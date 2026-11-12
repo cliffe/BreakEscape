@@ -58,7 +58,7 @@
         { "type": "pc", "id": "fade_pc", "name": "Reception PC", "takeable": false, "observations": "On the reception desk: joins the desk's table group and has a screen glow." },
         { "type": "safe", "id": "fade_safe_low", "name": "Low safe", "locked": false, "observations": "Wholly below the strip: must stay at full alpha." },
         { "type": "safe", "id": "fade_safe_edge", "name": "Edge safe", "locked": false, "observations": "Two pixels into the strip: fades." },
-        { "type": "key", "id": "fade_key", "name": "Wall key", "takeable": true, "observations": "Hung on the back wall: fades." },
+        { "type": "key", "id": "fade_key", "name": "Wall key", "keyPins": [45, 25, 55, 35], "takeable": true, "observations": "Hung on the back wall: fades." },
         { "type": "lockpick", "id": "fade_elevated", "name": "Shelf lockpick", "takeable": true, "position": { "x": 8.6, "y": 0.8, "elevation": 32 }, "observations": "Explicit elevation 32, drawn in the strip: fades." },
         { "type": "keycard", "id": "fade_floor_edge", "name": "Floor card", "takeable": true, "position": { "x": 8.6, "y": 2 }, "observations": "Top edge exactly on the strip's bottom: must stay at full alpha." },
         { "type": "notes", "id": "fade_desk_note", "name": "Desk note", "takeable": true, "text": "Back in five.", "position": { "x": 6.3, "y": 2.1 }, "observations": "Its own rect is below the strip but it sits on the desk's front half: fades with the desk." }

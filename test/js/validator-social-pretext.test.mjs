@@ -272,9 +272,9 @@ test('--strict-social: the broken call exits 1, the call lints run beside the ot
   assert.equal(r.status, 1, r.stdout + r.stderr);
   assert.match(r.stdout, /--strict-social: \d+ social lint error/);
   assert.match(r.stdout, /pretext_say\("ghost_line"\)/);
-  // without the flag the findings still print and the exit stays 0
+  // without the flag the findings still print, and every ❌ fails the run (hardening step 1)
   const plain = cli('sp_broken');
-  assert.equal(plain.status, 0, plain.stdout + plain.stderr);
+  assert.equal(plain.status, 1, plain.stdout + plain.stderr);
   assert.match(plain.stdout, /ghost_line/);
 });
 

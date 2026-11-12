@@ -462,7 +462,7 @@ test('the CLI under --strict-social exits 1 on the broken fixture and 0 on the c
   // The clean fixture raises no triage or defender lint. The only strict-social error it may show is the
   // missing triage-workstation sprite, which the wiring packet (P3-W) adds; that check is not this area's.
   const good = cli(join(fx, 'tr_clean/scenario.json.erb'), '--strict-social');
-  const social = good.stdout.split('\n').filter((l) => /❌ SOCIAL|⚠️ SOCIAL/.test(l));
+  const social = good.stdout.split('\n').filter((l) => /❌ ERROR: SOCIAL|⚠️ SOCIAL/.test(l));
   assert.deepEqual(social.filter((l) => !/assets\/objects\/.*\.png does not exist/.test(l)), []);
 });
 

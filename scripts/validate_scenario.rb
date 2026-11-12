@@ -20,6 +20,7 @@ require 'pathname'
 require 'set'
 require 'base64'
 require 'open3'
+require_relative 'validator_report'
 require_relative 'validate_social'
 require_relative 'validate_npc_needs'
 require_relative 'validate_network'
@@ -208,7 +209,7 @@ def check_duplicate_show_scenario_brief(rendered_json)
   key_count = top_level_key_counts(rendered_json)['show_scenario_brief']
 
   if key_count > 1
-    issues << "❌ INVALID: Top-level field 'show_scenario_brief' is defined #{key_count} times. Keep exactly one declaration. Use 'show_scenario_brief': 'on_resume' when using an opening timedConversation briefing so both UIs do not appear at mission start."
+    issues << "❌ ERROR: Top-level field 'show_scenario_brief' is defined #{key_count} times. Keep exactly one declaration. Use 'show_scenario_brief': 'on_resume' when using an opening timedConversation briefing so both UIs do not appear at mission start."
   end
 
   issues
@@ -242,7 +243,7 @@ def check_scenario_directory_structure(erb_path)
 
   # Check that mission.json exists in the scenario directory
   unless File.exist?(mission_json_path)
-    issues << "❌ INVALID: Scenario directory '#{scenario_name}/' is missing required 'mission.json' file. Structure should be: scenarios/#{scenario_name}/mission.json"
+    issues << "❌ ERROR: Scenario directory '#{scenario_name}/' is missing required 'mission.json' file. Structure should be: scenarios/#{scenario_name}/mission.json"
   end
 
   # Validate mission.json structure if it exists
@@ -255,15 +256,13 @@ def check_scenario_directory_structure(erb_path)
       missing_fields = required_fields.filter { |field| !mission.key?(field) || mission[field].to_s.strip.empty? }
 
       if missing_fields.any?
-        issues << "❌ INVALID: mission.json is missing required fields: #{missing_fields.join(', ')}"
+        issues << "❌ ERROR: mission.json is missing required fields: #{missing_fields.join(', ')}"
       end
-
-      issues.concat(check_mission_scoring(mission))
-      issues.concat(check_mission_result(mission))
+      # scoring and endingCheck are checked once, by the objective wiring check (with the rendered data)
     rescue JSON::ParserError => e
-      issues << "❌ INVALID: mission.json contains invalid JSON: #{e.message}"
+      issues << "❌ ERROR: mission.json contains invalid JSON: #{e.message}"
     rescue StandardError => e
-      issues << "❌ INVALID: Error reading mission.json: #{e.message}"
+      issues << "❌ ERROR: Error reading mission.json: #{e.message}"
     end
   end
 
@@ -281,7 +280,7 @@ def check_mission_scoring(mission, json_data = nil)
 
   mode = mission['scoring']
   unless SCORING_MODES.include?(mode)
-    return ["❌ INVALID: mission.json 'scoring' is #{mode.inspect}; it must be one of #{SCORING_MODES.join(', ')} " \
+    return ["❌ ERROR: mission.json 'scoring' is #{mode.inspect}; it must be one of #{SCORING_MODES.join(', ')} " \
             "(or left out, which means tasks)"]
   end
   return [] if json_data.nil? || mode == 'tasks'
@@ -306,17 +305,17 @@ def check_mission_result(mission, json_data = nil)
 
   issues = []
   if mission.key?('endingCheck') && ![true, false].include?(mission['endingCheck'])
-    issues << "❌ INVALID: mission.json 'endingCheck' is #{mission['endingCheck'].inspect}; it must be true or false " \
+    issues << "❌ ERROR: mission.json 'endingCheck' is #{mission['endingCheck'].inspect}; it must be true or false " \
               "(false turns off the warning before the ending)"
   end
   if mission.key?('stage') && !RESULT_STAGES.include?(mission['stage'])
-    issues << "❌ INVALID: mission.json 'stage' is #{mission['stage'].inspect}; it must be one of #{RESULT_STAGES.join(', ')}"
+    issues << "❌ ERROR: mission.json 'stage' is #{mission['stage'].inspect}; it must be one of #{RESULT_STAGES.join(', ')}"
   end
   return issues unless mission.key?('resultGlobal')
 
   name = mission['resultGlobal']
   unless name.is_a?(String) && RESULT_GLOBAL_PATTERN.match?(name)
-    issues << "❌ INVALID: mission.json 'resultGlobal' is #{name.inspect}; it must be a global name ending in _percent " \
+    issues << "❌ ERROR: mission.json 'resultGlobal' is #{name.inspect}; it must be a global name ending in _percent " \
               "(for example triage_pre_percent)"
     return issues
   end
@@ -324,9 +323,9 @@ def check_mission_result(mission, json_data = nil)
     declared = json_data['globalVariables']
     declared = {} unless declared.is_a?(Hash)
     if !declared.key?(name)
-      issues << "❌ INVALID: mission.json 'resultGlobal' names #{name.inspect}, which the scenario does not declare in globalVariables"
+      issues << "❌ ERROR: mission.json 'resultGlobal' names #{name.inspect}, which the scenario does not declare in globalVariables"
     elsif !declared[name].is_a?(Numeric)
-      issues << "❌ INVALID: mission.json 'resultGlobal' names #{name.inspect}, which is declared as #{declared[name].inspect} (it must be a number)"
+      issues << "❌ ERROR: mission.json 'resultGlobal' names #{name.inspect}, which is declared as #{declared[name].inspect} (it must be a number)"
     end
   end
   unless mission.key?('stage')
@@ -731,32 +730,32 @@ def check_structure_validity(json_data)
   # Validate rooms structure
   if json_data.key?('rooms')
     if json_data['rooms'].is_a?(Array)
-      issues << "❌ INVALID: 'rooms' must be a JSON object {}, not an array []. Structure should be: \"rooms\": { \"room_id\": { ... }, \"another_room\": { ... } }"
+      issues << "❌ ERROR: 'rooms' must be a JSON object {}, not an array []. Structure should be: \"rooms\": { \"room_id\": { ... }, \"another_room\": { ... } }"
     elsif !json_data['rooms'].is_a?(Hash)
-      issues << "❌ INVALID: 'rooms' must be a JSON object {} (hash), got #{json_data['rooms'].class}"
+      issues << "❌ ERROR: 'rooms' must be a JSON object {} (hash), got #{json_data['rooms'].class}"
     end
   end
 
   # Validate startItemsInInventory structure
   if json_data.key?('startItemsInInventory')
     if json_data['startItemsInInventory'].is_a?(Hash)
-      issues << "❌ INVALID: 'startItemsInInventory' must be a JSON array [], not an object {}. Structure should be: \"startItemsInInventory\": [ { \"type\": \"phone\", \"name\": \"...\" }, ... ]"
+      issues << "❌ ERROR: 'startItemsInInventory' must be a JSON array [], not an object {}. Structure should be: \"startItemsInInventory\": [ { \"type\": \"phone\", \"name\": \"...\" }, ... ]"
     elsif !json_data['startItemsInInventory'].is_a?(Array)
-      issues << "❌ INVALID: 'startItemsInInventory' must be a JSON array [], got #{json_data['startItemsInInventory'].class}"
+      issues << "❌ ERROR: 'startItemsInInventory' must be a JSON array [], got #{json_data['startItemsInInventory'].class}"
     end
   end
 
   # Validate NPCs structure if present
   if json_data.key?('npcs')
     if !json_data['npcs'].is_a?(Array)
-      issues << "❌ INVALID: 'npcs' must be a JSON array [], got #{json_data['npcs'].class}"
+      issues << "❌ ERROR: 'npcs' must be a JSON array [], got #{json_data['npcs'].class}"
     end
   end
 
   # Validate objectives structure if present
   if json_data.key?('objectives')
     if !json_data['objectives'].is_a?(Array)
-      issues << "❌ INVALID: 'objectives' must be a JSON array [], got #{json_data['objectives'].class}"
+      issues << "❌ ERROR: 'objectives' must be a JSON array [], got #{json_data['objectives'].class}"
     end
   end
 
@@ -804,14 +803,14 @@ def check_ink_dialogue_hazards(ink_lines, source_ink_path, valid_speakers)
     # 1. A flavour emote written on its own line starts with '*', which ink parses
     #    as a choice. It becomes a phantom choice button and can dead-end a branch.
     if stripped.start_with?('*') && stripped.end_with?('*') && !stripped.include?('[') && stripped.count('*') >= 2
-      issues << "❌ INVALID: '#{source_ink_path}' line #{ln}: '#{stripped[0, 60]}' is a standalone emote starting " \
+      issues << "❌ ERROR: '#{source_ink_path}' line #{ln}: '#{stripped[0, 60]}' is a standalone emote starting " \
                 "with '*', which ink parses as a CHOICE. Attach it to a spoken line " \
                 "(\"Marcus Webb: *sighs* ...\") or make it a 'Narrator:' beat."
     end
 
     # 2. '//' inside dialogue is an ink comment — everything after it is dropped.
     if !is_meta && stripped.include?('//')
-      issues << "❌ INVALID: '#{source_ink_path}' line #{ln}: contains '//', which ink treats as a comment. " \
+      issues << "❌ ERROR: '#{source_ink_path}' line #{ln}: contains '//', which ink treats as a comment. " \
                 "The rest of the line will be silently discarded at compile time. Rephrase or escape it."
     end
 
@@ -829,7 +828,7 @@ def check_ink_dialogue_hazards(ink_lines, source_ink_path, valid_speakers)
 
     # 5. A choice whose brackets don't balance swallows the rest of the line.
     if is_choice && stripped.count('[') != stripped.count(']')
-      issues << "❌ INVALID: '#{source_ink_path}' line #{ln}: unbalanced '[' / ']' in a choice."
+      issues << "❌ ERROR: '#{source_ink_path}' line #{ln}: unbalanced '[' / ']' in a choice."
     end
 
     # 6. Speaker-prefix resolution.
@@ -861,7 +860,7 @@ def check_ink_dialogue_hazards(ink_lines, source_ink_path, valid_speakers)
     is_label_word = INK_LABEL_WORDS.include?(speaker.downcase)
     if lines.size >= 5 && !is_label_word
       # Used repeatedly in one file — this is somebody's dialogue, not a label.
-      issues << "❌ INVALID: '#{source_ink_path}': speaker prefix '#{speaker}:' is used #{lines.size} times but " \
+      issues << "❌ ERROR: '#{source_ink_path}': speaker prefix '#{speaker}:' is used #{lines.size} times but " \
                 "matches no NPC id or displayName in this scenario (lines #{shown}#{more}). The engine will render " \
                 "the literal text '#{speaker}: ...' inside the previous speaker's bubble. Use the NPC's exact " \
                 "displayName, or 'Narrator:' / 'You:'."
@@ -1009,12 +1008,12 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
 
     # Enforce that storyPath uses the full scenarios/ relative path format
     if story_path.start_with?('ink/')
-      issues << "❌ INVALID: '#{npc_path}' uses deprecated relative path '#{story_path}'. Must use full path format: \"scenarios/SCENARIO_NAME/ink/FILENAME.ink.json\" (e.g., \"scenarios/test_npc_visibility/ink/test_dispatcher.ink.json\")"
+      issues << "❌ ERROR: '#{npc_path}' uses deprecated relative path '#{story_path}'. Must use full path format: \"scenarios/SCENARIO_NAME/ink/FILENAME.ink.json\" (e.g., \"scenarios/test_npc_visibility/ink/test_dispatcher.ink.json\")"
       next
     end
 
     unless story_path.start_with?('scenarios/')
-      issues << "❌ INVALID: '#{npc_path}' storyPath '#{story_path}' must start with 'scenarios/' (e.g., \"scenarios/SCENARIO_NAME/ink/FILENAME.ink.json\"). Absolute paths and other relative paths are not supported."
+      issues << "❌ ERROR: '#{npc_path}' storyPath '#{story_path}' must start with 'scenarios/' (e.g., \"scenarios/SCENARIO_NAME/ink/FILENAME.ink.json\"). Absolute paths and other relative paths are not supported."
       next
     end
 
@@ -1030,24 +1029,31 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
 
     if full_ink_path && File.exist?(full_ink_path)
       # Source .ink exists — compile it to disk (creates/overwrites the JSON)
+      # Each run compiles to its own temp file and renames it into place, so validator runs in
+      # parallel (a merge batch, shared ink such as scenarios/ink/helper-npc.ink) never read a
+      # half-written JSON file. The rename is atomic on one file system.
+      tmp_json_path = "#{full_json_path}.tmp-#{Process.pid}-#{rand(1 << 32).to_s(16)}"
       begin
-        output = `"#{inklecate_bin}" -o "#{full_json_path}" "#{full_ink_path}" 2>&1`
+        output = `"#{inklecate_bin}" -o "#{tmp_json_path}" "#{full_ink_path}" 2>&1`
         status = $?.exitstatus
 
         if status != 0 || output.include?('ERROR') || output.include?('error')
-          issues << "❌ INVALID: '#{npc_path}' references ink file '#{source_ink_path}' which fails to compile:\n#{output.strip}"
-        elsif !File.exist?(full_json_path)
-          issues << "❌ INVALID: '#{npc_path}' references ink file '#{source_ink_path}' — compiled but output file was not created"
+          issues << "❌ ERROR: '#{npc_path}' references ink file '#{source_ink_path}' which fails to compile:\n#{output.strip}"
+        elsif !File.exist?(tmp_json_path)
+          issues << "❌ ERROR: '#{npc_path}' references ink file '#{source_ink_path}' — compiled but output file was not created"
         else
-          # Verify the output is valid JSON
+          # Verify the output is valid JSON before it replaces the old file
           begin
-            JSON.parse(File.read(full_json_path))
+            JSON.parse(File.read(tmp_json_path))
+            File.rename(tmp_json_path, full_json_path)
           rescue JSON::ParserError => e
-            issues << "❌ INVALID: '#{npc_path}' compiled ink file produced invalid JSON: #{e.message}"
+            issues << "❌ ERROR: '#{npc_path}' compiled ink file produced invalid JSON: #{e.message}"
           end
         end
       rescue => e
-        issues << "❌ INVALID: '#{npc_path}' references ink file '#{source_ink_path}' but compilation failed: #{e.message}"
+        issues << "❌ ERROR: '#{npc_path}' references ink file '#{source_ink_path}' but compilation failed: #{e.message}"
+      ensure
+        File.delete(tmp_json_path) if File.exist?(tmp_json_path)
       end
 
       begin
@@ -1067,7 +1073,7 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
 
           if item_selector.nil? || item_selector.empty?
             unless items_held_types.include?(item_type)
-              issues << "❌ INVALID: '#{source_ink_path}' line #{i + 1}: '#give_item:#{item_spec}' but " \
+              issues << "❌ ERROR: '#{source_ink_path}' line #{i + 1}: '#give_item:#{item_spec}' but " \
                         "NPC '#{npc_path}' has no item with type '#{item_type}' in itemsHeld. " \
                         "Add { \"type\": \"#{item_type}\", ... } to the NPC's itemsHeld array in the scenario JSON."
             end
@@ -1082,7 +1088,7 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
             end
 
             unless matches_selector
-              issues << "❌ INVALID: '#{source_ink_path}' line #{i + 1}: '#give_item:#{item_spec}' but " \
+              issues << "❌ ERROR: '#{source_ink_path}' line #{i + 1}: '#give_item:#{item_spec}' but " \
                         "NPC '#{npc_path}' has no itemsHeld entry matching type '#{item_type}' and selector '#{item_selector}' " \
                         "(selector checks id, opens_lock, or name)."
             end
@@ -1117,12 +1123,12 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
         json_content = File.read(full_json_path)
         JSON.parse(json_content)
       rescue JSON::ParserError => e
-        issues << "❌ INVALID: '#{npc_path}' references compiled ink file '#{story_path}' but the file contains invalid JSON: #{e.message}"
+        issues << "❌ ERROR: '#{npc_path}' references compiled ink file '#{story_path}' but the file contains invalid JSON: #{e.message}"
       rescue => e
-        issues << "❌ INVALID: '#{npc_path}' references compiled ink file '#{story_path}' but failed to read it: #{e.message}"
+        issues << "❌ ERROR: '#{npc_path}' references compiled ink file '#{story_path}' but failed to read it: #{e.message}"
       end
     else
-      issues << "❌ INVALID: '#{npc_path}' references ink file '#{story_path}' which does not exist (checked for both .json and .ink versions)"
+      issues << "❌ ERROR: '#{npc_path}' references ink file '#{story_path}' which does not exist (checked for both .json and .ink versions)"
     end
   end
 
@@ -1235,7 +1241,7 @@ def check_objectives_wiring(json_data, base_dir)
 
         story_path = npc[:story_path]
         unless story_path
-          issues << "❌ INVALID: #{task_path} is type 'npc_conversation' targeting NPC '#{target_npc}', " \
+          issues << "❌ ERROR: #{task_path} is type 'npc_conversation' targeting NPC '#{target_npc}', " \
                     "but that NPC has no 'storyPath'. Without an Ink story the '#complete_task:#{task_id}' " \
                     "tag can never fire. Add a storyPath to the NPC or use taskOnKO to complete the task " \
                     "when the NPC is knocked out."
@@ -1264,7 +1270,7 @@ def check_objectives_wiring(json_data, base_dir)
 
         tag = "complete_task:#{task_id}"
         unless content_to_search.include?(tag)
-          issues << "❌ INVALID: #{task_path} is type 'npc_conversation' targeting NPC '#{target_npc}', " \
+          issues << "❌ ERROR: #{task_path} is type 'npc_conversation' targeting NPC '#{target_npc}', " \
                     "but '##{tag}' was not found in '#{searched_file}'. " \
                     "The engine completes npc_conversation tasks only when chat-helpers.js processes a " \
                     "'#complete_task:#{task_id}' ink tag (or when the NPC is knocked out and taskOnKO matches). " \
@@ -1342,7 +1348,7 @@ def check_objectives_wiring(json_data, base_dir)
           item_label = item['id'] || item['name'] || item['type']
 
           unless item['readable']
-            issues << "❌ INVALID: #{task_path} (collect_items) targets item '#{item_label}' " \
+            issues << "❌ ERROR: #{task_path} (collect_items) targets item '#{item_label}' " \
                       "(type: #{item['type']}), but the item is missing 'readable: true'. " \
                       "interactions.js only enters the notes branch — which emits 'item_picked_up' " \
                       "and drives task progress — when both 'readable: true' and a non-empty 'text' " \
@@ -1351,7 +1357,7 @@ def check_objectives_wiring(json_data, base_dir)
           end
 
           if item['text'].to_s.strip.empty?
-            issues << "❌ INVALID: #{task_path} (collect_items) targets item '#{item_label}' " \
+            issues << "❌ ERROR: #{task_path} (collect_items) targets item '#{item_label}' " \
                       "(type: #{item['type']}), but the item has no 'text' field (or it is empty). " \
                       "interactions.js only enters the notes branch — which emits 'item_picked_up' " \
                       "and drives task progress — when both 'readable: true' and a non-empty 'text' " \
@@ -1883,7 +1889,7 @@ def check_lock_credentials(json_data)
     when Array then node.each { |n| walk_items.call(n) }
     when Hash
       if node.key?('key_id')
-        issues << "❌ INVALID: item '#{node['name'] || node['key_id']}' uses 'key_id', which was renamed to " \
+        issues << "❌ ERROR: item '#{node['name'] || node['key_id']}' uses 'key_id', which was renamed to " \
                   "'opens_lock' (the lock this item opens). If the value does not name a lock, it is an " \
                   "identity and belongs in 'id' instead. key_id survives in the engine only so missions " \
                   "started before the rename can finish -- it must not appear in a scenario."
@@ -2095,12 +2101,12 @@ def check_pin_locks(json_data)
                       "against an empty PIN, so the pad never opens it; only an unlock_door event or flag reward can."
           end
         elsif !pin.is_a?(String) && !pin.is_a?(Integer)
-          issues << "❌ INVALID: #{where} PIN lock 'requires' must be a string of digits, got #{pin.class}."
+          issues << "❌ ERROR: #{where} PIN lock 'requires' must be a string of digits, got #{pin.class}."
         elsif pin.to_s !~ /\A\d+\z/
-          issues << "❌ INVALID: #{where} PIN '#{pin}' has characters other than digits. The PIN pad has keys 0-9 " \
+          issues << "❌ ERROR: #{where} PIN '#{pin}' has characters other than digits. The PIN pad has keys 0-9 " \
                     "only, so it can never be entered. Use lockType 'password' for letters, or a digits-only PIN."
         elsif !declared.nil? && declared != pin.to_s.length
-          issues << "❌ INVALID: #{where} has pinLength #{declared.inspect} but its PIN is #{pin.to_s.length} digits. " \
+          issues << "❌ ERROR: #{where} has pinLength #{declared.inspect} but its PIN is #{pin.to_s.length} digits. " \
                     "The server sends the PIN's own length, so remove pinLength (it is not needed) or fix the PIN."
         end
       end
@@ -2132,29 +2138,29 @@ def check_combination_cryptex_locks(json_data)
         if secret.nil? || secret.to_s.strip.empty?
           moved = kind == 'combination' ? node['combination'] : node.dig('cryptexConfig', 'answer')
           note = moved ? " Move the answer from '#{kind == 'combination' ? 'combination' : 'cryptexConfig.answer'}' into 'requires'." : ''
-          issues << "❌ INVALID: #{where} is a #{kind} lock with no 'requires'. The server checks the answer " \
+          issues << "❌ ERROR: #{where} is a #{kind} lock with no 'requires'. The server checks the answer " \
                     "against 'requires' only, so it can never open.#{note}"
         elsif kind == 'combination'
           parts = secret.is_a?(Array) ? secret.map(&:to_s) : secret.to_s.split(/[^0-9]+/).reject(&:empty?)
           unless parts.length == 3 && parts.all? { |p| p.match?(/\A\d+\z/) && p.to_i.between?(0, 39) }
-            issues << "❌ INVALID: #{where} combination '#{secret.is_a?(Array) ? secret.join('-') : secret}' must be " \
+            issues << "❌ ERROR: #{where} combination '#{secret.is_a?(Array) ? secret.join('-') : secret}' must be " \
                       "three numbers from 0 to 39 (the padlock's dials), such as \"12-30-5\"."
           end
         else
           config = node['cryptexConfig'].is_a?(Hash) ? node['cryptexConfig'] : {}
           wheels = config.key?('wheelCount') ? Integer(config['wheelCount'], exception: false) : 5
           unless wheels.is_a?(Integer) && wheels.positive?
-            issues << "❌ INVALID: #{where} cryptexConfig.wheelCount must be a whole number such as 6, not " \
+            issues << "❌ ERROR: #{where} cryptexConfig.wheelCount must be a whole number such as 6, not " \
                       "#{config['wheelCount'].inspect}."
             wheels = 5
           end
           word = secret.to_s.strip
           alphabets = config['alphabets'] || Array.new(wheels, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
           if word.length != wheels
-            issues << "❌ INVALID: #{where} cryptex word is #{word.length} letters but the cryptex has #{wheels} " \
+            issues << "❌ ERROR: #{where} cryptex word is #{word.length} letters but the cryptex has #{wheels} " \
                       "wheels (cryptexConfig.wheelCount, 5 if unset), so it can never be spelt."
           elsif word.chars.each_with_index.any? { |c, w| !alphabets[w].to_s.upcase.include?(c.upcase) }
-            issues << "❌ INVALID: #{where} cryptex word '#{word}' has a letter that is not on its wheel."
+            issues << "❌ ERROR: #{where} cryptex word '#{word}' has a letter that is not on its wheel."
           end
         end
         if node.key?('combination') || (node['cryptexConfig'].is_a?(Hash) && node['cryptexConfig'].key?('answer'))
@@ -2188,7 +2194,7 @@ def check_npc_held_containers(json_data)
       next unless container
       next if item['id'].is_a?(String) && !item['id'].strip.empty?
 
-      issues << "❌ INVALID: '#{where}/#{npc['id']}/itemsHeld[#{i}]'#{item['name'] ? " (#{item['name']})" : ''} is a " \
+      issues << "❌ ERROR: '#{where}/#{npc['id']}/itemsHeld[#{i}]'#{item['name'] ? " (#{item['name']})" : ''} is a " \
                 "container an NPC carries but has no 'id'. The server releases it after a give or a KO only by its " \
                 "id, so without one the player can never open it. Give it an id."
     end
@@ -2564,14 +2570,14 @@ def check_interaction_warnings(json_data)
   ]
   check_actions = lambda do |acts, p|
     unless acts.is_a?(Array)
-      issues << "❌ INVALID: '#{p}' must be an array of actions."
+      issues << "❌ ERROR: '#{p}' must be an array of actions."
       return
     end
     acts.each_with_index do |a, i|
       if !a.is_a?(Hash)
-        issues << "❌ INVALID: '#{p}[#{i}]' must be an action object."
+        issues << "❌ ERROR: '#{p}[#{i}]' must be an action object."
       elsif !a['type'].is_a?(String) || a['type'].empty?
-        issues << "❌ INVALID: '#{p}[#{i}]' needs a string 'type'."
+        issues << "❌ ERROR: '#{p}[#{i}]' needs a string 'type'."
       elsif !known_actions.include?(a['type'])
         issues << "⚠️ WARNING: '#{p}[#{i}]' has unknown action type '#{a['type']}'. " \
                   "Known types: #{known_actions.join(', ')}."
@@ -2586,18 +2592,18 @@ def check_interaction_warnings(json_data)
         w = node['interactionWarning']
         wp = "#{path}/interactionWarning"
         if !w.is_a?(Hash)
-          issues << "❌ INVALID: '#{wp}' must be an object { text, proceedLabel, declineLabel, onProceed, onDecline, once }."
+          issues << "❌ ERROR: '#{wp}' must be an object { text, proceedLabel, declineLabel, onProceed, onDecline, once }."
         else
           if !w['text'].is_a?(String) || w['text'].strip.empty?
-            issues << "❌ INVALID: '#{wp}/text' is required and must be a non-empty string."
+            issues << "❌ ERROR: '#{wp}/text' is required and must be a non-empty string."
           end
           ['proceedLabel', 'declineLabel'].each do |lk|
             if w.key?(lk) && !w[lk].is_a?(String)
-              issues << "❌ INVALID: '#{wp}/#{lk}' must be a string."
+              issues << "❌ ERROR: '#{wp}/#{lk}' must be a string."
             end
           end
           if w.key?('once') && ![true, false].include?(w['once'])
-            issues << "❌ INVALID: '#{wp}/once' must be a boolean."
+            issues << "❌ ERROR: '#{wp}/once' must be a boolean."
           end
           check_actions.call(w['onProceed'], "#{wp}/onProceed") if w.key?('onProceed')
           check_actions.call(w['onDecline'], "#{wp}/onDecline") if w.key?('onDecline')
@@ -2607,7 +2613,9 @@ def check_interaction_warnings(json_data)
           end
         end
       end
-      node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+      # A minigame's own data is its own format: the EHR terminal's medication rows carry a
+      # string 'interactionWarning' that the object-level warning code never reads.
+      node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") unless k == 'minigameData' }
     when Array
       node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
     end
@@ -2626,7 +2634,7 @@ def check_common_issues(json_data, valid_item_types = nil)
     known_fx_presets = ['voice-distortion', 'radio', 'robot']
     if fx.is_a?(String)
       unless known_fx_presets.include?(fx)
-        issues << "❌ INVALID: '#{fx_path}' is an unknown voice FX preset '#{fx}'. Use one of: #{known_fx_presets.join(', ')}, or a custom object { highpass, lowpass, drive, ringMod: { frequency, mix }, makeup }."
+        issues << "❌ ERROR: '#{fx_path}' is an unknown voice FX preset '#{fx}'. Use one of: #{known_fx_presets.join(', ')}, or a custom object { highpass, lowpass, drive, ringMod: { frequency, mix }, makeup }."
       end
     elsif fx.is_a?(Hash)
       allowed_fx_keys = ['highpass', 'lowpass', 'drive', 'ringMod', 'makeup']
@@ -2636,7 +2644,7 @@ def check_common_issues(json_data, valid_item_types = nil)
       end
       ['highpass', 'lowpass', 'drive', 'makeup'].each do |k|
         if fx.key?(k) && !fx[k].is_a?(Numeric)
-          issues << "❌ INVALID: '#{fx_path}/#{k}' must be a number."
+          issues << "❌ ERROR: '#{fx_path}/#{k}' must be a number."
         end
       end
       ['highpass', 'lowpass'].each do |k|
@@ -2650,26 +2658,26 @@ def check_common_issues(json_data, valid_item_types = nil)
       if fx.key?('ringMod')
         rm = fx['ringMod']
         if !rm.is_a?(Hash)
-          issues << "❌ INVALID: '#{fx_path}/ringMod' must be an object { frequency, mix }."
+          issues << "❌ ERROR: '#{fx_path}/ringMod' must be an object { frequency, mix }."
         else
           if rm.key?('frequency')
             if !rm['frequency'].is_a?(Numeric)
-              issues << "❌ INVALID: '#{fx_path}/ringMod/frequency' must be a number (Hz)."
+              issues << "❌ ERROR: '#{fx_path}/ringMod/frequency' must be a number (Hz)."
             elsif rm['frequency'] <= 0 || rm['frequency'] > 20000
               issues << "⚠️ WARNING: '#{fx_path}/ringMod/frequency' = #{rm['frequency']}Hz is outside the sensible audio range (1–20000Hz)."
             end
           end
           if rm.key?('mix')
             if !rm['mix'].is_a?(Numeric)
-              issues << "❌ INVALID: '#{fx_path}/ringMod/mix' must be a number between 0 and 1."
+              issues << "❌ ERROR: '#{fx_path}/ringMod/mix' must be a number between 0 and 1."
             elsif rm['mix'] < 0 || rm['mix'] > 1
-              issues << "❌ INVALID: '#{fx_path}/ringMod/mix' must be between 0 and 1 (got #{rm['mix']})."
+              issues << "❌ ERROR: '#{fx_path}/ringMod/mix' must be between 0 and 1 (got #{rm['mix']})."
             end
           end
         end
       end
     else
-      issues << "❌ INVALID: '#{fx_path}' must be a preset name (string) or a config object { highpass, lowpass, drive, ringMod, makeup }."
+      issues << "❌ ERROR: '#{fx_path}' must be a preset name (string) or a config object { highpass, lowpass, drive, ringMod, makeup }."
     end
   end
 
@@ -2692,7 +2700,7 @@ def check_common_issues(json_data, valid_item_types = nil)
       # capture_log.png).
       engine_type = t == 'capture_log' && item['sprite'].is_a?(String) && valid_item_types.include?(item['sprite'])
       unless exact_match || variant_match || engine_type
-        issues << "❌ INVALID: '#{item_path}' has type '#{t}' but no matching sprite found at assets/objects/#{t}.png (nor any #{t}*.png variant) — check the spelling or add the asset"
+        issues << "❌ ERROR: '#{item_path}' has type '#{t}' but no matching sprite found at assets/objects/#{t}.png (nor any #{t}*.png variant) — check the spelling or add the asset"
       end
     end
     item['contents']&.each_with_index { |c, i| check_item_type.call(c, "#{item_path}/contents[#{i}]") }
@@ -2896,7 +2904,7 @@ def check_common_issues(json_data, valid_item_types = nil)
         # Check for old x/y format (deprecated in favor of position object)
         path = "rooms/#{room_id}/objects[#{idx}]"
         if obj['x'] && obj['y'] && !obj['position']
-          issues << "❌ INVALID: '#{path}' uses deprecated x/y format. Must use position object: \"position\": { \"x\": #{obj['x']}, \"y\": #{obj['y']} } (optional: add \"elevation\": <value> for z-ordering)"
+          issues << "❌ ERROR: '#{path}' uses deprecated x/y format. Must use position object: \"position\": { \"x\": #{obj['x']}, \"y\": #{obj['y']} } (optional: add \"elevation\": <value> for z-ordering)"
         end
       end
 
@@ -2904,7 +2912,7 @@ def check_common_issues(json_data, valid_item_types = nil)
       if room['connections']
         room['connections'].each do |direction, target|
           unless valid_directions.include?(direction)
-            issues << "❌ INVALID: Room '#{room_id}' uses invalid direction '#{direction}' - only north, south, east, west are valid (not northeast, southeast, etc.)"
+            issues << "❌ ERROR: Room '#{room_id}' uses invalid direction '#{direction}' - only north, south, east, west are valid (not northeast, southeast, etc.)"
           end
 
           # Check reverse connections if target is a single room
@@ -2938,7 +2946,7 @@ def check_common_issues(json_data, valid_item_types = nil)
 
           # Check for incorrect VM launcher configuration (type: "pc" with vmAccess)
           if obj['type'] == 'pc' && obj['vmAccess']
-            issues << "❌ INVALID: '#{path}' uses type: 'pc' with vmAccess - should use type: 'vm-launcher' instead. See scenarios/secgen_vm_lab/scenario.json.erb for example"
+            issues << "❌ ERROR: '#{path}' uses type: 'pc' with vmAccess - should use type: 'vm-launcher' instead. See scenarios/secgen_vm_lab/scenario.json.erb for example"
           end
 
           # Track VM launchers (including variants: vm-launcher-kali, vm-launcher-desktop)
@@ -2997,7 +3005,7 @@ def check_common_issues(json_data, valid_item_types = nil)
           container_types = ['briefcase', 'bag', 'bag1', 'suitcase', 'safe', 'pc', 'bin1']
           if container_types.include?(obj['type']) && obj['contents'] && !obj['contents'].empty?
             unless obj.key?('locked')
-              issues << "❌ INVALID: '#{path}' is a container with contents but missing required 'locked' field - must be explicitly true or false for server-side validation"
+              issues << "❌ ERROR: '#{path}' is a container with contents but missing required 'locked' field - must be explicitly true or false for server-side validation"
             end
 
             # Track dead-end locks: locked containers where no content is useful to the player
@@ -3041,21 +3049,21 @@ def check_common_issues(json_data, valid_item_types = nil)
               key_locked_targets << { path: path, name: (obj['name'] || obj['type']) }
               # Check for key locks without keyPins (REQUIRED, not recommended)
               unless obj['keyPins']
-                issues << "❌ INVALID: '#{path}' has lockType: 'key' but missing required 'keyPins' array - key locks must specify keyPins array for lockpicking minigame"
+                issues << "❌ ERROR: '#{path}' has lockType: 'key' but missing required 'keyPins' array - key locks must specify keyPins array for lockpicking minigame"
               end
             end
           end
 
           # Check for key items without keyPins (REQUIRED, not recommended)
           if obj['type'] == 'key' && !obj['keyPins']
-            issues << "❌ INVALID: '#{path}' (key item) missing required 'keyPins' array - key items must specify keyPins array for lockpicking"
+            issues << "❌ ERROR: '#{path}' (key item) missing required 'keyPins' array - key items must specify keyPins array for lockpicking"
           end
 
           # Cross-reference onRead.setVariable against globalVariables
           if obj['onRead']&.dig('setVariable')
             obj['onRead']['setVariable'].each_key do |var_name|
               unless global_variables_defined.include?(var_name)
-                issues << "❌ INVALID: '#{path}/onRead/setVariable' references variable '#{var_name}' not defined in scenario.globalVariables. Add '#{var_name}': false to globalVariables."
+                issues << "❌ ERROR: '#{path}/onRead/setVariable' references variable '#{var_name}' not defined in scenario.globalVariables. Add '#{var_name}': false to globalVariables."
               end
             end
           end
@@ -3064,7 +3072,7 @@ def check_common_issues(json_data, valid_item_types = nil)
           if obj['onPickup']&.dig('setVariable')
             obj['onPickup']['setVariable'].each_key do |var_name|
               unless global_variables_defined.include?(var_name)
-                issues << "❌ INVALID: '#{path}/onPickup/setVariable' references variable '#{var_name}' not defined in scenario.globalVariables. Add '#{var_name}': false to globalVariables."
+                issues << "❌ ERROR: '#{path}/onPickup/setVariable' references variable '#{var_name}' not defined in scenario.globalVariables. Add '#{var_name}': false to globalVariables."
               end
             end
           end
@@ -3073,7 +3081,7 @@ def check_common_issues(json_data, valid_item_types = nil)
           if obj['onInteract']&.dig('setVariable')
             obj['onInteract']['setVariable'].each_key do |var_name|
               unless global_variables_defined.include?(var_name)
-                issues << "❌ INVALID: '#{path}/onInteract/setVariable' references variable '#{var_name}' not defined in scenario.globalVariables. Add '#{var_name}': false to globalVariables."
+                issues << "❌ ERROR: '#{path}/onInteract/setVariable' references variable '#{var_name}' not defined in scenario.globalVariables. Add '#{var_name}': false to globalVariables."
               end
             end
           end
@@ -3088,7 +3096,7 @@ def check_common_issues(json_data, valid_item_types = nil)
           if obj['onInteract']&.key?('display')
             mode = obj['onInteract']['display']
             unless valid_display_modes.include?(mode)
-              issues << "❌ INVALID: '#{path}/onInteract/display' has unknown value '#{mode}'. Valid values: #{valid_display_modes.join(', ')}."
+              issues << "❌ ERROR: '#{path}/onInteract/display' has unknown value '#{mode}'. Valid values: #{valid_display_modes.join(', ')}."
             end
           end
 
@@ -3099,7 +3107,7 @@ def check_common_issues(json_data, valid_item_types = nil)
           if obj['itemsHeld']
             obj['itemsHeld'].each_with_index do |item, item_idx|
               unless item['type']
-                issues << "❌ INVALID: '#{path}/itemsHeld[#{item_idx}]' has no 'type' field - #give_item matches on type."
+                issues << "❌ ERROR: '#{path}/itemsHeld[#{item_idx}]' has no 'type' field - #give_item matches on type."
               end
               # Flag-station rewards live in the station's itemsHeld; their graph edges count too.
               if item['puzzle_graph_unlocks']
@@ -3157,7 +3165,7 @@ def check_common_issues(json_data, valid_item_types = nil)
           key_locked_targets << { path: "rooms/#{room_id}", name: (room['name'] || room_id) }
           # Check for key locks without keyPins (REQUIRED, not recommended)
           unless room['keyPins']
-            issues << "❌ INVALID: 'rooms/#{room_id}' has lockType: 'key' but missing required 'keyPins' array - key locks must specify keyPins array for lockpicking minigame"
+            issues << "❌ ERROR: 'rooms/#{room_id}' has lockType: 'key' but missing required 'keyPins' array - key locks must specify keyPins array for lockpicking minigame"
           end
         end
       end
@@ -3198,7 +3206,7 @@ def check_common_issues(json_data, valid_item_types = nil)
           # koImmune: the player can't fight or knock out this NPC (npc-hostile.js isNPCKOImmune)
           if npc.key?('koImmune')
             if npc['koImmune'] != true && npc['koImmune'] != false
-              issues << "❌ INVALID: '#{path}' koImmune must be true or false (got #{npc['koImmune'].inspect})."
+              issues << "❌ ERROR: '#{path}' koImmune must be true or false (got #{npc['koImmune'].inspect})."
             elsif npc['koImmune'] == true
               dead = %w[taskOnKO globalVarOnKO].select { |k| npc[k] }
               if dead.any?
@@ -3215,7 +3223,7 @@ def check_common_issues(json_data, valid_item_types = nil)
             has_global_var_on_ko = true
             var_name = npc['globalVarOnKO']
             unless global_variables_defined.include?(var_name)
-              issues << "❌ INVALID: '#{path}' globalVarOnKO references '#{var_name}' which is not defined in scenario.globalVariables. Add '#{var_name}': false to globalVariables."
+              issues << "❌ ERROR: '#{path}' globalVarOnKO references '#{var_name}' which is not defined in scenario.globalVariables. Add '#{var_name}': false to globalVariables."
             end
           end
 
@@ -3223,7 +3231,7 @@ def check_common_issues(json_data, valid_item_types = nil)
           if npc['taskOnKO']
             task_id = npc['taskOnKO']
             unless all_task_ids.include?(task_id)
-              issues << "❌ INVALID: '#{path}' taskOnKO references task '#{task_id}' which does not exist in any objective's tasks. Ensure the taskId is correct."
+              issues << "❌ ERROR: '#{path}' taskOnKO references task '#{task_id}' which does not exist in any objective's tasks. Ensure the taskId is correct."
             end
           end
 
@@ -3249,11 +3257,11 @@ def check_common_issues(json_data, valid_item_types = nil)
             tc = npc['timedConversation']
             # Check for incorrect property name
             if tc['knot'] && !tc['targetKnot']
-              issues << "❌ INVALID: '#{path}' timedConversation uses 'knot' property - should use 'targetKnot' instead. Change 'knot' to 'targetKnot'"
+              issues << "❌ ERROR: '#{path}' timedConversation uses 'knot' property - should use 'targetKnot' instead. Change 'knot' to 'targetKnot'"
             end
             # Check for missing targetKnot
             unless tc['targetKnot']
-              issues << "❌ INVALID: '#{path}' timedConversation missing required 'targetKnot' property - must specify the Ink knot to navigate to"
+              issues << "❌ ERROR: '#{path}' timedConversation missing required 'targetKnot' property - must specify the Ink knot to navigate to"
             end
             # Check for missing delay
             unless tc.key?('delay')
@@ -3263,26 +3271,26 @@ def check_common_issues(json_data, valid_item_types = nil)
 
           # Validate eventMapping vs eventMappings (parameter name mismatch)
           if npc['eventMapping'] && !npc['eventMappings']
-            issues << "❌ INVALID: '#{path}' uses 'eventMapping' (singular) - should use 'eventMappings' (plural). The NPCManager expects 'eventMappings' and won't register event listeners with 'eventMapping'"
+            issues << "❌ ERROR: '#{path}' uses 'eventMapping' (singular) - should use 'eventMappings' (plural). The NPCManager expects 'eventMappings' and won't register event listeners with 'eventMapping'"
           end
 
           # Validate eventMappings structure
           if npc['eventMappings']
             # Check if it's an array
             unless npc['eventMappings'].is_a?(Array)
-              issues << "❌ INVALID: '#{path}' eventMappings is not an array - must be an array of event mapping objects"
+              issues << "❌ ERROR: '#{path}' eventMappings is not an array - must be an array of event mapping objects"
             else
               npc['eventMappings'].each_with_index do |mapping, idx|
                 mapping_path = "#{path}/eventMappings[#{idx}]"
 
                 # Check for incorrect property name (knot vs targetKnot)
                 if mapping['knot'] && !mapping['targetKnot']
-                  issues << "❌ INVALID: '#{mapping_path}' uses 'knot' property - should use 'targetKnot' instead. Change 'knot' to 'targetKnot'"
+                  issues << "❌ ERROR: '#{mapping_path}' uses 'knot' property - should use 'targetKnot' instead. Change 'knot' to 'targetKnot'"
                 end
 
                 # Check for missing eventPattern
                 unless mapping['eventPattern']
-                  issues << "❌ INVALID: '#{mapping_path}' missing required 'eventPattern' property - must specify the event pattern to listen for (e.g., 'global_variable_changed:varName')"
+                  issues << "❌ ERROR: '#{mapping_path}' missing required 'eventPattern' property - must specify the event pattern to listen for (e.g., 'global_variable_changed:varName')"
                 end
 
                 # For person NPCs only: conversationMode: 'person-chat' requires targetKnot.
@@ -3298,26 +3306,26 @@ def check_common_issues(json_data, valid_item_types = nil)
                   po = mapping['patrolOverride']
                   unless po.is_a?(Hash) && po['targetTile'].is_a?(Hash) &&
                          po['targetTile']['x'].is_a?(Numeric) && po['targetTile']['y'].is_a?(Numeric)
-                    issues << "❌ INVALID: '#{mapping_path}/patrolOverride' must have targetTile: {x: number, y: number}"
+                    issues << "❌ ERROR: '#{mapping_path}/patrolOverride' must have targetTile: {x: number, y: number}"
                   end
                   if po['speed'] && (!po['speed'].is_a?(Numeric) || po['speed'] <= 0)
-                    issues << "❌ INVALID: '#{mapping_path}/patrolOverride/speed' must be a positive number"
+                    issues << "❌ ERROR: '#{mapping_path}/patrolOverride/speed' must be a positive number"
                   end
                 end
 
                 # Validate barkDelay
                 if mapping.key?('barkDelay') && (!mapping['barkDelay'].is_a?(Numeric) || mapping['barkDelay'] < 0)
-                  issues << "❌ INVALID: '#{mapping_path}/barkDelay' must be a non-negative number (milliseconds)"
+                  issues << "❌ ERROR: '#{mapping_path}/barkDelay' must be a non-negative number (milliseconds)"
                 end
 
                 # Validate setPatrolSpeed
                 if mapping.key?('setPatrolSpeed') && (!mapping['setPatrolSpeed'].is_a?(Numeric) || mapping['setPatrolSpeed'] <= 0)
-                  issues << "❌ INVALID: '#{mapping_path}/setPatrolSpeed' must be a positive number"
+                  issues << "❌ ERROR: '#{mapping_path}/setPatrolSpeed' must be a positive number"
                 end
 
                 # Validate setDwellMultiplier
                 if mapping.key?('setDwellMultiplier') && (!mapping['setDwellMultiplier'].is_a?(Numeric) || mapping['setDwellMultiplier'] <= 0)
-                  issues << "❌ INVALID: '#{mapping_path}/setDwellMultiplier' must be a positive number"
+                  issues << "❌ ERROR: '#{mapping_path}/setDwellMultiplier' must be a positive number"
                 end
 
                 # Phone NPC event mapping anti-patterns
@@ -3333,13 +3341,13 @@ def check_common_issues(json_data, valid_item_types = nil)
 
                   # Any conversationMode outside the supported set is not used for phone NPCs.
                   if mapping['conversationMode'] && !phone_trigger_modes.include?(mapping['conversationMode'])
-                    issues << "❌ INVALID: '#{mapping_path}' is a phone NPC event mapping with 'conversationMode: \"#{mapping['conversationMode']}\"' — this field is not used for phone NPCs and has no effect. Remove it (supported: 'phone-chat', 'video-call')."
+                    issues << "❌ ERROR: '#{mapping_path}' is a phone NPC event mapping with 'conversationMode: \"#{mapping['conversationMode']}\"' — this field is not used for phone NPCs and has no effect. Remove it (supported: 'phone-chat', 'video-call')."
                   end
 
                   # targetKnot without a supported conversation trigger does NOT work after the first
                   # conversation. After the first open, storyState is restored and currentKnot is bypassed.
                   if mapping['targetKnot'] && !phone_chat_trigger
-                    issues << "❌ INVALID: '#{mapping_path}' is a phone NPC event mapping with 'targetKnot' — this does NOT work after the first conversation. Once a storyState is saved, targetKnot is ignored on reopen. Correct pattern: use 'setGlobal' to set a flag, then add a conditional hub option in the Ink story: '+ {flag_var} [Ask about it] -> knot'. Also add 'sendTimedMessage' to notify the player that new content is available."
+                    issues << "❌ ERROR: '#{mapping_path}' is a phone NPC event mapping with 'targetKnot' — this does NOT work after the first conversation. Once a storyState is saved, targetKnot is ignored on reopen. Correct pattern: use 'setGlobal' to set a flag, then add a conditional hub option in the Ink story: '+ {flag_var} [Ask about it] -> knot'. Also add 'sendTimedMessage' to notify the player that new content is available."
                   end
 
                   # NOTE: 'targetKnot' inside sendTimedMessage IS used by the engine
@@ -3365,12 +3373,12 @@ def check_common_issues(json_data, valid_item_types = nil)
 
             # Validate phone NPC structure - should have phoneId
             unless npc['phoneId']
-              issues << "❌ INVALID: '#{path}' (phone NPC) missing required 'phoneId' field - phone NPCs must specify which phone they appear on (e.g., 'player_phone')"
+              issues << "❌ ERROR: '#{path}' (phone NPC) missing required 'phoneId' field - phone NPCs must specify which phone they appear on (e.g., 'player_phone')"
             end
 
             # Validate phone NPC structure - should have storyPath
             unless npc['storyPath']
-              issues << "❌ INVALID: '#{path}' (phone NPC) missing required 'storyPath' field - phone NPCs must have a path to their Ink story JSON file"
+              issues << "❌ ERROR: '#{path}' (phone NPC) missing required 'storyPath' field - phone NPCs must have a path to their Ink story JSON file"
             end
 
             # Validate phone NPC structure - should NOT have position (phone NPCs don't have positions)
@@ -3386,19 +3394,19 @@ def check_common_issues(json_data, valid_item_types = nil)
             # Validate timedMessages structure for phone NPCs
             if npc['timedMessages']
               unless npc['timedMessages'].is_a?(Array)
-                issues << "❌ INVALID: '#{path}' timedMessages is not an array - must be an array of timed message objects"
+                issues << "❌ ERROR: '#{path}' timedMessages is not an array - must be an array of timed message objects"
               else
                 npc['timedMessages'].each_with_index do |msg, idx|
                   msg_path = "#{path}/timedMessages[#{idx}]"
 
                   # Check for missing message field
                   unless msg['message']
-                    issues << "❌ INVALID: '#{msg_path}' missing required 'message' field - must specify the text content of the message"
+                    issues << "❌ ERROR: '#{msg_path}' missing required 'message' field - must specify the text content of the message"
                   end
 
                   # Check for incorrect property name (text vs message)
                   if msg['text'] && !msg['message']
-                    issues << "❌ INVALID: '#{msg_path}' uses 'text' property - should use 'message' instead. The NPCManager reads msg.message, not msg.text"
+                    issues << "❌ ERROR: '#{msg_path}' uses 'text' property - should use 'message' instead. The NPCManager reads msg.message, not msg.text"
                   end
 
                   # Check for missing delay field
@@ -3408,7 +3416,7 @@ def check_common_issues(json_data, valid_item_types = nil)
 
                   # Check for incorrect property name (knot vs targetKnot) in timed messages
                   if msg['knot'] && !msg['targetKnot']
-                    issues << "❌ INVALID: '#{msg_path}' uses 'knot' property - should use 'targetKnot' instead. Change 'knot' to 'targetKnot'"
+                    issues << "❌ ERROR: '#{msg_path}' uses 'knot' property - should use 'targetKnot' instead. Change 'knot' to 'targetKnot'"
                   end
                 end
               end
@@ -3435,7 +3443,7 @@ def check_common_issues(json_data, valid_item_types = nil)
           if npc['itemsHeld']
             npc['itemsHeld'].each_with_index do |item, item_idx|
               unless item['type']
-                issues << "❌ INVALID: '#{path}/itemsHeld[#{item_idx}]' has no 'type' field - #give_item matches on type."
+                issues << "❌ ERROR: '#{path}/itemsHeld[#{item_idx}]' has no 'type' field - #give_item matches on type."
               end
 
               # Check item type against known asset files
@@ -3510,10 +3518,10 @@ def check_common_issues(json_data, valid_item_types = nil)
   headless_npc_records(json_data).each do |npc, path|
     all_npc_ids.add(npc['id'])
     unless npc['phoneId']
-      issues << "❌ INVALID: '#{path}' (phone NPC) missing required 'phoneId' field - phone NPCs must specify which phone they appear on (e.g., 'player_phone')"
+      issues << "❌ ERROR: '#{path}' (phone NPC) missing required 'phoneId' field - phone NPCs must specify which phone they appear on (e.g., 'player_phone')"
     end
     unless npc['storyPath']
-      issues << "❌ INVALID: '#{path}' (headless NPC record) missing required 'storyPath' field - a headless record must have a path to its Ink story JSON file"
+      issues << "❌ ERROR: '#{path}' (headless NPC record) missing required 'storyPath' field - a headless record must have a path to its Ink story JSON file"
     end
   end
 
@@ -3523,7 +3531,7 @@ def check_common_issues(json_data, valid_item_types = nil)
       path = "phoneNPCs[#{idx}]"
 
       # Flag incorrect structure - phone NPCs should be in rooms, not phoneNPCs section
-      issues << "❌ INVALID: '#{path}' - Phone NPCs should be defined in 'rooms/{room_id}/npcs[]' arrays, NOT in a separate 'phoneNPCs' section. See scenarios/npc-sprite-test3/scenario.json.erb for correct format. Phone NPCs should be in the starting room (or room where phone is accessible) with npcType: 'phone'"
+      issues << "❌ ERROR: '#{path}' - Phone NPCs should be defined in 'rooms/{room_id}/npcs[]' arrays, NOT in a separate 'phoneNPCs' section. See scenarios/npc-sprite-test3/scenario.json.erb for correct format. Phone NPCs should be in the starting room (or room where phone is accessible) with npcType: 'phone'"
 
       # Track phone NPCs (phone contacts) - but note they're in wrong location
       has_phone_contacts = true
@@ -3582,7 +3590,7 @@ def check_common_issues(json_data, valid_item_types = nil)
 
               # Check if the global variable is defined
               unless global_variables_defined.include?(var_name)
-                issues << "❌ INVALID: '#{mapping_path}' references global variable '#{var_name}' in eventPattern, but it's not defined in scenario.globalVariables. Add '#{var_name}' with an initial value (typically false) to globalVariables"
+                issues << "❌ ERROR: '#{mapping_path}' references global variable '#{var_name}' in eventPattern, but it's not defined in scenario.globalVariables. Add '#{var_name}' with an initial value (typically false) to globalVariables"
               end
             end
 
@@ -3671,13 +3679,13 @@ def check_common_issues(json_data, valid_item_types = nil)
   # Check for orphaned global variable references
   orphaned_vars = global_variables_referenced - global_variables_defined
   orphaned_vars.each do |var_name|
-    issues << "❌ INVALID: Global variable '#{var_name}' is referenced in eventPatterns but not defined in scenario.globalVariables. Add '#{var_name}' to globalVariables with an initial value (typically false for cutscene triggers)"
+    issues << "❌ ERROR: Global variable '#{var_name}' is referenced in eventPatterns but not defined in scenario.globalVariables. Add '#{var_name}' to globalVariables with an initial value (typically false for cutscene triggers)"
   end
 
   # Cross-reference task targetGroup against item collection_groups
   target_groups_used.each do |group|
     unless collection_groups_used.include?(group)
-      issues << "❌ INVALID: Task uses targetGroup '#{group}' but no items have collection_group: '#{group}'. Add collection_group: '#{group}' to the relevant items."
+      issues << "❌ ERROR: Task uses targetGroup '#{group}' but no items have collection_group: '#{group}'. Add collection_group: '#{group}' to the relevant items."
     end
   end
   orphaned_groups = collection_groups_used - target_groups_used
@@ -3690,10 +3698,10 @@ def check_common_issues(json_data, valid_item_types = nil)
     obj['tasks']&.each_with_index do |task, ti|
       task_path = "objectives[#{oi}]/tasks[#{ti}] (#{task['taskId']})"
       if task['targetNPC'] && !all_npc_ids.include?(task['targetNPC'])
-        issues << "❌ INVALID: #{task_path} references targetNPC '#{task['targetNPC']}' which does not exist in any room. Check the NPC id."
+        issues << "❌ ERROR: #{task_path} references targetNPC '#{task['targetNPC']}' which does not exist in any room. Check the NPC id."
       end
       if task['targetRoom'] && !all_room_ids.include?(task['targetRoom'])
-        issues << "❌ INVALID: #{task_path} references targetRoom '#{task['targetRoom']}' which is not a defined room."
+        issues << "❌ ERROR: #{task_path} references targetRoom '#{task['targetRoom']}' which is not a defined room."
       end
       if task['targetObject'] && !all_object_ids.include?(task['targetObject'])
         issues << "⚠️ WARNING: #{task_path} references targetObject '#{task['targetObject']}' but no object with that id was found. Ensure the object has an explicit 'id' field matching '#{task['targetObject']}'."
@@ -3706,11 +3714,11 @@ def check_common_issues(json_data, valid_item_types = nil)
       if task['type'] == 'submit_flags'
         flags = task['targetFlags']
         if !flags.is_a?(Array) || flags.empty?
-          issues << "❌ INVALID: #{task_path} is type 'submit_flags' but has no 'targetFlags' array. " \
+          issues << "❌ ERROR: #{task_path} is type 'submit_flags' but has no 'targetFlags' array. " \
                     "The task can never complete. Add \"targetFlags\": [\"<vm_name>:flag_1\"] and " \
                     "\"targetCount\": 1. See scenarios/m01_first_contact/scenario.json.erb."
         elsif !task['targetCount'].is_a?(Integer) || task['targetCount'] < 1
-          issues << "❌ INVALID: #{task_path} (submit_flags) has targetFlags but no valid 'targetCount'. " \
+          issues << "❌ ERROR: #{task_path} (submit_flags) has targetFlags but no valid 'targetCount'. " \
                     "Add \"targetCount\": #{flags.size}."
         end
       end
@@ -4762,7 +4770,7 @@ end
 
 # ============================================================================
 # TOOLING PASS 4c CHECKS: stacked timed texts, globals nothing reads, credit
-# sections that can print empty. All SUGGESTION or WARNING, never INVALID.
+# sections that can print empty. All SUGGESTION or WARNING, never ERROR.
 # (README_scenario_design.md "Common bugs and how to avoid them".)
 # ============================================================================
 
@@ -5925,7 +5933,7 @@ def check_engine_limits(json_data)
       next unless m.is_a?(Hash)
       mp = "#{holder_path}/eventMappings[#{i}]"
       if (bad = unsupported_condition_syntax(m['condition'], allow_includes: true))
-        issues << "❌ INVALID: '#{mp}' condition \"#{m['condition']}\" uses #{bad}. npc-manager.js " \
+        issues << "❌ ERROR: '#{mp}' condition \"#{m['condition']}\" uses #{bad}. npc-manager.js " \
                   "safeEvaluateCondition supports only '&&'-joined simple terms (value/data.x[.y]/globalVars.x " \
                   "with ===, !==, >, <, >=, <= against a literal or a data./globalVars. operand, '!' or .includes('…')), so this evaluates to false and the " \
                   "mapping never fires. Split it into simpler mappings, one per '||' branch."
@@ -5956,7 +5964,7 @@ def check_engine_limits(json_data)
   Array(json_data['timers']).each_with_index do |t, i|
     next unless t.is_a?(Hash)
     if (bad = unsupported_condition_syntax(t['condition'], allow_includes: false))
-      issues << "❌ INVALID: 'timers[#{i}]' condition \"#{t['condition']}\" uses #{bad}. scenario-timer.js " \
+      issues << "❌ ERROR: 'timers[#{i}]' condition \"#{t['condition']}\" uses #{bad}. scenario-timer.js " \
                 "_evaluateCondition supports only '&&'-joined terms (globalVars.x, !globalVars.x, ===, !==, >, <, >=, <=); " \
                 "'||' and parentheses are mis-read (the first globalVars name wins)."
     end
@@ -5973,7 +5981,7 @@ def check_engine_limits(json_data)
     when Hash
       if node['type'] == 'complete_task' && node['taskId'].to_s.strip.empty?
         hint = node['task_id'] ? " It has 'task_id', which the engine does not read; rename it to 'taskId'." : ''
-        issues << "❌ INVALID: '#{path}' is a complete_task action with no 'taskId'. apply-actions.js reads " \
+        issues << "❌ ERROR: '#{path}' is a complete_task action with no 'taskId'. apply-actions.js reads " \
                   "action.taskId, so this does nothing at runtime.#{hint}"
       end
 
@@ -6016,7 +6024,7 @@ def check_engine_limits(json_data)
         Array(node[vk]).each_with_index do |v, i|
           next unless v.is_a?(Hash)
           if (bad = unsupported_condition_syntax(v['condition'], allow_includes: false))
-            issues << "❌ INVALID: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" uses #{bad}. conditional-text.js " \
+            issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" uses #{bad}. conditional-text.js " \
                       "supports only '&&'-joined terms; '||' and parentheses are mis-read."
           end
         end
@@ -6084,13 +6092,13 @@ def check_action_conditions(json_data)
             where = "'#{child}[#{i}]' (#{action['type']})"
             cond = action['condition']
             if k == 'flagRewards'
-              issues << "❌ INVALID: #{where} is a flag reward with a 'condition'. The server applies flag rewards " \
+              issues << "❌ ERROR: #{where} is a flag reward with a 'condition'. The server applies flag rewards " \
                         "and does not read an action's condition, so the reward would be skipped on the page and " \
                         "granted on the server. Remove the condition; gate the reward by which flag earns it."
               next
             end
             if (problem = action_condition_problem(cond))
-              issues << "❌ INVALID: #{where} condition #{problem}. An action's condition is joined by '&&' and '||' " \
+              issues << "❌ ERROR: #{where} condition #{problem}. An action's condition is joined by '&&' and '||' " \
                         "(no parentheses) from terms of the form globalVars.x, !globalVars.x, or globalVars.x " \
                         "===, !==, >, <, >=, <= true, false, null, a number or a quoted string. The engine " \
                         "(global-condition.js parseActionCondition) treats anything else as not holding, so this " \
@@ -6149,7 +6157,7 @@ def check_or_in_global_conditions(json_data)
         when :lighting, :torch, :chat_background, :clock
           if (bad = unsupported_condition_syntax(cond, allow_includes: false))
             where = { lighting: 'lighting', torch: 'NPC torch', chat_background: 'chatBackground', clock: 'gameClock anchor' }[ctx]
-            issues << "❌ INVALID: '#{path}' #{where} condition \"#{cond}\" uses #{bad}. conditional-text.js " \
+            issues << "❌ ERROR: '#{path}' #{where} condition \"#{cond}\" uses #{bad}. conditional-text.js " \
                       "evaluateGlobalCondition supports only '&&'-joined terms, so '||' is mis-read (each term " \
                       "reads its first globalVars name: \"globalVars.a || globalVars.b\" is just globalVars.a). " \
                       "Use one variant per '||' branch, or a global that the story sets for either case."
@@ -6203,7 +6211,7 @@ def check_door_alignment(erb_path, repo_root)
     return issues
   end
   Array(res['bad']).each do |b|
-    issues << "❌ INVALID: Doors between '#{b['a']}' and '#{b['b']}' (#{b['dir']}) are misaligned, so the player " \
+    issues << "❌ ERROR: Doors between '#{b['a']}' and '#{b['b']}' (#{b['dir']}) are misaligned, so the player " \
               "can't walk straight through: #{b['detail']}. Change the room types/sizes or the connection so the " \
               "two door gaps meet (see scripts/check_door_alignment.py)."
   end
@@ -6777,6 +6785,69 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
 end
 
 # Main execution
+# A json-schema message as one validator line: "❌ ERROR: schema: <json pointer> (<where>): <message>",
+# without the gem's opaque "in schema <uuid>" tail, naming the room, object or NPC the pointer reaches.
+def format_schema_error(json_data, message)
+  text = message.to_s.sub(/ in schema [0-9a-f-]+#?\s*\z/, '')
+  m = text.match(/\AThe property '(#[^']*)' (.*)\z/m)
+  return "❌ ERROR: schema: #{text}" unless m
+
+  "❌ ERROR: schema: #{m[1]}#{describe_schema_pointer(json_data, m[1])}: #{m[2]}"
+end
+
+def describe_schema_pointer(data, pointer)
+  segs = pointer.sub(%r{\A#/?}, '').split('/').map { |s| s.gsub('~1', '/').gsub('~0', '~') }
+  node = data
+  labels = []
+  segs.each_with_index do |seg, i|
+    node =
+      if node.is_a?(Hash) then node[seg]
+      elsif node.is_a?(Array) && seg.match?(/\A\d+\z/) then node[seg.to_i]
+      end
+    parent = i.positive? ? segs[i - 1] : nil
+    if i == 1 && segs[0] == 'rooms'
+      labels << "room '#{seg}'"
+    elsif parent == 'objects' && node.is_a?(Hash)
+      labels << "object '#{node['id'] || node['name'] || seg}'"
+    elsif parent == 'npcs' && node.is_a?(Hash)
+      labels << "NPC '#{node['id'] || node['displayName'] || seg}'"
+    end
+    break if node.nil?
+  end
+  labels.empty? ? '' : " (#{labels.join(', ')})"
+rescue StandardError
+  ''
+end
+
+# Ink issues that mean a file did not compile: the checks that read its compiled JSON were skipped.
+INK_COMPILE_FAILURE_RE = ValidatorReport::INK_COMPILE_FAILURE_RE
+
+def print_issue_list(report, issues, error_header:, warning_header:, ok_line:, blank_after_each: true)
+  report.run_check(report.stage, 'print_issue_list', fallback: nil) do
+    print_issue_list_unguarded(report, issues, error_header: error_header, warning_header: warning_header,
+                                               ok_line: ok_line, blank_after_each: blank_after_each)
+  end
+end
+
+def print_issue_list_unguarded(report, issues, error_header:, warning_header:, ok_line:, blank_after_each:)
+  errors = issues.count { |i| report.error_line?(i) }
+  if errors.positive?
+    report.header("✗ #{error_header} #{errors} error(s):")
+  elsif issues.any?
+    report.header("⚠️ #{warning_header.sub('%d', issues.length.to_s)}")
+  else
+    puts ok_line
+    puts
+    return
+  end
+  puts
+  issues.each_with_index do |issue, index|
+    puts "#{index + 1}. #{issue}"
+    puts if blank_after_each
+  end
+  puts unless blank_after_each
+end
+
 def main
   options = {
     schema_path: File.join(__dir__, 'scenario-schema.json'),
@@ -6785,11 +6856,13 @@ def main
     no_graph: false,
     skip_ink: false,
     no_lint: false,
-    strict_social: false
+    strict_social: false,
+    known_failures: File.join(__dir__, 'validator_known_failures.json')
   }
 
   OptionParser.new do |opts|
-    opts.banner = "Usage: #{$PROGRAM_NAME} <scenario.json.erb> [options]"
+    opts.banner = "Usage: #{$PROGRAM_NAME} <scenario.json.erb> [options]\n" \
+                  'Exits 1 when any ❌ line is not covered by the known-failures list.'
 
     opts.on('-s', '--schema PATH', 'Path to JSON schema file') do |path|
       options[:schema_path] = path
@@ -6811,12 +6884,20 @@ def main
       options[:skip_ink] = true
     end
 
-    opts.on('--strict-social', 'Exit 1 when a social lint (scripts/validate_social.rb) reports an error; a scenario with no `social` key always exits 0') do
+    opts.on('--strict-social', 'Accepted for older callers (CI). Every ❌ line, social ones included, already fails the run') do
       options[:strict_social] = true
     end
 
     opts.on('--no-lint', 'Skip the DIALOGUE LINT section (dialoguelint.mjs over the mission folder)') do
       options[:no_lint] = true
+    end
+
+    opts.on('--known-failures PATH', 'Known-failures list to read (default scripts/validator_known_failures.json)') do |path|
+      options[:known_failures] = path
+    end
+
+    opts.on('--no-known-failures', 'Ignore the known-failures list and show the raw result') do
+      options[:known_failures] = nil
     end
 
     opts.on('-h', '--help', 'Show this help message') do
@@ -6835,354 +6916,372 @@ def main
 
   erb_path = File.expand_path(erb_path)
   schema_path = File.expand_path(options[:schema_path])
+  repo_root = File.expand_path('..', __dir__)
+  rel_path = erb_path.start_with?("#{repo_root}/") ? erb_path.delete_prefix("#{repo_root}/") : erb_path
+
+  known_error = nil
+  known = begin
+    ValidatorReport.load_known_failures(options[:known_failures] && File.expand_path(options[:known_failures]))
+  rescue StandardError => e
+    known_error = e
+    []
+  end
+
+  real_out = $stdout
+  real_out.sync = true
+  report = ValidatorReport.new(real_out, scenario_paths: [rel_path, erb_path], known_failures: known)
+  $stdout = report
+  code = 1
+  begin
+    if known_error
+      report.stage = 'common'
+      puts "❌ ERROR: known-failures list could not run: #{known_error.message.to_s.lines.first.to_s.strip}"
+      puts
+    end
+    run_validation(report, erb_path, schema_path, repo_root, options)
+  rescue StandardError, ScriptError => e
+    report.stage = 'common'
+    puts "❌ ERROR: validator could not run: #{e.class}: #{e.message.to_s.lines.first.to_s.strip}"
+    puts e.backtrace.join("\n") if options[:verbose]
+    ValidatorReport::STAGES.each { |s| report.not_full!(s, 'validator raised') }
+  ensure
+    code = report.finish
+    $stdout = real_out
+  end
+  exit code
+end
+
+# The body of a run. It never exits: every section prints, and ValidatorReport#finish decides
+# the exit code from the ❌ lines it counted.
+def run_validation(report, erb_path, schema_path, repo_root, options)
+  scenario_dir = File.dirname(erb_path)
 
   puts "Validating scenario: #{erb_path}"
   puts "Using schema: #{schema_path}"
   puts
 
   # Check scenario directory structure
+  report.stage = 'common'
   puts "Checking scenario directory structure..."
-  dir_issues = check_scenario_directory_structure(erb_path)
-  if !dir_issues.empty?
+  dir_issues = report.run_check('common', 'check_scenario_directory_structure') { check_scenario_directory_structure(erb_path) }
+  if dir_issues.empty?
+    puts "✓ Directory structure is valid"
+  else
     puts "✗ Directory structure validation failed with #{dir_issues.length} error(s):"
     puts
-
-    dir_issues.each_with_index do |issue, index|
-      puts "#{index + 1}. #{issue}"
-      puts
-    end
-
-    exit 1
+    dir_issues.each_with_index { |issue, index| puts "#{index + 1}. #{issue}"; puts }
   end
-  puts "✓ Directory structure is valid"
   puts
 
   # Load valid item types from assets directory
-  repo_root = File.expand_path('..', __dir__)
   valid_item_types = load_valid_item_types(repo_root)
   if valid_item_types
     puts "Loaded #{valid_item_types.size} valid item types from assets/objects/"
   else
-    puts "⚠️ assets/objects/ directory not found — item type validation skipped"
+    report.header("⚠️ assets/objects/ directory not found — item type validation skipped")
   end
   puts
 
+  # Render ERB to JSON. Nothing else can run without the rendered data.
+  puts "Rendering ERB template..."
   begin
-    # Render ERB to JSON
-    puts "Rendering ERB template..."
     json_data, rendered_json = render_erb_to_json(erb_path, {}, include_rendered: true)
-    puts "✓ ERB rendered successfully"
+  rescue StandardError, ScriptError => e
+    puts "❌ ERROR: ERB render could not run: #{e.message.to_s.lines.first.to_s.strip}"
     puts
-
-    # Carry-over: imported globals count as declared for every later check.
-    own_globals = (json_data['globalVariables'] || {}).dup
-    carry_imports = prepare_carry_over_globals(json_data)
-
-    # Output JSON if requested
-    if options[:output_json]
-      puts "Rendered JSON:"
-      puts JSON.pretty_generate(json_data)
-      puts
-    end
-
-    # Pre-validate structure before running schema validation
-    puts "Checking JSON structure..."
-    structure_issues = check_structure_validity(json_data)
-    structure_issues.concat(check_duplicate_show_scenario_brief(rendered_json))
-
-    # Report structure issues immediately and exit
-    if !structure_issues.empty?
-      puts "✗ Structure validation failed with #{structure_issues.length} error(s):"
-      puts
-
-      structure_issues.each_with_index do |issue, index|
-        puts "#{index + 1}. #{issue}"
-        puts
-      end
-
-      exit 1
-    end
-    puts "✓ JSON structure is valid"
-    puts
-
-    # Check for unknown fields (warnings, not errors)
-    puts "Checking for unknown fields..."
-    unknown_fields_warnings = check_unknown_fields(json_data)
-    if unknown_fields_warnings.any?
-      puts "⚠️ Found #{unknown_fields_warnings.length} unknown field(s):"
-      puts
-      unknown_fields_warnings.each_with_index do |warning, index|
-        puts "#{index + 1}. #{warning}"
-      end
-      puts
-    else
-      puts "✓ No unknown fields"
-      puts
-    end
-
-    # Check ink files exist and compile (unless skipped)
-    unless options[:skip_ink]
-      puts "Checking ink files..."
-      scenario_dir = File.dirname(erb_path)
-      ink_issues = check_ink_files(json_data, repo_root, scenario_dir)
-
-      # Report ink issues immediately and exit if critical
-      if ink_issues.any? { |issue| issue.start_with?("❌") }
-        puts "✗ Ink file validation failed with #{ink_issues.count { |i| i.start_with?("❌") }} error(s):"
-        puts
-
-        ink_issues.each_with_index do |issue, index|
-          puts "#{index + 1}. #{issue}"
-          puts
-        end
-
-        exit 1
-      elsif ink_issues.any?
-        puts "⚠️ Found #{ink_issues.length} ink file warning(s):"
-        puts
-
-        ink_issues.each_with_index do |issue, index|
-          puts "#{index + 1}. #{issue}"
-          puts
-        end
-      else
-        puts "✓ All ink files valid"
-      end
-      puts
-    else
-      puts "⏭️ Skipping ink file validation (--skip-ink)"
-      puts
-    end
-
-    # Dialogue lint over the mission folder (advisory; needs node; off with --no-lint or --skip-ink)
-    unless options[:skip_ink] || options[:no_lint]
-      lint_report = run_dialogue_lint(File.dirname(erb_path), repo_root)
-      print_dialogue_lint(lint_report, repo_root) if lint_report
-    end
-
-    # Check objective task completion wiring
-    puts "Checking objective task wiring..."
-    wiring_issues = check_objectives_wiring(json_data, repo_root)
-    begin
-      scoring_mission = JSON.parse(File.read(File.join(File.dirname(erb_path), 'mission.json')))
-      wiring_issues.concat(check_mission_scoring(scoring_mission, json_data))
-      wiring_issues.concat(check_mission_result(scoring_mission, json_data))
-      wiring_issues.concat(check_mission_ending_check(scoring_mission, json_data, File.dirname(erb_path)))
-    rescue StandardError
-      # mission.json problems were already reported by the directory check
-    end
-    if wiring_issues.any? { |i| i.start_with?("❌") }
-      puts "✗ Objective wiring check found #{wiring_issues.count { |i| i.start_with?('❌') }} error(s):"
-      puts
-      wiring_issues.each_with_index do |issue, index|
-        puts "#{index + 1}. #{issue}"
-        puts
-      end
-      # Non-fatal: continue so the author sees all problems at once.
-      puts
-    elsif wiring_issues.any?
-      puts "⚠️ Found #{wiring_issues.length} objective wiring warning(s):"
-      puts
-      wiring_issues.each_with_index do |issue, index|
-        puts "#{index + 1}. #{issue}"
-        puts
-      end
-      puts
-    else
-      puts "✓ Objective task wiring OK"
-      puts
-    end
-
-    # Check room layout geometry (world-space overlaps)
-    puts "Checking room layout geometry..."
-    geometry_issues = check_room_geometry(json_data, repo_root)
-    puts "Checking door alignment..."
-    door_issues = check_door_alignment(erb_path, repo_root)
-    if geometry_issues.any? { |i| i.start_with?("⚠️") }
-      puts "⚠️ Found #{geometry_issues.count { |i| i.start_with?('⚠️') }} room overlap warning(s):"
-      puts
-      geometry_issues.each_with_index do |issue, index|
-        puts "#{index + 1}. #{issue}"
-        puts
-      end
-    elsif geometry_issues.any?
-      geometry_issues.each { |issue| puts issue }
-      puts
-    else
-      puts "✓ Room layout geometry OK — no world-space overlaps"
-      puts
-    end
-    if door_issues.any? { |i| i.start_with?("❌") }
-      puts "✗ Door alignment check found #{door_issues.count { |i| i.start_with?('❌') }} error(s):"
-      puts
-      door_issues.each_with_index { |issue, index| puts "#{index + 1}. #{issue}"; puts }
-    elsif door_issues.any?
-      puts "⚠️ Door alignment: #{door_issues.length} note(s):"
-      puts
-      door_issues.each_with_index { |issue, index| puts "#{index + 1}. #{issue}"; puts }
-    else
-      puts "✓ Door alignment OK"
-      puts
-    end
-
-    # Validate against schema
-    puts "Validating against schema..."
-    errors = validate_json(json_data, schema_path)
-
-    # Check for common issues and structural problems
-    puts "Checking for common issues..."
-    common_issues = check_common_issues(json_data, valid_item_types)
-    common_issues += check_lock_credentials(json_data)
-    common_issues += check_pin_locks(json_data)
-    common_issues += check_combination_cryptex_locks(json_data)
-    common_issues += check_npc_held_containers(json_data)
-    common_issues += check_npc_patrol_and_catch_locks(json_data, repo_root)
-    common_issues += check_give_item_collectible(json_data)
-    common_issues += check_interaction_warnings(json_data)
-    common_issues += check_engine_limits(json_data)
-    common_issues += check_vm_flags_load_bearing(json_data)
-    common_issues += check_recurring_bugs(json_data, repo_root)
-    common_issues += check_unheard_room_triggers(json_data, repo_root)
-    habits_copy, habits_report = BreakEscape::NpcHabits.expanded_copy(json_data)
-    common_issues += ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy))
-    common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
-    common_issues += check_network_model(json_data, File.dirname(erb_path))
-    common_issues += check_capture_log(json_data)
-    common_issues += check_wearables(json_data, File.dirname(erb_path))
-    common_issues += ValidateAccessWork.check(json_data)
-    common_issues += ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report,
-                                                        scenario_dir: File.dirname(erb_path))
-    common_issues += check_tooling_pass4c(json_data, repo_root)
-    common_issues += check_carry_over(json_data, repo_root, File.basename(File.dirname(erb_path)),
-                                      File.dirname(File.dirname(erb_path)), carry_imports, own_globals)
-
-    # Social-engineering lints (scripts/validate_social.rb). Two lints (aim unlockCondition
-    # keys, object id uniqueness) apply to every scenario; the rest need a `social` key.
-    social_issues = ValidateSocial.check(json_data, repo_root: repo_root, valid_item_types: valid_item_types,
-                                                   imports: carry_imports, raw: rendered_json)
-    # Schema errors under /social are social errors: listed with the lints, and fatal under
-    # --strict-social like them (MECHANICS_AUDIT M3). Every other schema error still fails the run.
-    social_schema, errors = ValidateSocial.split_schema_errors(errors)
-    social_issues = social_schema + social_issues
-    common_issues += social_issues
-
-    # Check for recommended fields
-    puts "Checking recommended fields..."
-    warnings = check_recommended_fields(json_data)
-
-    # Report errors
-    if errors.empty?
-      puts "✓ Schema validation passed!"
-    else
-      puts "✗ Schema validation failed with #{errors.length} error(s):"
-      puts
-
-      errors.each_with_index do |error, index|
-        puts "#{index + 1}. #{error}"
-        puts
-      end
-
-      if options[:verbose]
-        puts "Full JSON structure:"
-        puts JSON.pretty_generate(json_data)
-      end
-
-      exit 1
-    end
-
-    # Report common issues
-    if common_issues.empty?
-      puts "✓ No common issues found."
-      puts
-    else
-      puts "⚠️ Found #{common_issues.length} issue(s) and suggestion(s):"
-      puts
-
-      common_issues.each_with_index do |issue, index|
-        puts "#{index + 1}. #{issue}"
-      end
-      puts
-    end
-
-    # The habits report (slice 9.1, 7.2): who never locks and whose password is on a note
-    habits_lines = ValidateNpcHabits.report_lines(json_data, expanded: habits_copy, report: habits_report,
-                                                             scenario_dir: File.dirname(erb_path))
-    unless habits_lines.empty?
-      habits_lines.each { |line| puts line }
-      puts
-    end
-
-    # The work report (access slice 9.2, section 10): work lists and workaround timing
-    work_lines = ValidateAccessWork.report_lines(json_data)
-    unless work_lines.empty?
-      work_lines.each { |line| puts line }
-      puts
-    end
-
-    # Report warnings
-    if warnings.empty?
-      puts "✓ No missing recommended fields."
-      puts
-    else
-      puts "⚠️ Found #{warnings.length} missing recommended field(s):"
-      puts
-
-      warnings.each_with_index do |warning, index|
-        puts "#{index + 1}. #{warning}"
-      end
-      puts
-    end
-
-    # Generate dungeon graph (runs by default, suppress with --no-graph)
-    unless options[:no_graph]
-      graph_script = File.join(__dir__, 'generate_dungeon_graph.rb')
-      if File.exist?(graph_script)
-        puts "Generating dungeon graph..."
-        # The generator's test switch (it turns the Wi-Fi key scrub off) never reaches a real run.
-        result = system({ 'DUNGEON_GRAPH_TEST_NO_SCRUB' => nil }, 'ruby', graph_script, erb_path)
-        graph_out = File.join(File.dirname(erb_path), 'dungeon_graph.html')
-        if result
-          # The path the author typed, as the "Validating scenario:" line prints it.
-          puts "✓ Dungeon graph: #{graph_out}"
-        elsif $?.exitstatus == 3
-          # The generator's key check stopped the run (KEY_STOP_STATUS) and deleted the old graph files.
-          puts "❌ ERROR: Dungeon graph stopped: an output still held a Wi-Fi key (see the message above); " \
-               'the old dungeon_graph files were deleted.'
-          puts
-          exit 1
-        else
-          puts "⚠️ Dungeon graph generation failed (non-fatal)"
-        end
-        puts
-      end
-    end
-
-    # --strict-social: a social lint error fails the run (only for scenarios with a `social` key)
-    if options[:strict_social] && json_data.key?('social') && ValidateSocial.errors(social_issues).any?
-      puts "✗ --strict-social: #{ValidateSocial.errors(social_issues).length} social lint error(s)"
-      exit 1
-    end
-
-    # Info: desk collision boxes per map (footprint maps opt in with a Tiled map property)
-    desk_maps = desk_box_maps(json_data, File.expand_path('..', __dir__))
-    if desk_maps[:legacy].any? || desk_maps[:footprint].any?
-      puts "ℹ Desk boxes: legacy in #{desk_maps[:legacy].length} map(s)" \
-           "#{desk_maps[:legacy].any? ? " (#{desk_maps[:legacy].join(', ')})" : ''}; " \
-           "footprint in #{desk_maps[:footprint].length}" \
-           "#{desk_maps[:footprint].any? ? " (#{desk_maps[:footprint].join(', ')})" : ''}"
-      puts
-    end
-
-    # Exit with success (warnings don't cause failure)
-    puts "✓ Validation complete!"
-    exit 0
-  rescue StandardError => e
-    $stderr.puts "ERROR: #{e.message}"
-    if options[:verbose]
-      $stderr.puts e.backtrace.join("\n")
-    end
-    exit 1
+    ValidatorReport::STAGES.each { |s| report.not_full!(s, 'render failed') }
+    return
   end
+  puts "✓ ERB rendered successfully"
+  puts
+
+  # Carry-over: imported globals count as declared for every later check.
+  own_globals = json_data.is_a?(Hash) ? (json_data['globalVariables'] || {}).dup : {}
+  carry_imports = report.run_check('common', 'prepare_carry_over_globals', fallback: nil) { prepare_carry_over_globals(json_data) }
+
+  if options[:output_json]
+    puts "Rendered JSON:"
+    report.raw(JSON.pretty_generate(json_data))
+    puts
+  end
+
+  # Pre-validate structure. Structure errors are schema errors: they print, and the run goes on.
+  report.stage = 'schema'
+  puts "Checking JSON structure..."
+  structure_issues = report.run_check('schema', 'check_structure_validity') do
+    check_structure_validity(json_data) + check_duplicate_show_scenario_brief(rendered_json)
+  end
+  if structure_issues.empty?
+    puts "✓ JSON structure is valid"
+  else
+    puts "✗ Structure validation failed with #{structure_issues.length} error(s):"
+    puts
+    structure_issues.each_with_index { |issue, index| puts "#{index + 1}. #{issue}"; puts }
+  end
+  puts
+
+  # Check for unknown fields (warnings, not errors)
+  report.stage = 'common'
+  puts "Checking for unknown fields..."
+  unknown_fields_warnings = report.run_check('common', 'check_unknown_fields') { check_unknown_fields(json_data) }
+  if unknown_fields_warnings.any?
+    report.header("⚠️ Found #{unknown_fields_warnings.length} unknown field(s):")
+    puts
+    unknown_fields_warnings.each_with_index { |warning, index| puts "#{index + 1}. #{warning}" }
+  else
+    puts "✓ No unknown fields"
+  end
+  puts
+
+  # Check ink files exist and compile (unless skipped). An ink failure no longer stops the run.
+  report.stage = 'ink'
+  if options[:skip_ink]
+    report.not_full!('ink', '--skip-ink')
+    puts "⏭️ Skipping ink file validation (--skip-ink)"
+    puts
+  else
+    puts "Checking ink files..."
+    ink_issues = report.run_check('ink', 'check_ink_files') { check_ink_files(json_data, repo_root, scenario_dir) }
+    print_issue_list(report, ink_issues, error_header: 'Ink file validation failed with',
+                                         warning_header: 'Found %d ink file warning(s):', ok_line: '✓ All ink files valid')
+    compile_failures = ink_issues.count { |i| i.to_s.start_with?('❌') && i.to_s.match?(INK_COMPILE_FAILURE_RE) }
+    if compile_failures.positive?
+      report.not_full!('ink', 'ink compile failure')
+      puts "⏭️ #{compile_failures} ink file(s) failed to compile: the checks that read their compiled JSON were skipped."
+      puts
+    end
+  end
+
+  # Dialogue lint over the mission folder (advisory; needs node; off with --no-lint or --skip-ink)
+  unless options[:skip_ink] || options[:no_lint]
+    lint_report = report.run_check('ink', 'dialogue lint', fallback: nil) { run_dialogue_lint(scenario_dir, repo_root) }
+    report.run_check('ink', 'dialogue lint', fallback: nil) { print_dialogue_lint(lint_report, repo_root) } if lint_report
+  end
+
+  # Check objective task completion wiring
+  report.stage = 'common'
+  puts "Checking objective task wiring..."
+  wiring_issues = report.run_check('common', 'check_objectives_wiring') { check_objectives_wiring(json_data, repo_root) }
+  scoring_mission = begin
+    JSON.parse(File.read(File.join(scenario_dir, 'mission.json')))
+  rescue StandardError
+    nil # mission.json problems were already reported by the directory check
+  end
+  if scoring_mission
+    wiring_issues += report.run_check('common', 'check_mission_scoring') { check_mission_scoring(scoring_mission, json_data) }
+    wiring_issues += report.run_check('common', 'check_mission_result') { check_mission_result(scoring_mission, json_data) }
+    wiring_issues += report.run_check('common', 'check_mission_ending_check') do
+      check_mission_ending_check(scoring_mission, json_data, scenario_dir)
+    end
+  end
+  print_issue_list(report, wiring_issues, error_header: 'Objective wiring check found',
+                                          warning_header: 'Found %d objective wiring warning(s):', ok_line: '✓ Objective task wiring OK')
+  puts if wiring_issues.any?
+
+  # Check room layout geometry (world-space overlaps)
+  puts "Checking room layout geometry..."
+  geometry_issues = report.run_check('common', 'check_room_geometry') { check_room_geometry(json_data, repo_root) }
+  puts "Checking door alignment..."
+  door_issues = report.run_check('common', 'check_door_alignment') { check_door_alignment(erb_path, repo_root) }
+  if geometry_issues.any? { |i| i.start_with?("⚠️") }
+    report.header("⚠️ Found #{geometry_issues.count { |i| i.start_with?('⚠️') }} room overlap warning(s):")
+    puts
+    geometry_issues.each_with_index { |issue, index| puts "#{index + 1}. #{issue}"; puts }
+  elsif geometry_issues.any?
+    geometry_issues.each { |issue| puts issue }
+    puts
+  else
+    puts "✓ Room layout geometry OK — no world-space overlaps"
+    puts
+  end
+  if door_issues.any? { |i| i.include?("❌") }
+    puts "✗ Door alignment check found #{door_issues.count { |i| i.include?('❌') }} error(s):"
+    puts
+    door_issues.each_with_index { |issue, index| puts "#{index + 1}. #{issue}"; puts }
+  elsif door_issues.any?
+    report.header("⚠️ Door alignment: #{door_issues.length} note(s):")
+    puts
+    door_issues.each_with_index { |issue, index| puts "#{index + 1}. #{issue}"; puts }
+  else
+    puts "✓ Door alignment OK"
+    puts
+  end
+
+  # Validate against schema
+  puts "Validating against schema..."
+  raw_schema_errors = report.run_check('schema', 'schema validation') { validate_json(json_data, schema_path) }
+
+  # Check for common issues and structural problems. Each check runs under its own rescue, so a
+  # check that raises (on data that failed the schema, say) prints "could not run" and the checks
+  # after it still run.
+  puts "Checking for common issues..."
+  common_issues = []
+  run = ->(name, &blk) { common_issues.concat(report.run_check('common', name, &blk)) }
+  run.call('check_common_issues') { check_common_issues(json_data, valid_item_types) }
+  run.call('check_lock_credentials') { check_lock_credentials(json_data) }
+  run.call('check_pin_locks') { check_pin_locks(json_data) }
+  run.call('check_combination_cryptex_locks') { check_combination_cryptex_locks(json_data) }
+  run.call('check_npc_held_containers') { check_npc_held_containers(json_data) }
+  run.call('check_npc_patrol_and_catch_locks') { check_npc_patrol_and_catch_locks(json_data, repo_root) }
+  run.call('check_give_item_collectible') { check_give_item_collectible(json_data) }
+  run.call('check_interaction_warnings') { check_interaction_warnings(json_data) }
+  run.call('check_engine_limits') { check_engine_limits(json_data) }
+  run.call('check_vm_flags_load_bearing') { check_vm_flags_load_bearing(json_data) }
+  run.call('check_recurring_bugs') { check_recurring_bugs(json_data, repo_root) }
+  run.call('check_unheard_room_triggers') { check_unheard_room_triggers(json_data, repo_root) }
+  habits_copy = nil
+  habits_report = nil
+  run.call('NpcHabits.expanded_copy') do
+    habits_copy, habits_report = BreakEscape::NpcHabits.expanded_copy(json_data)
+    []
+  end
+  run.call('ValidateNpcNeeds') { ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy)) }
+  run.call('check_access_model') { check_access_model(json_data, repo_root, scenario_dir) }
+  run.call('check_network_model') { check_network_model(json_data, scenario_dir) }
+  run.call('check_capture_log') { check_capture_log(json_data) }
+  run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
+  run.call('ValidateAccessWork') { ValidateAccessWork.check(json_data) }
+  run.call('ValidateNpcHabits') do
+    ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report, scenario_dir: scenario_dir)
+  end
+  run.call('check_tooling_pass4c') { check_tooling_pass4c(json_data, repo_root) }
+  run.call('check_carry_over') do
+    check_carry_over(json_data, repo_root, File.basename(scenario_dir), File.dirname(scenario_dir), carry_imports, own_globals)
+  end
+
+  # Social-engineering lints (scripts/validate_social.rb). Two lints (aim unlockCondition
+  # keys, object id uniqueness) apply to every scenario; the rest need a `social` key.
+  social_issues = report.run_check('social', 'ValidateSocial') do
+    ValidateSocial.check(json_data, repo_root: repo_root, valid_item_types: valid_item_types,
+                                    imports: carry_imports, raw: rendered_json)
+  end
+  # Schema errors under /social are listed with the social lints. Like every ❌ line they fail the run.
+  # The schema report under its own rescue: if splitting or formatting raises, the raw messages
+  # print as schema errors with a "could not run" line, and the rest of the report still prints.
+  schema_marked = raw_schema_errors.select { |e| e.start_with?('❌') }
+  schema_plain = raw_schema_errors.reject { |e| e.start_with?('❌') }
+  begin
+    social_schema, schema_errors = ValidateSocial.split_schema_errors(schema_plain)
+    schema_errors = schema_errors.map { |e| format_schema_error(json_data, e) } + schema_marked
+  rescue StandardError, ScriptError => e
+    report.not_full!('schema', 'schema report raised')
+    social_schema = []
+    schema_errors = schema_plain.map { |m| "❌ ERROR: schema: #{m}" } + schema_marked +
+                    ["❌ ERROR: schema report could not run: #{e.class}: #{e.message.to_s.lines.first.to_s.strip}"]
+  end
+  social_issues = social_schema + social_issues
+
+  # Check for recommended fields
+  puts "Checking recommended fields..."
+  warnings = report.run_check('common', 'check_recommended_fields') { check_recommended_fields(json_data) }
+
+  # Report schema errors
+  report.stage = 'schema'
+  if schema_errors.empty?
+    puts "✓ Schema validation passed!"
+  else
+    puts "✗ Schema validation failed with #{schema_errors.length} error(s):"
+    puts
+    schema_errors.each_with_index { |error, index| puts "#{index + 1}. #{error}"; puts }
+    if options[:verbose]
+      puts "Full JSON structure:"
+      report.raw(JSON.pretty_generate(json_data))
+    end
+  end
+
+  # Report common issues, then the social lints (their own stage, one numbered list)
+  all_issues = common_issues.map { |i| ['common', i] } + social_issues.map { |i| ['social', i] }
+  if all_issues.empty?
+    puts "✓ No common issues found."
+    puts
+  else
+    report.header("⚠️ Found #{all_issues.length} issue(s) and suggestion(s):")
+    puts
+    all_issues.each_with_index do |(stage, issue), index|
+      report.stage = stage
+      puts "#{index + 1}. #{issue}"
+    end
+    report.stage = 'common'
+    puts
+  end
+
+  # The habits report (slice 9.1, 7.2): who never locks and whose password is on a note
+  report.stage = 'habits'
+  habits_lines = report.run_check('habits', 'habits report') do
+    ValidateNpcHabits.report_lines(json_data, expanded: habits_copy, report: habits_report, scenario_dir: scenario_dir)
+  end
+  unless habits_lines.empty?
+    habits_lines.each { |line| puts line }
+    puts
+  end
+
+  # The work report (access slice 9.2, section 10): work lists and workaround timing
+  report.stage = 'work'
+  work_lines = report.run_check('work', 'work report') { ValidateAccessWork.report_lines(json_data) }
+  unless work_lines.empty?
+    work_lines.each { |line| puts line }
+    puts
+  end
+
+  # Report warnings
+  report.stage = 'common'
+  if warnings.empty?
+    puts "✓ No missing recommended fields."
+    puts
+  else
+    report.header("⚠️ Found #{warnings.length} missing recommended field(s):")
+    puts
+    warnings.each_with_index { |warning, index| puts "#{index + 1}. #{warning}" }
+    puts
+  end
+
+  # Generate dungeon graph (runs by default, suppress with --no-graph)
+  unless options[:no_graph]
+    graph_script = File.join(__dir__, 'generate_dungeon_graph.rb')
+    if File.exist?(graph_script)
+      puts "Generating dungeon graph..."
+      # The generator's test switch (it turns the Wi-Fi key scrub off) never reaches a real run.
+      result = system({ 'DUNGEON_GRAPH_TEST_NO_SCRUB' => nil }, 'ruby', graph_script, erb_path)
+      graph_out = File.join(scenario_dir, 'dungeon_graph.html')
+      if result
+        # The path the author typed, as the "Validating scenario:" line prints it.
+        puts "✓ Dungeon graph: #{graph_out}"
+      elsif $?.exitstatus == 3
+        # The generator's key check stopped the run (KEY_STOP_STATUS) and deleted the old graph files.
+        puts "❌ ERROR: Dungeon graph stopped: an output still held a Wi-Fi key (see the message above); " \
+             'the old dungeon_graph files were deleted.'
+      else
+        # Any other failure (an abort, a crash) printed its reason on stderr; it fails the run too.
+        puts "❌ ERROR: dungeon graph could not run (exit #{$?.exitstatus.inspect}); see the message above."
+      end
+      puts
+    end
+  end
+
+  # --strict-social no longer changes the exit code (every ❌ line fails the run); it still names
+  # the count, as older callers read it.
+  if options[:strict_social] && json_data.is_a?(Hash) && json_data.key?('social')
+    report.stage = 'social'
+    report.run_check('social', 'strict-social count', fallback: nil) do
+      social_errors = ValidateSocial.errors(social_issues).length
+      report.header("✗ --strict-social: #{social_errors} social lint error(s)") if social_errors.positive?
+    end
+    report.stage = 'common'
+  end
+
+  # Info: desk collision boxes per map (footprint maps opt in with a Tiled map property)
+  desk_maps = report.run_check('common', 'desk_box_maps', fallback: { legacy: [], footprint: [] }) do
+    desk_box_maps(json_data, repo_root)
+  end
+  if desk_maps[:legacy].any? || desk_maps[:footprint].any?
+    puts "ℹ Desk boxes: legacy in #{desk_maps[:legacy].length} map(s)" \
+         "#{desk_maps[:legacy].any? ? " (#{desk_maps[:legacy].join(', ')})" : ''}; " \
+         "footprint in #{desk_maps[:footprint].length}" \
+         "#{desk_maps[:footprint].any? ? " (#{desk_maps[:footprint].join(', ')})" : ''}"
+    puts
+  end
+
+  puts "✓ Validation complete!"
 end
 
 main if __FILE__ == $PROGRAM_NAME

@@ -53,7 +53,7 @@ function validate(json) {
   }
 }
 
-const schemaError = (out) => /conclusionScreen\/type' value/.test(out);
+const schemaError = (out) => /conclusionScreen\/type: value/.test(out);
 const missingWarning = (out) => out.split('\n').find((l) => /no conclusionScreen/.test(l)) || null;
 
 test('success with a title and body is accepted, with no missing-screen warning', { skip }, () => {

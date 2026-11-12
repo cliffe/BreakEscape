@@ -3854,6 +3854,7 @@
             "room_meeting",
             "room_it",
             "room_servers",
+            "room_test_desk_seating",
             "room_security",
             "room_control_1x2gu",
             "room_archive_1x2gu",
@@ -4039,7 +4040,7 @@
         },
         "lockType": {
           "type": "string",
-          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "combination", "cryptex"]
+          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "combination", "cryptex", "ble"]
         },
         "access": { "$ref": "#/definitions/accessList" },
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
@@ -5040,7 +5041,7 @@
         },
         "lockType": {
           "type": "string",
-          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "login", "combination", "cryptex"]
+          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "login", "combination", "cryptex", "ble"]
         },
         "requires": {
           "oneOf": [
