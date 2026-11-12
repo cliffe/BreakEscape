@@ -1,0 +1,529 @@
+{
+  "scenario_brief": "TEST: phone calls (A2b). The ringer and the ring banner with the phone closed. The opening briefing plays, then Basic rings; levers ring the other callers. See scenarios/TEST_SCENARIOS_README.md.",
+  "endGoal": "Answer and end each call.",
+  "startRoom": "office",
+  "globalVariables": {
+    "briefing_played": false,
+    "debrief_go": false,
+    "skip_timed": true,
+    "timed_ringing": false,
+    "declined_seen": false,
+    "missed_seen": false
+  },
+  "objectives": [
+    {
+      "aimId": "take_calls",
+      "title": "Take the Calls",
+      "description": "Answer each caller.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "answer_basic",
+          "title": "Answer Basic",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": [
+        "caller_basic",
+        "caller_patient",
+        "caller_decline",
+        "caller_debrief",
+        "caller_queue",
+        "caller_queue_b",
+        "caller_replace",
+        "timed_caller",
+        "legacy_voiced",
+        "texter"
+      ],
+      "observations": "Your phone."
+    }
+  ],
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Phone Test Office",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "debrief_host",
+          "displayName": "Host",
+          "npcType": "person",
+          "position": {
+            "x": 6,
+            "y": 6
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_phone_calls/ink/debrief_host.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Aoede",
+            "style": "A seasoned handler on a phone line. Consistent British Received Pronunciation accent. Quick and clipped.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "facePlayer": false,
+            "immovable": true
+          },
+          "timedConversation": {
+            "delay": 0,
+            "targetKnot": "briefing",
+            "waitForEvent": "game_loaded",
+            "skipIfGlobal": "briefing_played",
+            "setGlobalOnStart": "briefing_played"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:debrief_go",
+              "condition": "value === true",
+              "conversationMode": "person-chat",
+              "targetKnot": "debrief",
+              "onceOnly": true,
+              "disableClose": true
+            }
+          ]
+        },
+        {
+          "id": "caller_basic",
+          "displayName": "Caller Basic",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_basic.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "conversation_closed:debrief_host",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": true,
+              "cooldown": 0,
+              "condition": "globalVars.briefing_played && !globalVars.debrief_go",
+              "delayMs": 3000,
+              "onceOnly": true,
+              "callLabel": "Basic"
+            },
+            {
+              "eventPattern": "ring_again",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": true,
+              "cooldown": 0,
+              "callLabel": "Basic"
+            }
+          ]
+        },
+        {
+          "id": "caller_patient",
+          "displayName": "Caller Patient",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_patient.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_patient",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": {
+                "untilAnswered": true
+              },
+              "cooldown": 0,
+              "callLabel": "Patient"
+            }
+          ]
+        },
+        {
+          "id": "caller_decline",
+          "displayName": "Caller Decline",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_decline.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_decline",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": true,
+              "cooldown": 0,
+              "callLabel": "Decline"
+            },
+            {
+              "eventPattern": "phone_call_declined:caller_decline",
+              "setGlobal": {
+                "declined_seen": true
+              },
+              "cooldown": 0
+            },
+            {
+              "eventPattern": "phone_call_missed:caller_decline",
+              "setGlobal": {
+                "missed_seen": true
+              },
+              "cooldown": 0
+            }
+          ]
+        },
+        {
+          "id": "caller_debrief",
+          "displayName": "Caller Debrief",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_debrief.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_debrief",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": true,
+              "cooldown": 0,
+              "callLabel": "Debrief"
+            }
+          ]
+        },
+        {
+          "id": "caller_queue",
+          "displayName": "Caller Queue One",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_queue.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_queue",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": true,
+              "cooldown": 0,
+              "callLabel": "One"
+            }
+          ]
+        },
+        {
+          "id": "caller_queue_b",
+          "displayName": "Caller Queue Two",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_queue_b.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_queue",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": true,
+              "cooldown": 0,
+              "callLabel": "Two",
+              "handlerIndex": 0
+            }
+          ]
+        },
+        {
+          "id": "caller_replace",
+          "displayName": "Caller Replace",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_replace.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_replace",
+              "conversationMode": "phone-chat",
+              "targetKnot": "old_call",
+              "ring": true,
+              "cooldown": 0
+            },
+            {
+              "eventPattern": "ring_replace",
+              "conversationMode": "phone-chat",
+              "targetKnot": "new_call",
+              "ring": true,
+              "cooldown": 0
+            }
+          ]
+        },
+        {
+          "id": "timed_caller",
+          "displayName": "Timed Caller",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/timed_caller.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [],
+          "timedConversation": {
+            "delay": 2000,
+            "targetKnot": "ring_call",
+            "waitForEvent": "game_loaded",
+            "skipIfGlobal": "skip_timed",
+            "setGlobalOnStart": "timed_ringing",
+            "ring": true,
+            "callLabel": "Timed"
+          }
+        },
+        {
+          "id": "legacy_voiced",
+          "displayName": "Legacy Voiced",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/legacy_voiced.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_legacy",
+              "conversationMode": "phone-chat",
+              "targetKnot": "legacy_call",
+              "voiced": true,
+              "cooldown": 0
+            }
+          ]
+        },
+        {
+          "id": "texter",
+          "displayName": "Texter",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/texter.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [],
+          "timedMessages": [
+            {
+              "delay": 1000,
+              "message": "Texter here. A plain text, no call.",
+              "type": "text",
+              "waitForEvent": "send_text"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Instructions",
+          "position": {
+            "x": 2,
+            "y": 8
+          },
+          "takeable": false,
+          "readable": true,
+          "text": "TEST: phone calls. The briefing plays first; close it and Basic rings 3 s later. Each lever fires one caller: Basic again (answer slowly for the slow line), Patient (rings until answered), Decline, Debrief (the call hands over to a person-chat debrief), Queue (two callers, one after the other), Replace (only the new call rings), Legacy (an old-style voiced call, no ring), Text (a plain text). Start with --set skip_timed=false for the timed caller.",
+          "observations": "Test instructions."
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_basic_again",
+          "name": "Lever: Basic rings again",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "emit_event",
+              "event_name": "ring_again"
+            }
+          ],
+          "observations": "Lever: Basic rings again"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_patient",
+          "name": "Lever: Patient (until answered)",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "emit_event",
+              "event_name": "ring_patient"
+            }
+          ],
+          "observations": "Lever: Patient (until answered)"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_decline",
+          "name": "Lever: Decline",
+          "position": {
+            "x": 4,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "emit_event",
+              "event_name": "ring_decline"
+            }
+          ],
+          "observations": "Lever: Decline"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_debrief",
+          "name": "Lever: Debrief",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "emit_event",
+              "event_name": "ring_debrief"
+            }
+          ],
+          "observations": "Lever: Debrief"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_queue",
+          "name": "Lever: Queue (two callers)",
+          "position": {
+            "x": 6,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "emit_event",
+              "event_name": "ring_queue"
+            }
+          ],
+          "observations": "Lever: Queue (two callers)"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_replace",
+          "name": "Lever: Replace (old then new)",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "emit_event",
+              "event_name": "ring_replace"
+            }
+          ],
+          "observations": "Lever: Replace (old then new)"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_legacy",
+          "name": "Lever: Legacy voiced call",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "emit_event",
+              "event_name": "ring_legacy"
+            }
+          ],
+          "observations": "Lever: Legacy voiced call"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_text",
+          "name": "Lever: Texter sends a text",
+          "position": {
+            "x": 9,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "emit_event",
+              "event_name": "send_text"
+            }
+          ],
+          "observations": "Lever: Texter sends a text"
+        }
+      ]
+    }
+  }
+}

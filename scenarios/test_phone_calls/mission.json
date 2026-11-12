@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Phone Calls",
+  "description": "Engine trial (phone calls A2b): incoming calls that ring, with the ring banner while the phone is closed. Levers ring each caller: basic, patient, decline, debrief, queue, replace, legacy and a plain text.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 5,
+  "test_type": "phone_calls",
+  "test_objective": "Ring, answer, decline, time out, end and hand over to a debrief; answer-seconds VAR; unchanged legacy voiced call and plain text"
+}

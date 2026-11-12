@@ -237,6 +237,26 @@ Additional test scenarios to create:
 - [ ] Mixed size complex layout (all sizes together)
 - [ ] Edge cases (single-tile-wide rooms, very tall rooms)
 
+## test_phone_calls (phone calls track, slice A2b onwards)
+
+Engine trial for incoming calls that ring. One office, levers that ring each caller, and a person NPC for the opening briefing and the debrief a call hands over to. Compile its ink with `scripts/compile-ink.sh test_phone_calls`. Start it with `--set skip_timed=false` to hear the timed caller; the opening briefing plays first and `caller_basic` rings 3 s after it closes.
+
+| Contact | Shows |
+|---|---|
+| `caller_basic` | `ring` written without `voiced`; ink reads `call_answer_seconds` (fast and slow answer through the "rings again" lever), End, story end |
+| `caller_patient` | `ring: { untilAnswered: true }`: no timeout, a nudge every 10 s |
+| `caller_decline` | Decline and timeout events set `declined_seen` and `missed_seen` |
+| `caller_debrief` | the call's choice sets `debrief_go`, a hand-off line, `#exit_conversation`; the person-chat debrief opens straight after |
+| `caller_queue`, `caller_queue_b` | two callers on one lever: the second rings after the first ends |
+| `caller_replace` | two ring mappings, only the newer knot rings |
+| `timed_caller` | `timedConversation` with `ring` |
+| `legacy_voiced` | a voiced mapping call with no `ring`: opens at once, as before |
+| `texter` | plain texts |
+
+Later slices add the lockpick and keypad, the popups, the hostile NPC, the guard and the `call` contacts (A2c to A6).
+
+---
+
 ---
 
 **Last Updated**: 2025-11-16

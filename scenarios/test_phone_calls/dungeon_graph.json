@@ -1,0 +1,6 @@
+{
+  "scenario": "test_phone_calls",
+  "start_room": "office",
+  "nodes": [],
+  "edges": []
+}
