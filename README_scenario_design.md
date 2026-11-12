@@ -1518,7 +1518,8 @@ For multi-room routes use `"multiRoom": true` with a `"route"` array instead of 
 | Action | Description |
 |--------|-------------|
 | `unlockRoom: "room_id"` | The NPC unlocks that room on the server as itself (it needs an `eventMapping` with `unlockDoor` naming the room), loads it, waits for the path grid to include it, then carries on. A refusal retries after 5 s; the route never moves into the unloaded room. Once the room is loaded the action is only a pause. The matching `unlockDoor` mapping is required, not optional: without it the server refuses and the NPC retries forever; the validator errors on a missing one, and the engine logs one console warning |
-| `useObject: "object_id"` | The NPC turns to face that object (a scenario object id, in any loaded room). It does not trigger the object's own behaviour. Combine with `unlockRoom` for a visible reader or keypad |
+| `useObject: "object_id"` | The NPC turns to face that object (a scenario object id, in any loaded room). It does not trigger the object's own behaviour. Combine with `unlockRoom` for a visible reader or keypad. Emits `npc_used_object:<object_id>` `{ npcId, objectId, roomId, useMs }` as he starts and `npc_used_object_done:<object_id>` when he has finished |
+| `useMs: 2500` | With `useObject`: the NPC stands at the object that long (a PIN keyed at a reader) before `npc_used_object_done` and the rest of the action. Default 0 (done at once). Use it for a shoulder-surf window: the lab sets a global on the done event and counts a look only before it |
 
 #### Bark Notifications
 
