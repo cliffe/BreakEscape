@@ -120,7 +120,7 @@ def text_map(event, cond, msg, once: true, delay: nil, msg_delay: 0, set: nil, e
   h.merge(extra)
 end
 
-def call_map(event, cond, knot, delay: nil, voiced: false, forced: true, once: false, resume: false, cooldown0: false, comment: nil, ring: nil)
+def call_map(event, cond, knot, delay: nil, voiced: false, forced: true, once: false, resume: false, cooldown0: false, comment: nil, ring: nil, set: nil)
   h = {}
   h["_comment"] = comment if comment
   h["eventPattern"] = event
@@ -131,6 +131,10 @@ def call_map(event, cond, knot, delay: nil, voiced: false, forced: true, once: f
   h["disableClose"] = true if forced
   h["voiced"] = true if voiced
   h["ring"] = ring unless ring.nil?
+  # A ring latch set at offer time (plan 3.1: setGlobal runs when the mapping
+  # fires, i.e. when the ring is offered), so a declined or missed ring still
+  # stops a second mapping ringing the same caller again.
+  h["setGlobal"] = set if set
   h["delayMs"] = delay if delay
   h["onceOnly"] = true if once
   h["cooldown"] = 0 if cooldown0
@@ -949,7 +953,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           ]
         },
         {
-          "_comment": "Nightshade (triple-agent branch only): rings after HaX's flag-1 call as a voiced incoming call (ring: the player can answer, decline or call back). Outside npcIds (stage 8 m-12).",
+          "_comment": "Nightshade (triple-agent branch only): rings once HaX's flag-1 read-out has been heard (flag1_read_heard), as a voiced incoming call (ring: the player can answer, decline or call back), so his help follows HaX's print-and-card line rather than pre-empting it. A room_entered:restricted_stacks fallback covers a player who never opens the read-out text; both latch nightshade_rang at offer time so he rings once. Outside npcIds (stage 8 m-12).",
           "id": "nightshade_phone",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "phone",
@@ -964,7 +968,12 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "eventMappings": [
 <%= jgen([
-  call_map("global_variable_changed:flag1_submitted", "value === true && globalVars.m08_nightshade_triple_agent", "call", delay: 7000, forced: false, once: true, voiced: true, ring: true),
+  # M1: ring after HaX's flag-1 read-out has been heard (flag1_read_heard), on
+  # closing her thread; delay 3 s so the ring follows the read-out, not the toast.
+  call_map("conversation_closed:agent_0x99", "globalVars.flag1_read_heard && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
+  # Fallback for a player who never opens the read-out text: ring on entering the
+  # restricted stacks (opened on flag 1). Same latch, so only one of the two rings.
+  call_map("room_entered:restricted_stacks", "globalVars.flag1_submitted && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin === 'nightshade_copy'",
            "You found what I cleared, too. Then you know I kept his notes. I'd have burned anything else.", delay: 4000),
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin !== 'nightshade_copy'",
@@ -988,15 +997,18 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "eventMappings": [
 <%= jgen([
-  # Puzzle chains R1 P2 (F2): the box ring skips once the lid has opened
-  # (hl_box_opened, set synchronously on item_unlocked), so a retry in the
-  # 500 ms keypad-to-container gap can't shut the opened box; a second ring
-  # waits for the open container and plays after the sheet is read.
-  call_map("object_interacted", "data.objectName === 'Harwick & Lowe, Dead Files' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.hl_box_opened", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true),
-  call_map("item_unlocked", "data.itemId === 'hl_box' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true),
+  # m1: one ring at the box. All three mappings latch torres_rang at offer time
+  # and check !torres_rang, so a declined or missed ring leaves only the
+  # callback (it already plays the right branch by hl_box_opened/sleeper_shortlist)
+  # and he never rings a second time at the lid or on leaving the office. The
+  # pre-existing !torres_called guard stays (set on the call knot when answered).
+  # Puzzle chains R1 P2 (F2): the lid ring over the shut box (!hl_box_opened).
+  call_map("object_interacted", "data.objectName === 'Harwick & Lowe, Dead Files' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.torres_rang && !globalVars.hl_box_opened", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true, set: { "torres_rang" => true }),
+  # Covers the rare player who opens the lid in the gap before the first ring's delay.
+  call_map("item_unlocked", "data.itemId === 'hl_box' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.torres_rang", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true, set: { "torres_rang" => true }),
   # P7 (F7): the fallback rings on leaving the office (was 8 s after
   # reading_found, which could shut the safe between page reads).
-  call_map("room_exited", "data.roomId === 'sorensen_office' && globalVars.reading_found && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true)
+  call_map("room_exited", "data.roomId === 'sorensen_office' && globalVars.reading_found && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.torres_rang", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true, set: { "torres_rang" => true })
 ]) %>
           ]
         },
@@ -2665,6 +2677,8 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "afterwards_heard": false,
     "torres_called": false,
     "gary_called": false,
+    "nightshade_rang": false,
+    "torres_rang": false,
 
     "identity_scene_started": false,
     "identity_scene_done": false,

@@ -1,9 +1,10 @@
 // ================================================
 // Mission 9: Digital Archaeology - David Torres' call (C4)
-// Host: torres_phone (phone contact, loading_dock), unvoiced, opened only by its
-// mapping: at the Harwick & Lowe boxes after flag 2 (m05_torres_turned): on
-// trying the lid and backing out, or once the lid has opened (puzzle chains R1
-// P2); or the fallback on leaving Sorensen's office with the Reading found
+// Host: torres_phone (phone contact, loading_dock). Voiced incoming call (ring:
+// answer, decline or call back when missed). Rings once at the Harwick & Lowe
+// boxes after flag 2 (m05_torres_turned): on trying the lid and backing out, or
+// once the lid has opened (puzzle chains R1 P2); or the fallback on leaving
+// Sorensen's office with the Reading found
 // (P7; was on reading_found, which could shut the safe mid-read).
 // Turned branch only. His own lines take no prefix. m05's voice: soft, slow.
 // He knows the legacy filing scheme, one step off the search, and doesn't

@@ -1,7 +1,8 @@
 // ================================================
 // Mission 9: Digital Archaeology - Gary Whitlock's call (C5)
-// Host: gary_phone (phone contact, loading_dock), unvoiced, opened only by its
-// mapping on the first attempt at the salvage cage's keypad (m02_gary_protected).
+// Host: gary_phone (phone contact, loading_dock). Voiced incoming call (ring:
+// answer, decline or call back when missed), rung on the first attempt at the
+// salvage cage's keypad (m02_gary_protected).
 // His own lines take no prefix. Birmingham and the Black Country: flat, a
 // bitter joke, slightly less bitter now. UK English. He can't see the room:
 // no Montana, no "your wall". The hint is fixed (S6 §2.3), split for the
