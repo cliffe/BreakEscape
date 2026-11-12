@@ -40,7 +40,6 @@
 .network-view-stale {
     margin: 6px 0 0 0;
     color: #9aa6ae;
-    font-style: italic;
 }
 
 .network-view-rows {
@@ -62,11 +61,47 @@
 }
 
 .network-row-icon {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
+    /* Pixel art at a whole-number scale: each kind's picture at twice (the printer three
+       times) its own size, centred in one 72px column so the names line up */
+    width: 72px;
+    height: 48px;
+    object-fit: none;
     image-rendering: pixelated;
-    flex: 0 0 auto;
+    flex: 0 0 72px;
+}
+
+.network-row[data-kind="pc"] .network-row-icon {
+    object-fit: fill;
+    width: 72px;   /* pc_desktop.png 36 x 24, x2 */
+    height: 48px;
+}
+
+.network-row[data-kind="file_share"] .network-row-icon {
+    object-fit: fill;
+    width: 52px;   /* m09_folder1.png 26 x 18, x2 */
+    height: 36px;
+    margin: 0 10px;
+    flex-basis: 52px;
+}
+
+.network-row[data-kind="printer"] .network-row-icon {
+    object-fit: fill;
+    width: 48px;   /* npc-print.png 16 x 16, x3 */
+    height: 48px;
+    margin: 0 12px;
+    flex-basis: 48px;
+}
+
+.network-row-group {
+    margin: 6px 0 0 0;
+    color: #9ee6ff;
+    font-size: 16px;
+    text-transform: none;
+}
+
+.network-row-note {
+    color: #ffe0a0;
+    font-size: 16px;
 }
 
 .network-row-label {
@@ -88,23 +123,26 @@
     gap: 6px;
 }
 
-.network-row-off,
-.network-row-locked {
+.network-row-off {
     color: #b8c4cc;
     font-size: 16px;
-    font-style: italic;
 }
 
+/* A padlock badge, the size of the other rows' buttons */
 .network-row-locked {
-    max-width: 260px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    padding: 6px 14px 6px 8px;
+    background: #2a2016;
+    border: 2px solid #8a6420;
+    color: #ffe0a0;
+    font-size: 18px;
 }
 
 .network-row-padlock {
-    width: 20px;
-    height: 20px;
+    width: 32px;   /* padlock_32.png at its own size */
+    height: 32px;
     image-rendering: pixelated;
 }
 

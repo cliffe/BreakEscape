@@ -43,7 +43,7 @@ const TILES = [
 ];
 
 let ended, signIns, nextResult, alerts;
-function open({ picker = 'accounts', tiles = TILES } = {}) {
+function open({ picker = 'accounts', tiles = TILES, postitNote = 'Sam: sokafor / x' } = {}) {
     ended = []; signIns = []; alerts = [];
     document.body.innerHTML = '<div id="mg"></div>';
     window.MinigameFramework = { currentMinigame: null, endMinigame: (success, result) => ended.push([success, result]) };
@@ -58,7 +58,7 @@ function open({ picker = 'accounts', tiles = TILES } = {}) {
     const mg = new PasswordMinigame(document.getElementById('mg'), {
         title: 'Hot desk PC', lockable: { scenarioData: { id: 'hot_desk' } }, type: 'item',
         signIn: { pcId: 'hot_desk', pcName: 'Hot desk PC', picker, tiles, current: null },
-        postitNote: 'Sam: sokafor / x', showPostit: true
+        postitNote, showPostit: true
     });
     window.MinigameFramework.currentMinigame = mg;
     mg.init();
@@ -84,6 +84,13 @@ test('tiles for each account plus Other user; choosing a tile shows only the pas
     assert.equal(mg.getTestState().signIn.otherUser, true);
     assert.ok(q('.postit-note').textContent.includes('Sam: sokafor'), "the PC's own post-it");
     assert.equal(q('.attempts-counter'), null, 'no attempts counter of its own');
+});
+
+test('the post-it never breaks a word across lines: each word is a keep-whole span (UX access R1 finding 7)', () => {
+    open({ postitNote: 'Omar: ohaddad / Cedar-Omar-58 <b>' });
+    const words = [...document.querySelectorAll('.postit-note .keep-whole')].map(el => el.textContent);
+    assert.deepEqual(words, ['Omar:', 'ohaddad', '/', 'Cedar-Omar-58', '<b>']);
+    assert.equal(q('.postit-note b'), null, 'still escaped');
 });
 
 test('loginPicker false: no tiles, the username field from the start', () => {
@@ -125,7 +132,10 @@ test('it stops only on a lockout, with the server\'s message', async () => {
     await mg.submitPassword();
     assert.equal(messageText(), 'This account is locked on this PC.');
     assert.deepEqual(mg.gameResult, { success: false, reason: 'locked_out' });
-    assert.ok(alerts.some(a => a[0] === 'This account is locked on this PC.'));
+    // Shown once (UX access R1 finding 2): the message line only, no toast, no failure box
+    assert.equal(alerts.length, 0, 'no toast');
+    assert.equal(document.querySelectorAll('.minigame-failure-message').length, 0, 'no failure box');
+    assert.ok(q('#password-field').disabled && q('#submit-password').disabled, 'the form is disabled');
 });
 
 test('not permitted keeps the screen open with the server\'s message, and no letter-case hint ever shows', async () => {

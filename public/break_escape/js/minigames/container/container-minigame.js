@@ -6,7 +6,23 @@ import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { resolveObjectField } from '../../utils/conditional-text.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 
+
+
+/**
+ * The line a claimed session's desktop shows above the account bar (UX access R1 finding 5):
+ * the player is on someone else's open screen, and it ends without warning. An owner claim
+ * ends when the owner comes back to the desk; a guest claim (a screen a borrowing colleague
+ * left open, 9.2 H) ends when the screen locks itself. Null for any other session.
+ */
+export function claimLineText(session) {
+    if (!session || session.via !== 'claim') return null;
+    const name = session.displayName || session.username || 'someone';
+    return session.guest
+        ? `You're on the screen ${name} left open. It ends when the screen locks.`
+        : `You're on ${name}'s open screen. It ends when they come back or the screen locks.`;
+}
 
 /**
  * The choices a takeable file on a sign-in desktop offers (access model 5.1): Open,
@@ -752,9 +768,15 @@ export class ContainerMinigame extends MinigameScene {
         const remoteLine = this.remote
             ? `
                     <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>` : '';
-        return `${remoteLine}
+        const claim = claimLineText(session);
+        const claimLine = claim ? `
+                    <div class="desktop-claim-line">${escapeHtml(claim)}</div>` : '';
+        const who = session.via === 'claim'
+            ? `Using <strong>${escapeHtml(name)}</strong>'s session (${escapeHtml(session.username)})`
+            : `Signed in as <strong>${escapeHtml(name)}</strong> (${escapeHtml(session.username)})`;
+        return `${remoteLine}${claimLine}
                     <div class="desktop-account-bar">
-                        <span class="desktop-account-name">Signed in as <strong>${escapeHtml(name)}</strong> (${escapeHtml(session.username)})</span>
+                        <span class="desktop-account-name">${who}</span>
                         <span class="desktop-account-actions">
                             <button type="button" class="minigame-button desktop-account-btn" id="desktop-switch-user">Switch user</button>
                             <button type="button" class="minigame-button desktop-account-btn" id="desktop-sign-out">Sign out</button>
@@ -793,7 +815,7 @@ export class ContainerMinigame extends MinigameScene {
         if (this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
             const postit = document.createElement('div');
             postit.className = 'postit-note';
-            postit.textContent = displayDashes(this.containerItem.scenarioData.postitNote);
+            postit.innerHTML = escapeHtmlKeepWords(displayDashes(this.containerItem.scenarioData.postitNote));
             makeDraggable(postit);
             this.gameContainer.appendChild(postit);
         }

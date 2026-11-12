@@ -36,7 +36,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText } =
+const { NetworkViewMinigame, displayOrder, viewObservations, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText } =
     await imp('minigames/network-view/network-view-minigame.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 
@@ -177,10 +177,14 @@ test('the view lists each row with its action and the row attributes, from GET /
     assert.deepEqual(requests, [['network', 'jack_comms_port']]);
     const text = document.querySelector('.network-view-title').textContent;
     assert.equal(text, 'Drop box: comms room, on Harbour office LAN');
-    assert.match(document.querySelector('.network-view-observations').textContent, /Open it to see what it reaches/);
-    // Server order is kept: hosts, then resources
+    // The view is open: the item's "Open it to see what it reaches." is dropped (UX access R1 finding 10)
+    assert.equal(document.querySelector('.network-view-observations').textContent, 'Your Network drop box on Spare wall port.');
+    // Display order: computers by host name, then shares, then printers, under group headings
     assert.deepEqual([...document.querySelectorAll('[data-host-id], [data-resource-id]')].map(el => el.dataset.hostId || el.dataset.resourceId),
-        ['door_box', 'kiosk_pc', 'lena_pc', 'sam_pc', 'ledger_archive', 'print_queue', 'scanned_inbox']);
+        ['sam_pc', 'door_box', 'lena_pc', 'kiosk_pc', 'ledger_archive', 'scanned_inbox', 'print_queue']);
+    assert.deepEqual([...document.querySelectorAll('.network-row-group')].map(el => el.textContent),
+        ['Computers', 'File shares', 'Printers and devices']);
+    assert.match(row('data-resource-id', 'ledger_archive').querySelector('.network-row-locked').textContent, /Locked/);
     assert.equal(row('data-host-id', 'door_box').querySelector('[data-action]').dataset.action, 'sign-in');
     assert.equal(row('data-host-id', 'kiosk_pc').querySelector('[data-action]'), null);
     assert.match(row('data-host-id', 'kiosk_pc').textContent, new RegExp(REMOTE_OFF_TEXT));
@@ -440,4 +444,21 @@ test('a resume message shows in the header', async () => {
     links.landed('desktop', 'no_session', { pcId: 'lena_pc', host: 'HB-FIN-02' });
     await settle();
     assert.equal(document.querySelector('.network-view-message').textContent, 'Your session on HB-FIN-02 has ended.');
+});
+
+test('displayOrder: computers, shares, printers, other; each by name with numbers as numbers', () => {
+    const rows = [
+        { id: 'p', kind: 'printer', name: 'Queue' }, { id: 'x', kind: 'camera', name: 'Cam' },
+        { id: 'b', kind: 'file_share', name: 'beta' }, { id: 'h10', kind: 'pc', host: 'HB-PC-10' },
+        { id: 'a', kind: 'file_share', name: 'Alpha' }, { id: 'h2', kind: 'pc', host: 'HB-PC-2' }
+    ];
+    assert.deepEqual(displayOrder(rows).map(r => r.id), ['h2', 'h10', 'a', 'b', 'p', 'x']);
+    assert.deepEqual(rows.map(r => r.id)[0], 'p', 'the input is not reordered');
+    assert.deepEqual(displayOrder(null), []);
+});
+
+test('viewObservations drops only the trailing "Open it to see what it reaches."', () => {
+    assert.equal(viewObservations('Your implant on HB-FIN-02. Open it to see what it reaches.'), 'Your implant on HB-FIN-02.');
+    assert.equal(viewObservations('A custom note.'), 'A custom note.');
+    assert.equal(viewObservations(undefined), '');
 });

@@ -41,7 +41,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { ContainerMinigame, transferChoices } = await imp('minigames/container/container-minigame.js');
+const { ContainerMinigame, transferChoices, claimLineText } = await imp('minigames/container/container-minigame.js');
 const { adds } = await imp('systems/inventory.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
 
@@ -93,6 +93,22 @@ test('transferChoices: both by default, Copy or Move only when restricted, only 
     assert.deepEqual(transferChoices({ transfer: 'copy' }, false), ['open', 'copy', 'cancel']);
     assert.deepEqual(transferChoices({ transfer: 'move' }, false), ['open', 'move', 'cancel']);
     assert.deepEqual(transferChoices({ transfer: 'copy' }, true), ['open', 'cancel']);
+});
+
+test('a claimed session says whose open screen it is and when it ends (UX access R1 finding 5)', async () => {
+    assert.equal(claimLineText(null), null);
+    assert.equal(claimLineText({ via: 'password', displayName: 'Dana Reyes' }), null);
+    assert.equal(claimLineText({ via: 'claim', displayName: 'Dana Reyes', username: 'dreyes' }),
+        "You're on Dana Reyes's open screen. It ends when they come back or the screen locks.");
+    assert.equal(claimLineText({ via: 'claim', guest: true, displayName: 'Ian Shaw' }),
+        "You're on the screen Ian Shaw left open. It ends when the screen locks.");
+    const mg = await openDesktop();
+    assert.equal(document.querySelector('.desktop-claim-line'), null, 'none for a password sign-in');
+    sessions.sessions.get('hot_desk').via = 'claim';
+    const html = mg.accountBarHtml();
+    assert.match(html, /desktop-claim-line/);
+    assert.match(html.replace(/<[^>]+>/g, ''), /Using Ian Shaw's session \(ishaw\)/);
+    assert.doesNotMatch(html, /Signed in as/);
 });
 
 test('the desktop loads from container for the session and names the account, with Switch user and Sign out', async () => {

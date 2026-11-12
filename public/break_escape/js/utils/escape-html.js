@@ -6,3 +6,12 @@ const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'
 export function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
 }
+
+// Escaped text whose words never break across lines: each run of non-space characters
+// goes in a <span class="keep-whole"> (white-space: nowrap, main.css), so a password
+// such as "Cedar-Omar-58" on a sticky note wraps only at its spaces, never at a hyphen.
+export function escapeHtmlKeepWords(value) {
+    return String(value ?? '').split(/(\s+)/).map(part => (
+        !part || /^\s+$/.test(part) ? part : `<span class="keep-whole">${escapeHtml(part)}</span>`
+    )).join('');
+}

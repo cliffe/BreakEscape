@@ -3,7 +3,11 @@ import { ASSETS_PATH } from '../../config.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+
+// How long a lockout's message stays on the sign-in screen before it closes.
+export const LOCKOUT_CLOSE_MS = 2500;
 
 /**
  * The keypad's line after a wrong password. A near miss (right apart from letter
@@ -342,7 +346,7 @@ export class PasswordMinigame extends MinigameScene {
                 
                 ${this.gameData.showPostit && this.gameData.postitNote ? `
                     <div class="postit-note">
-                        ${escapeHtml(displayDashes(this.gameData.postitNote))}
+                        ${escapeHtmlKeepWords(displayDashes(this.gameData.postitNote))}
                     </div>
                 ` : ''}
                 
@@ -930,7 +934,7 @@ export class PasswordMinigame extends MinigameScene {
                 <button type="button" class="signin-tile signin-other" data-tile-index="other" title="Other user">
                     <span class="signin-portrait signin-portrait-initials">?</span>
                     <span class="signin-name">Other user</span>
-                    <span class="signin-username">type a username</span>
+                    <span class="signin-username">type a name</span>
                 </button>
             </div>`;
         const current = s.current
@@ -973,7 +977,7 @@ export class PasswordMinigame extends MinigameScene {
                     </div>
                 </div>
                 ${this.gameData.showPostit && this.gameData.postitNote ? `
-                    <div class="postit-note">${escapeHtml(this.gameData.postitNote)}</div>
+                    <div class="postit-note">${escapeHtmlKeepWords(this.gameData.postitNote)}</div>
                 ` : ''}
             </div>
         `;
@@ -1172,13 +1176,18 @@ export class PasswordMinigame extends MinigameScene {
         this.showSuccess(escapeHtml(`Signed in as ${session?.displayName || session?.username}`), true, 800);
     }
 
+    /**
+     * A lockout: the server's message once, on the screen's own message line (no toast and
+     * no failure box over it, which showed the same words three times and covered the PC
+     * title), the form disabled, then the screen closes as before.
+     */
     signInLockedOut(result) {
         this.cleanup();
         if (window.playUISound) window.playUISound('reject');
         const message = signInRefusalMessage(result);
         this.setSignInMessage(message, 'error');
         this.gameResult = { success: false, reason: 'locked_out' };
-        window.gameAlert?.(message, 'error', 'Locked out', 4000);
-        this.showFailure(escapeHtml(message), true, 1500);
+        this.gameContainer?.querySelectorAll('.signin-mode input, .signin-mode button').forEach(el => { el.disabled = true; });
+        setTimeout(() => this.complete(false), LOCKOUT_CLOSE_MS);
     }
 }

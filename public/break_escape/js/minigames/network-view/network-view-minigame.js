@@ -51,6 +51,27 @@ const KIND_ICONS = {
     printer: '/break_escape/assets/icons/npc-print.png'
 };
 
+// The order rows are shown in (UX access R1 finding 10): computers, then shares, then
+// printers and other devices, each group by its name. The server's order is the scenario's.
+const KIND_RANK = { pc: 0, file_share: 1, printer: 2 };
+const KIND_GROUPS = { pc: 'Computers', file_share: 'File shares', printer: 'Printers and devices' };
+const rowLabel = (r) => String((r?.kind === 'pc' ? (r.host || r.id) : (r?.name || r?.id)) || '');
+const rowRank = (r) => KIND_RANK[r?.kind] ?? 3;
+
+/** Rows in display order: by kind, then by name (numbers compared as numbers). Exported for tests. */
+export function displayOrder(rows) {
+    return [...(rows || [])].sort((a, b) => (rowRank(a) - rowRank(b))
+        || rowLabel(a).localeCompare(rowLabel(b), 'en', { numeric: true, sensitivity: 'base' }));
+}
+
+/**
+ * The link's observations as the view's subtitle: the item's "Open it to see what it
+ * reaches." is for the inventory, and reads wrong once the view is open. Exported for tests.
+ */
+export function viewObservations(text) {
+    return String(text || '').replace(/\s*Open it to see what it reaches\.?\s*$/i, '').trim();
+}
+
 /**
  * The action a host row offers (4.3), in the plan's order: 'not_responding' (the host's own
  * service is off, 9.3b plan 5.2) | 'off' | 'open' | 'sign-in'. Exported for tests.
@@ -194,7 +215,7 @@ export class NetworkViewMinigame extends MinigameScene {
     blockSectionHtml(block) {
         const via = block.via ? ` — through ${escapeHtml(block.via.host || block.via.hostId || '')}` : '';
         if (block.route === 'down') {
-            const rows = this.blockRows(block).map(r => `
+            const rows = displayOrder(this.blockRows(block)).map(r => `
                 <li class="network-row network-row-host network-row-down" data-kind="pc">
                     <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
                     <span class="network-row-label"><strong>${escapeHtml(r.host || r.id)}</strong>
@@ -204,7 +225,7 @@ export class NetworkViewMinigame extends MinigameScene {
             return `<div class="network-block network-block-down"><h5 class="network-block-title">${escapeHtml(block.name || block.id)} (no route)</h5><ul class="network-view-rows">${rows}</ul></div>`;
         }
         const rows = this.blockRows(block);
-        const body = rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>';
+        const body = rows.length ? this.rowsHtml(rows) : '<li class="network-row-empty">Nothing answers on this network.</li>';
         return `<div class="network-block network-block-up"><h5 class="network-block-title">${escapeHtml(block.name || block.id)}${via}</h5><ul class="network-view-rows">${body}</ul></div>`;
     }
 
@@ -213,6 +234,19 @@ export class NetworkViewMinigame extends MinigameScene {
         const itemId = this.links()?.get?.(this.footholdId)?.itemId || `netlink_${this.footholdId}`;
         const item = (window.inventory?.items || []).find(it => it?.scenarioData?.id === itemId);
         return item?.scenarioData?.observations || '';
+    }
+
+    /** Rows in display order, with a group heading wherever the kind changes and more than one kind is listed. */
+    rowsHtml(rows, rowFn = (r) => this.rowHtml(r)) {
+        const ordered = displayOrder(rows);
+        const groups = new Set(ordered.map(r => KIND_GROUPS[r.kind] || 'Other devices'));
+        let last = null;
+        return ordered.map(r => {
+            const group = KIND_GROUPS[r.kind] || 'Other devices';
+            const head = groups.size > 1 && group !== last ? `<li class="network-row-group">${group}</li>` : '';
+            last = group;
+            return head + rowFn(r);
+        }).join('');
     }
 
     rowHtml(row) {
@@ -244,8 +278,10 @@ export class NetworkViewMinigame extends MinigameScene {
         let control;
         const action = resourceAction(row);
         if (action !== 'observe') {
+            // A locked share: a padlock badge where other rows have a button, and the reason
+            // under the share's name as a plain line (not three lines of italics)
             control = action === 'locked'
-                ? `<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt="Locked"> ${SHARE_LOCKED_TEXT}</span>`
+                ? '<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> Locked</span>'
                 : '<button type="button" class="minigame-button network-row-action" data-action="open">Open</button>';
         } else {
             control = '<button type="button" class="minigame-button network-row-action" data-action="observe">Look</button>';
@@ -254,7 +290,8 @@ export class NetworkViewMinigame extends MinigameScene {
                 <li class="network-row network-row-resource" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
                     <img class="network-row-icon" src="${icon}" alt="">
                     <span class="network-row-label"><strong>${escapeHtml(row.name || row.id)}</strong>
-                        <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on ${escapeHtml(row.host)}` : ''}</span></span>
+                        <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on ${escapeHtml(row.host)}` : ''}</span>${action === 'locked' ? `
+                        <span class="network-row-note">${SHARE_LOCKED_TEXT}</span>` : ''}</span>
                     <span class="network-row-control">${control}</span>
                 </li>`;
     }
@@ -262,7 +299,7 @@ export class NetworkViewMinigame extends MinigameScene {
     render() {
         const v = this.view || {};
         const title = v.network?.name ? `${v.name || 'Your link'}, on ${v.network.name}` : (v.name || 'Your link');
-        const obs = this.linkObservations();
+        const obs = viewObservations(this.linkObservations());
         const rows = this.rows();
         this.gameContainer.innerHTML = `
             <div class="network-view">
@@ -275,7 +312,7 @@ export class NetworkViewMinigame extends MinigameScene {
                 <ul class="network-view-rows">
                     ${v.responding === false
                         ? `<li class="network-row-empty network-row-off">${escapeHtml(linkOffText(v.sourceHost))}</li>`
-                        : (rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>')}
+                        : (rows.length ? this.rowsHtml(rows) : '<li class="network-row-empty">Nothing answers on this network.</li>')}
                 </ul>
                 ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
                 <div class="network-view-notice" aria-live="polite"></div>
