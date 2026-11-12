@@ -1483,6 +1483,20 @@ module ValidateAccessWork
     out
   end
 
+  # C3 (plan 7): the text of every room NPC's story, compiled or .ink source with its INCLUDEs,
+  # read as plain text. A reply piece inside an ink line ships from the start.
+  def story_texts(json_data)
+    files = room_npcs(json_data).filter_map do |e|
+      sp = e[:npc]['storyPath']
+      AW.present_string?(sp) ? [story_file(sp), ink_file(sp)] : nil
+    end.flatten.compact.uniq
+    files.flat_map do |f|
+      [File.read(f, encoding: 'UTF-8')] + (f.end_with?('.ink') ? ink_included_texts(f) : [])
+    rescue SystemCallError
+      []
+    end
+  end
+
   def awareness_level(json_data, npc)
     if defined?(BreakEscape::NpcHabits) && BreakEscape::NpcHabits.respond_to?(:level_of)
       [BreakEscape::NpcHabits.level_of(npc, json_data), true]
@@ -1523,6 +1537,7 @@ module ValidateAccessWork
     seen_posts = {}
     pws = passwords(json_data)
     shipped = nil
+    reply_shipped = nil
     fed = []
 
     room_npcs(json_data).each do |e|
@@ -1571,7 +1586,7 @@ module ValidateAccessWork
         check_reactive_post(json_data, npc, nid, tag, post, issues) if post.is_a?(Hash) && post.key?('when')
         reply = AW.reply_post?(post)
         texts = reply ? [] : [[post['text'], "#{tag}.text"]]
-        check_reply_text(json_data, npc, tag, post, pws, issues) { shipped ||= shipped_strings(json_data, feed_facts) } if reply
+        check_reply_text(json_data, npc, tag, post, pws, issues) { reply_shipped ||= shipped_strings(json_data, feed_facts) + story_texts(json_data) } if reply
         if !reply && post['text'].is_a?(String) && post['text'].include?('{name}')
           warn(issues, "#{tag}.text holds {name} but is not a reply: it would ship as written.")
         end

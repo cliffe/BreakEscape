@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const ruby = spawnSync('ruby', ['--version']);
@@ -192,4 +194,23 @@ test('report lines: reply, answer, second reply and per-complaint members, names
     const kofi = npc('kofi', [own('kofi_vent', 'Kofi vents about the drive.', { complaint: 'c1' }),
         reC('kofi_re', '{name}, mine is down as well today.', 'c1', 'kofi_vent')]);
     assertHas(report(scenario([asha, kofi])), "Complaint 'c1': Asha Fullname, Kofi Fullname, each replying in place of their vent");
+});
+
+test('a reply piece inside an ink line raises the unique-text warning; the filled text does not', { skip }, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'c3-ink-'));
+    try {
+        // The story INCLUDEs the file that holds the line, so the INCLUDE is followed too
+        writeFileSync(join(dir, 'main.ink'), 'INCLUDE parts/talk.ink\n=== start ===\nHello there.\n-> END\n');
+        mkdirSync(join(dir, 'parts'));
+        writeFileSync(join(dir, 'parts/talk.ink'), '=== gossip ===\nNo idea. Ivy, did IT ever ring you back about it? Me neither.\n-> END\n');
+        const s = pair();
+        s.rooms.office.npcs[0].storyPath = join(dir, 'main.ink');
+        const list = issues(s);
+        // Pieces are taken with the punctuation at their ends trimmed (AccessWork.reply_text_pieces)
+        assertHas(list, 'piece "did IT ever ring you back about it" occurs inside another string that ships from the start');
+        assertNot(list, 'piece "Tomasz, did IT');
+        assertNot(issues(pair()), 'occurs inside another string');
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
 });
