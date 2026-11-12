@@ -743,7 +743,7 @@ Three of them were in here for hours. They left something behind. Find it, and w
     They'll know someone's opened the workshop. Keep an eye on the door.
 }
 
-Call when you've got something.
+Message me when you've got something.
 
 #exit_conversation
 -> support_hub
