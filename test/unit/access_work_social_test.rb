@@ -24,6 +24,16 @@ class AccessWorkSocialTest < ActiveSupport::TestCase
     refute AW.feeds?(npc('nia'))
     refute AW.feeds?(npc('jake').merge('feed' => { 'posts' => [{ 'text' => 'no id' }] }))
     refute AW.feeds?(npc('jake').merge('feed' => ['a bare list']))
+    # Review C R1 n1: a need the server cannot pace is no feed (not an unbounded one)
+    refute AW.feeds?(npc('jake').merge('needs' => { 'social_media' => { 'decayPerMin' => '60', 'urgentAt' => 40 } }))
+    refute AW.feeds?(npc('jake').merge('needs' => { 'social_media' => { 'urgentAt' => 40 } }))
+  end
+
+  test 'review C R1 n1: urgentAt and socialUse.restores are clamped as the client clamps them' do
+    j = npc('jake').merge('needs' => { 'social_media' => { 'decayPerMin' => 60, 'urgentAt' => 100 } })
+    assert_in_delta 1.0, AW.post_period_seconds(data, j), 0.001, 'urgentAt 100 is 99: min(60, 1) / 60 min'
+    j = npc('jake').merge('socialUse' => { 'restores' => -20 })
+    assert_in_delta 0.0, AW.post_period_seconds(data, j), 0.001, 'restores -20 is 0, never a negative period'
   end
 
   test 'the own workstation is a social_media place whatever its affordance; another desk is not' do

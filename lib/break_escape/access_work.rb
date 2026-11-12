@@ -285,9 +285,14 @@ module BreakEscape
       posts.select { |p| p.is_a?(Hash) && present_string?(p['id']) }
     end
 
-    # Whether the NPC posts at all: a feed with posts and a social_media need (route check 2)
+    # Whether the NPC posts at all: a feed with posts and a usable social_media need, one with a
+    # numeric decayPerMin above 0 (route check 2). Review C R1 n1: a need the server cannot pace
+    # (a string or missing decayPerMin) is no feed, rather than a feed with no floor.
     def feeds?(npc)
-      need?(npc, 'social_media') && !feed_posts(npc).empty?
+      return false unless need?(npc, 'social_media') && !feed_posts(npc).empty?
+
+      decay = npc['needs']['social_media']['decayPerMin']
+      decay.is_a?(Numeric) && decay.positive?
     end
 
     # Every fact id a room NPC's feed post names, sorted: withheld from the bootstrap's
@@ -310,10 +315,11 @@ module BreakEscape
       decay = n['decayPerMin'].is_a?(Numeric) ? n['decayPerMin'].to_f : 0
       return nil unless decay.positive?
 
-      urgent = n['urgentAt'].is_a?(Numeric) ? n['urgentAt'].to_f.clamp(0, 100) : 0
+      # Clamped as the client's normaliseNeed clamps them (review C R1 n1)
+      urgent = n['urgentAt'].is_a?(Numeric) ? n['urgentAt'].to_f.clamp(1, 99) : 0
       jitter = n['jitterPct'].is_a?(Numeric) ? n['jitterPct'].to_f.clamp(0, 50) : 0
       su = npc['socialUse'].is_a?(Hash) ? npc['socialUse']['restores'] : nil
-      options = [su.is_a?(Numeric) ? su.to_f : SOCIAL_RESTORES]
+      options = [su.is_a?(Numeric) ? su.to_f.clamp(0, 100) : SOCIAL_RESTORES]
       st = station(data, npc)
       places(data, npc, 'social_media').each do |id|
         next if st && st['id'] == id

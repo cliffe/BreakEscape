@@ -1142,7 +1142,7 @@ module ValidateAccessWork
       period = AW.post_period_seconds(json_data, npc)
       use = AW.shortest_use_seconds(json_data, npc, 'social_media')
       times = posts.each_index.map { |i| first + use + (i * (period + use)) }
-      at = times.map { |t| format('%d:%02d', (t / 60).floor, (t % 60).round) }.join(', ')
+      at = times.map { |t| secs = t.round; format('%d:%02d', secs / 60, secs % 60) }.join(', ')
       lines << "ℹ️ Feed #{npc['id']} (#{npc['feed']['site']}, #{npc['feed']['person']}): #{posts.size} posts; first urgent at " \
                "#{first.round} s, then about every #{(period + use).round} s; posts expected at about #{at} (needs clock, " \
                "after the room loads). Server floor #{AW.post_floor(json_data, npc).round} s between posts."

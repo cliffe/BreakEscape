@@ -197,6 +197,24 @@ module BreakEscape
       assert_includes @game.player_state['encounteredNPCs'], 'omar', 'the room load met him'
     end
 
+    test 'review C R1 n5: a game saved before C (no feedRevealed key) loads and serves its first post' do
+      build
+      state = @game.player_state.except('feedRevealed')
+      @game.update_column(:player_state, state)
+      get scenario_game_url(@game), as: :json
+      assert_response :success
+      assert_equal({}, response.parsed_body['feedPosts'])
+      assert_equal 'jake_post_1', ask('jake').dig('post', 'id')
+      assert_equal 1, @game.reload.player_state.dig('feedRevealed', 'jake', 'n')
+    end
+
+    test 'review C R1 n5: /feed_post runs under the game lock' do
+      src = File.read(GamesController.instance_method(:feed_post).source_location[0])
+      list = src[/around_action :with_game_lock, only: \[([^\]]*)\]/m, 1]
+      assert list, 'the lock has an only: list'
+      assert_includes list.scan(/:(\w+)/).flatten, 'feed_post'
+    end
+
     test 'a reset drops feedRevealed' do
       build
       ask('jake')
