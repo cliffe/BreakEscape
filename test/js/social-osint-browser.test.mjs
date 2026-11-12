@@ -791,6 +791,27 @@ test('reactions: the pointer-focus mark clears, so a keyboard focus after two cl
     assert.equal(names(s, 'feed_pierce_1'), 'Like: Sofia Lord');
 });
 
+test('reactions: a press on a keyboard-focused chip released off it still lets the next keyboard focus show its names', () => {
+    setGlobals();
+    for (const end of ['pointerup', 'pointercancel']) {
+        const s = open({ start: 'social.pierce', feed: rxFeed() });
+        const sad = chip(s, 'feed_pierce_1', 'sad');
+        sad.focus();
+        assert.equal(names(s, 'feed_pierce_1'), 'Sad: Jed Baker, Chris Hampshire');
+        ptr(sad, 'pointerdown');           // already focused: no focusin, and no click follows
+        ptr(document.body, end);           // the press ends off the chip
+        chip(s, 'feed_pierce_1', 'like').focus();
+        assert.equal(names(s, 'feed_pierce_1'), 'Like: Sofia Lord', `after ${end} off the chip`);
+        s.cleanup();
+    }
+    // Paired: with the press still held, the next focus is pointer focus and shows nothing new
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    ptr(chip(s, 'feed_pierce_1', 'like'), 'pointerdown');
+    chip(s, 'feed_pierce_1', 'like').focus();
+    assert.equal(names(s, 'feed_pierce_1'), '');
+    s.cleanup();
+});
+
 test('reactions: a re-render does not turn pointer focus into keyboard focus', () => {
     setGlobals();
     withBus(() => {

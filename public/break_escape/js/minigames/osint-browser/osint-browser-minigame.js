@@ -152,6 +152,13 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         this.container.classList.add('osint-browser-container');
         this._sites = listSites(this.osint, { siteIds: this.params.siteIds, profile: this.profile });
         this._buildShell();
+        // A press that ends anywhere (released off the chip, or cancelled) ends the pointer-focus
+        // mark: focus moves at the press, so a later keyboard focus is never taken for pointer
+        // focus (reactions code review R1 m4). Registered here so cleanup removes it.
+        const doc = this.container.ownerDocument || document;
+        const endPress = () => { this._rxPointer = false; };
+        this.addEventListener(doc, 'pointerup', endPress);
+        this.addEventListener(doc, 'pointercancel', endPress);
         const state = readOsintState(this.globals);
         let place = null;
         // start '@home' opens the first site, ignoring the last page visited (the episode's
@@ -525,7 +532,6 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         }
         chip.appendChild(h('span', { class: 'ob-reaction-count', text: String(who.length) }));
         this.addEventListener(chip, 'pointerdown', () => { this._rxPointer = true; });
-        this.addEventListener(chip, 'pointercancel', () => { this._rxPointer = false; });
         this.addEventListener(chip, 'focusin', () => {
             if (this._rendering) return;
             if (this._rxPointer) { this._rxPointer = false; return; } // pointer focus shows nothing
