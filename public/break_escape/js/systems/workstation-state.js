@@ -251,6 +251,19 @@ export class WorkstationState {
         return { ownerId, present, userId: this._userOf(objectId), guestId: this.guestOf(objectId) };
     }
 
+    /**
+     * Whether npcId has left the workstation objectId: its owner with a current away record, or
+     * the guest whose open session is recorded there. Read only, nothing emitted. A tap on the
+     * PC its owner is walking away from is for the PC (q55 d, lab UX review R2 m1).
+     */
+    leftBy(objectId, npcId) {
+        if (!npcId) return false;
+        const data = this._find(objectId);
+        if (!data) return false;
+        if (this.guests.get(objectId)?.npcId === npcId) return true;
+        return ownerOf(data, this.env.npcs()) === npcId && !!this.away.get(npcId)?.away;
+    }
+
     _userOf(objectId) {
         if (typeof this.env.userOf !== 'function') return null;
         const id = this.env.userOf(objectId);

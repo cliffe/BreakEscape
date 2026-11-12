@@ -48,7 +48,7 @@ export class MinigameScene {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Close button clicked');
-                this.complete(false);
+                this.closeByPlayer();
             });
         }
         
@@ -60,7 +60,7 @@ export class MinigameScene {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Cancel button clicked');
-                this.complete(false);
+                this.closeByPlayer();
             });
         } else {
             console.log('Cancel button not found');
@@ -81,13 +81,23 @@ export class MinigameScene {
             this._fallbackCloseHandler = (e) => {
                 if (e.key === 'Escape') {
                     console.log('Escape key pressed, closing minigame');
-                    this.complete(false);
+                    this.closeByPlayer();
                 }
             };
             document.addEventListener('keydown', this._fallbackCloseHandler);
         }
     }
     
+    /**
+     * The player's own Close, Cancel or Esc. Marks the close so a reader can tell it from
+     * one forced by a hit, a knockout or a conversation (all complete(false) too): only
+     * the player's own close goes back to the container it came from (lab UX review M1).
+     */
+    closeByPlayer() {
+        this.closedByPlayer = true;
+        this.complete(false);
+    }
+
     complete(success) {
         console.log('Minigame complete called with success:', success);
 

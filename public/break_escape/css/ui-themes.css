@@ -995,6 +995,7 @@
   font-size: 11px;
 }
 
+[data-ui-theme] .objectives-panel { --obj-more-fade: var(--ui-surface); --obj-more-arrow: var(--ui-text-dim); }
 [data-ui-theme] .objectives-toggle { color: var(--ui-text-dim); }
 [data-ui-theme] .objectives-toggle:hover { color: var(--ui-text); }
 [data-ui-theme] .aim-header { color: var(--ui-accent); text-shadow: var(--ui-text-glow); }
