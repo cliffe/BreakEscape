@@ -1631,3 +1631,41 @@ test('R3 M2: an end report with endedByCall on a non-forced call is row 25 (hang
     assert.equal(s.events().some((e) => e.startsWith('phone_call_missed')), false);
     assert.equal(s.last('outcome')[1], 'ended');
 });
+
+test('R4 M1: a forced offer ringing for the first time is never replaced', () => {
+    const s = setup();
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(3000);
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.current().knot, 'call_a');
+    assert.equal(s.ringer.current().disableClose, true);
+});
+
+test('R4 M1: a forced offer queued behind a conversation is never replaced', () => {
+    const s = setup({ ringBlocked: true });
+    s.ringer.offer(offer({ disableClose: true }));
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.queueLength(), 2);
+    s.w.ringBlocked = false;
+    s.clock.advance(TICK_MS * 2);
+    assert.equal(s.ringer.current().knot, 'call_a', 'the forced call rings first');
+});
+
+test('R4 M1: a forced offer auto-answered into hold is never replaced and keeps its answerSeconds', () => {
+    const s = setup({ openBlocked: true });
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(AUTO_ANSWER_MS + 300);
+    assert.equal(s.ringer.stateOf('ceo'), 'held');
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.current().knot, 'call_a');
+    assert.equal(s.ringer.current().disableClose, true);
+    assert.equal(s.ringer.hangUp('ceo'), false, 'a forced call cannot be hung up');
+});
+
+test('R4 m1: a forced call queued behind a connected non-forced call keeps the save slot', () => {
+    const s = setup();
+    s.ringer.offer({ npcId: 'ceo', knot: 'chat' });
+    s.ringer.answer('ceo'); connect(s);
+    assert.equal(s.ringer.offer(offer({ disableClose: true })), 'queued');
+    assert.equal(saves(s).pop().knot, 'call_a');
+});

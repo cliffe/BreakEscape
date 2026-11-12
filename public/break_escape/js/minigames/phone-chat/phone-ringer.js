@@ -648,7 +648,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             notBefore: 0,
             goneSince: 0,
             saveAs: null,
-            keep: false,        // R3 M1: set once a forced call has connected; lasts until it ends
+            keep: forced,       // R4 M1: a forced offer is protected from the moment it is offered, until it ends
         };
     }
 
@@ -663,11 +663,11 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (closed) return 'refused';
         advance();
         // The trigger is persisted by the caller before this (see the header), not here.
-        // A forced call waiting to ring again counts as a connected call (rows 5, 26): it is
-        // never replaced and a new offer queues behind it (R2 M1). Row 4 replaces only the
-        // contact's ringing, held or queued non-forced offer.
-        // R3 M1: the protection is the `keep` flag, which lasts from the first connect until the
-        // call ends, whatever state it is in (queued, ringing again, held, requeued by rows 23/24).
+        // A forced offer is never replaced, from the moment it is offered until it ends (R4 M1):
+        // a new offer for the contact queues behind it (row 5) and the same knot is dropped
+        // (row 3). Row 4 replaces only the contact's ringing, held or queued non-forced offer.
+        // The protection is the `keep` flag, set in makeOffer for a forced offer and in restore(),
+        // whatever state the call is in (queued, ringing, held, connected, requeued by rows 23/24).
         const waiting = (active && active.npcId === raw.npcId && active.keep ? active : null)
             || queue.find((x) => x.npcId === raw.npcId && x.keep);
         if (waiting && waiting.knot === raw.knot) return 'dropped';
