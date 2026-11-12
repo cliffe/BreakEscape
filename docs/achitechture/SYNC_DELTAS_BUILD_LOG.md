@@ -40,10 +40,49 @@ Standing constraints for this build:
 | 4. P1 cloner one-card deltas | Done, committed, tested |
 | Merge main (batch 9, 33c003230) into the branch | Done (`f03396201`); capture tests reran green |
 | 5. R3 capture-log seen keys | Done, committed, tested (`cb269170c`) |
-| 6a. R2 server-owned capture record (ships first) | BLOCKED pending reconciliation with main's usePayload-secret fix (see handover) |
+| 6a. R2 server-owned capture record (ships first) | Unblocked by the orchestrator's ruling (plan amendment below); build in progress |
 | 6b. R2 reveal/proof gating | Not started |
 | 7. Node + Rails size tests, then live proof A to F | Not started |
 | 8. One release later: remove transition code | Not started (separate release) |
+
+## Plan amendment (orchestrator ruling, 2026-11-12): 6a reconciled with main's serving path
+
+The 6a blocker above (plan 6.3's writer-path `candidate_secret` overlapping main's merged
+usePayload-secret fix) is resolved by the following ruling. It amends plan sections 6.2, 6.3, 6.4,
+6.7 and 9 for the build; the plan text is left as written and this amendment governs where they
+differ.
+
+1. **One serving path, main's.** `Game#capture_secrets_for_client` keeps serving through
+   `authored_capture_secret` / `authored_capture_secrets` (game.rb:1250 to 1364):
+   - writer and `usePayload` secrets are looked up by target id against the authored
+     `scenario_data` (`authored_capture_secrets`), not by a stored `writer` path;
+   - the account-holder guard, the proof gates and the hard-access-value guard
+     (`hard_access_capture_value?`, `CaptureModel.hard_access_values`) all stay;
+   - plan 6.3's `candidate_secret`, its writer pass in `capture_secrets_for_client`, the stored
+     `writer` key and `legacySecret` are DROPPED. No second candidate-secret or writer-path pass is
+     added. Len's PIN is already served by main's `authored_capture_secret` (it is not a hard-access
+     value: the records door is RFID/badge-locked, so the event-gated PIN opens no lock).
+2. **6a's job is the size and ownership change.** `seCaptures` becomes server-owned:
+   - the server records an entry when a capture is claimed (the sync `captures` part and the
+     heard-share composition), taking every field from the scenario (plan 6.3 part 1 and part 4);
+   - `se_captures` stops being a client-synced `globalVariables` section of `PUT /sync_state`;
+   - an old save's `globalVariables.se_captures` migrates into `player_state['seCaptures']` once,
+     on the bootstrap;
+   - the client reads the record from the bootstrap (`captures`) and from the sync answer deltas;
+   - `capture_secrets_for_client` and `NetworkAccess#account_capture_usernames` read the
+     server-owned record (`se_captures_record`, which returns `player_state['seCaptures']` when
+     present, else resolves the legacy global in memory for an old save and so keeps main's capture
+     tests green), with the same semantics as today.
+   - Every entry recorded under 6a is stored `proven: true` (as today, everything is revealable).
+3. **R5 residue kept, applied on main's path:** m1 (authored capture-string limits + validator
+   error), n1 (payload-owner handled by main's `build_authored_capture_secrets`, which already skips
+   an account holder's writer and a username-addressed writer), n2 (`strip.empty?` in the
+   account-holder test, already so in `CaptureModel.present_string?`), n4/n5/n6 taken where cheap.
+   Plan 6.3's own `candidate_secret` payload-owner guard is moot because the writer pass is dropped.
+4. **Live proof** (ruling point 3): the capture tests on main stay green
+   (`capture_payload_secret_test`, `capture_payload_secret_routes_test`, `capture_secret_endpoint_test`,
+   `lab_physical_pentest_secrets_test`, the `capture_proofs` tests), then Len's shoulder-surf beat
+   played on the earned path in lab_physical_pentest.
 
 ## This session (2026-11-12, builder 6: merge, step 5, 6a assessment)
 
