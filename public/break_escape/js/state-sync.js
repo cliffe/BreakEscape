@@ -63,6 +63,84 @@ export function stableJson(value) {
   });
 }
 
+// Globals the server owns: the client never sends them and never seeds them from
+// the bootstrap. Empty for now; step 6a (R2) adds se_captures (SYNC_DELTAS_PLAN 3.2).
+export const SERVER_OWNED_GLOBALS = new Set();
+
+// The synced fields of a note and a biometric sample, as one place both the seed
+// (seedFromSaved) and the export (buildPlayerSections) read, so they cannot drift.
+export function pickNote(n) {
+  return { id: n.id, title: n.title, text: n.text, timestamp: n.timestamp, read: n.read, important: n.important };
+}
+export function pickSample(s) {
+  return {
+    id: s.id, type: s.type, owner: s.owner, ownerId: s.ownerId, ownerName: s.ownerName,
+    quality: s.quality, rating: s.rating, pattern: s.pattern, identified: s.identified,
+    sourceObjectId: s.sourceObjectId, sourceRoomId: s.sourceRoomId, sourceName: s.sourceName,
+    surface: s.surface, collectedAt: s.collectedAt
+  };
+}
+
+// The timed-texts and clock comparison keys, as buildChanges builds them, so the
+// seed and the diff agree (SYNC_DELTAS_PLAN 3.2).
+function timedMessagesKeyOf(timed) {
+  return stableJson({ pending: (timed?.pending || []).map(m => m.id), delivered: timed?.delivered || [] });
+}
+function clockKeyOf(clock) {
+  const t = clock?.timers || {};
+  return stableJson({ fired: t.fired || [], cancelled: t.cancelled || [], started: Object.keys(t.started || {}).sort() });
+}
+
+/**
+ * A `confirmed`-shaped object built from the bootstrap's saved blocks, every value
+ * turned into its stableJson string (the same strings buildChanges compares), so
+ * the first sync after a load sends only what truly changed (SYNC_DELTAS_PLAN 3.2).
+ * Pure: `mailKeys` is the flattened savedMailState (flattenSavedMailState), passed
+ * in so this module needs no import of mail-scheduler.js.
+ */
+export function seedFromSaved(saved, mailKeys = {}) {
+  const confirmed = {};
+  const put = (section, key, value) => { (confirmed[section] ||= {})[key] = stableJson(value); };
+
+  const keyed = [
+    ['globalVariables', 'savedGlobalVariables'],
+    ['npcVisibility', 'savedNpcVisibility'],
+    ['npcHostility', 'savedNpcHostility'],
+    ['triggeredEvents', 'savedTriggeredEvents'],
+    ['npcInkVariables', 'savedNpcInkVariables']
+  ];
+  for (const [section, field] of keyed) {
+    const obj = saved?.[field];
+    if (!obj || typeof obj !== 'object') continue;
+    for (const [k, v] of Object.entries(obj)) {
+      if (section === 'globalVariables' && SERVER_OWNED_GLOBALS.has(k)) continue;
+      put(section, k, v);
+    }
+  }
+
+  // Mail: the flattened keys. jobs compare by mailJobsChangeKey, as buildChanges does.
+  for (const [k, v] of Object.entries(mailKeys || {})) {
+    if (k === 'jobs') (confirmed.mailState ||= {}).jobs = mailJobsChangeKey(v);
+    else put('mailState', k, v);
+  }
+
+  for (const note of Array.isArray(saved?.savedNotes) ? saved.savedNotes : []) {
+    if (note && note.id !== undefined) put('notes', note.id, pickNote(note));
+  }
+
+  if (Array.isArray(saved?.savedCommandBoardLog)) confirmed.commandBoardLog = stableJson(saved.savedCommandBoardLog);
+  if (Array.isArray(saved?.savedBiometricSamples)) confirmed.biometricSamples = stableJson(saved.savedBiometricSamples.map(pickSample));
+  if (saved?.savedPlayerHealth) confirmed.playerHealth = stableJson(saved.savedPlayerHealth);
+  if (saved?.scenarioBriefShown) confirmed.scenarioBriefShown = true;
+  if (typeof saved?.savedCurrentRoom === 'string') confirmed.currentRoom = saved.savedCurrentRoom;
+  if (saved?.savedTimedMessages) confirmed.timedMessagesKey = timedMessagesKeyOf(saved.savedTimedMessages);
+  if (saved?.savedScenarioClock) {
+    confirmed.clockKey = clockKeyOf(saved.savedScenarioClock);
+    confirmed.clockElapsedMs = saved.savedScenarioClock.elapsedMs;
+  }
+  return confirmed;
+}
+
 const isPlainObject = v => v != null && typeof v === 'object' && !Array.isArray(v);
 const pickKeys = (obj, keys) => {
   const out = {};
@@ -153,6 +231,42 @@ export class StateSync {
     this.lastError = null; // error from the latest failed run (status set for HTTP errors)
     this._boolFor = new WeakMap(); // run promise -> the boolean promise sync() hands out
     this._notSavedLogged = new Set(); // sections already warned about on this page
+    this._seeded = false; // seedFromBootstrap runs once per page
+    // Keyed-section keys this page has ever held in its current state. A confirmed
+    // key missing from the current state is only sent as null (a delete) when it is
+    // held here, so a key the server holds that the client never showed this page is
+    // left alone, as the first sync leaves it today (SYNC_DELTAS_PLAN 3.2, 3.3).
+    this._held = {};
+  }
+
+  /**
+   * Seed `confirmed` from the bootstrap's saved blocks, once per page, so the first
+   * sync after a load sends only what changed since the server saved it, not every
+   * section whole (SYNC_DELTAS_PLAN 3.2). A value is set only where `confirmed` has
+   * none yet, so a sync that ran before the seed keeps its acknowledgements.
+   * @param {Object} scenario - the bootstrap (gameScenario)
+   * @param {Object} [opts.mailKeys] - the flattened savedMailState (flattenSavedMailState)
+   */
+  seedFromBootstrap(scenario, { mailKeys = {} } = {}) {
+    if (this._seeded) return;
+    this._seeded = true;
+    const seed = seedFromSaved(scenario, mailKeys);
+    for (const [section, value] of Object.entries(seed)) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const target = this.confirmed[section] ||= {};
+        for (const [k, v] of Object.entries(value)) if (!(k in target)) target[k] = v;
+      } else if (this.confirmed[section] === undefined) {
+        this.confirmed[section] = value;
+      }
+    }
+    // The page applies every saved global with Object.assign, so it holds them from
+    // the start; a saved global the client then deletes must go up as null (3.2).
+    const savedGlobals = scenario?.savedGlobalVariables;
+    if (savedGlobals && typeof savedGlobals === 'object') {
+      const held = this._held.globalVariables ||= new Set();
+      for (const k of Object.keys(savedGlobals)) if (!SERVER_OWNED_GLOBALS.has(k)) held.add(k);
+    }
+    if (this.confirmed.clockKey !== undefined) this.clockConfirmedAt = Date.now();
   }
 
   start() {
@@ -213,14 +327,7 @@ export class StateSync {
     out.currentRoom = window.currentRoom?.name;
 
     // Notes, so observations survive page reloads. Plain data only (no sprites).
-    out.notes = (window.gameState?.notes || []).map(n => ({
-      id: n.id,
-      title: n.title,
-      text: n.text,
-      timestamp: n.timestamp,
-      read: n.read,
-      important: n.important
-    }));
+    out.notes = (window.gameState?.notes || []).map(pickNote);
 
     // Phone threads: texts, read state and story position per contact. With
     // onlyChanged, only contacts changed since the last confirmed sync.
@@ -239,12 +346,7 @@ export class StateSync {
     if (playerHealth) out.playerHealth = playerHealth;
 
     // Lifted fingerprints, plain fields only, so they survive a reload.
-    const biometricSamples = (window.gameState?.biometricSamples || []).map(s => ({
-      id: s.id, type: s.type, owner: s.owner, ownerId: s.ownerId, ownerName: s.ownerName,
-      quality: s.quality, rating: s.rating, pattern: s.pattern, identified: s.identified,
-      sourceObjectId: s.sourceObjectId, sourceRoomId: s.sourceRoomId, sourceName: s.sourceName,
-      surface: s.surface, collectedAt: s.collectedAt
-    }));
+    const biometricSamples = (window.gameState?.biometricSamples || []).map(pickSample);
     if (biometricSamples.length > 0) out.biometricSamples = biometricSamples;
 
     // Timed texts already counting down (and NPC-level ones already delivered), so
@@ -286,13 +388,17 @@ export class StateSync {
       const changes = {};
       const acked = {};
       const changeKeys = CHANGE_KEYS[section] || {};
+      const held = this._held[section] ||= new Set();
       for (const [key, value] of Object.entries(current)) {
         if (value === undefined) continue;
+        held.add(key);
         const s = changeKeys[key] ? changeKeys[key](value) : stableJson(value);
         if (confirmed[key] !== s) { changes[key] = value; acked[key] = s; }
       }
       for (const key of Object.keys(confirmed)) {
-        if (current[key] === undefined) { changes[key] = null; acked[key] = null; }
+        // Only delete a key this page held and then lost, never one the server holds
+        // that the client never showed this page (SYNC_DELTAS_PLAN 3.3).
+        if (current[key] === undefined && held.has(key)) { changes[key] = null; acked[key] = null; }
       }
       if (Object.keys(changes).length > 0) { body[section] = changes; ack[section] = acked; }
     }

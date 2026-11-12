@@ -27,8 +27,8 @@ copy('systems/mail-scheduler.js', 'mail-scheduler.mjs', s => s.replace("'./globa
 
 globalThis.window = { breakEscapeConfig: { gameId: 1, apiBasePath: '/games/1', csrfToken: 't' } };
 globalThis.document = { querySelector: () => null };
-const { MailScheduler } = await import(pathToFileURL(join(dir, 'mail-scheduler.mjs')).href);
-const { StateSync } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).href);
+const { MailScheduler, flattenSavedMailState } = await import(pathToFileURL(join(dir, 'mail-scheduler.mjs')).href);
+const { StateSync, stableJson } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).href);
 
 let flushed = [];
 let answer = { success: true }; // what the fake server answers a PUT with
@@ -491,5 +491,21 @@ test('literal scan: the mirrored sanitiser methods hold no inline numeric limits
     for (const tok of nums) {
       assert.ok(tok === '0' || tok === '1', `${name} holds an inline numeric literal ${tok}`);
     }
+  }
+});
+
+test('flattenSavedMailState equals exportMailState of a scheduler built from the saved state (R1 seed)', () => {
+  const { mail } = setup();
+  mail.addMessage('guest', { id: 'sent1', folder: 'sent', body: 'mine', landed: true, tells: [] });
+  mail.markRead('guest', 'welcome');
+  mail.setDraft('guest', { freeText: 'wip' });
+  mail.setThread('t1:guest', { position: 'two' });
+  const exported = JSON.parse(JSON.stringify(mail.exportMailState()));
+  // The server stores the keyed diff nested; rebuild that nested shape, then flatten.
+  const nested = serverMerge({}, exported);
+  const flat = flattenSavedMailState(nested);
+  for (const key of Object.keys(exported)) {
+    if (key === 'jobs') continue; // jobs compare by mailJobsChangeKey, not whole value
+    assert.equal(stableJson(flat[key]), stableJson(exported[key]), `flatten matches export for ${key}`);
   }
 });

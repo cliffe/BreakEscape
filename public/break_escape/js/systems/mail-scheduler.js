@@ -222,6 +222,35 @@ export function clipMailDrafts(drafts) {
   return clean;
 }
 
+/**
+ * The saved (nested) mailState turned into the flat keyed form exportMailState()
+ * emits (mailboxes.<box>.<id>, threads.<key>, jobs, drafts, metrics), so the R1
+ * seed is built from the same keys the client diffs against (SYNC_DELTAS_PLAN 3.2).
+ * The server already stored the sanitised form, so a saved value flattens to the
+ * same value the export produces; comparison is by stableJson, so jsonb key order
+ * does not matter.
+ */
+export function flattenSavedMailState(saved) {
+  const out = {};
+  if (!saved || typeof saved !== 'object') return out;
+  const boxes = saved.mailboxes;
+  if (boxes && typeof boxes === 'object') {
+    for (const [boxId, box] of Object.entries(boxes)) {
+      for (const m of (box && Array.isArray(box.messages) ? box.messages : [])) {
+        if (m && m.id !== undefined && m.id !== null) out[`mailboxes.${boxId}.${m.id}`] = m;
+      }
+    }
+  }
+  if (Array.isArray(saved.jobs)) out.jobs = saved.jobs;
+  const threads = saved.threads;
+  if (threads && typeof threads === 'object') {
+    for (const [k, v] of Object.entries(threads)) out[`threads.${k}`] = v;
+  }
+  if (saved.drafts && typeof saved.drafts === 'object') out.drafts = saved.drafts;
+  if (saved.metrics && typeof saved.metrics === 'object') out.metrics = saved.metrics;
+  return out;
+}
+
 const pick = (obj, fields) => {
   const out = {};
   for (const f of fields) if (obj[f] !== undefined) out[f] = obj[f];

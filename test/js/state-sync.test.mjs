@@ -26,7 +26,7 @@ copy('state-sync.js', 'state-sync.mjs', toMjs);
 globalThis.window = { breakEscapeConfig: { gameId: 1, apiBasePath: '/games/1', csrfToken: 't' } };
 globalThis.document = { querySelector: () => null };
 const quiet = { log: () => {}, warn: () => {}, error: () => {} };
-const { StateSync, stableJson } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).href);
+const { StateSync, stableJson, seedFromSaved } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).href);
 
 // A fetch that records each request; reply() decides the answer
 let requests = [];
@@ -304,4 +304,80 @@ test('stableJson sorts object keys at every depth and keeps array order', () => 
   assert.equal(stableJson([undefined]), '[null]');
   // reachable as a static on the class for callers holding the instance
   assert.equal(StateSync.stableJson({ b: 1, a: 2 }), '{"a":2,"b":1}');
+});
+
+// --- R1: seed confirmed from the bootstrap (SYNC_DELTAS_PLAN 3.2, 3.7) ---
+
+// The saved blocks that match resetGame()'s current state, so a seed from them
+// leaves buildChanges with nothing to send.
+const matchingSaved = (over = {}) => ({
+  savedGlobalVariables: { a: 1, b: true },
+  savedNotes: [{ id: 'n1', title: 'T', text: 'x' }],
+  savedTriggeredEvents: { 'hax:start:0': 1 },
+  savedCurrentRoom: 'lobby',
+  savedScenarioClock: { elapsedMs: 600000, timers: { fired: [], cancelled: [], started: {} } },
+  savedTimedMessages: { pending: [], delivered: [] },
+  ...over
+});
+// restorePhoneState marks the saved phone threads on load; the mock does the same.
+const markPhone = () => window.npcManager.markPhoneStateSynced(window.npcManager.exportPhoneState({ onlyChanged: false }));
+
+test('seedFromSaved: a reordered saved object seeds the same string as the ordered one', () => {
+  const a = seedFromSaved({ savedGlobalVariables: { x: { id: 'm1', read: true } } });
+  const b = seedFromSaved({ savedGlobalVariables: { x: { read: true, id: 'm1' } } });
+  assert.equal(a.globalVariables.x, b.globalVariables.x);
+});
+
+test('after a seed that matches the loaded state, the first buildChanges sends nothing', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved());
+  assert.equal(sync.buildChanges(), null);
+});
+
+test('when the page starts in a different room, the first buildChanges sends only currentRoom (with the clock, timed texts)', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved({ savedCurrentRoom: 'vault' }));
+  const changes = sync.buildChanges();
+  assert.equal(changes.body.currentRoom, 'lobby');
+  assert.equal(changes.body.globalVariables, undefined);
+  assert.equal(changes.body.notes, undefined);
+  assert.equal(changes.body.triggeredEvents, undefined);
+});
+
+test('one global changed after a matching seed sends only that key', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved());
+  window.gameState.globalVariables.a = 2;
+  const changes = sync.buildChanges();
+  assert.deepEqual(changes.body.globalVariables, { a: 2 });
+});
+
+test('a saved section key the client never holds this page is not sent as null', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved({ savedNpcInkVariables: { eve: { met: true } } }));
+  assert.equal(sync.buildChanges(), null, 'eve is confirmed but never held, so not deleted');
+});
+
+test('a saved global the client deletes before the first sync is sent as null', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved({ savedGlobalVariables: { a: 1, b: true, siem: 'x' } }));
+  // window.gameState holds a and b only (siem deleted after the Object.assign)
+  const changes = sync.buildChanges();
+  assert.deepEqual(changes.body.globalVariables, { siem: null });
+});
+
+test('a seed after a confirmed sync keeps the acknowledgement; a second seed does nothing', () => {
+  const sync = resetGame();
+  sync.confirmed.globalVariables = { a: stableJson(2) };
+  sync.seedFromBootstrap({ savedGlobalVariables: { a: 1, b: true } });
+  assert.equal(sync.confirmed.globalVariables.a, stableJson(2), 'the ack is kept');
+  assert.equal(sync.confirmed.globalVariables.b, stableJson(true), 'the new key is seeded');
+  const snapshot = JSON.stringify(sync.confirmed);
+  sync.seedFromBootstrap({ savedGlobalVariables: { a: 999, z: 9 } });
+  assert.equal(JSON.stringify(sync.confirmed), snapshot, 'the second seed is a no-op');
 });

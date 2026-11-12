@@ -52,7 +52,7 @@ import { initLighting } from '../systems/lighting.js';
 import { installSeating } from '../systems/seating.js';  // Sitting on chairs (sets window.seating)
 import { installBehindWallFade } from '../systems/behind-wall-fade.js';  // Fades a south room's back wall while the player is behind it
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
-import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
+import { mailScheduler, flattenSavedMailState } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
 import { installTimedEmails } from '../systems/mail-ink.js';  // Ink-driven plain email: contacts' timedEmails
 import { writeGlobal as writeMailGlobal } from '../systems/global-writer.js';
 import '../systems/mail-runner.js';  // Registers the ink-job runner on the mail scheduler (P1-J); self-installs on import after mailScheduler
@@ -1700,6 +1700,14 @@ export async function create() {
     // globalVariables when the game was created): read-only from here on.
     const importedNames = Object.keys(gameScenario.importedGlobals || {});
     window.npcConversationStateManager?.setReadOnlyGlobals?.(importedNames);
+
+    // Seed the sync's `confirmed` from the saved blocks before anything is restored,
+    // so the first sync after a load sends only what changed since the server saved
+    // it, not every section whole (R1, SYNC_DELTAS_PLAN 3.2). Seeding first matters:
+    // some restores keep references to the saved objects, so the seed must read their
+    // values before any in-place change touches them. The flattened mail is passed in
+    // so state-sync.js needs no import of mail-scheduler.js.
+    window.stateSync?.seedFromBootstrap?.(gameScenario, { mailKeys: flattenSavedMailState(gameScenario.savedMailState) });
 
     // Merge in server-saved global variables (from a resumed session).
     // Saved values take precedence over scenario defaults so that persistent

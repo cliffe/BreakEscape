@@ -312,6 +312,13 @@ module BreakEscape
           filtered['savedGlobalVariables'] = @game.player_state['globalVariables']
         end
 
+        # The saved current room, so the first sync after a load does not resend
+        # currentRoom unless the page starts the player somewhere else (R1,
+        # SYNC_DELTAS_PLAN 3.2). One short string; the old client ignores it.
+        if @game.player_state['currentRoom'].is_a?(String)
+          filtered['savedCurrentRoom'] = @game.player_state['currentRoom']
+        end
+
         # Include saved notes (with player observations) for session resume.
         if @game.player_state['notes'].present?
           filtered['savedNotes'] = @game.player_state['notes']
