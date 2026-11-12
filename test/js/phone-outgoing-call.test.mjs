@@ -27,10 +27,10 @@ const header = `
 const S = globalThis.__stubs;
 const { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } = S.lock;
 const callHomeKnot = S.callHomeKnot;
-class MinigameScene { constructor(c, p) { this.container = c; this.params = p; } addEventListener() {} }
+class MinigameScene { constructor(c, p) { this.container = c; this.params = p; } addEventListener() {} start() { if (S.baseStart) S.baseStart.call(this); } }
 class PhoneChatUI {} class PhoneChatHistory { constructor() { Object.assign(this, S.history); } } class InkEngine {} class PhoneCallVoice {} class TTSManager {}
 class PhoneChatConversation { constructor() {} static stepKnot(story) { return story && story.__knot || null; } static async waitForPreload() {} static isPreloadedOpening() { return false; } }
-const attachPretext = async () => null, processGameActionTags = () => {}, choiceAsksEnding = () => false,
+const attachPretext = async () => null, processGameActionTags = (tags) => { (S.processed = S.processed || []).push(tags); }, choiceAsksEnding = () => false,
   confirmEndingBeforeChoice = async () => true, partitionSlowTags = () => ({}), classifyPhoneLine = () => ({}),
   displayPhoneLine = () => ({}), phoneStepLines = () => [], choiceIndexFromKey = () => -1,
   whenSessionOverlayClosed = () => Promise.resolve(), isVoicedCall = (p) => p && p.voiced === true,
@@ -305,18 +305,21 @@ test('m1: with the real base minigame, the base Esc handler is dropped on a ring
     const { MinigameScene: RealBase } = await import(dataUrl(baseSrc));
     for (const [first, ringer] of [['phone', true], ['base', true], ['phone', false]]) {
         const { inst, log } = make({ ringer });
-        const probe = Object.assign(Object.create(RealBase.prototype), inst);
+        // the real PhoneChatMinigame.start(), over the real base start (it registers the base Esc
+        // handler); only the preload and the conversation open are stubbed
+        const probe = Object.assign(Object.create(PhoneChatMinigame.prototype), inst);
         probe.params = { ...inst.params };
         probe.complete = (ok) => { log.completed.push(ok); };
-        for (const k of Object.getOwnPropertyNames(PhoneChatMinigame.prototype)) {
-            if (!['constructor', 'start', 'complete'].includes(k)) probe[k] = PhoneChatMinigame.prototype[k];
-        }
+        probe.preloadIntroMessages = async () => {};
+        probe.openConversation = noop;
+        probe.currentNPCId = 'caller';
+        probe.gameState = { isActive: true };
+        globalThis.__stubs.baseStart = RealBase.prototype.start;
         document.listeners = [];
         const phoneListener = (e) => probe.handleKeyPress(e);
         if (first === 'phone') document.addEventListener('keydown', phoneListener);
-        RealBase.prototype.start.call(probe);       // registers the base Esc handler
+        await PhoneChatMinigame.prototype.start.call(probe);
         if (first === 'base') document.addEventListener('keydown', phoneListener);
-        probe._dropBaseEscOnRingerCall();
         const ev = { key: 'Escape', preventDefault() {} };
         for (const f of [...document.listeners]) f(ev);
         if (ringer) assert.ok(!log.completed.includes(false), `order=${first}: never complete(false)`);
@@ -343,4 +346,23 @@ test('m5: End call holds "Call ended m:ss" for a beat, then completes once; a se
         plain.inst.closeConversation();
         assert.deepEqual(plain.log.completed, [true], 'terminal look: at once');
     } finally { t.restore(); }
+});
+
+test('A2b R2 m2: after "Keep going" a text thread still runs the batch tags; a ringer call drops them', async () => {
+    for (const ringer of [true, false]) {
+        const t = make({ ringer });
+        t.inst.saveStoryState = () => {};
+        t.inst._endingKeptGoing = async () => true;
+        t.inst.ui.addChoices = noop;
+        globalThis.__stubs.processed = [];
+        await t.inst._presentOutput([], ['complete_task:x', 'ending_check'], { choices: [{ text: 'x' }], canContinue: false });
+        assert.equal(globalThis.__stubs.processed.length, ringer ? 0 : 1, `ringer=${ringer}`);
+    }
+});
+
+test('A2b R2 m4: the Call ended bar is upper case like ON CALL and the call-ended class has a rule', () => {
+    const ui = readFileSync(join(chat, 'phone-chat-ui.js'), 'utf8');
+    assert.match(ui, /label\.textContent = 'CALL ENDED'/);
+    const css = readFileSync(join(here, '../../public/break_escape/css/phone-chat-minigame.css'), 'utf8');
+    assert.match(css, /\.call-status-bar\.call-ended \{/);
 });

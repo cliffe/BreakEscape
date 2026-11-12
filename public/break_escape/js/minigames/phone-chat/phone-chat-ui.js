@@ -230,7 +230,7 @@ export default class PhoneChatUI {
         const shown = timer.textContent || '0:00';
         this.stopCallTimer();
         const label = bar.querySelector('.call-status-label');
-        if (label) label.textContent = 'Call ended';
+        if (label) label.textContent = 'CALL ENDED';   // upper case, as the ON CALL bar it replaces (the dot goes with the text)
         timer.textContent = shown;
         bar.classList.add('call-ended');
         this.elements.choicesContainer && (this.elements.choicesContainer.innerHTML = '');

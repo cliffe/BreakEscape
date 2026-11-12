@@ -185,6 +185,9 @@ export function installPhoneRinger(win = window) {
             const id = info.ringerCall.id;
             ownedCallId = id;
             let started = null;
+            // The call knot is the contact's position only while the call is open; the thread
+            // reads currentKnot, so a ring that is declined or missed never moved it (R2 M1)
+            if (offer.knot) npc.currentKnot = offer.knot;
             try {
                 started = fw().startMinigame('phone-chat', null, {
                     npcId: offer.npcId,

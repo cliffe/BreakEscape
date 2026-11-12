@@ -1158,6 +1158,14 @@
     gap: 8px;
 }
 
+.phone-call-mode .call-status-bar.call-ended {
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.phone-call-mode .call-status-bar.call-ended .call-timer {
+    opacity: 0.75;
+}
+
 .phone-call-mode .call-status-dot {
     width: 10px;
     height: 10px;

@@ -37,9 +37,11 @@ The only difference is the `ringer` column: "n/a" before (no ringer), "none" now
 - Key dump against `keys_baseline_a1/`: differs only in `m09`, `m10` (the M2 moves) and adds `test_phone_calls` (32 keys) and `test_phone_call_notes`. `lab_social_engineering` identical.
 - Lab SE Dev proof after the fixes: not re-run (see Open). The phone-chat changes are all gated on `params.ringerCall`, and `phone-chat-ui.js` gains one method only a ringer call reaches.
 
-## Open
+## Open (closed 2026-11-12, live proofs in `proofs/A2b_r1/live/`)
 
-1. M2 live thread proof: after a decline and after a ring-out, open timed_caller's thread and check it shows the thread. The harness runners (`/tmp` scratch `m23run.sh`, copied into `a2b_r1_live.sh` only in part) auto-click in the page; the run was cut for budget.
-2. M3 live proof: a text sent during a connected ringer call toasts only after End. The attempt (`proofs/A2b_r1/live/m3_timeline.txt`) is not valid: the connected call had ended before `send_text` was emitted (a toast at 38.8 s landed during a later ring, which is not held). Use `caller_basic` with `ring_again`, answer, and emit `send_text` while `callActive` is true (check it just before). Keyless 503 makes a call race to its story end, so use a call that stops at a choice.
-3. Lab SE Dev proof (`routes/se_dev.sh`, `sha256_noseed` against A0).
-4. A screenshot of the "Call ended" screen.
+1. M2 live thread proof: done for the mapping path in R2 (see `REVIEW_A2b_R2_OUTCOMES.md`, `r2m1_*`). The timed path stays covered by the unit test only: `timed_caller` never rang in four live attempts (the keyless run lets `caller_basic` ring 3 s after the briefing, and the timed offer did not come back after it was declined), so no `m2_*` files are kept.
+2. M3 live proof: done. `m3_emit.json`: `send_text` emitted with `callActive` true and the phone-chat open (`m3_timeline.txt` 24.2 s). The toast count stays 0 while the call is connected and becomes 1 at 32.1 s, after End (`m3_during_call.png`, `m3_after_end.png` shows the Texter toast).
+3. Lab SE Dev proof: done, identical. `live/se_dev/storystate_after_call.json` and `_after_reload.json` have the same `sha256_noseed` as `proofs/A0/` (`dev_service_desk` ffe4c083..., `ruth_phone` 52c50b7a...), and `se_dev/tts.jsonl` holds the same four Dev lines.
+4. "Call ended": done. `ended_end_beat_hangup.png` shows the bar frozen on "Call ended 0:02" after End (the text is "CALL ENDED" from R2 m4 on). A story-end close has no beat: `ended2_storyend_screen.png` and `ended2_timeline.json` show the screen on the last line, then the minigame closes about 3 s later with "Call ended" never shown. This matches plan 2.5, which puts the beat in `closeConversation` (End, back arrow); `#exit_conversation` and story end call `complete(true)` directly. Say if the story-end close should show it too.
+
+Runner: `tools/phone_calls/routes/a2b_r1_finish.sh` (`r2m1`, `m3`, `ended`, `ended2`, `m2`).

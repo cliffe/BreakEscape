@@ -236,6 +236,41 @@ test('A2b R1 M2: a declined or missed timed ring call leaves npc.currentKnot on 
     }
 });
 
+test('A2b R2 M1: a mapping ring leaves npc.currentKnot on the thread when declined, rung out or queued; Answer sets the call knot at open', async () => {
+    for (const how of ['decline', 'ringout', 'answer']) {
+        const w = makeWorld({ npcs: [npc] });
+        try {
+            w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+            await w.advance(300);
+            assert.equal(w.ringer.stateOf('caller'), 'ringing', how);
+            assert.equal(w.nm.getNPC('caller').currentKnot, 'start', `${how}: not moved at offer`);
+            if (how === 'answer') {
+                w.click('.incoming-call-answer');
+                await w.advance(700);
+                assert.equal(w.calls.started[0].params.startKnot, 'ring_call');
+                assert.equal(w.nm.getNPC('caller').currentKnot, 'ring_call', 'set when the call opens');
+                continue;
+            }
+            if (how === 'decline') w.click('.incoming-call-decline'); else await w.advance(30000);
+            await w.advance(200);
+            assert.equal(w.ringer.stateOf('caller'), null, how);
+            assert.equal(w.nm.getNPC('caller').currentKnot, 'start', `${how}: the thread opens on its own knot`);
+        } finally { w.restore(); }
+    }
+});
+
+test('A2b R2 M1: a ring queued behind a call does not move currentKnot either', async () => {
+    const other = { id: 'other', displayName: 'Other', avatar: 'assets/x.png' };
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        w.nm._handleEventMapping('other', 'room_entered', ringConfig(), {});
+        await w.advance(300);
+        w.nm._handleEventMapping('caller', 'room_entered', ringConfig({ handlerIndex: 1 }), {});
+        await w.advance(300);
+        assert.equal(w.nm.getNPC('caller').currentKnot, 'start', 'queued or replaced: unmoved');
+    } finally { w.restore(); }
+});
+
 // A8: the ringtone loops through the sound manager and stops on every outcome.
 function fakeSoundManager(win, { withRingtone = true } = {}) {
     const log = [];
@@ -306,4 +341,77 @@ test('A8: with the ringtone not loaded the banner falls back to phone_vibrate ev
         await w.advance(5000);
         assert.equal(log.length, n, 'no more vibrates after Decline');
     } finally { w.restore(); }
+});
+
+// A2b R2 m1: plan 2.4, "stops on any outcome and while paused". The exits the A8 tests did not cover.
+async function ringing(opts = {}) {
+    const w = makeWorld({ npcs: [npc] });
+    const log = fakeSoundManager(w.win);
+    w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+    await w.advance(300);
+    assert.equal(playing(log), 1, 'rings');
+    return { w, log };
+}
+
+test('A2b R2 m1: the ringtone stops when a minigame, a workstation popup or a knockout takes the ring away', async () => {
+    {
+        const { w, log } = await ringing();
+        try {
+            w.fw.startMinigame('notes', null, { title: 'Notes' });
+            await w.advance(300);
+            assert.equal(playing(log), 0, 'a minigame opened over the ring');
+        } finally { w.restore(); }
+    }
+    {
+        const { w, log } = await ringing();
+        try {
+            const pop = w.win.document.createElement('div'); pop.id = 'laptop-popup'; pop.style.display = 'block';
+            w.win.document.body.appendChild(pop);
+            await w.advance(600);
+            assert.equal(playing(log), 0, 'a workstation popup opened');
+        } finally { w.restore(); }
+    }
+    {
+        const { w, log } = await ringing();
+        try {
+            w.win.playerIsKnockedOut = () => true;
+            await w.advance(600);
+            assert.equal(playing(log), 0, 'knockout');
+        } finally { w.restore(); }
+    }
+});
+
+test('A2b R2 m1: the ringtone stops on close() and while paused (menu, hidden tab), and restarts after the menu closes', async () => {
+    {
+        const { w, log } = await ringing();
+        try {
+            w.win.phoneRinger.close();
+            assert.equal(playing(log), 0, 'close()');
+            assert.equal(w.banner(), null);
+        } finally { w.restore(); }
+    }
+    {
+        const { w, log } = await ringing();
+        try {
+            const menu = w.win.document.createElement('div'); menu.className = 'game-menu-overlay visible';
+            w.win.document.body.appendChild(menu);
+            await w.advance(600);
+            assert.equal(playing(log), 0, 'pause menu');
+            assert.ok(w.banner(), 'the banner is kept');
+            menu.remove();
+            await w.advance(600);
+            assert.equal(playing(log), 1, 'restarts when the menu closes');
+        } finally { w.restore(); }
+    }
+    {
+        const { w, log } = await ringing();
+        try {
+            Object.defineProperty(w.win.document, 'hidden', { value: true, configurable: true });
+            await w.advance(600);
+            assert.equal(playing(log), 0, 'hidden tab');
+        } finally {
+            Object.defineProperty(w.win.document, 'hidden', { value: false, configurable: true });
+            w.restore();
+        }
+    }
 });

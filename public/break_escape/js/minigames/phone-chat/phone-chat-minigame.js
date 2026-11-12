@@ -872,7 +872,12 @@ export class PhoneChatMinigame extends MinigameScene {
         // pendingNpcMessages is what has not reached the history yet: if the phone is closed
         // mid-typeout, _flushPendingMessages() keeps it (see there). Set before the tags,
         // since a tag can close the phone (a cutscene's set_global, m06 N-6-1).
-        if (await this._endingKeptGoing?.(accumulatedTags)) { accumulatedMessages = []; accumulatedTags = []; }
+        if (await this._endingKeptGoing?.(accumulatedTags)) {
+            accumulatedMessages = [];
+            // The tags go too on a ringer call, so a #exit_conversation beside the #ending_check
+            // does not hang up the call the player chose to stay on. A text thread keeps them (R2 m2).
+            if (this.params?.ringerCall) accumulatedTags = [];
+        }
 
         this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
 

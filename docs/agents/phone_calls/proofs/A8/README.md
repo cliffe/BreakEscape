@@ -13,3 +13,5 @@ Keyless server on :3026 (stopped), headless, `test_phone_calls` game 1499. `soun
 
 Loop stays on one `play` per ring (no restart every 2 s). Session and /tts logs: `basic_*`.
 Lab SE: `grep ringtone|phoneRinger` over `scenarios/lab_social_engineering` finds nothing; its calls are not ringer calls.
+
+R2 m1 (2026-11-12): plan 2.4's "`phone_vibrate` once per cycle" is dropped on purpose. The looped ringtone covers the cycle, and `phone_vibrate` stays only as the fallback when the ringtone has not loaded (every 2 s). The other exits (minigame, popup, knockout, `close()`, pause menu, hidden tab) are tests in `test/js/phone-ring-layer.test.mjs` ("A2b R2 m1").

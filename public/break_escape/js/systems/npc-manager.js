@@ -1266,8 +1266,10 @@ export default class NPCManager {
     }
 
     // Update NPC's current knot if specified (use targetKnot or knot for backwards compatibility)
+    // A ring mapping leaves it alone: the call knot is set when the call opens (the ringer
+    // adapter's openCall), so a declined or missed ring never leaves the thread on it (A2b R2 M1).
     const knotToSet = config.targetKnot || config.knot;
-    if (knotToSet) {
+    if (knotToSet && !isRing) {
       npc.currentKnot = knotToSet;
       console.log(`📍 Updated ${npcId} current knot to: ${knotToSet}`);
     }
