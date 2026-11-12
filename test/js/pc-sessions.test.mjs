@@ -591,3 +591,18 @@ test('R1 m4: a guest claim granted after someone sat down at the PC ends at once
         delete window.npcManager;
     }
 });
+
+// q72: a 403 from a switched-off PC carries the server's reason, so the screen can say "off"
+test('a 403 sign-in refusal carries the server reason (off at the keyboard, not_responding remotely)', async () => {
+    for (const reason of ['off', 'not_responding']) {
+        const s = setup({ answer: () => { throw Object.assign(new Error('x'), { status: 403, body: { success: false, message: 'm', reason } }); } });
+        const r = await s.signIn('hot_desk', 'sokafor', 'right-sam');
+        assert.equal(r.ok, false);
+        assert.equal(r.error, true);
+        assert.equal(r.status, 403);
+        assert.equal(r.serverReason, reason);
+        assert.equal(s.has('hot_desk'), false);
+    }
+    const s = setup({ answer: () => { throw Object.assign(new Error('x'), { status: 500 }); } });
+    assert.equal((await s.signIn('hot_desk', 'sokafor', 'right-sam')).serverReason, null);
+});

@@ -371,7 +371,22 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
   relays no pivot (`player_reach` skips it; `structural_reach` does not, so nothing is pruned and
   an onward session shows in a down block until the power returns), and no share is served
   through a session there. A session held at it is kept; its row names it (`heldAs`). The client
-  syncs the globals before `GET /network`, waiting at most about three seconds.
+  syncs the globals before `GET /network`, waiting at most about three seconds; a view fetched
+  after that limit carries `stale: true`, shows "Still updating, so this may be out of date." and
+  fetches once more when the late sync lands. A remote refusal there answers 403 `not_responding`,
+  and the client words it "not responding", as the row. An up block's `via` never names an off
+  host (the route runs through another); a down block's still does.
+  **Off is off at the keyboard too** (user decision q72). A walk-up click on a switched-off PC
+  shows "This PC is off." and opens nothing; the client checks `offWhen` on its own globals first
+  and, for a PC that has one but is on, sends the globals before it asks the server. The server
+  refuses on its own copy as well: a keyboard sign-in, an owner or guest claim and
+  `GET /login_accounts` answer 403 `off` with that message, and the keyboard desktop answers 403
+  `off` without settling a remote session there. `session_route_up?` is false for every session
+  at an off PC, local ones included, so its folders, its mapped shares and an inventory add from
+  them (a share's add path as well as its read) are all refused. A session held there, local or
+  remote, is kept (the client keeps its copy on a 403 `off`) and works again when the PC is back
+  on. The PC's look is not changed by the engine; an author who wants an off picture gives the
+  object a `spriteVariants` entry on the same global.
 - **The scoped-request route test, judged from server state.** This is the one place 9.3a's "a
   session exists is enough" rule no longer holds, because losing a pivot or an outage can take a
   route down while the session record survives. The server re-judges **from its own session record,

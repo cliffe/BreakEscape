@@ -603,8 +603,11 @@ module BreakEscape
       own = network_footholds[foothold_id]['network']
       reach = player_reach(foothold_id)
       session_hosts = view_session_hosts
+      # An up block is reached through a host that answers (review R2 m2): an off host relays
+      # nothing, so it is never named there. A down block keeps naming it (the right hint).
+      live_hosts = session_hosts.reject { |h| host_service_off?(h[:pc]) }
       blocks = reach.to_a.sort.map do |net|
-        { 'id' => net, 'name' => network_name(net), 'via' => (net == own ? nil : via_for(net, session_hosts, reach)),
+        { 'id' => net, 'name' => network_name(net), 'via' => (net == own ? nil : via_for(net, live_hosts, reach)),
           'hosts' => network_rows(net), 'route' => 'up' }
       end
       blocks + down_blocks(foothold_id, reach, session_hosts)
@@ -627,8 +630,9 @@ module BreakEscape
 
     # [{ pc_id:, pc:, host_id:, net:, seq: }] for every held session at a sign-in host, for
     # the view blocks. The `via` of a pivot-reached network names the bridging session. `seq`
-    # is the session's position in insertion order (its creation order, kept across prunes
-    # and keyboard settles), the primary tie-break for `via` (5.1).
+    # is the session's position in the stored sessions hash, the primary tie-break for `via`
+    # (5.1). The column is jsonb, which keeps object keys sorted by length then bytewise, so
+    # after a save this is that order, not the order of sign-in; it is still deterministic.
     def view_session_hosts
       access_sessions.each_with_index.filter_map do |(pc_id, session), seq|
         next unless session.is_a?(Hash)
@@ -681,16 +685,38 @@ module BreakEscape
     # `affordance.offWhen` (9.2's field) holds on the server's copy of the globals, read the way
     # the NPC frustration path reads them. Its row answers "not responding", and a remote
     # sign-in, a remote desktop and a scoped request under a remote session there are refused
-    # 403 unreachable. A session already held there is kept, as one over a down route is.
+    # 403 not_responding. Off is off at its own keyboard too (user decision q72): a walk-up
+    # sign-in, a claim, the keyboard desktop and the shares mapped there are refused 403 off,
+    # "This PC is off." A session already held there, remote or local, is kept, as one over a
+    # down route is, and works again when the PC is back on.
     #
     # Like an outage (network_up?), this is a soft gate, not a security boundary: the global is
-    # client-synced, and a keyboard desktop request settles a remote session as local. Clearing
-    # it only lets the player try a host the foothold already reaches.
-    def host_service_off?(pc)
+    # client-synced. Clearing it only lets the player use a PC they could already reach.
+    # `globals` lets a caller that asks for many hosts build the merged globals once.
+    def host_service_off?(pc, globals = nil)
       cond = BreakEscape::AccessWork.affordance(scenario_data, pc)&.dig('offWhen')
       return false if cond.nil? || cond == false || cond == ''
 
-      BreakEscape::AccessWork.globals_hold?(cond, frustration_globals)
+      BreakEscape::AccessWork.globals_hold?(cond, globals || frustration_globals)
+    end
+
+    PC_OFF_MESSAGE = 'This PC is off.'.freeze
+    PC_NOT_RESPONDING_MESSAGE = 'PC not responding'.freeze
+
+    # Why a desktop request is refused (render_login_desktop's 403 reason), or nil when it is
+    # allowed. 'not_responding': through a foothold that reaches the host, whose own service is
+    # off. 'off': at the keyboard of a reachable PC that is off (q72). Else 'unreachable'. The
+    # power state is told only where the PC itself could be reached.
+    def desktop_refusal(info, foothold_id)
+      return nil if desktop_request_allowed?(info, foothold_id)
+
+      pc = info[:object]
+      if foothold_id.present?
+        return 'not_responding' if host_reachable_through?(foothold_id, pc) && !remote_blocked?(pc) && host_service_off?(pc)
+      elsif login_pc_reachable?(info) && !NetworkModel.headless?(pc) && host_service_off?(pc)
+        return 'off'
+      end
+      'unreachable'
     end
 
     def host_row(pc)
@@ -800,24 +826,26 @@ module BreakEscape
     # while that PC is in the player_reach of that foothold, so a lost pivot or an outage over
     # the route is caught though the session record survives. A local session (blank foothold:
     # a local sign-in, a claim, or a remote session settled at the keyboard) is judged as 9.3a
-    # did, so no 9.3a scenario (which has no footholds) gains a refusal.
+    # did, except that a PC whose own service is off (5.2, q72) refuses every session's scoped
+    # requests, local ones included: off is off at the keyboard too.
     def session_route_up?(pc_id)
       session = access_sessions[pc_id.to_s]
       return true unless session.is_a?(Hash)
+
+      info = find_login_pc(pc_id)
+      return false if info && host_service_off?(info[:object])
 
       fid = session['foothold']
       return true if fid.blank?
       return false unless network_footholds.key?(fid.to_s)
 
-      info = find_login_pc(pc_id)
       net = info ? object_network(info[:object]) : nil
       # A deliberate deny when the PC cannot be resolved (info nil) or has no network (net nil):
       # a session whose host the server can no longer place is treated as off-route rather than
       # trusted. This is the safe default; a future change that makes a legitimately reachable
       # remote PC momentarily unresolvable would silently deny a held session here, so the
       # happy path (a present, reachable PC passing) is covered by a test in network_outages_test.
-      # A host whose own service is off (5.2) refuses a remote session's scoped requests too.
-      !net.nil? && player_reach(fid.to_s).include?(net) && !host_service_off?(info[:object])
+      !net.nil? && player_reach(fid.to_s).include?(net)
     end
 
     # What a foothold could reach if nothing were down (5.1): start from the foothold's own
@@ -850,7 +878,11 @@ module BreakEscape
       fid = foothold_id.to_s
       outages = ignore_outages ? nil : NetworkModel.networks(scenario_data).map { |id, net| [id, net.is_a?(Hash) ? outage_global(net['downIf']) : nil] }
       # The off state of each session host, which the outage walk reads (5.2)
-      hosts_off = ignore_outages ? nil : access_sessions.keys.map(&:to_s).sort.map { |id| (info = find_login_pc(id)) ? host_service_off?(info[:object]) : nil }
+      # (the merged globals are built once for them all, review R2 nit 2)
+      unless ignore_outages
+        globals = frustration_globals
+        hosts_off = access_sessions.keys.map(&:to_s).sort.map { |id| (info = find_login_pc(id)) ? host_service_off?(info[:object], globals) : nil }
+      end
       [fid, ignore_outages, network_footholds[fid].to_json, access_sessions.keys.map(&:to_s).sort, outages, hosts_off,
        scenario_data.object_id, scenario_data['networks'].to_json, scenario_data['networkLinks'].to_json]
     end
@@ -967,7 +999,8 @@ module BreakEscape
         host_reachable_through?(foothold_id, pc) && !remote_blocked?(pc) && !host_service_off?(pc) &&
           !(session.is_a?(Hash) && session['via'] == 'claim')
       else
-        login_pc_reachable?(info) && !NetworkModel.headless?(pc)
+        # Off is off at the keyboard too (q72): a held session is kept, its desktop refused
+        login_pc_reachable?(info) && !NetworkModel.headless?(pc) && !host_service_off?(pc)
       end
     end
 
@@ -1024,9 +1057,10 @@ module BreakEscape
         npc = scenario_room_npc(session['id'])
         next false unless info && npc
 
-        # A session at a host whose own service is off reaches nothing through it, and a remote
-        # session whose route is down (an outage, a lost pivot) serves nothing either (5.2)
-        next false if host_service_off?(info[:object]) || !session_route_up?(pc_id)
+        # A session at a host whose own service is off reaches nothing through it, at the
+        # keyboard or remotely, and a remote session whose route is down (an outage, a lost
+        # pivot) serves nothing either (5.2, q72): session_route_up? judges both
+        next false unless session_route_up?(pc_id)
 
         host_net = object_network(info[:object])
         next false unless host_net

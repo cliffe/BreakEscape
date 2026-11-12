@@ -40,6 +40,8 @@ const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
 
 export const REMOTE_OFF_TEXT = 'remote sign-in off';
 export const NOT_RESPONDING_TEXT = 'not responding';
+// Shown when the view was fetched before the latest globals reached the server (review R2 m3)
+export const STALE_TEXT = 'Still updating, so this may be out of date.';
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
 const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
 const KIND_ICONS = {
@@ -93,6 +95,8 @@ export class NetworkViewMinigame extends MinigameScene {
         this.status = 'loading';
         this.exitReason = 'close';
         this.notice = null;
+        this.stale = false;
+        this._staleRefetched = false;
     }
 
     links() { return window.networkLinks || null; }
@@ -133,6 +137,17 @@ export class NetworkViewMinigame extends MinigameScene {
         }
         this.view = answer.view;
         this.status = 'ready';
+        // Fetched after the sync's time limit (review R2 m3): say so, and fetch once more when
+        // that sync lands, if this view is still open by then
+        this.stale = !!answer.stale;
+        if (answer.stale && answer.synced && !this._staleRefetched) {
+            this._staleRefetched = true;
+            this.refetched = Promise.resolve(answer.synced).then(ok => {
+                if (!ok || this._reported) return null;
+                if (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this) return null;
+                return this.load();
+            });
+        }
         this.render();
         const hostIds = this.rows().filter(r => r.kind === 'pc').map(r => r.id);
         const networkId = this.view?.network?.id ?? null;
@@ -253,6 +268,7 @@ export class NetworkViewMinigame extends MinigameScene {
                     <h4 class="network-view-title">${escapeHtml(title)}</h4>
                     ${obs ? `<p class="network-view-observations">${escapeHtml(obs)}</p>` : ''}
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
+                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}
                 </div>
                 <ul class="network-view-rows">
                     ${rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>'}

@@ -5,9 +5,9 @@ module BreakEscape
   # Networks slice 9.3b, plan 5.2 "A host whose own service is off": a sign-in host whose
   # office-life `affordance.offWhen` (9.2's field) holds on the server shows as not responding
   # in the view, and a remote sign-in, a remote desktop and a scoped request under a remote
-  # session there are refused 403 unreachable. A session already held there is kept, and works
-  # again once the service is back. The keyboard is not the network: a walk-up sign-in is
-  # judged as before.
+  # session there are refused 403 not_responding. A session already held there is kept, and
+  # works again once the service is back. Off is off at the keyboard too (user decision q72):
+  # a walk-up sign-in, a claim, the keyboard desktop and its mapped shares are refused 403 off.
   class NetworkHostServiceOffTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
     include NetworkRequests
@@ -50,8 +50,8 @@ module BreakEscape
       assert_response :success, response.body
     end
 
-    def with_foothold(lena_off:, sam_power: 'on')
-      build_network_game({}, scenario_with_service_off(lena_off: lena_off, sam_power: sam_power))
+    def with_foothold(lena_off:, sam_power: 'on', player_state: {})
+      build_network_game(player_state, scenario_with_service_off(lena_off: lena_off, sam_power: sam_power))
       take_drop_box
       plant('comms_port')
       assert_response :success, response.body
@@ -75,11 +75,12 @@ module BreakEscape
       assert kiosk.key?('remoteSignIn')
     end
 
-    test 'a remote sign-in to a host whose service is off is 403 unreachable, before the password is read' do
+    test 'a remote sign-in to a host whose service is off is 403 not_responding, before the password is read' do
       with_foothold(lena_off: true)
       body = sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
       assert_response :forbidden
-      assert_equal 'unreachable', body['reason']
+      assert_equal 'not_responding', body['reason']
+      assert_equal 'PC not responding', body['message']
       refute body.to_json.include?('lfox'), 'nothing about the account comes back'
       refute state['sessions'].to_h.key?('lena_pc'), 'no session is written'
       assert_empty state['loginFailures'].to_h, 'no failed attempt is counted'
@@ -100,7 +101,7 @@ module BreakEscape
       set_global(LENA_OFF, true)
       container('lena_pc', foothold: OFFICE)
       assert_response :forbidden
-      assert_equal 'unreachable', response.parsed_body['reason']
+      assert_equal 'not_responding', response.parsed_body['reason'], 'the row and the refusal say the same'
       container('lena_local')
       assert_response :forbidden, 'a file on the host is refused under the remote session'
       @game.reload
@@ -114,18 +115,74 @@ module BreakEscape
       assert_includes body['contents'].map { |c| c['id'] }, 'lena_local'
     end
 
-    test 'the hash form of offWhen matches on value, and the keyboard is not refused' do
+    test 'the hash form of offWhen matches on value' do
       with_foothold(lena_off: false, sam_power: 'off')
       assert_equal false, row('sam_pc')['responding'], "{ name: value } holds when the global equals the value"
       sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD, foothold: OFFICE)
       assert_response :forbidden
 
-      # Walk-up: the remote rule does not apply at the keyboard (plan 5.2 names remote requests)
-      body = sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
-      assert_response :success, body.inspect
-
       set_global('sam_pc_power', 'on')
       refute row('sam_pc').key?('responding'), 'another value does not hold'
+    end
+
+    # q72: off is off at the keyboard too
+    test 'at the keyboard of an off PC the sign-in, its screen and a claim are refused with "This PC is off."' do
+      with_foothold(lena_off: false, sam_power: 'off')
+      body = sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
+      assert_response :forbidden
+      assert_equal 'off', body['reason']
+      assert_equal 'This PC is off.', body['message']
+      refute state['sessions'].to_h.key?('sam_pc')
+      assert_empty state['loginFailures'].to_h, 'no failed attempt is counted'
+
+      get game_path('login_accounts'), params: { pc_id: 'sam_pc' }, as: :json
+      assert_response :forbidden
+      assert_equal 'off', response.parsed_body['reason'], 'the sign-in screen is not shown'
+
+      post game_path('login'), params: { pc_id: 'sam_pc', claim: 'owner' }, as: :json
+      assert_response :forbidden
+      assert_equal 'off', response.parsed_body['reason'], 'an unlocked screen cannot be claimed either'
+
+      set_global('sam_pc_power', 'on')
+      get game_path('login_accounts'), params: { pc_id: 'sam_pc' }, as: :json
+      assert_response :success
+      body = sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
+      assert_response :success, body.inspect
+    end
+
+    # q72, and review R2 m1: a keyboard session is kept, but its desktop, its folders and its
+    # mapped shares are refused, the add path as well as the read, so a share cannot be
+    # written or taken from while it cannot be read
+    test 'a keyboard session at an off PC is kept, its desktop, files and shares refused, and works again' do
+      # Lena's office is unlocked, so her PC can be walked up to
+      with_foothold(lena_off: false, player_state: { 'unlockedRooms' => OPEN_ROOMS + ['finance_office'] })
+      body = sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD)
+      assert_response :success, body.inspect
+      body = container('lena_pc')
+      assert_response :success
+      assert_includes body['contents'].map { |c| c['id'] }, 'ledger_archive'
+
+      set_global(LENA_OFF, true)
+      body = container('lena_pc')
+      assert_response :forbidden
+      assert_equal 'off', body['reason']
+      assert_equal 'This PC is off.', body['error']
+      container('lena_local')
+      assert_response :forbidden, 'a file on the PC is refused'
+      container('ledger_archive')
+      assert_response :not_found, 'the mapped share is not served'
+      add_item('text_file', 'ledger_handover', NS::HANDOVER_NAME, source_pc_id: 'lena_pc', transfer: 'copy')
+      assert_not_equal 200, response.status, 'a file from the share cannot be taken'
+      refute((state['inventory'] || []).any? { |i| i['id'] == 'ledger_handover' }, 'nothing was added')
+      add_item('text_file', 'lena_local', 'budget.txt', source_pc_id: 'lena_pc')
+      assert_not_equal 200, response.status, 'nor a file on the PC itself'
+      assert state['sessions'].key?('lena_pc'), 'the session is kept'
+
+      set_global(LENA_OFF, false)
+      body = container('lena_pc')
+      assert_response :success, body.inspect
+      add_item('text_file', 'ledger_handover', NS::HANDOVER_NAME, source_pc_id: 'lena_pc', transfer: 'copy')
+      assert_response :success, response.body
     end
 
     # Review R1 M1: a switched-off PC is off for everything that goes through it, so it relays
@@ -193,6 +250,55 @@ module BreakEscape
       lena = row('lena_pc')
       assert_equal 'Lena Fox', lena['heldAs']
       refute lena.key?('session')
+    end
+
+    # Review R2 m2: an up block is labelled with a host that answers, never an off one. A down
+    # block still names the off host.
+    test 'the via of an up block skips an off session host' do
+      data = NS.with_pivot
+      pcs = data['rooms'].values.flat_map { |room| room['objects'] || [] }
+      pcs.find { |o| o['id'] == 'sam_pc' }['affordance'] = { 'offWhen' => 'sam_pc_off' }
+      data['globalVariables'] = (data['globalVariables'] || {}).merge('sam_pc_off' => false)
+      build_network_game({}, data)
+      take_drop_box
+      plant('comms_port')
+      %w[lena_pc sam_pc].each do |pc|
+        creds = pc == 'sam_pc' ? ['sokafor', NS::SAM_PASSWORD] : ['lfox', NS::LENA_PASSWORD]
+        sign_in(pc, *creds, foothold: OFFICE)
+        assert_response :success, response.body
+      end
+      server_block = lambda do
+        network_view(OFFICE)['footholds'].find { |f| f['id'] == OFFICE }['networks'].find { |b| b['id'] == 'server_net' }
+      end
+      # jsonb keeps sam_pc ahead of lena_pc (shorter key), so Sam's session has the lower seq
+      assert_equal 'sam_pc', server_block.call['via']['hostId'], 'with both on, the lower seq names it'
+
+      set_global('sam_pc_off', true)
+      block = server_block.call
+      assert_equal 'up', block['route'], 'the route runs through Lena'
+      assert_equal 'lena_pc', block['via']['hostId'], 'the label names the host that answers'
+    end
+
+    # Review R2 nit 3: nothing prunes a session while its host is off (a reload, an unrelated
+    # sign-out), since the prune reads structural_reach
+    test 'a reload and an unrelated sign-out while a pivot host is off keep both sessions' do
+      with_pivot_foothold
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: OFFICE)
+      sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD, foothold: OFFICE)
+      assert_response :success, response.body
+
+      set_global(LENA_OFF, true)
+      bootstrap_scenario
+      assert_response :success
+      post game_path('logout'), params: { pc_id: 'sam_pc' }, as: :json
+      assert_response :success
+      sessions = state['sessions']
+      assert sessions.key?('lena_pc') && sessions.key?('sv_fs02'), 'both sessions are kept'
+
+      set_global(LENA_OFF, false)
+      body = container('sv_fs02', foothold: OFFICE)
+      assert_response :success, body.inspect
     end
   end
 end

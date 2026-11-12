@@ -34,7 +34,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT } =
+const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT } =
     await imp('minigames/network-view/network-view-minigame.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 
@@ -366,6 +366,49 @@ test('a refetch that finds the foothold gone goes back to the world with foothol
     assert.deepEqual(named('network_view_closed'), [{ footholdId: 'jack_comms_port', reason: 'foothold_gone' }]);
     assert.equal(window.MinigameFramework.currentMinigame, null);
     assert.equal(links.get('jack_comms_port'), null);
+});
+
+// Review R2 m3: a view fetched before the latest globals reached the server says so, and
+// fetches once more when the late sync lands, if it is still open
+test('a stale view shows the "may be out of date" line and refetches once when the sync lands', async () => {
+    setup();
+    let land;
+    window.stateSync = { sync: () => new Promise(r => { land = r; }) };
+    links.viewSyncWaitMs = 10;
+    links.open('jack_comms_port');
+    await new Promise(r => setTimeout(r, 30));
+    await settle();
+    assert.equal(requests.filter(r => r[0] === 'network').length, 1);
+    assert.ok(view().gameContainer.querySelector('.network-view-stale'), 'the line shows');
+    assert.equal(view().gameContainer.querySelector('.network-view-stale').textContent, STALE_TEXT);
+
+    window.stateSync = { sync: async () => true };
+    land(true);
+    await view().refetched;
+    await settle();
+    assert.equal(requests.filter(r => r[0] === 'network').length, 2, 'fetched once more');
+    assert.equal(view().gameContainer.querySelector('.network-view-stale'), null, 'the fresh view drops the line');
+    delete links.viewSyncWaitMs;
+    delete window.stateSync;
+});
+
+test('a stale view closed before the sync lands does not refetch', async () => {
+    setup();
+    let land;
+    window.stateSync = { sync: () => new Promise(r => { land = r; }) };
+    links.viewSyncWaitMs = 10;
+    links.open('jack_comms_port');
+    await new Promise(r => setTimeout(r, 30));
+    await settle();
+    const m = view();
+    document.querySelector('#minigame-cancel').click();
+    await settle();
+    land(true);
+    await m.refetched;
+    await settle();
+    assert.equal(requests.filter(r => r[0] === 'network').length, 1, 'no fetch for a closed view');
+    delete links.viewSyncWaitMs;
+    delete window.stateSync;
 });
 
 test('a resume message shows in the header', async () => {

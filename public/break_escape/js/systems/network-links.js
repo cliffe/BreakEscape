@@ -64,6 +64,8 @@ export const IMPLANT_NOT_READY_DELAY_MS = 1500;
 export const VIEW_SYNC_WAIT_MS = 3000;
 export const sessionEndedMessage = (host) => `Your session on ${host || 'that host'} has ended.`;
 export const unreachableMessage = (host) => `${host || 'That host'} can't be reached over this link.`;
+// A host whose own service is off (9.3b plan 5.2): the same words as its row in the view
+export const notRespondingMessage = (host) => `${host || 'That host'} is not responding.`;
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 const apiClient = () => win().ApiClient || win().APIClient || null;
@@ -124,6 +126,7 @@ const LANDINGS = {
         sign_out: () => ({ resume: true }),
         no_session: (self, d) => ({ resume: true, message: sessionEndedMessage(self._hostOf(d)) }),
         unreachable: (self, d) => ({ resume: true, message: unreachableMessage(self._hostOf(d)) }),
+        not_responding: (self, d) => ({ resume: true, message: notRespondingMessage(self._hostOf(d)) }),
         displaced: () => ({ resume: true }),
         link_dropped: () => ({ leave: 'link_dropped' })
     },
@@ -231,6 +234,10 @@ export class NetworkLinks {
     /**
      * GET /network for one foothold. Resolves
      *   { ok: true, view }                 the entry { id, via, name, network, hosts }
+     *   { ok: true, view, stale: true, synced }  the same, fetched after the sync's time limit,
+     *                                      so it may predate a switch flipped a moment ago;
+     *                                      `synced` resolves true once that sync has landed
+     *                                      (review R2 m3: the view then refetches once)
      *   { ok: false, reason: 'gone' }      the server holds no such foothold (404): the
      *                                      local copy is dropped
      *   { ok: false, reason: 'error' }     no answer
@@ -242,11 +249,14 @@ export class NetworkLinks {
         // send the latest first (9.3b plan 5.2): a switch flipped a moment ago shows at once
         // rather than after the next timed sync. A failed or slow sync still fetches the view:
         // after VIEW_SYNC_WAIT_MS it opens with the server's last known state (review R1 m1).
+        let synced = null;
+        let stale = false;
         try {
-            const synced = Promise.resolve(win().stateSync?.sync?.()).catch(() => false);
+            synced = Promise.resolve(win().stateSync?.sync?.()).then(ok => ok !== false, () => false);
+            const TIMED_OUT = {};
             let timer;
-            const waited = new Promise(r => { timer = setTimeout(() => r(false), this.viewSyncWaitMs ?? VIEW_SYNC_WAIT_MS); });
-            await Promise.race([synced, waited]);
+            const waited = new Promise(r => { timer = setTimeout(() => r(TIMED_OUT), this.viewSyncWaitMs ?? VIEW_SYNC_WAIT_MS); });
+            stale = (await Promise.race([synced, waited])) === TIMED_OUT;
             clearTimeout(timer);
         } catch (e) { /* fetch the view anyway */ }
         let body;
@@ -267,7 +277,7 @@ export class NetworkLinks {
         this.views.set(footholdId, entry);
         const clean = cleanFoothold(entry);
         if (clean) this.footholds.set(clean.id, { ...(this.footholds.get(clean.id) || {}), ...clean });
-        return { ok: true, view: entry };
+        return stale ? { ok: true, view: entry, stale: true, synced } : { ok: true, view: entry };
     }
 
     _dropFoothold(footholdId) {

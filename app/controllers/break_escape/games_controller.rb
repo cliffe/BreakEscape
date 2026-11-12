@@ -1170,6 +1170,10 @@ module BreakEscape
       unless @game.login_pc_reachable?(info) && !BreakEscape::NetworkModel.headless?(info[:object])
         return render_error("PC not reachable: #{params[:pc_id]}", :forbidden)
       end
+      # The sign-in screen at a switched-off PC's keyboard is not shown (q72)
+      if params[:foothold].blank? && @game.host_service_off?(info[:object])
+        return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
+      end
 
       answer = { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
       # A written-down note is seen at the PC's own keyboard only: a request that names a
@@ -2101,7 +2105,13 @@ module BreakEscape
       return render json: { error: "Not signed in: #{container_id}", reason: 'no_session' }, status: :forbidden unless npc
 
       foothold = params[:foothold].presence&.to_s
-      unless @game.desktop_request_allowed?(info, foothold)
+      refusal = @game.desktop_refusal(info, foothold)
+      if refusal == 'off'
+        # At the keyboard of a switched-off PC (q72): the session is kept, the desktop refused
+        return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
+      elsif refusal == 'not_responding'
+        return render json: { error: BreakEscape::NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' }, status: :forbidden
+      elsif refusal
         return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
       end
 

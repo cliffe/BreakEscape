@@ -219,7 +219,9 @@ export class PcSessions {
      * foothold (slice 9.3a, 4.4). Resolves to
      *   { ok: true, session }
      *   { ok: false, reason: 'wrong' | 'not_permitted' | 'locked_out' | 'remote_blocked', message, attemptsLeft }
-     *   { ok: false, reason: 'error', error: true, status, message }   (no answer, or not reachable)
+     *   { ok: false, reason: 'error', error: true, status, message, serverReason }   (no answer,
+     *       or refused: serverReason is the server's own reason, 'off' at the keyboard of a
+     *       switched-off PC (q72) or 'not_responding' through a foothold (9.3b plan 5.2))
      * The current session at this PC (if any) stays until the new account's password is
      * accepted; then pc_signed_out fires for the old account and pc_signed_in for the new.
      */
@@ -249,7 +251,8 @@ export class PcSessions {
             }
             return {
                 ok: false, reason: 'error', error: true, status: err?.status ?? null,
-                message: b.message || b.error || 'Could not reach the sign-in service'
+                message: b.message || b.error || 'Could not reach the sign-in service',
+                serverReason: typeof b.reason === 'string' ? b.reason : null
             };
         }
         if (!body || body.success === false || !body.npcId) {

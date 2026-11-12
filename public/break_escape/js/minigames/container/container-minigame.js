@@ -59,6 +59,9 @@ export function networkScreenKind(item) {
     return pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true ? 'desktop' : null;
 }
 
+// The keyboard refusal at a switched-off PC (user decision q72), if the server sends no text
+export const PC_OFF_TEXT = 'This PC is off.';
+
 /**
  * The way back from a hand-over to something that is neither a reader nor a container
  * (slice 9.3a, 4.3): a lock screen (a PIN pad, a password, a key or a lockpick), a key
@@ -344,14 +347,25 @@ export class ContainerMinigame extends MinigameScene {
             const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
+            let refusal = null;
+            if (response.status === 403) {
+                try { refusal = await response.json(); } catch (e) { /* no body */ }
+            }
             if (response.status === 403 && this.remote) {
                 // Back to the network view, never the physical sign-in screen (4.3): with
-                // no_session the client drops its copy; with unreachable it keeps it
-                let reason = 'no_session';
-                try { reason = (await response.json())?.reason === 'unreachable' ? 'unreachable' : 'no_session'; } catch (e) { /* no body */ }
+                // no_session the client drops its copy; with unreachable or not_responding (the
+                // host's own service is off, 9.3b plan 5.2) it keeps it
+                const reason = ['unreachable', 'not_responding'].includes(refusal?.reason) ? refusal.reason : 'no_session';
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
                 this.exitReason = reason;
                 this.complete(false);
+                return null;
+            }
+            if (response.status === 403 && refusal?.reason === 'off') {
+                // At the keyboard of a switched-off PC (q72): the session is kept for when it
+                // comes back on, and no sign-in screen opens
+                this.complete(false);
+                window.gameAlert?.(refusal.error || PC_OFF_TEXT, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 return null;
             }
             if (response.status === 403) {

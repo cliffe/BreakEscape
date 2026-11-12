@@ -546,6 +546,15 @@ test('landing: a 403 no_session or unreachable returns to the view with its mess
     ]);
 });
 
+// Review R2 nit 1: a host whose own service is off is "not responding", as its row says
+test('landing: a 403 not_responding returns to the view saying the host is not responding', async () => {
+    await tripFromView();
+    links.views.set('jack_comms_port', viewEntry);
+    links.landed('desktop', 'not_responding', { pcId: 'lena_pc' });
+    await settle();
+    assert.deepEqual(views.map(v => v.message), ['HB-FIN-02 is not responding.']);
+});
+
 test('landing: "The link dropped" goes to the world with reason link_dropped', async () => {
     const back = await tripFromView();
     assert.equal(links.landed('desktop', 'link_dropped').landing, 'world');
@@ -642,6 +651,30 @@ test('view() fetches anyway when the sync does not settle within the time limit'
     const out = await links.view('jack_comms_port');
     assert.deepEqual(order, ['sync', 'network']);
     assert.equal(out.ok, true, 'the view opens with the last known state');
+    delete links.viewSyncWaitMs;
+    delete window.stateSync;
+});
+
+// Review R2 m3: a view fetched after the time limit says it may be out of date, and hands back
+// the sync so the screen can fetch once more when it lands
+test('view() marks a view fetched after the time limit stale, with the sync still to land', async () => {
+    await reset();
+    let land;
+    window.stateSync = { sync: () => new Promise(r => { land = r; }) };
+    links.viewSyncWaitMs = 20;
+    const out = await links.view('jack_comms_port');
+    assert.equal(out.ok, true);
+    assert.equal(out.stale, true, 'the timer won');
+    let landed = null;
+    out.synced.then(v => { landed = v; });
+    land(true);
+    await settle();
+    assert.equal(landed, true, 'synced resolves once the late sync lands');
+
+    window.stateSync = { sync: async () => true };
+    const fresh = await links.view('jack_comms_port');
+    assert.equal(fresh.stale, undefined, 'a view after a sync in time is not stale');
+    assert.equal(fresh.synced, undefined);
     delete links.viewSyncWaitMs;
     delete window.stateSync;
 });

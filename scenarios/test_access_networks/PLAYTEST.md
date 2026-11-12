@@ -319,11 +319,12 @@ it cannot set, or keep using a no-route session.
 In the workshop, `bench_pc` (WS-BENCH-01, a sign-in PC on `workshop_lan`, `access` staff) carries
 `affordance.offWhen: "bench_pc_off"`, true at the start. The `bench_power` switch flips it with two
 `confirm_action`s. The box's view sends the latest globals before it fetches, so a flip shows at
-once.
+once. Off is off at the keyboard too (user decision q72). The PC has no off picture: it looks the
+same on and off (see the build log).
 
 | Beat | Steps | What should happen | Server afterwards |
 |---|---|---|---|
-| **N14 Host off** | Plant the box in `bench_port` (unplug it from the comms room first). The view lists `bench_pc` as "not responding" with no control (`action: "not_responding"` in the test state). `interact` `bench_power`, Confirm, open the link item again: `bench_pc` offers Sign in. Sign in with Sam's sticky-note details. | `n14_seen_off` is set by the first view; `n14_host_off` ticks on the remote sign-in. With the PC switched off again, a held session's row shows "not responding", a desktop fetch through the box is 403 and the session is kept. A forced `POST /login` through the box while off is 403 `unreachable` and counts no failure | `sessions.bench_pc` remote through `jack_bench_port` and kept while off; `loginFailures` 0 |
+| **N14 Host off** | Plant the box in `bench_port` (unplug it from the comms room first). The view lists `bench_pc` as "not responding" with no control (`action: "not_responding"` in the test state). `interact` `bench_power`, Confirm, open the link item again: `bench_pc` offers Sign in. Sign in with Sam's sticky-note details. | `n14_seen_off` is set by the first view; `n14_host_off` ticks on the remote sign-in. With the PC switched off again, a held session's row shows "not responding", a desktop fetch through the box is 403 and the session is kept. A forced `POST /login` through the box while off is 403 `not_responding` and counts no failure. At the keyboard (q72): with the PC off, `interact` `bench_pc` shows "This PC is off." and opens nothing, a held session included; switched back on, the same click opens the sign-in screen or the session's desktop | `sessions.bench_pc` remote through `jack_bench_port` and kept while off; `loginFailures` 0 |
 
 The scoped-request route test: a folder, inventory add or unlock scoped under the remote
 `sv_fs02` session is allowed only while the route is up, read from the server's own

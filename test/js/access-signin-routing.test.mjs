@@ -381,3 +381,43 @@ test('R1 m4: a claim answered "displaced" shows the plain text message and opens
     assert.equal(desktops.length, 0);
     assert.equal(started.length, 0);
 });
+
+// User decision q72: a switched-off PC refuses at its own keyboard too, "This PC is off."
+test('a click on a switched-off PC says "This PC is off." and opens nothing, with or without a session', async () => {
+    for (const held of [false, true]) {
+        reset({ held });
+        window.gameState = { globalVariables: { hot_desk_off: true } };
+        const out = await interactLoginPc(pc({ affordance: { offWhen: 'hot_desk_off' } }));
+        assert.equal(out, 'off');
+        assert.equal(started.length, 0, 'no sign-in screen');
+        assert.equal(desktops.length, 0, 'no desktop');
+        assert.equal(calls.filter(c => c[0] === 'loginAccounts').length, 0, 'nothing is asked');
+        assert.ok(calls.some(c => c[0] === 'alert' && c[1] === 'This PC is off.'));
+    }
+    delete window.gameState;
+});
+
+test('the { name: value } form of offWhen, and a PC switched back on, which syncs first then opens', async () => {
+    reset();
+    window.gameState = { globalVariables: { power: 'off' } };
+    assert.equal(await interactLoginPc(pc({ affordance: { offWhen: { power: 'off' } } })), 'off');
+
+    reset();
+    const order = [];
+    window.gameState = { globalVariables: { power: 'on' } };
+    window.stateSync = { sync: async () => { order.push('sync'); return true; } };
+    window.ApiClient.loginAccounts = async (pcId) => { order.push('loginAccounts'); return { pc_id: pcId, loginAccounts: TILES }; };
+    assert.equal(await interactLoginPc(pc({ affordance: { offWhen: { power: 'off' } } })), 'signin');
+    await settle();
+    assert.deepEqual(order, ['sync', 'loginAccounts'], 'the server hears the switch before it is asked');
+    assert.equal(started.length, 1);
+    delete window.stateSync;
+    delete window.gameState;
+});
+
+test('the server holding the PC off answers the sign-in screen with "This PC is off."', async () => {
+    reset({ tilesError: Object.assign(new Error('API Error: 403'), { status: 403, body: { reason: 'off', error: 'This PC is off.' } }) });
+    await openLoginSignIn(pc());
+    assert.equal(started.length, 0);
+    assert.ok(calls.some(c => c[0] === 'alert' && c[1] === 'This PC is off.'));
+});

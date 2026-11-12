@@ -101,6 +101,19 @@ export function signInRefusalMessage(result) {
 }
 
 /**
+ * The line under the form when the sign-in got no usable answer (`result.error`): a PC that is
+ * switched off says so at its keyboard ("This PC is off.", q72) and through a foothold ("This
+ * PC is not responding.", as its row in the network view, 9.3b plan 5.2); any other 403 or
+ * 404 is a PC that can't be reached; anything else a network error.
+ */
+export function signInErrorMessage(result) {
+    if (result?.serverReason === 'off') return 'This PC is off.';
+    if (result?.serverReason === 'not_responding') return 'This PC is not responding.';
+    if (result?.status === 403 || result?.status === 404) return "This PC can't be reached.";
+    return 'Network error. Please try again.';
+}
+
+/**
  * The remote sign-in screen's Captured sign-ins (slice 9.3a, 4.4): the player's captures
  * (`se_captures`, as captures.js readCaptures returns it) whose target is in `accounts` of
  * GET /capture_secrets ({ targetId: username }), oldest first. Each fills the username;
@@ -1131,7 +1144,7 @@ export class PasswordMinigame extends MinigameScene {
             return;
         }
         if (result.error) {
-            this.setSignInMessage(result.status === 403 || result.status === 404 ? "This PC can't be reached." : 'Network error. Please try again.', 'error');
+            this.setSignInMessage(signInErrorMessage(result), 'error');
             return;
         }
         if (window.playUISound) window.playUISound('reject');

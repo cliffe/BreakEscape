@@ -1568,7 +1568,7 @@ module BreakEscape
         return unreachable unless host_reachable_through?(foothold, info[:object])
         # A host whose own service is off does not answer over the network (9.3b plan 5.2)
         if host_service_off?(info[:object])
-          return { status: :forbidden, body: { success: false, message: 'PC not responding', reason: 'unreachable' } }
+          return { status: :forbidden, body: { success: false, message: NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' } }
         end
         if remote_blocked?(info[:object])
           return { status: :unprocessable_entity,
@@ -1576,6 +1576,9 @@ module BreakEscape
         end
       elsif NetworkModel.headless?(info[:object]) || !login_pc_reachable?(info)
         return unreachable
+      elsif host_service_off?(info[:object])
+        # Off is off at its own keyboard too (q72): nothing is read, nothing counted
+        return pc_off_answer
       end
 
       pc = info[:object]
@@ -1601,8 +1604,14 @@ module BreakEscape
       record_login_failure!(pc, key, account: !npc.nil?)
     end
 
+    # 403 for a sign-in or claim at the keyboard of a PC whose own service is off (q72)
+    def pc_off_answer
+      { status: :forbidden, body: { success: false, message: NetworkAccess::PC_OFF_MESSAGE, reason: 'off' } }
+    end
+
     # POST /login with claim: "owner" (section 6, claim checks 1 to 7). Every refusal
-    # answers "Sign in required"; the client then shows the sign-in screen. The
+    # answers "Sign in required"; the client then shows the sign-in screen. The one exception
+    # is a switched-off PC (q72): 403 off, "This PC is off." The
     # workstation globals the client sends are logged, not trusted.
     def claim_login_session!(pc_id, globals = nil, foothold: nil)
       refusal = lambda do |reason|
@@ -1617,6 +1626,8 @@ module BreakEscape
       return refusal.call('no such sign-in PC') unless info
       return refusal.call('a headless host') if NetworkModel.headless?(info[:object])
       return refusal.call('PC not reachable') unless login_pc_reachable?(info)
+      # A switched-off PC has no screen to claim (q72): said plainly, as the sign-in is
+      return pc_off_answer if host_service_off?(info[:object])
 
       pc = info[:object]
       # A session already held here (a password sign-in) is never replaced by a claim
@@ -1677,6 +1688,8 @@ module BreakEscape
       return refusal.call('no such sign-in PC') unless info
       return refusal.call('a headless host') if NetworkModel.headless?(info[:object])
       return refusal.call('PC not reachable') unless login_pc_reachable?(info)
+      # A switched-off PC has no screen to claim (q72)
+      return pc_off_answer if host_service_off?(info[:object])
 
       pc = info[:object]
       # 2. no session held here

@@ -288,16 +288,38 @@ async function remoteCapturedSignIns() {
     return typeof list === 'function' ? list(captures, accounts, secrets) : [];
 }
 
+// A switched-off PC at its own keyboard (user decision q72)
+export const PC_OFF_TEXT = 'This PC is off.';
+// The longest a click on a PC with an offWhen waits for the globals sync (as the network view)
+export const PC_OFF_SYNC_WAIT_MS = 3000;
+
+/**
+ * Is this sign-in PC switched off: its office-life `affordance.offWhen` (a global name, or
+ * { name: value }, all to match) holds on the client's globals? The server judges the same
+ * field on its own copy (Game#host_service_off?). Exported for tests.
+ */
+export function pcSwitchedOff(data, globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {}) {
+    const cond = data?.affordance?.offWhen;
+    if (cond === undefined || cond === null || cond === false || cond === '') return false;
+    const g = globals || {};
+    if (typeof cond === 'string') return !!g[cond];
+    if (typeof cond === 'object') return Object.entries(cond).every(([name, value]) => g[name] === value);
+    return false;
+}
+
 /**
  * A click on a sign-in PC (access model 5.4, "The interaction at a sign-in PC"):
  *   0. a headless host (slice 9.3a): its observations, and stop;
+ *   0b. switched off (affordance.offWhen holds, q72): "This PC is off.", and stop. A session
+ *      held there is kept. A PC that has an offWhen but is on first sends the globals (at
+ *      most PC_OFF_SYNC_WAIT_MS), so a switch flipped back on a moment ago is known;
  *   1. owned and the owner present: "<owner> is using this PC", then the PC's resolved
  *      observations, and stop (no workstation event; pc_in_use for task mappings);
  *   2. a session held here: the desktop;
  *   3. workstationState.onInteract: 'accessed' claims the owner's session through
  *      pc-sessions.js (the desktop on success, the sign-in screen on a refusal); anything
  *      else ('locked', 'signin', 'attended' from a race with step 1, null) the sign-in screen.
- * Resolves to what it did: 'headless' | 'in_use' | 'desktop' | 'claimed' | 'claim_refused' | 'signin'.
+ * Resolves to what it did: 'headless' | 'off' | 'in_use' | 'desktop' | 'claimed' | 'claim_refused' | 'signin'.
  */
 export async function interactLoginPc(lockable) {
     const data = lockable?.scenarioData || {};
@@ -306,6 +328,19 @@ export async function interactLoginPc(lockable) {
     if (isHeadlessHost(lockable)) {
         await showHeadlessObservations(lockable);
         return 'headless';
+    }
+    if (pcSwitchedOff(data)) {
+        window.gameAlert?.(PC_OFF_TEXT, 'info', data.name || 'PC', 3000);
+        window.eventDispatcher?.emit?.('pc_off_shown', { pcId });
+        return 'off';
+    }
+    if (data.affordance?.offWhen !== undefined) {
+        let timer;
+        try {
+            const synced = Promise.resolve(window.stateSync?.sync?.()).catch(() => false);
+            await Promise.race([synced, new Promise(r => { timer = setTimeout(r, PC_OFF_SYNC_WAIT_MS); })]);
+        } catch (e) { /* the server judges it anyway */ }
+        clearTimeout(timer);
     }
     const ws = window.workstationState;
     const sessions = window.pcSessions;
@@ -424,6 +459,11 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
             }
             if (typeof answer?.postitNote === 'string' && answer.postitNote) servedNote = answer.postitNote;
         } catch (error) {
+            if (error?.status === 403 && error?.body?.reason === 'off') {
+                // The server holds the PC switched off (q72): no sign-in screen
+                window.gameAlert?.(PC_OFF_TEXT, 'info', data.name || 'Sign in', 3000);
+                return;
+            }
             if (error?.status === 403 || error?.status === 404) {
                 window.gameAlert?.("This PC can't be reached", 'error', data.name || 'Sign in', 3000);
                 return;
