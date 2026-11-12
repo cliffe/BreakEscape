@@ -314,6 +314,17 @@ it cannot set, or keep using a no-route session.
 | **N6 Repair** | `interact` `server_power` (sets `servers_offline` false). Open the box's view; sign in to `sv_fs02` through the box. | The Server network block fills back in (route `up`, through `lena_pc`); `sv_fs02` signs in. `n6_repair` ticks. | `player_reach` includes `server_net` again |
 | **N7 Held route down** | Sign in to `sv_fs02` through the box first, then `interact` `server_breaker`. The desktop closes to a greyed "No route to SV-FS02" row; a desktop fetch is refused. Then `interact` `server_power` and reopen `sv_fs02`. | The session is kept throughout; while down the view shows a greyed `server_net` block with the "no route" row; on repair the desktop opens again with no password. `n7_held_route` ticks (on `pc_desktop_opened` for `sv_fs02` while armed and repaired). | `sessions.sv_fs02` present the whole time; `endedPcIds` never names it for an outage |
 
+### N14: a host whose own service is off (plan 5.2)
+
+In the workshop, `bench_pc` (WS-BENCH-01, a sign-in PC on `workshop_lan`, `access` staff) carries
+`affordance.offWhen: "bench_pc_off"`, true at the start. The `bench_power` switch flips it with two
+`confirm_action`s. The box's view sends the latest globals before it fetches, so a flip shows at
+once.
+
+| Beat | Steps | What should happen | Server afterwards |
+|---|---|---|---|
+| **N14 Host off** | Plant the box in `bench_port` (unplug it from the comms room first). The view lists `bench_pc` as "not responding" with no control (`action: "not_responding"` in the test state). `interact` `bench_power`, Confirm, open the link item again: `bench_pc` offers Sign in. Sign in with Sam's sticky-note details. | `n14_seen_off` is set by the first view; `n14_host_off` ticks on the remote sign-in. With the PC switched off again, a held session's row shows "not responding", a desktop fetch through the box is 403 and the session is kept. A forced `POST /login` through the box while off is 403 `unreachable` and counts no failure | `sessions.bench_pc` remote through `jack_bench_port` and kept while off; `loginFailures` 0 |
+
 The scoped-request route test: a folder, inventory add or unlock scoped under the remote
 `sv_fs02` session is allowed only while the route is up, read from the server's own
 `sessions[sv_fs02].foothold`, never a client parameter. A local (keyboard or claim) session is
