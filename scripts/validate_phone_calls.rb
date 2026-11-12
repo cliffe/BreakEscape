@@ -427,6 +427,16 @@ module ValidatePhoneCalls
                   Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat' }
 
     warn.call('has a ring or call entry but no voice; the call would have no voice (plan 4.3)') if call_contact && (npc['voice'].nil? || npc['voice'] == {} || npc['voice'].to_s.strip.empty?)
+    # A call and its thread each emit conversation_closed:<npc> (review A5 R1 item 3, plan 3.2), so an
+    # unguarded mapping on a calling contact can fire twice.
+    if call_contact
+      Array(npc['eventMappings']).each_with_index do |m, i|
+        next unless m.is_a?(Hash) && m['eventPattern'].is_a?(String) && m['eventPattern'].start_with?('conversation_closed:')
+        next if m['onceOnly'] == true || (m['condition'].is_a?(String) && !m['condition'].strip.empty?)
+
+        warn.call("eventMappings[#{i}] listens for #{m['eventPattern']} with neither onceOnly nor a condition: a call and its thread each emit it, so it can fire twice (plan 3.2)")
+      end
+    end
     warn.call('has callId and a call entry: the call button is hidden while callId is set') if has_call && npc['callId']
 
     # A `call` contact the phone never lists

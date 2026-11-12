@@ -434,3 +434,24 @@ test('m4: an empty npcIds filters nothing, so it does not warn that the contact 
     const other = { startItemsInInventory: [{ type: 'phone', phoneId: 'player_phone', npcIds: ['other'] }] };
     assertHas(warnings(check({ call: { knot: 'support_call' } }, { hax: INK }, other)), 'never appears');
 });
+
+test('#place_call:<knot> errors when the contact has no call entry at all, with a ring, or with spaced tag forms', { skip }, () => {
+    const hub = tag => INK.replace('    Not yet.\n    -> start', `    Not yet.\n    ${tag}\n    -> DONE`);
+    assertHas(errors(check({}, { hax: hub('#place_call:support_call') })), 'is not one of the contact\'s call entries');
+    assertHas(errors(check({ eventMappings: [ringMap()] }, { hax: hub('#place_call:support_call') })), 'is not one of the contact\'s call entries');
+    assertHas(errors(check({ call: { knot: 'support_call' } }, { hax: hub('# place_call : ring_call') })), '#place_call:ring_call is not one of');
+    assert.deepEqual(errors(check({ call: { knot: 'support_call' } }, { hax: hub('# place_call : support_call') })), []);
+});
+
+test('conversation_closed mapping on a calling contact warns unless onceOnly or a condition guards it', { skip }, () => {
+    const closed = (over = {}) => ({ eventPattern: 'conversation_closed:hax', setGlobal: { seen: true }, ...over });
+    const glob = { globalVariables: { seen: false } };
+    const frag = 'can fire twice';
+    assertHas(warnings(check({ call: { knot: 'support_call' }, eventMappings: [closed()] }, { hax: INK }, glob)), frag);
+    assertHas(warnings(check({ eventMappings: [ringMap(), closed({ eventPattern: 'conversation_closed:other' })] }, { hax: INK }, glob)), frag);
+    assertHas(warnings(check({ timedConversation: { delay: 0, targetKnot: 'ring_call', ring: true }, eventMappings: [closed()] }, { hax: INK }, glob)), frag);
+    assertNone(warnings(check({ call: { knot: 'support_call' }, eventMappings: [closed({ onceOnly: true })] }, { hax: INK }, glob)), frag);
+    assertNone(warnings(check({ call: { knot: 'support_call' }, eventMappings: [closed({ condition: 'globalVars.seen !== true' })] }, { hax: INK }, glob)), frag);
+    // a contact with no call or ring never gets the double emit
+    assertNone(warnings(check({ eventMappings: [closed()] }, { hax: INK }, glob)), frag);
+});
