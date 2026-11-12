@@ -39,7 +39,7 @@ for (const [spec, url] of Object.entries(stubs)) {
 globalThis.window = {};
 const {
     handleUnlock, getLockRequirementsForDoor, getLockRequirementsForItem,
-    heldRfidCardIds, hasRfidAccessList, rfidOpenedLine, rfidCardForId, rfidAccessDeniedLine
+    heldRfidCardIds, hasRfidAccessList, rfidOpenedLine, rfidCardForId, rfidAccessUnlockResult, rfidAccessDeniedLine
 } = await import(dataUrl(src));
 
 // ── a stubbed browser ────────────────────────────────────────────────────────
@@ -285,6 +285,15 @@ test('rfidOpenedLine names the card, and says when the copier played back a copy
     assert.equal(rfidOpenedLine({ cardName: 'Visitor card 07', emulated: false }), 'Opened with Visitor card 07.');
     assert.equal(rfidOpenedLine(null), 'Card accepted.');
     assert.equal(rfidOpenedLine({ cardName: '  ' }), 'Card accepted.');
+    assert.equal(rfidOpenedLine({ viaCopy: true }), 'Opened with a copied card.');
+});
+
+test('rfidAccessUnlockResult: viaCopy names no card; a cardId is looked up among held cards', () => {
+    reset({ items: [keycard({ card_id: 'VISITOR-07', name: 'Visitor card 07' }), cloner([{ card_id: 'DANA-1', name: "Dana's badge" }])] });
+    assert.deepEqual(rfidAccessUnlockResult({ viaCopy: true }), { viaCopy: true });
+    assert.deepEqual(rfidAccessUnlockResult({ cardId: 'VISITOR-07' }), { cardName: 'Visitor card 07', emulated: false });
+    assert.equal(rfidAccessUnlockResult({ success: true }), null);
+    assert.equal(rfidAccessUnlockResult(null), null);
 });
 
 test('rfidCardForId: a held keycard is the card, a saved card is a copy, anything else null', () => {
@@ -295,12 +304,21 @@ test('rfidCardForId: a held keycard is the card, a saved card is a copy, anythin
     assert.equal(rfidCardForId(undefined), null);
 });
 
-test('an access-list unlock names the card the server says passed', async () => {
-    reset({ items: [cloner([{ card_id: 'DANA-1', name: "Dana's badge" }])],
-        answer: { success: true, type: 'door', roomData: { id: 'r' }, cardId: 'DANA-1' } });
+test('an access-list unlock names the player\'s own card the server says passed', async () => {
+    reset({ items: [keycard({ card_id: 'VISITOR-07', name: 'Visitor card 07' })],
+        answer: { success: true, type: 'door', roomData: { id: 'r' }, cardId: 'VISITOR-07' } });
     handleUnlock(door({ access: FINANCE }), 'door');
     await settle();
-    assert.equal(alerts.at(-1)[0], "Opened with your copy of Dana's badge.");
+    assert.equal(alerts.at(-1)[0], 'Opened with Visitor card 07.');
+});
+
+test('an access-list unlock by a copy says a copied card, naming no one', async () => {
+    reset({ items: [cloner([{ card_id: 'DANA-1', name: "Dana's badge" }, { card_id: 'JAKE-1', name: "Jake's badge" }])],
+        answer: { success: true, type: 'door', roomData: { id: 'r' }, viaCopy: true } });
+    handleUnlock(door({ access: FINANCE }), 'door');
+    await settle();
+    assert.equal(alerts.at(-1)[0], 'Opened with a copied card.');
+    assert.doesNotMatch(alerts.at(-1)[0], /Dana|Jake/);
 });
 
 test('rfidAccessDeniedLine: a people list says so; roles and mixed lists say staff; an object says lock', () => {

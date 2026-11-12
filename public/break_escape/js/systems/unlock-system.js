@@ -174,17 +174,29 @@ export async function requestRfidAccessUnlock(lockable, type, cardIds) {
 
 /**
  * The success toast after an RFID unlock: which card opened it, and whether it was the
- * card itself or the copier playing back a copy. result: { cardName, emulated }.
+ * card itself or the copier playing back a copy. result: { cardName, emulated }, or
+ * { viaCopy: true } when the server says only that a copy passed, not whose.
  */
 export function rfidOpenedLine(result) {
+    if (result && result.viaCopy === true) return 'Opened with a copied card.';
     const name = result && typeof result.cardName === 'string' && result.cardName.trim();
     if (!name) return 'Card accepted.';
     return result.emulated ? `Opened with your copy of ${name}.` : `Opened with ${name}.`;
 }
 
 /**
- * The card behind an access-list unlock: the server answers with the id of the held card
- * that passed (cardId). A keycard in the inventory is the card itself; a card saved on the
+ * What an access-list unlock answer says about the card that passed. The server names the
+ * player's own keycard (cardId) but, for a copy, answers only viaCopy: naming the copy
+ * would tell the player whose identity the list admits.
+ */
+export function rfidAccessUnlockResult(response) {
+    if (response && response.viaCopy === true) return { viaCopy: true };
+    return rfidCardForId(response && response.cardId);
+}
+
+/**
+ * The card behind an access-list unlock by the player's own keycard: the server answers
+ * with its id (cardId). A keycard in the inventory is the card itself; a card saved on the
  * copier is a copy. null when the id is not one the player holds.
  */
 export function rfidCardForId(cardId) {
@@ -1123,8 +1135,8 @@ export function handleUnlock(lockable, type) {
                         }
                         playRfidUnlockSound();
                         unlockTarget(lockable, type, lockable.layer, response);
-                        // The server names the held card that passed: the card, or the copier's copy of it
-                        window.gameAlert(rfidOpenedLine(rfidCardForId(response && response.cardId)), 'success', 'Access Granted', 3000);
+                        // The server names the player's own card that passed; a copy only as "a copied card"
+                        window.gameAlert(rfidOpenedLine(rfidAccessUnlockResult(response)), 'success', 'Access Granted', 3000);
                     } else if (outcome === 'uid_only') {
                         playUISound('reject');
                         window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
