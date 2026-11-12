@@ -88,3 +88,17 @@ Fix, both parts:
 ## Recommendation on the commit-order check and the known-stale list
 
 Drop both (B1). The content comparison is the real guard, it is fast with the cache (under 1 s warm, about 6.5 s cold), and the five listed files already compile to their committed JSON.
+
+## Outcomes (round 1 fixes)
+
+Commits 28faf4c62 (B1, M1, m3, n1 to n4) and d1ef42141 (m1, m2).
+
+- B1 fixed as recommended: the commit-order test, `KNOWN_OUT_OF_ORDER` and the class comment's second bullet are gone.
+- M1 fixed. Checked first: in all eight, `X.json` equals the compiled .ink and `X.ink.json` is the stale one (last committed 2026-04-08, before its .ink). Nothing in the repository names any of the nine `X.json` files (grep over scenario ERB, tests, JS and scripts); every storyPath names `X.ink.json`. So the `.ink.json` files were recompiled in place (storyPaths unchanged) and the nine unused `X.json` copies deleted, `seat_npc.json` included (identical, unreferenced). `InkStoryFile.find` compiles into the JSON it found, or beside the .ink when there is none; new test in `ink_story_file_test.rb`. The staleness test now compares the compiled .ink with every JSON beside it (`X.json` and `X.ink.json`). `scripts/compile-ink.sh` writes into `X.ink.json` when that is the only compiled file, so running it no longer recreates the duplicates. Not changed: `scenarios/test_scenarios/ink` keeps both forms for eight stories; none is named by a storyPath and both forms match their .ink, so the test guards them.
+- m1 fixed: `TtsLineExtractor#resolve` strips "voice:" from a non-narrator line (`transcript: true`). `voiced_as` passes `transcript: false`, because the resolver's voice-message lambda needs the marker to tell a voice message, and a request still carrying "voice:" must stay refused (the existing resolver tests caught both). Test: the extractor's entries for a person host carry the transcript, never the marker.
+- m2 fixed: `placed: !host` on the voice-message lookup.
+- m3 fixed: the test asserts `bin/inklecate` is executable and runs it once, with `flunk` (not skip) on a system error.
+- n1 fixed (comment names the right file). n2 fixed (marks not from this run are deleted after it). n3 fixed (`[Etc.nprocessors, 8].min`). n4 fixed (includes followed recursively with a seen set; sorted into the digest).
+- n5 not done: pre-existing and outside this branch; left for a validator check.
+- Key identity against base 708b154e8: every base row unchanged (8,485 untagged matched, 105 tagged identical). Nine new untagged rows, all `test_event_cascade`: lines the stale `.ink.json` lacked and the recompiled one has. No cached clip moves.
+- Suites after the fixes: bin/rails test 1654 runs, 24,332 assertions, 0 failures, 1 skip; bin/test-js -j 3 495 of 495 files passed.
