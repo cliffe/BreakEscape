@@ -166,3 +166,42 @@ test('guesses and pips survive closing and reopening the same keypad, and are pe
     const other = makePin({ secret: '1987', lockId: 'emergency_storage' });
     assert.equal(other.attempts.length, 0);
 });
+
+// Review R3 m1: a folder under a session at a PC that is off. The server answers 403 with a
+// reason for the scope, so the right PIN is not called wrong and no attempt is counted.
+test('a 403 off refuses the pad without counting a try, says "This PC is off." and closes', async () => {
+    clearPinAttemptHistory();
+    const { PIN_SCOPE_REFUSAL_TEXT } = mod;
+    const server = {
+        async unlock() {
+            const err = new Error('refused');
+            err.status = 403;
+            err.body = { success: false, reason: 'off', message: 'This PC is off.' };
+            throw err;
+        }
+    };
+    const pin = makePin({ secret: '0417', cracker: false, maxAttempts: 1, lockId: 'off_vault', server });
+    pin.params.type = 'object';
+    pin.params.lockable = { scenarioData: { id: 'lena_vault' } };
+    const shown = [];
+    pin.showFailure = (message, autoClose) => shown.push([message, autoClose]);
+    pin.updateDisplay = () => {};
+    pin.currentInput = '0417';
+    await pin.handleEnter();
+    assert.equal(pin.attemptCount, 0, 'no try is counted');
+    assert.equal(pin.attempts.length, 0, 'nothing in the history');
+    assert.deepEqual(shown, [[PIN_SCOPE_REFUSAL_TEXT.off, true]], 'the pad says why and closes');
+    assert.equal(PIN_SCOPE_REFUSAL_TEXT.off, 'This PC is off.');
+    assert.equal(pin.gameResult.cancelled, true, 'closed quietly, with no PIN Rejected');
+    assert.equal(pin.gameResult.refused, 'off');
+    assert.notEqual(pin.gameResult.maxAttemptsReached, true, 'with one try allowed, not locked out');
+});
+
+test('a 403 with no scope reason is still a wrong PIN', async () => {
+    clearPinAttemptHistory();
+    const server = { async unlock() { const err = new Error('x'); err.status = 403; err.body = { reason: 'nope' }; throw err; } };
+    const pin = makePin({ secret: '0417', cracker: false, lockId: 'odd_vault', server });
+    pin.updateDisplay = () => {};
+    await guess(pin, '0417');
+    assert.equal(pin.attemptCount, 1);
+});
