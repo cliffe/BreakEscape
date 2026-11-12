@@ -8,7 +8,7 @@ Written 2026-11-12 on `build/phone-calls`. Field names, defaults and behaviour f
 - `README_ink_best_practices.md`: new section "Writing call and voicemail knots", placed after "Exit Strategy" (not beside "Remote conversations: write for the mode", because commit 758d94b39 is on main and not yet on this branch, and a second insertion at the same spot would conflict on merge).
 - The validator's phone checks have no `scripts/README`; they are documented in `README_scenario_design.md` under "What the validator checks for phone calls".
 
-## To do after merging main into this branch
+## To do after merging main into this branch (done: the mode table row names `ring`, `call` and the new section)
 
 1. In "Remote conversations: write for the mode" (README_ink_best_practices.md), change the "Voiced phone call" row of the mode table: add `ring` (a call that rings) and `call` (a contact the player can ring) to "How it is configured", and point at "Writing call and voicemail knots". Its sentence "A call beat ends `#exit_conversation` then `-> DONE`" already agrees with the new section.
 2. Same section: "Voiced phone call ... never the contact's home knot or hub" stays true; no change.
