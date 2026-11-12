@@ -120,6 +120,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     const now = () => c.now();
 
     let closed = false;
+    /** A3 R1 m5: an ending's conclude is pending. Nothing starts ringing or opens; offers stay as they are and the tick runs. */
+    let suspended = false;
     /** The one offer that is ringing, held or connected, or null. */
     let active = null;
     /** Offers in `queued` state, first in first out. */
@@ -157,17 +159,17 @@ export function createPhoneRinger({ adapter, clock } = {}) {
 
     /** Everything that stops a call opening, the ringer's own state included (2.2). */
     function openBlocked() {
-        return closed || worldOpenBlocked(false);
+        return closed || suspended || worldOpenBlocked(false);
     }
 
     /** The check the ringer itself uses before it opens: also holds while paused (the pause menu is no minigame). */
     function cannotOpenNow(second, npcId) {
-        return isPaused() || worldOpenBlocked(second, npcId);
+        return suspended || isPaused() || worldOpenBlocked(second, npcId);
     }
 
     /** Everything that stops an offer starting to ring (2.2). */
     function ringBlocked() {
-        if (closed) return true;
+        if (closed || suspended) return true;
         if (active) return true;
         if (call('outgoingActive')) return true;
         return !!call('ringBlocked', queue[0] && queue[0].npcId);
@@ -176,6 +178,16 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     function pillShowing(o) {
         return !!o && o.state === 'held' && !!call('minigameOpen', o.npcId)
             && !call('conversationOpen') && !call('knockedOut');
+    }
+
+    /**
+     * A3 R1 m3, m4: an answered call on the player's own phone that has not opened yet (held, or
+     * connected and waiting out SCRIPTED_CALL_START_MS). The phone is still the open minigame, so
+     * the panel stays up in a "Connecting" state rather than leaving a live phone with no call on it.
+     */
+    function connectingInPhone(o) {
+        return !!o && (o.state === 'held' || (o.state === 'connected' && !o.opened))
+            && !!call('phoneHost', o.npcId);
     }
 
     function record(o) {
@@ -246,7 +258,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         lastAdvance = t;
         if (dt <= 0 || dt > MAX_ADVANCE_MS || isPaused() || !active) return;
         if (active.state === 'ringing') active.ringMs += dt;
-        else if (active.state === 'held' && pillShowing(active)) active.holdMs += dt;
+        else if (active.state === 'held' && (pillShowing(active) || connectingInPhone(active))) active.holdMs += dt;
     }
 
     function ensureTick() {
@@ -285,6 +297,9 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             // A3: the call rings inside the player's own phone when it is open (row 10)
             const inPhone = !!call('phoneHost', o.npcId);
             want = { kind: 'banner', key: `b:${o.npcId}:${o.knot}:${over}:${inPhone}`, v: view(o, { overMinigame: over, inPhone }) };
+        } else if (connectingInPhone(o)) {
+            want = { kind: 'banner', key: `c:${o.npcId}:${o.knot}:${o.state}`,
+                v: view(o, { overMinigame: false, inPhone: true, connecting: true, canHangUp: o.state === 'held' && !o.disableClose }) };
         } else if (o && pillShowing(o)) {
             want = { kind: 'pill', key: `p:${o.npcId}:${o.knot}`, v: view(o, { canHangUp: !o.disableClose }) };
         }
@@ -845,6 +860,19 @@ export function createPhoneRinger({ adapter, clock } = {}) {
 
     // ---- hooks ---------------------------------------------------------------------
 
+    /**
+     * Hold the ringer while an ending's conclude is pending (A2c R3 m1, A3 R1 m5): ringBlocked() and
+     * openBlocked() are true, so a queued offer does not start ringing and an answered or held one does
+     * not open over the credits. Offers stay as they are and the tick keeps running. `suspend(false)`
+     * (the server refused the ending) lets them go on; `close()` (it agreed) removes them.
+     */
+    function suspend(on) {
+        const next = !!on;
+        if (next === suspended) return;
+        suspended = next;
+        if (!suspended) run();
+    }
+
     function nudge() {
         const go = () => {
             advance();
@@ -899,6 +927,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         hangUp,
         callEnded,
         close,
+        suspend,
         tick() { advance(); run(); },
         onMinigameStarted: nudge,
         onMinigameEnded: nudge,

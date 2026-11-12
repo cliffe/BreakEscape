@@ -1270,10 +1270,26 @@ export default class PhoneChatUI {
         }
         const status = document.createElement('div');
         status.className = 'phone-incoming-call-status';
-        status.textContent = 'Incoming call';
+        status.textContent = view.connecting ? 'Connecting\u2026' : 'Incoming call';
         panel.appendChild(status);
         const buttons = document.createElement('div');
         buttons.className = 'phone-incoming-call-buttons';
+        if (view.connecting) {
+            // Answered, not open yet: nothing to answer or decline (A3 R1 m3, m4)
+            if (view.onHangUp) {
+                const hang = document.createElement('button');
+                hang.type = 'button';
+                hang.className = 'phone-incoming-call-decline';
+                hang.textContent = 'Hang up';
+                hang.setAttribute('aria-label', 'Hang up');
+                hang.addEventListener('click', () => view.onHangUp());
+                buttons.appendChild(hang);
+            }
+            panel.appendChild(buttons);
+            host.appendChild(panel);
+            this._incomingCallPanel = panel;
+            return;
+        }
         const answer = document.createElement('button');
         answer.type = 'button';
         answer.className = 'phone-incoming-call-answer';

@@ -105,8 +105,11 @@ export function installPhoneRinger(win = window) {
             avatar: (!view.withheld && npc?.avatar) ? avatarSrc(npc) : null,
             withheld: !!view.withheld,
             forced: !!view.forced,
+            connecting: !!view.connecting,
             onAnswer: () => win.phoneRinger?.answer(view.npcId),
             onDecline: () => win.phoneRinger?.decline(view.npcId),
+            // A3 R1 m3: an answered call that has not opened yet can still be hung up from hold
+            ...(view.connecting && view.canHangUp ? { onHangUp: () => win.phoneRinger?.hangUp(view.npcId) } : {}),
         });
         return true;
     }

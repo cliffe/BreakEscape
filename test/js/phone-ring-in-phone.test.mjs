@@ -391,3 +391,57 @@ test('M1 (row 26): a second phone opened during a forced re-ring replaces the fi
         assert.equal(closedEvents(w, 'other').length, 1);
     } finally { w.restore(); }
 });
+
+// ---- A3 review round 1, m3 and m4: the call is never "answered with nothing on screen" ----------
+
+test('m4: in the 500 ms after Answer the panel stays up as Connecting, with no Answer to press, until the phone is put aside', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await ring(w);
+        phone.panel.onAnswer();
+        await w.advance(100);
+        assert.equal(w.ringer.stateOf('caller'), 'connected');
+        assert.ok(phone.panel, 'panel still up');
+        assert.equal(phone.panel.connecting, true);
+        assert.equal(w.fw.currentMinigame, phone, 'the phone is still the open minigame');
+        await w.advance(500);
+        assert.equal(phone.panel, null, 'gone with the phone');
+        assert.ok(w.fw.currentMinigame.params.ringerCall);
+    } finally { w.restore(); }
+});
+
+test('m3: an answered call held over the player\'s phone (a beat queued) shows Connecting with Hang up, not nothing', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await ring(w);
+        w.nm._scriptedCallQueue = [{ npcId: 'other' }];
+        phone.panel.onAnswer();
+        await w.advance(300);
+        assert.equal(w.ringer.stateOf('caller'), 'held');
+        assert.ok(phone.panel, 'a panel, not a blank phone');
+        assert.equal(phone.panel.connecting, true);
+        assert.equal(typeof phone.panel.onHangUp, 'function', 'a non-forced call can be hung up');
+        phone.panel.onHangUp();
+        await w.advance(100);
+        assert.equal(w.ringer.stateOf('caller'), null);
+        assert.equal(phone.panel, null);
+        assert.equal(w.fw.currentMinigame, phone, 'the phone stays open');
+        assert.ok(w.dispatcher.emitted.some(([n]) => n === 'phone_call_declined:caller'));
+    } finally { w.restore(); }
+});
+
+test('m4: a forced call that has answered itself shows Connecting with no Hang up, and the call then opens', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        w.nm._handleEventMapping('caller', 'room_entered', { ...ringConfig(), disableClose: true }, {});
+        await w.advance(6200);
+        assert.equal(w.ringer.stateOf('caller'), 'connected');
+        assert.equal(phone.panel.connecting, true);
+        assert.equal(phone.panel.onHangUp, undefined);
+        await w.advance(700);
+        assert.ok(w.fw.currentMinigame.params.ringerCall, 'the call is open');
+    } finally { w.restore(); }
+});
