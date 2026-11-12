@@ -7,6 +7,9 @@ Away here. I am not always at my desk.
 + [Anything new?]
     Nothing new. Try my line.
     -> start
++ [Place the call from here.]
+    #place_call:away_call
+    -> DONE
 
 === away_call ===
 // lint: call-knot
