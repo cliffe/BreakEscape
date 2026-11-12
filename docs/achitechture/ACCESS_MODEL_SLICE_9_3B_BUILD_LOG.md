@@ -128,3 +128,12 @@ and `n8_wifi_join` completed. Walking to `guest_ap2` and clicking produced **no*
 (`already` path) and completed `n9_second_ap`; exactly one Wi-Fi foothold remained. Screenshot:
 `scratchpad/wifi_proof_3024.png` (the two access-point racks stand inside the east wall and the
 player reaches them). Validator on the scenario: 0 errors.
+
+### R1 suites (after merging main, both under the shared lock)
+
+- `bin/rails test`: 1645 runs, 24287 assertions, 0 failures, 0 errors, 1 skip.
+- `bin/test-js -j 3`: 495 files passed, 0 failed.
+
+Merged `main` into `build/9-3b-w` (kept both sides; one conflict in
+`test/unit/access_leak_scanner_test.rb` where main's slice 9.2 H block met the W netlink test,
+resolved by keeping both).
