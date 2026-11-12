@@ -472,9 +472,9 @@ Client roster, transaction records, anything to the Architect.
     -> DONE
 }
 {
-    - call_is_callback: Knew you'd get back to me. Your distcc flag landed while you were out there -- open your copy and read along.
-    - call_answer_seconds > 10: Thought I'd lost you. Your distcc flag landed, the whole log with it -- open your copy and read along.
-    - else: Your distcc flag just landed -- the whole transaction log came through with it. Open your copy and read along.
+    - call_is_callback: Knew you'd get back to me. Open your copy and read along.
+    - call_answer_seconds > 10: Thought I'd lost you. Open your copy and read along.
+    - else: Logs are up on my side. Open your copy and read along.
 }
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
 And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.
@@ -488,13 +488,13 @@ St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, sa
 // in the history. A choices-only knot replays nothing.
 === m2_revelation_choices ===
 // lint: call-knot
-* [Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.]
++ [Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.]
     It does. One ENTROPY cell invoicing another. I may have it framed.
     -> m2_revelation_impact
-* [They charged extra to hit a hospital. That's intent, on an invoice.]
++ [They charged extra to hit a hospital. That's intent, on an invoice.]
     That's the line a jury remembers. Keep it.
     -> m2_revelation_impact
-* [If they invoice one cell like this, they invoice all of them.]
++ [If they invoice one cell like this, they invoice all of them.]
     Which is the whole reason you're in there. Finish it.
     -> m2_revelation_impact
 
@@ -515,9 +515,9 @@ St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, sa
 
 === m2_revelation_impact_choices ===
 // lint: call-knot
-* [I'll get everything]
++ [I'll get everything]
     -> m2_revelation_end
-* [We take the whole network down]
++ [We take the whole network down]
     One page at a time. Starting tonight.
     -> m2_revelation_end
 
@@ -611,7 +611,11 @@ Step out into the main hallway before anyone finds her. That ends the day; come 
 === extract_call ===
 // lint: call-knot
 #speaker:agent_0x99
-Last look. Once you're out, the search team has that building.
+{ extract_choices > 0:
+    Still in there. That search team's getting restless.
+- else:
+    Last look. Once you're out, the search team has that building.
+}
 { not catalogue_seen:
     The server room safe's still shut, for one.
 }
