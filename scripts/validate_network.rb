@@ -14,13 +14,6 @@ require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/npc_habits/clues'
 
-# Fields still reserved for later 9.3b sub-slices. Sub-slice W un-reserved 'wifi' and
-# 'wifiAp', sub-slice P un-reserved 'portSecurity' and 'portSecurityMessage', and sub-slice O
-# un-reserved network 'downIf' (each added its real checks below). The implant work keeps the
-# 'grant_foothold' action reserved (checked below).
-NETWORK_RESERVED_OBJECT_FIELDS = %w[].freeze
-NETWORK_RESERVED_NETWORK_FIELDS = %w[].freeze
-
 # Items that are physical things: taken down the wire from a remote desktop, they would
 # arrive in the player's hand (7.2).
 NETWORK_PHYSICAL_ITEM_TYPES = %w[key keycard lockpick lockpick_set rfid_cloner key-ring].freeze
@@ -53,18 +46,6 @@ def check_network_model(json_data, scenario_dir = nil)
     policy.is_a?(Hash) ? policy : {}
   end
   quote_list = ->(ids) { ids.map { |id| "'#{id}'" }.join(', ') }
-
-  # ---- Reserved for 9.3b (3.1) ----
-  networks.each do |net_id, net|
-    NETWORK_RESERVED_NETWORK_FIELDS.each do |field|
-      err.call("'networks/#{net_id}' has '#{field}', which needs slice 9.3b.") if net.key?(field)
-    end
-  end
-  all_objects.each do |e|
-    NETWORK_RESERVED_OBJECT_FIELDS.each do |field|
-      err.call("'#{e[:path]}' has '#{field}', which needs slice 9.3b.") if e[:object].key?(field)
-    end
-  end
 
   # ---- Port security (sub-slice P, section 5.4 / 9.2) ----
   # portSecurity is only valid on a networkJack; portSecurityMessage needs portSecurity;
@@ -589,7 +570,7 @@ def check_network_model(json_data, scenario_dir = nil)
     where = "grant_foothold at '#{path}'"
     unless BreakEscape::DeclaredGrants.executed?(entry[:keys])
       err.call("#{where} is on a path the engine does not run server-side (e.g. under flagRewards or eventMappings); " \
-               'a grant_foothold must sit on a timer, triggerOnInteract, onInteract, conditionalActions or onConfirm.')
+               'a grant_foothold must sit on a timer, triggerOnInteract, onInteract, conditionalActions, completionActions or onConfirm.')
       next
     end
     dropped = node.key?('needsDropped')
