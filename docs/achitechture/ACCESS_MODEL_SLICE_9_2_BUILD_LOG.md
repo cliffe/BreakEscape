@@ -2029,3 +2029,7 @@ scope field (only if the user asks later).
 ### Leftover games
 
 1272 (live proof), 1274 (tampered client). Server on 3028 stopped by PID.
+
+### Suites (at `460f46329`, under the lock)
+
+Rails 1702 runs, 24995 assertions, 0 failures, 0 errors, 1 skip. JS 499 of 499 files.
