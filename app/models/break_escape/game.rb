@@ -448,7 +448,7 @@ module BreakEscape
         # too). A koImmune NPC cannot be knocked out, so it records nothing.
         ko_recorded = false
         if source_data['source_type'] == 'npc_defeated' && !npc_defeated?(source_data['npc_id']) &&
-           npc_data['koImmune'] != true && npc_in_room?(source_data['npc_id'], room_id)
+           npc_ko_claimable?(source_data['npc_id']) && npc_in_room?(source_data['npc_id'], room_id)
           ko_recorded = true
           player_state['room_states'][room_id]['npc_states'] ||= {}
           player_state['room_states'][room_id]['npc_states'][source_data['npc_id']] ||= {}
@@ -646,6 +646,13 @@ module BreakEscape
         return false
       end
 
+      # Review R4 M1 and m2: a KO only for an NPC the player can have knocked out
+      ko_claim = state_changes.respond_to?(:[]) && (state_changes['isKO'] == true || state_changes[:isKO] == true)
+      if ko_claim && !npc_ko_claimable?(npc_id)
+        Rails.logger.warn "[BreakEscape] KO of #{npc_id} refused: not met, not a room NPC, or koImmune"
+        return false
+      end
+
       # Merge state changes
       player_state['room_states'][room_id]['npc_states'][npc_id] ||= {}
       player_state['room_states'][room_id]['npc_states'][npc_id].merge!(state_changes)
@@ -772,8 +779,17 @@ module BreakEscape
     # True when the NPC exists in the scenario and its KO was recorded (in whichever
     # room it was reported from: the client reports a KO against the NPC's home room),
     # or its hostility record says KO (review R3 m2)
+    # Review R4 M1: either record counts only for an NPC the player could have knocked out
+    # (npc_ko_claimable?), so a forged record, or one saved before the rule, opens nothing.
     def npc_defeated?(npc_id)
-      return false unless find_npc_in_scenario(npc_id)
+      return false unless npc_ko_record_present?(npc_id)
+
+      npc_ko_claimable?(npc_id)
+    end
+
+    # Either KO record exists for the NPC, before any check: cheap (no scenario walk), so the
+    # room payload asks it first (review R4 n3)
+    def npc_ko_record_present?(npc_id)
       return true if npc_ko_recorded_by_hostility?(npc_id)
 
       (player_state['room_states'] || {}).values.any? do |rs|
@@ -787,28 +803,93 @@ module BreakEscape
       player_state.dig('npcHostility', npc_id, 'ko') == true
     end
 
+    # Review R4 M1 and m2: a KO is a client claim (combat runs in the browser), so the server
+    # takes it only for an NPC the player can have fought: one standing in a scenario room (no
+    # phone or headless record), met (its room was served to the player: track_npc_encounters,
+    # which only runs for a room the player may enter), and not koImmune. A hostile NPC follows
+    # the player through doors, but it is met first, in its own room. Used by every KO record
+    # (update_npc_state!, merge_npc_hostility!, an in-room KO drop) and by every reader.
+    def npc_ko_claimable?(npc_id)
+      return false unless npc_id.is_a?(String) && !npc_id.empty?
+      return false unless Array(player_state['encounteredNPCs']).include?(npc_id)
+
+      ko_claimable_room_npc_ids.include?(npc_id)
+    end
+    public :npc_ko_claimable?
+
+    # Ids of the scenario's room NPCs that are not koImmune. Reads scenario_data when it is
+    # loaded; sync_state's narrow load leaves it out, so there two jsonpath lists are read,
+    # as scenario_npc_ids does. Bounded by the scenario.
+    def ko_claimable_room_npc_ids
+      if has_attribute?(:scenario_data)
+        rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+        return Set.new unless rooms.is_a?(Hash)
+
+        ids = Set.new
+        rooms.each_value do |room|
+          next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+          room['npcs'].each do |npc|
+            next unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['koImmune'] != true
+
+            ids << npc['id']
+          end
+        end
+        return ids
+      end
+
+      all, immune = self.class.where(id: id).pick(
+        Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"),
+        Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*] ? (@.koImmune == true).id')")
+      )
+      parse = ->(list) { Array(list.is_a?(String) ? JSON.parse(list) : list).select { |i| i.is_a?(String) } }
+      Set.new(parse.call(all)) - Set.new(parse.call(immune))
+    end
+
     # Review R3 m2: a held item (by id) that has already left the NPC: dropped into any room
     # (objects_added), picked up from one (objects_removed), or in the inventory
     def npc_held_item_delivered?(item_id)
       return false if item_id.blank?
 
-      rooms = (player_state['room_states'] || {}).values.select { |rs| rs.is_a?(Hash) }
-      rooms.any? { |rs| Array(rs['objects_added']).any? { |o| o.is_a?(Hash) && o['id'] == item_id } } ||
-        rooms.any? { |rs| Array(rs['objects_removed']).include?(item_id) } ||
-        Array(player_state['inventory']).any? { |i| i.is_a?(Hash) && (i['id'] == item_id || i.dig('scenarioData', 'id') == item_id) }
+      delivered_item_ids.include?(item_id)
+    end
+
+    # Every item id that has left an NPC or the scenario: dropped into a room (objects_added),
+    # picked up from one (objects_removed), or in the inventory. One walk of the player state.
+    def delivered_item_ids
+      ids = Set.new
+      (player_state['room_states'] || {}).each_value do |rs|
+        next unless rs.is_a?(Hash)
+
+        Array(rs['objects_added']).each { |o| ids << o['id'] if o.is_a?(Hash) && o['id'].is_a?(String) }
+        Array(rs['objects_removed']).each { |id| ids << id if id.is_a?(String) }
+      end
+      Array(player_state['inventory']).each do |i|
+        next unless i.is_a?(Hash)
+
+        ids << i['id'] if i['id'].is_a?(String)
+        sid = i.dig('scenarioData', 'id')
+        ids << sid if sid.is_a?(String)
+      end
+      ids
     end
 
     # Review R3 m2: the ids of a KO'd NPC's held items that never reached a room or the player,
     # for the room payload (`koDropPending`), so the client drops them again after a reload.
-    # Items with no id cannot be traced and are left out. Bounded by the NPC's itemsHeld.
-    def npc_ko_drop_pending_ids(npc)
+    # Bounded by the NPC's itemsHeld (every room NPC's held item has an id from game creation,
+    # review R4 m1; one with none, in a game made before that, is left out).
+    # Review R4 n3: an NPC with no KO record (nearly all of them) costs two hash lookups and a
+    # walk of the room states; the claim check and the delivered walk run only for a KO'd NPC,
+    # and the caller may pass the delivered set so one room load walks the state once.
+    def npc_ko_drop_pending_ids(npc, delivered = nil)
       return [] unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['koImmune'] != true
       return [] unless npc['itemsHeld'].is_a?(Array) && !npc['itemsHeld'].empty?
-      return [] unless npc_defeated?(npc['id'])
+      return [] unless npc_ko_record_present?(npc['id']) && npc_ko_claimable?(npc['id'])
 
+      delivered ||= delivered_item_ids
       npc['itemsHeld'].filter_map do |i|
         id = i.is_a?(Hash) ? i['id'] : nil
-        id if id.is_a?(String) && !id.empty? && !npc_held_item_delivered?(id)
+        id if id.is_a?(String) && !id.empty? && !delivered.include?(id)
       end
     end
 
@@ -1335,8 +1416,13 @@ module BreakEscape
       # then a reload) lists the held items still owed, and the client drops them again
       # (npc-sprites.js, npc-hostile.js redropPending). Copy, as above.
       if room['npcs'].is_a?(Array)
+        delivered = nil
         room['npcs'] = room['npcs'].map do |npc|
-          pending = npc_ko_drop_pending_ids(npc)
+          # One delivered walk per room load, and only once a KO'd NPC needs it (review R4 n3)
+          if delivered.nil? && npc.is_a?(Hash) && npc['id'].is_a?(String) && npc_ko_record_present?(npc['id'])
+            delivered = delivered_item_ids
+          end
+          pending = npc_ko_drop_pending_ids(npc, delivered)
           pending.empty? ? npc : npc.merge('koDropPending' => pending)
         end
       end
@@ -3389,6 +3475,8 @@ module BreakEscape
       return unless incoming.is_a?(Hash)
 
       known = scenario_npc_ids
+      encountered = Array(player_state['encounteredNPCs'])
+      claimable = ko_claimable_room_npc_ids.select { |npc_id| encountered.include?(npc_id) }.to_set
       merged = (player_state['npcHostility'] || {}).dup
       incoming.each do |npc_id, entry|
         next unless npc_id.is_a?(String) && known.include?(npc_id)
@@ -3399,6 +3487,9 @@ module BreakEscape
         next unless [true, false].include?(hostile) && [true, false].include?(ko)
 
         ko ||= merged.dig(npc_id, 'ko') == true
+        # Review R4 M1 and m2: the KO is kept only for an NPC the player can have knocked out;
+        # the hostile flag stays as sent
+        ko = false if ko && !claimable.include?(npc_id)
         record = { 'hostile' => hostile, 'ko' => ko }
         # A hurt NPC's HP (7.1g), so a reload doesn't restore it at full health
         hp = entry['hp']
@@ -4556,6 +4647,20 @@ module BreakEscape
         room['objects']&.each_with_index do |obj, i|
           obj['id'] ||= "#{room_id}_#{obj['type']}_#{i}"
           stamp_contents_ids!(obj)
+        end
+
+        # Review R4 m1: a room NPC's held item with no id gets `<npcId>_held_<n>`, so a KO
+        # drop has a stable identity: a retried drop is not stored twice, and one that never
+        # landed is listed in koDropPending after a reload (npc_held_item_delivered?)
+        room['npcs']&.each do |npc|
+          next unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['itemsHeld'].is_a?(Array)
+
+          npc['itemsHeld'].each_with_index do |held, i|
+            next unless held.is_a?(Hash)
+
+            held['id'] ||= "#{npc['id']}_held_#{i}"
+            stamp_contents_ids!(held)
+          end
         end
       end
 

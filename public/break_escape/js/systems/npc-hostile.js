@@ -311,7 +311,7 @@ function damageNPC(npcId, amount) {
       koSynced = withSyncRetries(() => window.RoomStateSync.updateNpcState(npc.roomId, npcId, {
         isKO: true,
         currentHP: 0
-      }), 'NPC KO state').catch(err => {
+      }, { reportRefusal: true }), 'NPC KO state').catch(err => {
         console.error('Failed to sync NPC KO state to server:', err);
       });
     }
@@ -471,19 +471,28 @@ export function setRetryWait(fn) {
   return prev;
 }
 
+/** The answer room-state-sync.js gives a definite refusal (its SYNC_REFUSED; review R4 n1). */
+export const SYNC_REFUSED = 'refused';
+
 /**
  * Calls `send` (a function returning a promise of true on success) until it answers true or the
- * delays run out. A thrown error counts as a failure. Resolves to the last answer.
+ * delays run out. A thrown error counts as a failure. A definite refusal (SYNC_REFUSED: a 4xx
+ * such as "room not accessible" or "NPC not KO'd") is not retried (review R4 n1). Resolves to
+ * true on success, false otherwise.
  */
 export async function withSyncRetries(send, what = 'sync', delays = SYNC_RETRY_DELAYS_MS) {
   for (let attempt = 0; ; attempt++) {
-    let ok = false;
+    let answer = false;
     try {
-      ok = (await send()) === true;
+      answer = await send();
     } catch (err) {
       console.warn(`${what} request failed:`, err);
     }
-    if (ok) return true;
+    if (answer === true) return true;
+    if (answer === SYNC_REFUSED) {
+      console.warn(`${what}: refused by the server, not retried`);
+      return false;
+    }
     if (attempt >= delays.length) {
       console.error(`${what}: gave up after ${attempt + 1} attempts`);
       return false;
@@ -671,7 +680,8 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
       // Retried with a bounded backoff (review R3 m2); the server takes a repeat as a no-op
       Promise.resolve(afterSync).catch(() => {}).then(() => withSyncRetries(() => window.RoomStateSync.addItemToRoom(npcRoomId, itemForServer, {
         npcId: npcId,
-        sourceType: 'npc_defeated'
+        sourceType: 'npc_defeated',
+        reportRefusal: true
       }), `Drop of ${itemForServer.id}`)).catch(err => {
         console.error('Failed to sync dropped item to server:', err);
       });

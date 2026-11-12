@@ -106,3 +106,43 @@ test('npc-sprites.js asks for the re-drop when it lays down a KO\'d NPC with koD
     const src = read('systems/npc-sprites.js');
     assert.match(src, /npc\.koDropPending\.length > 0[\s\S]{0,120}redropPending\?\.\(npc\.id\)/);
 });
+
+test('review R4 n1: a definite refusal (4xx) is not retried; the drop asks for refusals to be reported', async () => {
+    waits.length = 0;
+    const calls = setup('gary', [{ id: 'gary_keycard', type: 'keycard', name: 'Keycard' }],
+        { koSync: [hostile.SYNC_REFUSED], add: [hostile.SYNC_REFUSED] });
+    let addOpts = null;
+    const add = window.RoomStateSync.addItemToRoom;
+    window.RoomStateSync.addItemToRoom = async (room, item, opts) => { addOpts = opts; return add(room, item, opts); };
+    await quiet(async () => { sys.setNPCHostile('gary', true); sys.damageNPC('gary', 10_000); await settle(); });
+    assert.equal(calls.filter(c => c[0] === 'ko').length, 1);
+    assert.equal(calls.filter(c => c[0] === 'add').length, 1);
+    assert.deepEqual(waits, []);
+    assert.equal(addOpts.reportRefusal, true);
+    assert.equal(hostile.SYNC_REFUSED, 'refused');
+});
+
+test('review R4 n1: room-state-sync answers SYNC_REFUSED for a 4xx only when asked, and false otherwise', async () => {
+    const sync = await import(dataUrl(read('systems/room-state-sync.js')));
+    assert.equal(sync.SYNC_REFUSED, hostile.SYNC_REFUSED);
+    const saved = { config: window.breakEscapeConfig, doc: globalThis.document, fetch: globalThis.fetch };
+    window.breakEscapeConfig = { gameId: 7 };
+    globalThis.document = { querySelector: () => null };
+    let status = 422;
+    globalThis.fetch = async () => ({ status, json: async () => ({ success: false, message: 'no' }) });
+    try {
+        await quiet(async () => {
+            assert.equal(await sync.addItemToRoom('office', { type: 'key' }, { reportRefusal: true }), 'refused');
+            assert.equal(await sync.addItemToRoom('office', { type: 'key' }, {}), false);
+            assert.equal(await sync.updateNpcState('office', 'gary', { isKO: true }, { reportRefusal: true }), 'refused');
+            status = 429;
+            assert.equal(await sync.addItemToRoom('office', { type: 'key' }, { reportRefusal: true }), false);
+            status = 500;
+            assert.equal(await sync.updateNpcState('office', 'gary', { isKO: true }, { reportRefusal: true }), false);
+        });
+    } finally {
+        window.breakEscapeConfig = saved.config;
+        globalThis.document = saved.doc;
+        globalThis.fetch = saved.fetch;
+    }
+});

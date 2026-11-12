@@ -8,11 +8,26 @@
  */
 
 /**
+ * Review R4 n1: the answer a sync call gives, when asked with `reportRefusal`, for a definite
+ * refusal (a 4xx other than a timeout or rate limit: the room is not accessible, the NPC is not
+ * KO'd, the item is not theirs). Sending the same request again cannot change it, so
+ * npc-hostile.js withSyncRetries stops there. Without the option such a refusal is false, as
+ * before, so callers that test the answer for truth are unchanged.
+ */
+export const SYNC_REFUSED = 'refused';
+
+function isDefiniteRefusal(response) {
+    const status = response?.status;
+    return typeof status === 'number' && status >= 400 && status < 500 && status !== 408 && status !== 429;
+}
+
+/**
  * Add an item to a room (e.g., NPC drops an item)
  * @param {string} roomId - Room ID
  * @param {object} item - Item data (must include type, id, name, etc.)
- * @param {object} options - Optional source data (npcId, sourceType)
- * @returns {Promise<boolean>} Success status
+ * @param {object} options - Optional source data (npcId, sourceType); reportRefusal: answer
+ *   SYNC_REFUSED instead of false for a definite refusal (review R4 n1)
+ * @returns {Promise<boolean|string>} Success status
  */
 export async function addItemToRoom(roomId, item, options = {}) {
     const gameId = window.breakEscapeConfig?.gameId;
@@ -37,6 +52,10 @@ export async function addItemToRoom(roomId, item, options = {}) {
             })
         });
 
+        if (options.reportRefusal && isDefiniteRefusal(response)) {
+            console.warn(`❌ Item add to room ${roomId} refused (${response.status})`);
+            return SYNC_REFUSED;
+        }
         const result = await response.json();
         
         if (result.success) {
@@ -190,7 +209,7 @@ export async function updateObjectState(roomId, objectId, stateChanges) {
  * @param {object} stateChanges - State properties to update
  * @returns {Promise<boolean>} Success status
  */
-export async function updateNpcState(roomId, npcId, stateChanges) {
+export async function updateNpcState(roomId, npcId, stateChanges, options = {}) {
     const gameId = window.breakEscapeConfig?.gameId;
     if (!gameId) {
         console.error('Cannot sync room state: gameId not available');
@@ -214,6 +233,10 @@ export async function updateNpcState(roomId, npcId, stateChanges) {
             })
         });
 
+        if (options.reportRefusal && isDefiniteRefusal(response)) {
+            console.warn(`❌ NPC state update in room ${roomId} refused (${response.status})`);
+            return SYNC_REFUSED;
+        }
         const result = await response.json();
         
         if (result.success) {

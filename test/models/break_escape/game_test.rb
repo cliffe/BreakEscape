@@ -56,6 +56,7 @@ module BreakEscape
         'rooms' => { 'break_room' => { 'objects' => [], 'npcs' => [{ 'id' => 'derek', 'itemsHeld' => [device] }] } }
       }
       @game.player_state['unlockedRooms'] = ['break_room']
+      @game.player_state['encounteredNPCs'] = ['derek'] # a KO needs the NPC met (review R4 M1)
       # The drop follows the KO (npc-hostile.js); a live NPC's drop is refused (review R2 M1)
       sent0 = { 'id' => 'entropy_launch_device', 'type' => 'launch-device', 'name' => 'Launch Device' }
       refute @game.add_item_to_room!('break_room', sent0, { 'npc_id' => 'derek' })
@@ -104,6 +105,7 @@ module BreakEscape
         }
       }
       @game.player_state['unlockedRooms'] = %w[main_office break_room]
+      @game.player_state['encounteredNPCs'] = ['derek'] # a KO needs the NPC met (review R4 M1)
       sent = { 'id' => 'entropy_launch_device', 'type' => 'launch-device', 'name' => 'Launch Device', 'x' => 10, 'y' => 20 }
       meta = { 'npc_id' => 'derek', 'source_type' => 'npc_defeated' }
 
@@ -217,6 +219,7 @@ module BreakEscape
       }
       @game.player_state['unlockedRooms'] = ['lab']
       @game.player_state['inventory'] = [device.dup]
+      @game.player_state['encounteredNPCs'] = ['derek'] # a KO needs the NPC met (review R4 M1)
       assert @game.update_npc_state!('lab', 'derek', { 'isKO' => true })
 
       assert @game.add_item_to_room!('lab', { 'id' => 'kit_deviceB', 'type' => 'usb', 'name' => 'BadUSB',
