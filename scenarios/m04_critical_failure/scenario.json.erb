@@ -901,14 +901,14 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
                 the hub re-offers it if the text is missed (anomaly_call_heard). %>
             {
               "eventPattern": "global_variable_changed:anomaly_detected",
-              "condition": "value === true",
+              "condition": "value === true && globalVars.esd_authorized !== true",
               "onceOnly": true,
               "_comment": "Phone calls M4: HaX rings six seconds after the dial read (was a text 'Call me when you're clear of it.'). Default ring-out; a decline or miss leaves a Call back button and the text below. The hub choice [About the dial reading.] dials the same knot.",
               "delayMs": 6000,
               "conversationMode": "phone-chat",
               "targetKnot": "on_anomaly_confirmed",
               "ring": { "onMissed": "callback" },
-              "callLabel": "Agent HaX"
+              "callLabel": "SAFETYNET secure line"
             },
             {
               "eventPattern": "phone_call_declined:agent_0x99",
@@ -1527,7 +1527,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               player rings from this thread once Vance is an ally and still on his feet.
               Before that (or after his KO) it rings out: "NO ANSWER". %>
           "call": { "knot": "support_call", "when": "globalVars.vance_is_ally && !globalVars.robert_vance_ko", "unavailable": "no_answer" },
-          "callLabel": "Albion ops desk",
+          "callLabel": "Albion Energy",
           "timedMessages": [
             {
               "delay": 20000,
