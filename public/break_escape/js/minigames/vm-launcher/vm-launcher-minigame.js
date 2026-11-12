@@ -13,29 +13,35 @@ import { escapeHtml } from '../../utils/escape-html.js';
 
 /**
  * The server's VM panel URL, or null when it is not one the launcher may use. It lands in
- * an iframe src and an href, so only http and https are accepted, or a relative path that
- * stays on the game's own origin (the server sends /break_escape/games/<id>/vm_panel).
- * javascript:, data:, protocol-relative //host and any other scheme are refused.
+ * an iframe src and an href, so it must parse as http or https and resolve to the page's
+ * own origin (the server sends /break_escape/games/<id>/vm_panel). That one test covers
+ * javascript:, data:, protocol-relative //host, /\host, http:host and any absolute URL on
+ * another host. The parsed href is returned, so the iframe, the link and this check all
+ * use the same parse. With no page origin to compare against, everything is refused.
  */
 export function safeVmPanelUrl(raw, base = (typeof window !== 'undefined' ? window.location?.href : undefined)) {
-    if (typeof raw !== 'string') return null;
+    if (typeof raw !== 'string' || !base) return null;
     const text = raw.trim();
     if (!text) return null;
     let parsed;
+    let origin;
     try {
-        parsed = base ? new URL(text, base) : new URL(text);
+        parsed = new URL(text, base);
+        origin = new URL(base).origin;
     } catch (e) {
         return null;
     }
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
-    // No scheme of its own: a relative path, which must resolve to the page's own origin
-    // (refuses //other.host and /\other.host, which browsers read as another host)
-    const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(text.replace(/[\t\n\r]/g, ''));
-    if (!hasScheme) {
-        if (!base) return null;
-        if (parsed.origin !== new URL(base).origin) return null;
-    }
-    return text;
+    if (parsed.origin !== origin) return null;
+    return parsed.href;
+}
+
+/** The panel URL with ?vm_title= (or &vm_title=) added in the query, ahead of any fragment. */
+export function vmPanelUrlWithTitle(panelUrl, title) {
+    if (!title) return panelUrl;
+    const url = new URL(panelUrl);
+    url.searchParams.set('vm_title', title);
+    return url.href;
 }
 
 export class VmLauncherMinigame extends MinigameScene {
@@ -44,7 +50,13 @@ export class VmLauncherMinigame extends MinigameScene {
         this.vm = params.vm || null;
         this.hacktivityMode = params.hacktivityMode || false;
         this.isLaunching = false;
-        this.vmPanelUrl = safeVmPanelUrl(window.breakEscapeConfig?.vmPanelUrl);
+        const rawPanelUrl = window.breakEscapeConfig?.vmPanelUrl;
+        this.vmPanelUrl = safeVmPanelUrl(rawPanelUrl);
+        // A panel URL was sent but refused: a misconfigured server. Say so by length only.
+        this.vmPanelRefused = !this.vmPanelUrl && typeof rawPanelUrl === 'string' && rawPanelUrl.trim() !== '';
+        if (this.vmPanelRefused) {
+            console.warn(`VM launcher: refused the server's VM panel URL (${rawPanelUrl.length} characters)`);
+        }
         this.postitNote = params.postitNote || '';
         this.showPostit = params.showPostit || false;
     }
@@ -71,9 +83,7 @@ export class VmLauncherMinigame extends MinigameScene {
         // request.referrer), vm_panel? policy includes admin check, and main.js has an
         // iframe guard preventing re-initialisation if the game page ever loads in a frame.
         if (this.hacktivityMode && this.vmPanelUrl) {
-            const iframeSrc = this.vm?.title
-                ? `${this.vmPanelUrl}?vm_title=${encodeURIComponent(this.vm.title)}`
-                : this.vmPanelUrl;
+            const iframeSrc = vmPanelUrlWithTitle(this.vmPanelUrl, this.vm?.title);
             const launcher = document.createElement('div');
             launcher.className = 'vm-launcher vm-launcher-iframe';
             const iframe = document.createElement('iframe');
@@ -411,7 +421,11 @@ export class VmLauncherMinigame extends MinigameScene {
         const statusText = hasConsole ? 'Console' : 'Active';
         let html = `<p>You've discovered a computer terminal in the game. To interact with it, `;
 
-        if (this.hacktivityMode) {
+        if (this.hacktivityMode && this.vmPanelRefused) {
+            html += `
+                you need its VM console, which is not available.</p>
+            `;
+        } else if (this.hacktivityMode) {
             html += `
                 click the console button below to open your VM in a new tab.</p>
             `;
@@ -437,9 +451,7 @@ export class VmLauncherMinigame extends MinigameScene {
         `;
         
         if (this.hacktivityMode && this.vmPanelUrl) {
-            const consoleSrc = this.vm?.title
-                ? `${this.vmPanelUrl}?vm_title=${encodeURIComponent(this.vm.title)}`
-                : this.vmPanelUrl;
+            const consoleSrc = vmPanelUrlWithTitle(this.vmPanelUrl, this.vm?.title);
             html += `
                 <div class="vm-actions">
                     <a class="vm-action-btn" href="${this.escapeHtml(consoleSrc)}" target="_blank" rel="noopener noreferrer">
@@ -456,6 +468,13 @@ export class VmLauncherMinigame extends MinigameScene {
             //     </div>
             //     <div class="launch-status" id="launch-status"></div>
             // `;
+        } else if (this.hacktivityMode && this.vmPanelRefused) {
+            // Not the VirtualBox steps: in Hacktivity the VM runs on the server, not locally
+            html += `
+                <div class="vm-actions vm-panel-unavailable">
+                    <p>VM panel unavailable.</p>
+                </div>
+            `;
         } else if (this.vm.ip) {
             // Standalone mode: show connection instructions
             html += `

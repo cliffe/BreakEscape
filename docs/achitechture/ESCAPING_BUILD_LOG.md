@@ -23,7 +23,7 @@ Branch `build/escaping`. Decisions: q47 and q48 in `docs/handover/2026-11-11_USE
 
 ### VM panel URL (q48 part 2)
 
-- `vm-launcher-minigame.js` exports `safeVmPanelUrl(raw, base)`. It accepts http and https, or a relative path that resolves to the page's own origin. It refuses `javascript:`, `data:`, other schemes, `//host`, `/\host`, control characters hidden in the scheme, and anything that does not parse. A refused URL gives no iframe and no console link (the standalone card shows instead).
+- `vm-launcher-minigame.js` exports `safeVmPanelUrl(raw, base)`. It accepts http and https, or a relative path that resolves to the page's own origin. It refuses `javascript:`, `data:`, other schemes, `//host`, `/\host`, control characters hidden in the scheme, and anything that does not parse. A refused URL gives no iframe and no console link. (Changed in review R1, below.)
 
 ### Chat headers (q48 part 4)
 
@@ -55,11 +55,21 @@ Games 1385 (sis02_energy), 1386 (sis03_cyber_insurance), 1388 (lab_tesseract_tri
 - End screens: a sis02-style body and a sis03 body (`<strong>`, `<br>`, `&deg;`, `&ldquo;`, dash) render formatted; a hostile body stays text and runs nothing. test_simple_success through its own `triggerOnInteract` `show_end_screen`: one `<strong>`, one `<br>`, the `&ndash;` shown as a dash, the `<u>` shown as typed.
 - No page errors in any game.
 
-`window.__test.interact('success_terminal')` returned ok:false in test_simple_success, so that beat used the room sprite and `handleObjectInteraction`; not investigated (backlog).
+`window.__test.interact('success_terminal')` returned ok:false in test_simple_success, so that beat used the room sprite and `handleObjectInteraction`. Review R1 traced it: the title screen, the Mission Brief notes and the tutorial prompt were still open (`minigame-active`, then `blocking-ui`), the same on main; once they are cleared it returns ok:true. Not a bug.
 
 ## Left open
 
 - The `plainText` leftovers and the local helpers kept on purpose (backlog entry).
+
+## Review R1 fixes
+
+- m1: `safeVmPanelUrl` applies the same-origin test to every input, absolute http(s) URLs included, and returns the parsed href, so the iframe, the link and the check use one parse. With no page origin it refuses everything. Refused now as well: `http:evil.com`, `http:/evil.com`, `https:/\evil.com`, an absolute URL on another host, port or scheme. A same-origin absolute URL still passes.
+- n1: the `interact` line above and the backlog entry now say what it was; backlog item 3 is gone.
+- n2: in Hacktivity mode a refused panel URL shows "VM panel unavailable." (not the VirtualBox steps) and logs a `console.warn` giving only the refused value's length.
+- n3: `vmPanelUrlWithTitle` adds `vm_title` through `URL.searchParams`, so it joins with `?` or `&` and stays ahead of any fragment.
+- n4: forensic `cleanStyle` clamps `font-size` (px 8 to 48, em and rem 0.5 to 3, % 50 to 300, or a size keyword) and drops anything else (`calc()`, `vw`, a bare number). Scenario values are all 10px to 14px. Margins are still unbounded.
+- n5: `showEndScreen` checks `shellReturnUrl` and `shellMenuUrl` with `safeShellUrl` in `apply-actions.js` (inline, because harnesses load that file with stubbed imports): an absolute http or https URL, or a relative path on the game's origin, navigated to as the parsed href. A refused return link falls back to a safe menu link, then to the no-shell behaviour, and does not take the shell label. The other shell link users (`ui/success-screen.js`, `ui/game-over-screen.js`, `ui/game-menu.js`) are not checked yet.
+- Tests (no lock, as asked): the 33 files that load `apply-actions.js`, the VM launcher or the forensic platform, plus the 89 other test files the branch touches: all pass. `escaping-shared-helpers`, `app-mode-exit` and `minigame-html-sweep-c` updated for absolute hrefs and the new cases. Full suites left for the merge.
 
 ## Suite results
 

@@ -237,7 +237,8 @@ test('VM launcher: title, IP and console link are text, and the href stays one a
     assertText(box.querySelector('.vm-title'), 'VM title');
     assertText(box.querySelector('.vm-ip-value'), 'VM IP');
     const a = box.querySelector('a.vm-action-btn');
-    assert.ok(a.getAttribute('href').startsWith(`/panel${ATTR}`), 'href reads back as typed');
+    // The launcher uses the parsed href (percent-encoded), so it reads back as that parse
+    assert.ok(a.getAttribute('href').startsWith(new URL(`/panel${ATTR}`, window.location.href).href), 'href reads back as parsed');
 });
 
 test('RFID cloner: card fields and result messages are text', () => {

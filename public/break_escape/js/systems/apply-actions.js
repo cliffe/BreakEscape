@@ -461,6 +461,26 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
     return gives;
 }
 
+// A host shell link the end screen may navigate to, as the parsed href, or null: an
+// absolute http or https URL, or a relative path that stays on the game's own origin
+// (refuses javascript:, data:, //host and /\host). The shell is the host's own page, so
+// unlike the VM panel URL an absolute link may name another host. Kept inline because
+// tests load this file on its own with only its known imports stubbed.
+export function safeShellUrl(raw, base = window.location?.href) {
+    if (typeof raw !== 'string') return null;
+    const text = raw.trim();
+    if (!text) return null;
+    try {
+        const parsed = base ? new URL(text, base) : new URL(text);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+        const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(text.replace(/[\t\n\r]/g, ''));
+        if (!hasScheme && (!base || parsed.origin !== new URL(base).origin)) return null;
+        return parsed.href;
+    } catch (e) {
+        return null;
+    }
+}
+
 /**
  * Show the full-screen scenario end overlay.
  *
@@ -490,7 +510,9 @@ export function showEndScreen(opts = {}) {
     } = opts;
     // A host game shell sends the player to its own page (the debrief), so it names the button.
     const cfg = window.breakEscapeConfig;
-    const buttonText = (cfg?.shellReturnUrl && cfg.shellReturnLabel) || opts.buttonText || 'Return to Missions';
+    const shellReturn = safeShellUrl(cfg?.shellReturnUrl);
+    const shellUrl = shellReturn || safeShellUrl(cfg?.shellMenuUrl);
+    const buttonText = (shellReturn && cfg.shellReturnLabel) || opts.buttonText || 'Return to Missions';
 
     if (window.player) window.player.disableMovement = true;
 
@@ -534,7 +556,6 @@ export function showEndScreen(opts = {}) {
     btn.onmouseout  = () => { btn.style.background = '#333'; btn.style.borderColor = '#666'; };
     btn.onclick = () => {
         // A host game shell opened the game in its own tab and names where to go back to.
-        const shellUrl = window.breakEscapeConfig?.shellReturnUrl || window.breakEscapeConfig?.shellMenuUrl;
         if (shellUrl) {
             window.location.href = shellUrl;
             return;

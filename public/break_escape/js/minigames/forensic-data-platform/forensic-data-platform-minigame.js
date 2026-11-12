@@ -19,6 +19,19 @@ const UNSAFE_STYLE = /url\s*\(|expression|@import|javascript:/i;
 // scenario style cannot cover the game (position:fixed, z-index, width:100%).
 const SAFE_STYLE_PROPS = /^(color|background-color|font-weight|font-style|font-size|text-decoration|text-align|(margin|padding)(-(top|right|bottom|left))?)$/;
 
+// A font size held to a readable range: px 8 to 48, em and rem 0.5 to 3, % 50 to 300,
+// or a keyword (small, large, ...). Anything else (calc(), vw, a bare number) is dropped.
+const FONT_SIZE_RANGE = { px: [8, 48], em: [0.5, 3], rem: [0.5, 3], '%': [50, 300] };
+const FONT_SIZE_KEYWORD = /^(xx-small|x-small|small|medium|large|x-large|xx-large|smaller|larger)$/i;
+export function clampFontSize(val) {
+    if (FONT_SIZE_KEYWORD.test(val)) return val.toLowerCase();
+    const m = /^(\d+(?:\.\d+)?|\.\d+)(px|em|rem|%)$/i.exec(val);
+    if (!m) return null;
+    const unit = m[2].toLowerCase();
+    const [lo, hi] = FONT_SIZE_RANGE[unit];
+    return `${Math.min(hi, Math.max(lo, Number(m[1])))}${unit}`;
+}
+
 // A style attribute value with only allow-listed properties and safe values kept, or ''.
 export function cleanStyle(value) {
     return String(value ?? '').split(';').map((decl) => {
@@ -27,6 +40,10 @@ export function cleanStyle(value) {
         const prop = decl.slice(0, at).trim().toLowerCase();
         const val = decl.slice(at + 1).trim();
         if (!SAFE_STYLE_PROPS.test(prop) || !val || !SAFE_STYLE.test(val) || UNSAFE_STYLE.test(val)) return null;
+        if (prop === 'font-size') {
+            const size = clampFontSize(val);
+            return size ? `${prop}:${size}` : null;
+        }
         return `${prop}:${val}`;
     }).filter(Boolean).join(';');
 }

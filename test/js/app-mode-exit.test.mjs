@@ -157,13 +157,29 @@ test('end screen button: a shell with a return link labels it with the shell lab
     const btn = document.querySelector('#scenario-end-screen button');
     assert.equal(btn.textContent, 'Debrief');
     btn.click();
-    assert.deepEqual(log.href, ['/shell/debrief']);
+    assert.deepEqual(log.href, ['http://localhost/shell/debrief']);
 
     // No return link: the scenario's own text stands, even if a label is set
     ({ w } = setup(BROWSER_UA));
     w.breakEscapeConfig = { shellMenuUrl: '/shell/menu', shellReturnLabel: 'Debrief' };
     showEndScreen({ title: 'Done', buttonText: 'Custom' });
     assert.equal(document.querySelector('#scenario-end-screen button').textContent, 'Custom');
+});
+
+test('end screen button: a refused shell link is not followed; a safe menu link is used instead', () => {
+    let { w, log } = setup(BROWSER_UA);
+    w.breakEscapeConfig = { shellReturnUrl: 'javascript:window.__pwned=1', shellMenuUrl: '/shell/menu' };
+    showEndScreen({ title: 'Done' });
+    document.querySelector('#scenario-end-screen button').click();
+    assert.deepEqual(log.href, ['http://localhost/shell/menu']);
+
+    // Neither link is safe: the button does what it does with no shell (closes the tab)
+    ({ w, log } = setup(BROWSER_UA));
+    w.breakEscapeConfig = { shellReturnUrl: '//evil.example/x', shellMenuUrl: 'data:text/html,x' };
+    showEndScreen({ title: 'Done' });
+    document.querySelector('#scenario-end-screen button').click();
+    assert.deepEqual(log.href, []);
+    assert.equal(log.closed, 1);
 });
 
 test('game menu: "Back to missions" exists only in the app', () => {
@@ -266,7 +282,7 @@ for (const ua of [BROWSER_UA, APP_UA]) {
         w.breakEscapeConfig = { ...SHELL };
         showEndScreen({ title: 'Done' });
         document.querySelector('#scenario-end-screen button').click();
-        assert.deepEqual(log.href, [SHELL.shellReturnUrl]);
+        assert.deepEqual(log.href, ['http://localhost' + SHELL.shellReturnUrl], 'the parsed href');
         assert.equal(log.closed, 0);
     });
 

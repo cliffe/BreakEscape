@@ -24,9 +24,10 @@ const imp = (rel) => import(pathToFileURL(join(js, rel)).href);
 
 const { escapeHtml } = await imp('utils/escape-html.js');
 const { authorHtml } = await imp('utils/author-html.js');
-const { showEndScreen } = await imp('systems/apply-actions.js');
+const { showEndScreen, safeShellUrl } = await imp('systems/apply-actions.js');
 const { CoverageDecisionFormMinigame } = await imp('minigames/coverage-decision-form/coverage-decision-form-minigame.js');
-const { VmLauncherMinigame, safeVmPanelUrl } = await imp('minigames/vm-launcher/vm-launcher-minigame.js');
+const { VmLauncherMinigame, safeVmPanelUrl, vmPanelUrlWithTitle } = await imp('minigames/vm-launcher/vm-launcher-minigame.js');
+const { cleanStyle, clampFontSize } = await imp('minigames/forensic-data-platform/forensic-data-platform-minigame.js');
 const T = await imp('systems/notifications.js');
 
 const HOSTILE = 'Ends <img src=x onerror="window.__pwned=1"> <script>window.__pwned=2</script> <a href="javascript:window.__pwned=3">go</a> <u class="x">u</u> & "q" \'s\'';
@@ -163,19 +164,55 @@ test('coverage form: a hostile outcome quote renders as text', () => {
 
 // ---- vm-launcher panel URL ------------------------------------------------------------
 
-test('VM panel URL: http, https and same-origin paths pass; other schemes and hosts are refused', () => {
+test('VM panel URL: only http(s) on the page origin passes, as the parsed href; everything else is refused', () => {
     const base = 'https://game.example/break_escape/games/7';
-    for (const ok of ['/break_escape/games/7/vm_panel', 'vm_panel', 'https://game.example/vm', 'http://panel.example/vm?x=1', ' /break_escape/games/7/vm_panel ']) {
-        assert.equal(safeVmPanelUrl(ok, base), ok.trim(), `accepted: ${ok}`);
+    const accepted = {
+        '/break_escape/games/7/vm_panel': 'https://game.example/break_escape/games/7/vm_panel',
+        'vm_panel': 'https://game.example/break_escape/games/vm_panel',
+        ' /break_escape/games/7/vm_panel ': 'https://game.example/break_escape/games/7/vm_panel',
+        'https://game.example/vm?x=1': 'https://game.example/vm?x=1',
+        'HTTPS://GAME.example/x': 'https://game.example/x',
+    };
+    for (const [ok, href] of Object.entries(accepted)) {
+        assert.equal(safeVmPanelUrl(ok, base), href, `accepted: ${ok}`);
     }
     for (const bad of ['javascript:alert(1)', 'JavaScript:alert(1)', ' javascript:alert(1)', 'java\tscript:alert(1)', 'java\nscript:alert(1)',
         'data:text/html,<script>1</script>', 'vbscript:x', 'file:///etc/hosts', '//evil.example/panel', '/\\evil.example/panel',
-        '\\\\evil.example/panel', 'ftp://panel.example/', '', '   ', null, undefined, 42, {}]) {
+        '\\\\evil.example/panel', 'ftp://panel.example/', '', '   ', null, undefined, 42, {},
+        // Absolute, or reading as relative but resolving to another host
+        'http:evil.com', 'http:/evil.com', 'https:/\\evil.com', 'https://evil.com/vm_panel', 'http://panel.example/vm?x=1',
+        'http://game.example/vm', 'https://game.example:8443/vm', 'https://game.example.evil.com/vm']) {
         assert.equal(safeVmPanelUrl(bad, base), null, `refused: ${JSON.stringify(bad)}`);
     }
-    // With no page origin to compare against, a relative path is refused
+    // With no page origin to compare against, everything is refused
     assert.equal(safeVmPanelUrl('/vm_panel', null), null);
-    assert.equal(safeVmPanelUrl('https://game.example/vm', null), 'https://game.example/vm');
+    assert.equal(safeVmPanelUrl('https://game.example/vm', null), null);
+});
+
+test('VM panel URL: vm_title goes in the query with ? or &, ahead of any fragment', () => {
+    assert.equal(vmPanelUrlWithTitle('https://game.example/vm_panel', 'Kali "box"'), 'https://game.example/vm_panel?vm_title=Kali+%22box%22');
+    assert.equal(vmPanelUrlWithTitle('https://game.example/vm_panel?set=3', 'Kali'), 'https://game.example/vm_panel?set=3&vm_title=Kali');
+    assert.equal(vmPanelUrlWithTitle('https://game.example/vm_panel?set=3#top', 'K&x=1'), 'https://game.example/vm_panel?set=3&vm_title=K%26x%3D1#top');
+    assert.equal(vmPanelUrlWithTitle('https://game.example/vm_panel', ''), 'https://game.example/vm_panel');
+});
+
+test('VM launcher: a refused panel URL in Hacktivity mode says the panel is unavailable, not the VirtualBox steps', () => {
+    const box = fresh();
+    window.breakEscapeConfig = { vmPanelUrl: 'https://evil.com/vm_panel' };
+    const mg = new VmLauncherMinigame(box, { vm: { title: 'Kali', ip: '10.0.0.5' }, hacktivityMode: true });
+    assert.equal(mg.vmPanelUrl, null);
+    assert.equal(mg.vmPanelRefused, true);
+    box.innerHTML = mg.buildVmDisplay();
+    assert.equal(box.querySelector('a'), null, 'no link');
+    assert.match(box.textContent, /VM panel unavailable\./);
+    assert.doesNotMatch(box.textContent, /VirtualBox|click the console button/);
+    assert.equal(box.textContent.includes('evil.com'), false, 'the refused value is not shown');
+
+    // Standalone mode keeps its instructions
+    const box2 = fresh();
+    const solo = new VmLauncherMinigame(box2, { vm: { title: 'Kali', ip: '10.0.0.5' }, hacktivityMode: false });
+    box2.innerHTML = solo.buildVmDisplay();
+    assert.match(box2.textContent, /VirtualBox/);
 });
 
 test('VM launcher: a javascript: panel URL gives no console link and no iframe', () => {
@@ -195,7 +232,7 @@ test('VM launcher: the server path still gives the console link', () => {
     window.breakEscapeConfig = { vmPanelUrl: '/break_escape/games/7/vm_panel' };
     const mg = new VmLauncherMinigame(box, { vm: { title: 'Kali "box"', ip: '10.0.0.5' }, hacktivityMode: true });
     box.innerHTML = mg.buildVmDisplay();
-    assert.equal(box.querySelector('a.vm-action-btn').getAttribute('href'), '/break_escape/games/7/vm_panel?vm_title=Kali%20%22box%22');
+    assert.equal(box.querySelector('a.vm-action-btn').getAttribute('href'), 'https://game.example/break_escape/games/7/vm_panel?vm_title=Kali+%22box%22');
 });
 
 // ---- toasts: duplicate checks compare the render mode ---------------------------------
@@ -247,4 +284,44 @@ test('gameDisplay plain mode still shows hostile text as text with the dash disp
     assert.ok(dlg.querySelector('.game-display-body').textContent.includes('A – B'));
     dlg.querySelector('.game-confirm-ok').click();
     await done;
+});
+
+// ---- end screen host links ------------------------------------------------------------
+
+test('end screen host links: http, https or a same-origin path; other schemes and hosts are refused', () => {
+    const base = 'https://game.example/break_escape/games/7';
+    assert.equal(safeShellUrl('/events/7/play/operations/3/debrief', base), 'https://game.example/events/7/play/operations/3/debrief');
+    assert.equal(safeShellUrl('https://hub.example/debrief', base), 'https://hub.example/debrief');
+    assert.equal(safeShellUrl('http://hub.example/debrief', base), 'http://hub.example/debrief');
+    for (const bad of ['javascript:window.__pwned=5', ' JavaScript:x', 'java\tscript:x', 'data:text/html,x', 'vbscript:x',
+        '//evil.com/x', '/\\evil.com/x', '\\\\evil.com', 'http:evil.com', 'https:/\\evil.com', 'ftp://x.example/', '', ' ', null, 7]) {
+        assert.equal(safeShellUrl(bad, base), null, `refused: ${JSON.stringify(bad)}`);
+    }
+});
+
+test('end screen button: a refused return link does not take the shell label', () => {
+    fresh();
+    window.breakEscapeConfig = { shellReturnUrl: 'javascript:window.__pwned=6', shellReturnLabel: 'Debrief' };
+    showEndScreen({ title: 'Done', buttonText: 'Custom' });
+    assert.equal(document.querySelector('#scenario-end-screen button').textContent, 'Custom');
+    document.getElementById('scenario-end-screen').remove();
+    assert.equal(window.__pwned, undefined);
+});
+
+// ---- forensic data platform font sizes ------------------------------------------------
+
+test('forensic cleanStyle: font sizes are held to a readable range; calc() and viewport units go', () => {
+    assert.equal(clampFontSize('11px'), '11px');
+    assert.equal(clampFontSize('9999px'), '48px');
+    assert.equal(clampFontSize('1px'), '8px');
+    assert.equal(clampFontSize('10em'), '3em');
+    assert.equal(clampFontSize('0.1rem'), '0.5rem');
+    assert.equal(clampFontSize('900%'), '300%');
+    assert.equal(clampFontSize('Large'), 'large');
+    for (const bad of ['calc(100vw)', '100vw', '50vh', '12', '-5px', '12 px', '1e3px']) {
+        assert.equal(clampFontSize(bad), null, `dropped: ${bad}`);
+    }
+    assert.equal(cleanStyle('font-size:9999px;color:#f00'), 'font-size:48px;color:#f00');
+    assert.equal(cleanStyle('font-size:calc(100vw);font-weight:bold'), 'font-weight:bold');
+    assert.equal(cleanStyle('font-size: 12px'), 'font-size:12px');
 });
