@@ -1,0 +1,20 @@
+game 2157 (gate_then_tap)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+terminal closed (t0)
+  room: "restricted_stacks"
+  +8.5s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=false" toast=true {"t":35.1,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+wait for HaX's toast without opening it:
+  +10.7s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=false" toast=true {"t":37.3,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+  geometry: {"player":{"x":279,"y":-179},"terminal":{"x":179,"y":45},"doors":[{"id":"restricted_stacks<reading_room","x":48,"y":32},{"id":"staff_passage<reading_room","x":272,"y":160},{"id":"open_stacks<reading_room","x":304,"y":80},{"id":"tape_room<restricted_stacks","x":48,"y":-224},{"id":"restricted_cage<restricted_stacks","x":304,"y":-176},{"id":"sorensen_office<restricted_stacks","x":16,"y":-176}]}
+  cage gate tried at +14.8s
+  WARN read-out toast never appeared
+  +21.2s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":47.8,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +23.2s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":49.3,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +24.7s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":51.3,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +26.7s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":53,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +28.4s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":55,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +30.3s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":57,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +32.3s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":58.9,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +34.3s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":60.9,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +36.3s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":62.8,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+shot gate_then_tap_gate_then_tap_ring
