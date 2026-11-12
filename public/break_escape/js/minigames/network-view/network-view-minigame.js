@@ -39,6 +39,7 @@ const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 export const REMOTE_OFF_TEXT = 'remote sign-in off';
+export const NOT_RESPONDING_TEXT = 'not responding';
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
 const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
 const KIND_ICONS = {
@@ -48,10 +49,11 @@ const KIND_ICONS = {
 };
 
 /**
- * The action a host row offers (4.3), in the plan's order: 'off' | 'open' | 'sign-in'.
- * Exported for tests.
+ * The action a host row offers (4.3), in the plan's order: 'not_responding' (the host's own
+ * service is off, 9.3b plan 5.2) | 'off' | 'open' | 'sign-in'. Exported for tests.
  */
 export function hostAction(row) {
+    if (row?.responding === false) return 'not_responding';
     if (row?.remoteSignIn === false) return 'off';
     if (row?.session && row.session.via !== 'claim') return 'open';
     return 'sign-in';
@@ -200,7 +202,9 @@ export class NetworkViewMinigame extends MinigameScene {
         if (row.kind === 'pc') {
             const action = hostAction(row);
             let control;
-            if (action === 'off') {
+            if (action === 'not_responding') {
+                control = `<span class="network-row-off">${NOT_RESPONDING_TEXT}</span>`;
+            } else if (action === 'off') {
                 control = `<span class="network-row-off">${REMOTE_OFF_TEXT}</span>`;
             } else if (action === 'open') {
                 const who = row.session.displayName || row.session.username || 'session';

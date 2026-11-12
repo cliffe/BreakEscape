@@ -56,6 +56,10 @@ export const LINK_GONE_MESSAGE = 'The link is gone.';
 export const PLANT_LABEL = 'Plug it in';
 export const UNPLUG_LABEL = 'Unplug it';
 export const LEAVE_LABEL = 'Leave it';
+// A dropped-device implant answered not_ready asks again this many times, this far apart, so a
+// timer that fires before the drop's save lands still grants the foothold (review I R3 m2)
+export const IMPLANT_NOT_READY_RETRIES = 3;
+export const IMPLANT_NOT_READY_DELAY_MS = 1500;
 export const sessionEndedMessage = (host) => `Your session on ${host || 'that host'} has ended.`;
 export const unreachableMessage = (host) => `${host || 'That host'} can't be reached over this link.`;
 
@@ -433,6 +437,7 @@ export class NetworkLinks {
         const api = apiClient();
         if (!api?.networkImplant || !pcId || !shape) return { action: 'error' };
         let body = null;
+        let notReadyLeft = shape === 'dropped' ? IMPLANT_NOT_READY_RETRIES : 0;
         for (let attempt = 0; attempt < 2 && !body; attempt++) {
             try {
                 body = await api.networkImplant(pcId, shape, path);
@@ -443,8 +448,18 @@ export class NetworkLinks {
                     this._emit('network_device_refused', { pcId, reason: 'usb_refused' }, pcId);
                     return { action: 'refused', reason: 'usb_refused' };
                 }
-                // not_ready / no_action are quiet: the beat that fired this was wrong about
-                // the state. A network error retries once, then gives up quietly.
+                // A dropped device's timer can fire before the drop's own save has reached the
+                // server (review I R3 m2): not_ready then means "not yet", and the timer is saved
+                // fired, so wait and ask again a few times. These waits do not use up the
+                // network-error retry.
+                if (err?.status === 422 && b.reason === 'not_ready' && notReadyLeft > 0) {
+                    notReadyLeft--;
+                    attempt--;
+                    await new Promise(r => setTimeout(r, this.notReadyDelayMs ?? IMPLANT_NOT_READY_DELAY_MS));
+                    continue;
+                }
+                // not_ready / no_action are otherwise quiet: the beat that fired this was wrong
+                // about the state. A network error retries once, then gives up quietly.
                 if (err?.status === 422 || err?.status === 404) {
                     return { action: 'not_ready', reason: b.reason || null };
                 }
@@ -467,15 +482,26 @@ export class NetworkLinks {
         const ids = [foothold.itemId];
         if (body.consumedId) ids.push(body.consumedId);
         win().syncInventoryFromServer?.(body.inventory, ids);
+        // Whether this browser already held the foothold, and had ever gained one here, before
+        // this answer (review I R3 m1): an `already` answer to a retry whose first response was
+        // lost is still news to this browser, so it fires the event and opens the view once, as
+        // the Wi-Fi join does. A repeat on a foothold already held stays quiet.
+        const isNew = !this.footholds.has(foothold.id);
+        const source = foothold.sourceId || pcId;
+        const firstHere = !this.gained.has(source);
         this.footholds.set(foothold.id, foothold);
         if (foothold.sourceId) this.gained.add(foothold.sourceId);
         this._publishPlanted(pcId, true);
-        if (body.already) return { action: 'already', footholdId: foothold.id };
+        if (body.already && !isNew) return { action: 'already', footholdId: foothold.id };
 
         const networkId = foothold.network?.id ?? null;
         this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: pcId }, pcId);
-        if (body.first) this.open(foothold.id);
-        return { action: 'implanted', footholdId: foothold.id, first: !!body.first };
+        // The server answers `first: false` on an already-held retry, so the browser's own record
+        // decides there whether this is the first foothold from this PC
+        const first = body.already ? firstHere : !!body.first;
+        if (first) this.open(foothold.id);
+        if (body.already) return { action: 'already', footholdId: foothold.id, first };
+        return { action: 'implanted', footholdId: foothold.id, first };
     }
 
     /** POST /network/unplug: the device back, the link item and the foothold gone. */

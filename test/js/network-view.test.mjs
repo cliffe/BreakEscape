@@ -34,7 +34,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT } =
+const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT } =
     await imp('minigames/network-view/network-view-minigame.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 
@@ -131,6 +131,28 @@ test('hostAction follows 4.3: remote sign-in off, then Open for a password sessi
     assert.equal(hostAction({ remoteSignIn: true, session: { via: 'password', remote: false } }), 'open', 'a local session opens too');
     assert.equal(hostAction({ remoteSignIn: true, session: { via: 'claim' } }), 'sign-in', 'a claimed session is not offered');
     assert.equal(hostAction({ remoteSignIn: true }), 'sign-in');
+});
+
+// 9.3b plan 5.2: a host whose own service is off answers "not responding" in place of its control
+test('hostAction: a host that is not responding wins over every other action', () => {
+    assert.equal(hostAction({ responding: false }), 'not_responding');
+    assert.equal(hostAction({ responding: false, remoteSignIn: false }), 'not_responding');
+    assert.equal(hostAction({ responding: false, remoteSignIn: true, session: { via: 'password' } }), 'not_responding');
+    assert.equal(hostAction({ responding: true, remoteSignIn: true }), 'sign-in', 'only false marks it');
+});
+
+test('a not-responding host row shows the text and no control, and its test state says so', async () => {
+    const hosts = HOSTS.map(h => (h.id === 'lena_pc'
+        ? { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, responding: false }
+        : h));
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const lena = row('data-host-id', 'lena_pc');
+    assert.equal(lena.querySelector('[data-action]'), null, 'nothing to click');
+    assert.match(lena.textContent, new RegExp(NOT_RESPONDING_TEXT));
+    const st = window.MinigameFramework.currentMinigame.getTestState();
+    assert.equal(st.rows.find(r => r.id === 'lena_pc').action, 'not_responding');
 });
 
 test('the view lists each row with its action and the row attributes, from GET /network only', async () => {

@@ -473,6 +473,11 @@ itself**; its `pc` field names the target PC, and the action lives on another ob
   covers all of them). `apply-actions.js` is shared with the engine plan's stream E4 (section 12), so
   this slice's case is added after E4's edits. **It awaits the answer with one retry**, because a
   timer is saved fired and never re-runs, so a single lost request would lose the foothold for good.
+  A `not_ready` answer to the dropped shape is asked again three times, 1.5 seconds apart, because
+  the timer can fire before the drop's own save has reached `droppedItems`; an author should still
+  place the timer at least a few seconds after the drop can happen. A retry whose first answer was
+  lost comes back `already`; the client then fires `network_foothold_gained` and opens the view
+  once if it did not hold that foothold before, as the Wi-Fi join does.
 - **Trigger 2, the BadUSB shape (player use).** The `grant_foothold` with `needsSession` +
   `needsHeld` is placed on a **desk-side prop object** next to the target PC (a USB socket, a cable
   port, the desk), carrying the action on its own `triggerOnInteract`, **never on the sign-in PC**

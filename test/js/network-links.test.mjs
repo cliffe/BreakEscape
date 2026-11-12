@@ -712,9 +712,11 @@ test('an implant lost to both retries shows a message and grants nothing (n2)', 
     assert.equal(links.get('implant_lena_pc'), null, 'no foothold');
 });
 
-test('an implant that answers already does not re-emit or reopen', async () => {
+test('an implant that answers already on a foothold this browser holds does not re-emit or reopen', async () => {
     await reset({ items: [box] });
     withStarters();
+    await links.implant('lena_pc', 'session', null); // the first, seen grant
+    events.length = 0; views.length = 0;
     implantAnswer = { already: true, first: false };
     const out = await links.implant('lena_pc', 'session', null);
     assert.equal(out.action, 'already');
@@ -722,6 +724,72 @@ test('an implant that answers already does not re-emit or reopen', async () => {
     assert.equal(views.length, 0);
     // n1: the planted global is published before the already return, as plant() does
     assert.equal(window.gameState.globalVariables.lena_pc_planted, true);
+});
+
+// Review I R3 m1: the first POST's answer was lost, so the retry's `already` is the first this
+// browser hears of the foothold. It fires the event and opens the view once, as Wi-Fi does.
+test('a retry answered already for a foothold not held before fires foothold_gained and opens the view once', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantThrowsLeft = 1;
+    implantAnswer = { already: true, first: false, consumedId: 'kit_dropbox', inventory: [implantLink] };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'already');
+    assert.equal(out.first, true, 'no foothold was ever gained here before, so this is the first');
+    assert.deepEqual(named('network_foothold_gained').map(e => e.data),
+        [{ footholdId: 'implant_lena_pc', via: 'implant', networkId: 'office_lan', sourceId: 'lena_pc' }]);
+    assert.deepEqual(views.map(v => v.footholdId), ['implant_lena_pc'], 'the view opens once');
+
+    // A further repeat is quiet
+    await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(named('network_foothold_gained').length, 1);
+    assert.equal(views.length, 1);
+});
+
+test('a retry answered already where a foothold was gained here before fires the event but does not open', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    links.gained.add('lena_pc'); // gained once before, then lost (an unplug, say)
+    implantAnswer = { already: true, first: false };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.first, false);
+    assert.equal(named('network_foothold_gained').length, 1, 'the foothold is news to this browser');
+    assert.equal(views.length, 0, 'not the first foothold from this PC, so the view stays shut');
+});
+
+// Review I R3 m2: a dropped device's timer can fire before the drop's save lands
+test('a dropped-shape implant answered not_ready asks again and is granted when the drop lands', async () => {
+    await reset();
+    withStarters();
+    links.notReadyDelayMs = 0;
+    let left = 2;
+    const real = window.ApiClient.networkImplant;
+    window.ApiClient.networkImplant = async (...args) => {
+        if (left > 0) { left--; calls.push(['implant', ...args]); const e = new Error('not ready'); e.status = 422; e.body = { reason: 'not_ready' }; throw e; }
+        return real(...args);
+    };
+    implantAnswer = { inventory: [implantLink] };
+    const out = await links.implant('door_box', 'dropped', null);
+    assert.equal(out.action, 'implanted');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 3, 'two not_ready answers, then the grant');
+    assert.deepEqual(toasts, []);
+    delete links.notReadyDelayMs;
+});
+
+test('a dropped-shape implant gives up quietly after its not_ready retries', async () => {
+    await reset();
+    links.notReadyDelayMs = 0;
+    implantAnswer = new Error('not ready');
+    implantAnswer.status = 422;
+    implantAnswer.body = { reason: 'not_ready' };
+    const out = await links.implant('door_box', 'dropped', null);
+    assert.equal(out.action, 'not_ready');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 4, 'the first ask and three more');
+    assert.deepEqual(toasts, []);
+    delete links.notReadyDelayMs;
 });
 
 test('a usb_refused answer toasts the authored line and emits the refusal, no foothold', async () => {
@@ -744,6 +812,7 @@ test('a not_ready answer is quiet and grants nothing', async () => {
     implantAnswer.body = { reason: 'not_ready' };
     const out = await links.implant('lena_pc', 'session', null);
     assert.equal(out.action, 'not_ready');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 1, 'the session shape does not wait and ask again');
     assert.deepEqual(toasts, []);
     assert.equal(links.get('implant_lena_pc'), null);
 });
