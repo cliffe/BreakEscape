@@ -308,7 +308,7 @@ Commits 02a1721fe and 25a38140f.
 
 ### Tests
 
-tap-pick.test.mjs 44 pass (9 new: the snapped cell returned, the ring cell returned,
+tap-pick.test.mjs 42 pass (7 new: the snapped cell returned, the ring cell returned,
 onStoppedShort, the busy and stopped-short wiring, flipY and rotation, NPC rects in the player
 line of sight with and without the option and for a knocked-out body, and the avoidNpcs
 wiring). tap-pick-handler.test.mjs 30 pass (5 new: a short stop says so once and the walk asks
