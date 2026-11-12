@@ -135,11 +135,7 @@ export class TextFileMinigame extends MinigameScene {
         let content = displayDashes(this.textFileData.fileContent);
         
         // Escape HTML characters
-        content = content.replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/'/g, '&#39;');
+        content = escapeHtml(content);
         
         // Convert line breaks to <br> tags
         content = content.replace(/\n/g, '<br>');

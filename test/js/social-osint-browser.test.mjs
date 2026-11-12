@@ -20,7 +20,7 @@ const dir = mkdtempSync(join(tmpdir(), 'social-osint-browser-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 const files = readdirSync(join(js, 'minigames/osint-browser')).filter((f) => f.endsWith('.js')).map((f) => `minigames/osint-browser/${f}`);
 for (const rel of [...files, 'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
-    'utils/display-dashes.js', 'ui/modal-stack.js', 'systems/global-writer.js', 'systems/social-intel.js']) {
+    'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js', 'systems/global-writer.js', 'systems/social-intel.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }

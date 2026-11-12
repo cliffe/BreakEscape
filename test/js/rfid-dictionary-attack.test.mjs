@@ -23,9 +23,10 @@ writeFileSync(join(tmp, 'api-stub.mjs'), 'export const ApiClient = {};');
 writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor() {} init() {} start() {} complete() {} cleanup() {} }');
 copy('minigames/rfid/rfid-protocols.js');
 copy('utils/display-dashes.js');
+copy('utils/escape-html.js');
 const P = "'./rfid-protocols.js'", PM = "'./rfid-protocols.mjs'";
 copy('minigames/rfid/rfid-data.js', { [P]: PM, "'../../api-client.js'": "'./api-stub.mjs'" });
-copy('minigames/rfid/rfid-ui.js', { [P]: PM, "'../../utils/display-dashes.js'": "'./display-dashes.mjs'" });
+copy('minigames/rfid/rfid-ui.js', { [P]: PM, "'../../utils/display-dashes.js'": "'./display-dashes.mjs'", "'../../utils/escape-html.js'": "'./escape-html.mjs'" });
 copy('minigames/rfid/rfid-attacks.js', { [P]: PM });
 copy('minigames/rfid/rfid-animations.js');
 const minigameUrl = copy('minigames/rfid/rfid-minigame.js', {

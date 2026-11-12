@@ -21,6 +21,8 @@ const copy = (rel, fix = (s) => s) => put(rel, fix(readFileSync(join(js, rel), '
 
 copy('utils/desktop-app.js');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
+copy('utils/escape-html.js');
+copy('utils/author-html.js');
 put('systems/global-writer.js', 'export function writeGlobal() {}\n');
 put('systems/social-intel.js', 'export function grantFact() {}\nexport function readyToastText() { return ""; }\nexport function readyToastTitle() { return ""; }\n');
 put('events/combat-events.js', 'export const CombatEvents = {};\n');

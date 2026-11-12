@@ -16,7 +16,7 @@ for (const k of ['log', 'info', 'debug', 'warn', 'error']) console[k] = () => {}
 const here = dirname(fileURLToPath(import.meta.url));
 // SWEEP_JS_ROOT points at a copy of the engine (used to show the tests fail on old code)
 const js = process.env.SWEEP_JS_ROOT || join(here, '../../public/break_escape/js');
-const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
+const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true, url: 'https://game.example/break_escape/games/1' });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.HTMLElement = dom.window.HTMLElement;

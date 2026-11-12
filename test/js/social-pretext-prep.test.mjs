@@ -25,7 +25,7 @@ const copies = [
     'systems/global-writer.js',
     'systems/social-intel.js',
     'systems/social-influence.js',
-    'utils/display-dashes.js',
+    'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js',
     'ui/modal-stack.js'
 ];
 const dir = mkdtempSync(join(tmpdir(), 'social-pretext-prep-'));

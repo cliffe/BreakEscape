@@ -17,7 +17,7 @@ const load = async (src, out) => {
 };
 const { npcReachDistSq, staticNpcBodyDistSq, pointToRectDistSq } = await load('systems/npc-reach.js', 'npc-reach.mjs');
 const { isRepeatInteraction } = await load('systems/interaction-repeat.js', 'interaction-repeat.mjs');
-const { displayDashes } = await load('utils/display-dashes.js', 'display-dashes.mjs');
+const { displayDashes } = await load('utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'display-dashes.mjs');
 
 const RANGE_SQ = 32 * 32;
 
