@@ -71,6 +71,6 @@ n2: `putAside` clears the flag and returns null when `endMinigame` threw and the
 
 ## Regression
 
-- `bin/test-js` and the Rails TTS tests: see the log line.
+- `bin/test-js -j 3` under the lock: 512 files passed, 0 failed. Rails TTS tests (`tts_line_extractor_ring`, `tts_line_resolver`, `tts_mission_lines`, `tts_delivery`, `tts_text_match`) under the lock: 102 runs, 0 failures.
 - Lab SE (`proofs/A3_r1/se_dev/`): `sha256_noseed` for `dev_service_desk` (`ffe4c083…`) and `ruth_phone` (`52c50b7a…`) identical to `A3/se_dev` after the call and after reload; the `/tts` request list identical.
 - Not run: `phone-ring-in-phone` as a live Connecting panel. The 500 ms window is too short to capture reliably in a headless run, and the held case needs a queued beat over the phone; both are covered by the harness against the real adapter.
