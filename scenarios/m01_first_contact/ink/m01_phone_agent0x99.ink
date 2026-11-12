@@ -114,6 +114,7 @@ VAR lockpicking_guide_offered = false
     - else: You're in.
 }
 
+#set_global:m01_first_ring_done:true
 One test call before it's texts only.
 
 A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover.

@@ -54,6 +54,13 @@ export function installPhoneRinger(win = window) {
     const sceneActive = () => !!nm()?.scriptedConversationActive?.();
     const queuedBeats = () => (nm()?._scriptedCallQueue?.length || 0) > 0;
     const knockedOut = () => !!win.playerIsKnockedOut?.();
+    /** The tutorial prompt or an active tutorial step: its panel (SKIP TUTORIAL, step counter) must stay visible, so nothing rings (M8 R1 M2). */
+    const tutorialShowing = () => {
+        try {
+            const t = win.getTutorialManager?.();
+            return !!t && (t.active === true || t.promptOpen === true);
+        } catch (e) { return false; }
+    };
     /** A conversation minigame: a person-chat (a video call is one: conversationMode "video-call"), or a phone-chat showing a call (2.2). */
     const isConversation = (m) => !!m && (m._sceneType === 'person-chat'
         || (m._sceneType === 'phone-chat' && (m.params?.voiced === true || m.params?.disableClose === true)));
@@ -209,9 +216,10 @@ export function installPhoneRinger(win = window) {
     // ---- the adapter -------------------------------------------------------------
     const adapter = {
         // A non-conversation minigame or a popup does not block: the call rings over it
+        // An active tutorial (or its prompt) does block: the ring waits until it ends or is skipped
         // The player's own phone does not block either: the call rings inside it (row 10)
         ringBlocked() {
-            return isConversation(openMinigame()) || sceneActive() || queuedBeats() || knockedOut();
+            return isConversation(openMinigame()) || sceneActive() || queuedBeats() || knockedOut() || tutorialShowing();
         },
         // A popup does not block opening either: row 11 puts it aside; the caller's own phone is
         // closed for the call (row 10)
