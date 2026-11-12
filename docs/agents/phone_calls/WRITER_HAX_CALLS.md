@@ -307,3 +307,53 @@ Voiced new/re-keyed: **2** (bring_me_in lines gain a voice).
 | m07 | M6 | 2 |
 
 All call knots marked `// lint: call-knot`; the engine also auto-discovers them by traversal (`voicedCallKnots`). `#place_call` validation and the engine-written-VAR awareness are A7/validator work not yet on this branch, so `#place_call` tags don't error and the "call VAR read but never set" warnings are expected (see top).
+
+---
+
+## Variety listing (3.6) — opening + last HaX line of every call I touched
+
+Checked side by side; collisions fixed (m03 slow/callback openers reworded away from m04's "There you are" and m01/m04's "You rang... Good").
+
+### Callback openers (each opens differently)
+- m01 first_ring: "You rang back. Good habit." *(plan-fixed)*
+- m03 revelation: "Knew you'd get back to me. Your distcc flag landed while you were out there..." *(reworded for variety)*
+- m04 anomaly: "You rang. Good. Nightshade's read it." *(plan-fixed)*
+- m05 architect: "Thank you. Listen." *(plan-fixed)*
+
+m01 and m04 share the "You rang / Good" cadence (both plan-fixed in 7.2); different sentences and clips. Noted, not overridden.
+
+### Slow-answer openers (`call_answer_seconds > 10`, each differs)
+- m01: "Took your time. Fine, nothing's on fire yet." *(plan)*
+- m03: "Thought I'd lost you. Your distcc flag landed, the whole log with it..." *(reworded)*
+- m04: "There you are. That dial won't wait." *(plan)*
+- m05: "Finally. Sit down for this." *(plan)*
+
+### Plain / placed openers
+- m01 first_ring: "You're in. I wanted the line tested before you go dark."
+- m01 bring-in: "It went through. Not on an open line. Come back to HQ." / "Shatter's dead in the water. Pack up and come in..."
+- m03 revelation: "Your distcc flag just landed -- the whole transaction log came through with it..."
+- m03 bring-in: "Last look. Once you're out, the search team has that building."
+- m04 anomaly: "Sixty-one. You were right not to trust their screens."
+- m04 bring-in: "Past the gate it's forensics' site, not ours. Anything you want, take it now."
+- m05 architect: "Read it twice. A casualty projection, reviewed, and signed off as an acceptable cost."
+- m05 bring-in: "Once you're out, QDC's own people go through that vault before ours do..."
+- m06 fund: "I've got it in front of me."
+- m06 bring-in: "Police are twenty minutes out. Whatever you leave in there is their evidence."
+- m08 door audit: "Two questions, the ones he'd ask. When was the plan opened?"
+- m07 bring-in: "Putting you through. He's waiting."
+
+m03 and m05 bring-ins both open "...Once you're out..." — both plan-sanctioned in 7.6 (m03 fixed, m05 stays); rest of each line differs.
+
+### Last HaX lines (bring-ins all differ, none is "See you at HQ.")
+- m01 first_ring: "Then you message me fast. I'm on the thread the whole way. Go."
+- m01 bring-in: "Walk out the way you came in. As far as Viral Dynamics knows, you were never here."
+- m03 revelation end: "Finish up, then Sterling. And be careful. Reasonable as she sounds, she signed that invoice."
+- m03 bring-in: "Leave her to us."
+- m04 bring-in: "Albion's grid is someone else's problem now."
+- m05 bring-in: "Thursday, nine o'clock. My office."
+- m06 bring-in: "We'll decide about the money at HQ, not on a phone."
+- m07 bring-in: "Putting you through. He's waiting." (one-shot: opening is the last line)
+- m08 door audit (right answer): "...Nightshade. I trained with him. ... You finish the chain."
+
+### [Bring me in.] replies (all differ)
+m03 "Side door, two minutes. Don't use the lobby." / m04 "Loading dock. The van with no livery." / m05 "Front entrance. Walk like you work there." / m06 "Round the back. They'll flash the headlights twice."

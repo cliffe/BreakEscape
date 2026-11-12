@@ -472,8 +472,8 @@ Client roster, transaction records, anything to the Architect.
     -> DONE
 }
 {
-    - call_is_callback: Good, you rang back. Your distcc flag landed while you were busy -- open your copy and read along.
-    - call_answer_seconds > 10: There you are. Your distcc flag landed, and the whole log came with it. Open your copy and read along.
+    - call_is_callback: Knew you'd get back to me. Your distcc flag landed while you were out there -- open your copy and read along.
+    - call_answer_seconds > 10: Thought I'd lost you. Your distcc flag landed, the whole log with it -- open your copy and read along.
     - else: Your distcc flag just landed -- the whole transaction log came through with it. Open your copy and read along.
 }
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
