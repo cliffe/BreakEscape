@@ -87,7 +87,8 @@ const STARTERS = {
     'kiosk': 'startEpisodeRunner',
     'page-builder': 'startLandingPageBuilder',
     'report-workstation': 'startEngagementReport',
-    'mail_terminal': 'startMailClientMinigame'
+    'mail_terminal': 'startMailClientMinigame',
+    'phone_friendface': 'startFriendfacePhone'
 };
 function reset() {
     alerts.length = 0; calls.length = 0; stationCalls.length = 0;

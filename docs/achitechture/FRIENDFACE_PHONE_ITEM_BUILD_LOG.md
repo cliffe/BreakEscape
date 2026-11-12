@@ -69,7 +69,11 @@ Screenshots: the scratchpad `ffp/` folder of the session (not committed).
 
 ## Suite results
 
-(filled in below)
+- Rails `bin/rails test` (under the lock): 1804 runs, 25613 assertions, 0 failures, 0 errors, 1 skip.
+- JS `bin/test-js -j 3` (under the lock): 507 of 508 files. The one failure,
+  `minigame-launch-routes.test.mjs`, listed the registry's types and lacked the new
+  `phone_friendface` entry; added to its starter map, the file now passes alone (31 of 31). No
+  other change, so the full JS suite was not rerun.
 
 ## Handover
 
