@@ -189,6 +189,14 @@ module BreakEscape
       assert_equal hostile, ask('jake').dig('post', 'text')
     end
 
+    test 'review C R1 m3: a feed-only NPC gets no npcFrustration entry when its room loads' do
+      build(player_state: { 'encounteredNPCs' => [] })
+      room_body
+      state = @game.reload.player_state['npcFrustration'] || {}
+      refute state.key?('omar'), 'omar has a feed and no need: nothing to record'
+      assert_includes @game.player_state['encounteredNPCs'], 'omar', 'the room load met him'
+    end
+
     test 'a reset drops feedRevealed' do
       build
       ask('jake')

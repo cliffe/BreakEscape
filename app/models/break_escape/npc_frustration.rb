@@ -62,16 +62,17 @@ module BreakEscape
     end
 
     # Called when a room's NPCs are first encountered (track_npc_encounters): the moment each
-    # NPC that can fail, or has a feed, became known (plan 9.4). No check in A reads it: since
-    # R5 n2 the "NPC known" check is encounteredNPCs. It is kept for sub-slice C's feed (which
-    # starts from it) and for the verify-run report.
+    # NPC that can fail became known (plan 9.4). No check reads it: since R5 n2 the "NPC known"
+    # check is encounteredNPCs, and sub-slice C's feed never reads it (its first post has no
+    # floor; the second and later are held to the last post's time, feedRevealed.at). It is
+    # kept for the verify-run report.
     def note_npcs_met!(npc_ids)
       now = server_now
       AccessWork.with_index(scenario_data) do
         Array(npc_ids).each do |id|
           npc = scenario_room_npc(id)
           next unless npc
-          next unless AccessWork::JUDGED_NEEDS.any? { |need| AccessWork.can_fail?(scenario_data, npc, need) } || npc['feed'].is_a?(Hash)
+          next unless AccessWork::JUDGED_NEEDS.any? { |need| AccessWork.can_fail?(scenario_data, npc, need) }
 
           entry = frustration_entry(id.to_s)
           entry['metAt'] ||= now

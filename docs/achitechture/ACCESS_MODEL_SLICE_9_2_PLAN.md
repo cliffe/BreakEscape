@@ -1218,7 +1218,10 @@ period, computed in `access_work.rb` as `min(restores, 100 - urgentAt) / decayPe
 minutes, with the need's own `urgentAt` and `decayPerMin` and the smallest `restores` among the
 NPC's options (`socialUse`, default 60, for the phone and its PC, and each object whose
 `affordance.satisfies` lists `social_media`). A larger `restores` only lengthens the real period,
-so the floor never refuses an honest post; the floor is 0.9 of this period (section 9.1).
+so the floor never refuses an honest post; the floor is 0.9 of this period (section 9.1). An honest use can still come inside the floor: after a reload
+(needs restart at `initial` while `feedRevealed.at` persists) or from a tempt band (slice 18b-i
+takes a need above `urgentAt`). The answer is then `tooSoon` with `retryAfter`, and the client
+asks once more after that wait, so the use still yields its post (C review R1 m2).
 
 ## 9. Server
 
@@ -1490,7 +1493,9 @@ play and without the player standing anywhere in particular:
   and read that login;
 - ask `/feed_post` for every post and its fact at the post floor, with the NPC never touching a
   phone or a PC, whatever the `social` policy (the route checks only "NPC known", the feed and the
-  floor);
+  floor). The first post comes the moment the NPC is known (it has no floor), and an NPC with
+  `"phone": false` whose only source is a blocked own PC posts before any borrow is handed over
+  (C review R1 m4, not adopted: the route does not ask whether an honest source exists);
 - send a `check` for any owner at any time, not only at the owner's return: after three wrong
   passwords for a guessed username at a PC, that answers whether the username is the owner's
   (decision 14);
@@ -2367,7 +2372,7 @@ touches:
 | A workstation used by a non-owner reads as in use, and an NPC signing in at a PC ends the player's session there | From sub-slice H, and only where an NPC's use job targets a sign-in PC it does not own. With `private` PCs (`test_needs_sims`) that never happens; in `test_npc_needs` and the lab each PC has one user. The needs regression captures confirm it |
 | The door unlock's tail becomes `serve_opened_room` | Every door unlock: the same steps in the same order |
 | Four new `player_state` keys | New games get empty ones; older saved games are read as empty |
-| `track_npc_encounters` writes `metAt` | Only for an NPC with a `work` plan or a feed: none today |
+| `track_npc_encounters` writes `metAt` | Only for an NPC that can fail (C review R1 m3: a feed alone writes none, since the feed never reads `metAt`) |
 | An owner claim is refused while the owner is locked out at that PC (sub-slice L) | Every scenario with `maxAttempts` and owned sign-in PCs (`test_access_signin`, `test_access_sessions`): a claim of a locked-out owner's session is refused where today it succeeds. The first slice's scripted runs are repeated at L-2 |
 | `validate_npc_needs.rb` no longer errors on a `social_media` need with no satisfying object | No scenario has one |
 
