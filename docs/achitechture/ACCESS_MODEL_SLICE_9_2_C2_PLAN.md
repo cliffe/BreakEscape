@@ -279,6 +279,14 @@ assertions), never as a fixed per-run total.
   names a cause this NPC can never meet, the validator's static reachability check of section 8,
   `AccessWork.cause_why_reachable?`; in a clean scenario this reduces to "shown").
 
+This is one **named pure helper**, `AccessWork.feed_done?(scenario_data, npc, shown)`, a function of
+`shown` (the derived reveal list) and `scenario_data` only. Both call sites use this one function so the
+rule cannot drift (the same one-copy discipline as `cause_holds?`): `select_feed_post` returns its
+result alongside the chosen post id (so the `POST /feed_post` route does not recompute it), and
+`feed_posts_for_client` calls `feed_done?` directly with the derived `shown`. It never reads the live
+globals or lockouts `select_feed_post` is given: branch (b) is static reachability only, so a reactive
+post that is merely false right now but still reachable keeps `done: false`.
+
 Branch (b) reads **only `scenario_data` reachability**, never the live globals or lockouts
 `select_feed_post` is given: a reactive post whose condition is merely false right now but can still
 be reached keeps `done: false`, so a builder must not let a transiently-false but reachable post close
@@ -343,10 +351,17 @@ Only `POST /feed_post` and the `feedPosts` block of `GET /scenario` change. No r
 
 A separate branch `build/q33-lockout` (under review, not yet merged) adds an `object_id` to
 `POST /feed_post` (where the use happened; null = the personal phone) and refuses a locked-out PC, an
-object not one of the NPC's places, a non-string, and the phone for a `"phone": false` NPC. C2 builds
-on top of that route shape once q33 merges: the selection of section 4 runs **after** those refusals,
-so a refused use never reaches the selection and the `npc_id`-only server-authority story (section 6)
-is unchanged (the extra `object_id` is still a server-checked location, not a condition input).
+object not one of the NPC's places, a non-string, and the phone for a `"phone": false` NPC. The C2
+branch does not yet hold q33: `build/9-2-c2`'s `app/models/break_escape/social_feed.rb` is still the C
+route shape (`reveal_feed_post!(npc_id)`, no `source`, no `feed_source_ok?`), so a builder who starts
+C2 against the plan's q33 signature would conflict when q33 lands.
+
+**Build order (hard prerequisite).** The build **begins** by bringing q33 into the branch: merge
+`build/q33-lockout` into `build/9-2-c2` (or merge `main` once q33 has landed there) **before any C2
+code**, so the route already carries the `source` parameter and `feed_source_ok?`. C2 then builds on
+that route shape: the selection of section 4 runs **after** the q33 refusals, so a refused use never
+reaches the selection and the `npc_id`-only server-authority story (section 6) is unchanged (the extra
+`object_id` is still a server-checked location, not a condition input).
 
 - **`POST /feed_post`** (`reveal_feed_post!`, `social_feed.rb`). Checks are C's, in the same order:
   1. NPC known (in `encounteredNPCs`); 2. the NPC has a feed with posts and a valid `social_media`
@@ -357,7 +372,8 @@ is unchanged (the extra `object_id` is still a server-checked location, not a co
   lockout_keys)` for the next post id by `order` and the eligibility tests, passing the route's
   `npcFrustration[id]`, globals and pre-gated lockout keys (section 3). The answer keeps C's shape, `{ npcId,
   index, post, fact, site, person, done }`, with `index` now the reveal sequence (`shown.length`
-  before the append) and `done` computed as in section 4. When selection yields nothing and the feed
+  before the append) and `done` taken from `select_feed_post`'s return (the shared
+  `AccessWork.feed_done?` of section 4), not recomputed in the route. When selection yields nothing and the feed
   is not finished, `{ post: null, done: false }`; when finished, `{ post: null, done: true }`; the
   pace refusal is C's `{ post: null, done: false, tooSoon: true, retryAfter, revealed }`, `revealed`
   now being `shown.length`. On a served post the route appends the id to `shown`, sets `at`, and
@@ -367,7 +383,10 @@ is unchanged (the extra `object_id` is still a server-checked location, not a co
   revealed list for the browser. It derives `shown` via `feed_shown_ids` (section 5, so a C-shape
   `{ n, at }` entry renders without a nil error), then maps `shown` in order, emitting each post with
   its reveal-sequence `index` (its position in `shown`) and its fact entry, so a reload lists reactive
-  posts newest first just as the live feed did. `done` is recomputed by section 4.
+  posts newest first just as the live feed did. `done` is recomputed by the shared
+  `AccessWork.feed_done?(scenario_data, npc, shown)` helper (section 4), the same function
+  `select_feed_post` returns for the route, so the two never drift. This replaces C's
+  `done => n >= posts.size`.
 
 **`feed_answer` split.** C's `feed_answer(npc, posts, index)` uses one `index` both to look up
 `posts[index]` and to emit it. C2 looks posts up **by id** and emits the **reveal sequence**
@@ -408,8 +427,10 @@ Almost none. `social-feed.js` already reveals a post per answer, merges its fact
 - Because every reactive post fires once with its own authored id, C's `_add` id dedup
   (`social-feed.js`) is correct as is: no id is served twice, so no reveal is dropped. No client change
   is needed for identity.
-- The test bridge's `feed()` (revealed post ids by NPC) already reports reveal order; it reads
-  `shown` with no change.
+- The test bridge's `feed()` (revealed post ids by NPC) already reports client reveal order, which
+  equals `shown` order, with no change. It reads the client's own reveal list (`f.revealed()` over the
+  client `posts`, sorted by the reveal-sequence `index`), not the server `shown` record; because
+  `index` is the reveal sequence, that order matches `shown`.
 
 No new client module. The plan adds client assertions, not client logic (section 9).
 
@@ -504,20 +525,34 @@ Unit, tampered-client, leak scanner and a live run, matching C's approach.
   and fact are absent from every response until the server serves it. Assert the whole-text and
   structural checks (section 6) over a reactive post before its condition holds.
 - **Leak scanner (`tools/playtest/lib/access_leak_scanner.rb`, driven by `access-leak-check.rb` /
-  `validator-access-work`).** C2 breaks two of the scanner's authored-order assumptions, so the scanner
-  is changed, not reused as is:
-  - `note_feed_served` currently infers the served post from the authored-order prefix
+  `validator-access-work`).** C2 breaks the scanner's authored-order assumptions in three places, so the
+  scanner is changed, not reused as is. The root cause is shared: the scanner decides which posts a
+  response may legitimately carry from an **authored-order prefix** of `@feed_order` (built in authored
+  order over `feed['posts']`), but C2 serves reactive posts out of authored order, so "revealed so far"
+  is no longer a prefix of the authored array. Both branches of `note_feed_served` rely on that prefix.
+  - `note_feed_served`'s `/feed_post` branch infers the served post from the authored-order prefix
     (`@feed_order[npc_id][feed_revealed_now(npc_id) - 1]`), because C guarantees authored order. C2
     serves reactive posts out of authored order, so the served id must be read from the **answer body's
     own `post['id']` and `fact['id']`** (`serve_feed(npc_id, body['post']['id'], body['fact']&.dig('id'))`),
-    not the prefix. The `GET /scenario` `feedPosts` branch already looks posts up by their own id, so it
-    is unaffected; only the `/feed_post` branch changes.
+    not the prefix.
+  - `note_feed_served`'s `GET /scenario` `feedPosts` branch is **also affected**. It currently allows a
+    listed post only when its id is in `allowed = @feed_order[npc_id].first(feed_revealed_now)`, an
+    authored-order prefix. Under C2 an out-of-order reactive post the server legitimately served falls
+    outside that prefix, so the branch skips it, never marks it served, and `scan_feed` then raises a
+    **false `feed_text` leak** for it. This bites a resumed-from-save run (the `@feed_fallback` path),
+    where there is no prior `/feed_post` answer line to mark the post served and the base comes from
+    `feedRevealed` alone. Fix: derive `allowed` from the **ids actually shown**, not the authored prefix.
+    When `@game.player_state['feedRevealed'][npc]['shown']` is available, use that id list as `allowed`;
+    for in-log reveals accumulate the served ids seen so far per NPC. Either way `allowed` is the set of
+    ids actually shown, so an out-of-order reactive post is recognised.
   - `prepare_feed_base` reads `n = entry['n'].to_i` from `feedRevealed`, but C2's shape is `{ shown, at }`
     with no `n`. The resumed base count derives from `entry['shown'].length` when present, falling back
     to `entry['n'].to_i` so a legacy C save `{ n, at }` still counts correctly.
   - Tests for the scanner: a reactive post served out of authored order is marked by its body id and
     raises no false `feed_text` leak; a resumed run whose `feedRevealed` is the new `{ shown, at }`
-    shape computes the right base; a legacy `{ n, at }` entry still does.
+    shape lists an **out-of-order reactive post** in its `feedPosts` and asserts no false `feed_text`
+    leak (the case that pins the scenario-branch fix), and computes the right base; a legacy `{ n, at }`
+    entry still does.
 
   The no-exposure fixture gains a reactive post with a feed fact. Assert: before any state change, no
   response holds the reactive post's whole `text` or its fact's whole `text`, no object keyed by the
