@@ -2,7 +2,7 @@
 // Run with: bin/test-js test/js/npc-needs-debug.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { barColour, barLayout, jobLabel, BAR, NpcNeedsDebug } from '../../public/break_escape/js/systems/npc-needs-debug.js';
+import { barColour, barLayout, jobLabel, BAR, NpcNeedsDebug, wrapLabel, LABEL_MAX_CHARS } from '../../public/break_escape/js/systems/npc-needs-debug.js';
 
 test('barColour: green above urgentAt, amber at or below, red once unmet for maxUnmetMin', () => {
     const cfg = { urgentAt: 40, maxUnmetMin: 5 };
@@ -75,4 +75,11 @@ test('access slice 9.2: an F bar for frustration, last, only when given', async 
     assert.deepEqual(rows.map(r => r.letter), ['C', 'W', 'F']);
     assert.equal(rows[2].colour, FRUSTRATION_COLOUR);
     assert.equal(rows[2].fillW, Math.round(rows[2].w * 0.4));
+});
+
+test('wrapLabel: the job line in short lines at spaces, so it stays over the NPC (UX access R1 finding 8)', () => {
+    assert.equal(wrapLabel('dana: using 560s dana_coffee leashed'), 'dana: using 560s\ndana_coffee\nleashed');
+    for (const line of wrapLabel('omar: goto omar_pc').split('\n')) assert.ok(line.length <= LABEL_MAX_CHARS);
+    assert.equal(wrapLabel('a_very_long_object_identifier'), 'a_very_long_object_identifier', 'a long word keeps its own line');
+    assert.equal(wrapLabel(''), '');
 });

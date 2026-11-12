@@ -81,6 +81,23 @@ function jobBase(st, job) {
     return `${job.phase || 'job'} ${target}`.trim();
 }
 
+/**
+ * Pure: the job line broken at spaces into lines of at most `maxChars` (a longer word keeps
+ * its own line), so the label stays a narrow block centred over the NPC instead of one long
+ * line running from the NPC out of the room (UX access R1 finding 8).
+ */
+export const LABEL_MAX_CHARS = 16;
+export function wrapLabel(text, maxChars = LABEL_MAX_CHARS) {
+    const lines = [];
+    let line = '';
+    for (const word of String(text || '').split(/\s+/).filter(Boolean)) {
+        if (line && line.length + 1 + word.length > maxChars) { lines.push(line); line = word; }
+        else line = line ? `${line} ${word}` : word;
+    }
+    if (line) lines.push(line);
+    return lines.join('\n');
+}
+
 const win = () => (typeof window !== 'undefined' ? window : {});
 const FONT = { fontFamily: 'monospace', fontSize: '8px', color: '#ffffff', stroke: '#000000', strokeThickness: 2 };
 
@@ -120,7 +137,7 @@ export class NpcNeedsDebug {
         if (p) return p;
         const scene = sprite.scene;
         const res = Math.max(2, Math.ceil(scene.scale?.displayScale ? 1 / scene.scale.displayScale.x : 4));
-        const label = scene.add.text(0, 0, '', { ...FONT, resolution: res }).setOrigin(0, 1).setDepth(DEPTH);
+        const label = scene.add.text(0, 0, '', { ...FONT, align: 'center', resolution: res }).setOrigin(0.5, 1).setDepth(DEPTH);
         p = { gfx: scene.add.graphics().setDepth(DEPTH), letters: new Map(), label, sprite, res, h: 0 };
         this.panels.set(id, p);
         return p;
@@ -143,7 +160,8 @@ export class NpcNeedsDebug {
             }
             t.setData('dy', r.y + r.h / 2);
         }
-        if (p.label.text !== text) p.label.setText(text);
+        const wrapped = wrapLabel(text);
+        if (p.label.text !== wrapped) p.label.setText(wrapped);
     }
 
     _place(p) {
@@ -152,7 +170,7 @@ export class NpcNeedsDebug {
         const x = Math.round(top.x - p.w / 2), y = Math.round(top.y - 14 - p.h);   // leave room for the action icon (frames have empty headroom)
         p.gfx.setPosition(x, y);
         for (const t of p.letters.values()) t.setPosition(x + BAR.pad, y + t.getData('dy'));
-        p.label.setPosition(x, y - 1);
+        p.label.setPosition(x + Math.round(p.w / 2), y - 1);
     }
 
     /** Per-frame. */
