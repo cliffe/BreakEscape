@@ -244,18 +244,23 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (active && active.npcId === npcId && active.direction !== 'outgoing') mine.push(active);
         for (const q of queue) if (q.npcId === npcId) mine.push(q);
         const forced = mine.filter((o) => o.keep);
-        const vm = (voicemails.get(npcId) || [])[0] || null;
+        const vms = voicemails.get(npcId) || [];
         let best = null;
         for (const o of mine) if (!o.keep && (!best || rank(o) > rank(best))) best = o;
         let slot = null;
         const cb = callbacks.get(npcId);
-        if (forced.length || best || cb || vm) {
+        if (forced.length || best || cb || vms.length) {
             slot = { forced: forced.map(record) };
             if (best) slot.live = record(best);
-            // A pending callback is saved as a live record with state "missed" (2.7). A contact's
-            // offer outranks it: a reload turns that offer into its own outcome (row 7 and 27).
-            else if (vm) slot.live = { knot: vm.knot, state: 'missed', onMissed: 'voicemail', voicemailKnot: vm.knot, withheld: vm.withheld || undefined };
-            else if (cb) slot.live = { knot: cb.knot, state: 'missed', onMissed: 'callback', callLabel: cb.callLabel || undefined };
+            // Every voicemail still to run, in arrival order, beside whatever else the contact has (A6 R2 M1).
+            if (vms.length) slot.voicemails = vms.map((v) => ({ knot: v.knot, withheld: v.withheld || undefined }));
+            // A pending callback is saved as a live record with state "missed" (2.7) when it is alone. With
+            // a live offer or a held voicemail it is saved beside them as `callback` (A6 R2 M1); a reload
+            // turns the offer into its own outcome (row 7 and 27) and hands the callback back.
+            if (cb) {
+                const rec = { knot: cb.knot, state: 'missed', onMissed: 'callback', callLabel: cb.callLabel || undefined };
+                if (best || vms.length) slot.callback = rec; else slot.live = rec;
+            }
         }
         call('savePendingCall', npcId, slot);
     }
@@ -1179,6 +1184,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         refreshSave,
         stateOf,
         isClosed: () => closed,
+        isSuspended: () => suspended,
         queueLength: () => queue.length,
         /** The current offer (ringing, held or connected), for the adapter and tests. */
         current: () => (active ? { ...active, openTimer: undefined } : null),

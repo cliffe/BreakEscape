@@ -4033,6 +4033,7 @@ module BreakEscape
     PHONE_CALL_GLOBAL_NAME = /\A[A-Za-z0-9_]{1,100}\z/
     PHONE_CALL_CONTROL = /[\u0000-\u001F\u007F]/
     MAX_PHONE_FORCED_CALLS = 10
+    MAX_PHONE_VOICEMAILS = 10
     MAX_PHONE_CALL_GLOBALS = 10
     MAX_PHONE_ANSWER_SECONDS = 3600
 
@@ -4138,12 +4139,12 @@ module BreakEscape
       clean
     end
 
-    # The saved call slot of one contact: { forced: [record], live: record } (A2a notes), or the
+    # The saved call slot of one contact: { forced: [record], live: record, voicemails: [{ knot, withheld }], callback: record } (A2a notes), or the
     # older single record. Untrusted: Hashes, plain strings, small numbers, nothing else.
     def clean_phone_pending_call(value)
       return nil unless value.is_a?(Hash)
 
-      unless value.key?('forced') || value.key?('live')
+      unless value.key?('forced') || value.key?('live') || value.key?('voicemails') || value.key?('callback')
         return clean_phone_call_record(value)
       end
 
@@ -4154,7 +4155,26 @@ module BreakEscape
       end
       live = clean_phone_call_record(value['live'])
       out['live'] = live if live
+      # Held voicemails, in arrival order (A6 R2 M1), and a callback kept beside a live record or a voicemail
+      if value['voicemails'].is_a?(Array)
+        vms = value['voicemails'].first(MAX_PHONE_VOICEMAILS * 4).filter_map { |r| clean_phone_voicemail(r) }.first(MAX_PHONE_VOICEMAILS)
+        out['voicemails'] = vms if vms.any?
+      end
+      callback = clean_phone_call_record(value['callback'])
+      out['callback'] = callback if callback
       out.empty? ? nil : out
+    end
+
+    # One held voicemail: { knot, withheld }. Nothing else is kept.
+    def clean_phone_voicemail(rec)
+      return nil unless rec.is_a?(Hash)
+
+      knot = rec['knot']
+      return nil unless knot.is_a?(String) && knot.match?(PHONE_CALL_KNOT)
+
+      out = { 'knot' => knot }
+      out['withheld'] = rec['withheld'] if rec['withheld'] == true || rec['withheld'] == false
+      out
     end
 
     def clean_phone_call_record(rec)

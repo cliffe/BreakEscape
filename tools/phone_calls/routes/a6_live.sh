@@ -1,6 +1,6 @@
 #!/bin/bash
 # A6 live proofs on test_phone_calls: callback and voicemail (plan 2.6), and a reload mid-call (A5 R1 M1).
-#   PC_PORT=3024 tools/phone_calls/routes/a6_live.sh patient|decline|debrief_ko|voicemail|terminal|midcall_out|midcall_in|voicemail_open|voicemail_held_reload
+#   PC_PORT=3024 tools/phone_calls/routes/a6_live.sh patient|decline|debrief_ko|voicemail|terminal|midcall_out|midcall_in|voicemail_open|voicemail_held_reload|voicemail_held_newer|voicemail_held_two
 # Each route fires the ring event, uses the real banner buttons, the real header and row buttons, and logs the rows, the
 # thread, the callback and the /tts requests (the keyless server answers 503; the request list is the evidence).
 export OUT=${OUT:-docs/agents/phone_calls/proofs/A6} NODE_PATH=$PWD/node_modules BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle
@@ -118,6 +118,29 @@ voicemail_held_reload)
   echo "after the reload (delivered, quiet): $(vm_vars)"
   open_phone; open_thread caller_voicemail; echo "thread: $(thread | jq -c '{text,choices}')"; a2b_shot thread_after_reload
   echo "server: $(BUNDLE_PATH=$BUNDLE_PATH bin/rails runner "g = BreakEscape::Game.find($GID); e = g.player_state['phoneState']['caller_voicemail']; puts JSON.generate({pendingCall: e['pendingCall']})" 2>/dev/null)"
+  tts_log; a2b_quit ;;
+voicemail_held_newer|voicemail_held_two)
+  # A6 R2 M1: a held voicemail plus a newer offer (or a second held voicemail) of the same contact survive a reload
+  start $1
+  open_phone; open_thread caller_voicemail
+  fire ring_voicemail; gate wait_ring caller_voicemail 25
+  press 'button[aria-label="Decline call"]' >/dev/null; sleep 4
+  echo "one held, thread open: $(vm_vars)"
+  fire ring_voicemail; gate wait_ring caller_voicemail 25
+  if [ "$1" = voicemail_held_two ]; then
+    press 'button[aria-label="Decline call"]' >/dev/null; sleep 4
+    echo "two held, thread open: $(vm_vars)"
+  else
+    echo "second offer ringing, one held: $(vm_vars)"
+  fi
+  sync_now
+  echo "server slot before the reload: $(BUNDLE_PATH=$BUNDLE_PATH bin/rails runner "g = BreakEscape::Game.find($GID); e = g.player_state['phoneState']['caller_voicemail']; puts JSON.generate({pendingCall: e['pendingCall']})" 2>/dev/null)"
+  reload; sleep 8
+  echo "after the reload (both delivered, quiet): $(vm_vars)"
+  open_phone; open_thread caller_voicemail; echo "thread: $(thread | jq -c '{text,choices}')"
+  echo "voice bubbles: $(a2b_ev "return document.querySelectorAll('.voice-message-display').length;")"; a2b_shot thread_after_reload
+  sync_now
+  echo "server slot after: $(BUNDLE_PATH=$BUNDLE_PATH bin/rails runner "g = BreakEscape::Game.find($GID); e = g.player_state['phoneState']['caller_voicemail']; puts JSON.generate({pendingCall: e['pendingCall']})" 2>/dev/null)"
   tts_log; a2b_quit ;;
 midcall_out)
   start midcall_out

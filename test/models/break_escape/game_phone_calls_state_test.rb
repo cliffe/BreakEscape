@@ -181,6 +181,47 @@ module BreakEscape
       assert_equal Game::MAX_PHONE_FORCED_CALLS, many['forced'].length
     end
 
+    test 'A6 R2: held voicemails are kept in order beside live and callback' do
+      slot = saved_slot({ 'live' => record, 'voicemails' => [{ 'knot' => 'a_vm', 'withheld' => true }, { 'knot' => 'b_vm' }],
+                          'callback' => record('state' => 'missed', 'callLabel' => 'Front desk') })
+      assert_equal [{ 'knot' => 'a_vm', 'withheld' => true }, { 'knot' => 'b_vm' }], slot['voicemails']
+      assert_equal 'ring_call', slot['live']['knot']
+      assert_equal 'Front desk', slot['callback']['callLabel']
+    end
+
+    test 'A6 R2: a slot with only voicemails is kept' do
+      slot = saved_slot({ 'voicemails' => [{ 'knot' => 'a_vm' }] })
+      assert_equal [{ 'knot' => 'a_vm' }], slot['voicemails']
+    end
+
+    test 'A6 R2: the voicemail list is capped and bad entries are skipped' do
+      slot = saved_slot({ 'voicemails' => [{ 'knot' => 'a' }, { 'knot' => '<script>' }, 7, 'x', { 'knot' => 'b' }] })
+      assert_equal %w[a b], slot['voicemails'].map { |r| r['knot'] }
+      many = saved_slot({ 'voicemails' => (1..50).map { |i| { 'knot' => "k#{i}" } } })
+      assert_equal Game::MAX_PHONE_VOICEMAILS, many['voicemails'].length
+      assert_equal 'k1', many['voicemails'][0]['knot']
+    end
+
+    test 'A6 R2: hostile voicemail entries and a hostile callback are dropped or stripped' do
+      hostile = ['a b', "a\nb", 'x' * 5000, '', nil, 5, ['a'], { 'k' => 1 }, "a\u0000"]
+      assert_nil saved_slot({ 'voicemails' => hostile.map { |k| { 'knot' => k } } })
+      assert_nil saved_slot({ 'voicemails' => 'a_vm' })
+      assert_nil saved_slot({ 'voicemails' => { 'knot' => 'a_vm' } })
+      assert_nil saved_slot({ 'callback' => 'x' })
+      assert_nil saved_slot({ 'callback' => record('knot' => '<bad>') })
+      slot = saved_slot({ 'voicemails' => [{ 'knot' => 'a', 'withheld' => '<b>', 'html' => '<script>', 'evil' => { 'x' => 1 } }] })
+      assert_equal [{ 'knot' => 'a' }], slot['voicemails']
+      cb = saved_slot({ 'callback' => record('callLabel' => '<b>x</b>', 'evil' => 1) })['callback']
+      refute cb.key?('callLabel')
+      refute cb.key?('evil')
+    end
+
+    test 'A6 R2: an old slot without the list still loads' do
+      slot = saved_slot({ 'live' => record('state' => 'missed', 'onMissed' => 'voicemail', 'voicemailKnot' => 'a_vm') })
+      refute slot.key?('voicemails')
+      assert_equal 'a_vm', slot['live']['voicemailKnot']
+    end
+
     test 'forced that is not a list is ignored; live survives' do
       slot = saved_slot({ 'forced' => 'x', 'live' => record })
       refute slot.key?('forced')

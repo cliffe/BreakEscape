@@ -198,14 +198,15 @@ test('M1: two voicemails for one contact held behind its open thread run in orde
     } finally { w.restore(); }
 });
 
-test('M1: a held voicemail is in the contact\'s saved slot (state missed, onMissed voicemail) until it runs, then the slot clears', async () => {
+test('M1: a held voicemail is in the contact\'s saved slot (voicemails list) until it runs, then the slot clears', async () => {
     const w = world();
     try {
         const mg = openThread(w);
         const p = w.nm.runVoicemail('caller', 'ring_vm', { withheld: true });
         await settle(w);
         const slot = w.nm.getNPC('caller').pendingCall;
-        assert.deepEqual(slot.live, { knot: 'ring_vm', state: 'missed', onMissed: 'voicemail', voicemailKnot: 'ring_vm', withheld: true });
+        assert.deepEqual(slot.voicemails, [{ knot: 'ring_vm', withheld: true }]);
+        assert.equal(slot.live, undefined, 'a held voicemail is in the list, not in live');
         closeThread(w, mg);
         await p;
         assert.equal(w.nm.getNPC('caller').pendingCall, null, 'delivered: nothing left to resume');
@@ -221,7 +222,7 @@ test('M1: a reload while a voicemail is held delivers it after the load, quietly
         w.nm.runVoicemail('caller', 'ring_vm', {});
         await settle(w);
         const saved = JSON.parse(JSON.stringify(w.nm.exportPhoneState()));
-        assert.equal(saved.caller.pendingCall.live.onMissed, 'voicemail');
+        assert.deepEqual(saved.caller.pendingCall.voicemails.map((v) => v.knot), ['ring_vm']);
 
         w2 = world();
         w2.nm.restorePhoneState(saved);
@@ -247,4 +248,172 @@ test('M1: the ringer path: Decline of a voicemail call while its thread is open 
         assert.deepEqual(rows(w), ['[Missed call]', '[Voicemail]', 'voice: You let it ring.', 'voice: Call me when you can.']);
         assert.deepEqual(w.toasts, ['New voicemail from Caller One']);
     } finally { w.restore(); }
+});
+
+// ---- A6 R2 M1: the slot keeps every held voicemail and the callback --------------------------------------
+
+const reloadFrom = async (w) => {
+    const saved = JSON.parse(JSON.stringify(w.nm.exportPhoneState()));
+    const w2 = world();
+    w2.nm.restorePhoneState(saved);
+    w2.dispatcher.emit('game_loaded', {});
+    await settle(w2, 60);
+    return { saved, w2 };
+};
+const vmCfg = (i) => cfg({ handlerIndex: i, ring: { onMissed: 'voicemail', voicemailKnot: i === 0 ? 'ring_vm' : 'other_vm' } });
+
+test('M1 P1: a held voicemail and a newer ring of the same contact both survive a reload', async () => {
+    const w = world(); let w2;
+    try {
+        w.nm._handleEventMapping('caller', 'room_entered', vmCfg(0), {});
+        await w.advance(300);
+        openThread(w);
+        w.click('.incoming-call-decline');
+        await settle(w);
+        w.nm._handleEventMapping('caller', 'item_picked_up', vmCfg(1), {});
+        await w.advance(300);
+        const r = await reloadFrom(w);
+        w2 = r.w2;
+        assert.deepEqual(r.saved.caller.pendingCall.voicemails.map((v) => v.knot), ['ring_vm']);
+        assert.ok(r.saved.caller.pendingCall.live, 'the newer offer rides in live');
+        assert.ok(rows(w2).includes('voice: You let it ring.'), 'ring_vm ran after the reload');
+        assert.ok(rows(w2).includes('voice: I already left one.'), 'the second voicemail saw the first');
+    } finally { w.restore(); w2?.restore(); }
+});
+
+test('M1 P2: two held voicemails both survive a reload, in order, each delivered once', async () => {
+    const w = world(); let w2;
+    try {
+        openThread(w);
+        w.nm.runVoicemail('caller', 'ring_vm', {});
+        w.nm.runVoicemail('caller', 'other_vm', {});
+        await settle(w);
+        const r = await reloadFrom(w);
+        w2 = r.w2;
+        assert.deepEqual(r.saved.caller.pendingCall.voicemails.map((v) => v.knot), ['ring_vm', 'other_vm']);
+        const lines = rows(w2).filter((t) => t.startsWith('voice:'));
+        assert.deepEqual(lines, ['voice: You let it ring.', 'voice: Call me when you can.', 'voice: I already left one.']);
+        assert.equal(rows(w2).filter((t) => t === '[Voicemail]').length, 2);
+        assert.equal(w2.nm.getNPC('caller').pendingCall, null);
+        // a second reload from the cleared slot delivers nothing more
+        const r2 = await reloadFrom(w2);
+        assert.equal(r2.saved.caller?.pendingCall ?? null, null);
+        assert.equal(rows(r2.w2).filter((t) => t === '[Voicemail]').length, 2);
+        r2.w2.restore();
+    } finally { w.restore(); w2?.restore(); }
+});
+
+test('M1 P3: a held voicemail and a callback for the same contact both survive a reload', async () => {
+    const w = world(); let w2;
+    try {
+        openThread(w);
+        w.nm.runVoicemail('caller', 'ring_vm', {});
+        await settle(w);
+        w.ringer.restoreCallback('caller', { knot: 'ring_call', state: 'missed', onMissed: 'callback' });
+        await settle(w);
+        const r = await reloadFrom(w);
+        w2 = r.w2;
+        assert.deepEqual(r.saved.caller.pendingCall.voicemails.map((v) => v.knot), ['ring_vm']);
+        assert.equal(r.saved.caller.pendingCall.callback.knot, 'ring_call');
+        assert.ok(rows(w2).includes('voice: You let it ring.'));
+        assert.equal(w2.ringer.callbackFor('caller')?.knot, 'ring_call');
+    } finally { w.restore(); w2?.restore(); }
+});
+
+test('M1: a slot saved before the list existed (a held voicemail in live) still delivers', async () => {
+    let w2;
+    try {
+        w2 = world();
+        w2.nm.restorePhoneState({ caller: { history: [], pendingCall: { forced: [], live: { knot: 'ring_vm', state: 'missed', onMissed: 'voicemail', voicemailKnot: 'ring_vm' } } } });
+        w2.dispatcher.emit('game_loaded', {});
+        await settle(w2, 60);
+        assert.ok(rows(w2).includes('voice: You let it ring.'));
+    } finally { w2?.restore(); }
+});
+
+// ---- A6 R2 m1: the thread holds the voicemail whatever isConversationActive says -----------------------
+
+test('m1: a thread that is still loading (isConversationActive false) holds the voicemail until it closes', async () => {
+    const w = world();
+    try {
+        const mg = openThread(w);
+        mg.isConversationActive = false;
+        const p = w.nm.runVoicemail('caller', 'ring_vm', {});
+        await settle(w);
+        assert.deepEqual(rows(w), [], 'nothing runs while the thread is on screen');
+        closeThread(w, mg);
+        assert.equal(await p, true);
+        assert.ok(rows(w).includes('voice: You let it ring.'));
+    } finally { w.restore(); }
+});
+
+test('m1: an ended thread (isConversationActive false, still the open phone-chat) holds the voicemail', async () => {
+    const w = world();
+    try {
+        const mg = openThread(w);
+        mg.isConversationActive = false;
+        assert.equal(w.nm._threadOpenOn('caller'), true);
+        mg._ending = true;
+        assert.equal(w.nm._threadOpenOn('caller'), false, 'the ending clears it');
+        mg._ending = false;
+        mg.currentNPCId = 'other';
+        assert.equal(w.nm._threadOpenOn('caller'), false, 'another contact does not hold it');
+        const second = openThread(w);
+        second.isConversationActive = false;
+        const p = w.nm.runVoicemail('caller', 'ring_vm', {});
+        await settle(w);
+        assert.deepEqual(rows(w), []);
+        closeThread(w, second);
+        assert.equal(await p, true);
+    } finally { w.restore(); }
+});
+
+test('m1: two windows on one contact: the second thread opened during the hold keeps holding', async () => {
+    const w = world();
+    try {
+        const first = openThread(w);
+        const p = w.nm.runVoicemail('caller', 'ring_vm', {});
+        await settle(w);
+        closeThread(w, first);
+        const second = openThread(w);       // reopened in the same tick as the close
+        second.isConversationActive = false;
+        await settle(w);
+        // the run may only complete after the second thread closes, or it re-holds
+        if (rows(w).length) assert.fail('the voicemail ran into an open thread');
+        closeThread(w, second);
+        assert.equal(await p, true);
+    } finally { w.restore(); }
+});
+
+// ---- A6 R2 nits ------------------------------------------------------------------------------------------
+
+test('n3: a voicemail released when the ending starts (ringer closed) shows no toast', async () => {
+    const w = world();
+    try {
+        const mg = openThread(w);
+        const p = w.nm.runVoicemail('caller', 'ring_vm', {});
+        await settle(w);
+        w.ringer.close?.();
+        closeThread(w, mg);
+        assert.equal(await p, true);
+        assert.deepEqual(w.toasts, [], 'no toast once the phone is closed for the ending');
+    } finally { w.restore(); }
+});
+
+test('n4: giving up after 20 blocked tries is logged, and the voicemail stays in the slot', async () => {
+    const w = world();
+    const warned = [];
+    const orig = console.warn; console.warn = (...a) => warned.push(a.join(' '));
+    try {
+        const real = Conversation.runVoicemail;
+        let calls = 0;
+        const stub = { ...Conversation };
+        w.nm._voicemailDeps = async () => ({ Conversation: { runVoicemail: async () => { calls++; return { blocked: true }; } }, InkEngine,
+            processGameActionTags: () => {} });
+        const ok = await w.nm.runVoicemail('caller', 'ring_vm', {});
+        assert.equal(ok, false);
+        assert.equal(calls, 20);
+        assert.ok(warned.some((m) => /voicemail/i.test(m) && /ring_vm/.test(m)), 'a warning names it');
+        void real; void stub;
+    } finally { console.warn = orig; w.restore(); }
 });
