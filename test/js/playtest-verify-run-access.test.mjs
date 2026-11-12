@@ -46,7 +46,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
   const lines = r.out.trim().split('\n');
   assert.match(lines[0], /^game\s+1\s+\(mission stub\)/);
   assert.equal(lines[1], 'access model');
-  assert.equal(lines.length, 13, r.out);   // npcFrustration: slice 9.2; guestSessions, sharedLogins: 9.2 H
+  assert.equal(lines.length, 14, r.out);   // npcFrustration: slice 9.2; guestSessions, sharedLogins: 9.2 H; feedRevealed: 9.2 C
   assert.match(r.out, /sessions\s+2: jake_pc = jake \(password\); it_pc = dana \(claim\)/);
   assert.match(r.out, /signedInPcs\s+2: jake_pc; it_pc/);
   assert.match(r.out, /serverClones\s+2: 4F00A1C2 from npc jake; EXEC-DF-01 from object exec_badge \(UID-only\)/);
@@ -59,6 +59,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
   assert.match(r.out, /npcFrustration\s+0/);
   assert.match(r.out, /guestSessions\s+0\n/);
   assert.match(r.out, /sharedLogins\s+0\n/);
+  assert.match(r.out, /feedRevealed\s+0/);
 });
 
 test('--access prints the PCs a check recorded an NPC locked out at (slice 9.2 L)', () => {

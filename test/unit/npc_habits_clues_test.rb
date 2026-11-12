@@ -253,4 +253,36 @@ class NpcHabitsCluesTest < ActiveSupport::TestCase
     refute b[:pieces][0][:case_differs]
     assert_equal 0, b[:case_changes]
   end
+
+  test 'slice 9.2 C: a feed post and its feed fact are clue sources, so a password built from them is backed' do
+    data = {
+      'social' => { 'intelFacts' => { 'jake_year' => { 'label' => 'Year', 'text' => 'Jake Brooks married in 1998.' } } },
+      'rooms' => { 'office' => {
+        'objects' => [{ 'id' => 'poster', 'type' => 'notes', 'text' => "IT reminder: your pet's name and a year, capital and a !, is not a password" }],
+        'npcs' => [{ 'id' => 'jake', 'creds' => { 'username' => 'jbrooks', 'password' => 'Biscuit1998!' },
+                     'needs' => { 'social_media' => { 'decayPerMin' => 2, 'urgentAt' => 40 } },
+                     'feed' => { 'site' => 'friendface', 'person' => 'jake', 'posts' => [
+                       { 'id' => 'p1', 'text' => 'Biscuit turns 5 today! Best boy.' },
+                       { 'id' => 'p2', 'text' => 'Twenty years married, still laughing.', 'fact' => 'jake_year' }
+                     ] } }]
+      } }
+    }
+    texts = CL.readable_texts(data)
+    assert texts.any? { |t| t[:path] == 'rooms/office/npcs[0]/feed/posts[0]' }
+    b = CL.backing(data['rooms']['office']['npcs'][0], data, texts, 'poster')
+    assert b[:backed], b[:reasons].inspect
+    assert_equal ['rooms/office/npcs[0]/feed/posts[0]'], b[:pieces][0][:sources].map { |src| src[:path] }
+    assert_equal ['social/intelFacts/jake_year'], b[:pieces][1][:sources].map { |src| src[:path] }
+
+    # Review C R1 m1: a post the server never serves is no clue source: an NPC with no
+    # social_media need never posts, and a post with no id is never served
+    no_id = data.dup.tap { |d| d['rooms'] = Marshal.load(Marshal.dump(d['rooms'])) }
+    no_id['rooms']['office']['npcs'][0]['feed']['posts'][0].delete('id')
+    refute CL.readable_texts(no_id).any? { |t| t[:path] == 'rooms/office/npcs[0]/feed/posts[0]' }
+    no_need = data.dup.tap { |d| d['rooms'] = Marshal.load(Marshal.dump(d['rooms'])) }
+    no_need['rooms']['office']['npcs'][0].delete('needs')
+    refute CL.readable_texts(no_need).any? { |t| t[:path].include?('/feed/') }
+    refute CL.backing(no_need['rooms']['office']['npcs'][0], no_need, CL.readable_texts(no_need), 'poster')[:backed]
+  end
+
 end

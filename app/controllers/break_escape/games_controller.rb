@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
                                         :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_join,
-                                        :npc_frustration, :npc_workaround, :wear]
+                                        :npc_frustration, :npc_workaround, :feed_post, :wear]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -92,7 +92,7 @@ module BreakEscape
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
                                           :login, :logout, :clone_card, :network_plant, :network_unplug, :network_join,
-                                          :npc_frustration, :npc_workaround, :wear]
+                                          :npc_frustration, :npc_workaround, :feed_post, :wear]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -395,6 +395,8 @@ module BreakEscape
         filtered['gainedFootholds'] = @game.gained_footholds
         # Frustration per NPC (slice 9.2, 5.4): level, tell, settled and each need's hold
         filtered['npcFrustration'] = @game.npc_frustration_for_client
+        # Feed posts revealed so far, with their facts (slice 9.2 C, 9.4)
+        filtered['feedPosts'] = @game.feed_posts_for_client
         # Sub-slice L review R1 M1: the sign-in PCs where the player caused a lockout (ids only),
         # so a reload keeps the client's "lockout seen" mark (6.6)
         filtered['lockoutPcs'] = @game.lockout_pcs_for_client
@@ -664,7 +666,6 @@ module BreakEscape
       resolved = TtsLineResolver.new(
         scenario_name: @game.mission&.name,
         scenario_data: @game.scenario_data,
-        story_file: method(:resolve_and_compile_ink),
         player_name: tts_player_name
       ).resolve(npc_id, npc, text)
       return render_error(resolved.error, resolved.status) unless resolved.line
@@ -1222,6 +1223,15 @@ module BreakEscape
         body = body.merge('roomData' => serve_opened_room(result[:open_room])) if result[:status] == :ok && result[:open_room]
         render json: body, status: result[:status]
       end
+    end
+
+    # POST /games/:id/feed_post (slice 9.2 C, ACCESS_MODEL_SLICE_9_2_PLAN.md 8.3 and 9.1):
+    # { npc_id }, sent after a met social media use. The NPC's next post and its fact, or
+    # { post: null, done } when none is left or it is too soon.
+    def feed_post
+      authorize @game if defined?(Pundit)
+      result = @game.reveal_feed_post!(params[:npc_id].is_a?(String) ? params[:npc_id] : nil)
+      render json: result[:body], status: result[:status]
     end
 
     # ==========================================
@@ -2654,66 +2664,10 @@ module BreakEscape
       nil
     end
 
-    # Resolve ink path and compile if necessary
+    # The compiled story for a storyPath, compiling a newer .ink first
+    # (InkStoryFile, the lookup TtsLineResolver uses too)
     def resolve_and_compile_ink(story_path)
-      # Use Engine root for Rails Engine context
-      engine_root = BreakEscape::Engine.root
-      base_path = engine_root.join(story_path)
-      json_path = find_compiled_json(base_path)
-      ink_path = find_ink_source(base_path)
-
-      if ink_path && needs_compilation?(ink_path, json_path)
-        Rails.logger.info "[BreakEscape] Compiling #{File.basename(ink_path)}..."
-        json_path = compile_ink(ink_path)
-      end
-
-      json_path
-    end
-
-    def find_compiled_json(base_path)
-      return base_path if File.exist?(base_path)
-
-      ink_json_path = base_path.to_s.gsub(/\.json$/, '.ink.json')
-      return Pathname.new(ink_json_path) if File.exist?(ink_json_path)
-
-      json_path = base_path.to_s.gsub(/\.ink\.json$/, '.json')
-      return Pathname.new(json_path) if File.exist?(json_path)
-
-      nil
-    end
-
-    def find_ink_source(base_path)
-      ink_path = base_path.to_s.gsub(/\.(ink\.)?json$/, '.ink')
-      File.exist?(ink_path) ? Pathname.new(ink_path) : nil
-    end
-
-    def needs_compilation?(ink_path, json_path)
-      return true unless json_path && File.exist?(json_path)
-      File.mtime(ink_path) > File.mtime(json_path)
-    end
-
-    def compile_ink(ink_path)
-      output_path = ink_path.to_s.gsub(/\.ink$/, '.json')
-      inklecate_path = BreakEscape::Engine.root.join('bin', 'inklecate')
-
-      stdout, stderr, status = Open3.capture3(
-        inklecate_path.to_s,
-        '-jo', output_path,
-        ink_path.to_s
-      )
-
-      unless status.success?
-        Rails.logger.error "[BreakEscape] Ink compilation failed: #{stderr}"
-        raise "Ink compilation failed for #{File.basename(ink_path)}: #{stderr}"
-      end
-
-      if stderr.present?
-        Rails.logger.warn "[BreakEscape] Ink compilation warnings: #{stderr}"
-      end
-
-      Rails.logger.info "[BreakEscape] Compiled #{File.basename(ink_path)} (#{(File.size(output_path) / 1024.0).round(2)} KB)"
-
-      Pathname.new(output_path)
+      InkStoryFile.find(story_path)
     end
 
     def render_error(message, status)

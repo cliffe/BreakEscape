@@ -806,6 +806,43 @@ Author-facing rules are in `README_scenario_design.md`, "Work, frustration and w
   needs regression captures on `test_needs_sims`, `test_npc_needs` and `test_needs_leash` show no
   difference.
 
+### 5.10 Social media and the `self` job (access slice 9.2 C, `ACCESS_MODEL_SLICE_9_2_PLAN.md` section 8)
+
+- **The need.** `social_media` is an ordinary need with its own candidates, tried in order by
+  `_socialCandidate`: a PC borrowed for it (a `borrow_session` in hand); the NPC's own `needsHome`
+  when it is a desk (a workstation) whose effective policy does not block social media, whatever
+  its `affordance.satisfies` says; any non-desk object whose `affordance.satisfies` lists it (a
+  break room tablet), by the usual nearest rule; the phone, unless the record says
+  `"phone": false`; last, the own desk under a blocking policy, a use that fails with
+  `social_blocked` and goes through 5.9 as a `failed` turn-back. Another NPC's desk is never a
+  candidate (`_otherDesk`), so a kiosk sign-in PC is used only when borrowed.
+- **The phone never parks.** When the phone is taken, `s.giveUp` is cleared, so the need never
+  parks for want of a source, and a dead own PC (`_deadStation`) counts nothing for an NPC with a
+  phone. Only an NPC with `"phone": false` parks `off` for a dead PC, as for work.
+- **A use at the own PC** is an at-post job (`job.socialDesk`): the NPC never gets up, and the
+  use takes `socialUse.useSeconds` (default 20) and restores `socialUse.restores` (default 60). It
+  is judged (`npc_used` carries `met`) and is not work.
+- **The `self` job.** A phone use is `{ kind: "self", need: "social_media", phase: "using",
+  targetId: null }`. It starts at once with no wind-up and no `npc_left_post`: an NPC at its post
+  stays there (its screen stays attended, `atPost` kept), and one walking home stops, uses the
+  phone and walks on. `_claims`, `_moveForPhase`, `_atOwnPost` and `_targetsOwnPost` are not asked
+  about it. It shows the `social` action icon and no pose. A conversation freezes it and a
+  knock-out aborts it, as any job. On completion it restores `socialUse.restores` and emits
+  `npc_used_phone:<npcId>`; no `npc_used` (there is no object).
+- **Distracted.** While a `self` job runs, `isDistracted(id)` and `getState().distracted` are
+  true; `systems/npc-sight-challenge.js` skips that NPC, so a guard on his phone can be walked
+  past once a period of the need. `seating.js` keeps a seated phone user at its post seated; one
+  away from its post stands where it stopped (no stop, so it never takes a chair it was passing).
+- **The desk phone.** An owner on its own phone does not answer its desk phone (slice 19,
+  `_ownerCanAnswer` takes only an idle owner or one using its own desk): a colleague is claimed,
+  or the phone rings out. The phone use runs on.
+- **The own workstation with no affordance.** The engine adapter lists the `needsHome` desk of
+  an NPC with a `social_media` need even when it has no `affordance` (it gets an empty one), so
+  it is a source in the browser as on the server and in the validator.
+- **The feed.** Each met `social_media` use (an `npc_used` with `met: true`, or `npc_used_phone`)
+  asks the server for the NPC's next post (`systems/social-feed.js`, `POST /feed_post`); the needs
+  system itself knows nothing of posts.
+
 ## 6. General drop action (exists)
 
 - An inventory item with `"droppable": true` is dropped when clicked in the
@@ -851,6 +888,8 @@ events.
 | `npc_arrived:<npcId>` | existing, now plus `owner` (`'needs'` or undefined) |
 | `npc_use_failed:<npcId>` | `{npcId, objectId, need, missing: [{id, why}], station}` (a judged use failed, 5.9) |
 | `npc_use_refused:<objectId>` | `{npcId, objectId, itemId, tag, usbClass}` (a USB policy refused a carried device) |
+| `npc_used_phone:<npcId>` | `{npcId, need, playerNearby, playerDistance}` (a `self` job, the phone, completed, 5.10) |
+| `npc_posted:<npcId>` | `{npcId, postId, index, site, person}` (from `social-feed.js`, not the needs system: the server revealed the NPC's next feed post) |
 | `npc_checked:<objectId>` | `{npcId, objectId, data}` (a check visit reached the broken thing, 5.9) |
 | `npc_visit_done:<npcId>` / `npc_visit_dropped:<npcId>` | `{npcId, kind, at, data}` (5.9) |
 | `npc_frustration_changed:<npcId>` | `{npcId, level, previous, tell}` (the server's answer moved the level, 5.9) |

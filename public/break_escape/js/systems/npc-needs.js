@@ -1499,7 +1499,11 @@ export class NPCNeedsSystem {
             s.giveUp = null;
             if (tempted) {
                 if (!cand) { this._selectSearched = true; continue; }   // the quiet look's back-off
-            } else if (!cand) cand = this._useCandidate(s, name, objects, pos, excludeId);
+            } else if (!cand) {
+                // Access 9.2 C (plan 8.1): social_media has its own candidate order, the phone last but one
+                cand = name === 'social_media' && this._judged(s, name)
+                    ? this._socialCandidate(s, objects, pos, excludeId) : this._useCandidate(s, name, objects, pos, excludeId);
+            }
             if (cand) best = { ...cand, need: name, score, ...(tempted ? { tempted: true } : {}) };
             else if (s.giveUp && !exclude?.noPark) {
                 // Access 9.2 A (plan 5.2): a judged need whose own station is off parks `off`,
@@ -2065,8 +2069,51 @@ export class NPCNeedsSystem {
         if (need === 'social_media' && this._rec(s).phone !== false) return null;
         const id = this._stationId(s);
         const obj = id ? this.world.getObject(id) : null;
-        if (!obj?.affordance || !asList(obj.affordance.satisfies).includes(need)) return null;
+        const source = need === 'social_media' ? !!obj?.desk : asList(obj?.affordance?.satisfies).includes(need);
+        if (!obj?.affordance || !source) return null;
         return this._isOff(obj) ? id : null;
+    }
+
+    /**
+     * Access 9.2 C (plan 8.1): the candidates for social_media, in order. 1, a PC borrowed for it;
+     * 2, the own workstation when its policy allows social media (and it is not off); 3, any
+     * non-desk object that satisfies the need, nearest reachable; 4, the phone, unless
+     * `"phone": false`; 5, the own workstation under a policy that blocks it, an attempt that
+     * fails. The own workstation is a source whatever its affordance says (a use there takes
+     * socialUse's time and restores), as AccessWork.social_station? says on the server.
+     */
+    _socialCandidate(s, objects, pos, excludeId) {
+        if (s.borrow && s.borrow.need === 'social_media') return this._useCandidate(s, 'social_media', objects, pos, excludeId);
+        const stId = this._stationId(s);
+        let station = null;
+        const others = [];
+        for (const o of objects) {
+            if (o.id === stId && o.desk) {
+                const aff = o.affordance && typeof o.affordance === 'object' ? o.affordance : {};
+                station = { ...o, affordance: { ...aff, satisfies: [...new Set([...asList(aff.satisfies), 'social_media'])] } };
+            } else others.push(o);
+        }
+        const blocked = !!station?.socialBlocked;
+        let cand = this._useCandidate(s, 'social_media', station && !blocked ? [station, ...others] : others, pos, excludeId);
+        if (cand) return cand;
+        if (this._rec(s).phone !== false) {
+            // The phone: never parks for want of a source, and a dead PC counts nothing (8.1)
+            s.giveUp = null;
+            return { kind: 'self', targetId: null };
+        }
+        if (station && blocked) cand = this._useCandidate(s, 'social_media', [station], pos, excludeId);
+        return cand;
+    }
+
+    /** socialUse (plan 8.1): a social media use at the own PC or on the phone; defaults 20 s and 60. */
+    _socialUseSeconds(s) {
+        const v = Number(this._rec(s).socialUse?.useSeconds);
+        return Number.isFinite(v) ? clamp(v, 0, 600) : 20;
+    }
+
+    _socialRestores(s) {
+        const v = Number(this._rec(s).socialUse?.restores);
+        return Number.isFinite(v) ? clamp(v, 0, 100) : 60;
     }
 
     _failurePark(s, name) {
@@ -2635,9 +2682,10 @@ export class NPCNeedsSystem {
     _startJob(s, pick) {
         const id = s.npcId;
         // Review R1 m4, R2 m2: a job shows its own icon, so neither an emit's workaround icon nor
-        // the barrier comes back after it (failCause stays: q17's fade needs it)
+        // the barrier comes back after it (failCause stays: q17's fade needs it). A phone use too.
         s.workaroundShow = null;
         s.failedShow = null;
+        if (pick.kind === 'self') { this._startSelfJob(s, pick); return; }
         s.job = {
             need: pick.need, kind: pick.kind, targetId: pick.targetId,
             itemId: pick.itemId || null, tag: pick.tag || null,
@@ -2648,6 +2696,8 @@ export class NPCNeedsSystem {
         if (pick.visit) s.job.visit = pick.visit;   // access 9.2 A: a visit (5.3)
         // Access 9.2 H (6.4): a borrowed use carries its borrow (cleared on completion, dropped if never done)
         if (pick.borrowed && s.borrow) { s.job.borrowed = true; s.job.borrow = s.borrow; s.borrow.started = true; }
+        // Access 9.2 C (8.1): social media at the own PC takes socialUse's time and restores
+        if (pick.need === 'social_media' && pick.kind === 'use' && pick.targetId === this._stationId(s) && !pick.borrowed) s.job.socialDesk = true;
         if (pick.tempted) s.job.tempted = true;   // slice 18b-i: recorded now, the level may decay on the way
         // Slice 19: a colleague answering a desk phone; the call (and its length) is chosen at the claim
         if (pick.phoneCall) { s.job.phone = true; s.job.call = pick.phoneCall; s.job.callMs = pick.phoneCall.total; }
@@ -2706,6 +2756,53 @@ export class NPCNeedsSystem {
             return;
         }
         this._leavePost(s);
+    }
+
+    /**
+     * Access 9.2 C (plan 8.2): a phone use, a job with no target. No wind-up, no npc_left_post, no
+     * move: the NPC stays where it is (at its post, its screen stays attended); one walking home
+     * stops, uses the phone and walks on. A conversation freezes it and a knock-out aborts it.
+     */
+    _startSelfJob(s, pick) {
+        const id = s.npcId;
+        s.job = {
+            need: pick.need, kind: 'self', targetId: null, itemId: null, tag: null, phase: 'using',
+            startedAt: this.clockMs, deadline: 0, useUntil: this.clockMs + this._socialUseSeconds(s) * 1000, carrying: false
+        };
+        if (pick.tempted) s.job.tempted = true;
+        s.avoidNoted = {};
+        if (s.mode === 'returning' && !s.atPost) this.world.cancelMove(id);
+        this._arrivals.delete(id);
+        s.mode = 'job';
+        this._log(id, 'job_start', { need: pick.need, target: 'phone' });
+        this._log(id, 'using', { need: pick.need, target: 'phone' });
+    }
+
+    _completeSelfJob(s) {
+        const id = s.npcId;
+        const job = s.job;
+        const need = job.need;
+        const n = need ? s.needs[need] : null;
+        if (n) {
+            const restores = this._socialRestores(s) * (1 + (s.rng() * 2 - 1) * n.jitterPct / 100);
+            s.levels[need] = clamp(s.levels[need] + restores, 0, 100);
+            s.lastSatisfiedAt[need] = this.clockMs;
+            if (s.temptBack[need]) delete s.temptBack[need];
+        }
+        this._log(id, 'used', { need, target: 'phone', level: n ? round2(s.levels[need]) : undefined });
+        this._emit(`npc_used_phone:${id}`, { npcId: id, need, ...this._playerProximity(id) });
+        // A met judged use: re-arm and ease, as at a PC; the server takes a null object for the phone
+        if (need && this._judged(s, need)) {
+            s.rearm[need] = true;
+            s.failCause[need] = [];
+            if ((s.frustration > 0 || s.failSent[need]) && typeof this.world.reportUse === 'function') {
+                this.world.reportUse(id, { event: 'ease', need, objectId: null });
+                delete s.failSent[need];
+            }
+        }
+        s.job = null;
+        this._clearBackoffs();
+        this._goHome(s, { stayPut: s.atPost });
     }
 
     /** True while the current job is a `use` of the NPC's own needsHome object, or a visit to it
@@ -2883,6 +2980,7 @@ export class NPCNeedsSystem {
     _advanceJob(s, arrived) {
         const id = s.npcId;
         const job = s.job;
+        if (job.kind === 'self') { if (this.clockMs >= job.useUntil) this._completeJob(s); return; }
         // Slice 17: the print errand's leg back to the desk is the return. _checkCaught has no
         // once-per-return guard of its own, and the errand holds job.errand from its start
         if (job.errand && job.carrying && !s.atPost && !s.caughtEmitted) this._checkCaught(s, this.world.npcPos(id));
@@ -2961,7 +3059,7 @@ export class NPCNeedsSystem {
                 this.world.emit(`npc_visit_arrived:${id}`, { npcId: id, kind: v.kind, at: { ...(v.at || {}) }, data: v.data ?? null });
                 return;
             }
-            const secs = Number(obj?.affordance?.useSeconds);
+            const secs = job.socialDesk ? this._socialUseSeconds(s) : Number(obj?.affordance?.useSeconds);
             job.useUntil = this.clockMs + (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
             this._log(id, 'using', { need: job.need, target: job.targetId });
             // Slice 20: room tone's startSound. world.emit, not _emit: the per-tick object cache stays
@@ -2978,6 +3076,7 @@ export class NPCNeedsSystem {
     _completeJob(s) {
         const id = s.npcId;
         const job = s.job;
+        if (job.kind === 'self') { this._completeSelfJob(s); return; }
         const n = job.need ? s.needs[job.need] : null;
         const obj = this.world.getObject(job.targetId);
         const aff = obj?.affordance || job.aff || {};
@@ -3012,7 +3111,7 @@ export class NPCNeedsSystem {
             v = (job.borrowed ? this.world.useVerdict(id, job.need, obj, job.borrow?.routes || null) : this.world.useVerdict(id, job.need, obj)) || { met: true };
         }
         // Access 9.2 L (6.6): a station failure, first in the list (5.2); work only (a lockout at a
-        // social_media station is left to sub-slice C), and never at a borrowed PC (per PC)
+        // social_media station never refuses: L exempts it, and C keeps that), and never at a borrowed PC (per PC)
         if (atStation && job.need === 'work' && s.lockedOut.has(job.targetId)) {
             const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
             v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest], station: true };
@@ -3023,7 +3122,7 @@ export class NPCNeedsSystem {
         if (!v.met) { this._failUse(s, v); return; }
         if (n && s.temptBack[job.need]) delete s.temptBack[job.need];
         if (n) {
-            let restores = asList(aff.satisfies).includes(job.need) ? Number(aff.restores) || 0 : 0;
+            let restores = job.socialDesk ? this._socialRestores(s) : (asList(aff.satisfies).includes(job.need) ? Number(aff.restores) || 0 : 0);
             restores *= 1 + (s.rng() * 2 - 1) * n.jitterPct / 100;
             s.levels[job.need] = clamp(s.levels[job.need] + restores, 0, 100);
             s.lastSatisfiedAt[job.need] = this.clockMs;
@@ -3724,6 +3823,8 @@ export class NPCNeedsSystem {
         const st = this.world.npcStatus(s.npcId) || {};
         if (st.ko || st.hostile || st.hidden) return false;
         if (s.mode === 'idle' || s.mode === 'returning') return true;   // returning at its post: the own-desk tick
+        // Access 9.2 C (review R1 m5): an owner on its own phone (a `self` job) does not answer its
+        // desk phone; a colleague is claimed or it rings out (NPC_NEEDS_SYSTEM.md 5.10)
         return s.mode === 'job' && this._atOwnPost(s) && s.job.phase === 'using';
     }
 
@@ -4183,6 +4284,12 @@ export class NPCNeedsSystem {
         return null;
     }
 
+    /** Access 9.2 C (8.2): on the phone now (cheap; the sight challenge asks every check). */
+    isDistracted(npcId) {
+        const s = this.states.get(npcId);
+        return !!(s && s.mode === 'job' && s.job?.kind === 'self');
+    }
+
     getState(npcId) {
         const s = this.states.get(npcId);
         if (!s) return null;
@@ -4213,6 +4320,8 @@ export class NPCNeedsSystem {
             visits: s.visits.map(v => ({ kind: v.kind, at: { ...v.at } })),
             visiting: s.job?.kind === 'visit' ? { kind: s.job.visit?.kind || null, at: { ...(s.job.visit?.at || {}) } } : null,
             judged: { work: this._judged(s, 'work'), social_media: this._judged(s, 'social_media') },
+            // Access 9.2 C (8.2): on the phone; a sight challenge does not fire meanwhile
+            distracted: this.isDistracted(npcId),
             causeCleared: this._causeCleared(s),
             // Access 9.2 H (6.4): a borrow handed over and not yet done
             borrow: s.borrow ? { index: s.borrow.index, hand: s.borrow.hand, pcId: s.borrow.pcId, need: s.borrow.need, leavesOpen: s.borrow.leavesOpen, started: s.borrow.started } : null,
@@ -4277,13 +4386,28 @@ export function createEngineWorld() {
         const op = W().officePresets;
         return !!(op?.presetIdFor && op.presetsOn?.(W().gameScenario) && op.presetIdFor(sd) === 'desk_pc');
     };
-    const describe = (roomId, key, sp) => {
+    // Access 9.2 C review R1 M2 (plan 8.1): the own workstation of an NPC with a social_media need
+    // is a source whatever its affordance, as AccessWork.social_station? says on the server, so a
+    // desk that is such an NPC's needsHome is listed with an empty affordance when it has none
+    const socialHomes = () => {
+        const ids = new Set();
+        const npcs = W().npcManager?.npcs;
+        if (npcs?.values) {
+            for (const rec of npcs.values()) {
+                if (typeof rec?.needsHome === 'string' && rec.needs?.social_media && typeof rec.needs.social_media === 'object') ids.add(rec.needsHome);
+            }
+        }
+        return ids;
+    };
+    const describe = (roomId, key, sp, homes = null) => {
         const sd = sp.scenarioData || {};
         const id = sd.id || sp.objectId || key;
         const c = centreOf(sp);
+        let affordance = affordanceOf(sp);
+        if (!affordance && isDeskData(sd) && (homes || socialHomes()).has(id)) affordance = {};
         const out = {
             id, roomId, x: c.x, y: c.y,
-            affordance: affordanceOf(sp),
+            affordance,
             needsTag: typeof sd.needsTag === 'string' ? sd.needsTag : null,
             screenOwner: typeof sd.screenOwner === 'string' ? sd.screenOwner : null,
             // A slot an NPC set down is not a carry candidate, or the deliverer would pick it straight up
@@ -4302,6 +4426,8 @@ export function createEngineWorld() {
         // Access slice 9.2 A (plan 5.2): a desk (a workstation by its fields, or the desk_pc preset)
         // is no source for another NPC's judged need
         if (isDeskData(sd)) out.desk = true;
+        // Access slice 9.2 C (plan 8.1): a PC whose effective policy blocks social media
+        if (out.desk && W().pcPolicy?.effectivePolicy?.(sd, W().gameScenario)?.social === 'blocked') out.socialBlocked = true;
         return out;
     };
     // A producer's reveal slots, by id, and the free test (loaded, not destroyed, active, global not
@@ -4442,14 +4568,17 @@ export function createEngineWorld() {
         listObjects() {
             const out = [];
             const rooms = W().rooms || {};
+            const homes = socialHomes();
             for (const roomId of Object.keys(rooms).sort()) {
                 const objs = rooms[roomId]?.objects;
                 if (!objs) continue;
                 for (const k of Object.keys(objs).sort()) {
                     const sp = objs[k];
                     const sd = sp?.scenarioData;
-                    if (!sd || (typeof sd.needsTag !== 'string' && !affordanceOf(sp))) continue;
-                    out.push(describe(roomId, k, sp));
+                    if (!sd) continue;
+                    const home = homes.has(sd.id || sp.objectId || k) && isDeskData(sd);
+                    if (typeof sd.needsTag !== 'string' && !affordanceOf(sp) && !home) continue;
+                    out.push(describe(roomId, k, sp, homes));
                 }
             }
             return out;
@@ -4601,8 +4730,9 @@ export function createEngineWorld() {
             const rec = W().npcManager?.getNPC?.(npcId) || W().npcManager?.npcs?.get?.(npcId) || null;
             if (!rules || !rec) return { met: true, missing: [] };
             const stationId = typeof rec.needsHome === 'string' ? rec.needsHome : null;
-            // lockedOut stays false here: the needs core adds a lockout from its own flag (9.2 L, 6.6)
-            const station = obj && obj.id === stationId ? { id: obj.id, lockedOut: false, socialBlocked: false } : null;
+            // lockedOut stays false here: the needs core adds a lockout from its own flag (9.2 L, 6.6);
+            // socialBlocked is the PC's policy (9.2 C, 8.1)
+            const station = obj && obj.id === stationId ? { id: obj.id, lockedOut: false, socialBlocked: !!obj.socialBlocked } : null;
             return rules.useVerdict(planWithRoutes(rec.work, routes), need, station, W().gameState?.globalVariables || {});
         },
         reportUse(npcId, report) { W().npcReports?.queue?.(npcId, report); },

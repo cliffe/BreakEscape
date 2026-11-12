@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
+require_relative '../access_work' unless defined?(BreakEscape::AccessWork)
+
 module BreakEscape
   module NpcHabits
     # Password clues (ACCESS_MODEL_SLICE_9_1_PLAN.md, 7.2): the text a player can read in a
     # scenario, the other places a secret lives, and whether a `guessable` password is backed
     # by both. Authoring time only: used by the validator and the dungeon graph, never by the
-    # server. Plain Ruby, no Rails, no require (the scripts require_relative it after
-    # access_identities.rb and npc_habits.rb).
+    # server. Plain Ruby, no Rails (the scripts require_relative it after access_identities.rb
+    # and npc_habits.rb; access_work.rb, for the feed rule, is loaded below when absent).
     #
     # Nothing here returns a password or text from one in a form meant for output: callers
     # report pieces by position and kind, and sources by path.
@@ -92,6 +94,17 @@ module BreakEscape
             next unless npc.is_a?(Hash)
 
             walk_objects(npc['itemsHeld'], "rooms/#{room_id}/npcs[#{i}]/itemsHeld", room_locks, nil, out, room_id.to_s)
+            # Slice 9.2 C (plan 10): each feed post's text is a clue source (its fact's text is read
+            # with intelFacts). Only posts the server can serve count (review C R1 m1): an NPC that
+            # feeds (a social_media need) and a post with an id.
+            next unless BreakEscape::AccessWork.feeds?(npc)
+
+            served = BreakEscape::AccessWork.feed_posts(npc)
+            npc['feed']['posts'].each_with_index do |post, j|
+              next unless served.any? { |p| p.equal?(post) } && post['text'].is_a?(String) && !post['text'].empty?
+
+              out << { text: post['text'], path: "rooms/#{room_id}/npcs[#{i}]/feed/posts[#{j}]", object_id: nil, scope: nil, locks: [] }
+            end
           end
         end
         walk_objects(scenario['startItemsInInventory'], 'startItemsInInventory', [], nil, out)

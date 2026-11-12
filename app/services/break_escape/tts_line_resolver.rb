@@ -20,12 +20,17 @@ module BreakEscape
 
     # @param scenario_name [String, nil] the mission's name (extractor cache key)
     # @param scenario_data [Hash] the game's scenario
-    # @param story_file [#call] storyPath => compiled story path, or nil
+    # @param compile [Boolean] compile an .ink newer than its JSON first (the
+    #   game does; tests read the committed JSON, InkStoryFile)
+    # @param story_file [#call, nil] storyPath => compiled story path, or nil;
+    #   only for fixture tests. The game and the mission tests use InkStoryFile,
+    #   the lookup GamesController#ink uses, so all of them read the same file.
     # @param player_name [String] the only value a player_name() line is voiced with
-    def initialize(scenario_name:, scenario_data:, story_file:, player_name: TtsService::PLAYER_NAME_DEFAULT)
+    def initialize(scenario_name:, scenario_data:, compile: true, story_file: nil,
+                   player_name: TtsService::PLAYER_NAME_DEFAULT)
       @scenario_name = scenario_name
       @scenario_data = scenario_data
-      @story_file = story_file
+      @story_file = story_file || ->(story_path) { InkStoryFile.find(story_path, compile: compile) }
       @player_name = player_name
     end
 
@@ -102,7 +107,11 @@ module BreakEscape
 
     private
 
+    # A voice message is voiced only as its transcript (own_story_line), so a
+    # line still marked "voice:" on any path is refused, never read out with it
     def found(line)
+      return refuse(:forbidden, 'Voice message marker in line', 'Line still marked voice:', line) if line.match?(VOICE_MESSAGE)
+
       Result.new(line: line)
     end
 
@@ -131,9 +140,11 @@ module BreakEscape
 
     # A line of the NPC's own story that the client voices as this NPC. Where
     # the story hosts a voiced conversation the extractor has read its placed
-    # lines already, so only what it can't place is looked at here. A phone
-    # contact's text conversation voices only its voice messages, as the
-    # transcript after "voice:".
+    # lines already, so only what it can't place is looked at here. A voice
+    # message ("voice: ..." in a phone-chat thread, phone-chat-ui.js) is voiced
+    # as the transcript after "voice:", whatever the record: the client sends
+    # that transcript for any contact it opens in phone-chat, phone or person.
+    # A phone contact's text conversation voices only its voice messages.
     def own_story_line(npc_id, npc, story, text)
       ex = extractor
       voiced_as =
@@ -156,15 +167,17 @@ module BreakEscape
       line = host ? InkTextValidator.canonical(story, text, voiced_as: voiced_as, placed: false, **options) : nil
       return line if line
 
-      if npc['npcType'] == 'phone'
-        voice_message = lambda do |raw|
-          voiced = voiced_as.call(raw)
-          voiced&.match?(VOICE_MESSAGE) ? voiced.sub(VOICE_MESSAGE, '').strip.presence : nil
-        end
-        InkTextValidator.canonical(story, "voice: #{text}", voiced_as: voice_message, **options)
-      elsif !host
-        InkTextValidator.canonical(story, text, voiced_as: voiced_as, **options)
+      voice_message = lambda do |raw|
+        voiced = voiced_as.call(raw)
+        voiced&.match?(VOICE_MESSAGE) ? voiced.sub(VOICE_MESSAGE, '').strip.presence : nil
       end
+      # A host's voice messages the extractor has placed already (as their
+      # transcript), so only its unplaced ones are indexed here
+      line = InkTextValidator.canonical(story, "voice: #{text}", voiced_as: voice_message, placed: !host, **options)
+      return line if line
+      return nil if host || npc['npcType'] == 'phone'
+
+      InkTextValidator.canonical(story, text, voiced_as: voiced_as, **options)
     end
 
     # A Narrator: line of one of this game's stories, as the story has it

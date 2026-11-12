@@ -1,1 +1,0 @@
-{"inkVersion":21,"root":[[["done",{"#n":"g-0"}],null],"done",{"start":["#","^speaker:npc","/#","^Hello. Mind the chair.","\n",{"->":"hub"},null],"hub":[["ev","str","^Carry on.","/str","/ev",{"*":".^.c-0","flg":4},{"c-0":["^ ","#","^exit_conversation","/#","\n","#","^speaker:npc","/#","^Will do.","\n",{"->":"hub"},null]}],null]}],"listDefs":{}}

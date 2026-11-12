@@ -34,6 +34,7 @@ import { ApiClient } from '../api-client.js'; // Import to ensure window.ApiClie
 import '../systems/npc-work.js'; // Access slice 9.2: sets window.npcWork (the use verdict) before the needs system runs
 import { installNpcReports } from '../systems/npc-reports.js'; // Access slice 9.2 (5.4): ready before the needs system's first tick (R1 m2)
 import { installNpcWorkarounds } from '../systems/npc-workarounds.js'; // Access slice 9.2 B (6): listening before a restored hand-over is emitted
+import { installSocialFeed } from '../systems/social-feed.js'; // Access slice 9.2 C (8.3): revealed posts in place before the browser can open
 import { getTutorialManager } from '../systems/tutorial-manager.js';
 import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE, INTERACTION_RANGE } from '../utils/constants.js';
 import { initScenarioMusicEvents } from '../music/scenario-music-events.js';
@@ -1639,6 +1640,9 @@ export async function create() {
         window.gameScenario = this.cache.json.get('gameScenarioJSON');
     }
     gameScenario = window.gameScenario;
+    // Access slice 9.2 C (8.3): the posts the server has revealed, with their facts, merged now,
+    // before anything can open the browser; then the listener that asks after each met use
+    try { installSocialFeed(ApiClient, gameScenario?.feedPosts || null); } catch (e) { console.warn('social feed failed to install', e); }
     
     console.log('🔍 Raw gameScenario loaded from cache:', gameScenario);
     if (gameScenario?.npcs && gameScenario.npcs.length > 0) {

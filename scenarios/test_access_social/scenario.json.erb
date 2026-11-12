@@ -1,0 +1,726 @@
+{
+  "scenario_brief": "TEST: Access model slice 9.2, social media feeds\n\nA test floor for ACCESS_MODEL_SLICE_9_2_PLAN.md section 8: the social_media need, the phone, the feed and what it reveals (beats F1 to F8). Each beat has a sign and its own room. Nothing to solve.",
+  "endGoal": "Test only: run the social media beats.",
+  "startRoom": "lobby",
+  "startPosition": {
+    "x": 6,
+    "y": 6
+  },
+  "npcNeedsSeed": "test_access_social",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+  "officePresets": true,
+  "chatter": {
+    "social_blocked": [
+      "Blocked. Of course."
+    ],
+    "work_fail_fed_up": [
+      "That's it. I've had enough."
+    ],
+    "station_fail": [
+      "This PC is useless."
+    ],
+    "work_fail_no_access": [
+      "Still no access. Nobody listens."
+    ],
+    "work_fail": [
+      "Why is nothing working?"
+    ],
+    "wk_borrow": [
+      "I'll use the spare PC."
+    ]
+  },
+  "policies": {
+    "no_social": {
+      "autoLockMin": 5,
+      "maxAttempts": null,
+      "usb": "allowed",
+      "social": "blocked"
+    },
+    "lax": {
+      "autoLockMin": null,
+      "maxAttempts": null,
+      "usb": "allowed",
+      "social": "allowed"
+    }
+  },
+  "globalVariables": {
+    "se_osint_state": {},
+    "se_intel_jake_office": false,
+    "se_intel_jake_pet_name": false,
+    "se_intel_jake_wedding_year": false
+  },
+  "objectives": [
+    {
+      "aimId": "social_beats",
+      "title": "Run the social media beats",
+      "description": "Test only. Each task ticks when its beat's event fires. F1 and F7 are checks with no event.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "f2_phone",
+          "title": "F2: Jake uses his phone at his desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f2_posted",
+          "title": "F2: Jake posts on Friendface",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f3_pc",
+          "title": "F3: Lena uses her PC for social media",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f4_borrowed",
+          "title": "F4: Omar is blocked, then uses the kiosk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f5_signed_in",
+          "title": "F5: sign in as Jake at the hot desk",
+          "type": "unlock_object",
+          "targetObject": "hot_desk",
+          "status": "active"
+        },
+        {
+          "taskId": "f6_last_post",
+          "title": "F6: Jake's third and last post",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f8_distracted",
+          "title": "F8: the guard uses his phone",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f8_challenged",
+          "title": "F8: the guard challenges you once he puts it away",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "social": {
+    "intelFacts": {
+      "jake_office": {
+        "label": "Jake's office",
+        "subject": "jake",
+        "source": "jake_authored",
+        "text": "Jake Brooks works in the finance office on the third floor."
+      },
+      "jake_pet_name": {
+        "label": "Jake's dog",
+        "subject": "jake",
+        "source": "jake_post_1",
+        "text": "Jake Brooks has a dog called Biscuit."
+      },
+      "jake_wedding_year": {
+        "label": "Jake's wedding year",
+        "subject": "jake",
+        "source": "jake_post_2",
+        "text": "Jake Brooks married his wife in 1998."
+      }
+    },
+    "osint": {
+      "sites": [
+        {
+          "id": "friendface",
+          "type": "social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "profiles": [
+            {
+              "person": "jake",
+              "name": "Jake Brooks",
+              "bio": "Finance. Dog dad.",
+              "posts": [
+                {
+                  "id": "jake_authored",
+                  "text": "New desk on the third floor. Finance office, come and say hello.",
+                  "fact": "jake_office"
+                }
+              ]
+            },
+            {
+              "person": "lena",
+              "name": "Lena Fox",
+              "bio": "Runner. Tea.",
+              "posts": [
+                {
+                  "id": "lena_authored",
+                  "text": "Rainy run this morning, still worth it."
+                }
+              ]
+            },
+            {
+              "person": "omar",
+              "name": "Omar Haddad",
+              "bio": "Facilities.",
+              "posts": [
+                {
+                  "id": "omar_authored",
+                  "text": "Who keeps moving the stapler?"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": {
+        "north": "jake_room",
+        "east": "lena_room",
+        "west": "omar_room",
+        "south": "gate_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": {
+            "x": 4,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Slice 9.2 social media test floor. F1: open the Friendface terminal first; each profile shows one post.\nJake north (F2), Lena east (F3), Omar west (F4), the guard south (F8). F5 and F6 are here in the lobby.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_f5",
+          "name": "Sign: F5 and F6",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F5. Read Jake's posts on the terminal and the IT poster, then sign in as Jake at the hot desk. A wrong guess counts.\nF6. Wait: Jake's third post is his last, and the terminal says nothing more after it.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "notes1",
+          "id": "it_poster",
+          "name": "IT poster",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "IT reminder: your pet's name with a capital letter, followed by the year you married, is not a password. Several of you are using exactly that.",
+          "observations": "An IT poster pinned to the wall."
+        },
+        {
+          "type": "osint-workstation",
+          "id": "friendface_terminal",
+          "name": "Friendface terminal",
+          "position": {
+            "x": 6,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A public terminal open on Friendface.",
+          "minigameData": {
+            "siteIds": [
+              "friendface"
+            ]
+          }
+        },
+        {
+          "type": "pc",
+          "id": "hot_desk",
+          "name": "Hot desk",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "access": {
+            "people": [
+              "jake"
+            ]
+          },
+          "observations": "A hot desk PC. Only Jake's account works here."
+        },
+        {
+          "type": "pc3",
+          "id": "kiosk",
+          "name": "Kiosk",
+          "position": {
+            "x": 7,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "access": {
+            "people": [
+              "omar"
+            ]
+          },
+          "affordance": {
+            "satisfies": [
+              "social_media"
+            ],
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A spare kiosk PC under the lax policy: social media is allowed."
+        }
+      ],
+      "npcs": []
+    },
+    "jake_room": {
+      "type": "room_office",
+      "door_sign": "F2 Jake",
+      "connections": {
+        "south": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f2",
+          "name": "Sign: F2 The phone at the desk",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F2. Jake's PC blocks social media, so he uses his phone where he sits, about once a minute, and never gets up. Each use reveals his next post on the Friendface terminal in the lobby.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "jake_pc",
+          "name": "Jake's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Jake's PC, under a policy that blocks social media."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "jake",
+          "displayName": "Jake Brooks",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "jake_pc",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "jbrooks",
+            "password": "Biscuit1998"
+          },
+          "habits": {
+            "password": "guessable",
+            "passwordPattern": "it_poster"
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "jake",
+            "posts": [
+              {
+                "id": "jake_post_1",
+                "text": "Biscuit turns five today! Best boy in the whole building.",
+                "fact": "jake_pet_name",
+                "date": "Monday"
+              },
+              {
+                "id": "jake_post_2",
+                "text": "Our anniversary today: married in 1998 and still laughing at the same jokes.",
+                "fact": "jake_wedding_year",
+                "date": "Tuesday"
+              },
+              {
+                "id": "jake_post_3",
+                "text": "Back from Crete, three hundred emails waiting for me.",
+                "date": "Wednesday"
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used_phone:jake",
+              "onceOnly": true,
+              "completeTask": "f2_phone"
+            },
+            {
+              "eventPattern": "npc_posted:jake",
+              "onceOnly": true,
+              "completeTask": "f2_posted",
+              "condition": "data.index === 0"
+            },
+            {
+              "eventPattern": "npc_posted:jake",
+              "onceOnly": true,
+              "completeTask": "f6_last_post",
+              "condition": "data.index === 2"
+            }
+          ]
+        }
+      ]
+    },
+    "lena_room": {
+      "type": "room_office",
+      "door_sign": "F3 Lena",
+      "connections": {
+        "west": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f3",
+          "name": "Sign: F3 The PC, where it is allowed",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F3. Lena's PC allows social media, so she uses it at her desk. Her first post then shows on the terminal.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "lena_pc",
+          "name": "Lena's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Lena's PC, under the lax policy: social media is allowed."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "lena",
+          "displayName": "Lena Fox",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "lena_pc",
+          "needsDeferMin": 0.5,
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "lena",
+            "posts": [
+              {
+                "id": "lena_post_1",
+                "text": "Signed up for the charity five kilometre race on Sunday. Sponsor me!",
+                "date": "Monday"
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used:lena_pc",
+              "onceOnly": true,
+              "completeTask": "f3_pc",
+              "condition": "data.need === 'social_media' && data.met === true"
+            }
+          ]
+        }
+      ]
+    },
+    "omar_room": {
+      "type": "room_office",
+      "door_sign": "F4 Omar",
+      "connections": {
+        "east": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f4",
+          "name": "Sign: F4 Blocked and no phone",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F4. Omar has no phone and his PC blocks social media. Each try fails; at his second failure he walks to the kiosk in the lobby, uses it and leaves it signed in. Click the kiosk while nobody sits there.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "omar_pc",
+          "name": "Omar's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "lockChance": 1,
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Omar's PC, under a policy that blocks social media."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "omar",
+          "displayName": "Omar Haddad",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "omar_pc",
+          "needsDeferMin": 0.5,
+          "phone": false,
+          "creds": {
+            "username": "ohaddad",
+            "password": "Stapler-Omar-71"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "kiosk"
+            }
+          ],
+          "feed": {
+            "site": "friendface",
+            "person": "omar",
+            "posts": [
+              {
+                "id": "omar_post_1",
+                "text": "Finally got on Friendface at work. The kiosk in reception lets you on.",
+                "date": "Monday"
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_borrowed_session:kiosk",
+              "onceOnly": true,
+              "completeTask": "f4_borrowed",
+              "condition": "data.npcId === 'omar'"
+            }
+          ]
+        }
+      ]
+    },
+    "gate_room": {
+      "type": "room_office",
+      "door_sign": "F8 Guard",
+      "connections": {
+        "north": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f8",
+          "name": "Sign: F8 A distracted guard",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F8. The guard challenges anyone he sees in this room, except while he is on his phone (about once a minute). Walk through his view while he is on it, then again after.",
+          "observations": "A beat sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "guard",
+          "displayName": "Dev Patel",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 4
+          },
+          "spriteSheet": "male_security_guard_v2",
+          "spriteTalk": "assets/characters/len_talk.png",
+          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false
+          },
+          "swivel": false,
+          "needsHome": {
+            "room": "gate_room",
+            "x": 7,
+            "y": 4
+          },
+          "socialUse": {
+            "restores": 60,
+            "useSeconds": 15
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 260,
+            "angle": 360,
+            "challengeOnSight": {
+              "event": "player_in_view_near:guard",
+              "cooldown": 5000,
+              "rooms": [
+                "gate_room"
+              ]
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used_phone:guard",
+              "onceOnly": true,
+              "completeTask": "f8_distracted"
+            },
+            {
+              "eventPattern": "player_in_view_near:guard",
+              "onceOnly": true,
+              "completeTask": "f8_challenged"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "accountProfiles": {
+    "jake_files": {
+      "for": {
+        "people": [
+          "jake"
+        ]
+      },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "jake_f5_note",
+          "name": "F5.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "F5 done: a password built from two of Jake's posts and the IT poster opened his desktop.",
+          "observations": "A note on Jake's desktop."
+        }
+      ]
+    }
+  }
+}
