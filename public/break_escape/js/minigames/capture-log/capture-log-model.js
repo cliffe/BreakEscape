@@ -8,6 +8,10 @@
 import { captureList } from '../../systems/captures.js';
 
 export const SEEN_GLOBAL = '__capture_log_seen';
+// One global per seen row (R3): the row key appended to this prefix, value true. This replaces the
+// whole-list write below, so each new row sends one key instead of the whole list. The legacy list
+// is still read (readSeen) for an old save but never written again.
+export const SEEN_PREFIX = '__capture_log_seen:';
 export const HOLDER_TYPE = 'capture_log';
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -116,10 +120,22 @@ export function rowKeys(sections) {
     return [...sections.captures, ...sections.sessions, ...sections.findings].map((r) => r.key);
 }
 
-/** The saved seen set (a list of keys) from the globals. */
+/**
+ * The saved seen set from the globals: the union of the legacy list (read only, for an old save)
+ * and every per-row key (a global named SEEN_PREFIX + key whose value is true, R3).
+ */
 export function readSeen(globals) {
-    const v = isObj(globals) ? globals[SEEN_GLOBAL] : null;
-    return Array.isArray(v) ? v.filter(isStr) : [];
+    if (!isObj(globals)) return [];
+    const out = new Set();
+    const legacy = globals[SEEN_GLOBAL];
+    if (Array.isArray(legacy)) for (const k of legacy) if (isStr(k)) out.add(k);
+    for (const name in globals) {
+        if (name.startsWith(SEEN_PREFIX) && globals[name] === true) {
+            const key = name.slice(SEEN_PREFIX.length);
+            if (isStr(key)) out.add(key);
+        }
+    }
+    return [...out];
 }
 
 /** The keys among these sections that are new (not yet seen). */
