@@ -10,10 +10,11 @@ Plan: `docs/achitechture/ACCESS_MODEL_SLICE_9_2_C3_PLAN.md` (Final). Branch `bui
 | Plan brought in | done | 6406d8988 |
 | 2 AccessWork | done | step 2 commits, then the shared `reply_text_pieces` helper |
 | 3 social_feed.rb route | done | step 3 commits |
-| 4 Validator, schema, OSINT, habit clues | partly done (see handover) | validator, fixtures, OSINT skip, schema |
-| 5 Client | not started | |
-| 6 Leak scanner, verify-run.rb | not started | |
-| 7 Scenario F15 to F17, PLAYTEST.md | not started | |
+| Pre-existing validator failures | fixed | dda5cb5a5 |
+| 4 Validator, schema, OSINT, habit clues | done | validator, fixtures, OSINT skip, schema; af4e082b2, a1b8a9fe0 |
+| 5 Client | done | 0cb5a1ee8 |
+| 6 Leak scanner, verify-run.rb | done | 94bee74e0, the helper rename after it, 505c29e72 |
+| 7 Scenario F15 to F17, PLAYTEST.md | done except the timing dry run | b14edfe4a, 0a2c17dba |
 | 8 Live proof | not started | |
 
 ## Step 2: AccessWork (`lib/break_escape/access_work.rb`)
@@ -58,6 +59,58 @@ Plan: `docs/achitechture/ACCESS_MODEL_SLICE_9_2_C3_PLAN.md` (Final). Branch `bui
 - `scripts/scenario-schema.json`: feed `order` and post properties (`when`, `deliberate`, `replyTo`,
   `replyToComplaint`, `complaint`, `insteadOf`); `additionalProperties` left open.
 
+## Step 4 remainder
+
+- `Clues.readable_texts` leaves out every set member through a shared `each_feed_text`; new
+  `Clues.set_member_texts` tags each with its set id (the own post's id; for a reply its
+  `insteadOf` when that names an own post of the NPC, else the reply's own id).
+- `check_password` second passes for `guessable` and `strong`, and the psk replacement warning in
+  `validate_network.rb`; each new line ends "the dungeon graph does not draw this clue". The sets
+  named are those whose text alone completes the clue, else every set that holds one.
+- The reply unique-text rule also reads every room NPC's story (compiled JSON, or `.ink` with its
+  INCLUDEs) through a new `story_texts`, so a piece inside an ink line warns. Own posts keep the
+  scenario-JSON-only rule.
+- Tests: `test/unit/npc_habits_clues_feed_test.rb` (4), three fixtures in
+  `validator-npc-habits.test.mjs`, one in `validator-network-model.test.mjs`, the ink-line fixture in
+  `validator-access-reply.test.mjs`, the reply-fact fixture in `validator-social-osint.test.mjs`.
+
+## Step 5: client
+
+- `social-feed.js`: `POST_FIELDS` gains `replyTo`; `_add` keeps `seq` and the four reply ids; the
+  `npc_posted` payload carries `seq` and, for a reply, `replyTo` and the four ids; `postsFor` leaves
+  answers out and marks a reply with `replyToPerson`; new `repliesFor`; reply toast "<replier>
+  replied to <named> on <site>" (title "New reply"), names from `npcName`, then `profileName`, then
+  the id. `liveDeps.npcName` now returns null without a record; new `liveDeps.profileName`.
+- osint browser: `_feedReplies`, `_replyEntry` (no selectable block; "Replied to" on the replier's
+  profile), threads under own posts, `_onPosted` re-renders on `replyToPerson`; CSS `.ob-thread`,
+  `.ob-reply`, `.ob-reply-to`.
+- `friendface-phone.js`: a reply counts on the replier's and `replyToNpc`'s phones and the player's
+  own, each key once. Bridge `feed().threads` on a null-prototype object.
+- Tests: new `test/js/social-feed-replies.test.mjs` (11); three cases in `social-osint-browser`; one
+  in `test-bridge-access`; two old expectations gained `seq` and `threads`.
+
+## Step 6: leak scanner and verify-run
+
+- `access_leak_scanner.rb`: `/friendface_phone` context, its `feedPosts` judged as GET /scenario's;
+  a reply's text registered by `AccessWork.reply_text_pieces` (12 or more); no feed fact from a
+  reply; `feed_reply_target` rule (a `replyTo` naming a post not served yet) in `RULE_TEXT`, so
+  `access-leak-check.rb` prints it with the others. The counts line now counts reply pieces as feed
+  posts, so PLAYTEST's "seven feed posts, two feed facts" needs the new numbers after a live run.
+- `verify-run.rb`: `<npc> <count> [<id>:<seq>[><thread>] ...]`, legacy `{ n, at }` as a count.
+- Tests: six C3 cases at the end of `access_leak_scanner_feed_test.rb`; one in
+  `playtest-verify-run-access.test.mjs`.
+
+## Step 7: scenario
+
+- F15 (`f15_room`) and F16 (`f16_room`) appended **east of `u1_room`**, not east of F13 as the plan
+  says: L1, L2 and U1 now sit east of F13. The plan's `sign_f15` was already used by L2's sign, so
+  L2's became `sign_l2` (as L1's became `sign_l1`).
+- New `social.people` (forms.first and full) for the five, Friendface profiles with full names,
+  resources `f15_drive` and `f16_drive`, globals true from the start, five tasks.
+- Validator: 0 failure lines. Its estimate: F15 posts at about 0:40, 0:55, 1:10; F16 Ivy 0:40, 2:00,
+  Tomasz 1:00, 2:20 (Ivy's answer 20 s before Tomasz's second use). PLAYTEST.md uses these, marked
+  to confirm in a dry run.
+
 ## Interpretations
 
 - **Literal pieces.** The plan says `"{name}: same here."` raises the 12-character warning with an
@@ -88,6 +141,26 @@ ff-phone owns them).
   `access_leak_scanner_feed_test.rb`: 89 runs, 0 failures.
 - `node --test` on `validator-access-reply`, `-reactive`, `-social` and the osint and schema files: all
   pass (8, 43 with the neighbours, 142).
+
+## Handover (2026-11-12, second agent, context limit)
+
+**Done:** the two validator failures; steps 4, 5 and 6 in full; step 7's scenario and PLAYTEST.md.
+
+**Open, in order:**
+
+1. Step 7 timing dry run (plan section 8): play F15 and F16 once on a keyless server, check each
+   NPC's `down` failure report precedes its first `/feed_post`, the order of the answers, Ivy's
+   answer at least 5 s before Tomasz's second use (else Tomasz's social `initial` down by 5), and
+   whether F14 already leaves `friendface` in `se_osint_state.visited`. Write the measured times into
+   PLAYTEST.md's F15 to F17 table and fix the leak check's expected counts line.
+2. Step 8: live proof on port 3050 or higher (check it is free), `--headless`, `setFPS(20)` with
+   fixed steps, `--capture-responses`; F15, F16, F17 with verify-run, leak check, `/feed_post`
+   budgets, `feed().threads`, toasts, phone badges; F1 to F14 regression; section 5.1 measurements
+   (entry sizes per NPC, answer sizes); screenshots; list the game ids.
+
+**Gotchas:** the scenario round-trips exactly through `json.dumps(indent=2, ensure_ascii=False)`, so
+a Python load-edit-dump makes a minimal diff (`scratchpad/c3b/add_f15_f16.py` built F15 and F16).
+Reply pieces are trimmed of end punctuation, so validator messages quote pieces without it.
 
 ## Handover (2026-11-12, context limit)
 
