@@ -4248,10 +4248,12 @@ module BreakEscape
         # A habit NPC's USB stick (2026-11-12): its files are served only by GET /container to
         # a player who holds it (Game#held_usb_sticks), so they leave every room, NPC and
         # inventory copy. hasContents opens it as a container; one with no authored contents
-        # holds the default work_file.txt, so it is marked too.
+        # holds the default work_file.txt, so it is marked too. A stick is never locked (the
+        # validator errors on one), and the client reads a missing `locked` as a key lock.
         if obj['type'] == 'usb' && obj['id'].is_a?(String) && usb_habit_stick_ids.include?(obj['id'])
           obj.delete('contents')
           obj['hasContents'] = true
+          obj['locked'] = false
         end
 
         # Remove 'contents' if locked (lazy-loaded via separate endpoint), but

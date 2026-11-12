@@ -189,6 +189,7 @@ module BreakEscape
       amy = response.parsed_body.dig('room', 'npcs').find { |n| n['id'] == 'amy' }
       stick = amy['itemsHeld'].find { |i| i['id'] == 'amy_usb' }
       assert_equal true, stick['hasContents']
+      assert_equal false, stick['locked'], 'the client reads a missing locked as a key lock'
       assert_not stick.key?('contents')
       refute_includes response.body, DEFAULT_TEXT
       refute_includes response.body, 'work_file.txt'
