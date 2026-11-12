@@ -32,33 +32,34 @@ VAR recruiter_line_dead = false
 // INITIAL CONTACT (torres_identified)
 // ===========================================
 
+// Phone-calls M5 (Recruiter). Her first contact is a ringing call now, opened on `first_call` (the
+// ring mapping's targetKnot). Ringing her back is the green Call button (the `call` entry, knot
+// return_contact, when !recruiter_line_dead; unavailable:"no_answer"). The call knots (first_call,
+// return_contact and everything they reach up to the deal flow) end `#exit_conversation` then `-> DONE`;
+// the engine moves the story to the home knot `start` after a call, and the "Call ended" screen replaces
+// the old "line goes dead" / "hangs up first" narration. `start` is a silent by-hand resting router.
+
 === start ===
-// PASS 3 (implementation review M1): if the player confronted Torres before
-// ringing her back, she knows it's over. Never play the pre-confrontation
-// pitch (or let the deal be taken) after the fate is decided. Marking her
-// contacted also stops the game_loaded backstop.
+// Home router (opened by hand). Never routes into a call knot as silent text -- it only rests.
+{not torres_identified: -> not_yet}
+-> idle
+
+// ===========================================
+// FIRST CALL (incoming ring, targetKnot: first_call)
+// ===========================================
+
+=== first_call ===
+// lint: call-knot
+// The call screen shows the caller, so the "Caller ID" narration is dropped. Playtest history
+// (preserved): never play the pre-confrontation pitch once the fate is decided, and never replay the
+// intro once the deal has been offered -- a callback after either skips straight to the right knot.
 {final_choice != "":
     ~ recruiter_contacted_player = true
     -> post_confrontation_contact
 }
-// Review B2: never play the first call before Torres is named, even if
-// something runs this knot early (the phone preloads listed contacts).
-{not torres_identified:
-    -> not_yet
-}
-
-// Playtest D2: route on whether the DEAL was made, not on whether the call
-// started. In run 1 the naming conversation's close fired twice, a second
-// jump to `start` landed after the first had set recruiter_contacted_player,
-// and the player got "Still deciding?" with no offer ever made. Replaying
-// the intro is harmless; skipping the offer is not.
 {recruiter_deal_offered:
     -> return_contact
 }
-
-#speaker:narrator
-Narrator: Caller ID: TALENTSTACK EXECUTIVE RECRUITING.
-
 #speaker:recruiter
 
 Agent. Or whatever they're calling you this week.
@@ -202,7 +203,7 @@ Everyone has a price, agent. I'm asking what yours is.
 * [I'm done talking. This call's over.]
     Time's short for both of us, then.
     #exit_conversation
-    -> idle
+    -> DONE
 
 === recruiter_deal_terms ===
 #speaker:recruiter
@@ -236,11 +237,8 @@ Sensible. You get your clean report, and I get my quiet. That's the whole arrang
 
 Do what you like with Torres. The other forty-seven were never your problem.
 
-#speaker:narrator
-Narrator: The line goes dead.
-
 #exit_conversation
--> idle
+-> DONE
 
 === recruiter_deal_refused ===
 #speaker:recruiter
@@ -255,17 +253,16 @@ You won't reach all of them before I've closed on a few more.
 Good luck with Torres. He was cheap. The next one might cost me more, and I'll enjoy the work regardless.
 
 ~ recruiter_deal_accepted = false
-#speaker:narrator
-Narrator: The line goes dead.
-
 #exit_conversation
--> idle
+-> DONE
 
 // ===========================================
 // RETURN CONTACT (After first call)
 // ===========================================
 
 === return_contact ===
+// lint: call-knot
+// The ring-back call entry (the `call` entry's knot, dialled by the Call button when !recruiter_line_dead).
 #speaker:recruiter
 
 {final_choice != "":
@@ -368,11 +365,8 @@ That's not a defence. It's the part nobody wants to hear: the price was real, an
 Forty-seven names, agent. The clock on those didn't stop because you found one of mine.
 
 ~ recruiter_line_dead = true
-#speaker:narrator
-Narrator: The line goes dead.
-
 #exit_conversation
--> idle
+-> DONE
 
 // PASS 3 (implementation review M1): reachable from start when the player
 // rings back only after the confrontation. No offer is made: the envelope's
@@ -382,41 +376,30 @@ Narrator: The line goes dead.
 Agent. Torres is dealt with, and we never did talk terms. Pity.
 There was an envelope under his keyboard I'd have liked back. Whatever you did with it, the next one will cost me more.
 ~ recruiter_line_dead = true
-#speaker:narrator
-Narrator: The line goes dead.
 #exit_conversation
--> idle
+-> DONE
 
 // Scenario design R2 (R2-m1): the ring-back answers close without "Think it over".
 === hangs_up ===
-#speaker:narrator
-Narrator: She hangs up first.
 #exit_conversation
--> idle
+-> DONE
 
 === end_contact ===
 #speaker:recruiter
 
 Think it over. Quickly.
 
-#speaker:narrator
-Narrator: She hangs up first.
-
 #exit_conversation
--> idle
+-> DONE
 
 // ===========================================
 // RESTING KNOT
 // ===========================================
 
 === idle ===
+// By-hand resting stub. The ring-back choices are gone: ringing her back is the green Call button
+// (the `call` entry, knot return_contact, when !recruiter_line_dead; it rings out once the line is dead).
 #speaker:narrator
-+ {not recruiter_line_dead} [Ring the TalentStack number back.]
-    -> return_contact
-+ {recruiter_line_dead} [Ring the number again.]
-    Narrator: It rings out. Nobody's answering that number tonight.
-    #exit_conversation
-    -> idle
 + [Leave it.]
     #exit_conversation
     -> idle

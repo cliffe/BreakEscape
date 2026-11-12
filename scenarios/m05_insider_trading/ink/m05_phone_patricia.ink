@@ -75,30 +75,40 @@ VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wr
 === function all_flags_in()
 ~ return flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted
 
+// Phone-calls M5 (Patricia callable). Patricia is a voiced callable contact now. The hub and the
+// phone_* knots are reached only by the call knot `phone_call` (the `call` entry's knot, dialled by
+// the green Call button / #place_call), gated by the entry's `when`
+// (patricia_phone_available && !patricia_ko) and `unavailable: "no_answer"`. The whole conversation
+// from `phone_call` through the phone_* knots is the voiced call; `start` stays a silent text stub.
+
 === start ===
+// Home text stub (phone reopen rule). Opening the thread by hand only rests here; it never routes
+// into a call knot as silent text. No NPC line: a preload would add an unread message.
++ [(Close.)]
+    #exit_conversation
+    -> start
+
+// ===========================================
+// CALL (the `call` entry's knot: phone_call)
+// ===========================================
+=== phone_call ===
+// lint: call-knot
 {patricia_ko: -> no_answer}
 {not patricia_phone_available: -> not_yet}
 -> hub
 
-// Before the first in-person meeting has closed. No NPC text: the preload
-// would otherwise leave an unread message.
+// Call fallbacks: Patricia becomes unreachable mid-call (the entry's `when` keeps her off the line
+// otherwise). The old fake-ring choices are gone; the engine rings out via unavailable:"no_answer".
 === not_yet ===
-{patricia_ko: -> no_answer}
-{patricia_phone_available: -> hub}
-+ [(Hang up.)]
-    #exit_conversation
-    -> not_yet
+#exit_conversation
+-> DONE
 
-// After a KO. The ring-out sits behind the choice so the preload shows
-// nothing (review r3 minor 1).
-// Playtest 3b: a narrator line after the choice counted as an unread
-// message. The outcome is in the choice text and nothing follows it.
 === no_answer ===
-+ [(Ring her. It rings out.)]
-    #exit_conversation
-    -> no_answer
+#exit_conversation
+-> DONE
 
 === hub ===
+// lint: call-knot
 {patricia_ko: -> no_answer}
 {not patricia_phone_available: -> not_yet}
 #speaker:patricia_morgan
@@ -126,7 +136,7 @@ VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wr
         It's done, then. I'll look after the building.
     }
     #exit_conversation
-    -> hub
+    -> DONE
 
 === phone_share_findings ===
 {torres_identified: -> hub}
@@ -145,7 +155,7 @@ Go on, then. Who?
     Ben's on that log one night, at eight on a Thursday evening. The transfers I flagged run between two and four in the morning.
     Don't throw names at me. Ring back when you're sure.
     #exit_conversation
-    -> hub
+    -> DONE
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
     -> phone_name_torres
 + [I've got a feeling. Nothing I can show you yet.]
@@ -162,13 +172,13 @@ Go on, then. Who?
     Halloran was in Zurich the night that badge first went in. You've seen that.
     Don't throw names at me. Ring back when you're sure.
     #exit_conversation
-    -> hub
+    -> DONE
 }
 Ruth. Her spare, at two in the morning. All right. I'll suspend her access and keep her in the lab for the police.
 ~ halloran_accused = true
 If you're wrong, that's her career. And whoever it really is has just watched Security move.
 #exit_conversation
--> hub
+-> DONE
 
 === phone_name_torres ===
 {patricia_ko: -> no_answer}
@@ -201,12 +211,12 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
     ~ torres_reason_guessed = true
     Read it again. His badge never touches the server hallway. Hers does.
     #exit_conversation
-    -> hub
+    -> DONE
 + [He's been under strain. His wife's ill.]
     ~ torres_reason_guessed = true
     Half this building has someone ill at home. That's not evidence.
     #exit_conversation
-    -> hub
+    -> DONE
 + {halloran_questioned} [Halloran puts him in her lab after hours, and the spare is the lab's.]
     Her word, about her own badge. It's enough to look, not to act.
     -> phone_partial_naming
@@ -222,7 +232,7 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
     ~ torres_reason_guessed = true
     So would seven other people. That's not evidence either.
     #exit_conversation
-    -> hub
+    -> DONE
 
 === phone_log_reason_right ===
 {patricia_ko: -> no_answer}
@@ -270,7 +280,7 @@ I sign that log off every Monday. I never once read the front door.
     ~ torres_reason_guessed = true
     That's how anyone on that team could. I asked why him.
     #exit_conversation
-    -> hub
+    -> DONE
 + {found_medical_bills or found_vetting_file} [Money. His wife's treatment isn't covered, and he's borrowed against the house.]
     {proof_given:
         Money. And you've shown me how. That's both.
@@ -282,7 +292,7 @@ I sign that log off every Monday. I never once read the front door.
     ~ torres_reason_guessed = true
     So has half this building. That's a mood, not a motive.
     #exit_conversation
-    -> hub
+    -> DONE
 + {found_torres_journal} [His own journal. He knows what it costs, and he's doing it anyway.]
     {proof_given:
         In his own hand. And you've shown me how. That's both.
@@ -298,14 +308,14 @@ I sign that log off every Monday. I never once read the front door.
     ~ torres_reason_guessed = true
     Read it again. His badge never touches the server hallway. Hers does.
     #exit_conversation
-    -> hub
+    -> DONE
 + {(flag3_submitted or found_manifest) and found_door_log} [The staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
     -> phone_significant_findings
 + [He's been in late, and nobody else has.]
     ~ torres_reason_guessed = true
     Late isn't leaving. I need the data going out, under his name.
     #exit_conversation
-    -> hub
+    -> DONE
 + {found_upload_schedule} [The upload schedule. He's the operator, on site, tonight.]
     -> phone_significant_findings
 
@@ -346,7 +356,7 @@ Whatever you decide in front of him, ring me when it's done.
     -> phone_significant_findings_choices
 + [On my way.]
     #exit_conversation
-    -> hub
+    -> DONE
 
 === phone_hold_him ===
 {final_choice != "": -> hub}
@@ -358,4 +368,4 @@ Ring me when it's done.
 === phone_hold_him_choices ===
 + [Understood.]
     #exit_conversation
-    -> hub
+    -> DONE
