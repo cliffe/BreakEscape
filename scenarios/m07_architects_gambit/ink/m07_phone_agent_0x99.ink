@@ -299,7 +299,7 @@ HaX here, Agent. I've got your channel and the board.
     -> first_call_committed_choices
 
 // --- Sticky exit ---
-+ [I'll call you back.]
++ [I'll check back in.]
     I'm here. Go.
     #exit_conversation
     -> hub
@@ -778,8 +778,8 @@ Bag it. That's what we work from next.
 === topic_teacher ===
 ~ teacher_discussed = true
 #set_global:teacher_discussed:true
-...Read me that again.
-Narrator: You read it back to her. The line stays quiet for longer than she usually lets it.
+...Send me that again.
+Narrator: You send it again. Nothing comes back for longer than she usually leaves it.
 // PASS 4 round 2 (re-review F1): branch on whether the player actually heard
 // her say it (first call, or "How do you carry that?").
 {hurt_line_said:
@@ -797,9 +797,9 @@ Leave it with me. And keep it out of your notes for now.
 
 === topic_mole ===
 ~ mole_discussed = true
-Narrator: A long pause on the line.
+Narrator: Nothing comes back for a while.
 
-Slowly. I want to be sure I'm hearing this.
+Slowly. I want to be sure I've read this right.
 
 He had your deployment before the order went out. Somebody handed ENTROPY you, by name.
 
