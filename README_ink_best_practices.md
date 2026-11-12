@@ -909,6 +909,40 @@ VAR talked_before = false
 -> hub
 ```
 
+## Remote conversations: write for the mode
+
+A conversation is shown in one of five ways, and its ink has to read right in the way it is shown. The phone calls audit (November 2026) found ink written as a call but configured as a text thread, and text threads that promised a ring.
+
+| Mode | How it is configured | How it should read |
+|---|---|---|
+| Text thread | phone-chat contact, no `voiced` | short texts; history stays on screen; nothing spoken |
+| Voiced phone call | `voiced: true` on the phone-chat mapping or its `timedConversation` (contact-level `voiced` only through a pretext `callLaunch`) | speech: short turns, one thought per line; only the call's own knots are voiced, never the contact's home knot or hub |
+| Video call | `conversationMode: "video-call"` or `timedConversation.videoCall` | person-chat framed as a call: speech, and the caller can see the player |
+| In person | person-chat | speech in the room; narration for actions |
+| Voicemail or recording | `type: "phone"` object with `voice` and `ttsVoice` | one speaker, no replies |
+
+**Write a text as a text.** A text thread never says "Pick up", "I'm ringing you", "Take it when it rings", "on the line" or "Call me" unless a real call follows from that thread. If the call opens at once (a forced call), the text before it says nothing about ringing. The same rule covers what surrounds the thread: an objective titled "Call Marcus Webb", an object description that mentions "speed dial", or a lab sheet telling students to "phone three people" are all wrong when those contacts are text threads (sis02, sis03, lab_physical_pentest). Write "Message", "text" or "contact".
+
+**Write a call as a call.** Spoken, short, no links or lists. A call beat runs to about ten NPC lines and ends `#exit_conversation` then `-> DONE`. Before finishing a mission's calls, list the opening and closing line of every call in it, and of the same handler's calls in other missions, and change any that repeat a shape or a sentence. A handler who rings the same way every time stops sounding like a person.
+
+**Debriefs.** The end-of-mission debrief is an in-person scene by default, because that carries the weight (user, 2026-11-12). Vary it where the story puts the speaker elsewhere: m07's Netherton on the secure link, m04's Vance on the line.
+
+**Same character, two records.** A character who appears both in the room and on the phone (HaX in m09 and m10: `hax_voice`/`hax_post` in person, `agent_0x99` on the phone) has two NPC records with one `displayName`. A `Agent HaX:` prefix resolves to whichever record was registered first, which is the wrong one in some scenes. So:
+- Name a co-speaker line in someone else's story by id (`agent_0x99: …`), never by the shared display name.
+- Give each record the voice style for where she is: m01's in-person briefing or debrief style in the room, the phone style on the phone (user, 2026-11-12).
+- Give the phone record the in-person record's `spriteTalk`, `spriteVisemes` and `spriteConfig`, so an id-prefixed line draws her portrait and lip sync instead of the default sprite. Never `spriteSheet`: the validator forbids it on a phone record.
+
+### Texts that carry progress
+
+When a handler's update arrives as a text with a toast (`sendTimedMessage` with `targetKnot`, the m09 HaX read-outs), the knot plays when the player taps the toast. Opening the thread by hand re-runs the hub instead. If the read-out sets a global another beat waits on, or gives an item, a player who ignores the toast misses it. The m09 pattern that fixed this, in `m09_phone_agent0x99.ink`:
+
+- **Route pending read-outs from the top of the hub knot**, not only from `start`: a reopened thread re-runs the hub, while `start` runs only on a fresh story. Order the guards; a pending voiced scene goes first and holds the read-outs back.
+- **Two levels per read-out:** finished goes to the hub; started but not finished goes to an `ask` stitch that offers the read-out's remaining choices. Without the second level, a player who closes the thread at the first choice and reopens after any global changes lands on the hub and skips the rest (m09 flag 1 lost its Tomb Beta line this way).
+- **Make each read-out knot idempotent:** its first line diverts to the hub if it has already been heard, so a toast tap after a hand-opened read-out plays nothing twice and gives no second item.
+- **Use an ink-local shadow flag** set on the knot's first line for these guards. A `#set_global` tag takes effect only after the next choice list is built, so a guard that reads the global in the same session still sees the old value.
+- **Stop texts that are no longer needed** with `skipIfGlobal` on the timed message (it is checked at delivery and on the toast).
+- **Survive a reload:** a per-text latch global plus a `game_loaded` backstop that resends only while the latch is unset. Space texts from one event at least 4 s apart (the validator warns otherwise).
+
 ## Common ink bugs (pass 4)
 
 These came up in more than one mission during the pass-4 dialogue reviews and playtests (October 2026). Most are caught by `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<mission>/` (rule name in brackets); the rest are for the reviewer. `README_scenario_design.md` ("Common bugs and how to avoid them") has the scenario-file side.
@@ -987,6 +1021,7 @@ Phone inks are the exception: the thread shows the history, and a phone resting 
 - Status answers ("Where do I stand?", "Remind me where we are", "What's the clock?") must branch on the globals that change, down to the step the player is on. Four missions had a recap that went stale halfway through.
 - A choice can only quote or answer what the player has heard on this route. Check every choice against each way into its knot (m03 "[…I signed myself in.]" after a KO route; m04 Relay answering a reply nobody gave).
 - Don't say the same fact twice in a row, across a choice and its reply, or across two speakers (m04 gate guard, Vance's phone opener, the debrief's "Voltage is out through the dock").
+- Don't put a `#delivery:` tag inside an inline conditional (`{flag: Line. #delivery: quietly}`). Inklecate emits an unbalanced tag pair, and the server's line walker fails on it, which can take down voicing for the whole mission. Put the conditional around whole lines instead.
 
 ## Debugging
 

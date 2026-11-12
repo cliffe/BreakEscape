@@ -117,6 +117,14 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 - An unlocked door can still be shut, and `enter` opens it before walking through. An unlocked door that has *vanished* is normal: opening a door removes its sprite on both sides. `enter` doesn't need the sprite.
 - `converse` stops once the conversation stops saying anything new, so hub NPCs no longer burn the whole turn budget. Pass `choices` when you need a branch. It never takes an option you did not name (see "Conversations" below): at an unnamed choice it stops and lists the options.
 
+### Harness gotchas from the phone calls track (November 2026)
+
+- **`new-game.rb --start-room` changes speaker resolution.** It rewrites the game's room copy, so records move rooms and a display-name prefix shared by two records (HaX in m09/m10) can resolve to the other one: voice requests then 403 in that game only. Reach a scene with `--set` and `--imports` when voices matter.
+- **`--set` is overwritten for imported globals** (`importGlobals` are re-applied by the server). Use `--imports=<file.json>` for those.
+- **Assigning a global through the bridge does not emit `global_variable_changed`**, so event mappings keyed on it don't fire. Trigger the real action, or emit the event yourself after setting the value.
+- **Prove texts and calls from the player's side.** For a text with a toast: ignore the toast and open the thread by hand, tap the toast, open the thread before the text arrives, and reload before and after delivery. For a voiced line, record the `/tts` requests (`npc_id`, text, delivery) and compare them with a known-good run; a screenshot of the subtitle doesn't show which voice was asked for.
+- **Compare saved conversation state without the seed.** `storySeed` is random per run, so compare `storyState` hashes with the seed removed.
+
 ### Harness gotchas from pass 4 (October 2026)
 
 Each of these cost at least one pass-4 run (reports in `tools/playtest/m0*-pass4-*report.md`):
