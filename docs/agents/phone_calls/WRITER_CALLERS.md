@@ -180,6 +180,11 @@ will land with the HaX writer's ERB/ink commit. Content verified against plan 7.
   `callLabel: "TalentStack Executive Recruiting"`, keep `setGlobal: { recruiter_texted: true }`. Add a
   `phone_call_declined`/`phone_call_missed` mapping sending the old text as her follow-up. Add the
   `call` block `{ knot: "return_contact", when: "!globalVars.recruiter_line_dead", unavailable: "no_answer" }`.
+  - **R2 M4:** `recruiter_line_dead` must be **declared** in m05's `globalVariables` (`"recruiter_line_dead":
+    false`, next to the other `recruiter_*` globals). The ink sets it with a plain `~`, and the engine syncs
+    an ink VAR back only when the name is already a global (`npc-conversation-state.js:522`). Undeclared, the
+    `when` is always true and every press of Call after her final word replays `return_contact`. Declare it
+    and keep the condition — do not drop it. No ink change (the `~` assignments sync once it is a global).
 - **Patricia** record (`:1534`): keep the text intro; add `call: { knot: "phone_call",
   when: "globalVars.patricia_phone_available && !globalVars.patricia_ko", unavailable: "no_answer" }`.
 - **Current-flow break (documented):** on this branch (no `call` block yet) both threads open on the new
@@ -269,6 +274,9 @@ My m07 scope: the Architect's taunts and sign-off as withheld voiced calls (C6),
   - T-5 (`architect_t5_played`) → `taunt_t5`, vm `taunt_t5_vm`
   - T-1 (`architect_t1_played`) → `taunt_t1`, vm `taunt_t1_vm`
   - post-countdown (`countdown_expired`, "Seattle first. As scheduled.") → NEW knot `seattle_call`, vm `seattle_call_vm`
+  - **R2:** the config step MUST drop the `sendTimedMessage` bark at `scenario.json.erb:1644` ("Seattle
+    first. As scheduled."). The `seattle_call` opener covers it; if the bark stayed, the player would be
+    told the same thing twice in a row (and it trips a repeated-line validator warning until then).
 - Sign-off (the two `minigame_completed`/`minigame_failed` mappings, already `conversationMode: "phone-chat"`,
   `targetKnot: "sign_off"`): ADD `ring: { withheld: true }` and `disableClose: true` (forced, auto-answers,
   no voicemail). Keep `setGlobal: { architect_signoff_started: true }`.
@@ -410,3 +418,38 @@ no topic was taken on the call.
 
 Voicemails (`taunt_*_vm`, `seattle_call_vm`) mirror each taunt's point, mutually exclusive with the live
 taunt; T-30 and T-20 carry an opener in his voice ("You let it ring. Sensible." / "Busy. Of course.").
+
+---
+
+## Fix round 2 (callers) — updated counts and variety listings (2026-11-12)
+
+Review `REVIEW_WRITER_CALLERS_R2.md` actioned; see `REVIEW_WRITER_CALLERS_R2_OUTCOMES.md` for each
+finding. Commits: m04 `4ed621179`, m05 `e1a63d819`, m07 `e57d6fb94`. m09 untouched. Config follow-ups
+(recruiter_line_dead declaration; m07 ERB :1644 bark drop) added to the M5 and M6 config lists above.
+
+### Voiced-line count per mission (after round 2)
+
+| Mission | Caller | After fix round 1 | After fix round 2 |
+|---|---|---|---|
+| m09 | Nightshade, Torres, Gary | ~22 | ~22 (untouched) |
+| m04 | Vance | ~48 | ~48 (comment-only; no spoken line changed) |
+| m05 | Recruiter | ~49 | ~47 (−2: M1 orphan cut, m2 refusal tail cut) |
+| m05 | Patricia | ~53 | ~50 (−3: m3 opener reuse −2, m4 badge-log reuse −1; M2/M5 reword, 0) |
+| m07 | Architect live calls | ~59 | ~59 (M7 drop + M8 split are 0 net on live lines) |
+| m07 | Architect voicemails | ~16 | ~11 (−5: m6 voicemails reuse live strings; M3 reword 0) |
+
+### Variety listing — changed lines only
+
+**m05 Recruiter:** `recruiter_introduction` now opens "Torres took debt relief and a standing consultancy
+retainer…" (the "only variable is currency" line is gone). Casualty projection `architect_discussed`
+branch now reads "…get us the schedule". `recruiter_deal_refused` ends on "You won't reach all of them
+before I've closed on a few more."
+
+**m05 Patricia:** opener (state-varied) now "Morgan. Have you got him?" / "Morgan. I've been watching the
+vault log." / "Morgan."; the `has_motive() and has_exfil()` "why" openers reuse "Again? Fine. Convince me
+this time." / "David. Why?"; the badge-log reply reuses the two `phone_case_why` lines.
+
+**m07 Architect:** `seattle_call_vm` last line now "Three to go, and you let it ring." `taunt_t10`
+`team_redirected` opener drops the spent "Ten minutes…" line. Voicemails `taunt_t30_vm`, `taunt_t10_vm`,
+`taunt_t1_vm` reuse the live taunts' exact strings (same voice block → shared audio); `taunt_t1_vm` now
+runs the countdown alternatives as two short lines each. All still mutually exclusive with the live taunt.
