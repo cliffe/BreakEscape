@@ -141,6 +141,12 @@ export class NpcNeedsDebug {
         const label = scene.add.text(0, 0, '', { ...FONT, align: 'center', resolution: res }).setOrigin(0.5, 1).setDepth(DEPTH);
         p = { gfx: scene.add.graphics().setDepth(DEPTH), letters: new Map(), label, sprite, res, h: 0 };
         this.panels.set(id, p);
+        // VT323 is fetched at boot (utils/canvas-fonts.js); text made before it arrived
+        // redraws once it has (review R1 m5)
+        const made = p;
+        win().canvasFontsReady?.then?.(() => {
+            try { made.label.updateText?.(); for (const t of made.letters.values()) t.updateText?.(); } catch (e) { /* gone */ }
+        });
         return p;
     }
 

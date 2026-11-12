@@ -61,6 +61,13 @@
  */
 import { iconShown, roomIsDark, npcIconAnchor } from './npc-office-visuals.js';
 
+// VT323 for the text stand-ins is fetched at boot (utils/canvas-fonts.js); a text made
+// before it arrived redraws, and its backing is re-laid out, once it has (review R1 m5).
+function redrawOnFonts(redraw) {
+    const p = typeof window !== 'undefined' ? window.canvasFontsReady : null;
+    if (p && typeof p.then === 'function') p.then(() => { try { redraw(); } catch (e) { /* gone */ } });
+}
+
 // The 16x16 NPC icon set (OFFICE_LIFE_PLAN 9.1, assets/icons/npc-<name>.png), drawn at native
 // size. Referenced by name only, so a swapped file needs no code change. No fallback art: text.
 export const NPC_ICON_NAMES = ['caffeine', 'thirst', 'hunger', 'rest', 'social', 'work', 'curiosity',
@@ -350,7 +357,9 @@ export class NpcActionIcons {
         }).setOrigin(0.5, 0.5);
         const img = scene.add.image(0, -2, '__DEFAULT').setOrigin(0.5, 1).setVisible(false);
         const box = scene.add.container(0, 0, [bg, text, img]).setDepth(5000);
-        return { box, bg, text, img, shown: null };
+        const ic = { box, bg, text, img, shown: null };
+        redrawOnFonts(() => { ic.shown = null; text.updateText?.(); });
+        return ic;
     }
 
     /** Draw `r` into the icon; re-laid out only when what it shows changes. */
@@ -385,7 +394,9 @@ export class NpcActionIcons {
         const badge = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false);
         const cross = scene.add.graphics().setVisible(false);
         const box = scene.add.container(0, 0, [g, text, img, face, badge, cross]).setDepth(5000);
-        return { box, g, text, img, face, badge, cross, shown: null, w: 0, h: 0 };
+        const bubble = { box, g, text, img, face, badge, cross, shown: null, w: 0, h: 0 };
+        redrawOnFonts(() => { bubble.shown = null; text.updateText?.(); });
+        return bubble;
     }
 
     /** The backing and its two trailing dots, redrawn only when the size changes. */
