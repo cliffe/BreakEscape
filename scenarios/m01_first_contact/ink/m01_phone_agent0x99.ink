@@ -111,14 +111,17 @@ VAR lockpicking_guide_offered = false
 {
     - call_is_callback: You rang back. Good habit.
     - call_answer_seconds > 10: Took your time. Fine, nothing's on fire yet.
-    - else: You're in. I wanted the line tested before you go dark.
+    - else: You're in.
 }
 
-A voice carries down those corridors. Someone hears one where there shouldn't be, and the cover's gone.
+One test call before it's texts only.
+
+A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover.
 
 So from here it's texts. Quiet, deniable. Message me the moment you're stuck and I'll walk you through it.
 
 + [Understood. Texts it is.]
+    Good. Off you go.
     #exit_conversation
     -> DONE
 + [What if I need you fast?]
