@@ -43,7 +43,7 @@ beat() { # beat <name> <toast text> <wait s> <closing choice regex>
   $S $GID '{"cmd":"mg","action":"clickText","args":["Close"]}' >/dev/null; sleep 1
 }
 emit flag1_submitted
-beat flag1 "Open this" 12 "^Got it|^Something else|^Ledger or"
+beat flag1 "It came with a list" 12 "^Got it|^Something else|^Ledger or"
 emit flag2_submitted
 beat ledger "entry you need" 11 "^TF Null|^Understood|^Got it"
 if [ -z "$RING_ONLY" ]; then
