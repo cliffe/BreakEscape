@@ -209,3 +209,34 @@ Keyless headless server on :3195 from this worktree, setFPS(20) with fixed steps
 
 ### Tests (single files, no lock)
 Every test file that imports or copies password-minigame.js, container-minigame.css or password-minigame.css, plus minigame-controls-layout: 19 files, 215 tests, 0 failures. Full suites not run (orchestrator's merge batch).
+
+## Code review R2 fixes
+
+| R2 | Outcome |
+|----|---------|
+| m1 | Fixed (51415336d). Only the head of the waiting line has a wait-limit timer (`armHead`). When it fires the head shows over the cap; the next one may follow no sooner than `TOAST_STAGGER_MS` (1.5 s) later, and if a toast is already over the cap it tries again a stagger later. At most three timed info or success toasts are ever on screen. Tests: toast-queue "a burst of six task toasts never puts more than three on screen" (the reviewer's scenario: was 6 at 4.1 s), and toast-once-across-panel-handover "five toasts held over a handover come out through the limit" (settle window and cap together: each drawn once, in order). |
+| m2 | Fixed (f7dc49dc6). The vendored client loads Phaser 3.60.0 (show.html.erb). The VT323 redraw in npc-action-icons.js (icon and bubble) and npc-needs-debug.js (label and letters) calls `refreshCanvasText`, which uses `text.style.update(true)` so the height metrics are measured again, and falls back to `updateText()`. Test in canvas-fonts.test.mjs for both modules. Live check: a monospace Text measured ascent 15, descent 4; after switching to VT323 and `style.update(true)`, 15 and 3. |
+| m3 | Fixed (dee246084). The screen floor is `min(240px, max(140px, calc(100vh - 440px)))`, so it never rises above its budget. Under 700px tall the bezel padding drops to 12px and the taskbar to 36px, giving the screen 40px more budget (`100vh - 400px`). Borders keep their widths. Test in minigame-controls-layout.test.mjs. |
+| n1 | Fixed (51415336d). In `showNotification`'s hold branch, waiting toasts go into the hold before the new one, so a workstation popup keeps their order. Test in toast-queue. |
+| n2 | Fixed (dee246084). `.signin-message` is 16px with no text shadow. The other 1px shadows the review lists (`.signin-current`, `.signin-selected`, `.signin-remote`, `.container-content-label`) are not touched by this branch and are left for the pixel-art pass. |
+| n3 | Fixed (dee246084). `.password-minigame-area.case-lock` sets its own `min-height: 0` on the screen and `background: none; padding: 0` on the label. |
+
+### Live proof
+Keyless headless server on :3210 from this worktree, setFPS(20) with fixed steps on and the setTimeout loop. Games 1889 (test_access_networks, start desk_room, finance office unlocked) and 1890 (m01_first_contact, start it_room). Server and sessions stopped afterwards. Shots e01 to e06 appended to the session scratchpad's `ux-shots/after_access/manifest.json`.
+
+Desktop bottom against the game area's foot (Close row in the flow below it in every case):
+
+| Window | Desktop | Screen | Desktop ends | Game area ends |
+|--------|---------|--------|--------------|----------------|
+| 1366x650 | m01 IT Monitoring Station | 250px | 484 | 549 |
+| 1366x650 | Sam's PC, signed in (starts 193px down) | 250px | 533 | 549 |
+| 1366x768 | m01 | 328px | 600 | 667 |
+| 1280x720 | m01 | 280px | 552 | 619 |
+| 1366x600 | m01 | 200px | 434 | 499 |
+
+Sam's PC at 1366x650 would have ended at 561px with the old 240px floor, 12px under the game area.
+
+Toast burst (game 1889): six task toasts raised together, sampled every 100 ms for 10.6 s: 2 on screen, 3 at 4.1 s, 3 again at 5.6 s and 10.1 s, never more than 3; each shown once, in order.
+
+### Tests (single files, no lock)
+Every test file that imports or copies notifications.js, npc-action-icons.js, npc-needs-debug.js, container-minigame.css or password-minigame.css, plus minigame-controls-layout and canvas-fonts: 28 files, 0 failures (toast-queue 18 with the handover file, minigame-controls-layout 11, canvas-fonts 5). Full suites not run (orchestrator's merge batch). No Rails files or scenarios changed.
