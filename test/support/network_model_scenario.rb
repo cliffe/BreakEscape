@@ -207,6 +207,21 @@ module NetworkModelScenario
     }
   end
 
+  # Port security message on the secured jack (sub-slice P, 5.4).
+  PORT_SECURITY_MESSAGE = 'The switch logs the device address and shuts the port. Known machines only.'.freeze
+
+  # The scenario with a port-security jack added in the comms room (sub-slice P): a jack
+  # with portSecurity: true on office_lan. The drop box home is unchanged, so the player
+  # can try the secured port with the box in hand.
+  def with_secured_port(message: PORT_SECURITY_MESSAGE)
+    data = scenario
+    jack = { 'id' => 'secure_port', 'type' => 'pc', 'sprite' => 'network_rack1', 'name' => 'Locked switch port',
+             'networkJack' => true, 'portSecurity' => true }
+    jack['portSecurityMessage'] = message if message
+    data['rooms']['comms_room']['objects'] << jack
+    data
+  end
+
   # The scenario with the drop box defined in one of its five homes (3.3): 'room' (the
   # lobby table, as authored), 'container' (an open crate in the lobby), 'start'
   # (startItemsInInventory), 'npc' (Sam's itemsHeld) or 'grant' (a timer's give_item).
