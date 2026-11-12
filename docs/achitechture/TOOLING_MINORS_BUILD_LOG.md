@@ -33,6 +33,23 @@ Branch `build/tooling-minors`. The user's answer to q49: fix both sets now. Sour
 - `bin/test-js -j 3` (under the lock): 507 files passed, 0 failed.
 - Validator on all 176 `scenarios/**/scenario.json.erb` files, before and after, with `--no-graph`: no ❌ or ⚠️ line added or removed in any file (106 ❌ lines both times). So there are no new warnings to list for any scenario.
 
+## Code review R1 fixes (commit 6247f36f9)
+
+From docs/achitechture/TOOLING_MINORS_CODE_REVIEW_R1.md.
+
+- M1: the door-entry requires warning names the field and the room only. It shows the values only when the room's lockType is rfid or key (card and key ids). For a pin or password room it says "(values not shown)". There is a test that neither value appears.
+- m1: `InkStoryFile.find` checks the realpath of the JSON, the .ink and the compile target (realdirpath for a target not yet written) against each root's realpath. Tests cover a file symlink, a folder symlink, a compile through a folder symlink, and the mirror case (a symlink that stays inside the root).
+- m2: the extractor's scenario-folder fallbacks are gone, so `resolve_ink_path` is `InkStoryFile.find(compile: false)`.
+- m3: a test records inklecate's `-o` argument and checks it is a `.tmp` file beside the output that is gone after the rename.
+- m4: `TtsExpectedLines#resolve_story` tries `InkStoryFile.find` first, and `with_includes` uses `InkStoryFile.includes`, which keeps the "INCLUDE not found" warning through a `missing:` collector. There is a test for a nested include from a subfolder and for an X.json storyPath with only X.ink.json on disk.
+- m5: the include walk is cached per .ink. The cache is valid while every file it read or looked for keeps its mtime, so a lookup costs one stat per file. A test checks that no walk runs when nothing changed and that one runs when a missing include appears or an include gains a nested INCLUDE.
+- m6: a test resets `allowed_roots` to the default and checks that it is `[scenarios]`. It then checks that `GamesController#resolve_and_compile_ink` returns nil and `TtsLineResolver` returns `:not_found` for a story in the temporary folder. With the test roots the same story is found.
+- Nits: a `// comment` after an INCLUDE name is dropped (n1). `TtsExpectedLines` takes an .ink only from a `.json` or `.ink` ref (n2). There is a narrator `voice:` extractor test (n3). The guard test uses `scenarios/../package.json` (n4). The three npc-hub-demo-ghost-protocol storyPaths now point at `scenarios/ink/*_hub.json` (n5). The compiled JSON takes the newest source mtime read before the compile (n7). A storyPath with a null byte returns nil, so `#ink` answers 404 rather than 500.
+- Not done: n6 (point the 8 test_scenarios storyPaths at X.json and delete the X.ink.json copies). It edits five test scenarios for a small gain, and the copy step in `compile-ink.sh` keeps both files right.
+- n5 side effect: npc-hub-demo-ghost-protocol loses its 3 ❌ storyPath lines. With those gone, the validator runs the checks that the INVALID lines had stopped, so 28 warnings that already applied to this demo now show (lockpick graph hints and similar). None comes from this build.
+
+R1 tests: `bin/rails test` 1810 runs, 25646 assertions, 0 failures, 0 errors, 1 skip. `bin/test-js -j 3` 507 of 507 files pass. In the validator sweep only npc-hub-demo-ghost-protocol changed (106 ❌ down to 103).
+
 ## Open
 
-Nothing from the two reviews is left open.
+n6 only, as above.
