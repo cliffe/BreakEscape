@@ -5939,18 +5939,21 @@ end
 # (utils/global-condition.js parseActionCondition): anything outside the grammar below
 # does not hold, so the action is silently never run. This is the same grammar, term
 # by term, so what passes here is what the engine evaluates.
-ACTION_CONDITION_NAME = /\A(!\s*)*globalVars\.\w+\z/
-ACTION_CONDITION_COMPARE = /\AglobalVars\.\w+\s*(===|!==|>=|<=|>|<)\s*(true|false|null|-?\d+(?:\.\d+)?|'[^'"]*'|"[^'"]*")\z/
+# Whitespace is the ASCII set only, as in the engine: Ruby's strip also drops NUL, and
+# JavaScript's \s and trim() also take Unicode spaces, so neither side uses them.
+ACTION_CONDITION_NAME = /\A(![ \t\n\r\f\v]*)*globalVars\.\w+\z/
+ACTION_CONDITION_COMPARE = /\AglobalVars\.\w+[ \t\n\r\f\v]*(===|!==|>=|<=|>|<)[ \t\n\r\f\v]*(true|false|null|-?\d+(?:\.\d+)?|'[^'"]*'|"[^'"]*")\z/
+ACTION_CONDITION_TRIM = /\A[ \t\n\r\f\v]+|[ \t\n\r\f\v]+\z/
 ACTION_LIST_KEYS = %w[actions triggerOnInteract onConfirm completionActions flagRewards].freeze
 
 # nil when the condition is in the grammar, else what is wrong with it.
 def action_condition_problem(condition)
   return "is not a string (#{condition.inspect})" unless condition.is_a?(String)
-  return 'is empty' if condition.strip.empty?
+  return 'is empty' if condition.gsub(ACTION_CONDITION_TRIM, '').empty?
   condition.split('||', -1).each do |alt|
-    return "has an empty term (a stray '&&' or '||')" if alt.strip.empty?
+    return "has an empty term (a stray '&&' or '||')" if alt.gsub(ACTION_CONDITION_TRIM, '').empty?
     alt.split('&&', -1).each do |term|
-      t = term.strip
+      t = term.gsub(ACTION_CONDITION_TRIM, '')
       return "has an empty term (a stray '&&' or '||')" if t.empty?
       next if t.match?(ACTION_CONDITION_NAME) || t.match?(ACTION_CONDITION_COMPARE)
       return "has a term the engine cannot read: \"#{t}\""
@@ -6029,10 +6032,17 @@ def check_or_in_global_conditions(json_data)
   walk = lambda do |node, path, ctx|
     case node
     when Array
-      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", ctx) }
+      # The entries of an action list are actions (see :action below)
+      entry_ctx = ctx == :action_list ? :action : ctx
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", entry_ctx) }
     when Hash
+      # An action's own condition supports '||' (check_action_conditions reads its syntax),
+      # so it is exempt here. Only that one: what is nested inside the action (a give_item's
+      # item with a lighting block, say) is read by its own evaluator and checked as usual.
+      is_action = ctx == :action
+      ctx = nil if is_action || ctx == :action_list
       cond = node['condition']
-      if cond.is_a?(String) && !path.match?(checked_elsewhere)
+      if !is_action && cond.is_a?(String) && !path.match?(checked_elsewhere)
         case ctx
         when :lighting, :torch, :chat_background, :clock
           if (bad = unsupported_condition_syntax(cond, allow_includes: false))
@@ -6063,8 +6073,8 @@ def check_or_in_global_conditions(json_data)
         child_ctx = :torch if k == 'torch' && ctx.nil?
         child_ctx = :chat_background if k == 'chatBackground' && ctx.nil?
         child_ctx = :or_ok if %w[timeline statusRows portraitVariants].include?(k) && ctx.nil?
-        # An action's condition: '||' is supported, and check_action_conditions reads the syntax
-        child_ctx = :js if ACTION_LIST_KEYS.include?(k)
+        # An action list: its entries' own conditions are exempt (see :action above)
+        child_ctx = :action_list if ACTION_LIST_KEYS.include?(k) && ctx.nil?
         walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}", child_ctx)
       end
     end
