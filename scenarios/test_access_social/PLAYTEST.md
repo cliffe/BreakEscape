@@ -1,4 +1,4 @@
-# test_access_social: scripted playtest (slice 9.2, F1 to F13, L1, L2 and U1 to U3)
+# test_access_social: scripted playtest (slice 9.2, F1 to F17, L1, L2 and U1 to U3)
 
 The scripted runs for access model slice 9.2 sub-slice C (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
 sections 8 and 11.2), plus F9 for user decision q33 (a lockout stops social media at that PC too),
@@ -43,8 +43,9 @@ grep -c '/feed_post' $S/<run>-responses.jsonl
 ```
 
 The leak check must say `VERDICT: no leaks found`, and its counts line must show the feed posts and
-feed facts it checked (seven feed posts, two feed facts): a run that checked none proves
-nothing. The `/feed_post` count must stay within the beat's budget below. The budgets count
+feed facts it checked ("34 feed post(s) (35 text(s)), 2 feed fact(s)": 34 distinct posts, 35 registered
+texts because a reply is matched by each of its pieces, measured in games 1742 to 1765): a run that
+checked none proves nothing. The `/feed_post` count must stay within the beat's budget below. The budgets count
 answers with a post; add one request for each `tooSoon` answer (Jake's first use after the F7
 reload often is one). If the leak check notes a reveal allowed at an answer whose body the log
 lost, or one judged by the saved count from the first line, that beat's order was not fully
@@ -88,6 +89,13 @@ work is live` line, and a `Work` line ending "every 2nd use at 'kim_pc' copies t
 its policy refuses (cause usb_refused)". It adds one warning, expected: "kim can be knocked out before its
 first USB refusal" for `u1_refused`, `u1_emailed` and `u1_posted`. Kim is not `koImmune` because U3 is the
 knock-out, and the U1 tasks are beat markers for a tester, not a mission's route.
+
+F15 and F16 (C3) add a `Work` line, a `Feed` line and a `Reactive feed` line (reactive_first) for
+each of Asha, Kofi, Mei, Tomasz and Ivy, two `Outage` lines (`f15_drive` and `f16_drive` start
+down), one `Complaint 'f15_drive'` line naming all three, and four `Reply` lines: Tomasz replies to
+Ivy's `f16_ivy_vent`, Tomasz may reply again in that thread, Ivy replies to Tomasz's `f16_tom_vent`,
+and Ivy answers in `f16_ivy_vent`'s thread. Each new phone draws an info line ("a KO drop is the only
+way to obtain it"). No new warning.
 
 ## Beats
 
@@ -148,7 +156,7 @@ u1_room` to run the beat alone.
 | U1 | Enter `u1_room` (east of Hamid's room), stand clear of Kim and wait about two minutes | Her first work use is met; her second fails: `npc_use_failed:kim` with `missing` `[{ id: kim_pc, why: usb_refused }]`, the line "IT blocked my USB. Email it is, then.", `npc_usb_refused:kim`, tasks `u1_refused` and `u1_emailed`. Her next met social use serves the vent `u1_usb_vent` (task `u1_posted`); her next work use is met and eases | `npcFrustration.kim.failWhy.work` is `["usb_refused"]`; `globalVariables.u1_kim_emailed_file` true; `feedRevealed.kim.shown` is `["u1_ordered", "u1_usb_vent"]` (or the vent alone if her first social use comes after the refusal), done | Kim 2 |
 
 | U2 | After U1, talk to Kim and choose "That USB stick isn't much use to you now, is it?" (offered only once `u1_kim_emailed_file` is true, so before U1 she has no such choice). Open the stick from the inventory and read `work_file.txt`. Reload and talk to her again: the choice does not come back. `u1_kim_gave_usb` is set by the stick's `onPickup` once it is in the tray, so a give the server refused leaves the choice for the next conversation. Wait for three or four more of her work uses | The stick (`kim_usb`) leaves her itemsHeld and joins the inventory; it opens to one file, `work_file.txt`, whose text is served by `/unlock` and `GET /container` only now. Her later work uses are all met: no `usb_refused`, no `npc_usb_refused:kim` | `npc_given_items.kim` names `kim_usb`; `globalVariables.u1_kim_gave_usb` true; no new `failWhy` | none |
-| U3 | Instead of U2, knock Kim out (`debugKO`) and click the stick she drops, from where you stand (out of reach, even where it lies on or beside her chair), then open it from the inventory | The click walks to the stick, not the chair (no "Can't reach that seat from here."), and a click in reach picks it up (no `/unlock` from the floor, no "Access denied"); from the tray it opens to `work_file.txt` | `kim_usb` in the inventory, in no room's `objects_added`; `globalVariables.u1_kim_gave_usb` true (the stick's `onPickup`) | none |
+| U3 | Instead of U2, knock Kim out (`debugKO`) and click the stick she drops, from where you stand (out of reach, even where it lies on or beside her chair), then open it from the inventory | The click walks to the stick, not the chair (no "Can't reach that seat from here."), and a click in reach picks it up (no `/unlock` from the floor, no "Access denied"); from the tray it opens to `work_file.txt`. She drops her phone (`kim_phone`) too; leave it where it lies | `kim_usb` in the inventory, in no room's `objects_added`; `globalVariables.u1_kim_gave_usb` true (the stick's `onPickup`) | none |
 
 Tampered (U2): with Kim still holding the stick, `POST /unlock` and `GET /container` for `kim_usb` (or any invented stick id) answer 422 and 404, and a forged stick in the browser's own tray opens nothing. No room, bootstrap or inventory response carries the file's text or name.
 
@@ -172,6 +180,33 @@ a phone (Jake, Lena, Priya, Nadia, Greg) holds its own `phone_friendface` item.
 | F14a | In the lobby, pick up "Your phone" (beside the start) | It opens 1 s later on the Friendface home (every profile). Each post the server reveals from then on plays `phone_vibrate` once and adds 1 to the tray badge; while a conversation or the browser is open the sound waits and plays once on close. Opening the phone clears the badge | `inventory` holds `player_phone` (no `phoneOf`) |
 | F14b | In `jake_room`, ask Jake "Could I borrow your phone for a bit?" | "Received: Jake's phone"; task `f14_jake_phone`. Opening it shows Jake's profile with only his revealed posts. Jake's live record has `phone: false`; his next social media use is at `jake_pc`, which blocks it, so it fails (parked `failed`, frustration up) and he no longer posts from the phone | `inventory` holds `jake_phone` with `phoneOf: "jake"`; `npc_given_items.jake` lists it; `POST /feed_post` for Jake with `object_id` null is `refused` |
 | F14c | Reload (`?skip_resume=1`) | No sound and no badge for posts already shown; the room bootstrap sends Jake with `phone: false` | unchanged |
+
+## Replies between NPCs (C3): F15 to F17
+
+Plan: `docs/achitechture/ACCESS_MODEL_SLICE_9_2_C3_PLAN.md`, section 8. Run after F14 (the player
+holds `player_phone` from F14a). Before F15, check that `se_osint_state.visited` holds
+`friendface`, so the toasts show: F14a already leaves it there (picking up the phone opens it on
+Friendface), so this is a check, and the terminal visit is needed only when F14 was skipped. t = 0
+is the room's load (the `/unlock` answer that carries the room). Times below were measured in the
+dry run (games 1723 and 1731): each NPC's `down` work failure reached the server 5.5 s after load,
+the first post came about 30 s after load, then each NPC posted every 80 s. The failure comes
+before the first post because it drains the NPC's social need by `breakDrain` (default 10, so
+10 s at 60 a minute); the validator's `Feed` estimate takes that drain off and matches these
+times. Keep a 5 s tolerance. The NPCs hold their phones: never take one in these
+beats (a taken phone stops that NPC posting from it).
+
+| Beat | Do | Expect | Server afterwards | `/feed_post` this beat |
+|---|---|---|---|---|
+| F15 | Enter `f15_room` (east of Kim's room) and stand back | Each NPC's `down` work failure reaches the server before its first `/feed_post`. Asha vents `f15_asha_vent` (about 0:30), Kofi replies `f15_kofi_re_drive` (about 0:45, task `f15_replied`), Mei replies `f15_mei_re_drive` (about 1:00, task `f15_thread`), each with `{name}` filled as "Asha". Toasts: "Kofi Mensah replied to Asha Rao on Friendface", then the same for Mei. Asha's profile shows the thread under her vent, Kofi then Mei; Kofi's and Mei's profiles each list their reply under "Replied to Asha Rao". `__test.access.feed().threads.f15_asha_vent` is `["f15_kofi_re_drive", "f15_mei_re_drive"]` | `feedRevealed` for asha, kofi, mei: one id each; `to` of each reply `{ post: f15_asha_vent, npc: asha }`; all three feeds `done` | 3 |
+| F16 | Enter `f16_room` and stand back about two and a half minutes | Ivy vents `f16_ivy_vent` (about 0:30); Tomasz replies `f16_tom_re_ivy` (about 0:50, task `f16_replied`, "Ivy" filled); Ivy answers `f16_ivy_answer` (about 1:50, task `f16_answered`, "Tomasz" filled; toast "Ivy Clarke replied to Tomasz Nowak on Friendface"); Tomasz replies again `f16_tom_re_ivy_again` (about 2:10, 20 s after Ivy's answer, task `f16_again`, "Ivy" filled; toast "Tomasz Nowak replied to Ivy Clarke on Friendface"). The thread reads Tomasz, Ivy, Tomasz; Tomasz's profile lists both replies with "Replied to Ivy Clarke". The player's phone badge counts each post once | `feedRevealed` ivy 2, tomasz 2; both feeds `done`; nothing more is posted | 4 |
+| F17 | Reload (`?skip_resume=1`) and open the Friendface terminal, then `player_phone` | Both threads in the same order with the same filled names; Kofi's and Tomasz's profiles still show "Replied to". No toast and no badge for posts already shown. The spent posts are in no response | unchanged | 0 |
+
+Expected `verify-run.rb --access` row (seq values depend on the earlier beats, so check the
+relations a < k < m and i < t < j < u):
+
+```
+  feedRevealed    N: ...; asha 1 [f15_asha_vent:a]; ...; ivy 2 [f16_ivy_vent:i f16_ivy_answer:j>f16_ivy_vent]; ...; kofi 1 [f15_kofi_re_drive:k>f15_asha_vent]; ...; mei 1 [f15_mei_re_drive:m>f15_asha_vent]; ...; tomasz 2 [f16_tom_re_ivy:t>f16_ivy_vent f16_tom_re_ivy_again:u>f16_ivy_vent]; ...
+```
 
 ## Earned secrets
 
@@ -214,6 +249,14 @@ a phone (Jake, Lena, Priya, Nadia, Greg) holds its own `phone_friendface` item.
   nothing. `window.startFriendfacePhone` called with a made-up phone item shows "You do not have that
   phone." and opens nothing. `POST /inventory` adding a `phone_friendface` the scenario does not
   have is 422; `phoneOf` on a client-built item (a notepad) is dropped before it is stored.
+- F15 to F17 (C3, plan section 6): `POST /feed_post` for Tomasz before Ivy's vent is out serves
+  his own vent or `{ post: null }`, never the reply text. Extra request fields (`reply_to`, `post_id`,
+  `insteadOf`, `complaint`, `name`) are ignored: the answer matches the same call without them.
+  Repeated `/feed_post` for Ivy cannot open her answer early (pace floor, her `when`, and no reply
+  newer than her vent), nor repeated calls for Tomasz his second reply (no answer newer than his
+  first reply). A held phone's `/friendface_phone` answer holds only served posts and served
+  replies. A spent post (`f15_kofi_vent`, `f15_mei_vent`, `f16_tom_vent`, `f16_ivy_re_tom`,
+  `f16_ivy_still_down`, `f16_tom_still_down`, `f15_asha_re_drive`) never appears in any response.
 - L1 (q36, q33 R2 m1): after Sade's lockout at the hot desk, `POST /feed_post` for her with
   `object_id` `l1_hot_desk` is `{ post: null, done: false, refused: true }` and a social media
   `ease` for her there is refused.

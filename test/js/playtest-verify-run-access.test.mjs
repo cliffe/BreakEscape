@@ -213,3 +213,17 @@ test('--access --log on a log with no workaround events says none', async () => 
   const r = verify(['1', '--access', '--log', log]);
   assert.match(r.out, /workaround events in the log\n\s+none/);
 });
+
+test('--access feedRevealed (C3): ids in reveal order with seq and thread post, a legacy count, the line count unchanged', () => {
+  const feedRevealed = {
+    ivy: { shown: ['ivy_vent', 'ivy_answer'], at: 1, seq: { ivy_vent: 3, ivy_answer: 7 }, to: { ivy_answer: { post: 'ivy_vent', npc: 'tomasz' } } },
+    tomasz: { shown: ['tom_re'], at: 1, seq: { tom_re: 5 }, to: { tom_re: { post: 'ivy_vent', npc: 'ivy' } } },
+    jake: { shown: ['jake_post_1'], at: 1 },
+    old: { n: 2, at: 1 }
+  };
+  const r = verify(['1', '--access'], { ...ACCESS_STATE, feedRevealed });
+  assert.equal(r.status, 0, r.out);
+  const lines = r.out.trim().split('\n');
+  assert.equal(lines.length, 14, r.out);
+  assert.match(r.out, /feedRevealed\s+4: ivy 2 \[ivy_vent:3 ivy_answer:7>ivy_vent\]; jake 1 \[jake_post_1\]; old 2; tomasz 1 \[tom_re:5>ivy_vent\]\n?/);
+});

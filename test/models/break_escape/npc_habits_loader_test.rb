@@ -129,7 +129,9 @@ module BreakEscape
     test 'the claim check reads an authored screenHabit, without any habit' do
       cases = {
         { 'lockChance' => 0 } => :ok,
-        { 'lockIfAwayOverSeconds' => 20 } => :ok,
+        # Owner claim q78: with nothing to meet Dana's need, her only leave is a knock-out, which
+        # has no time-away estimate, so a threshold alone never leaves the screen open
+        { 'lockIfAwayOverSeconds' => 20 } => :unprocessable_entity,
         { 'lockChance' => 1 } => :unprocessable_entity,
         nil => :unprocessable_entity
       }
@@ -139,6 +141,12 @@ module BreakEscape
         assert_equal expected, claim_status(game, 'dana_pc'), habit.inspect
         assert_equal habit, npc_in(game, 'dana')['screenHabit'] if habit
       end
+
+      # The same threshold with a coffee to fetch: a short trip can leave the screen open
+      coffee = { 'id' => 'coffee_1', 'type' => 'notes', 'name' => 'Coffee', 'affordance' => { 'satisfies' => 'coffee' } }
+      game = build(scenario(npcs: [owner('dana', 'dana_pc', 'screenHabit' => { 'lockIfAwayOverSeconds' => 20 })],
+                            objects: [login_pc('dana_pc'), coffee]))
+      assert_equal :ok, claim_status(game, 'dana_pc'), 'a threshold with a need source'
 
       game = build(scenario(npcs: [owner('dana', 'dana_pc', 'screenHabit' => { 'lockChance' => 0 })],
                             objects: [login_pc('dana_pc', 'locksScreenOnLeave' => true)]))

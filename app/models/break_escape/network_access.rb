@@ -644,7 +644,10 @@ module BreakEscape
                                              'hosts' => [], 'networks' => network_blocks(id))
         end
 
-        foothold_for_client(id).merge('hosts' => network_rows(network_footholds[id]['network']),
+        # A foothold whose own network is down (an outage, 5.2) lists none of its rows: they
+        # would only be refused, and the hosts leave every view while the network is down
+        own = network_footholds[id]['network']
+        foothold_for_client(id).merge('hosts' => network_up?(own) ? network_rows(own) : [],
                                       'networks' => network_blocks(id))
       end
       { status: :ok, body: { footholds: footholds } }

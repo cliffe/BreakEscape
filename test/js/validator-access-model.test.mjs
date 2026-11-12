@@ -409,3 +409,163 @@ test('a hint action in triggerOnInteract passes the schema, and an unknown actio
     pc.triggerOnInteract.push({ type: 'no_such_action' });
     assertHas(schemaErrors(sc), 'triggerOnInteract');
 });
+
+// ---- owner claim q78: an owner whom nothing sends away (OwnerClaim.leave_route) ----
+
+const NEVER_LEAVES = "whom nothing sends away from the post";
+
+test('a tracked owner who never leaves the post is warned about, with a fix', { skip }, () => {
+    const sc = clean();
+    sc.disableAttacks = true;
+    const out = warnings(issues(sc));
+    assertHas(out, `sign-in PC 'jake_pc' is owned by 'jake', ${NEVER_LEAVES}`);
+    assertHas(out, 'give the owner a need met somewhere else');
+});
+
+test('a knock-out that always locks is no route; one that can find the PC open is', { skip }, () => {
+    let sc = clean();
+    delete obj(sc, 'jake_pc').lockChance;
+    obj(sc, 'jake_pc').locksScreenOnLeave = false;
+    assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), 'locksScreenOnLeave false: a knock-out leaves it open');
+    sc = clean();
+    delete obj(sc, 'jake_pc').lockChance;
+    npc(sc, 'jake').screenHabit = { lockIfAwayOverSeconds: 20 };
+    assertHas(warnings(issues(sc)), NEVER_LEAVES);
+});
+
+test('each leave route keeps the never-leaves warning silent', { skip }, () => {
+    const routes = {
+        'a need source elsewhere': sc => lobby(sc).objects.push({ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst' } }),
+        "a colleague's phone": sc => {
+            npc(sc, 'jake').answersPhones = true;
+            lobby(sc).objects.push({ id: 'dana_phone', type: 'notes', name: 'Phone', phoneOwner: 'dana' });
+        },
+        'a print command': sc => { npc(sc, 'jake').eventMappings = [{ eventPattern: 'go', needs: { print: 'copier' } }]; },
+        'an own print hook with a printHabit': sc => {
+            obj(sc, 'jake_pc').affordance = { satisfies: 'thirst' };
+            npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } };
+            npc(sc, 'jake').printHabit = {};
+        },
+        'an interest with an item and a place': sc => {
+            npc(sc, 'jake').interests = { mail: 2 };
+            lobby(sc).objects.push({ id: 'letter', type: 'notes', name: 'Letter', needsTag: 'mail', takeable: true },
+                { id: 'tray', type: 'notes', name: 'Tray', affordance: { accepts: 'mail' } });
+        }
+    };
+    for (const [label, edit] of Object.entries(routes)) {
+        const sc = clean();
+        sc.disableAttacks = true;
+        edit(sc);
+        assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), label);
+    }
+    // and the near misses still warn
+    const misses = {
+        'the only source is the own PC': sc => { obj(sc, 'jake_pc').affordance = { satisfies: 'thirst' }; },
+        'the only source is private to somebody else': sc => {
+            lobby(sc).objects.push({ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst', private: true, owners: ['dana'] } });
+        },
+        'a needs set command and a droppable item for another need': sc => {
+            npc(sc, 'jake').eventMappings = [{ eventPattern: 'go', needs: { set: { thirst: 90 } } }];
+            lobby(sc).objects.push({ id: 'stapler', type: 'notes', name: 'Stapler', droppable: true, affordance: { satisfies: 'work' } });
+        }
+    };
+    for (const [label, edit] of Object.entries(misses)) {
+        const sc = clean();
+        sc.disableAttacks = true;
+        edit(sc);
+        assertHas(warnings(issues(sc)), NEVER_LEAVES);
+    }
+});
+
+// Review R2: B1, B2 and the cautious layer (a movement source the mirror does not model exactly)
+test('droppable sources, social media prints and every cautious movement source keep the warning silent', { skip }, () => {
+    const routes = {
+        'B1: a droppable source outside needsRooms': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            sc.rooms.finance_office.objects = [{ id: 'water', type: 'notes', name: 'Water', droppable: true, takeable: true, affordance: { satisfies: 'thirst' } }];
+        },
+        'B2: a print hook on the own station used for social media': sc => {
+            npc(sc, 'jake').needs = { social_media: { decayPerMin: 10, urgentAt: 40 } };
+            npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } };
+            npc(sc, 'jake').printHabit = {};
+        },
+        'a patrol': sc => { npc(sc, 'jake').behavior = { patrol: { waypoints: [{ x: 2, y: 2 }] } }; },
+        'a scripted move': sc => { npc(sc, 'jake').eventMappings = [{ eventPattern: 'alarm', patrolOverride: { targetTile: { x: 1, y: 1 } } }]; },
+        'navigateToPlayer': sc => { npc(sc, 'jake').eventMappings = { seen: { knot: 'hi', navigateToPlayer: true } }; },
+        'a patrol_mode ink tag': sc => { npc(sc, 'jake').storyPath = 'scenarios/ink/test-patrol-toggle.json'; },
+        'a social media need': sc => { npc(sc, 'jake').needs.social_media = { decayPerMin: 10, urgentAt: 40 }; },
+        'a station hook': sc => { npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } }; },
+        'an interest': sc => { npc(sc, 'jake').interests = { mail: 2 }; },
+        'answersPhones with no colleague phone': sc => { npc(sc, 'jake').answersPhones = true; },
+        'a printHabit': sc => { npc(sc, 'jake').printHabit = { fetchAfterSeconds: [10, 20] }; }
+    };
+    for (const [label, edit] of Object.entries(routes)) {
+        const sc = clean();
+        sc.disableAttacks = true;
+        edit(sc);
+        assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), label);
+    }
+});
+
+// Review R3: no room or leash test refuses, a held, carried or revealed source counts, and an
+// unreadable story allows
+test('sources in any room, movable sources and an unreadable story keep the warning silent', { skip }, () => {
+    const water = (extra = {}) => ({ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst' }, ...extra });
+    const routes = {
+        'a fixed source outside needsRooms': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            sc.rooms.finance_office.objects = [water()];
+        },
+        'a source in a room the owner avoids': sc => {
+            npc(sc, 'jake').needsAvoidRooms = ['finance_office'];
+            sc.rooms.finance_office.objects = [water()];
+        },
+        'a source held by a colleague (knock-out drop)': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            npc(sc, 'dana').itemsHeld = [water()];
+        },
+        'a tagged source (carry drop)': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            sc.rooms.finance_office.objects = [water({ needsTag: 'bottle', takeable: true })];
+        },
+        'a reveal slot (outputOf)': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            sc.rooms.finance_office.objects = [water({ outputOf: 'copier' })];
+        },
+        'a storyPath that cannot be read': sc => { npc(sc, 'jake').storyPath = 'scenarios/no_such_scenario/ink/none.json'; }
+    };
+    for (const [label, edit] of Object.entries(routes)) {
+        const sc = clean();
+        sc.disableAttacks = true;
+        edit(sc);
+        assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), label);
+    }
+});
+
+// Review R2 n4: the warning names check 10, so it fires only where check 10 is the reason
+test('the never-leaves warning is silent where an earlier claim check refuses', { skip }, () => {
+    const earlier = {
+        'no account': sc => { delete npc(sc, 'jake').creds.username; },
+        'the access list does not admit the owner': sc => { obj(sc, 'jake_pc').access = { roles: ['it'] }; },
+        'a policy with autoLockMin 0': sc => { sc.policies.lax.autoLockMin = 0; }
+    };
+    for (const [label, edit] of Object.entries(earlier)) {
+        const sc = clean();
+        sc.disableAttacks = true;
+        edit(sc);
+        assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), label);
+    }
+});
+
+test('the never-leaves warning judges the prepared data and skips a screen that always locks', { skip }, () => {
+    // No lock field and no habit: every leave locks, so the claim is refused already
+    let sc = clean();
+    delete obj(sc, 'jake_pc').lockChance;
+    assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), 'a screen that always locks');
+    // An id-less source gets a stamped id at game creation, so the server sees it; judged on the
+    // raw data it would be invisible and the owner would look as if they never left
+    sc = clean();
+    sc.disableAttacks = true;
+    lobby(sc).objects.push({ type: 'notes', name: 'Water', affordance: { satisfies: 'thirst' } });
+    assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), 'object ids stamped first');
+});

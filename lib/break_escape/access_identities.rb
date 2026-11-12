@@ -78,13 +78,56 @@ module BreakEscape
       return false unless npc.is_a?(Hash)
 
       needs = npc['needs']
-      if needs.is_a?(Hash) && needs.values.any? { |n| n.is_a?(Hash) && positive_number?(n['decayPerMin']) && positive_number?(n['urgentAt']) }
+      if needs.is_a?(Hash) && needs.values.any? { |n| n.is_a?(Hash) && js_positive?(n['decayPerMin']) && js_positive?(n['urgentAt']) }
         return true
       end
 
       interests = npc['interests']
       interests.is_a?(Hash) && interests.values.any? do |interest|
-        interest.is_a?(Hash) ? positive_number?(interest['weight']) : (interest.is_a?(Numeric) && interest.positive?)
+        interest.is_a?(Hash) ? js_positive?(interest['weight']) : (interest.is_a?(Numeric) && interest.positive?)
+      end
+    end
+
+    # Number(value) > 0, as normaliseNeed and normaliseInterest read decayPerMin, urgentAt and
+    # weight. positive_number? or a JavaScript reading of true (1) and of a one-element array
+    # (Number([5]) is 5), so it is never narrower than positive_number?.
+    def js_positive?(value)
+      return true if positive_number?(value)
+
+      n = value.is_a?(Array) ? js_array_number(value) : js_number_full(value)
+      # No finite test: Number("Infinity") and a JSON 1e400 are above 0 to normaliseNeed, which
+      # clamps them. NaN is never positive.
+      n.positive?
+    end
+
+    # js_number plus the string spellings Number() also reads: 0b and 0o literals and a signed
+    # Infinity. Used by js_positive? only, so js_number's other callers read what they always did.
+    def js_number_full(value)
+      return js_number(value) unless value.is_a?(String)
+
+      s = value.strip
+      case s
+      when /\A0[bB]([01]+)\z/ then Regexp.last_match(1).to_i(2).to_f
+      when /\A0[oO]([0-7]+)\z/ then Regexp.last_match(1).to_i(8).to_f
+      when /\A\+?Infinity\z/ then Float::INFINITY
+      when '-Infinity' then -Float::INFINITY
+      else js_number(s)
+      end
+    end
+
+    # Number(array): Number(String(array)). An empty array is 0; one element reads as that
+    # element's string (null is empty, so 0; true is "true", so NaN); more than one has a comma,
+    # so NaN.
+    def js_array_number(array)
+      return 0.0 if array.empty?
+      return Float::NAN unless array.size == 1
+
+      el = array.first
+      case el
+      when nil then 0.0
+      when Numeric, String then js_number_full(el.to_s)
+      when Array then js_array_number(el)
+      else Float::NAN
       end
     end
 
@@ -150,10 +193,31 @@ module BreakEscape
 
       habit = owner.is_a?(Hash) ? owner['screenHabit'] : nil
       return true unless habit.is_a?(Hash)
-      return false if habit['lockIfAwayOverSeconds'].is_a?(Numeric)
+      # decideLocked: a trip expected to last at most lockIfAwayOverSeconds stays open, the value
+      # read with Number() (so "20" counts). Owner claim q78: a negative threshold can never be
+      # met (an expected absence is never below 0), so lockChance alone decides there.
+      over = js_number(habit['lockIfAwayOverSeconds']) if habit.key?('lockIfAwayOverSeconds')
+      return false if over&.finite? && over >= 0
       return habit['lockChance'] >= 1 if habit['lockChance'].is_a?(Numeric)
 
       true
+    end
+
+    # JavaScript's Number(x) for a JSON value: nil, "" and false are 0, true is 1, a numeric
+    # string its number; anything else NaN. Known gaps, which no scenario authors: an array is NaN
+    # here where Number([]) is 0 and Number([n]) is n, and Float() reads "1_000" as 1000 where
+    # Number() gives NaN, and "Infinity", "0b101" and "0o7" are NaN here. js_positive?
+    # (needs_tracked?, OwnerClaim) reads arrays, true and those spellings as Number() does.
+    def js_number(value)
+      case value
+      when Numeric then value.to_f
+      when nil, false then 0.0
+      when true then 1.0
+      when String
+        s = value.strip
+        s.empty? ? 0.0 : Float(s, exception: false) || Float::NAN
+      else Float::NAN
+      end
     end
 
     def sign_in_pcs(scenario)

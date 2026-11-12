@@ -208,8 +208,24 @@ test('slice 9.2: work(npcId) reads the plan and the needs state; reports() reads
 
 test('feed() (slice 9.2 C): revealed post ids, done NPCs and the request count; empty without the module', () => {
   delete window.socialFeed;
-  assert.deepEqual(accessBridge.feed(), { revealed: {}, done: [], requests: 0 });
+  assert.deepEqual(accessBridge.feed(), { revealed: {}, done: [], requests: 0, threads: {} });
   window.socialFeed = { revealed: () => ({ jake: ['p1', 'p2'] }), done: new Set(['lena']), requests: 3 };
-  assert.deepEqual(accessBridge.feed(), { revealed: { jake: ['p1', 'p2'] }, done: ['lena'], requests: 3 });
+  assert.deepEqual(accessBridge.feed(), { revealed: { jake: ['p1', 'p2'] }, done: ['lena'], requests: 3, threads: {} });
+  delete window.socialFeed;
+});
+
+test('feed() C3: threads in thread order, on a null-prototype object, a __proto__ post id included', () => {
+  const replies = { __proto__: null, p1: [{ post: { id: 'r1' } }, { post: { id: 'r2' } }], ['__proto__']: [{ post: { id: 'r3' } }] };
+  Object.defineProperty(replies, '__proto__', { value: [{ post: { id: 'r3' } }], enumerable: true });
+  window.socialFeed = {
+    revealed: () => ({ jake: ['p1', '__proto__', 'p2'], amy: ['r1'] }), done: new Set(), requests: 2,
+    repliesFor: (id) => (Object.prototype.hasOwnProperty.call(replies, id) ? replies[id] : [])
+  };
+  const out = accessBridge.feed();
+  assert.deepEqual(Object.keys(out.threads).sort(), ['__proto__', 'p1']);
+  assert.deepEqual(out.threads.p1, ['r1', 'r2']);
+  assert.deepEqual(Object.getOwnPropertyDescriptor(out.threads, '__proto__').value, ['r3']);
+  assert.equal(Object.getPrototypeOf(out.threads), Object.prototype, 'json() copies it into a plain object');
+  assert.equal({}.r3, undefined);
   delete window.socialFeed;
 });

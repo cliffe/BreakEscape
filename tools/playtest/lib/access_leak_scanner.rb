@@ -179,6 +179,7 @@ class AccessLeakScanner
     @feed_served = Set.new    # "npc|post_id" and "fact:<id>"
     @feed_order = Hash.new { |h, k| h[k] = [] } # npc id => [[post_id, fact id or nil], ...] as authored
     @feed_ordered_ids = Hash.new { |h, k| h[k] = [] } # npc id => authored post ids with no `when` (C2 migration)
+    @feed_post_key = {}       # C3: post id => "npc|post_id", the first authored owner (feed_reply_target)
     # C2: reactive posts come out of authored order, so "revealed so far" is no longer an authored
     # prefix; the scanner accumulates the ids the log shows served and falls back to the game's
     # saved reveal set (its `shown` list, or a legacy count migrated to ordered ids) only where no
@@ -217,7 +218,10 @@ class AccessLeakScanner
       wifi_secrets: @wifi_secrets.length,
       share_items: @share_items.length,
       workarounds: @workarounds.length,
-      feed_posts: @feed_texts.values.count { |f| f[:kind] == :post },
+      # Distinct posts with a registered text; a reply with two pieces is one post, its pieces
+      # counted apart in feed_texts (review C3 R1 m5)
+      feed_posts: @feed_texts.values.select { |f| f[:kind] == :post }.flat_map { |f| f[:served] }.uniq.length,
+      feed_texts: @feed_texts.values.count { |f| f[:kind] == :post },
       feed_facts: @feed_fact_ids.length,
       lockout_records: lockout_records.values.sum(&:length)
     }
@@ -310,6 +314,7 @@ class AccessLeakScanner
     'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
     'feed_text' => "a feed post's or feed fact's whole text before the server served it",
     'feed_fact_key' => 'an object keyed by a feed fact id with a text key before its post was served, or a bootstrap social.intelFacts that is not an object',
+    'feed_reply_target' => 'a feed reply whose replyTo names a post the server had not served yet',
     'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
                       'npcFrustration, a lockedOut flag outside a check or sign-in answer, or a lockoutPcs entry that is not a locked-out PC',
     'lockout_unrecorded' => 'a lockout the server\'s check did not record'
@@ -646,7 +651,8 @@ class AccessLeakScanner
       login_accounts: method == 'GET' && path.end_with?('/login_accounts'),
       npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
       npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
-      login: method == 'POST' && path.end_with?('/login')
+      login: method == 'POST' && path.end_with?('/login'),
+      friendface_phone: method == 'POST' && path.end_with?('/friendface_phone')
     }
   end
 
@@ -779,11 +785,19 @@ class AccessLeakScanner
         next unless post.is_a?(Hash) && post['id'].is_a?(String) && !post['id'].strip.empty?
 
         key = "#{npc['id']}|#{post['id']}"
-        fid = post['fact'].is_a?(String) && facts[post['fact']].is_a?(Hash) ? post['fact'] : nil
+        # C3 (plan 9): a post with a reply field adds no feed fact, as on the server (feed_facts)
+        reply = BreakEscape::AccessWork.reply_post?(post)
+        fid = !reply && post['fact'].is_a?(String) && facts[post['fact']].is_a?(Hash) ? post['fact'] : nil
         @feed_order[npc['id'].to_s] << [post['id'], fid]
-        @feed_ordered_ids[npc['id'].to_s] << post['id'] unless post['when'].is_a?(Hash)
+        @feed_ordered_ids[npc['id'].to_s] << post['id'] unless post['when'].is_a?(Hash) || reply
+        @feed_post_key[post['id']] ||= key
         text = post['text']
-        (@feed_texts[text] ||= { kind: :post, owner: "feed:#{key}", served: [] })[:served] << key if text.is_a?(String) && text.length >= MIN_FEED_TEXT
+        # C3: a reply ships with {name} filled, so it is matched by each literal piece around
+        # {name} of MIN_FEED_TEXT or more (the validator's piece rules use the same helper)
+        texts = reply ? BreakEscape::AccessWork.reply_text_pieces(text) : [text]
+        texts.each do |t|
+          (@feed_texts[t] ||= { kind: :post, owner: "feed:#{key}", served: [] })[:served] << key if t.is_a?(String) && t.length >= MIN_FEED_TEXT
+        end
         next unless fid
 
         @feed_fact_ids << fid
@@ -947,7 +961,8 @@ class AccessLeakScanner
       @feed_shown[npc_id] << post_id unless @feed_shown[npc_id].include?(post_id)
       fact = body['fact']
       serve_feed(npc_id, post_id, fact.is_a?(Hash) ? fact['id'] : nil)
-    elsif ctx[:scenario] && body['feedPosts'].is_a?(Hash)
+    elsif (ctx[:scenario] || ctx[:friendface_phone]) && body['feedPosts'].is_a?(Hash)
+      # C3 (plan 9): POST /friendface_phone answers with a feedPosts slice, judged as GET /scenario's
       body['feedPosts'].each do |npc_id, f|
         nid = npc_id.to_s
         allowed = feed_allowed_ids(nid)
@@ -976,6 +991,15 @@ class AccessLeakScanner
 
   def scan_feed(body, ctx, add)
     return if @feed_texts.empty? && @feed_fact_ids.empty?
+
+    # C3: a served reply's replyTo names its thread post, which must be out already
+    walk_hashes(body, '$') do |hash, json_path|
+      target = hash['replyTo']
+      next unless target.is_a?(String) && hash['id'].is_a?(String) && @feed_post_key.key?(target)
+      next if @feed_served.include?(@feed_post_key[target])
+
+      add.call('feed_reply_target', "feed:#{@feed_post_key[target]}", safe_path("#{json_path}.replyTo"))
+    end
 
     each_string(body) do |str, json_path, _owner|
       @feed_texts.each do |text, entry|

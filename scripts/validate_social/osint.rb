@@ -194,7 +194,9 @@ module ValidateSocial
           # Review C R1 m1: only posts the server serves grant (an NPC that feeds, a post with an id)
           next [] unless BreakEscape::AccessWork.feeds?(npc)
 
-          served = BreakEscape::AccessWork.feed_posts(npc)
+          # C3: a reply (any reply field) is never a fact's granting element (the access validator
+          # reports a fact on a reply as an error)
+          served = BreakEscape::AccessWork.own_feed_posts(npc)
           npc['feed']['posts'].each_with_index.filter_map do |p, j|
             next unless served.any? { |s| s.equal?(p) } && p['fact'].is_a?(String)
 

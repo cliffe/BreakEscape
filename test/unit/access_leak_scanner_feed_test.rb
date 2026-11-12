@@ -472,4 +472,104 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     assert_equal 1, lines.length
     refute_includes lines[0], AccessSocialScenario::POSTS[2]
   end
+
+  # ---- C3 (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md 9): replies ------------------------------------
+
+  PHONE = '/break_escape/games/1/friendface_phone'.freeze
+  IVY_VENT = 'Shared drive down again, nothing will save.'.freeze
+  TOM_VENT = 'Shared drive is gone. Lovely start to the week.'.freeze
+  TOM_RE = 'Same here {name}, I lost my whole morning to it.'.freeze
+  TOM_RE_PIECE = 'I lost my whole morning to it'.freeze
+  IVY_RE = 'Not just you {name}, mine has gone as well.'.freeze
+  REPLY_FACT = 'A fact wrongly authored on a reply, long enough.'.freeze
+
+  def reply_data
+    down = { 'global' => 'drive_down' }
+    feeder = lambda do |id, posts|
+      { 'id' => id, 'npcType' => 'person', 'needs' => { 'social_media' => { 'decayPerMin' => 60, 'urgentAt' => 40 } },
+        'feed' => { 'site' => 'friendface', 'person' => id, 'order' => 'reactive_first', 'posts' => posts } }
+    end
+    ivy = feeder.call('ivy', [{ 'id' => 'ivy_vent', 'text' => IVY_VENT, 'when' => down },
+                              { 'id' => 'ivy_re_tom', 'text' => IVY_RE, 'replyTo' => 'tom_vent', 'insteadOf' => 'ivy_vent', 'when' => down }])
+    tom = feeder.call('tomasz', [{ 'id' => 'tom_vent', 'text' => TOM_VENT, 'when' => down },
+                                 { 'id' => 'tom_re_ivy', 'text' => TOM_RE, 'replyTo' => 'ivy_vent', 'insteadOf' => 'tom_vent', 'when' => down,
+                                   'fact' => 'reply_fact' }])
+    { 'globalVariables' => { 'drive_down' => true },
+      'social' => { 'intelFacts' => { 'reply_fact' => { 'label' => 'R', 'subject' => 'ivy', 'text' => REPLY_FACT } } },
+      'rooms' => { 'office' => { 'type' => 'room_office', 'npcs' => [tom, ivy] } } }
+  end
+
+  def ivy_vent_answer
+    { 'npcId' => 'ivy', 'index' => 0, 'seq' => 1, 'post' => { 'id' => 'ivy_vent', 'text' => IVY_VENT },
+      'site' => 'friendface', 'person' => 'ivy', 'done' => false }
+  end
+
+  def reply_answer
+    { 'npcId' => 'tomasz', 'index' => 0, 'seq' => 2, 'site' => 'friendface', 'person' => 'tomasz', 'done' => true,
+      'post' => { 'id' => 'tom_re_ivy', 'text' => TOM_RE.sub('{name}', 'Ivy'), 'replyTo' => 'ivy_vent' },
+      'replyToNpc' => 'ivy', 'replyToPerson' => 'ivy', 'namedNpc' => 'ivy', 'namedPerson' => 'ivy' }
+  end
+
+  def thread_posts
+    { 'ivy' => { 'site' => 'friendface', 'person' => 'ivy', 'done' => false, 'posts' => [ivy_vent_answer.slice('index', 'seq', 'post')] },
+      'tomasz' => { 'site' => 'friendface', 'person' => 'tomasz', 'done' => true,
+                    'posts' => [reply_answer.slice('index', 'seq', 'post', 'replyToNpc', 'replyToPerson', 'namedNpc', 'namedPerson')] } }
+  end
+
+  test 'C3: a reply is matched by its literal pieces around {name}; the filled text before its serve is a leak' do
+    early = { 'notes' => [{ 'text' => TOM_RE.sub('{name}', 'Ivy') }] }
+    assert_equal [[1, 'feed_text', 'feed:tomasz|tom_re_ivy']], summary(AccessLeakScanner.new(reply_data).scan(rows(['GET', SCENARIO, early])))
+    # served by its own answer, then listed again: clean, with the name filled
+    clean = AccessLeakScanner.new(reply_data).scan(rows(['POST', FEED, ivy_vent_answer], ['POST', FEED, reply_answer],
+                                                       ['GET', SCENARIO, { 'feedPosts' => thread_posts }]))
+    assert_empty summary(clean)
+  end
+
+  test "C3: a spent post's text in any response is a feed_text leak" do
+    spent = { 'x' => TOM_VENT }
+    found = summary(AccessLeakScanner.new(reply_data).scan(rows(['POST', FEED, ivy_vent_answer], ['POST', FEED, reply_answer], ['GET', SCENARIO, spent])))
+    assert_equal [[3, 'feed_text', 'feed:tomasz|tom_vent']], found
+  end
+
+  test 'C3: a replyTo naming a post not yet served is feed_reply_target' do
+    found = summary(AccessLeakScanner.new(reply_data).scan(rows(['POST', FEED, reply_answer])))
+    assert_includes found, [1, 'feed_reply_target', 'feed:ivy|ivy_vent']
+    assert_includes AccessLeakScanner::RULE_TEXT.keys, 'feed_reply_target'
+  end
+
+  test 'C3: a resumed run whose GET /scenario feedPosts holds a thread raises no false leak' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => {
+      'ivy' => { 'shown' => ['ivy_vent'], 'at' => 0, 'seq' => { 'ivy_vent' => 1 }, 'to' => {} },
+      'tomasz' => { 'shown' => ['tom_re_ivy'], 'at' => 0, 'seq' => { 'tom_re_ivy' => 2 }, 'to' => { 'tom_re_ivy' => { 'post' => 'ivy_vent', 'npc' => 'ivy' } } }
+    } })
+    scanner = AccessLeakScanner.new(reply_data, game: game)
+    assert_empty summary(scanner.scan(rows(['GET', SCENARIO, { 'feedPosts' => thread_posts }])))
+    assert_equal %w[ivy tomasz], scanner.feed_fallback.sort
+  end
+
+  test 'C3: a resumed run whose /friendface_phone answer holds a thread raises no false leak; unserved text there is reported' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => {
+      'ivy' => { 'shown' => ['ivy_vent'], 'at' => 0 }, 'tomasz' => { 'shown' => ['tom_re_ivy'], 'at' => 0 }
+    } })
+    phone = { 'site' => 'friendface', 'person' => 'ivy', 'feedPosts' => thread_posts }
+    assert_empty summary(AccessLeakScanner.new(reply_data, game: game).scan(rows(['POST', PHONE, phone])))
+    # without the saved reveals the same answer shows posts nothing served
+    found = summary(AccessLeakScanner.new(reply_data).scan(rows(['POST', PHONE, phone])))
+    assert_includes found, [1, 'feed_text', 'feed:ivy|ivy_vent']
+    assert_includes found, [1, 'feed_text', 'feed:tomasz|tom_re_ivy']
+  end
+
+  test 'C3: a fact wrongly authored on a reply is not withheld, so its text in the bootstrap is not reported' do
+    scanner = AccessLeakScanner.new(reply_data)
+    assert_equal 0, scanner.counts[:feed_facts]
+    b = { 'social' => { 'intelFacts' => { 'reply_fact' => reply_data['social']['intelFacts']['reply_fact'] } } }
+    assert_empty summary(scanner.scan(rows(['GET', SCENARIO, b])))
+  end
+
+  # Review C3 R1 m5: a reply with two pieces of 12 or more is one post and two texts
+  test 'C3: feed_posts counts distinct posts and feed_texts counts the registered pieces' do
+    c = AccessLeakScanner.new(reply_data).counts
+    assert_equal 4, c[:feed_posts], 'ivy_vent, ivy_re_tom, tom_vent, tom_re_ivy'
+    assert_equal 5, c[:feed_texts], 'two vents, two pieces of ivy_re_tom, one of tom_re_ivy'
+  end
 end

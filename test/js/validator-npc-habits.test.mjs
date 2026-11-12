@@ -526,3 +526,47 @@ test('the schema takes habits.holdsDoors (a boolean) and gate.noHold (a list of 
     assert.ok(errs.some(e => e.includes('holdsDoors')), errs.join('\n'));
     assert.ok(errs.some(e => e.includes('noHold')), errs.join('\n'));
 });
+
+// ── C3: alternative-set feed posts (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md, 9) ────────
+
+// Ivy feeds; her vent ivy_vent is the post her reply ivy_re stands in for, so both are set
+// members, whose shipping depends on timing. ivy_own is an own post outside any set.
+function ivy(ventText, ownText = 'Quiet morning at the desk so far.') {
+    return person('ivy', {
+        needs: { social_media: { decayPerMin: 60, urgentAt: 40 } },
+        feed: { site: 'friendface', person: 'ivy', posts: [
+            { id: 'ivy_own', text: ownText },
+            { id: 'ivy_vent', text: ventText, when: { cause: 'down', need: 'work' } },
+            { id: 'ivy_re', text: '{name}, the shared drive is down here too.', replyTo: 'tom_vent', insteadOf: 'ivy_vent',
+                when: { cause: 'down', need: 'work' } }
+        ] }
+    });
+}
+function meiWithIvy(password, habits, objects, ivyNpc) {
+    const npc = person('mei', { needsHome: 'mei_pc', habits });
+    npc.creds.password = password;
+    return run(scenario({ npcs: [npc, ivyNpc], objects: [loginPc('mei_pc'), ...objects] }));
+}
+const timing = 'backed only by posts whose shipping depends on timing';
+
+test('guessable backed only by a set member: the timing line, not the "not backed" line', () => {
+    const out = meiWithIvy('Rex2019!', guessable, [calendar(), MEMO], ivy('Took Rex to the beach before work.'));
+    assertHas(warnings(out.habits), timing);
+    assertHas(warnings(out.habits), 'alternative sets ivy_vent');
+    assertHas(warnings(out.habits), 'the dungeon graph does not draw this clue');
+    assertLacks(warnings(out.habits), notBacked);
+});
+
+test('guessable backed by nothing: only "not backed"; on an own post outside the set: backed', () => {
+    let out = meiWithIvy('Rex2019!', guessable, [calendar(), MEMO], ivy('Nothing saves this morning.'));
+    assertHas(warnings(out.habits), notBacked);
+    assertLacks(warnings(out.habits), timing);
+    out = meiWithIvy('Rex2019!', guessable, [calendar(), MEMO], ivy('Nothing saves this morning.', 'Took Rex to the beach before work.'));
+    assert.deepEqual(warnings(out.habits), []);
+});
+
+test('strong readable only in set members: the timing warning, not the plain one', () => {
+    const out = meiWithIvy('Rex2019!', { password: 'strong' }, [calendar()], ivy('Took Rex to the beach before work.'));
+    assertHas(warnings(out.habits), 'can be read in posts that may ship (alternative sets ivy_vent)');
+    assertLacks(warnings(out.habits), 'can be read in the scenario');
+});
