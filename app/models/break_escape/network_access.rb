@@ -1272,7 +1272,7 @@ module BreakEscape
     # revealSecret says, and never from the landing-page or single-secret passes. It
     # carries only the address the browser wrote, so it reveals no secret.
     def account_capture_usernames
-      earned = player_state.dig('globalVariables', 'se_captures')
+      earned = se_captures_record
       return {} unless earned.is_a?(Hash) && earned.any?
 
       usernames = account_capture_passwords

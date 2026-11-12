@@ -1247,12 +1247,26 @@ module BreakEscape
     # record of the client-computed verdict (se_captures is written only when a phish lands
     # and is synced to the server), not a bare request claim: a fresh game, whose persisted
     # se_captures is empty, gets nothing.
+    # The server-owned capture record (sync deltas R2, 6a). Entries live in
+    # player_state['seCaptures'], written only by the server's own capture steps
+    # (CaptureProofs#record_capture! and the heard-share composition). An old save whose
+    # captures still sit in the legacy globalVariables.se_captures global is read in place until
+    # the bootstrap migrates it, so main's serving path and its tests see the same entries either
+    # way. The reader never writes.
+    def se_captures_record
+      record = player_state['seCaptures']
+      return record if record.is_a?(Hash)
+
+      legacy = player_state.dig('globalVariables', 'se_captures')
+      legacy.is_a?(Hash) ? legacy : {}
+    end
+
     def capture_secrets_for_client
       return {} unless reveal_capture_secret?
 
       social = scenario_data['social']
 
-      earned = player_state.dig('globalVariables', 'se_captures')
+      earned = se_captures_record
       return {} unless earned.is_a?(Hash) && earned.any?
 
       # The authored secrets, by the capture address they were authored beside.
