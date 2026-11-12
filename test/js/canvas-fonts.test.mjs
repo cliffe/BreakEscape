@@ -44,6 +44,22 @@ test('the two canvas text systems redraw on window.canvasFontsReady', () => {
     for (const rel of ['systems/npc-action-icons.js', 'systems/npc-needs-debug.js']) {
         const src = readFileSync(join(js, rel), 'utf8');
         assert.match(src, /canvasFontsReady/, rel);
-        assert.match(src, /updateText\?\.\(\)/, rel);
+        assert.match(src, /refreshCanvasText\(/, rel);
+    }
+});
+
+// Code review R2 m2: Phaser 3.60 keeps a Text's height metrics from when it was made, so the
+// redraw goes through style.update(true), which measures the font again before redrawing.
+test('the font redraw measures the text again (style.update(true)), in both systems', async () => {
+    for (const rel of ['systems/npc-action-icons.js', 'systems/npc-needs-debug.js']) {
+        const { refreshCanvasText } = await import(join(js, rel));
+        const calls = [];
+        const text = { style: { update: (recalc) => calls.push(['update', recalc]) }, updateText: () => calls.push(['updateText']) };
+        refreshCanvasText(text);
+        assert.deepEqual(calls, [['update', true]], rel);
+        const bare = { updateText: () => calls.push(['bare']) };
+        refreshCanvasText(bare);
+        assert.deepEqual(calls.at(-1), ['bare'], rel + ': a text with no style is still redrawn');
+        assert.doesNotThrow(() => refreshCanvasText(null));
     }
 });

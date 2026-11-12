@@ -13,6 +13,15 @@
  * the world, so it changes no collisions, world depth sorting or clicks.
  */
 
+// Phaser 3.60 measures a Text's ascent and descent once, when its style is made, and
+// updateText() reuses them. A text made before VT323 arrived would keep the fallback
+// font's line height, so the redraw asks the style to measure again first (code review R2
+// m2). A text with no style (a test stub) is just redrawn.
+export function refreshCanvasText(text) {
+    if (text?.style && typeof text.style.update === 'function') return text.style.update(true);
+    return text?.updateText?.();
+}
+
 export const REDRAW_MS = 200;
 export const BAR = { w: 32, h: 4, gap: 3, letterW: 7, pad: 2 };
 export const DEPTH = 5001;   // just above the action icon (5000)
@@ -145,7 +154,7 @@ export class NpcNeedsDebug {
         // redraws once it has (review R1 m5)
         const made = p;
         win().canvasFontsReady?.then?.(() => {
-            try { made.label.updateText?.(); for (const t of made.letters.values()) t.updateText?.(); } catch (e) { /* gone */ }
+            try { refreshCanvasText(made.label); for (const t of made.letters.values()) refreshCanvasText(t); } catch (e) { /* gone */ }
         });
         return p;
     }

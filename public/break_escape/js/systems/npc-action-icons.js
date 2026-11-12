@@ -61,6 +61,15 @@
  */
 import { iconShown, roomIsDark, npcIconAnchor } from './npc-office-visuals.js';
 
+// Phaser 3.60 measures a Text's ascent and descent once, when its style is made, and
+// updateText() reuses them. A text made before VT323 arrived would keep the fallback
+// font's line height, so the redraw asks the style to measure again first (code review R2
+// m2). A text with no style (a test stub) is just redrawn.
+export function refreshCanvasText(text) {
+    if (text?.style && typeof text.style.update === 'function') return text.style.update(true);
+    return text?.updateText?.();
+}
+
 // VT323 for the text stand-ins is fetched at boot (utils/canvas-fonts.js); a text made
 // before it arrived redraws, and its backing is re-laid out, once it has (review R1 m5).
 function redrawOnFonts(redraw) {
@@ -358,7 +367,7 @@ export class NpcActionIcons {
         const img = scene.add.image(0, -2, '__DEFAULT').setOrigin(0.5, 1).setVisible(false);
         const box = scene.add.container(0, 0, [bg, text, img]).setDepth(5000);
         const ic = { box, bg, text, img, shown: null };
-        redrawOnFonts(() => { ic.shown = null; text.updateText?.(); });
+        redrawOnFonts(() => { ic.shown = null; refreshCanvasText(text); });
         return ic;
     }
 
@@ -395,7 +404,7 @@ export class NpcActionIcons {
         const cross = scene.add.graphics().setVisible(false);
         const box = scene.add.container(0, 0, [g, text, img, face, badge, cross]).setDepth(5000);
         const bubble = { box, g, text, img, face, badge, cross, shown: null, w: 0, h: 0 };
-        redrawOnFonts(() => { bubble.shown = null; text.updateText?.(); });
+        redrawOnFonts(() => { bubble.shown = null; refreshCanvasText(text); });
         return bubble;
     }
 
