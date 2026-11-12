@@ -294,7 +294,7 @@ node .claude/skills/playtest-scenario/scripts/playtest-session.js \
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--flags` | `FLAGS_XML` from `new-game.rb` — the flag values that game was seeded with. A comma-separated list also works                                             |
 | `--log`   | Where the session log goes. Defaults to `tools/playtest/session-<timestamp>.jsonl`; `--no-log` disables it — never do that for a run you intend to report |
-| `--capture-responses` | A file for every JSON response the game server sends, one line each (method, path, status, body and the session log `seq` of the command that was running). For the access model leak check below |
+| `--capture-responses` | A file for every JSON response the game server sends, one line each (method, path, status, body, the session log `seq` of the command that was running and, on a `/feed_post` line, the `npcId` its request named). For the access model leak check below |
 
 **Browser build mismatch.** If `chromium.launch` fails because the project's Playwright wants a Chromium build that is not installed (seen in cloud containers), set `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium` and pass `--headless` (there is no display).
 

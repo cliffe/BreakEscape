@@ -2,6 +2,7 @@
 
 require 'json'
 require 'set'
+require 'cgi'
 require 'uri'
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
@@ -178,6 +179,8 @@ class AccessLeakScanner
     @feed_unknown_seen = Hash.new(0) # npc id => unreadable answers passed so far that may be its reveals
     @feed_at = {}               # npc id => the game's saved time of its last reveal (server seconds)
     @feed_unknown = []          # npc ids that took a reveal from an unreadable answer
+    @feed_ruled_out = []        # fallback npc ids that a lost answer's npcId tag ruled out of it
+    @feed_tags_ignored = false  # a readable answer's npcId tag disagreed with its body
     collect_passwords
     collect_items
     collect_network_secrets
@@ -212,6 +215,14 @@ class AccessLeakScanner
   # NPCs allowed one more reveal at an unreadable /feed_post answer (review C R2 m2: a lost
   # response body), from that answer on and never before it. Filled by scan.
   attr_reader :feed_unknown
+
+  # NPCs that a lost answer's npcId tag ruled out of it and that still took first-line credit
+  # (no lost answer in the log was theirs). Filled by scan.
+  attr_reader :feed_ruled_out
+
+  # Whether a readable /feed_post answer's npcId tag disagreed with the NPC its body names, so
+  # every tag in the log was ignored. Filled by scan.
+  attr_reader :feed_tags_ignored
 
   # lines: [[source, line_no, hash]]. Returns findings, deduplicated per response line, rule
   # and owner (the first JSON path is kept).
@@ -744,13 +755,33 @@ class AccessLeakScanner
   # (it was another NPC's answer, or a tooSoon or done answer).
   LOST_ANSWER_SLACK_S = 5
 
+  # The NPC a /feed_post row's request named (the capture's `npcId`), or nil when the row has no
+  # tag, a blank one, or an `npc_id` in its query string (Rails lets the query beat the body, so
+  # the body's id may not be the NPC the server revealed for), or when the log's tags were found
+  # untrustworthy.
+  def feed_row_tag(row)
+    return nil if @feed_tags_ignored
+
+    tagged = row['npcId']
+    return nil unless tagged.is_a?(String) && !tagged.strip.empty?
+    return nil if query_names_npc?(row['query'])
+
+    tagged
+  end
+
+  def query_names_npc?(query)
+    return false unless query.is_a?(String)
+
+    query.split('&').any? { |pair| CGI.unescape(pair.split('=', 2).first.to_s).start_with?('npc_id') }
+  end
+
   # Whether an unreadable answer may have been one of `npc_id`'s reveals. A row the capture tagged
   # with the request's `npcId` was that NPC's answer and no other's. An untagged row (a capture
   # file older than the tag) may be any NPC's. Without a capture time or a saved time it may (the
   # log cannot settle it, so the note says so).
   def lost_answer_may_be?(npc_id, row)
-    tagged = row['npcId']
-    return false if tagged.is_a?(String) && !tagged.strip.empty? && tagged != npc_id
+    tagged = feed_row_tag(row)
+    return false if tagged && tagged != npc_id
 
     at = @feed_at[npc_id]
     t = capture_time(row)
@@ -784,6 +815,8 @@ class AccessLeakScanner
     @feed_unknown_share = {}
     @feed_unknown_seen = Hash.new(0)
     @feed_unknown = []
+    @feed_ruled_out = []
+    @feed_tags_ignored = false
     @feed_at = {}
     return if @feed_order.empty?
 
@@ -797,6 +830,8 @@ class AccessLeakScanner
       next unless row['path'].to_s.split('?').first.to_s.end_with?('/feed_post') && row['body']['post'].is_a?(Hash)
 
       in_log[row['body']['npcId'].to_s] += 1
+      tag = feed_row_tag(row)
+      @feed_tags_ignored = true if tag && tag != row['body']['npcId']
     end
     revealed = @game&.player_state.is_a?(Hash) ? @game.player_state['feedRevealed'] : nil
     return unless revealed.is_a?(Hash)
@@ -822,6 +857,7 @@ class AccessLeakScanner
 
       @feed_base[npc_id] = base
       @feed_fallback << npc_id
+      @feed_ruled_out << npc_id if unreadable.any? { |row| (tag = feed_row_tag(row)) && tag != npc_id }
     end
   end
 

@@ -304,6 +304,67 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     assert_includes found, [1, 'feed_text', 'feed:lena|lena_post_1'], 'the old rule: the lost row may have been her reveal'
   end
 
+  test 'capture npcId R1 m1: a lost row whose query names an npc_id is treated as untagged' do
+    game, log = two_reveals_after_lost_row('jake')
+    log[1][2]['query'] = 'npc_id=lena'
+    scanner = AccessLeakScanner.new(data, game: game)
+    found = summary(scanner.scan(log))
+    assert_equal %w[jake lena], scanner.feed_unknown.sort, 'the server revealed for the query, so the tag is not trusted'
+    assert_includes found, [1, 'feed_text', 'feed:lena|lena_post_1']
+  end
+
+  test 'capture npcId R1 m1: a readable answer whose tag and body disagree makes the scanner ignore every tag' do
+    game, log = two_reveals_after_lost_row('jake')
+    readable = rows(['POST', FEED, first_answer])[0]
+    readable[2]['npcId'] = 'lena'
+    log = numbered([log[0], at(readable, 10), log[1], log[2]])
+    scanner = AccessLeakScanner.new(data, game: game)
+    found = summary(scanner.scan(log))
+    assert scanner.feed_tags_ignored
+    assert_equal ['lena'], scanner.feed_unknown, 'the lost row is judged by the old rule: it may be Lena\'s'
+    assert_includes found, [1, 'feed_text', 'feed:lena|lena_post_1']
+  end
+
+  test 'capture npcId R1 m2: an NPC that a tag ruled out of the only lost row is listed for the note' do
+    game, log = two_reveals_after_lost_row('jake')
+    scanner = AccessLeakScanner.new(data, game: game)
+    scanner.scan(log)
+    assert_equal ['lena'], scanner.feed_ruled_out
+    refute scanner.feed_tags_ignored
+    game, log = two_reveals_after_lost_row(nil)
+    scanner = AccessLeakScanner.new(data, game: game)
+    scanner.scan(log)
+    assert_empty scanner.feed_ruled_out, 'an untagged row rules nobody out'
+  end
+
+  test 'capture npcId R1 m3: one tagged and one untagged lost row give each NPC one share, and a Lena leak before the untagged row is found' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'lena' => { 'shown' => ['lena_post_1'], 'at' => (T0 + 31).to_f },
+                                                               'jake' => { 'n' => 1, 'at' => (T0 + 32).to_f } } })
+    tagged = at(lost_answer, 20)
+    tagged[2]['npcId'] = 'jake'
+    between = bootstrap.merge('feedPosts' => lena_feed)
+    later = bootstrap.merge('feedPosts' => lena_feed.merge(jake_feed(feed_item(0))))
+    later['social']['intelFacts']['jake_pet_name'] = first_answer['fact']['entry']
+    log = numbered([at(rows(['GET', SCENARIO, bootstrap])[0], 0), tagged, at(rows(['GET', SCENARIO, between])[0], 25),
+                    at(lost_answer, 30), at(rows(['GET', SCENARIO, later])[0], 40)])
+    scanner = AccessLeakScanner.new(data, game: game)
+    found = summary(scanner.scan(log))
+    assert_equal %w[jake lena], scanner.feed_unknown.sort
+    assert_empty scanner.feed_fallback
+    assert_equal [[3, 'feed_text', 'feed:lena|lena_post_1']], found.select { |_l, _r, o| o.include?('lena') }.uniq,
+                 "Jake's tagged row is not hers, so her post before the untagged row is a leak"
+    refute(found.any? { |l, _r, _o| l == 5 }, 'the last bootstrap is clean')
+  end
+
+  test 'capture npcId R1 m3: a lost row tagged for an NPC with no feed gives nobody a share' do
+    game, log = two_reveals_after_lost_row('nobody')
+    scanner = AccessLeakScanner.new(data, game: game)
+    assert_empty scanner.scan(log)
+    assert_empty scanner.feed_unknown
+    assert_equal %w[jake lena], scanner.feed_fallback.sort
+    assert_equal %w[jake lena], scanner.feed_ruled_out.sort
+  end
+
   test 'review C R2 nit: a blank post id is skipped, as the server skips it' do
     d = data.deep_dup
     jake = d['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'jake' }

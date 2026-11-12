@@ -149,11 +149,24 @@ test('npcId is left out when the request body is null, not JSON, names no NPC or
     () => { throw new Error('gone'); }]) {
     cap.onResponse(res(FEED, { method: 'POST', postData, body: {} }));
   }
+  cap.onResponse(res(FEED, { method: 'POST', postData: JSON.stringify({ npc_id: 'omar' }), body: {} }));
   cap.onResponse(res('/break_escape/games/7/unlock', { method: 'POST', postData: JSON.stringify({ npc_id: 'jake' }), body: {} }));
   await cap.flush();
   const got = lines(file);
-  assert.equal(got.length, 8, 'every line is still written');
-  for (const l of got) assert.equal('npcId' in l, false, `${l.path} #${l.n}`);
+  assert.equal(got.length, 9, 'every line is still written');
+  assert.deepEqual(got.filter(l => 'npcId' in l).map(l => [l.n, l.npcId]), [[8, 'omar']], 'only the valid /feed_post line is tagged');
+});
+
+test('npcId is left out when the query string names an npc_id (the server takes the query over the body)', async () => {
+  const { file, cap } = fresh();
+  const body = JSON.stringify({ npc_id: 'jake' });
+  cap.onResponse(res('/break_escape/games/7/feed_post?npc_id=lena', { method: 'POST', postData: body, body: {} }));
+  cap.onResponse(res('/break_escape/games/7/feed_post?npc_id%5B%5D=lena', { method: 'POST', postData: body, body: {} }));
+  cap.onResponse(res('/break_escape/games/7/feed_post?x=1', { method: 'POST', postData: body, body: {} }));
+  await cap.flush();
+  const got = lines(file);
+  assert.deepEqual(got.map(l => l.npcId ?? null), [null, null, 'jake']);
+  assert.equal(got[0].query, 'npc_id=lena');
 });
 
 test('playtest-session.js wires --capture-responses through the module', () => {

@@ -32,8 +32,15 @@ const path = require('path');
 
 const STATIC_PATH_RE = /\/(js|css|assets|stylesheets)\//;
 
-/** The `npc_id` a /feed_post request asked for, or null. Never throws. */
-function feedPostNpcId(request) {
+/**
+ * The `npc_id` a /feed_post request asked for, or null. Never throws. Null when the URL's query
+ * names an `npc_id` too: Rails lets the query beat the body, so the body's id may not be the NPC
+ * the server revealed for.
+ */
+function feedPostNpcId(request, url = null) {
+  try {
+    if (url && [...url.searchParams.keys()].some(k => k.startsWith('npc_id'))) return null;
+  } catch { return null; }
   let data;
   try { data = request.postData(); } catch { return null; }
   if (typeof data !== 'string' || !data) return null;
@@ -94,7 +101,7 @@ function createResponseCapture({ file, origin, now = () => new Date() }) {
     try { method = response.request().method(); } catch { /* keep GET */ }
     let npcId = null;
     if (w.url.pathname.endsWith('/feed_post')) {
-      try { npcId = feedPostNpcId(response.request()); } catch { /* left out */ }
+      try { npcId = feedPostNpcId(response.request(), w.url); } catch { /* left out */ }
     }
     // Start reading the body at once: a navigation can drop it later.
     const bodyP = Promise.resolve()
