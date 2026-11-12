@@ -488,6 +488,18 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal 1, AccessLeakScanner.new(data).counts[:stick_items]
   end
 
+  # USB habit review R3 n3: a stick file named like a sign-in PC's own file is left to that file
+  test "a sign-in PC's file with a stick file's name is not reported as the stick's" do
+    data = stick_scenario(contents: authored_files)
+    pc = data['rooms']['office']['objects'].find { |o| o['id'] == 'omar_pc' }
+    pc['contents'] = [{ 'type' => 'text_file', 'id' => 'pc_rota', 'name' => 'rota.txt', 'text' => 'PC-ROTA-OWN-SECRET' }]
+    answer = { 'contents' => pc['contents'] }
+    assert_empty scan(answer, path: '/break_escape/games/1/container/omar_pc', data: data)
+    # The stick's own text is still a secret outside its answers
+    room = { 'room' => { 'npcs' => [{ 'id' => 'omar', 'note' => STICK_TEXT }] } }
+    assert_equal [[1, 'stick_content', 'item:omar_rota']], summary(scan(room, data: data))
+  end
+
   private
 
   def run_check(game_id, *files)

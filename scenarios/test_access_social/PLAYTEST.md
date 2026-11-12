@@ -85,7 +85,9 @@ work report also prints one `fires when ...` line per reactive post: `f10_vent`/
 
 U1 adds a `Feed` and a `Reactive feed` line for Kim, a `fires when a cause with why usb_refused for
 work is live` line, and a `Work` line ending "every 2nd use at 'kim_pc' copies to a USB stick, which
-its policy refuses (cause usb_refused)". Still no new warning.
+its policy refuses (cause usb_refused)". It adds one warning, expected: "kim can be knocked out before its
+first USB refusal" for `u1_refused`, `u1_emailed` and `u1_posted`. Kim is not `koImmune` because U3 is the
+knock-out, and the U1 tasks are beat markers for a tester, not a mission's route.
 
 ## Beats
 
@@ -145,8 +147,8 @@ u1_room` to run the beat alone.
 |---|---|---|---|---|
 | U1 | Enter `u1_room` (east of Hamid's room), stand clear of Kim and wait about two minutes | Her first work use is met; her second fails: `npc_use_failed:kim` with `missing` `[{ id: kim_pc, why: usb_refused }]`, the line "IT blocked my USB. Email it is, then.", `npc_usb_refused:kim`, tasks `u1_refused` and `u1_emailed`. Her next met social use serves the vent `u1_usb_vent` (task `u1_posted`); her next work use is met and eases | `npcFrustration.kim.failWhy.work` is `["usb_refused"]`; `globalVariables.u1_kim_emailed_file` true; `feedRevealed.kim.shown` is `["u1_ordered", "u1_usb_vent"]` (or the vent alone if her first social use comes after the refusal), done | Kim 2 |
 
-| U2 | After U1, talk to Kim and choose "That USB stick isn't much use to you now, is it?" (offered only once `u1_kim_emailed_file` is true, so before U1 she has no such choice). Open the stick from the inventory and read `work_file.txt`. Reload and talk to her again: the choice does not come back. Wait for three or four more of her work uses | The stick (`kim_usb`) leaves her itemsHeld and joins the inventory; it opens to one file, `work_file.txt`, whose text is served by `/unlock` and `GET /container` only now. Her later work uses are all met: no `usb_refused`, no `npc_usb_refused:kim` | `npc_given_items.kim` names `kim_usb`; `globalVariables.u1_kim_gave_usb` true; no new `failWhy` | none |
-| U3 | Instead of U2, knock Kim out (`debugKO`) and click the stick she drops, then open it from the inventory | The click picks the stick up (no `/unlock` from the floor, no "Access denied"); from the tray it opens to `work_file.txt` | `kim_usb` in the inventory, in no room's `objects_added` | none |
+| U2 | After U1, talk to Kim and choose "That USB stick isn't much use to you now, is it?" (offered only once `u1_kim_emailed_file` is true, so before U1 she has no such choice). Open the stick from the inventory and read `work_file.txt`. Reload and talk to her again: the choice does not come back. `u1_kim_gave_usb` is set by the stick's `onPickup` once it is in the tray, so a give the server refused leaves the choice for the next conversation. Wait for three or four more of her work uses | The stick (`kim_usb`) leaves her itemsHeld and joins the inventory; it opens to one file, `work_file.txt`, whose text is served by `/unlock` and `GET /container` only now. Her later work uses are all met: no `usb_refused`, no `npc_usb_refused:kim` | `npc_given_items.kim` names `kim_usb`; `globalVariables.u1_kim_gave_usb` true; no new `failWhy` | none |
+| U3 | Instead of U2, knock Kim out (`debugKO`) and click the stick she drops, from where you stand (out of reach, even where it lies on or beside her chair), then open it from the inventory | The click walks to the stick, not the chair (no "Can't reach that seat from here."), and a click in reach picks it up (no `/unlock` from the floor, no "Access denied"); from the tray it opens to `work_file.txt` | `kim_usb` in the inventory, in no room's `objects_added`; `globalVariables.u1_kim_gave_usb` true (the stick's `onPickup`) | none |
 
 Tampered (U2): with Kim still holding the stick, `POST /unlock` and `GET /container` for `kim_usb` (or any invented stick id) answer 422 and 404, and a forged stick in the browser's own tray opens nothing. No room, bootstrap or inventory response carries the file's text or name.
 

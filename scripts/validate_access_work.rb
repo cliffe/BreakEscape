@@ -477,6 +477,7 @@ module ValidateAccessWork
                    "#{nid} is knocked out. Set takeable: true for a give.")
     end
     check_usb_give_order(json_data, npc, stick, issues)
+    check_usb_ko_route(json_data, npc, issues)
     return unless stick.key?('contents')
 
     files = stick['contents']
@@ -524,19 +525,70 @@ module ValidateAccessWork
 
   # Review R2 M1: a give of the stick before the habit's first refusal stops the habit for good,
   # so a task, mapping, condition or post keyed on the refusal can then never happen. Warn unless
-  # every ink give of the stick sits under a choice gated on the habit's setGlobal.
+  # every ink give of the stick (#give_item, or #give_npc_inventory_items that offers it, in the
+  # NPC's own ink or a mail reply's, review R3 n1) sits under a choice or inside a conditional
+  # block gated on the habit's setGlobal.
   def check_usb_give_order(json_data, npc, stick, issues)
     nid = npc['id']
     glob = npc.dig('usbHabit', 'setGlobal')
     return unless usb_refusal_beats?(json_data, nid, glob)
 
-    ungated = usb_stick_gives(npc, stick).reject { |line, choice| choice && gated_on?(choice, glob) }
+    ungated = usb_stick_gives(json_data, npc, stick).reject { |_where, conds| conds.any? { |c| names_global?(c, glob) } }
     return if ungated.empty?
 
     want = glob.is_a?(String) ? "a choice gated on {#{glob}}" : 'a choice offered only after the refusal (set usbHabit.setGlobal and gate on it)'
-    warn(issues, "#{nid}'s ink gives the USB stick '#{stick['id']}' (line #{ungated.map(&:first).join(', ')}) where the player " \
+    warn(issues, "#{nid}'s ink gives the USB stick '#{stick['id']}' (#{ungated.map(&:first).join(', ')}) where the player " \
                  "can take it before #{nid}'s first refusal; the habit then stops and anything keyed on the refusal " \
                  "(npc_usb_refused:#{nid}#{glob ? ", #{glob}" : ''}, a usb_refused post) never happens. Offer the give from #{want}.")
+  end
+
+  # Review R3 m3: a knock-out before the first refusal stops the habit as well (the NPC's work
+  # stops with it), and the player chooses when it happens. Warn when a required task waits only
+  # on the refusal and the NPC can be knocked out with no fallback for that task.
+  def check_usb_ko_route(json_data, npc, issues)
+    nid = npc['id']
+    return if npc['koImmune'] == true || json_data['disableAttacks'] == true
+
+    glob = npc.dig('usbHabit', 'setGlobal')
+    vents = Array(npc.dig('feed', 'posts')).select { |p| p.is_a?(Hash) && p.dig('when', 'cause') == 'usb_refused' }.map { |p| p['id'] }.compact
+    refusal = lambda do |m|
+      pat = m['eventPattern'].to_s
+      next true if pat == "npc_usb_refused:#{nid}"
+      next true if glob.is_a?(String) && pat == "global_variable_changed:#{glob}"
+      pat == "npc_posted:#{nid}" && vents.any? { |v| m['condition'].to_s.include?(v) }
+    end
+    by_task = Hash.new { |h, k| h[k] = [] }
+    ko_tasks = Set.new
+    inks = []
+    walk = lambda do |v|
+      case v
+      when Hash
+        Array(v['eventMappings']).each { |m| by_task[m['completeTask']] << m if m.is_a?(Hash) && AW.present_string?(m['completeTask']) }
+        ko_tasks << v['taskOnKO'] if AW.present_string?(v['taskOnKO'])
+        inks << v['storyPath'] if AW.present_string?(v['storyPath'])
+        v.each_value { |x| walk.call(x) }
+      when Array then v.each { |x| walk.call(x) }
+      end
+    end
+    walk.call(json_data)
+    ink_text = inks.uniq.map { |sp| ink_file(sp) }.compact.map { |f| File.read(f, encoding: 'UTF-8') }.join("\n")
+    stranded = required_task_ids(json_data).select do |tid|
+      maps = by_task[tid]
+      !maps.empty? && maps.all?(&refusal) && !ko_tasks.include?(tid) && !ink_text.include?("complete_task:#{tid}")
+    end
+    return if stranded.empty?
+
+    ko_glob = AW.present_string?(npc['globalVarOnKO']) ? " or global_variable_changed:#{npc['globalVarOnKO']}" : ''
+    warn(issues, "#{nid} can be knocked out before its first USB refusal, which stops the habit, and the required task(s) " \
+                 "#{stranded.join(', ')} complete only on that refusal, so a knock-out strands them. Set koImmune: true on " \
+                 "#{nid}, give it a taskOnKO, or add an eventMapping completing the task on #{nid}'s knock-out " \
+                 "(npc_ko:#{nid}#{ko_glob}).")
+  end
+
+  def required_task_ids(json_data)
+    Array(json_data['objectives']).flat_map { |a| a.is_a?(Hash) ? Array(a['tasks']) : [] }
+                                  .select { |t| t.is_a?(Hash) && !t['optional'] && AW.present_string?(t['taskId']) }
+                                  .map { |t| t['taskId'] }
   end
 
   # Whether anything in the scenario waits on the habit's first refusal
@@ -562,41 +614,107 @@ module ValidateAccessWork
 
   REPO_ROOT = File.expand_path('..', __dir__)
 
-  # [[line number, governing choice line or nil]] for each #give_item of the stick in the NPC's ink
-  def usb_stick_gives(npc, stick)
-    sp = npc['storyPath']
-    return [] unless sp.is_a?(String) && !sp.empty?
+  def ink_file(story_path)
+    return nil unless story_path.is_a?(String) && !story_path.empty?
 
-    ink = sp.sub(/\.json\z/, '.ink')
+    ink = story_path.sub(/\.json\z/, '.ink')
     ink = File.join(REPO_ROOT, ink) unless ink.start_with?('/')
-    return [] unless File.exist?(ink)
+    File.exist?(ink) ? ink : nil
+  end
 
-    tag = /#\s*give_item:\s*(?:usb|#{Regexp.escape(stick['id'].to_s)})\b/
-    lines = File.readlines(ink, encoding: 'UTF-8')
+  # The ink files that can hand over the habit's stick: the NPC's own storyPath, and a mail
+  # reply's (review R3 n1). A reply runs its gives as the headless record it speaks for
+  # (mail-runner.js, scenario-npc-records.js: social.characters.*.emailRecord under its
+  # channels.email id, or social.mailClient.contacts[].emailRecord under its npc id), taking
+  # from that record's own itemsHeld, so a record's ink counts only when it holds the stick's
+  # id. A record that reuses the NPC's id is the NPC, whose storyPath is read already.
+  def usb_give_inks(json_data, npc, stick)
+    paths = [npc['storyPath']]
+    social = json_data['social'].is_a?(Hash) ? json_data['social'] : {}
+    chars = social['characters'].is_a?(Hash) ? social['characters'].values : []
+    contacts = social.dig('mailClient', 'contacts')
+    headless = chars.map { |c| c.is_a?(Hash) ? [c.dig('channels', 'email'), c['emailRecord']] : nil } +
+               (contacts.is_a?(Array) ? contacts : []).map { |c| c.is_a?(Hash) ? [c['npc'], c['emailRecord']] : nil }
+    headless.compact.each do |rid, rec|
+      next unless rec.is_a?(Hash) && AW.present_string?(rid) && rid != npc['id']
+      next unless Array(rec['itemsHeld']).any? { |i| i.is_a?(Hash) && i['id'] == stick['id'] }
+
+      paths << rec['storyPath']
+    end
+    paths.map { |sp| ink_file(sp) }.compact.uniq
+  end
+
+  # [["file:line", [conditions]]] for each give of the stick: the governing choice line's {..}
+  # conditions and the conditions of every conditional block enclosing the give (review R3 n1)
+  def usb_stick_gives(json_data, npc, stick)
+    sid = Regexp.escape(stick['id'].to_s)
+    give = /#\s*give_item:\s*(?:usb|#{sid})\b/
+    offer = /#\s*give_npc_inventory_items\b(?::\s*([^#\n]*))?/
     out = []
-    lines.each_with_index do |l, i|
-      next if l.strip.start_with?('//') || l !~ tag
+    usb_give_inks(json_data, npc, stick).each do |ink|
+      lines = File.readlines(ink, encoding: 'UTF-8')
+      lines.each_with_index do |l, i|
+        next if l.strip.start_with?('//')
 
-      choice = nil
-      i.downto(0) do |j|
-        t = lines[j].strip
-        break if t.start_with?('===') || (t.start_with?('=') && j < i)
-        if t =~ /\A[*+]/
-          choice = t
-          break
+        hit = l =~ give
+        if !hit && (m = l.match(offer))
+          types = m[1].to_s.split(',').map(&:strip).reject(&:empty?)
+          hit = types.empty? || types.include?('usb') || types.include?(stick['id'].to_s)
         end
+        next unless hit
+
+        out << ["#{File.basename(ink)} line #{i + 1}", give_conditions(lines, i)]
       end
-      out << [i + 1, choice]
     end
     out
   end
 
-  # The choice's condition names the global, not negated
-  def gated_on?(choice, glob)
+  # The conditions gating line i: its choice's {..} parts, and the open conditional blocks
+  # ({cond: ... } across lines, or a { - cond: ... } branch) from the knot's start down to it
+  def give_conditions(lines, i)
+    top = i
+    top -= 1 while top.positive? && !lines[top].strip.start_with?('===')
+    conds = []
+    i.downto(top) do |j|
+      t = lines[j].strip
+      break if t.start_with?('===') || (t.start_with?('=') && j < i)
+      if t =~ /\A[*+]/
+        conds.concat(t.scan(/\{([^{}]*)\}/).flatten)
+        break
+      end
+    end
+    stack = []
+    (top..i).each do |j|
+      t = lines[j].strip
+      next if t.start_with?('//')
+
+      if t =~ /\A-\s*(.+?):\s*\z/ && !stack.empty?
+        stack[-1] = Regexp.last_match(1) == 'else' ? '' : Regexp.last_match(1)
+        next
+      end
+      k = 0
+      while k < t.length
+        c = t[k]
+        if c == '{'
+          close = t.index('}', k)
+          colon = t.index(':', k)
+          text = colon && (close.nil? || colon < close) ? t[(k + 1)...colon] : ''
+          stack << text
+        elsif c == '}'
+          stack.pop
+        end
+        k += 1
+      end
+    end
+    conds + stack.reject(&:empty?)
+  end
+
+  # The condition names the global, not negated
+  def names_global?(cond, glob)
     return false unless glob.is_a?(String) && !glob.empty?
 
     g = Regexp.escape(glob)
-    choice.scan(/\{([^{}]*)\}/).flatten.any? { |c| c.scan(/(\bnot\s+|!\s*)?\b#{g}\b/).any? { |m| m.first.nil? } }
+    cond.to_s.scan(/(\bnot\s+|!\s*)?\b#{g}\b/).any? { |m| m.first.nil? }
   end
 
   # Review R2 n2: the filter, held_usb_sticks and the browser's habit all key on the stick's id

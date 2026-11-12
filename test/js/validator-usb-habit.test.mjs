@@ -245,7 +245,7 @@ const hub = (choice) => `=== start ===\nHi.\n-> hub\n=== hub ===\n${choice}\n   
 
 test('USB habit: an ungated ink give of the stick is warned when something waits on the refusal', { skip }, () => {
     const list = issues(withInk(clean(), hub('* [Could I have your stick?]')));
-    assertHas(list, "kim's ink gives the USB stick 'kim_usb' (line 6)");
+    assertHas(list, "kim's ink gives the USB stick 'kim_usb' (kim.ink line 6)");
     assertHas(list, 'Offer the give from a choice gated on {kim_emailed}');
     assertHas(issues(withInk(clean(), hub('+ {not kim_emailed} [Stick?]'))), "kim's ink gives the USB stick");
 });
@@ -255,4 +255,67 @@ test('USB habit: a give gated on the habit global, or nothing keyed on the refus
     const s = withInk(clean(), hub('* [Stick?]'));
     delete kim(s).eventMappings;
     assert.deepEqual(issues(s), []);
+});
+
+// Review R3 n1: #give_npc_inventory_items offers the stick too; a conditional block gates a give
+test('USB habit: #give_npc_inventory_items that offers the stick is a give', { skip }, () => {
+    const ink = (tag) => `=== start ===\nHi.\n-> hub\n=== hub ===\n+ [What have you got?]\n    ${tag}\n    -> hub\n`;
+    assertHas(issues(withInk(clean(), ink('#give_npc_inventory_items'))), "kim's ink gives the USB stick 'kim_usb' (kim.ink line 6)");
+    assertHas(issues(withInk(clean(), ink('#give_npc_inventory_items:notes,usb'))), "kim's ink gives the USB stick");
+    assert.deepEqual(issues(withInk(clean(), ink('#give_npc_inventory_items:notes,key'))), []);
+});
+
+test('USB habit: a give inside a conditional block gated on the habit global raises nothing', { skip }, () => {
+    const block = `=== start ===\nHi.\n-> hub\n=== hub ===\n{kim_emailed and not kim_gave:\n    + [Stick?]\n        #give_item:usb\n        Take it.\n        -> hub\n}\n+ [Bye] #exit_conversation\n    -> hub\n`;
+    assert.deepEqual(issues(withInk(clean(), block)), []);
+    const branch = `=== start ===\n-> hub\n=== hub ===\n{\n    - kim_emailed:\n        + [Stick?]\n            #give_item:usb\n            -> hub\n    - else:\n        Nothing yet.\n}\n-> hub\n`;
+    assert.deepEqual(issues(withInk(clean(), branch)), []);
+    const negated = `=== start ===\n-> hub\n=== hub ===\n{not kim_emailed:\n    + [Stick?]\n        #give_item:usb\n        -> hub\n}\n-> hub\n`;
+    assertHas(issues(withInk(clean(), negated)), "kim's ink gives the USB stick");
+    const closed = `=== start ===\n-> hub\n=== hub ===\n{kim_emailed: Thanks.}\n+ [Stick?]\n    #give_item:usb\n    -> hub\n`;
+    assertHas(issues(withInk(clean(), closed)), "kim's ink gives the USB stick");
+});
+
+test('USB habit: a mail reply run as kim is read for gives', { skip }, () => {
+    const s = withInk(clean(), `=== start ===\nHi.\n-> END\n`);
+    const dir = mkdtempSync(join(tmpdir(), 'usb-mail-'));
+    writeFileSync(join(dir, 'kim_mail.ink'), `=== on_email ===\nHere you go.\n#give_item:kim_usb\n-> END\n`);
+    const rec = { storyPath: join(dir, 'kim_mail.json'), itemsHeld: [{ type: 'usb', id: 'kim_usb', name: 'Stick' }] };
+    s.social = { characters: { kim: { channels: { email: 'kim_mail' }, emailRecord: rec } } };
+    assertHas(issues(s), "kim's ink gives the USB stick 'kim_usb' (kim_mail.ink line 3)");
+    s.social = { mailClient: { contacts: [{ npc: 'kim_mail', emailRecord: rec }] } };
+    assertHas(issues(s), "kim's ink gives the USB stick 'kim_usb' (kim_mail.ink line 3)");
+    // A record that does not hold the stick gives from its own items, so it cannot hand it over
+    rec.itemsHeld = [];
+    assert.ok(!has(issues(s), "kim's ink gives the USB stick"), issues(s).join('\n'));
+});
+
+// Review R3 m3: a knock-out before the first refusal strands a required task keyed on it
+function koFixture() {
+    const s = clean();
+    s.objectives = [{ aimId: 'a', tasks: [{ taskId: 'refused', type: 'custom' }] }];
+    kim(s).eventMappings = [{ eventPattern: 'npc_usb_refused:kim', onceOnly: true, completeTask: 'refused' }];
+    return s;
+}
+test('USB habit: a required task keyed only on the refusal is warned while the NPC can be knocked out', { skip }, () => {
+    assertHas(issues(koFixture()), 'kim can be knocked out before its first USB refusal');
+    assertHas(issues(koFixture()), 'the required task(s) refused complete only on that refusal');
+    const g = koFixture();
+    kim(g).eventMappings = [{ eventPattern: 'global_variable_changed:kim_emailed', completeTask: 'refused' }];
+    assertHas(issues(g), 'kim can be knocked out before its first USB refusal');
+});
+
+test('USB habit: koImmune, taskOnKO, a knock-out mapping, disableAttacks or an optional task clear the knock-out warning', { skip }, () => {
+    const cases = [
+        s => { kim(s).koImmune = true; },
+        s => { kim(s).taskOnKO = 'refused'; },
+        s => { kim(s).eventMappings.push({ eventPattern: 'npc_ko:kim', completeTask: 'refused' }); },
+        s => { s.disableAttacks = true; },
+        s => { s.objectives[0].tasks[0].optional = true; }
+    ];
+    for (const change of cases) {
+        const s = koFixture();
+        change(s);
+        assert.ok(!has(issues(s), 'knocked out before its first USB refusal'), issues(s).join('\n'));
+    }
 });

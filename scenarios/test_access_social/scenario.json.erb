@@ -2031,7 +2031,12 @@
               "sprite": "usb_bowl1",
               "usbClass": "storage",
               "takeable": true,
-              "observations": "A plain USB memory stick. Kim copies her work to it."
+              "observations": "A plain USB memory stick. Kim copies her work to it.",
+              "onPickup": {
+                "setVariable": {
+                  "u1_kim_gave_usb": true
+                }
+              }
             }
           ],
           "needsHome": "kim_pc",

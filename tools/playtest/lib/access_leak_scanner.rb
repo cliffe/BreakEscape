@@ -102,6 +102,16 @@ require 'uri'
 # or the default work_file.txt, are served only to a player who holds it. Their names and texts are
 # secrets (rule `stick_content`) anywhere but a GET /container/:id answer for that stick or a folder
 # on it, or the contents of an /unlock answer, and they are never public room strings.
+# Its limits (review R3 n2): the scanner cannot tell whether the player held the stick when an
+# answer was served, so files served for a stick still with its NPC or lying on the floor pass,
+# and so would an /unlock answer for some other object that carried them (it does not know an
+# /unlock answer's target). The held check is the server's, and the controller tests cover it
+# (usb_habit_test.rb: a stick the player does not hold, a forged inventory entry, the floor 422
+# and 404). Once served, a file is legitimate for the rest of the run, as for every content
+# class; files shorter than MIN_CONTENT_LENGTH and fields other than name, text and content (a file's
+# observations) are not checked, as for every item. A stick string that another secret also
+# carries (a sign-in PC's, a profile's or a share's file of the same name, review R3 n3) is left
+# to that secret, since the other file's own answer would otherwise be reported as the stick's.
 #
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
@@ -193,6 +203,7 @@ class AccessLeakScanner
     collect_workarounds
     collect_feeds
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
+    drop_shared_stick_strings
     @items.delete_if { |_, info| info[:strings].empty? }
   end
 
@@ -499,6 +510,15 @@ class AccessLeakScanner
       end
     end
     walk_children(item, child_ctx)
+  end
+
+  # Review R3 n3: a stick string that another secret also carries is that secret's, so the other
+  # file's own /container answer is not reported as stick_content
+  def drop_shared_stick_strings
+    others = Set.new
+    @items.each_value { |info| info[:strings].each { |s| others << s } unless info[:scope] == :stick }
+    @share_items.each_value { |info| info[:strings].each { |s| others << s } }
+    @items.each_value { |info| info[:strings] = info[:strings].reject { |s| others.include?(s) } if info[:scope] == :stick }
   end
 
   # Every habit NPC's stick id (BreakEscape::AccessWork.usb_stick: a storage usb item in itemsHeld)
