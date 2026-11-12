@@ -8,10 +8,10 @@ Written 2026-11-12 on `build/phone-calls`. Field names, defaults and behaviour f
 - `README_ink_best_practices.md`: new section "Writing call and voicemail knots", placed after "Exit Strategy" (not beside "Remote conversations: write for the mode", because commit 758d94b39 is on main and not yet on this branch, and a second insertion at the same spot would conflict on merge).
 - The validator's phone checks have no `scripts/README`; they are documented in `README_scenario_design.md` under "What the validator checks for phone calls".
 
-## To do after merging main into this branch (done: the mode table row names `ring`, `call` and the new section)
+## Merged from main (done)
 
-1. In "Remote conversations: write for the mode" (README_ink_best_practices.md), change the "Voiced phone call" row of the mode table: add `ring` (a call that rings) and `call` (a contact the player can ring) to "How it is configured", and point at "Writing call and voicemail knots". Its sentence "A call beat ends `#exit_conversation` then `-> DONE`" already agrees with the new section.
-2. Same section: "Voiced phone call ... never the contact's home knot or hub" stays true; no change.
+1. "Remote conversations: write for the mode" (README_ink_best_practices.md): the "Voiced phone call" and "Voicemail or recording" rows of the mode table name `ring`, `call` and `voicemailKnot`, and point at "Writing call and voicemail knots" and "A voicemail knot".
+2. Its "never the contact's home knot or hub" and "ends `#exit_conversation` then `-> DONE`" agree with the new section; no change.
 
 ## Skill changes needed (not made: `.claude/skills/*` is not mine to edit)
 
@@ -20,7 +20,7 @@ Written 2026-11-12 on `build/phone-calls`. Field names, defaults and behaviour f
 - Line 17 (delivery note): delete "Voiced phone calls don't send a note yet, so the extractor gives their lines none." Voiced call lines send `#delivery:` since A1 (`line_delivery` returns the note for voiced call knots as well as video knots; narration in a voiced call stays unspoken).
 - Line 36 (rule 7): delete the last sentence "Voiced phone calls ignore the tag for now."
 - Line 21 (which lines exist): "Phone chats are not voiced ... except a contact with a voiced call (`voiced: true` on a phone-chat mapping or its `timedConversation`, F17)" needs the new sources. A contact is also a voiced call when it has a `call` entry, or a mapping or `timedConversation` for it has `ring` (with or without `voiced`). The call start knots are: every `call` entry's `knot` (`button: false` entries too, because `#place_call:<knot>` dials them); the `targetKnot` of each `phone-chat` mapping with `ring`; the `timedConversation.targetKnot` when it has `ring`. The walk from them stops at the home knot as before.
-- Same line: voicemail knots. `ring.voicemailKnot` is collected by `TtsLineExtractor.voicemail_knots`; only lines that start `voice:` are extracted (prefix stripped, contact's voice, no delivery note), and the knot does not widen the call walk.
+- Same line: voicemail knots. `ring.voicemailKnot` is collected by `TtsLineExtractor.voicemail_knots`; only lines that start `voice:` are extracted (prefix stripped, contact's voice, no delivery note), and the knot does not widen the call walk. Delete the parenthesis "(no ink has `voice:` lines)" from skill line 21: voicemail knots have them.
 - Line 21: id-prefixed co-speaker lines on the phone path (`agent_0x99: …`) resolve like person-chat's (exact id, case-insensitive, never `narrator` or `player`); the "use a `#speaker:<id>` tag" advice for two records with one name is replaced on the phone path by an id prefix.
 - Add a gotcha: a new call line's key is text + voice + style + language, so the same sentence in two missions' call knots is one clip (the writing rule "no line twice across missions" is about reuse of a clip, not just variety).
 - `{call_answer_seconds}` and `{call_is_callback}` are not printed variables; the lines they choose between are conditionals, and each branch is its own clip (the extractor expands every branch of an inline conditional, capped at 16 variants). Rule 2 ("no printed variables") needs a pointer to that pattern.
@@ -62,6 +62,7 @@ Written 2026-11-12 on `build/phone-calls`. Field names, defaults and behaviour f
 - Mention `scripts/validate_phone_calls.rb` (`check_phone_calls`) and the `call-in-text-thread` rule of `dialoguelint.mjs`; the expected "call me" warnings clear as each mission gets its `call` or `ring` entry. Baseline: `docs/agents/phone_calls/A7_VALIDATOR_BASELINE.md`.
 - Every mission with HaX calls sets a contact-level `callLabel: "SAFETYNET secure line"` on `agent_0x99`; the ring banner, callbacks and placed calls all read it.
 - A ring that should stop ringing once its reason is gone needs `ring.ringWhile` (and usually the same string as `callbackWhen`), with the same terms repeated in the mapping's trigger `condition`: a trigger `condition` is not re-checked, and a ring whose `ringWhile` is already false when the mapping fires is dropped at once but its `completeTask` and timed messages still run. `ringWhile` and `callbackWhen` are `&&` chains of single-segment `globalVars.` terms (negated, or compared to a literal or another `globalVars.` value); `||` or any other term is a validator error.
+- `call.when` is an `&&` chain of `globalVars.` terms. An `||` is a validator error (the engine reads it as one unsupported term and the entry never holds); write two entries with the same knot. The full error and warning list is in `README_scenario_design.md` "What the validator checks for phone calls": point the skills at it rather than copying it.
 
 ## Not documented, deliberately
 

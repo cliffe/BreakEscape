@@ -490,7 +490,7 @@ module ValidatePhoneCalls
         next unless m.is_a?(Hash) && m['eventPattern'].is_a?(String) && m['eventPattern'].start_with?('conversation_closed:')
         next if m['onceOnly'] == true || (m['condition'].is_a?(String) && !m['condition'].strip.empty?)
 
-        warn.call("eventMappings[#{i}] listens for #{m['eventPattern']} with neither onceOnly nor a condition: a call and its thread each emit it, so it can fire twice (plan 3.2)")
+        warn.call("eventMappings[#{i}] listens for #{m['eventPattern']} with neither onceOnly nor a condition: it runs once per call and again on each later thread visit (plan 3.2)")
       end
     end
     warn.call('has callId and a call entry: the call button is hidden while callId is set') if has_call && npc['callId']
@@ -568,7 +568,7 @@ module ValidatePhoneCalls
   # the engine's ringConditionHolds / callConditionHolds evaluates (mirrors globalOnly in
   # npc-manager.js). An `||`, or a term that reads anything but a single-segment `globalVars.` value
   # (optionally negated or compared to a literal or another `globalVars.` value), is skipped by the
-  # engine, so the ring would never drop (ringWhile) or the callback never be offered (callbackWhen).
+  # engine, so the ring would never drop (ringWhile) or the callback be cleared at once (callbackWhen).
   # Returns a predicate fragment for the error message, or nil when the condition is a clean chain.
   # Assumes when_misuse has already cleared `value`, `name` and `data.`.
   RING_GRAMMAR_LITERALS = %w[true false null undefined].freeze
@@ -578,7 +578,7 @@ module ValidatePhoneCalls
     s.split('&&').map(&:strip).reject(&:empty?).each do |term|
       rest = term.gsub(/globalVars\.[A-Za-z_$][\w$]*/, ' ').gsub(/(['"])(?:\\.|(?!\1).)*\1/, ' ')
       ids = rest.scan(/[A-Za-z_$][\w$]*/).reject { |id| RING_GRAMMAR_LITERALS.include?(id) }
-      return "has the non-globalVars. term `#{term}`; only globalVars. terms (optionally negated or compared to a literal) are evaluated" unless ids.empty?
+      return "has the non-globalVars. term `#{term}`; only single globalVars.<name> terms (optionally negated, or compared to a literal or another globalVars.<name>) are evaluated" unless ids.empty?
     end
     nil
   end

@@ -452,7 +452,7 @@ test('#place_call:<knot> errors when the contact has no call entry at all, with 
 test('conversation_closed mapping on a calling contact warns unless onceOnly or a condition guards it', { skip }, () => {
     const closed = (over = {}) => ({ eventPattern: 'conversation_closed:hax', setGlobal: { seen: true }, ...over });
     const glob = { globalVariables: { seen: false } };
-    const frag = 'can fire twice';
+    const frag = 'again on each later thread visit';
     assertHas(warnings(check({ call: { knot: 'support_call' }, eventMappings: [closed()] }, { hax: INK }, glob)), frag);
     assertHas(warnings(check({ eventMappings: [ringMap(), closed({ eventPattern: 'conversation_closed:other' })] }, { hax: INK }, glob)), frag);
     assertHas(warnings(check({ timedConversation: { delay: 0, targetKnot: 'ring_call', ring: true }, eventMappings: [closed()] }, { hax: INK }, glob)), frag);
