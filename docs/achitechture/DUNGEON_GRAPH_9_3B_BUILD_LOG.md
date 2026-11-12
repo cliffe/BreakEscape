@@ -107,3 +107,48 @@ Sweep: all 176 scenarios generated with `main`'s script and this one. Only
 `test_access_networks` differs. Against its graph from the previous commit, only the legend
 line changed. Render: 47 nodes, no overlapping
 node boxes, no Mermaid error.
+
+## Review R3
+
+`DUNGEON_GRAPH_9_3B_CODE_REVIEW_R3.md`, fixed in commit fa9959eb9. The R2 whole-file
+`scrub_wifi_keys` is gone.
+
+- **M1**: the scrub now acts on authored text, not on the page. `scrub_label` runs on every node
+  label, edge label, the title, the brief and the critical path, as each enters an output
+  (`emit_mermaid_diagram` and the JSON builder), in any letter case and for each encoded form (as
+  written, `"` shown as `'`, HTML, JSON, JS template, node id). It splits on the generator's own
+  `<br/>`, so a short key never eats one. `hide_id` swaps an id that holds a key for
+  `hidden_<n>` (numbered by first use, the same in every diagram and the JSON); every other id
+  keeps its value. The final check (`check_wifi_key_free`) builds each page a second time with
+  every authored string blanked and stops the run, writing no file, if any output holds a key
+  form more often than that skeleton. The page's own text (`function` in the script,
+  `fullscreen` in the style) is in both, so it never counts. The message names the file, never
+  the key. The test-only switch `DUNGEON_GRAPH_TEST_NO_SCRUB=1` turns the label scrub off to
+  prove the check stops a leak.
+- **m1**: the label scrub has no length floor, and the `'` form of a key with `"` is one of its
+  forms. Proposed, not done: a validator warning for a psk under 8 characters (the WPA2 minimum),
+  for the validator owner.
+- **m2**: the brief is scrubbed before the 160-character subtitle cut.
+- **m3**: a key note inside locked folders on a share, or on a PC desktop, hangs from each
+  folder's lock in turn, chained from `resource_<id>` or `lock_<pc>`. The folders are found by
+  walking the share's or desktop's contents with the text walk's own labels.
+- **m4**: a headless host counts as an admitting host for an access-listed share only when a
+  foothold reaches its network (remote sign-in), on its own network and across links. The
+  foothold set and its one-hop pivot growth (`foothold_reach`) are now read from the model
+  before any share edge is drawn; the pivots further down use the same set.
+- **n1**: the label scrub and the label checks (`safe_text`, contents names) ignore case.
+  **n2**: the critical path printed to the terminal is the scrubbed one, and so is the
+  missing-door warning. **n3**: `object_from` walks every container above an object and hangs it
+  from the innermost locked one with a lock node.
+
+Tests: 43 in `dungeon-graph-networks.test.mjs`, all passing (8 new: keys `function`,
+`fullscreen` and `office` with the inline script passing `node --check`, the script and style
+matching another key's page, and every id not holding the key unchanged; a quoted, a short and
+an other-case key; the subtitle cut; the terminal line; the final check stopping a leak with no
+file written; folder locks on a share and a desktop; headless hosts on one network and across a
+link; an access point two containers down). All 8 fail on the R2 script. The other dungeon graph
+test files pass (workarounds 3, habits 8, story gates 1, identities 5, grants 1).
+
+Sweep: all 176 scenarios generated with `main`'s script and this one, no failures. Only
+`test_access_networks` differs, and its regenerated graph is byte for byte the committed one,
+so nothing there changed.
