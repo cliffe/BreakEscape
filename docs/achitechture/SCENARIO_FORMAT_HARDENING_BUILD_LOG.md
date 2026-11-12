@@ -477,9 +477,146 @@ Only `feed_answer` and `objectives_state` embedded a sub-object wholesale withou
 
 **Files touched (R1):** `app/models/break_escape/social_feed.rb`, `app/models/break_escape/game.rb`, `lib/break_escape/scenario_schema.rb`, `scenarios/test_author_notes/scenario.json`, `test/controllers/break_escape/author_notes_sentinel_test.rb`, this log.
 
-## Handover
+## Step 7. formatVersion and the load-time upgrader (phase 1: server and validator)
 
-### Step 2b (build/harden-2b) handover
+Date: 2026-11-12. Branch `build/harden-7`, made from main `c9a4f7a84` (step 2b merged). The plan's
+request-site and line references were re-anchored on that main. Phase 1 is the server side, the
+validator rules and their Rails and node tests. **Phase 2 (not built here):** the client fetch guard
+(`public/break_escape/js/format-guard.js`), the `core/game.js` bootstrap-refusal handling and client
+reload logic, the node static scan of request sites and the jsdom wrapper tests, the sweep tool
+(`tools/format/upgrade_games.rb`) and all live proofs. See the handover for exactly where this stops.
+
+### What changed (phase 1)
+
+- **`lib/break_escape/format_upgrade.rb` (new).** Plain Ruby, required with the guarded form. `STEPS`
+  is an empty, unfrozen Array (the dev switch appends in place; nothing is reassigned), read only
+  through `steps` so a test stubs that one method. `current` is the last step's version or 0.
+  `version_of(data)` gives 0 for an absent or nil field, the Integer for a non-negative Integer, and
+  raises `Unreadable` for a string, float or negative. `upgrade!(data, state)` runs each step above
+  the stored version in order on both in place, stamps `current`, and reports `scenario_changed` by
+  comparing a `Marshal` deep copy of data (without `formatVersion`) taken once before the first step;
+  a stored version above current raises `TooNew`. `retired_keys_in(data)` walks with
+  `AuthorNotes.each_live(..., free: :skip)`, so notes and free data are skipped. `ALIASES` is empty
+  (`apply_aliases!`, `aliased?`). `install_dev_test_step!(env:, enabled:)` appends one no-op step
+  (version 900) only in development, idempotently.
+- **`app/models/break_escape/game.rb`.** `before_create :stamp_format_version` stamps `current` onto
+  data that has no `formatVersion` (so supplied data with `formatVersion: 0` keeps 0, as `0 ||=` is a
+  no-op). `ensure_current_format!` raises `TooNew`/`Unreadable` for a too-new or unreadable game, and
+  otherwise upgrades under `with_lock { reload; upgrade!; prepare_scenario_data! if scenario_changed;
+  save! }`, taking the lock only when the stored version is below current.
+- **`app/controllers/break_escape/application_controller.rb`.** `prepend_before_action
+  :set_format_header` sets `X-Break-Escape-Format: <current>` on every engine response; a `rescue_from
+  ActionController::InvalidAuthenticityToken` answers CSRF failures locally (422 JSON) for JSON
+  requests only (`request.content_mime_type&.json? || request.format.json?`) and re-raises otherwise.
+- **`games_controller.rb`.** Re-prepends `set_format_header` after its `refuse_oversized_body` prepend,
+  so the header stays first in this controller's chain. `set_game` runs `ensure_current_format!` and
+  turns `TooNew`/`Unreadable` into `render_format_refusal` (the HTML page for `show`, 409 JSON
+  `{ error, message, current }` for every other route). `sync_state` plucks the stored version under
+  its row lock (`scenario_data -> 'formatVersion'`, parsed if the adapter hands back JSON text) via
+  `sync_format_refusal`, before any merge, and answers 409 without writing when it is too new or
+  unreadable. The `scenario` bootstrap ships `filtered['formatVersion'] = version_of(scenario_data)`.
+- **`static_files_controller.rb`.** `skip_before_action :set_format_header`, so a cached asset never
+  carries a stale version.
+- **`app/views/break_escape/games/format_refusal.html.erb` (new).** The HTML refusal page: self-hosted
+  pixel fonts (GNF, Press Start 2P), a 2px solid square-cornered border, no radius or smooth fonts.
+- **`lib/break_escape/engine.rb`.** A `break_escape.format_upgrade_test_step` initializer calls
+  `install_dev_test_step!(env: Rails.env)` (acts only in development with the env var set).
+- **`scripts/scenario-schema.json`.** `formatVersion` declared as a top-level `integer`, `minimum 0`.
+- **`scripts/validate_scenario.rb`.** `check_retired_keys` errors on a template that sets
+  `formatVersion` and on each key `FormatUpgrade.retired_keys_in` finds (a warning for an aliased
+  key); wired into the common run block. STEPS is empty, so it adds no corpus line.
+
+### Sync size
+
+Step 7 adds one integer to `scenario_data` (written once at creation or upgrade, never in
+player_state), one integer to the bootstrap and one constant response header. `sync_state` reads one
+jsonb scalar (`scenario_data -> 'formatVersion'`) under the lock it already holds; it never loads the
+full `scenario_data` blob and writes nothing on a refusal. player_state is untouched.
+
+### Tests (phase 1)
+
+- Unit `test/unit/format_upgrade_test.rb` (12): `version_of`, `current`, `upgrade!` order/idempotence/
+  `TooNew`, `scenario_changed` (no-op false, rename true, player_state-only false), the mixed
+  anonymiser state equals a clean upgrade, `retired_keys_in` depth and note-skip, the dev switch.
+- Controller/model `test/controllers/break_escape/format_version_test.rb` (17): creation stamping; a
+  pre-step-7 game not written on load (ships and headers 0); the header on an ordinary route and on
+  every early exit (409 refusal, Pundit, CSRF 422, oversized body); `set_format_header` first on every
+  engine controller bar the static one; the 409 refusal on `scenario`/`room`/`show`/`sync_state` with
+  nothing written; unreadable refused; re-preparing only when a step changed the scenario; the lock
+  rerun; sync never upgrades.
+- Node `test/js/validator-retired-keys.test.mjs` (5): a retired key is one error with the new name; a
+  key inside a note is ignored; a `formatVersion` template errors; an aliased key is a warning.
+- Updated `reload_persistence_test.rb`: the sync query-count test now expects the narrow FOR UPDATE
+  load plus the one formatVersion jsonb-scalar pluck, and asserts the full `scenario_data` column is
+  never loaded.
+
+### Must-fail proof
+
+The too-new refusal test returned 200 with `@game.ensure_current_format!` removed from `set_game`
+(refusal gone), and 409 with it restored. The node and unit tests fail by construction without
+`check_retired_keys` / `FormatUpgrade`.
+
+### Results
+
+- `test/unit/format_upgrade_test.rb`: 12 runs, 0 failures.
+- `test/controllers/break_escape/format_version_test.rb`: 17 runs, 0 failures.
+- `test/js/validator-retired-keys.test.mjs`: 5 pass.
+- Affected existing files, all green: `reload_persistence_test` (69), `games_controller_test` +
+  `authorization_test` + `author_notes_sentinel_test` (89 together), `notes_never_ship_test` +
+  `capture_notes_not_live_test` (10), `filtered_scenario_test` (21).
+- Validator spot-check (`--no-graph`): m01, m02, test_author_notes, test_access_networks all
+  `Result: 0 errors`. STEPS empty, so `check_retired_keys` adds nothing to the corpus.
+- Diffs checked for the PostToolUse reindent gotcha: every edited Ruby diff is additions only (plus
+  the one intended `if refusal` -> `elsif refusal` in sync_state); no unrelated block moved.
+
+### Files touched
+
+`lib/break_escape/format_upgrade.rb` (new), `lib/break_escape/engine.rb`,
+`app/models/break_escape/game.rb`, `app/controllers/break_escape/application_controller.rb`,
+`app/controllers/break_escape/games_controller.rb`,
+`app/controllers/break_escape/static_files_controller.rb`,
+`app/views/break_escape/games/format_refusal.html.erb` (new), `scripts/scenario-schema.json`,
+`scripts/validate_scenario.rb`, `test/unit/format_upgrade_test.rb` (new),
+`test/controllers/break_escape/format_version_test.rb` (new),
+`test/js/validator-retired-keys.test.mjs` (new),
+`test/controllers/break_escape/reload_persistence_test.rb`, this log.
+
+### Step 7 (build/harden-7) handover
+
+- **Done (phase 1):** the full server side (FormatUpgrade, stamping, `ensure_current_format!` under
+  the row lock from `set_game` with re-prepare on change, the 409/HTML refusal, `sync_state`'s version
+  check under its lock, the header on every engine controller with the static exemption, the CSRF
+  rescue for JSON only, the bootstrap `formatVersion`), the schema declaration, the validator rules,
+  and their Rails and node tests. Commits: `355d02bda` (server + validator), `583a2508b` (tests),
+  `c6757d489` (reload query-count test), plus the commit holding this log section.
+- **In progress:** none.
+- **Open / phase 2 (where this stops):**
+  1. The client fetch guard `public/break_escape/js/format-guard.js` (first import of `main.js`), the
+     wrapper comparison and reload/banner logic, and the `core/game.js` `loaderror` bootstrap-refusal
+     handling. None of these exists yet; the server already sends the header, the bootstrap
+     `formatVersion` and the 409 bodies they consume.
+  2. The node static scan of request sites and the jsdom wrapper + bootstrap-refusal tests.
+  3. The sweep tool `tools/format/upgrade_games.rb` and its `--dry-run` test.
+  4. All live proofs (old game on the base worktree, new game, the reload-for-real with the dev
+     switch, the refusal, and the clean-up of 900-stamped games). The base worktree (port 3281) is
+     not yet made; the dev switch and `swap-scenario-game.rb --format-version` support (plan's
+     refusal proof) are the one server-side bit the swap tool still needs for phase 2's refusal proof.
+  5. Optional/deferred Rails tests from the plan's list that are lower value for the no-rename step 7
+     and heavier: the per-deployed-scenario re-prepare test (render the four deployed templates) and
+     the alias-rule test. The `scenario_changed`/re-prepare logic they guard is already covered by the
+     fixture-step controller tests.
+  6. README sections for `formatVersion` and the validator wording, and the six skill wording
+     proposals, were not touched (none needed for the server mechanism; propose at phase 2).
+- **Gotchas:**
+  1. `STEPS` must stay an unfrozen Array and be read only through `FormatUpgrade.steps`; tests stub
+     `steps` (minitest block-form `stub`, `require 'minitest/mock'`), the dev switch appends in place.
+  2. `swap-scenario-game.rb` must stamp `current` on swapped data and gain `--format-version <n>` for
+     the phase-2 refusal proof (900); it is never used to make an "old" game (plan section 2).
+  3. The `sync_state` formatVersion pluck is defensive about the adapter returning JSON text vs a
+     decoded value; `reload_persistence_test`'s query-count test was updated for the extra scalar read.
+  4. The PostToolUse formatter reindents Ruby after an Edit; every diff here was checked.
+
+
 
 - **Done:** (1) schema resolver and notes helper + unit tests (732f41433); (2) **phase A** (afe5b6ca3): schema marks, eager enumerator, schema-walk test; (3) **phase A continued:** validator migration, `_`-skip audit, action-in-a-note warning, README line; (4) **phase B1:** every granting/deriving walker skips notes and visits free data, `CaptureModel.each_capture_writer`'s `notes:` keyword, schema-walk parts 3 and 6, the corpus before/after proof (identical), and the implant/plant Rails route tests with a revert proof (see "Phase B1"); (5) **phase B2, this session:** `strip_notes!` at every client payload builder, the route audit, the boot initializer, the Rails note/capture/boot tests (each with a revert proof), the part-6 ruling recorded, README item 8, and the live proof on port 3270. See "Phase B2" above. **Step 2b is complete.**
 - **In progress:** none.
