@@ -367,6 +367,15 @@ test('N1: call promises without "me" warn for a contact who cannot be called; no
         assert.deepEqual(noVar(warnings(check({}, withLine(line)))), [], line);
         assert.deepEqual(warnings(check({ timedMessages: [{ delay: 1, message: line }] })).filter(w => w.includes('timedMessages')), [], line);
     }
+    // R3 m1: someone else's call back, and nouns with an adjective, are not a request to the player
+    for (const line of ['Tell him to call back.', 'Did she call back?', 'If they call back, stall.', 'Ask Dev to ring back once he has it.', 'We will call back.', 'It is a judgement call if ever there was one.', 'That was a conference call if you like.']) {
+        assert.deepEqual(noVar(warnings(check({}, withLine(line)))), [], line);
+    }
+    // ... but the bare ask still warns
+    assertHas(warnings(check({}, withLine('Call back when you\'re sure.'))), 'hax.ink:7');
+    // R3 nit 1: "phone me" alone is a request
+    assertHas(warnings(check({}, withLine('Phone me.'))), 'hax.ink:7');
+    assertHas(warnings(check({}, withLine('Phone me tonight.'))), 'hax.ink:7');
     // a choice's own text (in the brackets) is the player's
     assert.deepEqual(noVar(warnings(check({}, withLine('+ [I\'ll call if I need you.]\n        Fine.')))), []);
     // a contact with a call entry may say it
@@ -387,6 +396,20 @@ test('N2: globalVars.<name> in call.when that nothing declares or sets is an err
     carry('m06_completed', { from: 'm06_follow_the_money', completed: 'm06_completed' });
     // a name that merely looks like a carryover name, but is not imported, is still an error
     assertHas(errors(check({ call: { knot: 'support_call', when: 'globalVars.m05_never_imported' } })), 'm05_never_imported');
+});
+
+test('N2 (R3 m2): every setter the engine has declares a name', { skip }, () => {
+    const ok = (extra, inks) => assertNone(errors(check({ call: { knot: 'support_call', when: '!globalVars.line_dead' } }, inks, extra)), 'line_dead');
+    ok({ importedGlobals: { line_dead: false } });
+    ok({ rooms: { r: { npcs: [{ id: 'x', setGlobalOnStart: 'line_dead' }] } } });
+    ok({ rooms: { r: { npcs: [{ id: 'x', globalVarOnKO: 'line_dead' }] } } });
+    ok({ timers: [{ id: 't', setGlobal: 'line_dead' }] });
+    ok({ objectives: [{ tasks: [{ onComplete: { setGlobal: { line_dead: true } } }] }] });
+    ok({ rooms: { r: { objects: [{ onRead: { setVariable: { line_dead: true } } }] } } });
+    ok({ timers: [{ id: 't', actions: [{ type: 'set_global', key: 'line_dead', value: true }] }] });
+    ok({}, { hax: INK.replace('That is all.', 'That is all.\n#set_variable:line_dead:true') });
+    // setGlobalPrefix is a prefix, not a name
+    assertHas(errors(check({ call: { knot: 'support_call', when: '!globalVars.line_dead' } }, { hax: INK }, { timers: [{ id: 't', setGlobalPrefix: 'line_dead' }] })), 'line_dead');
 });
 
 test('N2: the error says so when the name is an ink VAR; a mapping condition only warns', { skip }, () => {

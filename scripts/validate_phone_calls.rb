@@ -23,8 +23,11 @@ module ValidatePhoneCalls
   # (review A7a R2, N1). A match inside CALL_NOUN ("your call if") or SELF_RING ("I'll ring when")
   # is not a request to the player.
   CALL_PROMISE = /\b(?:call|ring|phone)(?:\s+me)?\s+(?:anytime|any\s+time|whenever|if|when|once)\b|\b(?:call|ring|phone)\s+back\b|\bcall\s+it\s+in\b/i.freeze
-  CALL_NOUN = /\b(?:a|the|your|my|his|her|our|their|that|this|next|last|first|one|whose|on)\s+(?:call|ring|phone)\b/i.freeze
+  CALL_NOUN = /\b(?:a|the|your|my|his|her|our|their|that|this|next|last|first|one|whose|on)\s+(?:(?:judg(?:e)?ment|conference|phone|video|voice|quick|short|long|bad|good|close|tough|hard|big|hot)\s+)?(?:call|ring|phone)\b/i.freeze
   SELF_RING = /\b(?:I['\u2019]ll|I will|we['\u2019]ll|she['\u2019]ll|he['\u2019]ll|they['\u2019]ll|I['\u2019]d)\s+(?:call|ring|phone)\b/i.freeze
+  # Someone else's call back (review A7a R3, m1): "Tell him to call back", "Did she call back?",
+  # "Ask Dev to ring back", "We will call back". "you to call back" is still a request.
+  OTHER_RING = /\b(?:(?:he|she|they|we|it)(?:\s+(?:will|would|shall|should|may|might|must|could))?|(?!you\b)\w+\s+to)\s+(?:call|ring|phone)\b/i.freeze
   # Stage business between asterisks or in parentheses (dialoguelint.mjs STAGE_VERB)
   STAGE_VERB = /\A(?:sigh|laugh|pause|nod|shrug|cough|exhale|inhale|smile|grin|wink|chuckle|snort|groan|gasp|sniff|frown|scoff|smirk|yawn|whistle|mutter|whisper|wince|blink|glance|cry|sob|giggle|shudder|gulp|swallow|hesitate|beat|beep|grunt|huff|tut|clap|squint)(?:s|es|ed|d|ing)?\z/i.freeze
   DIVERT_KEYS = %w[-> ->t-> f() ^-> *].freeze
@@ -49,7 +52,7 @@ module ValidatePhoneCalls
   def call_promise?(text)
     return true if text.match?(CALL_ME)
 
-    excuses = text.to_enum(:scan, Regexp.union(CALL_NOUN, SELF_RING)).map { Regexp.last_match.then { |m| m.begin(0)...m.end(0) } }
+    excuses = text.to_enum(:scan, Regexp.union(CALL_NOUN, SELF_RING, OTHER_RING)).map { Regexp.last_match.then { |m| m.begin(0)...m.end(0) } }
     text.to_enum(:scan, CALL_PROMISE).any? do
       m = Regexp.last_match
       excuses.none? { |r| r.begin < m.end(0) && m.begin(0) < r.end }
@@ -60,7 +63,7 @@ module ValidatePhoneCalls
 
   # Names a `globalVars.<name>` condition can see: globalVariables keys, the names a game merges in at
   # creation from importGlobals (CarryOver.import_name; they are not in globalVariables in the file),
-  # keys of any setGlobal, and `#set_global:<name>` tags in any contact's ink.
+  # names any engine setter writes (see the walk below), and `#set_global:` / `#set_variable:` tags in any contact's ink.
   def known_globals(json_data, recs, base_dir)
     names = Set.new
     gv = json_data['globalVariables']
@@ -71,10 +74,20 @@ module ValidatePhoneCalls
       n = carry_over_name(e)
       names << n if n
     end
+    # Every setter the engine has (same set as validate_scenario.rb check_globals_never_read, plus
+    # `set_global` action nodes): setGlobal / setVariable hashes, setGlobal* and globalVarOnKO strings
+    # (not setGlobalPrefix), {type: set_global, key:}.
     walk = lambda do |node|
       case node
       when Hash
-        node['setGlobal'].each_key { |k| names << k.to_s } if node['setGlobal'].is_a?(Hash)
+        node.each do |k, v|
+          if %w[setGlobal setVariable].include?(k) && v.is_a?(Hash)
+            v.each_key { |n| names << n.to_s }
+          elsif k != 'setGlobalPrefix' && (k.to_s.start_with?('setGlobal') || k == 'globalVarOnKO') && v.is_a?(String) && !v.empty?
+            names << v
+          end
+        end
+        names << node['key'].to_s if node['type'] == 'set_global' && node['key'].is_a?(String)
         node.each_value { |v| walk.call(v) }
       when Array
         node.each { |v| walk.call(v) }
@@ -83,7 +96,7 @@ module ValidatePhoneCalls
     walk.call(json_data)
     recs.each do |npc, _|
       _, source = read_ink(npc, base_dir)
-      source&.each { |l| l.scan(/#\s*set_global\s*:\s*(\w+)/) { |(n)| names << n } }
+      source&.each { |l| l.scan(/#\s*set_(?:global|variable)\s*:\s*(\w+)/) { |(n)| names << n } }
     end
     names
   end
