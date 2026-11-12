@@ -88,6 +88,7 @@
         "caller_hold",
         "caller_forced",
         "caller_popup",
+        "caller_thread",
         "timed_caller",
         "legacy_voiced",
         "texter"
@@ -537,6 +538,46 @@
           ]
         },
         {
+          "id": "caller_thread",
+          "displayName": "Caller Thread",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_thread.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_thread",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": true,
+              "cooldown": 0,
+              "delayMs": 8000,
+              "callLabel": "Thread"
+            }
+          ]
+        },
+        {
+          "id": "desk_line",
+          "displayName": "Desk Line",
+          "npcType": "phone",
+          "phoneId": "desk_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/desk_line.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": []
+        },
+        {
           "id": "texter",
           "displayName": "Texter",
           "npcType": "phone",
@@ -746,6 +787,26 @@
           "interactable": true,
           "triggerOnInteract": [ { "type": "emit_event", "event_name": "ring_popup" } ],
           "observations": "Lever: Popup (rings in 8 s)"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_thread",
+          "name": "Lever: Thread (rings in 8 s)",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [ { "type": "emit_event", "event_name": "ring_thread" } ],
+          "observations": "Lever: Thread (rings in 8 s)"
+        },
+        {
+          "type": "phone",
+          "id": "desk_phone",
+          "name": "Desk Phone",
+          "phoneId": "desk_phone",
+          "npcIds": [ "desk_line" ],
+          "position": { "x": 6, "y": 8 },
+          "takeable": false,
+          "observations": "A desk phone: a phone-chat that is not the player's, so a call rings over it as a banner."
         },
         {
           "type": "ups_cabinet1",
