@@ -9,7 +9,7 @@ client and server must not grow so that data is sent back and forth all the time
 questions q79 to q81 on the decisions form are section 13's decisions 2, 6 and 5; until the user
 answers, their suggested options stand.
 
-Code was read on `build/c3-replies` at 57a3dea22 (C3 steps 2 to 8 done, including the live proof
+Code was read on `build/c3-replies` at a4ecfe07e (C3 steps 2 to 8 done, including the live proof
 and the measured times in its `PLAYTEST.md`; code review rounds under way). Function and key names
 are authoritative; line numbers are not given because C3 can still move. Section 12 lists what
 depends on C3.
@@ -173,23 +173,57 @@ chips in key order. Each chip is the key's icon and the count of NPCs who reacte
   `div`), never inside a button: nested interactive content is invalid, and a click there would
   select the post.
 - **Its accessible name holds the names.** `aria-label` is "Sad, 2: Kofi Mensah, Mei Tanaka": the
-  key's label, the count, then the reactors' Friendface profile names through the browser's
-  existing `_profileName({ person })`, in reactor id order (section 6).
+  key's label, the count, then the reactors' names as C3's reply entries show them (the browser's
+  existing `_profileName({ person })`, which falls back to `social.people`'s `forms.full`), in
+  reactor id order (section 6).
+- **Its icon is decorative:** the `<img>` has `alt=""`, so if the `aria-label` were ever lost, the
+  file name would not become the button's name. The chip carries no `aria-expanded`: the names line
+  it opens is `aria-hidden`, so a screen reader would find nothing new, and the names are already
+  in the label. The open state is a `data-open` attribute, for styling and tests.
+- **It is big enough to touch:** `.ob-reaction` has a `min-width` and `min-height` of 32px (two
+  whole 16px steps), with the 16px icon centred.
 - **It keeps focus across re-renders.** Each chip has `data-focus="reaction:<postId>:<key>"`, so
   `_renderMain`'s `_focusKey` and `_restoreFocus` bring focus back to it after an `npc_posted` or
   `npc_reacted` re-render, as they do for the page's links and blocks. A post appears once on any
   one profile page, so the key is unique on the page.
 - **The names line.** Each row draws one names line under its chips (not the browser's `title`
-  tooltip, which draws in a system font). It shows the names of one chip when that chip is hovered,
-  focused, or clicked or tapped. A click or tap toggles it and sets the chip's `aria-expanded`; a
-  second click, or Esc while the chip has focus, hides it (Esc is handled on the chip and stops
-  there only when a names line is open, so it does not close the browser). Hover is tracked on the
-  row, not the chip, so the line stays up while the pointer moves down onto it. The open chip's
-  `data-focus` key is kept on the browser instance, so a re-render redraws the line open.
-- **The names line takes no space when it shows.** Its height is reserved: the line is always in
-  the row with a fixed `min-height` of one text line, empty when nothing shows, so showing it moves
-  nothing below. It carries `aria-hidden="true"`, since the chip's label already holds the names
-  and a screen reader would otherwise read them twice.
+  tooltip, which draws in a system font). It shows the names of at most one chip, chosen in this
+  order: the **open** chip (opened by a click or tap), else the **focused** chip, else the
+  **hovered** chip. So while one chip is open, focusing or hovering another changes nothing; once
+  the open chip is closed, the focused or hovered chip shows.
+  - **Open (click or tap).** A click toggles the chip: it opens it, or closes it if it is the open
+    chip. A click on another chip while one is open closes the first and opens the second. The open
+    chip's `data-focus` key is held on the browser instance, so a re-render redraws the line open.
+  - **Focus (keyboard only).** `focusin` on a chip makes it the focused chip and `focusout` clears
+    it. A `pointerdown` on a chip marks the instance, and the `focusin` that follows it is ignored:
+    otherwise a tap that closes a chip would leave it focused, and the line would stay up.
+    `_restoreFocus` after a re-render fires `focusin` again, which restores the focused chip.
+  - **Hover (mouse only).** `pointerenter` and `pointermove` on a chip make it the hovered chip, and
+    `pointerleave` on the row clears it, so the line stays up while the pointer moves down onto it.
+    Each handler acts only when `e.pointerType === 'mouse'`, and no `mouseover` or `mouseenter`
+    handler is used. A tap's emulated hover is therefore ignored, and on a phone a second tap
+    closes the line. The hovered chip is not kept across a re-render: `_renderMain` replaces the
+    row, and the line comes back on the pointer's next move over a chip. Only an NPC post or
+    reaction causes a re-render, so the gap is rare and brief, and it is accepted.
+  - **Esc.** The browser is a `SocialOverlayScene`. Its Esc handler runs in the capture phase on
+    `document` and closes the topmost entry in its layer stack before anything else, so no handler
+    on a chip ever sees Esc. When a click opens a chip, the browser calls
+    `this._namesLayerOff = this.pushLayer(() => this._closeReactionNames(), 'reaction-names')`.
+    `_closeReactionNames()` clears the open key, calls and clears `_namesLayerOff`, and redraws the
+    row. Esc then closes the open names line wherever focus is in the browser, and the next Esc
+    closes the browser. The layer is removed on **every** route that clears the open key: Esc (the
+    overlay calls the closer, which removes its own entry, since the overlay does not), a second
+    click on the open chip, a click on another chip (the old layer is removed before the new one is
+    pushed, so there is never more than one), `go()` or any other page change, and the minigame's
+    close and cleanup. The layer stays across `npc_posted` and `npc_reacted` re-renders, since the
+    open key survives them. Focus and hover push no layer: Esc with only a focused or hovered chip
+    closes the browser, as it does today.
+- **The names line reserves one line, and may grow when it wraps.** The line is always in the row,
+  empty when nothing shows, with a CSS `min-height` of one text line, so showing a short list moves
+  nothing below. A list too long for one line (four full names at 16px at the phone view's width)
+  wraps and grows the row by the extra lines. That is accepted, because the names show only on the
+  player's own hover, focus or click. The line carries `aria-hidden="true"`, since the chip's label
+  already holds the names and a screen reader would otherwise read them twice.
 
 No reaction, no row. Every string is set as text or an attribute, never as markup.
 
@@ -208,6 +242,8 @@ No reaction, no row. Every string is set as text or an attribute, never as marku
   and a builder does not copy the 3px to match the page.
 - Icons are drawn at a whole-number scale of their 16x16 pixels (16px or 32px, never in between),
   with `image-rendering: pixelated`.
+- The chip's 32px minimum size is two whole 16px steps, so a 16px icon sits in it at its native
+  scale with no stretching.
 
 A CSS test (section 11) checks the `.ob-reaction*` rules for these, and the live proof's
 screenshots are looked at for them.
@@ -241,9 +277,19 @@ filter is applied **after** the dedupe in step 4, never before: a candidate that
 but whose `via` is the served post must not be returned. The helper may skip any reactor that
 cannot produce a reaction with that `via`, and the result equals the full map filtered.
 
-A post is **drawable** when it is in `revealed_map` with a `seq` above 0 and, if it is a reply, has
-a non-nil `to` there (the `reply_target` test `feed_posts_for_client` applies). For each room NPC X
-that `feeds?` and has a `reacts` list:
+A post is **drawable** when the client is sent it, which is when all of these hold:
+
+- it is in `revealed_map` with a `seq` above 0;
+- its NPC is a room NPC that `feeds?` (`feed_posts_for_client` skips an NPC that no longer does);
+- if it is a reply, its stored `to` is a hash, `to['post']` is in `revealed_map` with an NPC that is
+  a room NPC, and `to['npc']` names a room NPC. These are the conditions under which `feed_answer`
+  answers a reply rather than returning nil, and they include the non-nil `to` test
+  (`reply_target`) that `feed_posts_for_client` applies.
+
+The last two fail only on an edited save or an edited scenario. For each room NPC X that `feeds?`,
+has a `reacts` list and has a `feed.person` that is a non-empty string (a reactor whose `person` is
+anything else is skipped: the validator already errors on it, and the server would otherwise ship
+`null` for it):
 
 1. Clean the list: entries that are objects with a key in `REACTION_KEYS` and exactly one of `to`
    and `toComplaint` as non-empty strings; `alongside`, if present, a non-empty string. Other keys
@@ -325,9 +371,10 @@ unknown ids), as it can for C3's threads.
 
 `reveal_feed_post!` (`social_feed.rb`), after the existing write and `save!`:
 
-- If `feed_answer` returned nil (a reply whose thread poster or named NPC is unknown), the answer
-  carries no post and no reactions, as today. The derivation agrees: such a post is not drawable,
-  so it is never a V or a T.
+- If `feed_answer` returned nil (a reply whose stored `to` is missing, whose thread post is not in
+  `revealed_map`, or whose thread poster or named NPC is not a room NPC), the answer carries no post
+  and no reactions, as today. The derivation agrees: section 5.1's drawable test is built from the
+  same conditions, so such a post is never a V or a T. A unit test covers each condition.
 - Otherwise `AccessWork.feed_reactions(scenario_data, store, revealed: map, via: post_id)`, using
   the store as just written. The route already builds `revealed_map` before the write. The
   post-write `map` is that pre-write map plus the one new entry (the served post's
@@ -345,7 +392,9 @@ unknown ids), as it can for C3's threads.
   `feed_reactions` call in `rescue StandardError => e`, which:
   - reports it through `Rails.error.report(e, handled: true, context: { game_id:, post_id: })`
     (Rails 7.0's error reporter) as well as a `Rails.logger.error` line naming the game id and post
-    id;
+    id. In Rails 7.0 the reporter does nothing without a subscriber, and the engine registers none,
+    so the log line is the record that the live proof and an operator read; the report is for a
+    host app that subscribes;
   - re-raises in the test environment unless a test has turned the rescue on:
     `raise if Rails.env.test? && !BreakEscape::SocialFeed.rescue_reactions_in_test`, where
     `rescue_reactions_in_test` is a module-level setting, false by default, that only the
@@ -375,7 +424,9 @@ Nothing is written for a reaction, so nothing runs outside the existing `with_ga
 ### 5.4 How big it grows and what each request sends
 
 Sizes are bytes of the JSON Rails sends. Ids have no length limit in the validator, so the bound
-comes from the authored id lengths.
+comes from the authored id lengths. Every item field is a string: post ids and NPC ids are strings
+in `revealed_map`, the key is from the fixed set, and section 5.1 skips a reactor whose
+`feed.person` is not a non-empty string, so no item ever carries `null`.
 
 **Encoded length.** A string's encoded length is `s.to_json.bytesize - 2` (the bytes between its
 quotes) as Rails renders it. That is its UTF-8 byte length, plus one byte for each `"` or `\`, plus
@@ -458,8 +509,11 @@ not change. If a builder adds an import anyway, the file goes on each copy list.
   stand-in `params.feed`) has it as a function, as `_feedReplies` does. The row goes after each
   post's `ob-block` button (as a sibling in `ob-blocks`, never inside the button) and at the end of
   each `_replyEntry`, with its names line. The chips, their `data-focus` keys, `aria-label`,
-  `aria-expanded` and the names line behave as section 4 sets out; the open chip's key is held in
-  one instance field that `_renderMain` reads, cleared when the page changes. A new `npc_reacted:*` listener
+  `data-open` and the names line behave as section 4 sets out. The instance holds the open chip's
+  key, the remover `_namesLayerOff` from `pushLayer`, the focused chip's key, the hovered chip's key
+  and the pointer-focus mark; `_renderMain` reads the open and focused keys. A page change
+  (`go()`) and the minigame's cleanup call `_closeReactionNames()`, which clears the open key and
+  removes the layer. A new `npc_reacted:*` listener
   (registered and removed beside `npc_posted:*`) re-renders an open social page when it shows the
   profile of either `targetPerson` or `targetReplyToPerson`, or any open page on the same site when
   the event has no target, keeping the scroll position as `_onPosted` does. The second person is
@@ -532,7 +586,7 @@ certainly never comes out:
 |---|---|---|
 | `:never_posts` | `npc` does not `feeds?`. | its NPC never posts |
 | `:when_unreachable` | The post is reactive (an own post or a reply) and `AW.when_reachable?` is false for its `when`. | its `when` can never hold |
-| `:instead_of_dead` | A reply whose `insteadOf` post is reactive with an unreachable `when`. | its `insteadOf` post can never fire |
+| `:instead_of_dead` | A reply whose `insteadOf` names a post (found among all feed posts through `feed_post_index`, as `check_reply` finds it, so it may be a reply) that is reactive with an unreachable `when`. | its `insteadOf` post can never fire |
 | `:answer_unopenable` | An answer (`answer?`) and `answer_repliers` is empty. | no reply can open it |
 | `:thread_never_opens` | A reply that is not an answer, whose `reply_threads` is not empty and every thread post belongs to an NPC that does not `feeds?` or is reactive with an unreachable `when`. | its thread can never open |
 
@@ -587,13 +641,22 @@ Warnings, for the cases where a reaction certainly never comes out, and for auth
   same message form.
 - **An `alongside` post that can never follow its target** (above): "`<post>` always comes out
   before `<target>`: this reaction never comes out".
-- **Two reactions by one NPC that can land on the same post** (the same `to`, or a `to` naming a
-  vent of a complaint another of its reactions names): "only the first to come out shows". Not
-  warned when both reactions have an `alongside` and the two `alongside` posts are different
-  members of the same alternative set (both in `set_member_ids` of the same own post): at most one
-  of them is ever served, so the two are never both candidates. That is the event pattern of
-  section 3 ("sad to T alongside A, angry to T alongside B"), a deliberate choice, and each gets its
-  "only if ... is the member served" ending in the report instead.
+- **Two reactions by one NPC that can land on the same post**: the same `to`; a `to` naming a vent
+  of a complaint another of its reactions names; or two `toComplaint` reactions naming the same
+  complaint (without `alongside` both resolve to the oldest served vent, so they always land on the
+  same post). The message is "only the first to come out shows". Not warned when both reactions
+  have an `alongside` and the two `alongside` posts are different members of the same alternative
+  set (both in `set_member_ids` of the same own post): at most one of them is ever served, so the
+  two are never both candidates. That is the event pattern of section 3 ("sad to T alongside A,
+  angry to T alongside B"), a deliberate choice, and each gets its "only if ... is the member
+  served" ending in the report instead. The exception applies to all three forms.
+
+**One warning per dead reactor.** When a reactor-level warning fires for X (`reacts` on an NPC that
+does not `feeds?`, or "`<X>` can never post"), the per-reaction "`alongside` post can never fire"
+and "can never follow its target" warnings are not given for X's reactions: `post_dead_reasons` on
+X's own post would only repeat the reactor's cause, once per reaction. The target warnings
+("`<target>` never comes out") and the clash warning are still given, since they are about another
+NPC's post or the author's own list, and each of X's report lines still ends "(never comes out)".
 
 A target or `alongside` post that might not come out, because it is one member of an alternative
 set, is not a warning. Every reply is conditional by design, and most reactions in a C3 thread
@@ -673,6 +736,12 @@ scenario whose feed posts all have text under `MIN_FEED_TEXT` and carry no facts
 at all, and its reaction items are not judged either. The build log notes it; closing it is not in
 this slice.
 
+**Counts.** The scanner counts each reaction item it judges (in a `/feed_post` answer or a
+`feedPosts` block) in a new `counts[:reaction_items]`, and `access-leak-check.rb`'s "secrets
+checked" line gains "N reaction item(s)" after the feed facts. As with C3's feed post count, a clean
+verdict proves something only when the count is above 0, so the live proof requires that
+(section 11), and `PLAYTEST.md` says so beside C3's counts line.
+
 The new kinds go in the scanner's kind table and `access-leak-check.rb`'s output. A reaction item
 has no `replyTo`, `id` or `npcType`, so `feed_reply_target` and `scan_withheld_keys` do not read
 it, and no existing kind gives a false positive.
@@ -723,7 +792,8 @@ one). Times are C3's measured ones from its `PLAYTEST.md`.
 `PLAYTEST.md`: the F15 to F17 rows gain the reaction expectations, the two tasks, the expected
 `__test.access.feed().reactions`, the validator report lines above with "no reaction warnings",
 the tamper rows of section 7, a note that the `/feed_post` budgets and the `verify-run.rb --access`
-row are unchanged from C3, and a note that the two tasks complete only on a clean live run (a lost
+row are unchanged from C3, the leak check's counts line with its reaction item count above 0
+from F15 on, and a note that the two tasks complete only on a clean live run (a lost
 answer shows the reaction on reload but leaves its task open).
 
 ## 11. Tests and live proof
@@ -761,6 +831,10 @@ merge batch.
     includes a dedupe loser whose `via` is the filtered post (it must not appear);
   - the route's post-write map (the pre-write map plus the new entry) equals `revealed_map` of the
     written store, for an own post and for a reply;
+  - **drawable:** each condition of section 5.1 alone makes a post neither a T nor a V: a reply with
+    no stored `to`, a reply whose `to['post']` is missing from the map, a reply whose `to['npc']` is
+    not a room NPC, and a post whose NPC no longer `feeds?`; a reactor whose `feed.person` is not a
+    non-empty string gives no reactions;
   - junk `reacts` (not an array, non-hash entries, an unknown key, both `to` and `toComplaint`, an
     extra field) is skipped or the extra field ignored, without raising.
 - **Route** (`test/controllers/break_escape/feed_post_reactions_test.rb`). **Every absence check is
@@ -805,7 +879,12 @@ merge batch.
   post certainly spent before its target. No warning, and no "(never comes out)" ending, for: an
   `alongside` set member; a `to` naming a reply; a target that is a second reply whose thread has
   no answer (it can still fire); and two reactions by one NPC on the same `to`, `alongside`
-  different members of one alternative set (beside the clash fixture, which does warn). Every
+  different members of one alternative set (beside the clash fixture, which does warn). Clash
+  fixtures for each of the three forms, including two `toComplaint` reactions on one complaint
+  with no `alongside` (warns) and the same two with `alongside` posts in one alternative set (no
+  warning). A reactor that does not `feeds?` with two `alongside` reactions gives exactly one
+  warning, and so does a reactor that can never post; each of their report lines still ends
+  "(never comes out)". Every
   report line form and ending, including "(never comes out)", each "only if" ending alone, the two
   joined with "and", and the "with it, since X has finished posting" form (a reactor with one vent,
   its thread drawing a `replyTo` reply).
@@ -813,11 +892,37 @@ merge batch.
   thread that can never open gives all three codes; an answer with no repliers gives
   `:answer_unopenable` and never `:thread_never_opens`; a second reply with no answer gives an
   empty list; an own reactive post with an unreachable `when` gives `:when_unreachable`; an NPC
-  that does not `feeds?` gives `:never_posts`. **Agreement with C3:** for every reply in the
-  fixtures of `validator-access-reply.test.mjs`, each code the helper returns matches the C3
-  never-fires warning `check_reply` gives for that reply (`:when_unreachable`, `:instead_of_dead`,
-  `:answer_unopenable`, `:thread_never_opens` to its four messages), and C3's fixtures and messages
-  are unchanged.
+  that does not `feeds?` gives `:never_posts`.
+  **Agreement with C3**, built in this file so that C3's test file stays unchanged:
+  - **Fixtures.** C3's reply fixtures are built inline in `validator-access-reply.test.mjs` and not
+    exported, so this file carries copies, with a comment naming the source file and the C3 commit
+    they were copied from: the `own`, `reTo`, `reC`, `npc`, `pair()` and `scenario` builders, the
+    clean `pair()`, the "warnings" fixture, the lone answer, the `noAnswer` second-reply pair, the
+    thread-never-opens fixture and the "errors" fixture. The fixture list also holds this file's
+    own three-reason fixture (a reply with an unreachable `when`, a dead `insteadOf` and a thread
+    that can never open) and a reply on an NPC that does not `feeds?`.
+  - **Harness.** Beside C3's one-argument `run(scenario, fn)`, a `deadReasons(scenario, npcId,
+    postId)` runs a Ruby snippet that parses the scenario, finds the room NPC by id and the post in
+    its `feed.posts` by id, and prints
+    `JSON.generate(ValidateAccessWork.post_dead_reasons(data, npc, post))`. Symbols come back as
+    strings (`"when_unreachable"`). A `feeds(scenario, npcId)` snippet prints `AW.feeds?` for the
+    NPC.
+  - **Both ways, per reply.** For every reply in every fixture, with `tag` its C3 tag
+    (`<npcId>.feed.posts[<i>]`): the set of codes other than `never_posts` **equals** the set of
+    codes whose message fragment appears in a `check` warning starting with that tag. The fragments
+    are matched exactly, because `check_reactive_post`'s own `when` warning carries the same tag
+    prefix: `when_unreachable` is ": the reply never fires, and its insteadOf post always comes out
+    instead", `instead_of_dead` is "can never fire: the reply cannot fire either",
+    `answer_unopenable` is "that no reply can open: no other NPC replies to it", and
+    `thread_never_opens` is "'s thread can never open". So a helper that returns too few codes
+    fails as surely as one that returns too many.
+  - **`never_posts`** has no `check_reply` message (C3 warns about a non-feeding NPC in
+    `check_social`, and only in some cases), so it is checked against the other predicate: the code
+    is present exactly when `feeds` is false for the reply's NPC. The other codes are compared on
+    every reply, whether or not it has `never_posts`.
+  - **Three reasons.** The three-reason fixture also runs through `check`, which must give all
+    three C3 warnings for that reply, and the helper must give all three codes.
+  - C3's test file, fixtures and messages are unchanged.
 - **Key sets in step:** `REACTION_KEYS` in `social-feed.js` (`test/js/social-feed-reactions.test.mjs`)
   and in the leak scanner (`test/unit/access_leak_scanner_feed_test.rb`) each equal the Ruby
   constant read from `lib/break_escape/access_work.rb`. The schema test checks that `reacts.items`
@@ -833,12 +938,27 @@ merge batch.
   unchanged by a reaction. The osint browser (the jsdom harness in
   `social-osint-browser.test.mjs`): each chip is a `button` of `type="button"`, outside the post's
   `ob-block` button, with `aria-label` "Sad, 2: Kofi Mensah, Mei Tanaka" and
-  `data-focus="reaction:<postId>:<key>"`; the names line is in the row from the first render, with
-  `aria-hidden="true"`, empty, and the same height empty as filled (its reserved `min-height`); it
-  fills on focus, on hover of the row, and on click, where the click sets `aria-expanded="true"`
-  and a second click or Esc on the chip empties it and sets it back to `false`; focus stays on the
-  chip, and an open names line stays open, across an `npc_reacted` re-render and an `npc_posted`
-  one; the row draws counts and the label fallback when an icon is missing; it works with a
+  `data-focus="reaction:<postId>:<key>"`, no `aria-expanded` attribute, and an icon `<img>` with
+  `alt=""`; the names line is in the row from the first render, with `aria-hidden="true"` and
+  empty (jsdom does no layout, so heights are not compared here: the reserved `min-height` is
+  checked in the CSS test, and the row's real height in the live proof). Names line behaviour:
+  - keyboard focus fills it; a `pointerenter` with `pointerType: 'mouse'` fills it and a
+    `pointerleave` on the row empties it; a `pointerenter` with `pointerType: 'touch'` fills
+    nothing;
+  - a click sets `data-open` and fills it; a second click empties it, with the chip still focused
+    and no hover left showing it (a `pointerdown` before each click, as a browser sends);
+  - precedence: with chip A open, focusing or hovering chip B leaves A's names showing; closing A
+    then shows B's;
+  - **Esc through the overlay:** open a names line by click, dispatch a `keydown` Esc on
+    `document` (where the overlay's capture handler listens, not on the chip), and check the line
+    is empty, `data-open` is gone, `this._layers` is empty and the minigame has not completed; a
+    second Esc on `document` closes the browser;
+  - **no stale layer:** open a line, navigate with `go()`, and check `this._layers` is empty; Esc
+    then closes the browser. Open chip A, then click chip B: `this._layers` holds one entry, and
+    Esc empties B's line. Open a line and close the minigame: `this._layers` is empty;
+  - focus stays on the chip, and an open names line stays open with its one layer, across an
+    `npc_reacted` re-render and an `npc_posted` one;
+  the row draws counts and the label fallback when an icon is missing; it works with a
   stand-in feed that has no `reactionsFor`; and it re-renders an open profile on `npc_reacted` only when it shows the
   target's person or the target reply's thread poster (a case where the carrying post is on a
   different thread from the target, so only the `npc_reacted` re-render reaches the thread
@@ -849,7 +969,10 @@ merge batch.
   and `none` are allowed, so `outline: none` on a non-focus state passes), and no `font-family`
   outside GNF, Press Start 2P, VT323 and the `--se-font-*` or `--ui-heading-font` variables with a
   `monospace` fallback; the chip's focus rule is on `:focus-visible` with a 2px outline; the icon
-  rule has `image-rendering: pixelated` and a width of 16px or 32px.
+  rule has `image-rendering: pixelated` and a width of 16px or 32px; `.ob-reaction` has a
+  `min-width` and `min-height` of 32px; `.ob-reaction-names` has a `min-height` (its one reserved
+  line) and no `height`, `max-height`, `overflow: hidden` or `white-space: nowrap`, so a long list
+  wraps and is not clipped.
 - **Leak scanner** (`test/unit/access_leak_scanner_feed_test.rb`): `feed_reaction_target` for a
   reaction on an unserved post (resolved through `@feed_post_key`), none for a reaction on the
   post in the same answer; `feed_reaction_key` for an unknown key; `feed_reaction_reactor` for a
@@ -857,14 +980,20 @@ merge batch.
   directly on an NPC record beside `feed`, and for one in a run whose scenario has no feed texts
   and no feed facts (outside the early return); a clean resumed run with reactions in `feedPosts`,
   paired with the same run with one reaction moved to an unserved post giving one
-  `feed_reaction_target` finding, so the clean result is not a scan that never ran.
+  `feed_reaction_target` finding, so the clean result is not a scan that never ran;
+  `counts[:reaction_items]` equals the number of reaction items in the responses scanned, and is 0
+  for a run with none.
 - **Live proof** (a keyless server started by hand from the worktree on the assigned port, never
   :3000; headless Chromium; `setFPS(20)` with fixed steps; `--capture-responses`). Run F15, F16 and
   F17 through the test bridge after the Friendface visit C3 needs. After each beat:
   `__test.access.feed().reactions` against section 10; the two tasks complete; the `/feed_post`
   count equals C3's budget for the beat (proof that reactions add no request); the
   `verify-run.rb --access` `feedRevealed` row and the `player_state` key list equal a C3 baseline
-  run's; `access-leak-check.rb` over the responses so far with no findings; the measured answer
+  run's; `access-leak-check.rb` over the responses so far with no findings, and its counts line
+  showing a reaction item count above 0 from F15 on (a clean verdict over no reaction items proves
+  nothing); the row height, measured with `getBoundingClientRect()` before and after its names line
+  shows, at the phone view's width and at the osint browser's width, logged in the build log (a
+  one-line list must not change it; a wrapped list may grow it, as section 4 allows); the measured answer
   growth per reaction and the bootstrap `feedPosts` growth, written into the build log; no toast and
   no badge change from a reaction; the server's Rails log has no line from the reactions rescue
   (the proof fails if it has one, since the rescue hides a fault that the screenshots might not
@@ -872,8 +1001,7 @@ merge batch.
   line, the same chip's names line opened by a click with the pointer elsewhere, Kofi's reply with
   Mei's like, Mei's reply with Asha's like, Ivy's thread with Tomasz's sad on her answer, the same
   after F17's reload, and the player's phone view; each looked at for section 4's pixel-art rules
-  (square 2px borders, pixel font, crisp icons) and for nothing below a row moving when its names
-  line shows. Pace is earned in real time; the needs clock is never stepped. Regression: F1 to
+  (square 2px borders, pixel font, crisp icons, chips at least 32px square). Pace is earned in real time; the needs clock is never stepped. Regression: F1 to
   F17's C3 expectations still pass.
 
 ## 12. Dependencies on C3
@@ -884,7 +1012,7 @@ merge batch.
   `answer_repliers` (which `post_dead_reasons` calls), `@feed_post_key` in the leak scanner, the
   client's `repliesFor` thread drawing and the osint browser's `_focusKey` and `_restoreFocus`.
   None of C3's code is changed except `feed_answer`'s new optional `revealed:` keyword.
-- **Times.** Section 10's times are the measured ones in C3's `PLAYTEST.md` at 57a3dea22. If C3's
+- **Times.** Section 10's times are the measured ones in C3's `PLAYTEST.md` at a4ecfe07e. If C3's
   final `PLAYTEST.md` moves them, or moves any social `initial`, the reaction expectations move
   with it and no reaction rule changes, provided Asha still vents before Mei replies.
 - **Names and signatures.** If C3's code review rounds rename `revealed_map`, `reply_target`,
@@ -976,17 +1104,22 @@ importers, not the full suites.
    `check_reactive_post` left unchanged; the reaction errors (the present-but-empty field rule
    included), warnings (the unknown-field, can-never-post, never-served, never-follows and clash
    rules, with the alternative-set exception), the static order helper and the report line forms
-   with their endings; schema (`key` a plain string); the README paragraph; fixtures, including the
-   helper's agreement with C3's warnings on C3's own fixtures. Commit.
+   with their endings, the clash rule's three forms and one warning per dead reactor; schema (`key`
+   a plain string); the README paragraph; fixtures, including copies of C3's reply fixtures and
+   the `deadReasons` harness for the two-way agreement test, with the three-reason fixture run
+   through `check` too. Commit.
 5. Client: `social-feed.js` store, events (with `targetReplyToPerson`) and `reactionsFor` (people
-   sorted by NPC id); the osint browser row of `button` chips with `data-focus` keys, the names line
-   (hover on the row, focus, click or tap, Esc; reserved height; `aria-hidden`), the listener and
-   CSS under the pixel-art rules, with the label fallback; the bridge; JS tests including the
-   key-set match, the phone count, the other-thread re-render, focus and open state across a
-   re-render, and the CSS rules check. Commit.
+   sorted by NPC id); the osint browser row of 32px `button` chips with `data-focus` keys, `data-open`,
+   no `aria-expanded` and a decorative icon; the names line (open, then focused, then hovered; mouse
+   hover only; keyboard focus only; a click toggles; Esc through a `pushLayer` layer removed on every
+   closing route; one reserved line that may wrap; `aria-hidden`), the listener and CSS under the
+   pixel-art rules, with the label fallback; the bridge; JS tests including the key-set match, the
+   phone count, the other-thread re-render, Esc dispatched on `document`, touch and precedence,
+   focus and open state across a re-render, and the CSS rules check. Commit.
 6. Leak scanner: the `REACTION_KEYS` copy, the four new kinds with `feed_reacts_key` outside the
-   early return, and their tests, including section 7's leak scanner row, a `reacts` key directly
-   on an NPC record, the clean run paired with a finding, and the key-set match. Commit.
+   early return, the reaction item count on the counts line, and their tests, including section 7's
+   leak scanner row, a `reacts` key directly on an NPC record, the clean run paired with a finding,
+   the count, and the key-set match. Commit.
 7. Icons, once the user approves (decision 5): four 16x16 PNGs in `public/break_escape/assets/icons/`,
    looked at in a screenshot at their whole-number scale before committing. Commit. If not approved
    yet, skip; the label fallback stands.
