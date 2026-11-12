@@ -273,8 +273,8 @@ card (`wifi_note`); the tester reads it there, as with every earned secret.
 
 | Beat | Steps | Server record afterwards |
 |---|---|---|
-| **N8 Wi-Fi join** | Click `guest_ap`. A keyed network opens the join minigame (`#password-field`, label "Network key", no attempts counter): a wrong key shows "That key was not accepted" and clears the field (no count); the right key joins. The view opens and lists `guest_notice` (its own network only, no office host). `n8_wifi_join` ticks on `network_joined`. | `footholds` has `wifi_guest_wifi` (`via wifi`, source `guest_ap`); `gainedFootholds` has `guest_ap`; a wrong key changed nothing |
-| **N9 Second access point** | Click `guest_ap2`. The keyless probe answers `already`, so no minigame; `network_joined` fires again and `n9_second_ap` ticks. After a reload both AP ids are in `gainedFootholds`. | `gainedFootholds` has `guest_ap` and `guest_ap2`; still one `wifi_guest_wifi` foothold |
+| **N8 Wi-Fi join** | Click `guest_ap`. A keyed network opens the join minigame (`#password-field`, label "Network key", no attempts counter): a wrong key shows "That key was not accepted" and clears the field (no count); the right key joins. The view opens and lists `guest_notice` (its own network only, no office host). `n8_wifi_join` is an `unlock_object` task on `guest_ap`: it ticks on the join with no reload, and the server checks `gainedFootholds`. | `footholds` has `wifi_guest_wifi` (`via wifi`, source `guest_ap`); `gainedFootholds` has `guest_ap`; a wrong key changed nothing |
+| **N9 Second access point** | Click `guest_ap2`. The keyless probe answers `already`, so no minigame; `network_joined` fires again and `n9_second_ap` (an `unlock_object` task on `guest_ap2`) ticks. After a reload both AP ids are in `gainedFootholds`. | `gainedFootholds` has `guest_ap` and `guest_ap2`; still one `wifi_guest_wifi` foothold |
 
 Harness: clicking an access point runs `networkLinks.interactWifiAp`, which first tries a keyless
 join (an open network would join at once, with no prompt) and, on `wrong_key`, opens the password
