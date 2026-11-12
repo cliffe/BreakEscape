@@ -533,50 +533,123 @@ export function dropTextureFor(item, exists) {
  * Where a KO'd NPC's items land (UX pass, 2026-11-12; backlog "KO item drops land on
  * top of each other"). The old 8 px ring put every item on the body, often under the
  * desk or chair the NPC fell by, where the player could not see it. Each spot here:
- *  - is a walkable cell (nearestWalkable, when the pathfinder is up), so it is never
- *    inside a wall or furniture body;
- *  - is at least MIN_GAP from the body and from every other drop;
+ *  - is a cell the player can walk to from the body without leaving the room
+ *    (`reachable`, from koReachableCells: a flood fill over the world grid), so it is
+ *    never inside a wall or furniture body, on the far side of a wall, in the next
+ *    room or in a walled-off pocket (code review R2 M1);
+ *  - is at least MIN_GAP from the body and from every other drop, when there is room;
  *  - draws clear of the shown room objects (obstacles: {x, y, w, h} rects), so a desk
  *    top or a chair does not hide it, when such a spot exists within reach.
+ * With too few reached cells for the gap (a narrow corridor, many items), the rest
+ * stack on the nearest reached cells. With no grid at all (`reachable` null or empty)
+ * every item lands on the body, a few px apart, since nothing else is known to be safe.
  * Returns the centre of each spot; the caller places a sprite of size (w, h) there.
  * Pure, so it is tested in node.
  */
 export const KO_DROP_MIN_GAP = 32;
-export function koDropSpots(feet, count, { nearestWalkable = null, obstacles = [], size = { w: 32, h: 32 } } = {}) {
+export const KO_DROP_RADII = [KO_DROP_MIN_GAP, KO_DROP_MIN_GAP * 1.5, KO_DROP_MIN_GAP * 2, KO_DROP_MIN_GAP * 3];
+const KO_DROP_ANGLES = [90, 45, 135, 0, 180, 270, 225, 315]; // below the body first, then round
+export function koDropSpots(feet, count, { reachable = null, obstacles = [], size = { w: 32, h: 32 } } = {}) {
   const gap = KO_DROP_MIN_GAP;
   const spots = [];
-  const far = (p, q, d) => (p.x - q.x) ** 2 + (p.y - q.y) ** 2 >= d * d;
+  const d2 = (p, q) => (p.x - q.x) ** 2 + (p.y - q.y) ** 2;
+  const far = (p, q, d) => d2(p, q) >= d * d;
   const clear = (p) => {
     const r = { x: p.x - size.w / 2, y: p.y - size.h / 2, w: size.w, h: size.h };
     return !obstacles.some(o => r.x < o.x + o.w && r.x + r.w > o.x && r.y < o.y + o.h && r.y + r.h > o.y);
   };
+  const cells = Array.isArray(reachable) ? reachable : [];
+  if (cells.length === 0) {
+    // Nothing is known to be walkable: on the body, a few px apart so each shows
+    for (let i = 0; i < count; i++) {
+      const a = (i / Math.max(count, 1)) * Math.PI * 2 + Math.PI / 2;
+      const r = count > 1 ? 4 : 0;
+      spots.push({ x: Math.round(feet.x + Math.cos(a) * r), y: Math.round(feet.y + Math.sin(a) * r) });
+    }
+    return spots;
+  }
+  // Ring points snapped to the nearest reached cell (within about one cell of the point)
   const candidates = [];
-  for (const radius of [gap, gap * 1.5, gap * 2, gap * 3]) {
-    // Below the body first (the side the player usually sees), then round the ring
-    for (const deg of [90, 45, 135, 0, 180, 270, 225, 315]) {
+  for (const radius of KO_DROP_RADII) {
+    for (const deg of KO_DROP_ANGLES) {
       const a = deg * Math.PI / 180;
       const raw = { x: feet.x + Math.cos(a) * radius, y: feet.y + Math.sin(a) * radius };
-      const snapped = nearestWalkable ? nearestWalkable(raw.x, raw.y, 1) : raw;
-      if (snapped) candidates.push({ x: Math.round(snapped.x), y: Math.round(snapped.y) });
+      let best = null, bestD = 12 * 12;
+      for (const c of cells) { const d = d2(c, raw); if (d <= bestD) { bestD = d; best = c; } }
+      if (best && !candidates.includes(best)) candidates.push(best);
     }
   }
-  const pick = (needClear) => {
-    for (const c of candidates) {
+  const byDistance = [...cells].sort((p, q) => d2(p, feet) - d2(q, feet));
+  const pick = (list, needClear, minGap) => {
+    for (const c of list) {
       if (spots.length >= count) return;
-      if (!far(c, feet, gap * 0.75)) continue;
-      if (!spots.every(s => far(c, s, gap))) continue;
+      if (spots.includes(c)) continue;
+      if (minGap > 0 && !far(c, feet, minGap * 0.75)) continue;
+      if (!spots.every(s => far(c, s, minGap))) continue;
       if (needClear && !clear(c)) continue;
       spots.push(c);
     }
   };
-  pick(true);
-  pick(false);
-  // Nowhere walkable in reach: a fixed spread round the body, still MIN_GAP apart
-  for (let i = spots.length; i < count; i++) {
-    const a = (i / Math.max(count, 1)) * Math.PI * 2 + Math.PI / 2;
-    spots.push({ x: Math.round(feet.x + Math.cos(a) * gap), y: Math.round(feet.y + Math.sin(a) * gap) });
+  pick(candidates, true, gap);
+  pick(candidates, false, gap);
+  pick(byDistance, false, gap);       // off the rings, e.g. along a corridor
+  pick(byDistance, false, gap / 2);   // tighter
+  // Last resort: stack on the nearest reached cells, one 8 px cell apart, then on top
+  for (let i = 0; spots.length < count; i++) {
+    const c = byDistance[i % byDistance.length];
+    if (i < byDistance.length && spots.includes(c)) continue;
+    spots.push(c);
   }
-  return spots;
+  return spots.map(c => ({ x: Math.round(c.x), y: Math.round(c.y) }));
+}
+
+/**
+ * The world-grid cells a KO drop may use (code review R2 M1): a 4-way flood fill from
+ * the body's cell over walkable cells (grid value 0), out to maxDist px from the feet,
+ * keeping only cells inRoom(x, y) accepts (the room the NPC fell in). Walls and
+ * furniture stop the fill, so a cell behind a wall or in an enclosed pocket is never
+ * reached, and a door gap into the next room is cut off by inRoom.
+ * bounds is the pathfinder's {minX, minY, cols, rows, step}. Returns cell centres,
+ * nearest first in fill order. Pure, so it is tested in node.
+ */
+export function koReachableCells(feet, { grid, bounds, maxDist = KO_DROP_RADII[KO_DROP_RADII.length - 1] + KO_DROP_MIN_GAP, inRoom = () => true } = {}) {
+  if (!grid || !bounds || !feet) return [];
+  const { minX, minY, cols, rows, step } = bounds;
+  const centre = (cx, cy) => ({ x: minX + cx * step + step / 2, y: minY + cy * step + step / 2 });
+  const ok = (cx, cy) => cx >= 0 && cy >= 0 && cx < cols && cy < rows && grid[cy]?.[cx] === 0;
+  const within = (p) => (p.x - feet.x) ** 2 + (p.y - feet.y) ** 2 <= maxDist * maxDist;
+  let sx = Math.floor((feet.x - minX) / step), sy = Math.floor((feet.y - minY) / step);
+  if (!ok(sx, sy) || !inRoom(centre(sx, sy).x, centre(sx, sy).y)) {
+    // The body's own cell is often blocked (clearance by a wall or desk): start from the
+    // nearest walkable in-room cell next to it, never more than two cells away
+    let found = null, bestD = Infinity;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const cx = sx + dx, cy = sy + dy;
+      if (!ok(cx, cy)) continue;
+      const c = centre(cx, cy);
+      if (!inRoom(c.x, c.y)) continue;
+      const d = (c.x - feet.x) ** 2 + (c.y - feet.y) ** 2;
+      if (d < bestD) { bestD = d; found = [cx, cy]; }
+    }
+    if (!found) return [];
+    [sx, sy] = found;
+  }
+  const seen = new Set([sy * cols + sx]);
+  const queue = [[sx, sy]];
+  const out = [];
+  for (let qi = 0; qi < queue.length; qi++) {
+    const [cx, cy] = queue[qi];
+    out.push(centre(cx, cy));
+    for (const [nx, ny] of [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]]) {
+      const k = ny * cols + nx;
+      if (seen.has(k) || !ok(nx, ny)) continue;
+      seen.add(k);
+      const c = centre(nx, ny);
+      if (!within(c) || !inRoom(c.x, c.y)) continue;
+      queue.push([nx, ny]);
+    }
+  }
+  return out;
 }
 
 function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
@@ -624,10 +697,14 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
     if (!(w > 0) || !(h > 0)) continue;
     obstacles.push({ x: o.x - (o.originX ?? 0.5) * w, y: o.y - (o.originY ?? 0.5) * h, w, h });
   }
-  const spots = koDropSpots(feet, toDrop.length, {
-    nearestWalkable: pm?.findNearestWalkableWorldCell ? (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r) : null,
-    obstacles
+  // Only cells reached from the body inside this room (code review R2 M1): the world grid
+  // spans every loaded room, so a plain nearest-walkable snap could land behind a wall
+  const reachable = koReachableCells(feet, {
+    grid: pm?.worldGrid,
+    bounds: pm?.worldGridBounds,
+    inRoom: (x, y) => roomIdAtFeet(x, y, window.rooms, 0) === npcRoomId
   });
+  const spots = koDropSpots(feet, toDrop.length, { reachable, obstacles });
 
   toDrop.forEach((item, index) => {
     // Create actual Phaser sprite for the dropped item, drawn as a reload draws it
