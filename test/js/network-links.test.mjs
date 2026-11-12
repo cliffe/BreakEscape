@@ -613,6 +613,24 @@ test('a new trip replaces the one running', async () => {
     assert.deepEqual(other, [{ reason: 'closed' }]);
 });
 
+// 9.3b plan 5.2: the server reads outages and a host's own service from its globals, so the
+// view sends the latest globals before GET /network, and a failed sync still fetches the view.
+test('view() syncs the globals before GET /network, and still fetches when the sync fails', async () => {
+    await reset();
+    const order = [];
+    const realNetwork = window.ApiClient.network;
+    window.ApiClient.network = async (id) => { order.push('network'); return realNetwork(id); };
+    window.stateSync = { sync: async () => { order.push('sync'); return true; } };
+    await links.view('jack_comms_port');
+    assert.deepEqual(order, ['sync', 'network']);
+
+    order.length = 0;
+    window.stateSync = { sync: async () => { order.push('sync'); throw new Error('offline'); } };
+    await links.view('jack_comms_port');
+    assert.deepEqual(order, ['sync', 'network'], 'a failed sync does not stop the fetch');
+    delete window.stateSync;
+});
+
 // ---------------------------------------------------------------- implants (slice 9.3b I)
 
 test('an implant adds the foothold, syncs the link item and emits foothold_gained', async () => {

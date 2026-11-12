@@ -236,6 +236,10 @@ export class NetworkLinks {
     async view(footholdId) {
         const api = apiClient();
         if (!api?.network) return { ok: false, reason: 'error' };
+        // The server judges outages and a host's own service from its copy of the globals, so
+        // send the latest first (9.3b plan 5.2): a switch flipped a moment ago shows at once
+        // rather than after the next timed sync. A failed sync still fetches the view.
+        try { await win().stateSync?.sync?.(); } catch (e) { /* fetch the view anyway */ }
         let body;
         try {
             body = await api.network(footholdId);
