@@ -57,10 +57,25 @@ export function expectContainerAfterUnlock(lockable, type) {
     return true;
 }
 
+// A panel that closes often hands straight over to another one a tick later: a share or
+// a desktop reopening the network screen it came from, a folder its desktop, the view
+// its trip (container-minigame.js reportNetworkExit, network-links.js resume and landed).
+// The release poll could fire in that gap when the close was slow, show the held toasts,
+// and the reopened panel then pulled them back as a glimpse and replayed them at the end:
+// every task toast twice (test_access_networks game 1750: P2, P3, N2, N3). The framework
+// calls this when a minigame ends, and again once its close work is done, so held toasts
+// wait until the screen has stayed clear this long. Starting a panel clears it at once.
+export const PANEL_SETTLE_MS = 400;
+
+export function settleAfterPanelClose(now = Date.now()) {
+    expectPanelWithin(PANEL_SETTLE_MS, now);
+}
+
 if (typeof window !== 'undefined') {
     window.expectContainerAfterUnlock = expectContainerAfterUnlock;
     window.expectPanelWithin = expectPanelWithin;
     window.clearExpectedPanel = clearExpectedPanel;
+    window.settleAfterPanelClose = settleAfterPanelClose;
 }
 
 function releaseHeldNotifications() {
