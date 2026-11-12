@@ -2,6 +2,11 @@
 // 22, 26, 28; 2.4 pill and status line). The pure rows are in phone-ringer.test.mjs against fakes;
 // these run the same rows through phone-ringer-dom.js, the real NPCManager and a jsdom window.
 import test from 'node:test';
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
+import { join } from 'node:path';
+import { jsRoot } from './phone-ring-harness.mjs';
 import assert from 'node:assert/strict';
 import { makeWorld, endCall } from './phone-ring-harness.mjs';
 
@@ -209,7 +214,7 @@ test('row 11: Answer over the CyberChef popup hides it, opens the call, and the 
         assert.equal(p.laptop.style.display, 'none');
         assert.equal(w.calls.started.length, 1);
         assert.equal(w.calls.started[0].type, 'phone-chat');
-        assert.equal(w.ringer.stateOf('caller'), 'connected', 'the put-aside close did not nudge the ringer into a re-ring or a re-open');
+        assert.equal(w.ringer.stateOf('caller'), 'connected', 'connected: the call opened');
         endCall(w);
         await w.advance(100);
         assert.deepEqual(p.log, ['closeLaptop', 'openCrypto']);
@@ -251,7 +256,7 @@ test('row 11: the popup is not reopened when something else is open by the time 
     } finally { w.restore(); }
 });
 
-test('row 11: a declined or rung-off call over a popup leaves the popup alone; a player close of the popup still nudges the ringer', async () => {
+test('row 11: a declined or rung-off call over a popup leaves the popup alone', async () => {
     const w = makeWorld({ npcs: [npc] });
     try {
         const p = addPopups(w);
@@ -353,5 +358,67 @@ test('row 28: a call connected when the ending starts finishes normally', async 
         endCall(w);
         await w.advance(100);
         assert.equal(w.ringer.callActive(), false);
+    } finally { w.restore(); }
+});
+
+// ---- R1 M2: the adapter's own wiring, each removable only with a failing test ----------------
+
+async function ringOver(type, params) {
+    const w = makeWorld({ npcs: [npc] });
+    w.fw.startMinigame(type, null, params);
+    w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+    await w.advance(300);
+    return w;
+}
+
+test('R1 M2: what blocks ringing. Voiced, forced and video calls (and a person-chat) queue the call; a text thread or notes let it ring and hold', async () => {
+    const blocking = [
+        ['a voiced phone-chat call', 'phone-chat', { voiced: true }],
+        ['a forced phone-chat', 'phone-chat', { disableClose: true }],
+        ['a person-chat', 'person-chat', { npcId: 'x' }],
+        ['a video call (a person-chat in video-call mode)', 'person-chat', { npcId: 'x', conversationMode: 'video-call' }],
+    ];
+    for (const [label, type, params] of blocking) {
+        const w = await ringOver(type, params);
+        try {
+            assert.equal(w.ringer.stateOf('caller'), 'queued', `${label} blocks the ring`);
+            assert.equal(w.banner(), null, `${label}: no banner`);
+        } finally { w.restore(); }
+    }
+    const rings = [
+        ['a text thread (a plain phone-chat)', 'phone-chat', {}],
+        ['notes', 'notes', {}],
+    ];
+    for (const [label, type, params] of rings) {
+        const w = await ringOver(type, params);
+        try {
+            assert.equal(w.ringer.stateOf('caller'), 'ringing', `${label} does not block the ring`);
+            assert.match(w.banner().textContent, /Answer puts them on hold/);
+            w.click('.incoming-call-answer');
+            await w.advance(100);
+            assert.equal(w.ringer.stateOf('caller'), 'held', `${label}: Answer holds`);
+            assert.ok(pill(w), `${label}: pill`);
+        } finally { w.restore(); }
+    }
+});
+
+test('R1 M2: the real player-damage-interrupt publishes window.lastPlayerHitAt; a hit through it holds the call for HIT_QUIET_MS', async () => {
+    const w = await ringOverKeypad();
+    try {
+        const src = readFileSync(join(jsRoot, 'systems/player-damage-interrupt.js'), 'utf8');
+        const dir = mkdtempSync(join(tmpdir(), 'pdi-wiring-'));
+        writeFileSync(join(dir, 'pdi.mjs'), src);
+        const mod = await import(pathToFileURL(join(dir, 'pdi.mjs')).href);   // evaluating it sets the window globals
+        assert.equal(typeof w.win.lastPlayerHitAt, 'function', 'the module publishes window.lastPlayerHitAt');
+        w.click('.incoming-call-answer');
+        await w.advance(100);
+        w.fw.currentMinigame.complete = (ok) => w.fw.endMinigame(ok);
+        const hitAt = w.win.performance.now();
+        assert.equal(mod.closeMinigameOnDamage(3, { framework: w.fw, notify: () => {}, perfNow: hitAt }), true);
+        assert.equal(w.win.lastPlayerHitAt(), hitAt, 'the adapter reads the stamp through the window');
+        await w.advance(3000);
+        assert.equal(w.calls.started.length, 1, 'no call within HIT_QUIET_MS of the hit');
+        await w.advance(1800);
+        assert.equal(w.calls.started.length, 2, 'then it opens');
     } finally { w.restore(); }
 });

@@ -45,8 +45,8 @@ export function installPhoneRinger(win = window) {
     const sceneActive = () => !!nm()?.scriptedConversationActive?.();
     const queuedBeats = () => (nm()?._scriptedCallQueue?.length || 0) > 0;
     const knockedOut = () => !!win.playerIsKnockedOut?.();
-    /** A conversation minigame: a person-chat, a video call, or a phone-chat showing a call (2.2). */
-    const isConversation = (m) => !!m && (m._sceneType === 'person-chat' || m._sceneType === 'video-call'
+    /** A conversation minigame: a person-chat (a video call is one: conversationMode "video-call"), or a phone-chat showing a call (2.2). */
+    const isConversation = (m) => !!m && (m._sceneType === 'person-chat'
         || (m._sceneType === 'phone-chat' && (m.params?.voiced === true || m.params?.disableClose === true)));
 
     // ---- banner and pill ---------------------------------------------------------
@@ -328,6 +328,8 @@ export function installPhoneRinger(win = window) {
         },
         /** The workstation popups' close hook; the ringer's own close for row 11 is not a player close. */
         onPopupClosed() {
+            // Defensive: nothing observable depends on it today (a nudge on a connecting call does
+            // nothing), so no test fails without it (A2c review R1 n1).
             if (settingAside) return;
             ringer.onPopupClosed();
         },

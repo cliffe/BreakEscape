@@ -243,11 +243,12 @@ function playEntry(entry, data) {
     // screen in front of a player who was simultaneously being told they were
     // not finished.
     const hasEnding = !!(entry.credits?.length || entry.closingCard);
-    // The credits start: no more calls ring (phone calls plan 2.3 row 28). A call already
-    // connected finishes normally.
-    if (hasEnding) {
+    // Phone calls plan 2.3 row 28: the ringer closes only once the server agrees the mission
+    // concluded (the two `result.concluded` branches below). A refusal leaves the player
+    // playing, so calls must still ring.
+    const closeRinger = () => {
         try { window.phoneRinger?.close?.(); } catch (e) { console.warn(`${TAG} phoneRinger.close failed:`, e); }
-    }
+    };
     const ownsVisualiser = hasEnding;
     if (ownsVisualiser && window.BondVisualiser?.setAutoOpenSuppressed) {
         window.BondVisualiser.setAutoOpenSuppressed(true);
@@ -315,12 +316,14 @@ function playEntry(entry, data) {
                 // R14: the server never answered. The player keeps the ending, but it
                 // says the result is not recorded yet, and the conclude is retried.
                 _endingOwnsMusic = true;
+                closeRinger();
                 openCredits(offlineEndingOptions);
                 queueConcludeRetry(window.breakEscapeConfig?.gameId);
                 return;
             }
             if (result.concluded) {
                 _endingOwnsMusic = true;
+                closeRinger();
                 openCredits();
                 return;
             }

@@ -205,7 +205,7 @@ export function confirmEnding(opts = {}, deps = {}) {
             if (endNow) {
                 confirmTasks(open.map((o) => o.taskId));
                 writeHeldRecord(null);
-                closePhoneRinger();   // phone calls plan 2.3 row 28
+                closePhoneRinger(opts.reason);   // phone calls plan 2.3 row 28
             }
             console.log(`[ending-check] ${opts.reason || 'ending'}: ${endNow ? 'end now' : 'keep going'} (${open.length} open)`);
             resolve(endNow);
@@ -262,10 +262,14 @@ export function restoreHeldEnding(deps = {}) {
 }
 
 /**
- * The ending has started: no more calls ring (phone calls plan 2.3 row 28). Queued, ringing and
+ * The ending has started (aim and mapping endings; credits close it after the conclude): no more calls ring (phone calls plan 2.3 row 28). Queued, ringing and
  * held offers go with no rows and no events; a call already connected finishes normally.
  */
-function closePhoneRinger() {
+function closePhoneRinger(reason) {
+    // The credits ending asks the server to conclude after this, and the server can refuse
+    // (outstanding VM work). Its own code closes the ringer once the conclude is agreed
+    // (scenario-music-events.js), so a refusal leaves calls ringing.
+    if (reason === 'credits') return;
     try { win()?.phoneRinger?.close?.(); } catch (e) { console.warn('[ending-check] phoneRinger.close failed:', e); }
 }
 
@@ -277,7 +281,7 @@ export function endHeldEnding() {
     writeHeldRecord(null);   // the hold is spent: a reload now must not restore it
     // The player asked to end it (or nothing optional is left): do not ask a second time.
     confirmTasks(openOptionalObjectives().map((o) => o.taskId));
-    closePhoneRinger();   // phone calls plan 2.3 row 28
+    closePhoneRinger(reason);   // phone calls plan 2.3 row 28
     console.log(`[ending-check] ending the held ${reason} ending`);
     try {
         const out = proceed();
