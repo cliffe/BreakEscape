@@ -91,10 +91,25 @@ export class ObjectivesPanel {
 
     // The "more below" cue follows the list as it scrolls, folds and resizes
     const cue = () => this.updateMoreBelow();
+    this._moreBelowCue = cue;
     this.content.addEventListener('scroll', cue, { passive: true });
     this.content.addEventListener('transitionend', cue);   // an aim folding open or shut
     window.addEventListener?.('resize', cue);
-    if (typeof ResizeObserver === 'function') new ResizeObserver(cue).observe(this.content);
+    if (typeof ResizeObserver === 'function') {
+      this._moreBelowObserver = new ResizeObserver(cue);
+      this._moreBelowObserver.observe(this.content);
+    }
+    // A late web font changes the list's height with no resize of the list's own box
+    document.fonts?.ready?.then?.(cue).catch?.(() => {});
+  }
+
+  /** Watch the rendered list too: an aim folding inside it changes its height, not the panel's (review m3). */
+  _observeListBody() {
+    const first = this.content?.firstElementChild;
+    if (!this._moreBelowObserver || !first || first === this._observedBody) return;
+    if (this._observedBody) this._moreBelowObserver.unobserve(this._observedBody);
+    this._observedBody = first;
+    this._moreBelowObserver.observe(first);
   }
 
   /**
@@ -108,6 +123,7 @@ export class ObjectivesPanel {
 
   /** Show or hide the fade and arrow at the panel's bottom edge (css/objectives.css). */
   updateMoreBelow() {
+    this._observeListBody();
     const c = this.content;
     const panel = this.container;
     if (!c || !panel?.classList) return;
@@ -351,6 +367,9 @@ export class ObjectivesPanel {
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
     }
+    if (this._moreBelowCue) window.removeEventListener?.('resize', this._moreBelowCue);
+    this._moreBelowObserver?.disconnect();
+    this._moreBelowObserver = null;
     this.manager.removeListener(this.render);
   }
 }

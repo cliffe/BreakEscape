@@ -411,3 +411,31 @@ test('the panel: the cue follows render, scrolling and collapse', () => {
     assert.equal(el.classList.contains('has-more-below'), false, 'a short list');
     panel.destroy();
 });
+
+test('the panel: the cue also watches the rendered list, and destroy() lets go of its observer and resize listener (review m3)', () => {
+    const observed = [];
+    let disconnected = 0;
+    const saved = { RO: window.ResizeObserver, gRO: globalThis.ResizeObserver };
+    globalThis.ResizeObserver = window.ResizeObserver = class {
+        constructor(cb) { this.cb = cb; }
+        observe(el) { observed.push(el); }
+        unobserve(el) { const i = observed.indexOf(el); if (i >= 0) observed.splice(i, 1); }
+        disconnect() { disconnected++; observed.length = 0; }
+    };
+    const removed = [];
+    const realRemove = window.removeEventListener.bind(window);
+    window.removeEventListener = (type, fn, ...r) => { removed.push(type); return realRemove(type, fn, ...r); };
+    try {
+        const manager = { listeners: [], addListener(fn) { this.listeners.push(fn); }, removeListener() {}, getActiveAims: () => [] };
+        const panel = new ObjectivesPanel(manager);
+        assert.ok(observed.includes(panel.content), 'the list box');
+        panel.render([{ aimId: 'a', title: 'A', status: 'active', tasks: [{ taskId: 't', title: 'T', status: 'active' }] }]);
+        assert.ok(observed.includes(panel.content.firstElementChild), 'and the rendered list inside it');
+        panel.destroy();
+        assert.equal(disconnected, 1, 'the observer is disconnected');
+        assert.ok(removed.includes('resize'), 'the resize listener is removed');
+    } finally {
+        globalThis.ResizeObserver = saved.gRO; window.ResizeObserver = saved.RO;
+        window.removeEventListener = realRemove;
+    }
+});
