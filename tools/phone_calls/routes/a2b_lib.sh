@@ -9,7 +9,11 @@
 #   a2b_shot <name>                       -> $OUT/<label>_<name>.png
 #   a2b_answer / a2b_decline              -> click the banner buttons
 #   a2b_quit
+# A route must name its own server: no fallback to a port that belongs to other work
+: "${PC_PORT:?set PC_PORT (your own server port, never 3023)}"
 cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
+# Scratch files for in-page scripts: a fresh directory per sourcing, not a session path
+A2B_TMP=${A2B_TMP:-$(mktemp -d)}
 S=tools/playtest/cmd.sh
 a2b_open() {
   LABEL=$1; shift
@@ -21,14 +25,14 @@ a2b_open() {
   echo "game $GID ($LABEL)"
 }
 a2b_ev() {
-  local f=/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/ev-$GID.js
+  local f=$A2B_TMP/ev-$GID.js
   printf '%s\n' "$1" > "$f"
   tools/phone_calls/ev.sh "$GID" "$f" | tail -n 1 | jq -c 'if type == "object" and has("result") then .result else . end'
 }
 a2b_status() {
   a2b_ev "const r = window.phoneRinger; const cur = r && r.current && r.current(); const b = document.querySelector('.incoming-call'); const mg = window.MinigameFramework && window.MinigameFramework.currentMinigame; return {ringer: cur && {npcId: cur.npcId, state: cur.state, knot: cur.knot, opened: cur.opened}, queue: r && r.queueLength(), callActive: r && r.callActive(), closed: r && r.isClosed(), banner: b ? b.innerText.replace(/\n+/g,' | ') : null, bannerImg: b && b.querySelector('img') ? {src: b.querySelector('img').getAttribute('src'), ok: b.querySelector('img').complete && b.querySelector('img').naturalWidth > 0} : null, mg: mg ? (mg.constructor.name + ' ' + (mg.params && mg.params.npcId || '')) : null, globals: {debrief_go: window.gameState.globalVariables.debrief_go, declined_seen: window.gameState.globalVariables.declined_seen, missed_seen: window.gameState.globalVariables.missed_seen, timed_ringing: window.gameState.globalVariables.timed_ringing}};"
 }
-# a2b_lever <object id> [expected caller npc id]: the interaction menu sometimes picks a neighbouring lever
+# a2b_lever <object id> [expected caller npc id] (A2c: when another call, e.g. timed_caller, may ring first, pass no caller and gate on a longer wait_ring; each retry pulls the lever again): the interaction menu sometimes picks a neighbouring lever
 # or none, so with an expected caller it retries (up to 4 times) until the ringer's current call is that caller.
 a2b_lever() {
   local n

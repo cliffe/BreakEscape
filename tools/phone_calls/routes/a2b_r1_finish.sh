@@ -28,7 +28,7 @@ m2)
   # R3 m3: a timed opening ring rings out inside bootstrap, so the watcher goes into the page BEFORE bootstrap.
   # It clicks Decline 1.5 s into timed_caller's ring (HOW=decline) or leaves it to ring out, and logs the ring.
   for how in decline ringout; do
-    W=/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/m2_watch_$how.js
+    W=$A2B_TMP/m2_watch_$how.js
     cat > $W <<JS
 window.__tc = { ringAt: null, goneAt: null, declinedAt: null };
 setInterval(() => {
