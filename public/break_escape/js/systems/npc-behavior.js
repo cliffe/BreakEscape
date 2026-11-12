@@ -43,8 +43,10 @@ const NPC_STUCK_PLAYER_PX = TILE_SIZE * 1.5; // the player this close: not wedge
 // reader), the NPC has arrived: a chair or another body is standing on the spot.
 const ROUTE_ACTION_REACH_PX = TILE_SIZE * 1.5;
 // An unlockRoom whose room is not loaded yet: skipping it would leave the route waiting
-// at that room for good. Once the room is loaded the action is only a pause.
-const routeActionHasWork = action => !!(action?.unlockRoom && !window.rooms?.[action.unlockRoom]);
+// at that room for good. Once the room is loaded the action is only a pause. A timed
+// useObject (useMs, a PIN keyed at a reader) is work too: a scenario waits on its event.
+const routeUseMs = action => (action?.useObject && Number(action.useMs) > 0 ? Math.min(Number(action.useMs), 30000) : 0);
+const routeActionHasWork = action => !!((action?.unlockRoom && !window.rooms?.[action.unlockRoom]) || routeUseMs(action) > 0);
 
 // Local avoidance (_handleBlockerAhead): a walking NPC that meets the player or
 // another NPC AHEAD on its path waits, then detours, then (if there is no way
@@ -368,6 +370,7 @@ class NPCBehavior {
         this._pathRetryAfter = 0;            // Timestamp after which a failed path may be retried
         this._routeWait = null;              // Multi-room route: waiting on a waypoint action (unlock + load a room)
         this._pendingRouteAction = null;     // The action of the route waypoint just reached
+        this._routeUse = null;               // A route useObject in progress: { action, until, done }
         this._routeWallRooms = new Set();    // Route rooms whose wall boxes this NPC already collides with
 
         // Chase state (for hostile NPCs)
@@ -1239,7 +1242,7 @@ class NPCBehavior {
                     // Path complete, mark reached time and stop following path
                     this.patrolReachedTime = time;
                     // A route waypoint with an action runs it before the next leg
-                    if (this.patrolTarget?.routeAction) this._pendingRouteAction = this.patrolTarget.routeAction;
+                    if (this.patrolTarget?.routeAction) { this._pendingRouteAction = this.patrolTarget.routeAction; this._routeUse = null; }
                     this.pathFollowingActive = false; // Path is done, dwell will start next frame
                     this.sprite.body.setVelocity(0, 0); // Stop movement immediately
                     this.isMoving = false;
@@ -1398,6 +1401,7 @@ class NPCBehavior {
         this._pathRetryAfter = 0;
         this.patrolReachedTime = target.dwellTime > 0 ? 0 : time;
         this._pendingRouteAction = target.routeAction;
+        this._routeUse = null;
         this.playAnimation?.('idle', this.direction);
         return true;
     }
@@ -1745,6 +1749,16 @@ class NPCBehavior {
      */
     chooseWaypointTargetMultiRoom(time) {
         const now = this.clockNow();
+        // A timed useObject (a PIN keyed at a reader): stand facing it until useMs is up,
+        // then say so (npc_used_object_done:<id>) and run the rest of the action.
+        const use = this._routeUse;
+        if (use && !use.done && use.action === this._pendingRouteAction) {
+            if (now < use.until) { this._haltForRoute(); return; }
+            use.done = true;
+            this._emitRouteUse('npc_used_object_done', use.action);
+            this._runRouteAction(this._pendingRouteAction, time);
+            return;
+        }
         // Waiting on a route action (unlock + load the next room): stand still, retry
         // after the back-off, time out after 15 s. Never advance into an unloaded room.
         if (this._routeWait) {
@@ -1981,10 +1995,21 @@ class NPCBehavior {
      */
     _runRouteAction(action, time) {
         const roomId = action?.unlockRoom;
-        if (action?.useObject) this._faceRouteObject(action.useObject);
+        // useObject: face it and emit npc_used_object:<id> once per arrival (a retry of the
+        // unlock below does not repeat it). With useMs the NPC stands there that long first
+        // (chooseWaypointTargetMultiRoom holds him), then npc_used_object_done:<id>.
+        if (action?.useObject && this._routeUse?.action !== action) {
+            this._faceRouteObject(action.useObject);
+            const ms = routeUseMs(action);
+            this._routeUse = { action, until: this.clockNow() + ms, done: ms === 0 };
+            this._emitRouteUse('npc_used_object', action);
+            if (ms > 0) { this._haltForRoute(); return; }
+            this._emitRouteUse('npc_used_object_done', action);
+        }
         if (!roomId || window.rooms?.[roomId]) {
             this._pendingRouteAction = null;
             this._routeWait = null;
+            this._routeUse = null;
             return;
         }
         const token = {};
@@ -2012,6 +2037,7 @@ class NPCBehavior {
             console.log(`✅ [${this.npcId}] Route action done: ${roomId} unlocked and loaded`);
             this._routeWait = null;
             this._pendingRouteAction = null;
+            this._routeUse = null;
         }).catch(err => {
             if (this._routeWait?.token !== token) return;
             console.warn(`⚠️ [${this.npcId}] Route action for ${roomId} failed (${err?.message || err}), retrying in 5s`);
@@ -2027,6 +2053,14 @@ class NPCBehavior {
         console.warn(`⚠️ [${this.npcId}] The server refused this NPC's route unlockRoom for '${roomId}'. ` +
             `Fix: add an eventMapping with unlockDoor: "${roomId}" to this NPC (see README_scenario_design.md); ` +
             `without one the NPC retries at the door forever.`);
+    }
+
+    /** npc_used_object[_done]:<objectId> { npcId, objectId, roomId, useMs } for a route useObject. */
+    _emitRouteUse(name, action) {
+        const objectId = action.useObject;
+        try {
+            window.eventDispatcher?.emit?.(`${name}:${objectId}`, { npcId: this.npcId, objectId, roomId: this.roomId, useMs: routeUseMs(action) });
+        } catch (e) { /* an event never stops the route */ }
     }
 
     _faceRouteObject(objectId) {
@@ -2118,6 +2152,7 @@ class NPCBehavior {
         this.patrolReachedTime = 0;
         this._pendingRouteAction = null;
         this._routeWait = null;
+        this._routeUse = null;
         this._haltForRoute();
         // A beat facing the player who held the door before walking off
         const p = window.player;
