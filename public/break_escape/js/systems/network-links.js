@@ -517,7 +517,11 @@ export class NetworkLinks {
         }
         if (!framework.mainGameScene && win().game) framework.init(win().game);
         framework.startMinigame('password', null, {
-            title: data?.name || 'Join Wi-Fi',
+            // The join branch builds and escapes its own visible header from join.apName
+            // (password-minigame.js). Feed the base template a constant title, never the
+            // author access-point name, so author text never reaches the unescaped
+            // params.title HTML sink in base-minigame.js.
+            title: 'Join Wi-Fi',
             lockable: null,
             requiresKeyboardInput: true,
             join: { apId, apName: data?.name || 'this network' }

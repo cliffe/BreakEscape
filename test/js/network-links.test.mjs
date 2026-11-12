@@ -605,6 +605,24 @@ test('a keyed network: the probe gets wrong_key, the key minigame opens, and a r
     assert.ok(links.get('wifi_guest_wifi'));
 });
 
+test('an access-point name containing HTML never reaches the base minigame title', async () => {
+    await reset();
+    // The server refuses the keyless probe, so the first click opens the key minigame
+    joinAnswer = () => { const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e; };
+    const started = [];
+    window.MinigameFramework = { currentMinigame: null, mainGameScene: {}, startMinigame: (name, _b, opts) => started.push({ name, opts }) };
+    const hostileName = 'Guest <img src=x onerror=alert(1)>';
+    const r = await links.interactWifiAp(wifiApSprite('guest_ap', hostileName));
+    assert.equal(r.action, 'prompt');
+    assert.equal(started.length, 1);
+    // params.title feeds the unescaped base-minigame HTML header, so the author access-point
+    // name must never be passed as the title. The join branch builds its own escaped header
+    // from join.apName instead.
+    assert.equal(started[0].opts.title, 'Join Wi-Fi');
+    assert.ok(!started[0].opts.title.includes('<'), 'no author HTML reaches params.title');
+    assert.equal(started[0].opts.join.apName, hostileName, 'the join header still receives the real name to escape');
+});
+
 test('a rapid second click on a keyed access point does not stack a second key minigame', async () => {
     await reset();
     // The server refuses the keyless probe, so the first click opens the key minigame
@@ -650,6 +668,10 @@ test('a second access point of a joined network answers already, emits network_j
     await settle();
     assert.equal(r.action, 'already');
     assert.equal(named('network_joined').length, 2, 'network_joined fires for the second AP too');
+    // The N9 mapping gates on this payload field; a first join must carry a falsey already
+    // and the second-AP already-join must carry already === true (see scenario N8/N9 gate).
+    assert.ok(!named('network_joined')[0].data.already, 'first join carries a falsey already');
+    assert.equal(named('network_joined')[1].data.already, true, 'second-AP already-join carries already === true');
     assert.equal(views.length, 0, 'an already-joined network does not reopen the view');
 });
 
