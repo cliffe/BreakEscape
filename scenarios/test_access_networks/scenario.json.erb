@@ -592,6 +592,32 @@
           "lockType": "login",
           "access": { "roles": ["staff"] },
           "affordance": { "offWhen": "bench_pc_off" },
+          "spriteVariants": [
+            { "condition": "globalVars.bench_pc_off", "value": "aw_pc_off1" }
+          ],
+          "contents": [
+            {
+              "type": "safe",
+              "id": "bench_logs",
+              "name": "Bench logs",
+              "takeable": false,
+              "locked": true,
+              "lockType": "pin",
+              "requires": "3141",
+              "observations": "A PIN-locked folder of bench logs. The sticker on the folder icon says 3141.",
+              "contents": [
+                {
+                  "type": "text_file",
+                  "id": "bench_log",
+                  "name": "bench_log.txt",
+                  "takeable": true,
+                  "readable": true,
+                  "text": "Bench log: the soldering station passed its checks. (N14: the PIN folder on the bench PC opened.)",
+                  "observations": "The bench log."
+                }
+              ]
+            }
+          ],
           "observations": "The workbench PC. Its power lead runs to the switch on the wall."
         },
         {

@@ -87,3 +87,19 @@ test('every scenario path that joins a table group goes through addScenarioItemT
     assert.equal((helper.match(/addScenarioItemToTableGroup\(/g) || []).length, 1);
     assert.doesNotMatch(create, /group\.items\.push\(\{ sprite, type: (sourceLayer|'scenario_table_item') \}\)/);
 });
+
+// Review R3 (bench_pc): an object matched to a Tiled item with no scenario sprite was created
+// with the map's picture (pc6). When its variant stops holding it returns to that picture, not
+// to its type's texture ("pc").
+test('a swap back returns to the texture the sprite was created with, not the type texture', () => {
+    const { registerSpriteVariantListeners, rooms, fire } = build();
+    const s = sprite('bench_pc', 'aw_pc_off1');
+    s.variantBaseKey = 'pc6';
+    rooms.ward.objects.bench_pc = s;
+    const obj = { id: 'bench_pc', type: 'pc', spriteVariants: [{ condition: 'globalVars.bench_pc_off', value: 'aw_pc_off1' }] };
+    quiet(() => registerSpriteVariantListeners(s, obj, 'ward'));
+    fire('bench_pc_off', false);
+    assert.equal(s.texture.key, 'pc6');
+    fire('bench_pc_off', true);
+    assert.equal(s.texture.key, 'aw_pc_off1');
+});
