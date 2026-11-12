@@ -175,23 +175,169 @@ test('CSS: the .ob-reaction* rules follow the pixel-art UI rule', () => {
     assert.notEqual(line.decls['white-space'], 'nowrap');
 });
 
-// q80 (user, 2026-11-12): the 16x16 icons show at a whole 2x, so never below 32px
-test('CSS: no rule draws a reaction icon below 32px or at a scale that is not a whole multiple of 16px', () => {
-    const rules = reactionRules().filter((r) => r.sels.some((x) => /\.ob-reaction-icon|\.ob-reaction\b.*\bimg\b/.test(x)));
-    assert.ok(rules.length >= 1, 'an icon rule');
-    for (const { sels, decls } of rules) {
-        const where = sels.join(', ');
-        for (const prop of ['width', 'height', 'min-width', 'min-height', 'max-width', 'max-height']) {
-            if (decls[prop] === undefined || decls[prop] === 'none') continue;
-            const m = /^(\d+)px$/.exec(decls[prop]);
-            assert.ok(m, `${where} ${prop}: ${decls[prop]} must be whole px`);
-            assert.ok(Number(m[1]) >= 32, `${where} ${prop}: ${decls[prop]} is below 32px`);
-            assert.equal(Number(m[1]) % 16, 0, `${where} ${prop}: ${decls[prop]} is not a whole scale of 16px`);
+// q80 (user, 2026-11-12): the 16x16 icons show at a whole 2x, so never below 32px.
+// Review R2 m1: every rule that can reach the icon counts, not only rules naming `.ob-reaction`.
+// In osint-browser-minigame.css that is any rule whose last compound is the icon, a bare `img`
+// or `*`, whatever its ancestors (`.ob-reactions img`, `.ob-post img`, `.ob-root img`). In every
+// other stylesheet the game page links, it is the same, unless an ancestor names a class that
+// never sits on the browser's ancestor chain (`.mail-client img` cannot reach it).
+const OSINT_CSS = 'public/break_escape/css/osint-browser-minigame.css';
+const PSEUDO_ELEMENT = /::?(before|after|marker|placeholder|selection|backdrop|first-line|first-letter|file-selector-button)\b/;
+
+function cssRules(css) {
+    const rules = [];
+    for (const m of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const sels = m[1].split(',').map((x) => x.trim()).filter(Boolean);
+        if (sels.some((s) => s.startsWith('@') || /^(from|to|[\d.]+%)$/.test(s))) continue; // @font-face, keyframe steps
+        const decls = {};
+        for (const d of m[2].split(';')) {
+            const i = d.indexOf(':');
+            if (i > 0) decls[d.slice(0, i).trim().toLowerCase()] = d.slice(i + 1).replace(/!important/i, '').trim();
         }
-        for (const prop of ['transform', 'zoom', 'scale']) assert.equal(decls[prop], undefined, `${where} has ${prop}`);
-        if (decls.flex !== undefined) assert.equal(decls.flex, 'none', `${where} flex lets the icon shrink`);
-        if (decls['flex-shrink'] !== undefined) assert.equal(decls['flex-shrink'], '0', `${where} flex-shrink`);
+        rules.push({ sels, decls });
     }
+    return rules;
+}
+
+// Splits a selector into compounds and the combinators between them, outside () and []
+function compounds(sel) {
+    const parts = [];
+    const joins = [];
+    let depth = 0;
+    let cur = '';
+    for (let i = 0; i < sel.length; i++) {
+        const c = sel[i];
+        if (c === '(' || c === '[') depth++;
+        if (c === ')' || c === ']') depth--;
+        if (depth === 0 && /[\s>+~]/.test(c)) {
+            let j = i;
+            let comb = ' ';
+            while (j < sel.length && /[\s>+~]/.test(sel[j])) { if (sel[j] !== ' ' && !/\s/.test(sel[j])) comb = sel[j]; j++; }
+            if (cur) { parts.push(cur); joins.push(comb); }
+            cur = '';
+            i = j - 1;
+            continue;
+        }
+        cur += c;
+    }
+    if (cur) parts.push(cur);
+    return { parts, joins: joins.slice(0, parts.length - 1) };
+}
+function parseCompound(c) {
+    const bare = c.replace(/\([^()]*\)/g, '').replace(/\[[^\]]*\]/g, '');
+    return {
+        type: (/^([a-z][a-z0-9-]*|\*)/i.exec(bare) || [])[1]?.toLowerCase(),
+        classes: [...bare.matchAll(/\.([\w-]+)/g)].map((m) => m[1]),
+        ids: [...bare.matchAll(/#([\w-]+)/g)].map((m) => m[1]),
+        pseudoElement: PSEUDO_ELEMENT.test(c)
+    };
+}
+// The last compound can be the icon: <img class="ob-reaction-icon">
+function compoundIsIcon(c) {
+    const p = parseCompound(c);
+    if (p.pseudoElement || p.ids.length) return false;
+    if (p.type && p.type !== 'img' && p.type !== '*') return false;
+    return p.classes.every((x) => x === 'ob-reaction-icon');
+}
+// The browser's ancestor chain: html, body, the framework's containers and the browser's own
+// elements (every class the osint browser source names)
+const osintSrc = readFileSync(join(root, 'public/break_escape/js/minigames/osint-browser/osint-browser-minigame.js'), 'utf8');
+const CHAIN_CLASSES = new Set(['minigame-container', 'minigame-game-container', 'minigame-controls-overlay',
+    'osint-browser-container', 'osint-browser-game-container']);
+function compoundOnChain(c) {
+    const p = parseCompound(c);
+    if (p.type === 'html' || p.type === 'body' || /^:root\b/.test(c)) return true;
+    if (p.ids.length) return false; // the chain carries no ids
+    return p.classes.every((x) => CHAIN_CLASSES.has(x) || x.startsWith('ob-') || new RegExp(`\\b${x}\\b`).test(osintSrc));
+}
+function reachesIcon(sel, ownSheet) {
+    const { parts, joins } = compounds(sel);
+    if (!parts.length || !compoundIsIcon(parts[parts.length - 1])) return false;
+    if (ownSheet) return true;
+    if (!parts.slice(0, -1).every(compoundOnChain)) return false;
+    // the icon's parent is button.ob-reaction
+    if (joins[joins.length - 1] === '>') {
+        const p = parseCompound(parts[parts.length - 2]);
+        if (p.type && !['button', '*'].includes(p.type)) return false;
+        if (!p.classes.every((x) => x === 'ob-reaction')) return false;
+    }
+    return true;
+}
+
+const SIZE_PROPS = ['width', 'height', 'inline-size', 'block-size'];
+const MIN_PROPS = ['min-width', 'min-height', 'min-inline-size', 'min-block-size'];
+const MAX_PROPS = ['max-width', 'max-height', 'max-inline-size', 'max-block-size'];
+function wholeStep(v) {
+    const m = /^(\d+)px$/.exec(v);
+    if (!m) return `${v} must be whole px`;
+    if (Number(m[1]) < 32) return `${v} is below 32px`;
+    if (Number(m[1]) % 16) return `${v} is not a whole scale of 16px`;
+    return null;
+}
+function iconProblems(decls) {
+    const out = [];
+    for (const [prop, val] of Object.entries(decls)) {
+        let why = null;
+        if (SIZE_PROPS.includes(prop)) why = wholeStep(val);
+        else if (MIN_PROPS.includes(prop)) why = /^(0|0px|auto)$/.test(val) ? null : wholeStep(val);
+        else if (MAX_PROPS.includes(prop)) why = /^(none|100%)$/.test(val) ? null : wholeStep(val); // the chip's content box is at least 32px
+        else if (['transform', 'zoom', 'scale'].includes(prop)) why = val === 'none' || val === 'normal' ? null : `${val} rescales the icon`;
+        else if (prop === 'flex') why = val === 'none' ? null : `${val} lets the icon shrink`;
+        else if (prop === 'flex-shrink') why = val === '0' ? null : `${val} lets the icon shrink`;
+        else if (prop === 'image-rendering') why = /^(pixelated|crisp-edges)$/.test(val) ? null : `${val} smooths the icon`;
+        if (why) out.push(`${prop}: ${why}`);
+    }
+    return out;
+}
+// Each rule in `css` that reaches the icon, with what is wrong with it
+function iconRuleReport(css, ownSheet) {
+    const hits = [];
+    for (const { sels, decls } of cssRules(css)) {
+        const reaching = sels.filter((s) => reachesIcon(s, ownSheet));
+        if (reaching.length) hits.push({ sels: reaching, problems: iconProblems(decls) });
+    }
+    return hits;
+}
+const pageSheets = () => [...readFileSync(join(root, 'app/views/break_escape/games/show.html.erb'), 'utf8')
+    .matchAll(/be_asset_path\('\/(break_escape\/css\/[\w/.-]+\.css)'\)/g)].map((m) => `public/${m[1]}`);
+
+test('CSS: the q80 icon check reaches every rule that can size the icon (review R2 m1 fixtures)', () => {
+    const bad = (css, own) => iconRuleReport(css, own).flatMap((h) => h.problems);
+    // the gaps R2 found: each now fails
+    assert.ok(bad('.ob-reactions img { width: 16px; height: 16px; }', true).length, '.ob-reactions img');
+    assert.ok(bad('.ob-post img { max-width: 16px; }', true).length, '.ob-post img');
+    assert.ok(bad('.ob-root img { max-height: 24px; }', true).length, '.ob-root img');
+    assert.ok(bad('@media (max-width: 700px) {\n  .ob-reactions img { width: 16px; }\n}', true).length, 'in a media query');
+    assert.ok(bad('.ob-reaction > img { transform: scale(0.5); }', true).length, 'transform');
+    assert.ok(bad('.ob-reaction-chips * { zoom: 0.5; }', true).length, 'zoom on *');
+    assert.ok(bad('.ob-reaction-icon { width: auto; }', true).length, 'width auto draws the 16px art');
+    // another stylesheet on the game page
+    assert.ok(bad('img { max-width: 16px; }', false).length, 'bare img elsewhere');
+    assert.ok(bad('@media (max-width: 700px) { body img { height: 20px; } }', false).length, 'phone query elsewhere');
+    assert.ok(bad('.minigame-container img { width: 16px; }', false).length, 'framework container');
+    assert.ok(bad('.osint-browser-game-container .ob-reaction-icon { width: 16px !important; }', false).length, '!important');
+    // rules that cannot reach it stay out
+    for (const css of ['.mail-client img.mail-icon { width: 16px; }', '.ob-reaction::before { width: 4px; }',
+        '.ob-reaction-count { width: 16px; }', '.contact-avatar img { width: 16px; }', '#other img { width: 16px; }',
+        '.ob-post > img { width: 16px; }']) {
+        assert.deepEqual(iconRuleReport(css, false), [], css);
+    }
+    assert.equal(iconRuleReport('.ob-post > img { width: 16px; }', true).length, 1, 'in its own sheet every img rule counts');
+    // and the real rule passes
+    assert.deepEqual(bad('.ob-reaction-icon { width: 32px; height: 32px; min-width: 32px; flex: none; image-rendering: pixelated; }', true), []);
+});
+
+test('CSS: no rule on the game page draws a reaction icon below 32px or off a whole multiple of 16px', () => {
+    const sheets = pageSheets();
+    assert.ok(sheets.includes(OSINT_CSS), 'show.html.erb links the browser stylesheet');
+    assert.ok(sheets.length > 20, 'every page stylesheet read');
+    let own = 0;
+    for (const file of new Set(sheets)) {
+        const hits = iconRuleReport(readFileSync(join(root, file), 'utf8'), file === OSINT_CSS);
+        if (file === OSINT_CSS) own = hits.length;
+        for (const h of hits) assert.deepEqual(h.problems, [], `${file}: ${h.sels.join(', ')}`);
+    }
+    assert.ok(own >= 1, 'the icon rule found');
     // the chip fits the icon: 32px plus 2px padding and a 2px border on each side
     const chip = ruleFor(reactionRules(), '.ob-reaction');
     const pad = chip.decls.padding.split(/\s+/).map((v) => parseInt(v, 10));

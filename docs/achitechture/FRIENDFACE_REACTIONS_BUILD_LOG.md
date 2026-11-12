@@ -283,3 +283,26 @@ art, shown at 2x; q81 hand-drawn icons, which the user approves before merge.
   `03-close-crop-dpr1-32px-icons-native.webp`, and the preview
   `04-icons-preview-4x-nearest-like-laugh-sad-angry.png`. Laugh and angry do not fire in F15, so
   they show only in the preview.
+
+## Code review R2 fixes
+
+`FRIENDFACE_REACTIONS_CODE_REVIEW_R2.md`: 1 minor fixed, 1 nit left.
+
+- m1: the q80 size test now reads every stylesheet `games/show.html.erb` links. In
+  `osint-browser-minigame.css` it checks every rule whose last compound can be the icon (a bare
+  `img` or `*`, or `.ob-reaction-icon`), whatever its ancestors; in the other sheets it checks the
+  same rules unless an ancestor names a class or id that never sits on the browser's ancestor
+  chain (html, body, the framework containers and the classes the browser source names). Media
+  queries count, keyframe steps and pseudo-elements do not. Width, height, the min and max sizes
+  (and their logical forms), transform, zoom, scale, flex, flex-shrink and image-rendering are
+  checked; `width: auto` fails, since it draws the 16px art. Fixtures prove `.ob-reactions img`,
+  `.ob-post img`, `.ob-root img`, a media query, `transform`, `zoom` on `*`, a bare `img` in
+  another sheet, a phone query in another sheet, `.minigame-container img` and `!important` all
+  fail, and that `.mail-client img.mail-icon`, `::before` and `.ob-post > img` elsewhere stay
+  out. Appending each of `.ob-reactions img`, `.ob-post img` and `.ob-root img` to the real
+  stylesheet, a 16px `img` media query to `main.css` and a `zoom` rule to `ui-themes.css` each
+  made the test fail. PLAYTEST.md row F15i names the live `getBoundingClientRect` 32x32 read at
+  1400x1000 and 390x844, repeated after F17's reload.
+- n1 (14px names line): left as is by the orchestrator. It matches the browser's other 14px
+  secondary text (`.ob-post-date`, `.ob-reply-to`); moving GNF lines to 16px would be one change
+  across the browser, not this branch alone.
