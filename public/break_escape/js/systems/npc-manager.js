@@ -564,9 +564,19 @@ export default class NPCManager {
    */
   ringConditionHolds(condition) {
     if (!condition || typeof condition !== 'string' || !condition.trim()) return true;
-    const terms = condition.split('&&').map((t) => t.trim()).filter(Boolean);
-    if (!terms.length || !terms.every((t) => /^globalVars\./.test(t))) return true;
-    try { return !!safeEvaluateCondition(condition, {}); } catch (e) { return true; }
+    if (condition.includes('||')) return true;   // only plain && chains are split safely
+    // Re-check the terms that read only globals (`globalVars.x`, `!globalVars.x`, `(globalVars.x !== true)`);
+    // a term that reads event data (`value`, `name`, `data.`) can't be re-run without its event and is
+    // left holding (M4 R3 m1: m04's `value === true && globalVars.esd_authorized !== true`).
+    const LITERALS = new Set(['true', 'false', 'null', 'undefined']);
+    const globalOnly = (t) => {
+      if (!/globalVars\.[A-Za-z_$]/.test(t)) return false;
+      const rest = t.replace(/globalVars\.[A-Za-z_$][\w$]*/g, ' ').replace(/(['"])(?:\\.|(?!\1).)*\1/g, ' ');
+      return (rest.match(/[A-Za-z_$][\w$]*/g) || []).every((id) => LITERALS.has(id));
+    };
+    const kept = condition.split('&&').map((t) => t.trim()).filter(Boolean).filter(globalOnly);
+    if (!kept.length) return true;
+    try { return !!safeEvaluateCondition(kept.join(' && '), {}); } catch (e) { return true; }
   }
 
   /**

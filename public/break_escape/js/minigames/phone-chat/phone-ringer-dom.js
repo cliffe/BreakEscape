@@ -114,6 +114,12 @@ export function installPhoneRinger(win = window) {
         return (a.startsWith('/') || a.startsWith('http')) ? a : `/break_escape/${a.replace(/^\/+/, '')}`;
     }
 
+    /** The ring's caption: the offer's own callLabel, else the contact's (as the call screen does, M5 R3 n1). */
+    function ringCaption(view, npc) {
+        if (view.callLabel) return view.callLabel;
+        return (npc && typeof npc.callLabel === 'string') ? npc.callLabel : '';
+    }
+
     /** Row 10: the same call, drawn inside the open phone instead of the top-centre layer. */
     function showPhonePanel(view, npc, name) {
         const phone = hostPhone(view.npcId);
@@ -122,7 +128,7 @@ export function installPhoneRinger(win = window) {
         phone.showIncomingCall({
             npcId: view.npcId,
             name,
-            caption: (!view.withheld && view.callLabel) ? view.callLabel : '',
+            caption: view.withheld ? '' : ringCaption(view, npc),
             avatar: (!view.withheld && npc?.avatar) ? avatarSrc(npc) : null,
             withheld: !!view.withheld,
             forced: !!view.forced,
@@ -161,7 +167,8 @@ export function installPhoneRinger(win = window) {
         box.appendChild(avatar);
         const body = el('div', 'incoming-call-body');
         body.appendChild(el('div', 'incoming-call-name', name));
-        if (!view.withheld && view.callLabel) body.appendChild(el('div', 'incoming-call-caption', view.callLabel));
+        const caption = view.withheld ? '' : ringCaption(view, npc);
+        if (caption) body.appendChild(el('div', 'incoming-call-caption', caption));
         body.appendChild(el('div', 'incoming-call-status',
             view.overMinigame ? 'Incoming call · Answer puts them on hold until you close this' : 'Incoming call'));
         box.appendChild(body);

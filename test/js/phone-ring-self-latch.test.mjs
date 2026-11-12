@@ -71,3 +71,42 @@ test('item 8 self-latch: a non-self term going false mid-ring still drops the ri
             'dropped quietly: no Missed call row');
     } finally { w.restore(); }
 });
+
+// ---- M4 R3 m1: negated and mixed conditions are re-checked on their global terms ---------------
+test('item 8: `!globalVars.x` terms and the global half of a mixed condition are re-checked', () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        const nm = w.nm;
+        const g = w.win.gameState.globalVariables;
+        g.esd_authorized = true;
+        // m04's dial ring: an event term plus a global term. The global term now fails, so it drops.
+        assert.equal(nm.ringConditionHolds('value === true && globalVars.esd_authorized !== true'), false);
+        g.esd_authorized = false;
+        assert.equal(nm.ringConditionHolds('value === true && globalVars.esd_authorized !== true'), true);
+        // A negated global term (m03, m07 shape)
+        g.revelation_heard = true;
+        assert.equal(nm.ringConditionHolds('globalVars.flag_distcc_submitted && !globalVars.revelation_heard'), false);
+        g.revelation_heard = false; g.flag_distcc_submitted = true;
+        assert.equal(nm.ringConditionHolds('globalVars.flag_distcc_submitted && !globalVars.revelation_heard'), true);
+        // Only event terms: nothing to re-check, keeps ringing
+        assert.equal(nm.ringConditionHolds('data.npcId === "x" && value === true'), true);
+        // An OR is not split: keeps ringing
+        assert.equal(nm.ringConditionHolds('globalVars.a === true || globalVars.b === true'), true);
+        // A string literal in a global term is not mistaken for event data
+        g.team_assignment = 'fracture';
+        assert.equal(nm.ringConditionHolds('globalVars.team_assignment === "trojan_horse"'), false);
+    } finally { w.restore(); }
+});
+
+// ---- M5 R3 n1 / M4 R3 m2: the ring banner falls back to the contact's callLabel ----------------
+test('ring banner: no mapping callLabel shows the contact-level callLabel', async () => {
+    const hax = { id: 'hax', displayName: 'Agent HaX', avatar: 'assets/x.png', callLabel: 'SAFETYNET secure line' };
+    const w = makeWorld({ npcs: [hax] });
+    try {
+        w.nm._handleEventMapping('hax', 'room_entered:x',
+            { handlerIndex: 0, knot: 'ring_call', conversationMode: 'phone-chat', ring: true, once: true, cooldown: 0 }, {});
+        await w.advance(1500);
+        assert.ok(w.banner(), 'it rings');
+        assert.match(w.banner().textContent, /SAFETYNET secure line/);
+    } finally { w.restore(); }
+});
