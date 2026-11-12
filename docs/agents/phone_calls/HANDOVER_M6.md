@@ -18,18 +18,26 @@ All eight remaining cases pass on the real event path. Results in `proofs/M6/PRO
   → `Call` row); `reload` (mid-call → `Missed call`, no call-back button); `signoff` (sign_off forced,
   `disableClose`, debrief waits for `architect_signoff_done`, then `endHeld()` opens Netherton); `bring` /
   `bring_notyet` (hub `[Bring me in.]` dials HaX both ways, sets `debrief_requested`, arms the Netherton ending).
-- **Route driver fixes this pass:** `replay` ends each answered call on the back arrow (own-path `Call` row +
-  closes the phone + frees the ringer) — walking the reply choices to `#exit_conversation` parks the phone open
-  and holds the ringer, so the next taunt never rings. `bring` presets `architect_signoff_started=true` as well
-  as `..._done`, or the forced `sign_off` re-rings on load (`grid_saved && !architect_signoff_started`) and
-  blocks the HaX thread. `bring_notyet` added for the not-yet branch. Still trigger taunts with the phone CLOSED.
+- **Route driver fixes this pass:** `bring` presets `architect_signoff_started=true` as well as `..._done`, or
+  the forced `sign_off` re-rings on load (`grid_saved && !architect_signoff_started`) and blocks the HaX thread.
+  `bring_notyet` added for the not-yet branch. Still trigger taunts with the phone CLOSED.
+- **[Corrected R1 M1, 2026-11-12]** The "walking the reply choices parks the phone open" claim was **wrong**.
+  Walking to `#exit_conversation` the way a player does ends the call and closes the phone; the next taunt
+  rings. The real fault was the driver's `IN_CALL` (`#call-end-button`, never drawn in the terminal look), so
+  `drive_taunt` never clicked a reply. The route now overrides `IN_CALL` to `window.phoneRinger.callActive()`
+  and `replay`/`signoff` walk the replies (no back arrow, no force-close). Re-proved on :3028: replay 2188,
+  signoff 2195, replace (person-chat) 2191, seattle 2192, bring 2196, bring_notyet 2194 — `proofs/M6_r1/`,
+  corrected `proofs/M6/PROOF.md`.
 - **Debrief mechanism (unchanged by M6):** the closing_debrief trigger has `endingCheck: true`; with optional
   objectives open it HOLDS the ending (`window.endingCheck`). It opens when the player settles the last optional
   objective or clicks the objectives-panel "End the mission" — `window.endingCheck.endHeld()` in the harness.
 
 ## Ink review — no change
-Every taunt and its `*_vm` re-assert all prior `heard_*` flags, so a voicemail skipped because a newer taunt
-replaced it strands nothing downstream. No ink changed; no spoken line changed. (Log 2026-11-12.)
+**[Corrected R1 n1, 2026-11-12]** The taunts do **not** all re-assert every prior `heard_*` flag (`taunt_t1`
+omits `heard_t20`/`heard_t10`; `taunt_t5` omits `heard_t10`). It still strands nothing: only `heard_t30`,
+`heard_t20` (the T-10 fold) and `t1_first_contact` are read downstream, and T-10 cannot ring after T-5/T-1, so
+a voicemail skipped because a newer taunt replaced it is read by nothing. No ink changed; no spoken line
+changed. (Log 2026-11-12.)
 
 ## To finish the slice
 1. ~~Commit handover + route + proofs + log~~ (done by this agent). 2. Commit the HLS lab sheet edit with an
