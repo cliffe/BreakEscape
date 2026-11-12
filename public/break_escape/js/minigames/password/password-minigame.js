@@ -3,7 +3,9 @@ import { ASSETS_PATH } from '../../config.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { isComputerType } from '../../utils/computer-keywords.js';
 
 /**
  * The keypad's line after a wrong password. A near miss (right apart from letter
@@ -23,6 +25,20 @@ export function incorrectPasswordMessage(attemptsRemaining, caseMismatch = false
 export function passwordFieldLabel(title) {
     const t = typeof title === 'string' ? title.trim() : '';
     return t && t !== 'Enter password' && t !== 'Password Entry' ? t : 'Password:';
+}
+
+/**
+ * Which face the classic password screen wears: 'screen' (a monitor with the desktop
+ * wallpaper, for a computer's own lock) or 'prompt' (a plain panel). A Wi-Fi key and a
+ * zip archive's password are not a computer signing in, and on the wallpaper they read
+ * as one (UX access R2).
+ */
+export function passwordScreenKind({ join = null, lockable = null } = {}) {
+    if (join) return 'prompt';
+    // The type, then the sprite's own name (its texture key), on the keyword list the
+    // container's desktop mode uses (utils/computer-keywords.js, code review R1 m3)
+    const names = [lockable?.scenarioData?.type, lockable?.type, lockable?.texture?.key];
+    return names.some((n) => isComputerType(n)) ? 'screen' : 'prompt';
 }
 
 /**
@@ -304,13 +320,16 @@ export class PasswordMinigame extends MinigameScene {
         // Name the lock over the field, as the PIN keypad does ("Enter PIN: Cable
         // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
         const fieldLabel = this.join ? 'Network key' : passwordFieldLabel(this.params.title);
+        const kind = passwordScreenKind({ join: this.join, lockable: this.params.lockable || this.params.sprite });
+        // The framework hides the header, so a Wi-Fi prompt names its network on the panel
+        const promptTitle = this.join ? `Join Wi-Fi: ${this.join.apName || 'network'}` : '';
         
         // A carried case (a bag, briefcase or suitcase) has a code lock, not a computer
         // screen: it gets the case-lock look, with no desktop wallpaper (UX pass, 2026-11-12)
         const caseLock = isCaseLockTarget((this.params.lockable || this.params.sprite)?.scenarioData);
 
         this.gameContainer.innerHTML = `
-            <div class="password-minigame-area${caseLock ? ' case-lock' : ''}">
+            <div class="password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}${caseLock ? ' case-lock' : ''}">
                 ${imageData ? `
                     <div class="password-image-section">
                         <img src="/break_escape/assets/objects/${escapeHtml(imageData.imageFile)}.png" 
@@ -325,12 +344,13 @@ export class PasswordMinigame extends MinigameScene {
                 <div class="monitor-bezel">
                     <div class="monitor-screen">
                         <div class="password-input-container">
+                            ${promptTitle ? `<div class="password-prompt-title">${escapeHtml(displayDashes(promptTitle))}</div>` : ''}
                             <label for="password-field">${escapeHtml(displayDashes(fieldLabel))}</label>
                             <div class="password-field-wrapper">
                                 <input type="${this.gameData.showPassword ? 'text' : 'password'}" 
                                        id="password-field" 
                                        class="password-field"
-                                       placeholder="Enter password..."
+                                       placeholder="${this.join ? 'Enter key...' : 'Enter password...'}"
                                        maxlength="50">
                                 <button type="button" class="toggle-password-btn" id="toggle-password">
                                     <img class="icon-small" src="/break_escape/assets/icons/${this.gameData.showPassword ? 'visible.png' : 'hidden.png'}" alt="Toggle password visibility">
@@ -356,7 +376,7 @@ export class PasswordMinigame extends MinigameScene {
                 
                 ${this.gameData.showPostit && this.gameData.postitNote ? `
                     <div class="postit-note">
-                        ${escapeHtml(displayDashes(this.gameData.postitNote))}
+                        ${escapeHtmlKeepWords(displayDashes(this.gameData.postitNote))}
                     </div>
                 ` : ''}
                 
@@ -944,7 +964,7 @@ export class PasswordMinigame extends MinigameScene {
                 <button type="button" class="signin-tile signin-other" data-tile-index="other" title="Other user">
                     <span class="signin-portrait signin-portrait-initials">?</span>
                     <span class="signin-name">Other user</span>
-                    <span class="signin-username">type a username</span>
+                    <span class="signin-username">type a name</span>
                 </button>
             </div>`;
         const current = s.current
@@ -987,7 +1007,7 @@ export class PasswordMinigame extends MinigameScene {
                     </div>
                 </div>
                 ${this.gameData.showPostit && this.gameData.postitNote ? `
-                    <div class="postit-note">${escapeHtml(this.gameData.postitNote)}</div>
+                    <div class="postit-note">${escapeHtmlKeepWords(this.gameData.postitNote)}</div>
                 ` : ''}
             </div>
         `;
@@ -1186,13 +1206,34 @@ export class PasswordMinigame extends MinigameScene {
         this.showSuccess(escapeHtml(`Signed in as ${session?.displayName || session?.username}`), true, 800);
     }
 
+    /**
+     * A lockout: the server's message once, on the screen's own message line (no toast and
+     * no failure box over it, which showed the same words three times and covered the PC
+     * title) and the form disabled. The screen stays open until the player closes it, so the
+     * reason (and any wait it names) can be read at any pace; it closed itself after 2.5 s
+     * (code review R1 m2). The Cancel button becomes Close.
+     */
     signInLockedOut(result) {
         this.cleanup();
         if (window.playUISound) window.playUISound('reject');
         const message = signInRefusalMessage(result);
         this.setSignInMessage(message, 'error');
         this.gameResult = { success: false, reason: 'locked_out' };
-        window.gameAlert?.(message, 'error', 'Locked out', 4000);
-        this.showFailure(escapeHtml(message), true, 1500);
+        this.gameContainer?.querySelectorAll('.signin-mode input, .signin-mode button').forEach(el => { el.disabled = true; });
+        // cleanup() took every listener, the closes too: put the player's closes back
+        const closeByPlayer = (e) => { e?.preventDefault?.(); e?.stopPropagation?.(); this.closeByPlayer(); };
+        const cancel = document.getElementById('minigame-cancel');
+        if (cancel) {
+            cancel.textContent = 'Close';
+            cancel.disabled = false;
+            this.addEventListener(cancel, 'click', closeByPlayer);
+            cancel.focus?.();
+        }
+        const cross = document.getElementById('minigame-close');
+        if (cross && this.params.disableClose !== true) this.addEventListener(cross, 'click', closeByPlayer);
+        if (this.params.disableClose !== true) {
+            this._fallbackCloseHandler = (e) => { if (e.key === 'Escape') this.closeByPlayer(); };
+            document.addEventListener('keydown', this._fallbackCloseHandler);
+        }
     }
 }

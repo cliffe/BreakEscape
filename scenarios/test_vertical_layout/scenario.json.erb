@@ -18,6 +18,8 @@
         {
           "type": "key",
           "name": "Office 1 Key",
+          "opens_lock": "office1_key",
+          "keyPins": [45, 25, 55, 35],
           "takeable": true,
           "observations": "A key labeled 'Office 1'"
         }
@@ -28,6 +30,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "office1_key",
+      "keyPins": [45, 25, 55, 35],
       "connections": {
         "south": "reception",
         "north": "ceo"
@@ -36,6 +39,8 @@
         {
           "type": "key",
           "name": "CEO Office Key",
+          "opens_lock": "ceo_key",
+          "keyPins": [40, 60, 30, 50],
           "takeable": true,
           "observations": "A golden key for the CEO office"
         }
@@ -62,6 +67,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "ceo_key",
+      "keyPins": [40, 60, 30, 50],
       "connections": {
         "south": ["office1", "office2"]
       },

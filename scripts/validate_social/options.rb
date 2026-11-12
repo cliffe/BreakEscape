@@ -296,7 +296,7 @@ module ValidateSocial
 
       hint = lockable['lockedHint']
       if !hint.is_a?(String) || hint.strip.empty?
-        return ["❌ SOCIAL: #{path} lockedHint must be a non-empty string (got #{type_name(hint)}); " \
+        return ["❌ ERROR: SOCIAL: #{path} lockedHint must be a non-empty string (got #{type_name(hint)}); " \
                 'the engine drops anything else and shows the plain "Requires key" line']
       end
       locked = lockable.key?('locked') ? lockable['locked'] : fallback&.dig('locked')

@@ -26,6 +26,7 @@ put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
 copy('utils/lock-scope-refusal.js');
+copy('utils/computer-keywords.js');
 copy('utils/author-html.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/password/password-minigame.js');
@@ -34,7 +35,8 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const {
-    PasswordMinigame, applyTilePortrait, isTalkSheetSize, tileInitials, portraitUrl, signInRefusalMessage, signInErrorMessage, capturedSignIns
+    PasswordMinigame, applyTilePortrait, isTalkSheetSize, tileInitials, portraitUrl, signInRefusalMessage, signInErrorMessage, capturedSignIns,
+    passwordScreenKind
 } = await import(pathToFileURL(join(dir, 'minigames/password/password-minigame.js')));
 
 const TILES = [
@@ -43,7 +45,7 @@ const TILES = [
 ];
 
 let ended, signIns, nextResult, alerts;
-function open({ picker = 'accounts', tiles = TILES } = {}) {
+function open({ picker = 'accounts', tiles = TILES, postitNote = 'Sam: sokafor / x' } = {}) {
     ended = []; signIns = []; alerts = [];
     document.body.innerHTML = '<div id="mg"></div>';
     window.MinigameFramework = { currentMinigame: null, endMinigame: (success, result) => ended.push([success, result]) };
@@ -58,7 +60,7 @@ function open({ picker = 'accounts', tiles = TILES } = {}) {
     const mg = new PasswordMinigame(document.getElementById('mg'), {
         title: 'Hot desk PC', lockable: { scenarioData: { id: 'hot_desk' } }, type: 'item',
         signIn: { pcId: 'hot_desk', pcName: 'Hot desk PC', picker, tiles, current: null },
-        postitNote: 'Sam: sokafor / x', showPostit: true
+        postitNote, showPostit: true
     });
     window.MinigameFramework.currentMinigame = mg;
     mg.init();
@@ -84,6 +86,13 @@ test('tiles for each account plus Other user; choosing a tile shows only the pas
     assert.equal(mg.getTestState().signIn.otherUser, true);
     assert.ok(q('.postit-note').textContent.includes('Sam: sokafor'), "the PC's own post-it");
     assert.equal(q('.attempts-counter'), null, 'no attempts counter of its own');
+});
+
+test('the post-it never breaks a word across lines: each word is a keep-whole span (UX access R1 finding 7)', () => {
+    open({ postitNote: 'Omar: ohaddad / Cedar-Omar-58 <b>' });
+    const words = [...document.querySelectorAll('.postit-note .keep-whole')].map(el => el.textContent);
+    assert.deepEqual(words, ['Omar:', 'ohaddad', '/', 'Cedar-Omar-58', '<b>']);
+    assert.equal(q('.postit-note b'), null, 'still escaped');
 });
 
 test('loginPicker false: no tiles, the username field from the start', () => {
@@ -125,7 +134,21 @@ test('it stops only on a lockout, with the server\'s message', async () => {
     await mg.submitPassword();
     assert.equal(messageText(), 'This account is locked on this PC.');
     assert.deepEqual(mg.gameResult, { success: false, reason: 'locked_out' });
-    assert.ok(alerts.some(a => a[0] === 'This account is locked on this PC.'));
+    // Shown once (UX access R1 finding 2): the message line only, no toast, no failure box
+    assert.equal(alerts.length, 0, 'no toast');
+    assert.equal(document.querySelectorAll('.minigame-failure-message').length, 0, 'no failure box');
+    assert.ok(q('#password-field').disabled && q('#submit-password').disabled, 'the form is disabled');
+    // Code review R1 m2: the screen stays open until the player closes it
+    await new Promise((r) => setTimeout(r, 3000));
+    assert.equal(ended.length, 0, 'not closed by itself');
+    assert.equal(mg.gameState.isActive, true);
+    assert.equal(messageText(), 'This account is locked on this PC.', 'the reason is still on screen');
+    const close = q('#minigame-cancel');
+    assert.equal(close.textContent, 'Close');
+    assert.equal(close.disabled, false);
+    close.click();
+    assert.equal(ended.length, 1, 'Close ends it');
+    assert.equal(ended[0][0], false);
 });
 
 test('not permitted keeps the screen open with the server\'s message, and no letter-case hint ever shows', async () => {
@@ -330,4 +353,24 @@ test('9.3a: a remote sign-in sends the foothold through pc-sessions', async () =
     await mg.submitPassword();
     assert.deepEqual(signIns, [['lena_pc', 'lfox', 'Ledger-Lena-9', { foothold: 'jack_comms_port' }]]);
     assert.equal(messageText(), 'Remote sign-in is turned off on this PC.');
+});
+
+test('UX access R2: a Wi-Fi key and a non-computer lock get the plain prompt; a computer keeps its screen', () => {
+    assert.equal(passwordScreenKind({ join: { apId: 'guest_ap', apName: 'Guest Wi-Fi' } }), 'prompt');
+    assert.equal(passwordScreenKind({ lockable: { scenarioData: { type: 'zip_archive' } } }), 'prompt');
+    assert.equal(passwordScreenKind({ lockable: { scenarioData: { type: 'safe' } } }), 'prompt');
+    assert.equal(passwordScreenKind({}), 'prompt');
+    for (const type of ['pc', 'pc3', 'laptop', 'workstation', 'lab-workstation', 'osint-workstation', 'kiosk', 'tablet', 'mail_terminal', 'smartscreen']) {
+        assert.equal(passwordScreenKind({ lockable: { scenarioData: { type } } }), 'screen', type);
+    }
+    // Code review R1 m3: the container's desktop keywords, as whole segments of the type
+    for (const type of ['security_console', 'mainframe', 'ipad', 'monitor', 'smartboard', 'display2']) {
+        assert.equal(passwordScreenKind({ lockable: { scenarioData: { type } } }), 'screen', type);
+    }
+    // a door or a room named for a server room, a room type, a word with pc inside: the plain panel
+    for (const type of ['door', 'room_servers', 'npc', 'spcial_case', 'monitoring']) {
+        assert.equal(passwordScreenKind({ lockable: { scenarioData: { type, name: 'Server Room' } } }), 'prompt', type);
+    }
+    // a launch that passes only the sprite: its texture key counts
+    assert.equal(passwordScreenKind({ lockable: { texture: { key: 'laptop2' } } }), 'screen');
 });

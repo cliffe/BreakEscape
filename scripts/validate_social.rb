@@ -89,11 +89,11 @@ module ValidateSocial
   end
 
   # Splits json-schema messages into [social issue strings, the other messages]. A message about
-  # a path under #/social (the closed social schema in scenario-schema.json) becomes a "❌ SOCIAL:
+  # a path under #/social (the closed social schema in scenario-schema.json) becomes a "❌ ERROR: SOCIAL:
   # schema:" issue, without the gem's "in schema <uuid>" tail.
   def self.split_schema_errors(errors)
     social, other = Array(errors).partition { |e| e.to_s.match?(%r{'#/social(?:/|')}) }
-    [social.map { |e| "❌ SOCIAL: schema: #{e.to_s.sub(/ in schema [0-9a-f-]+#?\s*\z/, '')}" }, other]
+    [social.map { |e| "❌ ERROR: SOCIAL: schema: #{e.to_s.sub(/ in schema [0-9a-f-]+#?\s*\z/, '')}" }, other]
   end
 
   # ---- scenario walking ----------------------------------------------------
@@ -129,12 +129,12 @@ module ValidateSocial
         # _comment and other underscore keys are notes; the engine never reads them
         next if AIM_UNLOCK_KEYS.include?(k) || k.to_s.start_with?('_')
 
-        issues << "❌ SOCIAL: /objectives[#{i}] (aim '#{aim['aimId']}') unlockCondition key '#{k}' is not supported " \
+        issues << "❌ ERROR: SOCIAL: /objectives[#{i}] (aim '#{aim['aimId']}') unlockCondition key '#{k}' is not supported " \
                   "(allowed: #{AIM_UNLOCK_KEYS.join(', ')}); the engine treats an unknown key as always met, so the aim would be unlocked from the start"
       end
       # equals is read only beside globalVariable; alone, the condition is always met
       if cond.key?('equals') && !cond['globalVariable'] && !cond['aimCompleted'] && !cond['aimsCompleted'].is_a?(Array)
-        issues << "❌ SOCIAL: /objectives[#{i}] (aim '#{aim['aimId']}') unlockCondition has 'equals' without 'globalVariable'; " \
+        issues << "❌ ERROR: SOCIAL: /objectives[#{i}] (aim '#{aim['aimId']}') unlockCondition has 'equals' without 'globalVariable'; " \
                   'the engine treats it as always met, so the aim would be unlocked from the start'
       end
     end
@@ -153,7 +153,7 @@ module ValidateSocial
       end
     end
     seen.select { |_, where| where.length > 1 }.map do |id, where|
-      "❌ SOCIAL: object id '#{id}' is used more than once (#{where.join(', ')}); " \
+      "❌ ERROR: SOCIAL: object id '#{id}' is used more than once (#{where.join(', ')}); " \
         "the unlock endpoint takes the first hit by id, so the others could never be unlocked"
     end
   end
@@ -196,7 +196,7 @@ module ValidateSocial
 
       t = obj['type']
       if SOCIAL_OBJECT_TYPES.include?(t) && !types.include?(t)
-        issues << "❌ SOCIAL: '#{path}' has social object type '#{t}' but assets/objects/#{t}.png does not exist"
+        issues << "❌ ERROR: SOCIAL: '#{path}' has social object type '#{t}' but assets/objects/#{t}.png does not exist"
       end
       %w[contents itemsHeld].each { |k| Array(obj[k]).each_with_index { |c, i| walk.call(c, "#{path}/#{k}[#{i}]") } }
     end
@@ -217,9 +217,9 @@ module ValidateSocial
     issues = []
     check = lambda do |name, why|
       if ctx.import_names.include?(name)
-        issues << "❌ SOCIAL: global '#{name}' (#{why}) is imported (importGlobals), but the social system writes it; declare it in globalVariables instead"
+        issues << "❌ ERROR: SOCIAL: global '#{name}' (#{why}) is imported (importGlobals), but the social system writes it; declare it in globalVariables instead"
       elsif !ctx.own_globals.key?(name)
-        issues << "❌ SOCIAL: global '#{name}' (#{why}) is not declared in globalVariables; an undeclared name is silently not synced to ink"
+        issues << "❌ ERROR: SOCIAL: global '#{name}' (#{why}) is not declared in globalVariables; an undeclared name is silently not synced to ink"
       end
     end
     characters_hash(ctx).each do |id, ch|
@@ -395,10 +395,10 @@ module ValidateSocial
         file, line, ar = decls.first
         rel = file.sub("#{ctx.repo_root}/", '')
         if !funcs.key?(name)
-          issues << "❌ SOCIAL: #{rel}:#{line} declares EXTERNAL #{name} but the story has no '=== function #{name}(...) ===' fallback; " \
+          issues << "❌ ERROR: SOCIAL: #{rel}:#{line} declares EXTERNAL #{name} but the story has no '=== function #{name}(...) ===' fallback; " \
                     'an unbound external throws on the first Continue()'
         elsif funcs[name] != ar
-          issues << "❌ SOCIAL: #{rel}:#{line} EXTERNAL #{name} takes #{ar} argument(s) but its fallback function takes #{funcs[name]}"
+          issues << "❌ ERROR: SOCIAL: #{rel}:#{line} EXTERNAL #{name} takes #{ar} argument(s) but its fallback function takes #{funcs[name]}"
         end
       end
     end
@@ -426,7 +426,7 @@ module ValidateSocial
       synced.each do |v|
         next if ctx.all_globals.key?(v)
 
-        issues << "❌ SOCIAL: #{where}.syncedVars lists '#{v}', which is not declared in globalVariables"
+        issues << "❌ ERROR: SOCIAL: #{where}.syncedVars lists '#{v}', which is not declared in globalVariables"
       end
 
       # each channel story declares the influence VAR; the VARs it names match type and default
@@ -434,7 +434,7 @@ module ValidateSocial
         vars = ink_vars(ink_files(src))
         rel = src.sub("#{ctx.repo_root}/", '')
         unless vars.key?(infl_global)
-          issues << "❌ SOCIAL: #{where} channel '#{chan}' (#{label}, #{rel}) does not declare VAR #{infl_global}"
+          issues << "❌ ERROR: SOCIAL: #{where} channel '#{chan}' (#{label}, #{rel}) does not declare VAR #{infl_global}"
         end
         ([infl_global] + synced).uniq.each do |v|
           next unless vars.key?(v) && ctx.all_globals.key?(v)
@@ -442,9 +442,9 @@ module ValidateSocial
           src_lit, ty = vars[v]
           decl = ctx.all_globals[v]
           if ty && value_type(decl) && ty != value_type(decl)
-            issues << "❌ SOCIAL: #{rel} VAR #{v} is #{ty} but globalVariables declares #{decl.inspect} (#{value_type(decl)})"
+            issues << "❌ ERROR: SOCIAL: #{rel} VAR #{v} is #{ty} but globalVariables declares #{decl.inspect} (#{value_type(decl)})"
           elsif ty && !literal_matches?(src_lit, decl)
-            issues << "❌ SOCIAL: #{rel} VAR #{v} = #{src_lit} but globalVariables declares #{decl.inspect}; the default must match"
+            issues << "❌ ERROR: SOCIAL: #{rel} VAR #{v} = #{src_lit} but globalVariables declares #{decl.inspect}; the default must match"
           end
         end
         vars.each_key do |v|
@@ -457,7 +457,7 @@ module ValidateSocial
       # thresholds ordered
       ids = thresholds.map { |t| t['id'] }
       dup = ids.compact.group_by(&:itself).select { |_, v| v.length > 1 }.keys
-      dup.each { |d| issues << "❌ SOCIAL: #{where}.thresholds has the id '#{d}' more than once" }
+      dup.each { |d| issues << "❌ ERROR: SOCIAL: #{where}.thresholds has the id '#{d}' more than once" }
       below = thresholds.select { |t| number?(t['at']) && threshold_when(t) == 'below' }
       above = thresholds.select { |t| number?(t['at']) && threshold_when(t) == 'above' }
       ordered = lambda do |list, dir, label|
@@ -465,18 +465,18 @@ module ValidateSocial
         ok = dir == :desc ? ats.each_cons(2).all? { |a, b| a >= b } : ats.each_cons(2).all? { |a, b| a <= b }
         next if ok
 
-        issues << "❌ SOCIAL: #{where}.thresholds are not ordered: #{label} thresholds must run #{dir == :desc ? 'from the mildest (highest at) to the most severe (lowest at)' : 'from the lowest at to the highest'} (got #{ats.join(', ')})"
+        issues << "❌ ERROR: SOCIAL: #{where}.thresholds are not ordered: #{label} thresholds must run #{dir == :desc ? 'from the mildest (highest at) to the most severe (lowest at)' : 'from the lowest at to the highest'} (got #{ats.join(', ')})"
       end
       ordered.call(below, :desc, '"below"')
       ordered.call(above, :asc, '"above"')
       thresholds.each_with_index do |t, i|
-        issues << "❌ SOCIAL: #{where}.thresholds[#{i}] needs a numeric 'at'" unless number?(t['at'])
+        issues << "❌ ERROR: SOCIAL: #{where}.thresholds[#{i}] needs a numeric 'at'" unless number?(t['at'])
       end
       if number?(infl['min']) && number?(infl['max']) && infl['min'] >= infl['max']
-        issues << "❌ SOCIAL: #{where}.influence min (#{infl['min']}) must be below max (#{infl['max']})"
+        issues << "❌ ERROR: SOCIAL: #{where}.influence min (#{infl['min']}) must be below max (#{infl['max']})"
       end
       if number?(infl['min']) && number?(infl['max']) && number?(infl['start']) && !(infl['min']..infl['max']).cover?(infl['start'])
-        issues << "❌ SOCIAL: #{where}.influence start (#{infl['start']}) lies outside min..max"
+        issues << "❌ ERROR: SOCIAL: #{where}.influence start (#{infl['start']}) lies outside min..max"
       end
       # influence.start agrees with the influence global's initial value and each channel story's
       # VAR default. The engine reads the global first and falls back to start, so a mismatch
@@ -484,7 +484,7 @@ module ValidateSocial
       if number?(infl['start'])
         decl = ctx.all_globals[infl_global]
         if ctx.all_globals.key?(infl_global) && number?(decl) && decl.to_f != infl['start'].to_f
-          issues << "❌ SOCIAL: #{where}.influence start (#{infl['start']}) does not match globalVariables #{infl_global} (#{decl}); " \
+          issues << "❌ ERROR: SOCIAL: #{where}.influence start (#{infl['start']}) does not match globalVariables #{infl_global} (#{decl}); " \
                     'the game starts the meter at the global, so make the two agree'
         end
         unless ctx.all_globals.key?(infl_global)
@@ -493,7 +493,7 @@ module ValidateSocial
             next unless ty == :number && !literal_matches?(src_lit, infl['start'])
 
             rel = src.sub("#{ctx.repo_root}/", '')
-            issues << "❌ SOCIAL: #{rel} VAR #{infl_global} = #{src_lit} but #{where}.influence start is #{infl['start']} " \
+            issues << "❌ ERROR: SOCIAL: #{rel} VAR #{infl_global} = #{src_lit} but #{where}.influence start is #{infl['start']} " \
                       "(channel '#{chan}', #{label}); the default must match"
           end
         end
@@ -508,7 +508,7 @@ module ValidateSocial
           bool_value = e['value'] == true || e['value'] == false
           bool_decl = decl == true || decl == false
           unless bool_value && (bool_decl || !ctx.all_globals.key?(e['global']))
-            issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' sets clearOnRearm on '#{e['global']}', which is not a boolean " \
+            issues << "❌ ERROR: SOCIAL: #{where} threshold '#{t['id']}' sets clearOnRearm on '#{e['global']}', which is not a boolean " \
                       "(value #{e['value'].inspect}, declared default #{decl.inspect}); only boolean band flags can clear on re-arm"
           end
         end
@@ -524,17 +524,17 @@ module ValidateSocial
           until_v = e['until']
           has_expiry = until_v.is_a?(Hash) && (number?(until_v['afterMinutes']) || until_v['global'].is_a?(String))
           if until_v.is_a?(Hash) && until_v.key?('afterMinutes') && !(number?(until_v['afterMinutes']) && until_v['afterMinutes'].positive?)
-            issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' lockout until.afterMinutes must be a positive number"
+            issues << "❌ ERROR: SOCIAL: #{where} threshold '#{t['id']}' lockout until.afterMinutes must be a positive number"
           end
           if until_v.is_a?(Hash) && until_v['global'].is_a?(String) && !ctx.all_globals.key?(until_v['global'])
-            issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' lockout until.global '#{until_v['global']}' is not declared in globalVariables"
+            issues << "❌ ERROR: SOCIAL: #{where} threshold '#{t['id']}' lockout until.global '#{until_v['global']}' is not declared in globalVariables"
           end
           if !has_expiry && !(e['alternativeRoute'] || ch['alternativeRoute'])
-            issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' has a lockout with no expiry (until must be {afterMinutes} or {global}) " \
+            issues << "❌ ERROR: SOCIAL: #{where} threshold '#{t['id']}' has a lockout with no expiry (until must be {afterMinutes} or {global}) " \
                       'and no alternativeRoute; a failed attempt could block the critical path for good'
           end
           if !%w[channel character].include?(e['scope'])
-            issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' lockout scope must be 'channel' or 'character'"
+            issues << "❌ ERROR: SOCIAL: #{where} threshold '#{t['id']}' lockout scope must be 'channel' or 'character'"
           end
           if a
             # the same default as the engine (social-influence.js normaliseCharacter and
@@ -545,9 +545,9 @@ module ValidateSocial
             end
             rec = e.key?('recoverTo') ? e['recoverTo'] : default_start
             if !number?(rec)
-              issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' lockout recoverTo must be a number (got #{rec.inspect})"
+              issues << "❌ ERROR: SOCIAL: #{where} threshold '#{t['id']}' lockout recoverTo must be a number (got #{rec.inspect})"
             elsif rec < a + margin
-              issues << "❌ SOCIAL: #{where} threshold '#{t['id']}' lockout recoverTo #{rec} is below #{a + margin} " \
+              issues << "❌ ERROR: SOCIAL: #{where} threshold '#{t['id']}' lockout recoverTo #{rec} is below #{a + margin} " \
                         "(highest below-threshold 'at' #{a} + rearmMargin #{margin}); the character would come back still wary"
             end
           end
@@ -567,12 +567,12 @@ module ValidateSocial
   # and a warning for number: true beside bar: false. Per-mount behaviour is the bar's job
   # (ui/influence-bar.js), not the validator's.
   def self.influence_display_lint(obj, where)
-    return ["❌ SOCIAL: #{where} must be an object with the keys bar, number, pip"] unless obj.is_a?(Hash)
+    return ["❌ ERROR: SOCIAL: #{where} must be an object with the keys bar, number, pip"] unless obj.is_a?(Hash)
 
     issues = []
     obj.each do |k, v|
-      issues << "❌ SOCIAL: #{where} has the key '#{k}'; only bar, number and pip are allowed" unless %w[bar number pip].include?(k)
-      issues << "❌ SOCIAL: #{where}.#{k} must be true or false" if %w[bar number pip].include?(k) && v != true && v != false
+      issues << "❌ ERROR: SOCIAL: #{where} has the key '#{k}'; only bar, number and pip are allowed" unless %w[bar number pip].include?(k)
+      issues << "❌ ERROR: SOCIAL: #{where}.#{k} must be true or false" if %w[bar number pip].include?(k) && v != true && v != false
     end
     issues << "⚠️ SOCIAL: #{where} sets number: true beside bar: false; bar: false hides the number too" if obj['number'] == true && obj['bar'] == false
     issues

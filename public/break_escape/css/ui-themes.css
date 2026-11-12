@@ -898,8 +898,13 @@
   color: var(--ui-accent);
 }
 
+/* The confirm dialog's Cancel is a real choice beside Confirm: plain button text on the same
+   button art, no dimming filter (it read as disabled, UX access R1 finding 12) */
+[data-ui-theme] .game-confirm-cancel {
+  color: var(--ui-button-text);
+}
+
 [data-ui-theme] .tutorial-btn-secondary,
-[data-ui-theme] .game-confirm-cancel,
 [data-ui-theme] #password-modal-cancel,
 [data-ui-theme] .modal-button.secondary,
 [data-ui-theme] .player-preferences-modal-content .btn-secondary {
@@ -955,12 +960,12 @@
 [data-ui-theme] .minigame-success-message {
   color: var(--ui-success);
   border-color: var(--ui-success);
-  box-shadow: 0 0 0 2px var(--ui-bar-outline), 0 0 16px color-mix(in srgb, var(--ui-success) 40%, transparent);
+  box-shadow: 0 0 0 2px var(--ui-bar-outline);   /* a hard 2px outline, no soft glow (pixel-art UI) */
 }
 [data-ui-theme] .minigame-failure-message {
   color: var(--ui-danger);
   border-color: var(--ui-danger);
-  box-shadow: 0 0 0 2px var(--ui-bar-outline), 0 0 16px color-mix(in srgb, var(--ui-danger) 40%, transparent);
+  box-shadow: 0 0 0 2px var(--ui-bar-outline);   /* a hard 2px outline, no soft glow (pixel-art UI) */
 }
 
 

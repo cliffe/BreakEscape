@@ -7,7 +7,7 @@
  * never by an object type, an ink tag or an openMinigame mapping, so it has no entry in
  * the minigame registry.
  *
- *   header        the link's name and its network ("Drop box: comms room, on Harbour office
+ *   header        the link's name (its own network is the first block's heading; was "Drop box: comms room, on Harbour office
  *                 LAN"), the link item's observations, and an optional one-line message
  *   a host row    host label, name and one action, decided in this order:
  *                   1. "remote sign-in off" when the PC's policy blocks it (no control);
@@ -50,6 +50,27 @@ const KIND_ICONS = {
     file_share: '/break_escape/assets/objects/m09_folder1.png',
     printer: '/break_escape/assets/icons/npc-print.png'
 };
+
+// The order rows are shown in (UX access R1 finding 10): computers, then shares, then
+// printers and other devices, each group by its name. The server's order is the scenario's.
+const KIND_RANK = { pc: 0, file_share: 1, printer: 2 };
+const KIND_GROUPS = { pc: 'Computers', file_share: 'File shares', printer: 'Printers and devices' };
+const rowLabel = (r) => String((r?.kind === 'pc' ? (r.host || r.id) : (r?.name || r?.id)) || '');
+const rowRank = (r) => KIND_RANK[r?.kind] ?? 3;
+
+/** Rows in display order: by kind, then by name (numbers compared as numbers). Exported for tests. */
+export function displayOrder(rows) {
+    return [...(rows || [])].sort((a, b) => (rowRank(a) - rowRank(b))
+        || rowLabel(a).localeCompare(rowLabel(b), 'en', { numeric: true, sensitivity: 'base' }));
+}
+
+/**
+ * The link's observations as the view's subtitle: the item's "Open it to see what it
+ * reaches." is for the inventory, and reads wrong once the view is open. Exported for tests.
+ */
+export function viewObservations(text) {
+    return String(text || '').replace(/\s*Open it to see what it reaches\.?\s*$/i, '').trim();
+}
 
 /**
  * The action a host row offers (4.3), in the plan's order: 'not_responding' (the host's own
@@ -202,19 +223,25 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** One further-network block (up: live controls; down: greyed "No route" rows). */
     blockSectionHtml(block) {
-        const via = block.via ? ` — through ${escapeHtml(block.via.host || block.via.hostId || '')}` : '';
+        const via = block.via ? `, through ${escapeHtml(block.via.host || block.via.hostId || '')}` : '';
         if (block.route === 'down') {
-            const rows = this.blockRows(block).map(r => `
-                <li class="network-row network-row-host network-row-down" data-kind="pc">
-                    <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
+            // Each row drawn as its own kind, under the same group headings as an up block
+            // (code review R1 n3: every row was drawn as a PC, so a share sorted after the
+            // computers with nothing to say why)
+            const rows = this.rowsHtml(this.blockRows(block), (r) => {
+                const kind = KIND_ICONS[r.kind] ? r.kind : 'pc';
+                return `
+                <li class="network-row network-row-host network-row-down" data-kind="${escapeHtml(kind)}">
+                    <img class="network-row-icon" src="${KIND_ICONS[kind]}" alt="">
                     <span class="network-row-label"><strong>${escapeHtml(r.host || r.id)}</strong>
                         <span class="network-row-name">${escapeHtml(r.name || '')}</span></span>
                     <span class="network-row-control"><span class="network-row-off">No route to ${escapeHtml(r.host || r.id)}</span></span>
-                </li>`).join('');
+                </li>`;
+            });
             return `<div class="network-block network-block-down"><h5 class="network-block-title">${escapeHtml(block.name || block.id)} (no route)</h5><ul class="network-view-rows">${rows}</ul></div>`;
         }
         const rows = this.blockRows(block);
-        const body = rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>';
+        const body = rows.length ? this.rowsHtml(rows) : '<li class="network-row-empty">Nothing answers on this network.</li>';
         return `<div class="network-block network-block-up"><h5 class="network-block-title">${escapeHtml(block.name || block.id)}${via}</h5><ul class="network-view-rows">${body}</ul></div>`;
     }
 
@@ -223,6 +250,19 @@ export class NetworkViewMinigame extends MinigameScene {
         const itemId = this.links()?.get?.(this.footholdId)?.itemId || `netlink_${this.footholdId}`;
         const item = (window.inventory?.items || []).find(it => it?.scenarioData?.id === itemId);
         return item?.scenarioData?.observations || '';
+    }
+
+    /** Rows in display order, with a group heading wherever the kind changes and more than one kind is listed. */
+    rowsHtml(rows, rowFn = (r) => this.rowHtml(r)) {
+        const ordered = displayOrder(rows);
+        const groups = new Set(ordered.map(r => KIND_GROUPS[r.kind] || 'Other devices'));
+        let last = null;
+        return ordered.map(r => {
+            const group = KIND_GROUPS[r.kind] || 'Other devices';
+            const head = groups.size > 1 && group !== last ? `<li class="network-row-group">${group}</li>` : '';
+            last = group;
+            return head + rowFn(r);
+        }).join('');
     }
 
     rowHtml(row) {
@@ -241,8 +281,10 @@ export class NetworkViewMinigame extends MinigameScene {
             } else {
                 control = '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
             }
+            // A PC that is off or not answering is greyed like a no-route row (UX access R2)
+            const down = action === 'not_responding' || action === 'off' ? ' network-row-down' : '';
             return `
-                <li class="network-row network-row-host" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
+                <li class="network-row network-row-host${down}" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
                     <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
                     <span class="network-row-label"><strong>${escapeHtml(row.host || row.id)}</strong>
                         <span class="network-row-name">${escapeHtml(row.name || '')}</span></span>
@@ -254,8 +296,10 @@ export class NetworkViewMinigame extends MinigameScene {
         let control;
         const action = resourceAction(row);
         if (action !== 'observe') {
+            // A locked share: a padlock badge where other rows have a button, and the reason
+            // under the share's name as a plain line (not three lines of italics)
             control = action === 'locked'
-                ? `<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt="Locked"> ${SHARE_LOCKED_TEXT}</span>`
+                ? '<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> Locked</span>'
                 : '<button type="button" class="minigame-button network-row-action" data-action="open">Open</button>';
         } else {
             control = '<button type="button" class="minigame-button network-row-action" data-action="observe">Look</button>';
@@ -264,15 +308,20 @@ export class NetworkViewMinigame extends MinigameScene {
                 <li class="network-row network-row-resource" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
                     <img class="network-row-icon" src="${icon}" alt="">
                     <span class="network-row-label"><strong>${escapeHtml(row.name || row.id)}</strong>
-                        <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on ${escapeHtml(row.host)}` : ''}</span></span>
+                        <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on ${escapeHtml(row.host)}` : ''}</span>${action === 'locked' ? `
+                        <span class="network-row-note">${SHARE_LOCKED_TEXT}</span>` : ''}</span>
                     <span class="network-row-control">${control}</span>
                 </li>`;
     }
 
     render() {
         const v = this.view || {};
-        const title = v.network?.name ? `${v.name || 'Your link'}, on ${v.network.name}` : (v.name || 'Your link');
-        const obs = this.linkObservations();
+        // UX access R2: the link's name alone as the title; its own network is a block heading
+        // like any further network's, so "Wi-Fi: Guest Wi-Fi, on Guest Wi-Fi" no longer repeats
+        // and the office network is named beside the networks reached through it.
+        const title = v.name || 'Your link';
+        const ownName = v.network?.name || '';
+        const obs = viewObservations(this.linkObservations());
         const rows = this.rows();
         this.gameContainer.innerHTML = `
             <div class="network-view">
@@ -282,11 +331,14 @@ export class NetworkViewMinigame extends MinigameScene {
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
                     ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}
                 </div>
-                ${(v.responding !== false && !rows.length && this.ownDownBlock()) ? '' : `<ul class="network-view-rows">
+                ${(v.responding !== false && !rows.length && this.ownDownBlock()) ? '' : `<div class="network-block network-block-own">
+                    ${ownName ? `<h5 class="network-block-title">${escapeHtml(ownName)}</h5>` : ''}
+                    <ul class="network-view-rows">
                     ${v.responding === false
                         ? `<li class="network-row-empty network-row-off">${escapeHtml(linkOffText(v.sourceHost))}</li>`
-                        : (rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>')}
-                </ul>`}
+                        : (rows.length ? this.rowsHtml(rows) : '<li class="network-row-empty">Nothing answers on this network.</li>')}
+                    </ul>
+                </div>`}
                 ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
                 <div class="network-view-notice" aria-live="polite"></div>
             </div>`;
