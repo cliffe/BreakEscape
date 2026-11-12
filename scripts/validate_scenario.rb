@@ -250,7 +250,12 @@ def validate_grant_foothold_actions(schema, json_data)
           end
         end
       end
-      node.each { |k, v| walk.call(v, "#{pointer}/#{k.to_s.gsub('~', '~0').gsub('/', '~1')}") }
+      node.each do |k, v|
+        # a "_" key is a note: its value is never checked, whatever it holds
+        next if k.to_s.start_with?('_')
+
+        walk.call(v, "#{pointer}/#{k.to_s.gsub('~', '~0').gsub('/', '~1')}")
+      end
     when Array
       node.each_with_index { |v, i| walk.call(v, "#{pointer}/#{i}") }
     end
@@ -279,8 +284,9 @@ def format_schema_errors(json_data, messages, schema = nil)
     rescue JSON::ParserError
       next
     end
-    known = schema_known_keys(schema, json_data, m[1])
-    keys.each { |k| unknown << [i, m[1], k.to_s, suggest_key(k.to_s, known)] }
+    known = schema_known_keys(schema, json_data, m[1], underscore: true)
+    plain = known.reject { |k| k.start_with?('_') }
+    keys.each { |k| unknown << [i, m[1], k.to_s, suggest_key(k.to_s, plain, known - plain)] }
   end
   suggested = unknown.map { |_, ptr, _, s| [ptr, s] if s }.compact.to_set
   replaced = unknown.map(&:first).to_set
@@ -298,23 +304,27 @@ def format_schema_errors(json_data, messages, schema = nil)
 
     out << format_schema_error(json_data, text)
   end
-  out
+  # One slip can reach json-schema twice (a grant_foothold in triggerOnInteract is checked by the
+  # main schema and again by validate_grant_foothold_actions); the raw messages differ only in
+  # their "in schema" suffix, so the formatted lines are the same and one is kept.
+  out.uniq
 end
 
 # The keys the schema declares for the object at a data pointer (properties of the node and of its
-# allOf/anyOf/oneOf branches), without "_" keys. A grant_foothold action uses its own definition.
-def schema_known_keys(schema, data, pointer)
+# allOf/anyOf/oneOf branches), without "_" keys unless underscore is true. A grant_foothold action
+# uses its own definition.
+def schema_known_keys(schema, data, pointer, underscore: false)
   segs = pointer.sub(%r{\A#/?}, '').split('/').map { |s| s.gsub('~1', '/').gsub('~0', '~') }
   node = data
   segs.each do |seg|
     node = node.is_a?(Hash) ? node[seg] : (node.is_a?(Array) && seg.match?(/\A\d+\z/) ? node[seg.to_i] : nil)
   end
   if node.is_a?(Hash) && node['type'] == 'grant_foothold' && schema.dig('definitions', 'grantFootholdAction')
-    return schema_node_keys(schema, schema['definitions']['grantFootholdAction'])
+    return schema_node_keys(schema, schema['definitions']['grantFootholdAction'], underscore: underscore)
   end
 
   sch = schema_resolve(schema, schema, segs)
-  sch ? schema_node_keys(schema, sch) : []
+  sch ? schema_node_keys(schema, sch, underscore: underscore) : []
 rescue StandardError
   []
 end
@@ -351,24 +361,27 @@ def schema_resolve(root, node, segs)
   nil
 end
 
-def schema_node_keys(root, node)
+def schema_node_keys(root, node, underscore: false)
   node = schema_deref(root, node)
   return [] unless node.is_a?(Hash)
 
   keys = (node['properties'] || {}).keys
-  %w[allOf anyOf oneOf].each { |comb| Array(node[comb]).each { |b| keys.concat(schema_node_keys(root, b)) } }
-  keys.uniq.reject { |k| k.start_with?('_') }
+  %w[allOf anyOf oneOf].each { |comb| Array(node[comb]).each { |b| keys.concat(schema_node_keys(root, b, underscore: true)) } }
+  keys = keys.uniq
+  underscore ? keys : keys.reject { |k| k.start_with?('_') }
 end
 
 # ", did you mean '<k>'?" for an unknown field, or '' when no known key is close.
 def unknown_key_hint(key, known)
-  s = suggest_key(key.to_s, known.reject { |k| k.start_with?('_') })
+  s = suggest_key(key.to_s, known.reject { |k| k.start_with?('_') }, known.select { |k| k.start_with?('_') })
   s ? ", did you mean '#{s}'?" : ''
 end
 
 # The one known key a slip most likely meant: a case-insensitive match, else the single closest key
-# within edit distance 2 (1 for keys under 5 characters). nil when none or more than one is closest.
-def suggest_key(key, known)
+# within edit distance 2 (1 for keys under 5 characters; a swap of two neighbouring letters is one
+# edit). nil when none or more than one is closest. With no such key, a note key written without
+# its "_" ("comment", or any "<k>" whose "_<k>" the block declares) gets "_comment" or "_<k>".
+def suggest_key(key, known, underscore_known = [])
   low = key.downcase
   same = known.select { |k| k.downcase == low }
   return same.first if same.length == 1
@@ -376,23 +389,32 @@ def suggest_key(key, known)
 
   limit = key.length < 5 ? 1 : 2
   scored = known.map { |k| [k, key_edit_distance(low, k.downcase)] }.select { |_, d| d <= limit }
-  return nil if scored.empty?
+  if scored.empty?
+    return nil if key.start_with?('_')
+    return "_#{key}" if underscore_known.include?("_#{key}")
+    return '_comment' if low == 'comment'
+
+    return nil
+  end
 
   best = scored.map(&:last).min
   top = scored.select { |_, d| d == best }
   top.length == 1 ? top.first.first : nil
 end
 
+# Optimal string alignment distance: Levenshtein plus a swap of two neighbouring letters as one edit.
 def key_edit_distance(a, b)
-  prev = (0..b.length).to_a
-  a.each_char.with_index(1) do |ca, i|
-    cur = [i]
-    b.each_char.with_index(1) do |cb, j|
-      cur << [prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca == cb ? 0 : 1)].min
+  d = Array.new(a.length + 1) { |i| Array.new(b.length + 1) { |j| i.zero? ? j : (j.zero? ? i : 0) } }
+  (1..a.length).each do |i|
+    (1..b.length).each do |j|
+      cost = a[i - 1] == b[j - 1] ? 0 : 1
+      d[i][j] = [d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost].min
+      if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1]
+        d[i][j] = [d[i][j], d[i - 2][j - 2] + 1].min
+      end
     end
-    prev = cur
   end
-  prev.last
+  d[a.length][b.length]
 end
 
 # Validate that scenario follows proper directory structure

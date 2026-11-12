@@ -116,14 +116,14 @@ module ValidateNpcHabits
         err(issues, "#{who} habits must be an object of habit names.")
         next
       end
+      # Unknown habit names are the schema's job (npc.habits is closed, "_" keys pass), so a slip
+      # prints one line; this checks only the values of the names it knows.
       habits.each do |name, value|
-        next if name == '_comment'
+        next if name.to_s.start_with?('_')
 
         if NH::PARAMETERS.include?(name)
           err(issues, "#{who} habits.#{name} must be a non-empty string.") unless NH.valid_parameter?(name, value)
-        elsif !NH::HABITS.key?(name)
-          err(issues, "#{who} has unknown habit '#{name}' (known: #{NH::HABITS.keys.join(', ')}).")
-        elsif !NH.valid_habit?(name, value)
+        elsif NH::HABITS.key?(name) && !NH.valid_habit?(name, value)
           err(issues, "#{who} habit '#{name}' has value #{value.inspect}; allowed: #{NH::HABITS[name].map(&:inspect).join(', ')}.")
         end
       end
