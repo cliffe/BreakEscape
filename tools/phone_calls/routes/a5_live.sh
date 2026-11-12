@@ -24,7 +24,7 @@ choose_text() { a2b_ev "const b=[...document.querySelectorAll('.choice-button')]
 wait_screen() { for i in $(seq 1 ${2:-30}); do a2b_ev "return $1;" | grep -qx true && return 0; sleep 1; done; return 1; }
 IN_CALL="!!document.getElementById('call-end-button') && !!document.querySelector('.choice-button')"
 CALLING="(document.getElementById('call-status-bar')||{innerText:''}).innerText.includes('CALLING')"
-start() { AUTOBRIEF=true a2b_open $1; gate clear_basic; a2b_ev "$LOGEV" >/dev/null; }
+start() { AUTOBRIEF=true a2b_open "$@"; gate clear_basic; a2b_ev "$LOGEV" >/dev/null; }
 case $1 in
 desk)
   start desk
@@ -58,11 +58,11 @@ row31)
 away)
   start away
   open_phone; open_thread away_contact; echo "away thread: $(screen)"; a2b_shot away_button
-  open_phone 2>/dev/null; a2b_ev "const m=window.MinigameFramework.currentMinigame; return m ? m.constructor.name : null;" >/dev/null
   press_call >/dev/null; sleep 3.5; echo "dialling, past the dial (rings on): $(screen)"; a2b_shot ringing_on
   gate wait_screen "document.getElementById('call-status-bar') && document.getElementById('call-status-bar').innerText.includes('NO ANSWER')" 12; echo "no answer: $(screen)"; a2b_shot no_answer
   sleep 2.5; echo "back in the phone: $(state | jq -c '{o:._open,r:._ringer,away:.away_contact}')"; echo "thread: $(screen)"; a2b_shot thread_after_no_answer
-  echo "hidden contact before: $(open_thread hidden_contact >/dev/null 2>&1; screen | jq -c '.callButton')"
+  a2b_ev "const m=window.MinigameFramework.currentMinigame; if(m) m.complete(false); return 'phone closed';" >/dev/null; sleep 1
+  open_phone; open_thread hidden_contact; echo "hidden before away_back: $(screen | jq -c '.callButton') thread: $(screen | jq -c '.thread')"; a2b_shot hidden_no_button
   a2b_ev "const m=window.MinigameFramework.currentMinigame; if(m) m.complete(false); return 'phone closed';" >/dev/null; sleep 1
   a2b_lever lever_back; sleep 1; echo "away_back: $(a2b_ev "return window.gameState.globalVariables.away_back;")"
   open_phone; open_thread hidden_contact; echo "hidden after: $(screen | jq -c '.callButton')"; a2b_shot hidden_button
@@ -86,11 +86,12 @@ debrief)
   open_phone; open_thread caller_debrief; echo "hub: $(screen)"
   choose_text "Ring the debrief line" >/dev/null; sleep 0.8; echo "dialling: $(state | jq -c '{o:._open}')"
   gate wait_screen "$IN_CALL" 12; echo "call: $(screen)"; a2b_shot call
-  choose_text "I'm done here" >/dev/null; sleep 6
+  choose_text "Bring me in" >/dev/null; sleep 6
   echo "after the hand-off: $(state | jq -c '{o:._open,r:._ringer}') debrief_go=$(a2b_ev "return window.gameState.globalVariables.debrief_go;")"; a2b_shot after_handoff
   echo "events: $(evs)"; a2b_ev "return window.__ev;" > "$OUT/debrief_events.json"; a2b_quit ;;
 ending_keep|ending_end)
-  start $1
+  # ending_ok=true: the server agrees to conclude after "End the mission now", so the credits roll (row 28)
+  start $1 --set ending_ok=true
   open_phone; open_thread desk_contact
   choose_text "Close the file" >/dev/null; gate wait_screen "$IN_CALL" 15; echo "extract call: $(screen)"; a2b_shot call
   choose_text "Yes, close it" >/dev/null; sleep 1.5
@@ -102,7 +103,7 @@ ending_keep|ending_end)
     echo "after Not yet: $(state | jq -c '{o:._open,r:._ringer,desk:.desk_contact}')"; a2b_shot after_not_yet
   else
     a2b_ev "const b=[...document.querySelectorAll('#ending-check-overlay button')].find(x=>x.innerText.includes('End the mission now')); if(!b) return 'no end'; b.click(); return 'End now';" >/dev/null; sleep 6
-    echo "after End now: $(state | jq -c '{o:._open,r:._ringer}') end_go=$(a2b_ev "return window.gameState.globalVariables.end_go;") ringer closed=$(a2b_ev "return window.phoneRinger.isClosed();")"; a2b_shot credits
+    echo "after End now: $(state | jq -c '{o:._open,r:._ringer,desk:.desk_contact}') end_go=$(a2b_ev "return window.gameState.globalVariables.end_go;") ringer closed=$(a2b_ev "return window.phoneRinger.isClosed();") credits=$(a2b_ev "return !!document.querySelector('.bond-visualiser, #bond-visualiser, .credits-overlay');")"; a2b_shot credits
   fi
   echo "events: $(evs)"; a2b_ev "return window.__ev;" > "$OUT/${1}_events.json"; a2b_quit ;;
 esac
