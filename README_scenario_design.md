@@ -1081,6 +1081,17 @@ A frustrated NPC works round the outage. Each room NPC (or its role) may carry a
 - **Keep the plan neutral.** The browser gets the scenario's event mappings, reveal props (with their `revealOnGlobal` and text) and global names from the start, before any workaround happens. Name globals and write mapping conditions and prop text so they do not say in advance who will work round what (`store_door_propped` is fine; a prop observation that says "Tom will wedge this" is not). A workaround's `setGlobal` is for display: the player's browser can write it, so never gate a task, an aim, `concludeRequires` or a carry-over export on it (the validator warns); gate on the workaround's event.
 - **Lines.** Add the `wk_writes_down`, `wk_prop_door`, `wk_borrow`, `wk_share_login` and `login_aloud` pools to the top-level `chatter` (the table above). A start line waits for the fail line before it, is never said while the player is talking to that NPC, and stays up at least six seconds.
 
+#### Lockout as a cause (sub-slice L)
+
+A sign-in PC under a policy with `maxAttempts` locks a username out at that PC after that many wrong passwords, for the rest of the mission. When the username belongs to the PC's owner, and the owner has a work plan with that PC as its `needsHome`, the lockout stops the owner's work there. This is the one failure a player can start with nothing but a sign-in screen.
+
+- **When the owner finds out.** Only when they have to type their password: on returning to a locked screen. The browser then asks the server (a `check`), but only at a PC where it has had a lockout answer, so a mission with no lockout asks nothing. The owner's first use at the desk waits for the answer; if none comes within 30 seconds of game time the use is skipped (never counted as met) and the next one waits again. A yes is recorded on the server and kept over a reload, and so is the fact that the player caused a lockout at that PC, so a reload between the lockout and the owner's return still leads to the check.
+- **While locked out**, each use at that PC fails with `locked_out`: the `station_fail` mutter, the blocked icon and frustration as for any failure. Give the owner a `borrow_session` and they hot-desk, which is what a locked-out person does. Their own PC's screen locks on every leave, whatever its `lockChance`, and the server refuses a claim of the owner's session at that PC while the lockout stands; the hot desk is left as the borrower's habit says. A lockout at a borrowed PC stops only the session left open there: a borrower locked out at the hot desk still works at it (seated, signed in, frustration easing) but leaves no session for the player to claim. So locking the owner out at every PC does not make them give up; a later slice may make a locked-out borrowed use a failure. A `writes_down` on a lockout-prone owner gives a sticky note whose password that PC refuses once the owner is locked out.
+- **An owner whose screen never locks** never types a password, so never finds out and carries on working; only the claim of their open screen is refused.
+- **What it teaches, and its limit.** A lockout policy is a denial of service anyone at the keyboard can cause. The game's lockout is per PC, so the owner can still sign in elsewhere; a real directory lockout usually follows the account to every PC. Say so in the debrief or lab sheet if students might take the scope as realistic: the lesson is the denial of service, not the scope.
+- **What it tells the player.** When the owner comes back to the locked screen, the player who locked out a guessed username learns whether it was the owner's. The sign-in screen's own answers never say which usernames are real, and no list of locked-out accounts reaches the browser.
+- The validator lists such an owner's lockout in the work report and wants a `station_fail` (or `work_fail`) line; it also warns that a `maxAttempts` lockout lasts the mission, so a mission that needs that PC needs another route.
+
 #### The validator and the work report
 
 Errors: a `workNeeds` entry that names no resource, a resource `object` that names no room object, a frustration field out of range, a global ending in `_frustration`, and `workNeeds`, `frustration`, `workarounds` or `feed` on a record that is not a room NPC. Warnings: an NPC with a resource it is not admitted to (its work never succeeds, so it fails with no player action), a resource its station can never reach, a `downIf` global not declared, `needsDeferMin` under 0.5 for a `work` plan (or a `social_media` need with `"phone": false`), a work plan with no station that satisfies `work` (naming a PC the NPC owns through `screenOwner`, which should be its `needsHome`), a station with no `restores`, a cause the NPC can meet with no line in its own pool or `work_fail` (not under `"chatter": false`), a resource no NPC needs that has no `contents` and no `host`, and a workaround at or below `perFail` (it comes on the first failure with no warning; mark it `"noWarning": true` if meant) or one that needs more than five minutes of outage.
@@ -1769,7 +1780,25 @@ A call the player must finish: it opens by itself, can't be closed, and if somet
 
 #### Voiced phone calls
 
-Phone texts are silent. A call can be spoken instead: add `"voiced": true` to the mapping that opens it (`conversationMode: "phone-chat"`) or to the contact's `timedConversation`, next to `disableClose` and `resume`. It is off unless set.
+Phone texts are silent. A call can be spoken instead. There are three places to say so, and all are off unless set:
+
+| Where | Form | What it voices |
+|---|---|---|
+| An event mapping | `"voiced": true` on a mapping with `conversationMode: "phone-chat"`, next to `disableClose` and `resume` | the call that mapping opens: its `targetKnot` and what it reaches |
+| A timed conversation | `"voiced": true` on the contact's `timedConversation` (not a `videoCall` one, which is person-chat and always voiced) | the timed call's `targetKnot` and what it reaches |
+| The contact | `"voiced": true` on the phone NPC itself | a call the player places through a pretext card (`pretext-card.js` `callLaunch`, a desk phone in `lab_social_engineering`): it opens on the contact's home knot, so the home knot counts as a call knot |
+
+```json
+{ "id": "dev_service_desk", "displayName": "Dev", "npcType": "phone",
+  "voiced": true, "callLabel": "Ledgerwell service desk",
+  "voice": { "name": "...", "style": "...", "language": "en-GB" } }
+```
+
+The contact-level key only voices calls that go through `callLaunch`. Opening the same contact from the player's phone contact list is a silent text thread, because the phone app passes no `voiced` param. Use it for a contact who is only ever phoned, never texted.
+
+**The call screen.** A voiced call (`params.voiced`, outside the `terminal` theme) draws a call screen in place of the message thread (`phone-call-ui.js`): an "ON CALL" bar with the running time, the contact's portrait large with a speaking indicator, subtitles for the current line (the previous one dimmed), the reply choices, and a red end-call button in place of the back arrow (hidden on a forced `disableClose` call). The caption under the caller's name is the call's own `callLabel` (on the mapping or `timedConversation`), else the contact's `callLabel`, else "Voice call". Write it as the phone would show it: "SAFETYNET secure line", "Unknown number", "Ledgerwell service desk". Every line still goes into the thread's history, so the notepad and a later open of the thread outside a call show it as messages.
+
+**Write a call as a call, a text as a text.** The player sees a call screen and hears a voice, or reads a silent thread. Ink that says "you picked up", "get off her line", "Are you safe?" / "Please be quick" or "Your handset rings" needs a voiced form; a contact configured as plain phone-chat with call wording reads as a text thread that claims to be a phone call. Short typed messages, links, "sent you" and emoji belong in a text thread, not a voiced call.
 
 - Each line the contact speaks plays through TTS as it appears in the thread, as in person-chat, and the next line waits until it has finished. Clicking the thread skips the line playing.
 - A line prefixed with another character's display name (`Director Netherton: Put her on.`) is spoken in that character's `voice`, with their `voice.fx`. A character with no `voice` is read in the contact's voice. Player lines (`You: …`, `#speaker:player`) and narration are not spoken.

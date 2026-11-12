@@ -431,6 +431,8 @@ module ValidateAccessWork
     if pcs.compact.any? { |pc| AW.off_when?(json_data, pc) }
       causes << ['its station going off', STATION_POOL]
     end
+    # Sub-slice L (6.6): locked out at its own sign-in PC, a station failure (5.5)
+    causes << ['its account being locked out at its station', STATION_POOL] if AW.lockout_station?(json_data, npc)
     list.each do |rid|
       r = resources[rid]
       next unless r
@@ -813,6 +815,10 @@ module ValidateAccessWork
       end
       st = AW.station(json_data, npc)
       station_off = st && AW.off_when?(json_data, st) ? "; station '#{st['id']}' off while #{AW.affordance(json_data, st)['offWhen']}" : ''
+      if AW.lockout_station?(json_data, npc)
+        max = AW.policy_of(json_data, st)['maxAttempts']
+        station_off += "; locked out at '#{st['id']}' after #{max.to_i} wrong passwords for its username there (a denial of service)"
+      end
       lines << "ℹ️ Work #{npc['id']}: #{parts.join('; ')}#{station_off}."
       AW.workarounds(json_data, npc).each_with_index do |w, i|
         lines << workaround_line(json_data, npc, w, i, resources)
@@ -857,14 +863,35 @@ module ValidateAccessWork
   #   halved when the station has an offWhen (R5 n1: an off fail and an owned-cause fail
   #   alternate, each held only to the use floor after the other).
   # - otherwise every cause can clear in play: the use floor.
+  # - sub-slice L: an NPC whose only failure is a lockout at its station has an owned cause once
+  #   the player has locked it out: `rearmed` is ignored and its station eases are refused, so a
+  #   fail comes a use floor after the last only when an ease at another place (a non-desk source
+  #   or a borrowed PC) lies between: "only by alternating eases and fails"; with no other place,
+  #   the park floor.
   def earliest_pace(json_data, npc, st)
     use = [(0.9 * AW.shortest_use_seconds(json_data, npc, 'work')) - 3, 0].max
     owned = AW.owned_causes(json_data, npc, 'work', [])
+    park = (0.9 * AW.defer_min(npc) * 60) - 3
+    if owned.empty? && lockout_only?(json_data, npc, st)
+      other = AW.places(json_data, npc, 'work').any? { |id| id != st['id'] } || AW.borrow_pcs(json_data, npc).any?
+      return other ? { seconds: use, note: 'only by alternating eases and fails, once the player has locked it out' } : { seconds: park, note: nil }
+    end
     return { seconds: use, note: nil } if owned.empty?
 
-    park = (0.9 * AW.defer_min(npc) * 60) - 3
     park /= 2.0 if AW.off_when?(json_data, st)
     { seconds: park, note: nil }
+  end
+
+  # Sub-slice L: the lockout is the NPC's one way to fail at work (no resource can drop, its
+  # station has no offWhen)
+  def lockout_only?(json_data, npc, st)
+    return false unless st && AW.lockout_station?(json_data, npc) && !AW.off_when?(json_data, st)
+
+    res = AW.resources(json_data)
+    AW.work_list(json_data, npc).filter_map { |id| res[id] }.none? do |r|
+      rt = AW.routes(json_data, npc, r)
+      !AW.admitted?(r, npc) || AW.present_string?(r['downIf']) || (rt && (rt.empty? || rt.any? { |route| !route.empty? }))
+    end
   end
 
   def workaround_line(json_data, npc, w, idx, resources)

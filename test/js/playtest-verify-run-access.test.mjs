@@ -62,6 +62,12 @@ test('--access prints only the access section, one line per key, and exits 0', (
   assert.match(r.out, /feedRevealed\s+0/);
 });
 
+test('--access prints the PCs a check recorded an NPC locked out at (slice 9.2 L)', () => {
+  const r = verify(['1', '--access'], { ...ACCESS_STATE, npcFrustration: { jake: { level: 60, handed: { 0: {} }, done: [], lockedOut: ['jake_pc'] }, dana: { level: 20 } } });
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.out, /npcFrustration\s+2: dana level 20, handed 0, done \[\]; jake level 60, handed 1, done \[\], locked out at jake_pc/);
+});
+
 test('--access prints footholds, gainedFootholds, and remote and foothold beside a session', () => {
   const r = verify(['1', '--access'], NETWORK_STATE);
   assert.equal(r.status, 0, r.out);

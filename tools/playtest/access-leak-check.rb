@@ -64,10 +64,10 @@ puts "access leak check: game #{game.id} (mission #{game.mission_id}), #{lines.l
 puts "unreadable lines #{unreadable}" if unreadable.positive?
 puts "secrets checked  #{counts[:passwords]} NPC password(s), #{counts[:login_items]} sign-in PC or profile item(s), " \
      "#{counts[:locked_items]} locked-container item(s), #{counts[:workarounds]} workaround(s), " \
-     "#{counts[:feed_posts]} feed post(s), #{counts[:feed_facts]} feed fact(s)"
+     "#{counts[:feed_posts]} feed post(s), #{counts[:feed_facts]} feed fact(s), #{counts[:lockout_records]} recorded lockout(s)"
 by_rule = findings.group_by(&:rule)
 AccessLeakScanner::RULE_TEXT.each do |rule, text|
-  puts "#{rule.ljust(16)} #{(by_rule[rule] || []).length}  (#{text})"
+  puts "#{rule.ljust(20)} #{(by_rule[rule] || []).length}  (#{text})"
 end
 scanner.report_lines(findings).each { |line| puts line }
 unless scanner.feed_fallback.empty?

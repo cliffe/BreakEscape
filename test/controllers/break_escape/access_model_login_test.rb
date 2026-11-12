@@ -309,9 +309,13 @@ module BreakEscape
       assert_equal 'claim', claim['via']
     end
 
-    test 'a lockout of the owner does not stop a claim' do
-      build(scenario: tracked_scenario, player_state: { 'loginLockouts' => ['jake_pc|jbrooks'] })
+    # Slice 9.2 sub-slice L (plan 6.6 and 14) reversed the first slice's rule: a person who cannot
+    # sign in at a PC cannot leave a session open there. Another username's lockout changes nothing.
+    test 'a lockout of the owner at that PC stops a claim; a lockout of another username does not' do
+      build(scenario: tracked_scenario, player_state: { 'loginLockouts' => ['jake_pc|someone'] })
       assert_equal 'claim', claim['via']
+      build(scenario: tracked_scenario, player_state: { 'loginLockouts' => ['jake_pc|jbrooks'] })
+      assert_equal 'Sign in required', claim['message']
     end
 
     test 'each claim refusal condition answers Sign in required' do
