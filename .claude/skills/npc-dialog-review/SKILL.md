@@ -204,6 +204,22 @@ These came up in several missions' pass-4 playtests and need a reader:
 - **`#speaker:` tags.** In person-chat only `#speaker:player` and three-part `#speaker:npc:<id>` choose a speaker (`person-chat-minigame.js` `determineSpeaker`); a two-part tag such as `#speaker:analyst` is ignored and the `Name:` prefix decides. So check the prefix, not the tag, on every line where the speaker matters.
 - **Credit and debrief lines against every route** that reaches them (m03 PERFECT STEALTH after the guard's challenge).
 
+### 2j. Mode fits the medium (remote conversations)
+
+Per `README_ink_best_practices.md` "Remote conversations: write for the mode". For every phone contact, video call, voicemail and remote co-speaker, read the config and the ink together:
+
+- **Text threads that read as calls** (CONCERN): "Pick up", "I'm ringing you", "on the line", "speak to you", a back-and-forth that only works aloud. Either the beat becomes a voiced call or the lines become texts. A forced call that opens at once must not be preceded by a text promising a ring.
+- **Call wording around text threads** (CONCERN): objective titles and task descriptions ("Call X"), object descriptions ("speed dial"), other NPCs' lines ("Call me on the phone") and the lab sheet, wherever the contact is a text thread.
+- **Calls that read as texts** (CONCERN): a voiced call knot with links, lists, emoji or "see above".
+- **Voiced call scope:** only the call's own knots are voiced; the contact's home knot and hub stay silent texts. A spoken-sounding home knot is a finding.
+- **Variety:** list the opening and last NPC line of every call in the mission, and of the same handler's calls in other missions. Flag repeated shapes or sentences.
+- **Debriefs:** in person by default; a call or video debrief needs a story reason.
+- **One character, two records** (m09/m10 HaX): co-speaker lines name the record by id, not the shared display name; the in-room record uses an in-person voice style; the phone record carries the talk and viseme art. Check `/tts` requests in a playtest go out under the expected id.
+
+### 2k. Progress carried by texts
+
+For each text with a toast that plays a knot (`sendTimedMessage` with `targetKnot`) and sets a global or gives an item, check the m09 read-out pattern (`README_ink_best_practices.md` "Texts that carry progress"): reachable by opening the thread by hand (hub guard), resumable after a close mid-knot (two-level guard), idempotent (no replay, no second item), `skipIfGlobal` on texts that can go stale, and a latch plus `game_loaded` backstop for reloads. Walk each read-out through: toast tapped, toast ignored, thread opened before the text arrives, closed mid-knot, reload before and after delivery. A read-out that only a toast tap can reach is **Must-fix** when another beat waits on its global.
+
 ## Step 3 — prioritised action list
 
 Short, one line per item, grouped:
@@ -213,11 +229,13 @@ Short, one line per item, grouped:
 - Ink that fails to compile; unresolved "apparent loose end" warnings.
 - A consequence choice that gates the **critical path** with no redundant source (soft-lock).
 - A `#set_global` gating progress that is undeclared or never read.
+- A progress-carrying read-out reachable only by tapping its toast (2k).
 
 **Should fix (degrades the story)**
 
 - Flat choices (identical content regardless of pick) that aren't legitimate stance-convergence.
 - Menu-label / `You:`-echo choice phrasing; missing influence tags; narration not on the Narrator voice.
+- Ink written for the wrong mode: texts that read as calls, "call" wording around a text thread, calls that read as texts (2j).
 - Lossy opening choices that skip content (recommend question-hub).
 
 **Worth considering (polish)**
