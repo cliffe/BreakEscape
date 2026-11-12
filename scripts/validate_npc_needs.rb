@@ -1293,6 +1293,15 @@ module ValidateNpcNeeds
       items = objs.select { |o| o.data['needsTag'] == tag }
       accepters = objs.select { |o| o.data['affordance'].is_a?(Hash) && list(o.data['affordance']['accepts']).include?(tag) }
       issues << "❌ ERROR: #{where} interest '#{tag}' has no item with needsTag '#{tag}' anywhere in the scenario." if items.empty?
+      # noticeRadius (q53 f): tiles from where the NPC stands within which it sees a tagged item (default 24)
+      if raw.is_a?(Hash) && raw.key?('noticeRadius')
+        nr = raw['noticeRadius']
+        if !(nr.is_a?(Numeric) && nr >= 0.5 && nr <= 100)
+          issues << "❌ ERROR: #{where} interest '#{tag}' noticeRadius must be a number of tiles from 0.5 to 100 (default 24)."
+        elsif nr < 2
+          issues << "⚠️ WARNING: #{where} interest '#{tag}' noticeRadius #{nr} is under 2 tiles: the NPC sees only an item dropped almost at its feet."
+        end
+      end
       if leashed && raw.is_a?(Hash) && raw['noticeRooms'].is_a?(Array)
         raw['noticeRooms'].each do |r|
           rule = leash_rule(json, npc, r, home_room)

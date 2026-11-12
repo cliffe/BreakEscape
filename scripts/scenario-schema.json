@@ -4655,6 +4655,7 @@
                 "properties": {
                   "weight": { "type": "number", "minimum": 0.1, "maximum": 10 },
                   "noticeRooms": { "type": "array", "items": { "type": "string" }, "description": "Room ids where the NPC notices items (default: the room of needsHome)" },
+                  "noticeRadius": { "type": "number", "minimum": 0.5, "maximum": 100, "description": "Tiles from where the NPC stands within which it notices an item in its noticeRooms (default 24, a whole 20 x 10 room). Smaller makes placement matter: a drop near this NPC gets found by them, one across the room does not" },
                   "_comment": { "type": "string" }
                 },
                 "required": ["weight"],

@@ -118,3 +118,20 @@ test('social_media: no object satisfies it, an error only with "phone": false', 
     const noPhone = check(office({ npc: { needs: social, phone: false } }));
     assert.ok(has(noPhone, "need 'social_media' has no object"), noPhone.join('\n'));
 });
+
+// q53 (f): interests.<tag>.noticeRadius
+const noticeSc = (noticeRadius) => office({
+    npc: { needs: undefined, interests: { post: { weight: 2, noticeRadius } } },
+    objects: { office: [{ id: 'tom_pc', type: 'pc', affordance: { accepts: ['post'] } }, { id: 'letter', type: 'notes', needsTag: 'post' }] }
+});
+
+test('interest noticeRadius: 4 tiles is fine; out of range or not a number is an error; under 2 warns', { skip }, () => {
+    let i = check(noticeSc(4));
+    assert.ok(!has(i, 'noticeRadius'), i.join('\n'));
+    i = check(noticeSc(0));
+    assert.ok(has(i, "interest 'post' noticeRadius must be a number of tiles from 0.5 to 100"), i.join('\n'));
+    i = check(noticeSc('near'));
+    assert.ok(has(i, "noticeRadius must be a number"));
+    i = check(noticeSc(1));
+    assert.ok(has(i, "noticeRadius 1 is under 2 tiles"), i.join('\n'));
+});
