@@ -24,6 +24,20 @@
     margin: 0 auto;
 }
 
+/* The post-it is stuck on the monitor's lower-left frame, overhanging its edge. */
+.container-minigame.desktop-mode {
+    position: relative;
+}
+
+.container-minigame.desktop-mode > .postit-note {
+    position: absolute;
+    top: auto;
+    left: -14px;
+    bottom: 64px;
+    margin: 0;
+    z-index: 15;
+}
+
 .container-minigame.desktop-mode .desktop-background {
     flex: 0 0 auto;
     aspect-ratio: 16 / 10;
@@ -204,9 +218,7 @@
     transition: all 0.2s ease;
 }
 
-.desktop-icon:hover {
-    transform: scale(1.1);
-}
+/* No hover zoom: a 1.1x scale smears the pixel icon and label; the frame highlight marks it. */
 
 .desktop-icon-image {
     width: 48px;
@@ -227,12 +239,12 @@
 }
 
 .desktop-icon-label {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
     color: white;
     text-align: center;
     margin-top: 4px;
-    line-height: 1.4;
+    line-height: 1.1;
     text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
     /* Words wrap at spaces only; a name too long for the line breaks only as a last resort
        ("Staff handbook.txt" broke as "handbook.t / xt" at 80px). */

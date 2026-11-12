@@ -817,7 +817,9 @@ export class ContainerMinigame extends MinigameScene {
             postit.className = 'postit-note';
             postit.innerHTML = escapeHtmlKeepWords(displayDashes(this.containerItem.scenarioData.postitNote));
             makeDraggable(postit);
-            this.gameContainer.appendChild(postit);
+            // Stuck on the monitor's frame, not loose in the page (it landed at the window's edge).
+            const monitor = this.gameContainer.querySelector('.container-minigame.desktop-mode');
+            (monitor || this.gameContainer).appendChild(postit);
         }
     }
     
