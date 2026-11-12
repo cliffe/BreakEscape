@@ -1,0 +1,17 @@
+game 2273 (gate_ring_readout)
+engine HEAD: 9b1b6e524
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+  room: "restricted_stacks"
+ringing: {"t":42.6,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}  "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true"
+"opened HaX"
+HaX thread open: {"t":49.5,"ringer":"nightshade_phone:ringing","mg":"PhoneChatMinigame:phone-chat","layer":"","laptop":"none"}  "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true"
+shot gate_ring_readout_hax_open_over_ring
+  WARN choice /Ledger or stacks/ never showed
+  WARN choice /Got it/ never showed
+read-out done, phone closed: {"t":89,"ringer":null,"mg":null,"layer":"","laptop":"none"}  "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true"
+  callback: {"knot":"call","callLabel":null}  rows: ["call:Missed call"]
+  no ring in 8s (good)
+  room: "reading_room"
+  no ring in 6s (good)
+final: "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true"
+shot gate_ring_readout_final
