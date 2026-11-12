@@ -160,6 +160,8 @@
 .network-row-down .network-row-name,
 .network-row-down .network-row-off {
     color: #868d93;
+    /* No synthesised slant on the pixel font in a greyed row */
+    font-style: normal;
 }
 
 .network-row-down .network-row-icon {

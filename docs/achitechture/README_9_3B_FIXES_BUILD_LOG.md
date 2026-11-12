@@ -46,3 +46,41 @@ A harness note: the first `interact guest_ap2` after closing the view landed out
 ## Sync size
 
 There is no new synced state. The join adds at most one boolean global per access point, written once per join. `gainedFootholds` is unchanged: it stays bounded by the scenario's jacks, access points and PCs.
+
+# Round 2 fixes
+
+Fixes the findings in `README_9_3B_REVIEW_R2.md` (0 blockers, 1 major, 0 minors, 4 nits).
+
+## Fixes
+
+- **M1, a held session on a down own network.** `networkBlocks()` in `network-view-minigame.js` now keeps the own network's block when its route is `down` (the up entry is still dropped, as its rows are the flat `hosts`). The block renders through the existing down branch: "<network> (no route)" and "No route to <host>" with no control. When that block is present and there are no own rows, the view no longer also says "Nothing answers on this network.". `allRows()` and the per-block `network_viewed` already skip down blocks.
+  - The down look meets the pixel-art rule: `.network-block` has a 2px solid square border and a flat fill; `.network-block-down` and `.network-row-down` grey the title, row and text, and the icon is greyed with a filter at its whole-number scale. No radius, shadow or gradient; the "No route" text in a greyed row is upright (no synthesised slant on the pixel font).
+  - Rails test in `network_outages_test.rb`: plant, remote sign-in to `lena_pc`, own network down. `hosts` is empty, one `down` block for `office_lan` holds only `lena_pc` with no `remoteSignIn` or `session`, the session is kept, and on repair the row is back in `hosts` with its session.
+  - Node tests in `network-view.test.mjs`: the greyed own block with "No route to HB-FIN-02", nothing clickable and no "Nothing answers" line (it fails without the fix); and with the own network up, its block is not drawn a second time.
+  - README line 939: "(a foothold on that network included: its own rows go, and only a session held there shows, greyed)".
+- **n1.** A join at a second access point writes `<apId>_planted = false` over an unset global with no change event (`writeGlobal` with `deferEmit`, events dropped), as a reload writes it. A first access point still fires its change. The node test in `network-links.test.mjs` asserts both, and fails without the fix. README line 928 says so.
+- **n2.** The first-join test in `objectives-network-footholds.test.mjs` stubs `serverCompleteTask` and asserts exactly one POST.
+- **n3.** The E3 secrecy check in `network_outages_test.rb` no longer skips itself: it takes the compact list of host labels, asserts it is not empty and refutes each in the body.
+- **n4.** README line 928: `network_viewed` fires for the foothold's own network even while that network is down, and a mapping whose beat needs a host tests `data.hostList`.
+
+## Tests run (affected files only, no lock)
+
+- Rails: `network_outages_test.rb`, 14 runs, 156 assertions, 0 failures.
+- Node: `network-view` (24), `network-links` (66), `objectives-network-footholds` (8), `network-links-routing` (4), `access-remote-signin` (15), `escaping-shared-helpers` (20), `test-bridge-access` (12): all pass.
+- Validator on `scenarios/test_access_networks/scenario.json.erb --no-graph`: 0 ❌.
+
+## Live proof
+
+A keyless headless server on :3096 from this worktree; game 1751 (test_access_networks, `--give kit_dropbox`). `session-start.sh --headless`, `setFPS(20)` with fixed steps on (set again after the reload). This game row's scenario copy only was given `downIf: office_down` on `office_lan`, with `office_down` declared false.
+
+- Planted at `comms_port` (`jack_comms_port` on `office_lan`), then a remote sign-in to `lena_pc` from the view with Lena's details from the letter.
+- `office_down` set true, view reopened: `hosts: []`, one `office_lan` block, route `down`, holding only `lena_pc`. The view reads "Harbour office LAN (no route)", "HB-FIN-02", "Lena's PC", "No route to HB-FIN-02", with nothing to click and no "Nothing answers" line. Screenshot: `ux-shots/branch/after_net/own_down_held_session_1751.png` in the session scratchpad.
+- `office_down` set false, view reopened: `lena_pc` is back in the own rows with "Open (Lena Fox)"; the server network block is up again.
+- Down again, synced, page reloaded and resumed: the same greyed block, the row text upright in GNF, the block border 2px solid. Screenshot: `own_down_held_session_after_reload_1751.png` in the same folder.
+- Server record afterwards: `sessions.lena_pc` is `{ id: lena, via: password, foothold: jack_comms_port }`, `office_down` true, `footholds` has `jack_comms_port`.
+
+A harness note: after a reload, `bootstrap` needs `"resume":"resume"` (`"continue"` fails on the resume menu).
+
+## Sync size
+
+No new synced state. The M1 fix is client rendering and tests. n1 writes the same one boolean global per access point as before, now with no change event for an unset-to-false write.
