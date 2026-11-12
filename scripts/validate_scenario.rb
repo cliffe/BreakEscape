@@ -27,6 +27,7 @@ require_relative 'validate_capture_log'
 require_relative 'validate_wearable'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
+require_relative '../lib/break_escape/capture_model'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative 'validate_npc_habits'
@@ -6230,6 +6231,43 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
              '(usernames compare trimmed and case-insensitively).')
   end
 
+  # A non-account capture secret that is also a password or PIN lock code is withheld until a
+  # capture proof holds (Game#authored_capture_secret), so one authored with no proof is never
+  # served and the capture silently stops working. Warn the author (usePayload/capture review R1).
+  lock_codes = BreakEscape::CaptureModel.lock_codes(json_data)
+  unless lock_codes.empty?
+    room_npcs.reject { |e| ai.account?(e[:npc]) }.each do |e|
+      npc = e[:npc]
+      payload = npc['usePayload']
+      if payload.is_a?(Hash) && lock_codes.include?(payload['secret'].to_s)
+        own = payload['targetId']
+        ungated = if own.is_a?(String) && !own.strip.empty?
+                    !payload['proof'].is_a?(Hash)
+        else
+                    Array(npc['eventMappings']).any? do |m|
+                      ac = m.is_a?(Hash) ? m['addCapture'] : nil
+                      ac.is_a?(Hash) && BreakEscape::CaptureModel.present_string?(ac['targetId']) &&
+                        !(ac['proof'].is_a?(Hash) || payload['proof'].is_a?(Hash))
+                    end
+        end
+        if ungated
+          warn.call("NPC #{name_of.call(npc)} has a usePayload.secret that is also a password or PIN lock " \
+                    'code but no capture proof gates it, so the capture is withheld and never served. Add a ' \
+                    "'proof' to the capture, or make the secret open nothing.")
+        end
+      end
+      Array(npc['eventMappings']).each_with_index do |mapping, i|
+        capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
+        next unless capture.is_a?(Hash) && lock_codes.include?(capture['secret'].to_s)
+        next if capture['proof'].is_a?(Hash)
+
+        warn.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture.secret is also a password or PIN " \
+                  'lock code but the mapping has no \'proof\', so the capture is withheld and never served. ' \
+                  "Add a 'proof' to the capture, or make the secret open nothing.")
+      end
+    end
+  end
+
   # Access lists: people must be room NPCs; roles should be held by someone
   roles_held = room_npcs.flat_map { |e| ai.identity_roles(e[:npc]) }.to_set
   acl_sources = []
@@ -6401,9 +6439,9 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
       when :no_direction
         said = if door.key?('direction')
                  "direction #{door['direction'].inspect}, which is not north, south, east or west (lower case),"
-               else
+        else
                  "no 'direction' (north, south, east or west),"
-               end
+        end
         warn.call("#{at} but #{said} #{dead} Add the direction under which room '#{room_id}' lists " \
                   "'#{door['connectedRoom']}' in its connections.")
         next

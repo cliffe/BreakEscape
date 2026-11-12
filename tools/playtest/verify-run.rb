@@ -111,9 +111,22 @@ def access_section(ps)
     # the player heard shared (ids only)
     ['guestSessions', hash.call(ps['guestSessions']).sort.map { |pc, npc| "#{pc} = #{npc}" }],
     ['sharedLogins', list.call(ps['sharedLogins']).map(&:to_s)],
-    # Slice 9.2 C (8.3) and C2: how many of each NPC's feed posts are out (counts only, never a text;
-    # C2 saves {shown, at}, older saves {n, at})
-    ['feedRevealed', hash.call(ps['feedRevealed']).sort.map { |id, e| "#{id} #{e.is_a?(Hash) ? (e['shown'].is_a?(Array) ? e['shown'].length : e['n'].to_i) : 0}" }]
+    # Slice 9.2 C (8.3), C2 and C3: how many of each NPC's feed posts are out, and for a `shown`
+    # entry the ids in reveal order, each with its seq and, for a reply, its thread post
+    # (`<id>:<seq>><thread>`); ids only, never a text. A legacy {n, at} entry prints its count.
+    ['feedRevealed', hash.call(ps['feedRevealed']).sort.map do |id, e|
+      next "#{id} 0" unless e.is_a?(Hash)
+      next "#{id} #{e['n'].to_i}" unless e['shown'].is_a?(Array)
+
+      seqs = hash.call(e['seq'])
+      tos = hash.call(e['to'])
+      ids = e['shown'].select { |x| x.is_a?(String) }.map do |pid|
+        seq = seqs[pid].is_a?(Integer) ? ":#{seqs[pid]}" : ''
+        to = tos[pid].is_a?(Hash) && tos[pid]['post'].is_a?(String) ? ">#{tos[pid]['post']}" : ''
+        "#{pid}#{seq}#{to}"
+      end
+      "#{id} #{e['shown'].length} [#{ids.join(' ')}]"
+    end]
   ]
   lines = ['access model']
   rows.each do |name, items|

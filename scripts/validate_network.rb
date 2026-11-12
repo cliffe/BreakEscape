@@ -194,8 +194,15 @@ def check_network_model(json_data, scenario_dir = nil)
 
     warn.call("'networks/#{net_id}/wifi' psk is shorter than eight characters.") if psk.length < 8
     unless readable.include?(psk)
-      warn.call("'networks/#{net_id}/wifi' psk appears nowhere the player can read (a note, a document or ink); " \
-                'the key is a lock secret the player must be able to find.')
+      # C3 (plan 9): a psk found only in alternative-set feed posts may never ship.
+      sets = BreakEscape::NpcHabits::Clues.set_member_texts(json_data).select { |t| t[:text].to_s.include?(psk) }
+      if sets.any?
+        warn.call("'networks/#{net_id}/wifi' psk appears only in posts whose shipping depends on timing " \
+                  "(alternative sets #{sets.map { |t| t[:set] }.uniq.join(', ')}); the dungeon graph does not draw this clue.")
+      else
+        warn.call("'networks/#{net_id}/wifi' psk appears nowhere the player can read (a note, a document or ink); " \
+                  'the key is a lock secret the player must be able to find.')
+      end
     end
   end
   all_objects.each do |e|
