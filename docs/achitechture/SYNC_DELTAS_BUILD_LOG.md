@@ -49,7 +49,8 @@ Standing constraints for this build:
 | 6b review R1 fixes (M1 doc, m1, n1, n2) | Done, committed, tested. See "builder 10 session" |
 | 7. Node request-size cases (10.1) + sync_bodies fixtures | Done, committed, tested (`7d73e62c7`). See "builder 9 session" |
 | 7. Rails answer-size test (10.2) | Done, committed, tested (`29a3a0815`). See "builder 9 session" |
-| 7. Live proof A to F (10.3) | In progress: see "builder 9 session" |
+| 7. Live proof A to F (10.3) | A/B-bootstrap (builder 9) + E done (builder 11); B/C/D full drives and F open |
+| Merge main (b7d500ccf) into the branch | Done (`c6df37c82`); 1 conflict (IDEAS_BACKLOG), affected tests + validator green. See "builder 11 session" |
 | 8. One release later: remove transition code | Not started (separate release) |
 
 ## Plan amendment (orchestrator ruling, 2026-11-12): 6a reconciled with main's serving path
@@ -112,6 +113,86 @@ deliberately: the direction is safe (it only ever withholds, never over-serves) 
 scenario hits it today (the lab account passwords all open something). An author who adds a
 `captureProof` to an account whose password opens nothing would find the capture withheld until the
 proof holds. Noted at the code site (capture_proofs.rb `capture_evidence_holds?`) and here.
+
+## This session (2026-11-12, builder 11: merge main b7d500ccf + live case E; case F open)
+
+### Merge main (b7d500ccf) -> `c6df37c82`
+Merged main (ux-access toasts/password-minigame/container CSS, tap-pick game.js/player.js/
+tap-pick.js/npc-pathfinding.js, hardening step 1 strict validator) into the branch. One conflict,
+`docs/IDEAS_BACKLOG.md`: both sides appended backlog bullets; kept both (the sync deltas 6b review
+M1 bullet, plus main's tap-pick R4 m1 and scenario-format hardening known-limit bullets). All other
+paths auto-merged. The three files changed on both sides (`core/game.js`, `main.js`,
+`scripts/validate_scenario.rb`) merged textually; the merged validator parses and the affected
+tests pass, so the auto-merges are sound. (The `<<<<<<<`/`>>>>>>>` lines in
+`physical_pentest_followup/STAGE_DIRECTIONS_M09_M10_REVIEW_R1.md` are pre-existing committed doc
+content inside a code fence, not a merge conflict.)
+
+### Tests after the merge (affected files, no lock)
+- **Validator (strict, --no-graph):** lab_physical_pentest, lab_social_engineering,
+  test_access_networks and test-rfid each exit 0 with 0 lines carrying the error cross. This
+  branch adds no validator errors; no known-failures entry added for this branch's scenarios.
+- **`MERGE_BATCH=1 node --test test/js/validator-known-failures.test.mjs`:** 15/15 pass.
+- **JS (every test file importing a changed module, 110 files):** 1555 tests, 1554 pass, 1 fail:
+  `event-mapping-unlock-door.test.mjs` is the pre-existing environmental node test-runner IPC
+  error ("Unable to deserialize cloned data"); its own assertion passes (`ok 1 - the mapping config
+  carries unlockDoor`). Not a regression (documented in Gotchas).
+- **Rails (changed controllers/models: games, captures_sync, mail_state_sync, capture_proofs,
+  capture_secret_endpoint, capture_payload_secret_routes, saved_current_room, network_inventory_
+  delta, npc_frustration, capture_record, capture_secret, capture_payload_secret, sanitiser_cases,
+  carry_over, sync_payload_size):** 236 runs, 1158 assertions, 0 failures. (Main changed no app/lib
+  Ruby, so the merge introduces no Rails source change.)
+
+### Live case E (an old save) -> PASS
+Two keyless headless servers, shared dev DB, `setFPS(20)` and fixed steps on: base `6a834437c` on
+:3246 (from p-sync-base), branch on :3245 (from p-sync-build). Games created from the base worktree
+so the stored `scenario_data` is base-era: **1947** (lab_physical_pentest), **1948** (test-rfid).
+
+Base phase (:3246, the real page): in 1947, `window.recordSECapture` ran the honest Len PIN beat
+(targetId `len`, secret `4471`, the exact object the `player_watched_reader` eventMapping builds);
+the first `PUT /sync_state` body carried `globalVariables.se_captures` (old format), and the base DB
+row then held `globalVariables.se_captures = { len }`, `seCaptures` nil, 2 notes. In 1948, the real
+RFID clone (`startRFIDMinigame` clone mode, source `{ npc_id: 'security_guard' }`, then
+`handleSaveCard`) saved master_keycard: base DB row held `saved_cards = [master_keycard]` and
+`serverClones = { master_keycard }`, `seCaptures` nil. Old-format save confirmed on both.
+
+Branch phase (:3245, same game ids, same DB): the branch bootstrap migrated once. Checks:
+- **migration runs once:** 1947 DB after the branch load has `globalVariables.se_captures` gone and
+  `seCaptures = { len }`; `migrate_legacy_captures!` runs only while `legacy_captures?` holds, which
+  it no longer does, so a second load is a no-op.
+- **captures still show / secret served per 6b:** `GET /capture_secrets` returns
+  `{"secrets":{"len":"4471"},"accounts":{}}`. The migrated legacy entry is grandfathered
+  `proven: true`, so the PIN is served (6b reveal gate satisfied for a legacy entry).
+- **cloned card still works at its door:** 1948 on the branch, the engine's real server path
+  `ApiClient.unlock('door','test_secure',null,'rfid')` (no `card_ids`; the server validates against
+  its own `serverClones`) answered `{ success: true, hasRoomData: true }`. The branch bootstrap's
+  `repair_saved_cards!` also kept `saved_cards = [master_keycard]`.
+- **nothing lost:** notes count preserved (2); saved_cards and serverClones preserved.
+- **first PUT /sync_state is a small delta:** on both branch loads no `PUT /sync_state` fired in the
+  observation window (nothing resent), the smallest possible delta; no body carried `se_captures`.
+- **player_state shape:** `seCaptures` present, `globalVariables.se_captures` absent (DB dump).
+
+Driver scripts (scratchpad, not committed): `e_base_drive.mjs`, `e_branch_verify.mjs`,
+`e_door_server.mjs`; DB dump `dump.rb`.
+
+### Live case F (an old tab) -> OPEN (handover)
+Not run. Method for the next session: open a tab on the base server (:3246), drive the old-shape
+state (a `lord` QR capture writing `globalVariables.se_captures`, Len's PIN, a chat-clone of
+`cm_records_badge` sent as `{ npc_id }`, an action-menu clone of Melanie's comms card, a device
+plant), keep the tab open, then stop the base process on :3246 and restart :3246 with the BRANCH
+code (the tab's old `?v=` modules keep sending old shapes). Trigger a sync from the still-open tab
+and check every `PUT /sync_state`, `POST /clone_card`, `POST /inventory` (`update_saved_cards`) and
+`POST /network/plant` answers 200 and does not corrupt state (the server intercepts the
+`se_captures` global and accepts `update_saved_cards` for one release, plan 5.4); then reload onto
+branch code and check the capture is in the record, the tablet shows Len's PIN via
+`/capture_secrets`, and Len's badge is listed (restored by `repair_saved_cards!`). The comms card is
+the expected exception (action-menu clone sends no source on the old tab, so it is not recorded and
+not listed after reload; copying it again on the new client lists it). The server-side acceptance of
+the old shapes is already covered by the Rails suites (`captures_sync_test`, `mail_state_sync_test`,
+`network_inventory_delta_test`, the clone tests); case F is the request-captured live confirmation.
+The clearest portable harness is one Playwright script that keeps the page open while a child
+process restarts :3246 onto the branch.
+
+Both servers stopped at the end of this session.
 
 ## This session (2026-11-12, builder 10: 6b review R1 fixes M1/m1/n1/n2)
 
