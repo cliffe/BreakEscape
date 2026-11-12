@@ -15,8 +15,10 @@
  *   It is sent only on `workstation_owner_returned:<pcId>` with `wasLocked`, at a PC under a
  *   policy with maxAttempts where this browser has had a lockout answer from POST /login
  *   (`pc_signin_failed` with reason locked_out, at the keyboard or remote), for an owner with a
- *   work plan whose station that PC is and who is not already flagged there. So a mission with
- *   no lockout sends no check at all. Every check gets an answer for the needs system (refused
+ *   work plan whose station that PC is and who is not already flagged there. User decision q36
+ *   adds a borrow path: on `npc_sat_at:<pcId>` (a borrower sitting down at a hot desk) a check is
+ *   sent under the same policy and lockout-answer tests, with no locked return and no needsHome
+ *   test. So a mission with no lockout sends no check at all. Every check gets an answer for the needs system (refused
  *   or lost: lockedOut false, after one resend of a lost request), which ends the hold on the
  *   owner's first use there. A send that has not settled after SEND_TIMEOUT_MS is aborted and
  *   counts as lost (review R2 m2), so a hung request cannot hold the queue or the owner.
@@ -89,6 +91,26 @@ export class NpcReports {
         if (typeof d.markCheck === 'function' && d.markCheck(ownerId, pcId) === false) return false;
         this.checks++;
         return this.queue(ownerId, { event: 'check', objectId: pcId, mark: this.lockoutCount.get(pcId) || 0 });
+    }
+
+    /**
+     * User decision q36: npc_sat_at:<pcId> { npcId, objectId }, a borrower sitting down at a hot
+     * desk. Sends a check there when shouldCheckLockout's borrow path says so and the needs system
+     * takes the hold, so the borrowed use waits for the answer.
+     */
+    onBorrowSat(data) {
+        const pcId = data?.objectId;
+        const npcId = data?.npcId;
+        const d = this.deps;
+        if (typeof npcId !== 'string' || !npcId) return false;
+        if (!shouldCheckLockout({
+            borrowed: true, seen: this.lockoutSeen.has(pcId), pcId,
+            policy: typeof d.policyFor === 'function' ? d.policyFor(pcId) : null,
+            flagged: typeof d.flagged === 'function' ? !!d.flagged(npcId, pcId) : false
+        })) return false;
+        if (typeof d.markCheck === 'function' && d.markCheck(npcId, pcId) === false) return false;
+        this.checks++;
+        return this.queue(npcId, { event: 'check', objectId: pcId, mark: this.lockoutCount.get(pcId) || 0 });
     }
 
     _now() { return typeof this.deps.now === 'function' ? this.deps.now() : Date.now(); }
@@ -232,11 +254,14 @@ export class NpcReports {
  * maxAttempts; the owner has a work plan or (user decision q33) a social_media need, and that PC
  * is its station (needsHome); and it is not
  * already flagged there (a restored or earlier true answer stands for the mission).
+ * User decision q36, `borrowed`: a borrower sitting down at a hot desk. No locked return and no
+ * owner test (the PC is borrowed for the failing need; the server checks the hand-over).
  */
-export function shouldCheckLockout({ wasLocked, seen, pcId, policy, owner, flagged }) {
-    if (!wasLocked || !seen || flagged || typeof pcId !== 'string' || !pcId) return false;
+export function shouldCheckLockout({ wasLocked, seen, pcId, policy, owner, flagged, borrowed = false }) {
+    if ((!wasLocked && !borrowed) || !seen || flagged || typeof pcId !== 'string' || !pcId) return false;
     const max = policy && typeof policy === 'object' ? policy.maxAttempts : null;
     if (!(typeof max === 'number' && Number.isFinite(max) && max > 0)) return false;
+    if (borrowed) return true;
     if (!owner || owner.needsHome !== pcId) return false;
     // User decision q33: a lockout stops social media at the PC too, so an owner with that need is asked about
     const social = !!owner.needs && typeof owner.needs === 'object' && !!owner.needs.social_media && typeof owner.needs.social_media === 'object';
@@ -296,6 +321,7 @@ export function installNpcReports(api) {
     reports.seedLockouts(w.gameScenario?.lockoutPcs);
     w.eventDispatcher?.on?.('pc_signin_failed', data => { if (data?.reason === 'locked_out') reports.noteLockout(data.pcId); });
     w.eventDispatcher?.on?.('workstation_owner_returned:*', data => reports.onOwnerReturned(data));
+    w.eventDispatcher?.on?.('npc_sat_at:*', data => reports.onBorrowSat(data));
     w.eventDispatcher?.on?.('global_variable_changed:*', (data, name) => {
         const key = typeof name === 'string' && name.startsWith('global_variable_changed:') ? name.slice('global_variable_changed:'.length) : data?.name;
         reports.onGlobalChanged(key);

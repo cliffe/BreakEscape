@@ -488,7 +488,9 @@ export class NPCNeedsSystem {
             kickSeen: {}, kickPending: new Set(),
             // Access slice 9.2 L (6.6): stations where the server's check found this owner locked
             // out (its uses there fail with locked_out), and checks sent and not yet answered
-            // (pcId -> needs clock ms sent; the first use there waits for the answer)
+            // (pcId -> needs clock ms sent; the first use there waits for the answer). User
+            // decision q36: a borrowed hot desk is a second kind of key here, checked when the
+            // borrower sits down, and a borrowed use there fails the same way
             lockedOut: new Set(), lockCheck: {},
             urgentFlag: {},
             mode: 'idle',
@@ -2083,9 +2085,9 @@ export class NPCNeedsSystem {
      * socialUse's time and restores), as AccessWork.social_station? says on the server.
      * User decision q33: a station the NPC is flagged locked out at (sub-slice L) is unusable for
      * social media as for work, so it is passed over like a blocked one (to the next source and
-     * the phone) and, with no phone, is the attempt that fails. The client knows a lockout only
-     * at the own station (lockedOut holds stations alone), so a lockout at a borrowed PC is not
-     * seen here: the use shows as met while the server refuses the post (see IDEAS_BACKLOG).
+     * the phone) and, with no phone, is the attempt that fails. A lockout at a borrowed PC (user
+     * decision q36) is learnt by the check sent when the borrower sits down there, and the
+     * borrowed use then fails (see the use verdict).
      */
     _socialCandidate(s, objects, pos, excludeId) {
         if (s.borrow && s.borrow.need === 'social_media') {
@@ -2390,7 +2392,9 @@ export class NPCNeedsSystem {
      */
     lockCheckSent(npcId, pcId) {
         const s = this.states.get(npcId);
-        if (!s || typeof pcId !== 'string' || pcId !== this._stationId(s)) return false;
+        // User decision q36: the PC of a borrow in use too (the check goes when the borrower sits)
+        const borrowPc = s?.job?.borrowed ? s.job.borrow?.pcId : null;
+        if (!s || typeof pcId !== 'string' || (pcId !== this._stationId(s) && pcId !== borrowPc)) return false;
         s.lockCheck[pcId] = this.clockMs;
         this._log(npcId, 'lock_check', { target: pcId });
         return true;
@@ -2404,8 +2408,10 @@ export class NPCNeedsSystem {
     _applyLockCheck(s, a) {
         const pc = typeof a.forObject === 'string' ? a.forObject : null;
         if (!pc) return;
+        // q36: a borrowed PC's answer counts only for a check this owner sent there
+        const asked = Object.prototype.hasOwnProperty.call(s.lockCheck, pc);
         delete s.lockCheck[pc];
-        if (a.lockedOut !== true || pc !== this._stationId(s) || s.lockedOut.has(pc)) return;
+        if (a.lockedOut !== true || (pc !== this._stationId(s) && !asked) || s.lockedOut.has(pc)) return;
         s.lockedOut.add(pc);
         this._log(s.npcId, 'locked_out', { target: pc });
         this._emit(`npc_locked_out:${s.npcId}`, { npcId: s.npcId, objectId: pc });
@@ -2520,10 +2526,10 @@ export class NPCNeedsSystem {
             this._restoreFrustration(s, e);
             this._seedFailCause(s, e.failWhy);
             // Access 9.2 L (6.6, 9.4): the stations a check found this owner locked out at, so it
-            // does not sit back down and work until its next locked return
-            const station = this._stationId(s);
+            // does not sit back down and work until its next locked return; q36 adds the hot
+            // desks it borrowed (the server sends only its station and its handed-over PCs)
             for (const pc of Array.isArray(e.lockedOut) ? e.lockedOut : []) {
-                if (pc === station && !s.lockedOut.has(pc)) { s.lockedOut.add(pc); this._log(s.npcId, 'locked_out', { target: pc, restored: true }); }
+                if (typeof pc === 'string' && pc && !s.lockedOut.has(pc)) { s.lockedOut.add(pc); this._log(s.npcId, 'locked_out', { target: pc, restored: true }); }
             }
         }
         const pending = this._pendingLevels?.get(s.npcId);
@@ -3095,6 +3101,15 @@ export class NPCNeedsSystem {
         const judged = job.kind === 'use' && job.need && this._judged(s, job.need);
         // Access 9.2 L (6.6): at its own station, a use waits at the desk for a check in flight
         const atStation = judged && !job.borrowed && job.targetId === this._stationId(s);
+        // User decision q36: at a borrowed PC too, for the check sent as the borrower sat down. The
+        // report queue answers every check (lockedOut false when refused or lost), so the wait
+        // there has no lapse: past LOCK_CHECK_WAIT_MS it only starts again
+        const atBorrow = judged && !!job.borrowed && (job.need === 'work' || job.need === 'social_media');
+        if (atBorrow && s.lockCheck[job.targetId] !== undefined) {
+            if (!job.lockHeld) { job.lockHeld = true; this._log(id, 'use_held', { target: job.targetId }); }
+            if (this.clockMs - s.lockCheck[job.targetId] >= LOCK_CHECK_WAIT_MS) s.lockCheck[job.targetId] = this.clockMs;
+            return;
+        }
         if (atStation && s.lockCheck[job.targetId] !== undefined) {
             if (this.clockMs - s.lockCheck[job.targetId] < LOCK_CHECK_WAIT_MS) {
                 if (!job.lockHeld) { job.lockHeld = true; this._log(id, 'use_held', { target: job.targetId }); }
@@ -3133,6 +3148,12 @@ export class NPCNeedsSystem {
         if (atStation && (job.need === 'work' || job.need === 'social_media') && s.lockedOut.has(job.targetId)) {
             const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
             v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest], station: true };
+        }
+        // User decision q36: the borrower's username is locked out at the hot desk, so its sign-in
+        // there fails and the use is not met (a failed borrowed use is still not reported, 6.4)
+        if (atBorrow && s.lockedOut.has(job.targetId)) {
+            const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
+            v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest] };
         }
         // Access 9.2 H (6.4): the borrower signed in before finding out, so a session is left either
         // way; said before anything else (before a failed verdict's turn-back)
