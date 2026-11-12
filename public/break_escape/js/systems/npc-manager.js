@@ -139,7 +139,16 @@ export default class NPCManager {
   static SCRIPTED_CALL_START_MS = 500;
   static SCRIPTED_CALL_RETRY_MS = 500;
   static PHONE_MESSAGE_MAX_CHARS = 4000;
-  static PHONE_STORY_STATE_MAX_CHARS = 60000;
+  // 60.kilobytes, now a UTF-8 byte limit (the server's bytesize, game.rb
+  // MAX_PHONE_STORY_STATE_BYTES), not a character count (SYNC_DELTAS_PLAN 2.1).
+  static PHONE_STORY_STATE_MAX_BYTES = 61440;
+  // Per-field phone export caps, server names (game.rb), measured in code points.
+  static MAX_PHONE_TYPE_CHARS = 20;
+  static MAX_PHONE_STORY_PATH_CHARS = 300;
+  static MAX_PHONE_KNOT_CHARS = 200;
+  static MAX_PHONE_DEFERRED_TAG_CHARS = 300;
+  static MAX_PHONE_DEFERRED_TAGS = 100;
+  static MAX_PHONE_SCALAR_KEY_CHARS = 100;
   // gameTime: elapsed game ms when the message arrived (window.gameClock), so its
   // shown time stays put across reopen and reload (messageClockText in game-clock.js)
   static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded'];
@@ -164,6 +173,11 @@ export default class NPCManager {
   static cpSlice(s, n) {
     if (s.length <= n) return s;
     return Array.from(s).slice(0, n).join('');
+  }
+
+  /** UTF-8 byte length, the server's bytesize (SYNC_DELTAS_PLAN 2.1). */
+  static utf8ByteLength(s) {
+    return new TextEncoder().encode(s).length;
   }
 
   /**
@@ -2288,47 +2302,67 @@ export default class NPCManager {
 
   _phoneStateEntry(npc) {
     const C = NPCManager;
+    // An exact mirror of sanitize_phone_state_entry (game.rb), so the seed built
+    // from the bootstrap matches this export and the thread is not resent on the
+    // first sync after a load (SYNC_DELTAS_PLAN 2.1).
     const history = (this.conversationHistory.get(npc.id) || [])
       .slice(-C.PHONE_HISTORY_MAX_MESSAGES)
-      .filter(msg => msg && typeof msg.text === 'string' && msg.text)
+      .filter(msg => msg && typeof msg === 'object' && typeof msg.type === 'string' && typeof msg.text === 'string' && msg.text)
       .map(msg => {
         const copy = {};
         for (const field of C.PHONE_MESSAGE_FIELDS) {
-          if (msg[field] !== undefined && msg[field] !== null) copy[field] = msg[field];
+          const value = msg[field];
+          if (value === undefined) continue;
+          switch (field) {
+            case 'type':
+              if (typeof value === 'string' && C.cpWithin(value, C.MAX_PHONE_TYPE_CHARS)) copy.type = value;
+              break;
+            case 'text':
+              copy.text = value; // already a string (filter above)
+              break;
+            case 'timestamp':
+            case 'gameTime':
+              if (typeof value === 'number') copy[field] = value;
+              break;
+            default: // read, isBark, timed, preloaded: boolean only
+              if (value === true || value === false) copy[field] = value;
+          }
         }
-        copy.text = copy.text.slice(0, C.PHONE_MESSAGE_MAX_CHARS);
+        copy.text = C.cpSlice(copy.text, C.PHONE_MESSAGE_MAX_CHARS);
         copy.read = !!msg.read;
         return copy;
       });
     const storyState = typeof npc.storyState === 'string' &&
-      npc.storyState.length <= C.PHONE_STORY_STATE_MAX_CHARS ? npc.storyState : null;
+      C.utf8ByteLength(npc.storyState) <= C.PHONE_STORY_STATE_MAX_BYTES ? npc.storyState : null;
     if (history.length === 0 && !storyState) return null;
     const entry = { history };
     if (storyState) {
       entry.storyState = storyState;
       // A story position only fits the story it came from (changeStoryPath)
-      if (npc.storyPath) entry.storyPath = npc.storyPath;
+      if (typeof npc.storyPath === 'string' && C.cpWithin(npc.storyPath, C.MAX_PHONE_STORY_PATH_CHARS)) entry.storyPath = npc.storyPath;
     }
-    if (npc.currentKnot) entry.currentKnot = npc.currentKnot;
-    if (npc.lastEnteredKnot) entry.lastEnteredKnot = npc.lastEnteredKnot;
-    if (npc.preloadedKnot) entry.preloadedKnot = npc.preloadedKnot;
+    for (const key of ['currentKnot', 'lastEnteredKnot', 'preloadedKnot']) {
+      if (typeof npc[key] === 'string' && C.cpWithin(npc[key], C.MAX_PHONE_KNOT_CHARS)) entry[key] = npc[key];
+    }
     // A preload's deferred tags and globals run when the thread is first opened;
     // if the player reloads before that, they still have to run
-    if (Array.isArray(npc.deferredTags) && npc.deferredTags.length > 0) {
-      entry.deferredTags = npc.deferredTags.filter(t => typeof t === 'string');
+    if (Array.isArray(npc.deferredTags)) {
+      const tags = npc.deferredTags.filter(t => typeof t === 'string' && C.cpWithin(t, C.MAX_PHONE_DEFERRED_TAG_CHARS)).slice(0, C.MAX_PHONE_DEFERRED_TAGS);
+      if (tags.length > 0) entry.deferredTags = tags;
     }
     if (npc.deferredGlobals && typeof npc.deferredGlobals === 'object') {
       const scalar = v => v === null || ['string', 'number', 'boolean'].includes(typeof v);
+      const keyOk = k => typeof k === 'string' && C.cpWithin(k, C.MAX_PHONE_SCALAR_KEY_CHARS);
       const globals = {};
       for (const [k, v] of Object.entries(npc.deferredGlobals)) {
-        if (scalar(v)) globals[k] = v;
+        if (keyOk(k) && scalar(v)) globals[k] = v;
       }
       if (Object.keys(globals).length > 0) {
         entry.deferredGlobals = globals;
         // Each one's value at preload: applied on first open only if still unchanged
         const base = {};
         for (const [k, v] of Object.entries(npc.deferredGlobalsBase || {})) {
-          if (k in globals && scalar(v)) base[k] = v;
+          if (k in globals && keyOk(k) && scalar(v)) base[k] = v;
         }
         if (Object.keys(base).length > 0) entry.deferredGlobalsBase = base;
       }

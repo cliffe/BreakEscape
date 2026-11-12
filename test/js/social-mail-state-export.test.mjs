@@ -341,7 +341,11 @@ test('pagehide flush: mailState comes right after globalVariables in the first r
 
 test('pagehide flush: a mailState over the budget is dropped whole, not cut', () => {
   const { mail } = setup();
-  mail.addMessage('guest', { id: 'huge', folder: 'inbox', subject: 's', body: big(70_000), read: false, tells: [], landed: null });
+  // Each body is clipped to MAX_MAIL_BODY_CHARS (4000) on export now (2.1), so a
+  // single huge body no longer overflows; many clipped messages do.
+  for (let i = 0; i < 20; i++) {
+    mail.addMessage('guest', { id: `huge${i}`, folder: 'inbox', subject: 's', body: big(4000), read: false, tells: [], landed: null });
+  }
   new StateSync().flush();
   assert.equal(flushed.length, 1);
   assert.ok(flushed[0].length <= 60_000);

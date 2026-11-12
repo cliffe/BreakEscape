@@ -49,6 +49,32 @@ export const MAIL_MESSAGE_FIELDS = [
 // Default reply delay when neither the character nor the target authors one (00 §10)
 export const DEFAULT_REPLY_DELAY_SECONDS = 20;
 
+// Mirror of the mail sanitiser limits in game.rb (SYNC_DELTAS_PLAN 2.1). The
+// export clips below reproduce the server's cuts exactly, so the seed built from
+// the bootstrap (R1) matches the client's export and nothing is resent on the
+// first sync after a load. The social-mail-state-export constants test reads each
+// of these from game.rb's source and fails if a value drifts. Names match the
+// server; MAIL_MESSAGE_FIELDS (above) keeps its own name, mapped in that test.
+export const MAIL_DRAFT_KEYS = ['to', 'subject', 'templates', 'slots', 'attachment', 'link', 'targetId', 'headerFrom', 'contactId', 'freeText'];
+export const MAIL_BODY_KEYS = ['body', 'hiddenText', 'hiddenTextLabel'];
+export const MAIL_FOLDERS = ['inbox', 'sent'];
+export const MAIL_EXPECT_MODES = ['choices', 'compose', 'waiting'];
+export const MAX_MAIL_BODY_CHARS = 4000;
+export const MAX_MAIL_STRING = 1000;
+export const MAX_MAIL_JSON_DEPTH = 6;
+export const MAX_MAIL_JSON_ENTRIES = 200;
+export const MAX_MAIL_JSON_KEY_CHARS = 100;
+export const MAX_MAIL_TELL_CHARS = 100;
+export const MAX_MAIL_TELLS = 50;
+export const MAX_MAIL_ID_LENGTH = 300;
+export const MAX_MAIL_BOX_ID_CHARS = 100;
+export const MAX_MAIL_THREAD_KEY_CHARS = 200;
+export const MAX_MAIL_THREAD_CHOICES = 20;
+export const MAX_MAIL_THREAD_POSITION_BYTES = 61440;
+export const MAX_MAIL_EXPECT_TARGET_CHARS = 100;
+export const MAX_MAIL_EXPECT_OPTIONS = 10;
+export const MAX_MAIL_DRAFT_ACCOUNT_CHARS = 100;
+
 // Code-point helpers (SYNC_DELTAS_PLAN 2.1). Ruby counts code points, JavaScript
 // counts UTF-16 units, so an astral character is cut at a different place on each
 // side. The mail export clips measure and cut by code points to mirror the server.
@@ -67,6 +93,133 @@ export function cpWithin(s, n) {
 export function cpSlice(s, n) {
   if (s.length <= n) return s;
   return Array.from(s).slice(0, n).join('');
+}
+
+/** UTF-8 byte length, the server's bytesize (SYNC_DELTAS_PLAN 2.1). */
+const utf8ByteLength = s => new TextEncoder().encode(s).length;
+
+// Rails' present?: a non-empty string with a non-whitespace character.
+const mailPresent = s => typeof s === 'string' && /\S/u.test(s);
+const mailBoxId = s => mailPresent(s) && cpWithin(s, MAX_MAIL_BOX_ID_CHARS);
+const mailId = s => mailPresent(s) && cpWithin(s, MAX_MAIL_ID_LENGTH);
+
+/**
+ * Plain JSON only, an exact mirror of game.rb sanitize_mail_json: short strings,
+ * finite numbers, booleans and null, objects and arrays at most MAX_MAIL_JSON_DEPTH
+ * deep. JSON.stringify writes NaN and Infinity as null, so a number is kept as is
+ * and the server never receives a non-finite float (SYNC_DELTAS_PLAN 2.1).
+ */
+export function clipMailJson(value, depth = 0) {
+  if (typeof value === 'string') return cpSlice(value, MAX_MAIL_STRING);
+  if (value === null || typeof value === 'boolean' || typeof value === 'number') return value;
+  if (Array.isArray(value)) {
+    if (depth >= MAX_MAIL_JSON_DEPTH) return [];
+    return value.slice(0, MAX_MAIL_JSON_ENTRIES).map(v => clipMailJson(v, depth + 1));
+  }
+  if (value && typeof value === 'object') {
+    if (depth >= MAX_MAIL_JSON_DEPTH) return {};
+    const out = {};
+    for (const [k, v] of Object.entries(value).slice(0, MAX_MAIL_JSON_ENTRIES)) {
+      if (cpWithin(k, MAX_MAIL_JSON_KEY_CHARS)) out[k] = clipMailJson(v, depth + 1);
+    }
+    return out;
+  }
+  return undefined;
+}
+
+/**
+ * The server's stored form of one mailboxes.<box>.<id> message, an exact mirror
+ * of the mailboxes branch of mail_state_updates followed by sanitize_mail_message
+ * (game.rb). `fullKey` is the whole `mailboxes.<box>.<id>` key; the ids come from
+ * it, as the server's split('.', 2) does. Returns undefined when the key or value
+ * is not one the server would store (that key is then not exported); never null:
+ * a deletion is a missing key handled by the keyed diff (R5 n6).
+ */
+export function clipMailMessage(fullKey, msg) {
+  if (typeof fullKey !== 'string' || !fullKey.startsWith('mailboxes.')) return undefined;
+  const rest = fullKey.slice('mailboxes.'.length);
+  const dot = rest.indexOf('.');
+  if (dot < 0) return undefined; // no message id after the box id
+  const boxId = rest.slice(0, dot);
+  const msgId = rest.slice(dot + 1);
+  if (!mailBoxId(boxId) || !mailId(msgId)) return undefined;
+  if (!msg || typeof msg !== 'object' || Array.isArray(msg)) return undefined;
+
+  const merged = { ...msg, id: msgId }; // the server stores the id from the key
+  const clean = {};
+  for (const key of MAIL_MESSAGE_FIELDS) {
+    if (!(key in merged)) continue;
+    const value = merged[key];
+    if (MAIL_BODY_KEYS.includes(key)) {
+      if (typeof value === 'string') clean[key] = cpSlice(value, MAX_MAIL_BODY_CHARS);
+    } else if (key === 'folder') {
+      if (MAIL_FOLDERS.includes(value)) clean[key] = value;
+    } else if (key === 'gameTime') {
+      if (typeof value === 'number') clean[key] = value;
+    } else if (key === 'read' || key === 'seeded') {
+      if (value === true || value === false) clean[key] = value;
+    } else if (key === 'landed') {
+      if (value === true || value === false || value === null) clean[key] = value;
+    } else if (key === 'tells') {
+      if (Array.isArray(value)) {
+        clean[key] = value.filter(t => typeof t === 'string' && cpWithin(t, MAX_MAIL_TELL_CHARS)).slice(0, MAX_MAIL_TELLS);
+      }
+    } else {
+      clean[key] = clipMailJson(value, 0);
+    }
+  }
+  return clean;
+}
+
+/**
+ * The server's stored form of one threads.<key> value, an exact mirror of the
+ * threads branch of mail_state_updates and sanitize_mail_threads (game.rb).
+ * `fullKey` is the whole `threads.<key>` key. Returns undefined when the thread
+ * is not one the server stores; a thread with no stored sub-keys exports as {}.
+ */
+export function clipMailThread(fullKey, thread) {
+  if (typeof fullKey !== 'string' || !fullKey.startsWith('threads.')) return undefined;
+  const threadKey = fullKey.slice('threads.'.length);
+  if (!mailPresent(threadKey) || !cpWithin(threadKey, MAX_MAIL_THREAD_KEY_CHARS)) return undefined;
+  if (!thread || typeof thread !== 'object' || Array.isArray(thread)) return undefined;
+
+  const entry = {};
+  const position = thread.position;
+  if (typeof position === 'string') {
+    if (utf8ByteLength(position) <= MAX_MAIL_THREAD_POSITION_BYTES) entry.position = position;
+  } else if (position && typeof position === 'object' && !Array.isArray(position)) {
+    if (utf8ByteLength(JSON.stringify(position)) <= MAX_MAIL_THREAD_POSITION_BYTES) entry.position = position;
+  }
+  if (Array.isArray(thread.choices)) entry.choices = clipMailJson(thread.choices.slice(0, MAX_MAIL_THREAD_CHOICES), 0);
+  const expects = thread.expects;
+  if (expects && typeof expects === 'object' && !Array.isArray(expects) && MAIL_EXPECT_MODES.includes(expects.mode)) {
+    const clean = { mode: expects.mode };
+    if (typeof expects.targetId === 'string' && cpWithin(expects.targetId, MAX_MAIL_EXPECT_TARGET_CHARS)) clean.targetId = expects.targetId;
+    if (Array.isArray(expects.options)) {
+      const opts = expects.options.filter(o => typeof o === 'string').slice(0, MAX_MAIL_EXPECT_OPTIONS).map(o => cpSlice(o, MAX_MAIL_STRING));
+      if (opts.length > 0) clean.options = opts;
+    }
+    entry.expects = clean;
+  }
+  return entry;
+}
+
+/**
+ * The server's stored form of the whole drafts object, an exact mirror of
+ * sanitize_mail_drafts (game.rb). Returns undefined when `drafts` is not an
+ * object (the server returns nil for it).
+ */
+export function clipMailDrafts(drafts) {
+  if (!drafts || typeof drafts !== 'object' || Array.isArray(drafts)) return undefined;
+  const clean = {};
+  for (const [accountId, draft] of Object.entries(drafts)) {
+    if (typeof accountId !== 'string' || !cpWithin(accountId, MAX_MAIL_DRAFT_ACCOUNT_CHARS)) continue;
+    if (!draft || typeof draft !== 'object' || Array.isArray(draft)) continue;
+    const picked = {};
+    for (const k of MAIL_DRAFT_KEYS) if (k in draft) picked[k] = clipMailJson(draft[k], 0);
+    clean[accountId] = picked;
+  }
+  return clean;
 }
 
 const pick = (obj, fields) => {
@@ -182,12 +335,21 @@ export class MailScheduler {
       for (const m of box.messages || []) {
         if (!m || !m.id) continue;
         const seeded = m.seeded === true || seeds.get(m.id)?.mailbox === boxId;
-        out[`mailboxes.${boxId}.${m.id}`] = seeded ? seededStub(m) : { ...m };
+        const key = `mailboxes.${boxId}.${m.id}`;
+        // Export the server's stored form, so the seed built from the bootstrap
+        // matches and the message is not resent on the first sync (R1, 2.1).
+        const clipped = clipMailMessage(key, seeded ? seededStub(m) : m);
+        if (clipped !== undefined) out[key] = clipped;
       }
     }
     out.jobs = this.exportJobs();
-    for (const [key, thread] of Object.entries(this.state.threads)) out[`threads.${key}`] = thread;
-    out.drafts = this.state.drafts;
+    for (const [key, thread] of Object.entries(this.state.threads)) {
+      const fullKey = `threads.${key}`;
+      const clipped = clipMailThread(fullKey, thread);
+      if (clipped !== undefined) out[fullKey] = clipped;
+    }
+    const drafts = clipMailDrafts(this.state.drafts);
+    if (drafts !== undefined) out.drafts = drafts;
     out.metrics = this.state.metrics;
     return out;
   }

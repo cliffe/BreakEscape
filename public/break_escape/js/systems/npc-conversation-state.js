@@ -10,6 +10,10 @@
 // Ink VAR prefixes that live for one run only and are never saved (00 S7)
 const RUN_SCOPED_PREFIXES = ['email_'];
 
+// Cap on an NPC id and an ink variable name (game.rb MAX_NPC_INK_NAME_CHARS),
+// in code points; the export mirrors it so the seed matches (SYNC_DELTAS_PLAN 2.1).
+export const MAX_NPC_INK_NAME_CHARS = 100;
+
 // Code-point helpers (SYNC_DELTAS_PLAN 2.1). Ruby counts code points, JavaScript
 // counts UTF-16 units, so an astral character is cut at a different place on each
 // side. exportNpcInkVariables measures by code points to mirror the server. A
@@ -242,10 +246,15 @@ class NPCConversationStateManager {
         const out = {};
         for (const [npcId, state] of this.conversationStates) {
             if (!state?.variables) continue;
+            // Mirror merge_npc_ink_variables! (game.rb): an NPC id or a variable
+            // name over MAX_NPC_INK_NAME_CHARS code points is dropped, so the seed
+            // built from the bootstrap matches this export (SYNC_DELTAS_PLAN 2.1).
+            if (!cpWithin(npcId, MAX_NPC_INK_NAME_CHARS)) continue;
             const vars = {};
             for (const [key, value] of Object.entries(state.variables)) {
                 if (this.isGlobalVariable(key)) continue;
                 if (this.isRunScopedVariable(key)) continue;
+                if (!cpWithin(key, MAX_NPC_INK_NAME_CHARS)) continue;
                 if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) {
                     vars[key] = value;
                 }
