@@ -37,15 +37,17 @@ function noop() {}
 const src = readFileSync(join(chat, 'phone-chat-minigame.js'), 'utf8').replace(/^import [\s\S]*?;\s*$/gm, '');
 const { PhoneChatMinigame } = await import(dataUrl(header + src));
 
-/** A thread open on `npcId`; `avail` is the live answer of callButtonFor, `placed` collects placeCall calls. */
-function openThread({ avail }) {
+/** A thread open on `npcId`; `avail` is the live answer of callButtonFor, `placed` collects placeCall
+ *  calls, `dialOk` (default follows `avail`) is what placeCall returns, `notes` collects toasts. */
+function openThread({ avail, dialOk }) {
     const dispatcher = new NPCEventDispatcher();
     window.eventDispatcher = dispatcher;
     const shown = [];
     const placed = [];
+    const notes = [];
     window.phoneRinger = {
         callButtonFor: () => (avail.on ? { label: 'Call', ariaLabel: 'Call X' } : null),
-        placeCall: (id) => { placed.push(id); return avail.on; },
+        placeCall: (id) => { placed.push(id); return dialOk ? dialOk.on : avail.on; },
         unregisterPhone() {},
     };
     const inst = Object.create(PhoneChatMinigame.prototype);
@@ -53,13 +55,19 @@ function openThread({ avail }) {
     inst.currentNPCId = 'hax';
     inst.gameState = { isActive: true };
     inst.conversation = { cleanup() {} };
-    inst.ui = { setCallButton: (state) => shown.push(state ? state.label : null), cleanup() {} };
+    inst.ui = {
+        setCallButton: (state) => shown.push(state ? state.label : null),
+        showNotification: (text, kind) => notes.push([text, kind]),
+        cleanup() {},
+    };
     inst._flushPendingMessages = () => {};
     inst.saveStoryState = () => {};
     inst._emitConversationClosed = () => {};
     inst._resetRingerCallOnTeardown = () => {};
-    return { inst, dispatcher, shown, placed };
+    return { inst, dispatcher, shown, placed, notes };
 }
+
+const watchCount = (d) => (d.listeners.get('global_variable_changed:*') || []).length;
 
 test('m2: a button that becomes available while the thread is open appears, and one that becomes unavailable goes', () => {
     const avail = { on: false };
@@ -89,9 +97,49 @@ test('m2: the watch is set once, ignores the contact list and a closing thread, 
     dispatcher.emit('global_variable_changed:x', {});
     assert.equal(shown.length, 3, 'a thread that is closing is left alone');
     inst._ending = false;
+    assert.equal(watchCount(dispatcher), 1, 'one watcher while the thread is open');
     inst.cleanup();
+    // A5 n-1 (K8): the watcher is actually removed from the dispatcher, not just left inert because
+    // cleanup() nulled this.conversation. Asserting the listener count pins the `off` call.
+    assert.equal(watchCount(dispatcher), 0, 'cleanup removes the watcher');
     dispatcher.emit('global_variable_changed:x', {});
     assert.equal(shown.length, 3, 'after cleanup nothing listens');
+});
+
+test('A5 n-1 (K7): the watch does nothing while a dial is in progress (conversation null), without being removed', () => {
+    const avail = { on: true };
+    const { inst, dispatcher, shown } = openThread({ avail });
+    inst._refreshCallButton('hax');
+    assert.equal(shown.length, 1);
+    // During a dial the thread is still "open" (id set, not ending, active) but conversation is null.
+    inst.conversation = null;
+    dispatcher.emit('global_variable_changed:x', {});
+    assert.equal(shown.length, 1, 'no refresh while dialling');
+    assert.equal(watchCount(dispatcher), 1, 'but the watcher is still attached for when the thread returns');
+});
+
+test('A5 n-2 (finding 4): a press refused while the entry still applies gives feedback and keeps the button', () => {
+    const avail = { on: true };     // the entry still applies (callButtonFor non-null)
+    const dialOk = { on: false };   // but the dial is refused (a held call, a paused scene...)
+    const { inst, shown, placed, notes } = openThread({ avail, dialOk });
+    inst._refreshCallButton('hax');
+    inst._pressCall('hax');
+    assert.deepEqual(placed, ['hax'], 'the dial was attempted');
+    assert.equal(notes.length, 1, 'the player is told');
+    assert.match(notes[0][0], /call/i);
+    assert.deepEqual(shown, ['Call', 'Call'], 'the button is refreshed, not hidden (the entry still applies)');
+});
+
+test('A5 n-2 (finding 4): a press that dials nothing (the entry went away) hides the button with no toast', () => {
+    const avail = { on: false };    // callButtonFor now null
+    const { inst, shown, placed, notes } = openThread({ avail });
+    avail.on = true;                // draw it once
+    inst._refreshCallButton('hax');
+    avail.on = false;               // the entry goes away
+    inst._pressCall('hax');
+    assert.deepEqual(placed, ['hax']);
+    assert.equal(notes.length, 0, 'no "can\'t call" toast when there was nothing to call');
+    assert.deepEqual(shown, ['Call', null], 'the button is hidden');
 });
 
 test('m2: a press that dials nothing hides the button', () => {

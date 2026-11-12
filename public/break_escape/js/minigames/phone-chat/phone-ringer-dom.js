@@ -329,7 +329,10 @@ export function installPhoneRinger(win = window) {
                     delete phone.params._closingForCall;
                     return null;
                 }
-                return { kind: 'phone', ...state };
+                // Remember which contact the call is to: when it is the thread the phone was on,
+                // the call's own phone-chat emits conversation_closed for that contact, so
+                // dropDisplaced must not emit a second one (sweep item 1).
+                return { kind: 'phone', callNpcId: npcId, ...state };
             }
             if (openMinigame()) return null;
             const laptop = doc.getElementById('laptop-popup');
@@ -352,6 +355,11 @@ export function installPhoneRinger(win = window) {
         // conversation_closed; it is emitted here, once, for the thread it was on (not for the list).
         dropDisplaced(d) {
             if (d?.kind !== 'phone' || !d.thread) return;
+            // A call placed from, or answered over, the same contact's own thread: its own
+            // phone-chat has already emitted conversation_closed for this contact, so emitting
+            // here would fire it twice (plan 2.5 says once). Only a different thread is owed it
+            // (row 10: a call to Y answered over X's thread). Sweep item 1.
+            if (d.callNpcId && d.thread === d.callNpcId) return;
             win.eventDispatcher?.emit?.(`conversation_closed:${d.thread}`, { npcId: d.thread, timestamp: Date.now() });
         },
         // Rows 11, 25: the popup comes back as it was, unless something else is open by then
@@ -385,6 +393,10 @@ export function installPhoneRinger(win = window) {
         },
         toast(text) { win.showNotification?.(text, 'info', 'Phone'); },
         displayName: (npcId) => nm()?.getNPC?.(npcId)?.displayName || null,
+        // Item 8: re-check a queued or ringing offer's mapping condition. Returns false (stale, drop)
+        // only when npcManager can confidently say so (a purely globalVars condition that now fails);
+        // otherwise true (keep ringing). Missing npcManager keeps the offer.
+        ringConditionHolds: (cond) => { const m = nm(); return m?.ringConditionHolds ? m.ringConditionHolds(cond) : true; },
         emit(name, data) { win.eventDispatcher?.emit?.(name, data); },
         setGlobal(map) {
             const globals = win.gameState?.globalVariables;
@@ -452,6 +464,20 @@ export function installPhoneRinger(win = window) {
 
     const ringer = createPhoneRinger({ adapter, clock });
 
+    // Item 7: a pending callback is still worth offering only while its ring's callbackWhen condition
+    // holds. The adapter evaluates it (it owns the globals via callConditionHolds); a failing one is
+    // cleared quietly so the "Call back" button never dials an out-of-date knot. A reload restores a
+    // callback without its condition (the save is unchanged), so the re-check applies only this session.
+    function liveCallback(npcId) {
+        const cb = ringer.callbackFor(npcId);
+        if (!cb) return null;
+        if (cb.callbackWhen && !nm()?.callConditionHolds?.(cb.callbackWhen)) {
+            ringer.clearStaleCallback(npcId);
+            return null;
+        }
+        return cb;
+    }
+
     const phoneRinger = {
         ...ringer,
         /** An offer as npc-manager builds it: `ring` (true or an object) is normalised here. */
@@ -463,6 +489,7 @@ export function installPhoneRinger(win = window) {
                 voicemailKnot: ring ? ring.voicemailKnot : raw?.voicemailKnot,
                 withheld: ring ? ring.withheld : raw?.withheld,
                 untilAnswered: ring ? ring.untilAnswered : raw?.untilAnswered,
+                callbackWhen: ring ? ring.callbackWhen : raw?.callbackWhen,
             });
         },
         /**
@@ -477,7 +504,7 @@ export function installPhoneRinger(win = window) {
             if (!npc || npc.callId || !phone || phone.params?.disableClose || phone.params?.ringerCall) return null;
             if (hostPhone(npcId) !== phone) return null;
             const entries = normaliseCall(npc.call);
-            const callback = ringer.callbackFor(npcId);
+            const callback = liveCallback(npcId);
             // A pending callback shows the button even when the contact has no `call` block (A6, 2.6)
             if (!entries.length && !callback) return null;
             const pick = pickButtonCall(entries, (w) => !!nm()?.callConditionHolds?.(w), callback);
@@ -498,7 +525,7 @@ export function installPhoneRinger(win = window) {
             if (!open || open.params?.disableClose || open.params?.ringerCall) return false;
             const entries = normaliseCall(npc.call);
             const holds = (w) => !!nm()?.callConditionHolds?.(w);
-            const callback = ringer.callbackFor(npcId);
+            const callback = liveCallback(npcId);
             const pick = knot ? pickPlacedCall(entries, holds, knot, callback) : pickButtonCall(entries, holds, callback);
             if (!pick) return false;
             const result = ringer.dial(npcId,
@@ -535,6 +562,9 @@ export function installPhoneRinger(win = window) {
         unregisterPhone(minigame) {
             if (registeredPhone === minigame) registeredPhone = null;
         },
+        // Exposed for the sweep item 1 test: the adapter owes a displaced thread's conversation_closed,
+        // but not when the call that displaced it was to the same contact (it already emitted).
+        dropDisplaced: adapter.dropDisplaced,
         layer,
     };
     win.phoneRinger = phoneRinger;

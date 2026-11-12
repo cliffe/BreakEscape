@@ -1195,12 +1195,19 @@ export class PhoneChatMinigame extends MinigameScene {
 
         console.log(`👆 Player chose: ${choiceText}`);
 
-        // Message sent: only for a choice that is taken (not one "Keep going" left untaken)
-        this.playMessageSent?.();
+        // A cosmetic home-stub choice whose whole text is one pair of parentheses ("(Close.)",
+        // "(Ring back.)": the lesson-21 pattern) keeps the story live but is not a line the player
+        // sends, so it posts no sent bubble and plays no sent sound (M1 m4). The choice is still taken.
+        const silentChoice = /^\s*\([^()]*\)\s*$/.test((choiceText ?? '').trim());
 
-        // Display player's choice as a message
-        this.ui.addMessage('player', choiceText);
-        this.history.addMessage('player', choiceText, { choice: choiceIndex });
+        if (!silentChoice) {
+            // Message sent: only for a choice that is taken (not one "Keep going" left untaken)
+            this.playMessageSent?.();
+
+            // Display player's choice as a message
+            this.ui.addMessage('player', choiceText);
+            this.history.addMessage('player', choiceText, { choice: choiceIndex });
+        }
 
         // Clear choices
         this.ui.clearChoices();
@@ -1385,8 +1392,13 @@ export class PhoneChatMinigame extends MinigameScene {
         if (!this.gameState?.isActive || this.currentNPCId !== npcId || this._ending) return;
         this._flushPendingMessages();
         this.saveStoryState();
-        // Nothing to dial (the entry went away since the button was drawn): the button goes too
-        if (!window.phoneRinger?.placeCall?.(npcId, {})) this._refreshCallButton(npcId);
+        if (window.phoneRinger?.placeCall?.(npcId, {})) return;
+        // The dial did not start. Either the entry went away since the button was drawn (the
+        // button goes too), or the call was refused while the entry still applies (a connected or
+        // held call, a paused scene, a knockout): tell the player so the press is not dead (A5 n-2).
+        const stillCallable = !!window.phoneRinger?.callButtonFor?.(npcId, this);
+        if (stillCallable) this.ui?.showNotification?.('Can’t call right now', 'info');
+        this._refreshCallButton(npcId);
     }
 
     /**

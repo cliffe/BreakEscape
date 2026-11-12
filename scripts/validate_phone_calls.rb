@@ -14,7 +14,7 @@ require 'json'
 require 'set'
 
 module ValidatePhoneCalls
-  RING_KEYS = %w[onMissed voicemailKnot withheld untilAnswered].freeze
+  RING_KEYS = %w[onMissed voicemailKnot withheld untilAnswered callbackWhen].freeze
   CALL_KEYS = %w[knot when unavailable button].freeze
   ON_MISSED = %w[callback voicemail].freeze
   UNAVAILABLE = %w[no_answer hidden].freeze
@@ -101,7 +101,11 @@ module ValidatePhoneCalls
     names
   end
 
-  # Mirrors BreakEscape::CarryOver.import_name (app/models/break_escape/carry_over.rb).
+  # Mirrors the engine model BreakEscape::CarryOver.import_name (app/models/break_escape/carry_over.rb),
+  # which is what actually merges the imports into globalVariables at game creation. This is a separate
+  # copy from validate_scenario.rb's carry_over_import_name (review A7a R3 nit 4): that one keeps a
+  # blank `completed`/`as` as "" where this one treats a blank as "no name", because here the result
+  # feeds a `globalVars.\w+` match that a "" could never satisfy. Keep this copy faithful to the model.
   def carry_over_name(entry)
     return nil unless entry.is_a?(Hash)
     return (entry['completed'].to_s.empty? ? nil : entry['completed'].to_s) if entry.key?('completed')
@@ -342,6 +346,20 @@ module ValidatePhoneCalls
       end
       warn.call("#{where}: ring.untilAnswered has no effect on a forced call (disableClose), which auto-answers") if until_answered && forced
 
+      if src.key?('callbackWhen') && !src['callbackWhen'].nil?
+        cbw = src['callbackWhen']
+        if cbw.is_a?(String) && !cbw.strip.empty?
+          bad = when_misuse(cbw)
+          err.call("#{where}: ring.callbackWhen uses #{bad}, which a call condition cannot read (only globalVars. terms; plan 3.1)") if bad
+          global_names(cbw).reject { |n| globals.include?(n) }.each do |n|
+            err.call("#{where}: ring.callbackWhen reads globalVars.#{n}, which is not in globalVariables and nothing sets it: the condition sees undefined#{var_hint(source, n)}")
+          end
+          warn.call("#{where}: ring.callbackWhen has no effect unless ring.onMissed is \"callback\" (got #{on_missed.inspect})") if on_missed != 'callback'
+        else
+          err.call("#{where}: ring.callbackWhen must be a non-empty condition string")
+        end
+      end
+
       target = cfg['targetKnot'] || cfg['knot']
       if !(target.is_a?(String) && !target.empty?) && !voiced
         # The engine falls back to the thread's current knot (npc-manager.js: targetKnot || knot || currentKnot),
@@ -359,6 +377,21 @@ module ValidatePhoneCalls
             warn.call("#{where}: ring.untilAnswered, but the call never reads call_answer_seconds; add a line for a long wait (plan 3.1, 2.11)")
           end
         end
+      end
+    end
+
+    # A voicemail knot that produces no `voice:` line (it only sets VARs) is overwritten, on a
+    # contact the player has never texted, by the next intro preload (review A6 n-e, plan 2.6): the
+    # preload sees only the "Voicemail" row, runs a fresh story and saves it over the voicemail's.
+    # The shipped missions never hit this (every voicemail knot speaks); warn so it stays that way.
+    if source && named && !voicemail_knots.empty?
+      knot_at = knot_of_lines(source)
+      voicemail_knots.uniq.each do |vm|
+        next unless knot_exists.call(vm)
+
+        reach = reachable_knots(named, [vm], home)
+        speaks = source.each_with_index.any? { |line, i| reach.include?(knot_at[i]) && line.sub(%r{(^|\s)//.*\z}, '').strip.downcase.start_with?('voice:') }
+        warn.call("ring.voicemailKnot \"#{vm}\" produces no voice: line (it only sets variables); a lines-less voicemail on a contact the player never texts is overwritten by the intro preload (review A6 n-e, plan 2.6)") unless speaks
       end
     end
 

@@ -625,7 +625,7 @@ About two dozen handler calls arrive in this plan, most of them HaX, and many ar
   - warn: a knot in a call set that diverts to the home knot, unless the contact has `voiced: true` (3.5);
   - warn: a `call` or `ring` contact with no `voice`;
   - warn: a contact with `callId` and a `call` entry (the button is hidden);
-  - warn: a `sendTimedMessage.message`, `timedMessages` text or bark for a contact with no `call` entry and no `ring` that matches `\b(call|ring) me\b` (case-insensitive): the text promises a call the contact can't take (3.5);
+  - warn: a `sendTimedMessage.message`, `timedMessages` text or bark for a contact with no `call` entry and no `ring` that promises a call the contact can't take (3.5): "call/ring/phone me", or a wider call promise ("Call anytime", "Call if…", "Phone me when…", "call back", "call it in"), excluding a noun use ("your call"), the NPC's own ring ("I'll ring…") and someone else's ("tell him to call back"). The call-knot source is scanned the same way (review A7a R1–R3, N1);
   - warn: a `call` contact not in its phone's `npcIds` that nothing gives history to (no `ring`, no `timedMessages`, no `sendTimedMessage` for it): its thread, and so its button, never appears (`phone-chat-ui.js:506-517`);
   - Voiced-line checks on the call set and voicemail knots: no printed variables (`{…}` that prints), no inline stage directions in parentheses or asterisks. These replace the phone-channel gap in dialoguelint (1.9).
 - Tests: `test/js/validator-phone-calls.test.mjs`, following `test/js/validator-social-pretext.test.mjs`.

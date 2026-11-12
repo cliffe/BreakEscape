@@ -553,6 +553,23 @@ export default class NPCManager {
   }
 
   /**
+   * Whether a ring mapping's `condition` still holds while its call is queued or ringing (plan 2.3,
+   * sweep item 8). Like a held bark, the condition is re-run so a global that has changed since the
+   * ring was offered can drop it. The original event is gone, so only a condition made entirely of
+   * `globalVars.*` terms (the state that can change under a pending ring) is re-evaluated; a
+   * condition that reads event data is left holding. Returns true (keep ringing) unless it can
+   * confidently say the condition is now false.
+   * @param {string|null} condition
+   * @returns {boolean}
+   */
+  ringConditionHolds(condition) {
+    if (!condition || typeof condition !== 'string' || !condition.trim()) return true;
+    const terms = condition.split('&&').map((t) => t.trim()).filter(Boolean);
+    if (!terms.length || !terms.every((t) => /^globalVars\./.test(t))) return true;
+    try { return !!safeEvaluateCondition(condition, {}); } catch (e) { return true; }
+  }
+
+  /**
    * Add a call row to a contact's thread (plan 2.6): `{ type: 'call', callEvent, text, timestamp,
    * read }` with fixed plain text. Only the ringer's outcomes call this (never a pretext call or a
    * legacy voiced mapping). A missed call is unread; the others are read.
@@ -1680,7 +1697,10 @@ export default class NPCManager {
             ring: config.ring,
             disableClose: config.disableClose || false,
             resume: config.resume === true,
-            callLabel: config.callLabel || null
+            callLabel: config.callLabel || null,
+            // Sweep item 8: the mapping's condition, re-checked while queued or ringing (a global
+            // that changes under a pending ring can drop it). A string condition only.
+            ringCondition: typeof config.condition === 'string' ? config.condition : null
           });
           console.log(`[NPCManager] Event '${eventPattern}' for NPC '${npcId}' → ring offer: ${outcome}`);
           return;

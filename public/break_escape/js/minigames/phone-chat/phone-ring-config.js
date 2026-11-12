@@ -8,7 +8,7 @@
  * No imports, so node tests load it on its own.
  */
 
-const RING_KEYS = new Set(['onMissed', 'voicemailKnot', 'withheld', 'untilAnswered']);
+const RING_KEYS = new Set(['onMissed', 'voicemailKnot', 'withheld', 'untilAnswered', 'callbackWhen']);
 const CALL_KEYS = new Set(['knot', 'when', 'unavailable', 'button']);
 
 function makeWarn(opts) {
@@ -89,7 +89,20 @@ export function normaliseRing(raw, opts) {
         warn('ring.untilAnswered has no effect on a forced call, which auto-answers');
     }
 
-    return { onMissed, voicemailKnot, withheld, untilAnswered };
+    // A condition (`globalVars.*`, && only, as `call.when`) under which a pending callback left by
+    // this missed call is still worth placing. Re-checked when the "Call back" button is built and
+    // as the callback dials; a failing condition clears the callback quietly, so an out-of-date
+    // knot is never dialled. In-memory only: a reload does not carry it (the save is unchanged).
+    let callbackWhen = null;
+    if (src.callbackWhen !== undefined && src.callbackWhen !== null) {
+        if (typeof src.callbackWhen === 'string' && src.callbackWhen.trim()) callbackWhen = src.callbackWhen.trim();
+        else warn('ring.callbackWhen must be a non-empty string; ignored');
+    }
+    if (callbackWhen && onMissed !== 'callback') {
+        warn('ring.callbackWhen has no effect unless ring.onMissed is "callback"');
+    }
+
+    return { onMissed, voicemailKnot, withheld, untilAnswered, callbackWhen };
 }
 
 /**

@@ -41,7 +41,7 @@ function setup(over = {}) {
     };
     const log = [];
     const w = { openBlocked: false, ringBlocked: false, minigame: false, callOpen: false, ringerCallId: null,
-        aside: null, names: { ceo: 'The CEO', other: 'Other' }, ...over };
+        aside: null, ringHolds: true, names: { ceo: 'The CEO', other: 'Other' }, ...over };
     const adapter = {
         ringBlocked: () => w.ringBlocked,
         openBlocked: () => w.openBlocked,
@@ -64,6 +64,7 @@ function setup(over = {}) {
         onOutcome(kind, o, extra) { log.push(['outcome', kind, o.npcId, extra]); },
         voicemail(o, opts) { log.push(['voicemail', o.npcId, o.voicemailKnot, opts]); },
         callbackChanged(id) { log.push(['callbackChanged', id]); },
+        ringConditionHolds: () => w.ringHolds,
     };
     const ringer = createPhoneRinger({ adapter, clock });
     const all = (n) => log.filter((e) => e[0] === n);
@@ -329,4 +330,69 @@ test('n5: the hold limit with onMissed voicemail but no voicemail knot falls bac
     s.clock.run(HOLD_MAX_MS + 1000);
     assert.equal(s.ringer.callbackFor('ceo').knot, 'ring_call');
     assert.equal(s.last('toast')[1], 'The CEO rang off. Call back from the thread.', 'the player is told, since no voicemail comes');
+});
+
+// ---- sweep item 7: ring.callbackWhen carried onto the callback ------------------------------
+
+test('item 7: callbackWhen is carried onto the callback the miss leaves, and clearStaleCallback forgets it', () => {
+    const s = setup();
+    s.ringer.offer(offer({ callbackWhen: 'globalVars.live !== true' }));
+    s.ringer.decline('ceo');
+    assert.deepEqual(s.ringer.callbackFor('ceo'),
+        { knot: 'ring_call', callLabel: 'Boss', callbackWhen: 'globalVars.live !== true' });
+    assert.equal(s.ringer.clearStaleCallback('ceo'), true, 'one was cleared');
+    assert.equal(s.ringer.callbackFor('ceo'), null);
+    assert.equal(s.lastSlot('ceo'), null, 'the empty slot is saved');
+    assert.equal(s.ringer.clearStaleCallback('ceo'), false, 'nothing left to clear');
+});
+
+test('item 7: a callback with no callbackWhen keeps the plain two-field shape (no save change)', () => {
+    const s = setup();
+    s.ringer.offer(offer());
+    s.ringer.decline('ceo');
+    assert.deepEqual(s.ringer.callbackFor('ceo'), { knot: 'ring_call', callLabel: 'Boss' });
+});
+
+// ---- sweep item 8: a stale ring condition drops the offer quietly ---------------------------
+
+test('item 8: a ringing offer whose condition stops holding is dropped quietly: no row, no missed event, no callback', () => {
+    const s = setup();
+    s.ringer.offer(offer({ ringCondition: 'globalVars.go === true' }));
+    assert.equal(s.ringer.stateOf('ceo'), 'ringing');
+    s.w.ringHolds = false;              // the global that gated the ring has changed
+    s.clock.run(600);                   // the tick re-checks
+    assert.equal(s.ringer.stateOf('ceo'), null, 'the offer is gone');
+    assert.equal(s.ringer.callbackFor('ceo'), null, 'no callback left');
+    assert.equal(s.all('emit').filter((e) => String(e[1]).startsWith('phone_call_missed')).length, 0, 'no missed event');
+    assert.equal(s.all('outcome').filter((e) => e[1] === 'dropped').length, 1, 'dropped, not missed');
+    assert.equal(s.lastSlot('ceo'), null, 'the slot is empty');
+});
+
+test('item 8: a queued offer whose condition goes stale before it rings never rings', () => {
+    const s = setup();
+    s.w.ringBlocked = true;             // something keeps it queued
+    s.ringer.offer(offer({ ringCondition: 'globalVars.go === true' }));
+    assert.equal(s.ringer.stateOf('ceo'), 'queued');
+    s.w.ringHolds = false;
+    s.w.ringBlocked = false;            // now it could ring, but the condition is stale
+    s.clock.run(600);
+    assert.equal(s.ringer.stateOf('ceo'), null);
+    assert.equal(s.all('emit').filter((e) => String(e[1]).startsWith('phone_call_')).length, 0, 'no ring, no miss');
+});
+
+test('item 8: a forced call is never dropped by a stale condition', () => {
+    const s = setup();
+    s.ringer.offer(offer({ ringCondition: 'globalVars.go === true', disableClose: true }));
+    assert.equal(s.ringer.stateOf('ceo'), 'ringing');
+    s.w.ringHolds = false;
+    s.clock.run(600);
+    assert.equal(s.ringer.stateOf('ceo'), 'ringing', 'the forced call rings on');
+});
+
+test('item 8: an offer with no condition is unaffected even when the hook would say false', () => {
+    const s = setup();
+    s.w.ringHolds = false;
+    s.ringer.offer(offer());            // no ringCondition
+    s.clock.run(600);
+    assert.equal(s.ringer.stateOf('ceo'), 'ringing');
 });

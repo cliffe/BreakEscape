@@ -371,6 +371,27 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         save(o);
     }
 
+    /**
+     * Item 8: the ring mapping's condition no longer holds. A global that changed since the ring was
+     * offered can make it stale (m04: the ESD goes live while HaX's dial ring is queued or ringing).
+     * A forced call is never dropped. The adapter re-checks the condition (it owns the globals).
+     */
+    function ringStale(o) {
+        return !o.disableClose && !!o.ringCondition && call('ringConditionHolds', o.ringCondition) === false;
+    }
+
+    /**
+     * Item 8: drop a stale offer quietly, like a held bark dropped on release: no "Missed call" row,
+     * no phone_call_missed, no callback or voicemail. A popup it had put aside comes back.
+     */
+    function dropQuietly(o) {
+        const d = o.displaced;
+        o.displaced = null;
+        finishOffer(o);
+        call('onOutcome', 'dropped', o);
+        if (d) reopenDisplaced(d);
+    }
+
     /** Back to the head of the queue with its elapsed time kept (rows 23, 24, 26). */
     function requeueHead(o, saveAs) {
         o.state = 'queued';
@@ -406,8 +427,13 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         return true;
     }
 
-    function setCallback(npcId, knot, callLabel) {
-        callbacks.set(npcId, { knot, callLabel: typeof callLabel === 'string' && callLabel ? callLabel : null });
+    function setCallback(npcId, knot, callLabel, callbackWhen) {
+        // callbackWhen is kept in memory only, and only when set: syncSave writes just
+        // { knot, state, onMissed, callLabel } (2.7), so the save is unchanged and a reload restores
+        // the callback with no condition (the re-check then passes, as before item 7).
+        const rec = { knot, callLabel: typeof callLabel === 'string' && callLabel ? callLabel : null };
+        if (typeof callbackWhen === 'string' && callbackWhen) rec.callbackWhen = callbackWhen;
+        callbacks.set(npcId, rec);
         syncSave(npcId);
         call('callbackChanged', npcId);
     }
@@ -433,7 +459,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             return;
         }
         if (o.withheld || contactLive(o.npcId)) return;
-        setCallback(o.npcId, o.knot, o.callLabel);
+        setCallback(o.npcId, o.knot, o.callLabel, o.callbackWhen);
     }
 
     /** A voicemail is waiting to run for this contact (held or loading): the slot carries it until releaseVoicemail. */
@@ -667,7 +693,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             o.displaced = null;
             finishOffer(o);
             // A callback that connected and was then cut off by something else is left again (A6)
-            if (!own && o.callbackDial && o.connectedAt && !o.noAnswer && !contactLive(o.npcId)) setCallback(o.npcId, o.knot, o.callLabel);
+            if (!own && o.callbackDial && o.connectedAt && !o.noAnswer && !contactLive(o.npcId)) setCallback(o.npcId, o.knot, o.callLabel, o.callbackWhen);
             if (o.noAnswer) call('onOutcome', 'no_answer', o);
             else if (o.connectedAt) call('onOutcome', 'ended', o, { displaced: !!reopenWhat, seconds: connectedFor });
         } else if (own) {
@@ -753,7 +779,11 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (closed) return;
         const o = active;
         if (o && o.state === 'ringing') {
-            if (call('ringBlocked', o.npcId)) {
+            if (ringStale(o)) {
+                // Item 8: the mapping's condition stopped holding while it rang. Drop it quietly.
+                dropQuietly(o);
+                again = true;
+            } else if (call('ringBlocked', o.npcId)) {
                 // Rows 23 and 24: a conversation opened, or the player was knocked out.
                 requeueHead(o);
             } else if (o.disableClose) {
@@ -771,6 +801,9 @@ export function createPhoneRinger({ adapter, clock } = {}) {
                 call('vibrate');
             }
         } else if (o && o.state === 'held') {
+            // Item 8: a held (answered, not yet opened) call whose mapping condition has gone stale
+            // is dropped quietly too, before the hold limit or the open.
+            if (ringStale(o)) { dropQuietly(o); again = true; return; }
             // Row 18: the hold limit, only while the pill shows (advance() counts only then).
             if (!o.disableClose && o.holdMs >= HOLD_MAX_MS) { miss(o, 'rang_off'); again = true; return; }
             // Rows 13 to 16: open once nothing blocks it; row 19 and the second check follow.
@@ -779,7 +812,11 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         // Row 8: the head of the queue starts ringing.
         if (!active && queue.length > 0) {
             const head = queue[0];
-            if (!ringBlocked() && !(head.rering && hitWithin(HIT_QUIET_MS)) && now() >= head.notBefore) {
+            if (ringStale(head)) {
+                // Item 8: its condition went stale while it waited in the queue; drop it, don't ring.
+                dropQuietly(head);
+                again = true;
+            } else if (!ringBlocked() && !(head.rering && hitWithin(HIT_QUIET_MS)) && now() >= head.notBefore) {
                 queue.shift();
                 startRinging(head);
                 again = true;
@@ -798,6 +835,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             resume: raw.resume || false,
             onMissed: raw.onMissed === 'voicemail' ? 'voicemail' : 'callback',
             voicemailKnot: typeof raw.voicemailKnot === 'string' ? raw.voicemailKnot : null,
+            callbackWhen: typeof raw.callbackWhen === 'string' && raw.callbackWhen ? raw.callbackWhen : null,
+            ringCondition: typeof raw.ringCondition === 'string' && raw.ringCondition ? raw.ringCondition : null,
             withheld: !!raw.withheld,
             untilAnswered: !!raw.untilAnswered && !forced,
             callLabel: typeof raw.callLabel === 'string' ? raw.callLabel : null,
@@ -1115,10 +1154,21 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         return all.some((o) => o.opening);
     }
 
-    /** The contact's pending callback `{ knot, callLabel }`, or null (A6, plan 2.6). */
+    /** The contact's pending callback `{ knot, callLabel, callbackWhen }`, or null (A6, plan 2.6). */
     function callbackFor(npcId) {
         const cb = callbacks.get(npcId);
         return cb ? { ...cb } : null;
+    }
+
+    /**
+     * Item 7: a callback whose `ring.callbackWhen` no longer holds is cleared and the empty slot is
+     * saved, so the "Call back" button never dials an out-of-date knot. The adapter evaluates the
+     * condition (it owns the globals); the ringer only forgets and persists. Returns true when one went.
+     */
+    function clearStaleCallback(npcId) {
+        if (!dropCallback(npcId)) return false;
+        syncSave(npcId);
+        return true;
     }
 
     /** A saved callback comes back after a reload (state "missed", 2.7). A newer live offer outranks it. */
@@ -1177,6 +1227,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         callVariablesFor,
         hasOpeningOffer,
         callbackFor,
+        clearStaleCallback,
         restoreCallback,
         holdVoicemail,
         releaseVoicemail,

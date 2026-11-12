@@ -455,3 +455,35 @@ test('conversation_closed mapping on a calling contact warns unless onceOnly or 
     // a contact with no call or ring never gets the double emit
     assertNone(warnings(check({ eventMappings: [closed()] }, { hax: INK }, glob)), frag);
 });
+
+test('sweep item 7: ring.callbackWhen is validated like a call condition', { skip }, () => {
+    const glob = { globalVariables: { live: false } };
+    // clean: a globalVars condition with onMissed callback (the default)
+    assert.deepEqual(check({ eventMappings: [ringMap({ ring: { callbackWhen: 'globalVars.live !== true' } })] }, { hax: INK }, glob), []);
+    // error: an undeclared global
+    assertHas(errors(check({ eventMappings: [ringMap({ ring: { callbackWhen: 'globalVars.nope !== true' } })] })),
+        'ring.callbackWhen reads globalVars.nope');
+    // error: a non-event-mapping term
+    assertHas(errors(check({ eventMappings: [ringMap({ ring: { callbackWhen: 'data.x === true' } })] }, { hax: INK }, glob)),
+        'ring.callbackWhen uses');
+    // error: a non-string
+    assertHas(errors(check({ eventMappings: [ringMap({ ring: { callbackWhen: 7 } })] })), 'ring.callbackWhen must be a non-empty condition string');
+    // warn: callbackWhen with onMissed voicemail has no effect
+    assertHas(warnings(check({ eventMappings: [ringMap({ ring: { onMissed: 'voicemail', voicemailKnot: 'vm', callbackWhen: 'globalVars.live !== true' } })] }, { hax: INK }, glob)),
+        'callbackWhen has no effect');
+    // callbackWhen is a known ring field (no "unknown field" warning)
+    assertNone(warnings(check({ eventMappings: [ringMap({ ring: { callbackWhen: 'globalVars.live !== true' } })] }, { hax: INK }, glob)), 'unknown field "callbackWhen"');
+});
+
+test('sweep item 5 / A6 n-e: a voicemail knot with no voice: line warns', { skip }, () => {
+    const silent = INK + `
+=== vm_silent ===
+#set_global:heard_vm:true
+-> DONE
+`;
+    assertHas(warnings(check({ eventMappings: [ringMap({ ring: { onMissed: 'voicemail', voicemailKnot: 'vm_silent' } })] }, { hax: silent })),
+        'produces no voice: line');
+    // a normal voicemail knot (vm has a voice: line) does not warn
+    assertNone(warnings(check({ eventMappings: [ringMap({ ring: { onMissed: 'voicemail', voicemailKnot: 'vm' } })] }, { hax: INK })),
+        'produces no voice: line');
+});

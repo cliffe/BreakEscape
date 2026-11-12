@@ -12,7 +12,7 @@ const { normaliseRing, normaliseCall } = await import('data:text/javascript;base
 
 const collect = () => { const w = []; return { warns: w, opts: { warn: (m) => w.push(m) } }; };
 
-const DEFAULT = { onMissed: 'callback', voicemailKnot: null, withheld: false, untilAnswered: false };
+const DEFAULT = { onMissed: 'callback', voicemailKnot: null, withheld: false, untilAnswered: false, callbackWhen: null };
 
 test('ring: nothing, false and null mean no ring', () => {
     for (const v of [undefined, null, false]) assert.equal(normaliseRing(v), null);
@@ -29,8 +29,23 @@ test('ring: the object form carries every field', () => {
     const { warns, opts } = collect();
     assert.deepEqual(
         normaliseRing({ onMissed: 'voicemail', voicemailKnot: 'vm', withheld: true, untilAnswered: true }, opts),
-        { onMissed: 'voicemail', voicemailKnot: 'vm', withheld: true, untilAnswered: true });
+        { onMissed: 'voicemail', voicemailKnot: 'vm', withheld: true, untilAnswered: true, callbackWhen: null });
     assert.deepEqual(warns, []);
+});
+
+test('ring.callbackWhen: a non-empty string is carried; a blank or non-string warns; it needs onMissed callback (item 7)', () => {
+    const a = collect();
+    assert.equal(normaliseRing({ callbackWhen: 'globalVars.x !== true' }, a.opts).callbackWhen, 'globalVars.x !== true');
+    assert.deepEqual(a.warns, []);
+    const b = collect();
+    assert.equal(normaliseRing({ callbackWhen: '   ' }, b.opts).callbackWhen, null);
+    assert.equal(b.warns.length, 1);
+    const c = collect();
+    assert.equal(normaliseRing({ callbackWhen: 7 }, c.opts).callbackWhen, null);
+    assert.equal(c.warns.length, 1);
+    const d = collect();
+    normaliseRing({ onMissed: 'voicemail', voicemailKnot: 'vm', callbackWhen: 'globalVars.x' }, d.opts);
+    assert.ok(d.warns.some((w) => w.includes('callbackWhen has no effect')), 'warns when onMissed is not callback');
 });
 
 test('ring: malformed values fall back to defaults with a warning each, and never throw', () => {
