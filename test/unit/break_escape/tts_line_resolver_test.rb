@@ -37,6 +37,34 @@ module BreakEscape
       end
     end
 
+    # phone-chat-ui.js sends a voice message's transcript for whichever contact
+    # the thread belongs to, phone or person, so the rule is not keyed on npcType
+    test "a person NPC's voice message is voiced as its transcript, never with voice: read aloud" do
+      Dir.mktmpdir do |dir|
+        path = story(dir, 'ann.json', ['voice: Meet me by the lifts.', 'Ann Ross: voice: Bring the badge.',
+                                       'Over here.'])
+        data = { 'rooms' => { 'r' => { 'npcs' => [
+          { 'id' => 'ann', 'displayName' => 'Ann Ross', 'npcType' => 'person', 'voice' => VOICE, 'storyPath' => path }
+        ] } } }
+        assert_equal 'Meet me by the lifts.', line(data, 'ann', 'Meet me by the lifts.')
+        assert_equal 'Bring the badge.', line(data, 'ann', 'bring the badge')
+        assert_nil line(data, 'ann', 'voice: Meet me by the lifts.')
+        assert_equal 'Over here.', line(data, 'ann', 'Over here.')
+      end
+    end
+
+    test "a phone object with a story voices its voice message as the transcript, never with voice: read aloud" do
+      Dir.mktmpdir do |dir|
+        path = story(dir, 'handset.json', ['voice: Call me back.', 'Not a voice message.'])
+        data = { 'rooms' => { 'r' => { 'objects' => [
+          { 'id' => 'desk_phone', 'type' => 'phone', 'storyPath' => path, 'ttsVoice' => VOICE }
+        ] } } }
+        assert_equal 'Call me back.', line(data, 'desk_phone', 'Call me back.')
+        assert_nil line(data, 'desk_phone', 'voice: Call me back.')
+        assert_equal 'Not a voice message.', line(data, 'desk_phone', 'Not a voice message.')
+      end
+    end
+
     test "a story that hosts no voiced conversation voices only the NPC's own lines" do
       Dir.mktmpdir do |dir|
         path = story(dir, 'desk.json', ['Ann Ross: Over here.', 'Not prefixed, so mine.', 'Bob Hale: Not me.',
