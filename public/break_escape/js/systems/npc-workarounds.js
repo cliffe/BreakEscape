@@ -278,7 +278,14 @@ export class NpcWorkarounds {
     /** `npc_visit_dropped:<npcId>`: the visit was never made, or was cut short. */
     visitDropped(data) {
         const key = this._jobFor(data);
-        if (key) this._send(key, true);
+        if (!key) return;
+        // Review R1 n3: a share's line still waiting goes with its visit, so it is not said with no job behind it
+        const job = this.active.get(key);
+        if (job.run.do === 'share_login' && job.awaitingLine) {
+            job.awaitingLine = false;
+            this._needs()?.cancelMutter?.(job.npcId, ALOUD_POOL);
+        }
+        this._send(key, true);
     }
 
     async _send(key, dropped) {

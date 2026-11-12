@@ -154,6 +154,9 @@ export const NEWS_WAIT_MS = 30000;
 // the least time a mutter's bubble stays up, so a start line is on screen long enough to notice
 export const MUTTER_WAIT_MS = 20000;
 export const MUTTER_BUBBLE_MS = 6000;
+// q42 review R1 m2: a share's line goes ahead of every other waiting mutter, so a queue of
+// start lines at one outage cannot turn it into a picture while the player stands by to hear it
+export const PRIORITY_MUTTERS = Object.freeze(new Set(['login_aloud']));
 /**
  * Slice 19 (OFFICE_LIFE_PLAN 12.5): desk phones. A ring every RING_MS of the needs clock, `rings`
  * times (default RINGS); a call's listening gaps between lines are seeded in CALL_GAP_MS; a pool
@@ -1669,7 +1672,10 @@ export class NPCNeedsSystem {
         const job = this.states.get(npcId)?.job;
         if (!job || job.kind !== 'visit' || job.phase !== 'using') return false;
         const v = Number(ms);
-        job.useUntil = this.clockMs + (Number.isFinite(v) ? clamp(v, 0, 600000) : 0);
+        const left = Number.isFinite(v) ? clamp(v, 0, 600000) : 0;
+        job.useUntil = this.clockMs + left;
+        // Review R1 n1: a frozen visit (a conversation) takes its end from useRemaining when it unfreezes
+        if (this.states.get(npcId)?.mode === 'frozen') job.useRemaining = left;
         return true;
     }
 
@@ -1968,9 +1974,20 @@ export class NPCNeedsSystem {
         // Review 9.2 B R2 m1: an NPC in conversation with the player, not placed or not available
         // says nothing now (nor is voiced over the conversation): the mutter waits, held, under
         // the same rule as one waiting for the lock
+        // A priority topic (PRIORITY_MUTTERS) waits only for the lock and for other priority
+        // lines, and is queued ahead of every other mutter
         const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
-        if (this._mutterHeld(npcId) || (lines && (!this._speechFree() || this._mutterWaits.length))) {
-            this._mutterWaits.push({ npcId, topic, since: this.clockMs, lines });
+        const priority = PRIORITY_MUTTERS.has(topic);
+        const ahead = priority ? this._mutterWaits.some(w => w.priority) : this._mutterWaits.length > 0;
+        if (this._mutterHeld(npcId) || (lines && (!this._speechFree() || ahead))) {
+            const wait = { npcId, topic, since: this.clockMs, lines };
+            if (priority) {
+                wait.priority = true;
+                const at = this._mutterWaits.findIndex(w => !w.priority);
+                if (at < 0) this._mutterWaits.push(wait); else this._mutterWaits.splice(at, 0, wait);
+            } else {
+                this._mutterWaits.push(wait);
+            }
             return true;
         }
         this._sayMutter(s, topic);
@@ -2004,6 +2021,15 @@ export class NPCNeedsSystem {
             else keep.push(w);
         }
         this._mutterWaits = keep;
+    }
+
+    /** Review R1 n3: drop an NPC's waiting mutter of `topic` (a share whose visit was dropped). How many went. */
+    cancelMutter(npcId, topic) {
+        const before = this._mutterWaits.length;
+        this._mutterWaits = this._mutterWaits.filter(w => !(w.npcId === npcId && w.topic === topic));
+        const n = before - this._mutterWaits.length;
+        if (n) this._log(npcId, 'mutter_cancelled', { topic });
+        return n;
     }
 
     /** Mutters waiting for the speech lock (a test and debug read). */
@@ -3512,10 +3538,11 @@ export class NPCNeedsSystem {
         if (job.carrying && job.slot && typeof this.world.stowHeld === 'function') { this.world.stowHeld(s.npcId, job.itemId); this._worldChanged(); }
         else if (job.carrying) { this.world.dropHeld(s.npcId, job.itemId); this._worldChanged(); }
         this._log(s.npcId, failed ? 'job_failed' : 'job_aborted', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, reason });
-        // User decision q43: a borrow cut short after the borrower sat down (a conversation, a
-        // script, a suspend) counts as done with the session left: the borrower signed in there,
-        // so the runner reports it done and the player can find the guest session. Unmet, since
-        // the use never finished. A reset reports it dropped instead (reset())
+        // User decision q43: a borrow cut short after the borrower sat down (a script move, a
+        // suspend, a knock-out or hide, a turn-back; a conversation only freezes it) counts as
+        // done with the session left: the borrower signed in there, so the runner reports it
+        // done and the player can find the guest session. Unmet, since the use never finished.
+        // A reset reports it dropped instead (reset())
         if (job.borrowed && job.borrow?.started && reason !== 'reset') this._borrowDone(s, job, false, reason);
         // Slice 17: a print errand that never picked its slot up may try again; one that did, or found
         // it gone, is over (the slot was filed, or the player has it)

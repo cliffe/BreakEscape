@@ -1047,3 +1047,100 @@ test('q43 R1 M1: a whole long use carries no cut and a drop never does; the floo
     await flush();
     assert.deepEqual(d.calls.sends, [{ npc_id: 'ian', index: 0, hand: 4, dropped: true }]);
 });
+
+// ── q42 review R1 m2, n1, n3 ──
+
+const QUEUE_LINES = { ...LINES, login_aloud: ["It's dmorgan. Password's in my head."],
+    mei_a: ['Has anyone seen the stapler?'], mei_b: ['The printer is jammed again.'], mei_c: ['Who moved my chair?'] };
+
+test('q42 R1 m2: a login_aloud line queued behind six other lines goes first and is said in words', () => {
+    const { sys, evs } = twoWorld(QUEUE_LINES);
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');   // takes the lock
+    for (const [id, topic] of [['mei', 'mei_a'], ['dana', 'wk_writes_down'], ['mei', 'mei_b'], ['dana', 'wk_prop_door'], ['mei', 'mei_c'], ['mei', 'wk_writes_down']]) {
+        sys.mutter(id, topic);
+    }
+    assert.equal(sys.mutterWaits().length, 6, 'six lines wait');
+    sys.mutter('dana', 'login_aloud');
+    assert.deepEqual(sys.mutterWaits().map(w => w.topic)[0], 'login_aloud', 'queued ahead of the six');
+    const queuedAt = sys.clockMs;
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:').some(e => e.data.topic === 'login_aloud'), 60000));
+    const said = evs('npc_mutter:').map(e => e.data);
+    assert.deepEqual(said.slice(0, 2).map(d => d.topic), ['work_fail', 'login_aloud'], 'said next, after the line holding the lock');
+    const line = said.find(d => d.topic === 'login_aloud');
+    assert.ok(line.line && line.picture === null, 'in words, not a picture');
+    assert.ok(sys.clockMs - queuedAt < MUTTER_WAIT_MS);
+    // the rest still come, in their order
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:').length === 8, 60000));
+    assert.deepEqual(evs('npc_mutter:').slice(2).map(e => e.data.topic), ['mei_a', 'wk_writes_down', 'mei_b', 'wk_prop_door', 'mei_c', 'wk_writes_down']);
+});
+
+test('q42 R1 m2: two priority lines keep their order; a priority line with the lock free and only ordinary lines waiting is said at once', () => {
+    const { sys, evs } = twoWorld(QUEUE_LINES);
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');
+    sys.mutter('mei', 'mei_a');
+    sys.mutter('mei', 'login_aloud');
+    sys.mutter('dana', 'login_aloud');
+    assert.deepEqual(sys.mutterWaits().map(w => [w.npcId, w.topic]), [['mei', 'login_aloud'], ['dana', 'login_aloud'], ['mei', 'mei_a']]);
+
+    const b = twoWorld(QUEUE_LINES);
+    b.sys.registerAll();
+    b.sys.step(250);
+    let held = true;
+    b.w.world.npcStatus = id => (id === 'mei' && held ? { hidden: true } : {});
+    b.sys.mutter('mei', 'mei_a');   // held: Mei is hidden, the lock stays free
+    assert.equal(b.sys.mutterWaits().length, 1);
+    b.sys.mutter('dana', 'login_aloud');
+    assert.equal(b.evs('npc_mutter:dana').length, 1, 'not stuck behind a held ordinary line');
+    assert.ok(b.evs('npc_mutter:dana')[0].data.line);
+    held = false;
+});
+
+test('q42 R1 n1: holdVisit on a frozen visit also sets the time it resumes with', () => {
+    const { sys } = wired();
+    sys.registerAll();
+    const s = sys.states.get('dana');
+    s.job = { kind: 'visit', phase: 'using', useUntil: sys.clockMs + 1000, useRemaining: 9000, frozenAt: sys.clockMs };
+    s.prevMode = 'job';
+    s.mode = 'frozen';
+    assert.equal(sys.holdVisit('dana', 3000), true);
+    assert.equal(s.job.useRemaining, 3000);
+    s.mode = 'job';
+    s.job.useRemaining = 9000;
+    sys.holdVisit('dana', 4000);
+    assert.equal(s.job.useRemaining, 9000, 'not frozen: left alone');
+});
+
+test('q42 R1 n3: a share dropped while its line waits takes the line out of the queue', async () => {
+    const { runner, calls, needs } = hStub({}, { lineNow: false });
+    calls.cancels = [];
+    needs.cancelMutter = (id, topic) => { calls.cancels.push([id, topic]); return 1; };
+    runner.due({ npcId: 'sam', run: SAM_RUN });
+    runner.visitArrived(visitDone('sam', SAM_RUN));
+    runner.visitDropped(visitDone('sam', SAM_RUN));
+    await flush();
+    assert.deepEqual(calls.cancels, [['sam', 'login_aloud']]);
+    assert.equal(calls.sends[0].dropped, true);
+    // a share dropped after its line was said cancels nothing
+    const b = hStub({});
+    b.calls.cancels = [];
+    b.needs.cancelMutter = (id, topic) => { b.calls.cancels.push([id, topic]); return 0; };
+    b.runner.due({ npcId: 'sam', run: SAM_RUN });
+    b.runner.visitArrived(visitDone('sam', SAM_RUN));
+    b.runner.visitDropped(visitDone('sam', SAM_RUN));
+    assert.deepEqual(b.calls.cancels, []);
+
+    // on the needs system: only that NPC's line of that topic goes
+    const { sys } = twoWorld(QUEUE_LINES);
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');
+    sys.mutter('mei', 'login_aloud');
+    sys.mutter('dana', 'login_aloud');
+    sys.mutter('dana', 'mei_a');
+    assert.equal(sys.cancelMutter('dana', 'login_aloud'), 1);
+    assert.deepEqual(sys.mutterWaits().map(w => [w.npcId, w.topic]), [['mei', 'login_aloud'], ['dana', 'mei_a']]);
+});

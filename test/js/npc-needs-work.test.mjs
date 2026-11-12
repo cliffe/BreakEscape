@@ -682,7 +682,7 @@ test('H-3: the caffeine need never takes the hot desk while a work borrow is hel
 });
 
 // User decision q43: a borrow cut short after the borrower sat down counts as done, session left
-test('q43: a borrow aborted while the NPC uses the PC is done: npc_borrowed_session and npc_borrow_done, no second sit', () => {
+test('q43: a borrow aborted while the NPC uses the PC is done: npc_borrowed_session and npc_borrow_done, no second sit from the same borrow', () => {
     const { sys, evs } = workWorld({ objects: [...baseObjects(), HOT()], globals: { dana_pc_off: true }, chatter: CHATTER });
     sys.registerAll();
     failOnce(sys, evs);
@@ -697,7 +697,8 @@ test('q43: a borrow aborted while the NPC uses the PC is done: npc_borrowed_sess
     assert.equal(sys.getState('dana').borrow, null);
     sys.control('dana', 'resume');
     sys.step(60000);
-    assert.equal(evs('npc_sat_at:hot_desk').length, 1, 'she does not sit there again');
+    // the cut-short borrow itself is not run again; a server could hand the desk over anew (her need is unmet)
+    assert.equal(evs('npc_sat_at:hot_desk').length, 1, 'no second sit from the same borrow');
     assert.equal(evs('npc_borrow_dropped:dana').length, 0, 'never reported dropped');
     assert.equal(evs('npc_borrow_done:dana').length, 1);
 });

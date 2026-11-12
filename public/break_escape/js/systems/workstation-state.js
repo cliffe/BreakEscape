@@ -102,6 +102,8 @@
  */
 
 const win = () => (typeof window !== 'undefined' ? window : {});
+// The pc_signed_out reasons whose /logout pc-sessions.js announces with pc_signing_out (q44)
+export const SIGNING_OUT_REASONS = Object.freeze(new Set(['sign_out', 'claim_ended', 'owner_returned', 'auto_locked']));
 
 /** Whether an object's config makes it a workstation. */
 export function isWorkstation(data) {
@@ -207,7 +209,9 @@ export class WorkstationState {
         // Review R1 M1: the player's own sign-out at a PC, or a sign-in there that is not a
         // claim, ends the guest session there, as the server does
         this.env.on('pc_signing_out', (d) => this.onSigningOut(d?.pcId));
-        this.env.on('pc_signed_out', (d) => this.onSignedOut(d?.pcId, true));
+        // Review R1 n4: only the reasons that send pc_signing_out first use its snapshot, so a
+        // displaced or switched session at that PC during a slow /logout does not spend it
+        this.env.on('pc_signed_out', (d) => this.onSignedOut(d?.pcId, SIGNING_OUT_REASONS.has(d?.reason)));
         this.env.on('pc_signed_in', (d) => { if (d?.via !== 'claim') this.onSignedOut(d?.pcId); });
         if (typeof this.env.onTick === 'function') this.env.onTick(() => this.checkAutoLocks());
         this.resetGlobals();

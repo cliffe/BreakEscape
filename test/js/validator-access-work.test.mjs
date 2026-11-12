@@ -644,3 +644,13 @@ test('q44: a hot desk that serves a need an NPC can use it for without borrowing
     npcOf(s, 'ruth').needsAvoidRooms = ['annex'];
     assert.ok(!has(issues(s), 'which ruth can use it for'), issues(s).join('\n'));
 });
+
+// Review 9.2 H R1 n6: the desk serves Ruth's work too, which is judged (a work plan), so she
+// never takes it unborrowed; with no work plan her work is not judged and it is warned
+test('q44 R1 n6: a hot desk serving a judged need of a non-borrower is not warned; the same need unjudged is', { skip }, () => {
+    const s = hClean();
+    assert.equal(hotDesk(s).affordance?.satisfies ?? 'work', 'work');
+    assert.ok(!has(issues(s), 'satisfies work, which ruth'), issues(s).join('\n'));
+    s.roles.staff.workNeeds = [];   // no work needs: no plan, so work is not judged
+    assertHas(warnings(issues(s)), "hot desk 'hot_desk' (a borrow_session names it) satisfies work, which ruth can use it for");
+});

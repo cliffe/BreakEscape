@@ -876,3 +876,18 @@ test('q44: a guest replaced during a slow /logout is kept; a sign-out with no pc
     handlers['pc_signed_out']({ pcId: 'hot_desk', reason: 'sign_out' });
     assert.equal(ws.guestOf('hot_desk'), 'ian');
 });
+
+// q44 review R1 n4: a displaced or switched session at the PC while a sign-out's /logout is slow
+// does not spend that sign-out's snapshot
+test('q44 R1 n4: a displacement during a slow /logout leaves the snapshot for the sign-out it belongs to', () => {
+    const { ws, handlers } = hotRig({ autoLockMin: null });
+    handlers['pc_signing_out']({ pcId: 'hot_desk', reason: 'sign_out' });
+    handlers['pc_signed_out']({ pcId: 'hot_desk', reason: 'displaced' });   // a second session there, displaced meanwhile
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    handlers['pc_signed_out']({ pcId: 'hot_desk', reason: 'sign_out' });   // the slow one answers
+    assert.equal(ws.guestOf('hot_desk'), 'ian', 'recorded after the request went: kept');
+    handlers['pc_signing_out']({ pcId: 'hot_desk', reason: 'sign_out' });
+    handlers['pc_signed_out']({ pcId: 'hot_desk', reason: 'switch' });
+    handlers['pc_signed_out']({ pcId: 'hot_desk', reason: 'sign_out' });
+    assert.equal(ws.guestOf('hot_desk'), null, 'there when its request went: the switch ended it, nothing is brought back');
+});
