@@ -62,7 +62,7 @@ The existing "wall-aware" refusal (NPC already in a wall: no push) is unchanged.
 - `test/js/npc-needs.test.mjs`: three new tests (normalising, inside and outside the radius, the room-wide default). 63 pass.
 - `test/js/validator-npc-leash.test.mjs`: one new test. 10 pass.
 - `test/js/npc-player-push.test.mjs` (new): the rule, wall nearness and the real collider callback on a fake scene. 6 pass.
-- Full suites: see the report (run under the shared lock).
+- Full suites under the shared lock: JS 508 of 508 files pass. Rails 1796 runs, 2 failures, both in `lab_physical_pentest_secrets_test.rb`, which pinned the old wiring (`len_at_door` alone, three shelf hints, "the window is the open door, not the keying"). Updated for the keying window; that file now passes, 36 runs, 0 failures. The full Rails suite was not rerun.
 
 ## Open
 
