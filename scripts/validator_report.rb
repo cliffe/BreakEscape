@@ -8,17 +8,23 @@ require 'date'
 # Everything the validator prints goes through ValidatorReport#write ($stdout is swapped for the
 # report while main runs), so a module that prints its own lines is counted too. Each complete line
 # is classified:
-#   - a line holding "❌" is an error, tagged with the stage that printed it;
+#   - a line whose text (after indentation and an optional "12. " list number) starts with "❌" is
+#     an error, tagged with the stage that printed it. A "❌" later in a line is author content (a
+#     quoted ink line, a JSON dump) and is not counted;
 #   - a line whose text (after an optional "12. " list number) starts with "⚠️" is a warning;
 #   - headers printed with #header are never counted.
 # An error line that a known-failures entry covers (same scenario, same stage, the entry's `match`
 # is a substring, and the entry still has room under its `count`) is printed with
 # "(known: <owner>, since <added>)" and does not count towards the exit code. "could not run",
-# "stale known failure" and "Result:" lines are never matched.
+# "stale known failure" and "Result:" lines are never matched, nor is an ink compile failure: it
+# stops the checks that read that file's compiled JSON, so it cannot be listed away.
 class ValidatorReport
   STAGES = %w[ink schema common habits work social].freeze
   UNMATCHABLE = ['could not run', 'stale known failure', 'Result:'].freeze
   ERROR_MARK = '❌'
+  ERROR_RE = /\A\s*(?:\d+\.\s+)?❌/.freeze
+  # Ink issues that mean a file did not compile: the checks that read its compiled JSON were skipped.
+  INK_COMPILE_FAILURE_RE = /fails to compile|compilation failed|compiled but output file was not created|produced invalid JSON|contains invalid JSON/.freeze
   WARNING_RE = /\A\s*(?:\d+\.\s+)?⚠️/.freeze
 
   attr_reader :errors, :known, :warnings, :stage_lines
@@ -125,7 +131,8 @@ class ValidatorReport
     @out.fileno
   end
 
-  # Prints a line that is never counted (a section header that happens to start with ⚠️).
+  # Prints a line that is never counted (a section header that happens to start with ⚠️, or
+  # author content such as the -o and -v JSON dumps).
   def header(text)
     flush_line
     @header = true
@@ -133,6 +140,7 @@ class ValidatorReport
   ensure
     @header = false
   end
+  alias raw header
 
   # --- the end of the run --------------------------------------------------------------------
 
@@ -192,7 +200,7 @@ class ValidatorReport
       @out.write("#{line}\n")
       return
     end
-    if line.include?(ERROR_MARK)
+    if error_line?(line)
       @errors += 1
       @stage_lines[@stage] += 1
       slot = match_entry(line)
@@ -208,8 +216,19 @@ class ValidatorReport
     @out.write("#{line}\n")
   end
 
+  public
+
+  # True for a line the validator printed as an error: "❌" first, after indentation and an
+  # optional list number.
+  def error_line?(line)
+    line.to_s.match?(ERROR_RE)
+  end
+
+  private
+
   def match_entry(line)
     return nil if UNMATCHABLE.any? { |u| line.include?(u) }
+    return nil if line.match?(INK_COMPILE_FAILURE_RE)
 
     @entries.find do |slot|
       e = slot[:entry]

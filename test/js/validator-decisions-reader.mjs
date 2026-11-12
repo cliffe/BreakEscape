@@ -9,7 +9,8 @@ import { readFileSync } from 'node:fs';
 
 export const HEADING_RE = /^## (\d{4}-\d{2}-\d{2}): (.+)$/;
 
-// Returns Map(headingText -> { date, jsonBlocks: [parsed or Error], line }).
+// Returns Map(headingText -> { date, jsonBlocks: [parsed or Error], prose, line }).
+// prose is the section's text outside its fenced blocks.
 // headingText is the text after "## ", the form an entry's `approved` field holds.
 export function readDecisions(text) {
   const sections = new Map();
@@ -43,11 +44,13 @@ export function readDecisions(text) {
     if (line.startsWith('## ')) {
       const m = line.match(HEADING_RE);
       const key = line.slice(3).trim();
-      current = { date: m ? m[1] : null, dated: Boolean(m), jsonBlocks: [], line: i + 1 };
+      current = { date: m ? m[1] : null, dated: Boolean(m), jsonBlocks: [], prose: '', line: i + 1 };
       if (sections.has(key)) current.duplicate = true;
       sections.set(key, current);
     } else if (line.startsWith('# ')) {
       current = null;
+    } else if (current) {
+      current.prose += `${line}\n`;
     }
   });
   return sections;
@@ -57,9 +60,13 @@ export function readDecisionsFile(path) {
   return readDecisions(readFileSync(path, 'utf8'));
 }
 
+// The status a section holds until the orchestrator signs it at the merge batch.
+export const AWAITING_RE = /awaiting orchestrator sign-off/i;
+
 // Problems with one entry's sign-off: [] when its heading exists, is dated, and holds exactly one
-// json block whose `fields` equal the entry's.
-export function signOffProblems(sections, entry, fields, label) {
+// json block whose `fields` equal the entry's. With mergeBatch, a section whose prose still says
+// "awaiting orchestrator sign-off" fails too: the batch that merges an entry has to sign it.
+export function signOffProblems(sections, entry, fields, label, { mergeBatch = false } = {}) {
   const problems = [];
   const heading = entry.approved;
   if (typeof heading !== 'string' || heading.trim() === '') return [`${label}: no 'approved' heading`];
@@ -67,6 +74,9 @@ export function signOffProblems(sections, entry, fields, label) {
   if (!section) return [`${label}: heading '## ${heading}' is not in VALIDATOR_DECISIONS.md`];
   if (!section.dated) problems.push(`${label}: heading '## ${heading}' does not start with a date (YYYY-MM-DD: )`);
   if (section.duplicate) problems.push(`${label}: heading '## ${heading}' appears more than once`);
+  if (mergeBatch && AWAITING_RE.test(section.prose)) {
+    problems.push(`${label}: heading '## ${heading}' is still awaiting orchestrator sign-off; sign it in this merge batch`);
+  }
   if (section.jsonBlocks.length !== 1) {
     problems.push(`${label}: heading '## ${heading}' needs exactly one json block, found ${section.jsonBlocks.length}`);
     return problems;

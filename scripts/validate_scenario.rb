@@ -258,9 +258,7 @@ def check_scenario_directory_structure(erb_path)
       if missing_fields.any?
         issues << "❌ ERROR: mission.json is missing required fields: #{missing_fields.join(', ')}"
       end
-
-      issues.concat(check_mission_scoring(mission))
-      issues.concat(check_mission_result(mission))
+      # scoring and endingCheck are checked once, by the objective wiring check (with the rendered data)
     rescue JSON::ParserError => e
       issues << "❌ ERROR: mission.json contains invalid JSON: #{e.message}"
     rescue StandardError => e
@@ -1031,24 +1029,31 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
 
     if full_ink_path && File.exist?(full_ink_path)
       # Source .ink exists — compile it to disk (creates/overwrites the JSON)
+      # Each run compiles to its own temp file and renames it into place, so validator runs in
+      # parallel (a merge batch, shared ink such as scenarios/ink/helper-npc.ink) never read a
+      # half-written JSON file. The rename is atomic on one file system.
+      tmp_json_path = "#{full_json_path}.tmp-#{Process.pid}-#{rand(1 << 32).to_s(16)}"
       begin
-        output = `"#{inklecate_bin}" -o "#{full_json_path}" "#{full_ink_path}" 2>&1`
+        output = `"#{inklecate_bin}" -o "#{tmp_json_path}" "#{full_ink_path}" 2>&1`
         status = $?.exitstatus
 
         if status != 0 || output.include?('ERROR') || output.include?('error')
           issues << "❌ ERROR: '#{npc_path}' references ink file '#{source_ink_path}' which fails to compile:\n#{output.strip}"
-        elsif !File.exist?(full_json_path)
+        elsif !File.exist?(tmp_json_path)
           issues << "❌ ERROR: '#{npc_path}' references ink file '#{source_ink_path}' — compiled but output file was not created"
         else
-          # Verify the output is valid JSON
+          # Verify the output is valid JSON before it replaces the old file
           begin
-            JSON.parse(File.read(full_json_path))
+            JSON.parse(File.read(tmp_json_path))
+            File.rename(tmp_json_path, full_json_path)
           rescue JSON::ParserError => e
             issues << "❌ ERROR: '#{npc_path}' compiled ink file produced invalid JSON: #{e.message}"
           end
         end
       rescue => e
         issues << "❌ ERROR: '#{npc_path}' references ink file '#{source_ink_path}' but compilation failed: #{e.message}"
+      ensure
+        File.delete(tmp_json_path) if File.exist?(tmp_json_path)
       end
 
       begin
@@ -6815,11 +6820,19 @@ rescue StandardError
 end
 
 # Ink issues that mean a file did not compile: the checks that read its compiled JSON were skipped.
-INK_COMPILE_FAILURE_RE = /fails to compile|compilation failed|compiled but output file was not created|produced invalid JSON|contains invalid JSON/.freeze
+INK_COMPILE_FAILURE_RE = ValidatorReport::INK_COMPILE_FAILURE_RE
 
 def print_issue_list(report, issues, error_header:, warning_header:, ok_line:, blank_after_each: true)
-  if issues.any? { |i| i.to_s.include?('❌') }
-    report.header("✗ #{error_header} #{issues.count { |i| i.to_s.include?('❌') }} error(s):")
+  report.run_check(report.stage, 'print_issue_list', fallback: nil) do
+    print_issue_list_unguarded(report, issues, error_header: error_header, warning_header: warning_header,
+                                               ok_line: ok_line, blank_after_each: blank_after_each)
+  end
+end
+
+def print_issue_list_unguarded(report, issues, error_header:, warning_header:, ok_line:, blank_after_each:)
+  errors = issues.count { |i| report.error_line?(i) }
+  if errors.positive?
+    report.header("✗ #{error_header} #{errors} error(s):")
   elsif issues.any?
     report.header("⚠️ #{warning_header.sub('%d', issues.length.to_s)}")
   else
@@ -6988,7 +7001,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
 
   if options[:output_json]
     puts "Rendered JSON:"
-    puts JSON.pretty_generate(json_data)
+    report.raw(JSON.pretty_generate(json_data))
     puts
   end
 
@@ -7143,9 +7156,19 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
                                     imports: carry_imports, raw: rendered_json)
   end
   # Schema errors under /social are listed with the social lints. Like every ❌ line they fail the run.
-  social_schema, schema_errors = ValidateSocial.split_schema_errors(raw_schema_errors.reject { |e| e.start_with?('❌') })
-  schema_errors = schema_errors.map { |e| format_schema_error(json_data, e) } +
-                  raw_schema_errors.select { |e| e.start_with?('❌') }
+  # The schema report under its own rescue: if splitting or formatting raises, the raw messages
+  # print as schema errors with a "could not run" line, and the rest of the report still prints.
+  schema_marked = raw_schema_errors.select { |e| e.start_with?('❌') }
+  schema_plain = raw_schema_errors.reject { |e| e.start_with?('❌') }
+  begin
+    social_schema, schema_errors = ValidateSocial.split_schema_errors(schema_plain)
+    schema_errors = schema_errors.map { |e| format_schema_error(json_data, e) } + schema_marked
+  rescue StandardError, ScriptError => e
+    report.not_full!('schema', 'schema report raised')
+    social_schema = []
+    schema_errors = schema_plain.map { |m| "❌ ERROR: schema: #{m}" } + schema_marked +
+                    ["❌ ERROR: schema report could not run: #{e.class}: #{e.message.to_s.lines.first.to_s.strip}"]
+  end
   social_issues = social_schema + social_issues
 
   # Check for recommended fields
@@ -7162,7 +7185,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
     schema_errors.each_with_index { |error, index| puts "#{index + 1}. #{error}"; puts }
     if options[:verbose]
       puts "Full JSON structure:"
-      puts JSON.pretty_generate(json_data)
+      report.raw(JSON.pretty_generate(json_data))
     end
   end
 
@@ -7228,7 +7251,8 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
         puts "❌ ERROR: Dungeon graph stopped: an output still held a Wi-Fi key (see the message above); " \
              'the old dungeon_graph files were deleted.'
       else
-        report.header("⚠️ Dungeon graph generation failed (non-fatal)")
+        # Any other failure (an abort, a crash) printed its reason on stderr; it fails the run too.
+        puts "❌ ERROR: dungeon graph could not run (exit #{$?.exitstatus.inspect}); see the message above."
       end
       puts
     end
@@ -7236,8 +7260,13 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
 
   # --strict-social no longer changes the exit code (every ❌ line fails the run); it still names
   # the count, as older callers read it.
-  if options[:strict_social] && json_data.is_a?(Hash) && json_data.key?('social') && ValidateSocial.errors(social_issues).any?
-    report.header("✗ --strict-social: #{ValidateSocial.errors(social_issues).length} social lint error(s)")
+  if options[:strict_social] && json_data.is_a?(Hash) && json_data.key?('social')
+    report.stage = 'social'
+    report.run_check('social', 'strict-social count', fallback: nil) do
+      social_errors = ValidateSocial.errors(social_issues).length
+      report.header("✗ --strict-social: #{social_errors} social lint error(s)") if social_errors.positive?
+    end
+    report.stage = 'common'
   end
 
   # Info: desk collision boxes per map (footprint maps opt in with a Tiled map property)

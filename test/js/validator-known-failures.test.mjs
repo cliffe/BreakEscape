@@ -2,7 +2,8 @@
 // scripts/validator_known_failures.json holds the ❌ lines other tracks have not fixed yet; each
 // entry names a dated heading in docs/agents/VALIDATOR_DECISIONS.md whose one json block restates
 // the entry's scenario, stage, match and count. This file checks the real list, then the checker
-// itself against broken lists. A passed reviewBy warns, and fails when MERGE_BATCH=1.
+// itself against broken lists. A passed reviewBy warns, and fails when MERGE_BATCH=1, as does a
+// section still awaiting orchestrator sign-off.
 // Run with: node test/js/validator-known-failures.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,6 +18,12 @@ const DECISIONS = join(root, 'docs/agents/VALIDATOR_DECISIONS.md');
 const EXCEPTIONS = join(root, 'test/fixtures/files/payload_scan_exceptions.json');
 const STAGES = ['ink', 'schema', 'common', 'habits', 'work', 'social'];
 const UNMATCHABLE = ['could not run', 'stale known failure', 'Result:'];
+// scripts/validator_report.rb INK_COMPILE_FAILURE_RE: a compile failure cannot be listed.
+const INK_COMPILE_FAILURE_RE = /fails to compile|compilation failed|compiled but output file was not created|produced invalid JSON|contains invalid JSON/;
+// What a match must keep once the parts every line of its kind shares are removed.
+const MIN_SPECIFIC = 8;
+const specificPart = (m) => m.replace('❌ ERROR: ', '').replace('ERROR: ', '').replace('SOCIAL: ', '')
+  .replace('schema: #/', '').trim();
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -44,20 +51,29 @@ export function checkKnownFailures(entries, decisionsText, { mergeBatch = false,
     else {
       for (const u of UNMATCHABLE) if (e.match.includes(u)) problems.push(`${label}: match contains '${u}', which is never matched`);
       if ('❌ ERROR: '.includes(e.match)) problems.push(`${label}: match '${e.match}' is part of every error line`);
+      else if (specificPart(e.match).length < MIN_SPECIFIC) {
+        problems.push(`${label}: match '${e.match}' is too general (under ${MIN_SPECIFIC} characters once the shared prefixes are removed)`);
+      }
+      if (INK_COMPILE_FAILURE_RE.test(e.match)) {
+        problems.push(`${label}: match '${e.match}' names an ink compile failure, which is never matched; fix the ink`);
+      }
     }
     if (typeof e.owner !== 'string' || e.owner.trim() === '') problems.push(`${label}: owner is empty`);
     if (!Number.isInteger(e.count) || e.count < 1) problems.push(`${label}: count must be a positive whole number`);
     if (!validDate(e.added)) problems.push(`${label}: added '${e.added}' is not an ISO date`);
     else if (e.added > now) problems.push(`${label}: added ${e.added} is in the future`);
     if (!validDate(e.reviewBy)) problems.push(`${label}: reviewBy '${e.reviewBy}' is not an ISO date`);
-    else if (e.reviewBy < now) {
+    else if (validDate(e.added) && e.reviewBy < e.added) {
+      problems.push(`${label}: reviewBy ${e.reviewBy} is earlier than added ${e.added}`);
+    } else if (e.reviewBy < now) {
       const msg = `${label}: reviewBy ${e.reviewBy} has passed; renew it with the owner or fix the lines`;
       (mergeBatch ? problems : warnings).push(msg);
     }
-    problems.push(...signOffProblems(sections, e, ['scenario', 'stage', 'match', 'count'], label));
+    problems.push(...signOffProblems(sections, e, ['scenario', 'stage', 'match', 'count'], label, { mergeBatch }));
   });
-  const labelled = entries.filter((e) => e && typeof e.approved === 'string')
-    .map((e, i) => [`known failure ${i} (${e.scenario})`, e.approved]).concat(otherApproved);
+  // Label with the entry's index in the list, before dropping entries with no heading.
+  const labelled = entries.map((e, i) => [e, i]).filter(([e]) => e && typeof e.approved === 'string')
+    .map(([e, i]) => [`known failure ${i} (${e.scenario})`, e.approved]).concat(otherApproved);
   for (const [heading, labels] of sharedHeadings(labelled)) {
     problems.push(`heading '## ${heading}' backs more than one entry: ${labels.join(', ')}`);
   }
@@ -157,10 +173,54 @@ test('bad fields: stage, owner, count, dates, scenario path', () => {
 });
 
 test('a passed reviewBy warns, and fails with MERGE_BATCH=1', () => {
-  const e = { ...good, reviewBy: '2026-11-11' };
+  const e = { ...good, added: '2026-11-01', reviewBy: '2026-11-11' };
   const text = doc(e.approved, block(ids(e)));
   const plain = check([e], text);
   assert.deepEqual(plain.problems, []);
   assert.match(plain.warnings.join('\n'), /reviewBy 2026-11-11 has passed/);
   assert.match(check([e], text, { mergeBatch: true }).problems.join('\n'), /reviewBy 2026-11-11 has passed/);
+});
+
+// ── review R1 fixes ──────────────────────────────────────────────────────────────────────────
+
+test('a match naming an ink compile failure fails (it would exempt the scenario\'s other ink entries)', () => {
+  for (const match of ["'scenarios/x/ink/a.ink' which fails to compile", 'produced invalid JSON', 'compilation failed']) {
+    const e = { ...good, match };
+    assert.match(check([e], doc(e.approved, block(ids(e)))).problems.join('\n'), /ink compile failure/, match);
+  }
+});
+
+test('a match that covers a whole stage fails (under eight characters once the shared prefixes go)', () => {
+  for (const match of ['ERROR: schema: #/', 'schema: #/rooms', 'SOCIAL: x', 'keyPin']) {
+    const e = { ...good, match };
+    assert.match(check([e], doc(e.approved, block(ids(e)))).problems.join('\n'), /too general/, match);
+  }
+  const exact = { ...good, stage: 'schema', match: "schema: #/: did not contain a required property of 'scenario_brief'" };
+  assert.deepEqual(check([exact], doc(exact.approved, block(ids(exact)))).problems, []);
+});
+
+test('a section still awaiting orchestrator sign-off fails with MERGE_BATCH=1 only', () => {
+  const awaiting = `# Validator decisions\n\n## ${good.approved}\n\n${block(ids(good))}\nOwner: labs track. Status: awaiting orchestrator sign-off.\n`;
+  assert.deepEqual(check([good], awaiting).problems, []);
+  assert.match(check([good], awaiting, { mergeBatch: true }).problems.join('\n'), /still awaiting orchestrator sign-off/);
+  const signed = awaiting.replace('awaiting orchestrator sign-off', 'signed by the orchestrator, 2026-11-13');
+  assert.deepEqual(check([good], signed, { mergeBatch: true }).problems, []);
+  // The status in another section, or in the file's preamble, does not count against this one.
+  const other = `# Validator decisions\n\nEach is awaiting orchestrator sign-off.\n\n## ${good.approved}\n\n${block(ids(good))}\nsigned\n\n` +
+    '## 2026-11-12: other\n\nStatus: awaiting orchestrator sign-off.\n';
+  assert.deepEqual(check([good], other, { mergeBatch: true }).problems, []);
+});
+
+test('a shared heading names each entry by its index in the list', () => {
+  const unsigned = { ...good, approved: undefined };
+  const second = { ...good, scenario: 'scenarios/lab_feeling_blu/scenario.json.erb' };
+  const { problems } = check([unsigned, good, second], doc(good.approved, block(ids(good))));
+  const shared = problems.find((p) => /backs more than one entry/.test(p));
+  assert.match(shared, /known failure 1 \(scenarios\/lab_exploitation/);
+  assert.match(shared, /known failure 2 \(scenarios\/lab_feeling_blu/);
+});
+
+test('a reviewBy earlier than its added date fails', () => {
+  const e = { ...good, added: '2026-11-12', reviewBy: '2026-11-01' };
+  assert.match(check([e], doc(e.approved, block(ids(e)))).problems.join('\n'), /reviewBy 2026-11-01 is earlier than added 2026-11-12/);
 });

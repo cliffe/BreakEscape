@@ -7,8 +7,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
-import { writeFileSync, mkdtempSync, rmSync, mkdirSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
+import { writeFileSync, mkdtempSync, rmSync, mkdirSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -53,18 +53,22 @@ const MUTATIONS = {
 
 // Runs the validator on a fixture. `known` is a known-failures list (scenario paths may use the
 // placeholder SCENARIO, replaced by the fixture's absolute path); `prelude` is Ruby run after the
-// validator is loaded and before main (to make one check raise).
-function run(json, { flags = ['--skip-ink'], known = null, prelude = null } = {}) {
+// validator is loaded and before main (to make one check raise). `json` may be a function of the
+// fixture's folder (for a storyPath into it); `files` are written into that folder; `mission`
+// patches mission.json; `graph: true` leaves out --no-graph.
+function run(json, { flags = ['--skip-ink'], known = null, prelude = null, files = {}, mission = {}, graph = false } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'validator-exit-'));
   try {
     const sdir = join(dir, 'test_exit_code');
     mkdirSync(sdir);
     const file = join(sdir, 'scenario.json.erb');
-    writeFileSync(file, typeof json === 'string' ? json : JSON.stringify(json));
+    const data = typeof json === 'function' ? json(sdir) : json;
+    writeFileSync(file, typeof data === 'string' ? data : JSON.stringify(data));
+    for (const [name, text] of Object.entries(files)) writeFileSync(join(sdir, name), text);
     writeFileSync(join(sdir, 'mission.json'), JSON.stringify({
-      display_name: 'Fixture', description: 'Fixture.', difficulty_level: 1, secgen_scenario: null
+      display_name: 'Fixture', description: 'Fixture.', difficulty_level: 1, secgen_scenario: null, ...mission
     }));
-    const args = [file, '--no-graph', '--no-lint', ...flags];
+    const args = [file, ...(graph ? [] : ['--no-graph']), '--no-lint', ...flags];
     if (known) {
       const kf = join(dir, 'known.json');
       writeFileSync(kf, JSON.stringify(known.map((e) => ({ ...e, scenario: e.scenario === 'SCENARIO' ? file : e.scenario }))));
@@ -76,7 +80,7 @@ function run(json, { flags = ['--skip-ink'], known = null, prelude = null } = {}
       ? spawnSync('ruby', ['-e', `require ${JSON.stringify(VALIDATOR)}\n${prelude}\nARGV.replace(${JSON.stringify(args)})\nmain`],
         { encoding: 'utf8', env, cwd: root })
       : spawnSync('ruby', [VALIDATOR, ...args], { encoding: 'utf8', env, cwd: root });
-    return { status: r.status, out: r.stdout || '', err: r.stderr || '' };
+    return { status: r.status, out: r.stdout || '', err: r.stderr || '', left: readdirSync(sdir) };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -232,4 +236,108 @@ test('a broken known-failures file is an error, never a silent pass', { skip }, 
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// ── review R1 fixes ──────────────────────────────────────────────────────────────────────────
+
+const notes = (text) => (j) => { j.rooms.r1.objects.push({ type: 'notes', id: 'checklist', name: 'Checklist', readable: true, text }); };
+const errorCount = (out) => Number((result(out).match(/^Result: (\d+) errors/) || [])[1]);
+
+test('a ❌ inside author content is not an error: plain, -o and -v runs agree (m1)', { skip }, () => {
+  const fixture = scenario(notes('❌ door left open'));
+  for (const flags of [['--skip-ink'], ['--skip-ink', '-o'], ['--skip-ink', '-v']]) {
+    const r = run(fixture, { flags });
+    assert.equal(r.status, 0, `${flags.join(' ')}\n${r.out}`);
+    assert.match(result(r.out), /^Result: 0 errors/, flags.join(' '));
+  }
+  assert.match(run(fixture, { flags: ['--skip-ink', '-o'] }).out, /"text": "❌ door left open"/);
+  // The -v dump prints after a schema failure: only the schema line counts, not the dumped ❌.
+  const broken = scenario((j) => { notes('❌ door left open')(j); j.rooms.r1.type = 'room_nowhere'; });
+  const v = run(broken, { flags: ['--skip-ink', '-v'] });
+  assert.equal(v.status, 1);
+  assert.match(v.out, /Full JSON structure:/);
+  assert.equal(errorCount(v.out), 1, v.out);
+});
+
+// The graph generator is stubbed (the real one would also write files next to the fixture).
+const stubGraph = (code) => `module Kernel
+  alias_method :__orig_system, :system
+  def system(*a)
+    return __orig_system('ruby', '-e', 'warn "graph: boom"; exit ${code}') if a.any? { |x| x.to_s.include?('generate_dungeon_graph') }
+    __orig_system(*a)
+  end
+end`;
+
+test('a dungeon graph abort fails the run (m2)', { skip }, () => {
+  const abort = run(scenario(), { graph: true, prelude: stubGraph(1) });
+  assert.equal(abort.status, 1, abort.out + abort.err);
+  assert.match(abort.out, /❌ ERROR: dungeon graph could not run \(exit 1\)/);
+  assert.doesNotMatch(abort.out, /non-fatal/);
+  const ok = run(scenario(), { graph: true, prelude: stubGraph(0) });
+  assert.equal(ok.status, 0, ok.out + ok.err);
+});
+
+// A scenario folder under the temp dir, reached from the repository's scenarios/ folder.
+const storyIn = (sdir, name) => `scenarios/${relative(join(root, 'scenarios'), join(sdir, name))}`;
+const inkNpc = (name) => (sdir) => scenario((j) => { j.rooms.r1.npcs.push(npc({ storyPath: storyIn(sdir, name) })); });
+
+test('an ink compile failure cannot be listed: with it and another ink entry listed, the run still fails (m3)', { skip }, () => {
+  const files = { 'bad.ink': '=== start ===\nHello\n-> nowhere_knot\n' };
+  const known = [entry({ stage: 'ink', match: 'fails to compile', count: 1 }),
+    entry({ stage: 'ink', match: 'some other ink line', count: 1, approved: '2026-11-12: other' })];
+  const r = run(inkNpc('bad.json'), { flags: [], known, files });
+  assert.equal(r.status, 1, r.out + r.err);
+  assert.match(r.out, /fails to compile/);
+  assert.doesNotMatch(r.out, /fails to compile.*\(known:/);
+});
+
+test('ink compiles through a private temp file that never stays behind (n2)', { skip }, () => {
+  const files = { 'good.ink': '=== start ===\nHello there.\n-> END\n' };
+  const r = run(inkNpc('good.json'), { flags: [], files });
+  assert.doesNotMatch(r.out, /fails to compile|invalid JSON|output file was not created/, r.out);
+  assert.ok(r.left.includes('good.json'), r.left.join(', '));
+  assert.deepEqual(r.left.filter((f) => f.includes('.tmp-')), []);
+  const bad = run(inkNpc('bad.json'), { flags: [], files: { 'bad.ink': 'Hello\n-> nowhere_knot\n' } });
+  assert.match(bad.out, /fails to compile/);
+  assert.deepEqual(bad.left.filter((f) => f.includes('.tmp-') || f === 'bad.json'), []);
+});
+
+for (const [name, prelude] of [
+  ['format_schema_error', 'def format_schema_error(*); raise "boom"; end'],
+  ['split_schema_errors', 'def ValidateSocial.split_schema_errors(*); raise "boom"; end']
+]) {
+  test(`${name} raising: the schema line still prints, and so do the checks after it (m7)`, { skip }, () => {
+    const r = run(scenario((j) => { j.rooms.r1.type = 'room_nowhere'; pinMismatch(j); }), { prelude });
+    assert.equal(r.status, 1, r.out + r.err);
+    assert.match(r.out, /❌ ERROR: schema report could not run: RuntimeError: boom/);
+    assert.match(r.out, /❌ ERROR: schema: .*room_nowhere/);
+    assert.match(r.out, MUTATIONS.common[1]);
+    assert.doesNotMatch(r.out, /validator could not run/);
+  });
+}
+
+test('print_issue_list raising: could-not-run, and the later sections still print (m7)', { skip }, () => {
+  const r = run(scenario(pinMismatch), { prelude: 'def print_issue_list_unguarded(*); raise "boom"; end' });
+  assert.equal(r.status, 1, r.out + r.err);
+  assert.match(r.out, /❌ ERROR: print_issue_list could not run: RuntimeError: boom/);
+  assert.match(r.out, MUTATIONS.common[1]); // the common list is printed directly, not by print_issue_list
+  assert.doesNotMatch(r.out, /validator could not run/);
+});
+
+test('the --strict-social count line raising is a could-not-run line, not a crash (m7)', { skip }, () => {
+  const r = run(scenario((j) => { j.social = {}; pinMismatch(j); }), {
+    flags: ['--skip-ink', '--strict-social'], prelude: 'def ValidateSocial.errors(*); raise "boom"; end'
+  });
+  assert.equal(r.status, 1, r.out + r.err);
+  assert.match(r.out, /❌ ERROR: strict-social count could not run: RuntimeError: boom/);
+  assert.match(r.out, /✓ Validation complete!/);
+  assert.doesNotMatch(r.out, /validator could not run/);
+});
+
+test('a bad mission.json scoring prints once and counts once (n1)', { skip }, () => {
+  const r = run(scenario(), { mission: { scoring: 'bogus' } });
+  assert.equal(r.status, 1, r.out + r.err);
+  const lines = r.out.split('\n').filter((l) => /❌/.test(l) && /scoring/.test(l));
+  assert.equal(lines.length, 1, lines.join('\n'));
+  assert.equal(errorCount(r.out), 1, r.out);
 });
