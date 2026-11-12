@@ -100,14 +100,18 @@ export function phoneLineVoice(line, contact, characters) {
     const list = !characters ? []
         : (typeof characters.values === 'function' ? Array.from(characters.values()) : Object.values(characters));
     const names = list.map(c => c?.displayName).filter(Boolean);
-    const other = otherSpeaker(line.text, contact, names);
+    const ids = new Map(list.filter(c => c?.id).map(c => [c.id, c.displayName || c.id]));
+    const other = otherSpeaker(line.text, contact, names, ids);
     let speakerId = contact.id;
     let text = line.text.trim();
     if (other) {
         text = other.text;
         const wanted = other.name.trim().toLowerCase();
-        const who = list.find(c => c?.id && c.voice && c.displayName &&
-            c.displayName.trim().toLowerCase() === wanted);
+        // Matched by id: that record speaks, even if another shares its display name
+        const who = other.id
+            ? list.find(c => c?.id === other.id && c.voice)
+            : list.find(c => c?.id && c.voice && c.displayName &&
+                c.displayName.trim().toLowerCase() === wanted);
         // A speaker with no voice is read in the contact's voice, as person-chat does
         if (who) speakerId = who.id;
     } else if (STRIP_SPEAKER_PREFIX.test(text)) {

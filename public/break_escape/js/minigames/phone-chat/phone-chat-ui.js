@@ -227,7 +227,7 @@ export default class PhoneChatUI {
 
     /** One subtitle line of a call (replaces a bubble in call mode). */
     _addCallSubtitle(type, text, contact, scrollToBottom) {
-        const other = type === 'npc' ? otherSpeaker(text, contact, this._knownSpeakerNames()) : null;
+        const other = type === 'npc' ? otherSpeaker(text, contact, this._knownSpeakerNames(), this._knownSpeakerIds()) : null;
         const sub = callSubtitle(type, text, contact, other);
         if (!sub.text) return Promise.resolve();
         const line = document.createElement('div');
@@ -892,7 +892,7 @@ export default class PhoneChatUI {
             // Another character's line in this thread ("Name: …") gets their name over
             // the bubble, prefix dropped, instead of reading as the contact's own (F14)
             let bodyText = trimmedText;
-            const other = type === 'npc' ? otherSpeaker(trimmedText, contact, this._knownSpeakerNames()) : null;
+            const other = type === 'npc' ? otherSpeaker(trimmedText, contact, this._knownSpeakerNames(), this._knownSpeakerIds()) : null;
             if (other) {
                 const sender = document.createElement('div');
                 sender.className = 'message-sender';
@@ -935,6 +935,15 @@ export default class PhoneChatUI {
         const npcs = this.npcManager?.npcs;
         if (!npcs || typeof npcs.values !== 'function') return [];
         return Array.from(npcs.values()).map(n => n?.displayName).filter(Boolean);
+    }
+
+    /** Registered id -> display name of every character, for otherSpeaker() id prefixes (plan 2.10). */
+    _knownSpeakerIds() {
+        const npcs = this.npcManager?.npcs;
+        const ids = new Map();
+        if (!npcs || typeof npcs.values !== 'function') return ids;
+        for (const n of npcs.values()) if (n?.id) ids.set(n.id, n.displayName || n.id);
+        return ids;
     }
 
     _typewriterMessage(text, scrollToBottom) {

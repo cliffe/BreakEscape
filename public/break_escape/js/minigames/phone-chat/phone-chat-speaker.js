@@ -169,9 +169,12 @@ export function phoneBarkText(text, contact) {
  * @param {string} text - the line after displayPhoneLine
  * @param {{id?: string, displayName?: string}|null} contact - the thread's own contact
  * @param {string[]} knownNames - display names of the scenario's characters
- * @returns {{name: string, text: string}|null} the speaker's name as registered, and the line without it
+ * @param {Map<string,string>} [knownIds] - registered id -> display name. A line starting `<id>:` (exact id,
+ *   any case) names that character, so two same-named records can be told apart (plan 2.10).
+ *   Never the contact's own id, `narrator` or `player`.
+ * @returns {{name: string, id?: string, text: string}|null} the speaker's name as registered (and id, when matched by id), and the line without it
  */
-export function otherSpeaker(text, contact, knownNames) {
+export function otherSpeaker(text, contact, knownNames, knownIds) {
     if (typeof text !== 'string' || !Array.isArray(knownNames)) return null;
     const own = new Set(contactNames(contact));
     const trimmed = text.trim();
@@ -183,6 +186,20 @@ export function otherSpeaker(text, contact, knownNames) {
         if (!match) continue;
         const rest = trimmed.slice(match[0].length).trim();
         if (rest) return { name: name.trim(), text: rest };
+    }
+    if (knownIds && typeof knownIds.entries === 'function') {
+        const ownId = String(contact?.id || '').toLowerCase();
+        const ids = Array.from(knownIds.entries())
+            .filter(([id]) => typeof id === 'string' && id.trim()
+                && !['narrator', 'player'].includes(id.trim().toLowerCase())
+                && id.trim().toLowerCase() !== ownId)
+            .sort((a, b) => b[0].length - a[0].length);
+        for (const [id, displayName] of ids) {
+            const match = trimmed.match(new RegExp(`^${escapeRegExp(id.trim())}\\s*:\\s*`, 'i'));
+            if (!match) continue;
+            const rest = trimmed.slice(match[0].length).trim();
+            if (rest) return { name: String(displayName || id).trim(), id: id.trim(), text: rest };
+        }
     }
     return null;
 }
