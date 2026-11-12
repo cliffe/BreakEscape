@@ -24,7 +24,7 @@ module BreakEscape
     JUDGED_NEEDS = %w[work social_media].freeze
     WORKAROUND_KINDS = %w[writes_down prop_door emit borrow_session share_login].freeze
     PRESETS_FILE = File.expand_path('../../public/break_escape/js/data/office-presets.json', __dir__)
-    FAIL_CAUSES = %w[down unreachable no_access off locked_out social_blocked].freeze
+    FAIL_CAUSES = %w[down unreachable no_access off locked_out social_blocked usb_refused].freeze
     # The needs a lockout at the NPC's own station stops (sub-slice L; user decision q33: every
     # use of that PC, social media included)
     LOCKOUT_NEEDS = %w[work social_media].freeze
@@ -150,6 +150,45 @@ module BreakEscape
 
     def phone?(npc)
       npc.is_a?(Hash) && npc['phone'] != false
+    end
+
+    # Whether an NPC's ink or JSON record offers an item type (Friendface phone review R1 M1 and
+    # R2 M1, m2): a give_item tag for the type, with or without a `|` or `:` selector, or a
+    # give_npc_inventory_items tag whose comma filter is empty or names the type. Read by the
+    # server (SocialFeed#npc_offers_item?) and by the validator, so the two cannot drift. `text`
+    # is a compiled story, an .ink source or a JSON record; a tag ends at a quote, a backslash
+    # (an escape in JSON), a newline or the next `#` (another ink tag on the same line).
+    GIVE_INVENTORY_RE = /give_npc_inventory_items(?:\s*:([^"\\\n#]*))?/.freeze
+
+    # The engine trims around the first colon (chat-helpers.js), so `give_item : type` gives too
+    # (review R3 n1). The type must be literal: a tag built from an ink variable never matches.
+    def give_item_re(type)
+      /give_item\s*:\s*#{Regexp.escape(type.to_s)}(?![\w-])/
+    end
+
+    def offers_item_text?(text, type)
+      return false unless text.is_a?(String) && type.is_a?(String) && !type.empty?
+      return true if text.match?(give_item_re(type))
+
+      text.scan(GIVE_INVENTORY_RE).any? do |(param)|
+        types = param.to_s.split(',').map(&:strip).reject(&:empty?)
+        types.empty? || types.include?(type)
+      end
+    end
+
+    # The texts an NPC's offers are read from: its JSON record without itemsHeld, then its story,
+    # found by `story_file` (storyPath -> path or nil; the server and the validator each resolve
+    # it their own way)
+    def offer_texts(npc, &story_file)
+      return [] unless npc.is_a?(Hash)
+
+      texts = [JSON.generate(npc.reject { |k, _| k == 'itemsHeld' })]
+      sp = npc['storyPath']
+      if sp.is_a?(String) && !sp.empty? && story_file
+        path = story_file.call(sp)
+        texts << File.read(path) if path && File.exist?(path)
+      end
+      texts
     end
 
     # Judged: work with a plan, or social_media
@@ -425,6 +464,8 @@ module BreakEscape
         need == 'social_media' && social_blocked?(data, npc)
       when 'locked_out'
         locked_out_at?(npc, object(data, id), lockout_keys)
+      when 'usb_refused'
+        need == 'work' && usb_habit_refused?(data, npc) && station(data, npc)&.dig('id') == id
       else
         false
       end
@@ -445,6 +486,8 @@ module BreakEscape
         need == 'social_media' && st ? [{ 'id' => st['id'], 'why' => 'social_blocked' }] : []
       when 'locked_out'
         LOCKOUT_NEEDS.include?(need) && st ? [{ 'id' => st['id'], 'why' => 'locked_out' }] : []
+      when 'usb_refused'
+        need == 'work' && st ? [{ 'id' => st['id'], 'why' => 'usb_refused' }] : []
       else
         []
       end
@@ -477,6 +520,8 @@ module BreakEscape
         need == 'social_media' && social_blocked?(data, npc)
       when 'locked_out'
         LOCKOUT_NEEDS.include?(need) && lockout_station?(data, npc)
+      when 'usb_refused'
+        need == 'work' && usb_habit_refused?(data, npc)
       else
         false
       end
@@ -722,7 +767,17 @@ module BreakEscape
         entry['routes'] = rt unless rt.nil?
         entry
       end
-      { 'breakDrain' => frustration(data, npc)['breakDrain'], 'needs' => needs }
+      out = { 'breakDrain' => frustration(data, npc)['breakDrain'], 'needs' => needs }
+      usb = usb_habit(npc)
+      if usb
+        out['usb'] = { 'every' => usb_every(npc) }
+        out['usb']['setGlobal'] = usb['setGlobal'] if usb['setGlobal'].is_a?(String) && declared_global?(data, usb['setGlobal'])
+        # The stick the copy goes to (USB stick, 2026-11-12): the browser copies only while the
+        # NPC's record still holds an item with this id
+        stick = usb_stick(npc)
+        out['usb']['stick'] = stick['id'] if stick
+      end
+      out
     end
 
     # ── the USB policy (sub-slice U, plan 7), as pc-policy.js decides it ─
@@ -756,6 +811,68 @@ module BreakEscape
       usb == 'blocked' || (usb == 'storage_blocked' && cls == 'storage')
     end
 
+    # ── the USB habit (USB_HABIT_PLAN.md, user decision q39) ───────────
+
+    USB_EVERY_DEFAULT = 2
+    USB_EVERY_RANGE = (1..10).freeze
+
+    # The NPC's usbHabit object, or nil
+    def usb_habit(npc)
+      h = npc.is_a?(Hash) ? npc['usbHabit'] : nil
+      h.is_a?(Hash) ? h : nil
+    end
+
+    # Every nth judged work use at the station carries a copy to a stick (1 to 10, default 2)
+    def usb_every(npc)
+      v = usb_habit(npc)&.dig('every')
+      v.is_a?(Integer) && USB_EVERY_RANGE.cover?(v) ? v : USB_EVERY_DEFAULT
+    end
+
+    # The stick the habit copies to (USB stick, 2026-11-12): the first `usb` item with an id in
+    # the NPC's itemsHeld, or nil. The validator requires one on a habit NPC.
+    def usb_stick(npc)
+      return nil unless usb_habit(npc) && npc['itemsHeld'].is_a?(Array)
+
+      # Review R2 m4: a storage stick (usbClass storage, or none); a HID device is never the habit's stick
+      npc['itemsHeld'].find do |i|
+        i.is_a?(Hash) && i['type'] == 'usb' && present_string?(i['id']) && [nil, 'storage'].include?(i['usbClass'])
+      end
+    end
+
+    USB_STICK_DEFAULT_FILE = 'work_file.txt'
+    USB_STICK_DEFAULT_TEXT = "Work in progress.\n\nCopied to finish at home tonight. Do not lose this stick."
+
+    # The files on a habit stick: its authored `contents`, else one work_file.txt. Served only by
+    # GET /container (and /unlock) to a player who holds the stick; never in room data.
+    def usb_stick_files(stick)
+      list = stick.is_a?(Hash) && stick['contents'].is_a?(Array) ? stick['contents'].select { |f| f.is_a?(Hash) } : []
+      return list unless list.empty?
+
+      [{ 'type' => 'text_file', 'id' => "#{stick['id']}_work_file", 'name' => USB_STICK_DEFAULT_FILE,
+         'takeable' => false, 'readable' => true, 'text' => USB_STICK_DEFAULT_TEXT }]
+    end
+
+    # Every habit stick in the scenario's rooms, as [npc, stick] pairs
+    def usb_habit_sticks(data)
+      return [] unless data.is_a?(Hash) && data['rooms'].is_a?(Hash)
+
+      data['rooms'].each_value.flat_map do |room|
+        Array(room.is_a?(Hash) ? room['npcs'] : nil).filter_map do |npc|
+          stick = usb_stick(npc)
+          stick ? [npc, stick] : nil
+        end
+      end
+    end
+
+    # The habit can be refused: a usbHabit, a work plan and a station whose policy refuses a
+    # storage stick. Static, since a policy does not change in play.
+    def usb_habit_refused?(data, npc)
+      return false unless usb_habit(npc) && work_plan?(data, npc)
+
+      st = station(data, npc)
+      !st.nil? && plant_refused?(data, st, { 'usbClass' => 'storage' })
+    end
+
     # ── can fail, belongs to, owned causes ──────────────────────────────
 
     def off_when?(data, obj)
@@ -787,6 +904,8 @@ module BreakEscape
 
         # Sub-slice L (6.6): its own sign-in PC under a policy with maxAttempts can lock it out
         return true if lockout_station?(data, npc)
+        # The USB habit (q39): its station's policy refuses the stick
+        return true if usb_habit_refused?(data, npc)
 
         # The station only: a borrow PC counts once handed over (sub-slice H; review R1 M2)
         off_when?(data, station(data, npc))
@@ -812,6 +931,10 @@ module BreakEscape
         need == 'work' && work_list(data, npc).include?(id) && resources(data).key?(id)
       when 'no_access'
         need == 'work' && work_list(data, npc).include?(id) && !admitted?(resources(data)[id], npc)
+      when 'usb_refused' # the USB habit (q39): a work use at the station only, of an NPC whose
+        # habit its station refuses (review R1 m2)
+        st = station(data, npc)
+        need == 'work' && !st.nil? && st['id'] == id && usb_habit_refused?(data, npc)
       else # off, locked_out, social_blocked: the station only (a lockout is per PC, and a failed
         # borrowed use is never reported, 6.4)
         st = station(data, npc)

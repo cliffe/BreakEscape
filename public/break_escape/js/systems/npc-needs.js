@@ -52,6 +52,10 @@ export const QUEUE_COOLDOWN_MS = 60000;   // after giving up on a queue, that ob
 export const QUEUE_CHAT_RADIUS = 48;  // px (1.5 tiles) from the approach cell: the front of the queue chats
 // Avoidance at a distance, balking and parked needs (slice 14, OFFICE_LIFE_PLAN 10)
 export const AVOID_RADIUS_TILES = 2;  // needsCompany.avoidRadius default, only for an NPC that declares avoids
+// interests.<tag>.noticeRadius default (q53 f): tiles from the NPC within which a tagged item is
+// seen. 24 tiles (768 px) spans any two points of a 20 x 10 room, the largest any interest uses,
+// so an NPC in its notice room sees everything there as before; only a far-off item waits.
+export const NOTICE_RADIUS_TILES = 24;
 export const NEEDS_DEFER_MIN = 4;     // needsDeferMin default: how long a given-up need stays parked
 export const AVOID_BUBBLE_MS = 4000;  // the avoided person's face shows this long after a turn-back's grumble
 export const WAKE_BASE_MS = 1000;     // a door opening or a room loading retries parked needs after this...
@@ -331,9 +335,12 @@ export function normaliseInterest(raw) {
     if (!r || typeof r !== 'object') return null;
     const w = Number(r.weight);
     if (!(w > 0)) return null;
+    const nr = Number(r.noticeRadius);
     return {
         weight: clamp(w, 0.1, 10),
-        noticeRooms: Array.isArray(r.noticeRooms) ? r.noticeRooms.slice() : null
+        noticeRooms: Array.isArray(r.noticeRooms) ? r.noticeRooms.slice() : null,
+        noticeRadius: r.noticeRadius !== undefined && r.noticeRadius !== null && Number.isFinite(nr) && nr > 0
+            ? clamp(nr, 0.5, 100) : NOTICE_RADIUS_TILES
     };
 }
 
@@ -497,6 +504,9 @@ export class NPCNeedsSystem {
             // decision q36: a borrowed hot desk is a second kind of key here, checked when the
             // borrower sits down, and a borrowed use there fails the same way
             lockedOut: new Set(), lockCheck: {},
+            // The USB habit (USB_HABIT_PLAN.md, q39): judged work uses at the station so far; every
+            // work.usb.every-th carries a copy to a stick. Restarts at 0 with the state on reload.
+            usbUses: 0,
             urgentFlag: {},
             mode: 'idle',
             prevMode: null,
@@ -2188,6 +2198,7 @@ export class NPCNeedsSystem {
         if (first) {
             if (first.why === 'off' || first.why === 'locked_out') own = 'station_fail';
             else if (first.why === 'social_blocked') own = 'social_blocked';
+            else if (first.why === 'usb_refused') own = 'usb_refused';
             else if (first.why === 'no_access') own = 'work_fail_no_access';
             else {
                 const kind = this._plan(s)?.needs.find(r => r.id === first.id)?.kind;
@@ -2719,7 +2730,9 @@ export class NPCNeedsSystem {
 
     _carryCandidate(s, tag, it, objects, pos) {
         const rooms = it.noticeRooms || (s.home?.roomId ? [s.home.roomId] : (pos.roomId ? [pos.roomId] : []));
+        const reach = (it.noticeRadius || NOTICE_RADIUS_TILES) * 32;   // q53 f: seen from where the NPC stands
         const items = objects.filter(o => o.needsTag === tag && o.pickable && rooms.includes(o.roomId)
+            && Math.hypot(o.x - pos.x, o.y - pos.y) <= reach
             && !this._itemClaimed(o.id, s.npcId) && !(s.cooldowns[o.id] > this.clockMs) && this._permitted(s, o, false)
             && !this._reservedFrom(o.id, s.npcId)   // slice 17: someone else's printout
             && !s.refused?.has(o.id));   // access 9.2 U: a device refused with nowhere to take it
@@ -3207,6 +3220,8 @@ export class NPCNeedsSystem {
             const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
             v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest], station: true };
         }
+        // The USB habit (q39): never at a borrowed PC, nor where the owner is locked out
+        if (atStation && job.need === 'work' && !s.lockedOut.has(job.targetId)) v = this._usbAttempt(s, obj, v);
         // User decision q36: the borrower's username is locked out at the hot desk, so its sign-in
         // there fails and the use is not met (a failed borrowed use is still not reported, 6.4)
         if (atBorrow && s.lockedOut.has(job.targetId)) {
@@ -3252,7 +3267,10 @@ export class NPCNeedsSystem {
             s.rearm[job.need] = true;
             s.failCause[job.need] = [];   // met: nothing holds for this need now
             if (job.need === 'work') s.checked.clear();
-            if ((s.frustration > 0 || s.failSent[job.need]) && typeof this.world.reportUse === 'function') {
+            // The USB habit (review R1 m1): every met work use at a station that refuses the stick is
+            // reported, even at level 0, since the server counts them to know which use carries a copy
+            const usbCount = atStation && job.need === 'work' && this._usbStickHeld(s) && usbRefusedBy(obj?.usbPolicy ?? null, 'storage');
+            if ((s.frustration > 0 || s.failSent[job.need] || usbCount) && typeof this.world.reportUse === 'function') {
                 this.world.reportUse(id, { event: 'ease', need: job.need, objectId: job.targetId });
                 delete s.failSent[job.need];
             }
@@ -3318,6 +3336,46 @@ export class NPCNeedsSystem {
         s.job = null;
         this._clearBackoffs();
         this._goHome(s, { stayPut });
+    }
+
+    /**
+     * The USB habit (USB_HABIT_PLAN.md, q39): every work.usb.every-th judged work use at the
+     * station copies a file to a stick. Where the station's policy refuses storage the use fails
+     * with usb_refused (after any other cause), npc_usb_refused fires and the habit's setGlobal
+     * (the NPC emails the file to itself instead) is set; the server sets it too when it accepts
+     * the fail. Where the policy allows it, npc_usb_copied fires and the verdict stands.
+     */
+    _usbAttempt(s, obj, v) {
+        const usb = this._plan(s)?.usb;
+        const every = Number.isInteger(usb?.every) && usb.every >= 1 && usb.every <= 10 ? usb.every : 0;
+        // No stick, nothing to copy: the use is a plain use (2026-11-12), and the count stands still
+        if (!every || !this._usbStickHeld(s)) return v;
+        s.usbUses += 1;
+        if (s.usbUses % every !== 0) return v;
+        const id = s.npcId;
+        const objectId = s.job.targetId;
+        if (!usbRefusedBy(obj?.usbPolicy ?? null, 'storage')) {
+            this._log(id, 'usb_copied', { target: objectId });
+            this._emit(`npc_usb_copied:${id}`, { npcId: id, objectId });
+            return v;
+        }
+        this._log(id, 'usb_refused', { target: objectId });
+        this._emit(`npc_usb_refused:${id}`, { npcId: id, objectId });
+        if (typeof usb.setGlobal === 'string' && usb.setGlobal) { this.world.setGlobal(usb.setGlobal, true); this._worldChanged(); }
+        const rest = Array.isArray(v.missing) ? v.missing.filter(c => c && c.why !== 'usb_refused') : [];
+        return { met: false, missing: [...rest, { id: objectId, why: 'usb_refused' }], station: !!v.station };
+    }
+
+    /**
+     * The USB habit's stick (2026-11-12): the plan names it (work.usb.stick) and the NPC's record
+     * still holds an item with that id. A give, a pickpocket or a knock-out takes it out of
+     * itemsHeld (and the server leaves it out of room data on a reload), so the habit stops.
+     */
+    _usbStickHeld(s) {
+        const stick = this._plan(s)?.usb?.stick;
+        if (typeof stick !== 'string' || !stick) return false;
+        const held = this._rec(s).itemsHeld;
+        return Array.isArray(held) && held.some(i => i && i.id === stick);
     }
 
     /**

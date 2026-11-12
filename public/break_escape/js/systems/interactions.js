@@ -1098,7 +1098,8 @@ export function handleObjectInteraction(sprite) {
         'workstation', 'lab-workstation',
         'vm-launcher', 'vm_launcher',
         'launch-device', 'phone',
-        'mail_terminal'   // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
+        'mail_terminal',  // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
+        'phone_friendface' // q35: a Friendface phone, opened from inventory
     ]);
     if (sprite.scenarioData.takeable && PICKUP_THEN_INTERACT_TYPES.has(sprite.scenarioData.type)) {
         // A locked takeable mail terminal must be unlocked before it is picked up and
@@ -1713,8 +1714,13 @@ export function handleObjectInteraction(sprite) {
     }
 
     // Handle container items (suitcase, briefcase, bags, bins, etc.) - check BEFORE lock check
-    // hasContents: the server strips a locked container's contents and marks it instead
-    if (data.type === 'suitcase' || data.type === 'briefcase' || data.type === 'bag1' || data.type === 'bin1' || data.contents || data.hasContents) {
+    // hasContents: the server strips a locked container's contents and marks it instead.
+    // A habit NPC's USB stick in the world (dropped by a knock-out) is takeable, unlocked and
+    // marked hasContents with no files: the server serves them only to a player who holds it,
+    // so it is picked up below and opened from the inventory (USB habit review R2, B1).
+    const pocketStickInWorld = !isInventoryItem && data.type === 'usb' && data.takeable === true &&
+        data.hasContents === true && data.locked !== true && !Array.isArray(data.contents);
+    if (!pocketStickInWorld && (data.type === 'suitcase' || data.type === 'briefcase' || data.type === 'bag1' || data.type === 'bin1' || data.contents || data.hasContents)) {
         console.log('CONTAINER ITEM INTERACTION', data);
 
         // SECURITY: Always validate with server

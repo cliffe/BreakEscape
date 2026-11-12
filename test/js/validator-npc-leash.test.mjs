@@ -118,3 +118,43 @@ test('social_media: no object satisfies it, an error only with "phone": false', 
     const noPhone = check(office({ npc: { needs: social, phone: false } }));
     assert.ok(has(noPhone, "need 'social_media' has no object"), noPhone.join('\n'));
 });
+
+// q53 (f): interests.<tag>.noticeRadius
+const noticeSc = (noticeRadius) => office({
+    npc: { needs: undefined, interests: { post: { weight: 2, noticeRadius } } },
+    objects: { office: [{ id: 'tom_pc', type: 'pc', affordance: { accepts: ['post'] } }, { id: 'letter', type: 'notes', needsTag: 'post' }] }
+});
+
+test('interest noticeRadius: 4 tiles is fine; out of range or not a number is an error; under 2 warns', { skip }, () => {
+    let i = check(noticeSc(4));
+    assert.ok(!has(i, 'noticeRadius must be') && !has(i, 'under 2 tiles'), i.join('\n'));
+    i = check(noticeSc(0));
+    assert.ok(has(i, "interest 'post' noticeRadius must be a number of tiles from 0.5 to 100"), i.join('\n'));
+    i = check(noticeSc('near'));
+    assert.ok(has(i, "noticeRadius must be a number"));
+    i = check(noticeSc(1));
+    assert.ok(has(i, "noticeRadius 1 is under 2 tiles"), i.join('\n'));
+});
+
+// Review R1 (F1): a notice room wider than the radius (or the default 24) is cut short silently
+test('interest noticeRadius: a radius under the notice room width warns; one wider does not', { skip }, () => {
+    let i = check(noticeSc(4));
+    assert.ok(has(i, "noticeRadius 4 tiles is less than notice room 'office'"), i.join('\n'));
+    i = check(noticeSc(60));
+    assert.ok(!has(i, 'is less than notice room'), i.join('\n'));
+    i = check(noticeSc(undefined));
+    assert.ok(!has(i, 'is less than notice room'), 'the default 24 covers a normal room: ' + i.join('\n'));
+});
+
+test('interest with the default radius in a room wider than 24 tiles warns', { skip }, () => {
+    const sc = noticeSc(undefined);
+    sc.rooms.office.npcs[0].interests.post.noticeRooms = ['big'];
+    sc.rooms.big = { type: 'room_test_big', connections: {}, objects: [] };
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}
+      ValidateNpcNeeds.instance_variable_set(:@room_tiles, { 'room_test_big' => [30, 12] })
+      puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
+    const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(sc), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    const out = JSON.parse(r.stdout.trim().split('\n').pop());
+    assert.ok(has(out, "the default noticeRadius (24) tiles is less than notice room 'big' (30 x 12 tiles"), out.join('\n'));
+});

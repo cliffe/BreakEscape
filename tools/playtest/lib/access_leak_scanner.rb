@@ -98,6 +98,21 @@ require 'uri'
 # R2 n4: a key whose username part is blank ("pc|") is skipped, since it would match any string
 # naming that PC.
 #
+# The USB habit's stick (USB habit code review R2 m2): the files on a habit NPC's stick, authored
+# or the default work_file.txt, are served only to a player who holds it. Their names and texts are
+# secrets (rule `stick_content`) anywhere but a GET /container/:id answer for that stick or a folder
+# on it, or the contents of an /unlock answer, and they are never public room strings.
+# Its limits (review R3 n2): the scanner cannot tell whether the player held the stick when an
+# answer was served, so files served for a stick still with its NPC or lying on the floor pass,
+# and so would an /unlock answer for some other object that carried them (it does not know an
+# /unlock answer's target). The held check is the server's, and the controller tests cover it
+# (usb_habit_test.rb: a stick the player does not hold, a forged inventory entry, the floor 422
+# and 404). Once served, a file is legitimate for the rest of the run, as for every content
+# class; files shorter than MIN_CONTENT_LENGTH and fields other than name, text and content (a file's
+# observations) are not checked, as for every item. A stick string that another secret also
+# carries (a sign-in PC's, a profile's or a share's file of the same name, review R3 n3) is left
+# to that secret, since the other file's own answer would otherwise be reported as the stick's.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -129,7 +144,7 @@ class AccessLeakScanner
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
   WITHHELD_KEYS = %w[creds role awareness habits workarounds].freeze
   # Slice 9.2 (9.2): the NPC keys the server withholds beside them (Game::WITHHELD_WORK_NPC_KEYS)
-  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed].freeze
+  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed usbHabit].freeze
   # Feed texts shorter than this are not searched for (the validator warns about them, 9.2)
   MIN_FEED_TEXT = 12
 
@@ -188,13 +203,15 @@ class AccessLeakScanner
     collect_workarounds
     collect_feeds
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
+    drop_shared_stick_strings
     @items.delete_if { |_, info| info[:strings].empty? }
   end
 
   def counts
     {
       passwords: @passwords.values.flatten.uniq.length,
-      login_items: @items.count { |_, i| i[:scope] },
+      login_items: @items.count { |_, i| i[:scope] && i[:scope] != :stick },
+      stick_items: @items.count { |_, i| i[:scope] == :stick },
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
       network_strings: @network_strings.length,
       wifi_secrets: @wifi_secrets.length,
@@ -283,12 +300,13 @@ class AccessLeakScanner
   RULE_TEXT = {
     'password' => 'an NPC password in a response',
     'signin_content' => 'sign-in PC content outside its own container response',
+    'stick_content' => "a habit USB stick's files outside a container or unlock response for that stick",
     'profile_content' => 'profile content outside a sign-in PC container response',
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
     'wifi_secret' => 'a Wi-Fi SSID or pre-shared key in any response (the key is compared on the server, never served)',
-    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds, workNeeds, frustration, feed) on an NPC record',
+    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds, workNeeds, frustration, feed, usbHabit) on an NPC record',
     'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
     'feed_text' => "a feed post's or feed fact's whole text before the server served it",
     'feed_fact_key' => 'an object keyed by a feed fact id with a text key before its post was served, or a bootstrap social.intelFacts that is not an object',
@@ -348,6 +366,7 @@ class AccessLeakScanner
   end
 
   def collect_items
+    @stick_ids = habit_stick_ids
     rooms = @data['rooms']
     (rooms.is_a?(Hash) ? rooms.values : []).each do |room|
       next unless room.is_a?(Hash)
@@ -433,7 +452,7 @@ class AccessLeakScanner
       when String then out << node.strip
       when Array then node.each { |v| walk.call(v) }
       when Hash
-        hidden = BreakEscape::Game.login_pc?(node) || node['locked'] == true
+        hidden = BreakEscape::Game.login_pc?(node) || node['locked'] == true || habit_stick?(node)
         node.each do |k, v|
           next if WITHHELD_ROOM_KEYS.include?(k)
           next if k == 'contents' && hidden
@@ -480,6 +499,10 @@ class AccessLeakScanner
     if BreakEscape::Game.login_pc?(item) && item['id']
       @login_pcs << item['id'].to_s
       child_ctx = ctx.merge(scope: :signin, pc: item['id'].to_s, profile: nil, ancestors: [])
+    elsif habit_stick?(item)
+      sid = item['id'].to_s
+      child_ctx = ctx.merge(scope: :stick, pc: nil, profile: nil, ancestors: [sid])
+      add_default_stick_file(item, child_ctx)
     else
       child_ctx = ctx.merge(ancestors: ctx[:ancestors] + [item['id'].to_s]) if item['id']
       if item['locked'] == true && item['id']
@@ -487,6 +510,36 @@ class AccessLeakScanner
       end
     end
     walk_children(item, child_ctx)
+  end
+
+  # Review R3 n3: a stick string that another secret also carries is that secret's, so the other
+  # file's own /container answer is not reported as stick_content
+  def drop_shared_stick_strings
+    others = Set.new
+    @items.each_value { |info| info[:strings].each { |s| others << s } unless info[:scope] == :stick }
+    @share_items.each_value { |info| info[:strings].each { |s| others << s } }
+    @items.each_value { |info| info[:strings] = info[:strings].reject { |s| others.include?(s) } if info[:scope] == :stick }
+  end
+
+  # Every habit NPC's stick id (BreakEscape::AccessWork.usb_stick: a storage usb item in itemsHeld)
+  def habit_stick_ids
+    BreakEscape::AccessWork.usb_habit_sticks(@data).map { |_npc, stick| stick['id'].to_s }.to_set
+  end
+
+  def habit_stick?(node)
+    @stick_ids ||= habit_stick_ids
+    node.is_a?(Hash) && node['type'] == 'usb' && node['id'] && @stick_ids.include?(node['id'].to_s)
+  end
+
+  # A stick with no authored files holds the engine's default one, which no scenario text names
+  def add_default_stick_file(stick, ctx)
+    files = stick['contents']
+    return if files.is_a?(Array) && files.any? { |f| f.is_a?(Hash) }
+
+    @items["#{stick['id']}_work_file"] = {
+      strings: [BreakEscape::AccessWork::USB_STICK_DEFAULT_FILE, BreakEscape::AccessWork::USB_STICK_DEFAULT_TEXT], scope: :stick, profile: nil, pc: nil,
+      ancestors: ctx[:ancestors].dup, locked_ancestors: []
+    }
   end
 
   # The item's id; an item without one (data that skipped the id stamp) is named by where it sits.
@@ -1111,7 +1164,7 @@ class AccessLeakScanner
       end
       next if legit.include?(item_id)
 
-      rule = info[:scope] == :profile ? 'profile_content' : 'signin_content'
+      rule = { profile: 'profile_content', stick: 'stick_content' }.fetch(info[:scope], 'signin_content')
       add.call(rule, "item:#{item_id}", safe_path(paths.first))
     end
   end
@@ -1129,6 +1182,8 @@ class AccessLeakScanner
   def allowed_login_route?(info, container)
     return false unless container
     return true if info[:ancestors].include?(container)
+
+    return false if info[:scope] == :stick
 
     info[:scope] == :profile ? @login_pcs.include?(container) : container == info[:pc]
   end

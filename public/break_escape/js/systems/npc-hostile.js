@@ -94,7 +94,8 @@ export function initNPCHostileSystem() {
     restoreHostility: (saved) => restoreHostility(saved),
     takeRestoredHostility: (npcId) => takeRestoredHostility(npcId),
     announceRestoredHostile: (npcId, config) => announceRestoredHostile(npcId, config),
-    resetHostilesForRespawn: () => resetHostilesForRespawn()
+    resetHostilesForRespawn: () => resetHostilesForRespawn(),
+    redropPending: (npcId) => redropPending(npcId)
   };
 }
 
@@ -303,13 +304,14 @@ function damageNPC(npcId, amount) {
     recordHostility(npcId, state);
     
     // Sync NPC KO state to server for persistence. The drop below waits for it: the server
-    // accepts a drop outside the NPC's own room only once the KO is recorded.
+    // accepts a drop outside the NPC's own room only once the KO is recorded. Retried with a
+    // bounded backoff (review R3 m2), so one failed request does not lose the drop.
     let koSynced = null;
     if (window.RoomStateSync && npc?.roomId) {
-      koSynced = window.RoomStateSync.updateNpcState(npc.roomId, npcId, {
+      koSynced = withSyncRetries(() => window.RoomStateSync.updateNpcState(npc.roomId, npcId, {
         isKO: true,
         currentHP: 0
-      }).catch(err => {
+      }, { reportRefusal: true }), 'NPC KO state').catch(err => {
         console.error('Failed to sync NPC KO state to server:', err);
       });
     }
@@ -455,20 +457,94 @@ function playNPCDeathAnimation(npcId, sprite) {
  * so multiple drops are visually distinguishable while remaining pickupable.
  * @param {string} npcId - The NPC that was defeated
  */
-function dropNPCItems(npcId, afterSync = null) {
+// Review R3 m2: a KO sync or a KO drop that fails is tried again after each of these delays,
+// then given up. Bounded: at most four requests per KO sync and per dropped item, nothing queued
+// beyond them, nothing saved. The server makes a repeated drop a no-op, and a reload lists any
+// drop that never landed (koDropPending) so it is sent again.
+export const SYNC_RETRY_DELAYS_MS = [500, 1500, 4000];
+let retryWait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Test seam: replace the wait between retries. Returns the previous one. */
+export function setRetryWait(fn) {
+  const prev = retryWait;
+  retryWait = fn;
+  return prev;
+}
+
+/** The answer room-state-sync.js gives a definite refusal (its SYNC_REFUSED; review R4 n1). */
+export const SYNC_REFUSED = 'refused';
+
+/**
+ * Calls `send` (a function returning a promise of true on success) until it answers true or the
+ * delays run out. A thrown error counts as a failure. A definite refusal (SYNC_REFUSED: a 4xx
+ * such as "room not accessible" or "NPC not KO'd") is not retried (review R4 n1). Resolves to
+ * true on success, false otherwise.
+ */
+export async function withSyncRetries(send, what = 'sync', delays = SYNC_RETRY_DELAYS_MS) {
+  for (let attempt = 0; ; attempt++) {
+    let answer = false;
+    try {
+      answer = await send();
+    } catch (err) {
+      console.warn(`${what} request failed:`, err);
+    }
+    if (answer === true) return true;
+    if (answer === SYNC_REFUSED) {
+      console.warn(`${what}: refused by the server, not retried`);
+      return false;
+    }
+    if (attempt >= delays.length) {
+      console.error(`${what}: gave up after ${attempt + 1} attempts`);
+      return false;
+    }
+    await retryWait(delays[attempt]);
+  }
+}
+
+/**
+ * Review R3 m2: after a reload, drop again the held items of a KO'd NPC that the server says
+ * never reached a room or the player (`koDropPending`, from GET /room). Called by
+ * npc-sprites.js once the KO'd sprite is laid down. Returns the number of items dropped.
+ */
+function redropPending(npcId) {
+  const npc = window.npcManager?.getNPC(npcId);
+  const pending = Array.isArray(npc?.koDropPending) ? npc.koDropPending.filter(id => typeof id === 'string') : [];
+  if (!npc || pending.length === 0 || !isNPCKO(npcId)) return 0;
+  npc.koDropPending = [];
+  return dropNPCItems(npcId, null, pending);
+}
+
+/**
+ * The texture a dropped held item is drawn with. The same order as a reload (rooms.js draws a
+ * stored object from `sprite || type`), so the drop looks the same before and after: the item's
+ * own sprite, then its texture field, then its type's default picture. 'key' only when none of
+ * them is a loaded texture (a USB stick used to show the key picture until a reload).
+ */
+export function dropTextureFor(item, exists) {
+  const candidates = [item?.sprite, item?.texture, item?.type];
+  for (const key of candidates) {
+    if (typeof key === 'string' && key && exists(key)) return key;
+  }
+  return 'key';
+}
+
+function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
   const npc = window.npcManager?.getNPC(npcId);
   let sprite = npc?._sprite || npc?.sprite;
   if (npc && !sprite && npc.roomId) {
     sprite = window.rooms?.[npc.roomId]?.npcSprites?.find(s => s.npcId === npcId);
   }
   if (!npc || !npc.itemsHeld || npc.itemsHeld.length === 0) {
-    return;
+    return 0;
   }
+  // A re-drop after a reload drops only the items still owed (review R3 m2)
+  const toDrop = Array.isArray(onlyIds) ? npc.itemsHeld.filter(i => i && onlyIds.includes(i.id)) : npc.itemsHeld;
+  if (toDrop.length === 0) return 0;
 
   // Use the sprite we already have and find its room
   if (!sprite) {
     console.warn(`⚠️ Cannot drop items - no sprite found for NPC: ${npcId}`);
-    return;
+    return 0;
   }
 
   // The room the NPC fell in, not its home room: hostile NPCs follow the player
@@ -480,14 +556,14 @@ function dropNPCItems(npcId, afterSync = null) {
 
   if (!npcRoomId || !window.rooms?.[npcRoomId]) {
     console.warn(`Could not find room for NPC ${npcId}`);
-    return;
+    return 0;
   }
 
   const room = window.rooms[npcRoomId];
   const gameRef = window.game;
-  const itemCount = npc.itemsHeld.length;
+  const itemCount = toDrop.length;
   
-  npc.itemsHeld.forEach((item, index) => {
+  toDrop.forEach((item, index) => {
     // Place items at the NPC's location with a small static offset per item so
     // they don't perfectly stack. Using a fixed ring radius (8px) keeps them
     // close together and always within the walkable area the NPC occupied.
@@ -497,19 +573,10 @@ function dropNPCItems(npcId, afterSync = null) {
     const spawnX = Math.round(sprite.x + Math.cos(angle) * SCATTER_RADIUS);
     const spawnY = Math.round(sprite.y + Math.sin(angle) * SCATTER_RADIUS);
 
-    // Create actual Phaser sprite for the dropped item
-    // Try item.texture, then item.type, with fallback to 'key' if texture doesn't exist
-    let texture = item.texture || item.type || 'key';
-    
-    console.log(`💧 Attempting to drop item: type="${item.type}", name="${item.name}", texture="${texture}"`);
-    
-    // Safety check: verify texture exists, fallback to 'key' if not
-    if (!gameRef.textures.exists(texture)) {
-      console.warn(`⚠️ Texture '${texture}' not found for dropped item '${item.name}', using fallback 'key'`);
-      texture = 'key';
-    } else {
-      console.log(`✅ Texture '${texture}' exists for dropped item '${item.name}'`);
-    }
+    // Create actual Phaser sprite for the dropped item, drawn as a reload draws it
+    // (dropTextureFor: its own sprite, then its type's picture, 'key' only as a last resort)
+    const texture = dropTextureFor(item, (key) => gameRef.textures.exists(key));
+    console.log(`💧 Dropping item: type="${item.type}", name="${item.name}", texture="${texture}"`);
     
     const spriteObj = gameRef.add.sprite(spawnX, spawnY, texture);
     
@@ -615,17 +682,20 @@ function dropNPCItems(npcId, afterSync = null) {
         scenarioData: droppedItemData
       };
       
-      Promise.resolve(afterSync).catch(() => {}).then(() => window.RoomStateSync.addItemToRoom(npcRoomId, itemForServer, {
+      // Retried with a bounded backoff (review R3 m2); the server takes a repeat as a no-op
+      Promise.resolve(afterSync).catch(() => {}).then(() => withSyncRetries(() => window.RoomStateSync.addItemToRoom(npcRoomId, itemForServer, {
         npcId: npcId,
-        sourceType: 'npc_defeated'
-      })).catch(err => {
+        sourceType: 'npc_defeated',
+        reportRefusal: true
+      }), `Drop of ${itemForServer.id}`)).catch(err => {
         console.error('Failed to sync dropped item to server:', err);
       });
     }
   });
 
-  // Clear the NPC's inventory
-  npc.itemsHeld = [];
+  // Clear the NPC's inventory (a re-drop clears only what it dropped)
+  npc.itemsHeld = toDrop === npc.itemsHeld ? [] : npc.itemsHeld.filter(i => !toDrop.includes(i));
+  return toDrop.length;
 }
 
 function isNPCKO(npcId) {

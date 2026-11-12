@@ -440,7 +440,7 @@ def check_unknown_fields(json_data)
     answersPhones phoneCalls
     role creds staff cloneable
     awareness habits
-    workNeeds frustration workarounds phone socialUse feed
+    workNeeds frustration workarounds phone socialUse feed usbHabit
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
@@ -530,6 +530,7 @@ def check_unknown_fields(json_data)
     hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
     fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
     mac canScanBluetooth phoneId npcIds app
+    phoneOf site
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents hasContents triggerOnInteract
@@ -2237,7 +2238,19 @@ def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_leg
     mapped = Array(npc['eventMappings']).flat_map { |m| m.is_a?(Hash) ? Array(m['unlockDoor']) : [] }
     wp_lists.each do |wps, where|
       wps.each_with_index do |wp, wi|
-        target = wp.is_a?(Hash) && wp['action'].is_a?(Hash) ? wp['action']['unlockRoom'] : nil
+        action = wp.is_a?(Hash) && wp['action'].is_a?(Hash) ? wp['action'] : nil
+        # useMs (q53 e): how long the NPC stands keying at useObject before npc_used_object_done
+        if action&.key?('useMs')
+          ms = action['useMs']
+          issues << "❌ ERROR: '#{where}' (#{npc['id']}) waypoint #{wi} action.useMs must be a number of ms from 0 to 30000." unless ms.is_a?(Numeric) && ms >= 0 && ms <= 30000
+          issues << "⚠️ WARNING: '#{where}' (#{npc['id']}) waypoint #{wi} has action.useMs but no useObject; it does nothing without one." unless action['useObject'].is_a?(String)
+        end
+        # The engine runs actions only when multiRoom is true and the route has segments
+        multi_room = patrol['multiRoom'] == true && patrol['route'].is_a?(Array) && !patrol['route'].empty?
+        if action && !multi_room && (action['useObject'] || action['unlockRoom'])
+          issues << "⚠️ WARNING: '#{where}' (#{npc['id']}) waypoint #{wi} has an action, but waypoint actions run only on a multi-room route (behavior.patrol.multiRoom true with a route)."
+        end
+        target = action ? action['unlockRoom'] : nil
         next unless target.is_a?(String) && !mapped.include?(target)
         issues << "❌ ERROR: '#{where}' (#{npc['id']}) waypoint #{wi} has action.unlockRoom '#{target}', but #{npc['id']} has no " \
                   "eventMapping with unlockDoor: \"#{target}\". The server refuses the unlock (game.rb npc_mapping_unlocks_door?) " \

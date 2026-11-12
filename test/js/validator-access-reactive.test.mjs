@@ -69,7 +69,10 @@ function reactiveClean() {
                             { id: 'dana_vent', text: 'Finance share down again, second time this week.',
                               when: { cause: 'down', need: 'work' }, fact: 'dana_backups', deliberate: true }
                         ]
-                    }
+                    },
+                    itemsHeld: [{ type: 'phone_friendface', id: 'dana_phone', name: "Dana's phone", takeable: true, phoneOf: 'dana' }],
+                    // Dana offers her phone, so the phone check raises nothing (review R2 m2)
+                    eventMappings: [{ eventPattern: 'global_variable_changed:lend_phone', action: 'give_item:phone_friendface' }]
                 }]
             }
         }

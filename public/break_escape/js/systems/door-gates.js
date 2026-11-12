@@ -45,7 +45,16 @@
  * - A guard held at the shut gate (barred player or force-shut) for
  *   GUARD_TURN_BACK_MS while his route wants him across turns back: door-gates calls
  *   his behaviour's turnBackFromGate(), he resumes his route on his own side and
- *   tries again next cycle. Event door_gate_guard_turned_back { ..., npcId }.
+ *   tries again next cycle. A guard with a timed useObject (a PIN at a reader) just
+ *   before the gate asks heldShutAgainst() there instead, waits up to
+ *   USE_HELD_GRACE_MS (npc-behavior.js) and turns back without keying if it is still
+ *   held. Both forms go through guardTurnedBack(), which emits
+ *   door_gate_guard_turned_back { roomId, connectedRoom, direction, x, y, npcId,
+ *   beforeUse } (beforeUse true for the reader form, false for the timer form).
+ * - A guard who has just turned back does not open the gate as he walks away (code
+ *   review R3, m1): until he leaves openRadius, wants to cross again, or keys at his
+ *   reader (clearTurnedBack), his being near does not open it. He still counts as
+ *   near for everything else (holding it open, the close timer, careful()).
  * - A bare player click never opens a gate from outside: doors.js handleDoorInteraction
  *   routes a gate click here and emits door_gate_denied. This holds regardless of the
  *   underlying room's server lock state (an NPC route may have server-unlocked the
@@ -723,10 +732,81 @@ export class DoorGates {
         for (const id of waiting) {
             if (!bm?.getBehavior?.(id)?.turnBackFromGate?.(info)) continue;
             console.log(`↩️ Gate ${g.roomId} ↔ ${g.connectedRoom} held shut: ${id} turns back`);
-            W().eventDispatcher?.emit?.('door_gate_guard_turned_back', {
-                roomId: g.roomId, connectedRoom: g.connectedRoom, direction: g.direction, npcId: id
-            });
+            this._turnedBack(g, id, false);
         }
+    }
+
+    /**
+     * A guard has turned back from this gate (either form): mark him so his walking away
+     * does not open it, and emit door_gate_guard_turned_back with one set of fields.
+     */
+    _turnedBack(g, npcId, beforeUse) {
+        (g.turnedBack ||= new Set()).add(npcId);
+        W().eventDispatcher?.emit?.('door_gate_guard_turned_back', { ...this._gateInfo(g), npcId, beforeUse: !!beforeUse });
+    }
+
+    /**
+     * NPCBehavior, after turning back at a timed useObject because heldShutAgainst()
+     * returned `info`: the same marking and event as the timer form.
+     * @returns {boolean} whether the gate was found
+     */
+    guardTurnedBack(npcId, info, { beforeUse = true } = {}) {
+        for (const g of this.groups.values()) {
+            if (g.roomId !== info?.roomId || g.connectedRoom !== info?.connectedRoom) continue;
+            if (Number.isFinite(info.x) && (g.x !== info.x || g.y !== info.y)) continue;
+            this._turnedBack(g, npcId, beforeUse);
+            return true;
+        }
+        W().eventDispatcher?.emit?.('door_gate_guard_turned_back', { ...info, npcId, beforeUse: !!beforeUse });
+        return false;
+    }
+
+    /** NPCBehavior, as the guard starts keying at his reader: his gates open for him again. */
+    clearTurnedBack(npcId) {
+        for (const g of this.groups.values()) g.turnedBack?.delete(npcId);
+    }
+
+    /**
+     * Each tick: a guard who turned back from this gate is unmarked once he has left its
+     * radius or wants to cross it again.
+     */
+    _pruneTurnedBack(g) {
+        const tb = g.turnedBack;
+        if (!tb?.size) return;
+        const near = this.nearGuardIds(g);
+        const bm = W().npcBehaviorManager;
+        const info = this._gateInfo(g);
+        for (const id of [...tb]) {
+            if (!near.includes(id) || bm?.getBehavior?.(id)?.wantsToCrossGate?.(info)) tb.delete(id);
+        }
+    }
+
+    /** The near guards that may open this shut gate: not one who has just turned back. */
+    _openers(g) {
+        const near = this.nearGuardIds(g);
+        return g.turnedBack?.size ? near.filter(id => !g.turnedBack.has(id)) : near;
+    }
+
+    /**
+     * Is a shut gate between roomA and roomB held against this openFor guard now: he is
+     * within its openRadius and a barred player or a recent force-shut keeps it shut? The
+     * same rule as the turn-back timer. NPCBehavior asks it at a timed useObject (a PIN at
+     * the reader) just before a leg across the gate, so a held guard turns back there
+     * instead of keying with the door shut (code review R2, m4).
+     * @returns {object|null} the gate info, or null
+     */
+    heldShutAgainst(npcId, roomA, roomB, now = Date.now()) {
+        for (const g of this.groups.values()) {
+            if (!g.cfg || g.open || !g.sprites.size || !g.cfg.openFor.includes(npcId)) continue;
+            const rooms = [g.roomId, g.connectedRoom];
+            if (!rooms.includes(roomA) || !rooms.includes(roomB)) continue;
+            const s = npcSprite(npcId);
+            if (!s || s.visible === false) continue;
+            const c = centreOf(s);
+            if (Math.hypot(c.x - g.x, c.y - g.y) > g.cfg.openRadius) continue;
+            if (now < g.forcedUntil || this._playerBarred(g)) return this._gateInfo(g);
+        }
+        return null;
     }
 
     /** Whether any openFor NPC is within openRadius (one distance rule: nearGuardIds). */
@@ -814,6 +894,7 @@ export class DoorGates {
         for (const g of this.groups.values()) {
             this._prune(g);
             if (!g.sprites.size || !g.cfg) continue;
+            this._pruneTurnedBack(g);
             const npcNear = this._npcNear(g);
             if (npcNear) g.lastNpcNear = now;
             if (g.open) for (const id of this.nearGuardIds(g)) g.lastGuards.add(id);
@@ -824,7 +905,7 @@ export class DoorGates {
             if (!g.open) {
                 // A barred player close by keeps it shut, even beside the guard.
                 // No override: a guard held here long enough turns back instead.
-                if (npcNear && !barred && now >= g.forcedUntil) this.open(g, now);
+                if (npcNear && !barred && now >= g.forcedUntil && this._openers(g).length) this.open(g, now);
                 else if (npcNear) this._holdGuards(g, now);
                 else g.guardBlockedSince = -1;
                 continue;

@@ -8,11 +8,26 @@
  */
 
 /**
+ * Review R4 n1: the answer a sync call gives, when asked with `reportRefusal`, for a definite
+ * refusal (a 4xx other than a timeout or rate limit: the room is not accessible, the NPC is not
+ * KO'd, the item is not theirs). Sending the same request again cannot change it, so
+ * npc-hostile.js withSyncRetries stops there. Without the option such a refusal is false, as
+ * before, so callers that test the answer for truth are unchanged.
+ */
+export const SYNC_REFUSED = 'refused';
+
+function isDefiniteRefusal(response) {
+    const status = response?.status;
+    return typeof status === 'number' && status >= 400 && status < 500 && status !== 408 && status !== 429;
+}
+
+/**
  * Add an item to a room (e.g., NPC drops an item)
  * @param {string} roomId - Room ID
  * @param {object} item - Item data (must include type, id, name, etc.)
- * @param {object} options - Optional source data (npcId, sourceType)
- * @returns {Promise<boolean>} Success status
+ * @param {object} options - Optional source data (npcId, sourceType); reportRefusal: answer
+ *   SYNC_REFUSED instead of false for a definite refusal (review R4 n1)
+ * @returns {Promise<boolean|string>} Success status
  */
 export async function addItemToRoom(roomId, item, options = {}) {
     const gameId = window.breakEscapeConfig?.gameId;
@@ -37,6 +52,10 @@ export async function addItemToRoom(roomId, item, options = {}) {
             })
         });
 
+        if (options.reportRefusal && isDefiniteRefusal(response)) {
+            console.warn(`❌ Item add to room ${roomId} refused (${response.status})`);
+            return SYNC_REFUSED;
+        }
         const result = await response.json();
         
         if (result.success) {
@@ -190,7 +209,7 @@ export async function updateObjectState(roomId, objectId, stateChanges) {
  * @param {object} stateChanges - State properties to update
  * @returns {Promise<boolean>} Success status
  */
-export async function updateNpcState(roomId, npcId, stateChanges) {
+export async function updateNpcState(roomId, npcId, stateChanges, options = {}) {
     const gameId = window.breakEscapeConfig?.gameId;
     if (!gameId) {
         console.error('Cannot sync room state: gameId not available');
@@ -214,6 +233,10 @@ export async function updateNpcState(roomId, npcId, stateChanges) {
             })
         });
 
+        if (options.reportRefusal && isDefiniteRefusal(response)) {
+            console.warn(`❌ NPC state update in room ${roomId} refused (${response.status})`);
+            return SYNC_REFUSED;
+        }
         const result = await response.json();
         
         if (result.success) {
@@ -238,71 +261,7 @@ export async function updateNpcState(roomId, npcId, stateChanges) {
     }
 }
 
-/**
- * Move NPC between rooms
- * @param {string} npcId - NPC ID
- * @param {string} fromRoomId - Source room ID
- * @param {string} toRoomId - Target room ID
- * @returns {Promise<boolean>} Success status
- */
-export async function moveNpcToRoom(npcId, fromRoomId, toRoomId) {
-    const gameId = window.breakEscapeConfig?.gameId;
-    if (!gameId) {
-        console.error('Cannot sync room state: gameId not available');
-        return false;
-    }
-
-    try {
-        const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            },
-            body: JSON.stringify({
-                roomId: toRoomId, // Target room
-                actionType: 'move_npc',
-                data: {
-                    npcId: npcId,
-                    fromRoom: fromRoomId,
-                    toRoom: toRoomId
-                }
-            })
-        });
-
-        const result = await response.json();
-        
-        if (result.success) {
-            console.log(`✅ Synced NPC move: ${npcId} from ${fromRoomId} to ${toRoomId}`);
-            
-            // Update local room state if rooms are loaded
-            if (window.rooms) {
-                // Remove from source room
-                if (window.rooms[fromRoomId]) {
-                    window.rooms[fromRoomId].npcs = window.rooms[fromRoomId].npcs || [];
-                    window.rooms[fromRoomId].npcs = window.rooms[fromRoomId].npcs.filter(npc => npc.id !== npcId);
-                }
-                
-                // Add to target room (need to get NPC data)
-                if (window.rooms[toRoomId] && window.npcManager) {
-                    const npcData = window.npcManager.getNPC(npcId);
-                    if (npcData) {
-                        window.rooms[toRoomId].npcs = window.rooms[toRoomId].npcs || [];
-                        window.rooms[toRoomId].npcs.push({ ...npcData, roomId: toRoomId });
-                    }
-                }
-            }
-            
-            return true;
-        } else {
-            console.warn(`❌ Failed to sync NPC move: ${result.message}`);
-            return false;
-        }
-    } catch (error) {
-        console.error('Error syncing NPC move:', error);
-        return false;
-    }
-}
+// No moveNpcToRoom: the server no longer takes a client-named NPC move (code review R5 M1).
 
 /**
  * Remove NPC from a room permanently (arrested, surrendered, escorted away)
@@ -362,8 +321,6 @@ export async function batchUpdateRoomState(updates) {
                 return updateObjectState(update.roomId, update.objectId, update.stateChanges);
             case 'update_npc':
                 return updateNpcState(update.roomId, update.npcId, update.stateChanges);
-            case 'move_npc':
-                return moveNpcToRoom(update.npcId, update.fromRoomId, update.toRoomId);
             default:
                 console.warn(`Unknown update type: ${update.type}`);
                 return Promise.resolve(false);
@@ -393,7 +350,6 @@ if (typeof window !== 'undefined') window.RoomStateSync = {
     removeItemFromRoom,
     updateObjectState,
     updateNpcState,
-    moveNpcToRoom,
     removeNpcFromScene,
     batchUpdateRoomState
 };

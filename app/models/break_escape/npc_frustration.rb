@@ -416,6 +416,16 @@ module BreakEscape
       player_state['globalVariables'][name] = true
     end
 
+    # The USB habit's workaround (USB_HABIT_PLAN.md, q39): an accepted fail naming usb_refused
+    # sets the habit's declared setGlobal true (the NPC emailed the file to itself instead)
+    def set_usb_habit_global!(npc)
+      name = AccessWork.usb_habit(npc)&.dig('setGlobal')
+      return unless declared_global?(name)
+
+      player_state['globalVariables'] = {} unless player_state['globalVariables'].is_a?(Hash)
+      player_state['globalVariables'][name] = true
+    end
+
     # The "done" answer, composed from the scenario (and, for a borrow, the guest record now), so
     # a resend gets the same body
     def workaround_body(npc, w, heard: false)
@@ -591,12 +601,25 @@ module BreakEscape
       return refused if missing.any? { |c| RECORDED_WHYS.include?(c['why']) && (!AccessWork::LOCKOUT_NEEDS.include?(need) || !lockout_recorded?(npc)) }
       return refused unless object_id && frustration_places(npc, need).include?(object_id)
 
-      # 3. a cause holds on the server
-      return { 'npcId' => npc_id, 'stale' => true } unless missing.any? { |c| frustration_cause_holds?(npc, need, c) }
+      usb = missing.find { |c| c['why'] == 'usb_refused' }
+      # USB habit review R1 n1: the use is at the station the cause names; R1 m1: only a use that
+      # carries a copy (every nth at the station, counted here) can be refused
+      return refused if usb && (object_id != usb['id'] || !usb_copy_due?(npc_id, npc))
+      # The stick (2026-11-12): once it has left the NPC there is nothing to copy, so no use
+      # can be refused for it (a plain met use, not a new cause)
+      return refused if usb && !usb_stick_with_npc?(npc)
 
-      # 4. the pace floor
+      # 3. a cause holds on the server
+      holding = missing.select { |c| frustration_cause_holds?(npc, need, c) }
+      return { 'npcId' => npc_id, 'stale' => true } if holding.empty?
+
+      # 4. the pace floor. USB habit review R1 M1: usb_refused always holds and is not owned, so
+      # `rearmed` would open the use floor for it for good; when it is the only cause that holds,
+      # only an accepted ease opens that floor
       entry = frustration_entry(npc_id)
-      if fail_too_soon?(npc, need, entry, missing, report['rearmed'] == true || report['rearmed'] == 'true')
+      rearmed = report['rearmed'] == true || report['rearmed'] == 'true'
+      rearmed = false if holding.all? { |c| c['why'] == 'usb_refused' }
+      if fail_too_soon?(npc, need, entry, missing, rearmed)
         body = too_soon(npc, entry, npc_id)
         run = unspent_run(npc, entry)
         body['run'] = run if run
@@ -608,6 +631,12 @@ module BreakEscape
       entry['level'] = tidy_level([previous + per_fail, 100].min)
       entry['failAt'][need] = server_now
       entry['failWhy'][need] = missing.map { |c| c['why'] }.uniq
+      if usb
+        entry['usbUses'] = 0
+        set_usb_habit_global!(npc) if holding.include?(usb)
+      else
+        count_usb_use!(npc, entry, need, object_id)
+      end
       run = choose_run!(npc, entry, need) || unspent_run(npc, entry)
       answer(npc_id, npc, entry, previous, run)
     end
@@ -631,6 +660,13 @@ module BreakEscape
       # sends one only above 0; an NPC that never failed keeps no entry)
       stored = npc_frustration[npc_id]
       unless stored.is_a?(Hash) && stored['level'].to_f.positive?
+        # ...except the USB habit's use count (review R1 m1): a client with a refusing habit
+        # reports every met use at the station, so the server knows which use carries a copy
+        if usb_counted_use?(npc, need, object_id)
+          entry = frustration_entry(npc_id)
+          count_usb_use!(npc, entry, need, object_id)
+          return answer(npc_id, npc, entry, entry['level'])
+        end
         view = frustration_view(stored)
         return answer(npc_id, npc, view, view['level'])
       end
@@ -643,7 +679,33 @@ module BreakEscape
       ease = AccessWork.frustration(scenario_data, npc)['easePerSuccess']
       entry['level'] = tidy_level([previous - ease, 0].max)
       entry['easeAt'][need] = server_now
+      count_usb_use!(npc, entry, need, object_id)
       answer(npc_id, npc, entry, previous)
+    end
+
+    # The USB habit's use count (USB_HABIT_PLAN.md, review R1 m1): accepted work uses at the
+    # station since the last accepted usb_refused fail, saved in the NPC's frustration entry
+    # (usbUses, never sent to the client). A held-back report (tooSoon) is not counted, so a
+    # forged report cannot pump it. Capped at 10, the largest `every`.
+    def usb_counted_use?(npc, need, object_id)
+      return false unless need == 'work' && AccessWork.usb_habit_refused?(scenario_data, npc) && usb_stick_with_npc?(npc)
+
+      object_id == AccessWork.station(scenario_data, npc)&.dig('id')
+    end
+
+    def count_usb_use!(npc, entry, need, object_id)
+      return unless usb_counted_use?(npc, need, object_id)
+
+      entry['usbUses'] = [entry['usbUses'].to_i + 1, AccessWork::USB_EVERY_RANGE.max].min
+    end
+
+    # Whether this use is at least the every-th since the last accepted usb fail. The browser's
+    # counter restarts at 0 on a reload while this one is saved, so it can only lag behind this
+    # one: an honest attempt is never refused for it.
+    def usb_copy_due?(npc_id, npc)
+      store = npc_frustration[npc_id]
+      uses = store.is_a?(Hash) ? store['usbUses'].to_i : 0
+      uses + 1 >= AccessWork.usb_every(npc)
     end
 
     # q36: the use is at a handed-over hot desk (not the station) where a check would answer and

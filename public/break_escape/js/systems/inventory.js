@@ -503,6 +503,7 @@ function receiveRewardNote(item) {
         itemType: item.type,
         itemName: item.name,
         itemId: item.id,
+        lockRef: item.opens_lock ?? item.key_id,
         collectionGroup: item.collection_group || null,
         roomId: window.currentPlayerRoom
     });
@@ -923,6 +924,7 @@ export async function addToInventory(sprite) {
                 itemType: sprite.scenarioData.type,
                 itemName: sprite.scenarioData.name,
                 itemId: sprite.scenarioData.id || window.lockRef(sprite.scenarioData),
+                lockRef: window.lockRef(sprite.scenarioData),
                 collectionGroup: sprite.scenarioData.collection_group || null,
                 roomId: window.currentPlayerRoom,
                 // From a sign-in desktop: which PC, and whether it was copied or moved

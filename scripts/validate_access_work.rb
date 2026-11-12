@@ -32,10 +32,154 @@ module ValidateAccessWork
     return issues unless json_data.is_a?(Hash)
 
     check_usb(json_data, issues)
+    check_usb_stick_ids(json_data, issues)
     check_work(json_data, issues)
     check_workarounds(json_data, issues)
     check_social(json_data, issues)
+    check_friendface_phones(json_data, issues)
     issues
+  end
+
+  # ── Friendface phone items (q35, docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md section 3) ──
+
+  FRIENDFACE_PHONE = 'phone_friendface'
+
+  # An NPC's Friendface phone (`phoneOf`) sits in that NPC's itemsHeld, the NPC has a phone, and it
+  # holds at most one; an NPC with a social_media need, a feed and a phone holds its phone. A phone
+  # with no phoneOf is the player's own and may be anywhere; its `site` must be a social site.
+  def check_friendface_phones(json_data, issues)
+    npcs = room_npcs(json_data).to_h { |e| [e[:npc]['id'], e[:npc]] }
+    sites = osint_sites(json_data).to_h { |site| [site['id'], site] }
+    held_by = Hash.new { |h, k| h[k] = [] }
+    room_npcs(json_data).each do |e|
+      Array(e[:npc]['itemsHeld']).each { |i| held_by[e[:npc]['id']] << i if i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE }
+    end
+    social_site = sites.values.any? { |site| site['type'] == 'social' }
+    no_site_said = false
+    all_objects(json_data).each do |o|
+      item = o[:obj]
+      if item['type'] != FRIENDFACE_PHONE
+        if item.key?('phoneOf')
+          warn(issues, "'#{item['name'] || item['id'] || item['type']}' (type '#{item['type']}') has phoneOf, which only a " \
+                       "#{FRIENDFACE_PHONE} reads: it is ignored here.")
+        end
+        next
+      end
+
+      owner = item['phoneOf']
+      name = item['name'] || item['id'] || FRIENDFACE_PHONE
+      # Review R1 m4: the phone opens a social site (its owner's feed site, else the first one)
+      if !social_site && !no_site_said
+        err(issues, "Friendface phone '#{name}': the scenario has no social osint site, so the phone has nowhere to open.")
+        no_site_said = true
+      end
+      err(issues, "Friendface phone '#{name}' needs an id: the server matches a held phone to the scenario's by id.") unless item['id'].is_a?(String) && !item['id'].empty?
+      if owner.nil?
+        if item.key?('site') && !(sites[item['site']] && sites[item['site']]['type'] == 'social')
+          err(issues, "Friendface phone '#{name}' site '#{item['site']}' names no social osint site.")
+        end
+        next
+      end
+      if !owner.is_a?(String) || !npcs.key?(owner)
+        err(issues, "Friendface phone '#{name}' phoneOf '#{owner}' names no room NPC.")
+      elsif !held_by[owner].any? { |i| i.equal?(item) }
+        err(issues, "Friendface phone '#{name}' is #{owner}'s (phoneOf) but is not in #{owner}'s itemsHeld: an NPC's phone starts with that NPC.")
+      elsif !AW.phone?(npcs[owner])
+        err(issues, "Friendface phone '#{name}' belongs to #{owner}, who is \"phone\": false: that NPC has no personal phone.")
+      end
+      err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no phoneOf) takes one.") if item.key?('site')
+      # Review R1 m3: an NPC phone that is not takeable can never be given or picked up
+      err(issues, "Friendface phone '#{name}' (#{owner}'s) is not \"takeable\": true, so it can never be given or picked up.") unless item['takeable'] == true
+      # Review R2 m2, R3 m1: the server hands an NPC's phone over only when its story or record
+      # offers it (the same patterns, AccessWork.offers_item_text?); otherwise a KO drop does,
+      # which is a valid route (q35), unless the NPC is koImmune and cannot be knocked out
+      if npcs.key?(owner) && !npc_offers_phone?(npcs[owner])
+        if npcs[owner]['koImmune'] == true
+          err(issues, "Friendface phone '#{name}' (#{owner}'s): no give_item:#{FRIENDFACE_PHONE} and no give_npc_inventory_items that " \
+                      "includes it in #{owner}'s story or record, and #{owner} is koImmune, so the player can never obtain it.")
+        else
+          issues << "ℹ️ work: Friendface phone '#{name}' (#{owner}'s): no give offers it, so a KO drop is the only way to obtain it."
+        end
+      end
+    end
+    # Review R3 n2: a JSON give_item action carries an inline item with no NPC source, which the
+    # server never matches to a declared phone; phones are given by ink tags only
+    json_actions(json_data).each do |a|
+      next unless a['type'] == 'give_item' && a['item'].is_a?(Hash) && a['item']['type'] == FRIENDFACE_PHONE
+
+      err(issues, "A JSON give_item action gives a #{FRIENDFACE_PHONE} ('#{a['item']['name'] || a['item']['id'] || FRIENDFACE_PHONE}'): " \
+                  "the server refuses it. Give a phone with an ink tag (#give_item:#{FRIENDFACE_PHONE}) from its owner's story.")
+    end
+    # Review R2 n4: the server resolves an add to the first item with a matching id, so two phones
+    # sharing an id would hand over the wrong one
+    all_objects(json_data).map { |o| o[:obj] }.select { |i| i['type'] == FRIENDFACE_PHONE && i['id'].is_a?(String) }
+                          .group_by { |i| i['id'] }.each do |id, list|
+      err(issues, "Friendface phone id '#{id}' is used by #{list.size} phones: each phone needs its own id.") if list.size > 1
+    end
+    npcs.each do |nid, npc|
+      own = held_by[nid].select { |i| i['phoneOf'] == nid }
+      err(issues, "#{nid} holds #{own.size} Friendface phones of its own; an NPC carries one.") if own.size > 1
+      next unless AW.need?(npc, 'social_media') && npc['feed'].is_a?(Hash) && AW.phone?(npc) && own.empty?
+
+      err(issues, "#{nid} posts from a phone (social_media need, a feed, no \"phone\": false) but holds no Friendface phone: " \
+                  "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"phoneOf\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")
+    end
+  end
+
+  REPO_ROOT = File.expand_path('..', __dir__)
+
+  # An NPC's offers, read as the server reads them (SocialFeed#npc_offers_item?): its record, then
+  # its compiled story, or the .ink source when there is no compiled file
+  # Review R3 n4: an .ink source (a story never compiled) brings in its INCLUDEd files too.
+  def npc_offers_phone?(npc)
+    texts = AW.offer_texts(npc) { |story_path| story_file(story_path) }
+    sp = npc['storyPath']
+    path = sp.is_a?(String) && !sp.empty? ? story_file(sp) : nil
+    texts += ink_included_texts(path) if path&.end_with?('.ink')
+    texts.any? { |t| AW.offers_item_text?(t, FRIENDFACE_PHONE) }
+  end
+
+  # The text of every file an .ink file INCLUDEs, followed recursively, each read once
+  def ink_included_texts(path)
+    seen = Set[path]
+    queue = [path]
+    out = []
+    until queue.empty?
+      f = queue.shift
+      File.readlines(f, encoding: 'UTF-8').each do |l|
+        next unless l =~ /^\s*INCLUDE\s+(\S+)/
+
+        inc = File.expand_path(Regexp.last_match(1), File.dirname(f))
+        next if seen.include?(inc) || !File.file?(inc)
+
+        seen << inc
+        queue << inc
+        out << File.read(inc, encoding: 'UTF-8')
+      end
+    end
+    out
+  end
+
+  # Every hash in the scenario with a String `type` and an `item` (the shape of a JSON give_item
+  # action, wherever it sits: eventMappings, timers, flag stations), found by walking the document
+  def json_actions(json_data)
+    out = []
+    walk = lambda do |v|
+      case v
+      when Hash
+        out << v if v['type'].is_a?(String) && v.key?('item')
+        v.each_value { |x| walk.call(x) }
+      when Array then v.each { |x| walk.call(x) }
+      end
+    end
+    walk.call(json_data)
+    out
+  end
+
+  def story_file(story_path)
+    base = File.expand_path(story_path, REPO_ROOT)
+    [base, base.sub(/\.json\z/, '.ink.json'), base.sub(/\.ink\.json\z/, '.json'), base.sub(/\.(ink\.)?json\z/, '.ink')]
+      .find { |f| File.file?(f) }
   end
 
   # ── shared walks ──────────────────────────────────────────────────────
@@ -207,7 +351,7 @@ module ValidateAccessWork
   # ── sub-slice A: work, outages and frustration ───────────────────────
 
   AW = BreakEscape::AccessWork
-  A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed].freeze
+  A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed usbHabit].freeze
   STATION_POOL = 'station_fail'
   NO_ACCESS_POOL = 'work_fail_no_access'
   FALLBACK_POOL = 'work_fail'
@@ -357,6 +501,7 @@ module ValidateAccessWork
     nid = npc['id']
     plan = AW.work_plan?(json_data, npc)
     social = AW.need?(npc, 'social_media') && !AW.phone?(npc)
+    check_usb_habit(json_data, npc, plan, issues) if npc.key?('usbHabit')
 
     if plan || social
       dm = npc['needsDeferMin']
@@ -422,6 +567,310 @@ module ValidateAccessWork
     end
   end
 
+  # The USB habit (USB_HABIT_PLAN.md, q39): its shape, its global, and whether it can act
+  def check_usb_habit(json_data, npc, plan, issues)
+    nid = npc['id']
+    h = npc['usbHabit']
+    unless h.is_a?(Hash)
+      err(issues, "#{nid}.usbHabit must be an object { every, setGlobal }.")
+      return
+    end
+    if h.key?('every') && !(h['every'].is_a?(Integer) && AW::USB_EVERY_RANGE.cover?(h['every']))
+      err(issues, "#{nid}.usbHabit.every is #{h['every'].inspect}; it must be a whole number from 1 to 10.")
+    end
+    if h.key?('setGlobal') && !(h['setGlobal'].is_a?(String) && declared_globals(json_data).key?(h['setGlobal']))
+      err(issues, "#{nid}.usbHabit.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
+    end
+    check_usb_stick(json_data, npc, issues)
+    unless plan
+      warn(issues, "#{nid} has a usbHabit but no work plan (a work need and a non-empty workNeeds list): only judged work " \
+                   'uses are checked, so the habit never acts. Give it a work plan, or remove the habit.')
+      return
+    end
+    # Review R1 m5: the copy is made at the NPC's own PC only
+    st = AW.station(json_data, npc)
+    unless st
+      warn(issues, "#{nid} has a usbHabit but no station (needsHome naming an object in a room): the copy is made only " \
+                   "at the NPC's own PC, so the habit never acts. Set needsHome, or remove the habit.")
+      return
+    end
+    return unless h['setGlobal'].is_a?(String) && !AW.usb_habit_refused?(json_data, npc)
+
+    warn(issues, "#{nid}.usbHabit.setGlobal '#{h['setGlobal']}' can never be set: the policy at '#{st['id']}' allows a USB " \
+                 'stick, so the copy is never refused. Check the policy name (an unknown one falls back to the default) ' \
+                 'or its usb field.')
+  end
+
+  # The habit's stick (2026-11-12): a storage `usb` item with an id in itemsHeld, its files well formed
+  def check_usb_stick(json_data, npc, issues)
+    nid = npc['id']
+    stick = AW.usb_stick(npc)
+    unless stick
+      other = Array(npc['itemsHeld']).find { |i| i.is_a?(Hash) && i['type'] == 'usb' && AW.present_string?(i['id']) }
+      extra = other ? " ('#{other['id']}' has usbClass '#{other['usbClass']}'; a habit stick is a storage stick)" : ''
+      err(issues, "#{nid} has a usbHabit but holds no USB stick#{extra}: add a { \"type\": \"usb\", \"id\": ..., \"sprite\": " \
+                  "\"usb_bowl1\", \"usbClass\": \"storage\", \"takeable\": true } item to its itemsHeld. Its files default to " \
+                  "#{AW::USB_STICK_DEFAULT_FILE}; list others in its contents.")
+      return
+    end
+    sid = stick['id']
+    err(issues, "#{nid}'s USB stick '#{sid}' is locked: a habit stick opens for whoever holds it, so drop the lock.") if stick['locked']
+    unless stick['takeable']
+      warn(issues, "#{nid}'s USB stick '#{sid}' is not takeable, so it cannot be handed over or picked up unless " \
+                   "#{nid} is knocked out. Set takeable: true for a give.")
+    end
+    check_usb_give_order(json_data, npc, stick, issues)
+    check_usb_ko_route(json_data, npc, issues)
+    return unless stick.key?('contents')
+
+    files = stick['contents']
+    unless files.is_a?(Array) && !files.empty?
+      err(issues, "#{nid}'s USB stick '#{sid}'.contents must be a non-empty list of files (leave it out for the default " \
+                  "#{AW::USB_STICK_DEFAULT_FILE}).")
+      return
+    end
+    ids = []
+    check_usb_stick_entries(files, "#{nid}'s USB stick '#{sid}'.contents", ids, issues)
+    dup = ids.group_by(&:itself).select { |_id, v| v.size > 1 }.keys
+    err(issues, "#{nid}'s USB stick '#{sid}' lists the id(s) #{dup.join(', ')} more than once.") unless dup.empty?
+  end
+
+  # Review R2 m1: a stick holds text files and unlocked folders or archives (any item with its own
+  # contents), nested to any depth; the server serves each nested one to the holder by its id.
+  def check_usb_stick_entries(entries, path, ids, issues, depth = 0)
+    entries.each_with_index do |f, i|
+      where = "#{path}[#{i}]"
+      unless f.is_a?(Hash)
+        err(issues, "#{where} must be a file or a folder.")
+        next
+      end
+      ids << f['id'] if AW.present_string?(f['id'])
+      err(issues, "#{where} needs an id (a string), so it can be told apart.") unless AW.present_string?(f['id'])
+      err(issues, "#{where} needs a name (the name the player sees).") unless AW.present_string?(f['name'])
+      err(issues, "#{where} is locked: everything on a stick opens for whoever holds it.") if f['locked']
+      # Review R2 n2: the take control would be refused, since a held stick is not searched for items
+      warn(issues, "#{where} is takeable, but nothing can be taken off a stick: set takeable: false.") if f['takeable'] == true
+      if f['type'] == 'text_file'
+        err(issues, "#{where} needs a text (what the file says).") unless AW.present_string?(f['text'])
+        err(issues, "#{where} is a text file with contents: a file holds no other files.") if f.key?('contents')
+      elsif f['contents'].is_a?(Array) && !f['contents'].empty?
+        if depth >= 4
+          err(issues, "#{where} is nested more than five levels deep on the stick.")
+        else
+          check_usb_stick_entries(f['contents'], "#{where}.contents", ids, issues, depth + 1)
+        end
+      else
+        err(issues, "#{where} must be a file { \"type\": \"text_file\", \"id\", \"name\", \"text\" } or a folder or " \
+                    'archive with a non-empty contents list.')
+      end
+    end
+  end
+
+  # Review R2 M1: a give of the stick before the habit's first refusal stops the habit for good,
+  # so a task, mapping, condition or post keyed on the refusal can then never happen. Warn unless
+  # every ink give of the stick (#give_item, or #give_npc_inventory_items that offers it, in the
+  # NPC's own ink or a mail reply's, review R3 n1) sits under a choice or inside a conditional
+  # block gated on the habit's setGlobal.
+  def check_usb_give_order(json_data, npc, stick, issues)
+    nid = npc['id']
+    glob = npc.dig('usbHabit', 'setGlobal')
+    return unless usb_refusal_beats?(json_data, nid, glob)
+
+    ungated = usb_stick_gives(json_data, npc, stick).reject { |_where, conds| conds.any? { |c| names_global?(c, glob) } }
+    return if ungated.empty?
+
+    want = glob.is_a?(String) ? "a choice gated on {#{glob}}" : 'a choice offered only after the refusal (set usbHabit.setGlobal and gate on it)'
+    warn(issues, "#{nid}'s ink gives the USB stick '#{stick['id']}' (#{ungated.map(&:first).join(', ')}) where the player " \
+                 "can take it before #{nid}'s first refusal; the habit then stops and anything keyed on the refusal " \
+                 "(npc_usb_refused:#{nid}#{glob ? ", #{glob}" : ''}, a usb_refused post) never happens. Offer the give from #{want}.")
+  end
+
+  # Review R3 m3: a knock-out before the first refusal stops the habit as well (the NPC's work
+  # stops with it), and the player chooses when it happens. Warn when a required task waits only
+  # on the refusal and the NPC can be knocked out with no fallback for that task.
+  def check_usb_ko_route(json_data, npc, issues)
+    nid = npc['id']
+    return if npc['koImmune'] == true || json_data['disableAttacks'] == true
+
+    glob = npc.dig('usbHabit', 'setGlobal')
+    vents = Array(npc.dig('feed', 'posts')).select { |p| p.is_a?(Hash) && p.dig('when', 'cause') == 'usb_refused' }.map { |p| p['id'] }.compact
+    refusal = lambda do |m|
+      pat = m['eventPattern'].to_s
+      next true if pat == "npc_usb_refused:#{nid}"
+      next true if glob.is_a?(String) && pat == "global_variable_changed:#{glob}"
+      pat == "npc_posted:#{nid}" && vents.any? { |v| m['condition'].to_s.include?(v) }
+    end
+    by_task = Hash.new { |h, k| h[k] = [] }
+    ko_tasks = Set.new
+    inks = []
+    walk = lambda do |v|
+      case v
+      when Hash
+        Array(v['eventMappings']).each { |m| by_task[m['completeTask']] << m if m.is_a?(Hash) && AW.present_string?(m['completeTask']) }
+        ko_tasks << v['taskOnKO'] if AW.present_string?(v['taskOnKO'])
+        inks << v['storyPath'] if AW.present_string?(v['storyPath'])
+        v.each_value { |x| walk.call(x) }
+      when Array then v.each { |x| walk.call(x) }
+      end
+    end
+    walk.call(json_data)
+    ink_text = inks.uniq.map { |sp| ink_file(sp) }.compact.map { |f| File.read(f, encoding: 'UTF-8') }.join("\n")
+    stranded = required_task_ids(json_data).select do |tid|
+      maps = by_task[tid]
+      !maps.empty? && maps.all?(&refusal) && !ko_tasks.include?(tid) && !ink_text.include?("complete_task:#{tid}")
+    end
+    return if stranded.empty?
+
+    ko_glob = AW.present_string?(npc['globalVarOnKO']) ? " or global_variable_changed:#{npc['globalVarOnKO']}" : ''
+    warn(issues, "#{nid} can be knocked out before its first USB refusal, which stops the habit, and the required task(s) " \
+                 "#{stranded.join(', ')} complete only on that refusal, so a knock-out strands them. Set koImmune: true on " \
+                 "#{nid}, give it a taskOnKO, or add an eventMapping completing the task on #{nid}'s knock-out " \
+                 "(npc_ko:#{nid}#{ko_glob}).")
+  end
+
+  def required_task_ids(json_data)
+    Array(json_data['objectives']).flat_map { |a| a.is_a?(Hash) ? Array(a['tasks']) : [] }
+                                  .select { |t| t.is_a?(Hash) && !t['optional'] && AW.present_string?(t['taskId']) }
+                                  .map { |t| t['taskId'] }
+  end
+
+  # Whether anything in the scenario waits on the habit's first refusal
+  def usb_refusal_beats?(json_data, nid, glob)
+    pattern = glob.is_a?(String) && !glob.empty? ? /npc_usb_refused:#{Regexp.escape(nid)}\b|\b#{Regexp.escape(glob)}\b/ : /npc_usb_refused:#{Regexp.escape(nid)}\b/
+    found = false
+    walk = lambda do |v, key|
+      return if found
+      case v
+      when Hash
+        v.each do |k, x|
+          next if %w[globalVariables usbHabit].include?(k)
+          found = true if k == 'cause' && x == 'usb_refused'
+          walk.call(x, k)
+        end
+      when Array then v.each { |x| walk.call(x, key) }
+      when String then found = true if key != 'setGlobal' && v =~ pattern
+      end
+    end
+    walk.call(json_data, nil)
+    found
+  end
+
+  REPO_ROOT = File.expand_path('..', __dir__)
+
+  def ink_file(story_path)
+    return nil unless story_path.is_a?(String) && !story_path.empty?
+
+    ink = story_path.sub(/\.json\z/, '.ink')
+    ink = File.join(REPO_ROOT, ink) unless ink.start_with?('/')
+    File.exist?(ink) ? ink : nil
+  end
+
+  # The ink files that can hand over the habit's stick: the NPC's own storyPath, and a mail
+  # reply's (review R3 n1). A reply runs its gives as the headless record it speaks for
+  # (mail-runner.js, scenario-npc-records.js: social.characters.*.emailRecord under its
+  # channels.email id, or social.mailClient.contacts[].emailRecord under its npc id), taking
+  # from that record's own itemsHeld, so a record's ink counts only when it holds the stick's
+  # id. A record that reuses the NPC's id is the NPC, whose storyPath is read already.
+  def usb_give_inks(json_data, npc, stick)
+    paths = [npc['storyPath']]
+    social = json_data['social'].is_a?(Hash) ? json_data['social'] : {}
+    chars = social['characters'].is_a?(Hash) ? social['characters'].values : []
+    contacts = social.dig('mailClient', 'contacts')
+    headless = chars.map { |c| c.is_a?(Hash) ? [c.dig('channels', 'email'), c['emailRecord']] : nil } +
+               (contacts.is_a?(Array) ? contacts : []).map { |c| c.is_a?(Hash) ? [c['npc'], c['emailRecord']] : nil }
+    headless.compact.each do |rid, rec|
+      next unless rec.is_a?(Hash) && AW.present_string?(rid) && rid != npc['id']
+      next unless Array(rec['itemsHeld']).any? { |i| i.is_a?(Hash) && i['id'] == stick['id'] }
+
+      paths << rec['storyPath']
+    end
+    paths.map { |sp| ink_file(sp) }.compact.uniq
+  end
+
+  # [["file:line", [conditions]]] for each give of the stick: the governing choice line's {..}
+  # conditions and the conditions of every conditional block enclosing the give (review R3 n1)
+  def usb_stick_gives(json_data, npc, stick)
+    sid = Regexp.escape(stick['id'].to_s)
+    give = /#\s*give_item:\s*(?:usb|#{sid})\b/
+    offer = /#\s*give_npc_inventory_items\b(?::\s*([^#\n]*))?/
+    out = []
+    usb_give_inks(json_data, npc, stick).each do |ink|
+      lines = File.readlines(ink, encoding: 'UTF-8')
+      lines.each_with_index do |l, i|
+        next if l.strip.start_with?('//')
+
+        hit = l =~ give
+        if !hit && (m = l.match(offer))
+          types = m[1].to_s.split(',').map(&:strip).reject(&:empty?)
+          hit = types.empty? || types.include?('usb') || types.include?(stick['id'].to_s)
+        end
+        next unless hit
+
+        out << ["#{File.basename(ink)} line #{i + 1}", give_conditions(lines, i)]
+      end
+    end
+    out
+  end
+
+  # The conditions gating line i: its choice's {..} parts, and the open conditional blocks
+  # ({cond: ... } across lines, or a { - cond: ... } branch) from the knot's start down to it
+  def give_conditions(lines, i)
+    top = i
+    top -= 1 while top.positive? && !lines[top].strip.start_with?('===')
+    conds = []
+    i.downto(top) do |j|
+      t = lines[j].strip
+      break if t.start_with?('===') || (t.start_with?('=') && j < i)
+      if t =~ /\A[*+]/
+        conds.concat(t.scan(/\{([^{}]*)\}/).flatten)
+        break
+      end
+    end
+    stack = []
+    (top..i).each do |j|
+      t = lines[j].strip
+      next if t.start_with?('//')
+
+      if t =~ /\A-\s*(.+?):\s*\z/ && !stack.empty?
+        stack[-1] = Regexp.last_match(1) == 'else' ? '' : Regexp.last_match(1)
+        next
+      end
+      k = 0
+      while k < t.length
+        c = t[k]
+        if c == '{'
+          close = t.index('}', k)
+          colon = t.index(':', k)
+          text = colon && (close.nil? || colon < close) ? t[(k + 1)...colon] : ''
+          stack << text
+        elsif c == '}'
+          stack.pop
+        end
+        k += 1
+      end
+    end
+    conds + stack.reject(&:empty?)
+  end
+
+  # The condition names the global, not negated
+  def names_global?(cond, glob)
+    return false unless glob.is_a?(String) && !glob.empty?
+
+    g = Regexp.escape(glob)
+    cond.to_s.scan(/(\bnot\s+|!\s*)?\b#{g}\b/).any? { |m| m.first.nil? }
+  end
+
+  # Review R2 n2: the filter, held_usb_sticks and the browser's habit all key on the stick's id
+  def check_usb_stick_ids(json_data, issues)
+    seen = Hash.new { |h, k| h[k] = [] }
+    AW.usb_habit_sticks(json_data).each { |npc, stick| seen[stick['id']] << npc['id'] }
+    seen.each do |sid, nids|
+      next if nids.size < 2
+
+      err(issues, "the USB stick id '#{sid}' is held by #{nids.join(' and ')}: each habit NPC needs its own stick id.")
+    end
+  end
+
   # For each cause the NPC can meet, the cause's own pool or work_fail needs a line (plan 5.5)
   def check_mutters(json_data, npc, list, resources, st, issues)
     return if chatter_off?(json_data)
@@ -433,6 +882,7 @@ module ValidateAccessWork
     end
     # Sub-slice L (6.6): locked out at its own sign-in PC, a station failure (5.5)
     causes << ['its account being locked out at its station', STATION_POOL] if AW.lockout_station?(json_data, npc)
+    causes << ['its PC refusing its USB stick', 'usb_refused'] if AW.usb_habit_refused?(json_data, npc)
     list.each do |rid|
       r = resources[rid]
       next unless r
@@ -861,6 +1311,15 @@ module ValidateAccessWork
       if AW.lockout_station?(json_data, npc)
         max = AW.policy_of(json_data, st)['maxAttempts']
         station_off += "; locked out at '#{st['id']}' after #{max.to_i} wrong passwords for its username there (a denial of service)"
+      end
+      if AW.usb_habit(npc) && st
+        every = AW.usb_every(npc)
+        nth = every == 1 ? 'every' : "every #{every}#{every == 2 ? 'nd' : every == 3 ? 'rd' : 'th'}"
+        station_off += if AW.usb_habit_refused?(json_data, npc)
+                         "; #{nth} use at '#{st['id']}' copies to a USB stick, which its policy refuses (cause usb_refused)"
+                       else
+                         "; #{nth} use at '#{st['id']}' copies to a USB stick, which its policy allows"
+                       end
       end
       lines << "ℹ️ Work #{npc['id']}: #{parts.join('; ')}#{station_off}."
       AW.workarounds(json_data, npc).each_with_index do |w, i|

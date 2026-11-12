@@ -56,6 +56,11 @@ module BreakEscape
         'rooms' => { 'break_room' => { 'objects' => [], 'npcs' => [{ 'id' => 'derek', 'itemsHeld' => [device] }] } }
       }
       @game.player_state['unlockedRooms'] = ['break_room']
+      @game.player_state['encounteredNPCs'] = ['derek'] # a KO needs the NPC met (review R4 M1)
+      # The drop follows the KO (npc-hostile.js); a live NPC's drop is refused (review R2 M1)
+      sent0 = { 'id' => 'entropy_launch_device', 'type' => 'launch-device', 'name' => 'Launch Device' }
+      refute @game.add_item_to_room!('break_room', sent0, { 'npc_id' => 'derek' })
+      assert @game.update_npc_state!('break_room', 'derek', { 'isKO' => true })
       # Client sends only a stripped subset, as the strong params allow
       # Client may send either the original id or a generated drop id; the stored id must be the scenario's
       sent = { 'id' => 'entropy_launch_device', 'type' => 'launch-device', 'name' => 'Launch Device',
@@ -100,6 +105,7 @@ module BreakEscape
         }
       }
       @game.player_state['unlockedRooms'] = %w[main_office break_room]
+      @game.player_state['encounteredNPCs'] = ['derek'] # a KO needs the NPC met (review R4 M1)
       sent = { 'id' => 'entropy_launch_device', 'type' => 'launch-device', 'name' => 'Launch Device', 'x' => 10, 'y' => 20 }
       meta = { 'npc_id' => 'derek', 'source_type' => 'npc_defeated' }
 
@@ -115,6 +121,27 @@ module BreakEscape
       refute @game.add_item_to_room!('main_office', sent, { 'npc_id' => 'derek' })
       refute @game.add_item_to_room!('main_office', sent.merge('id' => 'other', 'type' => 'key'), meta)
       refute @game.add_item_to_room!('main_office', sent, { 'npc_id' => 'nobody', 'source_type' => 'npc_defeated' })
+    end
+
+    # Friendface phone review R2 M1: a drop from an NPC that is not KO'd stands only for an item
+    # its story or record offers, and only once the player has met it
+    test "a live NPC's room drop needs a KO, or an offer from an NPC the player has met" do
+      badge = { 'type' => 'keycard', 'name' => 'Badge', 'id' => 'derek_badge', 'takeable' => true }
+      @game.scenario_data = {
+        'startRoom' => 'lab',
+        'rooms' => { 'lab' => { 'objects' => [], 'npcs' => [{ 'id' => 'derek', 'itemsHeld' => [badge] }] } }
+      }
+      @game.player_state['unlockedRooms'] = ['lab']
+      @game.player_state['encounteredNPCs'] = ['derek']
+      sent = { 'id' => 'derek_badge', 'type' => 'keycard', 'name' => 'Badge', 'x' => 1, 'y' => 2 }
+      refute @game.add_item_to_room!('lab', sent, { 'npc_id' => 'derek' })
+
+      npc = @game.scenario_data['rooms']['lab']['npcs'].first
+      npc['eventMappings'] = [{ 'eventPattern' => 'x', 'action' => 'give_item:keycard' }]
+      @game.player_state['encounteredNPCs'] = []
+      refute @game.add_item_to_room!('lab', sent, { 'npc_id' => 'derek' }), 'offered, but never met'
+      @game.player_state['encounteredNPCs'] = ['derek']
+      assert @game.add_item_to_room!('lab', sent, { 'npc_id' => 'derek' })
     end
 
     # D3: the "already in inventory" filter matches ids when both sides have one,
@@ -192,6 +219,8 @@ module BreakEscape
       }
       @game.player_state['unlockedRooms'] = ['lab']
       @game.player_state['inventory'] = [device.dup]
+      @game.player_state['encounteredNPCs'] = ['derek'] # a KO needs the NPC met (review R4 M1)
+      assert @game.update_npc_state!('lab', 'derek', { 'isKO' => true })
 
       assert @game.add_item_to_room!('lab', { 'id' => 'kit_deviceB', 'type' => 'usb', 'name' => 'BadUSB',
                                               'texture' => 'key', 'x' => 1, 'y' => 2 },
@@ -1474,6 +1503,25 @@ module BreakEscape
     test "a flag submission that completes a task applies its setGlobal" do
       @game.process_flag_task_completions!(["vm-flag1"])
       assert_equal 7, @game.reload.player_state["globalVariables"]["count"]
+    end
+
+    # Friendface phone code review R5 M2: m01's find_derek_access lists names and a lock ref;
+    # stamped ids (NPC held items, container contents) must not hide them
+    test "validate_collection matches a listed target by the item's id, lock ref or name" do
+      task = { 'taskId' => 'find_derek_access', 'type' => 'collect_items', 'targetCount' => 1,
+               'targetItemIds' => ["Derek's Office Key", 'derek_office_key', 'Lock Pick Kit'] }
+      check = lambda do |item|
+        @game.player_state['inventory'] = [item]
+        @game.send(:validate_collection, task, {})
+      end
+      assert check.call({ 'type' => 'lockpick', 'id' => 'kevin_park_held_0', 'name' => 'Lock Pick Kit' }), 'by name'
+      assert check.call({ 'type' => 'key', 'id' => 'patricia_briefcase_content_0', 'name' => 'Office key',
+                          'opens_lock' => 'derek_office_key' }), 'by lock ref'
+      assert check.call({ 'type' => 'key', 'scenarioData' => { 'id' => 'x_content_0', 'key_id' => 'derek_office_key' } }),
+             'by the older key_id, under scenarioData'
+      refute check.call({ 'type' => 'keycard', 'id' => 'kevin_park_held_1', 'name' => 'Server Room Keycard',
+                          'opens_lock' => 'server_keycard' }), 'an unlisted item'
+      refute check.call('not a hash'), 'a malformed entry'
     end
   end
 end

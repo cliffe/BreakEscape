@@ -1,4 +1,4 @@
-# test_access_social: scripted playtest (slice 9.2, F1 to F13, L1 and L2)
+# test_access_social: scripted playtest (slice 9.2, F1 to F13, L1, L2 and U1 to U3)
 
 The scripted runs for access model slice 9.2 sub-slice C (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
 sections 8 and 11.2), plus F9 for user decision q33 (a lockout stops social media at that PC too),
@@ -83,6 +83,12 @@ work report also prints one `fires when ...` line per reactive post: `f10_vent`/
 (and `f12_vent` on `off`) cause, `f11_borrowed` after the borrow, `f13_blocked` on `social_blocked`,
 `f13_fixed` on recovery. No new warning: the only warnings stay the three above.
 
+U1 adds a `Feed` and a `Reactive feed` line for Kim, a `fires when a cause with why usb_refused for
+work is live` line, and a `Work` line ending "every 2nd use at 'kim_pc' copies to a USB stick, which
+its policy refuses (cause usb_refused)". It adds one warning, expected: "kim can be knocked out before its
+first USB refusal" for `u1_refused`, `u1_emailed` and `u1_posted`. Kim is not `koImmune` because U3 is the
+knock-out, and the U1 tasks are beat markers for a tester, not a mission's route.
+
 ## Beats
 
 | Beat | Do | Expect | Server afterwards | `/feed_post` so far |
@@ -129,10 +135,43 @@ use and is usually answered `{ post: null, done: false }`, so a per-run total gr
 | L1 | Enter `l1_room` (east of Ruth's room) at once. Sade's PC blocks social media and she has no phone, so after two failures she borrows the hot desk. Before she does, click the hot desk, pick her tile (`sokafor`) and type three wrong passwords. Step back and wait | The third answer says the account is locked on this PC. When she sits down there one `check` goes for her at `l1_hot_desk` and comes back locked out: `npc_locked_out:sade` with `objectId` `l1_hot_desk`, task `l1_locked_out`. At the end of the use it fails: `npc_use_failed:sade` with `missing` `[{ id: l1_hot_desk, why: locked_out }]`, `npc_borrow_done:sade` `met: false` (no `lapsed`), task `l1_borrow_failed`. No `npc_used:l1_hot_desk`, no post | `loginLockouts` holds `l1_hot_desk\|sokafor`; `npcFrustration.sade.lockedOut` `["l1_hot_desk"]` (and in GET /scenario's `npcFrustration`), no `easeAt`, no `guestSessions.l1_hot_desk`, no `feedRevealed.sade` | Sade 0 |
 | L2 | Enter `l2_room` (east of Sade's room) at once. Hamid's PC is switched off (`l2_pc_off` starts true), so after two work failures he takes his work to the hot desk. Before he does, click the hot desk, pick his tile (`hrahimi`) and type three wrong passwords. Step back and wait. Leave the power switch alone | The third answer says the account is locked on this PC. When he sits down one `check` goes for him at `l2_hot_desk` and comes back locked out: `npc_locked_out:hamid`, task `l2_locked_out`. At the end of the use his work fails: `npc_use_failed:hamid` need `work`, `missing` `[{ id: l2_hot_desk, why: locked_out }]`, `npc_borrow_done:hamid` `met: false` (no `lapsed`), task `l2_borrow_failed`. No `npc_used:l2_hot_desk` | `loginLockouts` holds `l2_hot_desk\|hrahimi`; `npcFrustration.hamid.lockedOut` `["l2_hot_desk"]` (and in GET /scenario), `easeAt` empty, no `guestSessions.l2_hot_desk`. A work `ease` for him at the hot desk is refused | none (no feed) |
 
+## USB habit beat (q39): U1
+
+East of Hamid's room, `u1_room` holds Kim (`docs/achitechture/USB_HABIT_PLAN.md`). Her PC is under
+`usb_locked` (`usb: storage_blocked`) and her `usbHabit.every` is 2, so every second work use there
+copies a file to a USB stick and is refused. Her feed is `reactive_first` with one ordered post and a
+vent keyed on `cause: "usb_refused"`. Start the game with `new-game.rb test_access_social --start-room
+u1_room` to run the beat alone.
+
+| Beat | Do | Expect | Server afterwards | `/feed_post` this beat |
+|---|---|---|---|---|
+| U1 | Enter `u1_room` (east of Hamid's room), stand clear of Kim and wait about two minutes | Her first work use is met; her second fails: `npc_use_failed:kim` with `missing` `[{ id: kim_pc, why: usb_refused }]`, the line "IT blocked my USB. Email it is, then.", `npc_usb_refused:kim`, tasks `u1_refused` and `u1_emailed`. Her next met social use serves the vent `u1_usb_vent` (task `u1_posted`); her next work use is met and eases | `npcFrustration.kim.failWhy.work` is `["usb_refused"]`; `globalVariables.u1_kim_emailed_file` true; `feedRevealed.kim.shown` is `["u1_ordered", "u1_usb_vent"]` (or the vent alone if her first social use comes after the refusal), done | Kim 2 |
+
+| U2 | After U1, talk to Kim and choose "That USB stick isn't much use to you now, is it?" (offered only once `u1_kim_emailed_file` is true, so before U1 she has no such choice). Open the stick from the inventory and read `work_file.txt`. Reload and talk to her again: the choice does not come back. `u1_kim_gave_usb` is set by the stick's `onPickup` once it is in the tray, so a give the server refused leaves the choice for the next conversation. Wait for three or four more of her work uses | The stick (`kim_usb`) leaves her itemsHeld and joins the inventory; it opens to one file, `work_file.txt`, whose text is served by `/unlock` and `GET /container` only now. Her later work uses are all met: no `usb_refused`, no `npc_usb_refused:kim` | `npc_given_items.kim` names `kim_usb`; `globalVariables.u1_kim_gave_usb` true; no new `failWhy` | none |
+| U3 | Instead of U2, knock Kim out (`debugKO`) and click the stick she drops, from where you stand (out of reach, even where it lies on or beside her chair), then open it from the inventory | The click walks to the stick, not the chair (no "Can't reach that seat from here."), and a click in reach picks it up (no `/unlock` from the floor, no "Access denied"); from the tray it opens to `work_file.txt` | `kim_usb` in the inventory, in no room's `objects_added`; `globalVariables.u1_kim_gave_usb` true (the stick's `onPickup`) | none |
+
+Tampered (U2): with Kim still holding the stick, `POST /unlock` and `GET /container` for `kim_usb` (or any invented stick id) answer 422 and 404, and a forged stick in the browser's own tray opens nothing. No room, bootstrap or inventory response carries the file's text or name.
+
+Tampered: a `fail` for Kim naming `usb_refused` for `social_media`, or naming another PC, is refused,
+and so is one for an NPC with no `usbHabit` (Nadia). Room data for Kim carries `work.usb` and no
+`usbHabit`.
+
 The leak check must still say `VERDICT: no leaks found` after each reactive beat, and its counts line
 must show the reactive post texts among the feed posts it checked. One reload during the run (as F7)
 must show every revealed reactive post at once, in reveal order, with no unrevealed reactive post in
 any response.
+
+## Friendface phones (q35): F14
+
+Plan: `docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md`. Run F14 after F2 to F9: once Jake's phone
+is taken he has no phone for the rest of the run, which changes F2 and F6. Every NPC with a feed and
+a phone (Jake, Lena, Priya, Nadia, Greg) holds its own `phone_friendface` item.
+
+| Beat | Do | Expect | Server afterwards |
+|---|---|---|---|
+| F14a | In the lobby, pick up "Your phone" (beside the start) | It opens 1 s later on the Friendface home (every profile). Each post the server reveals from then on plays `phone_vibrate` once and adds 1 to the tray badge; while a conversation or the browser is open the sound waits and plays once on close. Opening the phone clears the badge | `inventory` holds `player_phone` (no `phoneOf`) |
+| F14b | In `jake_room`, ask Jake "Could I borrow your phone for a bit?" | "Received: Jake's phone"; task `f14_jake_phone`. Opening it shows Jake's profile with only his revealed posts. Jake's live record has `phone: false`; his next social media use is at `jake_pc`, which blocks it, so it fails (parked `failed`, frustration up) and he no longer posts from the phone | `inventory` holds `jake_phone` with `phoneOf: "jake"`; `npc_given_items.jake` lists it; `POST /feed_post` for Jake with `object_id` null is `refused` |
+| F14c | Reload (`?skip_resume=1`) | No sound and no badge for posts already shown; the room bootstrap sends Jake with `phone: false` | unchanged |
 
 ## Earned secrets
 
@@ -170,6 +209,11 @@ any response.
   reads only `npc_id` and the `object_id` location, and the server decides the condition. The same for
   Greg's `f12_vent` before his outage, Theo's `f11_borrowed` before his borrow, and Ruth's
   `f13_blocked`/`f13_fixed` before her failure and recovery.
+- F14 (q35): `POST /friendface_phone` for a phone the server's inventory does not hold (`lena`, an
+  array, or `null` before the player's own phone is picked up) is 403 `no such phone` and writes
+  nothing. `window.startFriendfacePhone` called with a made-up phone item shows "You do not have that
+  phone." and opens nothing. `POST /inventory` adding a `phone_friendface` the scenario does not
+  have is 422; `phoneOf` on a client-built item (a notepad) is dropped before it is stored.
 - L1 (q36, q33 R2 m1): after Sade's lockout at the hot desk, `POST /feed_post` for her with
   `object_id` `l1_hot_desk` is `{ post: null, done: false, refused: true }` and a social media
   `ease` for her there is refused.

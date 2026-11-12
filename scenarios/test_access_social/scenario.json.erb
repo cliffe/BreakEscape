@@ -28,6 +28,9 @@
     ],
     "wk_borrow": [
       "I'll use the spare PC."
+    ],
+    "usb_refused": [
+      "IT blocked my USB. Email it is, then."
     ]
   },
   "policies": {
@@ -48,6 +51,12 @@
       "maxAttempts": 3,
       "usb": "allowed",
       "social": "allowed"
+    },
+    "usb_locked": {
+      "autoLockMin": null,
+      "maxAttempts": null,
+      "usb": "storage_blocked",
+      "social": "allowed"
     }
   },
   "globalVariables": {
@@ -59,7 +68,9 @@
     "f12_crm_down": false,
     "f12_pc_unplugged": false,
     "l2_pc_off": true,
-    "l2_ledger_down": false
+    "l2_ledger_down": false,
+    "u1_kim_emailed_file": false,
+    "u1_kim_gave_usb": false
   },
   "objectives": [
     {
@@ -167,6 +178,12 @@
           "status": "active"
         },
         {
+          "taskId": "f14_jake_phone",
+          "title": "F14: ask Jake for his phone",
+          "type": "custom",
+          "status": "active"
+        },
+        {
           "taskId": "l1_locked_out",
           "title": "L1: Sade finds out she is locked out at the hot desk",
           "type": "custom",
@@ -187,6 +204,24 @@
         {
           "taskId": "l2_borrow_failed",
           "title": "L2: Hamid's borrowed work at the hot desk fails",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_refused",
+          "title": "U1: Kim's PC refuses her USB stick",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_emailed",
+          "title": "U1: Kim emails the file to herself instead",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_posted",
+          "title": "U1: Kim posts that IT blocked her USB",
           "type": "custom",
           "status": "active"
         }
@@ -321,6 +356,17 @@
                   "text": "New badge photo. Somehow worse than the old one."
                 }
               ]
+            },
+            {
+              "person": "kim",
+              "name": "Kim Nguyen",
+              "bio": "Reports. Takes work home.",
+              "posts": [
+                {
+                  "id": "kim_authored",
+                  "text": "Quarterly report due Friday. Wish me luck."
+                }
+              ]
             }
           ]
         }
@@ -446,6 +492,32 @@
             "useSeconds": 10
           },
           "observations": "A spare kiosk PC under the lax policy: social media is allowed."
+        },
+        {
+          "type": "phone_friendface",
+          "id": "player_phone",
+          "name": "Your phone",
+          "takeable": true,
+          "position": {
+            "x": 5,
+            "y": 6
+          },
+          "observations": "Your own mobile, signed in to Friendface."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_f14",
+          "name": "Sign: F14",
+          "position": {
+            "x": 4,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F14. Pick up your phone here: it opens the Friendface feed, and buzzes when someone posts.\nThen ask Jake (north) for his phone: it opens on his profile, and he has to post from his PC instead.",
+          "observations": "A beat sign on a stand."
         }
       ],
       "npcs": []
@@ -503,7 +575,7 @@
           "spriteSheet": "male_office_worker_v2",
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
           "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
-          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "storyPath": "scenarios/test_access_social/ink/jake.json",
           "currentKnot": "start",
           "behavior": {
             "facePlayer": true,
@@ -566,6 +638,23 @@
               "onceOnly": true,
               "completeTask": "f6_last_post",
               "condition": "data.index === 2"
+            },
+            {
+              "eventPattern": "item_picked_up:phone_friendface",
+              "onceOnly": true,
+              "completeTask": "f14_jake_phone",
+              "condition": "data.itemId === 'jake_phone'",
+              "fireOnlyWhenLoaded": true
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "jake_phone",
+              "name": "Jake's phone",
+              "takeable": true,
+              "phoneOf": "jake",
+              "observations": "Jake's mobile, open on Friendface."
             }
           ]
         }
@@ -657,6 +746,16 @@
               "onceOnly": true,
               "completeTask": "f3_pc",
               "condition": "data.need === 'social_media' && data.met === true"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "lena_phone",
+              "name": "Lena's phone",
+              "takeable": true,
+              "phoneOf": "lena",
+              "observations": "Lena's mobile, open on Friendface."
             }
           ]
         }
@@ -975,6 +1074,16 @@
               "completeTask": "f9_posted",
               "condition": "data.index === 1"
             }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "priya_phone",
+              "name": "Priya's phone",
+              "takeable": true,
+              "phoneOf": "priya",
+              "observations": "Priya's mobile, open on Friendface."
+            }
           ]
         }
       ]
@@ -1129,6 +1238,16 @@
               "onceOnly": true,
               "completeTask": "f10_posted",
               "condition": "data.postId === 'f10_vent'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "nadia_phone",
+              "name": "Nadia's phone",
+              "takeable": true,
+              "phoneOf": "nadia",
+              "observations": "Nadia's mobile, open on Friendface."
             }
           ]
         }
@@ -1467,6 +1586,16 @@
               "completeTask": "f12_posted",
               "condition": "data.postId === 'f12_vent'"
             }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "greg_phone",
+              "name": "Greg's phone",
+              "takeable": true,
+              "phoneOf": "greg",
+              "observations": "Greg's mobile, open on Friendface."
+            }
           ]
         }
       ]
@@ -1760,7 +1889,8 @@
       "type": "room_office",
       "door_sign": "L2 Hamid",
       "connections": {
-        "west": "l1_room"
+        "west": "l1_room",
+        "east": "u1_room"
       },
       "objects": [
         {
@@ -1921,6 +2051,146 @@
           ]
         }
       ]
+    },
+    "u1_room": {
+      "type": "room_office",
+      "door_sign": "U1 Kim",
+      "connections": {
+        "west": "l2_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_u1",
+          "name": "Sign: U1 IT blocked my USB",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "U1. Kim copies a report to a USB stick on every second work use at her PC. Her PC's policy blocks USB storage, so the copy is refused: she grumbles and emails the file to herself instead. The refusal counts as a failed work use, and her next social media post says IT blocked her USB, a hint that this PC is locked down.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "kim_pc",
+          "name": "Kim's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "usb_locked",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Kim's PC, under a policy that blocks USB storage."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "kim",
+          "displayName": "Kim Nguyen",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/kim.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "itemsHeld": [
+            {
+              "type": "usb",
+              "id": "kim_usb",
+              "name": "Kim's USB stick",
+              "sprite": "usb_bowl1",
+              "usbClass": "storage",
+              "takeable": true,
+              "observations": "A plain USB memory stick. Kim copies her work to it.",
+              "onPickup": {
+                "setVariable": {
+                  "u1_kim_gave_usb": true
+                }
+              }
+            }
+          ],
+          "needsHome": "kim_pc",
+          "needsDeferMin": 0.5,
+          "workNeeds": [
+            "u1_reports"
+          ],
+          "usbHabit": {
+            "every": 2,
+            "setGlobal": "u1_kim_emailed_file"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "kim",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "u1_ordered",
+                "text": "Desk plant survived the weekend. Small victories.",
+                "date": "Monday"
+              },
+              {
+                "id": "u1_usb_vent",
+                "text": "IT blocked my USB stick again. Had to email the report to myself like it's 2005.",
+                "when": {
+                  "cause": "usb_refused",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_usb_refused:kim",
+              "onceOnly": true,
+              "completeTask": "u1_refused"
+            },
+            {
+              "eventPattern": "global_variable_changed:u1_kim_emailed_file",
+              "onceOnly": true,
+              "completeTask": "u1_emailed",
+              "condition": "data.value === true",
+              "fireOnlyWhenLoaded": true
+            },
+            {
+              "eventPattern": "npc_posted:kim",
+              "onceOnly": true,
+              "completeTask": "u1_posted",
+              "condition": "data.postId === 'u1_usb_vent'"
+            }
+          ]
+        }
+      ]
     }
   },
   "resources": {
@@ -1938,6 +2208,10 @@
       "name": "Facilities ledger",
       "kind": "file_share",
       "downIf": "l2_ledger_down"
+    },
+    "u1_reports": {
+      "name": "Team reports",
+      "kind": "file_share"
     }
   },
   "accountProfiles": {

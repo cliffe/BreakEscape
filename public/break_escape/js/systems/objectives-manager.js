@@ -8,6 +8,22 @@
  * @module objectives-manager
  */
 
+/**
+ * Code review R5 M2: a targetItemIds entry may name an item by its id, its lock ref
+ * (opens_lock, or the older key_id) or its name. Items get ids at game creation
+ * (container contents, NPC held items), so a task authored against a name or a lock
+ * ref must still match once the item carries a stamped id. Mirrors the server's
+ * validate_collection.
+ */
+export function targetIdMatches(targetIds, ...candidates) {
+  if (!Array.isArray(targetIds) || targetIds.length === 0) return false;
+  return candidates.some(c => typeof c === 'string' && c !== '' && targetIds.includes(c));
+}
+
+function lockRefOf(data) {
+  return data ? (data.opens_lock ?? data.key_id) : undefined;
+}
+
 export class ObjectivesManager {
   constructor(eventDispatcher) {
     this.eventDispatcher = eventDispatcher;
@@ -174,6 +190,7 @@ export class ObjectivesManager {
             const itemType = item.scenarioData?.type || item.getAttribute?.('data-type');
             const itemId = item.scenarioData?.id;
             const itemName = item.scenarioData?.name;
+            const idMatch = () => targetIdMatches(task.targetItemIds, itemId, lockRefOf(item.scenarioData), itemName);
             
             let matches = false;
             
@@ -182,19 +199,15 @@ export class ObjectivesManager {
               matches = task.targetItems.includes(itemType);
             }
             
-            // ID-based matching (more specific)
+            // ID-based matching (more specific): id, lock ref or name (review R5 M2)
             if (task.targetItemIds && task.targetItemIds.length > 0) {
-              const identifier = itemId || itemName;
-              matches = task.targetItemIds.includes(identifier);
+              matches = idMatch();
             }
             
             // If both specified, match either
             if (task.targetItems && task.targetItems.length > 0 && 
                 task.targetItemIds && task.targetItemIds.length > 0) {
-              const typeMatch = task.targetItems.includes(itemType);
-              const identifier = itemId || itemName;
-              const idMatch = task.targetItemIds.includes(identifier);
-              matches = typeMatch || idMatch;
+              matches = task.targetItems.includes(itemType) || idMatch();
             }
             
             return matches;
@@ -204,8 +217,8 @@ export class ObjectivesManager {
           const keyRingItems = window.inventory?.keyRing?.keys || [];
           const matchingKeys = keyRingItems.filter(key => {
             const keyType = key.scenarioData?.type;
-            const keyId = window.lockRef(key.scenarioData) || key.scenarioData?.id;
             const keyName = key.scenarioData?.name;
+            const idMatch = () => targetIdMatches(task.targetItemIds, key.scenarioData?.id, lockRefOf(key.scenarioData), keyName);
             
             let matches = false;
             
@@ -214,19 +227,16 @@ export class ObjectivesManager {
               matches = task.targetItems.includes(keyType) || task.targetItems.includes('key');
             }
             
-            // ID-based matching
+            // ID-based matching: id, lock ref or name (review R5 M2)
             if (task.targetItemIds && task.targetItemIds.length > 0) {
-              const identifier = keyId || keyName;
-              matches = task.targetItemIds.includes(identifier);
+              matches = idMatch();
             }
             
             // If both specified, match either
             if (task.targetItems && task.targetItems.length > 0 && 
                 task.targetItemIds && task.targetItemIds.length > 0) {
               const typeMatch = task.targetItems.includes(keyType) || task.targetItems.includes('key');
-              const identifier = keyId || keyName;
-              const idMatch = task.targetItemIds.includes(identifier);
-              matches = typeMatch || idMatch;
+              matches = typeMatch || idMatch();
             }
             
             return matches;
@@ -384,20 +394,17 @@ export class ObjectivesManager {
           matches = task.targetItems.includes(itemType);
         }
 
-        // ID-based matching (targetItemIds array) - more specific, overrides type matching
+        // ID-based matching (targetItemIds array) - more specific, overrides type matching.
+        // Review R5 M2: the id, the lock ref (keyId / lockRef on the event) or the name
+        const idMatch = () => targetIdMatches(task.targetItemIds, itemId, data.lockRef, data.keyId, itemName);
         if (task.targetItemIds && task.targetItemIds.length > 0) {
-          // Match by ID if available, fall back to name
-          const identifier = itemId || itemName;
-          matches = task.targetItemIds.includes(identifier);
+          matches = idMatch();
         }
 
         // If both are specified, item must match at least one
         if (task.targetItems && task.targetItems.length > 0 &&
             task.targetItemIds && task.targetItemIds.length > 0) {
-          const typeMatch = task.targetItems.includes(itemType);
-          const identifier = itemId || itemName;
-          const idMatch = task.targetItemIds.includes(identifier);
-          matches = typeMatch || idMatch;
+          matches = task.targetItems.includes(itemType) || idMatch();
         }
       }
 
