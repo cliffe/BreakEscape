@@ -306,6 +306,12 @@ export function installPhoneRinger(win = window) {
                 } catch (err) {
                     console.error('phone ringer: closing the phone for a call failed', err);
                 }
+                // The close threw and the phone is still open (A3 R1 n2): it must not keep the flag, or a
+                // later real close would skip its thread's conversation_closed. Nothing was put aside.
+                if (fw().currentMinigame === phone && !phone._ending) {
+                    delete phone.params._closingForCall;
+                    return null;
+                }
                 return { kind: 'phone', ...state };
             }
             if (openMinigame()) return null;

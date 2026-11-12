@@ -445,3 +445,22 @@ test('m4: a forced call that has answered itself shows Connecting with no Hang u
         assert.ok(w.fw.currentMinigame.params.ringerCall, 'the call is open');
     } finally { w.restore(); }
 });
+
+test('n2: if closing the phone for a call throws and the phone stays open, it does not keep _closingForCall', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await ring(w);
+        const realEnd = w.fw.endMinigame.bind(w.fw);
+        let first = true;
+        w.fw.endMinigame = (...args) => { if (first) { first = false; throw new Error('close failed'); } return realEnd(...args); };
+        const errors = console.error;
+        console.error = () => {};
+        try {
+            phone.panel.onAnswer();
+            await w.advance(100);
+            await w.advance(600);
+        } finally { console.error = errors; }
+        assert.notEqual(phone.params._closingForCall, true, 'a later real close of this phone still emits its thread event');
+    } finally { w.restore(); }
+});
