@@ -381,3 +381,32 @@ test('a seed after a confirmed sync keeps the acknowledgement; a second seed doe
   sync.seedFromBootstrap({ savedGlobalVariables: { a: 999, z: 9 } });
   assert.equal(JSON.stringify(sync.confirmed), snapshot, 'the second seed is a no-op');
 });
+
+// --- se_captures is server-owned: never sent, never seeded (SYNC_DELTAS_PLAN 3.2, 6a) ---
+
+test('se_captures in the live globals is left out of the outgoing body', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved());
+  window.gameState.globalVariables.se_captures = { len: { targetId: 'len', kind: 'credential', at: 1 } };
+  assert.equal(sync.buildChanges(), null, 'the capture mirror is not a change and is not sent');
+});
+
+test('se_captures in the saved globals is not seeded and not deleted', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved({ savedGlobalVariables: { a: 1, b: true, se_captures: { len: {} } } }));
+  assert.equal(sync.confirmed.globalVariables.se_captures, undefined, 'the server-owned global is not seeded');
+  assert.equal(sync.buildChanges(), null, 'and the client never holds it, so it is never sent as null');
+});
+
+test('a registered part with a build value makes buildChanges non-null when nothing else changed', () => {
+  const sync = resetGame();
+  markPhone();
+  sync.seedFromBootstrap(matchingSaved());
+  assert.equal(sync.buildChanges(), null, 'nothing else changed');
+  sync.registerPart('captures', { build: () => [{ targetId: 'len', kind: 'credential' }] });
+  const changes = sync.buildChanges();
+  assert.ok(changes, 'the part alone is a change');
+  assert.deepEqual(changes.body.captures, [{ targetId: 'len', kind: 'credential' }]);
+});

@@ -42,7 +42,7 @@ module BreakEscape
       refute JSON.parse(response.body).dig('captures', 'mel').key?('proven')
     end
 
-    test 'the capture survives a reload: the bootstrap ships it and the mirror' do
+    test 'the capture survives a reload: the bootstrap ships it under captures, not as a global' do
       build_game
       sync(globalVariables: { 'se_captures' => { 'mel' => { 'targetId' => 'mel', 'kind' => 'credential', 'at' => 1 } } })
       assert_response :success
@@ -50,8 +50,8 @@ module BreakEscape
       get game_path('scenario'), as: :json
       boot = JSON.parse(response.body)
       assert_equal 'm.pierce', boot.dig('captures', 'mel', 'address')
-      assert_equal 'm.pierce', boot.dig('savedGlobalVariables', 'se_captures', 'mel', 'address'),
-                   'the current client reader still sees it'
+      assert_nil boot.dig('savedGlobalVariables', 'se_captures'),
+                 'se_captures no longer rides savedGlobalVariables; the client mirrors it from captures'
     end
 
     test 'an undeclared target is refused, a declared one recorded, both answered' do

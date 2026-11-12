@@ -1716,6 +1716,16 @@ export async function create() {
         Object.assign(window.gameState.globalVariables, gameScenario.savedGlobalVariables);
         console.log('🌐 Merged saved global variables from server:', gameScenario.savedGlobalVariables);
     }
+    // The server-owned capture record (sync deltas R2, 6a): se_captures no longer rides the sync,
+    // so the bootstrap ships it as `captures`. Mirror it into the global the readers watch (capture
+    // log, captures view, password minigame), only for a mission that has captures or declares
+    // se_captures, so a mission with none gets no mirror.
+    if (gameScenario.captures && typeof gameScenario.captures === 'object') {
+        window.gameState.globalVariables.se_captures = gameScenario.captures;
+    } else if (window.gameState.globalVariables.se_captures === undefined
+        && gameScenario.globalVariables && 'se_captures' in gameScenario.globalVariables) {
+        window.gameState.globalVariables.se_captures = {};
+    }
     // The worn item (wearables.js): the server's record, so the tray frame comes back
     window.gameState.wornItem = gameScenario.wornItem && typeof gameScenario.wornItem.itemId === 'string'
         ? gameScenario.wornItem : null;

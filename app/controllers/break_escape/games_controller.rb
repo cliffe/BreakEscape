@@ -317,15 +317,12 @@ module BreakEscape
           filtered['savedGlobalVariables'] = @game.player_state['globalVariables']
         end
 
-        # The server-owned capture record (sync deltas R2, 6a): shipped as `captures` for the
-        # new client, and mirrored into savedGlobalVariables.se_captures so the current client's
-        # reader (core/game.js) still fills the capture log until 6a-client ships. The entries
-        # carry no secret: GET /capture_secrets serves those once earned (main's authored path).
+        # The server-owned capture record (sync deltas R2, 6a): shipped as `captures`. The client
+        # (core/game.js) mirrors it into its se_captures global for the readers; it no longer rides
+        # savedGlobalVariables. The entries carry no secret: GET /capture_secrets serves those once
+        # earned (main's authored path).
         captures = @game.captures_for_client
-        if captures.any?
-          filtered['captures'] = captures
-          filtered['savedGlobalVariables'] = (filtered['savedGlobalVariables'] || {}).merge('se_captures' => captures)
-        end
+        filtered['captures'] = captures if captures.any?
 
         # The saved current room, so the first sync after a load does not resend
         # currentRoom unless the page starts the player somewhere else (R1,

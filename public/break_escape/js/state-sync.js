@@ -39,13 +39,6 @@ const LANDING_CHOICE_KEYS = ['brand', 'purpose', 'domainId', 'logo', 'wording', 
 const LANDING_VICTIM_KEYS = ['visited', 'submitted', 'noticed'];
 const LANDING_TELL_IDS = ['brand', 'purpose', 'domain', 'logo', 'wording', 'form', 'padlock', 'formOrigin', 'hoverMismatch'];
 
-// se_captures: one entry per phish target the campaign got something from (a credential sign-in
-// or a document/exe foothold). The closed key set mirrors systems/captures.js CAPTURE_ENTRY_KEYS;
-// the social-captures test asserts they stay in step. Sanitised here so a hand-edited or older
-// save can never push an unknown key to the server (defence in depth, as for the landing state).
-const CAPTURES_KEY = 'se_captures';
-const CAPTURE_ENTRY_KEYS = ['targetId', 'roleLabel', 'address', 'kind', 'secret', 'host', 'note', 'at'];
-
 // Deterministic JSON: object keys sorted at every depth, arrays kept in order,
 // undefined dropped as JSON.stringify drops it. A value stored in the jsonb
 // player_state column comes back with its object keys reordered (jsonb sorts
@@ -64,8 +57,10 @@ export function stableJson(value) {
 }
 
 // Globals the server owns: the client never sends them and never seeds them from
-// the bootstrap. Empty for now; step 6a (R2) adds se_captures (SYNC_DELTAS_PLAN 3.2).
-export const SERVER_OWNED_GLOBALS = new Set();
+// the bootstrap. se_captures is server-owned (sync deltas R2, 6a): a capture rides the
+// `captures` sync part instead, and the mirror the client keeps for its readers is left
+// out of the outgoing globals (buildSharedSections) and of the seed (SYNC_DELTAS_PLAN 3.2).
+export const SERVER_OWNED_GLOBALS = new Set(['se_captures']);
 
 // The synced fields of a note and a biometric sample, as one place both the seed
 // (seedFromSaved) and the export (buildPlayerSections) read, so they cannot drift.
@@ -185,14 +180,7 @@ function guardLandingState(globals) {
   if (Object.prototype.hasOwnProperty.call(globals, LANDING_DRAFTS_KEY)) {
     globals[LANDING_DRAFTS_KEY] = sanitizeLandingMap(globals[LANDING_DRAFTS_KEY], sanitizeLandingChoices);
   }
-  if (Object.prototype.hasOwnProperty.call(globals, CAPTURES_KEY)) {
-    globals[CAPTURES_KEY] = sanitizeLandingMap(globals[CAPTURES_KEY], sanitizeCaptureEntry);
-  }
 }
-
-// One capture entry: the eight closed keys only; a non-object becomes {} so nothing unexpected
-// is sent. The map is keyed by target id (sanitizeLandingMap keeps the keys as-is).
-const sanitizeCaptureEntry = entry => (isPlainObject(entry) ? pickKeys(entry, CAPTURE_ENTRY_KEYS) : {});
 
 /**
  * Periodic state synchronisation with the server.
@@ -358,6 +346,9 @@ export class StateSync {
     const out = {};
     // Shallow copy, so a later change to a global doesn't alter what was built
     out.globalVariables = { ...(window.gameState?.globalVariables || {}) };
+    // Server-owned globals (se_captures) never ride the sync: the client keeps a display mirror
+    // but the record is server-owned and travels in the `captures` part (SYNC_DELTAS_PLAN 3.2, 6a)
+    for (const k of SERVER_OWNED_GLOBALS) delete out.globalVariables[k];
     // Keep the landing-page globals to their closed shapes before they are synced or flushed (N4)
     guardLandingState(out.globalVariables);
 

@@ -39,6 +39,7 @@ import './systems/room-state-sync.js';
 
 // Import global state sync (persists gameState.globalVariables to server every 30s)
 import { StateSync } from './state-sync.js';
+import { installCaptureClient } from './systems/capture-client.js';
 
 // Import Music Controller and Widget
 import MusicController from './music/music-controller.js';
@@ -143,6 +144,9 @@ function initializeGame() {
 
     // Start periodic global state sync (saves globalVariables to server every 30s)
     window.stateSync = new StateSync(30000);
+    // Capture client (sync deltas R2, 6a): registers the `captures` sync part and sets
+    // window.submitSECapture / window.mirrorSECapture, before any game code captures.
+    installCaptureClient(window.stateSync);
     window.stateSync.start();
     
     console.log('✅ NPC systems initialized');
