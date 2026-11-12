@@ -1,128 +1,61 @@
 # Scenario format hardening plan
 
-Status: **Final**. Date: 2026-11-12. Written on `build/schema-review`. Code references are to main at **33c003230** (which includes build/c3-replies, build/usepayload-secret, build/keypin-seed and build/readme-93b), unless they say otherwise; references to build/unlock-gaps-r1 are to **e937b75f8**, which merges before this work (its tip has since moved to 309a5dc19, which adds only a document under `docs/`, so the line numbers hold). The validator triage in section 3 ran on main at 72e26f911; step 1's own corpus run repeats it on the main the build starts from. A builder re-anchors any line number that has moved on that main and names the commit in the build log.
+Status: **Draft, amendment 1**. Date: 2026-11-12. Code references are to main at **33c003230** unless they say otherwise; references marked "on b7d500ccf" are to main at b7d500ccf, which includes build/unlock-gaps-r1 (references to it as **e937b75f8** hold there) and step 1. A builder re-anchors any line number that has moved on the main the build starts from and names the commit in the build log.
 
-Sources: `docs/achitechture/SCENARIO_FORMAT_REVIEW_STRUCTURE.md` and `docs/achitechture/SCENARIO_FORMAT_REVIEW_ACCESS.md`. Every claim the plan builds on was checked in the code; where a source review was wrong or incomplete, this plan says what the code does.
+Every claim the plan builds on was checked in the code. The user's decisions it applies are in section 6.
 
 ## 1. What this plan does
 
-It hardens the scenario JSON format without changing any scenario's design. Six steps, in order of value for cost, plus one candidate that waits for the user. Step 6a is built in two parts, 6a-1 and 6a-2.
+It hardens the scenario JSON format and consolidates the access and office-life fields. Steps 1 to 6 change no scenario's design. Step 7 adds a format version and a load-time upgrader. Steps 8a to 8c rename and move fields, rewrite every template that uses the old names, and upgrade stored games on load. Step 6a is built in two parts, 6a-1 and 6a-2.
 
-| # | Step | Touches | Scenario edits | Size |
-|---|---|---|---|---|
-| 1 | Validator exit code matches its output, with a known-failures list | validator, CI, tests | 41 lines in test scenarios fixed here; other tracks' lines fixed or listed (section 3) | M+ |
-| 2 | Strict keys for the access, network and office-life blocks | schema, validator | none expected | S |
-| 3 | Secret-leak check, with acknowledged clues, and the server's answer sets extended | validator, schema, `CaptureModel`, `Game.lock_answer_matches?`, one bootstrap line | m08 waits for q85; m06 gets one marker | M |
-| 3b | Server-held globals (candidate, waits for q85) | schema, model, controller, validator | m08 only | M |
-| 4 | Reference and id checks driven by schema annotations | schema, validator | 5 scenarios, as warnings | M |
-| 5 | One `ScenarioBinding` in `lib/` for every renderer, and a JSON-safe ERB helper | lib, model, validator, tools, tests | none | S |
-| 6a-1 | Server-only marks in the schema, the top-level declared test and the fresh-state payload scan | schema, tests | none | M |
-| 6a-2 | The opened-state payload scan, the identity check, feed seeding and the mutation tests | tests | none | M |
-| 6b | Client-visibility marks, a top-level client-read scan and one client serialiser (only if the 6a-2 opened-state scan finds a gap) | schema, lib, model, controller, tests | none | L |
+| # | Step | Touches | Scenario edits | Size | State |
+|---|---|---|---|---|---|
+| 1 | Validator exit code matches its output, with a known-failures list | validator, CI, tests | this build's test scenarios fixed; other tracks' lines listed | M+ | on main |
+| 2 | Strict keys for the access, network and office-life blocks | schema, validator | none | S | built on build/harden-step2 |
+| 3 | Secret-leak check, with acknowledged clues, and the server's answer sets extended | validator, schema, `CaptureModel`, `Game.lock_answer_matches?`, one bootstrap line | m08 and m06 get one clue marker each | M | |
+| 4 | Reference and id checks driven by schema annotations | schema, validator | 5 scenarios, as warnings | M | |
+| 5 | One `ScenarioBinding` in `lib/` for every renderer, and a JSON-safe ERB helper | lib, model, validator, tools, tests | none | S | |
+| 6a-1 | Server-only marks in the schema, the top-level declared test and the fresh-state payload scan | schema, tests | none | M | |
+| 6a-2 | The opened-state payload scan, the identity check, feed seeding and the mutation tests | tests | none | M | |
+| 6b | Client-visibility marks, a top-level client-read scan and one client serialiser (only if the 6a-2 opened-state scan finds a gap) | schema, lib, model, controller, tests | none | L | |
+| 7 | `formatVersion` and the load-time upgrader, with no renames yet | lib, model, controller, client API wrapper, validator, tools, tests | none | M | |
+| 8a | One outage field: `offWhen` on objects, networks and resources (format 1) | schema, validator, network, work and feed code, needs and work JS, dungeon graph, upgrader step | 4 test scenarios | M | |
+| 8b | One owner field: `owner` and `private` on objects and items (format 2) | schema, validator, owner readers in lib, models, controller and JS, upgrader step | 9 scenarios (8 test scenarios and lab_physical_pentest) | L | |
+| 8c | Habits in one block: `habits.screen`, `habits.print`, `habits.usb` (format 3) | schema, validator, `NpcHabits`, the NPC filter, workstation and needs JS, `AccessWork`, upgrader step | 3 test scenarios | M | |
 
-Deferred to a later slice: the load-time upgrader, with `formatVersion`, which the server stamps into `scenario_data` at creation. It starts with the first approved step that rewrites stored data (section 8). Templates never carry the field.
+**Aliases.** Four scenarios are played on Hacktivity: m01_first_contact, sis01_healthcare, sis02_energy and lab_social_engineering. A renamed key keeps its old name as an alias only where one of these four uses it. Checked on b7d500ccf by rendering every template and walking every key, and with `git log -S` over each of the four folders for every old name: none of the four has ever used any key that steps 8a to 8c rename (`screenOwner`, `affordance.owners`, `affordance.private`, `phoneOwner`, `phoneOf`, `leftBehindBy`, `downIf`, `affordance.offWhen`, `screenHabit`, `printHabit`, `usbHabit`), nor `needsHome`, `habits` or NPC `awareness`. The alias list is therefore empty. Step 7 still builds the place an alias would live (section 4, step 7) and a test that fails if one of the four starts using a retired key, so the rule is checked, not assumed. Every other scenario is rewritten to the new names, with no alias.
 
-Out of scope: the format migrations that wait for the user. Section 7 groups them by question: q83 (7.1 to 7.3) and q84 (7.5, then 7.4).
+Out of scope: closing the core kinds (rooms, objects, NPCs, event mappings, objectives, tasks) and dropping the dead fields, which the user has put later (section 7). Also not taken here: one merge rule for role defaults, one shape for planting a device, renaming the colliding names (`social`, `profile`, `accountProfiles.*.for`), writing a Friendface person once, the requireGlobal form in `spriteVariants`, and the identity fields that mean something other than ownership (`identity` on a keycard, `fingerprintOwner`, a room's `needsPrivateTo`). Server-held globals are dropped: m08's door PIN is accepted as an acknowledged clue (section 6).
 
-**Riskiest step: step 3.** It is the only step that changes live server behaviour on main: the comparator every combination and cryptex unlock goes through, the two answer sets read by four consumers, and which capture secrets and account passwords are served. Its safeguards are the existing unlock tests (kept green, named in step 3), the predicate diff, the live run on its own test scenario and an extra live proof of the comparator through the real unlock route. Step 6a is the step most likely to overrun its size, which is why it is split.
+**Riskiest steps.** Step 3 changes live server behaviour on main: the comparator every combination and cryptex unlock goes through, the two answer sets read by four consumers, and which capture secrets and account passwords are served. Its safeguards are the existing unlock tests (kept green, named in step 3), the predicate diff, the live run on its own test scenario and a live proof of the comparator through the real unlock route. Step 8b is the largest: it removes the `needsHome` owner fallback from every reader and writes an explicit `owner` into 9 templates and every stored game that relied on the fallback. Its safeguards are the corpus equivalence check (the upgraded old render equals the new render), reader parity with the old code, and a live run of a stored game created before the step. Step 6a is the step most likely to overrun its size, which is why it is split.
 
 ## 2. Rules every step follows
 
 - **Cheat policy.** The server hard-enforces secrets, keys and forged items; ink-gated steps and tailgating stay best effort with an NPC sanity check. A secret is any value that, read from the browser, lets a player skip a lock: a PIN, password, combination, cryptex word, flag answer, account password, Wi-Fi key, capture secret or a declared grant's contents. Steps 3 and 6 exist to keep every one of these on the server until it is earned.
-- **Sync size rule (q77).** player_state and any per-game record the client re-sends must change by delta or stay bounded. Steps 1 to 6 add nothing to player_state and no new sync traffic; step 3 removes one key from the bootstrap and changes only which capture secrets and account passwords the server serves, read from the authored scenario per request, with nothing stored. Step 3b, if approved, adds one bounded string per declared server global, sent once as a delta when it is revealed. Each step's section states its effect.
-- **Tests.** Every step ships with node tests for validator behaviour (`test/js/validator-*.test.mjs`, the `check_*` function called through `ruby -e`, as `test/js/validator-pin-locks.test.mjs` does) and fixtures, Rails tests for any server change, and a corpus run of the validator over all 176 scenarios with the before and after counts in the build log. Builders run every test file their change touches plus every file that imports a changed module, without the shared lock; the orchestrator runs the full suites once per merge batch.
-- **Merge-batch validator rule.** Each merge batch runs the validator (`--no-graph`, ink on) on every test scenario a merged branch touched and needs 0 `❌` before main moves. After step 1 this is the exit code, and the rule becomes "0 unlisted `❌`" (step 1, the known-failures list).
-- **Live proof** for every engine change (steps 3, 3b and 6b, and any filter fix 6a's scan leads to): a keyless server on the builder's own port, a browser run through the real routes, and `tools/playtest/verify-run.rb` showing progress on the server. Helper tests alone do not count.
-- **No new gems or npm packages.** The validator already has `json-schema`; the server needs nothing new.
+- **Sync size rule (q77).** player_state and any per-game record the client re-sends must change by delta or stay bounded. Steps 1 to 6 add nothing to player_state and no new sync traffic; step 3 removes one key from the bootstrap and changes only which capture secrets and account passwords the server serves, read from the authored scenario per request, with nothing stored. Step 7 adds one integer to `scenario_data` (never to player_state), one integer to the bootstrap and one constant response header. Steps 8a to 8c rename keys inside item copies already stored in player_state, in place, on the server, once per game; a copy keeps its size or gains at most one short key, and nothing is re-sent because of it. Each step's section states its effect.
+- **Tests.** Every step ships with node tests for validator behaviour (`test/js/validator-*.test.mjs`, the `check_*` function called through `ruby -e`, as `test/js/validator-pin-locks.test.mjs` does) and fixtures, Rails tests for any server change, and a corpus run of the validator over every scenario with the before and after counts in the build log. Builders run every test file their change touches plus every file that imports a changed module, without the shared lock; the orchestrator runs the full suites once per merge batch.
+- **Corpus.** 177 `scenarios/*/scenario.json.erb` on b7d500ccf. build/del-scen deletes basic_mission and vm_free_mission, leaving 175; a step that lands after it counts 175.
+- **Merge-batch validator rule.** Each merge batch runs the validator (`--no-graph`, ink on) on every test scenario a merged branch touched and needs 0 unlisted `❌` (the exit code, step 1).
+- **Live proof** for every engine change (steps 3, 6b, 7, 8a, 8b and 8c, and any filter fix 6a's scan leads to): a keyless server on the builder's own port, a browser run through the real routes, and `tools/playtest/verify-run.rb` showing progress on the server. Helper tests alone do not count.
+- **Shared development database.** Every worktree's server uses one development database. A builder never upgrades a game it did not create for its own proof: no sweep (step 7's tool) runs against the development database except with `--dry-run`, and live proofs use games made with `tools/playtest/swap-scenario-game.rb`. A game upgraded by a newer branch refuses to load on older code (step 7), which is the intended, visible failure.
+- **No new gems or npm packages, and no database migration.** The validator already has `json-schema`; `formatVersion` lives inside the `scenario_data` JSON, so no column is added.
 
-## 3. Triage
+## 3. State on main
 
-Run on 2026-11-12 over all 176 scenarios on main 72e26f911, with the merge-batch flags: `LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb <f> --no-graph` (ink compiled and checked; the lint is advisory and prints no `❌`).
+Step 1 is on main (b7d500ccf). The validator exits 1 on any `❌` not in `scripts/validator_known_failures.json`, prints every section, and ends with a `Result:` line. Its corpus run over all 177 templates (`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`, step 1) found 132 `❌` lines: this build's 51 were fixed, and 81 are listed in 22 signed entries owned by the labs track (49 lines), the escape-room track (24) and basic_mission and vm_free_mission (8, removed by build/del-scen with their entries). m01 to m10 print no `❌`.
 
-- **14 scenarios exit 1**: 8 on ink-stage errors (the 6 VM labs below, ceo_exfil, npc-sprite-test2) and 6 on schema errors (section 3.2). test_desk_seating prints its schema error as `✗ Schema validation failed` with no `❌`, which is why the schema failures are counted apart.
-- **105 `❌` lines are printed, in 22 scenarios.**
-- **11 more are hidden** today because the ink stage exits before the common issues (`validate_scenario.rb:6854` on 33c003230): ceo_exfil's 10 `targetKnot` lines and lab_malware_metasploit's task line. Running those 8 scenarios with `--skip-ink` shows exactly these 11 and nothing else. With step 1 printing every section, the count is **116 lines**, plus whatever the 6 schema failures hide (unknown until step 1 prints them).
-- **m01 to m10: 0 `❌`, exit 0.**
-
-For comparison, with `--skip-ink --no-lint` the same corpus prints 62 `❌` lines in 16 scenarios and 6 scenarios exit 1. The ink stage adds 54 lines and 8 exit-1 scenarios.
-
-### 3.1 The 116 lines, by owner
-
-**This build (test and demo scenarios): 41 lines.**
-
-| Scenario | Lines | Message | Verdict |
-|---|---|---|---|
-| test_complex_multidirection | 10 | key lock or key item without `keyPins` | true error |
-| test_multiple_connections | 8 | same | true error |
-| test_mixed_room_sizes | 6 | same | true error |
-| test_vertical_layout | 4 | same | true error |
-| test_horizontal_layout | 4 | same | true error |
-| test_behind_wall_fade | 1 | same | true error |
-| test-rfid-multiprotocol | 2 | NPC `spriteSheet` `hacker-green` and `hacker-yellow` do not exist | true error |
-| npc-sprite-test2 | 2 | `#give_item:keycard` and `#give_item:phone` in the shared `scenarios/ink/helper-npc.ink`, with no matching item in the helper NPC's `itemsHeld` (exits 1) | true error |
-| sis02_energy | 3 | `minigameData` fields `nextTabPrompt`, `nextTabButton`, `completeBanner` undeclared for `log_filter_terminal` | **false positive** |
-| sis01_healthcare | 1 | `interactionWarning` must be an object | **false positive** |
-
-**C3 builder: 2 lines, now fixed on main.** test_access_social: Kim posted from a phone with no Friendface phone, and object id `sign_f14` was used twice. Both were fixed on `build/c3-replies`, which is in main at 33c003230.
-
-**Escape-room track: 24 lines** (the `escape_room` collection). The last change to any of these five `scenario.json.erb` files is df29856c3 on 2026-10-22; a later commit, d6d5d7da2 on 2026-11-06, touched only crypto1's dungeon graph. The owner check uses `git log -1 --format='%h %ad' --date=short main -- scenarios/<dir>/scenario.json.erb scenarios/<dir>/ink` for each scenario; a date after 2026-10-22 means the track is active again.
-
-| Scenario | Lines | Message | Verdict |
-|---|---|---|---|
-| crypto1_captain_meow | 1 | key lock or key item without `keyPins` | true error |
-| crypto2_rsa_asymmetric | 2 | same | true error |
-| crypto3_aes_symmetric | 2 | same | true error |
-| biometric_breach | 5 | same | true error |
-| ceo_exfil | 4 | `#give_item` for keycard, lockpick, phone and workstation in the shared `helper-npc.ink`, with no matching item on the reception NPC (exits 1) | true error |
-| ceo_exfil | 10 (hidden today) | phone NPC eventMapping uses `targetKnot`, which is ignored once a story state is saved | true error |
-
-**Labs track: 49 lines** (the VM labs; every one exits 1 on ink today).
-
-| Scenario | Lines | Message | Verdict |
-|---|---|---|---|
-| lab_exploitation | 13 | `**Heading:**` lines in `instructor.ink` parse as standalone emotes starting with `*` | true error |
-| lab_post_exploitation | 12 | same | true error |
-| lab_vulnerability_analysis | 9 | 7 headings as above, 2 lines containing `//` (ink cuts the rest of the line as a comment) | true error |
-| lab_feeling_blu | 10 | `//` in ink text | true error |
-| lab_vulnerabilities | 3 | `//` in ink text | true error |
-| lab_malware_metasploit | 1 | `//` at `instructor.ink:636` | true error |
-| lab_malware_metasploit | 1 (hidden today) | `npc_conversation` task whose `#complete_task` tag is not in the instructor ink | true error |
-
-Total: 41 + 2 + 24 + 49 = 116, of which 2 are now fixed on main. 112 true errors, 4 false positives.
-
-Notes on the verdicts:
-
-- **keyPins (43 lines).** The README makes `keyPins` required on key locks and key items (README_scenario_design.md:635, 1244). The client's fallback for a lock with none, `generatePinHeightsForLock` (`public/break_escape/js/systems/key-lock-system.js`, reached from `assignKeysToLocks`), declared `const seed` and then ran `seed++`, so it threw "Assignment to constant variable." whenever a held key matched a lock with no `keyPins`. build/keypin-seed (in main) fixes that with `let`. Whether a key cut from the generated mapping always fits the lockpicking minigame's own pins is still unproven, so the rule stays an error and the fix is a `keyPins` array on each lock and its key (the same array on both): one line per lock, nothing a player can see.
-- **ceo_exfil targetKnot (10).** The validator's rule matches the engine: a phone NPC's saved story state wins over `targetKnot` on reopen (README_scenario_design.md:52). The fix is a design edit: each mapping sets a global, and the ink hub gets a conditional option for it, with a `sendTimedMessage` to tell the player.
-- **`#give_item` in the shared helper ink (6).** npc-sprite-test2 and ceo_exfil share `scenarios/ink/helper-npc.ink`. Each scenario fixes its own NPC's `itemsHeld` (or, for ceo_exfil, its owner picks another ink file). Nobody edits the shared ink for one scenario without the other's owner.
-- **The lab ink lines (48).** Mechanical: reword a `//` (for example "slash slash" or a URL without the scheme), and attach each `**Heading:**` to a spoken line. They are labs content, so the labs track makes them.
-- **lab_malware_metasploit task (1).** `objectives[0].tasks[0]` targets `malware_specialist` and waits for `#complete_task:complete_instruction_task`; neither `instructor.ink` nor `instructor.json` has the tag, so the aim can never complete. The fix is one tag at the end of the instruction knot, or a task type that does not need it.
-- **test-rfid-multiprotocol (2).** Only `hacker` and `hacker-red` are loaded (`public/break_escape/js/core/game.js`, the guard sprite list). Swap the two guards to existing sheets.
-- **sis02_energy (3), false positive.** `public/break_escape/js/minigames/log-filter/log-filter-minigame.js` documents and reads all three fields; `scripts/minigame-data-schemas.json` (`log_filter_terminal`) omits them. Add them to its `optional` list.
-- **sis01_healthcare (1), false positive.** The object-level `interactionWarning` (`public/break_escape/js/systems/interactions.js`) is an object, but the EHR minigame's medication rows have their own string field of the same name, tested only for truth (`public/break_escape/js/minigames/ehr-terminal/ehr-terminal-minigame.js`). The validator's walk (`scripts/validate_scenario.rb:2467-2503`) descends into `minigameData`. Stop the walk at `minigameData`.
-
-The orchestrator confirms with each owner before anyone edits their files. The `keyPins` edits are mechanical enough for this build to prepare as a patch the escape-room owner approves; the ceo_exfil design change and the lab ink stay with their owners.
-
-### 3.2 The 6 schema failures
-
-These already exit 1, so the switch does not change their exit code, but step 1 prints every section after a schema failure and they will then show further lines that are hidden today. Step 1 re-triages them.
-
-| Scenario | Schema error | Proposed fix | Who |
-|---|---|---|---|
-| test_desk_seating | room `type` `room_test_desk_seating` not in the 145-entry enum (the map file exists) | add the map to the enum now; step 4 replaces the enum with a file check | this build |
-| test-blockchain-explorer | task `type` `set_global` not in the enum | add it if the objectives code handles it, else change the fixture | this build |
-| test_table_items | an object without `name`, and others | fix the fixture | this build |
-| test-ble-scanner | top-level `name`, `description` and others | fix the fixture | this build |
-| basic_mission, vm_free_mission | top-level `globalItems` and others | the user decides (section 6, q86) | user |
+Step 2 is built on build/harden-step2 and closes the access, network and office-life blocks listed there, including NPC `screenHabit`, `printHabit` and `usbHabit`, object `affordance` (as `#/definitions/affordance`), and the entries of `resources` and `networks`. Steps 8a to 8c rename keys inside these closed blocks (section 4, step 8, "Interaction with step 2").
 
 ## 4. The steps
 
 ### Step 1. The validator's exit code matches its output
 
+Built; on main at b7d500ccf. The specification stays here because steps 3, 6a and 7 reuse its list format, its decisions file and its message rules.
+
 **Why.** `scripts/validate_scenario.rb` exits 1 only for directory, structure, schema, ink-compile, ink-check and graph-key failures (on 33c003230: lines 6748, 6770, 6818 for the schema, 6854 for ink, 7003, 7065, 7076). Every other `❌` is printed and the run ends with `exit 0` ("warnings don't cause failure", lines 7089-7091). On a schema or ink failure it exits early, before the common issues, habits report and work report are printed, so an author meets a second wave of errors after fixing the first. Agents are told to count `❌` lines by hand.
 
 **Change.**
-1. Fix the 4 false positives and the 37 true errors in this build's test scenarios (section 3.1), and the four schema-failing fixtures this build owns (section 3.2).
+1. Fix the false positives and the true errors in this build's test scenarios, and the schema-failing fixtures this build owns (the build log, step 1, lists them).
 2. One label. Every hard finding is `❌ ERROR:`. Today there are `❌ INVALID` (108 sites in validate_scenario.rb), `❌ ERROR` (53 there, 117 in validate_npc_needs.rb) and `❌ SOCIAL` (validate_social.rb). The rename is mechanical and the text after the label stays: social lines become `❌ ERROR: SOCIAL: <text>`, so the existing tests that match `SOCIAL: schema:` keep their match. Tests that match on an old label are updated in the same commit (see Tests, the audit).
 3. Schema errors print as `❌ ERROR: schema: <json pointer>: <message>`, with the opaque schema id removed and, where the pointer reaches a room, object or NPC, its id or name added.
 4. Print every section before deciding the exit code. Neither a schema failure nor an ink-check failure exits early; an ink compile failure still skips the checks that need the compiled JSON, and says so. The common checks assume schema-shaped data (`rooms` a Hash, `objects` Arrays) and today never see data that failed the schema, so each check call runs under its own rescue: one per `common_issues += ...` line (the common stage is 19 such calls, validate_scenario.rb:6949-6970 on 33c003230, including `ValidateNpcNeeds`, `ValidateAccessWork` and `ValidateNpcHabits`) and one per ink, schema, habits, work and social call. An exception prints `❌ ERROR: <check name> could not run: <message>`, counts as an error, marks that stage as not run in full, and the run continues with the next call, so one crashing check never hides the checks after it.
@@ -149,7 +82,7 @@ These already exit 1, so the switch does not change their exit code, but step 1 
 - This build's own fixtures are fixed, never listed.
 - **First contents**, if the owners have not fixed their lines when step 1 lands: the 6 VM labs (labs track, 49 lines in 8 entries, 47 of them `stage: ink`), and the 5 escape rooms (escape-room track, 24 lines in 6 entries). Each with a `reviewBy` the owner agrees and an `approved` heading the orchestrator writes.
 
-**When it lands.** After this build's 41 lines and 4 fixtures are fixed, and with every remaining line either fixed or listed. Step 1's own corpus run produces the list's first contents, so no line is listed by guesswork.
+**When it landed.** After this build's lines and fixtures were fixed and every remaining line was fixed or listed. Step 1's own corpus run produced the list's first contents, so no line was listed by guesswork.
 
 **Tests.**
 - Node: a fixture with one `❌` line from each module (common, ink check, schema, habits, work, social) exits 1; a fixture with only warnings exits 0; a schema failure plus a common issue prints both and exits 1; an ink-check failure plus a common issue prints both; a schema-invalid `rooms` value (a string) prints the schema error and a `could not run` line for each check that raised, then the summary, and exits 1 with no stack trace; the summary line counts correctly; the four false-positive shapes (sis01 medication warning, sis02 fields) pass; a listed failure exits 0 and prints its owner; a stale entry and a short `count` each exit 1; an extra unlisted line exits 1; a listed ink line under `--skip-ink` exits 0 and prints the `not checked` line; the same entry with ink on and the line fixed exits 1 (stale).
@@ -162,6 +95,8 @@ These already exit 1, so the switch does not change their exit code, but step 1 
 
 ### Step 2. Strict keys for the access, network and office-life blocks
 
+Built on build/harden-step2; the build log lists the closed set with each block's schema path.
+
 **Why.** Several of these blocks are open in the schema and the validator's unknown-field pass does not walk them. A misspelt key is silent, and some slips change play: `wifi: { "PSK": ... }` leaves `psk` missing, which means an open network by design; `"downif"` on a resource means the outage never happens; `"autoLockMins"` drops an instant lock. Checked on main: `networks.*` and `networks.*.wifi`, `resources.*`, `policies.*` and NPC `feed` set no `additionalProperties`, and the schema is run with `strict: false` (validate_scenario.rb:224). No main mission uses these blocks, so closing them now costs nothing.
 
 **When it lands.** After build/c3-replies, which declares NPC `feed.order` (read by `lib/break_escape/access_work.rb`, used by 5 test_access_social NPCs). C3 is in main at 33c003230, so the dependency holds; it stays a hard rule for any rebase.
@@ -170,9 +105,9 @@ These already exit 1, so the switch does not change their exit code, but step 1 
 1. In `scripts/scenario-schema.json`, set `additionalProperties: false` with `patternProperties: { "^_": {} }` (so `_comment` keys still pass) on: the entries of `resources`, `networks`, `networks.*.wifi`, `policies`, `accountProfiles` and `roles`; the access list type (`roles`, `people`) wherever it appears (`access`, `for`); each NPC `workarounds` entry; NPC `feed` and its posts; the `grant_foothold` action. These blocks are already closed on main and get only the `^_` pattern where they lack a `_comment` property: NPC `creds`, `habits`, `screenHabit`, `printHabit`, `usbHabit`, `frustration`, each `needs` entry, and object `affordance`. `portSecurity` is a boolean and is left alone. The builder lists the final set in the build log with each block's schema path.
 2. The corpus check, before the commit: every rendered scenario's keys under every block in item 1 are compared with the schema. Expected result: no unknown key. Any hit in a test scenario is fixed here; any in a mission goes to its owner before the block is closed.
 3. The validator rewrites json-schema's own `additionalProperties` message in place, as `❌ ERROR: schema: <path>: unknown key '<k>'`, adding `did you mean '<known>'?` when one known key matches case-insensitively or within edit distance 2. It prints one line per unknown key, never a second line for the same slip. The schema stays the single definition; the pass only words the message.
-4. The hand-kept lists in `check_unknown_fields` (validate_scenario.rb:402) stay for the core kinds, which remain open until q84's closure (section 7).
+4. The hand-kept lists in `check_unknown_fields` (validate_scenario.rb:402) stay for the core kinds, which remain open until the closure (section 7).
 
-**Tests.** Node fixtures for each mutation in the access review's table (`PSK`, `downif`, `autoLockMins`, `lockchance`, `needHome`, affordance `owner`), each exactly one error naming the right key and suggestion; a `_comment` key in each block passes. Corpus run: expected 0 new errors.
+**Tests.** Node fixtures for each slip listed under Why, and the others that change play (`PSK`, `downif`, `autoLockMins`, `lockchance`, `needHome`, affordance `owner`), each exactly one error naming the right key and suggestion; a `_comment` key in each block passes. Corpus run: expected 0 new errors.
 
 **Sync.** No runtime change.
 
@@ -228,13 +163,13 @@ Both are `Set`s of strings probed with `include?`. Step 3 extends both, through 
 - **New:** `CaptureModel.lock_answer?(hard_access_values(data), secret)` and the new `password_opens_lock?`.
 - **Old:** the text of `lib/break_escape/capture_model.rb` at the merge base the branch started from (`git merge-base main build/<step-3 branch>`, recorded in the build log), loaded under another module name. The old hard-access predicate is `old.hard_access_values(data).include?(secret)` exactly, as game.rb:1284 tests it on main; the old account predicate is the old `password_opens_lock?`.
 
-The builder renders and prepares every scenario once (one render each, shared by old and new code), lists every capture writer with an authored secret and no proof (`CaptureModel.capture_writers`) and every account holder (`CaptureModel.account_holder?`) in a scenario where `declares_proofs?` is true, evaluates both predicates old and new, and writes the list and the diff to the build log. It runs over the 176 corpus scenarios plus `scenarios/test_secret_leaks/` (created by this step, rendered from its template with no database row; the live proof below says how it is played):
-- over the 176, the expected diff is empty (no corpus scenario holds a capture or account password equal to a combination, cryptex or untyped door-entry answer);
+The builder renders and prepares every scenario once (one render each, shared by old and new code), lists every capture writer with an authored secret and no proof (`CaptureModel.capture_writers`) and every account holder (`CaptureModel.account_holder?`) in a scenario where `declares_proofs?` is true, evaluates both predicates old and new, and writes the list and the diff to the build log. It runs over the corpus scenarios plus `scenarios/test_secret_leaks/` (created by this step, rendered from its template with no database row; the live proof below says how it is played):
+- over the corpus, the expected diff is empty (no corpus scenario holds a capture or account password equal to a combination, cryptex or untyped door-entry answer);
 - over `test_secret_leaks`, the diff must list exactly the rows the scenario was written to change (its combination capture secret, and whichever account and door-entry cases it carries), named in advance in the build log. That proves the harness can see a change, so the empty corpus diff means something.
 
 Comparing the old and new sets directly says nothing about serving, because they differ by design; the build log records their sizes only as background.
 
-**When it lands.** After build/unlock-gaps-r1 (combination and cryptex lock types, `lock_answer_matches?`) and after step 5 (the server's `flags` shape in the validator); section 5 has the order.
+**When it lands.** After step 5 (the server's `flags` shape in the validator). build/unlock-gaps-r1, which brings the combination and cryptex lock types and `lock_answer_matches?`, is on main. Section 5 has the order.
 
 **Change.** A validator check, `check_secret_leaks`, run on the rendered scenario.
 1. **Collect answers:** `CaptureModel.each_lock_answer` (the whole-tree walk plus door entries) for lock types pin, password, combination and cryptex, keeping each value and its path for the message; top-level `flags` values; task `targetFlags`; flag-station `flags`; `creds.password`; `networks.*.wifi.psk`; capture secrets (`usePayload.secret`, `addCapture.secret`, `capture.secret`).
@@ -242,12 +177,12 @@ Comparing the old and new sets directly says nothing about serving, because they
    - equality with the leaf, after the text forms below;
    - for an answer of 6 or more characters, a whole word inside a string leaf.
 
-   Text forms: a number and its string are equal (`4821` and `"4821"`). A combination answer (a list of integers such as `[12, 30, 5]`) matches an equal array, or a string holding the numbers in order in a common form (`12-30-5`, `12 30 5`, `12,30,5`, `12, 30, 5`). A cryptex answer and a password compare case-insensitively (the server compares a cryptex with `casecmp?`; for the leak check, stricter is safer). The message names both places and points to the decision the author needs (section 6, q85).
+   Text forms: a number and its string are equal (`4821` and `"4821"`). A combination answer (a list of integers such as `[12, 30, 5]`) matches an equal array, or a string holding the numbers in order in a common form (`12-30-5`, `12 30 5`, `12,30,5`, `12, 30, 5`). A cryptex answer and a password compare case-insensitively (the server compares a cryptex with `casecmp?`; for the leak check, stricter is safer). The message names both places and the two ways out: keep the value where the browser does not get it at the start, or mark the match as an acknowledged clue (item 5).
 3. **Random values.** Templates draw values three ways: the binding's `@random_pin` (sis01_healthcare), `Kernel#rand` and `Array#sample` called in the template itself (sis01_healthcare's `itsec_pin` and `clinical_pin`; lab_tesseract_trials' PINs, tokens and hole numbers), and `SecureRandom` (`@random_password`, `@random_code`, tesseract's keys). The check renders the template twice, after `srand(1)` and after `srand(2)` (both `Kernel#rand` and `Array#sample` use the default generator), and reports a match only when the same answer path and leaf path match in both renders. A real copy (a random PIN written into a global) matches in both; a random PIN that equals a year or an amount elsewhere under one seed almost never does under the other; and the result is the same on every run. `SecureRandom` values are 8 or more characters and cannot collide with a short leaf in practice. `ScenarioBinding.render` constructs the binding inside the call (step 5), so `@random_pin`, drawn in `ScenarioBinding#initialize` (mission.rb:338-341 on main), is drawn after the seed; the validator calls `srand` immediately before each `render` and restores `srand(Random.new_seed)` after the second. The binding takes no option and the server never seeds.
 
    Known limit: matching is by path, so a leak whose leaf path itself depends on a random draw is missed. lab_tesseract_trials puts the player's envelope in pigeonhole `kh_hole = rand(2..5)`, so a value copied into that envelope sits at different paths under the two seeds and is not reported. The build log records this; the 6a scan, which renders once with a fixed seed, is the second check.
 
-   Second known limit: the check does not look at fields that ship before they are shown (`revealOnGlobal` objects, `textVariants`, `observationVariants`); section 9 has the detail.
+   Second known limit: the check does not look at fields that ship before they are shown (`revealOnGlobal` objects, `textVariants`, `observationVariants`); section 8 has the detail.
 4. **`requires` with no resolved lock type, and door entries that differ:**
    - resolved to biometric, bluetooth or rfid: an id (a card, fingerprint owner or device), never a secret; no finding;
    - resolved to a secret kind on a door entry that has no `lockType` of its own: an error ("this door entry ships its `requires` because the server filter reads the entry's own `lockType`; set `lockType` on the entry or remove `requires` and let the room carry it"). The corpus has none;
@@ -266,19 +201,19 @@ Comparing the old and new sets directly says nothing about serving, because they
    - **Declared.** Step 3 declares `acknowledgedClues` in the schema: an array of closed objects with `lock`, `in`, `reason` and `approved`, all required strings. The top level is open, but `check_unknown_fields`' known top-level list (validate_scenario.rb:405) would otherwise warn on m06; the key is added to that list too.
    - A match between that lock's answer and a value inside the named object's `minigameData` is reported once as `ℹ️ acknowledged clue: <lock> in <in>: <reason>` and is not an error. An entry that matches nothing is a warning (stale).
    - **Rejected forms.** An entry whose `in` is the lock itself, or an object inside the lock's `contents` at any depth, is an error: the lock's own `minigameData` ships with the room while the lock is still shut, and contents are served only after the unlock, so a marker there is either a leak or not needed.
-   - **The `global:` form** (`"in": "global:<name>"`) waits for q85. Until the user answers (a), the validator rejects it with an error naming q85. If (a) is chosen, the form is accepted and prints as `⚠️ WARNING: acknowledged clue in a global ships at game start: <lock> in global:<name>: <reason>`, never as `ℹ️`. The switch is one constant in the validator, flipped in the commit that records the answer.
+   - **The `global:` form** (`"in": "global:<name>"`) is accepted, for a clue an NPC must say aloud (ink reads globals in the browser), and prints as `⚠️ WARNING: acknowledged clue in a global ships at game start: <lock> in global:<name>: <reason>`, never as `ℹ️`. It is the cheat policy's best effort, as the user decided for m08 (section 6). The switch is one validator constant, `GLOBAL_CLUES_ALLOWED`, set to true by this step; set to false, the form is an error.
    - **Counted and reviewed.** The summary line adds `, <c> acknowledged clues`. A node test over the rendered corpus (`test/js/validator-acknowledged-clues.test.mjs`) checks every entry's `approved` heading and `json` block as step 1's list test does, with the same shared reader, and that no heading backs two entries across the three lists. Each merge batch also greps every merged branch's diff for `acknowledgedClues`, as the second line: an added or changed marker is named in the batch notes and signed off by the orchestrator under its own dated heading.
    - **Not shipped.** `acknowledgedClues` is a top-level key, and the bootstrap's top level is a deny list (`Game#filtered_scenario_for_bootstrap`, game.rb:1094-1186, deletes named keys only), so every `reason` would reach the browser: a spoiler, though not a secret. Step 3 adds `filtered.delete('acknowledgedClues')` there, with a Rails test through the real `GET /games/:id/scenario` route (not the helper alone) and the browser check below. No client code reads the key; the builder records a grep of `public/break_escape/js` for it in the build log.
    - **m06.** m06_follow_the_money needs one entry: its transaction server's `minigameData` lists three `withdrawals[].slot` values (`data_center/objects[0]/minigameData/withdrawals[2,8,12].slot`) equal to the custody console PIN (`data_center/objects[1].requires`). Tracing the withdrawals to the slot is the deduction, shown on screen in the unlocked object, so it is not a leak, and the object is not the lock or inside it. The marker is a one-entry edit to a main mission, made by m06's owner.
 6. **Capture-secret warnings.** main already has, in `check_access_model` (validate_scenario.rb:6233-6268), the warning for a capture secret that is a password or PIN lock code with no `proof` (for `usePayload` and for an `addCapture` mapping). Step 3 does not add it again; with `lock_answer_keys` and `CaptureModel.lock_answer?`, it now also covers door-entry, combination and cryptex answers. The one new warning: a non-account `usePayload` with a `secret` but no `targetId`, and no `addCapture` mapping on its NPC, can never be served (`⚠️ WARNING: <path>: this usePayload secret can never be served`).
 7. **Playtest leak scanner.** `tools/playtest/lib/access_leak_scanner.rb` knows `creds.password` and sign-in PC, profile and locked-container contents. It learns the non-account capture secrets, so every live run checks this class too. A small playtest-tool change with its own fixture.
 
-**Corpus effect.** m08: one error, until the user rules on q85 (section 6). m06: three matches, reported as one acknowledged clue once its owner adds the marker. Neither is fixed by this build. Step 3 lands with m08 in the known-failures list (`stage: common`, owner the m08 owner, pending q85) and with m06's marker in, or m06's three lines listed until it is. Expected warnings: the 15 legacy PCs. The server-side corpus check above records its list and its empty diff.
+**Corpus effect.** m08: one match, the interrogation-suite PIN in the global `suite_code`, which becomes one warning once m08's owner adds a marker `{ "lock": <the suite's room>, "in": "global:suite_code", "reason": <Netherton says the code aloud>, "approved": <heading> }`. m06: three matches, reported as one acknowledged clue once its owner adds the marker. Neither marker is written by this build. Step 3 lands with both markers in, or with each scenario's lines in the known-failures list (`stage: common`, owner that mission's owner) until its marker is. Expected warnings: the 15 legacy PCs. The server-side corpus check above records its list and its empty diff.
 
 **Tests.** Node fixtures:
 - leaks: a PIN copied into a global (string and number), into `minigameData`; a password inside a longer `minigameData` string; a flag answer in a global; a combination as `12-30-5` in a global and as an equal array in `minigameData`; a cryptex answer in a different case; a `rand` PIN written into both a lock and a global (caught under both seeds); a `rand` PIN that equals a four-digit leaf under one seed only (no finding);
 - lock types: `requires` with no `lockType`, locked and unlocked; a door entry with a card id and no `lockType` whose connected room is rfid (no finding: copies of lab_physical_pentest `open_plan/doors[0]` and test_gate_tailgate `office/doors[0]`); a door entry with a PIN and no `lockType` whose connected room is pin (error); a door entry whose `requires` differs from its room's (warning); a door entry `doorway_problem` flags (not resolved); a door entry with `requires` and no lock type anywhere (no "delete it" message); `requires` in `social` (no finding); a clue PIN on a note's `text` (no finding: clues are the game);
-- acknowledged clues: one in `minigameData` (one note, counted in the summary); one with no `approved`, or an `approved` heading whose section names another lock (node test fails); two entries naming one heading (fails); one naming the lock itself (error); one naming an object in the lock's `contents` (error); the `global:` form (error naming q85; with the constant flipped, a warning); a stale marker (warning);
+- acknowledged clues: one in `minigameData` (one note, counted in the summary); one with no `approved`, or an `approved` heading whose section names another lock (node test fails); two entries naming one heading (fails); one naming the lock itself (error); one naming an object in the lock's `contents` (error); the `global:` form (a warning, counted in the summary; with the constant set to false, an error); a stale marker (warning);
 - capture: the new `usePayload` warning and its passing shape; the existing proof warning on a door-entry PIN and on a combination answer (so the call sites at validate_scenario.rb:6242 and 6261 are shown to use the probe); `capture_log_secret_strings` finding a combination, a cryptex and a door-entry answer in `storeIn` text;
 - the walk: a lock inside an action's `give_item`, a flag reward and a timer each reach both sets.
 
@@ -298,29 +233,15 @@ The leak scanner gets a fixture response holding a non-account capture secret.
 - m06 started, `window.gameScenario.acknowledgedClues` undefined after load and after a reload;
 - lab_physical_pentest's shoulder-surf beat played, with the capture secret appearing only from `/capture_secrets` after the capture. This is the no-regression run: Len's records PIN is on a `pin` lock and is withheld on main already;
 - the new withholding: the build's own test scenario (`scenarios/test_secret_leaks/`, created by this step; never test_unlock_gaps, which belongs to the unlock-gaps track) carries an NPC `usePayload` with a `secret` equal to a combination padlock's answer and a `proof`. The run shows the secret absent from every payload and from `/capture_secrets` before the proof, present from `/capture_secrets` after it, and the padlock opening with it;
-- **how test_secret_leaks is played.** It never gets a Mission row: no `bin/rails runner` insert, no `db:seed`, no other database write that creates one. The development database is shared by every worktree, and a seed run from a worktree that lacks another branch's scenario folders offers the orphan delete for those missions (section 6, q86). Its folder holds `scenario.json.erb` and a `mission.json` with `"collection": "testing"`, as test_desk_seating's does. The run uses `tools/playtest/swap-scenario-game.rb`, as the other test scenarios without a row do: `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/swap-scenario-game.rb <host_mission> test_secret_leaks`, with an existing test mission as the host (test_seating, for example). It makes one game row of the host, swaps that row's `scenario_data` for the rendered test scenario, rebuilds its player_state, prints `GAME_ID=<id>`, and aborts if the Mission count changed. The browser opens that game on the builder's keyless server, and `verify-run.rb` reads the same game id. The build log records the command, the host and the game id. Any later test scenario a step adds is played the same way;
+- **how test_secret_leaks is played.** It never gets a Mission row: no `bin/rails runner` insert, no `db:seed`, no other database write that creates one. The development database is shared by every worktree, and a seed run from a worktree that lacks another branch's scenario folders offers the orphan delete for those missions. Its folder holds `scenario.json.erb` and a `mission.json` with `"collection": "testing"`, as test_desk_seating's does. The run uses `tools/playtest/swap-scenario-game.rb`, as the other test scenarios without a row do: `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/swap-scenario-game.rb <host_mission> test_secret_leaks`, with an existing test mission as the host (test_seating, for example). It makes one game row of the host, swaps that row's `scenario_data` for the rendered test scenario, rebuilds its player_state, prints `GAME_ID=<id>`, and aborts if the Mission count changed. The browser opens that game on the builder's keyless server, and `verify-run.rb` reads the same game id. The build log records the command, the host and the game id. Any later test scenario a step adds is played the same way;
 - the comparator, because step 3 is the riskiest step: test_unlock_gaps (read only; its scenario files are not edited) in the browser on the builder's keyless server. Each combination and cryptex lock first gets a blank answer, a malformed answer (for a combination, `"twelve"` or `"12--"`; for a cryptex, a non-letter string) and a wrong answer, and each cryptex also its right word in a different case. The minigames cannot send these: the combination minigame builds its answer from the dials (`_combo()`, combination-minigame.js:201 on e937b75f8, always zero-padded numbers joined by `-`) and the cryptex builds its word from fixed wheel letters (cryptex-minigame.js:207 and 303-308). So they are sent from the page with the client's own `apiClient.unlock(targetType, targetId, answer, method)`, which is the real route with the session and CSRF token and stands as the browser proof. The blank, malformed and wrong attempts are refused, the different-case cryptex word opens its lock as `casecmp?` allows today, and after a reload every refused lock is still shut. Each lock not yet open is then opened with its right answer through the minigame UI. The other written forms (`"L12 R30 L5"`, an array) are covered through the route by the Rails tests. m01's PIN door is opened as a no-regression run;
 - `verify-run.rb` showing progress on the server in each.
 
 **Sync.** The bootstrap loses one key; player_state is untouched.
 
-### Step 3b. Server-held globals (candidate, waits for q85)
-
-Built only if the user picks option (b) in q85. Otherwise m08 is handled by an acknowledged clue (option a) or a writing change (option c), and this step is dropped.
-
-**Change.**
-1. A top-level `serverGlobals` map: `{ "<name>": { "revealWhen": <condition> } }`, where a condition is one the server can check from its own records: a room in `unlockedRooms`, a task completed by a server route, a flag submitted, an item the server put in the inventory.
-2. The bootstrap and every sync answer send `""` for the global until the condition holds, then send the value once, as a delta. A client write to a server-held global is ignored. build/sync-deltas already drops client writes to its server-owned globals (`SERVER_OWNED_GLOBAL_NAMES`, today `se_captures`) and mirrors the server's value into `savedGlobalVariables`; this step extends that mechanism with the declared names instead of building a second one.
-3. Step 3's check accepts an answer held in a declared server global and errors on one that is not declared.
-4. The validator checks that `revealWhen` uses only server-checkable kinds, and that no ink line reading the global can be reached before the condition holds.
-
-**Tests.** Rails: the global is sent empty before the condition, with its value after; a client write is ignored; a reload before and after. Node: the validator rules. Live proof on m08 through to the interrogation suite, with `verify-run.rb`.
-
-**Sync.** One bounded string per declared global, sent once as a delta when revealed; no growth. Only m08 needs it today. Size M.
-
 ### Step 4. Reference and id checks driven by schema annotations
 
-**Why.** Reference checks exist one field at a time, so new fields arrive unchecked. The structure review's mutation test showed an eventMapping `completeTask` naming a missing task passes with no message, and `completeTask`, `unlockTask` and `unlockAim` are typed `{}`. Id uniqueness is checked only for objects directly in `rooms[*].objects` (`ValidateSocial.duplicate_object_ids`, scripts/validate_social.rb:146); duplicates inside `contents` and `itemsHeld` pass. Spot checks confirm the review: `derek_file` appears twice in m09 and `nightshade_payment` four times in m10.
+**Why.** Reference checks exist one field at a time, so new fields arrive unchecked. A mutation test on a copy of m01 showed that an eventMapping `completeTask` naming a missing task passes with no message, and `completeTask`, `unlockTask` and `unlockAim` are typed `{}`. Id uniqueness is checked only for objects directly in `rooms[*].objects` (`ValidateSocial.duplicate_object_ids`, scripts/validate_social.rb:146); duplicates inside `contents` and `itemsHeld` pass. Spot checks confirm the review: `derek_file` appears twice in m09 and `nightshade_payment` four times in m10.
 
 **Change.**
 1. A schema annotation `"x-ref": "<kind>"` on every property that names something: `room`, `npc`, `object`, `item`, `task`, `aim`, `global`, `lock` (a key lock's name), `network`, `resource`, `policy`, `role`. Arrays of references carry it on `items`. Type `completeTask`, `unlockTask`, `unlockAim` and `skipTask` as a string or array of strings with `x-ref`.
@@ -332,7 +253,7 @@ Built only if the user picks option (b) in q85. Otherwise m08 is handled by an a
 
 **Promotion to errors.** After the 5 scenarios with duplicate ids are fixed: m09_digital_archaeology and m10_full_disclosure (main missions: their owners), lab_tesseract_trials (labs track), npc-hub-demo-ghost-protocol (this build: a demo) and test_access_social (this build). The promotion is one commit that flips the level and runs the corpus. The builder checks whether the server's unlock lookup (first hit by id) makes any of these duplicates a live bug and, if it does, reports it to the owner as a bug, not a nit.
 
-**Tests.** Node fixtures for each kind (a missing task in `completeTask`, a missing aim, a missing global in a condition, a missing network on a room), duplicates in `contents` and `itemsHeld`, an engine-written global accepted, and the structure review's whole mutation set re-run as one fixture with every finding expected. Corpus: counts of the new warnings per scenario in the build log.
+**Tests.** Node fixtures for each kind (a missing task in `completeTask`, a missing aim, a missing global in a condition, a missing network on a room), duplicates in `contents` and `itemsHeld`, an engine-written global accepted, and a copy of m01 with six slips as one fixture, every finding expected: a misspelt room field `lockedd`, a misspelt `requries` on a PIN safe, `onRead.setGlobal` for `setVariable`, an eventMapping `completeTask` naming a missing task, a `triggerOnInteract` `unlock_door` to a missing room and a task `targetRoom` to a missing room. Corpus: counts of the new warnings per scenario in the build log.
 
 **Sync.** No runtime change.
 
@@ -367,7 +288,7 @@ Left out, with reasons:
 2. Add `json(value)`: returns `value.to_json`, for `"title": <%= json(title) %>`. Document it in the README's ERB section beside `.to_json`.
 3. Replace each copy as the table says.
 
-**Tests.** Rails unit test of each helper (`vm_object`, `flags_for_vm`, `flags_for_vm_slice`, `vm_flags_json` with and without a context, `json` with quotes, backslashes and non-ASCII). A test that `Mission::ScenarioBinding` is the lib class. A node test that each Python and JS caller renders m01 identically to the lib class. Corpus: render all 176 scenarios with random values stubbed, before and after; the JSON is identical except the top-level `flags` of the 11 `vm_flags_json` users, which now match the server. Dungeon graphs of those 11 before and after, kept in the build log (the graphs are not committed). Validator over m01 to m10 before and after: `check_vm_flags_load_bearing` sees a Hash for the first time, so its warnings will change. Each change is recorded in the build log with a verdict (a real finding for the mission's owner, or a check bug fixed here); none is called a bug by default.
+**Tests.** Rails unit test of each helper (`vm_object`, `flags_for_vm`, `flags_for_vm_slice`, `vm_flags_json` with and without a context, `json` with quotes, backslashes and non-ASCII). A test that `Mission::ScenarioBinding` is the lib class. A node test that each Python and JS caller renders m01 identically to the lib class. Corpus: render every scenario with random values stubbed, before and after; the JSON is identical except the top-level `flags` of the 11 `vm_flags_json` users, which now match the server. Dungeon graphs of those 11 before and after, kept in the build log (the graphs are not committed). Validator over m01 to m10 before and after: `check_vm_flags_load_bearing` sees a Hash for the first time, so its warnings will change. Each change is recorded in the build log with a verdict (a real finding for the mission's owner, or a check bug fixed here); none is called a bug by default.
 
 **Sync.** No runtime change (the server's output is unchanged by construction).
 
@@ -396,10 +317,10 @@ Built in two parts, each size M and each its own branch and merge batch: **6a-1*
   - `networks`, `networkLinks` and `resources` (the whole keys `NetworkAccess::WITHHELD_SCENARIO_KEYS` deletes; none of them ships today): `x-serverOnly`, `"x-servedBy": ["GET /network", "GET /container"]`;
   - `roles` and `flags`: `x-serverOnly`, served by no route.
 - **Precedence under a server-only ancestor.** A leaf under a server-only ancestor, on a route the ancestor's `x-servedBy` names, is classed by its own field (classes 2 to 4 below), not passed by the ancestor's mark. A leaf on a route the ancestor does not name is class 1. So an answer under an undeclared key in a profile served by `GET /container` still fails (class 4), and a profile's `text` there passes (class 3). The same rule applies inside the NPC records below.
-- Whole-record rules: NPC `creds`, `role`, `awareness`, `habits`, `workarounds`, `workNeeds`, `frustration`, `feed`, `usbHabit`.
+- Whole-record rules: NPC `creds`, `role`, `awareness`, `workarounds`, `workNeeds`, `frustration`, `feed`, and `habits` except `habits.screen` and `habits.print`, which ship (step 8c; `habits.usb` ships only inside the work plan, as `work.usb`).
 - The feed fields the server serves once a post is revealed, `SocialFeed::POST_KEYS` (`app/models/break_escape/social_feed.rb:25`: `id`, `text`, `fact`, `date`, `note`, `replyTo`), and the `social.intelFacts` entry a post's `fact` names, carry `"x-servedBy": "feedPosts"` inside the server-only `feed` record.
 - **A written-down password.** `GET login_accounts` builds a note `"<username> / <creds.password>"` when the PC's owner writes the password down (`written_down?`, game.rb:1876-1880: `habits.writesDown`, or a `writes_down` workaround done; the note is built at games_controller.rb:1185-1186). So `creds.password` (inside the server-only `creds` record) carries `"x-servedBy": { "route": "GET /login_accounts", "key": "postitNote" }`: the allowance covers that answer's `postitNote` key only, and the same password in a tile's other keys, or on any other route, still fails. An authored `postitNote` on a sign-in PC is a different case: `login_postit_for` (game.rb:1886-1898) returns nil whenever the PC authors a non-empty `postitNote`, so the constructed note is suppressed, and the authored note ships in the room payload, where it is class 3.
-- Every top-level key the corpus uses is declared. Ten are undeclared today; `acknowledgedClues`, an eleventh, is already declared by step 3. Each of the ten is declared with its type and a description naming its readers on main; whether it ships (`x-client`) is 6b's decision, taken from this table:
+- Every top-level key the corpus uses is declared. Nine are undeclared today; `acknowledgedClues` and `formatVersion` are already declared, by steps 3 and 7. Each of the nine is declared with its type and a description naming its readers on main; whether it ships (`x-client`) is 6b's decision, taken from this table:
 
 | Key | Scenarios | Readers on main |
 |---|---|---|
@@ -409,11 +330,11 @@ Built in two parts, each size M and each its own branch and merge batch: **6a-1*
 | `importGlobals` | 23 | server only, at creation (`carry_over.rb`) and in TTS extraction (`tts_line_extractor.rb`) |
 | `description` | 4 | none |
 | `name` | 3 | client: `npc-needs.js:5234` (seed fallback after `npcNeedsSeed` and `scenario_name`) |
-| `globalItems` | 2 (basic_mission, vm_free_mission) | none (q86) |
 | `validSprites` | 2 (m01, lab_tesseract_trials) | server only (`avatar_unlocks.rb`, the player preferences controller) |
 | `timedMessages` | 1 (timed_messages_example) | none at the top level (the NPC manager reads each NPC's own `timedMessages`) |
 | `showTitleScreen` | 1 (title-screen-demo) | none (`main.js` starts the title screen unconditionally) |
-| `acknowledgedClues` | 1 once m06's marker lands | none; declared and deleted from the bootstrap in step 3 |
+| `acknowledgedClues` | 2 once m06's and m08's markers land | none; declared and deleted from the bootstrap in step 3 |
+| `formatVersion` | none (the server stamps every game; templates never carry it) | server (step 7); the client's reload check |
 
 The three scenarios with a top-level `name` (test-ble-scanner, test-rfid-multiprotocol, test-rfid) have no needs NPCs, so the seed fallback changes nothing today; it would for a future needs scenario that relies on it.
 
@@ -446,8 +367,7 @@ The three scenarios with a top-level `name` (test-ble-scanner, test-rfid-multipr
 - A passed `reviewBy` warns, and fails under `MERGE_BATCH=1` (step 1's rule).
 - The merge-batch diff and the AGENTS.md line (step 1, item 9) name this file, so an added entry gets the same sign-off as a known failure.
 
-Expected first entries, both fresh-state findings and neither a reason to start 6b:
-- m08_the_mole's `suite_code` global (scenario.json.erb:117), a class 2 finding in the bootstrap, pending q85, with a `reviewBy` tied to that answer;
+Expected first entries, fresh-state findings and not a reason to start 6b (m08_the_mole's `suite_code` global is not an entry: class 2 follows step 3's rule, acknowledged clues included, so it passes once m08's `global:` marker is in):
 - the 15 legacy unlocked PCs in ceo_exfil and crypto1 to crypto4, which ship `"requires": "password"` today because the filter removes `requires` only when a `lockType` is present (games_controller.rb:1930-1932) and the fail-closed rule marks it secret: one entry per scenario, its `paths` listing that scenario's PCs, with a `reviewBy` the owners agree, until they delete the inert field (step 3 warns about it).
 
 **Run time.** The build log records the scan's run time over the corpus (6a-1) and again with the opened state (6a-2). If either exceeds about two minutes, the file is tagged out of the default `bin/rails test` run, and the orchestrator runs it at each merge batch; builders run it alone when their change touches a filter, a payload route or the schema's marks.
@@ -506,7 +426,7 @@ Any field that reaches the browser but should not, in either state, on these rou
 Starts only if the 6a-2 opened-state scan finds a filter gap, or when a new secret-bearing block is added to the format. Its first commit is the preparation below; the serialiser follows.
 
 **Preparation.**
-- `"x-client": true | false` on every top-level authored property, decided from 6a's table: **true** for `scenario_name` and `name` (both seed office life, and `scenario_name` names the mission), false for the other nine. All of them ship today, because the bootstrap's top level is a deny list, except `acknowledgedClues`.
+- `"x-client": true | false` on every top-level authored property, decided from 6a's table: **true** for `scenario_name` and `name` (both seed office life, and `scenario_name` names the mission) and `formatVersion` (the client's reload check), false for the other eight. All of them ship today, because the bootstrap's top level is a deny list, except `acknowledgedClues`.
 - **Server-added bootstrap keys.** After `filtered_scenario_for_bootstrap`, the controller's `scenario` action adds 26 top-level keys (games_controller.rb:293-408: `objectivesState`, `scenarioBriefShown`, `submittedFlags`, `wornItem`, `savedGlobalVariables`, `savedNotes`, `savedBiometricSamples`, `savedNpcInkVariables`, `savedTriggeredEvents`, `savedTimedMessages`, `savedScenarioClock`, `commandBoard`, `savedCommandBoardLog`, `savedNpcVisibility`, `savedNpcHostility`, `savedPlayerHealth`, `savedPhoneState`, `savedMailState`, `sessions`, `signedInPcs`, `footholds`, `gainedFootholds`, `npcFrustration`, `feedPosts`, `lockoutPcs`, `playerInventory`), and the model adds `characterSprites` (game.rb:1101). None is authored and none belongs in the schema. They go in a constant, `SERVER_BOOTSTRAP_KEYS`, defined beside the controller code that adds them. A new server-added key goes into that constant in the same commit that adds it. A node test collects every `filtered['<k>'] =` assignment in the controller's `scenario` action and in `filtered_scenario_for_bootstrap`, drops any key the schema declares at the top level (the model's `objectives` assignment, game.rb:1149, is authored and declared), and checks that the remainder equals the constant, so a key added without the constant fails.
 - **Node, top-level client-read scan.** Bound names are collected per file, never across files:
   - *Assignment pass:* in each file of `public/break_escape/js`, every identifier bound to `window.gameScenario` or `window.gameState.scenario`, including `this.<name> =`, destructuring (`const { rooms } = window.gameScenario`) and aliases of `window` itself (`const w = window`, then `w.gameScenario`). On main these include `scenario` (`main.js:178`, `core/player.js:203`, `door-gaps.js:11`), `gameScenario` (`core/game.js:1666`, `core/rooms.js`, `collision.js:157`, `minigame-starters.js`), `this.scenario` (`person-chat-minigame.js:55`) and `w` (`npc-needs.js`, `consumables.js`).
@@ -535,22 +455,187 @@ Door entries resolve their lock type from the connected room before the `require
 
 **Sync.** Payloads shrink or stay the same; player_state is untouched.
 
+### Step 7. `formatVersion` and the load-time upgrader
+
+**Why.** A game stores the rendered scenario at creation (`before_create :generate_scenario_data`, game.rb:33; `Game#generate_scenario_data`, game.rb:4992 on b7d500ccf), and the access loader `prepare_scenario_data!` (game.rb:1097 on b7d500ccf) runs only then. A stored game keeps the names the format had on the day it was made, so every reader must accept every old spelling for as long as old games exist; the `key_id` to `opens_lock` fallbacks in `window.lockRef` and `lib/break_escape/item_identity.rb` show the cost. An ordered list of upgrade steps keyed on a version number lets every reader see only the current names. Step 7 builds the mechanism with no renames, so it is proven on its own before step 8a puts the first rename in it.
+
+**formatVersion.**
+- A top-level integer in `scenario_data`. 0 is the format before step 8a: every game created before step 7, and any data with no field. Step 8a makes it 1, 8b 2, 8c 3. Each later change that renames a stored field adds one.
+- `BreakEscape::FormatUpgrade::CURRENT` (in `lib/break_escape/format_upgrade.rb`) is the code's version. Step 7 lands it as 0.
+- Templates never carry it. A rendered template already has the current names (the validator rejects retired keys, below), so the server stamps the number. The validator errors on a template that sets `formatVersion` ("the server stamps formatVersion at creation; remove it").
+- Stamped at creation: `Game#generate_scenario_data` sets it to CURRENT after `prepare_scenario_data!`. When the caller supplies `scenario_data` (the method returns early when it is present, which tests use), a `before_create` stamps CURRENT if the field is absent; an upgrader test that wants an old game sets `formatVersion: 0` itself. `tools/playtest/swap-scenario-game.rb` stamps CURRENT on the data it swaps in, and gains `--rendered <file>` and `--format-version <n>` so a live proof can play an old game (step 8).
+- Declared in the schema as a top-level integer, minimum 0, and shipped in the bootstrap, because the client's reload check reads it (6b marks it `x-client: true`).
+
+**The upgrader.** `lib/break_escape/format_upgrade.rb`, plain Ruby (no Rails), required with the guarded form the other lib files use.
+- `STEPS`: an ordered list, one entry per version: `{ version:, name:, scenario: ->(data) { ... }, player_state: ->(state) { ... }, retired: [{ path:, key:, now: }] }`. Both transforms change their argument in place, are idempotent, and leave data that already has the new names unchanged. `retired` lists the keys the step removes, the path pattern where each lived and its new spelling; the validator and step 2's message read it.
+- `ALIASES`: old keys a deployed scenario still uses, each with the step that retired it. Empty (section 1). An alias would be applied to a freshly rendered template at creation, between `mission.generate_scenario_data` and `prepare_scenario_data!`, and by the validator and `scripts/generate_dungeon_graph.rb` on their rendered copies (one call, `FormatUpgrade.apply_aliases!`). Those are the only places an old name would be read; no reader in the engine JS, Rails or the validator's checks keeps a fallback, because every copy they see has passed through one of them or through the load-time upgrade.
+- `upgrade!(data, state)`: reads `data['formatVersion']` (absent is 0), runs each step above it in order on both, sets `formatVersion` to CURRENT and returns the names of the steps it ran. A stored version above CURRENT raises `FormatUpgrade::TooNew`.
+- `retired_keys_in(data)`: every retired key present in rendered data, with its path and new name.
+
+**Two data shapes.** A stored game holds prepared data (`prepare_scenario_data!`: `normalise_access_model!`, `stamp_scenario_object_ids!`, `NpcHabits.expand!`, which writes filled habits into the data). Each step is written against raw-shaped fields and must also accept prepared data. After the steps run at load, `prepare_scenario_data!` runs again (it is idempotent); each step's tests show that upgrading prepared data and preparing again gives the same result as preparing the new template.
+
+**When it runs.**
+1. **At load, on the server, always.** One helper, `Game#ensure_current_format!`, runs `with_lock { reload; upgrade if still old; save }` when the stored version is below CURRENT. It is called from `set_game` (games_controller.rb:1761 on b7d500ccf, a plain `Game.find` today) and from every other path that reads `scenario_data` without `set_game`. The builder lists those paths (`grep -rn scenario_data app lib`) in the build log, each either calling the helper or shown not to read a renamed key; Hacktivity code that reads a game's `scenario_data` is listed the same way, read only, and any Hacktivity reader of a renamed key goes to the user before step 8a lands. `with_game_lock` covers only some routes (games_controller.rb:93) and leaves out `show` and `scenario`, which run first on a load, and the client fetches rooms while the bootstrap is in flight; the row lock and the reload inside it mean a second request finds the work done. A game already at CURRENT costs one integer comparison.
+2. **`sync_state` never upgrades.** It loads only `SYNC_STATE_COLUMNS` (games_controller.rb:1784 on b7d500ccf) and never reads `scenario_data`. It takes the same row lock (`Game.lock.select`), so a sync and an upgrade never interleave: the sync writes either before the upgrade, which then sees its write, or after it, on upgraded player_state. No step renames anything a sync writes (globals, NPC state, timers, clocks); each step's section confirms this for its keys.
+3. **A tool, optional.** `tools/format/upgrade_games.rb`, run with `bin/rails runner`, walks games in batches of 100, each through the same helper under its own row lock. `--dry-run` reports counts per stored version and per step and writes nothing. It lets a release upgrade games before players load them; load time stays the guarantee. It never runs without `--dry-run` against the shared development database (section 2).
+4. **The validator and the dungeon graph** render templates, which carry current names, so they run no step. The validator calls `retired_keys_in` (below).
+
+**Refusal.** A stored `formatVersion` above CURRENT (code rolled back after games were upgraded, or an older worktree opening a game a newer branch upgraded) does not load: `set_game` answers 409 with "This game was saved by a newer version of Break Escape (format <n>; this server reads up to <m>)", and the game page shows that text. Nothing is written.
+
+**The client.**
+- The bootstrap carries `formatVersion`.
+- Every response from a games route carries the header `X-Break-Escape-Format: <CURRENT>`. The client's API wrapper (`public/break_escape/js/api-client.js`) compares it with the bootstrap's `formatVersion` on every response and, on a difference, stops saving and reloads the page once (a session flag stops a loop). A tab opened before a release that upgrades its game picks up the new names this way: its next request after the upgrade sees the new number, whether that is a sync, a room fetch or a container fetch.
+- A tab running code from before step 7 has no such check. For the four deployed scenarios this costs nothing, since steps 8a to 8c change none of their data; it is still the reason step 7 should reach a release before step 8a (section 5).
+- No upgrade runs on the client, and the client sends nothing new.
+
+**The validator.**
+- `check_retired_keys`: one error per key `retired_keys_in` finds, `❌ ERROR: <path>: '<old>' was renamed to '<new>' in format <n>`, unless `ALIASES` holds it (then a warning naming the deployed scenario that keeps it). The core kinds are open, so step 2's closed-block message does not reach a retired key on an object, item or NPC; this check does.
+- In a block step 2 closed, a retired key also fails the schema. Step 2's formatter reads `retired` and, for a retired key, prints the rename line instead of its `unknown key` line, so one slip prints one line.
+- An error for a template that sets `formatVersion`.
+
+**Tests.**
+- Rails unit (`test/unit/format_upgrade_test.rb`): `upgrade!` with no steps stamps CURRENT and changes nothing else; a fixture step list (two toy steps defined in the test) runs in order from the stored version, is idempotent, and leaves current data unchanged; an absent field reads as 0; above CURRENT raises; `retired_keys_in` finds a key at depth.
+- Rails model: creation stamps CURRENT; supplied data without the field is stamped; supplied data with `formatVersion: 0` keeps 0.
+- Rails controller, with the fixture step list: a game at 0 is upgraded and saved once on `GET scenario`; two concurrent first requests (`show` and `room` on two threads) upgrade once (a counter in the fixture step); a game above CURRENT gets 409 with the message on `show`, `scenario` and `room`, and nothing is written; every games route sends the header; `sync_state` on a game at 0 succeeds and leaves `scenario_data` untouched.
+- Rails, the alias rule: the four deployed templates, rendered as step 3 renders (seeded), hold no retired key outside `ALIASES`; with a fixture step that retires a key one of them uses, the test fails and names the scenario and key.
+- Node (jsdom): the API wrapper reloads once on a header that differs from the bootstrap's `formatVersion`, not on an equal one, and not twice.
+- Node: `check_retired_keys` with a fixture step list (one error per key, with the new name; a warning for an aliased key); a template with `formatVersion` errors.
+- The tool: `--dry-run` over a test database holding games at 0 and at CURRENT reports both and writes nothing.
+
+**Live proof.** A keyless server on the builder's port: a game made on the branch (stamped 0, CURRENT being 0) played through m01's PIN door, with `verify-run.rb`; a swap-tool game whose stored `formatVersion` is set to 1 shows the refusal page and is left unchanged.
+
+**Sync.** `formatVersion` is in `scenario_data`, written once at creation or upgrade. The bootstrap gains one integer and each response one constant header. player_state is untouched.
+
+### Step 8. The access and office-life consolidation (8a, 8b, 8c)
+
+Three steps, each its own branch and merge batch, each one format version. This part holds what they share.
+
+**Each step ships in one branch:** the schema change; every reader in Rails, `lib/`, the engine JS, the validators and the dungeon graph, reading only the new names; one `FormatUpgrade` step (CURRENT plus one), whose `scenario` and `player_state` transforms upgrade stored games and whose `retired` list feeds the validator; the rewrite of every template that uses an old name; every test fixture moved to the new names (`test/support/*_scenario.rb`, `test/js/fixtures/`, inline fixtures); the README sections for those fields.
+
+**The template rewrite.** `tools/format/rewrite_templates.rb --step <version>` edits each `scenario.json.erb` that holds a retired key. It edits template text, never re-serialised JSON, so the diff shows only the moved keys. It masks each `<% %>` tag (same length) before scanning, finds each affected key by its JSON path in the masked text and rewrites that span. To keep one definition of the change, it takes the target from the step's own `scenario` transform applied to the rendered data, then edits the text to match. A key it cannot map to one span (inside an ERB loop, say) is listed with its path and edited by hand; the corpus check proves both. Among the affected templates only lab_physical_pentest (124 ERB tags) and test_capture_log (1) contain ERB.
+
+**The corpus equivalence check.** Run before the commit, recorded in the build log. Every template is rendered from the merge base the branch started from and from the branch, with `srand(1)` before each render and `SecureRandom` stubbed to a fixed sequence (as step 5's corpus run stubs random values). For every scenario:
+- the step's `scenario` transform applied to the old render equals the new render, compared as parsed JSON with key order ignored. The template rewrite and the stored-game upgrade therefore agree, and nothing changed except the step's keys;
+- a scenario with no retired key renders identically before and after;
+- `prepare_scenario_data!` on each side (a model built with the data supplied, never saved) gives results that agree the same way, so the loader's fills agree;
+- `retired_keys_in` finds nothing in any new render.
+The build log lists each moved key per scenario with its count.
+
+**Reader parity.** Equal keys are not enough where a reader derives something: an owner from `needsHome`, a lock rule, an outage condition. The old reader is loaded from the merge base under another module name (as step 3 loads the old `CaptureModel`) and run on the old render, the new reader on the new render, and the derived values must match for every object or NPC; the build log holds the list. The JS readers get the same check in a node test that loads the old module text from `git show <base>:<path>` into a temporary directory.
+
+**Stored games.** At load the step's `scenario` transform runs on prepared data, then `prepare_scenario_data!` again (step 7). The `player_state` transform renames the same keys inside item copies the server stored: `player_state['inventory']` (`add_inventory_item!`, game.rb:170, stores the server's filtered copy of the scenario item), `room_states.*.objects_added` (`add_item_to_room!`, game.rb:415) and any other list of item hashes the builder finds (`droppedItems`, `copiedItems` and `serverClones` are candidates; the build log records the grep). Renames happen in place; a copy gains at most the one key the step writes.
+
+**The stored-game live proof.** Each step plays one beat on a game that holds old names. The swap tool loads the merge base's render of the scenario (`--rendered <file> --format-version <CURRENT minus 1>`) into a new game row, with player_state seeded to hold the step's item where it has one. The run shows the game upgraded on its first load (`formatVersion` now CURRENT and the old keys gone, read with `bin/rails runner`) and the beat behaving as before, with `verify-run.rb` showing progress.
+
+**Interaction with step 2.** Step 2 closes `affordance`, the entries of `resources` and `networks`, and NPC `habits`, `screenHabit`, `printHabit` and `usbHabit`. Steps 8a to 8c each land after step 2 and edit those closed definitions in the same commit as the rename: the new key is declared and the old one removed, so a template that still has the old key fails the schema with step 7's rename line. Step 2's corpus test (no unknown key in any closed block) keeps passing because the template rewrite is in the same commit. Landing a step 8 before step 2 would mean adding new keys to open blocks and then closing blocks that hold them; the order in section 5 avoids it.
+
+**Interaction with steps 4 and 6a.** Step 4's `x-ref` marks go on the new names: `owner` (`npc`) and `offWhen` (`global`, on the names inside the requireGlobal form). Whichever lands second adds them. 6a-1 lands after 8c, so its server-only marks name current fields only (8c says what ships of `habits`).
+
+### Step 8a. One outage field (format 1)
+
+**Why.** An outage is two fields with two grammars. `downIf` on a network or resource takes a bare global name; `offWhen`, inside an object's `affordance`, takes the requireGlobal form (a name, truthy, or `{ name: value }`, all must match). `offWhen` sits in the block that describes what NPCs do at an object, yet it governs the player too: a sign-in PC whose `offWhen` holds refuses sign-in, serves no share and relays no pivot. An object with `affordance: false` has nowhere to put it.
+
+**Change.**
+- `affordance.offWhen` moves up to the object: `offWhen`, same form.
+- `downIf` on `networks.*` and `resources.*` becomes `offWhen`, in the requireGlobal form. A bare name keeps its meaning (the global is truthy), so every corpus value carries over as it is, and the object form becomes possible on networks and resources.
+- The server's two failure causes stay (`down` for a network or resource, `off` for an object). They say where the outage sits and are recorded per event, not stored.
+- The work plan the server sends with an NPC (`compile_npc_plan!`; see the comment above `WITHHELD_WORK_NPC_KEYS`, game.rb:4942 on b7d500ccf) carries `downIf` names today. It carries `offWhen` values instead, and the client checks them with the needs system's requireGlobal check.
+- Readers moved (the grep for `downIf` and `offWhen` on b7d500ccf): `app/models/break_escape/network_access.rb`, `social_feed.rb` and `game.rb`; `lib/break_escape/access_work.rb` and `network_model.rb`; `public/break_escape/js/systems/npc-work.js`, `npc-needs.js`, `npc-reports.js`, `unlock-system.js` and `minigames/container/container-minigame.js`; `scripts/validate_network.rb`, `validate_access_work.rb`, `validate_npc_needs.rb` and `generate_dungeon_graph.rb`. Every reader of a network or resource outage that took a bare name takes the requireGlobal form, through one shared helper per language (the needs system's in JS, one in `AccessWork` in Ruby).
+- Retired: `networks.*.downIf`, `resources.*.downIf`, `affordance.offWhen` at any depth.
+
+**Scenarios.** test_access_networks (1 `downIf`, 1 `affordance.offWhen`), test_access_social (5, 2), test_access_work (7, 1), test_needs_sims (0, 3). None contains ERB.
+
+**Stored games.** The step moves the same keys in `scenario_data`. An item copy in player_state with an `affordance.offWhen` (a takeable machine) has it moved up a level, same size. Nothing a sync writes changes: outage switches are globals, and globals keep their names.
+
+**Tests.**
+- Unit: the step on raw and on prepared data; idempotent; a no-op on format-1 data. A network and a resource with `offWhen: { name: value }`, which `downIf` could not express, go down only when the value matches (Rails and node).
+- Every existing outage test moved to the new names and passing, among them `network_outages_test.rb`, `network_host_service_off_test.rb`, `npc_frustration_test.rb`, `access_work_test.rb`, `network_model_test.rb`, `npc-coffee-off.test.mjs`, `npc-printer-power.test.mjs`, `npc-needs-work.test.mjs`, `npc-work.test.mjs`, `dungeon-graph-networks.test.mjs`, `dungeon-graph-workarounds.test.mjs`, `validator-network-model.test.mjs` and `validator-access-work.test.mjs`; the grep lists the rest.
+- Validator: `downIf` on a network and on a resource, and `offWhen` inside `affordance`, each print one rename error; an `offWhen` naming an undeclared global keeps today's warning.
+- Corpus equivalence, and reader parity on the outage condition of every network, resource and object.
+
+**Live proof.** test_access_networks: the network's outage global switched on and off, a host leaving and returning; test_access_work: a printer outage turning an NPC back and a work failure with cause `down`; the stored-game proof on test_access_work through the same outage.
+
+**Sync.** No new state; item copies keep their size.
+
+### Step 8b. One owner field (format 2)
+
+**Why.** Who owns a thing is spelt five ways on objects and items, and where none is written a movement field decides. `needsHome` says where an NPC idles, and by default also who owns the PC there, whose lock habit applies, where a written-down password appears and which PC an account belongs to: `AccessIdentities.owner_id` (`lib/break_escape/access_identities.rb:228` on b7d500ccf) and the client's `ownerOf` (`public/break_escape/js/systems/workstation-state.js:116`) both take `screenOwner`, else the first NPC whose `needsHome` is the object. Moving an NPC's idle spot changes ownership.
+
+**Change.**
+- `owner`: an NPC id, or a list of them, on objects and items. `private: true` at object level, from `affordance.private`: only the owners' needs use the object, and deliveries (`accepts`) still go to it, as today.
+- Each old field becomes `owner`. The kind of object says what owning it means:
+
+| Old | On | Kind |
+|---|---|---|
+| `screenOwner` | object | a workstation (`workstation: true`, `lockChance`, `locksScreenOnLeave` or `lockType: "login"`, as today) |
+| `affordance.owners` | object | a private object (`private: true`) |
+| `phoneOwner` | object | a desk phone, now marked `deskPhone: true`; today the presence of `phoneOwner` is the only marker (`npc-needs.js`, `npc-action-icons.js`, `office-room-tone.js`, `owner_claim.rb`) |
+| `phoneOf` | item | a Friendface phone (type `phone_friendface`, as today); no `owner` still means the player's own phone |
+| `leftBehindBy` | item | a left-behind item, now marked by `leftBehindChance`, which becomes required for one; the rewrite writes `leftBehindChance: 0` where it was absent, today's default |
+
+- `needsHome` means movement only: where the NPC idles and returns, and the station where it works. The print habit's fetch target and the USB habit's station stay on it, because they are about where the NPC is. No reader derives an owner from it. The rewrite and the upgrade write an explicit `owner` wherever the old rule derived one, so nothing changes in play.
+- An explicit owner field beats a derived owner, as today. An object whose old fields name two different owners (`screenOwner` against `affordance.owners`) is a conflict the script reports and the builder settles with the scenario's owner; the builder records whether any exists (none is expected).
+- Readers moved: `AccessIdentities.owner_id`; `OwnerClaim` (`lib/break_escape/owner_claim.rb`, which also reads `phoneOwner`); `NpcHabits.owned_workstations`; `AccessWork`; `SocialFeed` (`phoneOf`, social_feed.rb:297 on b7d500ccf); `Game` (the written-down note, a Friendface phone taken); `GamesController` (a found item's `phoneOf`, games_controller.rb:2386); `workstation-state.js`, `npc-needs.js` (private use, desk phone, left-behind items), `npc-action-icons.js`, `office-room-tone.js`, `left-card-consequence.js`, `friendface-phone.js`; `validate_access_work.rb` (the `writes_down` workaround's owner, today `screenOwner` else the first NPC with the object as `needsHome`), `validate_npc_needs.rb`, `validate_npc_habits.rb`, `validate_network.rb`, `validate_scenario.rb`; `tools/playtest/verify-run.rb`.
+- **A forgeable field.** `CLIENT_ITEM_FORBIDDEN_FIELDS` (games_controller.rb:2246-2253 on b7d500ccf) holds `phoneOf`, because a client-built item that names an owner could mint a Friendface phone. `owner` joins it. `phoneOf` stays in it, so a tab still running old code cannot send it either.
+- The validator warns on a workstation or private object with no `owner` when an NPC's `needsHome` is that object: "needsHome no longer sets an owner; add owner: '<npc>' if this is theirs".
+- Retired: object `screenOwner`, `phoneOwner`, `affordance.owners`, `affordance.private`; item `phoneOf`, `leftBehindBy`.
+
+**Scenarios.** Retired keys: lab_physical_pentest (2 `screenOwner`, 3 `leftBehindBy`), test_access_habits (8 `affordance.owners`), test_access_sessions (7 `affordance.owners`), test_access_social (11 `phoneOf`), test_access_work (1 `screenOwner`), test_capture_log (1 `screenOwner`), test_clone_left_card (1 `leftBehindBy`), test_needs_sims (1 `phoneOwner`, 1 `leftBehindBy`). Owners derived from `needsHome` today and written out: test_access_habits 9 workstations, test_access_sessions 7, test_access_social 16, test_access_work 12, test_needs_sims 3 workstations and 3 private objects, test_npc_needs 2. Nine scenarios in all. lab_physical_pentest belongs to the labs track: the user's decision covers the edit (section 6), the labs track is told before the branch merges, and its open branches rebase over it.
+
+**Stored games.** The step renames the keys in `scenario_data` and writes `owner` where the old rule derived one, computing the old rule on the stored, prepared data. In player_state, item copies are renamed in place: a held Friendface phone's `phoneOf` becomes `owner` (shorter), a carried left-behind item's `leftBehindBy` likewise. A stored copy of a workstation or private object whose owner was derived gains one `owner` key, once. The "phone taken" check reads the inventory copy (`SocialFeed`, social_feed.rb:140-143), so a phone taken before the upgrade still counts as taken after it.
+
+**Tests.**
+- Unit: the step on raw and on prepared data, with derived owners for a workstation, a private object, and an object that is an NPC's `needsHome` but neither (no owner written); idempotent; a no-op on format-2 data; the `player_state` transform on a phone in the inventory and on a room-added item.
+- Readers: `ownerOf` and `owner_id` read `owner` only, and an object with only a `needsHome` NPC has no owner (node and Rails); a desk phone with `owner` and `deskPhone: true` rings for its owner, and an object with `owner` and no `deskPhone` does not ring (node); a left-behind item with `owner` and `leftBehindChance` is a reveal slot (node).
+- Every existing ownership test moved, among them `owner_claim_test.rb`, `owner_claim_enforce_test.rb`, `npc_habits_test.rb`, `npc_habits_loader_test.rb`, `npc_habits_postit_test.rb`, `friendface_phone_test.rb`, `feed_post_reply_test.rb`, `workstation-state.test.mjs`, `npc-needs.test.mjs`, `npc-left-behind.test.mjs`, `npc-desk-phone.test.mjs`, `left-card-consequence.test.mjs`, `friendface-phone.test.mjs`, `validator-access-work.test.mjs`, `validator-access-social.test.mjs` and `validator-access-model.test.mjs`; the grep lists the rest.
+- Rails: a client-built item carrying `owner` (and one carrying `phoneOf`) is stored without it; a game at format 1 with Jake's Friendface phone in its inventory, once loaded, opens the same feed and Jake still has no phone.
+- Validator: each retired key one error; the `needsHome` warning.
+- Corpus equivalence, and reader parity: for every object, the owner the old code derives (old `owner_id` and old `ownerOf`) equals the new `owner`; for every private object, the NPCs allowed; for every desk phone and left-behind item, its owner. The build log also records whether the old Ruby and JS rules ever disagreed on the corpus (a difference in first-match order would be a bug today, reported to the orchestrator, not carried over).
+
+**Live proof.** test_access_sessions: the owner claim at a PC whose owner used to be derived; test_needs_sims: the desk phone rings and its owner answers, and a left-behind item appears when its owner leaves; test_access_social: Jake's Friendface phone; lab_physical_pentest: the left-card beat; the stored-game proof on test_access_social with Jake's phone already in the inventory.
+
+**Sync.** Item copies in player_state are renamed in place, once, on the server. The only growth is one `owner` key on a stored copy whose owner was derived, written once and never sent by a sync. No sync payload changes.
+
+### Step 8c. Habits in one block (format 3)
+
+**Why.** A person's habits are spread over four NPC blocks: `habits` (awareness habits, server only) and `screenHabit`, `printHabit` and `usbHabit` (office life). `habits.locksScreen` fills `screenHabit`, so an author meets two blocks for one idea.
+
+**Change.**
+- `screenHabit` becomes `habits.screen` (`lockChance`, `lockIfAwayOverSeconds`), `printHabit` becomes `habits.print`, `usbHabit` becomes `habits.usb`. Each keeps its keys and stays closed, with `^_` allowed.
+- `habits.locksScreen` and `awareness` fill `habits.screen` where it is not authored, by today's rule (`NpcHabits.fill_screen_habit!`, npc_habits.rb:180 on b7d500ccf): not when the NPC owns no workstation, and not when every workstation it owns sets its own lock field. Ownership comes from `owner` (8b lands first).
+- **Precedence stays as it is.** On a workstation: a policy's `autoLockMin: 0`, then the PC's `lockChance` or `locksScreenOnLeave`, then the owner's `habits.screen` (authored or filled), then the default; on a borrowed hot desk the guest's own `habits.screen` decides. Letting the person beat the PC would change 5 corpus workstations whose owners carry a habit that differs from their own PC on purpose: priya_pc in test_access_habits, omar_pc in test_access_social, and rosa_pc, ian_pc and jake_pc in test_access_work. In test_access_work the owner's habit (`lockChance: 0`) drives the hot desk beats while their own PC sets `lockChance: 1`. The fold changes where the fields live, not what they do.
+- The habits report prints each workstation's effective lock rule and its source (the policy, the PC's field, the owner's authored habit or the owner's preset), so the precedence is visible to an author.
+- **What ships.** Today the NPC filter deletes `habits` whole (`WITHHELD_NPC_KEYS`, game.rb:4938 on b7d500ccf) and ships `screenHabit` and `printHabit`, which the client reads (`workstation-state.js`, `npc-needs.js`); `usbHabit` is deleted (`WITHHELD_WORK_NPC_KEYS`) and ships inside the work plan as `work.usb`. After the fold the filter keeps `habits.screen` and `habits.print` and deletes the rest of `habits` (`locksScreen`, `writesDown`, `password`, `passwordPattern`, `holdsDoors`, `usb`, and any key added later: an allow list of two keys, never a deny list), so a habit that hints at a password never ships. `work.usb` is built from `habits.usb`. The client reads `npc.habits.screen` and `npc.habits.print`.
+- Readers moved: `NpcHabits`, `AccessIdentities`, `OwnerClaim`, `AccessWork` (`usbHabit`, access_work.rb:1062 on b7d500ccf), `NpcFrustration`, `Game` (the filter, and the written-down rule beside game.rb:1894), `workstation-state.js`, `npc-needs.js`; `scripts/validate_npc_habits.rb`, `validate_npc_needs.rb`, `validate_access_work.rb`, `validate_scenario.rb`; `tools/playtest/verify-run.rb`.
+- Retired: NPC `screenHabit`, `printHabit`, `usbHabit`.
+
+**Scenarios.** test_access_social (5 `screenHabit`, 1 `usbHabit`), test_access_work (3 `screenHabit`), test_needs_sims (2 `screenHabit`, 1 `printHabit`). test_access_habits and lab_physical_pentest author none of the three, but they carry `awareness` or `habits.locksScreen`, so their stored games hold a `screenHabit` the loader filled; no template edit, a stored-game change only.
+
+**Stored games.** Prepared data holds `screenHabit` as authored or as filled by the loader. The step moves it to `habits.screen` either way; `prepare_scenario_data!` then finds `habits.screen` present and fills nothing, so the result matches what the old loader produced, field for field. `printHabit` and `usbHabit` move likewise. NPC records are not stored in player_state (the builder confirms by grep), so player_state is untouched.
+
+**Tests.**
+- Unit: the step on raw data and on prepared data with an authored and with a filled habit; idempotent; a no-op on format-3 data. The loader fills `habits.screen` with the same values and the same report entries as before.
+- Rails, what ships: a room NPC carrying every `habits` key arrives in the bootstrap and the room payload with `habits` holding exactly `screen` and `print`; `writesDown`, `password` and `holdsDoors` never ship; `work.usb` is still built for a USB habit.
+- Every existing habits test moved, among them `npc_habits_test.rb`, `npc_habits_loader_test.rb`, `access_identities_screen_test.rb`, `lab_physical_pentest_secrets_test.rb`, `npc_lockout_l_test.rb`, `npc_frustration_test.rb`, `owner_claim_test.rb`, `validator-npc-habits.test.mjs` and the USB habit tests.
+- Validator: each retired key one error; the effective-rule printout for a PC with its own field, an owner with an authored habit, an owner with a preset, and a hot desk guest.
+- Corpus equivalence, and reader parity: for every workstation, and for every NPC that can borrow one, the effective lock rule is the same under the old reader on the old render and the new reader on the new render. The 5 workstations named above are fixtures.
+
+**Live proof.** test_access_work: the hot desk beats H1 to H3 (the guest's habit decides) and Rosa's own PC locking when she leaves; test_needs_sims: a print fetched; test_access_social: the USB refusal; the stored-game proof on test_access_habits with a preset-filled habit.
+
+**Sync.** No player_state change. Payloads carry the same habit values under new paths and lose nothing the client reads.
+
 ## 5. Merge order
 
-Branches that touch the same files as this plan (`scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `app/models/break_escape/game.rb`, `app/controllers/break_escape/games_controller.rb`, `app/models/break_escape/mission.rb`, `scripts/generate_dungeon_graph.rb`, `public/break_escape/js/systems/doors.js`, `lib/break_escape/capture_model.rb`). State recorded 2026-11-12 16:12 UTC, main at 33c003230:
+Branches that touch the same files as this plan (`scripts/validate_scenario.rb`, `scripts/scenario-schema.json`, `app/models/break_escape/game.rb`, `app/controllers/break_escape/games_controller.rb`, `app/models/break_escape/mission.rb`, `scripts/generate_dungeon_graph.rb`, `lib/break_escape/capture_model.rb`, `public/break_escape/js/api-client.js`). State recorded 2026-11-12 18:34 UTC, main at b7d500ccf:
 
 | Branch | Tip | Ahead of main | Merges with main | Files shared with this plan |
 |---|---|---|---|---|
-| build/c3-replies | 6d222c6fa | 0: merged | | |
-| build/usepayload-secret | 91849ba67 | 0: merged (validator capture-proof warning, `CaptureModel`) | | |
-| build/keypin-seed | a524171df | 0: merged | | |
-| build/readme-93b | 3da7627c5 | 0: merged | | |
-| build/unlock-gaps-r1 | 309a5dc19 | 20, includes a merge of 33c003230 (supersedes build/unlock-gaps); the last commit adds only a document under `docs/` to e937b75f8 | clean | schema, validator, game.rb (`lock_answer_matches?`, `strip_lock_answers!` in both filters), controller, `doors.js` (`cryptexConfig` on the door properties, entry else connected room), `generate_dungeon_graph.rb` (lock labels) |
-| build/sync-deltas | 9a156704c | 35 (includes build/sync-proof-tools and build/sync-p1-verify) | clean | game.rb, controller: the bootstrap and sync paths, and `SERVER_OWNED_GLOBAL_NAMES` (`se_captures`, dropped from client global writes and mirrored into `savedGlobalVariables`); `capture_model.rb` (new capture-candidate helpers, no change to `hard_access_values` or `lock_codes`); validator (one `check_carry_over` rule for server-owned globals) |
-| build/phone-calls | f9297e5c4 | 176, based on 552c2d718 | **conflicts** | validator, `mission.rb`, game.rb, controller, `tts_line_extractor.rb` |
-| build/phone-calls-writing | 734b6e922 | 159, based on 552c2d718 | **conflicts** | the same |
-
-Pairwise (`git merge-tree --write-tree`): build/sync-deltas and build/unlock-gaps-r1 conflict, in `games_controller.rb` (the inventory route: unlock-gaps-r1 answers with the inventory; sync-deltas removes that echo under the sync size rule), `game.rb` and `network_access.rb`. That overlap is being settled between those two branches; this plan needs only that they land in separate batches. build/phone-calls conflicts with both, and with main. Step 3 rewrites the two answer sets in `capture_model.rb`, which sync-deltas leaves alone, so step 3 rebases over its new helpers without a conflict in the sets themselves.
+| build/c3-replies, build/usepayload-secret, build/keypin-seed, build/readme-93b, build/unlock-gaps-r1, build/harden-step1 | | 0: merged | | |
+| build/harden-step2 | df825084c | 5 (step 2, being fixed) | clean | schema, validator |
+| build/del-scen | d632dd6de | 1 (deletes basic_mission and vm_free_mission, and their known-failures entries) | clean | `scripts/validator_known_failures.json` |
+| build/sync-deltas | 1fba1baa7 | 53 | clean | game.rb, controller (the bootstrap and sync paths, `SERVER_OWNED_GLOBAL_NAMES`), `capture_model.rb` (new capture-candidate helpers; the answer sets untouched), `api-client.js`, `state-sync.js`, validator |
+| build/phone-calls | 1002c920f | 217 | **conflicts** | validator, `mission.rb`, game.rb, controller, `tts_line_extractor.rb` |
+| build/phone-calls-writing | 734b6e922 | 159 | **conflicts** | the same |
 
 The table is regenerated at each merge batch, with the time recorded, from:
 ```
@@ -561,97 +646,58 @@ git merge-tree --write-tree <branch-a> <branch-b>    # each pair still open
 ```
 
 Order:
-1. **Done:** build/c3-replies, build/usepayload-secret, build/keypin-seed, build/readme-93b are in main.
-2. **build/unlock-gaps-r1** and **build/sync-deltas**, in separate batches; the second rebases on main after the first. Step 3 needs unlock-gaps-r1 (combination and cryptex lock types, `lock_answer_matches?`); step 5 rebases after it (`generate_dungeon_graph.rb`).
-3. **build/phone-calls** and **build/phone-calls-writing** rebase onto main before step 1 or step 5 lands. If they land after, whoever merges second redoes step 1's label rename on their validator lines and step 5's binding move in `mission.rb`.
-4. **Step 1** (exit code and the known-failures list), once this build's 41 lines and 4 fixtures are fixed and every other line is fixed or listed. Every later branch then fails its own merge batch on any unlisted `❌`.
-5. **Steps 2, 4 and 5**: validator, schema, lib and tools; they can be built in parallel worktrees and merged one per batch.
-6. **Step 3**, after unlock-gaps-r1 and after step 5. Step 5 makes the validator's top-level `flags` the server's Hash, which `CaptureModel.hard_access_values` reads; landing step 3 first would leave the validator's flag answers empty, or make `CaptureModel` read two shapes for good. Step 3 can be built alongside step 5 and rebased onto it. It lands with m08 listed (q85) and m06's marker in or its lines listed.
-7. **Step 3b**, only if the user picks q85 (b).
-8. **Step 6a-1**, then **6a-2**, one per batch. Then **6b** only if the opened-state scan finds a filter gap, rebased on main after unlock-gaps-r1 and sync-deltas, because it replaces the code they change.
-9. The upgrader slice (section 8), only with the first approved step that rewrites stored data.
+1. **Done:** step 1 and the branches it built on are in main.
+2. **Step 2** and **build/del-scen**, in separate batches. Every step 8 lands after step 2 (section 4, step 8, "Interaction with step 2").
+3. **build/phone-calls** and **build/phone-calls-writing** rebase onto main before step 5 lands, redoing step 1's label rename on their own validator lines. If they land after step 5, whoever merges second redoes the binding move in `mission.rb`.
+4. **Steps 4 and 5**: validator, schema, lib and tools; built in parallel worktrees and merged one per batch.
+5. **Step 3**, after step 5. Step 5 makes the validator's top-level `flags` the server's Hash, which `CaptureModel.hard_access_values` reads; landing step 3 first would leave the validator's flag answers empty, or make `CaptureModel` read two shapes for good. It can be built alongside step 5 and rebased onto it. It lands with m06's and m08's clue markers in, or with their lines in the known-failures list until their owners add them.
+6. **build/sync-deltas**, then **step 7**. Step 7 edits the API wrapper and the load and sync paths that sync-deltas rewrites, so it rebases on main after sync-deltas. It can be built alongside steps 3 to 5. Step 7 should reach a Hacktivity release before step 8a, so every open tab has the reload check before any game it holds is upgraded; for the four deployed scenarios it makes no difference, because steps 8a to 8c change none of their data.
+7. **Steps 8a, 8b, 8c**, one per batch, in that order, each after step 2 and step 7. 8a goes first because it is the smallest and derives nothing, so it proves the upgrader on real data. 8b goes before 8c because 8c's loader fill reads workstation ownership, which 8b changes. They may be built in parallel; each lands with the next free format version, and one that rebases over another takes the next number (one constant and the step's `version`).
+8. **Step 6a-1**, after 8c, so its marks name current fields (`habits.screen` and `habits.print` client-visible, the rest of `habits` server-only). If 8c is late, 6a-1 may land first with marks on the old names, and 8c moves them in its own commit. Then **6a-2**, one batch later. Then **6b** only if the opened-state scan finds a filter gap, rebased on main after sync-deltas, because it replaces code sync-deltas changes.
 
 Each batch moves main only to the commit the full suites ran on, and runs the validator over every test scenario a merged branch touched.
 
-## 6. Questions for the user
+## 6. Decisions recorded
 
-1. **q85: m08's door PIN in a global.** Netherton's voiced ink needs to say the suite code, and ink reads globals in the browser. Options: (a) accept it under the cheat policy as a voiced clue, marked as an acknowledged clue in a global (step 3, item 5), which the leak check reports as a warning ("ships at game start") and allows; (b) server-held globals (step 3b): the global holds `""` until a server-checkable condition holds, then the value arrives as a delta; (c) change the beat so the code is read off the card and Netherton never says it. (a) is cheapest, and it opens the `global:` marker form to every scenario, each use a warning reviewed at the merge batch; (b) is new engine work (size M); (c) changes the mission's writing and its cached audio. Until the answer, m08's line sits in the known-failures list and the `global:` form is rejected.
-2. **q86: basic_mission and vm_free_mission.** They fail the schema (top-level `globalItems` and other undeclared keys). Facts on main: neither `mission.json` has a `collection`, so `db/seeds.rb` puts both in the `default` collection with `published = true`: they are listed as playable missions wherever seeds ran. Deleting a folder makes the next seeds run offer the orphan delete, which destroys each mission with its games and Hacktivity listings (typed confirmation at a terminal, or `BREAK_ESCAPE_PRUNE=1`). Nothing else in the repository refers to them except two docs. If kept, the fix is S: move the undeclared keys into the schema's form and add `"collection": "testing"` to each `mission.json`. Fix them as examples, or delete them?
-3. **q83: access and office-life consolidation** (section 7, 7.1 to 7.3). One owner field, one outage field and grammar, habits in one block. Size L; 9 scenarios plus `lockChance` in 6; owners: this build's test scenarios, the labs track (lab_physical_pentest), and the engine (`owner_claim.rb`, the habits loader). It brings in the upgrader (section 8). Yes or no, or a subset.
-4. **q84: closing the older core kinds** (section 7, 7.5 and 7.4). Two parts, each a separate yes:
-   - **7.5, drop dead fields:** M, up to 146 scenarios, every track, mechanical. No upgrader. `scenario_name` and `name` are not dropped: they stay, declared in the schema.
-   - **7.4, close the core kinds:** M to L, 37 scenarios, after 7.5. The upgrader only if an alias is retired.
+The user's answers of 2026-11-12, which this plan applies:
 
-   `formatVersion` is not a question: it arrives with the upgrader slice, stamped by the server at creation (section 8), and no template carries it.
+1. **q83, the access and office-life fields: consolidate now, with a clear schema.** Steps 8a to 8c. Old names stay as aliases only where a deployed game uses them (m01_first_contact, sis01_healthcare, sis02_energy, lab_social_engineering); every other scenario moves to the new names with no alias. None of the four uses a renamed key, so there are no aliases (section 1). The plan's own call inside this decision: screen-lock precedence is unchanged, for the reason in step 8c. The user may overrule it; flipping it would mean rewriting the 5 named workstations' beats.
+2. **q84, the format version and the core kinds: `formatVersion` and the upgrader now (step 7); closing the core kinds later (section 7).** Dropping the dead fields is the first part of the closure and waits with it.
+3. **q85, m08's door PIN in a global: accepted at game start as best effort, as an acknowledged clue.** Step 3 accepts the `global:` marker form as a warning; server-held globals are dropped.
+4. **q86, basic_mission and vm_free_mission: deleted** (build/del-scen). They leave the corpus and the known-failures list.
 
-## 7. The migrations (not in scope; for the user to pick)
+## 7. Later: closing the core kinds (not scheduled)
 
-Each needs scenario edits and waits for a decision. The upgrader slice (section 8) is built with the first approved step that rewrites stored games' data.
+Kept here so the next plan starts from checked facts. Neither part is built by this plan.
 
-| Question | Parts | Size | Scenarios | Owners touched | Brings in the upgrader |
-|---|---|---|---|---|---|
-| q83 | 7.1, 7.2, 7.3 | L | 9, plus `lockChance` in 6 test scenarios if precedence changes | this build (test scenarios), labs track (lab_physical_pentest), engine | yes: 7.1 and 7.3 rewrite stored fields, and 7.3 needs the raw-shape handling (section 8, problem 2) |
-| q84 | 7.5 | M | up to 146 | every track | no |
-| q84 | 7.4, after 7.5 | M to L | 37 | every track | only if an alias is retired |
+### 7.1 Drop dead fields (the first part of the closure)
+- Changes: remove `endGoal`, `version`, `scenario_id`, object `isEndGoal`, eventMapping `autoTrigger`, `note_title` and `note_content`. Nothing in `app/`, `lib/` or the client reads any of them.
+- Affects up to 146 scenarios on 33c003230 (`endGoal` 146, `scenario_id` 94, `version` 87, `isEndGoal` 9, `autoTrigger` 7, `note_*` 2). Mechanical; no spoken text changes, so cached audio is safe.
+- `scenario_name` and `name` stay, declared in the schema (and `x-client: true` once 6b's marks exist): they seed office life (`npc-needs.js:5234`), and `scenario_name` also names the mission in `bond-visualiser.js`.
+- Stored games: nothing reads the dropped fields, so old games can keep them; no upgrader step.
 
-### q83: 7.1, 7.2 and 7.3
+### 7.2 Close the core kinds
+- Changes: declare the fields scenarios use that the schema does not know (room `chatBackground`; object `minigameData`, `labUrl`, `scenarioData`, `important` and the two `puzzle_graph_*` keys the client reads; eventMapping `unlockDoor`, `endingCheck`, `skipTask`, `resume`, `voiced`; task `description`, `targetGlobal`, `targetValue`; flag reward `item_type`, `room_id`, `label`), decide the unread ones (room `name`, `dimensions`, `exits`, `items`; the other `puzzle_graph_*` keys, which only the generator reads), then set `additionalProperties: false` (with `^_` allowed) on room, object, NPC, eventMapping, objective and task, and delete the hand lists in `check_unknown_fields`.
+- Affects 37 scenarios that carry unknown-field warnings on 33c003230, once 7.1 has removed or declared the dead fields.
+- Stored games: none for the closure itself, which is a validator rule. Any alias it retires (`target_room`, `roomId`, `task_id`, `setVariable`) becomes a `FormatUpgrade` step, with the alias rule of section 1 applied to the deployed scenarios at that time.
 
-#### 7.1 One `owner` field
-- Changes: an `owner` (NPC id or list) and `private: true` on objects and items replace `screenOwner`, `affordance.owners`, `phoneOwner`, `phoneOf` and `leftBehindBy`; `needsHome` goes back to meaning movement only.
-- Affects 8 scenarios: lab_physical_pentest, test_access_habits, test_access_sessions, test_access_social (with C3's additions), test_access_work, test_capture_log, test_clone_left_card, test_needs_sims. Main also has `lib/break_escape/owner_claim.rb` (q78), which derives owners from `needsHome` and must read `owner` first.
-- Stored games: copy each old field into `owner`, and write an explicit `owner` wherever the old rule derived one from `needsHome`, so old saves behave as before. player_state is keyed by object and NPC ids, which do not change.
-
-#### 7.2 One outage field and one condition grammar
-- Changes: `offWhen` moves from `affordance` to the object and replaces `downIf` on networks and resources, all in the requireGlobal form (a name, or `{ name: value }`); `spriteVariants` accepts the same form.
-- Affects 4 scenarios: test_access_networks, test_access_social, test_access_work, test_needs_sims.
-- Stored games: `downIf: "g"` becomes `offWhen: "g"`; `affordance.offWhen` moves up a level. The server's two failure causes (`down`, `off`) are recorded per event, not stored, so saves need nothing more.
-
-#### 7.3 Habits in one block
-- Changes: `screenHabit`, `printHabit` and `usbHabit` fold into `habits.screen`, `habits.print`, `habits.usb`; `awareness` stays the preset that fills them; the person's habit beats the PC's `lockChance`, and the validator prints each workstation's effective lock rule.
-- Affects 5 scenarios (test_access_habits, test_access_social, test_access_work, test_needs_sims, lab_physical_pentest), plus `lockChance` on PCs in 6 test scenarios if the precedence changes.
-- Stored games: move the three fields. Where the new precedence would change an old save's outcome, write the PC's old `lockChance` into the owner's habit so the save keeps its behaviour. These are the fields `NpcHabits.expand!` fills at creation, so the upgrader step must work on raw-shaped data (section 8, problem 2). The seeded screen roll is not stored, so nothing in player_state moves.
-
-### q84: 7.5, then 7.4
-
-#### 7.5 Drop dead fields (the first step of the closure)
-- Changes: remove `endGoal`, `version`, `scenario_id`, object `isEndGoal`, eventMapping `autoTrigger`, `note_title` and `note_content`.
-- Affects up to 146 scenarios (`endGoal` 146, `scenario_id` 94, `version` 87, `isEndGoal` 9, `autoTrigger` 7, `note_*` 2). Mechanical; no spoken text changes, so cached audio is safe.
-- `scenario_name` and `name` stay in the scenario, declared in the schema (and `x-client: true` once 6b's marks exist): they seed office life (`npc-needs.js:5234`), and `scenario_name` also names the mission in `bond-visualiser.js`. Moving them would need a client change and an `npcNeedsSeed` line in every needs scenario, which 7.5 does not buy.
-- Stored games: nothing reads the dropped fields, so old games can keep them; no upgrader step is needed.
-
-#### 7.4 Close the core kinds
-- Changes: add the fields from the structure review's M2 table to the schema, then `additionalProperties: false` (with `^_` allowed) on room, object, NPC, eventMapping, objective and task, and delete the hand lists in `check_unknown_fields`.
-- Affects 37 scenarios that carry unknown-field warnings today, once 7.5 has removed or declared the dead fields.
-- Stored games: none for the closure itself, which is a validator rule. Any alias it retires (`target_room`, `roomId`, `task_id`, `setVariable`) becomes an upgrader step that rewrites it to the current spelling; retiring none keeps the upgrader out.
-
-## 8. Deferred: the load-time upgrader
-
-Not built in this plan. When it is built, `formatVersion` comes with it: a top-level integer declared in the schema (not shipped until problem 4 below needs the client to see it), stamped into `scenario_data` by `Game#generate_scenario_data` at creation with the code's current version. Templates never carry it, so no template is edited for it; every template in the repository is migrated in the same commit as the code that changes the format, so a number in the template would add nothing the server cannot stamp. A stored game with no `formatVersion` reads as version 0.
-
-A game stores the rendered scenario at creation (`before_create :generate_scenario_data`, game.rb:33 and 4837), so every rename is read in both spellings for as long as old games exist (the `key_id` to `opens_lock` fallbacks in `window.lockRef` and `lib/break_escape/item_identity.rb` show the cost), and the access loader `prepare_scenario_data!` (game.rb:1068) runs only at creation. An ordered list of pure, idempotent upgrade steps, keyed on `formatVersion`, would fix that.
-
-**Trigger.** The slice starts with the first approved step that rewrites stored data: any q83 migration, or a q84 alias retirement. It is built with that step as its first real step, after build/sync-deltas has merged. A yes to q84's 7.5, or to 7.4 with no alias retired, does not start it.
-
-Four problems its design must solve:
-
-1. **No lock on the load path.** `set_game` (`games_controller.rb:1754`) is a plain `Game.find`. `with_game_lock` is an `around_action` for some routes (line 93) and excludes `show` and `scenario`, the two that run first on a load, and the client fetches rooms while the bootstrap is in flight. An upgrade on load must run in one helper, called from `set_game` and from every route that reads `scenario_data` without it, as `@game.with_lock { reload; upgrade if still old }`, so a second request finds the work done.
-2. **Two data shapes.** `generate_scenario_data` calls `prepare_scenario_data!` itself (game.rb:4867), so at creation a step would see raw data, and at load it sees prepared data (habits expanded, ids stamped). Migrations 7.1 and 7.3 move exactly the fields `NpcHabits.expand!` fills. At creation the upgrade belongs inside `generate_scenario_data`, between `mission.generate_scenario_data` and `prepare_scenario_data!`; at load, run the steps and then `prepare_scenario_data!` again (it is idempotent, per its comment above game.rb:1068), so every step is written against raw-shaped fields.
-3. **player_state carries old shapes too.** `add_inventory_item!` (game.rb:170) stores the whole item hash in `player_state['inventory']`, so an old save's held key carries `key_id` there. While player_state is left untouched, the client fallbacks (`helpers.js`, `inventory.js`, `npc-game-bridge.js`, `objectives-manager.js`) cannot go. A rename pilot must either rename the key in player_state items in place (same size, so q77 holds) or keep the fallback.
-4. **The sync path bypasses the loader.** `sync_state` loads only `SYNC_STATE_COLUMNS` (`games_controller.rb:783`) and never passes through `set_game`, and a tab opened before an upgrade keeps sending the old shape as deltas (build/sync-deltas seeds its "confirmed" state from the bootstrap). Nothing maps old keys on the way in. So player_state transforms stay out of the framework until a migration needs one; when one does, the bootstrap carries `formatVersion` and the client reloads when a sync answer reports a different one.
-
-Other settled points: a stored `formatVersion` above the code's (code rolled back after games were upgraded) refuses to load with a clear message; the validator runs the upgrade on a copy and warns once per old spelling; releases that add a step say so in their notes.
-
-## 9. Risks
+## 8. Risks
 
 - **Step 1 blocks other work.** Once errors fail the run, any branch carrying an unlisted `❌` fails its merge batch. The known-failures list keeps other tracks' lines visible with their owners without blocking, a stale entry fails the run so the list cannot rot, and the stage rule keeps partial runs (`--skip-ink`, CI's social job) from failing on lines they never checked.
 - **The known-failures list or the clue markers grow quietly.** Every known-failures entry, acknowledged clue and scan exception needs its own `approved` heading in `docs/agents/VALIDATOR_DECISIONS.md`, whose `json` block restates that one entry; the tests check the block matches and that no heading backs two entries across the three lists, and that file does not move with the pass; every batch diffs `scripts/validator_known_failures.json` and `test/fixtures/files/payload_scan_exceptions.json` and greps for `acknowledgedClues`, and the orchestrator signs off each addition. Markers are counted in every summary line. A passed `reviewBy` fails the merge-batch suites.
-- **A clue marker hides a real leak.** A marker cannot name its own lock or anything inside it, and the `global:` form is rejected until q85 is answered, then printed as a warning.
+- **A clue marker hides a real leak.** A marker cannot name its own lock or anything inside it, and the `global:` form always prints as a warning and needs its own signed heading.
 - **Step 3 tells an author to delete a live field.** The door-entry lock type is resolved from the connected room, as the client does, and a door entry is never told to delete its `requires`; two corpus door entries are fixtures.
 - **Step 3 changes which capture secrets and account passwords the server withholds.** The extended `hard_access_values` withholds non-account capture secrets equal to door-entry, combination and cryptex answers until their proof holds (`authored_capture_secret`); the extended `lock_answer_keys` withholds account passwords equal to combination and cryptex answers in proof-declaring scenarios (`password_opens_lock?`). One normaliser, shared with `Game.lock_answer_matches?`, decides what equal means, so a stray number beside a combination is not withheld, and a blank, nil or malformed answer never opens a lock. The comparator's four blank and nil refusals in the unlock tests are named and must stay green. The corpus check diffs both predicates, old (from the merge base) against new, over every capture writer and every account holder, expects no change over the corpus and exactly the intended rows over `test_secret_leaks`; Rails tests cover the array, case and account cases; the live run on the build's own test scenario shows the new withholding, and the lab_physical_pentest run shows no regression.
+- **A rename breaks a stored game.** Each step's transform is tested on raw and on prepared data and is idempotent; the corpus check proves that upgrading an old render gives exactly the new render; reader parity proves that derived owners, lock rules and outage conditions are unchanged; each step plays a beat on a game created with old names. A game is upgraded under its row lock, once, and `sync_state` cannot interleave with it.
+- **A deployed game breaks.** The four deployed scenarios hold none of the renamed keys, so their games are only stamped; a test fails if one of them starts using a retired key without an alias. Hacktivity readers of `scenario_data` are listed before step 8a and any reader of a renamed key goes to the user.
+- **An open tab sees new names with old code.** The response header and the API wrapper's one-time reload cover every tab opened after step 7 is released; step 7 is released before step 8a.
+- **The shared development database.** A game upgraded by a branch refuses to load on older code with a clear message instead of misreading it; builders upgrade only games they made, and the sweep tool runs there only with `--dry-run`.
+- **The template rewrite mangles an ERB template.** The rewrite edits spans in masked text, lists what it cannot map, and the corpus check compares parsed renders, so a broken template fails to render or fails the comparison. Only lab_physical_pentest and test_capture_log contain ERB.
+- **A habit that should stay on the server ships after 8c.** The filter keeps an allow list of two keys inside `habits`, and a Rails test shows `writesDown`, `password` and `holdsDoors` absent from every payload.
 - **The 6a scan misses locked content or never fires.** It scans an opened state as well as a fresh one, with every admitted account's session, every PC switched on, every foothold, every NPC encountered, every feed post revealed and every collectible item picked up with the source the route needs; it fetches every route that serves authored data (including `POST unlock`'s room and contents answers), or names why a route carries none; the top-level blocks the bootstrap deletes are marked, so a lost delete fails; an unexplained refusal in the opened state fails; an identity check catches a profile served to the wrong account even when it holds no secret; and four mutation tests show it failing on a known leak class.
 - **Fields shipped before they are shown pass as clue text (known limit of step 3 and the 6a scan).** `revealOnGlobal` is read only by the client (no use in `app/` or `lib/` on main), so an object hidden until a global is set, a note holding a PIN for example, ships in the room payload at load. `textVariants` and `observationVariants` likewise ship every variant at load. A PIN in one of these is in the browser before the player has earned it, the same harm as m08's global, yet step 3 does not look at these fields and the scan passes them as class 3. Corpus users on main: `revealOnGlobal` in lab_physical_pentest and four test scenarios; `textVariants` in m02_ransomed_trust, m07 to m10, lab_physical_pentest, sis01, sis02 and two test scenarios; `observationVariants` in most of the awareness course and several missions. Bringing these fields under step 3's rule is filed in `docs/IDEAS_BACKLOG.md` and is not built here.
-- **The 6a scan fails on clues that are the game.** Each leaf is classed by where it came from: authored clue text in a declared, unmarked field passes, values under `globalVariables`, `minigameData` and `scenarioData` follow step 3's rule, and constructed answers are judged by value with their serving fields named. m01's `postitNote` and the other plain-text clues on main are fixtures that must pass, and test_access_habits' written-down password passes in its sign-in tile through an allowance scoped to the tile's `postitNote` key. The two known answer copies (`cryptexConfig.answer`, a combination lock's `combination`) are declared on rooms and items and marked server-only, so a copy there still fails. Random values are seeded, and reviewed exceptions carry a decisions-file heading.
-- **Step 6b strips a field the client needs.** The two-sided parity test in both states, the top-level client-read scan with its per-file alias list and call-site list, `SERVER_BOOTSTRAP_KEYS` and the live runs exist for this. `scenario_name` and `name` are the known top-level cases (mission name and office-life seed); the rfid door entries' card ids are the known nested case.
+- **The 6a scan fails on clues that are the game.** Each leaf is classed by where it came from: authored clue text in a declared, unmarked field passes, values under `globalVariables`, `minigameData` and `scenarioData` follow step 3's rule (acknowledged clues included), and constructed answers are judged by value with their serving fields named. m01's `postitNote` and the other plain-text clues on main are fixtures that must pass, and test_access_habits' written-down password passes in its sign-in tile through an allowance scoped to the tile's `postitNote` key. The two known answer copies (`cryptexConfig.answer`, a combination lock's `combination`) are declared on rooms and items and marked server-only, so a copy there still fails. Random values are seeded, and reviewed exceptions carry a decisions-file heading.
+- **Step 6b strips a field the client needs.** The two-sided parity test in both states, the top-level client-read scan with its per-file alias list and call-site list, `SERVER_BOOTSTRAP_KEYS` and the live runs exist for this. `scenario_name`, `name` and `formatVersion` are the known top-level cases; the rfid door entries' card ids and `habits.screen` and `habits.print` are the known nested cases.
 - **Step 6b cost per request.** The stripped copy is cached per game in `Rails.cache` with an expiry; the build log records the measurement.
-- **Other tracks editing the same scenarios.** No builder edits a mission, lab or escape room without the orchestrator's confirmation from its owner.
-- **Long-lived branches.** build/phone-calls and build/phone-calls-writing conflict with main and touch the validator and `mission.rb`; they rebase before step 1 and step 5, or the second to merge redoes the rename and the binding move.
+- **Other tracks editing the same scenarios.** No builder edits a mission, lab or escape room without the orchestrator's confirmation from its owner. lab_physical_pentest's rewrite in step 8b is covered by the user's decision, and the labs track is told before it merges.
+- **Long-lived branches.** build/phone-calls and build/phone-calls-writing conflict with main and touch the validator and `mission.rb`; they rebase before step 5, or the second to merge redoes the binding move.
