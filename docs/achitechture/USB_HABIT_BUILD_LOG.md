@@ -121,6 +121,9 @@ Live (keyless :3035, `--start-room u1_room`):
 - Game 1450, honest client: Kim's first met use posts an ease at level 0 (answer level 0), her
   second posts the `usb_refused` fail (`rearmed: true`), accepted at 25.
 
+Suites under the shared lock on `1109bee39`: `bin/rails test` 1816 runs, 25657 assertions, 0
+failures, 0 errors, 1 skip; `bin/test-js -j 3` 509 files passed, 0 failed.
+
 ## Added scope, not started: Kim's USB stick (coordinator, 2026-11-12)
 
 Asked: an NPC with `usbHabit` holds a USB stick in `itemsHeld` (default contents one
