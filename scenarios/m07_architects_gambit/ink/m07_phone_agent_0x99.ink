@@ -174,7 +174,7 @@ The team's logged for {team_assignment == "fracture": Fracture, Washington|{team
 HaX here, Agent. I've got your channel and the board.
 
 // Phase 4 dialogue C1 (D7-30): a first call opened late.
-{inside_reached: You're past the checkpoint. Ask me where you stand and I'll give you the next step.|Get past the checkpoint to the operations floor. Call me when you hit something you can't open.}
+{inside_reached: You're past the checkpoint. Ask me where you stand and I'll give you the next step.|Get past the checkpoint to the operations floor. Message me when you hit something you can't open.}
 
 -> hub
 
