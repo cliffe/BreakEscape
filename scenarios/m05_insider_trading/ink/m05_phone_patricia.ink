@@ -14,7 +14,9 @@
 //   (phone-chat-minigame.js:532-566). So every resting knot re-checks
 //   patricia_ko and patricia_phone_available at its top, and the naming
 //   knot returns to the hub once torres_identified is set.
-// - Never reaches DONE/END (lesson 21).
+// - Phone-calls M5: the call-ending choices now reach DONE (#exit_conversation then -> DONE); the
+//   engine moves the story to the home knot `start` after the call. `hub` and the phone_* knots stay
+//   mid-call resting knots that never fall through to DONE on their own (lesson 21).
 // The naming conditions match m05_npc_patricia_morgan.ink exactly.
 // PASS 4 fix 7: the two authorisations (office card, server-room password)
 // can be asked for by phone too, with the same conditions as in person.
@@ -30,6 +32,7 @@
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
 VAR proof_given = false // Fixes round 3 (2026-10-17): local; the front-door reason completed the proof in phone_log_reason_right, so phone_case_why's right answer is the naming
+VAR topic_taken = false // Phone-calls M3: local; set true when a topic is taken on this call (reset at phone_call), so the hub's goodbye reads right after one
 VAR patricia_ko = false
 VAR patricia_phone_available = false
 VAR torres_identified = false // Synced scenario global: Torres named on motive and exfil; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
@@ -95,15 +98,29 @@ VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wr
 // lint: call-knot
 {patricia_ko: -> no_answer}
 {not patricia_phone_available: -> not_yet}
+// M3: reset the per-call "a topic was taken" flag (entered once per call, unlike hub).
+~ topic_taken = false
+#speaker:patricia_morgan
+// M2: she answers before the menu, varied by state (three whole lines, not inline).
+{
+- torres_identified and final_choice == "":
+    Morgan. Where is he?
+- final_choice != "":
+    Morgan. Is it over?
+- else:
+    Morgan.
+}
 -> hub
 
 // Call fallbacks: Patricia becomes unreachable mid-call (the entry's `when` keeps her off the line
 // otherwise). The old fake-ring choices are gone; the engine rings out via unavailable:"no_answer".
 === not_yet ===
+// lint: call-knot
 #exit_conversation
 -> DONE
 
 === no_answer ===
+// lint: call-knot
 #exit_conversation
 -> DONE
 
@@ -118,14 +135,17 @@ VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wr
     -> phone_hold_him
 + {torres_suspected and not patricia_authorised_office and not office_card_obtained} [I need into David Torres' office.]
     ~ patricia_authorised_office = true
+    ~ topic_taken = true
     I'll message Owen now. On my authority. If it's nothing, it was a routine audit.
     -> hub
 // Puzzle R1 (P6): only once Owen has actually refused.
 + {(server_door_seen or it_notice_read) and owen_refused_password and not server_password_obtained and not patricia_authorised_server} [Owen won't give me the server-room password.]
     ~ patricia_authorised_server = true
+    ~ topic_taken = true
     I sign the access log; IT holds the password. I'll tell Owen it's on my authority.
     -> hub
-+ [Just checking in.]
+// M3: "Just checking in." fits only when no topic was taken on this call; otherwise a plain goodbye.
++ {not topic_taken} [Just checking in.]
     {not torres_identified:
         Still here. Ring me when you've got something.
     }
@@ -137,14 +157,20 @@ VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wr
     }
     #exit_conversation
     -> DONE
++ {topic_taken} [That's all for now.]
+    Right.
+    #exit_conversation
+    -> DONE
 
 === phone_share_findings ===
+// lint: call-knot
 {torres_identified: -> hub}
 #speaker:patricia_morgan
 Go on, then. Who?
 -> phone_who
 
 === phone_who ===
+// lint: call-knot
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 + {found_door_log and not halloran_accused} [Dr Ruth Halloran.]
@@ -160,9 +186,11 @@ Go on, then. Who?
     -> phone_name_torres
 + [I've got a feeling. Nothing I can show you yet.]
     So have I. Ring me back with evidence.
-    -> hub
+    #exit_conversation
+    -> DONE
 
 === phone_accuse_halloran ===
+// lint: call-knot
 {patricia_ko: -> no_answer}
 {halloran_accused or torres_identified: -> hub}
 #speaker:patricia_morgan
@@ -181,6 +209,7 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
 -> DONE
 
 === phone_name_torres ===
+// lint: call-knot
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 #speaker:patricia_morgan
@@ -205,6 +234,7 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
 // torres_why). Choices-only; re-checks state for a re-navigation. A wrong
 // reason ends the call.
 === phone_torres_why ===
+// lint: call-knot
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 + {found_door_log} [His own badge is on the server hallway those nights.]
@@ -235,6 +265,7 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
     -> DONE
 
 === phone_log_reason_right ===
+// lint: call-knot
 {patricia_ko: -> no_answer}
 #speaker:patricia_morgan
 ~ door_log_reasoned = true
@@ -251,7 +282,11 @@ I sign that log off every Monday. I never once read the front door.
 {has_motive() and has_exfil():
     ~ torres_suspected = true
     ~ proof_given = true
-    That's a pattern. Put it with the {found_upload_schedule:upload schedule|staging manifest} and it's proof. Now tell me why he'd do it.
+    {found_upload_schedule:
+        That's a pattern. Put it with the upload schedule and it's proof. Now tell me why he'd do it.
+    - else:
+        That's a pattern. Put it with the staging manifest and it's proof. Now tell me why he'd do it.
+    }
     -> phone_case_why
 }
 // D1 (2026-10-16): with flag 3 in, the pattern ties the manifest's badge 4471 to him.
@@ -263,7 +298,9 @@ I sign that log off every Monday. I never once read the front door.
 -> phone_partial_naming
 
 === phone_partial_naming ===
+// lint: call-knot
 ~ torres_suspected = true
+~ topic_taken = true
 {not patricia_authorised_office and not office_card_obtained:
     ~ patricia_authorised_office = true
     It's enough to look in his office. I'll tell Owen you can have the spare.
@@ -274,6 +311,7 @@ I sign that log off every Monday. I never once read the front door.
 // m05_npc_patricia_morgan.ink, case_why). Choices-only knots that re-check
 // state for a re-navigation; a wrong answer ends the call.
 === phone_case_why ===
+// lint: call-knot
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 + [He's the cryptography lead. He'd know how.]
@@ -302,6 +340,7 @@ I sign that log off every Monday. I never once read the front door.
     -> phone_case_proof
 
 === phone_case_proof ===
+// lint: call-knot
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 + {found_door_log} [His own badge is on the server hallway those nights.]
@@ -320,6 +359,7 @@ I sign that log off every Monday. I never once read the front door.
     -> phone_significant_findings
 
 === phone_significant_findings ===
+// lint: call-knot
 {torres_identified: -> hub}
 #speaker:patricia_morgan
 ...Damn. His kids drew on the tablecloth at our Christmas party.
@@ -333,10 +373,7 @@ His badge just went through the hallway and the vault's logged him in. He's at t
 {not owen_ko and not office_card_obtained:
     I've told Owen you can have the spare for his office.
 }
-// PASS 4 fixes 6 and 12: outstanding flags, and urgency that matches the print.
-{not all_flags_in():
-    Stop him first. Then finish whatever you were doing on that research server. Your people will want all of it.
-}
+// m6: the "finish the research server" sign-off is HaX's job and her texts say it, so it is cut here.
 {
 - torres_print_collected:
     You've got his print, then. Go.
@@ -349,6 +386,7 @@ Whatever you decide in front of him, ring me when it's done.
 -> phone_significant_findings_choices
 
 === phone_significant_findings_choices ===
+// lint: call-knot
 {patricia_ko: -> no_answer}
 + {found_door_log and not door_log_reasoned} [And the badge log. He comes in the front door six minutes before her spare.]
     ~ door_log_reasoned = true
@@ -359,13 +397,15 @@ Whatever you decide in front of him, ring me when it's done.
     -> DONE
 
 === phone_hold_him ===
+// lint: call-knot
 {final_choice != "": -> hub}
 #speaker:patricia_morgan
-I know. I'm watching his badge on the vault log. He hasn't moved.
-Ring me when it's done.
+I know. I'm watching his badge. He hasn't moved.
+I'll be on the vault log.
 -> phone_hold_him_choices
 
 === phone_hold_him_choices ===
+// lint: call-knot
 + [Understood.]
     #exit_conversation
     -> DONE

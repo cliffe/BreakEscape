@@ -24,9 +24,18 @@ VAR found_pipeline_list = false
 // choosing it again doesn't replay a call the phone already shows.
 VAR recruiter_line_dead = false
 
-// PASS 2: never reaches DONE (lesson 21). Every exit goes to `idle`,
-// whose sticky choices let the player ring her back. Return-contact
-// choices are sticky (+) so a second call can't starve.
+// Phone-calls M5: engine-written call VARs (2.11) and the cross-caller de-dup (M1).
+VAR call_answer_seconds = 0
+VAR call_is_callback = false
+// Synced scenario global: set by HaX's topic_architect_choices once the player has heard the
+// casualty projection from her. The Recruiter branches on it so she doesn't repeat HaX (M1).
+VAR architect_discussed = false
+// Local (m3): true once she is rung back, so recruiter_deal opens "Since you've rung...".
+VAR player_rang = false
+
+// Phone-calls M5: the call knots now end #exit_conversation then -> DONE. The engine moves the story
+// to the home knot `start` after the call, and the green Call button (the `call` entry, return_contact)
+// rings her back. The old "never reaches DONE, every exit goes to idle" rule is gone.
 
 // ===========================================
 // INITIAL CONTACT (torres_identified)
@@ -62,19 +71,22 @@ VAR recruiter_line_dead = false
 }
 #speaker:recruiter
 
+{call_is_callback:
+    You rang back. Manners, or curiosity?
+}
+{call_answer_seconds > 10:
+    Take your time. Patience is most of my job.
+}
 Agent. Or whatever they're calling you this week.
 
-I run TalentStack. Executive search, mostly technical roles.
-
-You've spent the last few hours putting a name to one of my placements. I thought I'd save you wondering who I am.
-
-David Torres. QD-001, if you prefer the file number.
+I run TalentStack. You've spent tonight putting a name to one of my placements. David Torres.
 
 ~ recruiter_contacted_player = true
 
 -> start_choices
 
 === start_choices ===
+// lint: call-knot
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
 * [You radicalised a man whose wife is dying.]
@@ -92,9 +104,8 @@ David Torres. QD-001, if you prefer the file number.
     -> recruiter_introduction
 
 === recruiter_introduction ===
+// lint: call-knot
 #speaker:recruiter
-
-Everyone has a price. I call that an operating philosophy, and it has never once failed me.
 
 The only variable is what currency they'll take.
 
@@ -103,6 +114,7 @@ Torres took debt relief and a standing consultancy retainer. Cheaper than most, 
 -> recruiter_introduction_choices
 
 === recruiter_introduction_choices ===
+// lint: call-knot
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
 * [You're talking about him like a receipt.]
@@ -112,22 +124,18 @@ Torres took debt relief and a standing consultancy retainer. Cheaper than most, 
     -> recruiter_reveals_target
 
 === recruiter_line_item ===
+// lint: call-knot
 #speaker:recruiter
 
 He was a line item, agent. There are more like him in the pipeline right now.
 
-I don't say that to be cruel. I say it because it's accurate, and accuracy is the only thing I owe you.
-
 You'll want to feel sorry for him. Go ahead. It costs me nothing.
-
-And it won't help the others, unless you move faster than I do.
 
 -> recruiter_reveals_target
 
 === recruiter_reveals_target ===
+// lint: call-knot
 #speaker:recruiter
-
-Project Heisenberg was never going to a foreign buyer. Nobody's shopping this around.
 
 ENTROPY wants the key material and the rollout schedule for your national dispatch network. Nine-nine-nine call routing.
 
@@ -136,6 +144,7 @@ We keep it. We integrate it. Operation Schrödinger, if your file needs a name.
 -> recruiter_reveals_target_choices
 
 === recruiter_reveals_target_choices ===
+// lint: call-knot
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
 * [You're talking about ambulances. Fire crews. Police response times.]
@@ -147,17 +156,22 @@ We keep it. We integrate it. Operation Schrödinger, if your file needs a name.
     -> recruiter_confirms_casualties
 
 === recruiter_confirms_casualties ===
+// lint: call-knot
 #speaker:recruiter
 
-A forty-to-seventy-minute failover window during the key-rotation cutover, across twelve regions, in the first wave alone.
-
-The Architect's office ran the numbers before signing off. Thirty to forty-five excess deaths, where minutes decide things: cardiac, stroke, structure fires.
-
-It's filed as an acceptable cost of acquisition. I didn't file it. I just recruited the man who could get us the schedule.
+// M1: if the player has already heard the projection from HaX (architect_discussed), she says it once;
+// otherwise she delivers it in full. HaX gates her own casualty topic on the same global.
+{architect_discussed:
+    You've read the projection, then. I didn't file it. I just recruited the man who could get you the schedule.
+- else:
+    A forty-to-seventy-minute failover window at the cutover, across twelve regions: thirty to forty-five excess deaths, where minutes decide things.
+    The Architect's office signed it off as an acceptable cost. I didn't file it. I recruited the man who could get us the schedule.
+}
 
 -> recruiter_confirms_casualties_choices
 
 === recruiter_confirms_casualties_choices ===
+// lint: call-knot
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
 * [That number was known before Torres ever touched the data.]
@@ -173,17 +187,25 @@ It's filed as an acceptable cost of acquisition. I didn't file it. I just recrui
 // ===========================================
 
 === recruiter_deal ===
+// lint: call-knot
 #speaker:recruiter
 
-Here's why I actually called. What you do with Torres doesn't much interest me. He's already spent.
-
-But I'd rather you didn't spend the next six months chasing the rest of my pipeline.
+// m3: "Since you've rung..." when the player rang her back; else "Here's why I actually called."
+{player_rang:
+    Since you've rung, here's what I wanted. What you do with Torres doesn't much interest me. He's already spent.
+- else:
+    Here's why I actually called. What you do with Torres doesn't much interest me. He's already spent.
+}
 
 Under Torres' keyboard there's an envelope addressed to a PO box in Reading. Forty-seven names.
 
-{found_pipeline_list: You've already opened it, I expect.} Leave it out of your report. Let my courier have it.
-
-In return, nothing in this operation points at you. No loose thread, no file with your face in it.
+// m5: the found_pipeline_list alternative is a whole-line branch now (3.6, no inline alternatives in
+// voiced lines); the old "In return, nothing points at you" line is folded in.
+{found_pipeline_list:
+    You've already opened it, I expect. Leave it out of your report, let my courier have it, and nothing points at you.
+- else:
+    Leave it out of your report, let my courier have it, and nothing in this operation points at you.
+}
 
 Everyone has a price, agent. I'm asking what yours is.
 
@@ -192,6 +214,7 @@ Everyone has a price, agent. I'm asking what yours is.
 -> recruiter_deal_choices
 
 === recruiter_deal_choices ===
+// lint: call-knot
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
 * [Not interested. That list is going to SAFETYNET.]
@@ -206,17 +229,17 @@ Everyone has a price, agent. I'm asking what yours is.
     -> DONE
 
 === recruiter_deal_terms ===
+// lint: call-knot
 #speaker:recruiter
 
 Nothing dramatic. You forget the envelope. It goes to Reading, not to your handler.
 
 You get a clean report, a grateful handler, and one less thing keeping you up at night.
 
-Most agents take that trade without needing it spelled out.
-
 -> recruiter_deal_terms_choices
 
 === recruiter_deal_terms_choices ===
+// lint: call-knot
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
 * [Fine. The envelope goes to Reading. I never saw it.]
@@ -229,6 +252,7 @@ Most agents take that trade without needing it spelled out.
     -> recruiter_deal_refused
 
 === recruiter_deal_taken ===
+// lint: call-knot
 #speaker:recruiter
 ~ recruiter_deal_accepted = true
 ~ recruiter_deal_decided = true
@@ -241,12 +265,11 @@ Do what you like with Torres. The other forty-seven were never your problem.
 -> DONE
 
 === recruiter_deal_refused ===
+// lint: call-knot
 #speaker:recruiter
 ~ recruiter_deal_decided = true
 
 Noted. For what it's worth, I expected it. Your file reads like someone who finishes what they start.
-
-Understand what you're choosing, though. Forty-seven is a number that changes weekly.
 
 You won't reach all of them before I've closed on a few more.
 
@@ -263,6 +286,8 @@ Good luck with Torres. He was cheap. The next one might cost me more, and I'll e
 === return_contact ===
 // lint: call-knot
 // The ring-back call entry (the `call` entry's knot, dialled by the Call button when !recruiter_line_dead).
+// m3: she knows the player rang this time, so recruiter_deal opens "Since you've rung...".
+~ player_rang = true
 #speaker:recruiter
 
 {final_choice != "":
@@ -272,6 +297,7 @@ Good luck with Torres. He was cheap. The next one might cost me more, and I'll e
 }
 
 === mid_mission_contact ===
+// lint: call-knot
 #speaker:recruiter
 {not recruiter_deal_offered:
     -> recruiter_deal
@@ -293,6 +319,7 @@ Forty-seven names. One call from you protects them, or leaves them where they ar
 -> mid_mission_contact_choices
 
 === mid_mission_contact_choices ===
+// lint: call-knot
 // Playtest 3b: a reopened chat re-navigates here (E10); never resume a pre-confrontation menu once the fate is set.
 {final_choice != "": -> post_confrontation_contact}
 // Phase 4 dialogue C1 (D5-5): a player who hung up on the offer has given no
@@ -310,6 +337,7 @@ Forty-seven names. One call from you protects them, or leaves them where they ar
     -> end_contact
 
 === post_confrontation_contact ===
+// lint: call-knot
 #speaker:recruiter
 {not recruiter_deal_offered:
     -> never_talked_terms
@@ -322,6 +350,7 @@ Forty-seven names. One call from you protects them, or leaves them where they ar
 }
 
 === deal_accepted_response ===
+// lint: call-knot
 #speaker:recruiter
 
 We're square, then. The file's forgotten on my end too.
@@ -331,10 +360,12 @@ You'll sleep fine. Most people do, once they've priced it out.
 -> deal_accepted_response_choices
 
 === deal_accepted_response_choices ===
+// lint: call-knot
 + [I'll live with it.]
     -> recruiter_final_statement
 
 === deal_refused_response ===
+// lint: call-knot
 #speaker:recruiter
 
 Torres is dealt with, one way or another, and you didn't take the trade. I respect that more than I expected to.
@@ -344,6 +375,7 @@ It changes nothing about the rest. I'll simply be more careful with whoever's ne
 -> deal_refused_response_choices
 
 === deal_refused_response_choices ===
+// lint: call-knot
 + [There won't be a "next" if I have anything to do with it.]
     -> recruiter_final_statement
 
@@ -352,13 +384,10 @@ It changes nothing about the rest. I'll simply be more careful with whoever's ne
     -> recruiter_final_statement
 
 === recruiter_final_statement ===
+// lint: call-knot
 #speaker:recruiter
 
-Here's what I'd like you to sit with, whatever you decided about Torres.
-
 I didn't lie to him once. I told him exactly what he was trading, and what it would cost other people.
-
-He signed anyway. Everyone I recruit signs anyway.
 
 That's not a defence. It's the part nobody wants to hear: the price was real, and he still took it.
 
@@ -372,6 +401,7 @@ Forty-seven names, agent. The clock on those didn't stop because you found one o
 // rings back only after the confrontation. No offer is made: the envelope's
 // moment has passed.
 === never_talked_terms ===
+// lint: call-knot
 #speaker:recruiter
 Agent. Torres is dealt with, and we never did talk terms. Pity.
 There was an envelope under his keyboard I'd have liked back. Whatever you did with it, the next one will cost me more.
@@ -381,10 +411,12 @@ There was an envelope under his keyboard I'd have liked back. Whatever you did w
 
 // Scenario design R2 (R2-m1): the ring-back answers close without "Think it over".
 === hangs_up ===
+// lint: call-knot
 #exit_conversation
 -> DONE
 
 === end_contact ===
+// lint: call-knot
 #speaker:recruiter
 
 Think it over. Quickly.
