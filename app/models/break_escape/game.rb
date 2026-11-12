@@ -324,6 +324,10 @@ module BreakEscape
     # included, is dropped.
     def merge_global_variables!(variables)
       globals = player_state['globalVariables'] ||= {}
+      # Server-owned globals (sync deltas R2, 6a) are never stored here: se_captures is recorded
+      # through record_capture! in the sync_state capture step, so the client's write (an old
+      # tab's whole map, or a stray key) is dropped whenever it appears.
+      variables = variables.reject { |key, _| SERVER_OWNED_GLOBAL_NAMES.include?(key.to_s) }
       # Imported globals and the worn globals with pp_disguise (Wearables: only POST wear
       # writes them)
       read_only = imported_global_names + wearable_read_only_globals
@@ -762,14 +766,20 @@ module BreakEscape
     # and 6a OR in cards_need_repair?, legacy_captures?, unrecorded_shared_logins?
     # and stampable_captures?; until then no bootstrap write is ever needed.
     def bootstrap_state_needs_write?
-      cards_need_repair?
+      cards_need_repair? || legacy_captures? || unrecorded_shared_logins?
     end
 
     # Run the bootstrap writers inside the lock (none of which saves) and return
     # whether anything changed. Steps 4 and 6a add repair_saved_cards!,
     # migrate_legacy_captures!, record_shared_logins! and stamp_proven_captures!.
     def run_bootstrap_writers!
-      repair_saved_cards!
+      # Each writer reports whether it changed anything, so a lock taken for one does not force a
+      # needless save when another was the reason. migrate first, so a legacy heard-share entry
+      # exists before the backfill looks for a gap.
+      changed = repair_saved_cards!
+      changed = migrate_legacy_captures!(scenario: scenario_data) || changed
+      changed = record_shared_logins!(scenario: scenario_data) || changed
+      changed
     end
 
     def sync_vm_set_id_column
@@ -1629,6 +1639,12 @@ module BreakEscape
       # Sub-slice C (9.4): how many of each NPC's feed posts are out, and when the last came out
       'feedRevealed' => {}
     }.freeze
+
+    # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
+    # is intercepted out of every PUT /sync_state and recorded through record_capture!, migrated
+    # out of an old save on the bootstrap, and refused as a carry-over import. The server's copy
+    # of the client's SERVER_OWNED_GLOBALS.
+    SERVER_OWNED_GLOBAL_NAMES = %w[se_captures].freeze
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that
     # are not accounts; entries for real accounts are never dropped (section 6).

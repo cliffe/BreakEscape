@@ -287,6 +287,9 @@ module BreakEscape
       scenario = CP.scenario
       scenario['social']['landingPages'] = [{ 'id' => 'portal', 'capture' => { 'address' => 'p@x.example', 'secret' => 'Land-Secret-1' } }]
       scenario['social']['phishTargets'] = [{ 'id' => 'phished' }]
+      # A link kit naming the page is the honest route to a phish credential (6a records the
+      # scenario's own fields), so the page the capture resolves to has a kit.
+      scenario['social']['mailClient'] = { 'payloadKit' => [{ 'id' => 'kit_portal', 'kind' => 'link', 'landingPageId' => 'portal' }] }
       build_game(scenario)
       put game_path('sync_state'), params: { globalVariables: { 'se_captures' => {
         'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 },
@@ -309,6 +312,9 @@ module BreakEscape
       scenario = CP.scenario
       scenario['social']['landingPages'] = [{ 'id' => 'portal' }]
       scenario['social']['phishTargets'] = { 'opal_target' => { 'id' => 'opal_target', 'address' => CP::USERNAMES['opal'] } }
+      # The honest route to this phish credential is a link kit landing on the page (6a records
+      # the scenario's own fields); the page carries no capture, so the target's own address is used.
+      scenario['social']['mailClient'] = { 'payloadKit' => [{ 'id' => 'kit_portal', 'kind' => 'link', 'landingPageId' => 'portal' }] }
       build_game(scenario)
       put game_path('sync_state'), params: { globalVariables: { 'se_captures' => {
         'opal_target' => { 'targetId' => 'opal_target', 'kind' => 'credential', 'address' => CP::USERNAMES['opal'], 'at' => 1 }

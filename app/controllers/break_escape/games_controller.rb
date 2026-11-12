@@ -317,6 +317,16 @@ module BreakEscape
           filtered['savedGlobalVariables'] = @game.player_state['globalVariables']
         end
 
+        # The server-owned capture record (sync deltas R2, 6a): shipped as `captures` for the
+        # new client, and mirrored into savedGlobalVariables.se_captures so the current client's
+        # reader (core/game.js) still fills the capture log until 6a-client ships. The entries
+        # carry no secret: GET /capture_secrets serves those once earned (main's authored path).
+        captures = @game.captures_for_client
+        if captures.any?
+          filtered['captures'] = captures
+          filtered['savedGlobalVariables'] = (filtered['savedGlobalVariables'] || {}).merge('se_captures' => captures)
+        end
+
         # The saved current room, so the first sync after a load does not resend
         # currentRoom unless the page starts the player somewhere else (R1,
         # SYNC_DELTAS_PLAN 3.2). One short string; the old client ignores it.
@@ -800,6 +810,11 @@ module BreakEscape
         raise ActiveRecord::Rollback if refusal
 
         merge_grow_only_sections
+        # Server-owned capture record (sync deltas R2, 6a). Runs on a stale request too (a
+        # capture is grow-only and safe to repeat): it intercepts the current client's
+        # se_captures global and records params[:captures], taking every field from the
+        # scenario, so the client never owns the record.
+        apply_capture_sync_step
         # validate: false because the validations here are player and mission
         # presence (twice each: belongs_to is required and validates :player /
         # :mission repeat it), which load both rows on every save, and the
@@ -814,13 +829,84 @@ module BreakEscape
       if refusal
         render json: { success: false, message: refusal }, status: :forbidden
       elsif stale
-        render json: { success: true, stale: true }
+        body = { success: true, stale: true }
+        add_capture_answer_fields(body)
+        render json: body
       else
         body = { success: true }
         body[:notSaved] = @not_saved if @not_saved.any?
         body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
+        add_capture_answer_fields(body)
         render json: body
       end
+    end
+
+    # The se_captures interception and record (sync deltas R2, 6a), inside the sync_state row
+    # lock. The incoming entries are params[:captures] plus the values of the current client's
+    # params[:globalVariables]['se_captures'] (which merge_global_variables! drops, so it is
+    # never stored as a global). Each is recorded through record_capture!, which takes every
+    # stored field from the scenario. Loads the scenario only when there is something to record
+    # or a legacy global to migrate (the narrow sync_state load has no scenario_data).
+    def apply_capture_sync_step
+      incoming = incoming_capture_entries
+      @capture_answers = {}
+      @capture_refused = {}
+      @capture_incoming_any = incoming.any?
+      return if incoming.empty? && !@game.legacy_captures?
+
+      scenario = Game.where(id: @game.id).pick(:scenario_data)
+      @game.migrate_legacy_captures!(scenario: scenario) if @game.legacy_captures?
+
+      incoming.first(BreakEscape::CaptureProofs::MAX_CAPTURES_PER_SYNC).each do |entry|
+        target_id = entry.is_a?(Hash) ? entry['targetId'] : nil
+        result = @game.record_capture!(entry, scenario: scenario)
+        case result[:result]
+        when :recorded, :already
+          stored = result[:entry]
+          tid = (stored && stored['targetId']) || target_id
+          @capture_answers[tid] = client_capture_entry(stored) if tid
+        when :refused
+          @capture_refused[target_id] = result[:reason] if target_id
+        end
+      end
+      # Entries beyond the per-sync cap are refused.
+      incoming.drop(BreakEscape::CaptureProofs::MAX_CAPTURES_PER_SYNC).each do |entry|
+        target_id = entry.is_a?(Hash) ? entry['targetId'] : nil
+        @capture_refused[target_id] = 'invalid' if target_id
+      end
+    end
+
+    # params[:captures] (an array) plus each value of the old tab's
+    # params[:globalVariables]['se_captures'] map, as plain hashes.
+    def incoming_capture_entries
+      entries = []
+      caps = params[:captures]
+      Array(caps).each do |cap|
+        entries << (cap.respond_to?(:to_unsafe_h) ? cap.to_unsafe_h : cap) if cap.is_a?(ActionController::Parameters) || cap.is_a?(Hash)
+      end
+
+      globals = params[:globalVariables]
+      globals = globals.to_unsafe_h if globals.respond_to?(:to_unsafe_h)
+      legacy = globals.is_a?(Hash) ? globals['se_captures'] : nil
+      legacy.each_value { |entry| entries << entry if entry.is_a?(Hash) } if legacy.is_a?(Hash)
+      entries
+    end
+
+    # One stored entry as the client reads it: the safe fields only, never proven or a secret.
+    def client_capture_entry(entry)
+      return nil unless entry.is_a?(Hash)
+
+      out = { 'targetId' => entry['targetId'], 'kind' => entry['kind'] || 'credential' }
+      %w[roleLabel address host note at].each { |k| out[k] = entry[k] if entry.key?(k) && !entry[k].nil? }
+      out
+    end
+
+    # Add captures / capturesRefused to a sync answer, only when the body carried captures.
+    def add_capture_answer_fields(body)
+      return unless @capture_incoming_any
+
+      body[:captures] = @capture_answers if @capture_answers.present?
+      body[:capturesRefused] = @capture_refused if @capture_refused.present?
     end
 
     # POST /games/:id/update_room

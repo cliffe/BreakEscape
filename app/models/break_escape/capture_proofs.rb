@@ -13,6 +13,9 @@ module BreakEscape
   module CaptureProofs
     extend ActiveSupport::Concern
 
+    # At most this many capture entries are taken from one sync body (sync deltas R2, 6a).
+    MAX_CAPTURES_PER_SYNC = 64
+
     # Records a plant when the inventory remove names the object it was used on. Appends
     # { item, on } to plantedItems only if the item is held, the object (a room object with that
     # id) requires and consumes the item, its USB policy does not refuse it (sub-slice U), and its
@@ -119,7 +122,195 @@ module BreakEscape
       CaptureModel.declared_target_ids(scenario_data).to_set | shared
     end
 
+    # --- Server-owned capture record (sync deltas R2, 6a) -----------------------------------
+    #
+    # The record lives in player_state['seCaptures'] = { targetId => entry }, each entry
+    # { targetId, roleLabel, address, kind, host, note, at, proven }. Every field but `at` and
+    # `proven` is taken from the scenario (CaptureModel.capture_candidates), so the server owns
+    # it: the client names the target and the kind and chooses between the candidate values the
+    # writers allow, nothing more. Under 6a every entry is stored proven: true (everything is
+    # revealable); 6b computes `proven`. None of these methods saves; the caller saves once.
+    # They take `scenario:` explicitly because the sync_state row lock loads a narrow column set
+    # without scenario_data.
+
+    # Record one client-claimed capture. Returns { result: :recorded | :already | :refused,
+    # entry:, reason: }.
+    def record_capture!(input, scenario:, by: :client)
+      return { result: :refused, reason: 'invalid' } unless input.is_a?(Hash)
+
+      target_id = input['targetId']
+      return { result: :refused, reason: 'invalid' } unless valid_capture_target_id?(target_id)
+
+      kind = input['kind']
+      kind = 'credential' if kind.nil? || kind == ''
+      return { result: :refused, reason: 'invalid' } unless CaptureModel::CAPTURE_KINDS.include?(kind)
+
+      %w[address host roleLabel].each do |field|
+        value = input[field]
+        next if value.nil?
+        return { result: :refused, reason: 'invalid' } unless value.is_a?(String) && value.length <= CaptureModel::MAX_CAPTURE_FIELD_CHARS
+      end
+
+      record = (player_state['seCaptures'] ||= {})
+      return { result: :already, entry: record[target_id] } if record[target_id].is_a?(Hash)
+
+      if by == :client && !CaptureModel.client_target_ids(scenario).include?(target_id)
+        return record_heard_or_refuse(target_id, scenario: scenario)
+      end
+
+      candidates = CaptureModel.capture_candidates(scenario, target_id, kind)
+      return { result: :refused, reason: 'invalid' } if candidates.empty?
+
+      chosen = pick_capture_candidate(candidates, input)
+      entry = store_capture_entry(record, chosen[:fields], proven: true)
+      { result: :recorded, entry: entry }
+    end
+
+    # Record the capture of a heard share from the server's own composition, first wins.
+    def record_shared_login!(npc_id, scenario:, workaround: nil, at: nil)
+      record = (player_state['seCaptures'] ||= {})
+      return { result: :already, entry: record[npc_id] } if record[npc_id].is_a?(Hash)
+
+      capture = CaptureModel.shared_login_capture(scenario, npc_id, workaround: workaround)
+      return { result: :refused, reason: 'invalid' } unless capture
+
+      entry = { 'targetId' => capture['targetId'], 'kind' => capture['kind'], 'address' => capture['address'],
+                'note' => capture['note'], 'at' => (at.is_a?(Numeric) ? at : capture_now_ms), 'proven' => true }
+      record[npc_id] = entry
+      { result: :recorded, entry: entry }
+    end
+
+    # Record every sharedLogins id whose NPC still has a share_login workaround and has no record
+    # entry (the bootstrap backfill). Returns whether anything changed.
+    def record_shared_logins!(scenario:)
+      changed = false
+      record = (player_state['seCaptures'] ||= {})
+      Array(player_state['sharedLogins']).each do |npc_id|
+        next unless npc_id.is_a?(String)
+        next if record[npc_id].is_a?(Hash)
+        next unless CaptureModel.share_login_npc?(scenario, npc_id)
+
+        result = record_shared_login!(npc_id, scenario: scenario)
+        changed = true if result[:result] == :recorded
+      end
+      changed
+    end
+
+    # Cheap predicate (player_state + scenario NPC list) for the locked bootstrap step.
+    def unrecorded_shared_logins?(scenario: scenario_data)
+      record = player_state['seCaptures']
+      rec = record.is_a?(Hash) ? record : {}
+      Array(player_state['sharedLogins']).any? do |npc_id|
+        npc_id.is_a?(String) && !rec[npc_id].is_a?(Hash) && CaptureModel.share_login_npc?(scenario, npc_id)
+      end
+    end
+
+    # Whether an old save still holds a non-empty legacy globalVariables.se_captures to migrate.
+    def legacy_captures?
+      legacy = player_state.dig('globalVariables', 'se_captures')
+      legacy.is_a?(Hash) && legacy.any?
+    end
+
+    # Move a legacy globalVariables.se_captures map into player_state['seCaptures'] once (a data
+    # move inside player_state, no schema change), then delete the global. A declared target goes
+    # through the candidate match and keeps its stored `at`; a heard share in sharedLogins is
+    # recorded from the server's composition; any other target is dropped. First wins. Returns
+    # whether anything changed.
+    def migrate_legacy_captures!(scenario:)
+      globals = player_state['globalVariables']
+      legacy = globals.is_a?(Hash) ? globals['se_captures'] : nil
+      unless legacy.is_a?(Hash)
+        return false unless globals.is_a?(Hash) && globals.key?('se_captures')
+
+        globals.delete('se_captures')
+        return true
+      end
+
+      record = (player_state['seCaptures'] ||= {})
+      legacy.each do |target_id, entry|
+        next if record[target_id].is_a?(Hash)
+        next unless entry.is_a?(Hash)
+
+        at = entry['at']
+        if CaptureModel.share_login_npc?(scenario, target_id) && Array(player_state['sharedLogins']).include?(target_id)
+          record_shared_login!(target_id, scenario: scenario, at: at)
+        elsif CaptureModel.client_target_ids(scenario).include?(target_id)
+          kind = entry['kind']
+          kind = 'credential' if kind.nil? || kind == ''
+          candidates = CaptureModel.capture_candidates(scenario, target_id, kind)
+          next if candidates.empty?
+
+          chosen = pick_capture_candidate(candidates, entry)
+          stored = store_capture_entry(record, chosen[:fields], proven: true)
+          stored['at'] = at if at.is_a?(Numeric)
+        end
+      end
+
+      globals.delete('se_captures')
+      true
+    end
+
+    # The record for the browser: every entry without the server-only keys (proven) and never a
+    # secret. The bootstrap and every sync answer use this shape. Reads se_captures_record, so an
+    # old save whose captures still sit in the legacy global reads through in place until the
+    # bootstrap migrates them.
+    def captures_for_client(scenario: nil)
+      record = se_captures_record
+      out = {}
+      record.each do |target_id, entry|
+        next unless entry.is_a?(Hash)
+
+        cleaned = { 'targetId' => (entry['targetId'] || target_id), 'kind' => (entry['kind'] || 'credential') }
+        %w[roleLabel address host note at].each { |k| cleaned[k] = entry[k] if entry.key?(k) && !entry[k].nil? }
+        out[target_id] = cleaned
+      end
+      out
+    end
+
     private
+
+    def capture_now_ms
+      (Time.now.to_f * 1000).round
+    end
+
+    def valid_capture_target_id?(target_id)
+      target_id.is_a?(String) && !target_id.empty? && target_id.length <= CaptureModel::MAX_CAPTURE_TARGET_CHARS
+    end
+
+    # The candidate whose client-given address/host/roleLabel all match, preferring a plain
+    # candidate to an overlaid one; else the first (plain-first) candidate.
+    def pick_capture_candidate(candidates, input)
+      ordered = candidates.sort_by { |c| c[:source][:overlaid] ? 1 : 0 }
+      ordered.find { |c| capture_candidate_matches_client?(c, input) } || ordered.first
+    end
+
+    def capture_candidate_matches_client?(candidate, input)
+      %w[address host roleLabel].all? do |field|
+        value = input[field]
+        value.nil? || value == '' || candidate[:fields][field] == value
+      end
+    end
+
+    # Store the candidate's fields whole (nothing authored is cut), with the server's `at` and
+    # `proven`. Returns the stored entry.
+    def store_capture_entry(record, fields, proven:)
+      entry = { 'targetId' => fields['targetId'], 'kind' => fields['kind'] }
+      %w[roleLabel address host note].each { |k| entry[k] = fields[k] if fields.key?(k) }
+      entry['at'] = capture_now_ms
+      entry['proven'] = proven
+      record[fields['targetId']] = entry
+      entry
+    end
+
+    # Record a heard share itself, or refuse a client claim for an undeclared target.
+    def record_heard_or_refuse(target_id, scenario:)
+      if CaptureModel.share_only_target?(scenario, target_id)
+        return record_shared_login!(target_id, scenario: scenario) if Array(player_state['sharedLogins']).include?(target_id)
+
+        return { result: :refused, reason: 'server_only' }
+      end
+      { result: :refused, reason: 'undeclared' }
+    end
 
     # { object:, room_id: } for the room object (under rooms.<id>.objects, by id only, never by
     # name) that a plant names, or nil.
