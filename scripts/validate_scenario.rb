@@ -28,10 +28,12 @@ require_relative 'validate_wearable'
 require_relative 'validate_phone_calls'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
+require_relative '../lib/break_escape/capture_model'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative 'validate_npc_habits'
 require_relative '../lib/break_escape/access_work'
+require_relative '../lib/break_escape/owner_claim'
 require_relative 'validate_access_work'
 
 # Try to load json-schema gem, provide helpful error if missing
@@ -425,7 +427,7 @@ def check_unknown_fields(json_data)
     type door_sign connections locked lockType requires keyPins lockedHint difficulty
     ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
     chatBackground doors needsPrivateTo access acceptsUIDOnly
-    network
+    network cryptexConfig
   ]
 
   # Known NPC fields
@@ -440,7 +442,7 @@ def check_unknown_fields(json_data)
     answersPhones phoneCalls call
     role creds staff cloneable
     awareness habits
-    workNeeds frustration workarounds phone socialUse feed
+    workNeeds frustration workarounds phone socialUse feed usbHabit
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
@@ -481,17 +483,28 @@ def check_unknown_fields(json_data)
     md = obj['minigameData']
     return unless md.is_a?(Hash)
 
-    # interactionType last: a generic 'pc' that opens a named minigame (blockchain_explorer).
-    schema      = minigame_schemas[obj['type']] || minigame_schemas[obj['lockType']] || minigame_schemas[obj['id']] || minigame_schemas[obj['interactionType']]
-    schema_key  = [obj['type'], obj['lockType'], obj['id'], obj['interactionType']].find { |k| k && minigame_schemas[k] }
-    unless schema
+    # Every layer that reads minigameData has its own schema, and an object can hit
+    # several: a locked 'pc' (type: the requiresGlobal gate) with lockType
+    # ransomware_display (the ransom screen) reads both. So the fields of every
+    # matching schema are known. interactionType last: a generic 'pc' that opens a
+    # named minigame (blockchain_explorer). id and lockType count only for schemas
+    # whose _dispatch names that key, as the engine dispatches them.
+    dispatched_on = ->(k, key) { minigame_schemas[k] && minigame_schemas[k]['_dispatch'] == key }
+    schema_keys = [
+      (obj['type'] if minigame_schemas[obj['type']]),
+      (obj['lockType'] if dispatched_on.call(obj['lockType'], 'lockType')),
+      (obj['id'] if dispatched_on.call(obj['id'], 'id')),
+      (obj['interactionType'] if minigame_schemas[obj['interactionType']])
+    ].compact.uniq
+    if schema_keys.empty?
       dispatch_key = obj['type'] || obj['lockType'] || obj['id']
       warnings << "⚠️ WARNING: '#{path}' has minigameData but no schema is defined for '#{dispatch_key}' — add an entry to minigame-data-schemas.json."
       return
     end
+    schema_key = schema_keys.join("' or '")
 
-    required = schema['required'] || []
-    optional = schema['optional'] || []
+    required = schema_keys.flat_map { |k| minigame_schemas[k]['required'] || [] }.uniq
+    optional = schema_keys.flat_map { |k| minigame_schemas[k]['optional'] || [] }.uniq
     known    = (required + optional + ['_comment']).to_set
 
     missing = required.reject { |k| md.key?(k) && !md[k].nil? }
@@ -514,11 +527,12 @@ def check_unknown_fields(json_data)
     voice ttsVoice sender timestamp avatar sprite
     collection_group onRead onPickup onInteract
     lockType requires opens_lock key_id keyPins card_id difficulty
-    passwordHint showHint showKeyboard maxAttempts pinLength
+    passwordHint showHint showKeyboard maxAttempts pinLength cryptexConfig
     postitNote showPostit
     hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
     fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
     mac canScanBluetooth phoneId npcIds app
+    phoneOf site
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents hasContents triggerOnInteract
@@ -1928,13 +1942,14 @@ def check_lock_credentials(json_data)
   # room NPC in its openFor who has a sprite (npcType person or both, as core/rooms.js
   # makes them), carrying the card or not, as door-gates.js opens for them; a phone NPC or
   # an id with no NPC behind it never comes near. A gate on an east or west door is no gate
-  # (door-gates.js declines it). A gate is a way in when it opens for someone and sets
-  # playerMayPassIf, or when an NPC it opens for holds doors, that is, is not in the gate's
-  # noHold once habits are expanded (plan 5.4). A gate that opens only for careful guards
-  # cannot be tailgated. A lock on an object (a safe, a cabinet) is never opened by
-  # tailgating, which does not give the player the card. This is a warning heuristic, not
-  # a proof of solvability: whether a cloner is itself reachable, and whether a guard ever
-  # walks the gate, are not checked.
+  # (door-gates.js declines it), nor is one on a door entry that matches no doorway (doors.js
+  # never reads it; check_access_model warns). A gate is a way in when it opens for someone
+  # and sets playerMayPassIf, or when an NPC it opens for holds doors, that is, is not in the
+  # gate's noHold once habits are expanded (plan 5.4). A gate that opens only for careful
+  # guards cannot be tailgated. A lock on an object (a safe, a cabinet) or on a start item is
+  # never opened by tailgating, which does not give the player the card. A lock counts only
+  # while locked is true. This is a warning heuristic, not a proof of solvability: whether a
+  # cloner is itself reachable, and whether a guard ever walks the gate, are not checked.
   declared = { 'key' => Set.new, 'rfid' => Set.new }
   key_items.each { |_name, credential, lt| declared[lt] << credential }
   # Cards the player can hold as an item: a lock that accepts one of them is open to him
@@ -1951,8 +1966,11 @@ def check_lock_credentials(json_data)
   end
   find_cloner.call(json_data)
   rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  # A lock only while locked: interactions.js opens an object's lock on locked === true and
+  # doors.js locks a door on a truthy room 'locked'
   requires_card = lambda do |lock, card_id|
-    lock.is_a?(Hash) && lock['lockType'] == 'rfid' && Array(lock['requires']).map(&:to_s).include?(card_id)
+    lock.is_a?(Hash) && lock['locked'] == true && lock['lockType'] == 'rfid' &&
+      Array(lock['requires']).map(&:to_s).include?(card_id)
   end
   rooms_requiring = lambda do |card_id|
     rooms.select { |_id, r| requires_card.call(r, card_id) && !accepts_item.call(r) }.keys
@@ -1962,8 +1980,34 @@ def check_lock_credentials(json_data)
     ai.room_objects(json_data).map { |e| e[:path] if requires_card.call(e[:object], card_id) && !accepts_item.call(e[:object]) }
       .compact
   end
+  # Every other lock on the card, outside the rooms and their objects (a locked container in
+  # startItemsInInventory): no gate leads to it either. A door entry is skipped: play never
+  # reads a lock on it (the bootstrap scenario has no doors; check_access_model warns).
+  counted = {}.compare_by_identity
+  rooms.each_value do |r|
+    next unless r.is_a?(Hash)
+
+    counted[r] = true
+    Array(r['doors']).each { |d| counted[d] = true if d.is_a?(Hash) }
+  end
+  ai.room_objects(json_data).each { |e| counted[e[:object]] = true }
+  other_requiring = lambda do |card_id|
+    out = []
+    walk = lambda do |node, path|
+      case node
+      when Array then node.each_with_index { |n, i| walk.call(n, "#{path}[#{i}]") }
+      when Hash
+        out << path if !counted.key?(node) && requires_card.call(node, card_id) && !accepts_item.call(node)
+        node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+      end
+    end
+    walk.call(json_data, '')
+    out
+  end
   gates = rooms.empty? ? [] : BreakEscape::NpcHabits.gate_entries(BreakEscape::NpcHabits.expanded_copy(json_data).first)
-  gates = gates.reject { |g| %w[east west].include?(g[:direction].to_s) }
+  # Only a gate the engine registers: on a north or south door (door-gates.js declines a
+  # side gate), on an entry doors.js matches to a doorway (check_access_model warns otherwise)
+  gates = gates.reject { |g| %w[east west].include?(g[:direction].to_s) || g[:doorway] }
   # The NPCs a gate can open for: those with a sprite. A phone NPC (npcType phone, or none,
   # which npc-manager.js reads as phone) or an openFor id with no NPC behind it never comes near
   room_npc_ids = rooms.values.flat_map { |r| r.is_a?(Hash) && r['npcs'].is_a?(Array) ? r['npcs'] : [] }
@@ -1990,21 +2034,15 @@ def check_lock_credentials(json_data)
       next
     end
 
-    locked_rooms = rooms_requiring.call(card_id)
-    gap = { careful: [], npc_only: [], object: objects_requiring.call(card_id) }
-    if locked_rooms.empty?
-      # Only other locks require it (a lock that also accepts an item card is open): no gate
-      # leads to them. A lock found nowhere else (a door entry, a start item) is reported
-      # in general terms.
-      covered = rooms.any? { |_id, r| requires_card.call(r, card_id) } || gap[:object].any?
-      gap[:npc_only] << nil unless covered
-    else
-      locked_rooms.each do |room_id|
-        states = gates.select { |g| g[:connected_room] == room_id }.map { |g| gate_state.call(g) }
-        next if states.include?(:open)
+    # Each locked room is decided by its gates. Every other lock on the card (an object, a
+    # start item) is a gap no gate fills; a lock that also accepts an item card is open to
+    # the player.
+    gap = { careful: [], npc_only: [], object: objects_requiring.call(card_id) + other_requiring.call(card_id) }
+    rooms_requiring.call(card_id).each do |room_id|
+      states = gates.select { |g| g[:connected_room] == room_id }.map { |g| gate_state.call(g) }
+      next if states.include?(:open)
 
-        gap[states.include?(:careful) ? :careful : :npc_only] << room_id
-      end
+      gap[states.include?(:careful) ? :careful : :npc_only] << room_id
     end
     if gap.values.all?(&:empty?)
       declared['rfid'] << card_id
@@ -2026,9 +2064,8 @@ def check_lock_credentials(json_data)
                     "cloner, a keycard item, a guard who holds doors, playerMayPassIf on the gate or another door."
         end
         unless gap[:npc_only].empty?
-          where = gap[:npc_only].compact.empty? ? 'the locked room' : quote.call(gap[:npc_only].compact)
           issues << "⚠️ WARNING: a lock requires rfid '#{req}', and only an NPC carries that card. There is no " \
-                    "rfid_cloner in the scenario and no gate into #{where} opens for an NPC, so the player " \
+                    "rfid_cloner in the scenario and no gate into #{quote.call(gap[:npc_only])} opens for an NPC, so the player " \
                     "cannot use it. Add a cloner, a keycard item or a gate, or the door is a soft-lock."
         end
         unless gap[:object].empty?
@@ -2088,6 +2125,91 @@ def check_pin_locks(json_data)
     end
   end
   walk.call(json_data, '')
+  issues
+end
+
+# ─────────────────────────────────────────────────────────────
+# Combination padlocks and cryptexes the minigame can't open (unlock gaps build,
+# 2026-11-12). The server checks the answer against `requires`, which never reaches
+# the client. The padlock has three dials of 0-39 (minigames/combination); the
+# cryptex has `cryptexConfig.wheelCount` wheels (5 if unset) of `alphabets` (A-Z if
+# unset). The old client copies of the answer (`combination`, `cryptexConfig.answer`)
+# are stripped from every payload, so they no longer open anything.
+# ─────────────────────────────────────────────────────────────
+def check_combination_cryptex_locks(json_data)
+  issues = []
+  walk = lambda do |node, path|
+    case node
+    when Array then node.each_with_index { |n, i| walk.call(n, "#{path}[#{i}]") }
+    when Hash
+      kind = node['lockType']
+      if %w[combination cryptex].include?(kind)
+        where = "'#{path}'#{node['name'] ? " (#{node['name']})" : ''}"
+        secret = node['requires']
+        if secret.nil? || secret.to_s.strip.empty?
+          moved = kind == 'combination' ? node['combination'] : node.dig('cryptexConfig', 'answer')
+          note = moved ? " Move the answer from '#{kind == 'combination' ? 'combination' : 'cryptexConfig.answer'}' into 'requires'." : ''
+          issues << "❌ INVALID: #{where} is a #{kind} lock with no 'requires'. The server checks the answer " \
+                    "against 'requires' only, so it can never open.#{note}"
+        elsif kind == 'combination'
+          parts = secret.is_a?(Array) ? secret.map(&:to_s) : secret.to_s.split(/[^0-9]+/).reject(&:empty?)
+          unless parts.length == 3 && parts.all? { |p| p.match?(/\A\d+\z/) && p.to_i.between?(0, 39) }
+            issues << "❌ INVALID: #{where} combination '#{secret.is_a?(Array) ? secret.join('-') : secret}' must be " \
+                      "three numbers from 0 to 39 (the padlock's dials), such as \"12-30-5\"."
+          end
+        else
+          config = node['cryptexConfig'].is_a?(Hash) ? node['cryptexConfig'] : {}
+          wheels = config.key?('wheelCount') ? Integer(config['wheelCount'], exception: false) : 5
+          unless wheels.is_a?(Integer) && wheels.positive?
+            issues << "❌ INVALID: #{where} cryptexConfig.wheelCount must be a whole number such as 6, not " \
+                      "#{config['wheelCount'].inspect}."
+            wheels = 5
+          end
+          word = secret.to_s.strip
+          alphabets = config['alphabets'] || Array.new(wheels, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+          if word.length != wheels
+            issues << "❌ INVALID: #{where} cryptex word is #{word.length} letters but the cryptex has #{wheels} " \
+                      "wheels (cryptexConfig.wheelCount, 5 if unset), so it can never be spelt."
+          elsif word.chars.each_with_index.any? { |c, w| !alphabets[w].to_s.upcase.include?(c.upcase) }
+            issues << "❌ INVALID: #{where} cryptex word '#{word}' has a letter that is not on its wheel."
+          end
+        end
+        if node.key?('combination') || (node['cryptexConfig'].is_a?(Hash) && node['cryptexConfig'].key?('answer'))
+          issues << "⚠️ WARNING: #{where} still has the answer in '#{node.key?('combination') ? 'combination' : 'cryptexConfig.answer'}'. " \
+                    "The server strips it and reads 'requires' only; remove it."
+        end
+      end
+      node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+    end
+  end
+  walk.call(json_data, '')
+  issues
+end
+
+# A container an NPC carries is released (by a give or a KO) only through its scenario
+# `id` (Game#released_npc_containers). Without one the player can never open it, and
+# sees "Access denied" (unlock gaps R1 m2). The container test matches the server's:
+# contents, locked, or a container type.
+NPC_CONTAINER_TYPES = %w[suitcase briefcase bag1 bin1].freeze
+def check_npc_held_containers(json_data)
+  issues = []
+  npcs = []
+  (json_data['rooms'] || {}).each do |room_id, room|
+    Array(room.is_a?(Hash) ? room['npcs'] : nil).each { |n| npcs << [n, "rooms/#{room_id}/npcs"] if n.is_a?(Hash) }
+  end
+  Array(json_data['npcs']).each { |n| npcs << [n, 'npcs'] if n.is_a?(Hash) }
+  npcs.each do |npc, where|
+    Array(npc['itemsHeld']).each_with_index do |item, i|
+      next unless item.is_a?(Hash)
+      container = item.key?('contents') || item['locked'] == true || NPC_CONTAINER_TYPES.include?(item['type'])
+      next unless container
+      next if item['id'].is_a?(String) && !item['id'].strip.empty?
+
+      issues << "❌ INVALID: '#{where}/#{npc['id']}/itemsHeld[#{i}]'#{item['name'] ? " (#{item['name']})" : ''} is a " \
+                "container an NPC carries but has no 'id'. The server releases it after a give or a KO only by its " \
+                "id, so without one the player can never open it. Give it an id."
+    end
+  end
   issues
 end
 
@@ -2219,7 +2341,19 @@ def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_leg
     mapped = Array(npc['eventMappings']).flat_map { |m| m.is_a?(Hash) ? Array(m['unlockDoor']) : [] }
     wp_lists.each do |wps, where|
       wps.each_with_index do |wp, wi|
-        target = wp.is_a?(Hash) && wp['action'].is_a?(Hash) ? wp['action']['unlockRoom'] : nil
+        action = wp.is_a?(Hash) && wp['action'].is_a?(Hash) ? wp['action'] : nil
+        # useMs (q53 e): how long the NPC stands keying at useObject before npc_used_object_done
+        if action&.key?('useMs')
+          ms = action['useMs']
+          issues << "❌ ERROR: '#{where}' (#{npc['id']}) waypoint #{wi} action.useMs must be a number of ms from 0 to 30000." unless ms.is_a?(Numeric) && ms >= 0 && ms <= 30000
+          issues << "⚠️ WARNING: '#{where}' (#{npc['id']}) waypoint #{wi} has action.useMs but no useObject; it does nothing without one." unless action['useObject'].is_a?(String)
+        end
+        # The engine runs actions only when multiRoom is true and the route has segments
+        multi_room = patrol['multiRoom'] == true && patrol['route'].is_a?(Array) && !patrol['route'].empty?
+        if action && !multi_room && (action['useObject'] || action['unlockRoom'])
+          issues << "⚠️ WARNING: '#{where}' (#{npc['id']}) waypoint #{wi} has an action, but waypoint actions run only on a multi-room route (behavior.patrol.multiRoom true with a route)."
+        end
+        target = action ? action['unlockRoom'] : nil
         next unless target.is_a?(String) && !mapped.include?(target)
         issues << "❌ ERROR: '#{where}' (#{npc['id']}) waypoint #{wi} has action.unlockRoom '#{target}', but #{npc['id']} has no " \
                   "eventMapping with unlockDoor: \"#{target}\". The server refuses the unlock (game.rb npc_mapping_unlocks_door?) " \
@@ -5923,18 +6057,21 @@ end
 # (utils/global-condition.js parseActionCondition): anything outside the grammar below
 # does not hold, so the action is silently never run. This is the same grammar, term
 # by term, so what passes here is what the engine evaluates.
-ACTION_CONDITION_NAME = /\A(!\s*)*globalVars\.\w+\z/
-ACTION_CONDITION_COMPARE = /\AglobalVars\.\w+\s*(===|!==|>=|<=|>|<)\s*(true|false|null|-?\d+(?:\.\d+)?|'[^'"]*'|"[^'"]*")\z/
+# Whitespace is the ASCII set only, as in the engine: Ruby's strip also drops NUL, and
+# JavaScript's \s and trim() also take Unicode spaces, so neither side uses them.
+ACTION_CONDITION_NAME = /\A(![ \t\n\r\f\v]*)*globalVars\.\w+\z/
+ACTION_CONDITION_COMPARE = /\AglobalVars\.\w+[ \t\n\r\f\v]*(===|!==|>=|<=|>|<)[ \t\n\r\f\v]*(true|false|null|-?\d+(?:\.\d+)?|'[^'"]*'|"[^'"]*")\z/
+ACTION_CONDITION_TRIM = /\A[ \t\n\r\f\v]+|[ \t\n\r\f\v]+\z/
 ACTION_LIST_KEYS = %w[actions triggerOnInteract onConfirm completionActions flagRewards].freeze
 
 # nil when the condition is in the grammar, else what is wrong with it.
 def action_condition_problem(condition)
   return "is not a string (#{condition.inspect})" unless condition.is_a?(String)
-  return 'is empty' if condition.strip.empty?
+  return 'is empty' if condition.gsub(ACTION_CONDITION_TRIM, '').empty?
   condition.split('||', -1).each do |alt|
-    return "has an empty term (a stray '&&' or '||')" if alt.strip.empty?
+    return "has an empty term (a stray '&&' or '||')" if alt.gsub(ACTION_CONDITION_TRIM, '').empty?
     alt.split('&&', -1).each do |term|
-      t = term.strip
+      t = term.gsub(ACTION_CONDITION_TRIM, '')
       return "has an empty term (a stray '&&' or '||')" if t.empty?
       next if t.match?(ACTION_CONDITION_NAME) || t.match?(ACTION_CONDITION_COMPARE)
       return "has a term the engine cannot read: \"#{t}\""
@@ -6013,10 +6150,19 @@ def check_or_in_global_conditions(json_data)
   walk = lambda do |node, path, ctx|
     case node
     when Array
-      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", ctx) }
+      # The entries of an action list are actions (see :action below)
+      entry_ctx = ctx == :action_list ? :action : ctx
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", entry_ctx) }
     when Hash
+      # An action's own condition supports '||' (check_action_conditions reads its syntax),
+      # so it is exempt here. Only that one: what is nested inside the action (a give_item's
+      # item with a lighting block, say) is read by its own evaluator and checked as usual.
+      # A hash with no type is not an action (check_action_conditions skips it too), so
+      # its condition is checked here like any other.
+      is_action = ctx == :action && node.key?('type')
+      ctx = nil if ctx == :action || ctx == :action_list
       cond = node['condition']
-      if cond.is_a?(String) && !path.match?(checked_elsewhere)
+      if !is_action && cond.is_a?(String) && !path.match?(checked_elsewhere)
         case ctx
         when :lighting, :torch, :chat_background, :clock
           if (bad = unsupported_condition_syntax(cond, allow_includes: false))
@@ -6047,8 +6193,8 @@ def check_or_in_global_conditions(json_data)
         child_ctx = :torch if k == 'torch' && ctx.nil?
         child_ctx = :chat_background if k == 'chatBackground' && ctx.nil?
         child_ctx = :or_ok if %w[timeline statusRows portraitVariants].include?(k) && ctx.nil?
-        # An action's condition: '||' is supported, and check_action_conditions reads the syntax
-        child_ctx = :js if ACTION_LIST_KEYS.include?(k)
+        # An action list: its entries' own conditions are exempt (see :action above)
+        child_ctx = :action_list if ACTION_LIST_KEYS.include?(k) && ctx.nil?
         walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}", child_ctx)
       end
     end
@@ -6093,6 +6239,12 @@ end
 # server's. repo_root (for storyPath) and scenario_dir (for ink/*.json) enable the ink
 # checks; without them those are skipped. Messages never quote a password.
 # ─────────────────────────────────────────────────────────────
+
+# Lock fields doors.js would take from a door entry before the room's (lockProps), and
+# never does in play, since the bootstrap scenario has no doors. requires is checked on
+# its own (a copy of the room's is harmless); access and acceptsUIDOnly are errors.
+DOOR_ENTRY_LOCK_FIELDS = %w[locked lockType keyPins key_pins difficulty lockedHint biometricMatchThreshold
+                            maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength].freeze
 def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   issues = []
   return issues unless json_data.is_a?(Hash)
@@ -6180,6 +6332,43 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
 
     err.call("accounts #{ids.map { |id| "'#{id}'" }.join(', ')} share the username '#{username}' " \
              '(usernames compare trimmed and case-insensitively).')
+  end
+
+  # A non-account capture secret that is also a password or PIN lock code is withheld until a
+  # capture proof holds (Game#authored_capture_secret), so one authored with no proof is never
+  # served and the capture silently stops working. Warn the author (usePayload/capture review R1).
+  lock_codes = BreakEscape::CaptureModel.lock_codes(json_data)
+  unless lock_codes.empty?
+    room_npcs.reject { |e| ai.account?(e[:npc]) }.each do |e|
+      npc = e[:npc]
+      payload = npc['usePayload']
+      if payload.is_a?(Hash) && lock_codes.include?(payload['secret'].to_s)
+        own = payload['targetId']
+        ungated = if own.is_a?(String) && !own.strip.empty?
+                    !payload['proof'].is_a?(Hash)
+        else
+                    Array(npc['eventMappings']).any? do |m|
+                      ac = m.is_a?(Hash) ? m['addCapture'] : nil
+                      ac.is_a?(Hash) && BreakEscape::CaptureModel.present_string?(ac['targetId']) &&
+                        !(ac['proof'].is_a?(Hash) || payload['proof'].is_a?(Hash))
+                    end
+        end
+        if ungated
+          warn.call("NPC #{name_of.call(npc)} has a usePayload.secret that is also a password or PIN lock " \
+                    'code but no capture proof gates it, so the capture is withheld and never served. Add a ' \
+                    "'proof' to the capture, or make the secret open nothing.")
+        end
+      end
+      Array(npc['eventMappings']).each_with_index do |mapping, i|
+        capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
+        next unless capture.is_a?(Hash) && lock_codes.include?(capture['secret'].to_s)
+        next if capture['proof'].is_a?(Hash)
+
+        warn.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture.secret is also a password or PIN " \
+                  'lock code but the mapping has no \'proof\', so the capture is withheld and never served. ' \
+                  "Add a 'proof' to the capture, or make the secret open nothing.")
+      end
+    end
   end
 
   # Access lists: people must be room NPCs; roles should be held by someone
@@ -6298,7 +6487,42 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
 
     room['doors'].each_with_index do |door, i|
-      next unless door.is_a?(Hash)
+      # The schema types each entry as an object, so from the command line validation stops
+      # before this; these cover a scenario checked without the schema. doors.js reads
+      # connectedRoom on every entry: null throws and the room's doors are never built, and
+      # any other non-object has no connectedRoom, so it matches no doorway and is skipped.
+      if door.nil?
+        err.call("'rooms/#{room_id}/doors[#{i}]' is null; doors.js throws reading its connectedRoom, so the " \
+                 "doors of '#{room_id}' are never built.")
+        next
+      end
+      unless door.is_a?(Hash)
+        warn.call("'rooms/#{room_id}/doors[#{i}]' is not an object, so the engine skips it.")
+        next
+      end
+
+      # A lock on a door entry is never read: the bootstrap scenario has no doors, so doors.js
+      # finds no entry to read lock fields from, and the door and the server take the lock
+      # from the room it leads into. That includes requires: a gate's card is the room's
+      # requires. A requires that repeats the room's is harmless and draws nothing.
+      target_room = rooms[door['connectedRoom']]
+      if door.key?('requires')
+        door_cards = Array(door['requires']).map(&:to_s).sort
+        room_cards = Array(target_room.is_a?(Hash) ? target_room['requires'] : nil).map(&:to_s).sort
+        if door_cards != room_cards
+          # Either value may be a PIN or password (on the room, or meant for the entry), so
+          # neither is shown
+          warn.call("'rooms/#{room_id}/doors[#{i}]' has a 'requires' that differs from the requires on room " \
+                    "'#{door['connectedRoom']}' (values not shown); the gate and the door use the room's, and " \
+                    'the game never reads requires on a door entry.')
+        end
+      end
+      DOOR_ENTRY_LOCK_FIELDS.each do |field|
+        next unless door.key?(field)
+
+        warn.call("'rooms/#{room_id}/doors[#{i}]' has '#{field}', which the game never reads on a door entry " \
+                  "(the bootstrap scenario has no doors); put it on room '#{door['connectedRoom']}'.")
+      end
 
       # An access list belongs on the room the door leads into: the server reads the room
       # (section 6), so a list on a door entry would be a client-only rule.
@@ -6309,6 +6533,31 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                  'which is where the server reads it.')
       end
       next unless door['gate'].is_a?(Hash) && door['gate']['enabled'] != false
+
+      # doors.js reads a door entry only when it matches a doorway of the room (connections
+      # plus direction, first match wins), so a gate on any other entry does nothing
+      at = "'rooms/#{room_id}/doors[#{i}]' has a gate into '#{door['connectedRoom']}'"
+      dead = 'so the engine never reads it: the gate does nothing and the door behaves as an ordinary door.'
+      case BreakEscape::NpcHabits.doorway_problem(room, i)
+      when :no_direction
+        said = if door.key?('direction')
+                 "direction #{door['direction'].inspect}, which is not north, south, east or west (lower case),"
+        else
+                 "no 'direction' (north, south, east or west),"
+        end
+        warn.call("#{at} but #{said} #{dead} Add the direction under which room '#{room_id}' lists " \
+                  "'#{door['connectedRoom']}' in its connections.")
+        next
+      when :no_connection
+        warn.call("#{at} on its '#{door['direction']}' door, but room '#{room_id}' lists no " \
+                  "'#{door['connectedRoom']}' under connections.#{door['direction']}, #{dead} Fix the direction " \
+                  'or the connectedRoom.')
+        next
+      when :shadowed
+        warn.call("#{at}, but an earlier entry in doors matches the same doorway and the engine reads only " \
+                  "the first, #{dead} Put the gate on the first entry and drop this one.")
+        next
+      end
 
       target = rooms[door['connectedRoom']]
       if door.key?('access') || (target.is_a?(Hash) && target.key?('access'))
@@ -6347,6 +6596,25 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     end
   end
   find_rewards.call(json_data)
+  # Owner claim q78, judged as the server judges it: on the data as prepared at game creation
+  # (habits expanded, so screenHabit is filled; object ids stamped), and only where check 10 is
+  # the reason the claim is refused. An owner with no account or not on the PC's access list, a
+  # screen that always locks and a policy with autoLockMin 0 are refused by an earlier check.
+  claim_data = nil
+  owner_never_leaves = lambda do |raw_pc, owner_id|
+    claim_data ||= BreakEscape::NpcHabits.expanded_copy(json_data).first
+    c_pc = ai.sign_in_pcs(claim_data).map { |x| x[:object] }.find { |o| raw_pc['id'] && o['id'] == raw_pc['id'] } || raw_pc
+    c_owner = ai.room_npcs(claim_data).map { |x| x[:npc] }.find { |n| n['id'].to_s == owner_id.to_s }
+    next false unless c_owner
+    # Game#claim_login_session! checks 4 and 5 (account_holder?, pc_admits_account?)
+    next false unless ai.account?(c_owner) && (c_pc['access'].nil? || ai.acl_admits?(c_pc['access'], c_owner))
+    next false if ai.screen_always_locks?(c_pc, c_owner)
+
+    c_policy = claim_data['policies'].is_a?(Hash) ? claim_data['policies'][(c_pc['policy'] || claim_data['defaultPolicy']).to_s] : nil
+    next false if c_policy.is_a?(Hash) && c_policy['autoLockMin'].is_a?(Numeric) && c_policy['autoLockMin'].zero?
+
+    BreakEscape::OwnerClaim.never_leaves?(claim_data, c_owner, c_pc)
+  end
   pcs.each do |e|
     pc = e[:object]
     where = "sign-in PC '#{pc['id'] || e[:path]}'"
@@ -6375,9 +6643,19 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
           warn.call("#{where} has lockChance #{lock_chance}: whether its owner's session is left open depends on a " \
                     'seeded roll. Fix the chance at 0 or 1, or make sure another route exists.')
         end
-        unless ai.needs_tracked?(owner[:npc])
+        if !ai.needs_tracked?(owner[:npc])
           warn.call("#{where} is owned by '#{owner_id}', who has no valid needs or interests entry, so the owner " \
                     'never leaves and no unlocked session is possible there.')
+        elsif owner_never_leaves.call(pc, owner_id)
+          # Owner claim q78: the server refuses a claim here too
+          warn.call("#{where} is owned by '#{owner_id}', whom nothing sends away from the post in a way that " \
+                    'can leave the screen open: no need is met by any object other than their own post (in any room), no ' \
+                    'print errand or failure route, no patrol, scripted move, patrol_mode ink tag or unreadable story, ' \
+                    'social media need, station hook, interest, phone answering, print habit or movable source, and a ' \
+                    'knock-out is either ' \
+                    'impossible (disableAttacks or koImmune) or always locks this screen. No unlocked session is ' \
+                    'possible there and the server refuses a claim. If the screen is meant to be found open, give ' \
+                    'the owner a need met somewhere else, or allow attacks and give the PC a lockChance below 1.')
         end
       end
     end
@@ -6461,7 +6739,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                         rescue JSON::ParserError
                           File.read(compiled)
                         end
-                      end
+      end
       source_text = File.exist?(source) ? File.read(source) : nil
       text = compiled_text || source_text
       next unless text
@@ -6774,6 +7052,8 @@ def main
     common_issues = check_common_issues(json_data, valid_item_types)
     common_issues += check_lock_credentials(json_data)
     common_issues += check_pin_locks(json_data)
+    common_issues += check_combination_cryptex_locks(json_data)
+    common_issues += check_npc_held_containers(json_data)
     common_issues += check_npc_patrol_and_catch_locks(json_data, repo_root)
     common_issues += check_give_item_collectible(json_data)
     common_issues += check_interaction_warnings(json_data)
@@ -6785,7 +7065,7 @@ def main
     common_issues += ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy))
     common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
     common_issues += check_speaker_id_name_clashes(json_data)
-    common_issues += check_network_model(json_data)
+    common_issues += check_network_model(json_data, File.dirname(erb_path))
     common_issues += check_capture_log(json_data)
     common_issues += check_wearables(json_data, File.dirname(erb_path))
     common_issues += check_phone_calls(json_data, repo_root)
@@ -6878,10 +7158,18 @@ def main
       graph_script = File.join(__dir__, 'generate_dungeon_graph.rb')
       if File.exist?(graph_script)
         puts "Generating dungeon graph..."
-        result = system('ruby', graph_script, erb_path)
+        # The generator's test switch (it turns the Wi-Fi key scrub off) never reaches a real run.
+        result = system({ 'DUNGEON_GRAPH_TEST_NO_SCRUB' => nil }, 'ruby', graph_script, erb_path)
         graph_out = File.join(File.dirname(erb_path), 'dungeon_graph.html')
         if result
+          # The path the author typed, as the "Validating scenario:" line prints it.
           puts "✓ Dungeon graph: #{graph_out}"
+        elsif $?.exitstatus == 3
+          # The generator's key check stopped the run (KEY_STOP_STATUS) and deleted the old graph files.
+          puts "❌ ERROR: Dungeon graph stopped: an output still held a Wi-Fi key (see the message above); " \
+               'the old dungeon_graph files were deleted.'
+          puts
+          exit 1
         else
           puts "⚠️ Dungeon graph generation failed (non-fatal)"
         end

@@ -1,5 +1,83 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml as escapeTitle } from '../../utils/escape-html.js';
+
+// The title is plain text (scenario or server data): escaped before it reaches HTML.
+
+// Block content (labels, descriptions, bodies, cells, values) is rich text by design:
+// the scenarios use <strong>, <p>, <br> and <code>, a style on <strong> and <p>, and
+// HTML entities. Everything else is dropped: other tags are unwrapped to their text,
+// script-like elements are removed whole, and every other attribute goes.
+const RICH_TAGS = new Set(['STRONG', 'P', 'BR', 'CODE']);
+const RICH_STYLE_TAGS = new Set(['STRONG', 'P']);
+const RICH_DROP = new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH',
+    'NOSCRIPT', 'TEXTAREA', 'TITLE', 'XMP', 'NOEMBED', 'NOFRAMES', 'SELECT']);
+// A plain declaration value: no url(), expression(), @import, escapes or markup.
+const SAFE_STYLE = /^[\w\s#%.,()-]*$/;
+const UNSAFE_STYLE = /url\s*\(|expression|@import|javascript:/i;
+// Only text styling and spacing: nothing that positions, sizes or layers a block, so a
+// scenario style cannot cover the game (position:fixed, z-index, width:100%).
+const SAFE_STYLE_PROPS = /^(color|background-color|font-weight|font-style|font-size|text-decoration|text-align|(margin|padding)(-(top|right|bottom|left))?)$/;
+
+// A font size held to a readable range: px 8 to 48 or rem 0.5 to 3. Only units that do not
+// compound, so nested styled elements cannot multiply a size (em, %, larger and smaller
+// would). Anything else (em, %, keywords, calc(), vw, a bare number) is dropped.
+const FONT_SIZE_RANGE = { px: [8, 48], rem: [0.5, 3] };
+export function clampFontSize(val) {
+    const m = /^(\d+(?:\.\d+)?|\.\d+)(px|rem)$/i.exec(val);
+    if (!m) return null;
+    const unit = m[2].toLowerCase();
+    const [lo, hi] = FONT_SIZE_RANGE[unit];
+    return `${Math.min(hi, Math.max(lo, Number(m[1])))}${unit}`;
+}
+
+// A style attribute value with only allow-listed properties and safe values kept, or ''.
+export function cleanStyle(value) {
+    return String(value ?? '').split(';').map((decl) => {
+        const at = decl.indexOf(':');
+        if (at < 0) return null;
+        const prop = decl.slice(0, at).trim().toLowerCase();
+        const val = decl.slice(at + 1).trim();
+        if (!SAFE_STYLE_PROPS.test(prop) || !val || !SAFE_STYLE.test(val) || UNSAFE_STYLE.test(val)) return null;
+        if (prop === 'font-size') {
+            const size = clampFontSize(val);
+            return size ? `${prop}:${size}` : null;
+        }
+        return `${prop}:${val}`;
+    }).filter(Boolean).join(';');
+}
+
+// insideP: a <p> already holds this content, so a nested <p> is unwrapped (a <p> in a <p>
+// re-parses into sibling paragraphs and an empty one).
+function cleanRich(node, insideP = false) {
+    for (const child of [...node.childNodes]) {
+        if (child.nodeType === 3) continue;                    // text
+        if (child.nodeType !== 1) { child.remove(); continue; } // comments and the rest
+        const tag = child.tagName.toUpperCase();
+        if (RICH_DROP.has(tag)) { child.remove(); continue; }
+        cleanRich(child, insideP || tag === 'P');
+        if (!RICH_TAGS.has(tag) || (tag === 'P' && insideP)) { child.replaceWith(...child.childNodes); continue; }
+        for (const attr of [...child.attributes]) {
+            const style = attr.name === 'style' && RICH_STYLE_TAGS.has(tag) ? cleanStyle(attr.value) : '';
+            if (style) child.setAttribute('style', style);
+            else child.removeAttribute(attr.name);
+        }
+    }
+}
+
+export function sanitizeRich(value, { insideP = false } = {}) {
+    // No DOM to parse with (a bare node test): fail closed, as plain text
+    if (typeof document === 'undefined') return escapeTitle(value);
+    const tpl = document.createElement('template');
+    tpl.innerHTML = String(value ?? '');
+    cleanRich(tpl.content, insideP);
+    const box = document.createElement('div');
+    box.appendChild(tpl.content);
+    return box.innerHTML;
+}
+
+const rich = (value, opts) => sanitizeRich(displayDashes(value), opts);
+const plain = (value) => escapeTitle(displayDashes(value));
 
 /**
  * MG-02 — Forensic Data Platform
@@ -47,8 +125,8 @@ function _renderTimeline(steps) {
 <li class="fdp-timeline-step">
   <div class="fdp-timeline-num${cls}">${num}</div>
   <div class="fdp-timeline-body">
-    <div class="fdp-timeline-label">${displayDashes(s.label)}</div>
-    <div class="fdp-timeline-desc">${displayDashes(s.desc)}</div>
+    <div class="fdp-timeline-label">${rich(s.label)}</div>
+    <div class="fdp-timeline-desc">${rich(s.desc)}</div>
   </div>
 </li>`;
     }).join('');
@@ -56,12 +134,12 @@ function _renderTimeline(steps) {
 }
 
 function _renderLogTable(block) {
-    const headers = block.columns.map(c => `<th>${displayDashes(c)}</th>`).join('');
+    const headers = block.columns.map(c => `<th>${rich(c)}</th>`).join('');
     const rows = block.rows.map(r => {
         const rowCls = r.highlight ? ' class="fdp-row-highlight"' : '';
         const cells  = r.cells.map(c => {
-            if (c && typeof c === 'object') return `<td class="${c.class || ''}">${displayDashes(c.html)}</td>`;
-            return `<td>${displayDashes(c)}</td>`;
+            if (c && typeof c === 'object') return `<td class="${escapeTitle(c.class || '')}">${rich(c.html)}</td>`;
+            return `<td>${rich(c)}</td>`;
         }).join('');
         return `<tr${rowCls}>${cells}</tr>`;
     }).join('');
@@ -69,16 +147,16 @@ function _renderLogTable(block) {
 }
 
 function _renderSetpointTable(block) {
-    const rows = block.rows.map(r => `<tr><td>${displayDashes(r.label)}</td><td>${displayDashes(r.value)}</td></tr>`).join('');
+    const rows = block.rows.map(r => `<tr><td>${rich(r.label)}</td><td>${rich(r.value)}</td></tr>`).join('');
     return `<table class="fdp-setpoint-table"><tbody>${rows}</tbody></table>`;
 }
 
 function _renderDocumentExcerpt(block) {
-    return `<div class="fdp-doc-excerpt">${displayDashes(block.body)}<div class="fdp-doc-source">${displayDashes(block.source)}</div></div>`;
+    return `<div class="fdp-doc-excerpt">${rich(block.body)}<div class="fdp-doc-source">${rich(block.source)}</div></div>`;
 }
 
 function _renderList(block) {
-    const items = block.items.map(i => `<li>${displayDashes(i)}</li>`).join('');
+    const items = block.items.map(i => `<li>${rich(i)}</li>`).join('');
     return `<ul style="margin:6px 0 10px 18px; font-size:11px; color:#c9d1d9; line-height:1.7">${items}</ul>`;
 }
 
@@ -94,16 +172,18 @@ function _renderCallout(block) {
     };
     const cls       = CSS_CLASS[block.style] || 'fdp-evidence-gap';
     const titleCls  = TITLE_CLASS[block.style];
-    const titleHtml = (block.title && titleCls) ? `<div class="${titleCls}">${displayDashes(block.title)}</div>` : '';
-    const extraStyle = block.style2 ? ` style="${block.style2}"` : '';
-    return `<div class="${cls}"${extraStyle}>${titleHtml}${displayDashes(block.body)}</div>`;
+    const titleHtml = (block.title && titleCls) ? `<div class="${titleCls}">${rich(block.title)}</div>` : '';
+    // style2 goes through the same property allow-list as a style inside the rich text
+    const style2 = block.style2 ? cleanStyle(block.style2) : '';
+    const extraStyle = style2 ? ` style="${escapeTitle(style2)}"` : '';
+    return `<div class="${cls}"${extraStyle}>${titleHtml}${rich(block.body)}</div>`;
 }
 
 function _renderBlocks(blocks, globals) {
     return blocks.map(block => {
         if (block.showIf && !globals[block.showIf]) return '';
         switch (block.type) {
-            case 'p':                return `<p>${displayDashes(block.html)}</p>`;
+            case 'p':                return `<p>${rich(block.html, { insideP: true })}</p>`;
             case 'timeline':        return _renderTimeline(block.steps);
             case 'log-table':       return _renderLogTable(block);
             case 'setpoint-table':  return _renderSetpointTable(block);
@@ -177,14 +257,14 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
         const confirmHint  = this.params.confirmHint  || 'Review all evidence before confirming.';
 
         const tabButtons = this._tabs.map(t =>
-            `<button class="fdp-tab" data-tab="${t.id}">${displayDashes(t.label)}</button>`
+            `<button class="fdp-tab" data-tab="${escapeTitle(t.id)}">${plain(t.label)}</button>`
         ).join('');
 
         this.gameContainer.innerHTML = `
 <div class="fdp-wrap">
   <div class="fdp-header">
-    <span class="fdp-title">${displayDashes(title)}</span>
-    <span class="fdp-case">${displayDashes(caseRef)}</span>
+    <span class="fdp-title">${escapeTitle(displayDashes(title))}</span>
+    <span class="fdp-case">${plain(caseRef)}</span>
   </div>
   <div class="fdp-tab-bar" id="fdp-tab-bar">
     ${tabButtons}
@@ -192,9 +272,9 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
   <div class="fdp-panel" id="fdp-panel"></div>
   <div class="fdp-footer">
     <button class="fdp-confirm-btn" id="fdp-confirm-btn" disabled>
-      ${displayDashes(confirmLabel)}
+      ${plain(confirmLabel)}
     </button>
-    <div id="fdp-confirm-hint" class="fdp-confirm-hint">${displayDashes(confirmHint)}</div>
+    <div id="fdp-confirm-hint" class="fdp-confirm-hint">${plain(confirmHint)}</div>
   </div>
 </div>`;
 
@@ -216,7 +296,7 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
         });
 
         this._tabsSeen.add(tabId);
-        const activeBtn = this.gameContainer.querySelector(`[data-tab="${tabId}"]`);
+        const activeBtn = [...this.gameContainer.querySelectorAll('.fdp-tab')].find(b => b.dataset.tab === tabId);
         if (activeBtn) activeBtn.classList.add('fdp-tab-seen');
 
         this._renderTabContent(tabId);
@@ -279,7 +359,7 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
         const tab = this._tabs.find(t => t.id === tabId);
         if (!tab) { panel.innerHTML = ''; return; }
         const globals = window.gameState?.globalVariables || {};
-        const heading = tab.heading ? `<h3>${displayDashes(tab.heading)}</h3>` : '';
+        const heading = tab.heading ? `<h3>${rich(tab.heading)}</h3>` : '';
         panel.innerHTML = heading + _renderBlocks(tab.blocks, globals);
     }
 

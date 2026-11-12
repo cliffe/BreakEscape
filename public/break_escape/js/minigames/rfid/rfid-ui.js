@@ -15,16 +15,116 @@
 
 import { getProtocolInfo, detectProtocol, getReadProfile } from './rfid-protocols.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
+
+// Result messages can name a card from the scenario: escaped once on the way into HTML.
 
 /** Shown under "No keycards in inventory" on the Read screen. */
 export const NO_KEYCARDS_HINT = 'The cloner reads a badge at close range: one you hold, or one someone is carrying.';
+
+/** What the device is called on screen and in the menus: the scenario's own name for the
+ *  rfid_cloner item ("Card copier"), so the inventory, the menus and the device agree. */
+export const DEFAULT_CLONER_NAME = 'Card copier';
+export function clonerName(items = (typeof window !== 'undefined' && window.inventory && window.inventory.items) || []) {
+    const cloner = (items || []).find(it => it && it.scenarioData && it.scenarioData.type === 'rfid_cloner');
+    const name = cloner && cloner.scenarioData.name;
+    return (typeof name === 'string' && name.trim()) ? name.trim() : DEFAULT_CLONER_NAME;
+}
+/** The name inside a sentence: "card copier", but "RFID cloner" keeps its capitals. */
+export function clonerNameInSentence(items) {
+    const name = clonerName(items);
+    return /^[A-Z][a-z]/.test(name) ? name[0].toLowerCase() + name.slice(1) : name;
+}
+// The one rule for the device's name: systems/action-menu.js (no static imports) reads it here
+if (typeof window !== 'undefined') window.clonerNameInSentence = clonerNameInSentence;
+
+// Pixel-art icons (UI rule: no emoji in game UI). Each is a grid of palette letters, drawn as
+// an inline SVG of whole pixels at a whole-number scale with crisp edges. '.' is clear.
+const PX = {
+    K: '#141414', Y: '#ffcc33', y: '#b87d00', W: '#f2f2f2', w: '#9a9a9a',
+    G: '#4cd964', g: '#23803a', O: '#ff8200', o: '#b35a00', D: '#4a4a4a', R: '#ff5a4a'
+};
+export const PIXEL_ICONS = {
+    key: ['.KKKK.........', 'KYYYYK........', 'KYKKYKKKKKKKK.', 'KYKKYYYYYYYYYK',
+          'KYYYYKKKYKYKK.', '.KKKK...KYKYK.', '........KKKKK.'],
+    card: ['KKKKKKKKKKKK', 'KWWWWWWWWWWK', 'KWYYWWWWWWWK', 'KWyyWWKKKKWK',
+           'KWWWWWWWWWWK', 'KWKKKKKKKWWK', 'KWWWWWWWWWWK', 'KKKKKKKKKKKK'],
+    signal: ['..O.....O..', '.O..O.O..O.', 'O..O...O..O', 'O..O.W.O..O',
+             '.O..O.O..O.', '..O..W..O..', '.....W.....', '.....W.....', '....WWW....'],
+    lock: ['..KKKKK..', '.KK...KK.', '.K.....K.', '.K.....K.', 'KKKKKKKKK',
+           'KYYYYYYYK', 'KYYYKYYYK', 'KYYYKYYYK', 'KYYYYYYYK', 'KKKKKKKKK'],
+    unlock: ['.....KKKKK.', '....KK...KK', '....K.....K', '....K......', 'KKKKKKKKK..',
+             'KGGGGGGGK..', 'KGGGKGGGK..', 'KGGGKGGGK..', 'KGGGGGGGK..', 'KKKKKKKKK..'],
+    warning: ['....K....', '...KYK...', '...KYK...', '..KYKYK..', '..KYKYK..',
+              '.KYYYYYK.', '.KYYKYYK.', 'KKKKKKKKK'],
+    battery: ['KKKKKKKKKKK.', 'KGGGGGGGGGKK', 'KGGGGGGGGGKK', 'KGGGGGGGGGKK', 'KKKKKKKKKKK.'],
+    reader: ['KKKKKKKK', 'KDDDDDDK', 'KDGGGGDK', 'KDDDDDDK', 'KDDDDDDK',
+             'KDDWWDDK', 'KDWDDWDK', 'KDDWWDDK', 'KDDDDDDK', 'KKKKKKKK'],
+    back: ['...K.....', '..KWK....', '.KWWKKKKK', 'KWWWWWWWK', '.KWWKKKKK', '..KWK....', '...K.....'],
+    tick: ['.......GG', '......GG.', 'G....GG..', 'GG..GG...', '.GGGG....', '..GG.....'],
+    cross: ['RR...RR', 'RRR.RRR', '.RRRRR.', '..RRR..', '.RRRRR.', 'RRR.RRR', 'RR...RR']
+};
+
+/**
+ * An icon as an SVG string: one rect per run of same-coloured pixels. Unknown names give ''.
+ * @param {string} name - a PIXEL_ICONS key
+ * @param {number} [scale] - screen pixels per art pixel (whole number)
+ */
+export function pixelIcon(name, scale = 3) {
+    const rows = PIXEL_ICONS[name];
+    if (!rows) return '';
+    const k = Math.max(1, Math.round(scale));
+    const w = Math.max(...rows.map(r => r.length)), h = rows.length;
+    let rects = '';
+    rows.forEach((row, y) => {
+        let x = 0;
+        while (x < row.length) {
+            const c = row[x];
+            let run = 1;
+            while (x + run < row.length && row[x + run] === c) run++;
+            if (PX[c]) rects += `<rect x="${x}" y="${y}" width="${run}" height="1" fill="${PX[c]}"/>`;
+            x += run;
+        }
+    });
+    return `<svg class="px-icon px-icon-${name}" width="${w * k}" height="${h * k}" viewBox="0 0 ${w} ${h}" ` +
+        `shape-rendering="crispEdges" aria-hidden="true" focusable="false">${rects}</svg>`;
+}
+
+/** A Back button: the pixel arrow, then the word (no text arrow glyph). */
+function backButton(onClick) {
+    const back = document.createElement('div');
+    back.className = 'flipper-button-back';
+    const art = document.createElement('span');
+    art.className = 'px-icon-holder';
+    art.innerHTML = pixelIcon('back', 2);
+    const words = document.createElement('span');
+    words.textContent = 'Back';
+    back.appendChild(art);
+    back.appendChild(words);
+    back.addEventListener('click', onClick);
+    return back;
+}
+
+/** A line with a pixel icon in front of (escaped) text. */
+function iconLine(className, icon, text, scale = 2) {
+    const el = document.createElement('div');
+    el.className = className;
+    const art = document.createElement('span');
+    art.className = 'px-icon-holder';
+    art.innerHTML = pixelIcon(icon, scale);
+    const words = document.createElement('span');
+    words.textContent = String(text ?? '');  // scenario text: a text node, never markup
+    el.appendChild(art);
+    el.appendChild(words);
+    return el;
+}
 
 export class RFIDUIRenderer {
     constructor(minigame) {
         this.minigame = minigame;
         this.container = minigame.gameContainer;
         this.dataManager = minigame.dataManager;
-        console.log('🎨 RFIDUIRenderer initialized');
+        console.log('RFIDUIRenderer initialized');
     }
 
     /**
@@ -39,8 +139,75 @@ export class RFIDUIRenderer {
         // Append to container first so screen element is in the DOM
         this.container.appendChild(flipper);
 
-        // Show main menu
-        this.showMainMenu('unlock');
+        // At a reader the copier opens on that reader: the saved cards to play back and the
+        // cards held to tap, one press each. From the inventory (no reader) it opens on its menu.
+        if (this.minigame.isLockingAttempt) this.showDoorScreen();
+        else this.showMainMenu('unlock');
+    }
+
+    /**
+     * The copier held up to a door's (or a cabinet's) reader: every saved card offered for
+     * playback and every keycard held offered for a tap. It does not mark which card the
+     * reader wants: trying them is the player's job.
+     */
+    showDoorScreen() {
+        const screen = this.getScreen();
+        if (!screen) return;
+        screen.innerHTML = '';
+
+        const breadcrumb = document.createElement('div');
+        breadcrumb.className = 'flipper-breadcrumb';
+        breadcrumb.textContent = 'RFID > Reader';
+        screen.appendChild(breadcrumb);
+
+        const readerName = this.minigame.params?.readerName;
+        screen.appendChild(iconLine('flipper-reader-head', 'reader', readerName ? `At the reader: ${displayDashes(readerName)}` : 'At the reader', 3));
+
+        const saved = this.dataManager.getSavedCards();
+        const held = this.minigame.params?.availableCards || [];
+        const list = document.createElement('div');
+        list.className = 'flipper-card-list flipper-door-list';
+
+        if (saved.length > 0) {
+            const head = document.createElement('div');
+            head.className = 'flipper-section-head';
+            head.textContent = 'Play back a saved card';
+            list.appendChild(head);
+            saved.forEach(card => {
+                const item = document.createElement('div');
+                item.className = 'flipper-menu-item';
+                item.setAttribute?.('role', 'button');
+                item.innerHTML = `${pixelIcon('signal', 2)}<span>Emulate ${escapeHtml(displayDashes(card.name || 'Card'))}</span>`;
+                item.addEventListener('click', () => this.showEmulationScreen(card));
+                list.appendChild(item);
+            });
+        }
+        if (held.length > 0) {
+            const head = document.createElement('div');
+            head.className = 'flipper-section-head';
+            head.textContent = 'Tap a card you hold';
+            list.appendChild(head);
+            held.forEach(card => {
+                const name = displayDashes(card.scenarioData?.name || 'Keycard');
+                const item = document.createElement('div');
+                item.className = 'flipper-menu-item';
+                item.setAttribute?.('role', 'button');
+                item.innerHTML = `${pixelIcon('card', 2)}<span>Tap ${escapeHtml(name)}</span>`;
+                item.addEventListener('click', () => this.minigame.handleCardTap(card));
+                list.appendChild(item);
+            });
+        }
+        if (saved.length === 0 && held.length === 0) {
+            const none = document.createElement('div');
+            none.className = 'flipper-info';
+            none.textContent = 'No saved cards and no keycard to tap';
+            list.appendChild(none);
+            const how = document.createElement('div');
+            how.className = 'flipper-info-dim';
+            how.textContent = NO_KEYCARDS_HINT;
+            list.appendChild(how);
+        }
+        screen.appendChild(list);
     }
 
     /**
@@ -78,11 +245,12 @@ export class RFIDUIRenderer {
         // Logo
         const logo = document.createElement('div');
         logo.className = 'flipper-logo';
-        logo.textContent = 'RFID FLIPPER';
+        // The scenario's name for the item, so the device, the inventory and the menus agree
+        logo.textContent = clonerName().toUpperCase();
 
         const battery = document.createElement('div');
         battery.className = 'flipper-battery';
-        battery.textContent = '⚡ 100%';
+        battery.innerHTML = `${pixelIcon('battery', 2)}<span>100%</span>`;
 
         header.appendChild(logo);
         header.appendChild(battery);
@@ -161,6 +329,8 @@ export class RFIDUIRenderer {
      * Show tap interface for unlock mode
      */
     showTapInterface() {
+        // At a reader both lists live on the door screen
+        if (this.minigame.isLockingAttempt) return this.showDoorScreen();
         const screen = this.getScreen();
         screen.innerHTML = '';
 
@@ -173,7 +343,7 @@ export class RFIDUIRenderer {
         // NFC waves animation
         const waves = document.createElement('div');
         waves.className = 'rfid-nfc-waves-container';
-        waves.innerHTML = '<div class="rfid-nfc-icon">📡</div>';
+        waves.innerHTML = `<div class="rfid-nfc-icon">${pixelIcon('signal', 4)}</div>`;
         screen.appendChild(waves);
 
         // Instruction
@@ -216,10 +386,7 @@ export class RFIDUIRenderer {
         screen.appendChild(cardList);
 
         // Back button
-        const back = document.createElement('div');
-        back.className = 'flipper-button-back';
-        back.textContent = '← Back';
-        back.addEventListener('click', () => this.showMainMenu('unlock'));
+        const back = backButton(() => this.showMainMenu('unlock'));
         screen.appendChild(back);
     }
 
@@ -227,6 +394,8 @@ export class RFIDUIRenderer {
      * Show saved cards list
      */
     showSavedCards() {
+        // At a reader both lists live on the door screen
+        if (this.minigame.isLockingAttempt) return this.showDoorScreen();
         const screen = this.getScreen();
         screen.innerHTML = '';
 
@@ -247,7 +416,7 @@ export class RFIDUIRenderer {
 
             const how = document.createElement('div');
             how.className = 'flipper-info-dim';
-            how.textContent = 'Nothing to emulate yet. Read a keycard with the cloner to save it here.';
+            how.textContent = `Nothing to emulate yet. Read a keycard with the ${clonerNameInSentence()} to save it here.`;
             screen.appendChild(how);
         } else {
             // Card list
@@ -266,10 +435,7 @@ export class RFIDUIRenderer {
         }
 
         // Back button
-        const back = document.createElement('div');
-        back.className = 'flipper-button-back';
-        back.textContent = '← Back';
-        back.addEventListener('click', () => this.showMainMenu('unlock'));
+        const back = backButton(() => this.showMainMenu('unlock'));
         screen.appendChild(back);
     }
 
@@ -292,16 +458,11 @@ export class RFIDUIRenderer {
         // Card icon
         const icon = document.createElement('div');
         icon.className = 'rfid-emulate-icon';
-        icon.textContent = '🔑';
+        icon.innerHTML = pixelIcon('card', 5);
         screen.appendChild(icon);
 
-        // Protocol with color indicator
-        const protocolDiv = document.createElement('div');
-        protocolDiv.className = 'flipper-info';
-        protocolDiv.style.borderLeft = `4px solid ${displayData.color}`;
-        protocolDiv.style.paddingLeft = '8px';
-        protocolDiv.innerHTML = `${displayData.icon} ${displayData.protocolName}`;
-        screen.appendChild(protocolDiv);
+        // Protocol, with its security icon
+        screen.appendChild(iconLine('flipper-info flipper-protocol-line', displayData.icon, displayData.protocolName));
 
         // Card name
         const name = document.createElement('div');
@@ -316,7 +477,7 @@ export class RFIDUIRenderer {
         // Show first 3 fields (most relevant for emulation)
         displayData.fields.slice(0, 3).forEach(field => {
             const fieldDiv = document.createElement('div');
-            fieldDiv.innerHTML = `${field.label}: ${field.value}`;
+            fieldDiv.textContent = `${field.label}: ${field.value}`;
             data.appendChild(fieldDiv);
         });
 
@@ -330,10 +491,7 @@ export class RFIDUIRenderer {
         screen.appendChild(emulateBtn);
 
         // Back button
-        const back = document.createElement('div');
-        back.className = 'flipper-button-back';
-        back.textContent = '← Back';
-        back.addEventListener('click', () => this.showSavedCards());
+        const back = backButton(() => this.showSavedCards());
         screen.appendChild(back);
     }
 
@@ -357,16 +515,11 @@ export class RFIDUIRenderer {
         // Emulation icon
         const icon = document.createElement('div');
         icon.className = 'rfid-emulate-icon';
-        icon.textContent = '📡';
+        icon.innerHTML = pixelIcon('signal', 5);
         screen.appendChild(icon);
 
-        // Protocol with color indicator
-        const protocolDiv = document.createElement('div');
-        protocolDiv.className = 'flipper-info';
-        protocolDiv.style.borderLeft = `4px solid ${displayData.color}`;
-        protocolDiv.style.paddingLeft = '8px';
-        protocolDiv.innerHTML = `${displayData.icon} ${displayData.protocolName}`;
-        screen.appendChild(protocolDiv);
+        // Protocol, with its security icon
+        screen.appendChild(iconLine('flipper-info flipper-protocol-line', displayData.icon, displayData.protocolName));
 
         // Card name
         const name = document.createElement('div');
@@ -381,7 +534,7 @@ export class RFIDUIRenderer {
         // Show first 3 fields (most relevant for emulation)
         displayData.fields.slice(0, 3).forEach(field => {
             const fieldDiv = document.createElement('div');
-            fieldDiv.innerHTML = `${field.label}: ${field.value}`;
+            fieldDiv.textContent = `${field.label}: ${field.value}`;
             data.appendChild(fieldDiv);
         });
 
@@ -431,11 +584,10 @@ export class RFIDUIRenderer {
         // Protocol header with icon and color
         const header = document.createElement('div');
         header.className = 'flipper-protocol-header';
-        header.style.borderLeft = `4px solid ${displayData.color}`;
         header.innerHTML = `
             <div class="protocol-header-top">
-                <span class="protocol-icon">${displayData.icon}</span>
-                <span class="protocol-name">${displayData.protocolName}</span>
+                <span class="protocol-icon">${pixelIcon(displayData.icon, 2)}</span>
+                <span class="protocol-name">${escapeHtml(displayData.protocolName)}</span>
             </div>
             <div class="protocol-meta">
                 <span>${displayData.frequency}</span>
@@ -459,7 +611,13 @@ export class RFIDUIRenderer {
         dataDiv.className = 'flipper-card-data';
         displayData.fields.forEach(field => {
             const fieldDiv = document.createElement('div');
-            fieldDiv.innerHTML = `<strong>${field.label}:</strong> ${field.value}`;
+            // Field values carry scenario card data: text nodes only
+            const strong = document.createElement('strong');
+            strong.textContent = `${field.label}:`;
+            const value = document.createElement('span');
+            value.textContent = ` ${field.value}`;
+            fieldDiv.appendChild(strong);
+            fieldDiv.appendChild(value);
             dataDiv.appendChild(fieldDiv);
         });
         screen.appendChild(dataDiv);
@@ -558,10 +716,7 @@ export class RFIDUIRenderer {
 
         // Back goes one step, to the read screen, keeping the read and any keys
         // already cracked. Abandoning the read is a separate, explicit choice.
-        const backBtn = document.createElement('div');
-        backBtn.className = 'flipper-button-back';
-        backBtn.textContent = '← Back';
-        backBtn.addEventListener('click', () => this.showCardDataScreen(cardData));
+        const backBtn = backButton(() => this.showCardDataScreen(cardData));
         actions.appendChild(backBtn);
 
         const abandonBtn = document.createElement('div');
@@ -634,9 +789,8 @@ export class RFIDUIRenderer {
      */
     createCryptoLine(profile) {
         const line = document.createElement('div');
-        line.className = `rfid-crypto-line rfid-crypto-${profile.cryptoClass}`;
-        line.textContent = `${profile.cryptoClass === 'open' ? '🔓' : '🔒'} ${profile.cryptoLine}`;
-        return line;
+        return iconLine(`rfid-crypto-line rfid-crypto-${profile.cryptoClass}`,
+            profile.cryptoClass === 'open' ? 'unlock' : 'lock', profile.cryptoLine);
     }
 
     /**
@@ -696,20 +850,19 @@ export class RFIDUIRenderer {
         // Get protocol-specific display data
         const displayData = this.dataManager.getCardDisplayData(cardData);
 
-        // Breadcrumb
+        // Breadcrumb, naming the card read (shot 17: only its raw data was shown)
         const breadcrumb = document.createElement('div');
         breadcrumb.className = 'flipper-breadcrumb';
-        breadcrumb.textContent = 'RFID > Read';
+        breadcrumb.textContent = cardData && cardData.name ? `RFID > Read: ${displayDashes(cardData.name)}` : 'RFID > Read';
         screen.appendChild(breadcrumb);
 
         // Protocol header
         const protocolHeader = document.createElement('div');
         protocolHeader.className = 'flipper-protocol-header';
-        protocolHeader.style.borderLeft = `4px solid ${displayData.color}`;
         protocolHeader.innerHTML = `
             <div class="protocol-header-top">
-                <span class="protocol-icon">${displayData.icon}</span>
-                <span class="protocol-name">${displayData.protocolName}</span>
+                <span class="protocol-icon">${pixelIcon(displayData.icon, 2)}</span>
+                <span class="protocol-name">${escapeHtml(displayData.protocolName)}</span>
             </div>
             <div class="protocol-meta">
                 <span>${displayData.frequency}</span>
@@ -737,7 +890,13 @@ export class RFIDUIRenderer {
         data.className = compact ? 'flipper-card-data flipper-card-data-compact' : 'flipper-card-data';
         displayData.fields.forEach(field => {
             const fieldDiv = document.createElement('div');
-            fieldDiv.innerHTML = `<strong>${field.label}:</strong> ${field.value}`;
+            // Field values carry scenario card data: text nodes only
+            const strong = document.createElement('strong');
+            strong.textContent = `${field.label}:`;
+            const value = document.createElement('span');
+            value.textContent = ` ${field.value}`;
+            fieldDiv.appendChild(strong);
+            fieldDiv.appendChild(value);
             data.appendChild(fieldDiv);
         });
 
@@ -767,10 +926,8 @@ export class RFIDUIRenderer {
         saveBtn.className = 'flipper-button';
         if (keyless) {
             // MIFARE Classic with no keys: no plain Save, point at the attack menu.
-            const why = document.createElement('div');
-            why.className = 'flipper-info flipper-crack-hint';
-            why.textContent = '🔒 Sectors encrypted: recover the keys to read them. Default keys fall to a dictionary attack; custom keys need Darkside.';
-            screen.appendChild(why);
+            screen.appendChild(iconLine('flipper-info flipper-crack-hint', 'lock',
+                'Sectors encrypted: recover the keys to read them. Default keys fall to a dictionary attack; custom keys need Darkside.'));
             saveBtn.textContent = 'Crack keys first';
             saveBtn.addEventListener('click', () => this.showProtocolInfo(cardData));
         } else {
@@ -907,9 +1064,10 @@ export class RFIDUIRenderer {
 
         const success = document.createElement('div');
         success.className = 'flipper-success';
+        // The message can name a card from the scenario: escaped, not parsed
         success.innerHTML = `
-            <div class="flipper-success-icon">✓</div>
-            <div class="flipper-success-message">${message}</div>
+            <div class="flipper-success-icon">${pixelIcon('tick', 6)}</div>
+            <div class="flipper-success-message">${escapeHtml(message)}</div>
         `;
         screen.appendChild(success);
     }
@@ -929,8 +1087,8 @@ export class RFIDUIRenderer {
         const error = document.createElement('div');
         error.className = notice ? 'flipper-error flipper-notice' : 'flipper-error';
         error.innerHTML = `
-            <div class="flipper-error-icon">${notice ? '📡' : '✗'}</div>
-            <div class="flipper-error-message">${message}</div>
+            <div class="flipper-error-icon">${notice ? pixelIcon('signal', 5) : pixelIcon('cross', 6)}</div>
+            <div class="flipper-error-message">${escapeHtml(message)}</div>
         `;
         if (detail) {
             const why = document.createElement('div');

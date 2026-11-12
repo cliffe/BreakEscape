@@ -23,9 +23,10 @@ writeFileSync(join(tmp, 'api-stub.mjs'), 'export const ApiClient = {};');
 writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor() {} init() {} start() {} complete() {} cleanup() {} }');
 copy('minigames/rfid/rfid-protocols.js');
 copy('utils/display-dashes.js');
+copy('utils/escape-html.js');
 const P = "'./rfid-protocols.js'", PM = "'./rfid-protocols.mjs'";
 copy('minigames/rfid/rfid-data.js', { [P]: PM, "'../../api-client.js'": "'./api-stub.mjs'" });
-copy('minigames/rfid/rfid-ui.js', { [P]: PM, "'../../utils/display-dashes.js'": "'./display-dashes.mjs'" });
+copy('minigames/rfid/rfid-ui.js', { [P]: PM, "'../../utils/display-dashes.js'": "'./display-dashes.mjs'", "'../../utils/escape-html.js'": "'./escape-html.mjs'" });
 copy('minigames/rfid/rfid-attacks.js', { [P]: PM });
 copy('minigames/rfid/rfid-animations.js');
 const minigameUrl = copy('minigames/rfid/rfid-minigame.js', {
@@ -53,6 +54,9 @@ const { RFIDMinigame } = await import(minigameUrl);
 
 const flat = (e) => [e, ...e.children.flatMap(flat)];
 const byText = (t) => flat(screen).find(e => e.textContent === t);
+// Back is the pixel arrow then the word (UX devices R1 n2: no text arrow glyph)
+const backButton = () => flat(screen).find(e => e.className === 'flipper-button-back' &&
+    e.children.some(c => c.textContent === 'Back'));
 const weakCard = () => ({ card_id: 'receptionist_badge', rfid_protocol: 'MIFARE_Classic_Weak_Defaults', name: 'Staff Access Badge' });
 
 function makeUI() {
@@ -71,7 +75,8 @@ test('Info screen: Back returns to the read screen with the read kept; Abandon r
     byText('Crack keys first').listeners.click();
     assert.ok(byText('> Dictionary Attack (instant)'), 'on the Info/crack screen');
     assert.equal(byText('← Cancel'), undefined);
-    byText('← Back').listeners.click();
+    assert.match(backButton().children[0].innerHTML, /px-icon-back/, 'the arrow is a pixel icon');
+    backButton().listeners.click();
     assert.deepEqual(calls, [], 'Back does not end the minigame');
     assert.ok(byText('Crack keys first'), 'back on the read screen');
     assert.ok(flat(screen).some(e => /RFID > Read/.test(e.textContent)));
@@ -89,7 +94,7 @@ test('Back keeps keys already cracked', () => {
     ui.showCardDataScreen(card);
     card.rfid_data.sectors = { 0: { keyA: 'FFFFFFFFFFFF' } };
     ui.showProtocolInfo(card);
-    byText('← Back').listeners.click();
+    backButton().listeners.click();
     assert.equal(byText('Save').tag, 'button');
     assert.equal(Object.keys(card.rfid_data.sectors).length, 1);
 });

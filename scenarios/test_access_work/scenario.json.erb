@@ -282,6 +282,39 @@
           "status": "active"
         }
       ]
+    },
+    {
+      "aimId": "lockout_beats",
+      "title": "Run the lockout beat",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 4,
+      "tasks": [
+        {
+          "taskId": "l1_locked_out",
+          "title": "L1: Jake cannot sign in, and his work fails",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l1_hot_desk",
+          "title": "L1: Jake works at the hot desk and leaves it signed in",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l1_claimed",
+          "title": "L1: you claim Jake's session at the hot desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l1_leo_locked_out",
+          "title": "L1: Leo is locked out at his PC and carries on",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
     }
   ],
   "rooms": {
@@ -307,7 +340,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "Slice 9.2 test floor. USB policy: Lena north (U1), Priya east (U2), Kofi south (U3).\nThe USB devices are on the floor here, one per beat, each named for its beat.\nWork beats W1 to W7: through the halls to the west. Each room has its own sign.\nWorkaround beats X1 to X4: Hall D, west of Hall C.",
+          "text": "Slice 9.2 test floor. USB policy: Lena north (U1), Priya east (U2), Kofi south (U3).\nThe USB devices are on the floor here, one per beat, each named for its beat.\nWork beats W1 to W7: through the halls to the west. Each room has its own sign.\nWorkaround beats X1 to X4: Hall D, west of Hall C.\nHot desk beats H1 to H3: Hall C. H4: east of Priya's room. Lockout beat L1: east of H4.",
           "observations": "A beat sign on a stand."
         },
         {
@@ -956,7 +989,7 @@
           "eventMappings": [
             {
               "eventPattern": "npc_borrowed_session:hot_desk",
-              "condition": "data.npcId === 'rosa' && data.met === false",
+              "condition": "data.npcId === 'rosa' && data.met === false && !data.lapsed",
               "onceOnly": true,
               "completeTask": "h3_failed_there"
             }
@@ -2375,7 +2408,8 @@
       "type": "room_office",
       "door_sign": "H4 Sam",
       "connections": {
-        "west": "vault_room"
+        "west": "vault_room",
+        "east": "lock_room"
       },
       "objects": [
         {
@@ -2390,7 +2424,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "H4. Switch the CRM off and leave the room: at Sam's third failure he walks over to Ruth and says his login out loud, and nobody hears. Come back and stand by Ruth's desk: at his next failure you overhear it, and it goes in your notes. The password then signs in at the hot desk in Hall C.",
+          "text": "H4. Switch the CRM off and leave the room: at Sam's third failure he walks over to Ruth and says his login out loud, and nobody hears. Come back and stand by Ruth's desk: at his next failure you overhear it, and it goes in your notes. The password then signs in at the hot desk in Hall C.\nEast: L1, the lockout chain.",
           "observations": "A beat sign on a stand."
         },
         {
@@ -2518,6 +2552,214 @@
           },
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "spriteVisemes": "assets/characters/female_office_worker_visemes.png"
+        }
+      ]
+    },
+    "lock_room": {
+      "type": "room_office",
+      "door_sign": "L1 Jake",
+      "connections": {
+        "west": "open_office"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_l1",
+          "name": "Sign: L1 The lockout chain",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "L1. Wait for Jake to go to the fridge: his screen locks behind him. Click his PC and type three wrong passwords on his tile. The PC's policy locks his account out there. When he comes back he cannot sign in: his work fails, and at his third failure he goes to the hot desk by the door and leaves his session open there for you.\nLeo's screen never locks. Lock him out the same way (claim his open screen while he is away, Switch user, three wrong passwords on his tile): he never has to type his password, so he carries on working, but his open screen can no longer be claimed.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "jake_pc",
+          "name": "Jake's PC",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "strict",
+          "lockChance": 1,
+          "observations": "Jake's PC: a sign-in PC under the strict policy (three tries).",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          }
+        },
+        {
+          "type": "pc",
+          "id": "hot_desk_2",
+          "name": "Hot desk",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "managed",
+          "observations": "A shared hot desk PC: anybody can sign in here.",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          }
+        },
+        {
+          "type": "pc",
+          "id": "leo_pc",
+          "name": "Leo's PC",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "strict",
+          "lockChance": 0,
+          "observations": "Leo's PC: a sign-in PC under the strict policy. He never locks it.",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          }
+        },
+        {
+          "type": "qdc_fridge1",
+          "id": "lock_fridge",
+          "name": "Fridge",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "The office fridge."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "jake",
+          "displayName": "Jake Brooks",
+          "position": {
+            "x": 3,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "npcType": "person",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "jake_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "jbrooks",
+            "password": "Jackdaw-Jake-72"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "hot_desk_2"
+            }
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "hunger": {
+              "decayPerMin": 20,
+              "urgentAt": 40,
+              "initial": 60
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_use_failed:jake",
+              "condition": "data.station === true",
+              "onceOnly": true,
+              "completeTask": "l1_locked_out"
+            },
+            {
+              "eventPattern": "npc_borrowed_session:hot_desk_2",
+              "condition": "data.npcId === 'jake'",
+              "onceOnly": true,
+              "completeTask": "l1_hot_desk"
+            },
+            {
+              "eventPattern": "pc_signed_in:hot_desk_2",
+              "condition": "data.via === 'claim' && data.npcId === 'jake'",
+              "onceOnly": true,
+              "completeTask": "l1_claimed"
+            }
+          ]
+        },
+        {
+          "id": "leo",
+          "displayName": "Leo Marsh",
+          "position": {
+            "x": 7,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "npcType": "person",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "leo_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "lmarsh",
+            "password": "Linnet-Leo-19"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "hunger": {
+              "decayPerMin": 20,
+              "urgentAt": 40,
+              "initial": 90
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "pc_signin_failed:leo_pc",
+              "condition": "data.reason === 'locked_out'",
+              "onceOnly": true,
+              "completeTask": "l1_leo_locked_out"
+            }
+          ]
         }
       ]
     }

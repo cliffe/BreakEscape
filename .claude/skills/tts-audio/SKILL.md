@@ -86,6 +86,9 @@ Change `GEMINI_TTS_MODEL`; the model is in the key, so old clips become the fall
 - `git add -A tts_cache/<scenario>` also adds sidecars and anything else untracked there; look at `git diff --cached --stat` before committing.
 - A rerun after editing `tts_batch_processor.rb` while a batch is running loads half-edited code. Don't edit the batch code while batches run.
 - The live endpoint (your :3000 server) writes clips during play; a few extra entries after a batch are usually that.
+- **Two records with one display name** (m10 `hax_post` and `agent_0x99`, both "Agent HaX"; m08's phone and person HaX) resolve a display-name prefix to the first record in room order. A game's stored `scenario_data` is jsonb, which does not keep key order, so before 361f81cee (2026-11-12) the endpoint picked a different record from the batch and refused 46 m10 and 2 m08 lines with 403 in every game. `/tts` now puts the stored rooms back in template order (`TtsLineResolver.in_template_order`). Still: name co-speaker lines by id where two records share a name, and if a whole speaker's lines come back 403, compare the extractor's speaker with the request's `npc_id` first.
+- **`tools/playtest/new-game.rb --start-room` moves records between rooms**, which changes first-match speaker resolution for that game only. A 403 seen only in a `--start-room` game is that artefact, not a player bug; reach the scene with `--set` or `--imports` instead.
+- **Don't put `#delivery:` inside an inline conditional** (`{flag: Line. #delivery: note}`). The walker fails on the tag pair inklecate emits, which can stop the extractor for the whole mission.
 
 ## Files
 

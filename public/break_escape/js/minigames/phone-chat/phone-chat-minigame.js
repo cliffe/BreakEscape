@@ -18,6 +18,8 @@ import { partitionSlowTags } from '../person-chat/person-chat-pending-reply.js';
 import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-chat-speaker.js';
 import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
+import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } from './phone-call-lock.js';
 import { isVoicedCall, phoneLineVoice, outcomeLineVoice, PhoneCallVoice, stepDeliveries, voicedCallKnots, callStartKnots, callHomeKnot } from './phone-call-voice.js';
 import TTSManager from '../../systems/tts-manager.js';
@@ -152,15 +154,16 @@ export class PhoneChatMinigame extends MinigameScene {
         this.appTheme = resolved.theme || null;
 
         // Customize header
+        // The app title and params.title are plain text (scenario data): escaped before HTML
+        const esc = (v) => escapeHtml(displayDashes(String(v)));
         if (resolved.app?.title) {
-            const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
             this.headerElement.innerHTML = `
             <h3>${esc(resolved.app.title)}</h3>
             <p>Direct messages</p>
         `;
         } else {
             this.headerElement.innerHTML = `
-            <h3>${safeParams.title || 'Phone'}</h3>
+            <h3>${esc(safeParams.title || 'Phone')}</h3>
             <p>Messages and conversations</p>
         `;
         }

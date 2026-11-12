@@ -98,9 +98,25 @@ export function pickRecentHoldable(entries, now, windowMs = RECENT_TOAST_MS) {
         && typeof e.shownAt === 'number' && now - e.shownAt < windowMs);
 }
 
-/** True when an identical info/success toast is already waiting in the hold. */
-export function isQueuedDuplicate(queue, message, type, title) {
-    return queue.some((q) => q[0] === message && q[1] === type && q[2] === title);
+/**
+ * How a toast's text is drawn: html (built markup) or plain text, and in plain text
+ * verbatim (no dash display) or not. Two toasts with the same words but a different
+ * mode are not duplicates.
+ */
+export function toastRenderMode(options) {
+    const html = options?.html === true;
+    return { html, verbatim: !html && options?.verbatim === true };
+}
+
+function sameRenderMode(a, b) {
+    return a.html === b.html && a.verbatim === b.verbatim;
+}
+
+/** True when an identical info/success toast (same text and render mode) is already waiting in the hold. */
+export function isQueuedDuplicate(queue, message, type, title, options = {}) {
+    const mode = toastRenderMode(options);
+    return queue.some((q) => q[0] === message && q[1] === type && q[2] === title
+        && sameRenderMode(toastRenderMode(q[5]), mode));
 }
 
 export function holdRecentNotifications(now = Date.now()) {
@@ -111,11 +127,11 @@ export function holdRecentNotifications(now = Date.now()) {
         .filter((el) => el._toast && !el._toast.pulled)
         .map((el) => ({ el, ...el._toast }));
     const pulled = pickRecentHoldable(shown, now);
-    pulled.forEach(({ el, message, type, title, duration, plainText, verbatim }) => {
+    pulled.forEach(({ el, message, type, title, duration, html, verbatim }) => {
         el._toast.pulled = true;
         if (el.parentNode) el.parentNode.removeChild(el);
         // seen = true: already on screen once, so it is replayed once and never pulled again
-        heldNotifications.push([message, type, title, duration, true, { plainText: plainText === true, verbatim: verbatim === true }]);
+        heldNotifications.push([message, type, title, duration, true, { html: html === true, verbatim: verbatim === true }]);
     });
     if (pulled.length && !holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
     pickStaleHoldable(shown, now).forEach(({ el }) => {
@@ -138,16 +154,18 @@ export function toastDuration(type, duration) {
 }
 
 // Show a notification instead of using alert()
-// options.plainText: render the title and message as plain text (textContent), never markup.
-// Use it for any message that carries author or organisation text (a host label, a name).
-// options.verbatim (with plainText): the message exactly as given, with no " -- " dash display,
+// The title and message are plain text (textContent) by default: callers pass scenario
+// names, observations, task titles and server text, none of which may become markup.
+// options.html === true: the caller built the title and message as HTML on purpose and has
+// escaped every piece of author text in it. options.plainText is accepted and changes nothing.
+// options.verbatim: the message exactly as given, with no " -- " dash display,
 // for text the player must copy character for character (an overheard password).
 export function showNotification(message, type = 'info', title = '', duration = 5000, options = {}) {
     duration = toastDuration(type, duration);
     if (shouldHoldNotification(type, fullScreenPanelOpen() || panelExpected())) {
         // The same toast raised twice while a panel is open (two code paths announcing one
         // event) shows once
-        if (isQueuedDuplicate(heldNotifications, message, type, title)) return null;
+        if (isQueuedDuplicate(heldNotifications, message, type, title, options)) return null;
         heldNotifications.push([message, type, title, duration, false, options]);
         if (!holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
         return null;
@@ -156,13 +174,15 @@ export function showNotification(message, type = 'info', title = '', duration = 
 }
 
 /**
- * The toast still on screen with the same message, type and title, or null. A toast that
- * is on its way out (closing, or pulled back behind a panel) does not count.
+ * The toast still on screen with the same message, type, title and render mode, or null.
+ * A toast that is on its way out (closing, or pulled back behind a panel) does not count.
  */
-export function findShownDuplicate(container, message, type, title) {
+export function findShownDuplicate(container, message, type, title, options = {}) {
+    const mode = toastRenderMode(options);
     const shown = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
     return shown.find((el) => el._toast && !el._toast.pulled && !el._toast.closing
-        && el._toast.message === message && el._toast.type === type && el._toast.title === title) || null;
+        && el._toast.message === message && el._toast.type === type && el._toast.title === title
+        && sameRenderMode(toastRenderMode(el._toast), mode)) || null;
 }
 
 // Start (or restart) a toast's countdown: the progress bar and the removal timer.
@@ -188,14 +208,14 @@ function setPlainLines(el, text) {
 }
 
 function renderNotification(message, type, title, duration, seen = false, options = {}) {
-    const plainText = options?.plainText === true;
+    const plainText = options?.html !== true;
     const verbatim = plainText && options?.verbatim === true;
     const notificationContainer = document.getElementById('notification-container');
 
     // The same toast raised again while it is still on screen (a refusal hint clicked
     // three times) restarts its countdown instead of stacking a copy.
     // (A timed toast and one that stays until closed are not the same toast.)
-    const same = findShownDuplicate(notificationContainer, message, type, title);
+    const same = findShownDuplicate(notificationContainer, message, type, title, options);
     if (same && (duration > 0) === (same._toast.duration > 0)) {
         same._toast.shownAt = Date.now();
         if (duration > 0) {
@@ -231,7 +251,7 @@ function renderNotification(message, type, title, duration, seen = false, option
         // review R2 n1: a password's doubled, leading or trailing spaces are kept on screen
         if (verbatim) notification.querySelector('.notification-message').style.whiteSpace = 'pre-wrap';
     }
-    notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, plainText, verbatim };
+    notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, html: !plainText, verbatim };
     
     // Add to container
     notificationContainer.appendChild(notification);
@@ -273,19 +293,29 @@ export function gameAlert(message, type = 'info', title = '', duration = 5000, o
 }
 
 // Show an in-game display modal with a title and scrollable body. Returns a Promise that resolves when closed.
-export function gameDisplay(message, title = '') {
+// The title and body are plain text by default, newlines kept. options.html === true: both
+// were built as HTML on purpose, with every piece of author text already escaped and the
+// " -- " dash display already applied to the text before the escape: the HTML is inserted
+// as given (newlines become <br>), never rewritten.
+export function gameDisplay(message, title = '', options = {}) {
     return new Promise(resolve => {
+        const html = options?.html === true;
         const overlay = document.createElement('div');
         overlay.className = 'game-confirm-overlay';
         overlay.innerHTML = `
             <div class="game-confirm-dialog game-display-dialog">
                 <button class="game-modal-close" aria-label="Close">&times;</button>
-                ${title ? `<div class="game-display-title">${displayDashes(title)}</div>` : ''}
-                <div class="game-display-body">${displayDashes(message).replace(/\n/g, '<br>')}</div>
+                ${title ? `<div class="game-display-title">${html ? title : ''}</div>` : ''}
+                <div class="game-display-body">${html ? String(message).replace(/\n/g, '<br>') : ''}</div>
                 <div class="game-confirm-buttons">
                     <button class="game-confirm-btn game-confirm-ok">Close</button>
                 </div>
             </div>`;
+        if (!html) {
+            // Author text in, plain text out: textContent, never innerHTML.
+            if (title) overlay.querySelector('.game-display-title').textContent = displayDashes(title);
+            setPlainLines(overlay.querySelector('.game-display-body'), displayDashes(message));
+        }
 
         const unregister = registerModal(() => finish());
         const finish = () => { unregister(); overlay.remove(); resolve(); };
@@ -296,12 +326,13 @@ export function gameDisplay(message, title = '') {
 }
 
 // Show an in-game confirmation modal. Returns a Promise that resolves true (confirm) or false (cancel).
-// options.plainText: render the message and both button labels as plain text (textContent), never
-// HTML, with newlines preserved. Use it for author-written scenario text (e.g. an object's
-// interactionWarning) so the content can never be interpreted as markup.
+// The message and both button labels are plain text (textContent) by default, newlines kept, so
+// author-written scenario text (an interactionWarning, a confirm action's text) is never markup.
+// options.html === true: all three were built as HTML on purpose, author text already escaped.
+// options.plainText is accepted and changes nothing.
 export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', options = {}) {
     return new Promise(resolve => {
-        const plainText = options && options.plainText === true;
+        const plainText = !(options && options.html === true);
         const overlay = document.createElement('div');
         overlay.className = 'game-confirm-overlay';
         if (plainText) {

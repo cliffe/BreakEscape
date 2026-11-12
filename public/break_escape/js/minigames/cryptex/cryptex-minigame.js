@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 export class CryptexMinigame extends MinigameScene {
     constructor(container, params = {}) {
@@ -19,7 +20,6 @@ export class CryptexMinigame extends MinigameScene {
 
         // Game state
         this.currentIndices = Array(this.wheelCount).fill(0);  // Current position of each wheel
-        this.answerIndices = [];  // Target indices (parsed from answer string)
         this.attemptCount = 0;
         this.maxAttempts = this.cryptexConfig.maxAttempts || 3;
         this.isLocked = false;
@@ -30,8 +30,8 @@ export class CryptexMinigame extends MinigameScene {
         this.hintStrip = this.cryptexConfig.hintStrip || {};
         this.wornRings = this.cryptexConfig.wornRings || {};
 
-        // Parse answer string to indices
-        this._parseAnswer();
+        // The answer never reaches the client: the server checks the word against the
+        // lock's `requires` (unlock gaps build, 2026-11-12), so any word can be submitted.
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -52,26 +52,6 @@ export class CryptexMinigame extends MinigameScene {
         super.cleanup();
     }
 
-    // ── Answer parsing ─────────────────────────────────────────────────────
-
-    _parseAnswer() {
-        const answerStr = this.cryptexConfig.answer || '';
-        this.answerIndices = [];
-
-        for (let i = 0; i < Math.min(answerStr.length, this.wheelCount); i++) {
-            const char = answerStr[i];
-            const alphabet = this.alphabets[i] || '';
-            const index = alphabet.indexOf(char);
-
-            if (index === -1) {
-                console.warn(`Char '${char}' not found in wheel ${i} alphabet`);
-                this.answerIndices.push(0);  // Fallback to position 0
-            } else {
-                this.answerIndices.push(index);
-            }
-        }
-    }
-
     // ── Layout ───────────────────────────────────────────────────────────────
 
     _renderLayout() {
@@ -79,7 +59,7 @@ export class CryptexMinigame extends MinigameScene {
 <div class="cryptex-wrapper">
   <div class="cryptex-header">
     <h2>Cryptex Password</h2>
-    <p>Turn wheels to spell the word</p>
+    <p id="cryptex-subtitle">Turn the wheels with ▲ ▼ to spell the word, then Submit</p>
   </div>
 
   <div class="cryptex-wheels" id="cryptex-wheels"></div>
@@ -94,7 +74,7 @@ export class CryptexMinigame extends MinigameScene {
 
   <div class="cryptex-footer">
     <button class="cryptex-reset-btn" id="cryptex-reset-btn">Reset</button>
-    <button class="cryptex-submit-btn" id="cryptex-submit-btn" disabled>Submit</button>
+    <button class="cryptex-submit-btn ready" id="cryptex-submit-btn">Submit</button>
   </div>
 </div>`;
 
@@ -107,7 +87,7 @@ export class CryptexMinigame extends MinigameScene {
 
             const label = document.createElement('div');
             label.className = 'cryptex-wheel-label';
-            label.textContent = `Pos ${i + 1}`;
+            label.textContent = `Wheel ${i + 1}`;
             wheelGroup.appendChild(label);
 
             const row = document.createElement('div');
@@ -116,10 +96,12 @@ export class CryptexMinigame extends MinigameScene {
             // Up arrow
             const upBtn = document.createElement('button');
             upBtn.className = 'cryptex-wheel-arrow';
-            upBtn.textContent = '↑';
+            // Up brings the next letter into view (A to B), down the one before (B to A)
+            upBtn.textContent = '▲';
+            upBtn.title = 'Next letter';
             upBtn.dataset.wheel = i;
             upBtn.dataset.direction = 'up';
-            this.addEventListener(upBtn, 'click', () => this._rotateWheel(i, -1));
+            this.addEventListener(upBtn, 'click', () => this._rotateWheel(i, 1));
             row.appendChild(upBtn);
 
             // Display
@@ -132,10 +114,11 @@ export class CryptexMinigame extends MinigameScene {
             // Down arrow
             const downBtn = document.createElement('button');
             downBtn.className = 'cryptex-wheel-arrow';
-            downBtn.textContent = '↓';
+            downBtn.textContent = '▼';
+            downBtn.title = 'Previous letter';
             downBtn.dataset.wheel = i;
             downBtn.dataset.direction = 'down';
-            this.addEventListener(downBtn, 'click', () => this._rotateWheel(i, 1));
+            this.addEventListener(downBtn, 'click', () => this._rotateWheel(i, -1));
             row.appendChild(downBtn);
 
             wheelGroup.appendChild(row);
@@ -186,7 +169,7 @@ export class CryptexMinigame extends MinigameScene {
         const alphabet = this.alphabets[wheelIndex];
         const alphabetLength = alphabet.length;
 
-        // Rotate: direction -1 goes backward (up), +1 goes forward (down)
+        // Rotate: +1 is the next letter (up arrow), -1 the one before (down arrow)
         this.currentIndices[wheelIndex] = (this.currentIndices[wheelIndex] + direction + alphabetLength) % alphabetLength;
 
         // Update display
@@ -208,13 +191,6 @@ export class CryptexMinigame extends MinigameScene {
             const char = alphabet[this.currentIndices[wheelIndex]];
             display.textContent = char;
 
-            // Mark as complete if this wheel matches answer
-            if (this.currentIndices[wheelIndex] === this.answerIndices[wheelIndex]) {
-                display.classList.add('complete');
-            } else {
-                display.classList.remove('complete');
-            }
-
             // Mark as worn if this character is in worn positions
             if (this.wornRings.enabled && this.wornRings.wornPositions) {
                 const wheelWornPositions = this.wornRings.wornPositions[`wheel${wheelIndex}`] || [];
@@ -227,17 +203,19 @@ export class CryptexMinigame extends MinigameScene {
         }
     }
 
-    _checkCompletion() {
-        const allComplete = this.currentIndices.every((idx, w) => idx === this.answerIndices[w]);
-        const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
+    _word() {
+        return this.currentIndices.map((idx, w) => this.alphabets[w][idx]).join('');
+    }
 
-        if (allComplete) {
-            submitBtn.disabled = false;
-            submitBtn.classList.add('ready');
-            this._setStatus('All wheels matched! Press SUBMIT.', 'success');
-        } else {
-            submitBtn.disabled = true;
-            submitBtn.classList.remove('ready');
+    // Any word can be tried, the opening one included; only the server knows the
+    // answer. The word just refused cannot be sent again until a wheel changes.
+    _checkCompletion() {
+        const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
+        const same = this.lastTried !== undefined && this._word() === this.lastTried;
+        submitBtn.disabled = same;
+        submitBtn.classList[same ? 'remove' : 'add']('ready');
+        if (!same && this.lastTried !== undefined) {
+            this._setStatus(`Ready to try ${this._word()}.`, '');
         }
     }
 
@@ -261,11 +239,8 @@ export class CryptexMinigame extends MinigameScene {
             this._updateWheelDisplay(i);
         }
 
-        const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
-        submitBtn.disabled = true;
-        submitBtn.classList.remove('ready');
-
-        this._setStatus('');
+        this._checkCompletion();
+        this._setStatus('Wheels back at the start.');
     }
 
     // ── Submit ──────────────────────────────────────────────────────────────
@@ -277,15 +252,32 @@ export class CryptexMinigame extends MinigameScene {
         const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
         submitBtn.disabled = true;
 
+        this.scopeRefusal = null;
+        this.networkError = false;
         const success = await this._validateWithServer();
 
         if (success) {
             this._handleSuccess();
+        } else if (this.scopeRefusal) {
+            this._handleScopeRefusal(this.scopeRefusal);
+        } else if (this.networkError) {
+            this._handleNetworkError();
         } else {
             this._handleFailure();
         }
 
         this.isSubmitting = false;
+    }
+
+    // The request never completed (R2 m4): not a wrong try. The wheels stay, no attempt
+    // is counted and the word is not marked as tried, so Submit can send it again.
+    _handleNetworkError() {
+        this._setStatus(`Network error: ${this._word()} was not checked. Press Submit to try again.`, 'wrong');
+        const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.classList.add('ready');
+        }
     }
 
     async _validateWithServer() {
@@ -325,20 +317,42 @@ export class CryptexMinigame extends MinigameScene {
             // A status means the server answered and said no -- that is a wrong
             // combination, not a network problem. Only a request that never
             // completed deserves the network message.
-            if (error?.status) {
+            // The server refused the PC the lock sits on (off, not responding or out of
+            // reach), not the answer (review R4 m2): no attempt, and never "wrong"
+            const refusal = lockScopeRefusal(error);
+            if (refusal) {
+                this.scopeRefusal = refusal;
+                return false;
+            }
+            // A 5xx is a server fault, not a wrong answer (code review R3 n3): it takes the
+            // network path, so no attempt is counted and the entry stays sendable
+            if (error?.status && error.status < 500) {
                 return false;
             }
             console.error('Server validation error:', error);
-            this._setStatus('Network error. Try again.', 'wrong');
+            this.networkError = true;
             return false;
         }
     }
 
     // ── Success / Failure ────────────────────────────────────────────────────
 
+    // Says why and closes as cancelled, counting no attempt (as the PIN pad does)
+    _handleScopeRefusal(reason) {
+        this.isLocked = true;
+        this._setStatus(LOCK_SCOPE_REFUSAL_TEXT[reason], '');
+        this.gameResult = { success: false, cancelled: true, refused: reason, attempts: this.attemptCount };
+        setTimeout(() => this.complete(false), 2000);
+    }
+
     _handleSuccess() {
         this.isLocked = true;
-        this._setStatus('✓ Cryptex Unlocked! Access Granted.', 'success');
+        this._setStatus('✓ Cryptex Unlocked! The end cap slides free.', 'success');
+        this.gameContainer.querySelector('.cryptex-wrapper')?.classList.add('opened');
+        const subtitle = this.gameContainer.querySelector('#cryptex-subtitle');
+        if (subtitle) subtitle.textContent = 'Open';
+        const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
+        if (submitBtn) { submitBtn.textContent = 'Open'; submitBtn.disabled = true; }
 
         if (window.playUISound) window.playUISound('confirm');
 
@@ -370,13 +384,13 @@ export class CryptexMinigame extends MinigameScene {
             setTimeout(() => this.complete(false), 2000);
         } else {
             const remaining = this.maxAttempts - this.attemptCount;
-            this._setStatus(`✗ Incorrect. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`, 'wrong');
             if (window.playUISound) window.playUISound('reject');
 
-            // Keep wheels in place (don't reset)
-            const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.classList.remove('ready');
+            // Keep wheels in place (don't reset). The same word cannot be sent twice,
+            // so Submit waits for a wheel to turn, and the message says so.
+            this.lastTried = this._word();
+            this._checkCompletion();
+            this._setStatus(`✗ ${this.lastTried} did not open it. ${remaining} attempt${remaining > 1 ? 's' : ''} left. Turn a wheel to try another word.`, 'wrong');
         }
     }
 }

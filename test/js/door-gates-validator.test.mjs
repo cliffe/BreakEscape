@@ -172,8 +172,9 @@ test('a gate a careless holder opens into one room does not clear a careful-only
     let out = credentialIssues(sc);
     assert.ok(out.some(s => s.startsWith('⚠️') && s.includes(carefulOnly) && s.includes("'vault2'") && !s.includes("'vault'")),
         out.join('\n'));
-    // mirror: vault2 also has a gate Gary opens
-    sc.rooms.office.doors.push({ connectedRoom: 'vault2', direction: 'north', gate: { openFor: ['gary'] } });
+    // mirror: vault2's gate also opens for Gary (on the same entry: doors.js reads only the
+    // first entry for a doorway)
+    sc.rooms.office.doors[1].gate.openFor = ['sam', 'gary'];
     out = credentialIssues(sc);
     assert.ok(!has(out, "'SAM-1'"), out.join('\n'));
 });
@@ -186,8 +187,8 @@ test('an authored noHold on one gate of two is decided for its own room', { skip
         { connectedRoom: 'vault2', direction: 'north', gate: { openFor: ['sam'], noHold: ['sam'] } }];
     let out = credentialIssues(sc);
     assert.ok(out.some(s => s.includes(carefulOnly) && s.includes("'vault2'") && !s.includes("'vault'")), out.join('\n'));
-    // mirror: vault2 also has a gate Sam holds
-    sc.rooms.office.doors.push({ connectedRoom: 'vault2', direction: 'north', gate: { openFor: ['sam'] } });
+    // mirror: without the noHold, Sam holds vault2's gate too
+    delete sc.rooms.office.doors[1].gate.noHold;
     out = credentialIssues(sc);
     assert.ok(!has(out, "'SAM-1'"), out.join('\n'));
 });
@@ -309,4 +310,239 @@ test('a careless guard on an east or west gate is no way in', { skip }, () => {
     }
     // mirror: the same guard on a south gate is a way in
     assert.ok(!has(credentialIssues(scenario({ direction: 'south', passIf: null, awareness: 'low' })), "'SAM-1'"));
+});
+
+// Review R5 minor 1: doors.js reads a door entry only when its connectedRoom and direction
+// match a doorway of the room (first match wins), so a gate on any other entry is never
+// registered. It gets its own warning and is no way in for the card.
+const deadGate = 'so the engine never reads it: the gate does nothing';
+function carelessGate() {
+    return scenario({ passIf: null, awareness: 'low' });
+}
+const noWay = "but no item declares card_id (or opens_lock) 'SAM-1'";
+
+test('a gate entry with no direction warns and is no way in', { skip }, () => {
+    const sc = carelessGate();
+    delete sc.rooms.office.doors[0].direction;
+    let out = issues(sc);
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("'rooms/office/doors[0]'") && s.includes("but no 'direction'") &&
+        s.includes(deadGate)), out.join('\n'));
+    out = credentialIssues(sc);
+    assert.ok(has(out, npcOnly) && has(out, "'vault'"), out.join('\n'));
+    // a direction that is not one of the four is the same, and the warning names it. The
+    // schema's lower-case enum stops the command line before this; the test covers the
+    // check_access_model path
+    sc.rooms.office.doors[0].direction = 'North';
+    out = issues(sc);
+    assert.ok(has(out, `direction "North", which is not north, south, east or west (lower case)`) && has(out, deadGate),
+        out.join('\n'));
+    assert.ok(has(credentialIssues(sc), npcOnly));
+});
+
+test('a gate entry whose direction the connections do not list warns and is no way in', { skip }, () => {
+    const sc = carelessGate();
+    // east: a live gate there would draw the side-gate warning, so its absence shows the
+    // dead-gate warning replaces it
+    sc.rooms.office.doors[0].direction = 'east';
+    let out = issues(sc);
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("on its 'east' door, but room 'office' lists no 'vault' under connections.east") &&
+        s.includes(deadGate)), out.join('\n'));
+    assert.ok(!has(out, 'Gates work on north and south doors only'), out.join('\n'));
+    out = credentialIssues(sc);
+    assert.ok(has(out, npcOnly) && !has(out, noWay), out.join('\n'));
+    // a list under the direction counts when it names the room
+    const listed = carelessGate();
+    listed.rooms.office.connections = { north: ['lobby', 'vault'] };
+    listed.rooms.lobby = { type: 'room_office', connections: { south: 'office' } };
+    assert.ok(!has(issues(listed), deadGate));
+    assert.ok(!has(credentialIssues(listed), "'SAM-1'"));
+    // and not when it does not
+    listed.rooms.office.connections = { north: ['lobby'], south: 'vault' };
+    assert.ok(has(issues(listed), "lists no 'vault' under connections.north"));
+    assert.ok(has(credentialIssues(listed), npcOnly));
+});
+
+test('a gate on a second entry for the same doorway warns and is no way in', { skip }, () => {
+    const sc = carelessGate();
+    const gate = sc.rooms.office.doors[0].gate;
+    sc.rooms.office.doors = [{ connectedRoom: 'vault', direction: 'north' }, { connectedRoom: 'vault', direction: 'north', gate }];
+    let out = issues(sc);
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("'rooms/office/doors[1]'") &&
+        s.includes('an earlier entry in doors matches the same doorway')), out.join('\n'));
+    assert.ok(!has(out, "'rooms/office/doors[0]' has a gate"), out.join('\n'));
+    assert.ok(has(credentialIssues(sc), npcOnly));
+});
+
+test('a gate entry that matches its doorway draws no doorway warning', { skip }, () => {
+    for (const direction of ['north', 'south']) {
+        const out = issues(scenario({ direction, passIf: null, awareness: 'low' }));
+        assert.ok(!has(out, deadGate), `${direction}:\n${out.join('\n')}`);
+    }
+    // a disabled gate is not a gate, so it is not checked
+    const off = carelessGate();
+    delete off.rooms.office.doors[0].direction;
+    off.rooms.office.doors[0].gate.enabled = false;
+    assert.ok(!has(issues(off), deadGate));
+});
+
+// Review R5 nit 1: a lock outside the rooms' objects (a locked container in
+// startItemsInInventory, a lock on a door entry) is a gap no gate fills, even when the
+// card's room has a gate the player can follow someone through
+const locker = () => ({ type: 'briefcase', name: 'Case', locked: true, lockType: 'rfid', requires: 'SAM-1', contents: [] });
+
+test('a start item locked with a card whose room has a passable gate is still a soft-lock', { skip }, () => {
+    const sc = carelessGate();
+    assert.ok(!has(credentialIssues(sc), "'SAM-1'"), 'the room alone is open');
+    sc.startItemsInInventory = [locker()];
+    let out = credentialIssues(sc);
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("'startItemsInInventory[0]'") && s.includes(objectGap) &&
+        s.includes("rfid 'SAM-1'")), out.join('\n'));
+    assert.ok(!has(out, npcOnly) && !has(out, carefulOnly), out.join('\n'));
+    // nested in a start item's contents, and with no room requiring the card
+    const nested = carelessGate();
+    delete nested.rooms.vault.locked; delete nested.rooms.vault.lockType; delete nested.rooms.vault.requires;
+    nested.startItemsInInventory = [{ type: 'bag', name: 'Bag', contents: [locker()] }];
+    out = credentialIssues(nested);
+    assert.ok(has(out, "'startItemsInInventory[0]/contents[0]'") && has(out, objectGap) && !has(out, npcOnly), out.join('\n'));
+    // mirror: an unlocked start item with lockType rfid is no lock
+    const open = carelessGate();
+    open.startItemsInInventory = [{ ...locker(), locked: false }];
+    assert.ok(!has(credentialIssues(open), "'SAM-1'"));
+    const unset = carelessGate();
+    unset.startItemsInInventory = [locker()];
+    delete unset.startItemsInInventory[0].locked;
+    assert.ok(!has(credentialIssues(unset), "'SAM-1'"), 'interactions.js locks an object only on locked === true');
+});
+
+// Review R1 M1: play never reads a lock on a door entry (the bootstrap scenario has no doors;
+// the door and the server read the room it leads into), so it is no soft-lock, and
+// check_access_model says the field does nothing
+test('a lock on a door entry is not a lock the credential check counts', { skip }, () => {
+    const gateEntry = carelessGate();
+    Object.assign(gateEntry.rooms.office.doors[0], { locked: true, lockType: 'rfid', requires: 'SAM-1' });
+    const other = carelessGate();
+    other.rooms.vault.doors = [{ connectedRoom: 'office', direction: 'south', locked: true, lockType: 'rfid', requires: 'SAM-1' }];
+    for (const sc of [gateEntry, other]) {
+        const out = credentialIssues(sc);
+        assert.ok(!has(out, '/doors[0]') && !has(out, "'SAM-1'"), out.join('\n'));
+    }
+    let out = issues(gateEntry);
+    for (const field of ['locked', 'lockType']) {
+        assert.ok(out.some(s => s.startsWith('⚠️') && s.includes(`'rooms/office/doors[0]' has '${field}', which the game never reads`)),
+            out.join('\n'));
+    }
+    // a requires that repeats the room's draws nothing
+    assert.ok(!has(out, "'rooms/office/doors[0]' requires"), out.join('\n'));
+    out = issues(carelessGate());
+    assert.ok(!has(out, 'which the game never reads'), out.join('\n'));
+});
+
+// Habits validator gaps review R2 minor 1: the gate's card is the room's requires, and every
+// other lock field doors.js could take from a door entry is never there in play either
+test('a door-entry requires that differs from the room it leads into warns', { skip }, () => {
+    const sc = carelessGate();
+    sc.rooms.office.doors[0].requires = 'OTHER-9';
+    let out = issues(sc);
+    const differs = "'rooms/office/doors[0]' has a 'requires' that differs from the requires on room 'vault'";
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes(`${differs} (values not shown)`) && !s.includes('OTHER-9') &&
+        s.includes("the gate and the door use the room's")), out.join('\n'));
+    // mirror: the same card, as a one-item list, draws nothing
+    sc.rooms.office.doors[0].requires = ['SAM-1'];
+    out = issues(sc);
+    assert.ok(!has(out, differs), out.join('\n'));
+    // a room with no requires: any card on the entry is one the game never asks for
+    const open = carelessGate();
+    delete open.rooms.vault.requires;
+    open.rooms.office.doors[0].requires = 'SAM-1';
+    assert.ok(has(issues(open), `${differs} (values not shown)`));
+});
+
+// Code review R2 m1: an entry carrying its own pin lock against an rfid room shows no value
+test('a pin door entry against an rfid room warns without its value', { skip }, () => {
+    const sc = carelessGate();
+    Object.assign(sc.rooms.office.doors[0], { lockType: 'pin', requires: '4821' });
+    const out = issues(sc);
+    assert.ok(has(out, "'rooms/office/doors[0]' has a 'requires' that differs"), out.join('\n'));
+    assert.ok(!out.some(s => s.includes('4821')), out.join('\n'));
+});
+
+// Code review R1 M1: for a PIN or password room, requires is the answer, so neither value is shown
+test('a door-entry requires that differs on a pin or password room warns without the values', { skip }, () => {
+    for (const lockType of ['pin', 'password']) {
+        const sc = carelessGate();
+        Object.assign(sc.rooms.vault, { lockType, requires: '4812' });
+        sc.rooms.office.doors[0].requires = '1999';
+        const out = issues(sc);
+        const line = out.find(s => s.includes("'rooms/office/doors[0]' has a 'requires' that differs"));
+        assert.ok(line && line.startsWith('⚠️') && line.includes('(values not shown)'), `${lockType}:\n${out.join('\n')}`);
+        assert.ok(!out.some(s => s.includes('4812') || s.includes('1999')), `${lockType}:\n${out.join('\n')}`);
+    }
+});
+
+test('lock fields on a door entry warn that the game never reads them', { skip }, () => {
+    const fields = { keyPins: [1, 2, 3, 4], key_pins: [1, 2], difficulty: 'hard', lockedHint: 'Badge only',
+        biometricMatchThreshold: 0.8, maxAttempts: 3, passwordHint: 'pet', showHint: true, postitNote: 'x',
+        showPostit: true, showKeyboard: true, pinLength: 4 };
+    const sc = carelessGate();
+    Object.assign(sc.rooms.office.doors[0], fields);
+    const out = issues(sc);
+    for (const field of Object.keys(fields)) {
+        assert.ok(out.some(s => s.startsWith('⚠️') && s.includes(`'rooms/office/doors[0]' has '${field}', which the game never reads`) &&
+            s.includes("put it on room 'vault'")), `${field}:\n${out.join('\n')}`);
+    }
+    // mirror: the same fields on the room itself draw nothing of the kind
+    const onRoom = carelessGate();
+    Object.assign(onRoom.rooms.vault, fields);
+    assert.ok(!has(issues(onRoom), 'which the game never reads'));
+});
+
+// Review R1 n2: doors.js reads connectedRoom on every entry, so null throws; any other
+// non-object has no connectedRoom and is skipped. The schema types each entry as an object,
+// so the command line stops before this; the test covers the check_access_model path
+test('a null door entry is an error, and another non-object a warning', { skip }, () => {
+    const sc = carelessGate();
+    sc.rooms.office.doors.push(null, 'x');
+    const out = issues(sc);
+    assert.ok(out.some(s => s.startsWith('❌') && s.includes("'rooms/office/doors[1]' is null; doors.js throws")), out.join('\n'));
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("'rooms/office/doors[2]' is not an object, so the engine skips it")),
+        out.join('\n'));
+    assert.ok(!out.some(s => s.startsWith('❌') && s.includes("'rooms/office/doors[2]'")), out.join('\n'));
+});
+
+// Review R1 m2: two real gates into one room from two doorways; one open is enough
+test('a careless gate from a second room clears the careful-only warning for that room', { skip }, () => {
+    const sc = twoRooms();
+    sc.rooms.office.doors = [{ connectedRoom: 'vault2', direction: 'north', gate: { openFor: ['sam'] } }];
+    sc.rooms.vault2.connections = { south: 'office', north: 'lobby' };
+    sc.rooms.lobby = { type: 'room_office', connections: { south: 'vault2' },
+        npcs: [{ id: 'gary', npcType: 'person', awareness: 'low' }],
+        doors: [{ connectedRoom: 'vault2', direction: 'south', gate: { openFor: ['gary'] } }] };
+    let out = credentialIssues(sc);
+    assert.ok(!out.some(s => s.includes(carefulOnly) && s.includes("'vault2'")), out.join('\n'));
+    // mirror: the lobby gate opens for nobody, so the careful-only warning comes back
+    sc.rooms.lobby.doors[0].gate.openFor = [];
+    out = credentialIssues(sc);
+    assert.ok(out.some(s => s.includes(carefulOnly) && s.includes("'vault2'")), out.join('\n'));
+});
+
+test('a disabled gate on the first entry shadows a live gate on a later one', { skip }, () => {
+    const sc = carelessGate();
+    const gate = sc.rooms.office.doors[0].gate;
+    sc.rooms.office.doors = [{ connectedRoom: 'vault', direction: 'north', gate: { enabled: false } },
+        { connectedRoom: 'vault', direction: 'north', gate }];
+    assert.ok(has(issues(sc), 'an earlier entry in doors matches the same doorway'));
+    assert.ok(has(credentialIssues(sc), npcOnly));
+});
+
+test('a cloner, a keycard item or another accepted item card clears the start item lock', { skip }, () => {
+    const cloner = carelessGate();
+    cloner.startItemsInInventory = [locker(), { type: 'rfid_cloner', name: 'Cloner' }];
+    const keycard = carelessGate();
+    keycard.startItemsInInventory = [locker(), { type: 'keycard', name: 'K', card_id: 'SAM-1' }];
+    const other = carelessGate();
+    other.startItemsInInventory = [{ ...locker(), requires: ['SAM-1', 'OTHER'] }, { type: 'keycard', name: 'K', card_id: 'OTHER' }];
+    for (const sc of [cloner, keycard, other]) {
+        const out = credentialIssues(sc);
+        assert.ok(!has(out, "'SAM-1'"), out.join('\n'));
+    }
 });

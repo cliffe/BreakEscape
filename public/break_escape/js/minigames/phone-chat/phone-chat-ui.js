@@ -21,8 +21,8 @@ import PhoneChatConversation from './phone-chat-conversation.js';
 import { npcDmFields, onAccentColour } from './phone-app.js';
 import { isPhoneCallMode, callLabelFor, formatCallDuration, callSubtitle, CALL_STATUS_HTML, CALL_SPEAKING_HTML, CALL_CONTROLS_HTML } from './phone-call-ui.js';
 
-const escHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 import InkEngine from '../../systems/ink/ink-engine.js';
+import { escapeHtml as escHtml } from '../../utils/escape-html.js';
 
 export default class PhoneChatUI {
     /**
@@ -658,7 +658,7 @@ export default class PhoneChatUI {
         if (!el) return null;
         const preview = this.previewText({ type: 'npc', text: raw }, npc);
         if (preview === null) return null;
-        el.innerHTML = displayDashes(preview);
+        el.textContent = displayDashes(preview);
         return preview;
     }
 
@@ -728,16 +728,16 @@ export default class PhoneChatUI {
 
         contactItem.innerHTML = `
             <div class="contact-avatar">
-                ${avatar ? `<img src="${avatarSrc}" alt="${npc.displayName}">` : '👤'}
+                ${avatar ? `<img src="${escHtml(avatarSrc)}" alt="${escHtml(npc.displayName)}">` : '👤'}
             </div>
             <div class="contact-info">
-                <div class="contact-name">${npc.displayName || npc.id}</div>
+                <div class="contact-name">${escHtml(npc.displayName || npc.id)}</div>
                 ${npcDmFields(npc).handle ? `<div class="contact-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
-                <div class="contact-last-message${lastIsMissedCall ? ' missed' : ''}">${displayDashes(lastMessagePreview)}</div>
+                <div class="contact-last-message${lastIsMissedCall ? ' missed' : ''}">${escHtml(displayDashes(lastMessagePreview))}</div>
             </div>
             <div class="contact-meta">
                 ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
-                <div class="contact-time">${lastMessageTime}</div>
+                <div class="contact-time">${escHtml(lastMessageTime)}</div>
             </div>
         `;
         
@@ -982,7 +982,10 @@ export default class PhoneChatUI {
             // Transcript
             const transcriptDiv = document.createElement('div');
             transcriptDiv.className = 'transcript';
-            transcriptDiv.innerHTML = `<strong>Transcript:</strong><br>${displayDashes(transcript)}`;
+            // The transcript is ink text: plain text after the label
+            const transcriptLabel = document.createElement('strong');
+            transcriptLabel.textContent = 'Transcript:';
+            transcriptDiv.append(transcriptLabel, document.createElement('br'), displayDashes(transcript));
             
             voiceDisplay.appendChild(audioControls);
             voiceDisplay.appendChild(transcriptDiv);

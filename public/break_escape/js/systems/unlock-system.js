@@ -172,6 +172,65 @@ export async function requestRfidAccessUnlock(lockable, type, cardIds) {
     }
 }
 
+/**
+ * The success toast after an RFID unlock: which card opened it, and whether it was the
+ * card itself or the copier playing back a copy. result: { cardName, emulated }, or
+ * { viaCopy: true } when the server says only that a copy passed, not whose.
+ */
+export function rfidOpenedLine(result) {
+    if (result && result.viaCopy === true) return 'Opened with a copied card.';
+    const name = result && typeof result.cardName === 'string' && result.cardName.trim();
+    if (!name) return 'Card accepted.';
+    return result.emulated ? `Opened with your copy of ${name}.` : `Opened with ${name}.`;
+}
+
+/**
+ * What an access-list unlock answer says about the card that passed. The server names the
+ * player's own keycard (cardId) but, for a copy, answers only viaCopy: naming the copy
+ * would tell the player whose identity the list admits.
+ */
+export function rfidAccessUnlockResult(response) {
+    if (response && response.viaCopy === true) return { viaCopy: true };
+    return rfidCardForId(response && response.cardId);
+}
+
+/**
+ * The card behind an access-list unlock by the player's own keycard: the server answers
+ * with its id (cardId). A keycard in the inventory is the card itself; a card saved on the
+ * copier is a copy. null when the id is not one the player holds.
+ */
+export function rfidCardForId(cardId) {
+    if (cardId == null || cardId === '') return null;
+    const id = String(cardId);
+    const items = (window.inventory && window.inventory.items) || [];
+    const getCardId = (d) => d && (d.card_id || window.lockRef?.(d));
+    const keycard = items.find(it => it?.scenarioData?.type === 'keycard' && String(getCardId(it.scenarioData)) === id);
+    if (keycard) return { cardName: keycard.scenarioData.name || null, emulated: false };
+    for (const it of items) {
+        if (it?.scenarioData?.type !== 'rfid_cloner') continue;
+        const saved = (it.scenarioData.saved_cards || []).find(c => String(getCardId(c)) === id);
+        if (saved) return { cardName: saved.name || null, emulated: true };
+    }
+    return null;
+}
+
+/** The reader the copier is held to: a door's sign, else the object's name. */
+export function rfidReaderName(target) {
+    return doorRefusalTitle(target, '') || target?.scenarioData?.name || '';
+}
+
+/**
+ * Why an access-list reader refused every card held, in the world's terms: no role or
+ * person is named, only that the door keeps a list (by role, or by named people).
+ */
+export function rfidAccessDeniedLine(access, type = 'door') {
+    const what = type === 'door' ? 'door' : 'lock';
+    const roles = access && Array.isArray(access.roles) && access.roles.length > 0;
+    const people = access && Array.isArray(access.people) && access.people.length > 0;
+    if (people && !roles) return `None of your cards is on this ${what}'s list. It opens for named people only.`;
+    return `None of your cards is cleared for this ${what}. It opens only for staff with the right access.`;
+}
+
 // ── Sign-in PCs (access model 5.3, step 8) ─────────────────────────────────
 // A `lockType: "login"` PC is opened by a session, never by unlockTarget: the PC stays
 // locked in every room response, so the next click comes back here. pc-sessions.js
@@ -288,16 +347,38 @@ async function remoteCapturedSignIns() {
     return typeof list === 'function' ? list(captures, accounts, secrets) : [];
 }
 
+// A switched-off PC at its own keyboard (user decision q72)
+export const PC_OFF_TEXT = 'This PC is off.';
+// The longest a click on a PC with an offWhen waits for the globals sync (as the network view)
+export const PC_OFF_SYNC_WAIT_MS = 3000;
+
+/**
+ * Is this sign-in PC switched off: its office-life `affordance.offWhen` (a global name, or
+ * { name: value }, all to match) holds on the client's globals? The server judges the same
+ * field on its own copy (Game#host_service_off?). Exported for tests.
+ */
+export function pcSwitchedOff(data, globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {}) {
+    const cond = data?.affordance?.offWhen;
+    if (cond === undefined || cond === null || cond === false || cond === '') return false;
+    const g = globals || {};
+    if (typeof cond === 'string') return !!g[cond];
+    if (typeof cond === 'object') return Object.entries(cond).every(([name, value]) => g[name] === value);
+    return false;
+}
+
 /**
  * A click on a sign-in PC (access model 5.4, "The interaction at a sign-in PC"):
  *   0. a headless host (slice 9.3a): its observations, and stop;
+ *   0b. switched off (affordance.offWhen holds, q72): "This PC is off.", and stop. A session
+ *      held there is kept. A PC that has an offWhen but is on first sends the globals (at
+ *      most PC_OFF_SYNC_WAIT_MS), so a switch flipped back on a moment ago is known;
  *   1. owned and the owner present: "<owner> is using this PC", then the PC's resolved
  *      observations, and stop (no workstation event; pc_in_use for task mappings);
  *   2. a session held here: the desktop;
  *   3. workstationState.onInteract: 'accessed' claims the owner's session through
  *      pc-sessions.js (the desktop on success, the sign-in screen on a refusal); anything
  *      else ('locked', 'signin', 'attended' from a race with step 1, null) the sign-in screen.
- * Resolves to what it did: 'headless' | 'in_use' | 'desktop' | 'claimed' | 'claim_refused' | 'signin'.
+ * Resolves to what it did: 'headless' | 'off' | 'in_use' | 'desktop' | 'claimed' | 'claim_refused' | 'signin'.
  */
 export async function interactLoginPc(lockable) {
     const data = lockable?.scenarioData || {};
@@ -306,6 +387,19 @@ export async function interactLoginPc(lockable) {
     if (isHeadlessHost(lockable)) {
         await showHeadlessObservations(lockable);
         return 'headless';
+    }
+    if (pcSwitchedOff(data)) {
+        window.gameAlert?.(PC_OFF_TEXT, 'info', data.name || 'PC', 3000);
+        window.eventDispatcher?.emit?.('pc_off_shown', { pcId });
+        return 'off';
+    }
+    if (data.affordance?.offWhen !== undefined) {
+        let timer;
+        try {
+            const synced = Promise.resolve(window.stateSync?.sync?.()).catch(() => false);
+            await Promise.race([synced, new Promise(r => { timer = setTimeout(r, PC_OFF_SYNC_WAIT_MS); })]);
+        } catch (e) { /* the server judges it anyway */ }
+        clearTimeout(timer);
     }
     const ws = window.workstationState;
     const sessions = window.pcSessions;
@@ -320,10 +414,9 @@ export async function interactLoginPc(lockable) {
             const { resolveObjectField } = await import('../utils/conditional-text.js');
             obs = resolveObjectField(data, 'observations', '') || '';
         } catch (e) { /* unresolved base observations */ }
-        // Review R1 m8: the user's name is author text, so it is escaped; the observations may
-        // hold intended markup and go in as before
-        const safeName = String(name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        const message = obs ? `${safeName} is using this PC.\n${obs}` : `${safeName} is using this PC.`;
+        // The toast is plain text by default, so the name and observations go in unescaped
+        // (escaping here as well would show "&lt;" on screen)
+        const message = obs ? `${name} is using this PC.\n${obs}` : `${name} is using this PC.`;
         window.gameAlert?.(message, 'info', data.name || 'PC', 4000);
         sessions?.inUseShown?.(pcId, userAt);
         return 'in_use';
@@ -366,6 +459,12 @@ export async function interactLoginPc(lockable) {
         // m1), so the screen is locked here too and the next click sends no claim. Only a real
         // refusal locks: a 5xx, 403 or network failure keeps the guest record (review R3 m1),
         // and only the guest that was claimed is dropped (review R3 n1)
+        if (r?.serverReason === 'off') {
+            // The server says the PC is off though the client thought it on (review R3 nit 4):
+            // say so once, and open no sign-in screen (it would only be refused the same way)
+            window.gameAlert?.(PC_OFF_TEXT, 'info', data.name || 'PC', 3000);
+            return 'off';
+        }
         if (guestId && r?.reason === 'refused') ws?.guestClaimRefused?.(pcId, guestId);
         else if (guestId && r?.message) window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000, { plainText: true });
         openLoginSignIn(lockable, { reason: 'claim_refused' });
@@ -425,6 +524,11 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
             }
             if (typeof answer?.postitNote === 'string' && answer.postitNote) servedNote = answer.postitNote;
         } catch (error) {
+            if (error?.status === 403 && error?.body?.reason === 'off') {
+                // The server holds the PC switched off (q72): no sign-in screen
+                window.gameAlert?.(PC_OFF_TEXT, 'info', data.name || 'Sign in', 3000);
+                return;
+            }
             if (error?.status === 403 || error?.status === 404) {
                 window.gameAlert?.("This PC can't be reached", 'error', data.name || 'Sign in', 3000);
                 return;
@@ -727,7 +831,7 @@ export function handleUnlock(lockable, type) {
         case 'cryptex':
             console.log('CRYPTEX PASSWORD REQUESTED');
             // Get cryptex config from lockable object
-            const cryptexConfig = lockable.cryptexConfig || lockable.scenarioData?.cryptexConfig || {};
+            const cryptexConfig = lockable.cryptexConfig || lockable.scenarioData?.cryptexConfig || lockable.doorProperties?.cryptexConfig || {};
 
             startCryptexMinigame(lockable, type, cryptexConfig, (success, result) => {
                 if (success) {
@@ -738,10 +842,9 @@ export function handleUnlock(lockable, type) {
         
         case 'combination':
             console.log('COMBINATION PADLOCK REQUESTED');
-            // Get combination from lockable.scenarioData.combination (array [L, R, L])
-            const combination = lockable.combination || lockable.scenarioData?.combination || [0, 0, 0];
-
-            startCombinationMinigame(lockable, type, combination, (success, result) => {
+            // The combination stays on the server (the lock's `requires`): the dials are
+            // checked there, so nothing about the answer is passed to the minigame
+            startCombinationMinigame(lockable, type, (success, result) => {
                 if (success) {
                     unlockTarget(lockable, type, lockable.layer, result?.serverResponse);
                 }
@@ -976,17 +1079,19 @@ export function handleUnlock(lockable, type) {
                     acceptsUIDOnly: acceptsUIDOnly,
                     availableCards: keycards,  // Cards they can read in the minigame
                     hasCloner: hasCloner,
+                    // The copier opens on this reader, named by the door's sign or the object
+                    readerName: rfidReaderName(lockable),
                     // A refused card or clone at the reader: door_unlock_failed (reason
                     // wrong_card or uid_only), same as a refused key or fingerprint
                     onRefused: refusedWithHint,
-                    onComplete: async (success) => {
+                    onComplete: async (success, result) => {
                         if (success) {
                             // Notify server and get room/container data
                             const serverResponse = await notifyServerUnlock(lockable, type, 'rfid');
                             setTimeout(() => {
                                 playRfidUnlockSound();
                                 unlockTarget(lockable, type, lockable.layer, serverResponse);
-                                window.gameAlert('RFID lock unlocked!', 'success', 'Access Granted', 3000);
+                                window.gameAlert(rfidOpenedLine(result), 'success', 'Access Granted', 3000);
                             }, 100);
                         }
                     }
@@ -1029,14 +1134,16 @@ export function handleUnlock(lockable, type) {
                         }
                         playRfidUnlockSound();
                         unlockTarget(lockable, type, lockable.layer, response);
-                        window.gameAlert('Card accepted', 'success', 'Access Granted', 3000);
+                        // The server names the player's own card that passed; a copy only as "a copied card"
+                        window.gameAlert(rfidOpenedLine(rfidAccessUnlockResult(response)), 'success', 'Access Granted', 3000);
                     } else if (outcome === 'uid_only') {
                         playUISound('reject');
                         window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
                         emitDoorUnlockFailed('uid_only');
                     } else if (outcome === 'denied') {
                         playUISound('reject');
-                        window.gameAlert(appendLockedHint('Access denied', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Access denied'));
+                        const deniedLine = rfidAccessDeniedLine(lockRequirements.access, type);
+                        window.gameAlert(appendLockedHint(deniedLine, lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, deniedLine));
                         emitDoorUnlockFailed('wrong_card');
                     } else {
                         window.gameAlert('Failed to verify access', 'error', 'Error', 3000);

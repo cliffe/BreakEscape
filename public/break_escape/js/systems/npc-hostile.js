@@ -1,5 +1,5 @@
 import { COMBAT_CONFIG } from '../config/combat-config.js';
-import { roomIdAtFeet } from './interaction-walls.js';
+import { roomIdAtFeet, roomFloorRect } from './interaction-walls.js';
 import { CombatEvents } from '../events/combat-events.js';
 import { getNPCDirection } from './npc-sprites.js';
 
@@ -94,7 +94,8 @@ export function initNPCHostileSystem() {
     restoreHostility: (saved) => restoreHostility(saved),
     takeRestoredHostility: (npcId) => takeRestoredHostility(npcId),
     announceRestoredHostile: (npcId, config) => announceRestoredHostile(npcId, config),
-    resetHostilesForRespawn: () => resetHostilesForRespawn()
+    resetHostilesForRespawn: () => resetHostilesForRespawn(),
+    redropPending: (npcId) => redropPending(npcId)
   };
 }
 
@@ -303,13 +304,14 @@ function damageNPC(npcId, amount) {
     recordHostility(npcId, state);
     
     // Sync NPC KO state to server for persistence. The drop below waits for it: the server
-    // accepts a drop outside the NPC's own room only once the KO is recorded.
+    // accepts a drop outside the NPC's own room only once the KO is recorded. Retried with a
+    // bounded backoff (review R3 m2), so one failed request does not lose the drop.
     let koSynced = null;
     if (window.RoomStateSync && npc?.roomId) {
-      koSynced = window.RoomStateSync.updateNpcState(npc.roomId, npcId, {
+      koSynced = withSyncRetries(() => window.RoomStateSync.updateNpcState(npc.roomId, npcId, {
         isKO: true,
         currentHP: 0
-      }).catch(err => {
+      }, { reportRefusal: true }), 'NPC KO state').catch(err => {
         console.error('Failed to sync NPC KO state to server:', err);
       });
     }
@@ -448,27 +450,243 @@ function playNPCDeathAnimation(npcId, sprite) {
 
 /**
  * Drop items around a defeated NPC
- * Items spawn directly at the NPC's position (which is always player-accessible).
+ * Items land on walkable floor round the body (koDropSpots), spread apart and clear
+ * of furniture where possible.
  * Physics launches are intentionally avoided: when an NPC dies near a wall or
  * furniture, velocity-based drops collide with geometry and leave items in
  * unreachable positions. Instead each item is placed at a small static offset
  * so multiple drops are visually distinguishable while remaining pickupable.
  * @param {string} npcId - The NPC that was defeated
  */
-function dropNPCItems(npcId, afterSync = null) {
+// Review R3 m2: a KO sync or a KO drop that fails is tried again after each of these delays,
+// then given up. Bounded: at most four requests per KO sync and per dropped item, nothing queued
+// beyond them, nothing saved. The server makes a repeated drop a no-op, and a reload lists any
+// drop that never landed (koDropPending) so it is sent again.
+export const SYNC_RETRY_DELAYS_MS = [500, 1500, 4000];
+let retryWait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Test seam: replace the wait between retries. Returns the previous one. */
+export function setRetryWait(fn) {
+  const prev = retryWait;
+  retryWait = fn;
+  return prev;
+}
+
+/** The answer room-state-sync.js gives a definite refusal (its SYNC_REFUSED; review R4 n1). */
+export const SYNC_REFUSED = 'refused';
+
+/**
+ * Calls `send` (a function returning a promise of true on success) until it answers true or the
+ * delays run out. A thrown error counts as a failure. A definite refusal (SYNC_REFUSED: a 4xx
+ * such as "room not accessible" or "NPC not KO'd") is not retried (review R4 n1). Resolves to
+ * true on success, false otherwise.
+ */
+export async function withSyncRetries(send, what = 'sync', delays = SYNC_RETRY_DELAYS_MS) {
+  for (let attempt = 0; ; attempt++) {
+    let answer = false;
+    try {
+      answer = await send();
+    } catch (err) {
+      console.warn(`${what} request failed:`, err);
+    }
+    if (answer === true) return true;
+    if (answer === SYNC_REFUSED) {
+      console.warn(`${what}: refused by the server, not retried`);
+      return false;
+    }
+    if (attempt >= delays.length) {
+      console.error(`${what}: gave up after ${attempt + 1} attempts`);
+      return false;
+    }
+    await retryWait(delays[attempt]);
+  }
+}
+
+/**
+ * Review R3 m2: after a reload, drop again the held items of a KO'd NPC that the server says
+ * never reached a room or the player (`koDropPending`, from GET /room). Called by
+ * npc-sprites.js once the KO'd sprite is laid down. Returns the number of items dropped.
+ */
+function redropPending(npcId) {
+  const npc = window.npcManager?.getNPC(npcId);
+  const pending = Array.isArray(npc?.koDropPending) ? npc.koDropPending.filter(id => typeof id === 'string') : [];
+  if (!npc || pending.length === 0 || !isNPCKO(npcId)) return 0;
+  npc.koDropPending = [];
+  return dropNPCItems(npcId, null, pending);
+}
+
+/**
+ * The texture a dropped held item is drawn with. The same order as a reload (rooms.js draws a
+ * stored object from `sprite || type`), so the drop looks the same before and after: the item's
+ * own sprite, then its texture field, then its type's default picture. 'key' only when none of
+ * them is a loaded texture (a USB stick used to show the key picture until a reload).
+ */
+export function dropTextureFor(item, exists) {
+  const candidates = [item?.sprite, item?.texture, item?.type];
+  for (const key of candidates) {
+    if (typeof key === 'string' && key && exists(key)) return key;
+  }
+  return 'key';
+}
+
+/**
+ * Where a KO'd NPC's items land (UX pass, 2026-11-12; backlog "KO item drops land on
+ * top of each other"). The old 8 px ring put every item on the body, often under the
+ * desk or chair the NPC fell by, where the player could not see it. Each spot here:
+ *  - is a cell the player can walk to from the body without leaving the room
+ *    (`reachable`, from koReachableCells: a flood fill over the world grid), so it is
+ *    never inside a wall or furniture body, on the far side of a wall, in the next
+ *    room or in a walled-off pocket (code review R2 M1);
+ *  - is at least MIN_GAP from the body and from every other drop, when there is room;
+ *  - draws clear of the shown room objects (obstacles: {x, y, w, h} rects), so a desk
+ *    top or a chair does not hide it, when such a spot exists within reach: clear ring
+ *    spots first, then any clear reached cell, and only then a hidden one (a desk top is
+ *    often drawn over walkable floor).
+ * With too few reached cells for the gap (a narrow corridor, many items), the rest
+ * stack on the nearest reached cells. With no grid at all (`reachable` null or empty)
+ * every item lands on the body, a few px apart, since nothing else is known to be safe.
+ * Returns the centre of each spot; the caller places a sprite of size (w, h) there.
+ * Pure, so it is tested in node.
+ */
+export const KO_DROP_MIN_GAP = 32;
+export const KO_DROP_RADII = [KO_DROP_MIN_GAP, KO_DROP_MIN_GAP * 1.5, KO_DROP_MIN_GAP * 2, KO_DROP_MIN_GAP * 3];
+const KO_DROP_ANGLES = [90, 45, 135, 0, 180, 270, 225, 315]; // below the body first, then round
+export function koDropSpots(feet, count, { reachable = null, obstacles = [], size = { w: 32, h: 32 } } = {}) {
+  const gap = KO_DROP_MIN_GAP;
+  const spots = [];
+  const d2 = (p, q) => (p.x - q.x) ** 2 + (p.y - q.y) ** 2;
+  const far = (p, q, d) => d2(p, q) >= d * d;
+  const clear = (p) => {
+    const r = { x: p.x - size.w / 2, y: p.y - size.h / 2, w: size.w, h: size.h };
+    return !obstacles.some(o => r.x < o.x + o.w && r.x + r.w > o.x && r.y < o.y + o.h && r.y + r.h > o.y);
+  };
+  const cells = Array.isArray(reachable) ? reachable : [];
+  if (cells.length === 0) {
+    // Nothing is known to be walkable: on the body, a few px apart so each shows
+    for (let i = 0; i < count; i++) {
+      const a = (i / Math.max(count, 1)) * Math.PI * 2 + Math.PI / 2;
+      const r = count > 1 ? 4 : 0;
+      spots.push({ x: Math.round(feet.x + Math.cos(a) * r), y: Math.round(feet.y + Math.sin(a) * r) });
+    }
+    return spots;
+  }
+  // Ring points snapped to the nearest reached cell (within about one cell of the point)
+  const candidates = [];
+  for (const radius of KO_DROP_RADII) {
+    for (const deg of KO_DROP_ANGLES) {
+      const a = deg * Math.PI / 180;
+      const raw = { x: feet.x + Math.cos(a) * radius, y: feet.y + Math.sin(a) * radius };
+      let best = null, bestD = 12 * 12;
+      for (const c of cells) { const d = d2(c, raw); if (d <= bestD) { bestD = d; best = c; } }
+      if (best && !candidates.includes(best)) candidates.push(best);
+    }
+  }
+  const byDistance = [...cells].sort((p, q) => d2(p, feet) - d2(q, feet));
+  const pick = (list, needClear, minGap) => {
+    for (const c of list) {
+      if (spots.length >= count) return;
+      if (spots.includes(c)) continue;
+      if (minGap > 0 && !far(c, feet, minGap * 0.75)) continue;
+      if (!spots.every(s => far(c, s, minGap))) continue;
+      if (needClear && !clear(c)) continue;
+      spots.push(c);
+    }
+  };
+  pick(candidates, true, gap);
+  pick(byDistance, true, gap);        // clear floor off the rings, before any hidden spot
+  pick(candidates, false, gap);
+  pick(byDistance, false, gap);       // off the rings, e.g. along a corridor
+  pick(byDistance, false, gap / 2);   // tighter
+  // Last resort: stack on the nearest reached cells, one 8 px cell apart, then on top
+  for (let i = 0; spots.length < count; i++) {
+    const c = byDistance[i % byDistance.length];
+    if (i < byDistance.length && spots.includes(c)) continue;
+    spots.push(c);
+  }
+  return spots.map(c => ({ x: Math.round(c.x), y: Math.round(c.y) }));
+}
+
+/**
+ * The world-grid cells a KO drop may use (code review R2 M1): a 4-way flood fill from
+ * the body's cell over walkable cells (grid value 0), out to maxDist px from the feet,
+ * keeping only cells inRoom(x, y) accepts (the room the NPC fell in). Walls and
+ * furniture stop the fill, so a cell behind a wall or in an enclosed pocket is never
+ * reached, and a door gap into the next room is cut off by inRoom.
+ * floor (optional, roomFloorRect's {left, right, top, bottom}) bounds the fill as well
+ * (code review R3 m1): the room's map rectangle includes its side wall tiles, and the
+ * strip of a side wall tile behind its collision box reads as walkable, so without it a
+ * body inside the wall's strip could fill a sealed column behind the wall. The start is
+ * also pulled onto the floor first, so such a body starts from the floor beside it.
+ * bounds is the pathfinder's {minX, minY, cols, rows, step}. Returns cell centres,
+ * nearest first in fill order. Pure, so it is tested in node.
+ */
+export function clampToFloor(p, floor) {
+  if (!p || !floor) return p;
+  return {
+    x: Math.min(Math.max(p.x, floor.left), floor.right),
+    y: Math.min(Math.max(p.y, floor.top), floor.bottom)
+  };
+}
+export function koReachableCells(feet, { grid, bounds, maxDist = KO_DROP_RADII[KO_DROP_RADII.length - 1] + KO_DROP_MIN_GAP, inRoom: inRoomId = () => true, floor = null } = {}) {
+  if (!grid || !bounds || !feet) return [];
+  const { minX, minY, cols, rows, step } = bounds;
+  const onFloor = (x, y) => !floor || (x >= floor.left && x <= floor.right && y >= floor.top && y <= floor.bottom);
+  const inRoom = (x, y) => onFloor(x, y) && inRoomId(x, y);
+  const centre = (cx, cy) => ({ x: minX + cx * step + step / 2, y: minY + cy * step + step / 2 });
+  const ok = (cx, cy) => cx >= 0 && cy >= 0 && cx < cols && cy < rows && grid[cy]?.[cx] === 0;
+  const within = (p) => (p.x - feet.x) ** 2 + (p.y - feet.y) ** 2 <= maxDist * maxDist;
+  feet = clampToFloor(feet, floor);
+  let sx = Math.floor((feet.x - minX) / step), sy = Math.floor((feet.y - minY) / step);
+  if (!ok(sx, sy) || !inRoom(centre(sx, sy).x, centre(sx, sy).y)) {
+    // The body's own cell is often blocked (clearance by a wall or desk): start from the
+    // nearest walkable in-room cell next to it, never more than two cells away
+    let found = null, bestD = Infinity;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const cx = sx + dx, cy = sy + dy;
+      if (!ok(cx, cy)) continue;
+      const c = centre(cx, cy);
+      if (!inRoom(c.x, c.y)) continue;
+      const d = (c.x - feet.x) ** 2 + (c.y - feet.y) ** 2;
+      if (d < bestD) { bestD = d; found = [cx, cy]; }
+    }
+    if (!found) return [];
+    [sx, sy] = found;
+  }
+  const seen = new Set([sy * cols + sx]);
+  const queue = [[sx, sy]];
+  const out = [];
+  for (let qi = 0; qi < queue.length; qi++) {
+    const [cx, cy] = queue[qi];
+    out.push(centre(cx, cy));
+    for (const [nx, ny] of [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]]) {
+      const k = ny * cols + nx;
+      if (seen.has(k) || !ok(nx, ny)) continue;
+      seen.add(k);
+      const c = centre(nx, ny);
+      if (!within(c) || !inRoom(c.x, c.y)) continue;
+      queue.push([nx, ny]);
+    }
+  }
+  return out;
+}
+
+function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
   const npc = window.npcManager?.getNPC(npcId);
   let sprite = npc?._sprite || npc?.sprite;
   if (npc && !sprite && npc.roomId) {
     sprite = window.rooms?.[npc.roomId]?.npcSprites?.find(s => s.npcId === npcId);
   }
   if (!npc || !npc.itemsHeld || npc.itemsHeld.length === 0) {
-    return;
+    return 0;
   }
+  // A re-drop after a reload drops only the items still owed (review R3 m2)
+  const toDrop = Array.isArray(onlyIds) ? npc.itemsHeld.filter(i => i && onlyIds.includes(i.id)) : npc.itemsHeld;
+  if (toDrop.length === 0) return 0;
 
   // Use the sprite we already have and find its room
   if (!sprite) {
     console.warn(`⚠️ Cannot drop items - no sprite found for NPC: ${npcId}`);
-    return;
+    return 0;
   }
 
   // The room the NPC fell in, not its home room: hostile NPCs follow the player
@@ -480,41 +698,54 @@ function dropNPCItems(npcId, afterSync = null) {
 
   if (!npcRoomId || !window.rooms?.[npcRoomId]) {
     console.warn(`Could not find room for NPC ${npcId}`);
-    return;
+    return 0;
   }
 
   const room = window.rooms[npcRoomId];
   const gameRef = window.game;
-  const itemCount = npc.itemsHeld.length;
-  
-  npc.itemsHeld.forEach((item, index) => {
-    // Place items at the NPC's location with a small static offset per item so
-    // they don't perfectly stack. Using a fixed ring radius (8px) keeps them
-    // close together and always within the walkable area the NPC occupied.
-    const angle = (index / itemCount) * Math.PI * 2;
-    const SCATTER_RADIUS = 8; // px — small enough to stay away from walls
 
-    const spawnX = Math.round(sprite.x + Math.cos(angle) * SCATTER_RADIUS);
-    const spawnY = Math.round(sprite.y + Math.sin(angle) * SCATTER_RADIUS);
+  // Spread the drops round the body on walkable floor, clear of furniture and at
+  // least KO_DROP_MIN_GAP apart (koDropSpots), so each one can be seen and picked.
+  // Bounded by the room's floor as well as its id (code review R3 m1): a body inside a side
+  // wall's collision strip would otherwise reach the sealed column behind the wall. Its
+  // feet are pulled onto the floor, so the rings and the no-grid stack land there too.
+  // Only when the body is in that room: a body in no room keeps the home-room fallback
+  // as before (review R3 n4, logged), rather than moving its drops to that room's floor.
+  const floor = fellIn ? roomFloorRect(room) : null;
+  const feet = clampToFloor(bc ? { x: bc.x, y: bc.y } : { x: sprite.x, y: sprite.y }, floor);
+  const pm = window.pathfindingManager;
+  const obstacles = [];
+  for (const o of Object.values(room.objects || {})) {
+    if (!o || o.destroyed || o.active === false || o.visible === false || o === sprite) continue;
+    const w = o.displayWidth ?? o.width ?? 0, h = o.displayHeight ?? o.height ?? 0;
+    if (!(w > 0) || !(h > 0)) continue;
+    obstacles.push({ x: o.x - (o.originX ?? 0.5) * w, y: o.y - (o.originY ?? 0.5) * h, w, h });
+  }
+  // Only cells reached from the body inside this room (code review R2 M1): the world grid
+  // spans every loaded room, so a plain nearest-walkable snap could land behind a wall
+  const reachable = koReachableCells(feet, {
+    grid: pm?.worldGrid,
+    bounds: pm?.worldGridBounds,
+    inRoom: (x, y) => roomIdAtFeet(x, y, window.rooms, 0) === npcRoomId,
+    floor
+  });
+  const spots = koDropSpots(feet, toDrop.length, { reachable, obstacles });
 
-    // Create actual Phaser sprite for the dropped item
-    // Try item.texture, then item.type, with fallback to 'key' if texture doesn't exist
-    let texture = item.texture || item.type || 'key';
-    
-    console.log(`💧 Attempting to drop item: type="${item.type}", name="${item.name}", texture="${texture}"`);
-    
-    // Safety check: verify texture exists, fallback to 'key' if not
-    if (!gameRef.textures.exists(texture)) {
-      console.warn(`⚠️ Texture '${texture}' not found for dropped item '${item.name}', using fallback 'key'`);
-      texture = 'key';
-    } else {
-      console.log(`✅ Texture '${texture}' exists for dropped item '${item.name}'`);
-    }
-    
-    const spriteObj = gameRef.add.sprite(spawnX, spawnY, texture);
-    
-    // Set origin to match standard object creation
+  toDrop.forEach((item, index) => {
+    // Create actual Phaser sprite for the dropped item, drawn as a reload draws it
+    // (dropTextureFor: its own sprite, then its type's picture, 'key' only as a last resort)
+    const texture = dropTextureFor(item, (key) => gameRef.textures.exists(key));
+    console.log(`💧 Dropping item: type="${item.type}", name="${item.name}", texture="${texture}"`);
+
+    const spriteObj = gameRef.add.sprite(0, 0, texture);
+
+    // Set origin to match standard object creation, then centre the picture on its spot
     spriteObj.setOrigin(0, 0);
+    const spot = spots[index];
+    const spawnX = Math.round(spot.x - (spriteObj.width || 32) / 2);
+    const spawnY = Math.round(spot.y - (spriteObj.height || 32) / 2);
+    spriteObj.x = spawnX;
+    spriteObj.y = spawnY;
     
     // Create scenario data from the dropped item
     const droppedItemData = {
@@ -615,17 +846,20 @@ function dropNPCItems(npcId, afterSync = null) {
         scenarioData: droppedItemData
       };
       
-      Promise.resolve(afterSync).catch(() => {}).then(() => window.RoomStateSync.addItemToRoom(npcRoomId, itemForServer, {
+      // Retried with a bounded backoff (review R3 m2); the server takes a repeat as a no-op
+      Promise.resolve(afterSync).catch(() => {}).then(() => withSyncRetries(() => window.RoomStateSync.addItemToRoom(npcRoomId, itemForServer, {
         npcId: npcId,
-        sourceType: 'npc_defeated'
-      })).catch(err => {
+        sourceType: 'npc_defeated',
+        reportRefusal: true
+      }), `Drop of ${itemForServer.id}`)).catch(err => {
         console.error('Failed to sync dropped item to server:', err);
       });
     }
   });
 
-  // Clear the NPC's inventory
-  npc.itemsHeld = [];
+  // Clear the NPC's inventory (a re-drop clears only what it dropped)
+  npc.itemsHeld = toDrop === npc.itemsHeld ? [] : npc.itemsHeld.filter(i => !toDrop.includes(i));
+  return toDrop.length;
 }
 
 function isNPCKO(npcId) {

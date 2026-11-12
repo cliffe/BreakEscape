@@ -107,7 +107,6 @@ export function changeRefusal(data, change = 'change', w = win()) {
 
 // Every text this module shows (watcher names, the item name, the server's message, confirmOn
 // and confirmOff) is author or server text: shown as plain text, never as markup.
-const PLAIN = { plainText: true };
 
 function defaults(deps = {}) {
     const w = deps.window ?? win();
@@ -119,8 +118,8 @@ function defaults(deps = {}) {
             const { writeGlobal } = await import('./global-writer.js');
             writeGlobal(k, v, { emitAlways: false, openChat: false });
         }),
-        confirm: deps.confirm ?? ((text) => (w.gameConfirm ? w.gameConfirm(text, 'Confirm', 'Cancel', PLAIN) : Promise.resolve(true))),
-        alert: deps.alert ?? ((msg, title) => w.gameAlert?.(msg, 'warning', title || '', 4000, PLAIN)),
+        confirm: deps.confirm ?? ((text) => (w.gameConfirm ? w.gameConfirm(text, 'Confirm', 'Cancel') : Promise.resolve(true))),
+        alert: deps.alert ?? ((msg, title) => w.gameAlert?.(msg, 'warning', title || '', 4000)),
         applyActions: deps.applyActions ?? ((acts) => w.applyActions?.(acts, { source: 'wearable' })),
         refresh: deps.refresh ?? (() => w.refreshInventoryTray?.())
     };

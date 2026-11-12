@@ -22,9 +22,11 @@
  * the view opens by itself the first time a foothold is gained at that jack.
  *
  * Events, each also as `<name>:<id>`:
- *   network_foothold_gained   (jack id)     { footholdId, via, networkId, sourceId }
+ *   network_foothold_gained   (jack/pc/ap id) { footholdId, via, networkId, sourceId }
+ *                                           via is 'jack', 'implant' (9.3b I) or 'wifi' (9.3b W)
+ *   network_joined            (ap id)       { apId, footholdId, networkId }   (slice 9.3b W)
  *   network_device_planted    (jack id)     { jackId, footholdId, networkId, deviceId }
- *   network_device_refused    (jack id)     { jackId, reason }       reason: no_device
+ *   network_device_refused    (jack id)     { jackId, reason }       reason: no_device | port_security
  *   network_device_unplugged  (jack id)     { jackId, footholdId, endedPcIds }
  *   network_view_closed       (foothold id) { footholdId, reason }   reason: closed |
  *                                           link_dropped | foothold_gone
@@ -54,8 +56,16 @@ export const LINK_GONE_MESSAGE = 'The link is gone.';
 export const PLANT_LABEL = 'Plug it in';
 export const UNPLUG_LABEL = 'Unplug it';
 export const LEAVE_LABEL = 'Leave it';
+// A dropped-device implant answered not_ready asks again this many times, this far apart, so a
+// timer that fires before the drop's save lands still grants the foothold (review I R3 m2)
+export const IMPLANT_NOT_READY_RETRIES = 3;
+export const IMPLANT_NOT_READY_DELAY_MS = 1500;
+// The longest the view waits for the globals sync before it fetches anyway (review R1 m1)
+export const VIEW_SYNC_WAIT_MS = 3000;
 export const sessionEndedMessage = (host) => `Your session on ${host || 'that host'} has ended.`;
 export const unreachableMessage = (host) => `${host || 'That host'} can't be reached over this link.`;
+// A host whose own service is off (9.3b plan 5.2): the same words as its row in the view
+export const notRespondingMessage = (host) => `${host || 'That host'} is not responding.`;
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 const apiClient = () => win().ApiClient || win().APIClient || null;
@@ -66,7 +76,10 @@ const footholdIdFor = (jackId) => `jack_${jackId}`;
 const plantedGlobal = (jackId) => `${jackId}_planted`;
 
 function toast(message, type = 'info', ms = 3000) {
-    try { win().gameAlert?.(message, type, '', ms); } catch (e) { /* no notification layer */ }
+    // Every toast here carries author or server text (jack hints, port-security refusals,
+    // network names), so it goes out as plain text: a `<` or markup renders literally
+    // (review R1 minor 1). The confirm dialogs on the same jack already pass plainText.
+    try { win().gameAlert?.(message, type, '', ms, { plainText: true }); } catch (e) { /* no notification layer */ }
 }
 
 function cleanFoothold(f) {
@@ -113,6 +126,7 @@ const LANDINGS = {
         sign_out: () => ({ resume: true }),
         no_session: (self, d) => ({ resume: true, message: sessionEndedMessage(self._hostOf(d)) }),
         unreachable: (self, d) => ({ resume: true, message: unreachableMessage(self._hostOf(d)) }),
+        not_responding: (self, d) => ({ resume: true, message: notRespondingMessage(self._hostOf(d)) }),
         displaced: () => ({ resume: true }),
         link_dropped: () => ({ leave: 'link_dropped' })
     },
@@ -220,13 +234,32 @@ export class NetworkLinks {
     /**
      * GET /network for one foothold. Resolves
      *   { ok: true, view }                 the entry { id, via, name, network, hosts }
+     *   { ok: true, view, stale: true, synced }  the same, fetched after the sync's time limit,
+     *                                      so it may predate a switch flipped a moment ago;
+     *                                      `synced` resolves true once that sync has landed
+     *                                      (review R2 m3: the view then refetches once,
+     *                                      with { sync: false }, as the globals are there)
      *   { ok: false, reason: 'gone' }      the server holds no such foothold (404): the
      *                                      local copy is dropped
      *   { ok: false, reason: 'error' }     no answer
      */
-    async view(footholdId) {
+    async view(footholdId, { sync = true } = {}) {
         const api = apiClient();
         if (!api?.network) return { ok: false, reason: 'error' };
+        // The server judges outages and a host's own service from its copy of the globals, so
+        // send the latest first (9.3b plan 5.2): a switch flipped a moment ago shows at once
+        // rather than after the next timed sync. A failed or slow sync still fetches the view:
+        // after VIEW_SYNC_WAIT_MS it opens with the server's last known state (review R1 m1).
+        let synced = null;
+        let stale = false;
+        if (sync) try {
+            synced = Promise.resolve(win().stateSync?.sync?.()).then(ok => ok !== false, () => false);
+            const TIMED_OUT = {};
+            let timer;
+            const waited = new Promise(r => { timer = setTimeout(() => r(TIMED_OUT), this.viewSyncWaitMs ?? VIEW_SYNC_WAIT_MS); });
+            stale = (await Promise.race([synced, waited])) === TIMED_OUT;
+            clearTimeout(timer);
+        } catch (e) { /* fetch the view anyway */ }
         let body;
         try {
             body = await api.network(footholdId);
@@ -245,7 +278,7 @@ export class NetworkLinks {
         this.views.set(footholdId, entry);
         const clean = cleanFoothold(entry);
         if (clean) this.footholds.set(clean.id, { ...(this.footholds.get(clean.id) || {}), ...clean });
-        return { ok: true, view: entry };
+        return stale ? { ok: true, view: entry, stale: true, synced } : { ok: true, view: entry };
     }
 
     _dropFoothold(footholdId) {
@@ -384,6 +417,13 @@ export class NetworkLinks {
                 this._emit('network_device_refused', { jackId, reason: 'no_device' }, jackId);
                 return { action: 'refused', reason: 'no_device' };
             }
+            if (err?.status === 422 && b.reason === 'port_security') {
+                // Port security (section 5.4): the switch refused the device, which stays in
+                // the inventory. Show the authored message so the fix is not lost.
+                toast(b.error || 'That port only takes known machines.', 'info', 5000);
+                this._emit('network_device_refused', { jackId, reason: 'port_security' }, jackId);
+                return { action: 'refused', reason: 'port_security' };
+            }
             toast(err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.', 'error');
             return { action: 'error', status: err?.status ?? null };
         } finally {
@@ -408,6 +448,86 @@ export class NetworkLinks {
         // Seeing what is exposed is the point: the first foothold at a jack opens the view
         if (body.first) this.open(foothold.id);
         return { action: 'planted', footholdId: foothold.id, first: !!body.first };
+    }
+
+    /**
+     * POST /network/implant (slice 9.3b I): a device in a PC, not a jack, grants a foothold.
+     * Fired from apply-actions.js when a grant_foothold action runs. `shape` is 'dropped'
+     * (an NPC uses a dropped device) or 'session' (a BadUSB the player holds). One retry on a
+     * network error, because a timer is saved fired and never re-runs, so a single lost
+     * request would lose the foothold for good. Resolves to what happened, for tests.
+     */
+    async implant(pcId, shape, path = null) {
+        const api = apiClient();
+        if (!api?.networkImplant || !pcId || !shape) return { action: 'error' };
+        let body = null;
+        let notReadyLeft = shape === 'dropped' ? IMPLANT_NOT_READY_RETRIES : 0;
+        for (let attempt = 0; attempt < 2 && !body; attempt++) {
+            try {
+                body = await api.networkImplant(pcId, shape, path);
+            } catch (err) {
+                const b = err?.body || {};
+                if (err?.status === 422 && b.reason === 'usb_refused') {
+                    toast(b.error || 'That device was refused.', 'info', 4000);
+                    this._emit('network_device_refused', { pcId, reason: 'usb_refused' }, pcId);
+                    return { action: 'refused', reason: 'usb_refused' };
+                }
+                // A dropped device's timer can fire before the drop's own save has reached the
+                // server (review I R3 m2): not_ready then means "not yet", and the timer is saved
+                // fired, so wait and ask again a few times. These waits do not use up the
+                // network-error retry.
+                if (err?.status === 422 && b.reason === 'not_ready' && notReadyLeft > 0) {
+                    notReadyLeft--;
+                    attempt--;
+                    await new Promise(r => setTimeout(r, this.notReadyDelayMs ?? IMPLANT_NOT_READY_DELAY_MS));
+                    continue;
+                }
+                // not_ready / no_action are otherwise quiet: the beat that fired this was wrong
+                // about the state. A network error retries once, then gives up quietly.
+                if (err?.status === 422 || err?.status === 404) {
+                    return { action: 'not_ready', reason: b.reason || null };
+                }
+                if (attempt === 1) {
+                    // Both tries lost to a transient network error: the timer that fired this
+                    // beat is saved fired and never re-runs, so the foothold is gone for good.
+                    // Say so in plain text rather than fail silently (review R1 nit 2).
+                    toast('The device could not reach the network. The foothold was lost.', 'error', 4000);
+                    return { action: 'error', status: err?.status ?? null };
+                }
+            }
+        }
+        const foothold = cleanFoothold(body?.foothold);
+        if (!body?.success || !foothold) return { action: 'error' };
+
+        // Reconcile only the ids the server says changed, as plant() does (review R1 client M1):
+        // the link item added, and the one device the session shape consumed (consumedId). The
+        // dropped shape consumes nothing. Never pass the whole tray: an item whose own pickup
+        // persist is still in flight would be absent from the server snapshot and wrongly removed.
+        const ids = [foothold.itemId];
+        if (body.consumedId) ids.push(body.consumedId);
+        win().syncInventoryFromServer?.(body.inventory, ids);
+        // Whether this browser already held the foothold, and had ever gained one here, before
+        // this answer (review I R3 m1): an `already` answer to a retry whose first response was
+        // lost is still news to this browser, so it fires the event and opens the view once, as
+        // the Wi-Fi join does. A repeat on a foothold already held stays quiet.
+        const isNew = !this.footholds.has(foothold.id);
+        const source = foothold.sourceId || pcId;
+        const firstHere = !this.gained.has(source);
+        this.footholds.set(foothold.id, foothold);
+        if (foothold.sourceId) this.gained.add(foothold.sourceId);
+        this._publishPlanted(pcId, true);
+        if (body.already && !isNew) return { action: 'already', footholdId: foothold.id };
+
+        // Two answers in flight (a double click): only the one that brought the foothold news
+        if (!isNew) return { action: 'implanted', footholdId: foothold.id, first: false };
+        const networkId = foothold.network?.id ?? null;
+        this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: pcId }, pcId);
+        // The server answers `first: false` on an already-held retry, so the browser's own record
+        // decides there whether this is the first foothold from this PC
+        const first = body.already ? firstHere : !!body.first;
+        if (first) this.open(foothold.id);
+        if (body.already) return { action: 'already', footholdId: foothold.id, first };
+        return { action: 'implanted', footholdId: foothold.id, first };
     }
 
     /** POST /network/unplug: the device back, the link item and the foothold gone. */
@@ -449,6 +569,89 @@ export class NetworkLinks {
         const endedPcIds = Array.isArray(body.endedPcIds) ? body.endedPcIds : [];
         this._emit('network_device_unplugged', { jackId, footholdId: id, endedPcIds }, jackId);
         return { action: 'unplugged', footholdId: id, endedPcIds };
+    }
+
+    // ------------------------------------------------------------------ Wi-Fi (slice 9.3b W, 5.3)
+
+    /**
+     * A click on a Wi-Fi access point (interactions.js). Tries an open join first (no key);
+     * a keyed network answers wrong_key, so the key minigame opens. Resolves to what
+     * happened, for tests.
+     */
+    async interactWifiAp(sprite) {
+        const data = sprite?.scenarioData;
+        const apId = data?.id;
+        if (!apId || data.wifiAp !== true) return { action: 'none' };
+        if (this._busy) return { action: 'busy' };
+        // A key minigame already open (e.g. a rapid second click) must not stack a second one
+        const mg = win().MinigameFramework;
+        if (mg?.currentMinigame && !mg.currentMinigame._ending) return { action: 'busy' };
+        const probe = await this.join(apId, null);
+        if (probe.action === 'wrong_key') return this._promptWifiKey(apId, data);
+        return probe;
+    }
+
+    /**
+     * POST /network/join, then the tray, the foothold and the events. `key` null is an open
+     * join (or the probe before the key prompt). A wrong key resolves { action: 'wrong_key' }
+     * with no toast, so the caller can open the key minigame.
+     */
+    async join(apId, key = null) {
+        const api = apiClient();
+        if (!api?.networkJoin) return { action: 'error' };
+        this._busy = true;
+        let body;
+        try {
+            body = await api.networkJoin(apId, key);
+        } catch (err) {
+            const b = err?.body || {};
+            if (err?.status === 422 && b.reason === 'wrong_key') return { action: 'wrong_key' };
+            toast(err?.status === 403 ? "You can't reach that access point from here." : 'The access point did not respond. Try again.', 'error');
+            return { action: 'error', status: err?.status ?? null };
+        } finally {
+            this._busy = false;
+        }
+        const foothold = cleanFoothold(body?.foothold);
+        if (!body?.success || !foothold) return { action: 'error' };
+        win().syncInventoryFromServer?.(body.inventory, [foothold.itemId]);
+        this.footholds.set(foothold.id, foothold);
+        this.gained.add(apId);
+        // The display global, as load() writes it after a reload: true for the access point
+        // the network was first joined at, false for a second one (review R1 E2). The false
+        // over an unset global is written with no change event, as load() writes it (review
+        // R2 n1): a join at a second access point is not a planting.
+        const planted = this.heldAt(apId) !== null;
+        const unset = win().gameState?.globalVariables?.[plantedGlobal(apId)] === undefined;
+        writeGlobal(plantedGlobal(apId), planted, { deferEmit: !planted && unset });
+        const networkId = foothold.network?.id ?? null;
+        // Events are client-emitted from the answer (as the plant does); network_joined fires
+        // for a second access point too, so a task or mapping on either one completes (5.3)
+        this._emit('network_joined', { apId, footholdId: foothold.id, networkId, already: !!body.already }, apId);
+        if (body.already) return { action: 'already', footholdId: foothold.id };
+        this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: apId }, apId);
+        // Seeing what is exposed is the point: the first join opens the view
+        if (body.first) this.open(foothold.id);
+        return { action: 'joined', footholdId: foothold.id, first: !!body.first };
+    }
+
+    /** Open the key minigame for a keyed access point (password minigame, join mode). */
+    _promptWifiKey(apId, data) {
+        const framework = win().MinigameFramework;
+        if (!framework?.startMinigame) {
+            toast('This network needs a key.', 'info');
+            return { action: 'needs_key' };
+        }
+        if (!framework.mainGameScene && win().game) framework.init(win().game);
+        framework.startMinigame('password', null, {
+            // The join branch builds and escapes its own visible header from join.apName
+            // (password-minigame.js). The base template gets a constant title; the base
+            // header escapes params.title too, so this is belt and braces.
+            title: 'Join Wi-Fi',
+            lockable: null,
+            requiresKeyboardInput: true,
+            join: { apId, apName: data?.name || 'this network' }
+        });
+        return { action: 'prompt' };
     }
 
     // ------------------------------------------------------------------ the trip (4.3)

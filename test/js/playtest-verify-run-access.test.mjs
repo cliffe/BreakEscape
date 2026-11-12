@@ -46,7 +46,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
   const lines = r.out.trim().split('\n');
   assert.match(lines[0], /^game\s+1\s+\(mission stub\)/);
   assert.equal(lines[1], 'access model');
-  assert.equal(lines.length, 13, r.out);   // npcFrustration: slice 9.2; guestSessions, sharedLogins: 9.2 H
+  assert.equal(lines.length, 14, r.out);   // npcFrustration: slice 9.2; guestSessions, sharedLogins: 9.2 H; feedRevealed: 9.2 C
   assert.match(r.out, /sessions\s+2: jake_pc = jake \(password\); it_pc = dana \(claim\)/);
   assert.match(r.out, /signedInPcs\s+2: jake_pc; it_pc/);
   assert.match(r.out, /serverClones\s+2: 4F00A1C2 from npc jake; EXEC-DF-01 from object exec_badge \(UID-only\)/);
@@ -59,6 +59,13 @@ test('--access prints only the access section, one line per key, and exits 0', (
   assert.match(r.out, /npcFrustration\s+0/);
   assert.match(r.out, /guestSessions\s+0\n/);
   assert.match(r.out, /sharedLogins\s+0\n/);
+  assert.match(r.out, /feedRevealed\s+0/);
+});
+
+test('--access prints the PCs a check recorded an NPC locked out at (slice 9.2 L)', () => {
+  const r = verify(['1', '--access'], { ...ACCESS_STATE, npcFrustration: { jake: { level: 60, handed: { 0: {} }, done: [], lockedOut: ['jake_pc'] }, dana: { level: 20 } } });
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.out, /npcFrustration\s+2: dana level 20, handed 0, done \[\]; jake level 60, handed 1, done \[\], locked out at jake_pc/);
 });
 
 test('--access prints footholds, gainedFootholds, and remote and foothold beside a session', () => {
@@ -205,4 +212,18 @@ test('--access --log on a log with no workaround events says none', async () => 
   writeFileSync(log, JSON.stringify({ seq: 1, dir: 'out', ok: true }) + '\n');
   const r = verify(['1', '--access', '--log', log]);
   assert.match(r.out, /workaround events in the log\n\s+none/);
+});
+
+test('--access feedRevealed (C3): ids in reveal order with seq and thread post, a legacy count, the line count unchanged', () => {
+  const feedRevealed = {
+    ivy: { shown: ['ivy_vent', 'ivy_answer'], at: 1, seq: { ivy_vent: 3, ivy_answer: 7 }, to: { ivy_answer: { post: 'ivy_vent', npc: 'tomasz' } } },
+    tomasz: { shown: ['tom_re'], at: 1, seq: { tom_re: 5 }, to: { tom_re: { post: 'ivy_vent', npc: 'ivy' } } },
+    jake: { shown: ['jake_post_1'], at: 1 },
+    old: { n: 2, at: 1 }
+  };
+  const r = verify(['1', '--access'], { ...ACCESS_STATE, feedRevealed });
+  assert.equal(r.status, 0, r.out);
+  const lines = r.out.trim().split('\n');
+  assert.equal(lines.length, 14, r.out);
+  assert.match(r.out, /feedRevealed\s+4: ivy 2 \[ivy_vent:3 ivy_answer:7>ivy_vent\]; jake 1 \[jake_post_1\]; old 2; tomasz 1 \[tom_re:5>ivy_vent\]\n?/);
 });

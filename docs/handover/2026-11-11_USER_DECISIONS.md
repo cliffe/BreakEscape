@@ -30,6 +30,43 @@ Answers to the access model form (https://claude.ai/artifact/PanecaCQBMChKnqsDGa
 - q27 Workaround icon: candidate 56 (an arrow over a striped barrier), now `assets/icons/npc-workaround.png`. Also use the barrier without the arrow as the "getting blocked" action icon, and similar: `npc-barrier.png` (candidate 7, the same barrier drawn plainly; removing 56's arrow would need a redraw). Wiring waits for 9.2 H to merge (shared files).
 - q28 The seven m02/m03 phone lines: keep the player's name; build/phone-names dropped (the lines are phone text, never voiced).
 - q29 Voice m02 Ghost's 38 video-call lines after the TTS fix merge (lab_tesseract_trials and chat_minigame_demo not voiced).
+- q30 Frustration icon: keep the no-entry sign (npc-barrier stays "this attempt failed").
+- q31 Agent HaX's new canonical voice style (origin commit 1fd322e67) re-keys about 525 m01 to m03 clips: leave for a separate session. Until then m02 shows 308 and m03 205 HaX clips unrequested, with the same lines missing.
+- q32 9.3b plan: all 8 recommended answers accepted (ACCESS_MODEL_SLICE_9_3B_PLAN.md section 13): K and O after 9.2 L and C land; W, P and I in parallel; lab port security later; ids wifi_<net>, implant_<pc>; outages keep sessions; port security refuse-only; 8-path cap; Wi-Fi and implant footholds permanent; sign-out ends onward sessions.
+- q33 (2026-11-12) Lockout scope: a lockout stops every use of that PC, social media too ("depends on the nature of the lockout"). Applied as: the lockout locks the account at that PC, so the NPC falls back to its personal phone (its own accounts, unaffected). Follow-up build after 9.2 C merges; a per-lockout scope field (for example a domain account that locks every PC the account signs in to) only if the user wants it.
+- q34 (2026-11-12) Friendface posts about frustrations and needs: yes, as a follow-on sub-slice "9.2 C2: reactive posts" after 9.2 C. Authored posts carry a condition (frustration level, a failure cause, a workaround, a need met or unmet) and the server picks them from state it records. The order in which fact posts and reactive posts are fed is configurable: facts first then reactive, reactive first, or mixed.
+- q35 (2026-11-12) A lockout for an NPC with work and a `"phone": false` social need: keep counting it once per need it blocks (as `off` does). Also: an NPC that carries a phone holds it in `itemsHeld` as a Friendface phone item; if the player gets it and opens it, it opens Friendface on that NPC's profile. Sprite: the existing phone sprite with its Bluetooth logo replaced by an F like the Friendface logo. Built as build/ff-phone.
+- (2026-11-12) Dungeon graph to draw links, outages, Wi-Fi and implants: now (build/graph-net). Lab port security on an unused comms-cupboard port (9.3b plan section 13 item 2): now (build/lab-portsec). Record `npcId` on captured `/feed_post` rows in the playtest skill's response-capture.js: approved (build/capture-npcid).
+- q36 to q55 (2026-11-12, second form round):
+  - q36 Borrowed hot desk lockout shown to the player: build now.
+  - q37 Four q33 server gaps (ease at a locked borrowed PC, refusal below the pace floor, blocked or off stations as feed sources, a non-owned station stalling the feed): fix all now.
+  - q38 C2 leftovers, including the needMet tweak (count a met need after a short time with no new failure): tidy now.
+  - q39 USB refusal as a frustration cause: build the USB habit and the cause now.
+  - q40 Repeatable reactive posts: dropped for now; revisit after C3 replies.
+  - q41 Per-lockout scope (for example, a domain account locked on every PC): later, when a mission needs it; in the ideas backlog.
+  - q42 `login_aloud`: start the listening window when the line is actually spoken.
+  - q43 A borrow cut short after the NPC sits: counts as done, with the session left open.
+  - q44 9.2 H small test and validator gaps: fix all now.
+  - q45 A host shown as not responding when its own service is off: build now.
+  - q46 Network minors from K, O and I: fix all now.
+  - q47 Author formatting: keep the allow-list filters; give the end screen the same filter.
+  - q48 Central escape of minigame titles, the vm-launcher URL scheme check, one shared escape helper and authorHtml module, and dash display in the chat headers: all now.
+  - q49 TTS and habits validator tooling minors: fix both sets now.
+  - q50 Lab follow-up R5 minors: fix all now.
+  - q51 Server-checked tailgating (gated `openFor` doors): write the plan now.
+  - q52 Server-proven hand-overs and declared grants: later, together with q51 if cheat resistance is wanted.
+  - q53 Lab playtest usability ideas: build all seven (pickup toasts for every item type, a text file closing back to its container, a "more below" cue on objectives, a click on an open gate walking through, a keying event at a badge reader, `noticeRadius` for NPC interests defaulting to quite wide, the player not shoving routed NPCs).
+  - q54 Locked-screen pictures for the other PC sprites: do them now and show a sheet.
+  - q55 (d) An owner walking away stealing the click: fix now. Plan the others later. (a) Defender missions are highly desirable, for soon.
+- q56 to q75 (2026-11-12, third form round):
+  - C3 replies: q56 a reply shows in the thread and on the replier's own profile. q57 a reply raises its own toast under `postToasts`. q58 one level of replies, but the original poster may answer too, at the same level as the first reply (a flat thread). q59 no time window: a reply stays possible while its condition holds. q60 replies never carry facts; they are about the needs only, and any fact is a post on the NPC's own profile. q66 a group shorthand for three or more NPCs sharing a complaint.
+  - Friendface phone: q61 a taken phone stays gone for the rest of the game. q62 keep the green F. q63 an NPC's phone shows only posts already revealed. q64 the unread badge clears on reload. q65 a missing phone item is a validator error.
+  - q67 to q71, server-checked tailgating: not built. The user's rule: hard-enforce on the server anything that would let a student cheat past a secret (passwords, PINs, keys, codes). Steps gated by the client's own control flow (an NPC unlocking a door or giving an item through ink, slipping past a guard) may stay best-effort, provided the server still checks that the NPC involved can give that item or unlock that door. Edge cases are an accepted risk as long as the overall defence against cheating holds. Students must never be blocked from completing a challenge as intended. The plan (docs/achitechture/GATED_DOOR_SERVER_CHECK_PLAN.md, final after 4 rounds) is kept as a reference and a backlog item to harden later.
+  - q72 a switched-off PC also refuses a sign-in at its own keyboard, with a "this PC is off" message. q73 a click on an open gate with an NPC in the doorway: leave as it is. q74 remove the leftover no-op `plainText` options once the parallel builds merge. q75 the office-life mission skill offers the USB habit where a PC policy blocks USB, when that skill is written.
+  - (Orchestrator decisions, same day: a switched-off PC is off for everything that passes through it, no pivot and no shares; a USB habit NPC whose stick has gone counts that use as met, not as a frustration cause; the lab's cloned-badge route line waits 1.5 s like the tailgate line.)
+  - q76 (2026-11-12): after the original poster answers a Friendface thread, another NPC may reply a second time if the author wrote that reply, with no extra rule. The user also asked to consider emoji replies or reactions; the C3 plan keeps them for a later slice (open as q77).
+  - q77 (2026-11-12): emoji reactions are a follow-up slice after C3. Standing constraint with it: player state synced between client and server must not grow so that data is constantly sent back and forth; anything kept in player_state changes as a delta. A sync audit of the access and office-life features was started (docs/achitechture/PLAYER_STATE_SYNC_AUDIT.md).
+  - q78 (2026-11-12): the password-free owner claim stays best effort: a tampered client claiming early only saves time, which is fine. Where the NPC would never give that access (honest play could never leave the screen open), the server must refuse the claim.
 
 ## Carried out
 
@@ -37,3 +74,5 @@ Answers to the access model form (https://claude.ai/artifact/PanecaCQBMChKnqsDGa
 - q13: removed 58 worktrees that were clean, whose HEAD is in main and that no process was using (84 GB freed). Branches kept. Kept worktrees: BreakEscape-merge, agent-ae40074c527a6f395, orch-merge, r1-fixes, r2-fixes (unmerged commits); agent-ab846af84a003a2d3, sync-merge (uncommitted changes); the active p-* build worktrees.
 - q05: done in this commit's parent.
 - q12/q18, later: deleted dev-database games 1201 to 1227 (27 playtest games made on 2026-11-11 under the demo user, once no agent was using them).
+- q12/q18, 2026-11-12: deleted 50 more playtest games made by this session's agents (missions 243, 245, 246 above id 1227, plus 1283, 1292 to 1294, 1318 and the newer ones from the same runs; all demo user, all after 2026-11-11).
+- q12/q18, 2026-11-12, later: deleted 78 dev-database playtest games from this work package's scenarios (test_access_*, test_capture_log, test_needs_*, test_npc_needs, test_gate_tailgate, lab_physical_pentest, lab_social_engineering), demo user, ids 1234 to 1459, all over an hour old. Games from other tracks (m01 to m10, sis, other test scenarios) were left.

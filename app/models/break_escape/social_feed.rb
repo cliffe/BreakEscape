@@ -1,0 +1,366 @@
+module BreakEscape
+  # Social media feeds held on the server (docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md 8.3,
+  # 9.1, 9.2 and 9.4, sub-slice C). A room NPC's `feed` never ships: the browser asks for the
+  # NPC's next post after each met social media use, and the server hands posts over one at a
+  # time, in order, no faster than the need's own pace. A post's fact (a social.intelFacts entry)
+  # is withheld from the bootstrap with it and travels with the post.
+  #
+  # player_state key (in Game::ACCESS_STATE_DEFAULTS):
+  #   feedRevealed { npcId => { 'shown' => [postId, ...] in reveal order, 'at' => server time of
+  #                  the last reveal, 'seq' => { postId => game-wide serve order },
+  #                  'to' => { replyId => { 'post' => threadPostId, 'npc' => namedNpcId } } } }
+  # C3 (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md section 5) added `seq` and `to`; the entry holds these
+  # four keys only, bounded by the authored posts (section 5.1).
+  # Sub-slice C2 (ACCESS_MODEL_SLICE_9_2_C2_PLAN.md) changed the record from C's `{ n, at }`: a
+  # reactive post is served out of authored order, so the actual set of shown ids is kept, and its
+  # length is the reveal sequence. AccessWork.feed_shown_ids migrates a C `{ n, at }` save.
+  module SocialFeed
+    extend ActiveSupport::Concern
+
+    # The keys of a post block the browser renders (the osint browser's post block); anything
+    # else authored on a post (`deliberate`, and C2's `when`, server-only `order` on the feed)
+    # stays on the server and never ships. C3: `replyTo` is set by the server from the resolved
+    # thread (`to.post`), never sliced from the authored post; `insteadOf`, `complaint` and
+    # `replyToComplaint` are server-only, and a reply's item never carries `fact`.
+    POST_KEYS = %w[id text fact date note replyTo].freeze
+
+    def feed_revealed
+      player_state['feedRevealed'] = {} unless player_state['feedRevealed'].is_a?(Hash)
+      player_state['feedRevealed']
+    end
+
+    # POST /feed_post. Returns { status:, body: }. Checks in order (plan 9.1): the NPC is known;
+    # it has a feed with posts and a social_media need; a post is left; for a second or later
+    # post, the pace floor; the use's source (user decision q33).
+    #
+    # `source` is the object the use was at (`object_id`), or nil for the NPC's phone. A post is
+    # refused (`refused: true`, nothing written) for the phone of an NPC with `"phone": false`,
+    # for an object that is not one of the NPC's social media places in a room the player has
+    # unlocked, for its own station while the station's policy blocks social media or its offWhen
+    # holds (q33 R2 m3), and for a sign-in PC where loginLockouts holds the NPC's username: a
+    # lockout stops every use of that PC, social media included, so a tampered client cannot post
+    # from a locked-out PC. That PC is the station or a handed-over hot desk, each only where a
+    # `check` would answer (AccessWork.lockout_pc?, R2 m4), so the refusal says no more than a
+    # `check` answer would (6.6, q36). The source is judged after the pace floor (R2 m2): a probe
+    # inside the floor gets tooSoon, and one outside it spends a post when the PC is not locked.
+    def reveal_feed_post!(npc_id, source = nil)
+      id = npc_id.is_a?(String) ? npc_id : nil
+      npc = id && scenario_room_npc(id)
+      return { status: :forbidden, body: { error: 'unknown NPC' } } unless npc && Array(player_state['encounteredNPCs']).include?(id)
+
+      return { status: :ok, body: { npcId: id, post: nil, done: true } } unless AccessWork.feeds?(npc)
+
+      store = feed_revealed
+      entry = store[id].is_a?(Hash) ? store[id] : {}
+      shown = AccessWork.feed_shown_ids(npc, entry)
+
+      # C2: the server picks one eligible post by the feed's order from state it records. The raw
+      # npcFrustration entry is read read-only (never frustration_entry(id), which would write a
+      # defaulted record); the lockout keys are pre-gated by the per-NPC check record.
+      raw_frustration = player_state['npcFrustration'].is_a?(Hash) ? player_state['npcFrustration'][id] : nil
+      keys = lockout_recorded?(npc) ? lockout_keys : []
+      now = Time.current.to_f
+      # q38: the request is for a met social media use, which counts for needMet (need_met_now?)
+      met_use = { 'need' => 'social_media', 'at' => now }
+      # C3: the server's own record of every served post, for the thread rules
+      revealed = AccessWork.revealed_map(scenario_data, store)
+      selected = AccessWork.select_feed_post(scenario_data, npc, entry, raw_frustration, frustration_globals, keys, met_use,
+                                             revealed: revealed)
+      post_id = selected['post']
+      done = selected['done'] == true
+
+      # Nothing eligible (an ordered post behind a mode that does not reach it, or a reactive post
+      # whose condition is not yet true): no write, the client asks again on the next met use
+      return { status: :ok, body: { npcId: id, post: nil, done: done } } if post_id.nil?
+
+      unless shown.empty?
+        wait = AccessWork.post_floor(scenario_data, npc) - (now - entry['at'].to_f)
+        # `revealed` (posts out so far) lets a client whose last answer was lost see that the
+        # lost request revealed a post, so it stops asking for this use (review C R3 nit)
+        return { status: :ok, body: { npcId: id, post: nil, done: false, tooSoon: true, retryAfter: wait.ceil, revealed: shown.length } } if wait.positive?
+      end
+
+      # q33: a refused use (a locked-out PC, a blocked or off station, an object not one of the
+      # NPC's places, the phone for a "phone": false NPC) is never served, so a tampered client
+      # cannot pick a post; nothing is written
+      return { status: :ok, body: { npcId: id, post: nil, done: false, refused: true } } unless feed_source_ok?(npc, source)
+
+      # C3: seq and to are carried forward; next_seq is derived under the game lock, capped
+      seq = AccessWork.next_seq(store)
+      to = AccessWork.feed_to_map(entry)
+      to = to.merge(post_id => selected['to']) if selected['to'].is_a?(Hash)
+      store[id] = { 'shown' => shown + [post_id], 'at' => now,
+                    'seq' => AccessWork.feed_seq_map(entry).merge(post_id => seq), 'to' => to }
+      save!
+      answer = feed_answer(npc, post_id, shown.length, seq: seq, to: selected['to'])
+      { status: :ok, body: (answer || {}).merge('npcId' => id, 'done' => done) }
+    end
+
+    # The feedPosts block GET /scenario carries (9.4): per NPC with a post out, its site and
+    # person, every revealed post with its fact entry, oldest first, and done. Reads the stored
+    # record without writing to it.
+    def feed_posts_for_client
+      store = player_state['feedRevealed']
+      return {} unless store.is_a?(Hash)
+
+      store.each_with_object({}) do |(id, entry), out|
+        npc = scenario_room_npc(id)
+        next unless npc && entry.is_a?(Hash) && AccessWork.feeds?(npc)
+
+        # C2: derive shown via feed_shown_ids so a C-shape { n, at } entry renders without a nil
+        # error, then list the posts in reveal order with their reveal-sequence index
+        shown = AccessWork.feed_shown_ids(npc, entry)
+        next if shown.empty?
+
+        feed = npc['feed']
+        seqs = AccessWork.feed_seq_map(entry)
+        tos = AccessWork.feed_to_map(entry)
+        by_id = AccessWork.feed_posts(npc).to_h { |p| [p['id'], p] }
+        # C3: a reply's item is rebuilt from `to`; a complaint reply or an answer with no usable
+        # `to` (an edited save) is left out, and stays in `shown` so it is never served again
+        posts = shown.each_with_index.filter_map do |pid, i|
+          raw = by_id[pid]
+          target = AccessWork.reply_post?(raw) ? AccessWork.reply_target(scenario_data, npc, raw, tos) : nil
+          next if AccessWork.reply_post?(raw) && target.nil?
+
+          feed_answer(npc, pid, i, seq: seqs[pid] || 0, to: target)&.slice(*FEED_ITEM_KEYS)
+        end
+        out[id] = { 'site' => feed['site'], 'person' => feed['person'],
+                    # C2 R2 nit: feed_shown_ids drops a saved id the scenario no longer has
+                    'posts' => posts,
+                    'done' => AccessWork.feed_done?(scenario_data, npc, shown) }
+      end
+    end
+
+    # ── Friendface phone item (q35, docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md) ─────────
+
+    FRIENDFACE_PHONE = 'phone_friendface'.freeze
+
+    # The Friendface phone the player holds for `npc_id` (nil: the player's own phone, one with no
+    # phoneOf), or nil. Reads the server's inventory, and counts only a phone the scenario declares
+    # (review R1 m1: an unsourced room add cannot mint one); phoneOf is a field a client-built item
+    # can never carry.
+    def held_friendface_phone(npc_id)
+      declared = declared_friendface_phones
+      Array(player_state['inventory']).find do |item|
+        next false unless item.is_a?(Hash) && item['type'] == FRIENDFACE_PHONE
+
+        owner = friendface_owner(item)
+        owner == npc_id && declared.any? { |d| d['id'] == item['id'] && friendface_owner(d) == owner }
+      end
+    end
+
+    # Every phone_friendface the scenario declares (room objects and their contents, NPC itemsHeld,
+    # start items), as authored
+    def declared_friendface_phones
+      out = []
+      walk = lambda do |list|
+        Array(list).each do |o|
+          next unless o.is_a?(Hash)
+
+          out << o if o['type'] == FRIENDFACE_PHONE && o['id'].is_a?(String)
+          walk.call(o['contents'])
+          walk.call(o['itemsHeld'])
+        end
+      end
+      (scenario_data['rooms'] || {}).each_value do |room|
+        next unless room.is_a?(Hash)
+
+        walk.call(room['objects'])
+        walk.call(room['npcs'])
+      end
+      walk.call(scenario_data['startItemsInInventory'])
+      out
+    end
+
+    # True once an NPC's Friendface phone has left it (plan section 3): recorded in phonesTaken the
+    # first time it reaches the inventory by any route (a give, the NPC's items, a KO drop picked
+    # up), so dropping or removing it later changes nothing (review R1 m2). A gift record or a held
+    # phone from a save made before the record existed counts too.
+    def friendface_phone_taken?(npc_id)
+      return false unless npc_id.is_a?(String) && !npc_id.empty?
+      return true if Array(player_state['phonesTaken']).include?(npc_id)
+
+      given = player_state['npc_given_items']
+      gifted = given.is_a?(Hash) && Array(given[npc_id]).any? { |g| g.is_a?(Hash) && g['type'] == FRIENDFACE_PHONE }
+      return true if gifted
+      # Review R2 n3, R3 n3: scenario_room_npc asks this on every call; skip the scenario walk in
+      # held_friendface_phone unless the inventory holds a Friendface phone of this NPC's (the
+      # player's own phone, with no phoneOf, never brings the walk back)
+      return false unless Array(player_state['inventory']).any? do |i|
+        i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE && friendface_owner(i) == npc_id
+      end
+
+      !held_friendface_phone(npc_id).nil?
+    end
+
+    # Called by add_inventory_item!: an NPC's phone entering the inventory is taken for good
+    def note_friendface_phone_taken!(item)
+      owner = item.is_a?(Hash) && item['type'] == FRIENDFACE_PHONE ? friendface_owner(item) : nil
+      return unless owner
+
+      player_state['phonesTaken'] = [] unless player_state['phonesTaken'].is_a?(Array)
+      player_state['phonesTaken'] << owner unless player_state['phonesTaken'].include?(owner)
+    end
+
+    # Review R1 M1: an NPC hands its Friendface phone over only when the scenario offers that give:
+    # a give_item tag for the phone type, or a give_npc_inventory_items tag that does not filter it
+    # out, in the NPC's story or anywhere in its JSON record (itemsHeld aside). The patterns live
+    # in AccessWork.offers_item_text?, which the validator reads too (review R2 m2).
+    def friendface_phone_offered?(npc_id)
+      npc_offers_item?(npc_id, FRIENDFACE_PHONE)
+    end
+
+    # Whether a room NPC's story or record offers an item of `type` (review R2 M1: the rule for an
+    # NPC-sourced room add from an NPC that is not KO'd). The story is the compiled JSON, or the
+    # .ink source when it was never compiled (review R2 n1; the game compiles a story on its first
+    # /ink request, before any give, so the fallback matters only to tools and tests).
+    def npc_offers_item?(npc_id, type)
+      npc = npc_id.is_a?(String) ? self.class.scenario_room_npcs(scenario_data).find { |n| n['id'] == npc_id } : nil
+      return false unless npc
+
+      texts = AccessWork.offer_texts(npc) do |story_path|
+        InkStoryFile.find(story_path, compile: false) || InkStoryFile.ink_source(Engine.root.join(story_path))
+      end
+      texts.any? { |t| AccessWork.offers_item_text?(t, type) }
+    end
+
+    # POST /friendface_phone. Returns { status:, body: }. Read only. `npc_id` a String opens that
+    # NPC's phone, nil the player's own. Refused (403) unless the player holds that phone. The body
+    # names the site and the profile to open. With `with_posts` (a test asks, `posts: 1`) it also
+    # carries the server's feedPosts for it (that NPC's, or all of them for the player's own
+    # phone): posts already revealed, nothing new. The client never merges them (review R1 M2), so
+    # a game open leaves them out (review R3 n5).
+    def open_friendface_phone(npc_id, with_posts: false)
+      return { status: :forbidden, body: { error: 'no such phone' } } unless npc_id.nil? || (npc_id.is_a?(String) && !npc_id.empty?)
+
+      item = held_friendface_phone(npc_id)
+      return { status: :forbidden, body: { error: 'no such phone' } } unless item
+
+      posts = feed_posts_for_client
+      if npc_id
+        npc = scenario_room_npc(npc_id)
+        feed = npc.is_a?(Hash) && npc['feed'].is_a?(Hash) ? npc['feed'] : {}
+        site = feed['site'].is_a?(String) ? feed['site'] : default_friendface_site
+        person = feed['person'].is_a?(String) ? feed['person'] : nil
+        posts = phone_posts_slice(posts, npc_id, feed['site'])
+      else
+        site = item['site'].is_a?(String) && !item['site'].empty? ? item['site'] : default_friendface_site
+        person = nil
+      end
+      body = { 'npcId' => npc_id, 'site' => site, 'person' => person }
+      body['feedPosts'] = posts if with_posts
+      { status: :ok, body: body }
+    end
+
+    # Deletes every feed fact's entry from the bootstrap's social.intelFacts (plan 8.3), never the
+    # block itself: an empty intelFacts stays an object, because grantFact grants any id when the
+    # block is absent (social-intel.js).
+    def withhold_feed_facts!(filtered)
+      ids = AccessWork.feed_facts(scenario_data)
+      return if ids.empty?
+
+      social = filtered['social']
+      return unless social.is_a?(Hash)
+
+      if social['intelFacts'].is_a?(Hash)
+        ids.each { |f| social['intelFacts'].delete(f) }
+      else
+        social['intelFacts'] = {}
+      end
+    end
+
+    # The item keys of a feedPosts post: C2's index, post and fact, C3's seq and a reply's thread
+    FEED_ITEM_KEYS = %w[index seq post fact replyToNpc replyToPerson namedNpc namedPerson].freeze
+
+    private
+
+    # q63, C3 section 5: an NPC's phone shows its profile, so its slice is its own served posts and
+    # replies, plus, under their own NPC ids, every served reply whose thread post is one of its
+    # served posts, on the same site. Every item already came from feedRevealed.
+    def phone_posts_slice(posts, npc_id, site)
+      own = posts[npc_id]
+      out = own ? { npc_id => own } : {}
+      thread_ids = own ? own['posts'].map { |p| p.dig('post', 'id') }.compact : []
+      return out if thread_ids.empty?
+
+      posts.each do |other_id, block|
+        next if other_id == npc_id || block['site'] != site
+
+        replies = block['posts'].select { |p| thread_ids.include?(p.dig('post', 'replyTo')) }
+        out[other_id] = block.merge('posts' => replies) unless replies.empty?
+      end
+      out
+    end
+
+    def friendface_owner(item)
+      item['phoneOf'].is_a?(String) && !item['phoneOf'].empty? ? item['phoneOf'] : nil
+    end
+
+    # The first social site in the scenario's osint block, or nil
+    def default_friendface_site
+      sites = scenario_data.dig('social', 'osint', 'sites')
+      site = Array(sites).find { |st| st.is_a?(Hash) && st['type'] == 'social' && st['id'].is_a?(String) }
+      site && site['id']
+    end
+
+    # q33: the phone (nil) when the NPC has one; else a social media place of the NPC (its own
+    # station, a non-desk source, a borrowed PC handed over) in a room the player can know of,
+    # where the NPC's username is not locked out. The station is refused too while its policy
+    # blocks social media or its offWhen holds (R2 m3). A lockout counts only at a PC where a
+    # `check` answers (AccessWork.lockout_pc?: not a station someone else owns, R2 m4), so the
+    # server never stalls a feed in a way the honest client cannot learn.
+    def feed_source_ok?(npc, source)
+      return AccessWork.phone?(npc) if source.nil?
+      return false unless source.is_a?(String) && frustration_places(npc, 'social_media').include?(source)
+
+      pc = AccessWork.object(scenario_data, source)
+      if AccessWork.station(scenario_data, npc)&.dig('id') == source
+        return false if AccessWork.social_blocked?(scenario_data, npc)
+        return false if frustration_cause_holds?(npc, 'social_media', { 'id' => source, 'why' => 'off' })
+      end
+      !(AccessWork.lockout_pc?(scenario_data, npc, pc) && AccessWork.locked_out_at?(npc, pc, lockout_keys))
+    end
+
+    # { index, post, fact, site, person } for the NPC's post named by `post_id`, with `index` the
+    # reveal sequence (C2: a reactive post comes out of authored order, so the served post is
+    # looked up by id and the reveal position is emitted separately). `fact` is { id, entry } for a
+    # post whose fact names an intelFacts entry, else nil.
+    #
+    # C3: `seq` is the post's game-wide serve order. For a reply, `to` is { 'post' => thread post,
+    # 'npc' => named NPC }: the item gains post.replyTo, replyToNpc, replyToPerson, namedNpc and
+    # namedPerson, `{name}` is filled with the named NPC's Friendface name as plain text, and
+    # `fact` is never carried. nil for a reply whose thread poster is unknown.
+    def feed_answer(npc, post_id, reveal_index, seq: nil, to: nil)
+      raw = AccessWork.feed_posts(npc).find { |p| p['id'] == post_id }
+      reply = AccessWork.reply_post?(raw)
+      post = raw ? raw.slice(*(POST_KEYS - %w[replyTo])).select { |_k, v| v.is_a?(String) } : {}
+      post.delete('fact') if reply
+      extra = {}
+      if reply
+        return nil unless to.is_a?(Hash)
+
+        rec = AccessWork.revealed_map(scenario_data, player_state['feedRevealed'])[to['post']]
+        poster = rec && AccessWork.room_npc(scenario_data, rec['npc'])
+        named = AccessWork.room_npc(scenario_data, to['npc'])
+        return nil unless poster && named
+
+        post['replyTo'] = to['post']
+        if post['text']
+          # Block form: the name goes in as plain text, never read as \0 or \& (review C3 R1 m1)
+          name = AccessWork.friendface_name(scenario_data, named)
+          post['text'] = post['text'].gsub('{name}') { name }
+        end
+        extra = { 'replyToNpc' => poster['id'], 'replyToPerson' => poster.dig('feed', 'person'),
+                  'namedNpc' => named['id'], 'namedPerson' => named.dig('feed', 'person') }
+      end
+      fid = post['fact']
+      facts = scenario_data.dig('social', 'intelFacts')
+      entry = fid && facts.is_a?(Hash) && facts[fid].is_a?(Hash) ? facts[fid].deep_dup : nil
+      out = { 'index' => reveal_index, 'post' => post, 'fact' => entry ? { 'id' => fid, 'entry' => entry } : nil,
+              'site' => npc['feed']['site'], 'person' => npc['feed']['person'] }
+      out['seq'] = seq if seq
+      out.merge(extra)
+    end
+  end
+end

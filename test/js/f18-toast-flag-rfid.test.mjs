@@ -44,8 +44,8 @@ test('holdRecentNotifications replays a glimpsed toast once, and a replayed one 
     const container = { els: [], appendChild(n) { this.els.push(n); n.parentNode = this; }, removeChild(n) { this.els = this.els.filter((e) => e !== n); n.parentNode = null; },
         querySelectorAll() { return this.els; } };
     const el = () => ({ classList: { add() {}, remove() {}, }, style: {}, set innerHTML(v) { this.html = v; },
-        querySelector: () => ({ style: {}, addEventListener() {} }) });
-    globalThis.document = { getElementById: (id) => (id === 'notification-container' ? container : null), createElement: el };
+        querySelector: () => ({ style: {}, addEventListener() {}, appendChild() {} }) });
+    globalThis.document = { getElementById: (id) => (id === 'notification-container' ? container : null), createElement: el, createTextNode: (text) => ({ text }) };
     window.MinigameFramework = { currentMinigame: null };
     const shownMessages = () => container.els.map((e) => e._toast.message);
 
@@ -71,8 +71,8 @@ test('holdRecentNotifications replays a glimpsed toast once, and a replayed one 
 test('the same toast raised twice while a panel is open shows once', async () => {
     const appended = [];
     const el = () => ({ classList: { add() {}, remove() {} }, style: {}, set innerHTML(v) { this.html = v; },
-        querySelector: () => ({ style: {}, addEventListener() {} }) });
-    globalThis.document = { getElementById: () => ({ appendChild: (n) => appended.push(n), querySelectorAll: () => [] }), createElement: el };
+        querySelector: () => ({ style: {}, addEventListener() {}, appendChild() {} }) });
+    globalThis.document = { getElementById: () => ({ appendChild: (n) => appended.push(n), querySelectorAll: () => [] }), createElement: el, createTextNode: (text) => ({ text }) };
     window.MinigameFramework = { currentMinigame: {} };
     N.showNotification('✓ Get inside the archive', 'success', 'Task Complete', 0);
     N.showNotification('✓ Get inside the archive', 'success', 'Task Complete', 0);
@@ -128,7 +128,9 @@ test('the station panel lists only its own flags', async () => {
     mk('minigames/framework/base-minigame.js', 'export class MinigameScene { constructor(c, params) { this.params = params; } }\n');
     mk('systems/apply-actions.js', 'export function applyActions() {}\n');
     mk('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
+    mk('utils/escape-html.js', readFileSync(new URL('../../public/break_escape/js/utils/escape-html.js', import.meta.url), 'utf8'));
     mk('utils/flag-wording.js', read('public/break_escape/js/utils/flag-wording.js'));
+    mk('utils/lock-scope-refusal.js', read('public/break_escape/js/utils/lock-scope-refusal.js'));
     mk('minigames/flag-station/flag-station-minigame.js', read('public/break_escape/js/minigames/flag-station/flag-station-minigame.js'));
     globalThis.window = { gameState: { submittedFlags: ['catalogue_server_1', 'catalogue_server_2'] } };
     const { FlagStationMinigame } = await import(pathToFileURL(join(tmp, 'minigames/flag-station/flag-station-minigame.js')).href);

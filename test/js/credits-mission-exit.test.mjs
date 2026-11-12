@@ -47,12 +47,12 @@ test('the visualiser: missionOver blocks every close and turns the control into 
 });
 
 test('returnToMissions is exported and goes to the shell debrief when there is one', async () => {
-    globalThis.window = { breakEscapeConfig: { shellReturnUrl: '/debrief/7' }, navigator: {} };
+    globalThis.window = { breakEscapeConfig: { shellReturnUrl: '/debrief/7' }, navigator: {}, location: { href: 'https://game.example/break_escape/games/7' } };
     const src = read('ui/success-screen.js')
         .replace("'../utils/display-dashes.js'", `'${new URL('file://' + join(js, 'utils/display-dashes.js')).href}'`)
         .replace("'../utils/desktop-app.js'", `'${new URL('file://' + join(js, 'utils/desktop-app.js')).href}'`);
     const ss = await import(dataUrl(src));
     const went = [];
     ss.returnToMissions({ navigate: (u) => went.push(u) });
-    assert.deepEqual(went, ['/debrief/7']);
+    assert.deepEqual(went, ['https://game.example/debrief/7']);
 });

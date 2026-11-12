@@ -71,8 +71,17 @@ for ink_dir in $ink_dirs; do
         # Get the filename without path
         filename=$(basename "$ink_file")
 
-        # Get output JSON filename
+        # Get output JSON filename: a storyPath may name X.ink.json, so compile
+        # into that when it is the only compiled file beside the .ink. When both
+        # X.json and X.ink.json exist, X.json is compiled and copied over the
+        # other, so neither is left stale (ink_compiled_staleness_test checks both)
         json_file="${ink_file%.ink}.json"
+        copy_file=""
+        if [ ! -f "$json_file" ] && [ -f "${ink_file%.ink}.ink.json" ]; then
+            json_file="${ink_file%.ink}.ink.json"
+        elif [ -f "$json_file" ] && [ -f "${ink_file%.ink}.ink.json" ]; then
+            copy_file="${ink_file%.ink}.ink.json"
+        fi
 
         echo -e "${YELLOW}Compiling: $filename${NC}"
 
@@ -90,6 +99,10 @@ for ink_dir in $ink_dirs; do
         # Compile the ink file
         if "$INKLECATE" -o "$json_file" "$ink_file"; then
             echo -e "${GREEN}✓ Success: $filename -> $(basename "$json_file")${NC}"
+            if [ -n "$copy_file" ]; then
+                cp "$json_file" "$copy_file"
+                echo -e "${GREEN}  copied to $(basename "$copy_file")${NC}"
+            fi
             ((compiled++))
         else
             echo -e "${RED}✗ Failed: $filename${NC}"

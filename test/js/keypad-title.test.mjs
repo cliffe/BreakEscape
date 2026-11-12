@@ -57,5 +57,6 @@ test('the password field is labelled with the lock it opens', () => {
         'Enter password: SCADA Control');
     assert.equal(passwordFieldLabel('Enter password'), 'Password:');
     assert.equal(passwordFieldLabel(undefined), 'Password:');
-    assert.match(src, /<label for="password-field">\$\{displayDashes\(fieldLabel\)\}<\/label>/);
+    // The rendered label (escaped) is checked in minigame-title-escape.test.mjs,
+    // test "the password header and field label show a hostile title as text"
 });

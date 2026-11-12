@@ -19,6 +19,8 @@ export class ApiClient {
     if (!response.ok) {
       const err = new Error(`API Error: ${response.status} ${response.statusText}`);
       err.status = response.status;
+      // The refusal's reason, as POST carries it (a switched-off PC answers reason "off", q72)
+      err.body = typeof response.json === 'function' ? await response.json().catch(() => null) : null;
       throw err;
     }
 
@@ -28,9 +30,11 @@ export class ApiClient {
   /**
    * POST request
    */
-  static async post(endpoint, data = {}) {
+  static async post(endpoint, data = {}, options = {}) {
     const response = await fetch(`${getApiBase()}${endpoint}`, {
       method: 'POST',
+      // an AbortSignal, so a caller can bound the request (npc-reports.js, review R2 m2)
+      ...(options && options.signal ? { signal: options.signal } : {}),
       credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
@@ -121,14 +125,21 @@ export class ApiClient {
 
   // Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1): NPC failed and met uses,
   // [{ npc_id, event, need, object_id, missing, rearmed }]. Answers { answers: [...] }.
-  static async npcFrustration(reports) {
-    return this.post('/npc_frustration', { reports });
+  static async npcFrustration(reports, options = {}) {
+    return this.post('/npc_frustration', { reports }, options);
   }
 
   // Slice 9.2 (plan 6): a workaround performed or dropped, { npc_id, index, hand, dropped }.
   // A refusal throws with err.status: 403 (no such hand-over), 425 (before the dwell).
   static async npcWorkaround(body) {
     return this.post('/npc_workaround', body);
+  }
+
+  // Slice 9.2 C (plan 8.3): an NPC's next social media post, after a met use. Answers
+  // { index, post, fact: { id, entry } | null, site, person, done } or { post: null, done }.
+  // `objectId`: where the use was, null for the NPC's phone (user decision q33)
+  static async feedPost(npcId, objectId = null) {
+    return this.post('/feed_post', { npc_id: npcId, object_id: typeof objectId === 'string' ? objectId : null });
   }
 
   // Sign in at a sign-in PC (access model 5.3, 6). `fields` is { username, password }
@@ -158,6 +169,24 @@ export class ApiClient {
   // refusal throws (422 reason "not_planted", 403 reason "unreachable", 404).
   static async networkUnplug(jackId) {
     return this.post('/network/unplug', { jack_id: jackId });
+  }
+
+  // A device in a PC (not a jack) grants a foothold (slice 9.3b sub-slice I). `shape` is
+  // 'dropped' (an NPC uses a dropped device) or 'session' (a BadUSB the player plugs into a
+  // PC they hold a session on); `path` names the declared action when a PC has several.
+  // Answers { success, foothold, inventory, first } (or { success, already: true, ... }); a
+  // refusal throws (404 reason "no_action", 422 reason "not_ready" or "usb_refused").
+  static async networkImplant(pcId, shape, path = null) {
+    return this.post('/network/implant', { pc_id: pcId, shape, ...(path ? { path } : {}) });
+  }
+
+  // Join an in-game Wi-Fi network through an access point (slice 9.3b sub-slice W, 5.3).
+  // The key is compared on the server; an open network sends no key. Answers
+  // { success, foothold, inventory, first } (or { success, already: true, ... } when the
+  // network is already joined); a refusal throws with err.status (404 no access point,
+  // 403 reason "unreachable", 422 reason "wrong_key") and err.body. The key is never echoed.
+  static async networkJoin(apId, key = null) {
+    return this.post('/network/join', { ap_id: apId, ...(key != null ? { key } : {}) });
   }
 
   // What a foothold reaches: { footholds: [{ id, via, name, network, hosts }] }, every

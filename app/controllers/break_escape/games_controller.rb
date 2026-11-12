@@ -25,8 +25,8 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
-                                        :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug,
-                                        :npc_frustration, :npc_workaround, :wear]
+                                        :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -91,8 +91,8 @@ module BreakEscape
     # (access model, section 6), so they take the lock like unlock. network_plant and
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
-                                          :login, :logout, :clone_card, :network_plant, :network_unplug,
-                                          :npc_frustration, :npc_workaround, :wear]
+                                          :login, :logout, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
+                                          :npc_frustration, :npc_workaround, :feed_post, :wear]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -395,12 +395,17 @@ module BreakEscape
         filtered['gainedFootholds'] = @game.gained_footholds
         # Frustration per NPC (slice 9.2, 5.4): level, tell, settled and each need's hold
         filtered['npcFrustration'] = @game.npc_frustration_for_client
+        # Feed posts revealed so far, with their facts (slice 9.2 C, 9.4)
+        filtered['feedPosts'] = @game.feed_posts_for_client
+        # Sub-slice L review R1 M1: the sign-in PCs where the player caused a lockout (ids only),
+        # so a reload keeps the client's "lockout seen" mark (6.6)
+        filtered['lockoutPcs'] = @game.lockout_pcs_for_client
         @game.end_claimed_sessions!
         # Sub-slice H (9.4): a reload ends every guest session too
         @game.end_guest_sessions!
 
         if @game.player_state['inventory'].present? && @game.player_state['inventory'].is_a?(Array)
-          filtered['playerInventory'] = @game.player_state['inventory']
+          filtered['playerInventory'] = client_inventory
 
           # Remove startItemsInInventory from scenario to prevent duplicates
           # Since we're sending the actual inventory, we don't need the starting items
@@ -627,10 +632,13 @@ module BreakEscape
 
       Rails.logger.debug "[BreakEscape] Serving ink from: #{ink_json_path}"
 
-      # Serve compiled JSON
-      render json: JSON.parse(File.read(ink_json_path))
-    rescue JSON::ParserError => e
-      render_error("Invalid JSON in compiled ink: #{e.message}", :internal_server_error)
+      # Serve compiled JSON, read without following a symlink swapped in since the lookup
+      text = InkStoryFile.read(ink_json_path)
+      return render_error("Ink script not found for #{npc['storyPath']}", :not_found) unless text
+
+      render json: JSON.parse(text)
+    rescue JSON::ParserError
+      render_error('Invalid JSON in compiled ink', :internal_server_error)
     end
 
     # POST /games/:id/tts
@@ -873,17 +881,9 @@ module BreakEscape
         # Use strong parameters instead of to_unsafe_h
         @game.update_npc_state!(room_id, npc_id, npc_state_params)
 
-      when 'move_npc'
-        npc_id = data[:npcId] || data['npcId']
-        from_room = data[:fromRoom] || data['fromRoom']
-        to_room = data[:toRoom] || data['toRoom']
-
-        unless npc_id.present? && from_room.present? && to_room.present?
-          return render json: { success: false, message: 'Invalid NPC move data' }, status: :bad_request
-        end
-
-        @game.move_npc_to_room!(npc_id, from_room, to_room)
-
+      # No 'move_npc' action: nothing in the game called it, and a client could name any NPC
+      # and any room next to an unlocked one, so the NPC was served there and recorded as met
+      # (friendface phone code review round 5, M1). An unknown action answers 400 below.
       when 'remove_npc_from_scene'
         npc_id = data[:npcId] || data['npcId']
 
@@ -925,6 +925,14 @@ module BreakEscape
       is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
 
       unless is_valid
+        # Under a session the player holds at a PC that is off, or over a route that is down
+        # (review R3 m1): say why, so the pad counts no attempt. Nil where that would tell the
+        # player something new; those answer as any wrong code.
+        refusal = @game.unlock_session_refusal(target_type, target_id)
+        if refusal
+          return render json: { success: false, reason: refusal[:reason], message: refusal[:message] }, status: :forbidden
+        end
+
         body = { success: false, message: 'Invalid attempt' }
         # A carried PIN cracker reads the keypad's response: send its pips,
         # worked out against the real PIN, which the client never holds.
@@ -943,16 +951,22 @@ module BreakEscape
         return render json: body, status: :unprocessable_entity
       end
 
+      # An access-list rfid unlock says which held card passed: the player's own keycard by
+      # id, a copy only as viaCopy (UX devices R1)
+      rfid_card_answer = method == 'rfid' && card_ids ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
+
       # Use transaction to ensure atomic update
       ActiveRecord::Base.transaction do
         if target_type == 'door'
           room_data = serve_opened_room(target_id)
 
-          render json: {
+          door_answer = {
             success: true,
             type: 'door',
             roomData: room_data
           }
+          door_answer.merge!(rfid_card_answer) if rfid_card_answer
+          render json: door_answer
         else
           # Object/container unlock
           @game.unlock_object!(target_id)
@@ -963,6 +977,7 @@ module BreakEscape
             success: true,
             type: 'object'
           }
+          response.merge!(rfid_card_answer) if rfid_card_answer
 
           # If object has contents, include them in response, filtered as
           # GET /container filters them (M7): a nested lock's requires and a
@@ -1042,7 +1057,7 @@ module BreakEscape
           # gift record for that NPC is kept.
           if source_npc_id.blank? && source_pc_id.blank? && source_resource_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
             Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
-            return render json: { success: true, inventory: @game.player_state['inventory'] }
+            return render json: { success: true, inventory: client_inventory }
           end
           validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
                                                                           source_resource_id: source_resource_id)
@@ -1068,7 +1083,7 @@ module BreakEscape
           # Copy: the file stays on the PC and in its profile (access model 5.1)
           @game.record_copied_item!(@collectible_item['id']) if (source_pc_id || source_resource_id) && @collectible_transfer == 'copy'
           Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
-          render json: { success: true, inventory: @game.player_state['inventory'] }
+          render json: { success: true, inventory: client_inventory }
 
         when 'remove'
           # A plant (engine plan section 6): the client names the object the device was used
@@ -1076,7 +1091,7 @@ module BreakEscape
           used_on = params[:used_on] || params[:usedOn]
           @game.record_planted_item!(item['id'], used_on) if used_on.present?
           @game.remove_inventory_item!(item['id'])
-          render json: { success: true, inventory: @game.player_state['inventory'] }
+          render json: { success: true, inventory: client_inventory }
 
         when 'update_saved_cards'
           # The RFID cloner's saved cards, so a reload doesn't empty it
@@ -1146,8 +1161,10 @@ module BreakEscape
       pc_id = params[:pc_id].to_s
       return render json: { success: false, message: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
 
-      @game.logout_session!(pc_id)
-      render json: { success: true }
+      # Ending a session can break a pivot; the model ends the onward sessions and returns
+      # their ids (networks slice 9.3b, 5.1) for pc-sessions.js.
+      ended = @game.logout_session!(pc_id)
+      render json: { success: true, endedPcIds: Array(ended) }
     end
 
     # GET /games/:id/login_accounts?pc_id=
@@ -1163,6 +1180,12 @@ module BreakEscape
       # A headless host has no screen and no tiles (networks slice 9.3a, section 5)
       unless @game.login_pc_reachable?(info) && !BreakEscape::NetworkModel.headless?(info[:object])
         return render_error("PC not reachable: #{params[:pc_id]}", :forbidden)
+      end
+      # The sign-in screen at a switched-off PC's keyboard is not shown (q72). The route is
+      # judged at the keyboard whatever foothold value it carries (review R3 nit 3): the PC is
+      # physically reachable here, so saying it is off tells nothing new.
+      if @game.host_service_off?(info[:object])
+        return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
       end
 
       answer = { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
@@ -1203,7 +1226,7 @@ module BreakEscape
     end
 
     # POST /games/:id/npc_workaround (slice 9.2, ACCESS_MODEL_SLICE_9_2_PLAN.md 6 and 9.1):
-    # { npc_id, index, hand, dropped } from the workaround runner. 403 for a hand-over the server
+    # { npc_id, index, hand, dropped, cut } from the workaround runner. 403 for a hand-over the server
     # never made (or already spent other than as done), 425 before the dwell.
     def npc_workaround
       authorize @game if defined?(Pundit)
@@ -1213,12 +1236,38 @@ module BreakEscape
         # Sub-slice H: a share_login reports `heard` (true or "true" only) and the room it was heard in
         heard = [true, 'true'].include?(params[:heard])
         room_id = params[:room_id].is_a?(String) ? params[:room_id] : nil
+        # q43 review R1 M1: a borrow cut short after the sit (true or "true" only)
+        cut = [true, 'true'].include?(params[:cut])
         result = @game.complete_npc_workaround!(npc_id: params[:npc_id], index: params[:index], hand: params[:hand],
-                                                dropped: dropped, heard: heard, room_id: room_id)
+                                                dropped: dropped, heard: heard, room_id: room_id, cut: cut)
         body = result[:body]
         body = body.merge('roomData' => serve_opened_room(result[:open_room])) if result[:status] == :ok && result[:open_room]
         render json: body, status: result[:status]
       end
+    end
+
+    # POST /games/:id/feed_post (slice 9.2 C, ACCESS_MODEL_SLICE_9_2_PLAN.md 8.3 and 9.1):
+    # { npc_id, object_id }, sent after a met social media use; object_id is where the use was,
+    # null for the NPC's phone (user decision q33). The NPC's next post and its fact, or
+    # { post: null, done } when none is left, it is too soon or the source is refused.
+    def feed_post
+      authorize @game if defined?(Pundit)
+      source = params[:object_id]
+      source = false unless source.nil? || source.is_a?(String) # any other shape is refused
+      result = @game.reveal_feed_post!(params[:npc_id].is_a?(String) ? params[:npc_id] : nil, source)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/friendface_phone: open a Friendface phone the player holds (q35,
+    # FRIENDFACE_PHONE_ITEM_PLAN.md section 4). npc_id a string: that NPC's phone; null: the
+    # player's own. Read only; refused unless the server's inventory holds that phone.
+    def friendface_phone
+      authorize @game if defined?(Pundit)
+      npc_id = params[:npc_id]
+      npc_id = false unless npc_id.nil? || npc_id.is_a?(String) # any other shape is refused
+      # Review R3 n5: the revealed posts come back only when asked for (tests); the game never reads them
+      result = @game.open_friendface_phone(npc_id, with_posts: params[:posts].to_s == '1')
+      render json: result[:body], status: result[:status]
     end
 
     # ==========================================
@@ -1275,6 +1324,19 @@ module BreakEscape
       render json: result[:body], status: result[:status]
     end
 
+    # POST /games/:id/network/join (ap_id, optional key) -- join an in-game Wi-Fi network
+    # through an access point (slice 9.3b sub-slice W, 5.3). The key is compared on the
+    # server; an open network sends no key.
+    def network_join
+      authorize @game if defined?(Pundit)
+
+      ap_id = params[:ap_id].to_s
+      return render json: { success: false, error: 'Missing ap_id' }, status: :bad_request if ap_id.empty?
+
+      result = @game.join_network!(ap_id, params[:key].presence&.to_s)
+      render json: result[:body], status: result[:status]
+    end
+
     # POST /games/:id/network/unplug (jack_id)
     def network_unplug
       authorize @game if defined?(Pundit)
@@ -1283,6 +1345,22 @@ module BreakEscape
       return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
 
       result = @game.unplug_device!(jack_id)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/implant (pc_id, shape = 'dropped' | 'session', optional path)
+    # A device in a PC (not a jack) grants a foothold: a dropped device an NPC uses, or a
+    # BadUSB the player plugs into a PC they hold a session on (slice 9.3b sub-slice I, 5.5).
+    def network_implant
+      authorize @game if defined?(Pundit)
+
+      pc_id = params[:pc_id].to_s
+      return render json: { success: false, error: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
+
+      shape = params[:shape].presence&.to_s
+      return render json: { success: false, error: 'Missing shape' }, status: :bad_request unless %w[dropped session].include?(shape)
+
+      result = @game.implant_foothold!(pc_id, shape, params[:path].presence&.to_s)
       render json: result[:body], status: result[:status]
     end
 
@@ -1844,6 +1922,14 @@ module BreakEscape
       @game.with_lock { yield }
     end
 
+    # The inventory as the browser may see it: a filtered deep copy, so a held lock (a start
+    # item such as a padlocked case or a cryptex) never ships its answer (unlock gaps R1 m3).
+    # One filter for every inventory echo (code review R2 M2): Game#client_inventory, which
+    # the network routes use too.
+    def client_inventory
+      @game.client_inventory
+    end
+
     def filter_requires_recursive(obj)
       case obj
       when Hash
@@ -1854,6 +1940,7 @@ module BreakEscape
         # - rfid: requires card IDs (e.g., ["master_keycard"])
         lock_type = obj['lockType']
         BreakEscape::Game.set_pin_length!(obj) # PIN pad length, before the PIN goes
+        BreakEscape::Game.strip_lock_answers!(obj) # combination and cryptex answers
         BreakEscape::Game.strip_puzzle_graph_keys!(obj) # generator-only authoring fields
         # A declared grant's contents are served from the held item, never shipped
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
@@ -1925,6 +2012,9 @@ module BreakEscape
           Rails.logger.error "[BreakEscape] note_npcs_met! failed: #{e.message}"
         end
         @game.save!
+        # Code review R5 m1: the payload was composed before these NPCs were met, so a KO'd one
+        # (an old save with a KO and no met record) is listed now, on this load
+        room_data['npcs'] = @game.with_ko_drop_pending(room_data['npcs'], only: new_npcs)
 
         total_encountered = @game.player_state['encounteredNPCs'].length
         Rails.logger.info "[BreakEscape] ✅ Tracked #{new_npcs.length} new NPC encounter(s) in room #{room_id}. Total NPCs encountered: #{total_encountered}"
@@ -1950,7 +2040,12 @@ module BreakEscape
       end
       # A declared grant the player holds (Game#held_grant_items), after the rooms so a
       # game whose snapshot still has the old twin answers from it as before.
-      find_container_recursive(@game.held_grant_items, container_id)
+      find_container_recursive(@game.held_grant_items, container_id) ||
+        # A habit NPC's USB stick the player holds (2026-11-12): taken from itemsHeld, so in no
+        # room; its files come from the scenario (or the default), never from the browser
+        find_container_recursive(@game.held_usb_sticks, container_id) ||
+        # A container an NPC carried, released by a give or KO record (unlock gaps build)
+        find_container_recursive(@game.released_npc_containers, container_id)
     end
 
     def find_container_recursive(objects, container_id)
@@ -1998,6 +2093,16 @@ module BreakEscape
       # Then a declared grant the player holds, as find_container_in_scenario.
       @game.held_grant_items.each do |grant_item|
         found = find_object_in_object(grant_item, object_id)
+        return found if found
+      end
+      # Then a habit NPC's USB stick the player holds, as find_container_in_scenario.
+      @game.held_usb_sticks.each do |stick|
+        found = find_object_in_object(stick, object_id)
+        return found if found
+      end
+      # Then a container an NPC carried that a give or KO released, as Game#find_scenario_object.
+      @game.released_npc_containers.each do |container|
+        found = find_object_in_object(container, object_id)
         return found if found
       end
       nil
@@ -2054,7 +2159,13 @@ module BreakEscape
       return render json: { error: "Not signed in: #{container_id}", reason: 'no_session' }, status: :forbidden unless npc
 
       foothold = params[:foothold].presence&.to_s
-      unless @game.desktop_request_allowed?(info, foothold)
+      refusal = @game.desktop_refusal(info, foothold)
+      if refusal == 'off'
+        # At the keyboard of a switched-off PC (q72): the session is kept, the desktop refused
+        return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
+      elsif refusal == 'not_responding'
+        return render json: { error: BreakEscape::NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' }, status: :forbidden
+      elsif refusal
         return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
       end
 
@@ -2120,20 +2231,26 @@ module BreakEscape
       office-misc-cup5 coffee_cups1 mugs_tray1
     ].freeze
 
-    # Fields that make a stored item open something: the key check reads the
-    # first three and scenarioData, the lockpick and PIN-cracker checks read type
-    # and scenarioData.type, the flag-station lookup reads flags. A client-built
-    # item (notepad, decor cup) has no scenario copy, so these are removed.
-    # The last five are authored behaviour a client must not invent: a forged
-    # droppable would pass the player_drop check (Game#add_item_to_room!), a
-    # forged needsTag would feed an NPC need, a forged wearable would let POST wear
-    # put on a costume the scenario never offered (Wearables), and holds and storeIn
-    # are the holder fields (feedback plan, section 6).
-    CLIENT_ITEM_FORBIDDEN_FIELDS = %w[
-      opens_lock key_id keyId scenarioData requires lockType locked
-      contents itemsHeld flags flagRewards keyPins saved_cards
-      droppable needsTag wearable holds storeIn
-    ].freeze
+    # Fields a client-built inventory item (notepad, decor cup) must not carry:
+    # lock references the key check reads, the lockType/PIN-cracker fields, the
+    # flag-station list, the card fields, and the authored-behaviour fields a
+    # client must not invent (a forged droppable would pass the player_drop check
+    # in Game#add_item_to_room!, a forged needsTag would feed an NPC need, a forged
+    # wearable would let POST wear put on a costume the scenario never offered).
+    # Single source with the model's FORGEABLE_LOCK_FIELDS, via
+    # ItemIdentity::FORGEABLE_ITEM_FIELDS, plus the whole scenarioData, which a
+    # client-built item has no business carrying (code review R1, m1).
+    # The clientAdded marker (ItemIdentity::CLIENT_ADDED_MARKER) is server-only: only
+    # Game#add_item_to_room! stamps it. A client must not set it on an item it builds
+    # (an always-allowed item reaches the non-Hash branch below with just this filter),
+    # so a security marker is never client-writable (code review R2, m2).
+    # phoneOf names whose Friendface phone an item is; only the scenario sets it
+    # (q35 review R1 m1).
+    CLIENT_ITEM_FORBIDDEN_FIELDS = (
+      BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS +
+      %w[scenarioData phoneOf] +
+      [BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER]
+    ).freeze
 
     # What the inventory stores for an add that validate_item_collectible passed.
     # A scenario item is stored as the server's own copy, filtered exactly as the
@@ -2264,6 +2381,16 @@ module BreakEscape
           Rails.logger.warn "[BreakEscape] #{error_msg}"
           return error_msg
         end
+        # Review R2 M1: an NPC's Friendface phone lies in a room only as a stored NPC drop. A save
+        # made before add_item_to_room! checked the drop can hold one taken from a live NPC that
+        # never offered it, so the pickup asks the same question
+        owner = found_item['phoneOf']
+        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && owner.is_a?(String) &&
+           !@game.npc_room_drop_allowed?(owner, found_item)
+          error_msg = "NPC does not give this item: #{owner}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
+        end
       elsif location[:type] == 'npc'
         npc_id = location[:npc_id]
         unless @game.player_state['encounteredNPCs']&.include?(npc_id)
@@ -2278,6 +2405,18 @@ module BreakEscape
             Rails.logger.warn "[BreakEscape] #{error_msg}"
             return error_msg
           end
+        end
+        # q35 review R1 M1: an NPC's Friendface phone changes what the server decides for that
+        # NPC, so it is handed over only when the scenario offers that give (a KO drop is a room
+        # location and stays allowed). Specific to this item; other held items keep the old rule.
+        # Code review R5 n2: an NPC the server holds as KO'd (npc_defeated?, the claim rule) gives
+        # its phone too, so a KO drop the server refused (its KO sync had not landed) can still be
+        # picked up from the local sprite once the KO has reached the server.
+        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && !@game.friendface_phone_offered?(npc_id) &&
+           !@game.npc_defeated?(npc_id)
+          error_msg = "NPC does not give this item: #{npc_id}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
         end
       elsif location[:type] == 'flag_station'
         # A flag station's item is its reward for a flag: collectible only once
@@ -2491,6 +2630,15 @@ module BreakEscape
         end
       end
 
+      # An item inside a container an NPC carried, once a give or KO released the container
+      # (unlock gaps build): taken as from any container, so the container must be unlocked.
+      @game.released_npc_containers.each do |container|
+        Array(container['contents']).each do |content|
+          next unless content.is_a?(Hash)
+          return { item: content, location: { type: 'container', container_id: container['id'] } } if matches.call(content)
+        end
+      end
+
       nil
     end
 
@@ -2644,66 +2792,10 @@ module BreakEscape
       nil
     end
 
-    # Resolve ink path and compile if necessary
+    # The compiled story for a storyPath, compiling a newer .ink first
+    # (InkStoryFile, the lookup TtsLineResolver uses too)
     def resolve_and_compile_ink(story_path)
-      # Use Engine root for Rails Engine context
-      engine_root = BreakEscape::Engine.root
-      base_path = engine_root.join(story_path)
-      json_path = find_compiled_json(base_path)
-      ink_path = find_ink_source(base_path)
-
-      if ink_path && needs_compilation?(ink_path, json_path)
-        Rails.logger.info "[BreakEscape] Compiling #{File.basename(ink_path)}..."
-        json_path = compile_ink(ink_path)
-      end
-
-      json_path
-    end
-
-    def find_compiled_json(base_path)
-      return base_path if File.exist?(base_path)
-
-      ink_json_path = base_path.to_s.gsub(/\.json$/, '.ink.json')
-      return Pathname.new(ink_json_path) if File.exist?(ink_json_path)
-
-      json_path = base_path.to_s.gsub(/\.ink\.json$/, '.json')
-      return Pathname.new(json_path) if File.exist?(json_path)
-
-      nil
-    end
-
-    def find_ink_source(base_path)
-      ink_path = base_path.to_s.gsub(/\.(ink\.)?json$/, '.ink')
-      File.exist?(ink_path) ? Pathname.new(ink_path) : nil
-    end
-
-    def needs_compilation?(ink_path, json_path)
-      return true unless json_path && File.exist?(json_path)
-      File.mtime(ink_path) > File.mtime(json_path)
-    end
-
-    def compile_ink(ink_path)
-      output_path = ink_path.to_s.gsub(/\.ink$/, '.json')
-      inklecate_path = BreakEscape::Engine.root.join('bin', 'inklecate')
-
-      stdout, stderr, status = Open3.capture3(
-        inklecate_path.to_s,
-        '-jo', output_path,
-        ink_path.to_s
-      )
-
-      unless status.success?
-        Rails.logger.error "[BreakEscape] Ink compilation failed: #{stderr}"
-        raise "Ink compilation failed for #{File.basename(ink_path)}: #{stderr}"
-      end
-
-      if stderr.present?
-        Rails.logger.warn "[BreakEscape] Ink compilation warnings: #{stderr}"
-      end
-
-      Rails.logger.info "[BreakEscape] Compiled #{File.basename(ink_path)} (#{(File.size(output_path) / 1024.0).round(2)} KB)"
-
-      Pathname.new(output_path)
+      InkStoryFile.find(story_path)
     end
 
     def render_error(message, status)
@@ -2711,14 +2803,19 @@ module BreakEscape
     end
 
     # Strong parameters for room state sync (SECURITY)
+    #
+    # Only identity and placement come from the client. The lock-relevant fields
+    # (opens_lock, key_id, keyPins and the like) are NOT permitted: a legitimate
+    # drop (NPC or player_drop) rebuilds the item from the server's own scenario
+    # copy in Game#add_item_to_room!, and an unsourced add has its lock fields
+    # stripped there (Game#strip_forgeable_lock_fields). Permitting them here would
+    # let a tampered client forge a key for any key lock.
     def item_add_params
-      # Allow common item properties, including nested scenarioData
       params.require(:data).permit(
         :id, :type, :name, :texture, :x, :y, :takeable, :interactable,
         position: [:x, :y],
         scenarioData: [
-          :type, :name, :takeable, :id, :opens_lock, :key_id, :observations, :active, :visible, :interactable,
-          keyPins: []
+          :type, :name, :takeable, :id, :observations, :active, :visible, :interactable
         ]
       ).to_h
     end
@@ -2948,8 +3045,12 @@ module BreakEscape
         end
       end
 
-      # Also search player inventory (takeable flag-stations/launch-devices end up here)
+      # Also search player inventory (takeable flag-stations/launch-devices end up here).
+      # A forged clientAdded item typed flag-station/launch-device must never stand in for
+      # a real station, even on a name match (code review R2, B1 sweep).
       @game.player_state['inventory']&.each do |item|
+        next if BreakEscape::ItemIdentity.client_forged?(item)
+
         return item if (item['id'] || item['name']) == flag_station_id && flag_station_types.include?(item['type'])
       end
 

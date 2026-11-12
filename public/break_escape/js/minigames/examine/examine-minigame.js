@@ -1,12 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { examineDisplaySize } from '../../systems/examine.js';
-
-const esc = (s) => String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+import { escapeHtml as esc } from '../../utils/escape-html.js';
 
 /**
  * Examine: the object's sprite at twice its on-screen room size (whole-number

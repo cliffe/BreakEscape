@@ -1,5 +1,8 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml as escapeTitle } from '../../utils/escape-html.js';
+
+// The title is plain text (scenario or server data): escaped before it reaches HTML.
 
 /**
  * MG-04 — Network Segmentation Map
@@ -53,7 +56,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
             <button type="button" class="minigame-close-button" id="nsm-close">&times;</button>
             <div class="nsm-wrapper">
                 <div class="nsm-header-bar">
-                    <span class="nsm-title-text">${displayDashes(title)}</span>
+                    <span class="nsm-title-text">${escapeTitle(displayDashes(title))}</span>
                     <span class="nsm-status-badge">ACTIVE INCIDENT</span>
                 </div>
                 <div class="nsm-body">
@@ -83,7 +86,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                     <div class="nsm-sever-group">
                         <div class="nsm-sever-hint" id="nsm-sever-hint"></div>
                         <button type="button" class="nsm-sever-btn" id="nsm-sever-btn" disabled>
-                            ${displayDashes(severLabel)}
+                            ${escapeTitle(displayDashes(severLabel))}
                         </button>
                     </div>
                 </div>
@@ -128,10 +131,10 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
 
     _buildZonesHTML() {
         return (this.params.zones || []).map(z => `
-            <div class="nsm-zone nsm-zone-${z.slot}" id="nsm-zone-${z.slot}">
-                <div class="nsm-zone-label">${displayDashes(z.label)}</div>
+            <div class="nsm-zone nsm-zone-${escapeTitle(z.slot)}" id="nsm-zone-${escapeTitle(z.slot)}">
+                <div class="nsm-zone-label">${escapeTitle(displayDashes(z.label))}</div>
                 <div class="nsm-zone-devices">
-                    ${(z.devices || []).map(d => `<div class="nsm-device">${displayDashes(d)}</div>`).join('')}
+                    ${(z.devices || []).map(d => `<div class="nsm-device">${escapeTitle(displayDashes(d))}</div>`).join('')}
                 </div>
             </div>
         `).join('');
@@ -140,7 +143,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
     _buildModalBodyHTML() {
         const auth = this.params.auth || {};
         const consequences = (this.params.modalConsequences || [])
-            .map(c => `<br/>• ${displayDashes(c)}`)
+            .map(c => `<br/>• ${escapeTitle(displayDashes(c))}`)
             .join('');
         return `
             This will disconnect all clinical zone systems from the enterprise network.
@@ -149,8 +152,8 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
             ${consequences}
             <br/><br/>
             <strong>DUAL AUTHORISATION STATUS:</strong>
-            <br/><span id="nsm-auth-itsec">⬜ ${displayDashes(auth.itsecLabel || 'IT Security')} — pending</span>
-            <br/><span id="nsm-auth-clinical">⬜ ${displayDashes(auth.clinicalLabel || 'Clinical Engineering')} — pending</span>
+            <br/><span id="nsm-auth-itsec">⬜ ${escapeTitle(displayDashes(auth.itsecLabel || 'IT Security'))} — pending</span>
+            <br/><span id="nsm-auth-clinical">⬜ ${escapeTitle(displayDashes(auth.clinicalLabel || 'Clinical Engineering'))} — pending</span>
             <br/><br/>
             <span id="nsm-auth-warning"></span>
         `;
@@ -226,16 +229,16 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         const warnEl = this.container.querySelector('#nsm-auth-warning');
 
         if (itsecEl) itsecEl.innerHTML = itsecDone
-            ? `✅ ${displayDashes(auth.itsecLabel || 'IT Security')} — authorised`
-            : `⬜ ${displayDashes(auth.itsecLabel || 'IT Security')} — <strong>not received</strong>`;
+            ? `✅ ${escapeTitle(displayDashes(auth.itsecLabel || 'IT Security'))} — authorised`
+            : `⬜ ${escapeTitle(displayDashes(auth.itsecLabel || 'IT Security'))} — <strong>not received</strong>`;
         if (clinicalEl) clinicalEl.innerHTML = clinicalDone
-            ? `✅ ${displayDashes(auth.clinicalLabel || 'Clinical Engineering')} — authorised`
-            : `⬜ ${displayDashes(auth.clinicalLabel || 'Clinical Engineering')} — <strong>not received</strong>`;
+            ? `✅ ${escapeTitle(displayDashes(auth.clinicalLabel || 'Clinical Engineering'))} — authorised`
+            : `⬜ ${escapeTitle(displayDashes(auth.clinicalLabel || 'Clinical Engineering'))} — <strong>not received</strong>`;
 
         const claimRef = auth.claimRef || 'dual authorisation policy';
         if (warnEl) warnEl.innerHTML = (itsecDone && clinicalDone)
-            ? `<strong style="color:#4caf50">Both authorisations confirmed. Proceeding will honour ${displayDashes(claimRef)}.</strong>`
-            : `<strong style="color:#e57373">⚠ Proceeding without full authorisation violates ${displayDashes(claimRef)}.</strong>`;
+            ? `<strong style="color:#4caf50">Both authorisations confirmed. Proceeding will honour ${escapeTitle(displayDashes(claimRef))}.</strong>`
+            : `<strong style="color:#e57373">⚠ Proceeding without full authorisation violates ${escapeTitle(displayDashes(claimRef))}.</strong>`;
 
         this.container.querySelector('#nsm-modal-overlay').classList.add('nsm-modal-visible');
         if (window.playUISound) window.playUISound('alert');
@@ -332,9 +335,9 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
     _buildConsequenceItem(item) {
         const cls = `nsm-cons-item nsm-impact-${item.severity}${item.isAttackPath ? ' nsm-attack-path' : ''}`;
         const content = item.isAttackPath
-            ? `<strong>ATTACK VECTOR:</strong> ${displayDashes(item.text)}`
-            : displayDashes(item.text);
-        return `<li class="${cls}">${content}</li>`;
+            ? `<strong>ATTACK VECTOR:</strong> ${escapeTitle(displayDashes(item.text))}`
+            : escapeTitle(displayDashes(item.text));
+        return `<li class="${escapeTitle(cls)}">${content}</li>`;
     }
 
     _updateConsequencePanel() {
@@ -376,7 +379,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 .join('');
             html += `
                 <div class="nsm-cons-rule">
-                    <div class="nsm-cons-rule-title">▪ ${displayDashes(rule.title)}</div>
+                    <div class="nsm-cons-rule-title">▪ ${escapeTitle(displayDashes(rule.title))}</div>
                     <ul class="nsm-cons-list">${items}</ul>
                 </div>
             `;
@@ -384,7 +387,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
 
         if (!anyToggled) {
             (this.params.defaultConsequences || []).forEach(group => {
-                html += `<div class="nsm-cons-section">${displayDashes(group.section)}</div>`;
+                html += `<div class="nsm-cons-section">${escapeTitle(displayDashes(group.section))}</div>`;
                 const items = (group.items || [])
                     .map(item => this._buildConsequenceItem(item))
                     .join('');

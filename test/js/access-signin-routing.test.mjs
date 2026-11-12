@@ -268,7 +268,7 @@ test('step 9: locked, signin, attended (a race) and null all open the sign-in sc
 
 // ── Access 9.2 H review R1 m6, m8 and m4: the hot desk's user and guest branches ──
 
-test('R1 m6: a borrower using an unowned PC gives "<name> is using this PC" and in_use, with the name escaped', async () => {
+test('R1 m6: a borrower using an unowned PC gives "<name> is using this PC" and in_use, the name raw (the toast is plain text)', async () => {
     reset();
     const asked = [];
     window.workstationState = {
@@ -281,7 +281,8 @@ test('R1 m6: a borrower using an unowned PC gives "<name> is using this PC" and 
     try {
         assert.equal(await interactLoginPc(pc()), 'in_use');
         const alert = calls.find(c => c[0] === 'alert');
-        assert.equal(alert[1], 'Rosa &lt;b&gt;Lane&lt;/b&gt; is using this PC.');
+        // Not pre-escaped: gameAlert renders plain text, so escaping here would show "&lt;"
+        assert.equal(alert[1], 'Rosa <b>Lane</b> is using this PC.');
         assert.deepEqual(asked, []);
         assert.deepEqual(inUse, [['hot_desk', 'rosa']]);
         assert.equal(desktops.length, 0);
@@ -379,4 +380,66 @@ test('R1 m4: a claim answered "displaced" shows the plain text message and opens
     assert.deepEqual(alert[5], { plainText: true });
     assert.equal(desktops.length, 0);
     assert.equal(started.length, 0);
+});
+
+// User decision q72: a switched-off PC refuses at its own keyboard too, "This PC is off."
+test('a click on a switched-off PC says "This PC is off." and opens nothing, with or without a session', async () => {
+    for (const held of [false, true]) {
+        reset({ held });
+        window.gameState = { globalVariables: { hot_desk_off: true } };
+        const out = await interactLoginPc(pc({ affordance: { offWhen: 'hot_desk_off' } }));
+        assert.equal(out, 'off');
+        assert.equal(started.length, 0, 'no sign-in screen');
+        assert.equal(desktops.length, 0, 'no desktop');
+        assert.equal(calls.filter(c => c[0] === 'loginAccounts').length, 0, 'nothing is asked');
+        assert.ok(calls.some(c => c[0] === 'alert' && c[1] === 'This PC is off.'));
+    }
+    delete window.gameState;
+});
+
+test('the { name: value } form of offWhen, and a PC switched back on, which syncs first then opens', async () => {
+    reset();
+    window.gameState = { globalVariables: { power: 'off' } };
+    assert.equal(await interactLoginPc(pc({ affordance: { offWhen: { power: 'off' } } })), 'off');
+
+    reset();
+    const order = [];
+    window.gameState = { globalVariables: { power: 'on' } };
+    window.stateSync = { sync: async () => { order.push('sync'); return true; } };
+    window.ApiClient.loginAccounts = async (pcId) => { order.push('loginAccounts'); return { pc_id: pcId, loginAccounts: TILES }; };
+    assert.equal(await interactLoginPc(pc({ affordance: { offWhen: { power: 'off' } } })), 'signin');
+    await settle();
+    assert.deepEqual(order, ['sync', 'loginAccounts'], 'the server hears the switch before it is asked');
+    assert.equal(started.length, 1);
+    delete window.stateSync;
+    delete window.gameState;
+});
+
+test('the server holding the PC off answers the sign-in screen with "This PC is off."', async () => {
+    reset({ tilesError: Object.assign(new Error('API Error: 403'), { status: 403, body: { reason: 'off', error: 'This PC is off.' } }) });
+    await openLoginSignIn(pc());
+    assert.equal(started.length, 0);
+    assert.ok(calls.some(c => c[0] === 'alert' && c[1] === 'This PC is off.'));
+});
+
+// Review R3 nit 4: client thinks on, server says off. A guest (or owner) claim refused 403 off
+// shows "This PC is off." once, and no sign-in screen follows to say it again.
+test('a claim refused 403 off says "This PC is off." once and opens no sign-in screen', async () => {
+    for (const guestId of ['ian', null]) {
+        reset();
+        const locked = [];
+        window.workstationState = {
+            presence: () => ({ ownerId: guestId ? null : 'dana', present: false, userId: null, guestId }),
+            onInteract: () => 'accessed',
+            guestOf: () => guestId,
+            guestClaimRefused: (pcId) => locked.push(pcId)
+        };
+        window.pcSessions.claim = async () => ({ ok: false, reason: 'error', error: true, status: 403, message: 'This PC is off.', serverReason: 'off' });
+        assert.equal(await interactLoginPc(pc()), 'off', String(guestId));
+        await settle();
+        const alerts = calls.filter(c => c[0] === 'alert').map(c => c[1]);
+        assert.deepEqual(alerts, ['This PC is off.'], `one toast (${guestId})`);
+        assert.equal(started.length, 0, 'no sign-in screen');
+        assert.deepEqual(locked, [], 'the guest record is kept');
+    }
 });

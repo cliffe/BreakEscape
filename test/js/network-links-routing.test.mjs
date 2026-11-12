@@ -48,7 +48,9 @@ const stubs = {
     './interaction-walls.js': dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8')),
     './interaction-reach.js': dataUrl(readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8')),
     './minigame-registry.js': dataUrl("export const hasMinigameStarter = () => { globalThis.__calls.push(['registry']); return false; }; export const startRegisteredMinigame = () => false;"),
-    './inventory-menu.js': inventoryMenuUrl
+    './inventory-menu.js': inventoryMenuUrl,
+    '../utils/display-dashes.js': dataUrl(readFileSync(join(js, 'utils/display-dashes.js'), 'utf8')),
+    '../utils/escape-html.js': dataUrl(readFileSync(join(js, 'utils/escape-html.js'), 'utf8'))
 };
 
 const started = [];

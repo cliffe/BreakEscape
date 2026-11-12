@@ -104,6 +104,16 @@ module BreakEscape
       show?
     end
 
+    # Slice 9.2 C: an NPC's next social media post
+    def feed_post?
+      show?
+    end
+
+    # q35: open a Friendface phone the player holds
+    def friendface_phone?
+      show?
+    end
+
     # Wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md)
     def wear?
       show?
@@ -119,6 +129,14 @@ module BreakEscape
     end
 
     def network_unplug?
+      show?
+    end
+
+    def network_implant?
+      show?
+    end
+
+    def network_join?
       show?
     end
 

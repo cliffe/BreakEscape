@@ -69,7 +69,26 @@ const viewEntry = { ...foothold, hosts: [
     { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, remoteSignIn: true }
 ] };
 
-let calls, requests, toasts, events, confirms, confirmAnswer, views, desktops, links;
+// An implant foothold (slice 9.3b I): its source is a PC, not a jack.
+const implantFoothold = { id: 'implant_lena_pc', via: 'implant', name: 'BadUSB: Lena desk',
+    itemId: 'netlink_implant_lena_pc', sourceId: 'lena_pc', network: officeNet };
+const implantLink = { id: 'netlink_implant_lena_pc', type: 'network_link', name: 'BadUSB: Lena desk', sprite: 'drop_box1',
+    takeable: false, footholdId: 'implant_lena_pc', sourceId: 'lena_pc',
+    observations: 'Your implant on HB-FIN-02. Open it to see what it reaches.' };
+
+let calls, requests, toasts, toastCalls, events, confirms, confirmAnswer, views, desktops, links, implantAnswer, implantThrowsLeft;
+let joinAnswer = null; // override the networkJoin mock per test
+
+// Wi-Fi fixtures (slice 9.3b sub-slice W)
+const guestNet = { id: 'guest_wifi', name: 'Guest Wi-Fi' };
+const wifiFoothold = { id: 'wifi_guest_wifi', via: 'wifi', name: 'Wi-Fi: Guest Wi-Fi', itemId: 'netlink_wifi_guest_wifi',
+    sourceId: 'guest_ap', network: guestNet, sprite: 'wifi_ap1' };
+const wifiLinkItem = { id: 'netlink_wifi_guest_wifi', type: 'network_link', name: 'Wi-Fi: Guest Wi-Fi', sprite: 'wifi_ap1',
+    takeable: false, footholdId: 'wifi_guest_wifi', sourceId: 'guest_ap',
+    observations: 'Your Wi-Fi link to Guest Wi-Fi. Open it to see what it reaches.' };
+const wifiApSprite = (id = 'guest_ap', name = 'Guest access point') => ({
+    scenarioData: { id, name, type: 'pc', sprite: 'wifi_ap1', wifiAp: true }
+});
 
 function jackSprite(extra = {}) {
     const sprite = {
@@ -85,11 +104,15 @@ async function reset({ items = [], planted = false } = {}) {
     calls = [];
     requests = [];
     toasts = [];
+    toastCalls = [];
     events = [];
     confirms = [];
     views = [];
     desktops = [];
     confirmAnswer = true;
+    implantAnswer = {};
+    implantThrowsLeft = 0;
+    joinAnswer = null;
     globalThis.fetch = async (url, opts) => {
         const body = JSON.parse(opts?.body || '{}');
         if (body?.item?.type !== 'notepad') requests.push({ url, body });
@@ -98,7 +121,7 @@ async function reset({ items = [], planted = false } = {}) {
     window.breakEscapeConfig = { gameId: 77 };
     window.lockRef = item => item?.opens_lock || item?.key_id || null;
     window.gameState = { notes: [], globalVariables: {} };
-    window.gameAlert = (msg) => toasts.push(msg);
+    window.gameAlert = (msg, type, title, ms, opts) => { toasts.push(msg); toastCalls.push({ msg, type, ms, opts }); };
     window.gameConfirm = async (message, ok, cancel, opts) => {
         confirms.push({ message, ok, cancel, opts });
         return typeof confirmAnswer === 'function' ? confirmAnswer(message) : confirmAnswer;
@@ -127,6 +150,19 @@ async function reset({ items = [], planted = false } = {}) {
         async network(footholdId) {
             calls.push(['network', footholdId]);
             return { footholds: [viewEntry] };
+        },
+        async networkImplant(pcId, shape, path) {
+            calls.push(['implant', pcId, shape, path]);
+            if (implantThrowsLeft > 0) { implantThrowsLeft--; const e = new Error('network down'); e.status = 500; throw e; }
+            if (implantAnswer instanceof Error) throw implantAnswer;
+            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+            return { success: true, foothold: implantFoothold, inventory: [...inv, implantLink], first: true, ...implantAnswer };
+        },
+        async networkJoin(apId, key) {
+            calls.push(['join', apId, key]);
+            if (typeof joinAnswer === 'function') return joinAnswer(apId, key);
+            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+            return { success: true, foothold: wifiFoothold, inventory: [...inv, wifiLinkItem], first: false };
         }
     };
     inventory.initializeInventory();
@@ -233,6 +269,51 @@ test('a server refusal (no_device) shows the hint and emits the refusal', async 
     assert.equal(named('network_device_refused').length, 1);
     assert.equal(held('kit_dropbox').length, 1, 'nothing changed in the tray');
     assert.deepEqual(links.list(), []);
+});
+
+test('a port-security refusal shows the authored message, keeps the device and emits the refusal', async () => {
+    await reset({ items: [box] });
+    const message = 'This port only takes known machines. Disable unused ports.';
+    window.ApiClient.networkPlant = async () => {
+        const e = new Error('x'); e.status = 422; e.body = { reason: 'port_security', error: message }; throw e;
+    };
+    const out = await links.interactJack(jackSprite());
+    assert.equal(out.action, 'refused');
+    assert.equal(out.reason, 'port_security');
+    assert.deepEqual(named('network_device_refused').map(e => e.data), [{ jackId: 'comms_port', reason: 'port_security' }]);
+    assert.ok(toasts.includes(message), 'the authored message is shown');
+    assert.equal(held('kit_dropbox').length, 1, 'the device stays in the tray');
+    assert.deepEqual(links.list(), []);
+});
+
+test('the port-security refusal toast carries author text as plain text (review R1 minor 1)', async () => {
+    await reset({ items: [box] });
+    const message = 'Known machines only. <disable> unused ports.';
+    window.ApiClient.networkPlant = async () => {
+        const e = new Error('x'); e.status = 422; e.body = { reason: 'port_security', error: message }; throw e;
+    };
+    await links.interactJack(jackSprite());
+    const call = toastCalls.find(c => c.msg === message);
+    assert.ok(call, 'the authored message was shown');
+    assert.equal(call.opts?.plainText, true, 'author text is shown as plain text, not HTML');
+});
+
+test('the no-device hint toast is shown as plain text too (review R1 minor 1)', async () => {
+    await reset({ items: [lockpick] });
+    await links.interactJack(jackSprite());
+    const call = toastCalls.find(c => c.msg === NO_DEVICE_HINT);
+    assert.ok(call, 'the hint was shown');
+    assert.equal(call.opts?.plainText, true, 'the hint is shown as plain text');
+});
+
+test('a port-security refusal with no server message shows the fallback line (review R1 nit 2)', async () => {
+    await reset({ items: [box] });
+    window.ApiClient.networkPlant = async () => {
+        const e = new Error('x'); e.status = 422; e.body = { reason: 'port_security' }; throw e;
+    };
+    const out = await links.interactJack(jackSprite());
+    assert.equal(out.reason, 'port_security');
+    assert.ok(toasts.includes('That port only takes known machines.'), 'the generic fallback is shown when b.error is absent');
 });
 
 test('a planted jack asks "Unplug it" / "Leave it"; "Leave it" and Esc send nothing', async () => {
@@ -465,6 +546,15 @@ test('landing: a 403 no_session or unreachable returns to the view with its mess
     ]);
 });
 
+// Review R2 nit 1: a host whose own service is off is "not responding", as its row says
+test('landing: a 403 not_responding returns to the view saying the host is not responding', async () => {
+    await tripFromView();
+    links.views.set('jack_comms_port', viewEntry);
+    links.landed('desktop', 'not_responding', { pcId: 'lena_pc' });
+    await settle();
+    assert.deepEqual(views.map(v => v.message), ['HB-FIN-02 is not responding.']);
+});
+
 test('landing: "The link dropped" goes to the world with reason link_dropped', async () => {
     const back = await tripFromView();
     assert.equal(links.landed('desktop', 'link_dropped').landing, 'world');
@@ -530,4 +620,434 @@ test('a new trip replaces the one running', async () => {
     await settle();
     assert.deepEqual(back, []);
     assert.deepEqual(other, [{ reason: 'closed' }]);
+});
+
+// 9.3b plan 5.2: the server reads outages and a host's own service from its globals, so the
+// view sends the latest globals before GET /network, and a failed sync still fetches the view.
+test('view() syncs the globals before GET /network, and still fetches when the sync fails', async () => {
+    await reset();
+    const order = [];
+    const realNetwork = window.ApiClient.network;
+    window.ApiClient.network = async (id) => { order.push('network'); return realNetwork(id); };
+    window.stateSync = { sync: async () => { order.push('sync'); return true; } };
+    await links.view('jack_comms_port');
+    assert.deepEqual(order, ['sync', 'network']);
+
+    order.length = 0;
+    window.stateSync = { sync: async () => { order.push('sync'); throw new Error('offline'); } };
+    await links.view('jack_comms_port');
+    assert.deepEqual(order, ['sync', 'network'], 'a failed sync does not stop the fetch');
+    delete window.stateSync;
+});
+
+// Review R1 m1: a sync that never settles holds the view only for the time limit
+test('view() fetches anyway when the sync does not settle within the time limit', async () => {
+    await reset();
+    const order = [];
+    const realNetwork = window.ApiClient.network;
+    window.ApiClient.network = async (id) => { order.push('network'); return realNetwork(id); };
+    window.stateSync = { sync: () => { order.push('sync'); return new Promise(() => {}); } };
+    links.viewSyncWaitMs = 20;
+    const out = await links.view('jack_comms_port');
+    assert.deepEqual(order, ['sync', 'network']);
+    assert.equal(out.ok, true, 'the view opens with the last known state');
+    delete links.viewSyncWaitMs;
+    delete window.stateSync;
+});
+
+// Review R2 m3: a view fetched after the time limit says it may be out of date, and hands back
+// the sync so the screen can fetch once more when it lands
+test('view() marks a view fetched after the time limit stale, with the sync still to land', async () => {
+    await reset();
+    let land;
+    window.stateSync = { sync: () => new Promise(r => { land = r; }) };
+    links.viewSyncWaitMs = 20;
+    const out = await links.view('jack_comms_port');
+    assert.equal(out.ok, true);
+    assert.equal(out.stale, true, 'the timer won');
+    let landed = null;
+    out.synced.then(v => { landed = v; });
+    land(true);
+    await settle();
+    assert.equal(landed, true, 'synced resolves once the late sync lands');
+
+    window.stateSync = { sync: async () => true };
+    const fresh = await links.view('jack_comms_port');
+    assert.equal(fresh.stale, undefined, 'a view after a sync in time is not stale');
+    assert.equal(fresh.synced, undefined);
+    delete links.viewSyncWaitMs;
+    delete window.stateSync;
+});
+
+// Review R1 nit 4: two answers in flight (a double click) emit and open once between them
+test('an implanted answer for a foothold an earlier answer already brought does not emit again', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantAnswer = { already: true, first: false };
+    await links.implant('lena_pc', 'session', null); // the already answer lands first
+    implantAnswer = { first: true };
+    const out = await links.implant('lena_pc', 'session', null); // then the implanted one
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.equal(named('network_foothold_gained').length, 1, 'emitted once in all');
+    assert.equal(views.length, 1, 'opened once in all');
+});
+
+// ---------------------------------------------------------------- implants (slice 9.3b I)
+
+test('an implant adds the foothold, syncs the link item and emits foothold_gained', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.deepEqual(calls.at(-1), ['implant', 'lena_pc', 'session', null]);
+    assert.ok(links.get('implant_lena_pc'), 'the foothold is held');
+    assert.equal(links.get('implant_lena_pc').via, 'implant');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item arrived');
+    const gained = named('network_foothold_gained').map(e => e.data);
+    assert.deepEqual(gained, [{ footholdId: 'implant_lena_pc', via: 'implant', networkId: 'office_lan', sourceId: 'lena_pc' }]);
+    assert.equal(views.length, 1, 'the first foothold opens the view');
+});
+
+test('an implant removes the consumed device the server names in consumedId', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    // The server consumed the box: its answer names it in consumedId and omits it from inventory.
+    implantAnswer = { inventory: [implantLink], consumedId: 'kit_dropbox' };
+    await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(held('kit_dropbox').length, 0, 'the consumed device is gone from the tray');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item is there');
+});
+
+test('an implant keeps an unrelated tray item the server has not synced yet (M1)', async () => {
+    await reset({ items: [box, lockpick] });
+    withStarters();
+    // The server consumed the box; the lockpick was picked up a tick earlier and its own
+    // POST /inventory persist is still in flight, so the server snapshot omits it. The
+    // reconcile must touch only the link item and the consumed device, never the lockpick.
+    implantAnswer = { inventory: [implantLink], consumedId: 'kit_dropbox' };
+    await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(held('lockpick').length, 1, 'the unrelated, not-yet-synced item survives');
+    assert.equal(held('kit_dropbox').length, 0, 'the consumed device is gone');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item arrived');
+});
+
+test('a dropped-shape implant (N11) consumes nothing from the tray', async () => {
+    await reset({ items: [lockpick] });
+    withStarters();
+    // The dropped shape: an NPC used a dropped device, so nothing leaves the player's tray.
+    // The server names no consumedId; the reconcile adds only the link item.
+    implantAnswer = { inventory: [implantLink] };
+    const out = await links.implant('door_box', 'dropped', null);
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.deepEqual(calls.at(-1), ['implant', 'door_box', 'dropped', null]);
+    assert.equal(held('lockpick').length, 1, 'the unrelated item is kept');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item arrived');
+});
+
+test('an implant retries once after a network error and then succeeds', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantThrowsLeft = 1; // first call throws a 500, the retry succeeds
+    implantAnswer = { inventory: [implantLink], consumedId: 'kit_dropbox' };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 2, 'it retried exactly once');
+    assert.deepEqual(toasts, [], 'a recovered retry shows nothing');
+    assert.equal(held('netlink_implant_lena_pc').length, 1);
+});
+
+test('first POST succeeds on the server, its response is lost, the retry reconciles the consumed device (R2 M1)', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    // The first POST reached the server: it granted the foothold and consumed the box, but the
+    // response was lost (thrown). The retry takes the server's already-held branch, which now
+    // names the consumed device in consumedId, so the tray is reconciled just as a first success
+    // would have reconciled it.
+    implantThrowsLeft = 1; // first call throws a 500, the retry answers already-held
+    implantAnswer = { already: true, first: false, consumedId: 'kit_dropbox', inventory: [implantLink] };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'already');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 2, 'it retried exactly once');
+    assert.equal(held('kit_dropbox').length, 0, 'the device the lost first call consumed is removed on the retry');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item is present');
+});
+
+test('an implant lost to both retries shows a message and grants nothing (n2)', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    const err = new Error('still down'); err.status = 500;
+    implantAnswer = err; // every call throws
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'error');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 2, 'it retried once then gave up');
+    assert.equal(toasts.length, 1, 'a plain-text message is shown');
+    assert.equal(links.get('implant_lena_pc'), null, 'no foothold');
+});
+
+test('an implant that answers already on a foothold this browser holds does not re-emit or reopen', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    await links.implant('lena_pc', 'session', null); // the first, seen grant
+    events.length = 0; views.length = 0;
+    implantAnswer = { already: true, first: false };
+    const out = await links.implant('lena_pc', 'session', null);
+    assert.equal(out.action, 'already');
+    assert.equal(named('network_foothold_gained').length, 0);
+    assert.equal(views.length, 0);
+    // n1: the planted global is published before the already return, as plant() does
+    assert.equal(window.gameState.globalVariables.lena_pc_planted, true);
+});
+
+// Review I R3 m1: the first POST's answer was lost, so the retry's `already` is the first this
+// browser hears of the foothold. It fires the event and opens the view once, as Wi-Fi does.
+test('a retry answered already for a foothold not held before fires foothold_gained and opens the view once', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantThrowsLeft = 1;
+    implantAnswer = { already: true, first: false, consumedId: 'kit_dropbox', inventory: [implantLink] };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'already');
+    assert.equal(out.first, true, 'no foothold was ever gained here before, so this is the first');
+    assert.deepEqual(named('network_foothold_gained').map(e => e.data),
+        [{ footholdId: 'implant_lena_pc', via: 'implant', networkId: 'office_lan', sourceId: 'lena_pc' }]);
+    assert.deepEqual(views.map(v => v.footholdId), ['implant_lena_pc'], 'the view opens once');
+
+    // A further repeat is quiet
+    await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(named('network_foothold_gained').length, 1);
+    assert.equal(views.length, 1);
+});
+
+test('a retry answered already where a foothold was gained here before fires the event but does not open', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    links.gained.add('lena_pc'); // gained once before, then lost (an unplug, say)
+    implantAnswer = { already: true, first: false };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.first, false);
+    assert.equal(named('network_foothold_gained').length, 1, 'the foothold is news to this browser');
+    assert.equal(views.length, 0, 'not the first foothold from this PC, so the view stays shut');
+});
+
+// Review I R3 m2: a dropped device's timer can fire before the drop's save lands
+test('a dropped-shape implant answered not_ready asks again and is granted when the drop lands', async () => {
+    await reset();
+    withStarters();
+    links.notReadyDelayMs = 0;
+    let left = 2;
+    const real = window.ApiClient.networkImplant;
+    window.ApiClient.networkImplant = async (...args) => {
+        if (left > 0) { left--; calls.push(['implant', ...args]); const e = new Error('not ready'); e.status = 422; e.body = { reason: 'not_ready' }; throw e; }
+        return real(...args);
+    };
+    implantAnswer = { inventory: [implantLink] };
+    const out = await links.implant('door_box', 'dropped', null);
+    assert.equal(out.action, 'implanted');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 3, 'two not_ready answers, then the grant');
+    assert.deepEqual(toasts, []);
+    delete links.notReadyDelayMs;
+});
+
+test('a dropped-shape implant gives up quietly after its not_ready retries', async () => {
+    await reset();
+    links.notReadyDelayMs = 0;
+    implantAnswer = new Error('not ready');
+    implantAnswer.status = 422;
+    implantAnswer.body = { reason: 'not_ready' };
+    const out = await links.implant('door_box', 'dropped', null);
+    assert.equal(out.action, 'not_ready');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 4, 'the first ask and three more');
+    assert.deepEqual(toasts, []);
+    delete links.notReadyDelayMs;
+});
+
+test('a usb_refused answer toasts the authored line and emits the refusal, no foothold', async () => {
+    await reset({ items: [box] });
+    implantAnswer = new Error('refused');
+    implantAnswer.status = 422;
+    implantAnswer.body = { reason: 'usb_refused', error: 'USB devices are disabled on this PC.' };
+    const out = await links.implant('lena_pc', 'session', null);
+    assert.equal(out.action, 'refused');
+    assert.equal(out.reason, 'usb_refused');
+    assert.deepEqual(toasts, ['USB devices are disabled on this PC.']);
+    assert.equal(links.get('implant_lena_pc'), null);
+    assert.deepEqual(named('network_device_refused').map(e => e.data), [{ pcId: 'lena_pc', reason: 'usb_refused' }]);
+});
+
+test('a not_ready answer is quiet and grants nothing', async () => {
+    await reset({ items: [box] });
+    implantAnswer = new Error('not ready');
+    implantAnswer.status = 422;
+    implantAnswer.body = { reason: 'not_ready' };
+    const out = await links.implant('lena_pc', 'session', null);
+    assert.equal(out.action, 'not_ready');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 1, 'the session shape does not wait and ask again');
+    assert.deepEqual(toasts, []);
+    assert.equal(links.get('implant_lena_pc'), null);
+});
+
+// ---------------------------------------------------------------- Wi-Fi (slice 9.3b W)
+
+test('an access point click joins an open network (no prompt), adds the link item and emits events once', async () => {
+    await reset();
+    const r = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r.action, 'joined');
+    assert.equal(r.footholdId, 'wifi_guest_wifi');
+    // Only the keyless probe was sent (an open network joins at once)
+    assert.deepEqual(calls.filter(c => c[0] === 'join'), [['join', 'guest_ap', null]]);
+    assert.equal(held('netlink_wifi_guest_wifi').length, 1, 'the link item is in the tray');
+    assert.ok(links.get('wifi_guest_wifi'), 'the foothold is held');
+    assert.equal(named('network_joined').length, 1);
+    assert.equal(named('network_foothold_gained').length, 1);
+    assert.equal(named('network_joined')[0].data.apId, 'guest_ap');
+});
+
+test('the first join opens the view', async () => {
+    await reset();
+    withStarters();
+    joinAnswer = () => {
+        const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+        return { success: true, foothold: wifiFoothold, inventory: [...inv, wifiLinkItem], first: true };
+    };
+    await links.interactWifiAp(wifiApSprite());
+    await settle();
+    assert.equal(views.length, 1);
+    assert.equal(views[0].footholdId, 'wifi_guest_wifi');
+});
+
+test('a keyed network: the probe gets wrong_key, the key minigame opens, and a right key joins', async () => {
+    await reset();
+    // The server refuses the keyless probe, then accepts the real key
+    let joined = false;
+    joinAnswer = (apId, key) => {
+        if (joined || (key && key === 'seabreeze-2025')) {
+            joined = true;
+            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+            return { success: true, foothold: wifiFoothold, inventory: [...inv, wifiLinkItem], first: false };
+        }
+        const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e;
+    };
+    const started = [];
+    window.MinigameFramework = { currentMinigame: null, mainGameScene: {}, startMinigame: (name, _b, opts) => started.push({ name, opts }) };
+    const r = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r.action, 'prompt');
+    assert.equal(started.length, 1);
+    assert.equal(started[0].opts.join.apId, 'guest_ap');
+    assert.ok(!links.get('wifi_guest_wifi'), 'no foothold yet');
+    // The minigame submits the right key through links.join
+    const r2 = await links.join('guest_ap', 'seabreeze-2025');
+    assert.equal(r2.action, 'joined');
+    assert.ok(links.get('wifi_guest_wifi'));
+});
+
+test('an access-point name containing HTML never reaches the base minigame title', async () => {
+    await reset();
+    // The server refuses the keyless probe, so the first click opens the key minigame
+    joinAnswer = () => { const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e; };
+    const started = [];
+    window.MinigameFramework = { currentMinigame: null, mainGameScene: {}, startMinigame: (name, _b, opts) => started.push({ name, opts }) };
+    const hostileName = 'Guest <img src=x onerror=alert(1)>';
+    const r = await links.interactWifiAp(wifiApSprite('guest_ap', hostileName));
+    assert.equal(r.action, 'prompt');
+    assert.equal(started.length, 1);
+    // The author access-point name is never passed as the title: the join branch builds its
+    // own escaped header from join.apName (the base header escapes params.title as well).
+    assert.equal(started[0].opts.title, 'Join Wi-Fi');
+    assert.ok(!started[0].opts.title.includes('<'), 'no author HTML reaches params.title');
+    assert.equal(started[0].opts.join.apName, hostileName, 'the join header still receives the real name to escape');
+});
+
+test('a rapid second click on a keyed access point does not stack a second key minigame', async () => {
+    await reset();
+    // The server refuses the keyless probe, so the first click opens the key minigame
+    joinAnswer = () => { const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e; };
+    const started = [];
+    const mg = { currentMinigame: null, mainGameScene: {},
+        startMinigame: (name, _b, opts) => { started.push({ name, opts }); mg.currentMinigame = { name, _ending: false }; } };
+    window.MinigameFramework = mg;
+    const r1 = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r1.action, 'prompt');
+    assert.equal(started.length, 1);
+    // A second click while the key minigame is open is refused before any probe, so no stack
+    const r2 = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r2.action, 'busy');
+    assert.equal(started.length, 1, 'no second key minigame is opened');
+    // Once the minigame has ended, a click probes again
+    mg.currentMinigame._ending = true;
+    const r3 = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r3.action, 'prompt');
+    assert.equal(started.length, 2);
+});
+
+test('a wrong key from join resolves wrong_key with no toast and no foothold', async () => {
+    await reset();
+    joinAnswer = () => { const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e; };
+    const r = await links.join('guest_ap', 'nope');
+    assert.equal(r.action, 'wrong_key');
+    assert.equal(toasts.length, 0);
+    assert.ok(!links.get('wifi_guest_wifi'));
+});
+
+test('a second access point of a joined network answers already, emits network_joined, does not reopen the view', async () => {
+    await reset();
+    withStarters();
+    await links.interactWifiAp(wifiApSprite());
+    await settle();
+    views.length = 0;
+    joinAnswer = (apId) => {
+        const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+        return { success: true, already: true, first: false, foothold: wifiFoothold, inventory: inv };
+    };
+    const r = await links.interactWifiAp(wifiApSprite('guest_ap2', 'Guest AP (lift)'));
+    await settle();
+    assert.equal(r.action, 'already');
+    assert.equal(named('network_joined').length, 2, 'network_joined fires for the second AP too');
+    // The N9 mapping gates on this payload field; a first join must carry a falsey already
+    // and the second-AP already-join must carry already === true (see scenario N8/N9 gate).
+    assert.ok(!named('network_joined')[0].data.already, 'first join carries a falsey already');
+    assert.equal(named('network_joined')[1].data.already, true, 'second-AP already-join carries already === true');
+    assert.equal(views.length, 0, 'an already-joined network does not reopen the view');
+});
+
+test('a Wi-Fi foothold and its handle come back on load; a missing handle is rebuilt', async () => {
+    await reset();
+    links.load([wifiFoothold], ['guest_ap']);
+    assert.ok(links.get('wifi_guest_wifi'));
+    const shown = links.restoreHandles();
+    assert.equal(shown, 1);
+    const item = held('netlink_wifi_guest_wifi')[0];
+    assert.ok(item, 'the link item is rebuilt');
+    assert.equal(item.scenarioData.sprite, 'wifi_ap1');
+});
+
+test('a join publishes <apId>_planted as load() does: true at the first access point, false at a second (review R1 E2)', async () => {
+    await reset();
+    await links.interactWifiAp(wifiApSprite());
+    assert.equal(window.gameState.globalVariables.guest_ap_planted, true, 'the first access point reads true with no reload');
+    assert.equal(named('global_variable_changed:guest_ap_planted').length, 1, 'the first access point publishes a change');
+    joinAnswer = () => {
+        const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+        return { success: true, already: true, first: false, foothold: wifiFoothold, inventory: inv };
+    };
+    await links.interactWifiAp(wifiApSprite('guest_ap2', 'Guest AP (lift)'));
+    assert.equal(window.gameState.globalVariables.guest_ap2_planted, false, 'a second access point reads false');
+    // Review R2 n1: as a reload, the false is written with no change event
+    assert.deepEqual(named('global_variable_changed:guest_ap2_planted'), [], 'a second access point fires no change event');
+    // The live values match what a reload writes from the same server state
+    const live = { ...window.gameState.globalVariables };
+    window.gameState.globalVariables = {};
+    links.load([wifiFoothold], ['guest_ap', 'guest_ap2']);
+    assert.equal(window.gameState.globalVariables.guest_ap_planted, live.guest_ap_planted);
+    assert.equal(window.gameState.globalVariables.guest_ap2_planted, live.guest_ap2_planted);
 });

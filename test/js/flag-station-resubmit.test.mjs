@@ -21,6 +21,8 @@ writeFileSync(join(root, 'package.json'), '{"type":"module"}');
 writeFileSync(join(dir, 'framework', 'base-minigame.js'), 'export class MinigameScene { constructor() {} }\n');
 writeFileSync(join(root, 'systems', 'apply-actions.js'), 'export function applyActions() {}\n');
 writeFileSync(join(root, 'utils', 'display-dashes.js'), 'export function displayDashes(s) { return s; }\n');
+writeFileSync(join(root, 'utils', 'escape-html.js'), readFileSync(join(here, '../../public/break_escape/js/utils/escape-html.js'), 'utf8'));
+writeFileSync(join(root, 'utils', 'lock-scope-refusal.js'), readFileSync(join(here, '../../public/break_escape/js/utils/lock-scope-refusal.js'), 'utf8'));
 writeFileSync(join(root, 'utils', 'flag-wording.js'), readFileSync(join(here, '../../public/break_escape/js/utils/flag-wording.js'), 'utf8'));
 writeFileSync(join(dir, 'flag-station', 'flag-station-minigame.js'), readFileSync(src, 'utf8'));
 globalThis.window = {};
@@ -92,4 +94,23 @@ test('the second flag can be submitted once the first check has finished', async
     calls[1].resolve({ success: true, message: 'ok', flagId: 'f2' });
     await p2;
     assert.equal(els['#flag-input'].value, '');
+});
+
+// Review R4 m2: a flag lock on a PC that is off answers 403 with a reason. The flag was not
+// judged, so the line says why and no flag_rejected is told to the mission.
+test('a flag lock refused 403 off says "This PC is off." and reports no rejection', async () => {
+    for (const [status, reason, line, rejected] of [[403, 'off', 'This PC is off.', 0], [403, 'unreachable', "This PC can't be reached.", 0],
+        [422, null, null, 1]]) {
+        const { s, els } = makeStation();
+        s.params = { type: 'object', lockable: { scenarioData: { id: 'flag_folder' } } };
+        let told = 0;
+        s.emitFlagRejected = () => { told++; };
+        window.ApiClient = { unlock: async () => { throw Object.assign(new Error('x'), { status, body: { success: false, reason, message: 'Invalid attempt' } }); } };
+        els['#flag-input'].value = 'flag{right}';
+        await s.submitFlagForLock();
+        if (line) assert.equal(els['#flag-result'].textContent, line, reason);
+        assert.equal(told, rejected, `${status} ${reason}`);
+        assert.equal(s.isSubmitting, false);
+    }
+    delete window.ApiClient;
 });

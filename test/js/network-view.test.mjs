@@ -24,6 +24,8 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 const put = (rel, text) => { mkdirSync(dirname(join(dir, rel)), { recursive: true }); writeFileSync(join(dir, rel), text); };
 const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
+copy('utils/escape-html.js');
+copy('utils/author-html.js');
 copy('utils/conditional-text.js');
 copy('systems/global-writer.js');
 copy('systems/network-links.js');
@@ -34,7 +36,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT } =
+const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText } =
     await imp('minigames/network-view/network-view-minigame.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 
@@ -133,6 +135,41 @@ test('hostAction follows 4.3: remote sign-in off, then Open for a password sessi
     assert.equal(hostAction({ remoteSignIn: true }), 'sign-in');
 });
 
+// 9.3b plan 5.2: a host whose own service is off answers "not responding" in place of its control
+test('hostAction: a host that is not responding wins over every other action', () => {
+    assert.equal(hostAction({ responding: false }), 'not_responding');
+    assert.equal(hostAction({ responding: false, remoteSignIn: false }), 'not_responding');
+    assert.equal(hostAction({ responding: false, remoteSignIn: true, session: { via: 'password' } }), 'not_responding');
+    assert.equal(hostAction({ responding: true, remoteSignIn: true }), 'sign-in', 'only false marks it');
+});
+
+test('a not-responding host row shows the text and no control, and its test state says so', async () => {
+    const hosts = HOSTS.map(h => (h.id === 'lena_pc'
+        ? { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, responding: false }
+        : h));
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const lena = row('data-host-id', 'lena_pc');
+    assert.equal(lena.querySelector('[data-action]'), null, 'nothing to click');
+    assert.match(lena.textContent, new RegExp(NOT_RESPONDING_TEXT));
+    const st = window.MinigameFramework.currentMinigame.getTestState();
+    assert.equal(st.rows.find(r => r.id === 'lena_pc').action, 'not_responding');
+});
+
+test('a not-responding row names a session that is kept there (review R1 nit 6)', async () => {
+    const hosts = HOSTS.map(h => (h.id === 'lena_pc'
+        ? { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false,
+            responding: false, heldAs: '<b>Lena</b>' }
+        : h));
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const lena = row('data-host-id', 'lena_pc');
+    assert.match(lena.textContent, /still signed in as <b>Lena<\/b>/, 'the name is shown as text');
+    assert.equal(lena.querySelector('b'), null, 'and never as markup');
+});
+
 test('the view lists each row with its action and the row attributes, from GET /network only', async () => {
     setup();
     links.open('jack_comms_port');
@@ -165,6 +202,82 @@ test('network_viewed carries the network, the host ids and hostList; it fires on
         hostIds: ['door_box', 'kiosk_pc', 'lena_pc', 'sam_pc'], hostList: 'door_box,kiosk_pc,lena_pc,sam_pc' };
     assert.deepEqual(named('network_viewed'), [expected]);
     assert.deepEqual(named('network_viewed:office_lan'), [expected]);
+});
+
+// Slice 9.3b sub-slice K (5.1): the further-network blocks under the own-network rows.
+const SERVER_ROW = { id: 'sv_fs02', kind: 'pc', name: 'Server host', host: 'SV-FS02', sprite: 'pc_desktop', headless: false, remoteSignIn: true };
+
+function withBlocks(blocks) {
+    setup();
+    answer = { footholds: [{ ...foothold, hosts: HOSTS.map(h => ({ ...h })),
+        networks: [{ id: 'office_lan', name: 'Harbour office LAN', via: null, route: 'up', hosts: HOSTS.map(h => ({ ...h })) }, ...blocks] }] };
+}
+
+test('a pivot-reached network renders an up block through its host, actionable and emitting its own network_viewed', async () => {
+    withBlocks([{ id: 'server_net', name: 'Server network', via: { hostId: 'lena_pc', host: 'HB-FIN-02' }, route: 'up', hosts: [{ ...SERVER_ROW }] }]);
+    links.open('jack_comms_port');
+    await settle();
+    const block = document.querySelector('.network-block-up');
+    assert.ok(block, 'an up block is drawn');
+    assert.match(block.querySelector('.network-block-title').textContent, /Server network — through HB-FIN-02/);
+    assert.equal(row('data-host-id', 'sv_fs02').querySelector('[data-action]').dataset.action, 'sign-in');
+    // The pivot network emits its own network_viewed, so a task on it completes
+    assert.deepEqual(named('network_viewed:server_net'), [{ footholdId: 'jack_comms_port', networkId: 'server_net',
+        hostIds: ['sv_fs02'], hostList: 'sv_fs02', via: 'lena_pc' }]);
+    // Clicking the server host signs in through the same foothold
+    row('data-host-id', 'sv_fs02').querySelector('[data-action]').click();
+    assert.deepEqual(signIns, [['sv_fs02', 'jack_comms_port']]);
+});
+
+// Review R3 M1: an implant whose own PC is off is listed, says so, and offers nothing
+test('a link whose PC is off says "This link is not responding" and offers no control', async () => {
+    setup({ hosts: [] });
+    answer.footholds[0].responding = false;
+    answer.footholds[0].sourceHost = '<i>HB-FIN-02</i>';
+    links.open('jack_comms_port');
+    await settle();
+    const text = document.querySelector('.network-view').textContent;
+    assert.ok(text.includes(linkOffText('<i>HB-FIN-02</i>')), 'the line names the PC as text');
+    assert.equal(document.querySelector('.network-view i'), null, 'never as markup');
+    assert.doesNotMatch(text, /Nothing answers on this network/);
+    assert.equal(document.querySelector('[data-action]'), null, 'nothing to click');
+    assert.equal(view().getTestState().responding, false);
+});
+
+test('a down block is greyed with "No route" and offers no control', async () => {
+    withBlocks([{ id: 'server_net', name: 'Server network', via: { hostId: 'lena_pc', host: 'HB-FIN-02' }, route: 'down', hosts: [{ ...SERVER_ROW }] }]);
+    links.open('jack_comms_port');
+    await settle();
+    const block = document.querySelector('.network-block-down');
+    assert.ok(block, 'a down block is drawn');
+    assert.match(block.textContent, /No route to SV-FS02/);
+    assert.equal(block.querySelector('[data-action]'), null, 'a down row has no control');
+    assert.deepEqual(named('network_viewed:server_net'), [], 'a down block emits no network_viewed');
+});
+
+// Review R2 M1 (plan 5.2): the own network down, a session held there. The server sends no
+// own rows and one down block for the own network holding only the held-session row; the view
+// keeps that block, greyed, and does not also say nothing answers.
+test('a session held on the own network shows greyed while the own network is down', async () => {
+    setup({ hosts: [] });
+    const lena = { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false };
+    answer.footholds[0].networks = [{ id: 'office_lan', name: 'Harbour office LAN', via: null, route: 'down', hosts: [lena] }];
+    links.open('jack_comms_port');
+    await settle();
+    const block = document.querySelector('.network-block-down');
+    assert.ok(block, 'the own network down block is drawn');
+    assert.match(block.querySelector('.network-block-title').textContent, /Harbour office LAN \(no route\)/);
+    assert.match(block.textContent, /No route to HB-FIN-02/);
+    assert.equal(document.querySelector('[data-action]'), null, 'nothing to click');
+    assert.doesNotMatch(document.querySelector('.network-view').textContent, /Nothing answers on this network/);
+    assert.deepEqual(view().getTestState().networks.map(b => [b.id, b.route]), [['office_lan', 'down']]);
+});
+
+test('with the own network up, its own block is not drawn twice', async () => {
+    withBlocks([]);
+    links.open('jack_comms_port');
+    await settle();
+    assert.equal(document.querySelectorAll('.network-block').length, 0, 'the own up block is folded into the flat rows');
 });
 
 test('Sign in hands over to the remote sign-in screen: network_host_opened, no network_view_closed', async () => {
@@ -295,6 +408,51 @@ test('a refetch that finds the foothold gone goes back to the world with foothol
     assert.deepEqual(named('network_view_closed'), [{ footholdId: 'jack_comms_port', reason: 'foothold_gone' }]);
     assert.equal(window.MinigameFramework.currentMinigame, null);
     assert.equal(links.get('jack_comms_port'), null);
+});
+
+// Review R2 m3: a view fetched before the latest globals reached the server says so, and
+// fetches once more when the late sync lands, if it is still open
+test('a stale view shows the "may be out of date" line and refetches once when the sync lands', async () => {
+    setup();
+    let land;
+    let syncs = 0;
+    // A slow link: every sync takes longer than the limit
+    window.stateSync = { sync: () => { syncs++; return new Promise(r => { land = r; }); } };
+    links.viewSyncWaitMs = 10;
+    links.open('jack_comms_port');
+    await new Promise(r => setTimeout(r, 30));
+    await settle();
+    assert.equal(requests.filter(r => r[0] === 'network').length, 1);
+    assert.ok(view().gameContainer.querySelector('.network-view-stale'), 'the line shows');
+    assert.equal(view().gameContainer.querySelector('.network-view-stale').textContent, STALE_TEXT);
+
+    land(true);
+    await view().refetched;
+    await settle();
+    assert.equal(requests.filter(r => r[0] === 'network').length, 2, 'fetched once more');
+    assert.equal(view().gameContainer.querySelector('.network-view-stale'), null, 'the fresh view drops the line');
+    assert.equal(syncs, 1, 'the refetch sends no second sync: the globals have landed');
+    delete links.viewSyncWaitMs;
+    delete window.stateSync;
+});
+
+test('a stale view closed before the sync lands does not refetch', async () => {
+    setup();
+    let land;
+    window.stateSync = { sync: () => new Promise(r => { land = r; }) };
+    links.viewSyncWaitMs = 10;
+    links.open('jack_comms_port');
+    await new Promise(r => setTimeout(r, 30));
+    await settle();
+    const m = view();
+    document.querySelector('#minigame-cancel').click();
+    await settle();
+    land(true);
+    await m.refetched;
+    await settle();
+    assert.equal(requests.filter(r => r[0] === 'network').length, 1, 'no fetch for a closed view');
+    delete links.viewSyncWaitMs;
+    delete window.stateSync;
 });
 
 test('a resume message shows in the header', async () => {

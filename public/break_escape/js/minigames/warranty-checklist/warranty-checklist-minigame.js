@@ -159,7 +159,9 @@ export class WarrantyChecklistMinigame extends MinigameScene {
     }
 
     renderWarrantyRow(warranty) {
-        const verdict = this.verdicts[warranty.id] || null;
+        // Saved state is restored from gameState, so only a known verdict reaches the class names
+        const saved = this.verdicts[warranty.id];
+        const verdict = Object.prototype.hasOwnProperty.call(VERDICT_LABELS, saved) ? saved : null;
         const isReadOnly = this.submitted;
 
         const verdictButtons = ['compliant', 'arguable', 'breached'].map(v => {

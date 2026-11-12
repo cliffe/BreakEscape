@@ -20,7 +20,9 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, aimX } from './interaction-reach.js';
+import { reachX, aimX, npcGivesWay, objectIdOf } from './interaction-reach.js';
+import { displayDashes } from '../utils/display-dashes.js';
+import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
 // The inventory click menu (feedback plan, section 5) decides with the same two tests as
 // the chain's first two branches for a held item, imported from one place.
@@ -776,7 +778,7 @@ export function maybeInteractionWarning(sprite) {
     const declineLabel = typeof w.declineLabel === 'string' && w.declineLabel ? w.declineLabel : 'Cancel';
     const once = w.once !== false; // default true
 
-    window.gameConfirm(text, proceedLabel, declineLabel, { plainText: true }).then(proceed => {
+    window.gameConfirm(text, proceedLabel, declineLabel).then(proceed => {
         if (proceed) {
             recordInteractionWarningAnswered(sprite); // Proceed is always permanent
             if (Array.isArray(w.onProceed)) applyActions(w.onProceed, { source: 'interaction_warning' });
@@ -940,6 +942,13 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A Wi-Fi access point (slice 9.3b sub-slice W, 5.3): its click is the join flow in
+    // network-links.js (an open network joins at once; a keyed one asks for the key).
+    if (sprite.scenarioData.wifiAp === true) {
+        window.networkLinks?.interactWifiAp?.(sprite);
+        return;
+    }
+
     // A network link item in the tray (slice 9.3a, 4.1): its own click opens the network
     // view for its foothold. It has no menu, no contents and is never dropped.
     if (sprite.scenarioData.type === 'network_link') {
@@ -1089,7 +1098,8 @@ export function handleObjectInteraction(sprite) {
         'workstation', 'lab-workstation',
         'vm-launcher', 'vm_launcher',
         'launch-device', 'phone',
-        'mail_terminal'   // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
+        'mail_terminal',  // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
+        'phone_friendface' // q35: a Friendface phone, opened from inventory
     ]);
     if (sprite.scenarioData.takeable && PICKUP_THEN_INTERACT_TYPES.has(sprite.scenarioData.type)) {
         // A locked takeable mail terminal must be unlocked before it is picked up and
@@ -1102,7 +1112,10 @@ export function handleObjectInteraction(sprite) {
             return;
         }
         playUISound('item');
-        addToInventory(sprite);
+        // The tool opens a second later: the pickup toast waits for it and shows once it
+        // closes, not a glimpse that is pulled back and shown again (review m1, F13/F24)
+        window.expectPanelWithin?.(1500);
+        Promise.resolve(addToInventory(sprite)).then(res => window.announcePickup?.(sprite, res));
         setTimeout(() => {
             // A pickup mapping may already have opened this phone's thread (m02 Ghost terminal:
             // item_picked_up:phone -> phone-chat at knot start). Opening the contact list over it
@@ -1167,12 +1180,13 @@ export function handleObjectInteraction(sprite) {
                 console.log('Notes minigame already running, navigating to notepad note instead');
                 // If notes minigame is already running, just navigate to the notepad note
                 if (window.MinigameFramework.currentMinigame.navigateToNoteIndex) {
-                    window.MinigameFramework.currentMinigame.navigateToNoteIndex(0);
+                    window.MinigameFramework.currentMinigame.navigateToNoteIndex(window.notepadStartIndex?.() ?? 0);
                 }
                 return;
             }
             
-            // Navigate to the notepad note (index 0) when clicking the notepad
+            // Open on the newest note when one was added since the notepad was last looked
+            // at, else on the page last shown (notes-minigame.js notepadStartIndex)
             // Create a minimal item just for navigation - no auto-add needed
             const notepadItem = {
                 scenarioData: {
@@ -1180,7 +1194,7 @@ export function handleObjectInteraction(sprite) {
                     name: 'Notepad'
                 }
             };
-            window.startNotesMinigame(notepadItem, '', '', 0, false, false);
+            window.startNotesMinigame(notepadItem, '', '', window.notepadStartIndex?.() ?? 0, false, false);
             return;
         }
     }
@@ -1701,8 +1715,13 @@ export function handleObjectInteraction(sprite) {
     }
 
     // Handle container items (suitcase, briefcase, bags, bins, etc.) - check BEFORE lock check
-    // hasContents: the server strips a locked container's contents and marks it instead
-    if (data.type === 'suitcase' || data.type === 'briefcase' || data.type === 'bag1' || data.type === 'bin1' || data.contents || data.hasContents) {
+    // hasContents: the server strips a locked container's contents and marks it instead.
+    // A habit NPC's USB stick in the world (dropped by a knock-out) is takeable, unlocked and
+    // marked hasContents with no files: the server serves them only to a player who holds it,
+    // so it is picked up below and opened from the inventory (USB habit review R2, B1).
+    const pocketStickInWorld = !isInventoryItem && data.type === 'usb' && data.takeable === true &&
+        data.hasContents === true && data.locked !== true && !Array.isArray(data.contents);
+    if (!pocketStickInWorld && (data.type === 'suitcase' || data.type === 'briefcase' || data.type === 'bag1' || data.type === 'bin1' || data.contents || data.hasContents)) {
         console.log('CONTAINER ITEM INTERACTION', data);
 
         // SECURITY: Always validate with server
@@ -1842,6 +1861,7 @@ export function handleObjectInteraction(sprite) {
             const minigameParams = {
                 title: `Text File - ${data.name || 'Unknown File'}`,
                 fileName: data.name || 'Unknown File',
+                itemId: data.id || null,
                 fileContent: resolvedText,
                 fileType: data.fileType || 'text',
                 observations: resolvedObservations,
@@ -1863,6 +1883,8 @@ export function handleObjectInteraction(sprite) {
                 Promise.resolve(addToInventory(sprite)).then(res => {
                     // Server refused or network failed: let the player try again
                     if (res && res.ok === false) data.takeable = true;
+                    // Shown once the reader closes (notifications.js holds it)
+                    window.announcePickup?.(sprite, res);
                 });
             }
             return; // Exit early since minigame handles the interaction
@@ -1969,6 +1991,9 @@ export function handleObjectInteraction(sprite) {
         // not a blind edit. Fixing it is tracked separately from the giveItem
         // item-loss fix that changed addToInventory's return contract.
         const added = addToInventory(sprite);
+        // Every pickup says so ("Picked up <name>"), not only the few types with a
+        // toast of their own (inventory.js announcePickup)
+        Promise.resolve(added).then(res => window.announcePickup?.(sprite, res));
 
         // Only show the observation notification if item was NOT added (duplicate)
         // because addToInventory() already shows its own notification
@@ -2042,9 +2067,12 @@ export function handleObjectInteraction(sprite) {
     }
 
     if (readInPlace && window.gameDisplay) {
-        const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // Dash display on the text, then the shared five-character escape: gameDisplay's
+        // html mode inserts the result as given
+        const esc = (s) => escapeHtml(displayDashes(String(s)));
         const body = (resolvedObservations ? `<em>${esc(resolvedObservations)}</em>\n\n` : '') + esc(resolvedText);
-        window.gameDisplay(body, esc(data.name || sprite.name));
+        // Built as HTML on purpose (the <em>), every author piece escaped once above
+        window.gameDisplay(body, esc(data.name || sprite.name), { html: true });
         return;
     }
 
@@ -2129,6 +2157,9 @@ export function tryInteractWithNearest() {
     let bestScore = Infinity;
     const seatedOn = window.seating?.currentSeat?.() || null;
 
+    // Ids of the objects in reach: an owner on the move from her own PC among them gives way (review R2 m1)
+    const inReachIds = [];
+
     function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite, faceX = objX) {
         const dx = objX - px;
         const dy = objY - py;
@@ -2136,9 +2167,11 @@ export function tryInteractWithNearest() {
         const distSq = npcSprite ? npcReachDistSq(player, npcSprite, plainSq) : plainSq;
         if (distSq > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
+        if (target && !npcSprite) inReachIds.push(objectIdOf(target));
         const dist = Math.sqrt(distSq);
         let score = angularDiff(faceX, objY) * 1000 + dist; // angle to the object's centre, range to its nearest part
         if (target && !npcSprite && window.seating?.isSeat(target)) score += 30000; // a chair loses to anything else faced
+        if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
         if (score < bestScore) { bestScore = score; best = { objX: faceX, objY, handleFn }; }
     }
 
@@ -2147,6 +2180,7 @@ export function tryInteractWithNearest() {
     const SIDE_DOOR_RANGE_SQ = INTERACTION_RANGE_SQ * 4; // 2× radius
     const SIDE_DOOR_Y_OFFSET = INTERACTION_RANGE / 2;    // half-tile down to floor level
 
+    const npcsToConsider = [];
     Object.values(rooms).forEach(room => {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
@@ -2172,10 +2206,12 @@ export function tryInteractWithNearest() {
             room.npcSprites.forEach(sprite => {
                 if (!sprite.active || !sprite._isNPC || !sprite.visible) return;
                 if (sprite.npcId && window.npcHostileSystem && window.npcHostileSystem.isNPCKO(sprite.npcId)) return;
-                consider(sprite.x, sprite.y, () => tryInteractWithNPC(sprite), INTERACTION_RANGE_SQ, sprite);
+                npcsToConsider.push(sprite);
             });
         }
     });
+    // NPCs last, once every object in reach is known (inReachIds)
+    npcsToConsider.forEach(sprite => consider(sprite.x, sprite.y, () => tryInteractWithNPC(sprite), INTERACTION_RANGE_SQ, sprite));
 
     if (!best) {
         if (seatedOn) window.seating.standUp(); // nothing else in reach: E stands up

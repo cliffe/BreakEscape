@@ -16,6 +16,10 @@ import { KeyGeometry } from './key-geometry.js';
 import { GameUtilities } from './game-utilities.js';
 import MusicController from '../../music/music-controller.js';
 import { wirePhaserGameSoundToBreakEscape } from '../../music/phaser-audio-bus.js';
+import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml as escapeItemText } from '../../utils/escape-html.js';
+
+// Item names and observations are scenario text: escaped before they reach HTML
 
 // Phaser Lockpicking Minigame Scene implementation
 export class LockpickingMinigamePhaser extends MinigameScene {
@@ -380,12 +384,12 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         const itemDisplayDiv = document.createElement('div');
         itemDisplayDiv.className = 'lockpicking-item-section';
         itemDisplayDiv.innerHTML = `
-            <img src="${itemImage}" 
-                 alt="${itemName}" 
+            <img src="${escapeItemText(itemImage)}" 
+                 alt="${escapeItemText(itemName)}" 
                  class="lockpicking-item-image">
             <div class="lockpicking-item-info">
-                <h4>${itemName}</h4>
-                <p>${itemObservations}</p>
+                <h4>${escapeItemText(displayDashes(itemName))}</h4>
+                <p>${escapeItemText(displayDashes(itemObservations))}</p>
             </div>
         `;
         

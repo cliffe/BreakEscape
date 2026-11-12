@@ -171,6 +171,7 @@ const dataUrl = (s) => 'data:text/javascript;base64,' + Buffer.from(s).toString(
 const stubs = `
 const displayPhoneLine = (type, text) => ({ type, text }), otherSpeaker = () => null,
   displayDashes = (s) => s, messageClockText = () => '9:41', ASSETS_PATH = '';
+const escHtml = (s) => String(s ?? '');
 const noop = () => {};
 const portraitFor = () => ({}), npcDmFields = () => ({}), onAccentColour = noop;
 class TTSManager {} class MusicController {} class ChatInfluence {} class PhoneChatConversation {} class InkEngine {}

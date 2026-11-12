@@ -21,6 +21,8 @@ writeFileSync(join(root, 'package.json'), '{"type":"module"}');
 writeFileSync(join(dir, 'framework', 'base-minigame.js'), 'export class MinigameScene { constructor(c, p) { this.params = p; } }\n');
 writeFileSync(join(root, 'systems', 'apply-actions.js'), 'export function applyActions() {}\n');
 writeFileSync(join(root, 'utils', 'display-dashes.js'), 'export function displayDashes(s) { return s; }\n');
+writeFileSync(join(root, 'utils', 'escape-html.js'), readFileSync(new URL('../../public/break_escape/js/utils/escape-html.js', import.meta.url), 'utf8'));
+writeFileSync(join(root, 'utils', 'lock-scope-refusal.js'), readFileSync(join(here, '../../public/break_escape/js/utils/lock-scope-refusal.js'), 'utf8'));
 writeFileSync(join(root, 'utils', 'flag-wording.js'), readFileSync(join(here, '../../public/break_escape/js/utils/flag-wording.js'), 'utf8'));
 writeFileSync(join(dir, 'flag-station', 'flag-station-minigame.js'), readFileSync(src, 'utf8'));
 globalThis.window = {};

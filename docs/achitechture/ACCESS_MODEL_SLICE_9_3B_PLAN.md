@@ -365,17 +365,48 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
 - **A host whose own service is off (9.2 hand-off).** 9.3a's section 13.2 left to this slice the
   display of a sign-in host whose office-life `affordance.offWhen` is truthy: `host_row` marks it
   `responding: false`, the view shows "not responding" in place of its control, and a remote sign-in
-  and desktop request for it answer 403 `unreachable`. This is the host-level counterpart of a
-  network outage and uses 9.2's field, no new field of this slice's.
+  and desktop request for it answer 403 `not_responding`. This is the host-level counterpart of a
+  network outage and uses 9.2's field, no new field of this slice's. A switched-off PC is off for
+  everything that goes through it: scoped requests under a remote session there are refused, it
+  relays no pivot (`player_reach` skips it; `structural_reach` does not, so nothing is pruned and
+  an onward session shows in a down block until the power returns), and no share is served
+  through a session there. An implant on it (`implant_<pc>`, software running on that PC) is off
+  with it: `player_reach` of the implant foothold is empty while its source PC is off, so it serves
+  no network block, remote sign-in, session or share; the view still lists the foothold with
+  `responding: false` and the source's host label (`sourceHost`), and the client says "This link
+  is not responding: <host> is off." with no rows. `structural_reach` ignores the power, so nothing
+  is pruned and the same implant works again when the PC is back on. A session held at it is kept;
+  its row names it (`heldAs`). The client
+  syncs the globals before `GET /network`, waiting at most about three seconds; a view fetched
+  after that limit carries `stale: true`, shows "Still updating, so this may be out of date." and
+  fetches once more when the late sync lands. A remote refusal there answers 403 `not_responding`,
+  and the client words it "not responding", as the row. An up block's `via` never names an off
+  host (the route runs through another); a down block's still does.
+  **Off is off at the keyboard too** (user decision q72). A walk-up click on a switched-off PC
+  shows "This PC is off." and opens nothing; the client checks `offWhen` on its own globals first
+  and, for a PC that has one but is on, sends the globals before it asks the server. The server
+  refuses on its own copy as well: a keyboard sign-in, an owner or guest claim and
+  `GET /login_accounts` answer 403 `off` with that message, and the keyboard desktop answers 403
+  `off` without settling a remote session there. `session_route_up?` is false for every session
+  at an off PC, local ones included, so its folders, its mapped shares and an inventory add from
+  them (a share's add path as well as its read) are all refused. A session held there, local or
+  remote, is kept (the client keeps its copy on a 403 `off`) and works again when the PC is back
+  on. The PC's look is not changed by the engine; an author who wants an off picture gives the
+  object a `spriteVariants` entry on the same global.
 - **The scoped-request route test, judged from server state.** This is the one place 9.3a's "a
   session exists is enough" rule no longer holds, because losing a pivot or an outage can take a
   route down while the session record survives. The server re-judges **from its own session record,
   never from a client-sent foothold**: a scoped request under a session whose `sessions[pc]` carries
   a `foothold` (a remote session, `start_login_session!` wrote it) is allowed only while that PC is
-  in the `player_reach` of that foothold; a local session (no `foothold`) is judged exactly as
-  today. The refusal is 403 `unreachable` for a host folder, the invented-id refusal for a share
-  path. The gate is "the session carries a foothold" (not "a network `downIf` exists"), so a lost
-  pivot is caught as well as an outage; a local session at a walk-up PC never gains a refusal, so no
+  in the `player_reach` of that foothold; a local session (no `foothold`) is judged as today except
+  at a PC whose own service is off, where every session is refused (q72, above). The refusal is 403
+  `unreachable` for a host folder, the invented-id refusal for a share path. An unlock (`POST
+  /unlock`) of an object under a session the player holds, refused because that session's PC is off
+  or its route is down, answers 403 with `reason` `off`, `not_responding` or `unreachable` and the
+  matching message, so a lock screen closes and counts no attempt; an object under no held session,
+  a share path and a wrong code still answer 422 "Invalid attempt", as an invented id does. The gate
+  is "the session carries a foothold" (not "a network `downIf` exists"), so a lost pivot is caught as
+  well as an outage; a local session at a walk-up PC gains a refusal only while that PC is off, so no
   9.3a scenario changes. Because the route is read server-side, **no client change is needed** to
   thread a foothold; the view handles the 403 through its existing `no_session`/`unreachable`
   landings (4.3 of 9.3a).
@@ -406,6 +437,10 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
   does), so a task or mapping on either access point completes.
 - No device and no range. A wrong key is not counted (section 13 records the strength): the server
   just answers "wrong key".
+- A join still requires reach: it is click-to-interact, so the player must walk to the access point
+  and click it (the object must be reachable, its room and container path unlocked), exactly as a
+  jack plant does. "No range" means no signal model, not that a locked-away access point can be
+  joined from anywhere.
 - **A Wi-Fi foothold is permanent for this slice.** `unplug_device!` is jack-only (it resolves
   through `find_jack`, which requires `networkJack: true`), so there is no unplug for a Wi-Fi join
   and none is added here (open question 7). The foothold ends only on a reset.
@@ -459,8 +494,8 @@ itself**; its `pc` field names the target PC, and the action lives on another ob
   for every `grant_foothold` action the server can honour, reusing `DeclaredGrants.executed?` so the
   server and the validator (section 9) agree on which actions are "declared". `POST /network/implant`
   is the route; `implant_foothold!(pc_id, shape, path)` reads precondition 1 from it, **selecting the
-  action by its declared `path`** so a PC with two `grant_foothold`s is unambiguous (the validator
-  errors on two of the same `pc` and `shape` with no distinct path, m2).
+  one action for that PC and shape** (the validator errors on two actions with the same `pc` and
+  `shape`, so the pair is unambiguous; `path` is compared only when a request carries one, m2).
 - **Trigger 1, the dropped shape (NPC use).** The `grant_foothold` with `needsDropped` sits on a
   server-run action path (a `timers` entry's `actions`, a prop's `triggerOnInteract`, `onInteract`,
   `conditionalActions` or an `onConfirm`), fired by the NPC's own beat. The client fires it from
@@ -469,6 +504,12 @@ itself**; its `pc` field names the target PC, and the action lives on another ob
   covers all of them). `apply-actions.js` is shared with the engine plan's stream E4 (section 12), so
   this slice's case is added after E4's edits. **It awaits the answer with one retry**, because a
   timer is saved fired and never re-runs, so a single lost request would lose the foothold for good.
+  A `not_ready` answer to the dropped shape is asked again three times, 1.5 seconds apart, because
+  the timer can fire before the drop's own save has reached `droppedItems`; an author should still
+  place the timer at least a few seconds after the drop can happen. The waits do not survive a
+  reload: the timer is saved fired, so a reload during them never asks again. A retry whose first answer was
+  lost comes back `already`; the client then fires `network_foothold_gained` and opens the view
+  once if it did not hold that foothold before, as the Wi-Fi join does.
 - **Trigger 2, the BadUSB shape (player use).** The `grant_foothold` with `needsSession` +
   `needsHeld` is placed on a **desk-side prop object** next to the target PC (a USB socket, a cable
   port, the desk), carrying the action on its own `triggerOnInteract`, **never on the sign-in PC**
@@ -480,8 +521,9 @@ itself**; its `pc` field names the target PC, and the action lives on another ob
   on a `needsSession` `grant_foothold` whose host object sets `consumesItem`. The client takes the
   inventory from the `/network/implant` answer (`syncInventoryFromServer`), as the jack plant does.
 - `implant_foothold!(pc_id, shape, path)` requires, before it grants:
-  1. `grant_foothold_actions(scenario_data)` holds an action at `path` for `pc_id` of this `shape`
-     (read from the scenario, never from the request);
+  1. `grant_foothold_actions(scenario_data)` holds the one action for `pc_id` of this `shape`
+     (read from the scenario, never from the request; the validator allows one action per PC and
+     shape, so `path` selects nothing and is compared only when a request carries one);
   2. **already held:** a foothold `implant_<pcId>` is already held: answer `already: true` and write
      nothing (checked **before** the preconditions, so a repeated session-shape implant whose device
      the first call consumed answers `already`, not `not_ready`, m2);
@@ -545,7 +587,7 @@ post 'network/implant', to: 'games#network_implant', as: 'network_implant'
 | `GET /network` (changed) | optional `foothold` | The game's own authorisation; an unknown foothold id is 404, as today | Per foothold, 9.3a's `{ id, via, name, network, hosts }` for the own network, **plus** `networks: [{ id, name, via, hosts, route }]` for every network in `player_reach` (`route: "up"`) and every network the player holds a session on but cannot reach now (`route: "down"`, greyed, held-session rows only; section 5.1). A network the player neither reaches nor has a session on is **absent and unnamed** |
 | `POST /network/plant` (changed, locked) | `jack_id`, optional `device_id` | 9.3a's checks, plus: when the jack sets `portSecurity: true`, after "object reachable" and before the device is taken, refuse | Port security: 422 `{ success: false, reason: "port_security", error }`, the device left in the inventory, no foothold. Otherwise 9.3a's writes and answer |
 | `POST /network/join` (new, locked) | `ap_id`, `key` (absent for an open network) | 1. The access point exists: a room object with `wifiAp: true` on a network that defines `wifi`; else 404 "Access point not found". 2. Object reachable; else 403 `unreachable`. 3. A foothold `wifi_<networkId>` is already held: write no foothold, append `ap_id` to `gainedFootholds` if absent, `save!`, answer `already: true`. 4. The network has a `psk`: the key matches; else 422 `reason: "wrong_key"`, no count. An open network skips check 4 | Success: `footholds["wifi_<networkId>"]` (with `name`/`sprite`) written, `ap_id` added to `gainedFootholds`, the link item added. Answer `{ success, foothold, inventory, first }`. The **client** emits `network_joined` from the answer (events are client-emitted, as 9.3a's plant does) |
-| `POST /network/implant` (new, locked) | `pc_id`, `shape` (`dropped`/`session`), `path` (the declared action's path, to pick one when a PC has several) | 1. `grant_foothold_actions` holds an action at `path` for `pc_id` of this `shape`; else 404. 2. **Already held:** foothold `implant_<pcId>` held → `already: true`, no write (before the preconditions). 3. The shape's precondition (5.5): `droppedItems` holds the item, or a non-foothold session is held and `needsHeld` is in the inventory. 4. The USB hook, where present | Success: `footholds["implant_<pcId>"]` (with `name`/`sprite`) written, `pcId` added to `gainedFootholds`, `needsHeld` removed (session shape), the link item added. Answer `{ success, foothold, inventory, first, already? }`. A failed precondition: 422 `reason: "not_ready"` (or `"usb_refused"` with the policy message when the hook is live), no state change |
+| `POST /network/implant` (new, locked) | `pc_id`, `shape` (`dropped`/`session`), optional `path` (compared only when present; scenario actions carry none, so the client sends null) | 1. `grant_foothold_actions` holds the one action for `pc_id` of this `shape`; else 404. 2. **Already held:** foothold `implant_<pcId>` held → `already: true`, no write (before the preconditions). 3. The shape's precondition (5.5): `droppedItems` holds the item, or a non-foothold session is held and `needsHeld` is in the inventory. 4. The USB hook, where present | Success: `footholds["implant_<pcId>"]` (with `name`/`sprite`) written, `pcId` added to `gainedFootholds`, `needsHeld` removed (session shape), the link item added. Answer `{ success, foothold, inventory, first, already? }`. A failed precondition: 422 `reason: "not_ready"` (or `"usb_refused"` with the policy message when the hook is live), no state change |
 | `POST /login` (changed, locked) | as today, plus optional `foothold` | 9.3a's checks, with `host_reachable_through?` now true when the host is in `player_reach(foothold)` (so a pivot host on a linked network is reachable only while the pivot session is held and up); plus, when the host's network is down, 403 `unreachable` before the password is read | As today |
 | `GET /container/:id` (changed, locked) | as today, plus optional `foothold` | A remote desktop: 9.3a's `desktop_request_allowed?`, now resolving reach through `player_reach` and refusing a down route 403 `unreachable`. A **scoped** request under a remote session: the server reads the route from **its own** `sessions[pc]['foothold']` (never a request parameter) and, when that session carries a foothold, allows it only while the PC is in that foothold's `player_reach`; a local session (no foothold) is judged as today (section 5.2) | As today |
 | `POST /inventory` add (changed, locked) | as today | A `source_pc_id` add whose session carries a foothold is re-judged from that session's foothold (as the scoped `GET /container`); a `source_resource_id` add on a resource no longer reached is refused with the resource's invented-id answer | As today |
@@ -646,8 +688,8 @@ Errors:
   never runs its own actions, 5.5): it must sit on a separate prop object;
 - a `needsSession` `grant_foothold` whose host object sets `consumesItem` (the server removes
   `needsHeld`; a client consume would race it, 5.5);
-- two `grant_foothold` actions with the same `pc` and `shape` that the `path` cannot tell apart (the
-  route selects by `path`, 5.5);
+- two `grant_foothold` actions with the same `pc` and `shape` (the route picks the one action for
+  a PC and shape, 5.5);
 - a network `downIf` or resource `downIf` whose value is not a string.
 
 Warnings:

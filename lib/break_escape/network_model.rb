@@ -167,17 +167,166 @@ module BreakEscape
       out
     end
 
-    # How a station on station_network reaches a resource (4.2), as a list of routes, each
-    # a list of conditions: [[]] is one route with no conditions, [] is no route. In 9.3a
-    # a resource with no network, or on the station's own network, is reachable; anything
-    # else is not. 9.3b extends the answer with links and outages, read from data.
+    # Links (slice 9.3b sub-slice K, docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.1).
+    # Two in-game networks joined by a link; a link is undirected. networkLinks is a list of
+    # two-item lists of network ids; a malformed entry or one naming an undefined network is
+    # dropped here (the validator reports it). Returns a list of [a, b] pairs.
+    def network_links(data)
+      list = data.is_a?(Hash) ? data['networkLinks'] : nil
+      return [] unless list.is_a?(Array)
+
+      nets = networks(data)
+      list.filter_map do |entry|
+        next unless entry.is_a?(Array) && entry.length == 2
+
+        a, b = entry
+        next unless present_string?(a) && present_string?(b) && a != b && nets.key?(a) && nets.key?(b)
+
+        [a, b]
+      end
+    end
+
+    # The networks directly joined to a network by a link (undirected), sorted by id.
+    def linked_networks(data, network)
+      return [] unless present_string?(network)
+
+      out = []
+      network_links(data).each do |a, b|
+        out << b if a == network
+        out << a if b == network
+      end
+      out.uniq.sort
+    end
+
+    # The cap on how many simple paths reach_paths returns (plan 5.1, open question 6): the
+    # validator warns above it. A hard ceiling on the enumeration keeps a dense link graph
+    # from a runaway walk on every GET /network.
+    REACH_PATHS_CAP = 8
+    REACH_PATHS_CEILING = 64
+
+    # Every simple path of network ids from `from` to `to` over the link graph, shortest
+    # first and, within one length, ordered by the id list, so the output is stable. Bounded
+    # by REACH_PATHS_CEILING to cap the walk; the caller (reach_paths) applies the eight cap.
+    def all_reach_paths(data, from, to)
+      nets = networks(data)
+      return [] unless present_string?(from) && present_string?(to) && nets.key?(from) && nets.key?(to)
+      return [[from]] if from == to
+
+      adj = Hash.new { |h, k| h[k] = [] }
+      network_links(data).each do |a, b|
+        adj[a] << b
+        adj[b] << a
+      end
+      adj.each_value { |v| v.uniq!; v.sort! }
+
+      found = []
+      walk = lambda do |path|
+        return if found.length >= REACH_PATHS_CEILING
+
+        last = path.last
+        if last == to
+          found << path
+          return
+        end
+        adj[last].each do |nb|
+          next if path.include?(nb)
+
+          walk.call(path + [nb])
+        end
+      end
+      walk.call([from])
+      found.sort_by { |p| [p.length, p] }
+    end
+
+    # The simple paths reach_paths exposes: all of them, shortest first, capped at eight.
+    def reach_paths(data, from, to)
+      all_reach_paths(data, from, to).first(REACH_PATHS_CAP)
+    end
+
+    # Every grant_foothold action the server can honour (slice 9.3b sub-slice I, 5.5).
+    # Walks the scenario and keeps a grant_foothold only where DeclaredGrants.executed?
+    # says the path is server-run (a timers entry's actions, an object's triggerOnInteract,
+    # onInteract.actions, conditionalActions, or an onConfirm whose own path is server-run),
+    # the same test the validator uses, so "declared" means one thing in both places. Each
+    # entry: { pc:, shape: 'dropped' | 'session', needs_dropped:, needs_held:, name:, path: }.
+    # Built beside the rogue-device walk, not inside DeclaredGrants.for (whose { path, item }
+    # contract for give_item must stay untouched).
+    def grant_foothold_actions(data)
+      out = []
+      return out unless data.is_a?(Hash)
+
+      walk = lambda do |node, keys|
+        case node
+        when Hash
+          if node['type'] == 'grant_foothold' && DeclaredGrants.executed?(keys)
+            shape = node['needsSession'] ? 'session' : 'dropped'
+            out << { pc: node['pc'].to_s, shape: shape, needs_dropped: node['needsDropped'],
+                     needs_held: node['needsHeld'], name: node['name'], path: DeclaredGrants.path_string(keys) }
+          end
+          node.each { |k, v| walk.call(v, keys + [k.to_s]) }
+        when Array
+          node.each_with_index { |v, i| walk.call(v, keys + [i]) }
+        end
+      end
+      walk.call(data, [])
+      out
+    end
+
+    # How a station on station_network reaches a resource (4.2), as a list of routes, each a
+    # list of condition globals: [[]] is one route with no conditions, [] is no route. A
+    # resource with no network is reachable with no condition; one on the station's own
+    # network is reached by the station network's own outage condition; one on another
+    # network is reached over the links, each route the downIf globals of the networks on one
+    # of its simple paths (the station's, every intermediate's and the resource's network,
+    # not the resource's own downIf). No path means no route. In sub-slice K no network
+    # carries downIf (sub-slice O un-reserves it), so every route is empty; the shape is
+    # ready for O. 9.2's NPC-work composer reads this as `routes`.
     def reach_conditions(data, station_network, resource)
-      _ = data
       target = resource.is_a?(Hash) ? resource['network'] : nil
       return [[]] unless present_string?(target)
-      return [[]] if present_string?(station_network) && station_network == target
+      return [] unless present_string?(station_network)
 
-      []
+      paths = reach_paths(data, station_network, target)
+      return [] if paths.empty?
+
+      nets = networks(data)
+      down_of = lambda do |net_id|
+        net = nets[net_id]
+        down = net.is_a?(Hash) ? net['downIf'] : nil
+        present_string?(down) ? down : nil
+      end
+      paths.map { |path| path.map { |net_id| down_of.call(net_id) }.compact.uniq }
+    end
+
+    # Outages (slice 9.3b sub-slice O, docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.2).
+    # This is the single Ruby truthy source: AccessWork.truthy_global? delegates here,
+    # and slice 9.2's npc-work.js `truthy` mirrors it on the client, so the server, the browser
+    # and the validator decide an outage the same way. True unless the value is one of the
+    # globals-relevant falsy forms: false, nil, 0, "" and a missing key (read as nil) are
+    # falsy; everything else, the string "false" included, is truthy. 0.0 is falsy too, through
+    # Ruby's 0.0 == 0 (and JS's 0.0 === 0), not a clause of its own. It is the globals-relevant
+    # subset of JavaScript's rule: a scenario global is never NaN or undefined.
+    def truthy?(value)
+      !(value.nil? || value == false || value == 0 || value == '')
+    end
+
+    # Wi-Fi (slice 9.3b sub-slice W, docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.3).
+    # The { ssid, psk } block of a network, or nil. It lives on the network and never ships
+    # to the browser; psk absent means an open network.
+    def wifi_of(data, network_id)
+      net = networks(data)[network_id]
+      wifi = net.is_a?(Hash) ? net['wifi'] : nil
+      wifi.is_a?(Hash) ? wifi : nil
+    end
+
+    # Every room object with wifiAp: true whose network defines a wifi block (5.3), as
+    # room_objects entries. Several access points may serve one network.
+    def wifi_aps(data)
+      room_objects(data).select do |entry|
+        obj = entry[:object]
+        obj.is_a?(Hash) && obj['wifiAp'] == true && present_string?(entry[:network]) &&
+          !wifi_of(data, entry[:network]).nil?
+      end
     end
 
     def present_string?(value)

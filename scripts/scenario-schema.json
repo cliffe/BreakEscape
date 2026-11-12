@@ -201,16 +201,17 @@
     "defaultPolicy": { "type": "string", "description": "Access model: the policy a PC with no policy of its own uses." },
     "networks": {
       "type": "object",
-      "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.1): network id to { name }. The name is what the player sees once they hold a foothold on it. Never sent in the bootstrap. downIf and wifi are reserved for slice 9.3b and refused by the validator.",
+      "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.1): network id to { name }. The name is what the player sees once they hold a foothold on it. Never sent in the bootstrap.",
       "additionalProperties": {
         "type": "object",
         "properties": {
           "name": { "type": "string", "minLength": 1 },
-          "downIf": { "type": "string", "description": "Reserved for slice 9.3b (outages)." },
+          "downIf": { "type": "string", "description": "Slice 9.3b (outages, 5.2): a global name; the network is down while that global is truthy. While down its hosts leave the view, its desktops and shares are not served, and a held session over the route is kept but shown no route until the route returns. Read server-side." },
           "wifi": {
             "type": "object",
-            "description": "Reserved for slice 9.3b (Wi-Fi).",
-            "properties": { "ssid": { "type": "string" }, "psk": { "type": "string" }, "_comment": { "type": "string" } }
+            "description": "Slice 9.3b (Wi-Fi, 5.3): an in-game SSID and pre-shared key for this network. Never sent in the bootstrap. psk absent means an open network. An access point object (wifiAp) joins it in the key minigame.",
+            "properties": { "ssid": { "type": "string", "minLength": 1 }, "psk": { "type": "string" }, "_comment": { "type": "string" } },
+            "required": ["ssid"]
           },
           "_comment": { "type": "string" }
         },
@@ -219,7 +220,7 @@
     },
     "networkLinks": {
       "type": "array",
-      "description": "Reserved for slice 9.3b: pairs of network ids a link joins. Refused by the 9.3a validator.",
+      "description": "Links (ACCESS_MODEL_SLICE_9_3B_PLAN.md 4.1): an undirected link joins two in-game networks. Each entry is a two-item list of network ids. A rogue device's foothold is not a member of a linked network; the linked network is reached only by pivoting through a host the player holds a session on.",
       "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 }
     },
     "resources": {
@@ -401,6 +402,7 @@
             "title": {"type": "string"},
             "pinHints": {"type": "boolean", "description": "Show a visible 'Pin' affordance on each not-yet-noted selectable block, so it is clear a block can be clicked to add it to notes. Default off (unchanged). Set true for learners unfamiliar with the browse-and-pin pattern"},
             "pinLabel": {"type": "string", "description": "The word on the pin affordance when pinHints is on; default 'Pin'"},
+            "postToasts": {"type": "boolean", "description": "Slice 9.2 C (section 8.3): a toast \"<name> posted on <site>\" when an NPC's feed post comes out on a site the player has opened. Default true; false turns it off"},
             "sites": {"type": "array", "items": {"$ref": "#/definitions/socialOsintSite"}},
             "tools": {"type": "array", "items": {"$ref": "#/definitions/socialOsintTool"}}
           },
@@ -4001,7 +4003,7 @@
         "locked": { "type": "boolean" },
         "doors": {
           "type": "array",
-          "description": "Per-door overrides for this room's doorways. Optional.",
+          "description": "Entries for this room's doorways, matched by connectedRoom and direction (first match wins). An entry carries a gate; lock fields (locked, lockType, requires, keyPins and the rest) belong on the room the door leads into, because the game never reads them on a door entry. Optional.",
           "items": {
             "type": "object",
             "properties": {
@@ -4037,7 +4039,7 @@
         },
         "lockType": {
           "type": "string",
-          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel"]
+          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "combination", "cryptex"]
         },
         "access": { "$ref": "#/definitions/accessList" },
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
@@ -4046,9 +4048,10 @@
         "requires": {
           "oneOf": [
             { "type": "string" },
-            { "type": "array", "items": { "type": "string" } }
+            { "type": "array", "items": { "type": ["string", "integer"] }, "description": "A list of ids, or a combination padlock's three numbers such as [12, 30, 5] (the server compares a combination as numbers)" }
           ]
         },
+        "cryptexConfig": { "type": "object", "description": "A cryptex door's wheels: wheelCount, alphabets, hintStrip, wornRings, maxAttempts. The answer goes in requires, never here." },
         "keyPins": {
           "type": "array",
           "items": { "type": "integer" }
@@ -4415,7 +4418,8 @@
                               "description": "Run on arrival at this waypoint, before the dwell or the next leg. See README_scenario_design.md, 'Patrol Behaviour'.",
                               "properties": {
                                 "unlockRoom": { "type": "string", "description": "Room id: the NPC unlocks it on the server as itself (needs an eventMapping with unlockDoor naming it), loads it, then carries on" },
-                                "useObject": { "type": "string", "description": "Scenario object id the NPC turns to face" }
+                                "useObject": { "type": "string", "description": "Scenario object id the NPC turns to face. Emits npc_used_object:<id> { npcId, objectId, roomId, useMs } as he starts and npc_used_object_done:<id> when he has finished (at once without useMs)" },
+                                "useMs": { "type": "number", "minimum": 0, "maximum": 30000, "description": "With useObject: ms the NPC stands at the object using it (a PIN keyed at a reader) before npc_used_object_done and the rest of the action. Default 0. The engine also reads a numeric string; the validator rejects one" }
                               }
                             }
                           }
@@ -4652,6 +4656,7 @@
                 "properties": {
                   "weight": { "type": "number", "minimum": 0.1, "maximum": 10 },
                   "noticeRooms": { "type": "array", "items": { "type": "string" }, "description": "Room ids where the NPC notices items (default: the room of needsHome)" },
+                  "noticeRadius": { "type": "number", "minimum": 0.5, "maximum": 100, "description": "Tiles from where the NPC stands within which it notices an item in its noticeRooms (default 24, a whole 20 x 10 room). Smaller makes placement matter: a drop near this NPC gets found by them, one across the room does not. The engine also reads a numeric string and treats 0 as the default; the validator rejects both" },
                   "_comment": { "type": "string" }
                 },
                 "required": ["weight"],
@@ -4682,7 +4687,7 @@
         "workarounds": { "type": "array", "items": { "type": "object", "required": ["at", "do"], "properties": { "at": { "type": "number", "minimum": 1, "maximum": 100 }, "do": { "type": "string", "enum": ["writes_down", "prop_door", "emit", "borrow_session", "share_login"] }, "pc": { "type": "string" }, "with": { "type": "string" }, "door": { "type": "string" }, "prop": { "type": "string" }, "event": { "type": "string" }, "setGlobal": { "type": "string" }, "noWarning": { "type": "boolean" }, "_comment": { "type": "string" } } }, "description": "Slice 9.2 (section 6): what this person does as frustration rises. Replaces the role's list. Room NPCs only; never sent to the browser." },
         "phone": { "type": "boolean", "description": "Slice 9.2 (section 8): false: the NPC has no phone. Default true for an NPC with a social_media need." },
         "socialUse": { "type": "object", "properties": { "restores": { "type": "number" }, "useSeconds": { "type": "number", "minimum": 0 }, "_comment": { "type": "string" } }, "description": "Slice 9.2: a social media use (defaults 60 and 20)." },
-        "feed": { "type": "object", "properties": { "site": { "type": "string" }, "person": { "type": "string" }, "posts": { "type": "array", "items": { "type": "object" } }, "_comment": { "type": "string" } }, "description": "Slice 9.2 (section 8): posts revealed one at a time into the social media browser. Room NPCs only; withheld until each is revealed." },
+        "feed": { "type": "object", "properties": { "site": { "type": "string" }, "person": { "type": "string" }, "order": { "type": "string", "enum": ["facts_first", "reactive_first", "mixed"], "description": "C2: how ordered and reactive posts interleave. Default facts_first." }, "posts": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "text": { "type": "string", "description": "A reply's text may hold {name}, filled by the server with the named NPC's Friendface name." }, "fact": { "type": "string" }, "date": { "type": "string" }, "note": { "type": "string" }, "deliberate": { "type": "boolean", "description": "C: a high-awareness NPC posting a fact on purpose." }, "when": { "type": "object", "description": "C2: a reactive post's condition (frustrationAtLeast, frustrationBelow, cause, need, workaround, needMet, global). Server-only." }, "replyTo": { "type": "string", "description": "C3: a reply naming an own post on a room NPC's feed on the same site; the replier's own post makes an answer." }, "replyToComplaint": { "type": "string", "description": "C3: a reply joining a served vent tagged with this complaint on another NPC's feed. Server-only." }, "complaint": { "type": "string", "description": "C3: tags an own post as a vent in this complaint. Server-only." }, "insteadOf": { "type": "string", "description": "C3: the replier's own reactive post that the reply stands in for. Server-only." } } } }, "_comment": { "type": "string" } }, "description": "Slice 9.2 (section 8): posts revealed one at a time into the social media browser. Room NPCs only; withheld until each is revealed." },
         "needsCompany": {
           "type": "object",
           "description": "NPC needs system, social compatibility (OFFICE_LIFE_PLAN 7.3). Two NPCs chat at a shared object only if neither avoids the other and they share a group (or either has none). An avoidance is declared one way and acts BOTH ways: it also stops the two sharing a capacity-2 object (the second waits; npc_avoided:<npcId>). With no needsCompany anywhere, everyone pairs. Slice 14: an NPC that declares avoids (or an avoidRadius) also turns away from a source someone avoided (either way) is using, is queued for, or stands within avoidRadius tiles of (npc_turned_back, npc_need_parked).",
@@ -4718,6 +4723,7 @@
         "swivel": { "type": "boolean", "description": "Idle swivel (OFFICE_LIFE_PLAN 12.7, slice 21): false stops this needs NPC turning its swivel chair to glance round or towards a colleague speaking nearby. Default on for needs NPCs; static seats never turn." },
         "swivelChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Idle swivel: the seeded chance per 6 s slot of the needs clock that this NPC turns its chair one compass step and back (default 0.05)." },
         "printHabit": { "type": "object", "additionalProperties": false, "description": "Print and forget (OFFICE_LIFE_PLAN 12.3, slice 17): this NPC owns what it prints (revealOutput hooks and needs.print commands). An owned print is reserved from other NPCs' interests; two seeded rolls per owned print decide forget, else a due time, from which the NPC fetches it to its needsHome object (an errand: it walks over, carries it back, sets it down, emits npc_print_fetched:<npcId>). Events: npc_print_uncollected:<npcId> (still on the tray after the producer's uncollectedAfterSeconds), npc_print_gone:<npcId> (taken before the fetch).", "properties": { "fetchAfterSeconds": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 3600 }, "minItems": 2, "maxItems": 2, "description": "[min, max] seconds after the print before the fetch (default [20, 60])." }, "forgetChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Chance 0..1 that a print is never fetched (default 0)." }, "weight": { "type": "number", "minimum": 0.1, "maximum": 10, "description": "Score of the fetch, like an interest's weight (default 2): an urgent need can still win." }, "shareAfterSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "Unset by default. After this long an unfetched print is no longer reserved, so interest NPCs (a tidy colleague) may take it." }, "_comment": { "type": "string" } } },
+        "usbHabit": { "type": "object", "additionalProperties": false, "description": "USB habit (USB_HABIT_PLAN.md, user decision q39): every nth judged work use at the NPC's own station (its needsHome) copies a file to a USB stick. Where the station's policy refuses storage (usb storage_blocked or blocked) the use fails with the cause usb_refused: the NPC mutters from the usb_refused pool, npc_usb_refused:<npcId> fires and a reactive feed post can key on \"cause\": \"usb_refused\". Where the policy allows it, npc_usb_copied:<npcId> fires. Needs a work plan (a work need and a non-empty work list). The NPC must hold the stick: a usb item with an id in itemsHeld (sprite usb_bowl1, usbClass storage or none, takeable). Its contents are the files on it, text_file items each with an id, name and text, and unlocked folders or archives of them; with no contents it holds one default work_file.txt. Offer an ink give of the stick only after the first refusal (gate it on setGlobal), or the habit stops before it acts. The files are served only to a player who holds the stick (given, pickpocketed, or picked up after a knock-out), never in room data. Once the stick has left the NPC the habit stops: a use is a plain use, not a failure. Room NPCs only; the browser gets it inside the work plan.", "properties": { "every": { "type": "integer", "minimum": 1, "maximum": 10, "description": "Every nth judged work use at the station carries the copy (default 2)." }, "setGlobal": { "type": "string", "minLength": 1, "description": "The workaround: a declared global set true when a refusal is first recorded (the NPC emails the file to itself instead). The server sets it on the accepted fail." }, "_comment": { "type": "string" } } },
         "screenHabit": { "type": "object", "additionalProperties": false, "description": "Lock-screen habit (systems/workstation-state.js, OFFICE_LIFE_PLAN 12.2, slice 16): how this person leaves the workstation they own. Applies only where the station sets neither lockChance nor locksScreenOnLeave (the object wins). A trip expected to last at most lockIfAwayOverSeconds stays open; a longer one, or one with no estimate, rolls lockChance (seeded, salt habit:<objectId>:<leaves>); the threshold alone means a long trip always locks. A locksScreen habit (slice 9.1) fills this when it is not authored; an authored screenHabit wins.", "properties": { "lockChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Chance 0..1 that a (long) trip locks the screen." }, "lockIfAwayOverSeconds": { "type": "number", "minimum": 0, "description": "Lock only when the trip is expected to last longer than this (npc_left_post expectedAwayMs)." }, "_comment": { "type": "string" } } },
         "answersPhones": { "type": "boolean", "description": "Desk phones (OFFICE_LIFE_PLAN 12.5, slice 19): true lets this needs NPC answer a colleague's ringing desk phone in its own room. From the second ring, the nearest such NPC that is idle at its post and does not avoid the owner walks over (a real leave, standing at the phone) unless the owner gets back first (turn-back reason answered); if it rings out first, it turns back (rang_out)." },
         "phoneCalls": { "type": "array", "description": "Desk phones (slice 19): ink knots in this NPC's own story, half a phone conversation each: every line is this NPC's own (no 'Name:' prefix), voiced one per bubble with listening gaps when the player is in earshot. Played once per game (sets heard_<knot>, declare it; emits npc_call_heard:<knot>); then calls use the NPC's chatter pool 'phone' (on its own phone) or 'phone_message' (answering someone else's), then the phone picture.", "items": { "type": "object", "properties": { "knot": { "type": "string", "minLength": 1 }, "requireGlobal": { "description": "Only while this global holds: a name (truthy) or { name: value }", "oneOf": [ { "type": "string" }, { "type": "object" } ] }, "_comment": { "type": "string" } }, "required": ["knot"], "additionalProperties": false } },
@@ -4905,7 +4911,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "description": "Sprite name for this item. Any valid sprite asset name is accepted. Certain types have special engine behaviour: 'pc' (file container), 'safe'/'suitcase'/'briefcase'/'bin'/'bin1' (locked containers), 'vm-launcher' (VM terminal), 'launch-device' (launch/abort prop), 'flag-station' (flag submission), 'lockpick'/'key'/'keycard'/'rfid_cloner'/'pin-cracker'/'bluetooth_scanner'/'fingerprint_kit' (security tools), 'notes'/'notes2'/'notes4'/'notes5'/'text_file'/'chalkboard' (readable content). Can be combined with 'observations' for any sprite."
+          "description": "Sprite name for this item. Any valid sprite asset name is accepted. Certain types have special engine behaviour: 'pc' (file container), 'safe'/'suitcase'/'briefcase'/'bin'/'bin1' (locked containers), 'vm-launcher' (VM terminal), 'launch-device' (launch/abort prop), 'flag-station' (flag submission), 'lockpick'/'key'/'keycard'/'rfid_cloner'/'pin-cracker'/'bluetooth_scanner'/'fingerprint_kit' (security tools), 'phone_friendface' (a Friendface phone: opens the social feed; see phoneOf), 'notes'/'notes2'/'notes4'/'notes5'/'text_file'/'chalkboard' (readable content). Can be combined with 'observations' for any sprite."
         },
         "id": { "type": "string", "description": "This object's own unique identity, distinct from opens_lock (which names the lock it opens). Used to target this specific object." },
         "name": { "type": "string" },
@@ -5034,12 +5040,12 @@
         },
         "lockType": {
           "type": "string",
-          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "login"]
+          "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "login", "combination", "cryptex"]
         },
         "requires": {
           "oneOf": [
             { "type": "string" },
-            { "type": "array", "items": { "type": "string" } }
+            { "type": "array", "items": { "type": ["string", "integer"] }, "description": "A list of ids, or a combination padlock's three numbers such as [12, 30, 5] (the server compares a combination as numbers)" }
           ]
         },
         "opens_lock": { "type": "string", "description": "The lock this item opens -- a reference to a lock's 'requires' value, NOT this item's own name. Many-to-one: two spare keys to the same door share one opens_lock and keep distinct 'id's. If the value does not name a lock, it is an identity and belongs in 'id'." },
@@ -5083,6 +5089,14 @@
         "mac": { "type": "string" },
         "canScanBluetooth": { "type": "boolean" },
         "phoneId": { "type": "string" },
+        "phoneOf": {
+          "type": "string",
+          "description": "A Friendface phone (type 'phone_friendface'): the id of the NPC whose phone it is. It sits in that NPC's itemsHeld; once the player has it the NPC has no phone for the rest of the run. Absent: the player's own phone, which opens the whole feed (FRIENDFACE_PHONE_ITEM_PLAN.md)."
+        },
+        "site": {
+          "type": "string",
+          "description": "The player's own Friendface phone (type 'phone_friendface', no phoneOf): the social.osint site it opens. Default: the first social site."
+        },
         "npcIds": {
           "type": "array",
           "items": { "type": "string" }
@@ -5165,8 +5179,13 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact", "add_capture", "set_costume", "clear_costume", "hint", "wear", "take_off"]
+                "enum": ["set_global", "emit_event", "complete_task", "unlock_task", "unlock_aim", "confirm_action", "unlock_object", "unlock_door", "give_item", "tint_objects", "show_end_screen", "lighting_dip", "grant_fact", "add_capture", "set_costume", "clear_costume", "hint", "wear", "take_off", "grant_foothold"]
               },
+              "pc": { "type": "string", "description": "grant_foothold (slice 9.3b I): the sign-in PC whose own network the implant foothold reaches. Never the sign-in PC's own actions (it sits on a separate prop or a timer)." },
+              "needsDropped": { "type": "string", "description": "grant_foothold dropped shape: the item id the player must have dropped (an NPC then uses it). One of needsDropped or needsSession, never both." },
+              "needsSession": { "type": "boolean", "description": "grant_foothold session shape: the player must already hold a non-foothold session at the PC and carry needsHeld, which the server removes. One of needsDropped or needsSession, never both." },
+              "needsHeld": { "type": "string", "description": "grant_foothold session shape: the device (by id, type or name) the player plugs in; the server removes it on success. Its host object must not set consumesItem." },
+              "name": { "type": "string", "description": "give_item/grant_foothold: the item label (a link-item label for grant_foothold, not a secret)." },
               "key": { "type": "string" },
               "condition": { "type": "string", "minLength": 1, "description": "Any action: run it only while this holds, read when the action is reached. globalVars terms (globalVars.x, !globalVars.x, or a comparison with true, false, null, a number or a quoted string) joined by && and ||, no parentheses. Anything else never holds. Read by the client only: the server ignores it." },
               "message": { "type": "string", "description": "hint: the toast text. Its heading is `title` (default 'Intelligence Received')." },
@@ -5285,9 +5304,9 @@
         "linkName": { "type": "string", "description": "Networks 4.1: the name of the link item the plant puts in the inventory. Default: <device name>: <jack name>." },
         "linkStoreIn": { "type": "string", "description": "Networks 13.4: the holder the link item is filed in (storeIn)." },
         "rogueDevice": { "type": "boolean", "description": "Networks 3.3: a takeable item with an id that can be planted in a jack. Not droppable." },
-        "wifiAp": { "description": "Reserved for slice 9.3b (Wi-Fi). Refused by the 9.3a validator." },
-        "portSecurity": { "description": "Reserved for slice 9.3b (port security). Refused by the 9.3a validator." },
-        "portSecurityMessage": { "type": "string", "description": "Reserved for slice 9.3b (port security). Refused by the 9.3a validator." },
+        "wifiAp": { "type": "boolean", "description": "Slice 9.3b (Wi-Fi, 5.3): true marks this object a Wi-Fi access point on its network (which must define a wifi block). Its click is the join flow; it is not a sign-in host, a jack or a lock." },
+        "portSecurity": { "type": "boolean", "description": "Networks 9.3b (port security): on a networkJack, the switch port refuses an unknown device. The device goes in, no foothold is given, and it stays in the inventory. Only valid on a jack; cannot be combined with wifiAp." },
+        "portSecurityMessage": { "type": "string", "description": "Networks 9.3b (port security): the line shown when a secured jack refuses a device. Needs portSecurity: true. A default naming the fix (disable unused ports) is used when absent." },
         "transfer": { "type": "string", "enum": ["copy", "move", "both"], "description": "Access model 5.1: what a takeable file on a sign-in desktop allows. Default both." },
         "cloneable": { "type": "boolean", "description": "Access model 4.2: false stops the server recording a card copier copy of this keycard." },
         "identity": { "type": "string", "description": "Access model section 3: for readability, the NPC id whose card this keycard is; the validator checks that NPC carries its card_id." },

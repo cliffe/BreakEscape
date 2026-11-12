@@ -63,12 +63,31 @@ counts = scanner.counts
 puts "access leak check: game #{game.id} (mission #{game.mission_id}), #{lines.length} responses from #{files.length} file(s)"
 puts "unreadable lines #{unreadable}" if unreadable.positive?
 puts "secrets checked  #{counts[:passwords]} NPC password(s), #{counts[:login_items]} sign-in PC or profile item(s), " \
-     "#{counts[:locked_items]} locked-container item(s), #{counts[:workarounds]} workaround(s)"
+     "#{counts[:locked_items]} locked-container item(s), #{counts[:stick_items]} USB stick file(s), #{counts[:workarounds]} workaround(s), " \
+     "#{counts[:feed_posts]} feed post(s) (#{counts[:feed_texts]} text(s)), #{counts[:feed_facts]} feed fact(s), #{counts[:lockout_records]} recorded lockout(s)"
 by_rule = findings.group_by(&:rule)
 AccessLeakScanner::RULE_TEXT.each do |rule, text|
-  puts "#{rule.ljust(16)} #{(by_rule[rule] || []).length}  (#{text})"
+  puts "#{rule.ljust(20)} #{(by_rule[rule] || []).length}  (#{text})"
 end
 scanner.report_lines(findings).each { |line| puts line }
+unless scanner.feed_fallback.empty?
+  puts "note             feed posts for #{scanner.feed_fallback.join(', ')} judged partly by the game's saved feedRevealed: " \
+       'fewer /feed_post answers in the log than the game revealed (a resumed game or a lost response body)'
+end
+unless scanner.feed_ruled_out.empty?
+  puts "note             feed posts for #{scanner.feed_ruled_out.join(', ')}: no lost /feed_post answer in the log could be theirs " \
+       '(at least one was tagged for another NPC), so their missing reveals count from the first line: a resumed game or a ' \
+       'response the capture missed. Check that the log began after their reveals'
+end
+if scanner.feed_tags_ignored
+  puts 'note             a readable /feed_post answer named another NPC than its npcId tag, so every npcId tag in the log ' \
+       'was ignored and lost answers were judged by the old rule'
+end
+unless scanner.feed_unknown.empty?
+  puts "note             feed posts for #{scanner.feed_unknown.join(', ')} allowed one more reveal at each /feed_post " \
+       'answer whose body the log lost, from that answer on only, and none at an answer captured after the ' \
+       "NPC's last saved reveal or tagged with another NPC's npcId"
+end
 if lines.any? { |_label, _no, row| row.is_a?(Hash) && (row.key?('dom') || row['path'].to_s.split('?').first.to_s.end_with?('/capture_secrets')) }
   puts 'note             capture answers judged against the proofs held now: run this after every beat to see order'
 end

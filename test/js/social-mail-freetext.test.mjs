@@ -21,7 +21,7 @@ const dir = mkdtempSync(join(tmpdir(), 'social-mail-freetext-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
-    'utils/display-dashes.js', 'ui/modal-stack.js',
+    'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js',
     'systems/phish-rules.js', 'systems/global-writer.js', 'systems/social-influence.js',
     'ui/influence-bar.js', 'systems/mail-scheduler.js', 'systems/mail-runner.js', 'systems/mail-ink.js',
     'systems/ink/ink-engine.js',

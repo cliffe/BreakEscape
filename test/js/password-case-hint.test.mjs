@@ -20,6 +20,8 @@ writeFileSync(join(root, 'package.json'), '{"type":"module"}');
 writeFileSync(join(root, 'config.js'), 'export const ASSETS_PATH = "";\n');
 writeFileSync(join(root, 'utils', 'helpers.js'), 'export function makeDraggable() {}\n');
 writeFileSync(join(root, 'utils', 'display-dashes.js'), 'export function displayDashes(s) { return s; }\n');
+writeFileSync(join(root, 'utils', 'escape-html.js'), readFileSync(join(here, '../../public/break_escape/js/utils/escape-html.js'), 'utf8'));
+writeFileSync(join(root, 'utils', 'lock-scope-refusal.js'), readFileSync(join(here, '../../public/break_escape/js/utils/lock-scope-refusal.js'), 'utf8'));
 writeFileSync(join(dir, 'framework', 'base-minigame.js'), 'export class MinigameScene { constructor() {} }\n');
 writeFileSync(join(dir, 'password', 'password-minigame.mjs'), readFileSync(src, 'utf8'));
 

@@ -1,7 +1,7 @@
 // A2b R1 M3 / m3: the bark hold during a ringer call, driven through the real
 // minigame-manager.js endMinigame (drain, then end hook), the real NPCBarkSystem._shouldDefer,
 // and the real ringer adapter. Also: the end hook still runs when a cleanup throws.
-// Copy list: minigame-manager.js, base-minigame.js, display-dashes.js, npc-barks.js (imports stubbed).
+// Copy list: minigame-manager.js, base-minigame.js, display-dashes.js, escape-html.js, npc-barks.js (imports stubbed).
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
@@ -13,7 +13,10 @@ import { makeWorld, endCall, jsRoot } from './phone-ring-harness.mjs';
 const dir = mkdtempSync(join(tmpdir(), 'phone-bark-hold-'));
 const rd = (p) => readFileSync(join(jsRoot, p), 'utf8');
 writeFileSync(join(dir, 'display-dashes.mjs'), rd('utils/display-dashes.js'));
-writeFileSync(join(dir, 'base-minigame.mjs'), rd('minigames/framework/base-minigame.js').replace("'../../utils/display-dashes.js'", "'./display-dashes.mjs'"));
+writeFileSync(join(dir, 'escape-html.mjs'), rd('utils/escape-html.js'));
+writeFileSync(join(dir, 'base-minigame.mjs'), rd('minigames/framework/base-minigame.js')
+  .replace("'../../utils/display-dashes.js'", "'./display-dashes.mjs'")
+  .replace("'../../utils/escape-html.js'", "'./escape-html.mjs'"));
 writeFileSync(join(dir, 'minigame-manager.mjs'), rd('minigames/framework/minigame-manager.js').replace("'./base-minigame.js'", "'./base-minigame.mjs'"));
 writeFileSync(join(dir, 'npc-barks.mjs'), `
 const ASSETS_PATH = '', overlayDepth = () => 0, displayDashes = (s) => s, releaseHeldBarks = () => {};

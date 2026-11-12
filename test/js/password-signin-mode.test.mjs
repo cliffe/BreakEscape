@@ -24,6 +24,9 @@ const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('config.js', 'export const ASSETS_PATH = "/break_escape/assets";\n');
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
+copy('utils/escape-html.js');
+copy('utils/lock-scope-refusal.js');
+copy('utils/author-html.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/password/password-minigame.js');
 
@@ -31,7 +34,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const {
-    PasswordMinigame, applyTilePortrait, isTalkSheetSize, tileInitials, portraitUrl, signInRefusalMessage, capturedSignIns
+    PasswordMinigame, applyTilePortrait, isTalkSheetSize, tileInitials, portraitUrl, signInRefusalMessage, signInErrorMessage, capturedSignIns
 } = await import(pathToFileURL(join(dir, 'minigames/password/password-minigame.js')));
 
 const TILES = [
@@ -225,6 +228,15 @@ test('a failed portrait falls back to the avatar, then to initials', async () =>
     const noPictures = document.createElement('span');
     applyTilePortrait(noPictures, { username: 'ishaw', displayName: 'Ian Shaw' }, fakeImage({}));
     assert.equal(noPictures.textContent, 'IS');
+});
+
+// q72 and review R2 nit 1: a switched-off PC says so, in the words its row and the keyboard use
+test('the error line names a switched-off PC: off at the keyboard, not responding through a foothold', () => {
+    assert.equal(signInErrorMessage({ error: true, status: 403, serverReason: 'off' }), 'This PC is off.');
+    assert.equal(signInErrorMessage({ error: true, status: 403, serverReason: 'not_responding' }), 'This PC is not responding.');
+    assert.equal(signInErrorMessage({ error: true, status: 403, serverReason: null }), "This PC can't be reached.");
+    assert.equal(signInErrorMessage({ error: true, status: 404 }), "This PC can't be reached.");
+    assert.equal(signInErrorMessage({ error: true, status: null }), 'Network error. Please try again.');
 });
 
 test('the refusal line', () => {

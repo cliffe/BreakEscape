@@ -156,6 +156,11 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         this._visit(place);
         this._renderStrip();
         this._renderMain();
+        const ed = typeof window !== 'undefined' ? window.eventDispatcher : null;
+        if (ed?.on) {
+            this._postedHandler = (data) => this._onPosted(data);
+            ed.on('npc_posted:*', this._postedHandler);
+        }
     }
 
     start() {
@@ -391,10 +396,66 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         wrap.appendChild(h('p', { class: 'ob-back' }, this._link('All profiles', site.id)));
         wrap.appendChild(this._profileHeader(profile));
         const body = h('div', { class: 'ob-blocks' });
+        // Access 9.2 C (plan 8.3): the feed posts revealed so far, newest first, then the authored ones
+        // C3 (plan 4): each own post's thread under it, oldest first; a reply to a colleague is
+        // listed on its replier's profile with a "Replied to" line and no thread
+        for (const post of this._feedPosts(site.id, profile.person)) {
+            if (typeof post.replyTo === 'string') {
+                body.appendChild(this._replyEntry({ person: profile.person, post }, true));
+                continue;
+            }
+            this._addBlock(body, { kind: 'post', ...post }, site);
+            const replies = this._feedReplies(post.id);
+            if (replies.length) {
+                const thread = h('div', { class: 'ob-thread', 'aria-label': 'Replies' });
+                for (const r of replies) thread.appendChild(this._replyEntry(r, false));
+                body.appendChild(thread);
+            }
+        }
         for (const post of profile.posts || []) this._addBlock(body, { kind: 'post', ...post }, site);
         for (const b of profile.blocks || []) this._addBlock(body, b, site);
         wrap.appendChild(body);
         return wrap;
+    }
+
+    /** Revealed feed posts for a profile (systems/social-feed.js), newest first; none: []. */
+    _feedPosts(siteId, personId) {
+        const feed = this.params.feed || (typeof window !== 'undefined' ? window.socialFeed : null);
+        return typeof feed?.postsFor === 'function' ? feed.postsFor(siteId, personId) : [];
+    }
+
+    /** C3: the thread under one feed post (systems/social-feed.js repliesFor), oldest first; none: []. */
+    _feedReplies(postId) {
+        const feed = this.params.feed || (typeof window !== 'undefined' ? window.socialFeed : null);
+        return typeof feed?.repliesFor === 'function' ? feed.repliesFor(postId) : [];
+    }
+
+    /**
+     * C3: one reply, as plain text: the replier's headshot and name, then its text. On the
+     * replier's own profile (`onProfile`) a "Replied to <poster>" line sits above the text.
+     * Replies carry no fact, so nothing here is selectable.
+     */
+    _replyEntry(reply, onProfile) {
+        const post = reply.post || {};
+        const to = onProfile && typeof post.replyToPerson === 'string'
+            ? h('span', { class: 'ob-line ob-reply-to', text: `Replied to ${this._profileName({ person: post.replyToPerson })}` })
+            : null;
+        const author = onProfile ? null : h('span', { class: 'ob-line ob-post-author' }, this._headshot({ person: reply.person }),
+            h('span', { class: 'ob-profile-name', text: this._profileName({ person: reply.person }) }));
+        return h('div', { class: `ob-item ob-post ob-reply${onProfile ? ' ob-reply-own' : ''}`, 'data-post': post.id || '' },
+            author, to, h('p', { class: 'ob-text', text: post.text || '' }));
+    }
+
+    /** Access 9.2 C: a post made while this profile is open appears without closing the browser. */
+    _onPosted(data) {
+        const p = this.place;
+        if (!this.main || !p || p.view !== 'social' || p.site?.id !== data?.site) return;
+        // C3: a reply also re-renders its thread poster's open profile
+        if (p.pageId !== data?.person && !(typeof data?.replyToPerson === 'string' && p.pageId === data.replyToPerson)) return;
+        // Review C R1 nit: a post arriving while the player reads keeps the scroll position
+        const top = this.main.scrollTop;
+        this._renderMain();
+        if (typeof top === 'number') this.main.scrollTop = top;
     }
 
     _profileName(profile) {
@@ -774,6 +835,10 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
     }
 
     cleanup() {
+        if (this._postedHandler) {
+            (typeof window !== 'undefined' ? window.eventDispatcher : null)?.off?.('npc_posted:*', this._postedHandler);
+            this._postedHandler = null;
+        }
         this._dropProps = null;
         this.root = null;
         this.main = null;

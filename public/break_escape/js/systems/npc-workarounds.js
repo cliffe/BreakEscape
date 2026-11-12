@@ -40,10 +40,16 @@
  *
  * Sub-slice H (plan 6.4, 6.5). `borrow_session` calls `NPCNeedsSystem.setBorrow(npcId, run)`, so
  * the NPC's next use of the failing need is at the borrowed PC; `npc_borrow_done` posts "done",
- * `npc_borrow_dropped` posts it dropped, and an answer with `guest: true` emits
+ * `npc_borrow_dropped` posts it dropped (a "done" for a use cut short carries `cut: true`, which
+ * skips the server's floor, q43; a "done" with `met: false` and `lapsed: true` means the use there
+ * was skipped unjudged after a lock check hold ran out: not refused, so "failed there" mappings
+ * exclude it, review R3 m1), and an answer with `guest: true` emits
  * `npc_guest_left:<pcId>` with { npcId, objectId }, which the workstation layer records as the
  * PC's guest. `share_login` is a visit to the colleague (`with`): on arrival the NPC says a
- * `login_aloud` line, and every HEAR_TICK_MS of the dwell the runner asks whether the player
+ * `login_aloud` line. The listening window opens when that line is said (`npc_mutter:<npcId>`,
+ * user decision q42: it can wait for the speech lock), and the visit is held beside the
+ * colleague until then and for the share's dwell after (`NPCNeedsSystem.holdVisit`). Every
+ * HEAR_TICK_MS of the window the runner asks whether the player
  * hears (`NPCNeedsSystem.playerHears`); the first tick that hears notes the player's room. "Done"
  * carries `heard` and that `room_id`. A heard answer { capture, line, note, displayName } shows a
  * toast titled "Overheard: <displayName>", adds the evidence note, records the capture through
@@ -65,6 +71,9 @@ const VISIT_KINDS = new Set(['writes_down', 'prop_door', 'share_login']);
 export const SHARE_DWELL_S = 6;      // plan 6.5: the walk to the colleague, 6 seconds there
 export const HEAR_TICK_MS = 250;     // how often a share's dwell asks whether the player hears
 export const ALOUD_POOL = 'login_aloud';
+// User decision q42: how long a share stands waiting for its line, which can wait this long for
+// the shared speech lock (MUTTER_WAIT_MS in npc-needs.js; a test checks they agree)
+export const LINE_WAIT_MS = 20000;
 
 /** The wait before resend number `attempts` (1, 2, ...): 2 s, 4 s, 8 s, 16 s, then 30 s. */
 export function retryDelay(attempts) {
@@ -79,6 +88,7 @@ const keyOf = (npcId, run) => `${npcId}:${run.index}:${run.hand}`;
  * is given a backslash and the page shows the text exactly as given. HTML needs nothing here:
  * the renderer escapes every character first. Kept beside its one user rather than imported, so
  * the runner's test harness copies need no new file; the test checks it against the renderer.
+ * systems/social-feed.js holds a copy: widen both together.
  */
 const NOTE_ESCAPABLE = /[\\|*`#_-]/g;
 export function escapeNoteText(text) {
@@ -142,7 +152,7 @@ export class NpcWorkarounds {
             // Review R3 n1: the dwell left sets the visit's length, so 0 gives a near-zero visit
             // (not the default VISIT_DWELL_S); only a run with no dwell takes the default
             const dwell = typeof run.dwell === 'number' && Number.isFinite(run.dwell) ? Math.max(0, run.dwell) : undefined;
-            if (share) job.heard = false;
+            if (share) { job.heard = false; job.dwellMs = Math.max(SHARE_DWELL_S, dwell || 0) * 1000; }
             const queued = typeof target === 'string' && target && this._needs()?.enqueueVisit?.(npcId, {
                 // A share always stands its whole dwell beside the colleague, so a reload's resent run
                 // (whose dwell left may be 0) still gives the player a chance to hear it (6.5)
@@ -177,17 +187,54 @@ export class NpcWorkarounds {
         const key = this._jobFor(data);
         if (!key) return;
         const job = this.active.get(key);
-        if (job.run.do === 'share_login') { this._listen(job); job.listening = false; }
+        if (job.run.do === 'share_login') {
+            if (job.listening === true) this._listen(job);
+            job.listening = false;
+            job.awaitingLine = false;
+        }
         this._send(key, false);
     }
 
-    /** `npc_visit_arrived:<npcId>`: a share's NPC is beside the colleague: the line, then listen. */
+    /**
+     * `npc_visit_arrived:<npcId>`: a share's NPC is beside the colleague and asks for its line.
+     * User decision q42: the listening window opens when the line is said (lineSaid), not on
+     * arrival, since in a room with chatter the line can wait for the speech lock. Until then the
+     * visit is held beside the colleague (NPCNeedsSystem.holdVisit) for up to LINE_WAIT_MS.
+     */
     visitArrived(data) {
         const key = this._jobFor(data);
         const job = key ? this.active.get(key) : null;
         if (!job || job.run.do !== 'share_login' || job.listening !== undefined) return;
+        job.listening = false;
+        job.awaitingLine = true;
+        if (!job.dwellMs) job.dwellMs = SHARE_DWELL_S * 1000;
+        this._needs()?.holdVisit?.(job.npcId, LINE_WAIT_MS + job.dwellMs);
+        // Review R2 n1: login_aloud goes ahead of ordinary lines, so a start line still waiting
+        // now would be said after it, out of order and stale; drop it first
+        this._needs()?.cancelMutter?.(job.npcId, START_POOLS.share_login);
         this._needs()?.mutter?.(job.npcId, ALOUD_POOL);
+    }
+
+    /**
+     * `npc_mutter:<npcId>` (q42): a share's line was said, so the window opens now and the visit
+     * stands the share's dwell from here. A picture with no line (the line waited too long, or
+     * the scenario has none) says nothing to hear: the visit ends, not heard.
+     */
+    lineSaid(data) {
+        if (data?.topic !== ALOUD_POOL || typeof data.npcId !== 'string') return;
+        let key = null;
+        for (const [k, j] of this.active) {
+            if (j.npcId === data.npcId && j.awaitingLine && j.state === 'running' && j.run.do === 'share_login') { key = k; break; }
+        }
+        const job = key ? this.active.get(key) : null;
+        if (!job) return;
+        job.awaitingLine = false;
+        if (typeof data.line !== 'string' || !data.line) {
+            this._needs()?.holdVisit?.(job.npcId, 0);
+            return;
+        }
         job.listening = true;
+        this._needs()?.holdVisit?.(job.npcId, job.dwellMs);
         const tick = () => {
             if (!job.listening || this.active.get(key) !== job || job.state !== 'running') return;
             this._listen(job);
@@ -213,7 +260,11 @@ export class NpcWorkarounds {
     /** `npc_borrow_done:<npcId>`: the borrower left the borrowed PC. */
     borrowDone(data) {
         const key = this._borrowKey(data);
-        if (key) this._send(key, false);
+        if (!key) return;
+        // q43 review R1 M1: a use cut short after the sit says so, and the server skips the
+        // borrow's floor, so "done" lands at once instead of after a password sign-in in the gap
+        if (typeof data.cut === 'string' && data.cut) this.active.get(key).cut = true;
+        this._send(key, false);
     }
 
     /** `npc_borrow_dropped:<npcId>`: the borrow never started in time. */
@@ -232,7 +283,14 @@ export class NpcWorkarounds {
     /** `npc_visit_dropped:<npcId>`: the visit was never made, or was cut short. */
     visitDropped(data) {
         const key = this._jobFor(data);
-        if (key) this._send(key, true);
+        if (!key) return;
+        // Review R1 n3: a share's line still waiting goes with its visit, so it is not said with no job behind it
+        const job = this.active.get(key);
+        if (job.run.do === 'share_login' && job.awaitingLine) {
+            job.awaitingLine = false;
+            this._needs()?.cancelMutter?.(job.npcId, ALOUD_POOL);
+        }
+        this._send(key, true);
     }
 
     async _send(key, dropped) {
@@ -250,6 +308,7 @@ export class NpcWorkarounds {
                 body.heard = !!job.heard;
                 if (job.heard && job.roomId) body.room_id = job.roomId;
             }
+            if (job.run.do === 'borrow_session' && !dropped && job.cut) body.cut = true;
             answer = await this.deps.send(body);
         } catch (err) {
             const status = err?.status;
@@ -309,7 +368,7 @@ export class NpcWorkarounds {
             // Review R1 M1: the line holds a password the player must type exactly, so it goes in
             // as plain text with no dash display; the note is plain text too, escaped for the
             // notebook's markdown so `*`, backticks and `--` in it are kept as they are
-            if (typeof body.line === 'string') this.deps.toast?.(body.line, `Overheard: ${who}`, { plainText: true, verbatim: true });
+            if (typeof body.line === 'string') this.deps.toast?.(body.line, `Overheard: ${who}`, { verbatim: true });
             if (typeof body.note === 'string' && body.note) this.deps.addNote?.(`Overheard: ${who}`, escapeNoteText(body.note));
             this.deps.recordCapture?.(body.capture);
         }
@@ -428,7 +487,7 @@ export function installNpcWorkarounds(api) {
         },
         npcRecord: id => w.npcManager?.npcs?.get?.(id) || null,
         playerRoom: () => w.currentPlayerRoom || null,
-        toast: (line, title, opts) => (typeof w.gameAlert === 'function' ? w.gameAlert(line, 'info', title, 8000, opts || { plainText: true }) : null),
+        toast: (line, title, opts) => (typeof w.gameAlert === 'function' ? w.gameAlert(line, 'info', title, 8000, opts || {}) : null),
         addNote: (title, text) => (typeof w.addNote === 'function' ? w.addNote(title, text, true) : null),
         recordCapture: capture => (typeof w.recordSECapture === 'function' ? w.recordSECapture(capture) : null)
     });
@@ -438,6 +497,7 @@ export function installNpcWorkarounds(api) {
     on('npc_visit_done:*', data => runner.visitDone(data));
     on('npc_visit_dropped:*', data => runner.visitDropped(data));
     on('npc_visit_arrived:*', data => runner.visitArrived(data));
+    on('npc_mutter:*', data => runner.lineSaid(data));
     on('npc_borrow_done:*', data => runner.borrowDone(data));
     on('npc_borrow_dropped:*', data => runner.borrowDropped(data));
     return runner;

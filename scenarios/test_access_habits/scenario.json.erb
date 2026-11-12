@@ -1,6 +1,6 @@
 {
-  "scenario_brief": "TEST: Access model awareness and habits\n\nA test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Nine beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks. Beyond Kai, the gate hall (H9): Gary holds his door into store A for you; Sara will not open hers into store B with you near.",
-  "endGoal": "Test only: run the nine habits beats.",
+  "scenario_brief": "TEST: Access model awareness and habits\n\nA test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Ten beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks. Beyond Kai, the gate hall (H9): Gary holds his door into store A for you; Sara will not open hers into store B with you near. Beyond Omar, Noor (H10) never leaves her desk.",
+  "endGoal": "Test only: run the ten habits beats.",
   "startRoom": "lobby",
   "startPosition": {
     "x": 7,
@@ -110,6 +110,12 @@
           "title": "H9: follow Gary into store A; Sara's door into store B stops you",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "taskId": "h10_never_leaves",
+          "title": "H10: Noor's PC is in use whenever you try it",
+          "type": "custom",
+          "status": "active"
         }
       ]
     }
@@ -137,7 +143,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "Nine beats, a sign at each. Dana north (H1), Ian east (H2), Priya south (H4), Lena west (H8).\nOmar is beyond Dana (H3), Kai beyond Ian (H5), Mei beyond Priya (H6) and Tom beyond Lena (H7). The gate hall is beyond Kai (H9). Nobody here will tell you how careful they are: watch.",
+          "text": "Ten beats, a sign at each. Dana north (H1), Ian east (H2), Priya south (H4), Lena west (H8).\nOmar is beyond Dana (H3) and Noor beyond Omar (H10), Kai beyond Ian (H5), Mei beyond Priya (H6) and Tom beyond Lena (H7). The gate hall is beyond Kai (H9). Nobody here will tell you how careful they are: watch.",
           "observations": "A sign on a stand."
         }
       ],
@@ -212,6 +218,12 @@
               "onceOnly": true,
               "completeTask": "h8_sometimes",
               "condition": "data.via === 'claim'"
+            },
+            {
+              "eventPattern": "pc_in_use",
+              "condition": "data.pcId === 'noor_pc'",
+              "onceOnly": true,
+              "completeTask": "h10_never_leaves"
             },
             {
               "eventPattern": "door_gate_denied",
@@ -423,7 +435,8 @@
       "type": "room_office",
       "door_sign": "Omar",
       "connections": {
-        "south": "dana_room"
+        "south": "dana_room",
+        "north": "noor_room"
       },
       "objects": [
         {
@@ -513,6 +526,86 @@
           "awareness": "high",
           "habits": {
             "writesDown": true
+          }
+        }
+      ]
+    },
+    "noor_room": {
+      "type": "room_office",
+      "door_sign": "Noor",
+      "connections": {
+        "south": "omar_room"
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "noor_pc",
+          "name": "Noor's PC",
+          "sprite": "pc_desktop",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "locksScreenOnLeave": false,
+          "observations": "Noor's desk PC.",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 600
+          }
+        },
+        {
+          "type": "notes1",
+          "id": "sign_h10",
+          "name": "Sign: H10 Never leaves",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H10. Noor never locks her screen, but she never leaves her desk either: all she needs is her own PC.\nClick her PC: she is using it. Wait as long as you like; it never comes free.",
+          "observations": "A sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "noor",
+          "displayName": "Noor Qureshi",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_hacker_hood_down_v2",
+          "spriteTalk": "assets/characters/female_hacker_hood_down_v2_talk.png",
+          "spriteVisemes": "assets/characters/female_hacker_hood_down_v2_visemes.png",
+          "storyPath": "scenarios/test_access_habits/ink/owner.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "creds": {
+            "username": "nqureshi",
+            "password": "Kestrel-Noor-63"
+          },
+          "needsHome": "noor_pc",
+          "needsRooms": [
+            "noor_room"
+          ],
+          "needsSpeed": 90,
+          "needs": {
+            "work": {
+              "decayPerMin": 30,
+              "urgentAt": 40,
+              "initial": 65
+            }
           }
         }
       ]

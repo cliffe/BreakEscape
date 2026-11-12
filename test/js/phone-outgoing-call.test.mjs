@@ -35,7 +35,7 @@ const callHomeKnot = S.callHomeKnot;
 const { placeCallFromTags } = S.ringConfig;
 const { DIAL_MS, RING_OUT_MS, NO_ANSWER_BEAT_MS } = S.dialMod;
 const startRingback = (...a) => S.startRingback(...a);
-class MinigameScene { constructor(c, p) { this.container = c; this.params = p; } addEventListener() {} start() { if (S.baseStart) S.baseStart.call(this); } }
+class MinigameScene { constructor(c, p) { this.container = c; this.params = p; } addEventListener() {} start() { if (S.baseStart) S.baseStart.call(this); } closeByPlayer() { this.closedByPlayer = true; this.complete(false); } }
 class PhoneChatUI {} class PhoneChatHistory { constructor() { Object.assign(this, S.history); } } class InkEngine {} class PhoneCallVoice {} class TTSManager {}
 class PhoneChatConversation { constructor() {} static stepKnot(story) { return story && story.__knot || null; } static async waitForPreload() {} static isPreloadedOpening() { return false; } }
 const attachPretext = async () => null, processGameActionTags = (tags) => { (S.processed = S.processed || []).push(tags); }, choiceAsksEnding = () => false,
@@ -328,7 +328,8 @@ test('a ringer call screen does not draw the thread history; a text thread and a
 
 test('m1: with the real base minigame, the base Esc handler is dropped on a ringer call, so Esc is End call whatever the listener order', async () => {
     const baseSrc = readFileSync(join(here, '../../public/break_escape/js/minigames/framework/base-minigame.js'), 'utf8')
-        .replace(/^import [\s\S]*?;\s*$/gm, 'const displayDashes = (s) => s;');
+        .replace("import { displayDashes } from '../../utils/display-dashes.js';", 'const displayDashes = (s) => s;')
+        .replace("import { escapeHtml } from '../../utils/escape-html.js';", 'const escapeHtml = (s) => String(s);');
     const { MinigameScene: RealBase } = await import(dataUrl(baseSrc));
     for (const [first, ringer] of [['phone', true], ['base', true], ['phone', false]]) {
         const { inst, log } = make({ ringer });

@@ -32,7 +32,7 @@ globalThis.window = { gameState: { globalVariables: {} } };
 globalThis.performance = globalThis.performance || { now: () => Date.now() };
 const quiet = console.log, warn = console.warn;
 console.log = () => {};
-const { default: behaviorModule } = await import(pathToFileURL(join(dir, 'npc-behavior.mjs')).href);
+const { default: behaviorModule, USE_HELD_GRACE_MS } = await import(pathToFileURL(join(dir, 'npc-behavior.mjs')).href);
 console.log = quiet;
 const { NPCBehavior } = behaviorModule;
 const silently = async fn => { console.log = () => {}; console.warn = () => {}; try { return await fn(); } finally { console.log = quiet; console.warn = warn; } };
@@ -303,6 +303,47 @@ test('a late answer that is a path is dropped too: the move keeps its own path a
     assert.equal(b._pathfindingInProgress, false, 'the request is still marked as answered');
 });
 
+// The same late-answer race on the two older patrol kinds: a single-room waypoint patrol
+// and a random patrol. A move that takes the target meanwhile keeps it, its path and its
+// following state, whether the old answer is a path or none.
+for (const kind of ['single-room waypoint', 'random']) {
+    test(`a late answer on a ${kind} patrol is dropped: the move keeps its target and path`, async () => {
+        const { b } = setup();
+        let release = null;
+        b.pathfindingManager.findWorldPath = (sx, sy, ex, ey, cb) => { release = cb; };
+        b.pathfindingManager.getRandomPatrolTarget = () => ({ x: 64, y: 400 });
+        const patrol = kind === 'random'
+            ? { enabled: true }
+            : { enabled: true, waypoints: [{ x: 2, y: 2 }, { x: 4, y: 1 }] };
+        b.config = await silently(() => b.parseConfig({ patrol }));
+        for (const answer of [[{ x: 1, y: 1 }], null]) {
+            release = null;
+            await silently(() => (kind === 'random' ? b.chooseRandomPatrolTarget(0) : b.chooseWaypointTarget(0)));
+            assert.equal(typeof release, 'function', 'the request is in flight');
+            const moveTarget = { x: 500, y: 500, dwellTime: 0 };   // what a goToAndStay sets
+            const movePath = [{ x: 500, y: 500 }];
+            b.patrolTarget = moveTarget;
+            b.currentPath = movePath;
+            b.pathFollowingActive = true;
+            b._pathRetryAfter = 0;
+            await silently(() => release(answer));
+            assert.equal(b.currentPath, movePath, `the move's path is kept (answer ${answer ? 'a path' : 'none'})`);
+            assert.equal(b.pathFollowingActive, true);
+            assert.equal(b.patrolTarget, moveTarget, 'the move keeps its target');
+            assert.equal(b._pathRetryAfter, 0, 'no back-off from an answer for an old target');
+            if (kind !== 'random') assert.equal(b._pathfindingInProgress, false, 'the request is still marked as answered');
+        }
+    });
+}
+
+test('a single-room waypoint patrol still takes its own answer', async () => {
+    const { b } = setup();
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, waypoints: [{ x: 2, y: 2 }, { x: 4, y: 1 }] } }));
+    await silently(() => b.chooseWaypointTarget(0));
+    assert.ok(b.currentPath.length > 0, 'the path is taken');
+    assert.equal(b.pathFollowingActive, true);
+});
+
 test('with the real gate system: kept out at his reader he waits; pushed out of the radius he walks back', async () => {
     // The two halves (approachPoint and _approachRouteGate) run together here. Each was
     // tested against a stand-in for the other, which is how a guard standing inside his
@@ -521,4 +562,255 @@ test('once its room is loaded, a cut-short action leg is skipped as before', asy
     assert.deepEqual(unlocks, []);
     assert.equal(b.roomId, 'a');
     assert.ok(requests.length >= 2);
+});
+
+// q53 (e): a keying event at a reader. useObject emits npc_used_object:<id> on arrival; with
+// useMs the NPC stands there that long, then npc_used_object_done:<id>, then the action goes on.
+function captureEvents() {
+    const events = [];
+    window.eventDispatcher = { emit: (type, data) => events.push([type, data]) };
+    return events;
+}
+
+test('useObject emits npc_used_object and npc_used_object_done at once when there is no useMs', async () => {
+    const { b } = setup({ bLoaded: true, bLocked: false });
+    const events = captureEvents();
+    b.faceWorldPoint = () => {};
+    b._pendingRouteAction = { useObject: 'reader' };
+    b._runRouteAction(b._pendingRouteAction, 0);
+    assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader', 'npc_used_object_done:reader']);
+    assert.deepEqual(events[0][1], { npcId: 'guard', objectId: 'reader', roomId: 'a', useMs: 0 });
+    assert.equal(b._pendingRouteAction, null);
+    delete window.eventDispatcher;
+});
+
+test('useObject with useMs holds the NPC for that long, then says done and runs the unlock once', async () => {
+    const { b, unlocks, loads, requests } = setup({ bLocked: true });
+    const events = captureEvents();
+    let now = 1000;
+    b.clockNow = () => now;
+    b.faceWorldPoint = () => {};
+    let halts = 0;
+    b._haltForRoute = () => { halts++; };
+    const KEY_ROUTE = [
+        { room: 'a', waypoints: [{ x: 4, y: 1, action: { unlockRoom: 'b', useObject: 'reader', useMs: 2500 } }] },
+        { room: 'b', waypoints: [{ x: 4, y: 6 }] }
+    ];
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: KEY_ROUTE } }));
+    await silently(() => b.chooseNewPatrolTarget(0));                  // the reader leg
+    b._pendingRouteAction = b.patrolTarget.routeAction; b._routeUse = null; b.currentPath = [];
+    await silently(() => b.chooseNewPatrolTarget(0));                  // arrival: keying starts
+    assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader']);
+    assert.equal(events[0][1].useMs, 2500);
+    assert.deepEqual(unlocks, [], 'no unlock while he keys');
+    const before = requests.length;
+    now = 3000;
+    await silently(() => b.chooseNewPatrolTarget(0));                  // still keying
+    assert.equal(requests.length, before, 'no new leg while keying');
+    assert.equal(events.length, 1);
+    assert.ok(halts >= 1);
+    now = 3600;
+    await silently(() => b.chooseNewPatrolTarget(0));                  // keyed: done, then the unlock
+    assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader', 'npc_used_object_done:reader']);
+    await silently(async () => { await flush(); await new Promise(r => setTimeout(r, 350)); });
+    assert.deepEqual(unlocks, [['b', 'guard']]);
+    assert.ok(loads.includes('b'));
+    assert.equal(b._pendingRouteAction, null);
+    assert.equal(b._routeUse, null);
+    assert.equal(events.length, 2, 'the unlock does not repeat the keying events');
+    delete window.eventDispatcher;
+});
+
+test('a timed useObject is emitted again on the next arrival, and a retried unlock does not repeat it', async () => {
+    const { b } = setup({ bLocked: true });
+    const events = captureEvents();
+    let now = 0;
+    b.clockNow = () => now;
+    b.faceWorldPoint = () => {};
+    let refuse = true;
+    window.NPCGameBridge = { unlockDoor: async () => ({ success: !refuse }) };
+    const action = { unlockRoom: 'b', useObject: 'reader', useMs: 1000 };
+    b.config = { patrol: { route: [{ room: 'a', waypoints: [{ x: 1, y: 1, action }] }, { room: 'b', waypoints: [{ x: 1, y: 1 }] }], currentSegmentIndex: 0, waypointIndex: 1 } };
+    b._pendingRouteAction = action; b._routeUse = null;
+    await silently(() => b.chooseWaypointTargetMultiRoom(0));
+    now = 1500;
+    await silently(() => b.chooseWaypointTargetMultiRoom(0));          // done, unlock refused
+    await silently(async () => { await flush(); await flush(); });
+    assert.ok(b._routeWait && !b._routeWait.inFlight, 'backing off after the refusal');
+    now = 7000; refuse = false;
+    await silently(() => b.chooseWaypointTargetMultiRoom(0));          // the retry
+    await silently(async () => { await flush(); await new Promise(r => setTimeout(r, 350)); });
+    assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader', 'npc_used_object_done:reader']);
+    // Next lap: a fresh arrival at the same waypoint keys again
+    b._pendingRouteAction = action; b._routeUse = null;
+    await silently(() => b.chooseWaypointTargetMultiRoom(0));
+    assert.equal(events.filter(e => e[0] === 'npc_used_object:reader').length, 2);
+    delete window.eventDispatcher;
+});
+
+test('a timed useObject leg cut short beside its spot counts as the arrival (the keying is work)', async () => {
+    const s = setup({ bLoaded: true, bLocked: false });
+    const events = captureEvents();
+    s.b.faceWorldPoint = () => {};
+    const route = [{ room: 'a', waypoints: [{ x: 2, y: 2 }, { x: 4, y: 1, action: { useObject: 'reader', useMs: 2000 } }] }, { room: 'b', waypoints: [{ x: 4, y: 6 }] }];
+    s.b.config = await silently(() => s.b.parseConfig({ patrol: { enabled: true, multiRoom: true, route } }));
+    s.b.config.patrol.waypointIndex = 1;
+    await silently(() => s.b.chooseNewPatrolTarget(0));
+    s.b.currentPath = [{ x: 100, y: 352 }, { x: 128, y: 352 }];
+    s.b.pathIndex = 1;
+    s.b.npcBodyPos = () => ({ x: 106, y: 352 });
+    await silently(() => s.b.chooseNewPatrolTarget(1000));
+    assert.deepEqual(s.b._pendingRouteAction, { useObject: 'reader', useMs: 2000 });
+    await silently(() => s.b.chooseNewPatrolTarget(1100));
+    assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader']);
+    delete window.eventDispatcher;
+});
+
+// Code review R2 (m4): at the reader, with the next leg across a gate held shut against him
+// (door-gates heldShutAgainst), the guard turns back before keying: no npc_used_object, the
+// turned-back event with beforeUse, and his own room's loop again. Not held: he keys as before.
+test('a timed useObject before a gate held shut: he turns back without keying', async () => {
+    const { b, unlocks } = setup({ bLoaded: true, bLocked: false });
+    const events = captureEvents();
+    let clock = 1000;
+    b.clockNow = () => clock;
+    b.faceWorldPoint = () => {};
+    let faced = 0;
+    b.facePlayer = () => { faced++; };
+    window.player = { x: 120, y: 360 };
+    const asked = [];
+    let held = true;
+    window.doorGates = { heldShutAgainst: (id, from, to) => { asked.push([id, from, to]); return held ? { roomId: 'a', connectedRoom: 'b', direction: 'north', x: 64, y: 32 } : null; } };
+    const KEY_ROUTE = [
+        { room: 'a', waypoints: [{ x: 2, y: 2 }, { x: 4, y: 1, action: { unlockRoom: 'b', useObject: 'reader', useMs: 2500 } }] },
+        { room: 'b', waypoints: [{ x: 4, y: 6 }] }
+    ];
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: KEY_ROUTE } }));
+    b.config.patrol.waypointIndex = 1;
+    await silently(() => b.chooseNewPatrolTarget(0));                  // the reader leg
+    b._pendingRouteAction = b.patrolTarget.routeAction; b._routeUse = null; b.currentPath = [];
+    await silently(() => b.chooseNewPatrolTarget(0));                  // arrival, gate held
+    assert.deepEqual(asked, [['guard', 'a', 'b']]);
+    // Code review R3 (m1): he waits at the reader for the grace before giving up
+    assert.deepEqual(events, [], 'waiting: no keying, no turn-back yet');
+    for (const t of [1050, 1500, 2000, 1000 + USE_HELD_GRACE_MS - 1]) {
+        clock = t;
+        await silently(() => b.chooseNewPatrolTarget(0));
+    }
+    assert.deepEqual(events, [], 'still waiting just inside the grace');
+    assert.equal(b.config.patrol.currentSegmentIndex, 0);
+    assert.equal(b.config.patrol.waypointIndex, 2, 'still at the reader stop');
+    clock = 1000 + USE_HELD_GRACE_MS;
+    await silently(() => b.chooseNewPatrolTarget(0));                  // grace over, still held
+    assert.deepEqual(events.map(e => e[0]), ['door_gate_guard_turned_back'], 'no keying events');
+    assert.deepEqual(events[0][1], { roomId: 'a', connectedRoom: 'b', direction: 'north', x: 64, y: 32, npcId: 'guard', beforeUse: true });
+    assert.equal(b.config.patrol.currentSegmentIndex, 0);
+    assert.equal(b.config.patrol.waypointIndex, 0, 'back to his own room\'s loop');
+    assert.equal(b._pendingRouteAction, null);
+    assert.equal(faced, 1);
+    assert.deepEqual(unlocks, []);
+    // Next lap, not held: he keys as before
+    held = false; events.length = 0;
+    b.config.patrol.waypointIndex = 1;
+    await silently(() => b.chooseNewPatrolTarget(0));
+    b._pendingRouteAction = b.patrolTarget.routeAction; b._routeUse = null; b.currentPath = [];
+    await silently(() => b.chooseNewPatrolTarget(0));
+    assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader']);
+    delete window.doorGates;
+    delete window.eventDispatcher;
+});
+
+test('a timed useObject that is not the last stop before the gate never asks the gate', async () => {
+    const { b } = setup({ bLoaded: true, bLocked: false });
+    const events = captureEvents();
+    b.clockNow = () => 1000;
+    b.faceWorldPoint = () => {};
+    let asked = 0;
+    window.doorGates = { heldShutAgainst: () => { asked++; return { roomId: 'a', connectedRoom: 'b' }; } };
+    const action = { useObject: 'reader', useMs: 2000 };
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: [
+        { room: 'a', waypoints: [{ x: 4, y: 1, action }, { x: 2, y: 2 }] }, { room: 'b', waypoints: [{ x: 4, y: 6 }] }] } }));
+    b._pendingRouteAction = action; b._routeUse = null;
+    await silently(() => b.chooseWaypointTargetMultiRoom(0));
+    assert.equal(asked, 0);
+    assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader']);
+    delete window.doorGates;
+    delete window.eventDispatcher;
+});
+
+// Code review R3 (m1): a player inside the radius just as he reaches the reader, who then
+// steps away within the grace, does not cost him the lap: he keys as normal.
+test('a timed useObject before a gate held only for a moment: he waits, then keys', async () => {
+    const { b } = setup({ bLoaded: true, bLocked: false });
+    const events = captureEvents();
+    let clock = 1000;
+    b.clockNow = () => clock;
+    b.faceWorldPoint = () => {};
+    b.facePlayer = () => {};
+    window.player = { x: 120, y: 360 };
+    let held = true;
+    const cleared = [];
+    window.doorGates = {
+        heldShutAgainst: () => (held ? { roomId: 'a', connectedRoom: 'b', direction: 'north', x: 64, y: 32 } : null),
+        clearTurnedBack: id => cleared.push(id)
+    };
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: [
+        { room: 'a', waypoints: [{ x: 2, y: 2 }, { x: 4, y: 1, action: { unlockRoom: 'b', useObject: 'reader', useMs: 2500 } }] },
+        { room: 'b', waypoints: [{ x: 4, y: 6 }] }] } }));
+    b.config.patrol.waypointIndex = 1;
+    await silently(() => b.chooseNewPatrolTarget(0));                  // the reader leg
+    b._pendingRouteAction = b.patrolTarget.routeAction; b._routeUse = null; b.currentPath = [];
+    await silently(() => b.chooseNewPatrolTarget(0));                  // arrival, gate held
+    clock = 1800;
+    await silently(() => b.chooseNewPatrolTarget(0));
+    assert.deepEqual(events, [], 'waiting');
+    held = false; clock = 1900;                                        // the player steps away
+    await silently(() => b.chooseNewPatrolTarget(0));
+    assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader'], 'he keys, no turn-back');
+    assert.deepEqual(cleared, ['guard'], 'his gate may open for him again');
+    assert.equal(b._useHeld, null);
+    // A later lap starts a fresh grace, not the old one
+    clock = 60000; held = true; events.length = 0;
+    b._routeUse = null; b._pendingRouteAction = b.config.patrol.route[0].waypoints[1].action;
+    b.config.patrol.currentSegmentIndex = 0;
+    await silently(() => b.chooseNewPatrolTarget(0));
+    assert.deepEqual(events, [], 'a new arrival waits again');
+    delete window.doorGates;
+    delete window.eventDispatcher;
+});
+
+// Code review R3 (n2): a route of three segments. Turning back at the reader before the
+// gate resumes at the next segment in his own room, not the first.
+test('turning back before keying on a three-segment route resumes at the next segment on his side', async () => {
+    const { b } = setup({ bLoaded: true, bLocked: false });
+    const events = captureEvents();
+    let clock = 1000;
+    b.clockNow = () => clock;
+    b.faceWorldPoint = () => {};
+    b.facePlayer = () => {};
+    window.player = { x: 120, y: 360 };
+    window.doorGates = { heldShutAgainst: () => ({ roomId: 'a', connectedRoom: 'b', direction: 'north', x: 64, y: 32 }) };
+    // c (west of a) -> a, reader -> b -> a -> c: a appears twice, with the far room between
+    window.gameScenario.rooms.a.connections = { north: 'b', west: 'c' };
+    window.gameScenario.rooms.c = { connections: { east: 'a' } };
+    window.rooms.c = { position: { x: -320, y: 320 } };
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: [
+        { room: 'c', waypoints: [{ x: 2, y: 2 }] },
+        { room: 'a', waypoints: [{ x: 3, y: 3 }, { x: 4, y: 1, action: { unlockRoom: 'b', useObject: 'reader', useMs: 2500 } }] },
+        { room: 'b', waypoints: [{ x: 4, y: 6 }] },
+        { room: 'a', waypoints: [{ x: 5, y: 2 }] }] } }));
+    assert.equal(b.config.patrol.multiRoom, true, 'the route is valid');
+    b.config.patrol.currentSegmentIndex = 1;
+    b.config.patrol.waypointIndex = 1;
+    await silently(() => b.chooseNewPatrolTarget(0));                  // the reader leg
+    b._pendingRouteAction = b.patrolTarget.routeAction; b._routeUse = null; b.currentPath = [];
+    await silently(() => b.chooseNewPatrolTarget(0));                  // arrival, held
+    for (clock = 1050; clock <= 1000 + USE_HELD_GRACE_MS; clock += 50) {   // asked every frame
+        await silently(() => b.chooseNewPatrolTarget(0));              // turns back at the end
+    }
+    assert.deepEqual(events.map(e => e[0]), ['door_gate_guard_turned_back']);
+    assert.equal(b.config.patrol.currentSegmentIndex, 3, 'skips the far room, resumes at the later segment in a, not the reader one');
+    assert.equal(b.config.patrol.waypointIndex, 0);
+    delete window.doorGates;
+    delete window.eventDispatcher;
 });

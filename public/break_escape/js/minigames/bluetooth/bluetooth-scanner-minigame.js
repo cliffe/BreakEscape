@@ -1,5 +1,8 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
+
+// Device names, MACs and details are scenario text: escaped once on the way into HTML.
 
 // Bluetooth Scanner Minigame Scene implementation
 export class BluetoothScannerMinigame extends MinigameScene {
@@ -441,7 +444,7 @@ export class BluetoothScannerMinigame extends MinigameScene {
             if (searchTerm) {
                 bluetoothContent.innerHTML = '<div class="bluetooth-device">No devices match your search.</div>';
             } else if (activeCategory !== 'all') {
-                bluetoothContent.innerHTML = `<div class="bluetooth-device">No ${activeCategory} devices found.</div>`;
+                bluetoothContent.innerHTML = `<div class="bluetooth-device">No ${escapeHtml(activeCategory)} devices found.</div>`;
             } else {
                 bluetoothContent.innerHTML = '<div class="bluetooth-device">No devices detected yet. Walk around to find Bluetooth devices.</div>';
             }
@@ -469,7 +472,7 @@ export class BluetoothScannerMinigame extends MinigameScene {
                 };
                 
                 let deviceContent = `<div class="bluetooth-device-name">
-                    <span>${displayDashes(device.name)}</span>
+                    <span>${escapeHtml(displayDashes(device.name))}</span>
                     <div class="bluetooth-device-icons">`;
                 
                 if (device.nearby && typeof device.signalStrength === 'number') {
@@ -503,7 +506,7 @@ export class BluetoothScannerMinigame extends MinigameScene {
                 }
 
                 deviceContent += `</div></div>`;
-                deviceContent += `<div class="bluetooth-device-details">MAC: ${device.mac}\n${displayDashes(device.details)}</div>`;
+                deviceContent += `<div class="bluetooth-device-details">MAC: ${escapeHtml(device.mac)}\n${escapeHtml(displayDashes(device.details))}</div>`;
                 deviceContent += `<div class="bluetooth-device-timestamp">Last seen: ${formattedDate} ${formattedTime}</div>`;
 
                 deviceElement.innerHTML = deviceContent;

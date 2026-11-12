@@ -21,6 +21,8 @@ const copy = (rel, fix = (s) => s) => put(rel, fix(readFileSync(join(js, rel), '
 
 copy('utils/desktop-app.js');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
+copy('utils/escape-html.js');
+copy('utils/author-html.js');
 put('systems/global-writer.js', 'export function writeGlobal() {}\n');
 put('systems/social-intel.js', 'export function grantFact() {}\nexport function readyToastText() { return ""; }\nexport function readyToastTitle() { return ""; }\n');
 put('events/combat-events.js', 'export const CombatEvents = {};\n');
@@ -39,7 +41,7 @@ globalThis.document = {};
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
 const { isDesktopApp, isAppWindow, appHomeUrl } = await imp('utils/desktop-app.js');
 const { GameOverScreen } = await imp('ui/game-over-screen.js');
-const { GameMenu, openLink } = await imp('ui/game-menu.js');
+const { GameMenu, openLink, leaveTarget, quitToShell } = await imp('ui/game-menu.js');
 const { showEndScreen } = await imp('systems/apply-actions.js');
 console.log = () => {};
 
@@ -155,13 +157,29 @@ test('end screen button: a shell with a return link labels it with the shell lab
     const btn = document.querySelector('#scenario-end-screen button');
     assert.equal(btn.textContent, 'Debrief');
     btn.click();
-    assert.deepEqual(log.href, ['/shell/debrief']);
+    assert.deepEqual(log.href, ['http://localhost/shell/debrief']);
 
     // No return link: the scenario's own text stands, even if a label is set
     ({ w } = setup(BROWSER_UA));
     w.breakEscapeConfig = { shellMenuUrl: '/shell/menu', shellReturnLabel: 'Debrief' };
     showEndScreen({ title: 'Done', buttonText: 'Custom' });
     assert.equal(document.querySelector('#scenario-end-screen button').textContent, 'Custom');
+});
+
+test('end screen button: a refused shell link is not followed; a safe menu link is used instead', () => {
+    let { w, log } = setup(BROWSER_UA);
+    w.breakEscapeConfig = { shellReturnUrl: 'javascript:window.__pwned=1', shellMenuUrl: '/shell/menu' };
+    showEndScreen({ title: 'Done' });
+    document.querySelector('#scenario-end-screen button').click();
+    assert.deepEqual(log.href, ['http://localhost/shell/menu']);
+
+    // Neither link is safe: the button does what it does with no shell (closes the tab)
+    ({ w, log } = setup(BROWSER_UA));
+    w.breakEscapeConfig = { shellReturnUrl: '//evil.example/x', shellMenuUrl: 'data:text/html,x' };
+    showEndScreen({ title: 'Done' });
+    document.querySelector('#scenario-end-screen button').click();
+    assert.deepEqual(log.href, []);
+    assert.equal(log.closed, 1);
 });
 
 test('game menu: "Back to missions" exists only in the app', () => {
@@ -256,7 +274,7 @@ for (const ua of [BROWSER_UA, APP_UA]) {
         const { w, log } = setup(ua);
         w.breakEscapeConfig = { ...SHELL };
         GameOverScreen.prototype.mainMenu.call({});
-        assert.deepEqual(log.href, [SHELL.shellMenuUrl]);
+        assert.deepEqual(log.href, ['http://localhost' + SHELL.shellMenuUrl], 'the parsed href');
     });
 
     test(`shell (${where}): end screen button goes to the debrief and never closes`, () => {
@@ -264,7 +282,7 @@ for (const ua of [BROWSER_UA, APP_UA]) {
         w.breakEscapeConfig = { ...SHELL };
         showEndScreen({ title: 'Done' });
         document.querySelector('#scenario-end-screen button').click();
-        assert.deepEqual(log.href, [SHELL.shellReturnUrl]);
+        assert.deepEqual(log.href, ['http://localhost' + SHELL.shellReturnUrl], 'the parsed href');
         assert.equal(log.closed, 0);
     });
 
@@ -283,9 +301,26 @@ for (const ua of [BROWSER_UA, APP_UA]) {
         assert.match(menu.overlay.querySelector('.game-menu-page[data-page="leave"] h3').textContent, /Save and quit to menu/);
         menu.overlay.querySelector('[data-leave="yes"]').click();
         await new Promise((r) => setTimeout(r, 0));
-        assert.deepEqual(calls, ['sync', ['go', SHELL.shellMenuUrl]]);
+        assert.deepEqual(calls, ['sync', ['go', 'http://localhost' + SHELL.shellMenuUrl]]);
     });
 }
+
+test('shell links that fail the check: game over, the pause menu and quitToShell ignore them', () => {
+    const BAD = { hacktivityMode: true, shellMenuUrl: 'javascript:window.__pwned=1', shellReturnUrl: 'https://evil.example/debrief' };
+    let { w, log } = setup(BROWSER_UA);
+    w.breakEscapeConfig = { ...BAD };
+    GameOverScreen.prototype.mainMenu.call({});
+    assert.deepEqual(log.href, ['/break_escape/missions']);
+    assert.equal(leaveTarget(BAD, w), null, 'browser, no safe shell link: no leave item');
+    const went = [];
+    quitToShell(BAD, (u) => went.push(u));
+    assert.deepEqual(went, []);
+    // A safe return link is used when the menu link is refused
+    assert.deepEqual(leaveTarget({ shellMenuUrl: 'data:text/html,x', shellReturnUrl: '/debrief' }, w),
+        { url: 'http://localhost/debrief', label: 'Save and quit to menu' });
+    ({ w } = setup(APP_UA));
+    assert.equal(leaveTarget(BAD, w).label, 'Back to missions', 'app: falls back to the app home');
+});
 
 // The walkthrough link: the Play app hands it to the phone's browser, everything else opens a tab.
 test('openLink: Play app sends the link through openOutside and opens no tab', () => {

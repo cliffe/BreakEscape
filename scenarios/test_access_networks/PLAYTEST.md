@@ -221,6 +221,119 @@ from the view with no password, and every task stays complete. Task `p12_reload`
 
 Server: `footholds`, `gainedFootholds`, `sessions` and `signedInPcs` unchanged.
 
+## Implants (slice 9.3b sub-slice I): N11 to N13
+
+Set-up pieces in the lobby: the "Keystroke injector" (`kit_badusb`, `usbClass` `hid`) and the
+"Spare USB stick" (`kit_stick`, droppable, `usbClass` `storage`). Pick both up first. An implant
+gives a foothold on the PC's own network and nothing else: no session, no desktop, no owner's
+access.
+
+### N13 The kiosk's USB policy refuses the BadUSB
+
+Sign in at the kiosk itself (Sam's sticky-note password), then use the "Kiosk USB socket"
+(`kiosk_dock`) with the keystroke injector held. The kiosk's `kiosk_locked` policy blocks USB, so
+the server refuses: "USB devices are disabled on this PC." No foothold is granted and the injector
+stays in the inventory.
+
+Server: no `implant_kiosk_pc` foothold; `kit_badusb` still held.
+
+### N12 BadUSB at Sam's desk
+
+Sign in at `sam_pc` (keyboard, the sticky note), then use the "USB socket by Sam's PC"
+(`sam_dock`) with the keystroke injector held. The server grants `implant_sam_pc` on `office_lan`,
+removes the injector, and the link item "BadUSB: Sam's desk" arrives. The implant's view lists the
+office network's hosts and shares; it opens no account on its own. Task `n12_badusb_implant`
+completes.
+
+Server: `footholds.implant_sam_pc` (`via` `implant`) on `office_lan`; `kit_badusb` gone from the
+inventory; no new session.
+
+### N11 A dropped stick the door controller reads
+
+Drop the spare USB stick in the store, then use the "Door controller USB port" (`door_dock`): the
+dropped-device action fires and the server, seeing the stick on its `droppedItems` record, grants
+`implant_door_box` on `office_lan`. No session is opened; the door controller's own desktop still
+needs Ian's account. Task `n11_dropped_implant` completes.
+
+Server: `footholds.implant_door_box` (`via` `implant`) on `office_lan`; no session at `door_box`.
+
+### Reload (implants) and tampered-client checks
+
+A reload (set `location.href` to the game URL with `?skip_resume=1`) keeps `implant_sam_pc` and
+`implant_door_box` with their `via` and network, and the link items come back. Tampered requests
+are refused by the server: `POST /network/implant` for a PC with no declared `grant_foothold`
+action answers 404 `no_action`; a view of a foothold the server never granted answers 404.
+
+## Slice 9.3b sub-slice W: Wi-Fi (N8, N9)
+
+Added by slice 9.3b (`ACCESS_MODEL_SLICE_9_3B_PLAN.md`, section 11, beats N8 and N9). A guest
+Wi-Fi network (`guest_wifi`, SSID `Harbour-Guest`), two access points in the lobby (`guest_ap`,
+`guest_ap2`) and a small open share on it (`guest_notice`). The key is on the reception Wi-Fi
+card (`wifi_note`); the tester reads it there, as with every earned secret.
+
+| Beat | Steps | Server record afterwards |
+|---|---|---|
+| **N8 Wi-Fi join** | Click `guest_ap`. A keyed network opens the join minigame (`#password-field`, label "Network key", no attempts counter): a wrong key shows "That key was not accepted" and clears the field (no count); the right key joins. The view opens and lists `guest_notice` (its own network only, no office host). `n8_wifi_join` is an `unlock_object` task on `guest_ap`: it ticks on the join with no reload, and the server checks `gainedFootholds`. | `footholds` has `wifi_guest_wifi` (`via wifi`, source `guest_ap`); `gainedFootholds` has `guest_ap`; a wrong key changed nothing |
+| **N9 Second access point** | Click `guest_ap2`. The keyless probe answers `already`, so no minigame; `network_joined` fires again and `n9_second_ap` (an `unlock_object` task on `guest_ap2`) ticks. After a reload both AP ids are in `gainedFootholds`. | `gainedFootholds` has `guest_ap` and `guest_ap2`; still one `wifi_guest_wifi` foothold |
+
+Harness: clicking an access point runs `networkLinks.interactWifiAp`, which first tries a keyless
+join (an open network would join at once, with no prompt) and, on `wrong_key`, opens the password
+minigame in join mode. Drive the key field as any password field
+(`{"cmd":"mg","action":"type","args":[0,"<key>",{"submit":true}]}`); read its state with
+`{"cmd":"eval","fn":"() => window.__test.minigame?.()?.join"}`. The Wi-Fi key and SSID must reach
+the browser from no response; the leak check's `wifi_secret` rule proves it.
+
+## Slice 9.3b sub-slice P: Port security (N10)
+
+Added by sub-slice P. A new game. Take the drop box, go north to the comms room, and
+`interact` `secure_port` (the second, locked wall port). Confirm the plant. The switch refuses
+the device: a toast shows the switch message ("The switch logs the device address and shuts the
+port... unused ports like this should be disabled."), no view opens, no link item arrives, and the
+box is still in the inventory. `network_device_refused { jackId: 'secure_port', reason:
+'port_security' }` fires, so task `n10_port_security` completes. Planting at `comms_port`
+afterwards still works (an open port is unaffected). The state survives a reload (the box is still
+held, `secure_port` has no foothold).
+
+Server, after the refusal: no `footholds.jack_secure_port`, the drop box still in `inventory`, no
+`gainedFootholds` entry for `secure_port`; nothing else changed. The port-security refusal carries
+only the authored message: no network name, host or share reaches the browser (the leak check
+covers it).
+
+## Slice 9.3b sub-slice O: Outages (N5 to N7)
+
+Added by sub-slice O (`ACCESS_MODEL_SLICE_9_3B_PLAN.md`, section 5.2). `server_net` now carries
+`downIf: "servers_offline"` and the global starts `false` (up), so the pivot beats N1 to N4 are
+unchanged. In the server room (north of the comms room) a rack breaker (`server_breaker`) takes
+the network down, a power switch (`server_power`) restores it. All outage state is read on the
+server from its own globals, so a tampered client cannot reach a downed network, clear the global
+it cannot set, or keep using a no-route session.
+
+| Beat | Steps | What should happen | Server afterwards |
+|---|---|---|---|
+| **N5 Outage** | With the box planted and a pivot session at `lena_pc`, `interact` `server_breaker` (sets `servers_offline` true). Open the box's view. | The Server network block is gone (no name, no greyed row): the player holds no session on it. A sign-in on `sv_fs02` through the box is 403 `unreachable`. `n5_outage` ticks. | `player_reach(jack_comms_port)` is `office_lan` only; no `server_net` string in any read route |
+| **N6 Repair** | `interact` `server_power` (sets `servers_offline` false). Open the box's view; sign in to `sv_fs02` through the box. | The Server network block fills back in (route `up`, through `lena_pc`); `sv_fs02` signs in. `n6_repair` ticks. | `player_reach` includes `server_net` again |
+| **N7 Held route down** | Sign in to `sv_fs02` through the box first, then `interact` `server_breaker`. The desktop closes to a greyed "No route to SV-FS02" row; a desktop fetch is refused. Then `interact` `server_power` and reopen `sv_fs02`. | The session is kept throughout; while down the view shows a greyed `server_net` block with the "no route" row; on repair the desktop opens again with no password. `n7_held_route` ticks (on `pc_desktop_opened` for `sv_fs02` while armed and repaired). | `sessions.sv_fs02` present the whole time; `endedPcIds` never names it for an outage |
+
+### N14: a host whose own service is off (plan 5.2)
+
+In the workshop, `bench_pc` (WS-BENCH-01, a sign-in PC on `workshop_lan`, `access` staff) carries
+`affordance.offWhen: "bench_pc_off"`, true at the start. The `bench_power` switch flips it with two
+`confirm_action`s. The box's view sends the latest globals before it fetches, so a flip shows at
+once. Off is off at the keyboard too (user decision q72). While off the PC shows `aw_pc_off1` (a
+dark monitor and tower, through `spriteVariants`), and back on it shows its map picture again.
+Its desktop holds a PIN folder, `bench_logs` (PIN 3141, given in its observations).
+
+| Beat | Steps | What should happen | Server afterwards |
+|---|---|---|---|
+| **N14 Host off** | Plant the box in `bench_port` (unplug it from the comms room first). The view lists `bench_pc` as "not responding" with no control (`action: "not_responding"` in the test state). `interact` `bench_power`, Confirm, open the link item again: `bench_pc` offers Sign in. Sign in with Sam's sticky-note details. | `n14_seen_off` is set by the first view; `n14_host_off` ticks on the remote sign-in. With the PC switched off again, a held session's row shows "not responding", a desktop fetch through the box is 403 and the session is kept. A forced `POST /login` through the box while off is 403 `not_responding` and counts no failure. At the keyboard (q72): with the PC off, `interact` `bench_pc` shows "This PC is off." and opens nothing, a held session included; switched back on, the same click opens the sign-in screen or the session's desktop | `sessions.bench_pc` remote through `jack_bench_port` and kept while off; `loginFailures` 0 |
+| **N14 Left open** | Signed in at the keyboard, open the desktop, then switch the PC off while it is open (another player action or `__test` setting `bench_pc_off`). Again with the Bench-Notes share open, and with the `bench_logs` PIN pad open (then enter 3141). | The desktop or share closes with "This PC is off." and nothing opens empty. The PIN pad says "This PC is off." and closes, with no wrong-PIN verdict and no attempt counted. Switched back on, the PIN opens the folder | `unlockedObjects` has no `bench_logs` while off; the session is kept |
+
+The scoped-request route test: a folder, inventory add or unlock scoped under the remote
+`sv_fs02` session is allowed only while the route is up, read from the server's own
+`sessions[sv_fs02].foothold`, never a client parameter. A local (keyboard or claim) session is
+never affected. A resource whose own `downIf` is truthy is withheld from the view and not served
+in the same way, returning when its global clears.
+
 ## Earned secrets
 
 | Secret | In-game source | Used in |
@@ -240,9 +353,20 @@ reload.
 `LANG=C.UTF-8`): no errors. One warning, the `maxAttempts` lockout warning the first slice gives
 for `lena_pc` (policy `counted`). No "doors skipped" warning (`counted` writes `remote` out).
 Information lines: the identity reach of each account (every account holder has the implicit
-`staff` role, so Lena and Ian also sign in at `sam_pc` and `kiosk_pc`); each jack's reach; and
+`staff` role, so Lena and Ian also sign in at `sam_pc` and `kiosk_pc`); each jack's reach (now
+including `secure_port` on `office_lan`, sub-slice P); and
 "Reachable without a foothold" for `sam_pc` and `kiosk_pc` (open rooms, not headless) and for the
 finance share, which maps for Lena on both of those. The open shares are not on that list, nor is
 `lena_pc` (behind a PIN door) or `door_box` (headless): the chain's payoff, "Door codes", is on the
 headless host, so it still needs the box. Plus the generic suggestions every small test scenario
 gets.
+
+Slice 9.3b sub-slice O adds one information line and no error or warning: "Outage: network
+'server_net' is down while 'servers_offline' is truthy; it starts up." `servers_offline` is
+declared in `globalVariables`, so no undeclared-global warning; `backup_vault` is an access-listed
+share (not an open share), so the start-down open-share warning does not apply.
+
+Slice 9.3b sub-slice I adds one expected warning: the `grant_foothold` at the kiosk socket targets
+`kiosk_pc`, whose `kiosk_locked` policy refuses the keystroke injector's USB class (this is beat
+N13 on purpose, so the refusal can be shown). The `kit_stick` "droppable without a needsTag"
+warning is the generic droppable one.

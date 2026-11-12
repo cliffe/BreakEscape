@@ -1329,3 +1329,933 @@ Rails 1606 runs, 0 failures, 0 errors, 1 skip; JS 491 of 491 files passed.
 
 Commits this round: `62a1fc990` (m1, n1), `076acc1d6` (m2), `71960ca23` (n3, drawer sprite),
 `4a4f97f37` (merge of `main`), and this note with the backlog change.
+
+## L: lockout as a cause (2026-11-11)
+
+Branch `build/9-2-l`, from `build/9-2-h` at `6192486b6` (H built, in review round 2; nothing of
+H's code was changed). Browser port 3019. The user said yes to this sub-slice (decision 14,
+2026-11-10).
+
+### Built
+
+- **L-1 server** (`3e7ed227a`). `AccessWork.lockout_station?`: the NPC's own station is a sign-in
+  PC it owns (no `screenOwner`, or its own id), the NPC has an account, and the PC's policy (its
+  own, else `defaultPolicy`) sets a positive `maxAttempts`; it joins "can fail" for `work`.
+  `POST /npc_frustration` takes `event: "check"` (`check_report!`): refused unless the object is
+  that station and in a room the player can know of (R2 m5's rule); answers `{ npcId, lockedOut }`
+  from `loginLockouts`; a true answer adds the station to the NPC's `lockedOut` list and writes
+  nothing else. A fail naming `locked_out` is refused unless that record exists
+  (`RECORDED_WHYS`, replacing A's `REFUSED_IN_A_WHYS`); `locked_out` holds when the record exists
+  and `loginLockouts` still holds the key; `owned_causes` passes the lockouts only behind the
+  record, so a recorded lockout ignores `rearmed` and refuses eases at the station. The owner claim
+  (`claim_login_session!`) is refused while `loginLockouts` holds the owner's username at that PC.
+  The first slice's test "a lockout of the owner does not stop a claim" now asserts the reverse
+  (plan 14), and A's R2 m2 test keeps passing unchanged in substance (no record, so no cause).
+  Tests: `npc_lockout_l_test.rb` (11 runs: can fail; check true only for the owner's username at
+  that PC, recorded once, nothing else written; refusals for another PC, no limit, another owner,
+  a locked room, an NPC not met; `locked_out` only behind the record; owned cause with the borrow
+  ease opening the gate; the claim refused; `GET /scenario` carries `lockedOut` and never
+  `loginLockouts`, `loginFailures` or a guessed username; the sign-in answer is the same for the
+  owner as for any username; tampered client).
+- **L-1 validator** (`ff6c07487`). A lockout station is a cause for the mutter check
+  (`station_fail` or `work_fail`); the work report line adds "locked out at '<pc>' after N wrong
+  passwords for its username there (a denial of service)"; `earliest_pace` gives an NPC whose only
+  failure is the lockout the use floor with the note "only by alternating eases and fails, once the
+  player has locked it out" when it has another place (a non-desk source or a borrow PC), else the
+  park floor. Tests: 2 in `validator-access-work.test.mjs`.
+- **L-1 client** (`683e7c080`). `npc-reports.js`: `noteLockout(pcId)` on `pc_signin_failed` with
+  `reason: "locked_out"` (keyboard or remote); `onOwnerReturned` on `workstation_owner_returned:*`
+  sends a `check` only when `shouldCheckLockout` holds (`wasLocked`, a lockout seen at that PC, a
+  positive `maxAttempts`, the owner has a work plan with that PC as `needsHome`, not already
+  flagged) and the needs system takes the hold; every check gets one answer for the needs system
+  (`lockedOut` true only when the server said so for that NPC; a lost request is sent once more,
+  then counts as no). `npc-needs.js`: `lockedOut` and `lockCheck` on each NPC's state,
+  `lockCheckSent`, `isLockedOut`, `npc_locked_out:<npcId>`; a judged use at the NPC's own station
+  holds its verdict while a check is in flight (`LOCK_CHECK_WAIT_MS` 30 s, then `lock_check_lapsed`);
+  a flagged station adds `{ id, why: "locked_out" }` first to the verdict (work only, never at a
+  borrowed PC); the flag is restored from `npcFrustration.lockedOut` (station only) and kept
+  through `reset()`; `getState()` gains both. `workstation-state.js`: `env.lockedOut(owner, pc)`
+  makes a flagged owner's screen lock on every leave (after the roll, so the seeded sequence of
+  other screens does not shift). Tests: `npc-lockout.test.mjs` (15; the hold and flag tests were
+  checked to fail with the code taken out); `npc-reports.test.mjs` install test now finds the three
+  listeners by name.
+- **Tooling** (`f16451753`). Leak scanner rules `lockout_list` (a `loginLockouts` or
+  `loginFailures` key anywhere; a `lockedOut` list anywhere but `GET /scenario`'s
+  `$.npcFrustration.<id>.lockedOut`) and `lockout_unrecorded` (a PC in that list, or a
+  `lockedOut: true` in a `/npc_frustration` answer, that the game's record does not hold);
+  `access-leak-check.rb` prints the recorded lockouts checked. `verify-run --access` adds "locked
+  out at <pc>" to an NPC's line. Bridge: `work()` gains `lockedOut`, `lockCheck`; `reports()` gains
+  `checks`, `lockoutSeen`. Tests: 3 scanner, 1 verify-run, the bridge test extended.
+- **L-2 scenario** (`303630655`). `lock_room` east of `open_office`: Jake (`jake_pc` under
+  `strict`, `lockChance: 1`, borrow `hot_desk_2` at 50, `screenHabit: { lockChance: 0 }`), Leo
+  (`leo_pc` under `strict`, `lockChance: 0`), `hot_desk_2` (unowned, `managed`) between them, a
+  fridge; aim `lockout_beats` with four tasks. `PLAYTEST.md` run L, expected validator output now
+  eight warnings (the two new ones are the first slice's "maxAttempts: confirm another route"
+  for `jake_pc` and `leo_pc`).
+- **Needs captures** (`9341c3f5f`): `access_model_needs_baseline/slice_9_2_l/`, 0 subjects differ
+  in both scenarios.
+- **Docs** (`fe8446e4b`): `README_scenario_design.md` "Lockout as a cause" (when the owner finds
+  out, the lesson and its per-PC limit, what it tells the player); `docs/test-bridge.md`.
+
+### Choices made (where the plan left one open)
+
+1. The `check` is answered only for the NPC's own station (`needsHome`), not any PC it owns
+   through `screenOwner`: the flag only matters there (5.2's "own station"), and it narrows
+   decision 14's exposure.
+2. A fail naming `locked_out` with no record is `refused`, not `stale` (an honest client never
+   sends one, and `stale` would trigger a sync and a resend).
+3. `locked_out` is applied to `work` only. A lockout at a `social_media` station is left to
+   sub-slice C (the "can fail" rule for `social_media` has no `maxAttempts` clause in the plan).
+4. No check is sent for an owner already flagged, including one flagged by a restore: the plan's
+   "or where npcFrustration already lists the owner" is met by the restore itself, since the
+   server's record stands for the mission.
+5. The hold sits at verdict time (`_completeJob`), so the use's own dwell covers the request; the
+   hold lapses after 30 s of needs clock so a lost answer cannot freeze an NPC.
+6. The lockouts this browser has seen live in the page only. A reload between the lockout and the
+   owner's locked return loses the mark, and the owner then works on; one more wrong password for
+   that username at that PC (answered locked_out again) marks it again. Persisting the mark would
+   need a new saved field; not done.
+7. Scenario: the hot desk is in the same room (a short walk; the beat is the lockout, not the
+   walk). Jake and Leo use a fridge (`hunger`): with a coffee station the validator warned that
+   Dana's caffeine need and theirs could cross rooms. Leo is locked out by claiming his open
+   screen, Switch user and three wrong passwords, since his screen never locks.
+
+### Browser run L (game 1241, port 3019)
+
+| Step | Result | Evidence |
+|---|---|---|
+| Lockout | **Pass** | Jake left (`screenLocked: true`); three wrong passwords on his tile: "2 attempts left", "1 attempt left", "This account is locked on this PC."; `pc_signin_failed` `locked_out`; `lockoutSeen` `jake_pc`. In this run Jake came back between the second and third password, so his return preceded the lockout and no check was due; he found out at his next locked return about three minutes later, as the plan intends |
+| Check and failure | **Pass** | `workstation_owner_returned:jake_pc` `wasLocked: true`, one check (`checks` 1 for the whole run), `npc_locked_out:jake`, `npc_use_failed:jake` `missing: [{ jake_pc, locked_out }]`, `station: true`, mutter `station_fail`, park `failed` 30 s; levels 20, 40, 60 (tell 1, 2, 2) |
+| Hot desk | **Pass** | At 60: `npc_workaround:jake` started, "I'll use the spare PC.", `npc_sat_at:hot_desk_2`, `npc_borrowed_session:hot_desk_2` `met: true`, ease to 50; the next station fail after the ease counted at the use floor (70). A click on the hot desk opened "Signed in as Jake Brooks (jbrooks)" (`pc_signed_in` `via: "claim"`) |
+| Leo | **Pass** | Claimed his open screen, Switch user, three wrong passwords: locked out at `leo_pc`. He came back (`wasLocked: false`), no check, and worked on (`npc_used:leo_pc` `met: true`). On his next trip a click showed the sign-in screen (`pc_signin_shown` `reason: "claim_refused"`); the server log names "the owner is locked out at this PC" |
+| Tasks | **Pass** | `l1_locked_out`, `l1_hot_desk`, `l1_claimed`, `l1_leo_locked_out` |
+| Reload | **Pass** | `location.href` to `/games/1241?skip_resume=1`: `npcFrustration.jake` came back with `lockedOut: ["jake_pc"]`; once `lock_room` loaded the needs log had `locked_out` `restored: true`, `checks` 0, and Jake's first use failed with `locked_out`; that fail was counted (90 to 100) and he borrowed the hot desk again |
+| Server record | **Pass** | `loginLockouts` `jake_pc\|jbrooks`, `leo_pc\|lmarsh`; `npcFrustration.jake` "locked out at jake_pc"; no `lockedOut` for Leo; `guestSessions.hot_desk_2` `jake` (a fresh borrow after the reload) |
+| Leak check | **Pass** | 68, then 112 responses: `VERDICT: no leaks found`, 1 recorded lockout checked, `lockout_list` 0, `lockout_unrecorded` 0 |
+
+Tampered client, from the page (`window.ApiClient`): a fail for Leo naming `locked_out` (no
+record): refused; a check for Jake naming `hot_desk_2` and one naming `leo_pc`: refused; a rearmed
+`locked_out` fail for Leo: refused; a state sync carrying `npcFrustration` (Leo locked out, Jake
+cleared) and an empty `loginLockouts`: ignored (verify-run unchanged), and Leo's fail after it
+still refused; an owner claim at `leo_pc` and at `jake_pc` with globals saying the screen is open:
+422 "Sign in required".
+
+### Observations, not changed
+
+- The sign-in screen shows "This account is locked on this PC." twice after the third wrong
+  password (first slice's minigame; not touched).
+- After the hot desk, Jake alternates a station fail and a borrow about every 35 s, his level
+  between 90 and 100 (H's repeating borrow, as designed); 19 report requests in about 8 minutes,
+  never two within 2 s.
+- `access-leak-check.rb` pads rule names to 16 characters, so `lockout_unrecorded` runs into its
+  count column (cosmetic).
+- The validator's error for `hall_c_drawer`'s `filing_cabinet1` sprite comes from H's Hall C, not
+  from L.
+- The first slice's scripted runs were not repeated (plan 14). Reason, from the scripts and the
+  code: none of `test_access_signin`, `test_access_sessions` (or any other scenario) has a work
+  plan, so "can fail" and the checks cannot reach them; the claim refusal is the only change that
+  can, and no beat claims a locked-out owner's session (S7 locks Sam out at `lockout_pc` and signs
+  in by password; the sessions runs have no lockout). Any mission where a player locks out an owner
+  and then claims that owner's open screen now gets the sign-in screen instead.
+
+### Needs regression
+
+Before (games 1235, 1236) with the three client files at `6192486b6`; after (games 1239, 1242) at
+`683e7c080`: `test_npc_needs` and `test_needs_leash` 0 subjects differ.
+`access_model_needs_baseline/slice_9_2_l/COMPARISON.md`.
+
+### Leftover games
+
+1235 and 1236 (before captures), 1239 and 1242 (after captures), 1241 (browser run). Shared dev
+database, mission 243. The :3019 server is stopped.
+
+### Suites
+
+Under the lock after the last code change: Rails 1618 runs, 21852 assertions, 0 failures, 0
+errors, 1 skip; JS 492 of 492 files passed.
+
+### Commits
+
+`3e7ed227a` (server), `ff6c07487` (validator), `683e7c080` (client), `f16451753` (tooling),
+`303630655` (scenario and run L), `9341c3f5f` (needs captures), `fe8446e4b` (docs), and this log.
+Nothing merged.
+
+## L review round 1 outcomes (2026-11-11)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_L_CODE_REVIEW_R1_SERVER.md` (0 blockers, 0 majors, 4 minors, 5
+nits) and `ACCESS_MODEL_SLICE_9_2_L_CODE_REVIEW_R1_CLIENT.md` (0 blockers, 1 major, 3 minors, 5
+nits). Every fix below has a test that fails with the fix taken out (checked by reverting each one
+in turn).
+
+### Orchestrator decisions (recorded)
+
+- **Client M1, the reload gap: the server sends the PCs.** `GET /scenario` carries `lockoutPcs`, the
+  ids of the sign-in PCs where `loginLockouts` holds any key (PC ids only, never a username or a
+  password), and the client seeds its "lockout seen" mark from it. The player caused and was shown
+  each of those lockouts, so this tells the browser nothing new. Plan 6.6 and the 9.2 table now say
+  so. The leak scanner allows exactly `$.lockoutPcs` in `GET /scenario`.
+- Server m2: `locked_out` is a `work` cause only, as on the client. Server m1: the hot-desk guest
+  path reads `loginLockouts`. Server m3: the check needs a work plan. Server m4: the scanner is
+  widened. Client m1: a "not locked out" answer clears the mark. Client n1: a lapse is never "met".
+
+### Server review
+
+| Finding | Outcome |
+|---|---|
+| m1 a locked-out guest leaves a claimable session | **Fixed.** `Game#account_locked_out_at?(pc, npc)` (the key `attempt_login!` builds); `record_borrow_done!` writes no guest record for a borrower locked out at that PC (as for a careful guest), and `claim_guest_session!` refuses "the guest is locked out at this PC". The owner claim uses the same helper. Tests: a borrow by Jake locked out at a `strict` hot desk leaves no `guestSessions` entry and the claim is 422; a planted guest record is refused while the lockout holds and granted once it is gone |
+| m2 `locked_out` owned for `social_media` | **Fixed.** `AccessWork.owned_causes` adds `locked_out` only for `work`; `fail_report!` refuses a `locked_out` cause on any other need. Test: Jake with `work` and `social_media` at `jake_pc` (desk only), recorded locked out: a social fail naming `locked_out` is refused and a social ease at the station is answered |
+| m3 the check needs no work plan | **Fixed.** `check_report!` refuses unless `AccessWork.work_plan?`. Test: a needs-only owner under `strict`, locked out, is refused and nothing is recorded |
+| m4 the scanner checks key names only | **Fixed.** `lockout_list` also reports a boolean `lockedOut` outside `POST /npc_frustration` and `POST /login`, and (with the game) any string holding one of the game's `loginLockouts` or `loginFailures` keys, under any key; and a `lockoutPcs` anywhere but `GET /scenario`'s `$.lockoutPcs`, or an entry there that is not a PC the game holds a lockout at (without a game, any key-shaped entry). Tests: one row each; no username in the report lines. The first L scanner test now also expects the `lockout_key` finding its own planted list gives |
+| n1 the owner claim is a second oracle | **Recorded** in plan 9.3's residual list: the claim answers the same question as the check, for any owner |
+| n2 plan 9.1 point 2 | **Fixed**: "for `work` only ... once a `check` has recorded it" |
+| n3 a record that outlives its lockout | **Test added**: `lockedOut: ["jake_pc"]` with no `loginLockouts`: the fail is refused, the station ease accepted |
+| n4 `lockedOut` sent as stored | **Fixed**: `GET /scenario` sends the stored list intersected with the NPC's station. Test with a stored `["jake_pc", "leo_pc", 7]` |
+| n5 column width | **Fixed**: `ljust(20)` |
+| Validator error on `hall_c_drawer` | H's; gone after merging `build/9-2-h` (the validator now shows no failure lines on `test_access_work`) |
+
+### Client review
+
+| Finding | Outcome |
+|---|---|
+| M1 the mark lost on reload | **Fixed** (decision above). `NpcReports.seedLockouts(list)`, called by `installNpcReports` from `window.gameScenario.lockoutPcs` (strings only). Server test: `lockoutPcs` lists `jake_pc` and `leo_pc` after lockouts of guessed and real usernames, drops a PC that is not a sign-in PC, carries no username, and the GET writes no record. Client test: the install seeds the mark and a locked return then checks |
+| m1 a false answer leaves the PC marked | **Fixed.** A per-PC count of lockout answers; the check carries the count when queued (never sent). An answer from the server with `lockedOut: false` for that NPC clears the mark unless the count has moved since; a refused or lost answer keeps it. Tests: no second check after a no; a new lockout answer marks it again; refused, lost, and a lockout noted while the check was in flight all keep the mark. After a reload the mark is seeded again from `lockoutPcs`, so a lockout of some other username costs one check per page load |
+| m2 no test joins the three layers | **Test added**: a real `WorkstationState`, `NpcReports` and the needs core on one dispatcher; Dana leaves for coffee, comes back to a locked screen, the check is sent and the hold taken in the same task as the return, her use waits, the answer arrives, the use fails with `locked_out`, no use is met. It fails with the hold taken out. Also added: a late true answer after a lapse still flags; `markCheck` refusing queues nothing. Not added: `_lateRoll` for a flagged owner (it goes through `_rollScreen`, which the screen test covers) |
+| m3 README says the wrong screen | **Fixed**: "Their own PC's screen locks on every leave ... the hot desk is left as the borrower's habit says (unless they are locked out there too ...)" |
+| n1 a lapse lets a use through as met | **Fixed.** After `LOCK_CHECK_WAIT_MS` with no answer the use is skipped, not judged: nothing restored, no `npc_used`, no report; the check stays in flight with its wait started again, so the next use there waits too, and only an answer ends the wait. The NPC never freezes (it goes home and comes back). Plan 6.6 and the README say so. Test: the lapse gives no `npc_used` and no failure, a second use lapses again, and the use after a no is met |
+| n2 the third policy lookup | **Comment added** at the copy in `npc-reports.js` naming the other two. Not merged: the copy reads the loaded room's sprite first, which `pc-policy.js` does not, and a new import there needs the JS test harness copy lists |
+| n3 the lockout shown three ways | **Not changed.** First-slice code; it is not a one-liner choice: the toast is the engine's refusal convention (the error-toast floor), and dropping the form message or the overlay changes the first slice's sign-in screen. For a first-slice pass |
+| n4 a check answer with no needs state | **Comment added** in `_applyAnswers` |
+| n5 `writes_down` on a lockout station | **Fixed**: one sentence in the README's lockout section |
+
+### Browser check (game 1253, port 3019)
+
+Keyless server on :3019, stopped by PID afterwards. A new game started in `lock_room`.
+
+- Jake left for the fridge (`workstation_owner_left:jake_pc` `screenLocked: true`). Three wrong
+  passwords for `jbrooks` through `pcSessions.signIn` (the minigame's own path): wrong (2 left),
+  wrong (1 left), `locked_out`; `lockoutSeen` `["jake_pc"]`; Jake had not come back.
+- Reload (`?skip_resume=1`) before his return. `GET /scenario` carried `lockoutPcs: ["jake_pc"]`
+  and no `lockedOut` for Jake; after the install `lockoutSeen` was `["jake_pc"]`, `checks` 0.
+- Jake's next trip: `workstation_owner_returned:jake_pc` `wasLocked: true`, one check (`checks`
+  1), `npc_locked_out:jake` a second later, then `npc_use_failed:jake` `missing: [{ jake_pc,
+  locked_out }]`, `station: true`. No use of `jake_pc` was met after the return.
+- Server record: `loginLockouts` `["jake_pc|jbrooks"]`; `npcFrustration.jake` level 20,
+  `lockedOut: ["jake_pc"]`, `failWhy.work: ["locked_out"]`.
+- `access-leak-check.rb` over the 20 responses (two `GET /scenario` with `lockoutPcs`): no leaks;
+  `lockout_list` 0, `lockout_unrecorded` 0.
+
+### Leftover games
+
+1253 (this round's check), on the shared dev database.
+
+### Merges and suites after review round 1
+
+`build/9-2-h` merged at its head `fa0f92445` (one conflict, this log: both sides kept, H's rounds 2
+and 3 before L), then `main` at `22255f183` (no conflicts). The validator shows no failure lines on
+`test_access_work`. After both merges, under the lock: Rails 1630 runs, 23720 assertions, 0
+failures, 0 errors, 1 skip; JS 493 of 493 files passed.
+
+Commits this round: `cd9c13722` (server and scanner), `8d5a26428` (client, README and plan), the
+two merges, and this log with the run L reload beat in `PLAYTEST.md`.
+
+## L review round 2 outcomes (2026-11-11)
+
+Review: `ACCESS_MODEL_SLICE_9_2_L_CODE_REVIEW_R2.md` (0 blockers, 0 majors, 2 minors, 5 nits).
+
+| Finding | Outcome |
+|---|---|
+| m1 a borrower locked out at the hot desk still works there | **Wording fixed.** Plan 6.6 has a new "At a borrowed PC" point and the README lockout section says it: a lockout at a borrowed PC stops only the session left open there; the borrower still works at it, so "lock them out everywhere" does not make them give up. No validator warning |
+| m2 a hung request holds the queue and the owner | **Fixed.** `NpcReports._sendBounded` races `deps.send` against `SEND_TIMEOUT_MS` (20 s, through `deps.setTimer`), aborts the request through an `AbortController` and rejects, so `flush` treats it as lost and the existing rules apply (a lost check is sent once more, then answered no). `ApiClient.post` and `npcFrustration` take an optional `{ signal }`. Plan 6.6 says the wait is bounded by the request. Test: a send that never settles gives the check answer within two timeouts, the first signal is aborted, `sending` is false and the next batch is sent; it fails without the timeout. The three-layer test's fake timer fired every timer at once, so it now leaves the send timeout unfired (that test models an answer in time) |
+| n1 a "no" clears the mark per PC | **Not changed**, one-line reason in `npc-reports.js`: it matters only for two owners sharing one unowned sign-in `needsHome`, which no scenario does, and costs one missed check until the next lockout answer or reload |
+| n2 the guest-lockout refusal leaves the record | **Fixed**: `end_guest_session_at!` and `save!` before the refusal, as the timed-out branch does. The R1 m1 claim test now asserts the record is gone |
+| n3 the scanner's key rule reads values only | **Fixed**: hash keys holding a lockout key are reported at the parent's path (`<path>.[lockout key]`), so no username reaches the report. The end-of-run limit is noted in the header comment. Test added |
+| n4 a blank username makes a short key | **Fixed in the scanner**: a key whose username part is blank is skipped. `attempt_login!` is unchanged (a blank username still counts as a failure). Test added |
+| n5 the guest claim as a third route | **Recorded** in plan 9.3's residual list |
+| Scanner test's unexplained first-run error | Six further runs alone (one after the edit, five in a row): 37 runs, 234 assertions, 0 errors each time. Not reproduced; consistent with the review's guess of the shared test database under another worktree's run |
+
+### Merge and suites after review round 2
+
+`main` merged at `ecc009d10` (no conflicts). Under the lock: Rails 1632 runs, 23726 assertions, 0
+failures, 0 errors, 1 skip; JS 494 of 494 files passed.
+
+Commits this round: `18488cea0` (fixes, tests, plan and README), merge `5a7b394cc`, and this log.
+
+## C: social media (2026-11-11, split at the context limit)
+
+Branch `build/9-2-c`, from `build/9-2-h` at `6192486b6`. Browser port 3020 (not used yet).
+
+### Built
+
+- **C-1 server** (`008df90ec`). New concern `app/models/break_escape/social_feed.rb` (`reveal_feed_post!`,
+  `feed_posts_for_client`, `withhold_feed_facts!`), included in `Game`; `game.rb` edits are four
+  small ones (include, `feedRevealed` in `ACCESS_STATE_DEFAULTS`, the bootstrap call after
+  `withhold_network_keys!`, `hasFeed` in `compile_npc_plan!`). `POST /feed_post` (locked, policy
+  `feed_post?`): 403 for an NPC not known (or a non-string `npc_id`); `{ post: null, done: true }`
+  with no feed or no need, or none left; `{ post: null, done: false, tooSoon: true, retryAfter }`
+  inside the floor; else `{ npcId, index, post, fact: { id, entry } | null, site, person, done }`.
+  A post carries only `id text fact date note` (string values); `deliberate` stays on the server.
+  `GET /scenario` adds `feedPosts`. Resolver (`access_work.rb`): `social_station?`, `feed_posts`,
+  `feeds?`, `feed_facts`, `post_period_seconds`, `post_floor`; `places` counts the own workstation
+  for `social_media`; `shortest_use_seconds` takes `socialUse` time at the own PC, not the PC's.
+  Tests: `test/controllers/break_escape/feed_post_test.rb` (12 runs), `test/unit/access_work_social_test.rb`
+  (6), fixture `test/support/access_social_scenario.rb`.
+- **C-3 needs core** (`40c513d75`). `npc-needs.js`: `_socialCandidate` (8.1's order: borrow, allowed
+  own PC, non-desk source, phone, blocked own PC), `_socialUseSeconds`/`_socialRestores`,
+  `_startSelfJob`/`_completeSelfJob` (job `{ kind: 'self', phase: 'using', targetId: null }`, no
+  wind-up, no `npc_left_post`, a walk home stopped and resumed, `npc_used_phone:<id>`, ease with
+  `objectId: null`), `job.socialDesk` for the at-desk use, `_deadStation` for a desk station,
+  `isDistracted(id)` and `getState().distracted`; adapter `describe` sets `socialBlocked` from
+  `pcPolicy.effectivePolicy(...).social`, and `useVerdict` reads it. `npc-sight-challenge.js` skips
+  a distracted NPC; `seating.js` `needsStop` keeps a phone user at its post seated;
+  `npc-action-icons.js` shows `social` for `social_media`. Tests: `npc-needs-social-media.test.mjs`
+  (14), one in `npc-sight-challenge.test.mjs`. `npc-work.js` needed nothing (A already had
+  `social_blocked`).
+- **C-4 feed and browser** (`b93b3bd51`). `systems/social-feed.js` (new): `SocialFeed`
+  (`onUse`, `apply`, `restore`, `postsFor`, `revealed`), `cleanPost`/`cleanFact` (strings only),
+  `installSocialFeed`. `core/game.js` installs it statically right after `gameScenario` is read,
+  so `feedPosts` and their facts are merged before anything can open. `api-client.js` `feedPost`.
+  `osint-browser-minigame.js`: `_feedPosts` lists revealed posts first, newest on top;
+  `_onPosted` re-renders an open profile on `npc_posted:*` (listener removed in `cleanup`).
+  Toast "<name> posted on <site>" with `plainText: true`. Tests: `social-feed.test.mjs` (12),
+  six in `social-osint-browser.test.mjs` (including hostile post text rendered as text).
+- **C-2 validator** (`076e098ff`). `validate_access_work.rb` `check_social`, `check_social_need`,
+  `feed_report_lines` (each in its own method). Errors: feed site/person, bare-list feed, post
+  without id, duplicate ids (osint and other feeds), unknown fact, a feed fact named anywhere
+  else (any `fact` key, a `grants.intel` list), a password in a post, a feed fact or a chatter
+  line, no source at all with `"phone": false`. Warnings: short text, text inside a shipped
+  string (equal counts), feed with no need, high awareness unless `deliberate`, no
+  `social_blocked` line, no station line for a social-only NPC, challengeOnSight with a phone.
+  Report line `ℹ️ Feed <npc>`: first urgent, period, expected times, server floor.
+  `validate_npc_needs.rb` counts the own workstation as a source. `clues.rb` reads each feed
+  post's text (feed facts were already read through `intelFacts`). Schema: `social.osint.postToasts`.
+  Tests: `validator-access-social.test.mjs` (13), one in `npc_habits_clues_test.rb`.
+- **C-5 tooling** (`29dcab141`). Leak scanner: feed post and feed fact whole texts (12 or more
+  characters) and any object keyed by a feed fact id with `text`, allowed once a `/feed_post`
+  answer served them or a `GET /scenario` `feedPosts` entry within the game's `feedRevealed`
+  count; `feed`, `workNeeds`, `frustration` join the withheld NPC keys; counts printed.
+  `verify-run --access` prints `feedRevealed`. `__test.access.feed()`. Tests:
+  `access_leak_scanner_feed_test.rb` (8), bridge and verify-run tests updated.
+
+### Choices made (where the plan left one open)
+
+1. The own workstation (`needsHome`, a desk) is a `social_media` source whatever its affordance,
+   on both sides (JS `_socialCandidate`, Ruby `social_station?`), so an author need not add
+   `social_media` to a sign-in PC's `satisfies`. A use there takes `socialUse` time and restores.
+2. Post floor: `0.9 x period - 3` s (the 3 s allowance the other floors give), with the smallest
+   `restores` taken at the low end of the need's `jitterPct`, so an honest jittered use is never
+   refused.
+3. `/feed_post` for an NPC not known is 403; a too-soon answer adds `tooSoon` and `retryAfter`.
+   The client does not retry on `tooSoon`: the next met use asks again.
+4. A feed text equal to another shipped string also warns ("occurs inside").
+5. The toast title is "New post".
+
+### Handover: open, in order
+
+1. **Needs regression captures.** The "before" captures were not taken before C-3. Take them
+   from a worktree at `6192486b6` (or by running the capture with the base's
+   `npc-needs.js`, `seating.js`, `npc-action-icons.js`, `npc-sight-challenge.js`), then "after" on
+   this branch, for `test_npc_needs` and `test_needs_leash`, into
+   `docs/achitechture/access_model_needs_baseline/slice_9_2_c/` with `COMPARISON.md`. H's script
+   was `.../scratchpad/h_capture.sh <suffix>` (port 3018; use 3020).
+2. **`scenarios/test_access_social`** (plan 11.2, F1 to F8) and its `PLAYTEST.md`, with
+   `mission.json` in `test_scenarios`. Top-level `chatter` with `social_blocked`, the work pools
+   and `wk_borrow`. Omar's kiosk: a sign-in PC under `lax` with an authored
+   `affordance: { satisfies: ["social_media"], restores, useSeconds }`. Run the validator; expect
+   only the challengeOnSight warning for F8's guard.
+3. **Live browser proof on :3020** through the real path (need, post, feed, use of the fact,
+   reload by `location.href` with `?skip_resume=1`), the F5 password at the hot desk, plus
+   tampered-client checks (`/feed_post` for an unmet NPC, too soon, a forged `grantFact` of an
+   unrevealed fact) and hostile text (a post with markup in this game's `scenario_data`).
+   `verify-run --access` and `access-leak-check.rb` after each beat.
+4. **C-6 documents**: "Social media feeds" in `README_scenario_design.md`; the `self` job in
+   `NPC_NEEDS_SYSTEM.md`; `feed()` and `distracted` in `docs/test-bridge.md`.
+5. Both full suites under the lock; then this section's outcomes.
+
+### Single-file results at this split
+
+`feed_post_test` 12, `access_work_social_test` 6, frustration/workaround/H/access_work 111,
+`npc_habits_clues_test` 14, leak scanner 37: all pass. JS: `npc-needs-social-media` 14, needs and
+seating files 224, `social-feed` 12, `social-osint-browser` 33, `validator-access-social` 13,
+`validator-access-work`/leash/habits 85, bridge and verify-run 25: all pass. Full suites not run.
+
+### Gotchas
+
+- `seating.js` reads `window` at import: import it dynamically in a node test after stubbing.
+- The needs work fixture's `log()` helper defaults to Dana; pass the NPC id.
+- No server or browser was started; no games were made.
+
+## C: social media, finished (2026-11-11)
+
+Resumed from the handover above. Port 3020 (this branch), and a second worktree at `6192486b6` on
+port 3023 for the "before" captures only.
+
+### Done
+
+- **Needs regression** (`bac489521`, `a655326c3`): before games 1240 and 1244 (base worktree,
+  :3023), after games 1246 and 1249 (:3020). `test_npc_needs` 0 subjects differ,
+  `test_needs_leash` 0. `access_model_needs_baseline/slice_9_2_c/COMPARISON.md`.
+- **`scenarios/test_access_social`** (`911d3a4bc`, `ccc28caca`): F1 to F8 as plan 11.2, with
+  `mission.json` in `test_scenarios`, `PLAYTEST.md` (beats, budgets, earned secrets, tampered
+  checks). Validator: no errors; two expected warnings (Jake's two `npc_posted` mappings, the
+  walkable guard). The kiosk first stood at x 9, on the lobby's east wall, so it was unreachable;
+  moved to x 7 after the live run found it.
+- **Two validator gaps found by the scenario** (`911d3a4bc`): the OSINT lint counted no feed post
+  as a fact's granting element, so every feed fact was "granted by nothing"; a feed post is now
+  that fact's element and the fact's `source` names the post (`scripts/validate_social/osint.rb`
+  `feed_elements`). The needs timing line read the own PC's `affordance.restores` (0 for a sign-in
+  PC) and printed `P = 0.0 min`; it now takes `socialUse.restores` (default 60) at the own PC.
+  Two tests in `validator-access-social.test.mjs`.
+- **Feed facts in the notebook** (`7622d75c2`, `a6631b5be`): `grantFact` wrote a fact's text to
+  the notebook raw, and the notebook renders a markdown subset, so a feed fact with `**`, `_`,
+  backticks, `#`, `|` or `--` was formatted. As sub-slice H did for overheard logins, the text is
+  escaped once at storage: `social-feed.js` sets `entry.noteText = escapeNoteText(entry.text)`
+  when it merges a feed fact (any `noteText` in the answer is overwritten), and `grantFact` writes
+  `noteText` when present, else `text`, so authored facts are unchanged. `escapeNoteText` is a
+  local copy of H's (no new import for the harness copy lists). The post toast now passes
+  `verbatim: true` as well as `plainText`. Tests: hostile strings (HTML, markdown, `--`,
+  backslashes, a list marker, tab and BEL) come out of the real `renderNoteMarkdown(displayDashes())`
+  exactly with no element; `grantFact` writes the escaped text for a feed fact and the authored
+  text for an ordinary one; main's `noteMatches` finds the escaped text by the text as written.
+- **C-6 documents** (`4adf39477`): "Social media feeds" under "Work, frustration and workarounds"
+  in `README_scenario_design.md`; 5.10 (the need, the phone, the `self` job, distracted) and the
+  `npc_used_phone` and `npc_posted` events in `NPC_NEEDS_SYSTEM.md`; `feed()` and `distracted` in
+  `docs/test-bridge.md`.
+- **Merge of `main`** (`7c5d331ac`): one code conflict, `_startJob`: main clears
+  `workaroundShow` and `failedShow` when a job starts; the `self` branch now comes after those two
+  lines, so a phone use clears them too. The build log conflict kept both sides (H review rounds
+  2 and 3 from main, then this section).
+
+### Live proof (game 1250, then game 1254 for the tampered client; port 3020, headless)
+
+Game 1250's `scenario_data` was edited before the browser loaded it: Lena's `displayName` and
+profile name `Lena <i>Fox</i> **Q**`, her post and a new feed fact `lena_race` holding HTML
+(`<b>`, an `<img onerror>`), markdown (`**`, `_`, backticks, `#`, `|`, a link), `--`, BEL and a
+right-to-left override. `verify-run --access` and `access-leak-check.rb` after each beat; the leak
+check counted 5 feed posts and 3 feed facts every time and reported no leaks.
+
+| Beat | Result |
+|---|---|
+| F1 | Bootstrap `social.intelFacts` held `jake_office` only; each profile showed its one authored post; the hostile name listed as text. `feedRevealed` empty, no leaks |
+| F2 | Jake used his phone at his desk: job `{ kind: self, phase: using, targetId: null }`, `atPost` true, `distracted` true, no `npc_left_post`; a click on his PC said "Jake Brooks is using this PC." `npc_used_phone:jake`, then `npc_posted:jake` and the "New post" toast (the terminal had been opened in F1). The terminal listed the feed post above the authored one; clicking it noted `jake_pet_name` with its text |
+| F3 | `npc_used:lena_pc` with need `social_media`, `met: true`; her post listed; her feed done after one request |
+| F4 | First failure muttered `social_blocked`, second `wk_borrow`. The first two borrows were dropped: the kiosk was on the wall (fixed), then the player stood in Omar's doorway and the walk timed out. With the player moved aside: `npc_borrowed_session:kiosk` (`met: true`), `npc_used:kiosk`, `npc_posted:omar`; a click on the kiosk opened "Signed in as Omar Haddad" (`via: claim`, `guest: true`). Server: `guestSessions` kiosk omar, `feedRevealed.omar` 1 |
+| F5 | Password built from Jake's two posts and the IT poster signed in at the hot desk (`pc_signed_in:hot_desk`, `via: password`); his desktop held `F5.txt`; server `sessions.hot_desk` jake by password. The task did not tick: after the reload Jake's room had not loaded, so his mappings were not registered (PLAYTEST now says to enter his room first) |
+| F6 | Jake's third post came with `done: true`; no further request for him (feed requests 4 in all, flat) |
+| F7 | Reload by `location.href` with `?skip_resume=1`: the terminal listed all three of Jake's posts, the two noted ones marked; the three evidence notes kept their text; `feedRevealed` unchanged; no request from the reload |
+| F8 | Challenge at entry; none in the 15 s the guard was on his phone with the player walking in view (cooldown 5 s); the next one as he put it away (`f8_distracted`, `f8_challenged`) |
+
+Hostile text: Lena's name in the profile list, the profile heading and the toast message; her
+post and the "Noted:" line in the browser; and the notebook page (opened from the Notepad,
+found by searching "Lena runs") all showed the text exactly, with no element made from it and
+the `<img onerror>` never run. The notebook stores the escaped form.
+
+Tampered client:
+- `POST /feed_post` for `guard` (no feed): `{ post: null, done: true }`; for `nobody` and for a
+  non-string id: 403; for Jake after his feed was done: `done: true`; with no CSRF token: 422.
+- Game 1254: before Jake's room loaded, a forged `/feed_post` for him was 403. After it loaded, a
+  forged first request was answered with post 1 (a tampered browser can take a post early, plan
+  9.3) and a second straight after was `tooSoon` (`retryAfter` 51).
+- `grantFact('jake_wedding_year')` and `grantFact('jake_pet_name')` before their posts: refused,
+  globals stayed false.
+- A post the server never revealed (`jake_post_3` with a made-up `jake_wedding_year` entry),
+  pushed into `window.socialFeed` by hand: listed and grantable in that page only. After a reload
+  `GET /scenario` `feedPosts` held only post 1 and `social.intelFacts` no `jake_wedding_year`. The
+  client-written `se_intel_jake_wedding_year` global and the player's own saved note kept the
+  forged text: the server cannot tell those from honest ones (as plan 9.3 says for globals).
+  The leak check on 1254: no leaks.
+
+### Findings for review
+
+1. A player standing in a doorway blocks an NPC's walk between rooms: the walk times out (20 s),
+   the borrow is dropped (60 s), the next failure is counted and the workaround handed again.
+   Omar's level reached 100 this way. Sub-slice H behaviour, not changed here.
+2. An NPC's `eventMappings` are registered only when its room loads, so a task mapped on an NPC
+   does not tick for events that happen while its room is unloaded (F5 after a reload).
+3. The objective wiring check cannot tell that `data.index === 0` and `data.index === 2` never
+   pass together, so it warns on Jake's two `npc_posted` mappings.
+
+### Leftover games
+
+1240, 1244 (before captures, base worktree); 1246, 1249 (after captures); 1250 (live proof, with
+hostile text in its `scenario_data`); 1254 (tampered client). A mission record for
+`test_access_social` (id 245) was added to the shared database the way `db/seeds.rb` makes one,
+since `new-game.rb` needs it; the full seed was not run. Servers on 3020 and 3023 stopped by PID.
+
+### Suites (after the merge of `main`, at `a6631b5be`)
+
+Rails 1633 runs, 23769 assertions, 0 failures, 0 errors, 1 skip. JS 495 of 495 files.
+
+## C review round 1 outcomes (2026-11-12)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_C_CODE_REVIEW_R1_SERVER.md` (2 majors, 4 minors, 6 nits) and
+`..._R1_CLIENT.md` (2 majors, 5 minors, 7 nits). Each must-fix item has a test that fails with the
+fix reverted (checked by putting the old file back and rerunning).
+
+### Server review
+
+- **M1** (`8c7a046a9`): the leak scanner counts `/feed_post` answers in log order. A `feedPosts`
+  item is allowed only when its post id is among the NPC's first n authored posts revealed so far
+  (looked up in the catalogue, never by the response's `index`), and its fact only when it is that
+  post's fact. A `/feed_post` answer serves the next authored post whatever it says, so an answer
+  out of order is reported. The game's saved `feedRevealed` is used only for reveals the log does
+  not hold (a resumed game), and `access-leak-check.rb` prints a note naming those NPCs. Tests: the
+  review's case (one answer, then `GET /scenario` with posts 1 and 2, a final n of 3), a mislabelled
+  index, an out-of-order answer, the resumed fallback. n3 (duplicate texts share one entry) and n4
+  (a bootstrap whose `social.intelFacts` is not an object) in the same commit.
+- **M2** (`1493e7f9a`): the no-password test gains Fay, a lobby NPC with work needs, a frustration
+  block, a workaround and a feed with two feed facts. Fifteen routes (scenario, scenario_map, both
+  rooms, ink, objectives, capture_secrets, login_accounts, container, door unlock, update_room,
+  inventory, login, npc_frustration, npc_workaround) are checked before and after one `/feed_post`:
+  no post or feed fact text, no object keyed by a feed fact id with text, no `feed`, `workNeeds` or
+  `frustration` on her record. Fails with `feed` out of `WITHHELD_WORK_NPC_KEYS`, and with
+  `withhold_feed_facts!` off.
+- **m1** (`c65c52da7`): `clues.rb` and the OSINT lint take only posts the server serves
+  (`AccessWork.feeds?` and `feed_posts`). A feed with no `social_media` need is now an error when a
+  post names a fact (the fact can never be granted), a warning otherwise.
+- **m2** (`ce13a102b`, plan 8.3): the client asks again once after a `tooSoon` answer's
+  `retryAfter` (capped at 300 s, plus 1 s), so a use inside the floor still yields its post; a use
+  while that retry waits asks nothing. The server is unchanged.
+- **m3** (`9786c837d`): the comment is corrected and a feed alone no longer writes an
+  `npcFrustration` entry. The optional first-post floor was not adopted.
+- **m4**: not adopted (it needs the server to judge whether an honest source exists); named in
+  plan 9.3's residual list with the first-post-at-once case.
+- **n1, n2, n5** (`985968160`): `feeds?` needs a numeric `decayPerMin` above 0; `urgentAt` is
+  clamped to 1..99 and `socialUse.restores` to 0..100 as the client does. The schedule rounds
+  seconds before splitting minutes. Tests for a save with no `feedRevealed` key and for
+  `feed_post` in the lock list. **n6** checked at the merge: L's lockout stays work only
+  (`access_work.rb` `need == 'work'`; the needs core's lockout line is work only; the adapter's
+  station keeps `lockedOut: false`).
+
+### Client review
+
+- **M1** (`ce13a102b`): `cleanFact` copies the entry as plain JSON data (strings, finite numbers,
+  booleans, null, arrays, plain objects, six levels; `__proto__`, `constructor`, `prototype` keys
+  skipped), so `provides` and `stale` survive. The wrong-shape test is replaced; a new test merges a
+  feed fact with `provides` and reads it through `heldProvides`, `buildBoardModel` (Jake identified
+  by the name in `provides` alone) and `blankSlot`. A network failure (no HTTP status) is asked
+  again once after 5 s (nit).
+- **M2** (`29ac1e0c6`): the engine adapter lists the `needsHome` desk of an NPC with a
+  `social_media` need even with no affordance (it gets an empty one, in `listObjects` and
+  `getObject`). Tests through the real `createEngineWorld` over a stub window, and a needs run in
+  which an NPC with `"phone": false` uses that PC (`npc_used:jake_pc`, `met: true`). The validator
+  now warns when an NPC with `"phone": false` has only its own PC, that PC blocks social media,
+  and no `borrow_session` workaround: the need is never met.
+- **m1** (`db8d9fc80`): `needsStop` returns null for a `self` job away from the post.
+- **m2**: a test sets a barrier and a workaround icon, starts a phone use and finds both cleared;
+  it fails with the `self` line moved above the two resets.
+- **m3** (`29ac1e0c6`): an adapter test for `socialBlocked` from the policy and the verdict's
+  `social_blocked`; it fails with the `describe` line broken.
+- **m4** (`afca40b3f`): `f5_signed_in` is an `unlock_object` task on `hot_desk` (only Jake's
+  account works there), so it ticks with Jake's room unloaded; the mapping and the PLAYTEST note
+  are gone. Build log finding 2 stays an engine item.
+- **m5**: kept as it is; a sentence in `NPC_NEEDS_SYSTEM.md` 5.10 and a test.
+- **Nits**: README says the guard challenges again when the phone goes away; the osint browser
+  keeps its scroll on a post (`e02251431`); `mergeFact` skips a prototype id; the two
+  `escapeNoteText` copies point at each other (`658f92759`). Not changed: the `_noteLeash` log
+  noise for a phone NPC (log only, and changing the candidate order risks the 8.1 order), and
+  `_wakeStationFor` using the station's `useSeconds` (harmless, in A and H code).
+
+### Live check (game 1259, port 3020, headless)
+
+Game 1259's `scenario_data` gave `jake_pet_name` a `provides` (a name and a pet) and Lena
+`"phone": false` with no `affordance` on `lena_pc`. Jake posted from his phone; the merged entry
+in `intelFacts` kept both `provides` items; clicking his post in the Friendface terminal granted
+the fact, and the page's own `heldProvides` and `buildBoardModel` read it (Jake identified by the
+name alone). Lena used her PC for social media (`npc_used:lena_pc`, `met: true`), posted, and F3
+ticked. After a reload by `location.href` with `?skip_resume=1` the posts and `provides` were
+back with no request. `access-leak-check.rb` after the run and after the reload: no leaks
+(5 feed posts, 2 feed facts checked). Server on 3020 stopped by PID.
+
+### Merge
+
+`main` merged at `d418c4cc8` (it holds L, `ea19141bb`). Conflicts kept both sides:
+`feedPosts` and `lockoutPcs` in `GET /scenario`; the adapter's station takes L's
+`lockedOut: false` and C's `socialBlocked`; the scanner counts, rules and rule texts of both; the
+bridge and test-bridge docs; plan 9.3's residual list; this log (L's sections, then C's).
+
+### Leftover games
+
+1259 (live check, with the edits above in its `scenario_data`).
+
+### Suites after C review round 1 (after the merge of `main`, at `d418c4cc8`)
+
+Rails 1670 runs, 24768 assertions, 0 failures, 0 errors, 1 skip. JS 497 of 497 files.
+
+## C review round 2 outcomes (2026-11-12)
+
+Review: `ACCESS_MODEL_SLICE_9_2_C_CODE_REVIEW_R2.md` (no blocker, 1 major, 2 minor, 4 nits).
+
+- **M1** (`b975d63db`): the no-exposure test now gets a 200 from every one of its 15 routes and
+  asserts that status before the leak checks, so a route that starts refusing fails the test.
+  Fay moves to finance, behind the PIN door, and each pass locks finance again first, so the door
+  unlock answers with her room. The sign-in uses Jake's password, so `GET /container/jake_pc`
+  answers; the inventory add takes a takeable lobby flyer; Fay has a `storyPath` for `GET /ink`;
+  the frustration report is a real `ease` (with `npc_id`, which the old call misspelt); her
+  workaround is an `emit` handed over in the saved state, so its "done" is answered; the
+  `move_npc` takes her from finance to the lobby, and `GET /room/lobby` then serves the record
+  the move stored. Fay's record is required on the door unlock, `GET /room/finance` and
+  `GET /room/lobby`, and the ease answer must name her and not be refused. `GET /scenario` strips
+  every room's NPCs, so it gets only the text and fact-key checks. Proof by reverting: with
+  `serve_opened_room` sending the raw room, the test fails on the door unlock ("carries a feed
+  text").
+- **m1** (`6066a1eb1`, plan 8.3 in `5e78e3efa`): the `tooSoon` retry waits the whole
+  `retryAfter` plus 1 s, with no cap, and a use makes at most four requests (`MAX_TRIES`), so a
+  server that always says `tooSoon` cannot keep it asking. Tests: `retryAfter` 420 (the review's
+  mission pace) waits 421 s and reveals the post; an always-`tooSoon` server is asked four times
+  and then a later honest use asks again. Both fail on the old code.
+- **m2** (`24309e1ac`): a `/feed_post` row with status 200 and no readable body (`bodyError`, or
+  a `bodyText`) stands for at most one reveal, from its own line on, for each NPC whose saved count
+  exceeds the log's answers. Only what is still missing after those counts from the first line (a
+  resumed game). `access-leak-check.rb` names the NPCs in a new note, and the fallback note now
+  says "a resumed game or a lost response body". Tests: the review's case (an early bootstrap
+  before a lost body is reported), a later bootstrap after it passes, and a resumed game with a
+  lost body uses both. They fail on the old scanner.
+- **Nits**: PLAYTEST.md (`081ba9d7b`) describes the retry, says the budgets gain a request per
+  `tooSoon`, and the F5 row says the task ticks on any sign-in at the hot desk, the "by password"
+  check being the server column's. The scanner skips a blank post id as `AccessWork.feed_posts`
+  does, with a test (`24309e1ac`). `cleanFact` refuses an entry whose `text` is present and not a
+  string, with a test (`6066a1eb1`).
+- **Not changed**: `locked_out` stays work only, as on `main`. Whether a locked-out NPC should
+  still browse at its PC is with the user.
+
+### Merge
+
+`main` (`94b88373d`) was already in the branch; nothing to merge.
+
+### Suites after C review round 2 (at `5e78e3efa`)
+
+Rails 1674 runs, 24848 assertions, 0 failures, 0 errors, 1 skip. JS 497 of 497 files.
+
+## C review round 3 outcomes (2026-11-12)
+
+Review: `ACCESS_MODEL_SLICE_9_2_C_CODE_REVIEW_R3.md` (approve; no blocker or major, 1 minor, 4 nits).
+
+- **m1** (`841390e82`): the leak scanner no longer credits a lost `/feed_post` answer to an NPC
+  whose saved last reveal (`feedRevealed[npc].at`) came more than 5 s before the capture's `t` on
+  that row: it was another NPC's answer or a `tooSoon` or `done`. The review's scenario A (a
+  resumed game, Lena's post in the first bootstrap, a lost answer later) and scenario B (two NPCs,
+  the lost row Jake's reveal) are clean now, and a bootstrap that shows Jake's post before the lost
+  answer that revealed it is still reported. A and B fail on the round 2 scanner. A row with no
+  `t`, or a game with no `at`, keeps round 2's rule. The `access-leak-check.rb` note says so.
+  What is left (one lost row credited to every NPC whose last reveal follows it) needs the
+  request's `npc_id` in `response-capture.js`, a skill script: entry in `docs/IDEAS_BACKLOG.md`
+  for the user.
+- **Nits** (`040170445`): the retry wait is capped at `MAX_WAIT_S` (2147483 s), below
+  `setTimeout`'s limit, with a test. A `tooSoon` answer now carries `revealed` (the posts out so
+  far; plan 9.1 routes table in `774da68ac`), and a use whose earlier ask failed in the network stops
+  when `revealed` is above the posts the client holds, so a lost answer that revealed a post is
+  not followed by a second post for that use; the missed post shows after a reload. Test, and
+  the controller test asserts `revealed`. The network-failure test is renamed and asserts four
+  asks five seconds apart. The no-exposure test's comment now says "every route that can carry
+  NPC or feed data and the ones next to them" and names what it leaves out.
+- **Not changed**: `locked_out` stays work only, on both sides of the merge.
+
+### Merge
+
+`main` at `0786f4fae` (9.3b W and the q33 user decision) merged in `c800f80f4`. Two conflicts,
+both lists: the controller's `before_action` action lists keep `network_join` and `feed_post`,
+and the scanner keeps both the `wifi_secret` rule and the feed `withheld_key` text, with Wi-Fi
+secrets and feed texts both in the redaction list.
+
+### Suites after C review round 3 (after the merge of `main`, at `c800f80f4`)
+
+Rails 1690 runs, 24930 assertions, 0 failures, 0 errors, 1 skip. JS 498 of 498 files.
+
+## q33: a lockout stops social media too (2026-11-12)
+
+Branch `build/q33-lockout`, from `main` at `fea96124c` (9.2 L and 9.2 C merged). Browser port 3028.
+User decision q33: a lockout stops every use of that PC, social media included. No per-lockout
+scope field (only if the user asks later).
+
+### Built
+
+- **Server** (`1f92e958e`). `AccessWork::LOCKOUT_NEEDS` (`work`, `social_media`): `owned_causes`
+  lists `locked_out` for both needs behind the check record, so a social media ease at the locked
+  station is refused and a `fail` naming `locked_out` for `social_media` is accepted once
+  recorded. `can_fail?` for `social_media` (an NPC with `"phone": false`) adds
+  `lockout_station?`. `check_report!` also answers an owner with a `social_media` need and no work
+  plan. `POST /feed_post` takes `object_id` (where the use was; null for the phone):
+  `feed_source_ok?` refuses the phone of an NPC with `"phone": false`, an object that is not one
+  of the NPC's social media places in a room the player can know of (`frustration_places`, which
+  includes a handed-over borrow PC), any non-string, and a sign-in PC where `loginLockouts` holds
+  the NPC's username. The refusal is `{ post: null, done: false, refused: true }` and writes
+  nothing. It reads `loginLockouts` directly, not the check record, so a client that never sends
+  the check still cannot post from the PC; the answer says no more than a `check` does (6.6). L's
+  test "R1 m2" now asserts the reverse. Tests: `social_lockout_q33_test.rb` (9 runs, including
+  the tampered-client cases: a PC that is not hers, an unknown id, an array, a hash, a sync that
+  clears `loginLockouts`).
+- **Client** (`c2590f9e2`). `npc-needs.js` `_socialCandidate`: a flagged station counts as
+  blocked (passed over for a non-desk source, then the phone; with no phone it is the attempt
+  that fails). (A first version also claimed to skip a borrow at a flagged PC; that guard could
+  never fire and was removed in review round 1, m1.) The station verdict adds `locked_out` for
+  `social_media` as for `work`. An NPC with a phone whose use reaches the locked station (flagged
+  on the way, or by the check it waited for) drops that use unjudged (`use_dropped_locked_out`,
+  nothing restored, no report) and takes the phone next, as 8.1 says a dead PC counts nothing for
+  it. `npc-reports.js` `shouldCheckLockout` accepts an owner with a `social_media` need.
+  `social-feed.js` passes the use's source (`npc_used` `objectId`, null for `npc_used_phone`)
+  through retries to `ApiClient.feedPost(npcId, objectId)`. Tests: `npc-social-lockout-q33.test.mjs`
+  (8; the four needs tests and the check test fail with the old files).
+- **Scenario** (`460f46329`). `test_access_social` F9: `priya_room` east of `lena_room`, Priya Shah
+  at `priya_pc` under `locking` (social allowed, `maxAttempts` 3, `lockChance` 1), a fridge, a feed
+  of two posts, tasks `f9_locked_out`, `f9_phone`, `f9_posted`. PLAYTEST.md: the F9 row, seven feed
+  posts in the leak check, a third expected warning (the `maxAttempts` route warning for
+  `priya_pc`) and the F9 tampered checks. Validator: 0 lines with ❌.
+- **Docs**: README "Lockout as a cause" (social media while locked out); plan 9.1 owned-cause
+  text and the `/feed_post` routes row.
+
+### Live proof (game 1272, then game 1274 for the tampered client; port 3028, headless)
+
+| Step | Result |
+|---|---|
+| Before | Priya used `priya_pc` for social media (`npc_used:priya_pc` `met: true`); `/feed_post` sent `object_id: "priya_pc"`; post 1 revealed |
+| Lockout | She left for the fridge (`priya_pc_screen_locked` true); three wrong passwords on her tile: "2 attempts left", "1 attempt left", then `pc_signin_failed` `locked_out`. As in L's run she came back between the second and third password, so no check was due |
+| Before she knew | Her next use at the PC was met on the client (she had not typed her password yet), and the server refused its post: `/feed_post` `object_id: "priya_pc"` answered `refused: true` |
+| Finding out | At her next locked return: one check, `npc_locked_out:priya`, task `f9_locked_out`; `lockedOut` `["priya_pc"]` |
+| Phone | Next social media use: `npc_used_phone:priya` (task `f9_phone`), post 2 from the phone (`npc_posted:priya` index 1, task `f9_posted`); a later use was the phone again; no `npc_used:priya_pc` after the flag, no `npc_use_failed:priya`, level 0 |
+| Server | `loginLockouts` `priya_pc\|pshah`; `npcFrustration.priya` "locked out at priya_pc"; `feedRevealed.priya` 2. Leak check: no leaks |
+| Tampered (1274) | From the page: three wrong passwords by `ApiClient.post('/login')`, then `/feed_post` with `object_id` `priya_pc`, `lena_pc`, an unknown id and an array: all `refused: true`; a `sync_state` with empty `loginLockouts` and `npcFrustration`: the PC still refused; `object_id: null` (her phone): post 1. On 1272 after the run, an `ease` and a `locked_out` `fail` for her at `priya_pc`: both refused. Leak check: no leaks |
+
+### Left as it is
+
+- A lockout at a borrowed PC (another username's lockout there, or the borrower's own at a hot
+  desk) is not known to the client: the flag is the station only (L). The server already refuses
+  the borrower's guest session there (L R1 m1) and now its feed post too.
+- `feed_source_ok?` checks that the named source is one of the NPC's places; it cannot tell
+  whether the use really happened there (plan 9.3's residual list: a tampered browser can still
+  name its phone or another real source).
+- The validator's mutter check for a lockout station looks only at work plans; a `social_media`
+  owner with `"phone": false` under a `maxAttempts` policy gets no `station_fail` warning. Added
+  in review round 1 (m3).
+
+### Leftover games
+
+1272 (live proof), 1274 (tampered client). Server on 3028 stopped by PID.
+
+### Suites (at `460f46329`, under the lock)
+
+Rails 1702 runs, 24995 assertions, 0 failures, 0 errors, 1 skip. JS 499 of 499 files.
+
+### Code review round 1 outcomes (`Q33_LOCKOUT_CODE_REVIEW_R1.md`)
+
+- m1: the unreachable borrow guard in `_socialCandidate` removed; the docblock says the client
+  knows a lockout only at the own station.
+- m2: deferred. One paragraph in plan 9.3 and an entry in `docs/IDEAS_BACKLOG.md`.
+- m3: the validator warns for a `"phone": false`, social-only owner at a lockout station with no
+  `station_fail` or `work_fail` line; test in `validator-access-social.test.mjs`.
+- m4: two feed tests in `social_lockout_q33_test.rb` (a handed-over borrow PC, a tablet in an
+  unopened room).
+- N1 README sentence; N3 validator warning for a hot desk that lacks one of the borrower's
+  can-fail needs, with a test; N4 comment; N5 the fallback send filters a non-string source.
+- N2: a tab left open across the deploy sends no `object_id`, so a `"phone": false` NPC's posts
+  are refused until the page is reloaded. Accepted: the gem ships client and server together, and
+  a fallback would undo the check.
+
+## Sub-slice C2: reactive feed posts (in progress)
+
+Plan: `ACCESS_MODEL_SLICE_9_2_C2_PLAN.md`. Built on `build/9-2-c2` after merging `main` (q33).
+A feed post with a `when` is served only when its condition holds, read from state the server
+already records; `feed.order` (facts_first default, reactive_first, mixed) interleaves the two
+kinds; every reactive post is served at most once.
+
+### Done and committed
+
+- **AccessWork helpers** (`lib/break_escape/access_work.rb`): `cause_holds?`, `globals_hold?`,
+  `truthy_global?`, `cause_candidates`, `cause_why_holds?`, `cause_why_reachable?`, `when_holds?`
+  (and its predicate helpers `workaround_performed?`, `need_met_now?`, `cause_predicate_holds?`),
+  `when_reachable?`, `declared_global?`, `workaround_present?`, `cause_reachable?`, `feed_done?`,
+  `select_feed_post`, `feed_shown_ids`, `reactive_post?`, `feed_order`. The condition rule has one
+  copy here; the route and the validator both call it. `done` in `select_feed_post` is computed
+  over the post-serve shown list (matching C's `n + 1 >= posts.size`).
+- **One-copy guarantee** (`app/models/break_escape/npc_frustration.rb`): `frustration_cause_holds?`
+  and `frustration_globals_hold?` are now thin wrappers that build the merged globals
+  (`frustration_globals`, player over scenario defaults by key presence) and the pre-gated lockout
+  keys and call the AccessWork helpers. `frustration_global` and the instance `truthy_global?` were
+  removed (dead after the lift).
+- **Route** (`app/models/break_escape/social_feed.rb`): `feedRevealed` is now `{ shown:[ids], at }`;
+  `reveal_feed_post!` runs the q33 source refusal, then `select_feed_post` (reading the raw
+  `npcFrustration[id]` read-only, never the writing `frustration_entry`), then the pace floor;
+  `feed_posts_for_client` lists `shown` in reveal order with `feed_done?`; `feed_answer` is split
+  to look a post up by id and emit the reveal sequence separately. `POST_KEYS` comment names `when`
+  and `order` as server-only.
+- **Leak scanner** (`tools/playtest/lib/access_leak_scanner.rb`): `note_feed_served` reads the
+  served id from the `/feed_post` answer body (not an authored prefix); the `feedPosts` branch's
+  `allowed` is the accumulated shown ids plus, for a resumed or lost-body reveal, the saved
+  `shown` set (migrated from a legacy `{ n, at }` count to the first n ordered ids). Dead
+  `feed_revealed_now`/`@feed_answers` removed.
+- **Validator** (`scripts/validate_access_work.rb`): `check_feed_order` (order value; mode vs mix;
+  dead feed) and `check_reactive_post` (empty/unknown predicate, cause whys, need, frustration
+  bounds, workaround, `when_reachable?` dead-post warning, unscoped cause on a two-need NPC,
+  frustrationBelow-only) plus `reactive_report_lines`.
+- **Tests, all green on this branch**: `test/unit/access_work_feed_select_test.rb` (15 cases, one
+  per order mode and every predicate, cause live/not-yet-failed, two-down-resource, done,
+  migration); the C feed-shape assertions updated in `feed_post_test.rb`; the scanner's out-of-order
+  and new-shape/legacy cases in `access_leak_scanner_feed_test.rb`. Baseline validator on
+  `test_access_social` is 0 ❌.
+
+### Commits
+
+- `9db901aaf` AccessWork helpers, feedRevealed shown shape, thin frustration wrappers
+- `d46e9140c` leak scanner body-id serve, saved-shown fallback
+- `2710c25fc` validator checks and report lines
+- `5617fc7c2` pure select_feed_post unit tests
+
+### Session 2 (2026-11-12): merge and the remaining test tiers
+
+- **Merge `main`** (`f9a661a14`, 9.3b network slices) into `build/9-2-c2`: clean, no conflicts (the
+  branch already carried q33, so `social_feed.rb` was untouched by the merge).
+- **Helper-equality test** (`test/controllers/break_escape/access_helper_equality_test.rb`, 3 cases):
+  `AccessWork.cause_holds?`/`globals_hold?` give the same answer as the `NpcFrustration` wrappers
+  over the same game for `down`/`off`/`no_access` and string/hash globals, and the `locked_out`
+  pre-gating case (a `loginLockouts` key with no check record reads false from both; true once
+  `npcFrustration.<npc>.lockedOut` records the station).
+- **Route + tampered-client tests** (`feed_post_test.rb`, +8 cases): a reactive vent served only once
+  its `cause: down` condition holds (reactive_first); an un-triggered reachable reactive post keeps
+  `done:false` and the null serve writes no `feedRevealed`; the pace floor bites a reactive serve and
+  `tooSoon` carries no reactive text; `feed_posts_for_client` lists an out-of-order reactive post in
+  reveal order; the C-shape `{ n, at }` migration through both route paths; tampered clients cannot
+  force a reactive post with extra request fields, and the reactive text/fact are absent everywhere
+  until served.
+- **Scanner no-exposure fixture** (`access_leak_scanner_feed_test.rb`, +3 cases): a reactive post
+  with its own feed fact is counted; the post or its fact in a bootstrap before its serve is reported
+  (`feed_text`/`feed_fact_key`); the serving `/feed_post` answer and a later bootstrap are clean.
+- **Validator reactive-check tests** (new `test/js/validator-access-reactive.test.mjs`, 10 cases): a
+  clean reactive feed; unknown `feed.order`; empty/unknown predicate; bad cause why, need and
+  frustration bounds; a workaround kind the NPC lacks; a dead `when` warning; order-vs-mix warnings;
+  the leak-cannot-protect too-short/embedded warning reaching a reactive post and its fact; the
+  report lines.
+
+### Session 2 commits
+
+- `8c8f3b597` merge of `f9a661a14` into `build/9-2-c2`
+- `1432d0ad4` helper-equality unit test
+- `5a3c45d4e` route and tampered-client tests
+- `271ebee29` scanner no-exposure fixture and validator reactive-check tests
+- `cd6af592d` this build-log and handover update
+
+### Suites (session 2, under the lock, after the merge)
+
+- `bin/rails test`: 1777 runs, 25413 assertions, 0 failures, 0 errors, 1 skip.
+- `bin/test-js -j 3`: 501 files passed, 0 failed.
+
+### Session 3 (2026-11-12): scenario beats F10 to F13 and the F10 live proof
+
+The numbering collision is settled: the plan's four reactive beats F9 to F12 became **F10 to F13**
+(q33's F9 Priya-lockout already holds F9). F1 to F9 are untouched; Priya's room gained only an `east`
+door to the new corridor.
+
+- **Beats authored** (`scenarios/test_access_social/scenario.json.erb`, `0efbace73`, `8101376f8`): four
+  new rooms east of Priya's room, each with its own sign, PC, task(s) and a feed NPC.
+  - **F10 Nadia, `reactive_first`, `cause: {down, work}`.** Work need on a `f10_share` resource
+    (`downIf f10_share_down`), a breaker to throw it, plus a `social_media` need. Two ordered posts and
+    one vent; the vent pre-empts the ordered queue once the outage has made her work fail. Task
+    `f10_posted` on the vent id.
+  - **F11 Theo, `mixed`, `workaround: borrow_session`.** Social-only NPC, no phone, blocked PC, a
+    `borrow_session` to `f11_kiosk`. Authored `[ordered, reactive, ordered]`; the borrow post slots at
+    its authored place. Task `f11_posted`.
+  - **F12 Greg, `facts_first`, `cause: [down, off]`.** Work need on `f12_crm`, a breaker and a socket
+    (`offWhen f12_pc_unplugged`) so both whys are statically reachable. Ordered post first, then the
+    vent after the outage. Task `f12_posted`.
+  - **F13 Ruth, `reactive_first`, `cause: social_blocked` then `needMet`.** Social-only, blocked PC, no
+    phone, a `borrow_session` to `f13_kiosk`. A blocked-site vent and a recovery post keyed on
+    `needMet`. Tasks `f13_blocked`, `f13_recovered`.
+  - Covers all three order modes and the predicate kinds `cause` (single, array, `social_blocked`),
+    `workaround` and `needMet`. Added a `resources` block, three outage globals and five tasks.
+  - Two authoring fixes after the first live run: F10 gained a second ordered post so `reactive_first`
+    pre-emption is unambiguous (`0efbace73`); the `f10_share`/`f12_crm` resource **names** were renamed
+    ("Finance drive", "Revenue tracker") out of all player-facing text so the leak scanner's
+    `network_string` check stays clean (`940bdfd8e`).
+- **Validator**: `LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb
+  scenarios/test_access_social/scenario.json.erb --no-graph` is **0 ❌**. Warnings unchanged (the three
+  expected: Jake's two `npc_posted` mappings, `priya_pc` maxAttempts, the guard). The work report now
+  prints the four `Reactive feed` lines and the per-post `fires when ...` lines.
+- **F10 live proof** (keyless server :3030, headless, `--capture-responses`, game 1323): entered
+  `f10_room`, threw the breaker, Nadia's work failed (`failWhy.work = ["down"]`), and her next met
+  social use served the vent **ahead of both ordered posts** (`feedRevealed.nadia.shown = ["f10_vent"]`),
+  proving `reactive_first`. Tampered client: a `/feed_post` for Nadia with forged `post_id`, `index`,
+  `when` and `force` fields was ignored and answered `{ post:null, tooSoon:true }` (no forced or picked
+  post). A `?skip_resume=1` reload restored the vent in reveal order
+  (`__test.access.feed().revealed.nadia = ["f10_vent"]`). `access-leak-check.rb` over all 23 captured
+  responses: **VERDICT: no leaks found** (17 feed posts, 2 feed facts checked). Beat `/feed_post` count 3.
+
+### Open (handover `docs/agents/HANDOVER_9_2_C2.md`)
+
+- Live proof for F11, F12, F13 is **done** (session 4 below). The server on :3030 and all browser
+  sessions were stopped afterwards.
+- The full suites should be rerun once more under the lock as a final gate, though sessions 3 and 4
+  changed only scenario JSON, PLAYTEST and this log (no Ruby or JS), so the session-2 counts stand
+  logically.
+
+Everything else from the handover is done and committed (merge, helper-equality, route/tampered,
+scanner fixture, validator tests, both suites green).
+
+### Session 3 commits
+
+- `8101376f8` reactive beats F10 to F13 and PLAYTEST
+- `0efbace73` F10 second ordered post (reactive_first pre-emption unambiguous)
+- `940bdfd8e` rename F10/F12 resource names out of player text (leak scanner clean)
+- `a2abc2466` build log session 3
+- `1563394df` merge of `1c54bce6d` (minigame title/toast escaping) into `build/9-2-c2` (clean)
+- `92810748f` handover session 3
+
+### Suites (session 3, under the lock, after the main merge)
+
+- `bin/test-js -j 3`: 507 files passed, 0 failed (main added six JS files).
+- `bin/rails test`: 1777 runs, 25413 assertions, 0 failures, 0 errors, 1 skip.
+
+### Session 4 (2026-11-12): live proof for F11, F12, F13
+
+Keyless server on :3030 (never :3000), headless Playwright, the `session-start.sh` / `cmd.sh` harness
+with `--capture-responses`, one isolated game per beat started with `--start-room` (so each beat's
+capture and request budget stay clean). The baseline validator stayed 0 ❌. The coordinator noted main
+moved to `857ce87a7`; no merge was needed for the proof, so `build/9-2-c2` was not merged and the F10
+session-3 proof stands unchanged.
+
+- **F11 Theo, `mixed`, `workaround: borrow_session` (game 1330).** A tampered `/feed_post` for Theo
+  with forged `post_id`/`when`/`index`/`force` before the borrow was answered `{ post:null, refused:true }`
+  (no forced or picked post, `f11_borrowed` not served). Then Theo failed at his no-social PC, borrowed
+  `f11_kiosk`, and posted in order: `feedRevealed.theo.shown = ["f11_first","f11_borrowed","f11_last"]`,
+  the borrow post slotting in at its authored place and never ahead of the ordered `f11_first`;
+  `guestSessions.f11_kiosk = theo`; task `f11_posted` toasted. A `?skip_resume=1` reload restored the
+  client's reveal order (`["f11_first","f11_borrowed"]` at the reload point). `access-leak-check.rb` over
+  `f11-responses.jsonl`: no leaks found (17 feed posts, 2 feed facts checked). Beat `/feed_post` 3.
+- **F12 Greg, `facts_first`, `cause: [down, off]` (game 1334).** A tampered `/feed_post` before the
+  outage, with a forged `post_id: f12_vent` plus `cause`/`index`/`force`, returned the legitimate ordered
+  `f12_ordered`, never `f12_vent`: the route ignores the extra fields and the server picks by its own
+  order. Throwing `f12_breaker` set `f12_crm_down` and Greg's work failed reading it
+  (`npc_use_failed:greg need work, missing f12_crm why down`); `failWhy.work = ["down"]`. His next met
+  social use served the vent: `feedRevealed.greg.shown = ["f12_ordered","f12_vent"]`, done; task
+  `f12_posted`. The breaker was reset. A reload restored the order (`["f12_ordered","f12_vent"]`).
+  Leak check: no leaks found. Beat `/feed_post` 3.
+- **F13 Ruth, `reactive_first`, `cause: social_blocked` then `needMet` (game 1337).** A tampered
+  `/feed_post` before her failure was answered `{ post:null, refused:true }`. On the borrow the blocked
+  vent `f13_blocked` served first (reactive_first); task `f13_blocked` toasted;
+  `failWhy.social_media = ["social_blocked"]`. The recovery post `f13_fixed` (`when: { needMet:
+  social_media }`) serves only in the window where `easeAt > failAt` at request time, i.e. just after a
+  kiosk ease and before Ruth's next no-social desk failure. Her auto cadence rarely lands a met-use
+  `/feed_post` inside that window: `waitFor` on `f13_recovered` timed out at 200 s and again at 280 s
+  while every met-use request returned `{ post:null, done:false }` with no `tooSoon` (the floor was
+  clear, so this was the predicate reading false, not the pace floor). Reading the persisted record at a
+  moment where `easeAt > failAt` and issuing one met-use `ApiClient.feedPost("ruth","f13_kiosk")` served
+  `f13_fixed`, `done:true`. The server, not the tester, chose it: the eight prior nulls prove it refuses
+  `f13_fixed` while `needMet` is false, so this is a genuine met-use serve, not a forced one.
+  `feedRevealed.ruth.shown = ["f13_blocked","f13_fixed"]`, done. A reload restored the order. Leak check:
+  no leaks found. Beat `/feed_post` 10 (the extra null polls are the real-time race, not a leak).
+
+**Not an engine bug.** `AccessWork.need_met_now?` is correct: it serves `f13_fixed` exactly when
+`easeAt[need] > failAt[need]` holds at the request, as the decisive serve showed. The F13 beat is simply
+hard to drive by waiting because Ruth re-fails at her no-social desk between borrows, so the window is
+narrow; whoever scripts this beat should drive the kiosk met use deliberately rather than wait on her
+own cadence. No scenario authoring change was needed; validator stayed 0 ❌ throughout.
+
+**Observation (not changed, not a feature regression).** `tools/playtest/verify-run.rb` line 115 prints
+the `feedRevealed` count from the legacy `e['n']` field and shows `0` for every NPC under the new
+`{ shown, at }` shape. It is cosmetic in that helper (the handover's feedRevealed shape change did not
+list verify-run). The authoritative `shown` arrays were read straight from the stored `player_state`
+and the leak scanner confirmed no exposure, so the proof does not rely on that line. Flagged for the
+coordinator to decide whether to update the reader.
+
+### Session 4 games and housekeeping
+
+- Dev DB: `test_access_social` (mission 245) holds 11 games; three were added this session (1330 F11,
+  1334 F12, 1337 F13). None were deleted (shared dev DB; no `db:*` run).
+- :3030 keyless server and all harness sessions stopped.

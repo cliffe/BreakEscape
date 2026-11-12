@@ -22,8 +22,13 @@ const copy = (src, name, fix = s => s) => writeFileSync(join(dir, name), fix(rea
 copy('systems/global-writer.js', 'global-writer.mjs');
 copy('systems/social-intel.js', 'social-intel.mjs', s => s.replace("'./global-writer.js'", "'./global-writer.mjs'"));
 copy('utils/display-dashes.js', 'display-dashes.mjs');
+copy('utils/escape-html.js', 'escape-html.mjs');
+copy('utils/author-html.js', 'author-html.mjs', s => s
+    .replace("'./escape-html.js'", "'./escape-html.mjs'")
+    .replace("'./display-dashes.js'", "'./display-dashes.mjs'"));
 copy('systems/apply-actions.js', 'apply-actions.mjs', s => s
     .replace("'../utils/display-dashes.js'", "'./display-dashes.mjs'")
+    .replace("'../utils/author-html.js'", "'./author-html.mjs'")
     .replace("'./global-writer.js'", "'./global-writer.mjs'")
     .replace("'./social-intel.js'", "'./social-intel.mjs'"));
 
@@ -233,4 +238,12 @@ test('applyActions grant_fact grants, toasts "Noted: <label>" once, and repeats 
     // missing fact id: nothing happens
     applyActions([{ type: 'grant_fact' }]);
     assert.equal(toasts.length, 2);
+});
+
+test('evidence note title: the name when known, else the fact\'s own label, never just "a colleague" (UX R1)', () => {
+    const { evidenceNoteTitle } = intel;
+    assert.equal(evidenceNoteTitle('Melanie Pierce', { label: 'Melanie works in Finance' }), 'Evidence: Melanie Pierce');
+    assert.equal(evidenceNoteTitle('a colleague', { label: "Jake's dog" }), "Evidence: Jake's dog");
+    assert.equal(evidenceNoteTitle('a colleague', {}), 'Evidence: a colleague');
+    assert.equal(evidenceNoteTitle('the company', { label: 'x' }), 'Evidence: the company');
 });

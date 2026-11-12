@@ -1,6 +1,16 @@
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
+
+// params.title and params.cancelText are plain text: they often come from scenario
+// object names, NPC names or server data, so they are escaped before they reach the
+// header HTML. No caller needs markup in a title, and there is deliberately no option
+// for an HTML title; a subclass that wants richer header content builds it with DOM
+// nodes after super.init().
 // Base class for minigame scenes
 export class MinigameScene {
+    // true on a full-window console that keeps Cancel overlaid on its own bottom bar
+    static controlsOverlay = false;
+
     constructor(container, params) {
         this.container = container;
         this.params = params;
@@ -22,12 +32,17 @@ export class MinigameScene {
         this.container.innerHTML = `
             <button class="minigame-close-button" id="minigame-close" ${disableClose ? 'style="display:none"' : ''}>&times;</button>
             <div class="minigame-header">
-                <h3>${displayDashes(this.params.title || 'Minigame')}</h3>
+                <h3>${escapeHtml(displayDashes(this.params.title || 'Minigame'))}</h3>
             </div>
             <div class="minigame-game-container"></div>
             <div class="minigame-message-container"></div>
-            ${showCancel ? `<div class="minigame-controls"><button class="minigame-button" id="minigame-cancel">${this.params.cancelText || 'Cancel'}</button></div>` : ''}
+            ${showCancel ? `<div class="minigame-controls"><button class="minigame-button" id="minigame-cancel">${escapeHtml(this.params.cancelText || 'Cancel')}</button></div>` : ''}
         `;
+
+        // A full-window console whose frame keeps a bar at its bottom for Cancel opts in to
+        // the overlaid Cancel row (static controlsOverlay = true on the subclass); every
+        // other scene keeps Cancel in the flow under its game area (code review R2 m2)
+        this.container.classList?.toggle?.('minigame-controls-overlay', this.constructor.controlsOverlay === true);
 
         this.headerElement = this.container.querySelector('.minigame-header');
         this.gameContainer = this.container.querySelector('.minigame-game-container');
@@ -41,7 +56,7 @@ export class MinigameScene {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Close button clicked');
-                this.complete(false);
+                this.closeByPlayer();
             });
         }
         
@@ -53,7 +68,7 @@ export class MinigameScene {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Cancel button clicked');
-                this.complete(false);
+                this.closeByPlayer();
             });
         } else {
             console.log('Cancel button not found');
@@ -74,13 +89,23 @@ export class MinigameScene {
             this._fallbackCloseHandler = (e) => {
                 if (e.key === 'Escape') {
                     console.log('Escape key pressed, closing minigame');
-                    this.complete(false);
+                    this.closeByPlayer();
                 }
             };
             document.addEventListener('keydown', this._fallbackCloseHandler);
         }
     }
     
+    /**
+     * The player's own Close, Cancel or Esc. Marks the close so a reader can tell it from
+     * one forced by a hit, a knockout or a conversation (all complete(false) too): only
+     * the player's own close goes back to the container it came from (lab UX review M1).
+     */
+    closeByPlayer() {
+        this.closedByPlayer = true;
+        this.complete(false);
+    }
+
     complete(success) {
         console.log('Minigame complete called with success:', success);
 

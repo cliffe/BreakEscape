@@ -120,7 +120,7 @@ test('a toast pulled back behind a panel is not reused', async () => {
 
 // Lab networks review R2 n1: a toast carrying author text (the unplug toast's host labels)
 // renders as plain text: the markup holds no message, and the text goes in as text nodes.
-test('plainText: the title and message go in as text, never as markup', async () => {
+test('plain text (the default, and with plainText): the title and message go in as text, never as markup', async () => {
     const label = '<img src=x onerror=alert(1)>';
     const toast = T.gameAlert(`Your session on ${label} ended.\nSecond line`, 'info', `Host ${label}`, 300, { plainText: true });
     assert.ok(!toast.html.includes(label), 'no author text in the markup');
@@ -128,9 +128,11 @@ test('plainText: the title and message go in as text, never as markup', async ()
     const nodes = toast.querySelector('.notification-message').nodes;
     assert.deepEqual(nodes.filter((n) => 'text' in n).map((n) => n.text), [`Your session on ${label} ended.`, 'Second line']);
     assert.equal(nodes.length, 3, 'a line break element between the two lines');
-    assert.equal(toast._toast.plainText, true);
-    const markup = T.gameAlert(`Plain ${label}`, 'info', '', 300);
-    assert.ok(markup.html.includes(label), 'without the option the old markup path is unchanged');
+    assert.equal(toast._toast.html, false);
+    const byDefault = T.gameAlert(`Plain ${label}`, 'info', '', 300);
+    assert.ok(!byDefault.html.includes(label), 'plain text without any option too (review R4 M1)');
+    const markup = T.gameAlert(`Marked <b>up</b>`, 'info', '', 300, { html: true });
+    assert.ok(markup.html.includes('<b>up</b>'), 'html: true keeps the markup path');
     await wait(700);
     assert.equal(children.length, 0);
 });

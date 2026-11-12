@@ -60,7 +60,7 @@ g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
 ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
-                 gainedFootholds npcFrustration guestSessions sharedLogins].freeze
+                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed].freeze
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
 # nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
@@ -74,8 +74,13 @@ def access_section(ps)
   end
   footholds = hash.call(ps['footholds']).sort_by { |_, f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.map do |id, f|
     f = {} unless f.is_a?(Hash)
-    device = f['device'].is_a?(Hash) ? (f['device']['id'] || f['device']['type'] || '?') : '?'
-    "#{id} = #{f['via'] || '?'} #{f['source'] || '?'}, device #{device} (network #{f['network'] || '?'})"
+    # A Wi-Fi or implant foothold (slice 9.3b) carries a name, not a device (5.3)
+    if %w[wifi implant].include?(f['via'])
+      "#{id} = #{f['via']} #{f['source'] || '?'}, #{f['name'] || '?'} (network #{f['network'] || '?'})"
+    else
+      device = f['device'].is_a?(Hash) ? (f['device']['id'] || f['device']['type'] || '?') : '?'
+      "#{id} = #{f['via'] || '?'} #{f['source'] || '?'}, device #{device} (network #{f['network'] || '?'})"
+    end
   end
   clones = hash.call(ps['serverClones']).map do |card_id, rec|
     rec = {} unless rec.is_a?(Hash)
@@ -94,15 +99,34 @@ def access_section(ps)
     ['loginLockouts', list.call(ps['loginLockouts']).map(&:to_s)],
     ['footholds', footholds],
     ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)],
-    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC
+    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC;
+    # sub-slice L adds the PCs a check recorded the NPC locked out at (only when there are any)
     ['npcFrustration', hash.call(ps['npcFrustration']).sort.map do |id, e|
       e = {} unless e.is_a?(Hash)
-      "#{id} level #{e['level'] || 0}, handed #{hash.call(e['handed']).size}, done #{list.call(e['done']).inspect}"
+      locked = list.call(e['lockedOut'])
+      "#{id} level #{e['level'] || 0}, handed #{hash.call(e['handed']).size}, done #{list.call(e['done']).inspect}" \
+        "#{locked.empty? ? '' : ", locked out at #{locked.join(' ')}"}"
     end],
     # Slice 9.2 H (6.4, 6.5): who last left a borrowed session open at each PC, and the accounts
     # the player heard shared (ids only)
     ['guestSessions', hash.call(ps['guestSessions']).sort.map { |pc, npc| "#{pc} = #{npc}" }],
-    ['sharedLogins', list.call(ps['sharedLogins']).map(&:to_s)]
+    ['sharedLogins', list.call(ps['sharedLogins']).map(&:to_s)],
+    # Slice 9.2 C (8.3), C2 and C3: how many of each NPC's feed posts are out, and for a `shown`
+    # entry the ids in reveal order, each with its seq and, for a reply, its thread post
+    # (`<id>:<seq>><thread>`); ids only, never a text. A legacy {n, at} entry prints its count.
+    ['feedRevealed', hash.call(ps['feedRevealed']).sort.map do |id, e|
+      next "#{id} 0" unless e.is_a?(Hash)
+      next "#{id} #{e['n'].to_i}" unless e['shown'].is_a?(Array)
+
+      seqs = hash.call(e['seq'])
+      tos = hash.call(e['to'])
+      ids = e['shown'].select { |x| x.is_a?(String) }.map do |pid|
+        seq = seqs[pid].is_a?(Integer) ? ":#{seqs[pid]}" : ''
+        to = tos[pid].is_a?(Hash) && tos[pid]['post'].is_a?(String) ? ">#{tos[pid]['post']}" : ''
+        "#{pid}#{seq}#{to}"
+      end
+      "#{id} #{e['shown'].length} [#{ids.join(' ')}]"
+    end]
   ]
   lines = ['access model']
   rows.each do |name, items|

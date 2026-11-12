@@ -108,9 +108,11 @@ const stubs = {
     '../utils/locked-hint.js': 'export function hintToastMs(){ return 6000; }',
     './requires-item-hint.js': 'export function requiresItemHint(data){ return (data && data.requiresItemHint) || ""; }',
     './pc-policy.js': readFileSync(join(js, 'systems/pc-policy.js'), 'utf8'),
-    './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;}',
+    './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;} export function npcWalkingAway(){return false;} export function npcGivesWay(){return false;} export function objectIdOf(o){return o?.scenarioData?.id ?? o?.objectId ?? null;}',
     './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
-    './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}'
+    './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}',
+    '../utils/display-dashes.js': 'export function displayDashes(s){ return s; }',
+    '../utils/escape-html.js': 'export function escapeHtml(s){ return String(s == null ? "" : s); }',
 };
 let interactionsSrc = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, body] of Object.entries(stubs)) {

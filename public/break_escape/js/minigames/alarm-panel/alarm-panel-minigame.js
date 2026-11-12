@@ -1,5 +1,10 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
+
+// Scenario text is plain text: escape it once before it goes into HTML
+// Panel title and footer allow one piece of markup, a line break (<br>), as sis02 uses
+const escapeWithBreaks = (value) => escapeHtml(value).replace(/&lt;br\s*\/?&gt;/gi, '<br>');
 
 /**
  * Alarm Panel Minigame
@@ -58,8 +63,8 @@ export class AlarmPanelMinigame extends MinigameScene {
         const SVG_W = 420;
         const SVG_H = 30 + this._lamps.length * ROW_H + 20;
 
-        const panelTitle = displayDashes(this._panelTitle || 'FACILITY ALARM PANEL');
-        const footer     = displayDashes(this._footer     || 'STATE-REACTIVE LAMP DISPLAY — READ ONLY');
+        const panelTitle = escapeWithBreaks(displayDashes(this._panelTitle || 'FACILITY ALARM PANEL'));
+        const footer     = escapeWithBreaks(displayDashes(this._footer     || 'STATE-REACTIVE LAMP DISPLAY — READ ONLY'));
 
         const rows = this._lamps.map((lamp, i) => {
             const cy   = 30 + i * ROW_H + ROW_H / 2;
@@ -70,8 +75,8 @@ export class AlarmPanelMinigame extends MinigameScene {
             return `
   <g class="ap-lamp-row" data-index="${i}">
     <circle id="ap-lamp-${i}" cx="${CX}" cy="${cy}" r="${R}" class="ap-off"/>
-    <text class="ap-label"  x="${CX + R + 14}" y="${cy - 7}">${displayDashes(lamp.label)}</text>
-    <text class="ap-status" id="ap-status-${i}" x="${CX + R + 14}" y="${cy + 11}">${displayDashes(initialStatus)}</text>
+    <text class="ap-label"  x="${CX + R + 14}" y="${cy - 7}">${escapeHtml(displayDashes(lamp.label))}</text>
+    <text class="ap-status" id="ap-status-${i}" x="${CX + R + 14}" y="${cy + 11}">${escapeHtml(displayDashes(initialStatus))}</text>
     <line class="ap-row-sep" x1="0" y1="${sepY}" x2="${SVG_W}" y2="${sepY}"/>
   </g>`;
         }).join('');

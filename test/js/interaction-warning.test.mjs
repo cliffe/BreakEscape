@@ -7,7 +7,7 @@
 //     again) only when once is truthy (default true). With once:false a Decline re-shows.
 //   - "answered" persists as the global iw_<id>_answered (survives reload with globalVariables).
 //   - Busy-guard: never opens over a chat or minigame the player is already in.
-//   - gameConfirm's plainText option renders the author text and both labels via textContent.
+//   - gameConfirm renders the author text and both labels via textContent (plain is the default).
 //
 // Run with: bin/test-js test/js/interaction-warning.test.mjs
 import test from 'node:test';
@@ -49,8 +49,10 @@ const stubs = {
   '../utils/locked-hint.js': 'export function hintToastMs(){ return 6000; }',
   './requires-item-hint.js': 'export function requiresItemHint(data){ return (data && data.requiresItemHint) || ""; }',
   './pc-policy.js': readFileSync(join(js, 'systems/pc-policy.js'), 'utf8'),
-  './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;}',
+  './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;} export function npcWalkingAway(){return false;} export function npcGivesWay(){return false;} export function objectIdOf(o){return o?.scenarioData?.id ?? o?.objectId ?? null;}',
   './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
+  '../utils/display-dashes.js': 'export function displayDashes(s){ return s; }',
+  '../utils/escape-html.js': 'export function escapeHtml(s){ return String(s ?? ""); }',
   './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}',
 };
 let interactionsSrc = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
@@ -79,18 +81,18 @@ const tick = () => new Promise(r => setTimeout(r, 0));
 
 const box = (iw, extra = {}) => ({ objectId: 'box', scenarioData: { id: 'box', type: 'generic', interactionWarning: iw, ...extra } });
 
-test('an unanswered warning shows: returns true and calls gameConfirm with the labels and plainText', () => {
+test('an unanswered warning shows: returns true and calls gameConfirm with the labels (plain text by default)', () => {
   const { confirmCalls } = setupWindow({ answer: false });
   const r = maybeInteractionWarning(box({ text: 'Are you sure?', proceedLabel: 'Open', declineLabel: 'Leave', onDecline: [{ type: 'set_global', key: 'd' }] }));
   assert.equal(r, true, 'intercepts the interaction');
   assert.equal(confirmCalls.length, 1);
-  assert.deepEqual(confirmCalls[0], ['Are you sure?', 'Open', 'Leave', { plainText: true }]);
+  assert.deepEqual(confirmCalls[0], ['Are you sure?', 'Open', 'Leave']);
 });
 
 test('labels default to Proceed / Cancel when omitted', () => {
   const { confirmCalls } = setupWindow({ answer: false });
   maybeInteractionWarning(box({ text: 'T' }));
-  assert.deepEqual(confirmCalls[0], ['T', 'Proceed', 'Cancel', { plainText: true }]);
+  assert.deepEqual(confirmCalls[0], ['T', 'Proceed', 'Cancel']);
 });
 
 test('Decline runs onDecline and, with once truthy (default), records answered', async () => {
@@ -242,9 +244,18 @@ test('gameConfirm plainText puts author text and labels in via textContent, neve
   assert.equal(lastOverlay.querySelector('.game-confirm-cancel').textContent, 'Leave it');
 });
 
-test('gameConfirm without plainText keeps the legacy innerHTML path (labels interpolated)', () => {
-  gameConfirm('Plain message', 'Yes', 'No');
-  // The non-plainText path renders through the overlay innerHTML template; the message
+test('gameConfirm without any option is plain text too (review R4 M1: plain is the default)', () => {
+  const hostile = 'Open <img src=x onerror=alert(1)> this?';
+  gameConfirm(hostile, 'Yes', 'No');
+  const msg = lastOverlay.querySelector('.game-confirm-message');
+  assert.equal(msg.textContent, hostile);
+  assert.equal(msg.innerHTML, '');
+  assert.doesNotMatch(lastOverlay.innerHTML, /onerror/);
+});
+
+test('gameConfirm with { html: true } keeps the innerHTML path (labels interpolated)', () => {
+  gameConfirm('Plain message', 'Yes', 'No', { html: true });
+  // The html path renders through the overlay innerHTML template; the message
   // node textContent is left untouched.
   assert.equal(lastOverlay.querySelector('.game-confirm-message').textContent, '');
   assert.match(lastOverlay.innerHTML, /Plain message/);

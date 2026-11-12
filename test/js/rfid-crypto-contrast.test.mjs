@@ -24,8 +24,9 @@ writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { cons
 const P = "'./rfid-protocols.js'", PM = "'./rfid-protocols.mjs'";
 const protocolsUrl = copy('minigames/rfid/rfid-protocols.js');
 copy('utils/display-dashes.js');
+copy('utils/escape-html.js');
 copy('minigames/rfid/rfid-data.js', { [P]: PM, "'../../api-client.js'": "'./api-stub.mjs'" });
-copy('minigames/rfid/rfid-ui.js', { [P]: PM, "'../../utils/display-dashes.js'": "'./display-dashes.mjs'" });
+copy('minigames/rfid/rfid-ui.js', { [P]: PM, "'../../utils/display-dashes.js'": "'./display-dashes.mjs'", "'../../utils/escape-html.js'": "'./escape-html.mjs'" });
 copy('minigames/rfid/rfid-attacks.js', { [P]: PM });
 const animUrl = copy('minigames/rfid/rfid-animations.js');
 const minigameUrl = copy('minigames/rfid/rfid-minigame.js', {
@@ -205,11 +206,12 @@ test('an emulation that throws shows "Emulation failed", not a stuck "Emulating.
 
 test('no saved cards: the menu and the Saved list both say there is nothing to emulate', () => {
     window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [] } }];
-    const g = makeGame({ mode: 'unlock', requiredCardIds: ['x'], availableCards: [] });
+    // Opened from the inventory (no reader): the menu and its Saved list
+    const g = makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
     g.ui.showMainMenu('unlock');
     assert.match(texts(), /No saved cards to emulate yet/);
     g.ui.showSavedCards();
-    assert.match(texts(), /Read a keycard with the cloner/);
+    assert.match(texts(), /Read a keycard with the card copier/);
     window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [em()] } }];
     g.ui.showMainMenu('unlock');
     assert.doesNotMatch(texts(), /No saved cards/);

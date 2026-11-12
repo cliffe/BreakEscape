@@ -23,6 +23,11 @@
  *                                       listener can tell "came back and typed a password" from
  *                                       "came back to an open screen"
  *
+ * Lockout (access slice 9.2 L, ACCESS_MODEL_SLICE_9_2_PLAN.md 6.6). `env.lockedOut(ownerId, objId)`
+ * (optional; the live env asks the needs system) names an owner the server found locked out at
+ * that PC. Such an owner's screen locks on every leave, whatever lockChance or habit says: a person
+ * who cannot sign in cannot leave a session open. The server refuses the owner claim there too.
+ *
  * Guests (access slice 9.2 H, ACCESS_MODEL_SLICE_9_2_PLAN.md 6.4). An NPC that borrowed an
  * unowned hot desk and left it signed in is that PC's guest, recorded on `npc_guest_left:<pcId>`
  * (the workaround runner, when the server's answer arrives). The guest's leave is a leave with the
@@ -97,6 +102,8 @@
  */
 
 const win = () => (typeof window !== 'undefined' ? window : {});
+// The pc_signed_out reasons whose /logout pc-sessions.js announces with pc_signing_out (q44)
+export const SIGNING_OUT_REASONS = Object.freeze(new Set(['sign_out', 'claim_ended', 'owner_returned', 'auto_locked']));
 
 /** Whether an object's config makes it a workstation. */
 export function isWorkstation(data) {
@@ -175,6 +182,7 @@ export class WorkstationState {
      * @param {Object} env - { objects() -> scenarioData[], npcs() -> npc[], on(pattern, cb),
      *                         emit(name, data), setGlobal(k, v), roll(npcId, salt) }, and
      *                         optionally ownerPresent(id), ownerTracked(id), policyFor(data),
+     *                         lockedOut(ownerId, objId),
      *                         clockMs() (or clock()) -> needs-clock ms, onTick(fn),
      *                         inMinigame(objectId) -> bool (the live env has all of them)
      */
@@ -185,6 +193,7 @@ export class WorkstationState {
         this.pendingLocks = new Map(); // objectId -> data, open screens with a policy lockAt
         this.idle = new Map(); // objectId -> needs-clock ms the idle clock started (open, owner away)
         this.guests = new Map(); // pcId -> { npcId, lockAt? }: a borrower left the session open (9.2 H)
+        this.signingOut = new Map(); // pcId -> the guest record there when a sign-out's /logout was sent (q44)
     }
 
     _changed(data, ownerId, locked, how) {
@@ -199,7 +208,10 @@ export class WorkstationState {
         this.env.on('npc_sat_at:*', (d) => this.onSatAt(d?.objectId, d?.npcId));
         // Review R1 M1: the player's own sign-out at a PC, or a sign-in there that is not a
         // claim, ends the guest session there, as the server does
-        this.env.on('pc_signed_out', (d) => this.onSignedOut(d?.pcId));
+        this.env.on('pc_signing_out', (d) => this.onSigningOut(d?.pcId));
+        // Review R1 n4: only the reasons that send pc_signing_out first use its snapshot, so a
+        // displaced or switched session at that PC during a slow /logout does not spend it
+        this.env.on('pc_signed_out', (d) => this.onSignedOut(d?.pcId, SIGNING_OUT_REASONS.has(d?.reason)));
         this.env.on('pc_signed_in', (d) => { if (d?.via !== 'claim') this.onSignedOut(d?.pcId); });
         if (typeof this.env.onTick === 'function') this.env.onTick(() => this.checkAutoLocks());
         this.resetGlobals();
@@ -219,6 +231,10 @@ export class WorkstationState {
         return typeof this.env.policyFor === 'function' ? (this.env.policyFor(data) || null) : null;
     }
 
+    _lockedOut(ownerId, objectId) {
+        return typeof this.env.lockedOut === 'function' ? !!this.env.lockedOut(ownerId, objectId) : false;
+    }
+
     _tracked(npcId) {
         return typeof this.env.ownerTracked === 'function' ? !!this.env.ownerTracked(npcId) : true;
     }
@@ -233,6 +249,19 @@ export class WorkstationState {
         const ownerId = ownerOf(data, this.env.npcs());
         const present = ownerId && typeof this.env.ownerPresent === 'function' ? !!this.env.ownerPresent(ownerId) : null;
         return { ownerId, present, userId: this._userOf(objectId), guestId: this.guestOf(objectId) };
+    }
+
+    /**
+     * Whether npcId has left the workstation objectId: its owner with a current away record, or
+     * the guest whose open session is recorded there. Read only, nothing emitted. A tap on the
+     * PC its owner is walking away from is for the PC (q55 d, lab UX review R2 m1).
+     */
+    leftBy(objectId, npcId) {
+        if (!npcId) return false;
+        const data = this._find(objectId);
+        if (!data) return false;
+        if (this.guests.get(objectId)?.npcId === npcId) return true;
+        return ownerOf(data, this.env.npcs()) === npcId && !!this.away.get(npcId)?.away;
     }
 
     _userOf(objectId) {
@@ -279,14 +308,26 @@ export class WorkstationState {
      * pc_signed_out (any reason) at pcId, or a password or remote pc_signed_in there: the guest
      * record goes, so the next click is the sign-in screen (review R1 M1). A displacement's
      * pc_signed_out comes before the new borrower's npc_guest_left, so that guest is kept.
-     * Known gap (review R2 n3): _endClaim and signOut emit pc_signed_out after awaiting
-     * /logout, so a guest recorded during a very slow /logout would be dropped here while the
-     * server keeps it; the next claim is then never sent and the click shows the sign-in screen.
+     * Review R2 n3 (q44): a sign-out that awaits /logout says so first (pc_signing_out), and
+     * its pc_signed_out ends only the guest record that was there when the request went: a
+     * guest recorded during a slow /logout came after it on the server too, so it is kept.
      */
-    onSignedOut(pcId) {
-        if (typeof pcId !== 'string' || !this.guests.has(pcId)) return false;
+    onSignedOut(pcId, fromSignOut = false) {
+        if (typeof pcId !== 'string') return false;
+        const pending = fromSignOut && this.signingOut.has(pcId);
+        const before = pending ? this.signingOut.get(pcId) : null;
+        if (pending) this.signingOut.delete(pcId);
+        if (!this.guests.has(pcId)) return false;
+        if (pending && this.guests.get(pcId) !== before) return false;
         this.guests.delete(pcId);
         this._publishGuest(pcId, false, false);
+        return true;
+    }
+
+    /** pc_signing_out: a sign-out's /logout is on its way; remember the guest record it ends (q44). */
+    onSigningOut(pcId) {
+        if (typeof pcId !== 'string' || !pcId) return false;
+        this.signingOut.set(pcId, this.guests.get(pcId) || null);
         return true;
     }
 
@@ -325,6 +366,10 @@ export class WorkstationState {
         const policy = this._policy(data);
         const habit = habitOf(ownerId, this.env.npcs());
         data.screenLocked = decideLocked(data, ownerId, rec.leaves, this.env.roll, habit, rec.expectedAwayMs ?? null, policy);
+        // Access 9.2 L (6.6): an owner the server found locked out here cannot leave a session
+        // open, so the screen locks on every leave, whatever its lockChance or habit (the roll
+        // above still runs, so the seeded sequence of other screens does not shift)
+        if (!data.screenLocked && this._lockedOut(ownerId, data.id)) data.screenLocked = true;
         delete data.lockAt;
         this.pendingLocks.delete(data.id);
         const left = Number.isFinite(rec.leftAt) ? rec.leftAt : this.leftAt.get(ownerId);
@@ -591,6 +636,8 @@ export function installWorkstationState() {
         ownerTracked: (id) => !!needs()?.getState?.(id),
         // 9.2 H (6.4): the NPC whose current job is using the object (not a visit)
         userOf: (objectId) => needs()?.userOf?.(objectId) || null,
+        // 9.2 L (6.6): the server's check found this owner locked out at this PC
+        lockedOut: (ownerId, objectId) => !!needs()?.isLockedOut?.(ownerId, objectId),
         ownerPresent: (id) => {
             const sys = needs();
             const st = sys?.getState?.(id);

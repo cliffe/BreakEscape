@@ -207,6 +207,78 @@ module NetworkModelScenario
     }
   end
 
+  # Slice 9.3b sub-slice K: the fixture with a server_net linked to office_lan, a host on
+  # it (sv_fs02, it only) reached only by pivoting through an office session, and a
+  # protected backup share. server_net has no jack, so a foothold never seeds it.
+  SERVER_NAME = 'Server network'.freeze
+  BACKUP_NAME = 'Backup-Vault'.freeze
+  SV_HOST = 'SV-FS02'.freeze
+  BACKUP_NOTE_TEXT = 'BACKUP-NOTE-TEXT-7788'.freeze
+  SERVER_STRINGS = [SERVER_NAME, BACKUP_NAME, SV_HOST, BACKUP_NOTE_TEXT].freeze
+
+  def with_pivot
+    data = scenario
+    data['networks']['server_net'] = { 'name' => SERVER_NAME }
+    data['networkLinks'] = [%w[office_lan server_net]]
+    data['resources']['backup_vault'] = {
+      'kind' => 'file_share', 'name' => BACKUP_NAME, 'host' => SV_HOST, 'network' => 'server_net',
+      'access' => { 'roles' => ['it'] },
+      'contents' => [{ 'id' => 'backup_note', 'type' => 'text_file', 'name' => 'backup_readme.txt',
+                       'takeable' => true, 'text' => BACKUP_NOTE_TEXT }]
+    }
+    data['rooms']['server_room']['objects'] << {
+      'id' => 'sv_fs02', 'type' => 'pc', 'name' => 'Server file host', 'host' => SV_HOST,
+      'network' => 'server_net', 'locked' => true, 'lockType' => 'login',
+      'access' => { 'roles' => ['it'] }, 'policy' => 'counted'
+    }
+    data
+  end
+
+  # Slice 9.3b sub-slice O: the pivot fixture with server_net carrying a downIf global,
+  # down by default (servers_offline true). A repair sets the global false. The player side
+  # of the resource downIf is exercised by backup_vault_down, an open share on office_lan
+  # whose own service can be switched off while its network stays up.
+  OUTAGE_GLOBAL = 'servers_offline'.freeze
+  RESOURCE_OUTAGE_GLOBAL = 'archive_offline'.freeze
+  OUTAGE_SHARE_NAME = 'Archive-Down'.freeze
+  OUTAGE_SHARE_TEXT = 'ARCHIVE-DOWN-TEXT-5529'.freeze
+
+  def with_outage(down: true)
+    data = with_pivot
+    data['networks']['server_net']['downIf'] = OUTAGE_GLOBAL
+    data['globalVariables'] = (data['globalVariables'] || {}).merge(OUTAGE_GLOBAL => down)
+    data
+  end
+
+  # A resource whose own downIf takes its service off while its network (office_lan) stays
+  # up: an open share listing contents, down while archive_offline is truthy.
+  def with_resource_outage(down: true)
+    data = scenario
+    data['resources']['archive_down'] = {
+      'kind' => 'file_share', 'name' => OUTAGE_SHARE_NAME, 'host' => FS_HOST, 'network' => 'office_lan',
+      'downIf' => RESOURCE_OUTAGE_GLOBAL,
+      'contents' => [{ 'id' => 'archive_note', 'type' => 'text_file', 'name' => 'archive_readme.txt',
+                       'takeable' => true, 'text' => OUTAGE_SHARE_TEXT }]
+    }
+    data['globalVariables'] = (data['globalVariables'] || {}).merge(RESOURCE_OUTAGE_GLOBAL => down)
+    data
+  end
+
+  # Port security message on the secured jack (sub-slice P, 5.4).
+  PORT_SECURITY_MESSAGE = 'The switch logs the device address and shuts the port. Known machines only.'.freeze
+
+  # The scenario with a port-security jack added in the comms room (sub-slice P): a jack
+  # with portSecurity: true on office_lan. The drop box home is unchanged, so the player
+  # can try the secured port with the box in hand.
+  def with_secured_port(message: PORT_SECURITY_MESSAGE)
+    data = scenario
+    jack = { 'id' => 'secure_port', 'type' => 'pc', 'sprite' => 'network_rack1', 'name' => 'Locked switch port',
+             'networkJack' => true, 'portSecurity' => true }
+    jack['portSecurityMessage'] = message if message
+    data['rooms']['comms_room']['objects'] << jack
+    data
+  end
+
   # The scenario with the drop box defined in one of its five homes (3.3): 'room' (the
   # lobby table, as authored), 'container' (an open crate in the lobby), 'start'
   # (startItemsInInventory), 'npc' (Sam's itemsHeld) or 'grant' (a timer's give_item).
@@ -285,6 +357,18 @@ module NetworkRequests
 
   def container(id, foothold: nil)
     get game_path("container/#{id}"), params: foothold ? { foothold: foothold } : {}, as: :json
+    response.parsed_body
+  end
+
+  # A hostile client sync: PUT /sync_state carrying globalVariables straight from the request,
+  # the real route a tampered client would use to try to clear an outage global.
+  def sync_globals(globals)
+    put game_path('sync_state'), params: { globalVariables: globals }, as: :json
+    response.parsed_body
+  end
+
+  def bootstrap_scenario
+    get game_path('scenario'), as: :json
     response.parsed_body
   end
 

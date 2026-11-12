@@ -27,6 +27,7 @@ import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
 import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
 import { isSessionOverlayShowing, onSessionOverlayClosed, whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 // Auto-advance timing: readingTimeMs()/advanceDelayMs() in dialogue-pacing.js; this is only the scheduleDialogueAdvance default
 const DIALOGUE_AUTO_ADVANCE_DELAY = 5000; // Default delay in milliseconds for new dialogue text (5 seconds)
@@ -194,10 +195,10 @@ export class PersonChatMinigame extends MinigameScene {
         this.autoAdvanceTimer = null;
         
         // Customize header
-        this.headerElement.innerHTML = `
-            <h3>🎭 ${this.title}</h3>
-            <p>Speaking with ${this.npc.displayName}</p>
-        `;
+        // The title and the NPC name are plain text (scenario data): set as text, never HTML
+        this.headerElement.innerHTML = '<h3></h3><p></p>';
+        this.headerElement.querySelector('h3').textContent = displayDashes(`🎭 ${this.title}`);
+        this.headerElement.querySelector('p').textContent = displayDashes(`Speaking with ${this.npc.displayName}`);
         
         // Create UI, passing both NPC and player data
         this.ui = new PersonChatUI(this.gameContainer, {
@@ -2064,10 +2065,11 @@ export class PersonChatMinigame extends MinigameScene {
         console.error(`❌ ${message}`);
         
         if (this.ui.elements.dialogueText) {
-            this.ui.elements.dialogueText.innerHTML = `
-                <span style="color: #ff6b6b;">⚠️ Error</span><br/>
-                ${message}
-            `;
+            // The message can name an NPC id or carry error text: plain text after the label
+            const label = document.createElement('span');
+            label.style.color = '#ff6b6b';
+            label.textContent = '⚠️ Error';
+            this.ui.elements.dialogueText.replaceChildren(label, document.createElement('br'), String(message ?? ''));
         }
     }
 }

@@ -1000,19 +1000,33 @@ sign-in screen.
   with `wasLocked: true`, at a PC under a policy with `maxAttempts`, the client sends a `check`
   report for that owner and PC (section 9.1), but **only for a PC where this browser has had a
   lockout answer from `POST /login`** (at the keyboard or, with 9.3a, through the drop box), or
-  where the scenario response's `npcFrustration` already lists the owner as locked out there. In
+  where the scenario response's `npcFrustration` already lists the owner as locked out there, or
+  where its `lockoutPcs` lists the PC (the sign-in PCs where the player caused a lockout, ids only,
+  so a reload keeps the mark; a check the server answers no clears it until a new lockout answer
+  comes at that PC). In
   any other case a check could only answer no, so none is sent, and a mission with no lockout
   sends no check at all. The server answers `lockedOut: true` when `loginLockouts` holds the
   owner's username at that PC, and records it (`lockedOut` in 9.4), so a reload can restore it.
 - **The first use waits for the answer.** The owner's first use after the return holds its verdict
   until the check is answered (the use's dwell is longer than one request in practice; if not, the
-  use waits at the desk), so a slow answer never lets one use through as met.
+  use waits at the desk), so a slow answer never lets one use through as met. After 30 s of needs
+  clock with no answer the use is skipped, not judged (nothing restored, no `npc_used`, no
+  report), and the next use there waits again; only an answer ends the wait. The wait is bounded
+  by the request, not by the needs clock: the report queue aborts a `POST /npc_frustration` that
+  has not settled after 20 s and treats it as lost, so a check is sent once more and then answered
+  no, and a hung connection cannot stop the queue.
 - **While locked out**, that NPC's uses of that PC fail with `locked_out` (a station failure), the
   mutter comes from `station_fail`, and frustration rises as for any failure. Whenever the owner
   leaves that PC the screen locks, whatever its `lockChance`, and the server refuses an owner claim
   there while `loginLockouts` holds the owner's username at it: a person who cannot sign in cannot
   leave a session open. An owner whose screen never locks never types a password and is never
   affected.
+- **At a borrowed PC.** The client learns a lockout only at the owner's own station, so a borrower
+  locked out at the hot desk still works there: the use is met and eases frustration, and the
+  hot-desk screen shows them seated and signed in. A lockout at a borrowed PC stops only the
+  session left open there: the `done` records no guest, and the server refuses a guest claim while
+  the lockout stands. So "lock them out everywhere and they give up" does not happen (a later
+  slice may make a locked-out borrowed use a failure).
 - **After a reload** the owner's flag comes back from `npcFrustration` when their room loads, so
   they do not sit back down and work until their next locked return.
 - **What the browser learns, and when.** That this owner is locked out at this PC, at the moment
@@ -1218,7 +1232,11 @@ period, computed in `access_work.rb` as `min(restores, 100 - urgentAt) / decayPe
 minutes, with the need's own `urgentAt` and `decayPerMin` and the smallest `restores` among the
 NPC's options (`socialUse`, default 60, for the phone and its PC, and each object whose
 `affordance.satisfies` lists `social_media`). A larger `restores` only lengthens the real period,
-so the floor never refuses an honest post; the floor is 0.9 of this period (section 9.1).
+so the floor never refuses an honest post; the floor is 0.9 of this period (section 9.1). An honest use can still come inside the floor: after a reload
+(needs restart at `initial` while `feedRevealed.at` persists) or from a tempt band (slice 18b-i
+takes a need above `urgentAt`). The answer is then `tooSoon` with `retryAfter`, and the client
+asks again after that whole wait (no cap), up to four requests for the use, so the use still
+yields its post at any pace (C review R1 m2, R2 m1).
 
 ## 9. Server
 
@@ -1312,8 +1330,11 @@ PC and a phone use take `socialUse.useSeconds` (default 20, 8.1). `access_work.r
      report lists. The server works these out itself, from the scenario and its own state: a
      resource in the NPC's resolved list that it is not admitted to (`no_access`) or whose
      `routes` are `[]` (an `unreachable` with no global to clear); for `social_media`, its own
-     station under a policy that blocks it (`social_blocked`); for either need, a `loginLockouts`
-     entry for the NPC's account at its own station (`locked_out`). None of these can clear in
+     station under a policy that blocks it (`social_blocked`); for `work` and (user decision q33)
+     `social_media`, a `loginLockouts`
+     entry for the NPC's account at its own station (`locked_out`), and only once a `check` has
+     recorded it in the NPC's `lockedOut` list (sub-slice L; with no record a lockout is no owned
+     cause). None of these can clear in
      play, so leaving one out of a report gains nothing. Only an outage the browser controls
      (`down`, `off`, or an `unreachable` whose routes carry a global) can be re-armed.
 
@@ -1361,7 +1382,7 @@ told the feed is done. Each scripted run checks the number of requests against a
 | `POST /login` with `claim: "owner"` (changed, locked) | L | as today | As today, plus: refused when `loginLockouts` holds the owner's username at that PC | As today; refusal "Sign in required" |
 | `GET /login_accounts` (changed by 9.1; extended here) | B | as today | As today. | `postitNote` when `login_postit_for(pc)` returns one, which now includes an owner whose `writes_down` is done; `no-store` |
 | `GET /capture_secrets` (changed) | H | as today | As today. | An account holder in `sharedLogins` counts as having a capture route whose proof holds (`account_capture_passwords`, `game.rb:965`; the engine plan's `proof` rule, section 15). The proof is the server's own record of a heard "done", as strong as that client claim (6.5) |
-| `POST /feed_post` (new, locked) | C | `npc_id` | 1. NPC known. 2. The NPC has a `feed` with posts and a valid `social_media` need. 3. A post is left. 4. For a second or later post: the pace floor. | `feedRevealed[npcId] = { n, at }`; answer `{ index, post, fact, site, person, done }`, where `fact` is `{ id, entry }` for a post with a feed fact and `done` is true when that was the last post. Check 3 fails: `{ post: null, done: true }`. Check 4 fails: `{ post: null, done: false }` |
+| `POST /feed_post` (new, locked) | C | `npc_id`, `object_id` (q33: where the use was; null for the phone) | 1. NPC known. 2. The NPC has a `feed` with posts and a valid `social_media` need. 3. A post is left. 3a (q33). The source: the phone only with a phone; else one of the NPC's social media places in a room the player can know of, and not a sign-in PC where `loginLockouts` holds the NPC's username; else `{ post: null, done: false, refused: true }`, nothing written. 4. For a second or later post: the pace floor. | `feedRevealed[npcId] = { n, at }`; answer `{ index, post, fact, site, person, done }`, where `fact` is `{ id, entry }` for a post with a feed fact and `done` is true when that was the last post. Check 3 fails: `{ post: null, done: true }`. Check 4 fails: `{ post: null, done: false, tooSoon: true, retryAfter, revealed }`, `revealed` being the posts out so far |
 | `GET /scenario` (changed) | A, B, H, C | as today | As today. | `filtered_scenario_for_bootstrap` also deletes `resources` and `roles` (where 9.3 or 9.1 already delete them or part of them, nothing more is needed) and, in C, every feed fact from `social.intelFacts`. The `scenario` action adds `npcFrustration` (per NPC: `level`, `tell`, `settled`, `hold`, per need the seconds until a fail with no `rearmed` mark would clear its floor, omitted when none is left (5.4), `pending`, the handed-over workarounds not yet spent, as `run` descriptions, `done`, likewise, each with its `setGlobal` (and, for a `prop_door`, `door` and the prop's room `from`), `failWhy`, per need the whys of its last counted failure, omitted when none, and `lockedOut`, the PCs a true `check` recorded) and `feedPosts` (per NPC: `site`, `person`, the posts revealed so far with their fact entries, and `done`). After answering it clears `guestSessions`, as it ends claimed sessions (`end_claimed_sessions!`, `game.rb:1542`), with the same row lock |
 | `GET /room/:id` and the room data of a door unlock (changed) | A, C | as today | As today. | Through `filtered_room_data`: each room NPC gains `work` (5.1) and, with a feed, `hasFeed: true`; `workNeeds`, `frustration` and `feed` are deleted beside the keys withheld today. `hasPostit` on a PC is 9.1's and follows `written_down?` |
 **`serve_opened_room(room_id)`.** The tail of the door unlock (`games_controller.rb:936-947`) is
@@ -1387,7 +1408,7 @@ No route is added for the USB policy (section 7).
 | Frustration | The level and `tell`, in each answer and on a load | `perFail` and `easePerSuccess` are not sent as fields; they can be inferred from the level steps (`level - previous`), which W3's mapping needs |
 | A written-down password | Only in a `GET /login_accounts` answer for the owner's own reachable PC, after the workaround is done (9.1's channel), and afterwards in the player's own saved notes if they press "add to notebook" | Before that. Never in room data, the bootstrap, a `/npc_workaround` answer or a door unlock |
 | A shared login | In the `/npc_workaround` answer to a heard `share_login` (`line`, `note`, and the username in `capture`), then in the player's saved notes; from `/capture_secrets` once the capture is recorded and `revealSecret` is on | Before that; and always, when the player did not hear |
-| A lockout of an owner | `lockedOut` in the answer to a `check` report, sent when the owner returns to the locked screen | A list of locked-out accounts is never sent; sign-in answers are unchanged |
+| A lockout of an owner | `lockedOut` in the answer to a `check` report, sent when the owner returns to the locked screen; `GET /scenario`'s `lockoutPcs`, the ids of the sign-in PCs where the player caused a lockout (sub-slice L review R1 M1: the player was shown each one) | A list of locked-out accounts or usernames is never sent; sign-in answers are unchanged |
 | `feed` posts | Posts revealed so far, one per answer and all on a load; `hasFeed: true` on the NPC; `done` once the last is out | Every post not yet revealed, and how many there are |
 | Feed facts | The entry of each revealed post's fact, with the post; afterwards in the evidence note the player's own click adds | The entry of every unrevealed post's fact. Its id may appear in a readiness slot; its text never |
 | `policies` | As today (the bootstrap ships them); `usb` and `social` are not secret | Nothing |
@@ -1490,10 +1511,16 @@ play and without the player standing anywhere in particular:
   and read that login;
 - ask `/feed_post` for every post and its fact at the post floor, with the NPC never touching a
   phone or a PC, whatever the `social` policy (the route checks only "NPC known", the feed and the
-  floor);
-- send a `check` for any owner at any time, not only at the owner's return: after three wrong
-  passwords for a guessed username at a PC, that answers whether the username is the owner's
-  (decision 14);
+  floor). The first post comes the moment the NPC is known (it has no floor), and an NPC with
+  `"phone": false` whose only source is a blocked own PC posts before any borrow is handed over
+  (C review R1 m4, not adopted: the route does not ask whether an honest source exists);
+- send a `check` for any owner with a work plan at any time, not only at the owner's return: after
+  three wrong passwords for a guessed username at a PC, that answers whether the username is the
+  owner's (decision 14); an owner claim at that PC's open screen answers the same question by
+  another route (refused while the owner is locked out there), for any owner, work plan or not;
+  and a guest claim at a hot desk answers it for that PC's guest (refused while the guest is
+  locked out there). That third route is moot, since a granted guest claim names the guest's
+  username anyway;
 - set `se_intel_<id>` itself, which satisfies a readiness slot or a phishing factor that names a
   feed fact, without ever having the fact's text.
 
@@ -1505,6 +1532,11 @@ workaround, a post or a feed fact before the server has handed it over, except w
 scenario's own event mappings, reveal props (their `revealOnGlobal` and text) and global names
 show, which are served from the start (the README tells authors to keep them neutral; sub-slice H
 withholds them).
+
+One gap is on the honest client's side (q33 review R1 m2, deferred to the ideas backlog): the
+client knows a lockout only at the NPC's own station, so a `"phone": false` NPC that borrows a hot
+desk for social media where its own username is locked out shows a met use while the server
+refuses both the guest record and the post. The server stays correct.
 
 This residual is accepted (decision 5). What keeps it small in practice: the validator prints, for
 every workaround, what it opens and the earliest it can be reached, and warns when what it opens
@@ -2367,7 +2399,7 @@ touches:
 | A workstation used by a non-owner reads as in use, and an NPC signing in at a PC ends the player's session there | From sub-slice H, and only where an NPC's use job targets a sign-in PC it does not own. With `private` PCs (`test_needs_sims`) that never happens; in `test_npc_needs` and the lab each PC has one user. The needs regression captures confirm it |
 | The door unlock's tail becomes `serve_opened_room` | Every door unlock: the same steps in the same order |
 | Four new `player_state` keys | New games get empty ones; older saved games are read as empty |
-| `track_npc_encounters` writes `metAt` | Only for an NPC with a `work` plan or a feed: none today |
+| `track_npc_encounters` writes `metAt` | Only for an NPC that can fail (C review R1 m3: a feed alone writes none, since the feed never reads `metAt`) |
 | An owner claim is refused while the owner is locked out at that PC (sub-slice L) | Every scenario with `maxAttempts` and owned sign-in PCs (`test_access_signin`, `test_access_sessions`): a claim of a locked-out owner's session is refused where today it succeeds. The first slice's scripted runs are repeated at L-2 |
 | `validate_npc_needs.rb` no longer errors on a `social_media` need with no satisfying object | No scenario has one |
 

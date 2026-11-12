@@ -219,7 +219,8 @@ family is added to the game, add it in both places.**
 system's `getState`, which adds `frustration` (the server's level, 0 to 100), `tell` (0, 1 or 2),
 `settled`, `failed` (`{ need, missing: [{ id, why }] }` for 4 s of the needs clock after a counted
 failure, else null), `visits` (queued `{ kind, at }`), `visiting` (the running visit or null) and
-`judged` (`{ work, social_media }`, whether each need's uses are judged).
+`judged` (`{ work, social_media }`, whether each need's uses are judged), and `distracted` (true
+while a phone use, a `self` job, runs: a `los.challengeOnSight` NPC does not challenge then).
 
 ---
 
@@ -402,9 +403,10 @@ on the game; compare it with the server's record from
 | `savedCards()` | The card copier's `saved_cards` as card ids. This list is client-written and never decides identity: the server's copies are `serverClones` in `verify-run.rb --access`. |
 | `footholds()` | Networks (`docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md`): the footholds the client holds, `[{ id, via, name, itemId, sourceId, network }]`, read from `window.networkLinks` (`systems/network-links.js`, its `list()`, else its `footholds`). Empty while the module does not exist. The server's record is `footholds` and `gainedFootholds` in `verify-run.rb --access`. |
 | `networkView(footholdId)` | The last `GET /network` entry the client fetched for that foothold, `{ id, via, name, network, hosts }`, or null (from `networkLinks.lastView(id)`, else its `views`). |
-| `work(npcId)` | Access slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`): `{ plan, frustration, tell, settled, failed, parked }`. `plan` is the server's read-only `work` plan on the NPC record (`{ breakDrain, needs: [{ id, kind, admitted, downIf?, object?, routes? }] }`, null with none); the rest is from the needs system's `getState`. The server's record is `npcFrustration` in `verify-run.rb --access`. |
+| `work(npcId)` | Access slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`): `{ plan, frustration, tell, settled, failed, parked, lockedOut, lockCheck }`. `lockedOut` lists the stations the server's check found the NPC locked out at, `lockCheck` the checks in flight (sub-slice L). `plan` is the server's read-only `work` plan on the NPC record (`{ breakDrain, needs: [{ id, kind, admitted, downIf?, object?, routes? }] }`, null with none); the rest is from the needs system's `getState`. The server's record is `npcFrustration` in `verify-run.rb --access`. |
 | `guest(pcId)` | Slice 9.2 H (plan 6.4): `{ ok, pcId, guest, userId, session }`. `guest` is the workstation layer's guest record at that PC (`{ npcId, lockAt }`, `lockAt` in needs-clock ms or null), set when a borrower left the hot desk signed in and the server agreed; `userId` is the NPC using the PC now (a borrower at the hot desk); `session` is the player's session there (`{ npcId, via, guest }`, `guest: true` for a guest claim) or null. The server's record is `guestSessions` in `verify-run.rb --access`. |
-| `reports()` | Slice 9.2: `{ requests, reports, pending, settled }` from `systems/npc-reports.js`: how many `POST /npc_frustration` requests and how many reports in them were sent, how many wait in the queue, and the NPC ids the client holds as settled. Compare `requests` with a beat's request budget. |
+| `feed()` | Slice 9.2 C (plan 8.3): `{ revealed, done, requests }` from `systems/social-feed.js`: the revealed feed post ids by NPC (oldest first), the NPCs whose feed the server said is done, and how many `POST /feed_post` requests were sent. Ids only, never a post's text. The server's record is `feedRevealed` in `verify-run.rb --access`. |
+| `reports()` | Slice 9.2: `{ requests, reports, pending, settled, checks, lockoutSeen, borrowLockoutSeen, borrowCleared }` from `systems/npc-reports.js`: how many `POST /npc_frustration` requests and how many reports in them were sent, how many wait in the queue, the NPC ids the client holds as settled, how many lockout `check` reports were queued, and the PCs where a sign-in answered locked_out in this page (sub-slice L: only these can bring a check). `borrowLockoutSeen` is the same set for borrowers sitting down at a hot desk; an owner's station "no" removes a PC from `lockoutSeen` but not from it, so a borrower there still checks. `borrowCleared` lists `pcId|npcId` for each borrower whose own "no" cleared the mark for that borrower only. Compare `requests` with a beat's request budget. |
 
 ```json
 {"cmd":"eval","fn":"() => window.__test.access.workstation('jake_pc')"}

@@ -312,11 +312,12 @@ module BreakEscape
 
     # [npc_id, text] the client voices a line of host_id's story as, for raw ink
     # text the walker could not place (glue, a divert mid-line, player_name()),
-    # or nil. Same rules as resolve, with no tags and no notes recorded.
+    # or nil. Same rules as resolve, with no tags and no notes recorded, and a
+    # voice message keeps its "voice:" marker so TtsLineResolver can tell one.
     def voiced_as(raw, host_id)
       prefix, text = InkLineWalker.split_prefix(raw)
       line = InkLineWalker::Line.new(prefix: prefix, text: text, raw: raw.to_s.strip, tags: [], path: nil)
-      resolve(line, host_id, notes: false)
+      resolve(line, host_id, notes: false, transcript: false)
     end
 
     # Which speaker the client asks for, and the text it sends, for one walker line.
@@ -327,7 +328,9 @@ module BreakEscape
     # same-named records (m10's `hax_post` and `agent_0x99`, both "Agent HaX") can be told
     # apart. Person-chat sends the conversation's own id in that case (isOwnNpcByName), so the
     # same-name rule below stays for person-chat lines and video-call knots.
-    def resolve(line, host_id, notes: true, id_names: false)
+    #
+    # With transcript: true a voice message's text is its transcript (no marker).
+    def resolve(line, host_id, notes: true, id_names: false, transcript: true)
       raw = line.raw
       return nil if raw.match?(BACKGROUND_LINE)
 
@@ -365,6 +368,10 @@ module BreakEscape
       return nil if speaker == 'player'
 
       text = text.sub(/\A[^:]+:\s*/, '') if text.match?(CLIENT_STRIP_PREFIX)
+      # A phone-chat voice message is voiced as its transcript, as the endpoint
+      # and phone-chat-ui.js have it, never with the "voice:" marker (a narrator
+      # line too: the endpoint refuses any line still marked)
+      text = text.sub(TtsLineResolver::VOICE_MESSAGE, '') if transcript
       return nil if self.class.normalize(text).empty?
 
       return ['narrator', text] if narrator
@@ -709,19 +716,11 @@ module BreakEscape
       false
     end
 
+    # The story the game serves for this storyPath (InkStoryFile, the lookup
+    # GamesController#ink uses), or nil: a story #ink refuses is not voiced
+    # either. Nothing is compiled here.
     def resolve_ink_path(story_path)
-      root = BreakEscape::Engine.root
-      full = root.join(story_path)
-      return full if File.exist?(full)
-
-      scenario_dir = root.join('scenarios', scenario_name)
-      candidate = scenario_dir.join(File.basename(story_path))
-      return candidate if File.exist?(candidate)
-
-      candidate = scenario_dir.join('ink', "#{File.basename(story_path, '.*')}.json")
-      return candidate if File.exist?(candidate)
-
-      nil
+      InkStoryFile.find(story_path, compile: false)
     end
 
     def each_room_npc(&block)

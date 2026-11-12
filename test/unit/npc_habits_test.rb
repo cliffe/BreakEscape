@@ -357,4 +357,53 @@ class NpcHabitsTest < ActiveSupport::TestCase
     assert_equal :authored_no_hold, gate[:reason]
     assert_equal false, gate[:no_hold]
   end
+
+  # doors.js reads a door entry only when its connectedRoom and direction match a doorway the
+  # room's connections build, and only the first entry for that doorway
+  test 'doorway_problem reads a door entry as doors.js does' do
+    room = { 'connections' => { 'north' => %w[lobby vault], 'south' => 'yard' },
+             'doors' => [{ 'connectedRoom' => 'vault', 'direction' => 'north' },
+                         { 'connectedRoom' => 'yard', 'direction' => 'south' },
+                         { 'connectedRoom' => 'vault' },
+                         { 'connectedRoom' => 'vault', 'direction' => 'North' },
+                         { 'connectedRoom' => 'vault', 'direction' => 'south' },
+                         { 'connectedRoom' => 'vault', 'direction' => 'north' },
+                         { 'connectedRoom' => 'nowhere', 'direction' => 'north' },
+                         'not a door'] }
+    assert_nil NH.doorway_problem(room, 0)
+    assert_nil NH.doorway_problem(room, 1)
+    assert_equal :no_direction, NH.doorway_problem(room, 2)
+    assert_equal :no_direction, NH.doorway_problem(room, 3)
+    assert_equal :no_connection, NH.doorway_problem(room, 4)
+    assert_equal :shadowed, NH.doorway_problem(room, 5)
+    assert_equal :no_connection, NH.doorway_problem(room, 6)
+    assert_equal :no_direction, NH.doorway_problem(room, 7)
+    assert_equal :no_connection, NH.doorway_problem({ 'doors' => [{ 'connectedRoom' => 'vault', 'direction' => 'north' }] }, 0)
+    # doors.js skips a falsy connections[dir], so "north": "" is no doorway, even for an
+    # entry whose connectedRoom is "" too
+    blank = { 'connections' => { 'north' => '' }, 'doors' => [{ 'connectedRoom' => '', 'direction' => 'north' }] }
+    assert_equal :no_connection, NH.doorway_problem(blank, 0)
+    blank['connections']['north'] = nil
+    assert_equal :no_connection, NH.doorway_problem(blank, 0)
+  end
+
+  # A gate on an entry no doorway reads does nothing: expand! fills no noHold on it and the
+  # report has no gate for its guard
+  test 'a gate on an entry doors.js never reads gets no fill and counts as no gate' do
+    data = scenario_with([npc('id' => 'sara', 'npcType' => 'person', 'awareness' => 'high')])
+    data['rooms']['office']['connections'] = { 'north' => 'vault' }
+    data['rooms']['office']['doors'] = [{ 'connectedRoom' => 'vault', 'gate' => { 'openFor' => ['sara'] } }]
+    data['rooms']['vault'] = { 'type' => 'room_office', 'connections' => { 'south' => 'office' } }
+    live = deep(data)
+    live['rooms']['office']['doors'][0]['direction'] = 'north'
+
+    assert_equal :no_direction, NH.gate_entries(data)[0][:doorway]
+    doors = report_for(NH.expand!(data), 'sara')[:doors]
+    assert_equal :no_gate, doors[:reason]
+    refute data['rooms']['office']['doors'][0]['gate'].key?('noHold')
+    # mirror: with its direction the gate is read and filled
+    assert_nil NH.gate_entries(live)[0][:doorway]
+    assert_nil report_for(NH.expand!(live), 'sara')[:doors][:reason]
+    assert_equal ['sara'], live['rooms']['office']['doors'][0]['gate']['noHold']
+  end
 end

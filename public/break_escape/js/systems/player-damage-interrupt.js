@@ -43,9 +43,20 @@ export function minigameClosedByDamage(withinMs = 1500, now = Date.now()) {
 // plan 2.3 rows 16, 22 and 26). Stamped on every hit, whether or not a minigame was open.
 let lastPlayerHitAtMs = null;
 
+// When the player was last hit (ms since the epoch), whether or not a minigame was open. Read by
+// the container return (container-minigame.js containerReturnBlocked): a hit in the moment between
+// a reader closing and its container reopening keeps the player in the world. The epoch is a
+// different clock from lastPlayerHitAtMs above (the ringer's performance clock); both are stamped.
+let lastHitAt = -Infinity;
+
 /** Performance-clock time of the last hit on the player, or null if none this session. */
 export function lastPlayerHitAt() {
   return lastPlayerHitAtMs;
+}
+
+/** Wall-clock (epoch ms) time of the last hit on the player, -Infinity if never. */
+export function lastPlayerHitAtWall() {
+  return lastHitAt;
 }
 
 /**
@@ -61,6 +72,7 @@ export function playerHitWithin(ms, now = (typeof performance !== 'undefined' ? 
 
 export function closeMinigameOnDamage(amount, deps = {}) {
   if (typeof amount !== 'number' || !(amount > 0)) return false;
+  lastHitAt = typeof deps.now === 'number' ? deps.now : Date.now();
 
   // Stamp first: the ringer reads it from inside the close below (a forced call's re-ring)
   lastPlayerHitAtMs = typeof deps.perfNow === 'number'
@@ -199,6 +211,7 @@ export function closeMinigameForKnockout(deps = {}) {
 if (typeof window !== 'undefined') {
   window.minigameClosedByDamage = minigameClosedByDamage;
   window.lastPlayerHitAt = lastPlayerHitAt;
+  window.lastPlayerHitAtWall = lastPlayerHitAtWall;
   window.playerHitWithin = playerHitWithin;
   window.playerIsKnockedOut = playerIsKnockedOut;
   window.closeMinigameForKnockout = closeMinigameForKnockout;

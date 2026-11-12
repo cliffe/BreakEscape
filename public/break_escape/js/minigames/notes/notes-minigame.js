@@ -3,6 +3,20 @@ import { displayDashes } from '../../utils/display-dashes.js';
 import { renderNoteMarkdown, noteMatches } from '../../utils/note-markdown.js';
 import { cappedText, NOTE_LIMIT } from '../../utils/test-state-text.js';
 
+// Observations are plain text: scenario data, the player's own typing, or a line another
+// minigame wrote ("Postit note found in <container name>"). They go in as text, never markup.
+function setObservationText(div, text) {
+    div.replaceChildren();
+    if (text) {
+        div.textContent = displayDashes(text);
+    } else {
+        const em = document.createElement('em');
+        em.textContent = 'Click edit to add your observations...';
+        div.appendChild(em);
+    }
+}
+
+
 // Load fonts
 const fontLink1 = document.createElement('link');
 fontLink1.href = 'https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap';
@@ -138,7 +152,7 @@ export class NotesMinigame extends MinigameScene {
 
                     const observationDiv = document.createElement('div');
                     observationDiv.className = 'notes-minigame-observation';
-                    observationDiv.innerHTML = displayDashes(this.observationText);
+                    setObservationText(observationDiv, this.observationText);
                     observationDiv.dataset.raw = this.observationText;
                     observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
                     observationDiv.title = 'Click to edit observations';
@@ -167,7 +181,7 @@ export class NotesMinigame extends MinigameScene {
 
                     const observationDiv = document.createElement('div');
                     observationDiv.className = 'notes-minigame-observation empty';
-                    observationDiv.innerHTML = '<em>Click edit to add your observations...</em>';
+                    setObservationText(observationDiv, '');
                     observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
                     observationDiv.title = 'Click to add observations';
                     observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
@@ -344,6 +358,11 @@ export class NotesMinigame extends MinigameScene {
     updateDisplayedNote() {
         const currentNote = this.collectedNotes[this.currentNoteIndex];
         if (!currentNote) return;
+        // The notepad remembers what it showed, so it reopens on a note added since (UX R1)
+        // Recorded against the full list: a search narrows collectedNotes (R1 m2)
+        if (this.item?.scenarioData?.type === 'notepad') {
+            Object.assign(notepadMemory, notepadMemoryFor(window.gameState?.notes, currentNote, this.currentNoteIndex));
+        }
         
         // Parse the note text to extract observations
         const noteParts = this.parseNoteText(currentNote.text);
@@ -392,14 +411,14 @@ export class NotesMinigame extends MinigameScene {
             const editBtn = observationContainer.querySelector('.notes-minigame-edit-btn');
             
             if (this.observationText) {
-                observationDiv.innerHTML = displayDashes(this.observationText);
+                setObservationText(observationDiv, this.observationText);
                 observationDiv.dataset.raw = this.observationText;
                 observationDiv.style.color = '#666';
                 observationDiv.style.cursor = 'pointer';
                 observationDiv.title = 'Click to edit observations';
                 editBtn.title = 'Edit observations';
             } else {
-                observationDiv.innerHTML = '<em>Click edit to add your observations...</em>';
+                setObservationText(observationDiv, '');
                 observationDiv.style.color = '#999';
                 observationDiv.style.cursor = 'pointer';
                 observationDiv.title = 'Click to add observations';
@@ -547,7 +566,7 @@ export class NotesMinigame extends MinigameScene {
             
             const newText = textarea.value.trim();
             observationDiv.dataset.raw = newText || '';
-            observationDiv.innerHTML = newText ? displayDashes(newText) : '<em>Click edit to add your observations...</em>';
+            setObservationText(observationDiv, newText);
             observationDiv.style.color = newText ? '#666' : '#999';
             
             // Update the stored observation text
@@ -577,10 +596,10 @@ export class NotesMinigame extends MinigameScene {
             
             // Restore original text
             if (originalText) {
-                observationDiv.innerHTML = displayDashes(originalText);
+                setObservationText(observationDiv, originalText);
                 observationDiv.style.color = '#666';
             } else {
-                observationDiv.innerHTML = '<em>Click edit to add your observations...</em>';
+                setObservationText(observationDiv, '');
                 observationDiv.style.color = '#999';
             }
             
@@ -721,6 +740,9 @@ export class NotesMinigame extends MinigameScene {
     
     cleanup() {
         super.cleanup();
+        // Read by the viewer's onComplete, which runs just after: a close by the framework
+        // alone (a hit's fallback, a conversation starting) never set closedByPlayer
+        NotesMinigame.lastCloseWasOwn = this.closedByPlayer === true;
     }
 }
 
@@ -745,6 +767,42 @@ export function showMissionBrief() {
     };
     
     startNotesMinigame(missionBriefItem, window.gameScenario.scenario_brief, '', null, true);
+}
+
+// What the notepad last showed (client-only, never synced: it lasts until a reload).
+const notepadMemory = { seenCount: 0, lastIndex: 0 };
+
+/**
+ * The page the notepad opens on: the newest note when one was added since it was last
+ * looked at (a fact just noted, shot 04 opened on page 1), else the page last shown.
+ * Pure: notes is the notes list, memory { seenCount, lastIndex }.
+ */
+export function notepadStartIndex(notes, memory = notepadMemory) {
+    const count = Array.isArray(notes) ? notes.length : 0;
+    if (count === 0) return 0;
+    const seen = Number(memory?.seenCount) || 0;
+    if (count > seen) return count - 1;
+    const last = Number(memory?.lastIndex) || 0;
+    return last >= 0 && last < count ? last : 0;
+}
+
+/**
+ * What the notepad remembers after showing a note: the full notes list's length, and the
+ * shown note's place in that list. A search shows a filtered list, so the note is found
+ * in the full list by identity, then by id; the shown index is the fallback.
+ * Pure: allNotes is the full notes list.
+ */
+export function notepadMemoryFor(allNotes, shownNote, shownIndex = 0) {
+    const notes = Array.isArray(allNotes) ? allNotes : [];
+    let lastIndex = notes.indexOf(shownNote);
+    if (lastIndex < 0 && shownNote && shownNote.id != null) {
+        lastIndex = notes.findIndex(n => n && n.id === shownNote.id);
+    }
+    if (lastIndex < 0) lastIndex = Number(shownIndex) || 0;
+    return { seenCount: notes.length, lastIndex };
+}
+if (typeof window !== 'undefined') {
+    window.notepadStartIndex = () => notepadStartIndex(window.gameState?.notes);
 }
 
 // Function to start the notes minigame
@@ -796,35 +854,53 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
                 console.log('NOTES COMPLETED - Not added to inventory');
             }
             
+            // The returns below happen only after the player's own close (Close, Esc) or the
+            // viewer finishing; never after a hit, the knockout screen, a conversation
+            // starting, or a room change (lab UX review M1). A note to take is still taken.
+            const ownClose = success === true || NotesMinigame.lastCloseWasOwn === true;
+            const arm = window.containerReturnArm?.() || null;
+            const blocked = () => (typeof window.containerReturnBlocked === 'function'
+                ? window.containerReturnBlocked(arm, ownClose) : (ownClose ? null : 'not_own_close'));
+            const dropReturns = () => {
+                window.pendingPhoneReturn = null;
+                window.pendingTextFileReturn = null;
+            };
+
             // Check if we need to return to a container after notes minigame
             if (window.pendingContainerReturn && window.returnToContainerAfterNotes) {
                 console.log('Returning to container after notes minigame');
                 // The notes panel is closing and the container opens 100 ms later. Held
                 // toasts released in that gap showed, were pulled back by the container
                 // and showed again on close (F13, engine F24).
-                window.expectPanelWithin?.(1000);
+                if (ownClose) window.expectPanelWithin?.(1000);
+                const back = window.pendingContainerReturn;
                 // Small delay to ensure notes minigame cleanup completes
                 setTimeout(() => {
-                    window.returnToContainerAfterNotes();
-                }, 100);
+                    if (window.pendingContainerReturn !== back) return;
+                    window.returnToContainerAfterNotes({ reopen: !blocked() });
+                }, ownClose ? 100 : 0);
             }
             
             // Check if we need to return to phone after notes minigame
             if (window.pendingPhoneReturn && window.returnToPhoneAfterNotes) {
+                if (!ownClose) { dropReturns(); return; }
                 console.log('Returning to phone after notes minigame');
                 window.expectPanelWithin?.(1000); // held toasts wait for it (F13, engine F24)
                 // Small delay to ensure notes minigame cleanup completes
                 setTimeout(() => {
+                    if (blocked()) { dropReturns(); return; }
                     window.returnToPhoneAfterNotes();
                 }, 100);
             }
             
             // Check if we need to return to text file after notes minigame
             if (window.pendingTextFileReturn && window.returnToTextFileAfterNotes) {
+                if (!ownClose) { dropReturns(); window.pendingContainerReturn = null; return; }
                 console.log('Returning to text file after notes minigame');
                 window.expectPanelWithin?.(1000); // held toasts wait for it (F13, engine F24)
                 // Small delay to ensure notes minigame cleanup completes
                 setTimeout(() => {
+                    if (blocked()) { dropReturns(); window.pendingContainerReturn = null; return; }
                     window.returnToTextFileAfterNotes();
                 }, 100);
             }

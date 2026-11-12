@@ -76,6 +76,79 @@ class NetworkModelTest < ActiveSupport::TestCase
     assert_equal [[]], NM.reach_conditions(data, nil, { 'kind' => 'printer' })
   end
 
+  # Slice 9.3b sub-slice K (ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.1): links and the pivot.
+  def linked_scenario(links)
+    {
+      'networks' => { 'a' => { 'name' => 'A' }, 'b' => { 'name' => 'B' }, 'c' => { 'name' => 'C' },
+                      'd' => { 'name' => 'D' } },
+      'networkLinks' => links
+    }
+  end
+
+  test 'network_links keeps only two-item pairs of defined, distinct networks' do
+    d = linked_scenario([%w[a b], %w[b c], %w[a x], %w[a], %w[a a], 'junk', %w[a b c]])
+    assert_equal [%w[a b], %w[b c]], NM.network_links(d)
+  end
+
+  test 'linked_networks is undirected and sorted' do
+    d = linked_scenario([%w[a b], %w[c a]])
+    assert_equal %w[b c], NM.linked_networks(d, 'a')
+    assert_equal %w[a], NM.linked_networks(d, 'b')
+    assert_empty NM.linked_networks(d, 'd')
+    assert_empty NM.linked_networks(d, nil)
+  end
+
+  test 'reach_paths: a chain is shortest first, the same network is a single node, no link is none' do
+    chain = linked_scenario([%w[a b], %w[b c], %w[c d]])
+    assert_equal [%w[a b c d]], NM.reach_paths(chain, 'a', 'd')
+    assert_equal [%w[a]], NM.reach_paths(chain, 'a', 'a')
+    assert_empty NM.reach_paths(linked_scenario([%w[a b]]), 'a', 'd')
+  end
+
+  test 'reach_paths: a cycle gives both directions, shortest first and ordered' do
+    cycle = linked_scenario([%w[a b], %w[b c], %w[c d], %w[a d]])
+    assert_equal [%w[a d], %w[a b c d]], NM.reach_paths(cycle, 'a', 'd')
+  end
+
+  test 'reach_paths is capped at eight' do
+    # a and f joined through ten parallel middle networks plus a direct link: eleven simple
+    # paths, so the pivot keeps the first eight.
+    middles = (1..10).map { |i| "m#{i}" }
+    nets = { 'a' => { 'name' => 'A' }, 'f' => { 'name' => 'F' } }
+    middles.each { |m| nets[m] = { 'name' => m } }
+    links = middles.flat_map { |m| [['a', m], [m, 'f']] } + [%w[a f]]
+    d = { 'networks' => nets, 'networkLinks' => links }
+    assert_equal NM::REACH_PATHS_CAP, NM.reach_paths(d, 'a', 'f').length
+    assert_operator NM.all_reach_paths(d, 'a', 'f').length, :>, NM::REACH_PATHS_CAP
+  end
+
+  test 'reach_conditions over a link: same network, linked, and unreachable' do
+    d = linked_scenario([%w[a b]])
+    res_on_b = { 'network' => 'b' }
+    assert_equal [[]], NM.reach_conditions(d, 'a', res_on_b), 'linked, no downIf: one empty route'
+    assert_equal [[]], NM.reach_conditions(d, 'b', res_on_b), 'same network'
+    assert_equal [], NM.reach_conditions(d, 'a', { 'network' => 'd' }), 'no link'
+    assert_equal [[]], NM.reach_conditions(d, 'a', { 'kind' => 'printer' }), 'no network'
+  end
+
+  # ---- Outages (sub-slice O, 5.2) ----
+
+  test 'truthy? is false for each globals-relevant falsy value and true for everything else' do
+    [nil, false, 0, 0.0, ''].each { |falsy| refute NM.truthy?(falsy), "#{falsy.inspect} should be falsy" }
+    ['false', 'x', '0', true, 1, -1, 0.1, [], {}, ' '].each { |truthy| assert NM.truthy?(truthy), "#{truthy.inspect} should be truthy" }
+  end
+
+  test 'reach_conditions over a link carries each network downIf global on the route' do
+    d = linked_scenario([%w[a b]])
+    d['networks']['a']['downIf'] = 'a_down'
+    d['networks']['b']['downIf'] = 'b_down'
+    res_on_b = { 'network' => 'b' }
+    assert_equal [%w[a_down b_down]], NM.reach_conditions(d, 'a', res_on_b), 'both networks on the route are conditions'
+    assert_equal [['b_down']], NM.reach_conditions(d, 'b', res_on_b), 'same network: its own downIf only'
+    # The station network's own outage is a condition even for a same-network resource.
+    assert_equal [['a_down']], NM.reach_conditions(d, 'a', { 'network' => 'a' })
+  end
+
   test 'a scenario with no networks answers empty everywhere' do
     bare = { 'startRoom' => 'lobby', 'rooms' => { 'lobby' => { 'objects' => [{ 'id' => 'pc', 'lockType' => 'login' }] } } }
     assert_empty NM.networks(bare)
@@ -122,6 +195,55 @@ class NetworkModelTest < ActiveSupport::TestCase
     game.reset_player_state!
     assert_equal({}, game.reload.player_state['footholds'])
     assert_equal [], game.player_state['gainedFootholds']
+  end
+
+  # Slice 9.3b sub-slice I: the grant_foothold enumerator keeps only server-run paths.
+  test 'grant_foothold_actions keeps server-run paths and reads the shape and needs' do
+    sc = {
+      'rooms' => {
+        'office' => { 'objects' => [
+          { 'id' => 'socket', 'triggerOnInteract' => [
+            { 'type' => 'grant_foothold', 'pc' => 'lena_pc', 'needsSession' => true, 'needsHeld' => 'badusb', 'name' => 'BadUSB' }
+          ] }
+        ] }
+      },
+      'timers' => [
+        { 'id' => 't', 'actions' => [{ 'type' => 'grant_foothold', 'pc' => 'sam_pc', 'needsDropped' => 'stick', 'name' => 'Stick' }] }
+      ],
+      # Neither of these is a server-run path, so both are dropped.
+      'flagRewards' => [{ 'type' => 'grant_foothold', 'pc' => 'x_pc', 'needsDropped' => 'kit' }],
+      'eventMappings' => { 'ev' => [{ 'type' => 'grant_foothold', 'pc' => 'y_pc', 'needsSession' => true }] }
+    }
+    actions = NM.grant_foothold_actions(sc)
+    by_pc = actions.map { |a| [a[:pc], a[:shape]] }.sort
+    assert_equal [%w[lena_pc session], %w[sam_pc dropped]], by_pc
+    session = actions.find { |a| a[:pc] == 'lena_pc' }
+    assert_equal 'badusb', session[:needs_held]
+    assert_match %r{triggerOnInteract}, session[:path]
+    dropped = actions.find { |a| a[:pc] == 'sam_pc' }
+    assert_equal 'stick', dropped[:needs_dropped]
+    assert_match %r{timers\[0\]/actions\[0\]}, dropped[:path]
+  end
+
+  # Slice 9.3b sub-slice W (ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.3): Wi-Fi.
+  test 'wifi_of reads a network block, and absent psk means an open network' do
+    d = NetworkModelScenario.scenario
+    d['networks']['guest_wifi'] = { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' } }
+    d['networks']['visitor_wifi'] = { 'name' => 'Visitor Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Open' } }
+    assert_equal({ 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' }, NM.wifi_of(d, 'guest_wifi'))
+    assert_nil NM.wifi_of(d, 'visitor_wifi')['psk']
+    assert_nil NM.wifi_of(d, 'office_lan'), 'a network with no wifi block'
+    assert_nil NM.wifi_of(d, 'no_such_net')
+  end
+
+  test 'wifi_aps lists objects with wifiAp on a network that defines wifi' do
+    d = NetworkModelScenario.scenario
+    d['networks']['guest_wifi'] = { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' } }
+    d['rooms']['lobby']['objects'] << { 'id' => 'guest_ap', 'type' => 'pc', 'name' => 'AP', 'wifiAp' => true, 'network' => 'guest_wifi' }
+    d['rooms']['lobby']['objects'] << { 'id' => 'guest_ap2', 'type' => 'pc', 'name' => 'AP2', 'wifiAp' => true, 'network' => 'guest_wifi' }
+    # wifiAp on a network with no wifi block is not an access point
+    d['rooms']['lobby']['objects'] << { 'id' => 'bogus_ap', 'type' => 'pc', 'name' => 'Bogus', 'wifiAp' => true, 'network' => 'office_lan' }
+    assert_equal %w[guest_ap guest_ap2], ids(NM.wifi_aps(d)).sort
   end
 
   test 'readers default for a game from before this slice' do

@@ -2,6 +2,9 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { applyActions } from '../../systems/apply-actions.js';
 import { resolveConditionalText } from '../../utils/conditional-text.js';
+import { escapeHtml } from '../../utils/escape-html.js';
+
+// Scenario text is plain text: escape it once before it goes into HTML
 
 /**
  * ESD Pushbutton Minigame
@@ -92,7 +95,7 @@ export class EsdPushbuttonMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
             <div class="esd-panel">
-                <div class="esd-label">${displayDashes(label)}</div>
+                <div class="esd-label">${escapeHtml(displayDashes(label))}</div>
                 <div class="esd-housing">
                     <div class="esd-guard" id="esd-guard" aria-label="Safety Guard"></div>
                     <button class="esd-button" id="esd-button" aria-label="ESD Button" disabled></button>
@@ -103,7 +106,7 @@ export class EsdPushbuttonMinigame extends MinigameScene {
             <div class="esd-confirm-modal" id="esd-confirm-modal" aria-hidden="true">
                 <div class="esd-confirm-card">
                     <h3>CONFIRM EMERGENCY SHUTDOWN?</h3>
-                    <p>${displayDashes(confirmDesc)}</p>
+                    <p>${escapeHtml(displayDashes(confirmDesc))}</p>
                     <div class="esd-confirm-actions">
                         <button class="esd-confirm" id="esd-confirm">CONFIRM - INITIATE SHUTDOWN</button>
                         <button class="esd-cancel" id="esd-cancel">CANCEL</button>

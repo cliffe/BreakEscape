@@ -130,6 +130,7 @@ module ValidateNpcNeeds
   # with heard_<knot> declared. Scenario-level 'phone' lines are said by every NPC: no names.
   PHONE_REACH_TILES = 1.5
   NEAR_CHAIR_TILES = 36.0 / 32
+  NOTICE_RADIUS_TILES = 24   # interests.<tag>.noticeRadius default (npc-needs.js NOTICE_RADIUS_TILES)
 
   def self.phone_cell(obj)
     uf = obj.data['affordance'].is_a?(Hash) ? obj.data['affordance']['useFrom'] : nil
@@ -1245,6 +1246,11 @@ module ValidateNpcNeeds
       if BreakEscape::AccessWork.judged?(json, npc, name)
         targets = targets.reject { |o| o.id != npc['needsHome'] && BreakEscape::AccessWork.desk?(json, o.data) }
       end
+      # Sub-slice C (plan 8.1): the own workstation is a social_media source whatever its affordance
+      if name == 'social_media' && BreakEscape::AccessWork.social_station?(json, npc, name)
+        own = objs.find { |o| o.id == npc['needsHome'] }
+        targets |= [own] if own
+      end
       # social_media is met by a phone (sub-slice C), so no object need satisfy it; an NPC with
       # "phone": false still needs one (plan 10, review R1 m6)
       next if targets.empty? && name == 'social_media' && npc['phone'] != false
@@ -1267,7 +1273,12 @@ module ValidateNpcNeeds
         end
       end
       nearest = targets.find { |o| o.room == home_room } || targets.first
-      restores = nearest.data['affordance']['restores'].to_f
+      restores = nearest.data['affordance'].is_a?(Hash) ? nearest.data['affordance']['restores'].to_f : 0.0
+      # Sub-slice C (plan 8.1): a social_media use at the own PC restores socialUse's amount
+      if name == 'social_media' && nearest.id == npc['needsHome'] && BreakEscape::AccessWork.social_station?(json, npc, name)
+        su = npc['socialUse'].is_a?(Hash) ? npc['socialUse']['restores'] : nil
+        restores = su.is_a?(Numeric) ? su.to_f : BreakEscape::AccessWork::SOCIAL_RESTORES.to_f
+      end
       t1 = [(initial - urgent) / decay.to_f, 0].max
       p_min = ([100, urgent + restores].min - urgent) / decay.to_f
       issues << "ℹ️ NPC needs #{nid}.#{name}: T1 = #{t1.round(2)} min to first use, P = #{p_min.round(2)} min between uses (via '#{nearest.id}', restores #{restores.round})."
@@ -1283,6 +1294,32 @@ module ValidateNpcNeeds
       items = objs.select { |o| o.data['needsTag'] == tag }
       accepters = objs.select { |o| o.data['affordance'].is_a?(Hash) && list(o.data['affordance']['accepts']).include?(tag) }
       issues << "❌ ERROR: #{where} interest '#{tag}' has no item with needsTag '#{tag}' anywhere in the scenario." if items.empty?
+      # noticeRadius (q53 f): tiles from where the NPC stands within which it sees a tagged item (default 24)
+      if raw.is_a?(Hash) && raw.key?('noticeRadius')
+        nr = raw['noticeRadius']
+        if !(nr.is_a?(Numeric) && nr >= 0.5 && nr <= 100)
+          issues << "❌ ERROR: #{where} interest '#{tag}' noticeRadius must be a number of tiles from 0.5 to 100 (default 24)."
+        elsif nr < 2
+          issues << "⚠️ WARNING: #{where} interest '#{tag}' noticeRadius #{nr} is under 2 tiles: the NPC sees only an item dropped almost at its feet."
+        end
+      end
+      # A notice room wider than the radius is cut short silently: from one corner the NPC
+      # does not see an item in the far corner (review R1, F1). Default 24 tiles.
+      given = raw.is_a?(Hash) && raw['noticeRadius'].is_a?(Numeric) && raw['noticeRadius'] >= 0.5 && raw['noticeRadius'] <= 100
+      radius = given ? raw['noticeRadius'] : NOTICE_RADIUS_TILES
+      seen_rooms = raw.is_a?(Hash) && raw['noticeRooms'].is_a?(Array) ? raw['noticeRooms'] : [home_room]
+      seen_rooms.each do |r|
+        room = r && json['rooms'].is_a?(Hash) ? json['rooms'][r] : nil
+        dims = room.is_a?(Hash) ? room_tiles(room['type']) : nil
+        next unless dims
+
+        # The tilemap size, walls included, so it errs towards warning (code review R2, n4)
+        diag = Math.hypot(dims[0], dims[1])
+        next unless radius < diag
+
+        what = given ? "noticeRadius #{radius}" : "the default noticeRadius (#{NOTICE_RADIUS_TILES})"
+        issues << "⚠️ WARNING: #{where} interest '#{tag}': #{what} tiles is less than notice room '#{r}' (#{dims[0]} x #{dims[1]} tiles, #{diag.round(1)} across), so from one end of it the NPC does not see an item at the other. #{diag.ceil <= 100 ? "Set noticeRadius to #{diag.ceil} or more if the whole room should count." : 'Even the largest noticeRadius (100) does not span it; list a smaller noticeRooms set or accept the cut.'}"
+      end
       if leashed && raw.is_a?(Hash) && raw['noticeRooms'].is_a?(Array)
         raw['noticeRooms'].each do |r|
           rule = leash_rule(json, npc, r, home_room)

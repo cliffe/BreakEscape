@@ -162,14 +162,15 @@ test('installNpcReports: one listener, the wildcard name parsed, idempotent', ()
         const b = installNpcReports(api);
         assert.equal(a, b);
         assert.equal(globalThis.window.npcReports, a);
-        assert.equal(listeners.length, 1);
-        assert.equal(listeners[0].name, 'global_variable_changed:*');
-        listeners[0].fn({}, 'global_variable_changed:unrelated');
+        // one listener each: the globals, and sub-slice L's lockout answers and locked returns
+        assert.deepEqual(listeners.map(l => l.name).sort(), ['global_variable_changed:*', 'npc_sat_at:*', 'pc_signin_failed', 'workstation_owner_returned:*']);
+        const g = listeners.find(l => l.name === 'global_variable_changed:*');
+        g.fn({}, 'global_variable_changed:unrelated');
         assert.equal(a.needSync, false);
-        listeners[0].fn({}, 'global_variable_changed:share_down');
+        g.fn({}, 'global_variable_changed:share_down');
         assert.equal(a.needSync, true);
         a.needSync = false;
-        listeners[0].fn({ name: 'share_down' }, undefined);
+        g.fn({ name: 'share_down' }, undefined);
         assert.equal(a.needSync, true, 'the name from the payload when the event name is not passed');
     } finally {
         globalThis.window = prev;

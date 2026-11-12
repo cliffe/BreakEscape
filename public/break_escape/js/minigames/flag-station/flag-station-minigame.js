@@ -9,6 +9,8 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { applyActions } from '../../systems/apply-actions.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { flagRefusalLine, flagRejectReason } from '../../utils/flag-wording.js';
+import { escapeHtml } from '../../utils/escape-html.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 export class FlagStationMinigame extends MinigameScene {
     static REWARD_ICONS = {
@@ -596,7 +598,12 @@ export class FlagStationMinigame extends MinigameScene {
             // The server answered "no" (422 with a body): a refused flag, not a dropped
             // connection. ApiClient throws for any non-2xx, so a wrong flag used to land
             // here as "Validation failed".
-            if (error?.status && error.status < 500) {
+            const refusal = lockScopeRefusal(error);
+            if (refusal) {
+                // The PC the lock sits on is off or out of reach (review R4 m2): the flag was
+                // not judged, so no rejection is told to the mission
+                this.showResult(resultEl, 'error', LOCK_SCOPE_REFUSAL_TEXT[refusal]);
+            } else if (error?.status && error.status < 500) {
                 const body = error.body || {};
                 const reason = flagRejectReason(body.message || body.error, body.reason);
                 if (window.playUISound) window.playUISound('reject');
@@ -867,14 +874,14 @@ export class FlagStationMinigame extends MinigameScene {
                     return `
                         <div class="reward-item">
                             <span class="reward-icon">📦</span>
-                            <span>Received: ${reward.item?.name || 'Item'}</span>
+                            <span>Received: ${this.escapeHtml(displayDashes(reward.item?.name || 'Item'))}</span>
                         </div>
                     `;
                 case 'unlock_door':
                     return `
                         <div class="reward-item">
                             <span class="reward-icon">🔓</span>
-                            <span>Door unlocked: ${reward.room_id}</span>
+                            <span>Door unlocked: ${this.escapeHtml(reward.room_id)}</span>
                         </div>
                     `;
                 case 'emit_event':
@@ -917,10 +924,10 @@ export class FlagStationMinigame extends MinigameScene {
         return meta ? meta.getAttribute('content') : '';
     }
     
+    // Server and scenario text (flags, VM labels, reward names) is plain text:
+    // escaped once, quotes included, so it is safe in text and in attributes.
     escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+        return escapeHtml(str);
     }
     
     start() {

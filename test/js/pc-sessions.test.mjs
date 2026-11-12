@@ -591,3 +591,62 @@ test('R1 m4: a guest claim granted after someone sat down at the PC ends at once
         delete window.npcManager;
     }
 });
+
+// q72: a 403 from a switched-off PC carries the server's reason, so the screen can say "off"
+test('a 403 sign-in refusal carries the server reason (off at the keyboard, not_responding remotely)', async () => {
+    for (const reason of ['off', 'not_responding']) {
+        const s = setup({ answer: () => { throw Object.assign(new Error('x'), { status: 403, body: { success: false, message: 'm', reason } }); } });
+        const r = await s.signIn('hot_desk', 'sokafor', 'right-sam');
+        assert.equal(r.ok, false);
+        assert.equal(r.error, true);
+        assert.equal(r.status, 403);
+        assert.equal(r.serverReason, reason);
+        assert.equal(s.has('hot_desk'), false);
+    }
+    const s = setup({ answer: () => { throw Object.assign(new Error('x'), { status: 500 }); } });
+    assert.equal((await s.signIn('hot_desk', 'sokafor', 'right-sam')).serverReason, null);
+});
+
+// Review R3 nit 4: a claim refused 403 off carries the server's reason too, as signIn does
+test('a 403 claim refusal carries the server reason, owner or guest', async () => {
+    for (const as of ['owner', 'guest']) {
+        const s = setup({ answer: () => { throw Object.assign(new Error('x'), { status: 403, body: { success: false, message: 'This PC is off.', reason: 'off' } }); } });
+        const r = await s.claim('hot_desk', { as });
+        assert.equal(r.ok, false);
+        assert.equal(r.serverReason, 'off', as);
+        assert.equal(s.has('hot_desk'), false);
+    }
+});
+
+// Review R2 n3 (q44): each sign-out that awaits /logout says pc_signing_out before the request
+test('q44: Sign out, a claim ended by the owner and a restored claim say pc_signing_out before POST /logout', async () => {
+    const s = setup();
+    let release;
+    const order = [];
+    window.ApiClient.logout = (pcId) => { order.push(['logout', pcId]); return new Promise(r => { release = () => r({ success: true }); }); };
+    window.eventDispatcher.emit = (name, data) => { events.push([name, data]); if (!name.includes(':')) order.push([name, data.reason]); };
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    order.length = 0;
+    const out = s.signOut('hot_desk');
+    await settle();
+    assert.deepEqual(order, [['pc_signing_out', 'sign_out'], ['logout', 'hot_desk']], 'nothing signed out while /logout is slow');
+    release();
+    await out;
+    assert.deepEqual(order.at(-1), ['pc_signed_out', 'sign_out']);
+
+    s._replace('pc_a', { npcId: 'ann', username: 'ann', displayName: 'Ann', via: 'claim' });
+    order.length = 0;
+    const end = s._endClaim('pc_a', 'owner_returned', 'back');
+    await settle();
+    assert.deepEqual(order, [['pc_signing_out', 'owner_returned'], ['logout', 'pc_a']]);
+    release();
+    await end;
+
+    order.length = 0;
+    s._endRestoredClaim('pc_b', { npcId: 'ann' });
+    await settle();
+    assert.deepEqual(order, [['pc_signing_out', 'claim_ended'], ['logout', 'pc_b']]);
+    release();
+    await settle();
+    assert.deepEqual(order.at(-1), ['pc_signed_out', 'claim_ended']);
+});

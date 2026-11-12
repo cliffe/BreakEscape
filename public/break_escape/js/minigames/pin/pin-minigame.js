@@ -1,9 +1,14 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 // Attempts allowed per opening of the pad when the scenario doesn't set
 // maxAttempts and the player has no PIN cracker. With a cracker there is no
 // limit: the point is to read its lights and close in on the code.
 export const DEFAULT_PIN_MAX_ATTEMPTS = 5;
+// A 403 from POST /unlock with one of these reasons refuses the folder's PC, not the PIN
+// (review R3 m1): the pad says so and closes, and counts no attempt. Shared with the other
+// lock screens (review R4 m2).
+export const PIN_SCOPE_REFUSAL_TEXT = LOCK_SCOPE_REFUSAL_TEXT;
 
 // Guesses (and their pips) per lock, kept for the page session so closing and
 // reopening a pad, or being locked out of it, doesn't wipe what the player has
@@ -346,6 +351,21 @@ export class PinMinigame extends MinigameScene {
             feedback: this.feedbackFor(this.currentInput, isCorrect)
         };
 
+        // The server refused the pad's scope, not the PIN (review R3 m1): the PC the folder
+        // sits on is off, or its route is down. That is no attempt, so the pad says why and
+        // closes, without a wrong-PIN verdict.
+        if (this.lastAttemptRefusal) {
+            const reason = this.lastAttemptRefusal;
+            this.lastAttemptRefusal = null;
+            this.lastAttemptWasNetworkError = false;
+            this.currentInput = '';
+            this.updateDisplay();
+            this.isLocked = true;
+            this.gameResult = { success: false, cancelled: true, refused: reason, attempts: this.attemptCount };
+            this.showFailure(PIN_SCOPE_REFUSAL_TEXT[reason], true, 2000);
+            return;
+        }
+
         // A request that never reached the server is not an attempt: it did not
         // cost the player one (attemptCount was refunded above), so it must not
         // appear in the history either.
@@ -429,6 +449,11 @@ export class PinMinigame extends MinigameScene {
             // That IS a real attempt: it must count, lock out at maxAttempts,
             // and tell the player they were wrong rather than blaming the
             // network. Only a genuinely failed request is refunded.
+            if (lockScopeRefusal(error)) {
+                this.attemptCount--;
+                this.lastAttemptRefusal = lockScopeRefusal(error);
+                return false;
+            }
             if (error?.status) {
                 console.log('Server rejected PIN attempt:', error.status);
                 this.lastServerFeedback = error.body?.feedback || null;

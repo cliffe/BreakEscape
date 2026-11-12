@@ -34,11 +34,15 @@
  */
 
 import { MinigameScene } from '../framework/base-minigame.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 export const REMOTE_OFF_TEXT = 'remote sign-in off';
+export const NOT_RESPONDING_TEXT = 'not responding';
+// Shown when the view was fetched before the latest globals reached the server (review R2 m3)
+export const STALE_TEXT = 'Still updating, so this may be out of date.';
+// An implant whose own PC is off (review R3 M1): the link is listed and reaches nothing
+export const linkOffText = (host) => `This link is not responding: ${host || 'its PC'} is off.`;
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
 const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
 const KIND_ICONS = {
@@ -48,10 +52,11 @@ const KIND_ICONS = {
 };
 
 /**
- * The action a host row offers (4.3), in the plan's order: 'off' | 'open' | 'sign-in'.
- * Exported for tests.
+ * The action a host row offers (4.3), in the plan's order: 'not_responding' (the host's own
+ * service is off, 9.3b plan 5.2) | 'off' | 'open' | 'sign-in'. Exported for tests.
  */
 export function hostAction(row) {
+    if (row?.responding === false) return 'not_responding';
     if (row?.remoteSignIn === false) return 'off';
     if (row?.session && row.session.via !== 'claim') return 'open';
     return 'sign-in';
@@ -91,6 +96,8 @@ export class NetworkViewMinigame extends MinigameScene {
         this.status = 'loading';
         this.exitReason = 'close';
         this.notice = null;
+        this.stale = false;
+        this._staleRefetched = false;
     }
 
     links() { return window.networkLinks || null; }
@@ -112,9 +119,9 @@ export class NetworkViewMinigame extends MinigameScene {
     }
 
     /** GET /network for this foothold (through network-links.js), then the rows. */
-    async load() {
+    async load({ sync = true } = {}) {
         const links = this.links();
-        const answer = links?.view ? await links.view(this.footholdId) : { ok: false, reason: 'error' };
+        const answer = links?.view ? await links.view(this.footholdId, { sync }) : { ok: false, reason: 'error' };
         // Closed, or replaced by another screen, while the answer was on its way
         if (this._reported || (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this)) return answer;
         if (!answer.ok && answer.reason === 'gone') {
@@ -131,15 +138,84 @@ export class NetworkViewMinigame extends MinigameScene {
         }
         this.view = answer.view;
         this.status = 'ready';
+        // Fetched after the sync's time limit (review R2 m3): say so, and fetch once more when
+        // that sync lands, if this view is still open by then
+        this.stale = !!answer.stale;
+        if (answer.stale && answer.synced && !this._staleRefetched) {
+            this._staleRefetched = true;
+            this.refetched = Promise.resolve(answer.synced).then(ok => {
+                if (!ok || this._reported) return null;
+                if (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this) return null;
+                // The late sync has landed, so the globals are on the server: no second sync
+                return this.load({ sync: false });
+            });
+        }
         this.render();
         const hostIds = this.rows().filter(r => r.kind === 'pc').map(r => r.id);
         const networkId = this.view?.network?.id ?? null;
         this._emit('network_viewed', { footholdId: this.footholdId, networkId, hostIds, hostList: hostIds.join(',') }, networkId);
+        // A pivot-reached network (slice 9.3b K, 5.1) emits its own network_viewed, so a task
+        // on the further network completes when its block appears.
+        this.networkBlocks().forEach(block => {
+            if (block.route === 'down') return;
+            const ids = this.blockRows(block).filter(r => r.kind === 'pc').map(r => r.id);
+            this._emit('network_viewed',
+                { footholdId: this.footholdId, networkId: block.id, hostIds: ids, hostList: ids.join(','), via: block.via?.hostId ?? null },
+                block.id);
+        });
         return answer;
     }
 
+    ownNetworkId() { return this.view?.network?.id ?? null; }
+
     rows() {
         return (Array.isArray(this.view?.hosts) ? this.view.hosts : []).filter(r => r && typeof r === 'object' && r.id);
+    }
+
+    /**
+     * The further-network blocks (slice 9.3b K, 5.1). The own network's up entry is dropped (its
+     * rows are the flat `hosts`); its down entry is kept, so a session held there while the
+     * own network is down still shows, greyed (5.2, review R2 M1).
+     */
+    networkBlocks() {
+        const own = this.ownNetworkId();
+        return (Array.isArray(this.view?.networks) ? this.view.networks : [])
+            .filter(b => b && typeof b === 'object' && b.id && (b.id !== own || b.route === 'down'));
+    }
+
+    /** The own network's down block, when the own network is down and a session is held there. */
+    ownDownBlock() {
+        const own = this.ownNetworkId();
+        return this.networkBlocks().find(b => b.id === own && b.route === 'down') || null;
+    }
+
+    blockRows(block) {
+        return (Array.isArray(block?.hosts) ? block.hosts : []).filter(r => r && typeof r === 'object' && r.id);
+    }
+
+    /** Every actionable row (own rows, then each up block's rows), for click lookup. */
+    allRows() {
+        const rows = [...this.rows()];
+        this.networkBlocks().forEach(b => { if (b.route !== 'down') rows.push(...this.blockRows(b)); });
+        return rows;
+    }
+
+    /** One further-network block (up: live controls; down: greyed "No route" rows). */
+    blockSectionHtml(block) {
+        const via = block.via ? ` — through ${escapeHtml(block.via.host || block.via.hostId || '')}` : '';
+        if (block.route === 'down') {
+            const rows = this.blockRows(block).map(r => `
+                <li class="network-row network-row-host network-row-down" data-kind="pc">
+                    <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
+                    <span class="network-row-label"><strong>${escapeHtml(r.host || r.id)}</strong>
+                        <span class="network-row-name">${escapeHtml(r.name || '')}</span></span>
+                    <span class="network-row-control"><span class="network-row-off">No route to ${escapeHtml(r.host || r.id)}</span></span>
+                </li>`).join('');
+            return `<div class="network-block network-block-down"><h5 class="network-block-title">${escapeHtml(block.name || block.id)} (no route)</h5><ul class="network-view-rows">${rows}</ul></div>`;
+        }
+        const rows = this.blockRows(block);
+        const body = rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>';
+        return `<div class="network-block network-block-up"><h5 class="network-block-title">${escapeHtml(block.name || block.id)}${via}</h5><ul class="network-view-rows">${body}</ul></div>`;
     }
 
     /** The link item's own observations, shown in the header (13.4: a link item has no menu). */
@@ -153,7 +229,11 @@ export class NetworkViewMinigame extends MinigameScene {
         if (row.kind === 'pc') {
             const action = hostAction(row);
             let control;
-            if (action === 'off') {
+            if (action === 'not_responding') {
+                // A session held there is kept (5.2): say so, as a down block's "No route" row does
+                const kept = row.heldAs ? ` (still signed in as ${escapeHtml(row.heldAs)})` : '';
+                control = `<span class="network-row-off">${NOT_RESPONDING_TEXT}${kept}</span>`;
+            } else if (action === 'off') {
                 control = `<span class="network-row-off">${REMOTE_OFF_TEXT}</span>`;
             } else if (action === 'open') {
                 const who = row.session.displayName || row.session.username || 'session';
@@ -200,16 +280,21 @@ export class NetworkViewMinigame extends MinigameScene {
                     <h4 class="network-view-title">${escapeHtml(title)}</h4>
                     ${obs ? `<p class="network-view-observations">${escapeHtml(obs)}</p>` : ''}
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
+                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}
                 </div>
-                <ul class="network-view-rows">
-                    ${rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>'}
-                </ul>
+                ${(v.responding !== false && !rows.length && this.ownDownBlock()) ? '' : `<ul class="network-view-rows">
+                    ${v.responding === false
+                        ? `<li class="network-row-empty network-row-off">${escapeHtml(linkOffText(v.sourceHost))}</li>`
+                        : (rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>')}
+                </ul>`}
+                ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
                 <div class="network-view-notice" aria-live="polite"></div>
             </div>`;
+        const lookup = this.allRows();
         this.gameContainer.querySelectorAll('[data-action]').forEach(btn => {
             const li = btn.closest('[data-host-id], [data-resource-id]');
             const id = li?.dataset.hostId || li?.dataset.resourceId;
-            const row = rows.find(r => r.id === id);
+            const row = lookup.find(r => r.id === id);
             if (row) this.addEventListener(btn, 'click', (e) => { e.preventDefault?.(); this.act(row, btn.dataset.action); });
         });
     }
@@ -273,6 +358,7 @@ export class NetworkViewMinigame extends MinigameScene {
             footholdId: this.footholdId,
             status: this.status,
             network: this.view?.network ? { id: this.view.network.id, name: this.view.network.name } : null,
+            responding: this.view?.responding !== false,
             message: this.message,
             notice: this.notice,
             rows: this.rows().map(r => (r.kind === 'pc'
@@ -281,7 +367,17 @@ export class NetworkViewMinigame extends MinigameScene {
                     selector: `[data-host-id="${r.id}"] [data-action]` }
                 : { id: r.id, kind: r.kind || null, name: r.name || null, host: r.host || null,
                     action: resourceAction(r),
-                    selector: `[data-resource-id="${r.id}"] [data-action]` }))
+                    selector: `[data-resource-id="${r.id}"] [data-action]` })),
+            networks: this.networkBlocks().map(b => ({
+                id: b.id, name: b.name || null, route: b.route || 'up', via: b.via?.hostId ?? null,
+                rows: this.blockRows(b).map(r => (r.kind === 'pc'
+                    ? { id: r.id, kind: 'pc', host: r.host || null, name: r.name || null,
+                        action: b.route === 'down' ? 'off' : hostAction(r),
+                        session: r.session ? (r.session.displayName || r.session.username || null) : null,
+                        selector: `[data-host-id="${r.id}"] [data-action]` }
+                    : { id: r.id, kind: r.kind || null, name: r.name || null, host: r.host || null,
+                        action: resourceAction(r), selector: `[data-resource-id="${r.id}"] [data-action]` }))
+            }))
         };
     }
 }

@@ -192,6 +192,57 @@ module BreakEscape
       assert_response :success
     end
 
+    test 'an access-list unlock names the player\'s own keycard that passed' do
+      build('inventory' => [keycard_item('visitor_badge'), keycard_item('jake_spare')])
+      body = door('records', card_ids: ['VISITOR-07', JAKE_CARD_ID])
+      assert_response :success
+      assert_equal JAKE_CARD_ID, body['cardId']
+      refute body.key?('viaCopy')
+    end
+
+    # Naming a copy would tell the player whose identity the list admits (UX devices R1 m1).
+    test 'an access-list unlock by a copy says only viaCopy, with no card id' do
+      build('inventory' => [CLONER.dup, keycard_item('visitor_badge')])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      body = door('records', card_ids: ['VISITOR-07', EXEC_CARD_ID, JAKE_CARD_ID])
+      assert_response :success
+      assert_equal true, body['viaCopy']
+      refute body.key?('cardId')
+    end
+
+    test 'an object unlock names the card too, and a refusal names none' do
+      build('inventory' => [keycard_item('jake_spare')])
+      refused = object('finance_cabinet', card_ids: ['VISITOR-07'])
+      refute refused.key?('cardId')
+      refute refused.key?('viaCopy')
+      body = object('finance_cabinet', card_ids: [JAKE_CARD_ID])
+      assert_equal JAKE_CARD_ID, body['cardId']
+    end
+
+    test 'a requires-only rfid door answers without cardId or viaCopy' do
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['badge_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true,
+                                      'lockType' => 'rfid', 'requires' => ['VISITOR-07'] }
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'],
+                                                 'inventory' => [keycard_item('visitor_badge')] })
+      body = door('badge_door', card_ids: ['VISITOR-07'])
+      assert_response :success, body.inspect
+      refute body.key?('cardId')
+      refute body.key?('viaCopy')
+    end
+
+    test 'a UID-only copy at a lock without acceptsUIDOnly is refused with no card named' do
+      build('inventory' => [CLONER.dup])
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      body = door('exec_suite', card_ids: [EXEC_CARD_ID])
+      assert_refused body, reason: 'uid_only'
+      refute body.key?('cardId')
+      refute body.key?('viaCopy')
+    end
+
     test 'the first passing card of several opens the door' do
       build('inventory' => [keycard_item('visitor_badge'), keycard_item('jake_spare')])
       door('records', card_ids: ['VISITOR-07', JAKE_CARD_ID])
@@ -310,6 +361,39 @@ module BreakEscape
       refute_equal true, body['recorded']
       assert_empty @game.reload.player_state['serverClones'].to_h
       assert_refused door('records', card_ids: ['DROPPED-01'])
+    end
+
+    # Code review R2, n1: a legitimately authored keycard dropped (player_drop) and picked up
+    # again is rebuilt from the server copy, so it is never marked clientAdded and still opens
+    # its rfid door. Guards against a regression that wrongly tagged a real card forged.
+    test 'a keycard dropped and picked up again is not marked forged and still opens an rfid door' do
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['lobby']['objects'].find { |o| o['id'] == 'visitor_badge' }['droppable'] = true
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby],
+                                                 'encounteredNPCs' => [] })
+
+      take = lambda do
+        post inventory_game_url(@game), params: { action_type: 'add',
+                                                  item: { type: 'keycard', id: 'visitor_badge', name: 'Visitor badge' } }, as: :json
+        assert_response :success, response.body
+      end
+      take.call
+      # Drop it (player_drop rebuilds from the server copy), remove it, then take it back.
+      post update_room_game_url(@game), params: { roomId: 'lobby', actionType: 'add_object', sourceType: 'player_drop',
+                                                  data: { id: 'visitor_badge', type: 'keycard', name: 'Visitor badge', x: 6, y: 6 } }, as: :json
+      assert_response :success, response.body
+      post inventory_game_url(@game), params: { action_type: 'remove', item: { id: 'visitor_badge' } }, as: :json
+      assert_response :success, response.body
+      take.call
+
+      stored = @game.reload.player_state['inventory'].find { |i| i['id'] == 'visitor_badge' }
+      assert stored, 'the keycard is back in the inventory'
+      refute BreakEscape::ItemIdentity.client_forged?(stored), 'a real dropped keycard is not marked forged'
+      assert_equal 'VISITOR-07', stored['card_id'], 'the server card_id survived the round trip'
+      # mixed is locked rfid, requires VISITOR-07: the re-picked badge still opens it.
+      assert door('mixed', card_ids: ['VISITOR-07'])['success'], 'the re-picked keycard still opens the rfid door'
     end
 
     private

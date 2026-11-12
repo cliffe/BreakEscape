@@ -305,6 +305,44 @@ test('Work: earliest by a modified browser (review R1 m1, m2): halved park floor
     assert.ok(!run(n, 'report_lines').some(l => l.includes('alternating')));
 });
 
+// Sub-slice L (plan 6.6 and 10): a lockout at the NPC's own sign-in PC under maxAttempts
+const withJake = s => {
+    s.policies = { strict: { autoLockMin: 5, maxAttempts: 3 } };
+    s.rooms.office.objects.push(pc('jake_pc', { policy: 'strict', lockChance: 1 }));
+    s.rooms.office.npcs.push(worker('jake', { workarounds: [{ at: 50, do: 'emit', event: 'jake_gave_up' }] }));
+    return s;
+};
+
+test('Work L: a lockout station is a cause: clean with a station_fail line, warned with no line', { skip }, () => {
+    const s = withJake(workClean());
+    assert.deepEqual(issues(s), []);
+    delete s.chatter.station_fail; delete s.chatter.work_fail;
+    assertHas(warnings(issues(s)), 'jake can fail for its account being locked out at its station, but no station_fail or work_fail line');
+    // no maxAttempts, or a station owned by somebody else: no lockout, so nothing to say
+    const t = withJake(workClean());
+    delete t.chatter.station_fail; delete t.chatter.work_fail;
+    t.policies.strict.maxAttempts = null;
+    assert.ok(!has(issues(t), 'jake can fail for'), issues(t).join('\n'));
+    t.policies.strict.maxAttempts = 3;
+    t.rooms.office.objects.find(o => o.id === 'jake_pc').screenOwner = 'dana';
+    assert.ok(!has(issues(t), 'locked out at its station'), issues(t).join('\n'));
+});
+
+test('Work L: the report line and the earliest time for a lockout-only NPC', { skip }, () => {
+    const s = withJake(workClean());
+    let lines = run(s, 'report_lines');
+    assertHas(lines, "Work jake: email (admitted, nothing takes it down); locked out at 'jake_pc' after 3 wrong passwords for its username there (a denial of service).");
+    // no place but the station: every ease there is refused once locked out, so the park floor, 2 x 24 = 48
+    assertHas(lines, 'Workaround jake[0] emit at 50: opens event \'jake_gave_up\'; 3 failed use(s) at perFail 20');
+    assert.ok(lines.some(l => l.startsWith('ℹ️ Workaround jake[0]') && l.includes('earliest by a modified browser 48 s after')), lines.join('\n'));
+    // a non-desk place: eases there open the gate, so the use floor, 2 x (0.9 x 5 - 3) = 3, by alternating
+    s.rooms.office.objects.push({ id: 'kiosk', type: 'info_kiosk_x', name: 'Kiosk', affordance: { satisfies: 'work', useSeconds: 5 } });
+    lines = run(s, 'report_lines');
+    assert.ok(lines.some(l => l.startsWith('ℹ️ Workaround jake[0]') && l.includes('earliest by a modified browser 3 s (only by alternating eases and fails, once the player has locked it out)')), lines.join('\n'));
+    // Dana (an outage she can be re-armed through) keeps the plain use floor
+    assert.ok(!lines.some(l => l.startsWith('ℹ️ Workaround dana') && l.includes('alternating')));
+});
+
 test('Work: a resource with only a network or observations is not called unused (review R1 m3)', { skip }, () => {
     const s = workClean();
     s.networks = { corp: { name: 'Corp' } };
@@ -550,6 +588,19 @@ test('H: borrow_session errors on each bad hot desk', { skip }, () => {
     }
 });
 
+test('q33 review R1 N3: a hot desk that satisfies only one of the needs its borrower can fail is warned', { skip }, () => {
+    const social = s => {
+        npcOf(s, 'ian').phone = false;
+        npcOf(s, 'ian').needs = { ...npcOf(s, 'ian').needs, social_media: { decayPerMin: 60, urgentAt: 40, initial: 50 } };
+    };
+    let s = hClean(); social(s);
+    assertHas(warnings(issues(s)), "'hot_desk' satisfies work but not social_media, which ian can also fail");
+    s = hClean(); social(s); hotDesk(s).affordance = { ...hotDesk(s).affordance, satisfies: ['work', 'social_media'] };
+    assert.ok(!has(issues(s), 'which ian can also fail'), issues(s).join('\n'));
+    s = hClean();
+    assert.ok(!has(issues(s), 'which ian can also fail'), issues(s).join('\n'));
+});
+
 test('H: lockChance on a hot desk is warned (a guest ignores it); a hot desk holding a flag station is warned', { skip }, () => {
     let s = hClean();
     hotDesk(s).lockChance = 1;
@@ -575,4 +626,31 @@ test('H: share_login errors with no account or with itself; a leashed colleague 
     s = hClean();
     delete s.chatter.login_aloud;
     assertHas(warnings(issues(s)), 'has no login_aloud line');
+});
+
+// Review 9.2 H R1 m5 (q44): only a borrower's sitting signs in at a hot desk
+test('q44: a hot desk that serves a need an NPC can use it for without borrowing is warned; a leash or a judged need is not', { skip }, () => {
+    const frag = "hot desk 'hot_desk' (a borrow_session names it) satisfies caffeine, which ruth can use it for";
+    let s = hClean();
+    hotDesk(s).affordance = { ...hotDesk(s).affordance, satisfies: ['work', 'caffeine'] };
+    npcOf(s, 'ruth').needs = { ...(npcOf(s, 'ruth').needs || {}), caffeine: { decayPerMin: 1, urgentAt: 10, initial: 80 } };
+    assertHas(warnings(issues(s)), frag);
+    // the work plan's judged need never takes another NPC's desk
+    assert.ok(!has(issues(hClean()), 'without borrowing it'), issues(hClean()).join('\n'));
+    // the desk moved to a room Ruth's leash keeps her out of
+    s.rooms.annex = { type: 'room_office', objects: [], npcs: [], connections: { south: 'office' } };
+    const moved = s.rooms.office.objects.findIndex(o => o.id === 'hot_desk');
+    s.rooms.annex.objects.push(...s.rooms.office.objects.splice(moved, 1));
+    npcOf(s, 'ruth').needsAvoidRooms = ['annex'];
+    assert.ok(!has(issues(s), 'which ruth can use it for'), issues(s).join('\n'));
+});
+
+// Review 9.2 H R1 n6: the desk serves Ruth's work too, which is judged (a work plan), so she
+// never takes it unborrowed; with no work plan her work is not judged and it is warned
+test('q44 R1 n6: a hot desk serving a judged need of a non-borrower is not warned; the same need unjudged is', { skip }, () => {
+    const s = hClean();
+    assert.equal(hotDesk(s).affordance?.satisfies ?? 'work', 'work');
+    assert.ok(!has(issues(s), 'satisfies work, which ruth'), issues(s).join('\n'));
+    s.roles.staff.workNeeds = [];   // no work needs: no plan, so work is not judged
+    assertHas(warnings(issues(s)), "hot desk 'hot_desk' (a borrow_session names it) satisfies work, which ruth can use it for");
 });

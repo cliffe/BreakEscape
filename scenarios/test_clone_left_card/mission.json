@@ -1,6 +1,6 @@
 {
   "display_name": "Test: Clone the left-behind card",
-  "description": "Minimal office proving three engine pieces: (1) an action menu when a world object offers more than one action — a keycard on a desk, with an RFID cloner in hand, offers Clone it with the flipper or Take it; (2) clone in place — the clone opens the card's door and the card stays, so the owner notices nothing on return; (3) the consequence of taking the card — the owner returns, barks, and the card is cancelled (revoke_card), so the physical card and any clone of the same card_id stop opening doors.",
+  "description": "Minimal office proving three engine pieces: (1) an action menu when a world object offers more than one action — a keycard on a desk, with an RFID cloner in hand, offers Copy it with the RFID cloner or Take it; (2) clone in place — the clone opens the card's door and the card stays, so the owner notices nothing on return; (3) the consequence of taking the card — the owner returns, barks, and the card is cancelled (revoke_card), so the physical card and any clone of the same card_id stop opening doors.",
   "difficulty_level": 1,
   "collection": "test_scenarios",
   "estimated_duration_minutes": 2,

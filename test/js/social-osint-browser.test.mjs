@@ -20,7 +20,7 @@ const dir = mkdtempSync(join(tmpdir(), 'social-osint-browser-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 const files = readdirSync(join(js, 'minigames/osint-browser')).filter((f) => f.endsWith('.js')).map((f) => `minigames/osint-browser/${f}`);
 for (const rel of [...files, 'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
-    'utils/display-dashes.js', 'ui/modal-stack.js', 'systems/global-writer.js', 'systems/social-intel.js']) {
+    'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js', 'systems/global-writer.js', 'systems/social-intel.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }
@@ -522,4 +522,155 @@ test('CSS: .ob-addr sets the address font with no box; the .ob-address container
     assert.match(css, /\.ob-addr\s*\{[^}]*font-family:\s*var\(--se-font-address/);
     assert.ok(!/\.ob-addr\s*\{[^}]*background/.test(css), 'the inline address span has no background box');
     assert.match(css, /\.ob-address\s*\{[^}]*background:\s*var\(--ui-bg/, 'the container keeps its dark box');
+});
+
+// ── Access slice 9.2 C (ACCESS_MODEL_SLICE_9_2_PLAN.md 8.3): revealed feed posts ─────────────
+const { SocialFeed } = await import(pathToFileURL(join(js, 'systems/social-feed.js')));
+
+function feedFor() {
+    return new SocialFeed({
+        mergeFact(id, entry) { window.gameScenario.social.intelFacts[id] = entry; },
+        emit(name, data) { window.eventDispatcher.emit(name, data); }
+    });
+}
+const feedAnswer = (index, id, text, fact = null) => ({
+    index, site: 'social', person: 'pierce', done: false,
+    post: { id, text, ...(fact ? { fact: fact.id } : {}) }, fact
+});
+const PET = { id: 'pierce_pet', entry: { label: 'Pet', subject: 'pierce', text: 'Melanie Pierce has a cat called Mittens.' } };
+
+test('9.2 C: revealed feed posts are listed first, newest at the top, then the authored post', () => {
+    setGlobals();
+    const feed = feedFor();
+    feed.apply('pierce', feedAnswer(0, 'feed_pierce_1', 'Mittens knocked my coffee over again.', PET));
+    feed.apply('pierce', feedAnswer(1, 'feed_pierce_2', 'Long week in finance, glad it is Friday.'));
+    const s = open({ start: 'social.pierce', feed });
+    const ids = [...s.container.querySelectorAll('.ob-block')].map((b) => b.getAttribute('data-id'));
+    assert.deepEqual(ids.slice(0, 3), ['feed_pierce_2', 'feed_pierce_1', 'post_pierce_jed']);
+});
+
+test('9.2 C: clicking a feed post grants its fact once, with its text in the evidence note', () => {
+    setGlobals();
+    const feed = feedFor();
+    feed.apply('pierce', feedAnswer(0, 'feed_pierce_1', 'Mittens knocked my coffee over again.', PET));
+    assert.deepEqual(window.gameScenario.social.intelFacts.pierce_pet, { ...PET.entry, noteText: PET.entry.text }, 'merged before it is listed, with its escaped notebook text');
+    const s = open({ start: 'social.pierce', feed });
+    assert.equal(pick(s, 'feed_pierce_1').last.outcome, 'noted');
+    assert.equal(window.gameState.globalVariables.se_intel_pierce_pet, true);
+    assert.equal(notes.filter((n) => n.text === PET.entry.text).length, 1);
+    assert.equal(pick(s, 'feed_pierce_1').last.outcome, 'already');
+    assert.equal(notes.filter((n) => n.text === PET.entry.text).length, 1, 'once');
+});
+
+test('9.2 C: an unrevealed feed fact cannot be granted', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: feedFor() });
+    s.selectBlock({ id: 'forged', kind: 'post', text: 'x', fact: 'pierce_pet' });
+    assert.equal(s.getTestState().osint.last.outcome, 'nothing');
+    assert.equal(window.gameState.globalVariables.se_intel_pierce_pet, undefined);
+});
+
+test('9.2 C: a profile with no revealed posts renders as it did with no feed', () => {
+    setGlobals();
+    const plain = text(open({ start: 'social.pierce' }));
+    setGlobals();
+    const feed = feedFor();
+    feed.apply('other', { ...feedAnswer(0, 'feed_hamp', 'Not on this profile.'), person: 'hampshire' });
+    assert.equal(text(open({ start: 'social.pierce', feed })), plain);
+});
+
+test('9.2 C: an open profile re-renders on npc_posted; another profile does not', () => {
+    setGlobals();
+    const handlers = new Map();
+    const saved = window.eventDispatcher;
+    window.eventDispatcher = {
+        on(n, cb) { handlers.set(n, [...(handlers.get(n) || []), cb]); },
+        off(n, cb) { handlers.set(n, (handlers.get(n) || []).filter((x) => x !== cb)); },
+        emit(n, d) { for (const [k, cbs] of handlers) if (k === n || (k.endsWith(':*') && n.startsWith(k.slice(0, -1)))) cbs.forEach((cb) => cb(d, n)); }
+    };
+    try {
+        const feed = feedFor();
+        const s = open({ start: 'social.pierce', feed });
+        assert.equal(block(s, 'feed_pierce_1'), null);
+        s.main.scrollTop = 120;
+        // A real browser resets the scroll when the content is cleared; the stub DOM does not
+        const render = s._renderMain.bind(s);
+        s._renderMain = () => { s.main.scrollTop = 0; render(); };
+        feed.apply('pierce', feedAnswer(0, 'feed_pierce_1', 'Mittens knocked my coffee over again.', PET));
+        assert.ok(block(s, 'feed_pierce_1'), 'shown without closing the browser');
+        assert.equal(s.main.scrollTop, 120, 'review C R1 nit: the scroll position is kept');
+        s.cleanup();
+        assert.equal((handlers.get('npc_posted:*') || []).length, 0, 'the listener is removed on close');
+    } finally { window.eventDispatcher = saved; }
+});
+
+test('9.2 C: hostile post text and dates render as plain text, never markup', () => {
+    setGlobals();
+    const feed = feedFor();
+    const hostile = '<img src=x onerror="window.__pwned=1"><b>bold</b> **star** -- `tick`';
+    feed.apply('pierce', { ...feedAnswer(0, 'feed_evil', hostile), post: { id: 'feed_evil', text: hostile, date: '<i>today</i>', note: '<script>x</script>' } });
+    const s = open({ start: 'social.pierce', feed });
+    const b = block(s, 'feed_evil');
+    assert.equal(b.querySelector('img, b, i, script'), null);
+    assert.ok(b.textContent.includes(hostile));
+    assert.ok(b.textContent.includes('<i>today</i>'));
+    assert.equal(window.__pwned, undefined);
+});
+
+// ── C3 (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md 4): threads under feed posts ───────────────────────
+const replyAnswer = (index, seq, id, text, thread, poster, named, person) => ({
+    index, seq, site: 'social', person, done: false, post: { id, text, replyTo: thread },
+    replyToNpc: poster, replyToPerson: poster, namedNpc: named, namedPerson: named
+});
+
+test('C3: a thread draws under its post, oldest first; the replier\'s profile lists its reply with "Replied to"', () => {
+    setGlobals({ se_intel_hampshire_careers: true });
+    const feed = feedFor();
+    feed.apply('pierce', { ...feedAnswer(0, 'feed_pierce_1', 'The shared drive is down again today.'), seq: 1 });
+    feed.apply('hampshire', replyAnswer(0, 2, 'hamp_re', 'Pierce, mine went down too this morning.', 'feed_pierce_1', 'pierce', 'pierce', 'hampshire'));
+    feed.apply('pierce', replyAnswer(1, 3, 'pierce_answer', 'Hampshire, did IT ever ring you back?', 'feed_pierce_1', 'pierce', 'hampshire', 'pierce'));
+    let s = open({ start: 'social.pierce', feed });
+    const replies = [...s.container.querySelectorAll('.ob-thread .ob-reply')].map((r) => r.getAttribute('data-post'));
+    assert.deepEqual(replies, ['hamp_re', 'pierce_answer']);
+    assert.equal(block(s, 'pierce_answer'), null, 'the answer is not a block of its own');
+    assert.equal(s.container.querySelector('.ob-reply-to'), null, 'no "Replied to" line in a thread');
+    s = open({ start: 'social.hampshire', feed });
+    const own = s.container.querySelector('.ob-reply-own');
+    assert.ok(own, 'the reply is listed on its replier\'s profile');
+    assert.match(own.querySelector('.ob-reply-to').textContent, /^Replied to /);
+    assert.equal(own.querySelector('.ob-thread'), null);
+    assert.ok(!text(s).includes('The shared drive is down again today.'), 'the thread post is not repeated');
+});
+
+test('C3: a stand-in feed with no repliesFor draws posts with no thread', () => {
+    setGlobals();
+    const feed = { postsFor: () => [{ id: 'feed_pierce_1', text: 'The shared drive is down again today.' }] };
+    const s = open({ start: 'social.pierce', feed });
+    assert.ok(block(s, 'feed_pierce_1'));
+    assert.equal(s.container.querySelector('.ob-thread'), null);
+});
+
+test('C3: a reply arriving re-renders the open thread poster\'s profile; reply text is plain text', () => {
+    setGlobals();
+    const handlers = new Map();
+    const saved = window.eventDispatcher;
+    window.eventDispatcher = {
+        on(n, cb) { handlers.set(n, [...(handlers.get(n) || []), cb]); },
+        off(n, cb) { handlers.set(n, (handlers.get(n) || []).filter((x) => x !== cb)); },
+        emit(n, d) { for (const [k, cbs] of handlers) if (k === n || (k.endsWith(':*') && n.startsWith(k.slice(0, -1)))) cbs.forEach((cb) => cb(d, n)); }
+    };
+    try {
+        const feed = feedFor();
+        feed.apply('pierce', { ...feedAnswer(0, 'feed_pierce_1', 'The shared drive is down again today.'), seq: 1 });
+        const s = open({ start: 'social.pierce', feed });
+        assert.equal(s.container.querySelector('.ob-thread'), null);
+        const hostile = '<b>bold</b> reply <img src=x onerror="window.__pwned2=1">';
+        feed.apply('hampshire', replyAnswer(0, 2, 'hamp_re', hostile, 'feed_pierce_1', 'pierce', 'pierce', 'hampshire'));
+        const r = s.container.querySelector('.ob-thread .ob-reply');
+        assert.ok(r, 'drawn without closing the browser');
+        assert.equal(r.querySelector('.ob-text b, .ob-text img, .ob-text *'), null, 'the headshot is the only image');
+        assert.ok(r.textContent.includes(hostile));
+        assert.equal(window.__pwned2, undefined);
+        s.cleanup();
+    } finally { window.eventDispatcher = saved; }
 });

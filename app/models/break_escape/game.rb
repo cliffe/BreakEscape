@@ -7,6 +7,7 @@ module BreakEscape
     include NetworkAccess
     include CaptureProofs
     include NpcFrustration
+    include SocialFeed
     include Wearables
 
     # Associations
@@ -174,6 +175,8 @@ module BreakEscape
 
       unless item_exists
         player_state['inventory'] << item
+        # q35: an NPC's Friendface phone reaching the inventory is taken for good (review R1 m2)
+        note_friendface_phone_taken!(item)
         save!
       else
         Rails.logger.info "[BreakEscape] Item already in inventory, skipping: #{item['type']} / #{item['name']}"
@@ -219,6 +222,10 @@ module BreakEscape
         # A notepad or a room-map cup is built by the client, with no scenario
         # copy to check its id against, so it never counts as a key (M6).
         next false if item['type'] == 'notepad' || item['decor'] == true
+        # An object added to a room with no server-known source is a bare client
+        # hash: its id (which the key check accepts as a lock reference for
+        # pre-rename scenarios) must never pass for a key (R1 B1).
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
 
         data = item['scenarioData'] || item
         candidates = BreakEscape::ItemIdentity.identity_candidates(data)
@@ -243,6 +250,8 @@ module BreakEscape
 
       # Check for lockpick item in scenarioData or at top level
       found = inventory.any? do |item|
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
         is_lockpick = item['scenarioData']&.dig('type') == 'lockpick' ||
                       item['type'] == 'lockpick'
         Rails.logger.debug "[BreakEscape] Inventory item: type=#{item['type']}, scenarioData.type=#{item['scenarioData']&.dig('type')}, is_lockpick=#{is_lockpick}"
@@ -303,6 +312,20 @@ module BreakEscape
           globals[key] = value
         end
       end
+    end
+
+    # The current value of a scenario global for a server-side gate: the player's own value if
+    # the key is set, else the scenario's declared default in globalVariables, else nil. Read
+    # from server state alone, never a request parameter, so the server decides. This is the one
+    # shared globals reader for outages: NetworkAccess#outage_global (5.2) delegates here. NPC
+    # frustration and the reactive feed (9.2 C2) read the same key-presence merge through
+    # NpcFrustration#frustration_globals and AccessWork.
+    def global_variable_value(name)
+      globals = player_state['globalVariables']
+      return globals[name] if globals.is_a?(Hash) && globals.key?(name)
+
+      defaults = scenario_data['globalVariables']
+      defaults.is_a?(Hash) ? defaults[name] : nil
     end
 
     # Minigame state
@@ -419,6 +442,37 @@ module BreakEscape
           return false
         end
 
+        # Friendface phone review R3 m2: a KO drop must not hang on the KO sync before it. A drop
+        # sent as `npc_defeated` from an NPC in this room records the KO itself, as the client's
+        # update_npc_state would (the same trust: the server takes isKO from the browser there
+        # too). A koImmune NPC cannot be knocked out, so it records nothing.
+        ko_recorded = false
+        if source_data['source_type'] == 'npc_defeated' && !npc_defeated?(source_data['npc_id']) &&
+           npc_ko_claimable?(source_data['npc_id']) && npc_in_room?(source_data['npc_id'], room_id)
+          ko_recorded = true
+          player_state['room_states'][room_id]['npc_states'] ||= {}
+          player_state['room_states'][room_id]['npc_states'][source_data['npc_id']] ||= {}
+          player_state['room_states'][room_id]['npc_states'][source_data['npc_id']].merge!('isKO' => true, 'currentHP' => 0)
+        end
+
+        # Review R3 m2: the client retries a drop whose answer it never saw, and re-sends a drop
+        # after a reload when one never landed, so an item already dropped, picked up or held is
+        # not added twice: nothing to do, and the same answer as the first time
+        if held_item['id'].present? && npc_held_item_delivered?(held_item['id'])
+          save! if ko_recorded
+          return true
+        end
+
+        # Friendface phone review R2 M1: a stored NPC drop is later picked up as a room item,
+        # which skips every NPC check, so the drop itself must be one the NPC can make: a KO
+        # drop (the NPC's KO is recorded), or an item its story or record offers, from an NPC
+        # the player has met (the same rule as a give). The only client route is the KO drop
+        # (npc-hostile.js dropNPCItems, sent after the KO sync).
+        unless npc_room_drop_allowed?(source_data['npc_id'], held_item)
+          Rails.logger.warn "[BreakEscape] NPC #{source_data['npc_id']} is not KO'd and does not offer #{held_item['type']}, rejecting item add"
+          return false
+        end
+
         # Persist the FULL scenario definition of the held item (mode, flags, onLaunch,
         # keyPins, etc.), not just the client-supplied subset, so a dropped object
         # restored after a reload behaves exactly like the original. Only identity and
@@ -461,6 +515,35 @@ module BreakEscape
         player_state['droppedItems'] << item['id'] unless player_state['droppedItems'].include?(item['id'])
       end
 
+      # q35 review R1 m1: a Friendface phone enters a room only as an NPC's drop or a player's
+      # drop, never from client fields, so no client can mint one
+      if item['type'] == SocialFeed::FRIENDFACE_PHONE && source_data['npc_id'].blank? && source_data['source_type'] != 'player_drop'
+        Rails.logger.warn "[BreakEscape] add_object of a Friendface phone with no source rejected"
+        return false
+      end
+
+      # SECURITY: an add with no server-known source (not an NPC drop, not a player
+      # drop of a held item) must never carry lock-relevant fields from the client.
+      # The two source branches above rebuilt the item from the server's own copy;
+      # anything else is a bare client hash, and find_accessible_item treats a stored
+      # added object as already validated. A forged opens_lock / key_id / keyPins would
+      # otherwise be picked up as a working key for any key lock (and card_id, requires,
+      # lockType and the authored-behaviour flags are stripped for the same reason).
+      unless source_data['npc_id'].present? || source_data['source_type'] == 'player_drop'
+        item = strip_forgeable_lock_fields(item)
+        # Even with the lock fields gone, a client-chosen id (or scenarioData.id)
+        # equal to a lock's `requires` value, or to a real scenario item id, would
+        # let the forged object pass for that key or item: has_key_in_inventory?
+        # and the other matchers accept an item's own id as a lock reference for
+        # pre-rename scenarios (code review R1, B1). Force a fresh server id the
+        # client cannot have chosen, drop any scenarioData.id, and mark the object
+        # client-added so no credential check ever treats it as a key, lockpick,
+        # card or cracker.
+        item['id'] = "#{room_id}_cadd_#{SecureRandom.hex(8)}"
+        item['scenarioData'].delete('id') if item['scenarioData'].is_a?(Hash)
+        item[BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER] = true
+      end
+
       # Generate unique ID if not provided
       item['id'] ||= "#{room_id}_added_#{SecureRandom.hex(4)}"
 
@@ -470,6 +553,24 @@ module BreakEscape
 
       Rails.logger.info "[BreakEscape] Added item #{item['type']} (#{item['id']}) to room #{room_id}"
       true
+    end
+
+    # Lock-relevant and authored-behaviour fields a client must never set on an item.
+    # Stripped from an unsourced add_object (add_item_to_room!), top level and inside
+    # scenarioData, so a tampered client cannot mint a key, keycard or lock from thin
+    # air. A legitimate dropped object carries these from the server's own scenario
+    # copy, not from here. Single source with the controller's
+    # CLIENT_ITEM_FORBIDDEN_FIELDS, via ItemIdentity::FORGEABLE_ITEM_FIELDS (R1 m1).
+    FORGEABLE_LOCK_FIELDS = BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS
+
+    def strip_forgeable_lock_fields(item)
+      return item unless item.is_a?(Hash)
+
+      cleaned = item.except(*FORGEABLE_LOCK_FIELDS)
+      if cleaned['scenarioData'].is_a?(Hash)
+        cleaned = cleaned.merge('scenarioData' => cleaned['scenarioData'].except(*FORGEABLE_LOCK_FIELDS))
+      end
+      cleaned
     end
 
     # Remove an item from a room (e.g., player picks up)
@@ -545,6 +646,13 @@ module BreakEscape
         return false
       end
 
+      # Review R4 M1 and m2: a KO only for an NPC the player can have knocked out
+      ko_claim = state_changes.respond_to?(:[]) && (state_changes['isKO'] == true || state_changes[:isKO] == true)
+      if ko_claim && !npc_ko_claimable?(npc_id)
+        Rails.logger.warn "[BreakEscape] KO of #{npc_id} refused: not met, not a room NPC, or koImmune"
+        return false
+      end
+
       # Merge state changes
       player_state['room_states'][room_id]['npc_states'][npc_id] ||= {}
       player_state['room_states'][room_id]['npc_states'][npc_id].merge!(state_changes)
@@ -574,7 +682,8 @@ module BreakEscape
       true
     end
 
-    # Move NPC between rooms
+    # Move NPC between rooms. Server and test use only: no route takes it from a client
+    # (code review R5 M1), since the room an NPC is served in is what records it as met.
     def move_npc_to_room!(npc_id, from_room_id, to_room_id)
       player_state['room_states'] ||= {}
 
@@ -603,8 +712,10 @@ module BreakEscape
       # Store full NPC data in target room
       npc_data = find_npc_in_scenario(npc_id)
       if npc_data
-        npc_with_new_room = npc_data.merge('roomId' => to_room_id)
-        player_state['room_states'][to_room_id]['npcs_added'] << npc_with_new_room
+        # One copy per NPC per room, so repeated moves cannot grow player_state
+        added = player_state['room_states'][to_room_id]['npcs_added']
+        added.reject! { |npc| npc.is_a?(Hash) && npc['id'] == npc_id }
+        added << npc_data.merge('roomId' => to_room_id)
       end
 
       save!
@@ -612,7 +723,36 @@ module BreakEscape
       true
     end
 
+    # The player's inventory as any response may send it (code review R2 M2): a filtered
+    # copy, never the stored array. Start items and picked-up items are stored filtered
+    # already; this also covers games created before that, and an item stored any other
+    # way. Strips lock answers (requires on answer locks, combination, cryptexConfig.answer),
+    # the PIN, generator-only keys, declared grant contents and capture secrets. Keeps
+    # contents and everything else the client reads, as the bootstrap always did.
+    def client_inventory
+      inventory = player_state.is_a?(Hash) ? player_state['inventory'] : nil
+      return inventory unless inventory.is_a?(Array)
+
+      inventory.deep_dup.tap { |items| filter_inventory_for_client!(items) }
+    end
+
     private
+
+    def filter_inventory_for_client!(obj)
+      case obj
+      when Hash
+        lock_type = obj['lockType']
+        self.class.set_pin_length!(obj)
+        self.class.strip_lock_answers!(obj)
+        self.class.strip_puzzle_graph_keys!(obj)
+        BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
+        strip_capture_secrets!(obj)
+        obj.delete('requires') if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
+        obj.each_value { |value| filter_inventory_for_client!(value) }
+      when Array
+        obj.each { |item| filter_inventory_for_client!(item) }
+      end
+    end
 
     def sync_vm_set_id_column
       state = player_state.is_a?(String) ? JSON.parse(player_state) : player_state
@@ -669,14 +809,153 @@ module BreakEscape
     end
 
     # True when the NPC exists in the scenario and its KO was recorded (in whichever
-    # room it was reported from: the client reports a KO against the NPC's home room)
+    # room it was reported from: the client reports a KO against the NPC's home room),
+    # or its hostility record says KO (review R3 m2)
+    # Review R4 M1: either record counts only for an NPC the player could have knocked out
+    # (npc_ko_claimable?), so a forged record, or one saved before the rule, opens nothing.
     def npc_defeated?(npc_id)
-      return false unless find_npc_in_scenario(npc_id)
+      return false unless npc_ko_record_present?(npc_id)
+
+      npc_ko_claimable?(npc_id)
+    end
+    public :npc_defeated?
+
+    # Either KO record exists for the NPC, before any check: cheap (no scenario walk), so the
+    # room payload asks it first (review R4 n3)
+    def npc_ko_record_present?(npc_id)
+      return true if npc_ko_recorded_by_hostility?(npc_id)
 
       (player_state['room_states'] || {}).values.any? do |rs|
         rs.is_a?(Hash) && rs.dig('npc_states', npc_id, 'isKO') == true
       end
     end
+
+    # Review R3 m2: the KO the client keeps in its hostility record (sync_state, flushed on
+    # pagehide) counts too, so a drop is accepted when either KO record has arrived
+    def npc_ko_recorded_by_hostility?(npc_id)
+      player_state.dig('npcHostility', npc_id, 'ko') == true
+    end
+
+    # Review R4 M1 and m2: a KO is a client claim (combat runs in the browser), so the server
+    # takes it only for an NPC the player can have fought: one standing in a scenario room (no
+    # headless record, and not npcType "phone": a phone NPC listed in a room, such as m03's
+    # handler holding a keycard, has no sprite to fight), met (its room was served to the player: track_npc_encounters,
+    # which only runs for a room the player may enter), and not koImmune. A hostile NPC follows
+    # the player through doors, but it is met first, in its own room. Used by every KO record
+    # (update_npc_state!, merge_npc_hostility!, an in-room KO drop) and by every reader.
+    def npc_ko_claimable?(npc_id)
+      return false unless npc_id.is_a?(String) && !npc_id.empty?
+      return false unless Array(player_state['encounteredNPCs']).include?(npc_id)
+
+      ko_claimable_room_npc_ids.include?(npc_id)
+    end
+    public :npc_ko_claimable?
+
+    # Ids of the scenario's room NPCs that are not koImmune and not phone NPCs. Reads scenario_data when it is
+    # loaded; sync_state's narrow load leaves it out, so there two jsonpath lists are read,
+    # as scenario_npc_ids does. Bounded by the scenario.
+    def ko_claimable_room_npc_ids
+      if has_attribute?(:scenario_data)
+        rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+        return Set.new unless rooms.is_a?(Hash)
+
+        ids = Set.new
+        rooms.each_value do |room|
+          next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+          room['npcs'].each do |npc|
+            next unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['koImmune'] != true && npc['npcType'] != 'phone'
+
+            ids << npc['id']
+          end
+        end
+        return ids
+      end
+
+      all, immune = self.class.where(id: id).pick(
+        Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"),
+        Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*] ? (@.koImmune == true || @.npcType == \"phone\").id')")
+      )
+      parse = ->(list) { Array(list.is_a?(String) ? JSON.parse(list) : list).select { |i| i.is_a?(String) } }
+      Set.new(parse.call(all)) - Set.new(parse.call(immune))
+    end
+
+    # Review R3 m2: a held item (by id) that has already left the NPC: dropped into any room
+    # (objects_added), picked up from one (objects_removed), or in the inventory
+    def npc_held_item_delivered?(item_id)
+      return false if item_id.blank?
+
+      delivered_item_ids.include?(item_id)
+    end
+
+    # Every item id that has left an NPC or the scenario: dropped into a room (objects_added),
+    # picked up from one (objects_removed), or in the inventory. One walk of the player state.
+    def delivered_item_ids
+      ids = Set.new
+      (player_state['room_states'] || {}).each_value do |rs|
+        next unless rs.is_a?(Hash)
+
+        Array(rs['objects_added']).each { |o| ids << o['id'] if o.is_a?(Hash) && o['id'].is_a?(String) }
+        Array(rs['objects_removed']).each { |id| ids << id if id.is_a?(String) }
+      end
+      Array(player_state['inventory']).each do |i|
+        next unless i.is_a?(Hash)
+
+        ids << i['id'] if i['id'].is_a?(String)
+        sid = i.dig('scenarioData', 'id')
+        ids << sid if sid.is_a?(String)
+      end
+      ids
+    end
+
+    # Review R3 m2: the ids of a KO'd NPC's held items that never reached a room or the player,
+    # for the room payload (`koDropPending`), so the client drops them again after a reload.
+    # Bounded by the NPC's itemsHeld (every room NPC's held item has an id from game creation,
+    # review R4 m1; one with none, in a game made before that, is left out).
+    # Review R4 n3: an NPC with no KO record (nearly all of them) costs two hash lookups and a
+    # walk of the room states; the claim check and the delivered walk run only for a KO'd NPC,
+    # and the caller may pass the delivered set so one room load walks the state once.
+    def npc_ko_drop_pending_ids(npc, delivered = nil)
+      return [] unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['koImmune'] != true
+      return [] unless npc['itemsHeld'].is_a?(Array) && !npc['itemsHeld'].empty?
+      return [] unless npc_ko_record_present?(npc['id']) && npc_ko_claimable?(npc['id'])
+
+      delivered ||= delivered_item_ids
+      npc['itemsHeld'].filter_map do |i|
+        id = i.is_a?(Hash) ? i['id'] : nil
+        id if id.is_a?(String) && !id.empty? && !delivered.include?(id)
+      end
+    end
+
+    # The room NPC list with `koDropPending` on each KO'd NPC that still owes items (copies).
+    # `only` limits it to those ids: the room action and a door unlock call it again for the NPCs
+    # the same load has just recorded as met (code review R5 m1), so an old save whose KO'd NPC
+    # had no met record re-drops on the first load, not the second.
+    def with_ko_drop_pending(npcs, only: nil)
+      delivered = nil
+      npcs.map do |npc|
+        next npc if only && !(npc.is_a?(Hash) && only.include?(npc['id']))
+
+        # One delivered walk per room load, and only once a KO'd NPC needs it (review R4 n3)
+        if delivered.nil? && npc.is_a?(Hash) && npc['id'].is_a?(String) && npc_ko_record_present?(npc['id'])
+          delivered = delivered_item_ids
+        end
+        pending = npc_ko_drop_pending_ids(npc, delivered)
+        pending.empty? ? npc : npc.merge('koDropPending' => pending)
+      end
+    end
+    public :with_ko_drop_pending
+
+    # Review R2 M1 (FRIENDFACE_PHONE_ITEM_CODE_REVIEW_R2.md): an NPC-sourced room add is a KO drop,
+    # or an item the NPC offers, from an NPC the player has met. Also asked of a stored drop
+    # when it is picked up, for a save made before the rule.
+    def npc_room_drop_allowed?(npc_id, held_item)
+      return true if npc_defeated?(npc_id)
+
+      Array(player_state['encounteredNPCs']).include?(npc_id) &&
+        held_item.is_a?(Hash) && npc_offers_item?(npc_id, held_item['type'])
+    end
+    public :npc_room_drop_allowed?
 
     # Check if NPC exists in a room (scenario or moved)
     def npc_in_room?(npc_id, room_id)
@@ -869,11 +1148,15 @@ module BreakEscape
           # `requires` when it strips the PIN, so a 5-digit door gets a 5-digit pad.
           # access, acceptsUIDOnly: an rfid door's role list and whether a UID-only copy opens it
           # (access model 4.1). They name roles and NPC ids, nothing secret.
+          # cryptexConfig: a cryptex door's wheels (wheelCount, alphabets, hintStrip, wornRings,
+          # maxAttempts), so its pad shows the right wheels before the room loads (unlock gaps
+          # R1 M2). Its old `answer` field is stripped here and again by the controller filter.
           %w[type connections locked lockType requires difficulty door_sign keyPins lockedHint ambientSound ambientVolume
              maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting
-             access acceptsUIDOnly].each do |field|
+             access acceptsUIDOnly cryptexConfig].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
+          self.class.strip_lock_answers!(kept_fields)
 
           # A motion-sensor room is lit only when someone's actually in it. NPCs are stripped
           # from the lazy payload, so expose just whether a present (non-phone, non-hidden) NPC
@@ -915,13 +1198,17 @@ module BreakEscape
       # the server holds.
       withhold_network_keys!(filtered)
 
-      # Strip the authored capture secret (e.g. the phished portal password) from the
-      # bootstrap: the browser must not hold it until the capture is earned. The real
-      # secret is served by GET /capture_secrets once the server's own se_captures record
-      # shows the phish landed (see capture_secrets_for_client). The capture's address,
-      # note and the revealSecret flag are not secret and stay. Today the only capture
-      # secret lives under social.landingPages[].capture, so the walk is scoped to social.
-      strip_capture_secrets!(filtered['social']) if filtered['social'].is_a?(Hash)
+      # Slice 9.2 C (8.3): a feed post's fact travels with its post, never in the bootstrap
+      withhold_feed_facts!(filtered)
+
+      # Strip every authored capture secret from the bootstrap: a landing page's capture (the
+      # phished portal password), an NPC's usePayload, a mapping's addCapture and an
+      # add_capture action's capture, wherever they sit (top-level npcs, phoneNPCs, timers).
+      # The browser must not hold one until the capture is earned. The real secret is served
+      # by GET /capture_secrets once the server's own se_captures record shows the capture
+      # was made (see capture_secrets_for_client). The capture's address, host, note and the
+      # revealSecret flag are not secret and stay.
+      strip_capture_secrets!(filtered)
 
       # A declared grant's contents (a timer's give_item, a triggerOnInteract reward) are
       # served from the held item, never shipped. GamesController#filter_requires_recursive
@@ -980,6 +1267,7 @@ module BreakEscape
       # declared one.
       declared = declared_capture_target_ids
       phish_targets = CaptureModel.phish_target_ids(scenario_data).to_set
+      authored = authored_capture_secrets
 
       out = {}
       earned.each do |target_id, entry|
@@ -992,9 +1280,94 @@ module BreakEscape
         secret ||= by_username[self.class.normalise_username(address)] if address.is_a?(String)
         # The single-secret fallback counts landing-page captures only: a phish target's.
         secret ||= only_secret if secret_count == 1 && phish_targets.include?(target_id.to_s)
+        secret ||= authored_capture_secret(authored[target_id.to_s])
         out[target_id] = secret if secret
       end
       out
+    end
+
+    # The authored secret of a capture that is not an account password: a usePayload.secret, a
+    # mapping's addCapture.secret or an add_capture action's capture.secret (a PIN read over a
+    # shoulder at a keypad, a code copied off a desk), found by its target id (a usePayload
+    # by usepayload_captures). Never an account's: a writer on an account
+    # holder, or whose address is an account's username, is served by the account pass with
+    # its capture proofs. A writer with a `proof` is served only once that proof holds. A
+    # secret that is a hard-access value (a password or PIN lock code, a Wi-Fi PSK, an RFID or
+    # biometric requires, or a flag) with no proof is never served on the capture record alone,
+    # as the account gate withholds a password that opens something (account_capture_served?).
+    def authored_capture_secret(entry)
+      return nil unless entry
+
+      proof = entry[:proof]
+      return (capture_proof_holds?(proof) ? entry[:secret] : nil) if proof.is_a?(Hash)
+      # A hard-access value is withheld whether or not the scenario declares proofs. A secret
+      # that opens nothing (an event-gated PIN for a badge-only door) still serves: the cheat
+      # policy keeps that best-effort (q78), it only saves the player time.
+      return nil if hard_access_capture_value?(entry[:secret])
+
+      entry[:secret]
+    end
+
+    # Whether a capture secret is a value that grants hard access if known: the code of a
+    # password or PIN lock, the requires of an RFID or biometric lock, a Wi-Fi PSK, or a flag.
+    # Memoised per request (the set is read from the authored scenario, which does not change).
+    def hard_access_capture_value?(secret)
+      return false unless secret.is_a?(String) && !secret.empty?
+
+      (@hard_access_capture_values ||= CaptureModel.hard_access_values(scenario_data)).include?(secret)
+    end
+
+    # { target_id => { secret:, address:, proof: } } for every non-account capture writer with
+    # an authored secret, first writer per target id. Read from the authored scenario_data.
+    # Memoised per request: the scenario is fixed, so this is recomputed only once a poll.
+    def authored_capture_secrets
+      @authored_capture_secrets ||= build_authored_capture_secrets
+    end
+
+    def build_authored_capture_secrets
+      holders = self.class.scenario_room_npcs(scenario_data).select { |npc| self.class.account_holder?(npc) }
+      usernames = holders.map { |npc| self.class.normalise_username(npc['creds']['username']) }.to_set
+      out = {}
+      add = lambda do |id, capture|
+        secret = capture['secret']
+        next unless id.is_a?(String) && !id.empty? && secret.is_a?(String) && !secret.empty?
+        next if capture['address'].is_a?(String) && usernames.include?(self.class.normalise_username(capture['address']))
+
+        out[id] ||= { secret: secret, address: capture['address'], proof: capture['proof'] }
+      end
+      CaptureModel.each_capture_writer(scenario_data) do |capture, _kind, _path, owner|
+        next if owner && holders.any? { |npc| npc.equal?(owner) }
+
+        add.call(capture['targetId'], capture)
+      end
+      self.class.scenario_room_npcs(scenario_data).each do |npc|
+        payload = npc['usePayload']
+        next unless payload.is_a?(Hash) && !self.class.account_holder?(npc)
+
+        usepayload_captures(npc, payload).each { |id, capture| add.call(id, capture) }
+      end
+      out
+    end
+
+    # The captures a usePayload fills, as [target_id, capture] pairs. With its own targetId the
+    # payload fills that one. Otherwise it fills each addCapture mapping on the same NPC, and the
+    # server reads each mapping's own gate: npc-manager.js overlays the payload onto the mapping's
+    # addCapture (the mapping is the base, the payload overrides), so the mapping's proof and
+    # address hold unless the payload carries its own (review R1 minor 1). The secret comes from
+    # the payload; the mapping has none of its own on a usePayload NPC.
+    def usepayload_captures(npc, payload)
+      own = payload['targetId']
+      return [[own, payload]] if own.is_a?(String) && !own.empty?
+
+      Array(npc['eventMappings']).filter_map do |mapping|
+        add_capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
+        next nil unless add_capture.is_a?(Hash)
+
+        id = add_capture['targetId']
+        next nil unless id.is_a?(String) && !id.empty?
+
+        [id, add_capture.merge(payload)]
+      end
     end
 
     # { normalised username => password } for each room NPC with an account and a
@@ -1165,6 +1538,29 @@ module BreakEscape
         end
       end
 
+      # q35: an NPC whose Friendface phone the player has taken starts the client as
+      # "phone": false (FRIENDFACE_PHONE_ITEM_PLAN.md section 3), and no longer holds that phone.
+      # Review R2 m1: a KO pickup leaves no gift record, so the filter above keeps the phone;
+      # drop it here by its owner (copy, as above).
+      if room['npcs'].is_a?(Array)
+        room['npcs'] = room['npcs'].map do |npc|
+          next npc unless npc.is_a?(Hash) && friendface_phone_taken?(npc['id'])
+
+          out = npc.merge('phone' => false)
+          if npc['itemsHeld'].is_a?(Array)
+            out['itemsHeld'] = npc['itemsHeld'].reject do |i|
+              i.is_a?(Hash) && i['type'] == SocialFeed::FRIENDFACE_PHONE && i['phoneOf'] == npc['id']
+            end
+          end
+          out
+        end
+      end
+
+      # Review R3 m2: a KO'd NPC whose drop never landed (every KO sync and drop request failed,
+      # then a reload) lists the held items still owed, and the client drops them again
+      # (npc-sprites.js, npc-hostile.js redropPending). Copy, as above.
+      room['npcs'] = with_ko_drop_pending(room['npcs']) if room['npcs'].is_a?(Array)
+
       # Mark previously-unlocked objects as locked=false so the client skips the
       # lock minigame and opens them directly on interaction.
       if player_state['unlockedObjects'].present? && room['objects'].present?
@@ -1201,7 +1597,9 @@ module BreakEscape
       # accounts the player heard shared out loud
       'guestSessions' => {}, 'sharedLogins' => [],
       # Review R1 m1: the server time each guest record was written, for the server's own lock
-      'guestSessionsAt' => {}
+      'guestSessionsAt' => {},
+      # Sub-slice C (9.4): how many of each NPC's feed posts are out, and when the last came out
+      'feedRevealed' => {}
     }.freeze
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that
@@ -1262,12 +1660,10 @@ module BreakEscape
       end
     end
 
-    # JavaScript's Number(x) > 0 for the values a scenario can hold: a number, or a
-    # string that reads as one.
+    # JavaScript's Number(x) > 0 for the values a scenario can hold (AccessIdentities.js_positive?:
+    # a number, a string that reads as one, true, or a one-element array of such a value)
     def self.positive_number?(value)
-      number = value if value.is_a?(Numeric)
-      number = Float(value.strip, exception: false) if value.is_a?(String)
-      !number.nil? && number.finite? && number.positive?
+      BreakEscape::AccessIdentities.js_positive?(value)
     end
 
     # The talk portrait person-chat would use for an NPC: spriteTalk, else the path
@@ -1290,7 +1686,10 @@ module BreakEscape
     def scenario_room_npc(npc_id)
       return nil if npc_id.blank?
 
-      self.class.scenario_room_npcs(scenario_data).find { |npc| npc['id'] == npc_id.to_s }
+      npc = self.class.scenario_room_npcs(scenario_data).find { |n| n['id'] == npc_id.to_s }
+      # q35: an NPC whose Friendface phone the player has taken has no phone for the rest of
+      # the run (docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md section 3)
+      npc && friendface_phone_taken?(npc['id']) ? npc.merge('phone' => false) : npc
     end
 
     def account_npcs
@@ -1367,14 +1766,16 @@ module BreakEscape
 
       case scope[:type]
       when 'login_pc'
-        access_sessions[scope[:id].to_s].is_a?(Hash)
+        # Slice 9.3b O (5.2): a scoped request under a remote session whose route is no longer
+        # reached is refused, read from the server's own session record (session_route_up?).
+        access_sessions[scope[:id].to_s].is_a?(Hash) && session_route_up?(scope[:id])
       when 'profile'
         profile = account_profiles[scope[:id]]
         return false unless profile
 
         access_sessions.keys.any? do |pc_id|
           npc = session_identity(pc_id)
-          npc && self.class.acl_admits?(profile['for'], npc)
+          npc && self.class.acl_admits?(profile['for'], npc) && session_route_up?(pc_id)
         end
       when 'resource'
         # Slice 9.3a, 4.5: a held foothold or session reaches it and is allowed
@@ -1389,6 +1790,9 @@ module BreakEscape
     def scope_admitted_by_session?(scope, pc_id)
       npc = session_identity(pc_id)
       return false unless npc
+      # Slice 9.3b O (5.2): a remote session whose route is down no longer admits its scoped
+      # requests (an inventory add, an unlock), judged from the server's own session record.
+      return false unless session_route_up?(pc_id)
 
       case scope && scope[:type]
       when 'login_pc'
@@ -1541,12 +1945,19 @@ module BreakEscape
       foothold = foothold.presence&.to_s
       if foothold
         return unreachable unless host_reachable_through?(foothold, info[:object])
+        # A host whose own service is off does not answer over the network (9.3b plan 5.2)
+        if host_service_off?(info[:object])
+          return { status: :forbidden, body: { success: false, message: NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' } }
+        end
         if remote_blocked?(info[:object])
           return { status: :unprocessable_entity,
                    body: { success: false, message: NetworkAccess::REMOTE_BLOCKED, remoteBlocked: true } }
         end
       elsif NetworkModel.headless?(info[:object]) || !login_pc_reachable?(info)
         return unreachable
+      elsif host_service_off?(info[:object])
+        # Off is off at its own keyboard too (q72): nothing is read, nothing counted
+        return pc_off_answer
       end
 
       pc = info[:object]
@@ -1572,8 +1983,27 @@ module BreakEscape
       record_login_failure!(pc, key, account: !npc.nil?)
     end
 
-    # POST /login with claim: "owner" (section 6, claim checks 1 to 7). Every refusal
-    # answers "Sign in required"; the client then shows the sign-in screen. The
+    # A storyPath's text for OwnerClaim: the compiled story GamesController#ink serves (not
+    # compiled here) and its .ink source, so an edit not yet compiled still counts. nil when
+    # neither can be read.
+    def owner_claim_story_text(story_path)
+      base = InkStoryFile.confined(story_path, InkStoryFile.allowed_roots)
+      return nil unless base
+
+      json = InkStoryFile.find(story_path, compile: false)
+      ink = InkStoryFile.ink_source(base)
+      texts = [json && InkStoryFile.read(json), ink && InkStoryFile.read(ink)].compact
+      texts.empty? ? nil : texts.join("\n")
+    end
+
+    # 403 for a sign-in or claim at the keyboard of a PC whose own service is off (q72)
+    def pc_off_answer
+      { status: :forbidden, body: { success: false, message: NetworkAccess::PC_OFF_MESSAGE, reason: 'off' } }
+    end
+
+    # POST /login with claim: "owner" (section 6, claim checks 1 to 10). Every refusal
+    # answers "Sign in required"; the client then shows the sign-in screen. The one exception
+    # is a switched-off PC (q72): 403 off, "This PC is off." The
     # workstation globals the client sends are logged, not trusted.
     def claim_login_session!(pc_id, globals = nil, foothold: nil)
       refusal = lambda do |reason|
@@ -1588,6 +2018,8 @@ module BreakEscape
       return refusal.call('no such sign-in PC') unless info
       return refusal.call('a headless host') if NetworkModel.headless?(info[:object])
       return refusal.call('PC not reachable') unless login_pc_reachable?(info)
+      # A switched-off PC has no screen to claim (q72): said plainly, as the sign-in is
+      return pc_off_answer if host_service_off?(info[:object])
 
       pc = info[:object]
       # A session already held here (a password sign-in) is never replaced by a claim
@@ -1599,14 +2031,45 @@ module BreakEscape
       return refusal.call('owner has no account') unless self.class.account_holder?(owner)
       return refusal.call('access list does not admit the owner') unless pc_admits_account?(pc, owner)
       return refusal.call('the screen always locks') if pc_always_locks?(pc, owner)
+      # Slice 9.2 sub-slice L (6.6, plan 9.1): a person who cannot sign in at this PC cannot
+      # leave a session open there, whatever the client says about the screen
+      return refusal.call('the owner is locked out at this PC') if account_locked_out_at?(pc['id'], owner)
 
       auto_lock = effective_policy(pc)['autoLockMin']
       return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
+      # Owner claim q78: refused only when the owner has no movement source at all
+      # (OwnerClaim.leave_route: no precise route, and nothing the cautious layer counts). Every
+      # object in any room counts. The owner's ink story is read as GamesController#ink finds it,
+      # and a story that cannot be read allows the claim.
+      if BreakEscape::OwnerClaim.never_leaves?(scenario_data, owner, pc, story: method(:owner_claim_story_text))
+        return refusal.call('the owner never leaves the post')
+      end
 
       Rails.logger.info "[BreakEscape] login claim at #{pc['id']} for #{owner['id']}; client globals: #{globals.inspect}"
       start_login_session!(pc['id'], owner, 'claim')
       save!
       { status: :ok, body: { success: true }.merge(login_session_answer(owner, 'claim')) }
+    end
+
+    # Slice 9.2 sub-slice L (6.6): whether loginLockouts holds this NPC's normalised username at
+    # this PC, the key attempt_login! builds. Read only (login_lockouts would write a default).
+    def account_locked_out_at?(pc_id, npc)
+      creds = npc.is_a?(Hash) ? npc['creds'] : nil
+      return false unless creds.is_a?(Hash) && creds['username'].present?
+
+      Array(player_state['loginLockouts']).include?("#{pc_id}|#{self.class.normalise_username(creds['username'])}")
+    end
+
+    # Sub-slice L review R1 M1 (orchestrator decision): the sign-in PCs where the server holds a
+    # lockout, for GET /scenario. PC ids only, never a username: the player caused and was shown
+    # each one, so a reload can seed the client's "lockout seen" mark (6.6) without telling the
+    # browser anything new. Reads loginLockouts without writing a default.
+    def lockout_pcs_for_client
+      list = player_state['loginLockouts']
+      return [] unless list.is_a?(Array)
+
+      list.filter_map { |k| k.is_a?(String) && k.include?('|') ? k.split('|', 2).first : nil }
+          .uniq.select { |pc| find_login_pc(pc) }
     end
 
     # POST /login with claim: "guest" (slice 9.2 sub-slice H, plan 9.1): the session an NPC left
@@ -1624,6 +2087,8 @@ module BreakEscape
       return refusal.call('no such sign-in PC') unless info
       return refusal.call('a headless host') if NetworkModel.headless?(info[:object])
       return refusal.call('PC not reachable') unless login_pc_reachable?(info)
+      # A switched-off PC has no screen to claim (q72)
+      return pc_off_answer if host_service_off?(info[:object])
 
       pc = info[:object]
       # 2. no session held here
@@ -1641,6 +2106,13 @@ module BreakEscape
       auto_lock = effective_policy(pc)['autoLockMin']
       return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
       return refusal.call('a careful guest') if careful_guest?(guest)
+      # Sub-slice L review R1 m1 (6.6): a guest who cannot sign in here left no session open.
+      # Review R2 n2: the record goes too, as for a timed-out session, since it can never be claimed
+      if account_locked_out_at?(pc['id'], guest)
+        end_guest_session_at!(pc['id'])
+        save!
+        return refusal.call('the guest is locked out at this PC')
+      end
       # Review R1 m1: the server times the guest session out itself, from the "done"
       # Review R2 n3: the timed-out record goes too, so verify-run and a later "done" read no
       # stale guest (POST /login runs under the game lock)
@@ -1670,7 +2142,11 @@ module BreakEscape
       if ended.is_a?(Hash) && ended['via'] == 'claim' && guest_sessions[key] == ended['id']
         end_guest_session_at!(key)
       end
+      # Ending a session can break a pivot; end every onward session whose route is now gone
+      # (networks slice 9.3b, 5.1). Returns the ended ids for pc-sessions.js.
+      pruned = prune_unreachable_sessions!
       save!
+      pruned
     end
 
     # A reload ends every claimed session (5.3): the workstation state restarts with every
@@ -1690,6 +2166,9 @@ module BreakEscape
         next if claimed.empty?
 
         player_state['sessions'] = access_sessions.except(*claimed)
+        # An onward session whose only route was a claimed pivot ends too (networks slice
+        # 9.3b, 5.1), so no orphaned onward desktop survives a reload.
+        prune_unreachable_sessions!
         save!
       end
     end
@@ -1768,6 +2247,8 @@ module BreakEscape
 
     def rfid_cloner_held?
       (player_state['inventory'] || []).any? do |item|
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
         item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'rfid_cloner'
       end
     end
@@ -1782,6 +2263,7 @@ module BreakEscape
     # these are server-written, never a client's field.
     def held_keycard_ids
       Array(player_state['inventory']).filter_map do |item|
+        next if BreakEscape::ItemIdentity.client_forged?(item)
         next unless item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'keycard'
 
         card_id = item['card_id'].presence || item.dig('scenarioData', 'card_id').presence
@@ -1841,13 +2323,37 @@ module BreakEscape
       ids = self.class.normalise_card_ids(card_ids)
       return Array(lock['requires']).any? if ids.nil?
 
+      !rfid_passing_card_id(lock, ids).nil?
+    end
+
+    # The first of these held card ids that opens an access-list rfid lock, or nil.
+    def rfid_passing_card_id(lock, ids)
       held = held_rfid_cards
-      ids.any? do |card_id|
+      Array(ids).find do |card_id|
         next false unless held.key?(card_id)
         next false if held[card_id] && lock['acceptsUIDOnly'] != true
 
         rfid_identity_passes?(lock, card_id)
       end
+    end
+
+    # After an access-list rfid unlock: which held card opened it, for the client's toast.
+    # The client sends every held card id at once, so naming a copied card would tell the
+    # player whose identity the list admits (an NPC's withheld role, or that a person is
+    # on a people list). Only the player's own keycard is named: { cardId: id }. A copy
+    # answers { viaCopy: true } with no id. nil for a lock with no access list or no
+    # card_ids.
+    def rfid_unlock_card_answer(target_type, target_id, card_ids)
+      lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
+      return nil unless lock.is_a?(Hash) && lock['lockType'] == 'rfid' && self.class.acl_lock?(lock)
+
+      ids = self.class.normalise_card_ids(card_ids)
+      return nil if ids.blank?
+
+      card_id = rfid_passing_card_id(lock, ids)
+      return nil if card_id.nil?
+
+      held_keycard_ids.include?(card_id) ? { cardId: card_id } : { viaCopy: true }
     end
 
     # True when a refused rfid unlock with card_ids would have passed but for a UID-only
@@ -1952,6 +2458,50 @@ module BreakEscape
       return true if self.class.login_pc?(located[:object])
 
       !located[:scope].nil? && !(session_admits?(located[:scope]) && path_unlocked?(located[:path]))
+    end
+
+    # Why an unlock under a sign-in PC or a profile is refused for its scope rather than its
+    # code (review R3 m1), or nil. Only where the player already knows the object is there: they
+    # hold the session that showed it, and that session is refused because its PC is off
+    # ('off' at the keyboard, 'not_responding' remotely) or its route is down ('unreachable').
+    # A share path, an object under no held session, a wrong code and a locked container above
+    # all give nil, so they still answer exactly as an invented id. Only an object with every
+    # folder above it already unlocked gets a reason. The lock screen counts no attempt.
+    UNLOCK_REFUSAL_MESSAGES = { 'off' => NetworkAccess::PC_OFF_MESSAGE, 'not_responding' => 'This PC is not responding.',
+                                'unreachable' => "This PC can't be reached." }.freeze
+
+    def unlock_session_refusal(target_type, target_id)
+      return nil if target_type.to_s == 'door' || !unlock_scope_refused?(target_id)
+
+      # Review R4 m1: an object behind a container still locked has never been shown, so it
+      # answers as an invented id; a reason here would confirm a guessed id exists
+      located = login_scope_of(target_id)
+      return nil unless located && path_unlocked?(located[:path])
+
+      scope = located[:scope]
+      pcs =
+        case scope && scope[:type]
+        when 'login_pc'
+          access_sessions[scope[:id].to_s].is_a?(Hash) ? [scope[:id].to_s] : []
+        when 'profile'
+          profile = account_profiles[scope[:id]]
+          held = profile ? access_sessions.keys.map(&:to_s) : []
+          held.select { |pc_id| (npc = session_identity(pc_id)) && self.class.acl_admits?(profile['for'], npc) }
+        else
+          []
+        end
+      # A session that would admit it means the refusal is a locked container above, not the PC
+      return nil if pcs.empty? || pcs.any? { |pc_id| session_route_up?(pc_id) }
+
+      pc_id = pcs.first
+      info = find_login_pc(pc_id)
+      reason =
+        if info && host_service_off?(info[:object])
+          access_sessions[pc_id]['foothold'].present? ? 'not_responding' : 'off'
+        else
+          'unreachable'
+        end
+      { reason: reason, message: UNLOCK_REFUSAL_MESSAGES[reason] }
     end
 
     def record_copied_item!(item_id)
@@ -2139,12 +2689,50 @@ module BreakEscape
       'biometric' => %w[biometric],
       'bluetooth' => %w[bluetooth],
       'ble' => %w[ble],
-      'rfid' => %w[rfid]
+      'rfid' => %w[rfid],
+      'combination' => %w[combination],
+      'cryptex' => %w[cryptex]
     }.freeze
 
     def unlock_method_matches_lock?(lock_type, method)
       allowed = UNLOCK_METHODS_BY_LOCK_TYPE[lock_type.presence || 'key']
       allowed.present? && allowed.include?(method.to_s)
+    end
+
+    # Whether an answer opens a combination padlock or a cryptex (unlock gaps build,
+    # 2026-11-12). The secret is the lock's `requires`, which never reaches the client.
+    # A combination is compared as its numbers in order, so "12-30-5" from the dials
+    # matches `requires` written "12-30-05", "12 30 5" or [12, 30, 5]. A cryptex word
+    # is compared ignoring case and outer spaces: its wheels show fixed letters, so case
+    # can only differ by an authoring slip. A blank secret or answer never opens.
+    def self.lock_answer_matches?(lock_type, secret, attempt)
+      case lock_type
+      when 'combination'
+        numbers = lambda do |value|
+          parts = value.is_a?(Array) ? value.map(&:to_s) : value.to_s.split(/[^0-9]+/)
+          parts = parts.map(&:strip).reject(&:empty?)
+          parts.all? { |p| p.match?(/\A\d+\z/) } ? parts.map(&:to_i) : nil
+        end
+        want = numbers.call(secret)
+        got = numbers.call(attempt)
+        want.present? && got.present? && want == got
+      when 'cryptex'
+        want = secret.is_a?(String) ? secret.strip : ''
+        got = attempt.is_a?(String) ? attempt.strip : ''
+        !want.empty? && want.casecmp?(got)
+      else
+        false
+      end
+    end
+
+    # The authored answers the combination and cryptex minigames once read on the client.
+    # `requires` is the server's secret; these copies leave every payload so an author who
+    # also wrote the answer there does not ship it (unlock gaps build).
+    def self.strip_lock_answers!(obj)
+      return unless obj.is_a?(Hash)
+
+      obj.delete('combination') if obj['lockType'] == 'combination'
+      obj['cryptexConfig'].delete('answer') if obj['cryptexConfig'].is_a?(Hash)
     end
 
     # A flag-station reward of type unlock_object opens its object on the client,
@@ -2271,6 +2859,10 @@ module BreakEscape
             is_valid = room['requires'].to_s == attempt.to_s
             Rails.logger.info "[BreakEscape] #{method} validation result: #{is_valid}"
             is_valid
+          when 'combination', 'cryptex'
+            is_valid = self.class.lock_answer_matches?(method, room['requires'], attempt)
+            Rails.logger.info "[BreakEscape] #{method} validation result: #{is_valid}"
+            is_valid
           else
             Rails.logger.warn "[BreakEscape] SECURITY VIOLATION: No valid unlock method for LOCKED door: #{target_id}, method=#{method}"
             false
@@ -2375,6 +2967,12 @@ module BreakEscape
             result = object['requires'].to_s == attempt.to_s
             Rails.logger.info "[BreakEscape] Password validation: required='#{object['requires']}', attempt='#{attempt}', result=#{result}"
             return result
+          when 'combination', 'cryptex'
+            # An unlocked one opens as the other methods do; a locked one needs its answer
+            return true unless lock_in_force
+            result = self.class.lock_answer_matches?(method, object['requires'], attempt)
+            Rails.logger.info "[BreakEscape] #{method} validation result: #{result}"
+            return result
           end
         end
         Rails.logger.warn "[BreakEscape] Object not found: #{target_id}"
@@ -2452,6 +3050,8 @@ module BreakEscape
 
     def has_pin_cracker_in_inventory?
       (player_state['inventory'] || []).any? do |item|
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
         item['scenarioData']&.dig('type') == 'pin-cracker' || item['type'] == 'pin-cracker'
       end
     end
@@ -2484,7 +3084,61 @@ module BreakEscape
         found = find_object_in_contents(grant_item, target_id)
         return found if found
       end
+      # A habit NPC's USB stick the player holds (2026-11-12), with its files
+      held_usb_sticks.each do |stick|
+        found = find_object_in_contents(stick, target_id)
+        return found if found
+      end
+      # A container an NPC carried (a bag, a folder, a laptop) that a give or a knock-out
+      # has released (unlock gaps build, 2026-11-12)
+      released_npc_containers.each do |container|
+        found = find_object_in_contents(container, target_id)
+        return found if found
+      end
       nil
+    end
+
+    # ── a container an NPC carries (unlock gaps build, 2026-11-12) ──────
+
+    # Item types the client opens as a container (interactions.js), besides any item with
+    # contents. A locked held item is counted too, since opening it calls /unlock.
+    NPC_CONTAINER_TYPES = %w[suitcase briefcase bag1 bin1].freeze
+
+    def self.npc_container_item?(item)
+      item.is_a?(Hash) && item['id'].is_a?(String) && !item['id'].empty? &&
+        (item['contents'].is_a?(Array) || item['locked'] == true || NPC_CONTAINER_TYPES.include?(item['type']))
+    end
+
+    # Whether a held container has left its NPC, by the server's own records: the give record
+    # (record_npc_gift!, written only after the give was validated) addresses it, or the NPC's
+    # knock-out is recorded (a KO drops everything it holds). Never from the browser's word.
+    def npc_container_released?(npc, item)
+      return false unless npc.is_a?(Hash) && npc['id'].is_a?(String)
+
+      given = player_state.is_a?(Hash) ? player_state.dig('npc_given_items', npc['id']) : nil
+      Array(given).any? { |g| g.is_a?(Hash) && BreakEscape::ItemIdentity.addressed_by?(item, g['type'], g['id'], g['name']) } ||
+        npc_defeated?(npc['id'])
+    end
+
+    # The scenario copy of every NPC-held container the player can have got: the NPC holds it
+    # in the scenario and a give or KO record releases it. A dropped copy in objects_added or
+    # the inventory copy is never read, so an id the browser invents, or a container still in
+    # its NPC's hands, resolves to nothing. Habit sticks have their own path (held_usb_sticks).
+    # Bounded by the scenario's NPC-held items; not memoised, as the records change per request.
+    def released_npc_containers
+      return [] unless scenario_data.is_a?(Hash) && player_state.is_a?(Hash)
+
+      npcs = []
+      scenario_data['rooms']&.each_value do |room|
+        npcs.concat(room['npcs'].select { |n| n.is_a?(Hash) }) if room.is_a?(Hash) && room['npcs'].is_a?(Array)
+      end
+      npcs.concat(self.class.headless_npc_records(scenario_data))
+      stick_ids = usb_habit_stick_ids
+      npcs.flat_map do |npc|
+        Array(npc['itemsHeld']).select do |item|
+          self.class.npc_container_item?(item) && !stick_ids.include?(item['id']) && npc_container_released?(npc, item)
+        end
+      end
     end
 
     # The scenario's declared grants (DeclaredGrants.for), walked once per instance:
@@ -2497,10 +3151,56 @@ module BreakEscape
     # memoised: the inventory changes per request and the container action reloads.
     def held_grant_items
       inventory = player_state.is_a?(Hash) ? (player_state['inventory'] || []) : []
+      # A declared grant serves its server-side contents to whoever holds the grant item.
+      # held_in? can match by name alone (when the grant item carries no id), so a forged
+      # clientAdded item with a matching name must not stand in for it (code review R2, B1
+      # sweep).
+      inventory = inventory.reject { |item| BreakEscape::ItemIdentity.client_forged?(item) }
       return [] if inventory.empty?
 
       declared_grants.map { |grant| grant['item'] }
                      .select { |item| BreakEscape::ItemIdentity.held_in?(item, inventory) }
+    end
+
+    # ── the USB habit's stick (USB_HABIT_BUILD_LOG.md, 2026-11-12) ──────
+
+    # Whether a habit NPC's stick has left it, by the server's own records: the give record
+    # (an NPC give or a pickpocket, record_npc_gift!) addresses it, or the NPC was knocked out
+    # (a KO drops everything it holds). Never from the browser's word.
+    def usb_stick_taken?(npc)
+      stick = BreakEscape::AccessWork.usb_stick(npc)
+      return false unless stick && npc['id'].is_a?(String)
+
+      given = player_state.is_a?(Hash) ? player_state.dig('npc_given_items', npc['id']) : nil
+      Array(given).any? { |g| g.is_a?(Hash) && BreakEscape::ItemIdentity.addressed_by?(stick, g['type'], g['id'], g['name']) } ||
+        npc_defeated?(npc['id'])
+    end
+
+    # The habit still copies: the NPC has a stick and it has not left it. With no stick there is
+    # nothing to copy, so a use is a plain use (the user's decision, 2026-11-12).
+    def usb_stick_with_npc?(npc)
+      !BreakEscape::AccessWork.usb_stick(npc).nil? && !usb_stick_taken?(npc)
+    end
+
+    # The ids of every habit stick in the scenario (memoised: the snapshot is fixed per request)
+    def usb_habit_stick_ids
+      @usb_habit_stick_ids ||= BreakEscape::AccessWork.usb_habit_sticks(scenario_data).map { |_npc, stick| stick['id'] }
+    end
+
+    # The habit sticks the player holds right now, each with its files resolved (its contents,
+    # or the default work_file.txt). Held means the server's inventory has it, from no
+    # client-added entry, and the server's give or take record says it left its NPC; a stick the
+    # browser only claims opens nothing. Not memoised: the inventory changes per request.
+    def held_usb_sticks
+      inventory = player_state.is_a?(Hash) ? Array(player_state['inventory']) : []
+      inventory = inventory.reject { |i| BreakEscape::ItemIdentity.client_forged?(i) }
+      return [] if inventory.empty?
+
+      BreakEscape::AccessWork.usb_habit_sticks(scenario_data).filter_map do |npc, stick|
+        next nil unless usb_stick_taken?(npc) && BreakEscape::ItemIdentity.held_in?(stick, inventory)
+
+        stick.deep_dup.merge('contents' => BreakEscape::AccessWork.usb_stick_files(stick).map(&:deep_dup))
+      end
     end
 
     # Match this object (by id/name, or the given client id at the top level) or any object nested
@@ -2705,7 +3405,14 @@ module BreakEscape
         # does not define is never met through unlockedObjects instead (review R1, m5).
         target_jack = network_room_object(task['targetObject'])
         target_jack = nil unless target_jack && NetworkModel.jack?(target_jack[:object])
-        if target_jack
+        # A Wi-Fi access point (slice 9.3b, 5.3): met once the player has joined there,
+        # a second access point of a joined network included (record_gained_ap!).
+        target_ap = target_jack ? nil : find_wifi_ap(task['targetObject'])
+        if target_ap
+          unless gained_footholds.include?(target_ap[:object]['id'].to_s)
+            return { success: false, error: 'Not joined here' }
+          end
+        elsif target_jack
           unless gained_footholds.include?(target_jack[:object]['id'].to_s)
             return { success: false, error: 'No device planted here' }
           end
@@ -2978,6 +3685,11 @@ module BreakEscape
       return false if cards.to_json.bytesize > MAX_SAVED_CARDS_BYTES
 
       cloner = (player_state['inventory'] || []).find do |item|
+        # A forged clientAdded item typed rfid_cloner must not be treated as the cloner
+        # (rfid_cloner_held? already skips it for cloning; keep writes off it too, so a
+        # real cloner is found when both are present) (code review R2, B1 sweep).
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
         item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'rfid_cloner'
       end
       return false unless cloner
@@ -3150,6 +3862,8 @@ module BreakEscape
       return unless incoming.is_a?(Hash)
 
       known = scenario_npc_ids
+      encountered = Array(player_state['encounteredNPCs'])
+      claimable = ko_claimable_room_npc_ids.select { |npc_id| encountered.include?(npc_id) }.to_set
       merged = (player_state['npcHostility'] || {}).dup
       incoming.each do |npc_id, entry|
         next unless npc_id.is_a?(String) && known.include?(npc_id)
@@ -3160,6 +3874,9 @@ module BreakEscape
         next unless [true, false].include?(hostile) && [true, false].include?(ko)
 
         ko ||= merged.dig(npc_id, 'ko') == true
+        # Review R4 M1 and m2: the KO is kept only for an NPC the player can have knocked out;
+        # the hostile flag stays as sent
+        ko = false if ko && !claimable.include?(npc_id)
         record = { 'hostile' => hostile, 'ko' => ko }
         # A hurt NPC's HP (7.1g), so a reload doesn't restore it at full health
         hp = entry['hp']
@@ -3998,10 +4715,15 @@ module BreakEscape
       target_item_ids = Array(task['targetItemIds'] || [])
 
       count = inventory.count do |item|
+        next false unless item.is_a?(Hash)
+
         item_type = item['type'] || item.dig('scenarioData', 'type')
-        item_id = item['id'] || item.dig('scenarioData', 'id')
-        item_name = item['name'] || item.dig('scenarioData', 'name')
-        identifier = item_id || item_name
+        # Code review R5 M2: a listed target names the item by its id, its lock ref or its name.
+        # Ids are stamped at game creation, so a task authored against a name or lock ref still
+        # matches (m01 find_derek_access); the client's objectives-manager matches the same way.
+        identifiers = [item, item['scenarioData']].flat_map do |h|
+          h.is_a?(Hash) ? [h['id'], h['opens_lock'], h['key_id'], h['name']] : []
+        end.select { |v| v.is_a?(String) && !v.empty? }
 
         matches = false
 
@@ -4012,14 +4734,12 @@ module BreakEscape
 
         # ID-based matching (more specific)
         if target_item_ids.any?
-          matches = target_item_ids.include?(identifier)
+          matches = (identifiers & target_item_ids).any?
         end
 
         # If both specified, match either
         if target_items.any? && target_item_ids.any?
-          type_match = target_items.include?(item_type)
-          id_match = target_item_ids.include?(identifier)
-          matches = type_match || id_match
+          matches = target_items.include?(item_type) || (identifiers & target_item_ids).any?
         end
 
         matches
@@ -4177,13 +4897,18 @@ module BreakEscape
       end
     end
 
-    # Delete the 'secret' field from every capture descriptor ({ "capture": { "secret": ... } })
-    # anywhere in the given tree. Walks the whole subtree so a capture nested under any key is
-    # covered; everything else in the capture (address, note) is left intact.
+    # The keys whose hash value is a capture descriptor carrying an authored secret: a landing
+    # page's or an add_capture action's capture, an NPC mapping's addCapture, an NPC's usePayload.
+    CAPTURE_SECRET_KEYS = %w[capture addCapture usePayload].freeze
+
+    # Delete the 'secret' field from every capture descriptor anywhere in the given tree
+    # ({ "capture" | "addCapture" | "usePayload": { "secret": ... } }), for every NPC, with or
+    # without an account. Walks the whole subtree so a descriptor nested under any key is
+    # covered; everything else in it (address, host, note, targetId) is left intact.
     def strip_capture_secrets!(node)
       case node
       when Hash
-        node['capture'].delete('secret') if node['capture'].is_a?(Hash)
+        CAPTURE_SECRET_KEYS.each { |key| node[key].delete('secret') if node[key].is_a?(Hash) }
         node.each_value { |v| strip_capture_secrets!(v) }
       when Array
         node.each { |v| strip_capture_secrets!(v) }
@@ -4199,6 +4924,9 @@ module BreakEscape
         # Deep, because this filter descends only into objects, npcs, contents and the
         # like, not into an object's triggerOnInteract or onInteract actions.
         BreakEscape::DeclaredGrants.strip_all_grant_contents!(obj)
+        # Every authored capture secret, at any depth (an object's triggerOnInteract, an NPC's
+        # usePayload and eventMappings, a held item's actions): served by GET /capture_secrets
+        strip_capture_secrets!(obj)
 
         # Remove 'requires' for exploitable lock types (key/pin/password)
         # Keep it for biometric/bluetooth/rfid since they reference collectible items, not answers
@@ -4218,6 +4946,7 @@ module BreakEscape
         end
 
         self.class.set_pin_length!(obj)
+        self.class.strip_lock_answers!(obj)
         if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
           obj.delete('requires')
         end
@@ -4231,6 +4960,17 @@ module BreakEscape
           obj.delete('contents')
           obj['hasContents'] = true
           obj['locked'] = true
+        end
+
+        # A habit NPC's USB stick (2026-11-12): its files are served only by GET /container to
+        # a player who holds it (Game#held_usb_sticks), so they leave every room, NPC and
+        # inventory copy. hasContents opens it as a container; one with no authored contents
+        # holds the default work_file.txt, so it is marked too. A stick is never locked (the
+        # validator errors on one), and the client reads a missing `locked` as a key lock.
+        if obj['type'] == 'usb' && obj['id'].is_a?(String) && usb_habit_stick_ids.include?(obj['id'])
+          obj.delete('contents')
+          obj['hasContents'] = true
+          obj['locked'] = false
         end
 
         # Remove 'contents' if locked (lazy-loaded via separate endpoint), but
@@ -4286,16 +5026,17 @@ module BreakEscape
     end
 
     # Access model 5.6: what an NPC record never takes to the browser. Sign-in details,
-    # role and (later slices) awareness, habits and workarounds go; for an account
-    # holder so do usePayload.secret and every addCapture.secret in its eventMappings,
-    # so an npc_used event carries the address and host only. The card is not secret
+    # role and (later slices) awareness, habits and workarounds go; so do usePayload.secret
+    # and every addCapture.secret in its eventMappings, for every NPC, so an npc_used event
+    # carries the address and host only. The card is not secret
     # (copying it is the game): rfidCard is set from creds.card, as authored, so
     # clone_keycard and the RFID minigame keep working; an NPC with no creds.card
     # keeps any rfidCard it already has.
     WITHHELD_NPC_KEYS = %w[creds awareness habits role workarounds].freeze
     # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.2): work needs, frustration settings and the
     # feed never ship; the NPC's resolved plan goes instead, as `work` (compile_npc_plan!).
-    WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed].freeze
+    # The USB habit (q39) ships inside that plan as `work.usb`.
+    WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed usbHabit].freeze
 
     # Slice 9.2 (5.2): a room NPC with a `work` plan (a work need and a non-empty resolved work
     # list) gains `work`: resource ids, kinds, `admitted`, `downIf` names, `object`, `routes`
@@ -4315,18 +5056,25 @@ module BreakEscape
       else
         npc.delete('work')
       end
+      # Sub-slice C (9.1): the browser asks for posts only for an NPC that has some
+      if BreakEscape::AccessWork.feeds?(record)
+        npc['hasFeed'] = true
+      else
+        npc.delete('hasFeed')
+      end
     end
 
     def withhold_npc_secrets!(npc)
       return unless npc.is_a?(Hash)
 
-      account = self.class.account_holder?(npc)
       card = npc['creds'].is_a?(Hash) ? npc['creds']['card'] : nil
       WITHHELD_NPC_KEYS.each { |key| npc.delete(key) }
       WITHHELD_WORK_NPC_KEYS.each { |key| npc.delete(key) }
       npc['rfidCard'] = card if card.is_a?(Hash)
-      return unless account
 
+      # Every NPC, account or not (an account's secret is its password; another's is a PIN
+      # read at a keypad or any code a capture records): GET /capture_secrets serves it once
+      # earned. filter_requires_and_contents_recursive also strips these at any depth.
       npc['usePayload'].delete('secret') if npc['usePayload'].is_a?(Hash)
       mappings = npc['eventMappings']
       return unless mappings.is_a?(Array)
@@ -4409,6 +5157,20 @@ module BreakEscape
           obj['id'] ||= "#{room_id}_#{obj['type']}_#{i}"
           stamp_contents_ids!(obj)
         end
+
+        # Review R4 m1: a room NPC's held item with no id gets `<npcId>_held_<n>`, so a KO
+        # drop has a stable identity: a retried drop is not stored twice, and one that never
+        # landed is listed in koDropPending after a reload (npc_held_item_delivered?)
+        room['npcs']&.each do |npc|
+          next unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['itemsHeld'].is_a?(Array)
+
+          npc['itemsHeld'].each_with_index do |held, i|
+            next unless held.is_a?(Hash)
+
+            held['id'] ||= "#{npc['id']}_held_#{i}"
+            stamp_contents_ids!(held)
+          end
+        end
       end
 
       # Resources' contents (slice 9.3a): `<resourceId>_content_<n>`.
@@ -4456,9 +5218,19 @@ module BreakEscape
       if scenario_data && scenario_data['startItemsInInventory'] && self.player_state['inventory'].empty?
         start_items = scenario_data['startItemsInInventory']
         if start_items.is_a?(Array)
-          # Use dup instead of deep_dup to avoid issues with ActiveSupport extensions
+          # Stored already filtered, as a picked-up item is (canonical_inventory_item): a
+          # locked start item's answer (requires, combination, cryptexConfig.answer) never
+          # enters player_state, so no inventory echo can ship it (code review R2 M2). No
+          # server check reads a lock answer or locked contents from this copy (keys match
+          # on key_id and opens_lock, which the filter keeps).
           start_items.each do |item|
-            self.player_state['inventory'] << (item.is_a?(Hash) ? item.dup : item)
+            if item.is_a?(Hash)
+              copy = item.deep_dup
+              filter_requires_and_contents_recursive(copy)
+              self.player_state['inventory'] << copy
+            else
+              self.player_state['inventory'] << item
+            end
           end
         else
           Rails.logger.warn "[BreakEscape] startItemsInInventory is not an Array: #{start_items.class}"

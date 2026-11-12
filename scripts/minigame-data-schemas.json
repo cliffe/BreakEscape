@@ -1,5 +1,5 @@
 {
-  "_comment": "Schema definitions for minigameData on scenario objects. Validated by validate_scenario.rb. The validator resolves schemas by checking the object's 'type', then 'lockType', then 'id' (for objects whose dispatch is id-based). Entries with '_dispatch':'lockType' or '_dispatch':'id' document which key is used at runtime.",
+  "_comment": "Schema definitions for minigameData on scenario objects. Validated by validate_scenario.rb. The validator checks an object's minigameData against every schema its 'type', 'lockType', 'id' (for objects whose dispatch is id-based) or 'interactionType' names, taken together, since each of those layers reads its own fields (a locked 'pc' with lockType 'ransomware_display' reads both). Entries with '_dispatch':'lockType' or '_dispatch':'id' document which key is used at runtime.",
   "alarm_panel": {
     "required": [
       "lamps"

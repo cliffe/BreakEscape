@@ -614,6 +614,30 @@ test('a delivery to the own post: arriving with the item is the return', () => {
     assert.equal(sys.getState('finder').atPost, true);
 });
 
+test('a delivery to the own post: a player at the desk while the owner fetches the item is not caught', () => {
+    // The per-tick caught check runs only on the goto_target leg. On goto_item the owner has
+    // just left the desk (still in the home room) to fetch the item: it is not a return.
+    const w = makeWorld(curiousCfg());
+    const sys = new NPCNeedsSystem(w.world, { seed: 3, manualClock: true });
+    w.attach(sys);
+    slowWalks(w, sys);
+    let askedOnFetch = 0;
+    w.world.playerAtPost = () => {
+        const fetching = sys.getState('finder').job?.phase === 'goto_item';
+        if (fetching) askedOnFetch++;
+        return { distance: fetching ? 10 : 500, inMinigame: false };
+    };
+    sys.registerAll();
+    sys.step(30000);
+    w.objs.push({ id: 'dropped_thing', x: 160, y: 160, roomId: 'office', pickable: true, needsTag: 'found_item' });
+    sys.step(60000);
+    const log = sys.getLog().filter(e => e.npc === 'finder');
+    assert.ok(log.some(e => e.ev === 'picked_up'), 'the item was fetched');
+    assert.ok(log.some(e => e.ev === 'returned_post'), 'and carried back to the desk');
+    assert.equal(askedOnFetch, 0, 'nothing asks where the player is while the owner fetches the item');
+    assert.equal(w.calls.emits.filter(e => e.name === 'npc_caught_at_post:finder').length, 0);
+});
+
 test('a walk back that is a job for the own post checks for the player at the desk on every tick', () => {
     // An ordinary walk home is checked each tick. This one is a job, and was checked only on
     // the tick after the trip ended and on arrival: a player at the desk mid-walk who had
@@ -1184,4 +1208,42 @@ test('step 9: onTick listeners run once at the end of each tick', () => {
     sys.reset(2);
     sys.step(250);
     assert.equal(again.length, 1);
+});
+
+// q53 (f): interests.<tag>.noticeRadius, tiles from where the NPC stands (default 24)
+import { normaliseInterest, NOTICE_RADIUS_TILES } from '../../public/break_escape/js/systems/npc-needs.js';
+
+test('noticeRadius: default 24 tiles; a number is clamped to 0.5..100; junk falls back to the default', () => {
+    assert.equal(NOTICE_RADIUS_TILES, 24);
+    assert.equal(normaliseInterest(3).noticeRadius, 24);
+    assert.equal(normaliseInterest({ weight: 3 }).noticeRadius, 24);
+    assert.equal(normaliseInterest({ weight: 3, noticeRadius: 4 }).noticeRadius, 4);
+    assert.equal(normaliseInterest({ weight: 3, noticeRadius: 500 }).noticeRadius, 100);
+    assert.equal(normaliseInterest({ weight: 3, noticeRadius: 0.1 }).noticeRadius, 0.5);
+    assert.equal(normaliseInterest({ weight: 3, noticeRadius: 'wide' }).noticeRadius, 24);
+    assert.equal(normaliseInterest({ weight: 3, noticeRadius: 0 }).noticeRadius, 24);
+});
+
+function noticeRun(radius, itemAt) {
+    const cfg = curiousCfg();
+    if (radius !== undefined) cfg.npcs.finder.rec.interests.found_item.noticeRadius = radius;
+    const w = makeWorld(cfg);
+    const sys = new NPCNeedsSystem(w.world, { seed: 3, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    sys.step(30000);
+    w.objs.push({ id: 'dropped_thing', ...itemAt, roomId: 'office', pickable: true, needsTag: 'found_item' });
+    sys.step(60000);
+    return sys.getLog().find(e => e.npc === 'finder' && e.ev === 'job_start' && e.item === 'dropped_thing');
+}
+
+test('noticeRadius: an item beyond the radius is left alone; one within it is fetched', () => {
+    // finder stands at (120, 100); 4 tiles = 128 px
+    assert.ok(!noticeRun(4, { x: 120 + 5 * TILE, y: 100 }), 'five tiles away: not seen');
+    assert.ok(noticeRun(4, { x: 120 + 3 * TILE, y: 100 }), 'three tiles away: fetched');
+});
+
+test('noticeRadius default keeps a room-wide notice: an item 20 tiles off in the room is fetched', () => {
+    assert.ok(noticeRun(undefined, { x: 120 + 20 * TILE, y: 100 }));
+    assert.ok(!noticeRun(undefined, { x: 120 + 25 * TILE, y: 100 }), '25 tiles: beyond the default');
 });

@@ -2,6 +2,7 @@
 
 require 'json'
 require 'set'
+require 'cgi'
 require 'uri'
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
@@ -78,6 +79,40 @@ require 'uri'
 # allowed inside savedNotes, and inside the se_captures global only under revealSecret. The note exception
 # above follows a done writes_down through the game's written_down?.
 #
+# Slice 9.2 sub-slice L (ACCESS_MODEL_SLICE_9_2_PLAN.md 6.6 and 9.2): no list of locked-out
+# accounts ever reaches the browser. It reports (rule `lockout_list`) a `loginLockouts` or
+# `loginFailures` key in any response, and a `lockedOut` list anywhere but GET /scenario's
+# `$.npcFrustration.<npcId>.lockedOut`. With the game given it also reports (rule
+# `lockout_unrecorded`) a PC in that list, or a `lockedOut: true` in a POST /npc_frustration
+# answer, for an NPC whose saved npcFrustration record does not hold it: the browser learns of a
+# lockout only through the server's own `check` record.
+# Review R1 m4 widened `lockout_list` to a boolean `lockedOut` outside POST /npc_frustration and
+# POST /login, and (with the game given) any string holding one of the game's loginLockouts or
+# loginFailures keys ("pcId|username"), whatever key it sits under. R1 M1 allows one more field:
+# GET /scenario's `$.lockoutPcs`, the sign-in PCs where the player caused a lockout, PC ids only;
+# a `lockoutPcs` anywhere else, or an entry in it that is not such a PC, is reported.
+# Review R2 n3: the key rule reads hash keys as well as strings (a key under another name, such
+# as an attempts map, is reported at its parent's path, so the finding never names the username).
+# Its one limit: the game's lockouts and failures are read once, at scan time, from the state at
+# the end of the run, so a response that listed a PC before the player locked it out passes.
+# R2 n4: a key whose username part is blank ("pc|") is skipped, since it would match any string
+# naming that PC.
+#
+# The USB habit's stick (USB habit code review R2 m2): the files on a habit NPC's stick, authored
+# or the default work_file.txt, are served only to a player who holds it. Their names and texts are
+# secrets (rule `stick_content`) anywhere but a GET /container/:id answer for that stick or a folder
+# on it, or the contents of an /unlock answer, and they are never public room strings.
+# Its limits (review R3 n2): the scanner cannot tell whether the player held the stick when an
+# answer was served, so files served for a stick still with its NPC or lying on the floor pass,
+# and so would an /unlock answer for some other object that carried them (it does not know an
+# /unlock answer's target). The held check is the server's, and the controller tests cover it
+# (usb_habit_test.rb: a stick the player does not hold, a forged inventory entry, the floor 422
+# and 404). Once served, a file is legitimate for the rest of the run, as for every content
+# class; files shorter than MIN_CONTENT_LENGTH and fields other than name, text and content (a file's
+# observations) are not checked, as for every item. A stick string that another secret also
+# carries (a sign-in PC's, a profile's or a share's file of the same name, review R3 n3) is left
+# to that secret, since the other file's own answer would otherwise be reported as the stick's.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -108,6 +143,10 @@ class AccessLeakScanner
 
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
   WITHHELD_KEYS = %w[creds role awareness habits workarounds].freeze
+  # Slice 9.2 (9.2): the NPC keys the server withholds beside them (Game::WITHHELD_WORK_NPC_KEYS)
+  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed usbHabit].freeze
+  # Feed texts shorter than this are not searched for (the validator warns about them, 9.2)
+  MIN_FEED_TEXT = 12
 
   attr_reader :passwords, :items
 
@@ -127,29 +166,84 @@ class AccessLeakScanner
     @clue_texts = Hash.new { |h, k| h[k] = Set.new }   # password => authored strings holding it
     @login_pcs = Set.new
     @network_strings = {}    # string => [owner, ...] (network:<id>, resource:<id>)
+    @wifi_secrets = {}       # a Wi-Fi SSID or psk => [network:<id>, ...] (never in any response)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
     # password on purpose, exempt only where that item's content may be (scan_passwords)
     @share_clues = Hash.new { |h, k| h[k] = [] }
     @workarounds = [] # { npc:, index:, do:, target: [key, value] }
+    # Sub-slice C: feed posts and feed facts, by text; served once a /feed_post answer has
+    # carried them, or a GET /scenario feedPosts block lists them within the reveals so far
+    @feed_texts = {}          # text => { owner:, post: npc|post_id, fact: id or nil }
+    @feed_fact_ids = Set.new
+    @feed_served = Set.new    # "npc|post_id" and "fact:<id>"
+    @feed_order = Hash.new { |h, k| h[k] = [] } # npc id => [[post_id, fact id or nil], ...] as authored
+    @feed_ordered_ids = Hash.new { |h, k| h[k] = [] } # npc id => authored post ids with no `when` (C2 migration)
+    @feed_post_key = {}       # C3: post id => "npc|post_id", the first authored owner (feed_reply_target)
+    # C2: reactive posts come out of authored order, so "revealed so far" is no longer an authored
+    # prefix; the scanner accumulates the ids the log shows served and falls back to the game's
+    # saved reveal set (its `shown` list, or a legacy count migrated to ordered ids) only where no
+    # log line names them (a resumed game, or a lost /feed_post body)
+    @feed_shown = Hash.new { |h, k| h[k] = [] } # npc id => post ids the log has shown served so far
+    @saved_shown = {}           # npc id => the game's saved reveal ids (new shape, or migrated)
+    @feed_base = {}             # npc id => reveals made before the log starts (a resumed game)
+    @feed_fallback = []         # npc ids whose base came from the game's feedRevealed
+    # Review C R2 m2: /feed_post answers (200) whose body the capture could not read. Each
+    # stands for at most one reveal, at its own place in the log, for an NPC the game shows
+    # more reveals for than the log holds
+    @feed_unknown_share = {}    # npc id => unreadable answers that may have been its reveals
+    @feed_unknown_seen = Hash.new(0) # npc id => unreadable answers passed so far that may be its reveals
+    @feed_at = {}               # npc id => the game's saved time of its last reveal (server seconds)
+    @feed_unknown = []          # npc ids that took a reveal from an unreadable answer
+    @feed_ruled_out = []        # fallback npc ids that a lost answer's npcId tag ruled out of it
+    @feed_tags_ignored = false  # a readable answer's npcId tag disagreed with its body
     collect_passwords
     collect_items
     collect_network_secrets
+    collect_wifi_secrets
     collect_workarounds
+    collect_feeds
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
+    drop_shared_stick_strings
     @items.delete_if { |_, info| info[:strings].empty? }
   end
 
   def counts
     {
       passwords: @passwords.values.flatten.uniq.length,
-      login_items: @items.count { |_, i| i[:scope] },
+      login_items: @items.count { |_, i| i[:scope] && i[:scope] != :stick },
+      stick_items: @items.count { |_, i| i[:scope] == :stick },
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
       network_strings: @network_strings.length,
+      wifi_secrets: @wifi_secrets.length,
       share_items: @share_items.length,
-      workarounds: @workarounds.length
+      workarounds: @workarounds.length,
+      # Distinct posts with a registered text; a reply with two pieces is one post, its pieces
+      # counted apart in feed_texts (review C3 R1 m5)
+      feed_posts: @feed_texts.values.select { |f| f[:kind] == :post }.flat_map { |f| f[:served] }.uniq.length,
+      feed_texts: @feed_texts.values.count { |f| f[:kind] == :post },
+      feed_facts: @feed_fact_ids.length,
+      lockout_records: lockout_records.values.sum(&:length)
     }
   end
+
+  # NPCs whose GET /scenario feedPosts were judged partly against the game's saved feedRevealed
+  # count from the log's first line, because the log holds fewer /feed_post answers than the
+  # game has revealed and the unreadable answers do not account for them all (a resumed game).
+  # Filled by scan.
+  attr_reader :feed_fallback
+
+  # NPCs allowed one more reveal at an unreadable /feed_post answer (review C R2 m2: a lost
+  # response body), from that answer on and never before it. Filled by scan.
+  attr_reader :feed_unknown
+
+  # NPCs with first-line credit that no lost answer could cover (share 0) while at least one
+  # lost answer was tagged for another NPC. Filled by scan.
+  attr_reader :feed_ruled_out
+
+  # Whether a readable /feed_post answer's npcId tag disagreed with the NPC its body names, so
+  # every tag in the log was ignored. Filled by scan.
+  attr_reader :feed_tags_ignored
 
   # lines: [[source, line_no, hash]]. Returns findings, deduplicated per response line, rule
   # and owner (the first JSON path is kept).
@@ -157,13 +251,15 @@ class AccessLeakScanner
     findings = []
     seen = Set.new
     legit = Set.new # items already served by their own allowed route earlier in the run
+    prepare_feed_base(lines)
     lines.each do |source, line_no, row|
       next unless row.is_a?(Hash)
 
+      note_feed_unreadable(row) if feed_unreadable?(row)
       body = if row.key?('dom') then row['dom']
-             elsif row.key?('body') then row['body']
-             else row['bodyText']
-             end
+      elsif row.key?('body') then row['body']
+      else row['bodyText']
+      end
       next if body.nil?
 
       ctx = response_context(row)
@@ -181,7 +277,11 @@ class AccessLeakScanner
       scan_locked_content(body, add)
       scan_share_content(body, ctx, legit, add)
       scan_network_strings(body, ctx, add)
+      scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
+      scan_lockouts(body, ctx, add)
+      note_feed_served(body, ctx)
+      scan_feed(body, ctx, add)
     end
     findings
   end
@@ -204,19 +304,27 @@ class AccessLeakScanner
   RULE_TEXT = {
     'password' => 'an NPC password in a response',
     'signin_content' => 'sign-in PC content outside its own container response',
+    'stick_content' => "a habit USB stick's files outside a container or unlock response for that stick",
     'profile_content' => 'profile content outside a sign-in PC container response',
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
-    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds) on an NPC record',
-    'workaround' => 'a workaround (its kind beside its target) outside a hand-over'
+    'wifi_secret' => 'a Wi-Fi SSID or pre-shared key in any response (the key is compared on the server, never served)',
+    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds, workNeeds, frustration, feed, usbHabit) on an NPC record',
+    'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
+    'feed_text' => "a feed post's or feed fact's whole text before the server served it",
+    'feed_fact_key' => 'an object keyed by a feed fact id with a text key before its post was served, or a bootstrap social.intelFacts that is not an object',
+    'feed_reply_target' => 'a feed reply whose replyTo names a post the server had not served yet',
+    'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
+                      'npcFrustration, a lockedOut flag outside a check or sign-in answer, or a lockoutPcs entry that is not a locked-out PC',
+    'lockout_unrecorded' => 'a lockout the server\'s check did not record'
   }.freeze
 
   private
 
   def secret_values
     @secret_values ||= (@passwords.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
-                        @share_items.values.flat_map { |i| i[:strings] }).uniq.sort_by { |v| -v.length }
+                        @wifi_secrets.keys + @share_items.values.flat_map { |i| i[:strings] } + @feed_texts.keys).uniq.sort_by { |v| -v.length }
   end
 
   # ---- catalogue ---------------------------------------------------------------------------
@@ -263,6 +371,7 @@ class AccessLeakScanner
   end
 
   def collect_items
+    @stick_ids = habit_stick_ids
     rooms = @data['rooms']
     (rooms.is_a?(Hash) ? rooms.values : []).each do |room|
       next unless room.is_a?(Hash)
@@ -303,6 +412,27 @@ class AccessLeakScanner
     end
   end
 
+  # A Wi-Fi SSID and pre-shared key (slice 9.3b W, 5.3) are never sent to the browser: the
+  # networks block is deleted whole from the bootstrap and the key is only compared on the
+  # server. A key the scenario deliberately shows the player in authored room text (a note, a
+  # document) is not a hidden secret, so it is skipped, the same rule network_strings uses.
+  def collect_wifi_secrets
+    public_strings = room_data_strings
+    networks = @data['networks'].is_a?(Hash) ? @data['networks'] : {}
+    networks.each do |net_id, net|
+      wifi = net.is_a?(Hash) ? net['wifi'] : nil
+      next unless wifi.is_a?(Hash)
+
+      %w[ssid psk].each do |field|
+        v = wifi[field]
+        next unless v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING
+        next if public_strings.any? { |s| s.include?(v.strip) }
+
+        (@wifi_secrets[v.strip] ||= []) << "network:#{net_id}"
+      end
+    end
+  end
+
   def walk_share(list, resource_id, ancestors, usable)
     (list.is_a?(Array) ? list : []).each do |item|
       next unless item.is_a?(Hash)
@@ -327,7 +457,7 @@ class AccessLeakScanner
       when String then out << node.strip
       when Array then node.each { |v| walk.call(v) }
       when Hash
-        hidden = BreakEscape::Game.login_pc?(node) || node['locked'] == true
+        hidden = BreakEscape::Game.login_pc?(node) || node['locked'] == true || habit_stick?(node)
         node.each do |k, v|
           next if WITHHELD_ROOM_KEYS.include?(k)
           next if k == 'contents' && hidden
@@ -374,6 +504,10 @@ class AccessLeakScanner
     if BreakEscape::Game.login_pc?(item) && item['id']
       @login_pcs << item['id'].to_s
       child_ctx = ctx.merge(scope: :signin, pc: item['id'].to_s, profile: nil, ancestors: [])
+    elsif habit_stick?(item)
+      sid = item['id'].to_s
+      child_ctx = ctx.merge(scope: :stick, pc: nil, profile: nil, ancestors: [sid])
+      add_default_stick_file(item, child_ctx)
     else
       child_ctx = ctx.merge(ancestors: ctx[:ancestors] + [item['id'].to_s]) if item['id']
       if item['locked'] == true && item['id']
@@ -381,6 +515,36 @@ class AccessLeakScanner
       end
     end
     walk_children(item, child_ctx)
+  end
+
+  # Review R3 n3: a stick string that another secret also carries is that secret's, so the other
+  # file's own /container answer is not reported as stick_content
+  def drop_shared_stick_strings
+    others = Set.new
+    @items.each_value { |info| info[:strings].each { |s| others << s } unless info[:scope] == :stick }
+    @share_items.each_value { |info| info[:strings].each { |s| others << s } }
+    @items.each_value { |info| info[:strings] = info[:strings].reject { |s| others.include?(s) } if info[:scope] == :stick }
+  end
+
+  # Every habit NPC's stick id (BreakEscape::AccessWork.usb_stick: a storage usb item in itemsHeld)
+  def habit_stick_ids
+    BreakEscape::AccessWork.usb_habit_sticks(@data).map { |_npc, stick| stick['id'].to_s }.to_set
+  end
+
+  def habit_stick?(node)
+    @stick_ids ||= habit_stick_ids
+    node.is_a?(Hash) && node['type'] == 'usb' && node['id'] && @stick_ids.include?(node['id'].to_s)
+  end
+
+  # A stick with no authored files holds the engine's default one, which no scenario text names
+  def add_default_stick_file(stick, ctx)
+    files = stick['contents']
+    return if files.is_a?(Array) && files.any? { |f| f.is_a?(Hash) }
+
+    @items["#{stick['id']}_work_file"] = {
+      strings: [BreakEscape::AccessWork::USB_STICK_DEFAULT_FILE, BreakEscape::AccessWork::USB_STICK_DEFAULT_TEXT], scope: :stick, profile: nil, pc: nil,
+      ancestors: ctx[:ancestors].dup, locked_ancestors: []
+    }
   end
 
   # The item's id; an item without one (data that skipped the id stamp) is named by where it sits.
@@ -485,7 +649,10 @@ class AccessLeakScanner
       any_container: path.include?('/container/'),
       scenario: method == 'GET' && path.end_with?('/scenario'),
       login_accounts: method == 'GET' && path.end_with?('/login_accounts'),
-      npc_workaround: method == 'POST' && path.end_with?('/npc_workaround')
+      npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
+      npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
+      login: method == 'POST' && path.end_with?('/login'),
+      friendface_phone: method == 'POST' && path.end_with?('/friendface_phone')
     }
   end
 
@@ -603,6 +770,261 @@ class AccessLeakScanner
     end
   end
 
+  # ---- sub-slice C: feeds (plan 9.2 and 11) ---------------------------------------------
+
+  def collect_feeds
+    facts = @data.dig('social', 'intelFacts')
+    facts = {} unless facts.is_a?(Hash)
+    each_room_npc do |npc|
+      feed = npc['feed']
+      next unless feed.is_a?(Hash) && feed['posts'].is_a?(Array)
+
+      feed['posts'].each do |post|
+        # Review C R2 nit: the server's own test (AccessWork.present_string? in feed_posts), so a
+        # blank id is skipped here too
+        next unless post.is_a?(Hash) && post['id'].is_a?(String) && !post['id'].strip.empty?
+
+        key = "#{npc['id']}|#{post['id']}"
+        # C3 (plan 9): a post with a reply field adds no feed fact, as on the server (feed_facts)
+        reply = BreakEscape::AccessWork.reply_post?(post)
+        fid = !reply && post['fact'].is_a?(String) && facts[post['fact']].is_a?(Hash) ? post['fact'] : nil
+        @feed_order[npc['id'].to_s] << [post['id'], fid]
+        @feed_ordered_ids[npc['id'].to_s] << post['id'] unless post['when'].is_a?(Hash) || reply
+        @feed_post_key[post['id']] ||= key
+        text = post['text']
+        # C3: a reply ships with {name} filled, so it is matched by each literal piece around
+        # {name} of MIN_FEED_TEXT or more (the validator's piece rules use the same helper)
+        texts = reply ? BreakEscape::AccessWork.reply_text_pieces(text) : [text]
+        texts.each do |t|
+          (@feed_texts[t] ||= { kind: :post, owner: "feed:#{key}", served: [] })[:served] << key if t.is_a?(String) && t.length >= MIN_FEED_TEXT
+        end
+        next unless fid
+
+        @feed_fact_ids << fid
+        ftext = facts[fid]['text']
+        next unless ftext.is_a?(String) && ftext.length >= MIN_FEED_TEXT
+
+        (@feed_texts[ftext] ||= { kind: :fact, owner: "fact:#{fid}", served: [] })[:served] << "fact:#{fid}"
+      end
+    end
+  end
+
+  # A /feed_post answer the server gave (200) whose body the log does not hold as JSON: the
+  # capture's bodyError (the browser dropped the body, as on a reload) or an unparsed bodyText
+  def feed_unreadable?(row)
+    row['path'].to_s.split('?').first.to_s.end_with?('/feed_post') && row['status'].to_i == 200 &&
+      !row['body'].is_a?(Hash)
+  end
+
+  # Review C R3 m1: the capture's time on an unreadable answer and the game's saved time of an
+  # NPC's last reveal (`feedRevealed[npc].at`) are both wall-clock times, so a lost answer
+  # captured more than this after that NPC's last reveal cannot have been one of its reveals
+  # (it was another NPC's answer, or a tooSoon or done answer).
+  LOST_ANSWER_SLACK_S = 5
+
+  # The NPC a /feed_post row's request named (the capture's `npcId`), or nil when the row has no
+  # tag, a blank one, or an `npc_id` in its query string (Rails lets the query beat the body, so
+  # the body's id may not be the NPC the server revealed for), or when the log's tags were found
+  # untrustworthy.
+  def feed_row_tag(row)
+    return nil if @feed_tags_ignored
+
+    tagged = row['npcId']
+    return nil unless tagged.is_a?(String) && !tagged.strip.empty?
+    return nil if query_names_npc?(row['query'])
+
+    tagged
+  end
+
+  def query_names_npc?(query)
+    return false unless query.is_a?(String)
+
+    # Rack splits the query on `;` as well as `&`; over-matching only falls back to the old rule
+    CGI.unescape(query).include?('npc_id')
+  end
+
+  # Whether an unreadable answer may have been one of `npc_id`'s reveals. A row the capture tagged
+  # with the request's `npcId` was that NPC's answer and no other's. An untagged row (a capture
+  # file older than the tag) may be any NPC's. Without a capture time or a saved time it may (the
+  # log cannot settle it, so the note says so).
+  def lost_answer_may_be?(npc_id, row)
+    tagged = feed_row_tag(row)
+    return false if tagged && tagged != npc_id
+
+    at = @feed_at[npc_id]
+    t = capture_time(row)
+    at.nil? || t.nil? || t <= at + LOST_ANSWER_SLACK_S
+  end
+
+  def capture_time(row)
+    row['t'].is_a?(String) ? Time.iso8601(row['t']).to_f : nil
+  rescue ArgumentError
+    nil
+  end
+
+  def note_feed_unreadable(row)
+    @feed_unknown_share.each_key { |npc_id| @feed_unknown_seen[npc_id] += 1 if lost_answer_may_be?(npc_id, row) }
+  end
+
+  # Reveals the log does not show: the game's saved count less the /feed_post answers the log
+  # holds. An unreadable answer (review C R2 m2) may be one of them, but only from its own place
+  # in the log, so up to one reveal per unreadable answer is granted there, and only what is
+  # still missing after that counts from the first line (a resumed game). An unreadable answer
+  # captured after the NPC's last saved reveal is not counted for it (review C R3 m1), and one
+  # tagged with another NPC's `npcId` is not counted for it either, so tagged lost rows give out
+  # no more shares than there are of them. Untagged rows from older capture files may still be
+  # counted for every NPC they could belong to. A complete
+  # log gives 0, so every reveal is judged in log order.
+  def prepare_feed_base(lines)
+    @feed_shown = Hash.new { |h, k| h[k] = [] }
+    @saved_shown = {}
+    @feed_base = {}
+    @feed_fallback = []
+    @feed_unknown_share = {}
+    @feed_unknown_seen = Hash.new(0)
+    @feed_unknown = []
+    @feed_ruled_out = []
+    @feed_tags_ignored = false
+    @feed_at = {}
+    return if @feed_order.empty?
+
+    in_log = Hash.new(0)
+    unreadable = []
+    lines.each do |_source, _no, row|
+      next unless row.is_a?(Hash)
+
+      unreadable << row if feed_unreadable?(row)
+      next unless row['body'].is_a?(Hash) && row['path'].to_s.split('?').first.to_s.end_with?('/feed_post')
+
+      # every readable answer that names its NPC (a post, done, refused or tooSoon) checks the tag
+      tag = feed_row_tag(row)
+      @feed_tags_ignored = true if tag && row['body']['npcId'].is_a?(String) && tag != row['body']['npcId']
+      next unless row['body']['post'].is_a?(Hash)
+
+      in_log[row['body']['npcId'].to_s] += 1
+    end
+    revealed = @game&.player_state.is_a?(Hash) ? @game.player_state['feedRevealed'] : nil
+    return unless revealed.is_a?(Hash)
+
+    @feed_order.each_key do |npc_id|
+      entry = revealed[npc_id].is_a?(Hash) ? revealed[npc_id] : {}
+      # C2: the saved reveal set is `shown` (ids) when present, else a legacy `{ n, at }` count
+      # migrated to the first n ordered post ids (mirrors AccessWork.feed_shown_ids)
+      saved = entry['shown'].is_a?(Array) ? entry['shown'].select { |i| i.is_a?(String) } : @feed_ordered_ids[npc_id].first(entry['n'].to_i)
+      @saved_shown[npc_id] = saved
+      n = saved.length
+      @feed_at[npc_id] = entry['at'].to_f if entry['at'].is_a?(Numeric)
+      missing = n - in_log[npc_id]
+      next unless missing.positive?
+
+      share = [missing, unreadable.count { |row| lost_answer_may_be?(npc_id, row) }].min
+      if share.positive?
+        @feed_unknown_share[npc_id] = share
+        @feed_unknown << npc_id
+      end
+      base = missing - share
+      next unless base.positive?
+
+      @feed_base[npc_id] = base
+      @feed_fallback << npc_id
+      @feed_ruled_out << npc_id if share.zero? && unreadable.any? { |row| (tag = feed_row_tag(row)) && tag != npc_id }
+    end
+  end
+
+  # The post ids this NPC may legitimately carry at this point of the log: the ids the log has
+  # shown served so far, plus, where no log line names them (reveals before the log, or a lost
+  # /feed_post body), the first of the game's saved reveal ids up to that count. Saved ids are
+  # never used as the whole `allowed` on a live run, only to cover reveals the log cannot show.
+  def feed_allowed_ids(npc_id)
+    ids = @feed_shown[npc_id].dup
+    credits = (@feed_base[npc_id] || 0) + [@feed_unknown_seen[npc_id], @feed_unknown_share[npc_id] || 0].min
+    saved = @saved_shown[npc_id]
+    ids |= (saved - ids).first(credits) if credits.positive? && saved
+    ids
+  end
+
+  # A /feed_post answer with a post serves the post its own body names and its own fact id (C2:
+  # the server serves reactive posts out of authored order, so the served id is read from the
+  # answer, not from an authored-order prefix). A GET /scenario feedPosts entry is allowed only
+  # for a post among the ids shown so far (feed_allowed_ids), looked up by its own id, and only
+  # with that post's authored fact; an out-of-order reactive post the server served is covered by
+  # the accumulated ids, so it raises no false feed_text leak.
+  def note_feed_served(body, ctx)
+    return if @feed_texts.empty? && @feed_fact_ids.empty?
+    return unless body.is_a?(Hash)
+
+    if ctx[:route].end_with?('/feed_post') && body['post'].is_a?(Hash)
+      npc_id = body['npcId'].to_s
+      post_id = body['post']['id']
+      return unless post_id.is_a?(String)
+
+      @feed_shown[npc_id] << post_id unless @feed_shown[npc_id].include?(post_id)
+      fact = body['fact']
+      serve_feed(npc_id, post_id, fact.is_a?(Hash) ? fact['id'] : nil)
+    elsif (ctx[:scenario] || ctx[:friendface_phone]) && body['feedPosts'].is_a?(Hash)
+      # C3 (plan 9): POST /friendface_phone answers with a feedPosts slice, judged as GET /scenario's
+      body['feedPosts'].each do |npc_id, f|
+        nid = npc_id.to_s
+        allowed = feed_allowed_ids(nid)
+        Array(f.is_a?(Hash) ? f['posts'] : nil).each do |item|
+          next unless item.is_a?(Hash) && item['post'].is_a?(Hash)
+
+          post_id = item['post']['id']
+          next unless allowed.include?(post_id)
+
+          _id, fid = @feed_order[nid].find { |id, _| id == post_id }
+          fact = item['fact']
+          serve_feed(nid, post_id, fact.is_a?(Hash) && fact['id'] == fid ? fid : nil)
+        end
+      end
+    end
+  end
+
+  def serve_feed(npc_id, post_id, fid)
+    @feed_served << "#{npc_id}|#{post_id}"
+    @feed_served << "fact:#{fid}" if fid
+  end
+
+  def feed_served?(entry)
+    entry[:served].any? { |k| @feed_served.include?(k) }
+  end
+
+  def scan_feed(body, ctx, add)
+    return if @feed_texts.empty? && @feed_fact_ids.empty?
+
+    # C3: a served reply's replyTo names its thread post, which must be out already
+    walk_hashes(body, '$') do |hash, json_path|
+      target = hash['replyTo']
+      next unless target.is_a?(String) && hash['id'].is_a?(String) && @feed_post_key.key?(target)
+      next if @feed_served.include?(@feed_post_key[target])
+
+      add.call('feed_reply_target', "feed:#{@feed_post_key[target]}", safe_path("#{json_path}.replyTo"))
+    end
+
+    each_string(body) do |str, json_path, _owner|
+      @feed_texts.each do |text, entry|
+        next unless str.include?(text)
+        next if feed_served?(entry)
+
+        add.call('feed_text', entry[:owner], safe_path(json_path))
+      end
+    end
+    return if @feed_fact_ids.empty?
+
+    # Plan 9.2: the bootstrap's social.intelFacts stays an object, or grantFact grants any id
+    if ctx[:scenario] && body.is_a?(Hash) && body['social'].is_a?(Hash) && !body['social']['intelFacts'].is_a?(Hash)
+      add.call('feed_fact_key', 'social.intelFacts', '$.social.intelFacts')
+    end
+    walk_hashes(body, '$') do |hash, json_path|
+      hash.each do |k, v|
+        next unless @feed_fact_ids.include?(k) && v.is_a?(Hash) && v.key?('text')
+        next if @feed_served.include?("fact:#{k}")
+
+        add.call('feed_fact_key', "fact:#{k}", safe_path("#{json_path}.#{k}"))
+      end
+    end
+  end
+
   def walk_hashes(node, path, &block)
     case node
     when Array then node.each_with_index { |v, i| walk_hashes(v, "#{path}[#{i}]", &block) }
@@ -612,10 +1034,102 @@ class AccessLeakScanner
     end
   end
 
+  # Sub-slice L: the game's own check records, npcId => [pcId] (empty without a game)
+  def lockout_records
+    @lockout_records ||= begin
+      store = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state['npcFrustration'] : nil
+      (store.is_a?(Hash) ? store : {}).each_with_object({}) do |(id, e), out|
+        list = e.is_a?(Hash) && e['lockedOut'].is_a?(Array) ? e['lockedOut'].map(&:to_s) : []
+        out[id.to_s] = list unless list.empty?
+      end
+    end
+  end
+
+  LOCKOUT_LIST_KEYS = %w[loginLockouts loginFailures].freeze
+  CLIENT_LOCKED_OUT_PATH = /\A\$\.npcFrustration\.([^.\[]+)\.lockedOut\z/.freeze
+  CLIENT_LOCKOUT_PCS_PATH = '$.lockoutPcs'.freeze
+
+  # Review R1 m4: the game's loginLockouts and loginFailures keys ("pcId|username"), empty without a game
+  def lockout_key_strings
+    @lockout_key_strings ||= begin
+      ps = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state : {}
+      list = ps['loginLockouts'].is_a?(Array) ? ps['loginLockouts'] : []
+      fails = ps['loginFailures'].is_a?(Hash) ? ps['loginFailures'].keys : []
+      (list + fails).select { |k| k.is_a?(String) && k.include?('|') && !k.split('|', 2).last.to_s.strip.empty? }.uniq
+    end
+  end
+
+  # Review R1 M1: the PCs of the game's loginLockouts keys, which GET /scenario may list
+  def lockout_pc_ids
+    @lockout_pc_ids ||= begin
+      ps = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state : {}
+      (ps['loginLockouts'].is_a?(Array) ? ps['loginLockouts'] : []).filter_map { |k| k.is_a?(String) && k.include?('|') ? k.split('|', 2).first : nil }.to_set
+    end
+  end
+
+  # Sub-slice L (6.6, 9.2): no lockout list, and no lockout the server's check did not record
+  def scan_lockouts(body, ctx, add)
+    walk_hashes(body, '$') do |hash, json_path|
+      LOCKOUT_LIST_KEYS.each do |key|
+        add.call('lockout_list', key, safe_path("#{json_path}.#{key}")) if hash.key?(key)
+      end
+      scan_lockout_pcs(hash, json_path, ctx, add) if hash.key?('lockoutPcs')
+      next unless hash.key?('lockedOut')
+
+      value = hash['lockedOut']
+      path = "#{json_path}.lockedOut"
+      if value.is_a?(Array)
+        m = ctx[:scenario] ? CLIENT_LOCKED_OUT_PATH.match(path) : nil
+        unless m
+          add.call('lockout_list', 'lockedOut', safe_path(path))
+          next
+        end
+        next unless @game
+
+        value.each do |pc|
+          add.call('lockout_unrecorded', "npc:#{m[1]}/#{pc}", safe_path(path)) unless Array(lockout_records[m[1]]).include?(pc.to_s)
+        end
+      elsif [true, false].include?(value) && !ctx[:npc_frustration] && !ctx[:login]
+        # Review R1 m4: a lockout answer belongs to a check answer or a sign-in answer only
+        add.call('lockout_list', 'lockedOut', safe_path(path))
+      elsif value == true && ctx[:npc_frustration] && @game
+        npc = hash['npcId'].to_s
+        add.call('lockout_unrecorded', "npc:#{npc}", safe_path(path)) if Array(lockout_records[npc]).empty?
+      end
+    end
+    # Review R1 m4: a lockout or failure key under any key name (a global, a log payload)
+    keys = lockout_key_strings
+    return if keys.empty?
+
+    each_string(body) do |str, json_path, _owner|
+      add.call('lockout_list', 'lockout_key', safe_path(json_path)) if keys.any? { |k| str.include?(k) }
+    end
+    # Review R2 n3: a lockout key used as a hash key, reported at the parent's path
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash.keys.any? { |hk| hk.is_a?(String) && keys.any? { |k| hk.include?(k) } }
+
+      add.call('lockout_list', 'lockout_key', safe_path("#{json_path}.[lockout key]"))
+    end
+  end
+
+  # Review R1 M1: GET /scenario's top-level lockoutPcs, PC ids where the game holds a lockout
+  def scan_lockout_pcs(hash, json_path, ctx, add)
+    path = "#{json_path}.lockoutPcs"
+    value = hash['lockoutPcs']
+    unless ctx[:scenario] && path == CLIENT_LOCKOUT_PCS_PATH && value.is_a?(Array)
+      add.call('lockout_list', 'lockoutPcs', safe_path(path))
+      return
+    end
+    value.each_with_index do |pc, i|
+      bad = !pc.is_a?(String) || pc.include?('|') || (@game && !lockout_pc_ids.include?(pc))
+      add.call('lockout_list', 'lockoutPcs', safe_path("#{path}[#{i}]")) if bad
+    end
+  end
+
   # NPC records holding a key the server withholds: by key and NPC id, never the value.
   def scan_withheld_keys(body, add)
     walk_records(body, '$', false) do |record, json_path|
-      WITHHELD_KEYS.each do |key|
+      (WITHHELD_KEYS + WITHHELD_WORK_KEYS).each do |key|
         next unless record.key?(key)
 
         add.call('withheld_key', "npc:#{record['id']}/#{key}", safe_path("#{json_path}.#{key}"))
@@ -674,7 +1188,7 @@ class AccessLeakScanner
       end
       next if legit.include?(item_id)
 
-      rule = info[:scope] == :profile ? 'profile_content' : 'signin_content'
+      rule = { profile: 'profile_content', stick: 'stick_content' }.fetch(info[:scope], 'signin_content')
       add.call(rule, "item:#{item_id}", safe_path(paths.first))
     end
   end
@@ -692,6 +1206,8 @@ class AccessLeakScanner
   def allowed_login_route?(info, container)
     return false unless container
     return true if info[:ancestors].include?(container)
+
+    return false if info[:scope] == :stick
 
     info[:scope] == :profile ? @login_pcs.include?(container) : container == info[:pc]
   end
@@ -749,14 +1265,32 @@ class AccessLeakScanner
     return if @network_strings.empty?
     return if ctx[:network] || ctx[:any_container]
 
-    each_string(body) do |str, json_path|
+    each_string(body) do |str, json_path, holder|
       next if ctx[:scenario] && json_path.start_with?('$.footholds')
       next if ctx[:unlock] && json_path.start_with?('$.contents[')
+      # A network link item is the handle of a foothold the player holds: its label and
+      # observations name the network the player has already reached (slice 9.3b W, 5.3),
+      # so a network name there is not a leak.
+      next if holder.to_s.start_with?('netlink_')
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)
 
         owners.each { |owner| add.call('network_string', owner, safe_path(json_path)) }
+      end
+    end
+  end
+
+  # A Wi-Fi SSID or key in any response is a leak, with no route exemption: unlike a network
+  # name, neither is ever legitimately served (5.3).
+  def scan_wifi_secrets(body, add)
+    return if @wifi_secrets.empty?
+
+    each_string(body) do |str, json_path|
+      @wifi_secrets.each do |secret, owners|
+        next unless str.strip == secret || str.include?(secret)
+
+        owners.each { |owner| add.call('wifi_secret', owner, safe_path(json_path)) }
       end
     end
   end

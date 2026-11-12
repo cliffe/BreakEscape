@@ -1,4 +1,4 @@
-# test_access_work: scripted playtest (slice 9.2, U1 to U3, W1 to W7, X1 to X4 and H1 to H5)
+# test_access_work: scripted playtest (slice 9.2, U1 to U3, W1 to W7, X1 to X4, H1 to H5 and L1)
 
 The scripted runs for access model slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
 section 11.1 and the build steps of sub-slices U, A and B). One room per beat, each with a sign.
@@ -42,7 +42,7 @@ Every beat ticks a task in the one aim; `window.__test.getState().objectives` li
 ## Expected validator output
 
 `LANG=C.UTF-8 ruby scripts/validate_scenario.rb scenarios/test_access_work/scenario.json.erb --no-graph`:
-no errors and these six warnings, each expected:
+no errors and these eight warnings, each expected:
 
 1. Dana has two `onceOnly` mappings on `npc_frustration_changed:dana` that can pass together
    (`w2_fed_up` and `w3_eased`): they tick different tasks, so firing together is intended.
@@ -54,6 +54,10 @@ no errors and these six warnings, each expected:
 5. U3's `lost_property_tray` takes a storage stick and is governed by no policy although the default
    blocks storage: that is the beat's point (plan 7, "Which objects a usb policy governs").
 6. "Work never succeeds" for Kai (W5).
+7. and 8. `jake_pc` and `leo_pc` are under a policy with `maxAttempts` 3, "so confirm another route
+   exists": the lockout is L1's point, and the other route is the hot desk.
+
+(The error for `hall_c_drawer`'s `filing_cabinet1` sprite comes from H's room, not from L1.)
 
 X3's Ellis puts the `intranet` resource in a work list, so the "in no NPC's work list" warning of
 sub-slice A is gone. After the issues the validator prints the work report: one `Work` line per
@@ -141,9 +145,11 @@ far desk. Game one: H1, H2, H3. Game two: H4, then H5. Hear the events with a li
 |---|---|---|---|---|
 | H1 | Enter `cable_room`, switch the wall socket off, go to Hall C and wait about 80 s by the hot desk. Click the hot desk while Ian sits at it. After he walks back, click it again, open `Cabinet.txt` and type its code on `comms_cabinet`. Switch the socket back on; once his next use is met, step the needs clock just past five game minutes (`window.__test.needs.step`) | Three `off` parks at his PC (tell 1, tell 2); at the third he says "I'll use the spare PC." and walks straight to the hot desk. A click while he works there: "Ian Shaw is using this PC." When he leaves, a click opens his desktop (a guest claim). After the clock step the desktop closes with "The screen locked" | `npc_workaround:ian` `started`; `npc_sat_at:hot_desk`; `npc_borrowed_session:hot_desk` `met: true`; `npc_borrow_done:ian`; `npc_workaround:ian` `done`; `npc_guest_left:hot_desk`; `workstation_owner_left:hot_desk` `reason: "guest"`; `pc_signed_in` `via: "claim"`; `workstation_auto_locked:hot_desk`. Tasks `h1_borrowed`, `h1_cabinet` | `guestSessions.hot_desk` `ian`; `sessions.hot_desk` a claim, then gone; `comms_cabinet` in `unlockedObjects` |
 | H2 | Open the drawer, read the note, sign in at the hot desk as the temporary account and leave the desktop open. Unplug Ian's PC again and wait | When Ian sits down the desktop closes with "Ian Shaw has signed in at this PC". After he leaves, a click opens Ian's desktop, not the temporary account's | `pc_signed_out` `reason: "displaced"`; one `POST /logout`; then as H1 | `sessions.hot_desk` the temporary account by password, then absent, then a claim for Ian |
-| H3 | Switch Rosa's breaker off by her desk and wait about 80 s | At her third failure she walks to the hot desk; her use fails there too and is not reported; she still leaves a session that can be claimed | `npc_borrowed_session:hot_desk` `npcId: "rosa"`, `met: false`; `npc_use_failed:rosa` at `hot_desk` with no matching report. Task `h3_failed_there` | `guestSessions.hot_desk` `rosa`; her level still rising |
+| H3 | Switch Rosa's breaker off by her desk and wait about 80 s | At her third failure she walks to the hot desk; her use fails there too and is not reported; she still leaves a session that can be claimed | `npc_borrowed_session:hot_desk` `npcId: "rosa"`, `met: false` (no `lapsed`); `npc_use_failed:rosa` at `hot_desk` with no matching report. Task `h3_failed_there` | `guestSessions.hot_desk` `rosa`; her level still rising |
 | H4 | Game two. Enter `open_office`, switch the CRM off and leave the room (stand in Priya's room) for about 80 s. Then stand beside Ruth and wait for Sam's next failure | First share: Sam walks to Ruth and speaks; nothing is noted. Second: a toast "Overheard: Sam Okafor" with his login, an evidence note in the notebook. The noted password signs in as Sam at the hot desk | First `POST /npc_workaround` with `heard: false`; second with `heard: true` and `room_id: "open_office"`; `npc_overheard_login:sam`. Task `h4_overheard` | `sharedLogins` `[]`, then `["sam"]` |
 | H5 | Reload (`location.href` to the game URL with `?skip_resume=1`) | The hot desk shows the sign-in screen; the levels are kept; the evidence note is still in the notebook | `pc_signed_out` `reason: "claim_ended"` for a claim held before the reload | `guestSessions` empty; `sharedLogins` kept |
+| H6 (q42) | Game started in `open_office` (`--start-room open_office`). Switch the CRM off and stand by the H4 sign, out of earshot. As Sam arrives beside Ruth, have other NPCs talk (`window.npcNeedsSystem.mutter(<id>, 'wk_borrow')` and two more, which take the shared speech lock). Walk up to Ruth only once his line is said | Sam waits beside Ruth until his line is said, then stands there the share's dwell; walking up after the line is enough to overhear it. Known limit: a conversation with Sam that starts before his line and lasts over 20 s drops the line, so that share is not heard | `npc_visit_arrived:sam`, then `npc_mutter:sam` `login_aloud` several seconds later, `npc_visit_done:sam` about 6 s after the line; `POST /npc_workaround` with `heard: true`; `npc_overheard_login:sam` | `sharedLogins` `["sam"]` |
+| H7 (q43) | Game started in `hall_c`. As H1, wait in `slow_room` until Ian sits at the hot desk, then cut his use short (`window.npcNeedsSystem.control('ian', 'suspend')`, the entry point of an eventMapping `needs: "suspend"`), then `resume`. Click the hot desk | The cut-short borrow counts as done, once: the session stays signed in and the click opens Ian's desktop. His need is left unmet, so he may be handed the hot desk again later, which ends a session the player claimed there | `npc_borrowed_session:hot_desk` and `npc_borrow_done:ian` with `met: false`, `cut: "suspend"`; `POST /npc_workaround` `dropped: false, cut: true` answered `guest: true` at once (no 425); `npc_guest_left:hot_desk`; `pc_signed_in` `via: "claim"`; one `npc_borrow_done:ian` for this borrow, no `npc_borrow_dropped:ian` (a later `npc_sat_at:hot_desk` comes from a new hand-over) | `guestSessions.hot_desk` `ian` |
 
 Tampered client (server tests, `test/controllers/break_escape/npc_workaround_h_test.rb`): a guest
 claim with no guest record, a careful guest, a held session or an unadmitted account is refused; a
@@ -152,8 +158,38 @@ and answers `{}`. Earned secrets: run H types Ian's cabinet code (read on his de
 temporary account's password (read from the drawer note) and Sam's password (read from the
 overheard note).
 
+## Run L: L1 (one new game, about 8 minutes)
+
+`lock_room` is east of `open_office` (H4). Jake Brooks works at `jake_pc` and Leo Marsh at
+`leo_pc`, both sign-in PCs under `strict` (`maxAttempts: 3`); `hot_desk_2` stands between them
+under `managed`, unowned; the fridge is in the corner. Jake's own PC always locks
+(`lockChance: 1`) and he borrows `hot_desk_2` at 50, leaving it signed in (`screenHabit:
+{ lockChance: 0 }`); Leo's PC never locks. Both go to the fridge every few minutes (Jake first,
+about a minute in). Hear the events with a listener on `npc_use_failed:*`, `npc_locked_out:*`,
+`npc_sat_at:*`, `npc_borrowed_session:*`, `workstation_owner_returned:*`, `pc_signin_failed` and
+`pc_signed_in`. `window.__test.access.work('jake')` shows `lockedOut` and `lockCheck`;
+`window.__test.access.reports()` shows `checks` and `lockoutSeen`.
+
+| Beat | Do | Expect | Events and tasks | Server record afterwards |
+|---|---|---|---|---|
+| L1 Jake | Enter `lock_room` and wait for Jake to leave for the fridge. Click his PC (the sign-in screen: his screen locked) and type three wrong passwords on his tile. Stand back and wait | The third answer says the account is locked on this PC. When Jake sits back down his use waits for the check, then fails: "This PC is useless.", the blocked icon. Tell 1, tell 2, then at his third failure "I'll use the spare PC.": he works at `hot_desk_2` and walks back, leaving it signed in. A click on the hot desk then opens his desktop | `pc_signin_failed` `reason: "locked_out"`; `workstation_owner_returned:jake_pc` `wasLocked: true`; one `POST /npc_frustration` with a `check` answered `lockedOut: true`; `npc_locked_out:jake`; `npc_use_failed:jake` `missing: [{ id: "jake_pc", why: "locked_out" }]`, `station: true`; `npc_sat_at:hot_desk_2`; `npc_borrowed_session:hot_desk_2` `met: true`; `pc_signed_in` `via: "claim"` at `hot_desk_2`. Tasks `l1_locked_out`, `l1_hot_desk`, `l1_claimed` | `loginLockouts` holds `jake_pc\|jbrooks`; `npcFrustration.jake.lockedOut` `["jake_pc"]`, level 60 then 50 after the hot desk; `guestSessions.hot_desk_2` `jake` |
+| L1 Leo | While Leo is at the fridge, click his PC (his screen is open: a claim), press Switch user and type three wrong passwords on his tile. Wait for him to come back and work | He sits down and works as before: his screen was open, so he never types a password and no check is sent. While he is away again, a click on his PC shows the sign-in screen: the server refuses the claim | `pc_signin_failed` `reason: "locked_out"` at `leo_pc`; `workstation_owner_returned:leo_pc` `wasLocked: false`; no `check` for Leo; `npc_used:leo_pc` `met: true`. Task `l1_leo_locked_out` | `loginLockouts` holds `leo_pc\|lmarsh`; no `npcFrustration.leo` entry |
+| L1 reload before the return | In a new game, lock Jake out while he is at the fridge, then reload (as below) before he comes back | After the reload the browser still knows a lockout happened at `jake_pc` (`reports().lockoutSeen`, seeded from `GET /scenario`'s `lockoutPcs`). His next locked return sends one check and his use there fails | `workstation_owner_returned:jake_pc` `wasLocked: true`; one check; `npc_locked_out:jake`; `npc_use_failed:jake` with `locked_out` | `npcFrustration.jake.lockedOut` `["jake_pc"]` |
+| L1 reload | Set `location.href` to the game URL with `?skip_resume=1` | Jake's flag comes back with his room: his next use at `jake_pc` fails at once, with no new check. The hot desk shows the sign-in screen until he borrows it again | No `check` after the reload; `npc_use_failed:jake` with `locked_out` | As before; `guestSessions` empty |
+
+A run may not see Jake leave before the window: his next trip comes about three minutes later.
+Request budget: no more than one report request every two seconds; one `check` per locked return
+to a PC where a lockout answer was seen, and none at all before the first lockout.
+
+Tampered client, from the page (`window.ApiClient`), each answered as the server's own record
+says: a `fail` naming `locked_out` before any check (refused); a `check` for `leo_pc` after his
+lockout, then a `fail` for Leo with `locked_out` (the check records it, which is the leak decision
+14 accepts; the fail is then counted); a `check` naming `hot_desk_2` for Jake (refused); a state
+sync carrying `npcFrustration` or `loginLockouts` (ignored); an owner claim at `leo_pc` with globals
+saying the screen is open (refused). Server tests: `test/controllers/break_escape/npc_lockout_l_test.rb`.
+
 ## Earned secrets
 
-Run U types no secret. Run W types the W4 cupboard code, read from `Cupboard.txt` on Omar's desktop after a claim.
+Run U types no secret. Run L types no secret: only wrong passwords, and a claim needs none. Run W types the W4 cupboard code, read from `Cupboard.txt` on Omar's desktop after a claim.
 Run X types two secrets, each read in the game first: Mei's password from the sticky note on her
 sign-in screen (after her `writes_down`), and the records nook code from `Nook.txt` on her desktop.

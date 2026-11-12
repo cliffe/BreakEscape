@@ -2,6 +2,8 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { ASSETS_PATH } from '../../config.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 /**
  * The keypad's line after a wrong password. A near miss (right apart from letter
@@ -23,6 +25,16 @@ export function passwordFieldLabel(title) {
     return t && t !== 'Enter password' && t !== 'Password Entry' ? t : 'Password:';
 }
 
+/**
+ * True for a container that is a bag or case rather than a device: its password
+ * screen is drawn as a code lock on the case, not as a computer's sign-in screen.
+ */
+export const CASE_LOCK_TYPES = ['suitcase', 'briefcase', 'bag', 'bag1', 'backpack', 'satchel', 'holdall'];
+export function isCaseLockTarget(data) {
+    const type = String(data?.type || '').toLowerCase();
+    return CASE_LOCK_TYPES.includes(type);
+}
+
 // ── Sign-in mode (access model 5.3, step 8) ──────────────────────────────────
 // A sign-in PC's screen: account tiles (from the server, per the PC's loginPicker),
 // Other user (type a username), the password field and the PC's post-it. It has no
@@ -30,8 +42,6 @@ export function passwordFieldLabel(title) {
 // only when the server reports a lockout for the username typed. It shows no
 // letter-case hint (the server sends none for /login). Signs in through pc-sessions.js.
 
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 /** Initials for a tile whose portrait and avatar both failed: "Sam Okafor" -> "SO". */
 export function tileInitials(name) {
@@ -101,6 +111,19 @@ export function signInRefusalMessage(result) {
 }
 
 /**
+ * The line under the form when the sign-in got no usable answer (`result.error`): a PC that is
+ * switched off says so at its keyboard ("This PC is off.", q72) and through a foothold ("This
+ * PC is not responding.", as its row in the network view, 9.3b plan 5.2); any other 403 or
+ * 404 is a PC that can't be reached; anything else a network error.
+ */
+export function signInErrorMessage(result) {
+    if (result?.serverReason === 'off') return 'This PC is off.';
+    if (result?.serverReason === 'not_responding') return 'This PC is not responding.';
+    if (result?.status === 403 || result?.status === 404) return "This PC can't be reached.";
+    return 'Network error. Please try again.';
+}
+
+/**
  * The remote sign-in screen's Captured sign-ins (slice 9.3a, 4.4): the player's captures
  * (`se_captures`, as captures.js readCaptures returns it) whose target is in `accounts` of
  * GET /capture_secrets ({ targetId: username }), oldest first. Each fills the username;
@@ -146,6 +169,10 @@ export class PasswordMinigame extends MinigameScene {
         // Store the correct password for validation
         this.correctPassword = params.password || '';
 
+        // Wi-Fi join mode (slice 9.3b sub-slice W, 5.3): { apId, apName }. The key field has
+        // no attempt limit; submit calls ApiClient.networkJoin through networkLinks.join.
+        this.join = params.join || null;
+
         // Sign-in mode: { pcId, pcName, picker, tiles, current } (unlock-system openLoginSignIn);
         // a remote screen (slice 9.3a, 4.4) adds remote: { footholdId, linkName } and captured
         this.signIn = params.signIn || null;
@@ -163,6 +190,14 @@ export class PasswordMinigame extends MinigameScene {
     }
         /** Test bridge state (see MinigameScene.getTestState). */
     getTestState() {
+        if (this.join) {
+            return {
+                ...super.getTestState(),
+                join: { apId: this.join.apId, message: this.joinMessage || null },
+                hasPasswordField: !!document.getElementById('password-field'),
+                entryHint: 'type(0, "<key>", { submit: true })'
+            };
+        }
         if (this.signIn) {
             const st = this.signInState;
             return {
@@ -205,10 +240,21 @@ export class PasswordMinigame extends MinigameScene {
             this.initSignIn();
             return;
         }
-        
+
+        // Wi-Fi join mode (slice 9.3b W, 5.3): the key field, no attempt counter
+        if (this.join) {
+            this.headerElement.innerHTML = `
+                <h3>${escapeHtml(displayDashes(`Join Wi-Fi: ${this.join.apName || ''}`))}</h3>
+                <p>Enter the network key</p>
+            `;
+            this.setupPasswordInterface();
+            this.setupEventListeners();
+            return;
+        }
+
         // Customize the header
         this.headerElement.innerHTML = `
-            <h3>${displayDashes(this.params.title || 'Password Entry')}</h3>
+            <h3>${escapeHtml(displayDashes(this.params.title || 'Password Entry'))}</h3>
             <p>Enter the correct password to proceed</p>
         `;
         
@@ -257,25 +303,29 @@ export class PasswordMinigame extends MinigameScene {
 
         // Name the lock over the field, as the PIN keypad does ("Enter PIN: Cable
         // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
-        const fieldLabel = passwordFieldLabel(this.params.title);
+        const fieldLabel = this.join ? 'Network key' : passwordFieldLabel(this.params.title);
         
+        // A carried case (a bag, briefcase or suitcase) has a code lock, not a computer
+        // screen: it gets the case-lock look, with no desktop wallpaper (UX pass, 2026-11-12)
+        const caseLock = isCaseLockTarget((this.params.lockable || this.params.sprite)?.scenarioData);
+
         this.gameContainer.innerHTML = `
-            <div class="password-minigame-area">
+            <div class="password-minigame-area${caseLock ? ' case-lock' : ''}">
                 ${imageData ? `
                     <div class="password-image-section">
-                        <img src="/break_escape/assets/objects/${imageData.imageFile}.png" 
-                             alt="${imageData.deviceName}" 
+                        <img src="/break_escape/assets/objects/${escapeHtml(imageData.imageFile)}.png" 
+                             alt="${escapeHtml(imageData.deviceName)}" 
                              class="password-image">
                         <div class="password-info">
-                            <h4>${imageData.deviceName}</h4>
-                            <p>${imageData.observations}</p>
+                            <h4>${escapeHtml(displayDashes(imageData.deviceName))}</h4>
+                            <p>${escapeHtml(displayDashes(imageData.observations))}</p>
                         </div>
                     </div>
                 ` : ''}
                 <div class="monitor-bezel">
                     <div class="monitor-screen">
                         <div class="password-input-container">
-                            <label for="password-field">${displayDashes(fieldLabel)}</label>
+                            <label for="password-field">${escapeHtml(displayDashes(fieldLabel))}</label>
                             <div class="password-field-wrapper">
                                 <input type="${this.gameData.showPassword ? 'text' : 'password'}" 
                                        id="password-field" 
@@ -297,7 +347,7 @@ export class PasswordMinigame extends MinigameScene {
                         ${this.gameData.showHint ? `
                             <div class="password-hint-container">
                                 <div class="password-hint" id="password-hint" style="display: none;">
-                                    <strong>Hint:</strong> ${this.gameData.passwordHint}
+                                    <strong>Hint:</strong> ${escapeHtml(displayDashes(this.gameData.passwordHint))}
                                 </div>
                             </div>
                         ` : ''}
@@ -306,7 +356,7 @@ export class PasswordMinigame extends MinigameScene {
                 
                 ${this.gameData.showPostit && this.gameData.postitNote ? `
                     <div class="postit-note">
-                        ${this.gameData.postitNote}
+                        ${escapeHtml(displayDashes(this.gameData.postitNote))}
                     </div>
                 ` : ''}
                 
@@ -374,9 +424,11 @@ export class PasswordMinigame extends MinigameScene {
                     </div>
                 ` : ''}
                 
+                ${this.join ? '' : `
                 <div class="attempts-counter">
-                    Attempts: <span id="attempts-display">${this.gameData.attempts}</span>/${this.gameData.maxAttempts}
+                    Attempts: <span id="attempts-display">${escapeHtml(this.gameData.attempts)}</span>/${escapeHtml(this.gameData.maxAttempts)}
                 </div>
+                `}
             </div>
         `;
         
@@ -574,7 +626,8 @@ export class PasswordMinigame extends MinigameScene {
         if (this.checkPending) return;
         this.checkPending = true;
         try {
-            if (this.signIn) await this._submitSignInOnce();
+            if (this.join) await this._submitJoinOnce();
+            else if (this.signIn) await this._submitSignInOnce();
             else await this._submitPasswordOnce();
         } finally {
             this.checkPending = false;
@@ -613,6 +666,35 @@ export class PasswordMinigame extends MinigameScene {
             console.error('SECURITY WARNING: API client not available, cannot validate password');
             // Fail securely - reject the attempt if we can't validate with server
             this.passwordIncorrect();
+        }
+    }
+
+    // Wi-Fi join (slice 9.3b W, 5.3): the key goes to networkLinks.join, which posts
+    // /network/join and applies the foothold. A wrong key is refused with no attempt count;
+    // a success or already closes the minigame. The key is sent as typed (no trim), since a
+    // Wi-Fi key may hold spaces, and is never stored on the scene.
+    async _submitJoinOnce() {
+        if (!this.gameState.isActive) return;
+        const key = this.passwordField ? this.passwordField.value : '';
+        if (!key) {
+            this.showFailure('Please enter the key', false, 1000);
+            return;
+        }
+        const links = window.networkLinks;
+        const result = (links && typeof links.join === 'function') ? await links.join(this.join.apId, key) : { action: 'error' };
+        if (result.action === 'joined' || result.action === 'already') {
+            this.cleanup();
+            if (window.playUISound) window.playUISound('confirm');
+            this.showSuccess('Connected.', true, 900);
+            this.gameResult = { success: true, join: result };
+        } else if (result.action === 'wrong_key') {
+            this.joinMessage = 'That key was not accepted.';
+            if (window.playUISound) window.playUISound('reject');
+            this.showFailure(this.joinMessage, false, 1500);
+            this.passwordField.value = '';
+            this.passwordField.focus();
+        } else {
+            this.showFailure('The network did not respond. Try again.', false, 1500);
         }
     }
 
@@ -657,7 +739,17 @@ export class PasswordMinigame extends MinigameScene {
         } catch (error) {
             console.error('Server validation error:', error);
             // api-client sets err.status; a wrong password comes back 422 and is a real attempt.
-            if (error?.status === 422 || error?.message?.includes('422')) {
+            const refusal = lockScopeRefusal(error);
+            if (refusal) {
+                // The PC the lock sits on is off, not responding or out of reach (review R4
+                // m2): not an attempt and not a wrong password, so say why and close as cancelled
+                this.gameData.attempts--;
+                this.attemptsDisplay.textContent = this.gameData.attempts;
+                this.cleanup();
+                this.showFailure(LOCK_SCOPE_REFUSAL_TEXT[refusal], true, 2000);
+                this.gameResult = { success: false, reason: 'cancelled', cancelled: true, refused: refusal,
+                                    attempts: this.gameData.attempts };
+            } else if (error?.status === 422 || error?.message?.includes('422')) {
                 this.passwordIncorrect({ caseMismatch: error?.body?.caseMismatch === true });
             } else {
                 this.showFailure("Network error. Please try again.", false, 1500);
@@ -747,7 +839,7 @@ export class PasswordMinigame extends MinigameScene {
     
     cancelPassword() {
         this.cleanup();
-        this.showFailure(this.signIn ? "Sign-in cancelled." : "Password entry cancelled.", true, 800);
+        this.showFailure(this.join ? "Join cancelled." : (this.signIn ? "Sign-in cancelled." : "Password entry cancelled."), true, 800);
         
         this.gameResult = {
             success: false,
@@ -1076,7 +1168,7 @@ export class PasswordMinigame extends MinigameScene {
             return;
         }
         if (result.error) {
-            this.setSignInMessage(result.status === 403 || result.status === 404 ? "This PC can't be reached." : 'Network error. Please try again.', 'error');
+            this.setSignInMessage(signInErrorMessage(result), 'error');
             return;
         }
         if (window.playUISound) window.playUISound('reject');

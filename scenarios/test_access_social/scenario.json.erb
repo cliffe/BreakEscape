@@ -1,0 +1,2931 @@
+{
+  "scenario_brief": "TEST: Access model slice 9.2, social media feeds\n\nA test floor for ACCESS_MODEL_SLICE_9_2_PLAN.md section 8: the social_media need, the phone, the feed and what it reveals (beats F1 to F8). Each beat has a sign and its own room. Nothing to solve.",
+  "endGoal": "Test only: run the social media beats.",
+  "startRoom": "lobby",
+  "startPosition": {
+    "x": 6,
+    "y": 6
+  },
+  "npcNeedsSeed": "test_access_social",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+  "officePresets": true,
+  "chatter": {
+    "social_blocked": [
+      "Blocked. Of course."
+    ],
+    "work_fail_fed_up": [
+      "That's it. I've had enough."
+    ],
+    "station_fail": [
+      "This PC is useless."
+    ],
+    "work_fail_no_access": [
+      "Still no access. Nobody listens."
+    ],
+    "work_fail": [
+      "Why is nothing working?"
+    ],
+    "wk_borrow": [
+      "I'll use the spare PC."
+    ],
+    "usb_refused": [
+      "IT blocked my USB. Email it is, then."
+    ]
+  },
+  "policies": {
+    "no_social": {
+      "autoLockMin": 5,
+      "maxAttempts": null,
+      "usb": "allowed",
+      "social": "blocked"
+    },
+    "lax": {
+      "autoLockMin": null,
+      "maxAttempts": null,
+      "usb": "allowed",
+      "social": "allowed"
+    },
+    "locking": {
+      "autoLockMin": 5,
+      "maxAttempts": 3,
+      "usb": "allowed",
+      "social": "allowed"
+    },
+    "usb_locked": {
+      "autoLockMin": null,
+      "maxAttempts": null,
+      "usb": "storage_blocked",
+      "social": "allowed"
+    }
+  },
+  "globalVariables": {
+    "se_osint_state": {},
+    "se_intel_jake_office": false,
+    "se_intel_jake_pet_name": false,
+    "se_intel_jake_wedding_year": false,
+    "f10_share_down": false,
+    "f12_crm_down": false,
+    "f12_pc_unplugged": false,
+    "l2_pc_off": true,
+    "l2_ledger_down": false,
+    "u1_kim_emailed_file": false,
+    "u1_kim_gave_usb": false,
+    "f15_drive_down": true,
+    "f16_drive_down": true
+  },
+  "objectives": [
+    {
+      "aimId": "social_beats",
+      "title": "Run the social media beats",
+      "description": "Test only. Each task ticks when its beat's event fires. F1 and F7 are checks with no event.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "f2_phone",
+          "title": "F2: Jake uses his phone at his desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f2_posted",
+          "title": "F2: Jake posts on Friendface",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f3_pc",
+          "title": "F3: Lena uses her PC for social media",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f4_borrowed",
+          "title": "F4: Omar is blocked, then uses the kiosk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f5_signed_in",
+          "title": "F5: sign in as Jake at the hot desk",
+          "type": "unlock_object",
+          "targetObject": "hot_desk",
+          "status": "active"
+        },
+        {
+          "taskId": "f6_last_post",
+          "title": "F6: Jake's third and last post",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f8_distracted",
+          "title": "F8: the guard uses his phone",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f8_challenged",
+          "title": "F8: the guard challenges you once he puts it away",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f9_locked_out",
+          "title": "F9: Priya finds she is locked out at her PC",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f9_phone",
+          "title": "F9: Priya uses her phone instead",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f9_posted",
+          "title": "F9: Priya posts from her phone",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f10_posted",
+          "title": "F10: Nadia's outage vent jumps the queue (reactive_first)",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f11_posted",
+          "title": "F11: Theo's borrow post slots in at its place (mixed)",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f12_posted",
+          "title": "F12: Greg's vent comes after his fact post (facts_first)",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f13_blocked",
+          "title": "F13: Ruth vents that the site is blocked",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f13_recovered",
+          "title": "F13: Ruth posts once the kiosk gets her back online",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f14_jake_phone",
+          "title": "F14: ask Jake for his phone",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l1_locked_out",
+          "title": "L1: Sade finds out she is locked out at the hot desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l1_borrow_failed",
+          "title": "L1: Sade's borrowed use at the hot desk fails",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l2_locked_out",
+          "title": "L2: Hamid finds out he is locked out at the hot desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l2_borrow_failed",
+          "title": "L2: Hamid's borrowed work at the hot desk fails",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_refused",
+          "title": "U1: Kim's PC refuses her USB stick",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_emailed",
+          "title": "U1: Kim emails the file to herself instead",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_posted",
+          "title": "U1: Kim posts that IT blocked her USB",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f15_replied",
+          "title": "F15: Kofi replies in Asha's thread instead of venting",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f15_thread",
+          "title": "F15: Mei replies in the same thread",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f16_replied",
+          "title": "F16: Tomasz replies to Ivy's vent",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f16_answered",
+          "title": "F16: Ivy answers in her own thread",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f16_again",
+          "title": "F16: Tomasz replies again after Ivy's answer",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "social": {
+    "intelFacts": {
+      "jake_office": {
+        "label": "Jake's office",
+        "subject": "jake",
+        "source": "jake_authored",
+        "text": "Jake Brooks works in the finance office on the third floor."
+      },
+      "jake_pet_name": {
+        "label": "Jake's dog",
+        "subject": "jake",
+        "source": "jake_post_1",
+        "text": "Jake Brooks has a dog called Biscuit."
+      },
+      "jake_wedding_year": {
+        "label": "Jake's wedding year",
+        "subject": "jake",
+        "source": "jake_post_2",
+        "text": "Jake Brooks married his wife in 1998."
+      }
+    },
+    "people": [
+      {
+        "id": "asha",
+        "forms": {
+          "first": "Asha",
+          "full": "Asha Rao"
+        }
+      },
+      {
+        "id": "kofi",
+        "forms": {
+          "first": "Kofi",
+          "full": "Kofi Mensah"
+        }
+      },
+      {
+        "id": "mei",
+        "forms": {
+          "first": "Mei",
+          "full": "Mei Tanaka"
+        }
+      },
+      {
+        "id": "ivy",
+        "forms": {
+          "first": "Ivy",
+          "full": "Ivy Clarke"
+        }
+      },
+      {
+        "id": "tomasz",
+        "forms": {
+          "first": "Tomasz",
+          "full": "Tomasz Nowak"
+        }
+      }
+    ],
+    "osint": {
+      "sites": [
+        {
+          "id": "friendface",
+          "type": "social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "profiles": [
+            {
+              "person": "jake",
+              "name": "Jake Brooks",
+              "bio": "Finance. Dog dad.",
+              "posts": [
+                {
+                  "id": "jake_authored",
+                  "text": "New desk on the third floor. Finance office, come and say hello.",
+                  "fact": "jake_office"
+                }
+              ]
+            },
+            {
+              "person": "lena",
+              "name": "Lena Fox",
+              "bio": "Runner. Tea.",
+              "posts": [
+                {
+                  "id": "lena_authored",
+                  "text": "Rainy run this morning, still worth it."
+                }
+              ]
+            },
+            {
+              "person": "omar",
+              "name": "Omar Haddad",
+              "bio": "Facilities.",
+              "posts": [
+                {
+                  "id": "omar_authored",
+                  "text": "Who keeps moving the stapler?"
+                }
+              ]
+            },
+            {
+              "person": "priya",
+              "name": "Priya Shah",
+              "bio": "Noodles. Spreadsheets.",
+              "posts": [
+                {
+                  "id": "priya_authored",
+                  "text": "Third week in the new team and I still get lost on the way to the kitchen."
+                }
+              ]
+            },
+            {
+              "person": "nadia",
+              "name": "Nadia Okonkwo",
+              "bio": "Accounts. Keeps a plant alive.",
+              "posts": [
+                {
+                  "id": "nadia_authored",
+                  "text": "Month end again. Send strong tea and quiet afternoons."
+                }
+              ]
+            },
+            {
+              "person": "theo",
+              "name": "Theo Marsh",
+              "bio": "Support desk. Headphones on.",
+              "posts": [
+                {
+                  "id": "theo_authored",
+                  "text": "Tickets cleared before lunch. A rare and beautiful thing."
+                }
+              ]
+            },
+            {
+              "person": "greg",
+              "name": "Greg Fenwick",
+              "bio": "Sales. Lives in the CRM.",
+              "posts": [
+                {
+                  "id": "greg_authored",
+                  "text": "Quarter is nearly done. Nearly. Ask me again on Friday."
+                }
+              ]
+            },
+            {
+              "person": "ruth",
+              "name": "Ruth Adeyemi",
+              "bio": "Operations. Runs a tight ship.",
+              "posts": [
+                {
+                  "id": "ruth_authored",
+                  "text": "Three meetings before the kettle even boiled this morning."
+                }
+              ]
+            },
+            {
+              "person": "sade",
+              "name": "Sade Okafor",
+              "bio": "Facilities. Never at the same desk twice.",
+              "posts": [
+                {
+                  "id": "sade_authored",
+                  "text": "New badge photo. Somehow worse than the old one."
+                }
+              ]
+            },
+            {
+              "person": "kim",
+              "name": "Kim Nguyen",
+              "bio": "Reports. Takes work home.",
+              "posts": [
+                {
+                  "id": "kim_authored",
+                  "text": "Quarterly report due Friday. Wish me luck."
+                }
+              ]
+            },
+            {
+              "person": "asha",
+              "name": "Asha Rao",
+              "bio": "Projects. Keeps the plan on one page."
+            },
+            {
+              "person": "kofi",
+              "name": "Kofi Mensah",
+              "bio": "Projects. Always has a spare charger."
+            },
+            {
+              "person": "mei",
+              "name": "Mei Tanaka",
+              "bio": "Projects. Calendar always full."
+            },
+            {
+              "person": "ivy",
+              "name": "Ivy Clarke",
+              "bio": "Design. Too many browser tabs."
+            },
+            {
+              "person": "tomasz",
+              "name": "Tomasz Nowak",
+              "bio": "Design. Bikes in, rain or shine."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": {
+        "north": "jake_room",
+        "east": "lena_room",
+        "west": "omar_room",
+        "south": "gate_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": {
+            "x": 4,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Slice 9.2 social media test floor. F1: open the Friendface terminal first; each profile shows one post.\nJake north (F2), Lena east (F3), Omar west (F4), the guard south (F8). F5 and F6 are here in the lobby.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_f5",
+          "name": "Sign: F5 and F6",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F5. Read Jake's posts on the terminal and the IT poster, then sign in as Jake at the hot desk. A wrong guess counts.\nF6. Wait: Jake's third post is his last, and the terminal says nothing more after it.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "notes1",
+          "id": "it_poster",
+          "name": "IT poster",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "IT reminder: your pet's name with a capital letter, followed by the year you married, is not a password. Several of you are using exactly that.",
+          "observations": "An IT poster pinned to the wall."
+        },
+        {
+          "type": "osint-workstation",
+          "id": "friendface_terminal",
+          "name": "Friendface terminal",
+          "position": {
+            "x": 6,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A public terminal open on Friendface.",
+          "minigameData": {
+            "siteIds": [
+              "friendface"
+            ]
+          }
+        },
+        {
+          "type": "pc",
+          "id": "hot_desk",
+          "name": "Hot desk",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "access": {
+            "people": [
+              "jake"
+            ]
+          },
+          "observations": "A hot desk PC. Only Jake's account works here."
+        },
+        {
+          "type": "pc3",
+          "id": "kiosk",
+          "name": "Kiosk",
+          "position": {
+            "x": 7,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "access": {
+            "people": [
+              "omar"
+            ]
+          },
+          "affordance": {
+            "satisfies": [
+              "social_media"
+            ],
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A spare kiosk PC under the lax policy: social media is allowed."
+        },
+        {
+          "type": "phone_friendface",
+          "id": "player_phone",
+          "name": "Your phone",
+          "takeable": true,
+          "position": {
+            "x": 5,
+            "y": 6
+          },
+          "observations": "Your own mobile, signed in to Friendface."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_f14",
+          "name": "Sign: F14",
+          "position": {
+            "x": 4,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F14. Pick up your phone here: it opens the Friendface feed, and buzzes when someone posts.\nThen ask Jake (north) for his phone: it opens on his profile, and he has to post from his PC instead.",
+          "observations": "A beat sign on a stand."
+        }
+      ],
+      "npcs": []
+    },
+    "jake_room": {
+      "type": "room_office",
+      "door_sign": "F2 Jake",
+      "connections": {
+        "south": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f2",
+          "name": "Sign: F2 The phone at the desk",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F2. Jake's PC blocks social media, so he uses his phone where he sits, about once a minute, and never gets up. Each use reveals his next post on the Friendface terminal in the lobby.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "jake_pc",
+          "name": "Jake's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Jake's PC, under a policy that blocks social media."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "jake",
+          "displayName": "Jake Brooks",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/jake.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "jake_pc",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "jbrooks",
+            "password": "Biscuit1998"
+          },
+          "habits": {
+            "password": "guessable",
+            "passwordPattern": "it_poster"
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "jake",
+            "posts": [
+              {
+                "id": "jake_post_1",
+                "text": "Biscuit turns five today! Best boy in the whole building.",
+                "fact": "jake_pet_name",
+                "date": "Monday"
+              },
+              {
+                "id": "jake_post_2",
+                "text": "Our anniversary today: married in 1998 and still laughing at the same jokes.",
+                "fact": "jake_wedding_year",
+                "date": "Tuesday"
+              },
+              {
+                "id": "jake_post_3",
+                "text": "Back from Crete, three hundred emails waiting for me.",
+                "date": "Wednesday"
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used_phone:jake",
+              "onceOnly": true,
+              "completeTask": "f2_phone"
+            },
+            {
+              "eventPattern": "npc_posted:jake",
+              "onceOnly": true,
+              "completeTask": "f2_posted",
+              "condition": "data.index === 0"
+            },
+            {
+              "eventPattern": "npc_posted:jake",
+              "onceOnly": true,
+              "completeTask": "f6_last_post",
+              "condition": "data.index === 2"
+            },
+            {
+              "eventPattern": "item_picked_up:phone_friendface",
+              "onceOnly": true,
+              "completeTask": "f14_jake_phone",
+              "condition": "data.itemId === 'jake_phone'",
+              "fireOnlyWhenLoaded": true
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "jake_phone",
+              "name": "Jake's phone",
+              "takeable": true,
+              "phoneOf": "jake",
+              "observations": "Jake's mobile, open on Friendface."
+            }
+          ]
+        }
+      ]
+    },
+    "lena_room": {
+      "type": "room_office",
+      "door_sign": "F3 Lena",
+      "connections": {
+        "west": "lobby",
+        "east": "priya_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f3",
+          "name": "Sign: F3 The PC, where it is allowed",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F3. Lena's PC allows social media, so she uses it at her desk. Her first post then shows on the terminal.\nEast: F9, a lockout stops social media too.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "lena_pc",
+          "name": "Lena's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Lena's PC, under the lax policy: social media is allowed."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "lena",
+          "displayName": "Lena Fox",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "lena_pc",
+          "needsDeferMin": 0.5,
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "lena",
+            "posts": [
+              {
+                "id": "lena_post_1",
+                "text": "Signed up for the charity five kilometre race on Sunday. Sponsor me!",
+                "date": "Monday"
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used:lena_pc",
+              "onceOnly": true,
+              "completeTask": "f3_pc",
+              "condition": "data.need === 'social_media' && data.met === true"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "lena_phone",
+              "name": "Lena's phone",
+              "takeable": true,
+              "phoneOf": "lena",
+              "observations": "Lena's mobile, open on Friendface."
+            }
+          ]
+        }
+      ]
+    },
+    "omar_room": {
+      "type": "room_office",
+      "door_sign": "F4 Omar",
+      "connections": {
+        "east": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f4",
+          "name": "Sign: F4 Blocked and no phone",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F4. Omar has no phone and his PC blocks social media. Each try fails; at his second failure he walks to the kiosk in the lobby, uses it and leaves it signed in. Click the kiosk while nobody sits there.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "omar_pc",
+          "name": "Omar's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "lockChance": 1,
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Omar's PC, under a policy that blocks social media."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "omar",
+          "displayName": "Omar Haddad",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "omar_pc",
+          "needsDeferMin": 0.5,
+          "phone": false,
+          "creds": {
+            "username": "ohaddad",
+            "password": "Stapler-Omar-71"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "kiosk"
+            }
+          ],
+          "feed": {
+            "site": "friendface",
+            "person": "omar",
+            "posts": [
+              {
+                "id": "omar_post_1",
+                "text": "Finally got on Friendface at work. The kiosk in reception lets you on.",
+                "date": "Monday"
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_borrowed_session:kiosk",
+              "onceOnly": true,
+              "completeTask": "f4_borrowed",
+              "condition": "data.npcId === 'omar'"
+            }
+          ]
+        }
+      ]
+    },
+    "gate_room": {
+      "type": "room_office",
+      "door_sign": "F8 Guard",
+      "connections": {
+        "north": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f8",
+          "name": "Sign: F8 A distracted guard",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F8. The guard challenges anyone he sees in this room, except while he is on his phone (about once a minute). Walk through his view while he is on it, then again after.",
+          "observations": "A beat sign on a stand."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "guard",
+          "displayName": "Dev Patel",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 4
+          },
+          "spriteSheet": "male_security_guard_v2",
+          "spriteTalk": "assets/characters/len_talk.png",
+          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": false
+          },
+          "swivel": false,
+          "needsHome": {
+            "room": "gate_room",
+            "x": 7,
+            "y": 4
+          },
+          "socialUse": {
+            "restores": 60,
+            "useSeconds": 15
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 260,
+            "angle": 360,
+            "challengeOnSight": {
+              "event": "player_in_view_near:guard",
+              "cooldown": 5000,
+              "rooms": [
+                "gate_room"
+              ]
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used_phone:guard",
+              "onceOnly": true,
+              "completeTask": "f8_distracted"
+            },
+            {
+              "eventPattern": "player_in_view_near:guard",
+              "onceOnly": true,
+              "completeTask": "f8_challenged"
+            }
+          ]
+        }
+      ]
+    },
+    "priya_room": {
+      "type": "room_office",
+      "door_sign": "F9 Priya",
+      "connections": {
+        "west": "lena_room",
+        "east": "f10_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f9",
+          "name": "Sign: F9 Locked out of social media too",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F9. Priya's PC allows social media, so she uses it at her desk. Wait for her to go to the fridge: her screen locks behind her. Click her PC and type three wrong passwords on her tile. The PC's policy locks her account out there. When she comes back she finds out, and from then on she checks Friendface on her own phone, never on that PC. Her next post comes from the phone.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "priya_pc",
+          "name": "Priya's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "locking",
+          "lockChance": 1,
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Priya's PC: social media is allowed, and three wrong passwords lock an account out."
+        },
+        {
+          "type": "qdc_fridge1",
+          "id": "priya_fridge",
+          "name": "Fridge",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "The office fridge."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "priya",
+          "displayName": "Priya Shah",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "priya_pc",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "pshah",
+            "password": "Kestrel-Priya-46"
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            },
+            "hunger": {
+              "decayPerMin": 20,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "priya",
+            "posts": [
+              {
+                "id": "priya_post_1",
+                "text": "Lunch plans: the new noodle bar by the station. Who is in?",
+                "date": "Monday"
+              },
+              {
+                "id": "priya_post_2",
+                "text": "Work PC has decided I am a stranger. Posting from my phone like it is 2009.",
+                "date": "Tuesday"
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_locked_out:priya",
+              "onceOnly": true,
+              "completeTask": "f9_locked_out"
+            },
+            {
+              "eventPattern": "npc_used_phone:priya",
+              "onceOnly": true,
+              "completeTask": "f9_phone"
+            },
+            {
+              "eventPattern": "npc_posted:priya",
+              "onceOnly": true,
+              "completeTask": "f9_posted",
+              "condition": "data.index === 1"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "priya_phone",
+              "name": "Priya's phone",
+              "takeable": true,
+              "phoneOf": "priya",
+              "observations": "Priya's mobile, open on Friendface."
+            }
+          ]
+        }
+      ]
+    },
+    "f10_room": {
+      "type": "room_office",
+      "door_sign": "F10 Nadia",
+      "connections": {
+        "west": "priya_room",
+        "east": "f11_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f10",
+          "name": "Sign: F10 A vent that jumps the queue",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F10. Nadia's feed is set to reactive first. Throw the breaker: her work fails because the accounts share is down. On her next social media use the outage vent is served ahead of her ordered post. Reset the breaker when you are done.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "nadia_pc",
+          "name": "Nadia's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Nadia's PC, under the lax policy: social media is allowed and her work runs here."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "f10_breaker",
+          "name": "Accounts share breaker",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.f10_share_down",
+              "text": "Switch the accounts share off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f10_share_down",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.f10_share_down",
+              "text": "Switch the accounts share back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f10_share_down",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "The breaker for the accounts share. Click it to switch it off, and again to switch it back on."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "nadia",
+          "displayName": "Nadia Okonkwo",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "nadia_pc",
+          "needsDeferMin": 0.5,
+          "workNeeds": [
+            "f10_share"
+          ],
+          "frustration": {
+            "perFail": 34
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "nadia",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f10_ordered",
+                "text": "The office plant has flowered. Small wins on a grey Monday.",
+                "date": "Monday"
+              },
+              {
+                "id": "f10_ordered_two",
+                "text": "Second coffee of the day and the spreadsheets finally balance.",
+                "date": "Tuesday"
+              },
+              {
+                "id": "f10_vent",
+                "text": "Accounts share is down again and my whole morning has gone.",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:nadia",
+              "onceOnly": true,
+              "completeTask": "f10_posted",
+              "condition": "data.postId === 'f10_vent'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "nadia_phone",
+              "name": "Nadia's phone",
+              "takeable": true,
+              "phoneOf": "nadia",
+              "observations": "Nadia's mobile, open on Friendface."
+            }
+          ]
+        }
+      ]
+    },
+    "f11_room": {
+      "type": "room_office",
+      "door_sign": "F11 Theo",
+      "connections": {
+        "west": "f10_room",
+        "east": "f12_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f11",
+          "name": "Sign: F11 A post slotted in its place",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F11. Theo's feed is mixed order. His PC blocks social media and he has no phone, so he borrows the spare kiosk here. His ordered post comes out first; the borrow post slots in at its authored place, never ahead of the ordered one.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "theo_pc",
+          "name": "Theo's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Theo's PC, under a policy that blocks social media."
+        },
+        {
+          "type": "pc3",
+          "id": "f11_kiosk",
+          "name": "Spare kiosk",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "access": {
+            "people": [
+              "theo"
+            ]
+          },
+          "affordance": {
+            "satisfies": [
+              "social_media"
+            ],
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A spare kiosk under the lax policy: social media is allowed."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "theo",
+          "displayName": "Theo Marsh",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "theo_pc",
+          "needsDeferMin": 0.5,
+          "phone": false,
+          "creds": {
+            "username": "tmarsh",
+            "password": "Willow-Theo-52"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "f11_kiosk"
+            }
+          ],
+          "feed": {
+            "site": "friendface",
+            "person": "theo",
+            "order": "mixed",
+            "posts": [
+              {
+                "id": "f11_first",
+                "text": "New headphones at last. Quiet bliss at my desk.",
+                "date": "Monday"
+              },
+              {
+                "id": "f11_borrowed",
+                "text": "Had to borrow the spare kiosk just to get a word in.",
+                "when": {
+                  "workaround": "borrow_session"
+                }
+              },
+              {
+                "id": "f11_last",
+                "text": "Weekend plan: a long walk and absolutely no screens.",
+                "date": "Tuesday"
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:theo",
+              "onceOnly": true,
+              "completeTask": "f11_posted",
+              "condition": "data.postId === 'f11_borrowed'"
+            }
+          ]
+        }
+      ]
+    },
+    "f12_room": {
+      "type": "room_office",
+      "door_sign": "F12 Greg",
+      "connections": {
+        "west": "f11_room",
+        "east": "f13_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f12",
+          "name": "Sign: F12 Facts first, then the vent",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F12. Greg's feed is facts first. His ordered post comes out first. Throw the breaker so the sales system is down: his work fails, and on his next social media use the vent follows the ordered post. The socket by his desk can cut his PC off instead.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "greg_pc",
+          "name": "Greg's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10,
+            "offWhen": "f12_pc_unplugged"
+          },
+          "observations": "Greg's PC, under the lax policy. The socket can cut its power."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "f12_breaker",
+          "name": "Sales system breaker",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.f12_crm_down",
+              "text": "Switch the sales system off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f12_crm_down",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.f12_crm_down",
+              "text": "Switch the sales system back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f12_crm_down",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "The breaker for the sales system. Click it to switch it off, and again to switch it back on."
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "f12_socket",
+          "name": "Wall socket",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.f12_pc_unplugged",
+              "text": "Switch off the socket under Greg's desk?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f12_pc_unplugged",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.f12_pc_unplugged",
+              "text": "Switch the socket back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f12_pc_unplugged",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "Wall socket. Click it to switch it off, and again to switch it back on."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "greg",
+          "displayName": "Greg Fenwick",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "greg_pc",
+          "needsDeferMin": 0.5,
+          "workNeeds": [
+            "f12_crm"
+          ],
+          "frustration": {
+            "perFail": 34
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "greg",
+            "order": "facts_first",
+            "posts": [
+              {
+                "id": "f12_ordered",
+                "text": "Coffee rota sorted for the whole week. Quiet teamwork.",
+                "date": "Monday"
+              },
+              {
+                "id": "f12_vent",
+                "text": "Cannot reach the sales system, nothing at all is loading.",
+                "when": {
+                  "cause": [
+                    "down",
+                    "off"
+                  ],
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:greg",
+              "onceOnly": true,
+              "completeTask": "f12_posted",
+              "condition": "data.postId === 'f12_vent'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "greg_phone",
+              "name": "Greg's phone",
+              "takeable": true,
+              "phoneOf": "greg",
+              "observations": "Greg's mobile, open on Friendface."
+            }
+          ]
+        }
+      ]
+    },
+    "f13_room": {
+      "type": "room_office",
+      "door_sign": "F13 Ruth",
+      "connections": {
+        "west": "f12_room",
+        "east": "l1_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f13",
+          "name": "Sign: F13 Blocked, then back online",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F13. Ruth's PC blocks social media and she has no phone. She vents that the site is blocked, then borrows the laxer kiosk here: once her use is met she posts that she is back online. Both posts are reactive; the vent reads the blocked policy, the second reads the recovery.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "ruth_pc",
+          "name": "Ruth's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Ruth's PC, under a policy that blocks social media."
+        },
+        {
+          "type": "pc3",
+          "id": "f13_kiosk",
+          "name": "Laxer kiosk",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "access": {
+            "people": [
+              "ruth"
+            ]
+          },
+          "affordance": {
+            "satisfies": [
+              "social_media"
+            ],
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A kiosk under the lax policy: social media is allowed."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ruth",
+          "displayName": "Ruth Adeyemi",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "ruth_pc",
+          "needsDeferMin": 0.5,
+          "phone": false,
+          "creds": {
+            "username": "radeyemi",
+            "password": "Heron-Ruth-38"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "f13_kiosk"
+            }
+          ],
+          "feed": {
+            "site": "friendface",
+            "person": "ruth",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f13_blocked",
+                "text": "Friendface is blocked at my desk and it is driving me up the wall.",
+                "when": {
+                  "cause": "social_blocked"
+                }
+              },
+              {
+                "id": "f13_fixed",
+                "text": "Back online from the kiosk and finally caught up with everyone.",
+                "when": {
+                  "needMet": "social_media"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:ruth",
+              "onceOnly": true,
+              "completeTask": "f13_blocked",
+              "condition": "data.postId === 'f13_blocked'"
+            },
+            {
+              "eventPattern": "npc_posted:ruth",
+              "onceOnly": true,
+              "completeTask": "f13_recovered",
+              "condition": "data.postId === 'f13_fixed'"
+            }
+          ]
+        }
+      ]
+    },
+    "l1_room": {
+      "type": "room_office",
+      "door_sign": "L1 Sade",
+      "connections": {
+        "west": "f13_room",
+        "east": "l2_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_l1",
+          "name": "Sign: L1 Locked out at the hot desk",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "L1. Sade's PC blocks social media and she has no phone, so she borrows the hot desk. Before she gets there, lock out her username, sokafor, at the hot desk: three wrong passwords. When she sits down she finds out, and her use there fails: no post and no session left open.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "sade_pc",
+          "name": "Sade's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Sade's PC, under a policy that blocks social media."
+        },
+        {
+          "type": "pc3",
+          "id": "l1_hot_desk",
+          "name": "Hot desk",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "locking",
+          "access": {
+            "people": [
+              "sade"
+            ]
+          },
+          "affordance": {
+            "satisfies": [
+              "social_media"
+            ],
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A hot desk under the locking policy: three wrong passwords lock an account here."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "sade",
+          "displayName": "Sade Okafor",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "sade_pc",
+          "needsDeferMin": 0.5,
+          "phone": false,
+          "creds": {
+            "username": "sokafor",
+            "password": "Plover-Sade-47"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "l1_hot_desk"
+            }
+          ],
+          "feed": {
+            "site": "friendface",
+            "person": "sade",
+            "posts": [
+              {
+                "id": "l1_post",
+                "text": "Finally found a desk that lets me catch up with everyone."
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_locked_out:sade",
+              "onceOnly": true,
+              "completeTask": "l1_locked_out",
+              "condition": "data.objectId === 'l1_hot_desk'"
+            },
+            {
+              "eventPattern": "npc_borrow_done:sade",
+              "onceOnly": true,
+              "completeTask": "l1_borrow_failed",
+              "condition": "data.met === false && !data.lapsed && data.objectId === 'l1_hot_desk'"
+            }
+          ]
+        }
+      ]
+    },
+    "l2_room": {
+      "type": "room_office",
+      "door_sign": "L2 Hamid",
+      "connections": {
+        "west": "l1_room",
+        "east": "u1_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_l2",
+          "name": "Sign: L2 Locked out at the hot desk, for work",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "L2. Hamid's PC is broken, so after two failures he takes his work to the hot desk. Before he gets there, lock out his username, hrahimi, at the hot desk: three wrong passwords. When he sits down he finds out, and his work there fails as well.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "l2_pc",
+          "name": "Hamid's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10,
+            "offWhen": "l2_pc_off"
+          },
+          "observations": "Hamid's PC. It has not worked all morning."
+        },
+        {
+          "type": "pc3",
+          "id": "l2_hot_desk",
+          "name": "Hot desk",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "locking",
+          "access": {
+            "people": [
+              "hamid"
+            ]
+          },
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A hot desk under the locking policy: three wrong passwords lock an account here."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "l2_pc_power",
+          "name": "Hamid's PC power",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.l2_pc_off",
+              "text": "Switch Hamid's PC back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "l2_pc_off",
+                  "value": false
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.l2_pc_off",
+              "text": "Switch Hamid's PC off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "l2_pc_off",
+                  "value": true
+                }
+              ]
+            }
+          ],
+          "observations": "The power switch for Hamid's PC. It starts off; click it to switch the PC on, and again to switch it off."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "hamid",
+          "displayName": "Hamid Rahimi",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "l2_pc",
+          "needsDeferMin": 0.5,
+          "workNeeds": [
+            "l2_ledger"
+          ],
+          "creds": {
+            "username": "hrahimi",
+            "password": "Curlew-Hamid-62"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "l2_hot_desk"
+            }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_locked_out:hamid",
+              "onceOnly": true,
+              "completeTask": "l2_locked_out",
+              "condition": "data.objectId === 'l2_hot_desk'"
+            },
+            {
+              "eventPattern": "npc_borrow_done:hamid",
+              "onceOnly": true,
+              "completeTask": "l2_borrow_failed",
+              "condition": "data.met === false && !data.lapsed && data.objectId === 'l2_hot_desk'"
+            }
+          ]
+        }
+      ]
+    },
+    "u1_room": {
+      "type": "room_office",
+      "door_sign": "U1 Kim",
+      "connections": {
+        "west": "l2_room",
+        "east": "f15_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_u1",
+          "name": "Sign: U1 IT blocked my USB",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "U1. Kim copies a report to a USB stick on every second work use at her PC. Her PC's policy blocks USB storage, so the copy is refused: she grumbles and emails the file to herself instead. The refusal counts as a failed work use, and her next social media post says IT blocked her USB, a hint that this PC is locked down.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "kim_pc",
+          "name": "Kim's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "usb_locked",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Kim's PC, under a policy that blocks USB storage."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "kim",
+          "displayName": "Kim Nguyen",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/kim.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "itemsHeld": [
+            {
+              "type": "usb",
+              "id": "kim_usb",
+              "name": "Kim's USB stick",
+              "sprite": "usb_bowl1",
+              "usbClass": "storage",
+              "takeable": true,
+              "observations": "A plain USB memory stick. Kim copies her work to it.",
+              "onPickup": {
+                "setVariable": {
+                  "u1_kim_gave_usb": true
+                }
+              }
+            },
+            {
+              "type": "phone_friendface",
+              "id": "kim_phone",
+              "name": "Kim's phone",
+              "takeable": true,
+              "phoneOf": "kim",
+              "observations": "Kim's mobile, open on Friendface."
+            }
+          ],
+          "needsHome": "kim_pc",
+          "needsDeferMin": 0.5,
+          "workNeeds": [
+            "u1_reports"
+          ],
+          "usbHabit": {
+            "every": 2,
+            "setGlobal": "u1_kim_emailed_file"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "kim",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "u1_ordered",
+                "text": "Desk plant survived the weekend. Small victories.",
+                "date": "Monday"
+              },
+              {
+                "id": "u1_usb_vent",
+                "text": "IT blocked my USB stick again. Had to email the report to myself like it's 2005.",
+                "when": {
+                  "cause": "usb_refused",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_usb_refused:kim",
+              "onceOnly": true,
+              "completeTask": "u1_refused"
+            },
+            {
+              "eventPattern": "global_variable_changed:u1_kim_emailed_file",
+              "onceOnly": true,
+              "completeTask": "u1_emailed",
+              "condition": "data.value === true",
+              "fireOnlyWhenLoaded": true
+            },
+            {
+              "eventPattern": "npc_posted:kim",
+              "onceOnly": true,
+              "completeTask": "u1_posted",
+              "condition": "data.postId === 'u1_usb_vent'"
+            }
+          ]
+        }
+      ]
+    },
+    "f15_room": {
+      "type": "room_office",
+      "door_sign": "F15 Asha, Kofi, Mei",
+      "connections": {
+        "west": "u1_room",
+        "east": "f16_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f15",
+          "name": "Sign: F15 Three colleagues, one complaint",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F15. The project drive is down from the start. Asha, Kofi and Mei each try to work, fail, then pick up their phones. Whoever posts first vents; the other two reply in that thread instead of venting too. Stand back and watch the Friendface feed.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "asha_pc",
+          "name": "Asha's PC",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Asha's PC, on the project drive."
+        },
+        {
+          "type": "pc",
+          "id": "kofi_pc",
+          "name": "Kofi's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Kofi's PC, on the project drive."
+        },
+        {
+          "type": "pc",
+          "id": "mei_pc",
+          "name": "Mei's PC",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Mei's PC, on the project drive."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "asha",
+          "displayName": "Asha Rao",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "asha_pc",
+          "needsDeferMin": 5,
+          "workNeeds": [
+            "f15_drive"
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 6,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "jitterPct": 0,
+              "initial": 60
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "asha",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f15_asha_vent",
+                "text": "Project drive down again. Nothing will save today.",
+                "complaint": "f15_drive",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f15_asha_re_drive",
+                "text": "{name}, mine too. Has anyone rung IT about it?",
+                "replyToComplaint": "f15_drive",
+                "insteadOf": "f15_asha_vent",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "asha_phone",
+              "name": "Asha's phone",
+              "takeable": true,
+              "phoneOf": "asha",
+              "observations": "Asha's mobile, open on Friendface."
+            }
+          ]
+        },
+        {
+          "id": "kofi",
+          "displayName": "Kofi Mensah",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "kofi_pc",
+          "needsDeferMin": 5,
+          "workNeeds": [
+            "f15_drive"
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 6,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "jitterPct": 0,
+              "initial": 75
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "kofi",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f15_kofi_vent",
+                "text": "Project drive is down and my files will not open.",
+                "complaint": "f15_drive",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f15_kofi_re_drive",
+                "text": "{name}, same on my desk. Not one file will open.",
+                "replyToComplaint": "f15_drive",
+                "insteadOf": "f15_kofi_vent",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:kofi",
+              "onceOnly": true,
+              "completeTask": "f15_replied",
+              "condition": "data.postId === 'f15_kofi_re_drive'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "kofi_phone",
+              "name": "Kofi's phone",
+              "takeable": true,
+              "phoneOf": "kofi",
+              "observations": "Kofi's mobile, open on Friendface."
+            }
+          ]
+        },
+        {
+          "id": "mei",
+          "displayName": "Mei Tanaka",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "mei_pc",
+          "needsDeferMin": 5,
+          "workNeeds": [
+            "f15_drive"
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 6,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "jitterPct": 0,
+              "initial": 90
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "mei",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f15_mei_vent",
+                "text": "No project drive this morning, so no work either.",
+                "complaint": "f15_drive",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f15_mei_re_drive",
+                "text": "{name}, mine is down as well. I have rung IT twice.",
+                "replyToComplaint": "f15_drive",
+                "insteadOf": "f15_mei_vent",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:mei",
+              "onceOnly": true,
+              "completeTask": "f15_thread",
+              "condition": "data.postId === 'f15_mei_re_drive'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "mei_phone",
+              "name": "Mei's phone",
+              "takeable": true,
+              "phoneOf": "mei",
+              "observations": "Mei's mobile, open on Friendface."
+            }
+          ]
+        }
+      ]
+    },
+    "f16_room": {
+      "type": "room_office",
+      "door_sign": "F16 Ivy, Tomasz",
+      "connections": {
+        "west": "f15_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f16",
+          "name": "Sign: F16 A pair, an answer and a second reply",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F16. The shared drive is down from the start. Ivy posts first and Tomasz replies in her thread. Later Ivy answers him there, and after that Tomasz replies once more. Stand back and watch for about two minutes.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "tomasz_pc",
+          "name": "Tomasz's PC",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Tomasz's PC, on the shared drive."
+        },
+        {
+          "type": "pc",
+          "id": "ivy_pc",
+          "name": "Ivy's PC",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Ivy's PC, on the shared drive."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "tomasz",
+          "displayName": "Tomasz Nowak",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "tomasz_pc",
+          "needsDeferMin": 5,
+          "workNeeds": [
+            "f16_drive"
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 6,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "jitterPct": 0,
+              "initial": 80
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "tomasz",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f16_tom_vent",
+                "text": "Shared drive has gone. Lovely start to the week.",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_tom_re_ivy",
+                "text": "Same here {name}, I lost my whole morning.",
+                "replyTo": "f16_ivy_vent",
+                "insteadOf": "f16_tom_vent",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_tom_still_down",
+                "text": "Still no shared drive. I have given up for today.",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_tom_re_ivy_again",
+                "text": "{name}, they told me tomorrow at the earliest.",
+                "replyTo": "f16_ivy_vent",
+                "insteadOf": "f16_tom_still_down",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:tomasz",
+              "onceOnly": true,
+              "completeTask": "f16_replied",
+              "condition": "data.postId === 'f16_tom_re_ivy'"
+            },
+            {
+              "eventPattern": "npc_posted:tomasz",
+              "onceOnly": true,
+              "completeTask": "f16_again",
+              "condition": "data.postId === 'f16_tom_re_ivy_again'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "tomasz_phone",
+              "name": "Tomasz's phone",
+              "takeable": true,
+              "phoneOf": "tomasz",
+              "observations": "Tomasz's mobile, open on Friendface."
+            }
+          ]
+        },
+        {
+          "id": "ivy",
+          "displayName": "Ivy Clarke",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "ivy_pc",
+          "needsDeferMin": 5,
+          "workNeeds": [
+            "f16_drive"
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 6,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "jitterPct": 0,
+              "initial": 60
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "ivy",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f16_ivy_vent",
+                "text": "Shared drive down. Again. Nothing saves at all.",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_ivy_re_tom",
+                "text": "Not just you then, {name}. Mine has gone as well.",
+                "replyTo": "f16_tom_vent",
+                "insteadOf": "f16_ivy_vent",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_ivy_still_down",
+                "text": "Two hours on and the drive is still down.",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_ivy_answer",
+                "text": "{name}, did IT ever ring you back about it?",
+                "replyTo": "f16_ivy_vent",
+                "insteadOf": "f16_ivy_still_down",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:ivy",
+              "onceOnly": true,
+              "completeTask": "f16_answered",
+              "condition": "data.postId === 'f16_ivy_answer'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "ivy_phone",
+              "name": "Ivy's phone",
+              "takeable": true,
+              "phoneOf": "ivy",
+              "observations": "Ivy's mobile, open on Friendface."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "resources": {
+    "f10_share": {
+      "name": "Finance drive",
+      "kind": "file_share",
+      "downIf": "f10_share_down"
+    },
+    "f12_crm": {
+      "name": "Revenue tracker",
+      "kind": "crm",
+      "downIf": "f12_crm_down"
+    },
+    "l2_ledger": {
+      "name": "Facilities ledger",
+      "kind": "file_share",
+      "downIf": "l2_ledger_down"
+    },
+    "u1_reports": {
+      "name": "Team reports",
+      "kind": "file_share"
+    },
+    "f15_drive": {
+      "name": "Project file share",
+      "kind": "file_share",
+      "downIf": "f15_drive_down"
+    },
+    "f16_drive": {
+      "name": "Team file share",
+      "kind": "file_share",
+      "downIf": "f16_drive_down"
+    }
+  },
+  "accountProfiles": {
+    "jake_files": {
+      "for": {
+        "people": [
+          "jake"
+        ]
+      },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "jake_f5_note",
+          "name": "F5.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "F5 done: a password built from two of Jake's posts and the IT poster opened his desktop.",
+          "observations": "A note on Jake's desktop."
+        }
+      ]
+    }
+  }
+}

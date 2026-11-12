@@ -9,10 +9,34 @@
 
   "networks": {
     "office_lan": { "name": "Harbour office LAN" },
-    "workshop_lan": { "name": "Workshop bench LAN" }
+    "workshop_lan": { "name": "Workshop bench LAN" },
+    "server_net": { "name": "Server network", "downIf": "servers_offline" },
+    "guest_wifi": { "name": "Guest Wi-Fi", "wifi": { "ssid": "Harbour-Guest", "psk": "seabreeze-2025" } }
   },
 
+  "networkLinks": [
+    ["office_lan", "server_net"]
+  ],
+
   "resources": {
+    "backup_vault": {
+      "kind": "file_share",
+      "name": "Backup-Vault",
+      "host": "SV-FS02",
+      "network": "server_net",
+      "access": { "roles": ["it"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "backup_note",
+          "name": "backup_readme.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Backup vault on the server network. (N3: reached only by pivoting through an office session.)",
+          "observations": "A readme in the server network's backup share."
+        }
+      ]
+    },
     "scanned_inbox": {
       "kind": "file_share",
       "name": "Scanned-Inbox",
@@ -77,6 +101,23 @@
       "network": "office_lan",
       "observations": "A print queue anyone on the LAN can read: three payslips waiting for collection."
     },
+    "guest_notice": {
+      "kind": "file_share",
+      "name": "Guest-Notice",
+      "host": "HB-GUEST-01",
+      "network": "guest_wifi",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "guest_note",
+          "name": "guest_wifi.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Guest Wi-Fi notice: this network reaches the internet only. (N8: the guest network was joined.)",
+          "observations": "A notice left on the guest network's little file share."
+        }
+      ]
+    },
     "bench_notes": {
       "kind": "file_share",
       "name": "Bench-Notes",
@@ -98,13 +139,18 @@
 
   "policies": {
     "hardened": { "remote": "blocked" },
-    "counted": { "maxAttempts": 5, "remote": "allowed" }
+    "counted": { "maxAttempts": 5, "remote": "allowed" },
+    "kiosk_locked": { "remote": "blocked", "usb": "blocked" }
   },
 
   "globalVariables": {
     "comms_port_planted": false,
     "bench_port_planted": false,
-    "p5_lena_remote": false
+    "p5_lena_remote": false,
+    "servers_offline": false,
+    "n7_armed": false,
+    "bench_pc_off": true,
+    "n14_seen_off": false
   },
 
   "objectives": [
@@ -126,7 +172,20 @@
         { "taskId": "p9_sit_down", "title": "P9: open Lena's PC at her desk", "type": "custom", "status": "active" },
         { "taskId": "p10_unplug", "title": "P10: unplug the box from the comms room", "type": "custom", "status": "active" },
         { "taskId": "p11_other_network", "title": "P11: plant the box in the workshop and look", "type": "custom", "status": "active" },
-        { "taskId": "p12_reload", "title": "P12: after a reload, Lena's PC opens through the box with no password", "type": "custom", "status": "active" }
+        { "taskId": "p12_reload", "title": "P12: after a reload, Lena's PC opens through the box with no password", "type": "custom", "status": "active" },
+        { "taskId": "n11_dropped_implant", "title": "N11: a dropped stick an NPC uses gives a foothold on the door controller's network", "type": "custom", "status": "active" },
+        { "taskId": "n12_badusb_implant", "title": "N12: a BadUSB at Sam's desk gives a foothold and is consumed", "type": "custom", "status": "active" },
+        { "taskId": "n13_usb_refused", "title": "N13: the kiosk's USB policy refuses the BadUSB", "type": "custom", "status": "active" },
+        { "taskId": "n8_wifi_join", "title": "N8: join the guest Wi-Fi with the key and look at what it reaches", "type": "unlock_object", "targetObject": "guest_ap", "status": "active" },
+        { "taskId": "n9_second_ap", "title": "N9: join again through the second guest access point", "type": "unlock_object", "targetObject": "guest_ap2", "status": "active" },
+        { "taskId": "n2_pivot", "title": "N2: after signing in to an office PC through the box, the server network appears", "type": "custom", "status": "active" },
+        { "taskId": "n3_signin_across", "title": "N3: sign in to the server host across the link", "type": "custom", "status": "active" },
+        { "taskId": "n4_signout", "title": "N4: sign out of the office pivot and the server session ends", "type": "custom", "status": "active" },
+        { "taskId": "n10_port_security", "title": "N10: a secured port refuses the box and keeps it", "type": "custom", "status": "active" },
+        { "taskId": "n5_outage", "title": "N5: take the server network down; it leaves the box's view and a sign-in on it is refused", "type": "custom", "status": "active" },
+        { "taskId": "n6_repair", "title": "N6: restore the server network; its block fills in and its host signs in again", "type": "custom", "status": "active" },
+        { "taskId": "n7_held_route", "title": "N7: a held server session survives the outage, shows no route, and reopens on repair", "type": "custom", "status": "active" },
+        { "taskId": "n14_host_off", "title": "N14: the bench PC is not responding while its power is off; switch it on and sign in to it through the box", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -146,6 +205,61 @@
           "takeable": true,
           "rogueDevice": true,
           "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+        },
+        {
+          "type": "pc",
+          "id": "kit_badusb",
+          "name": "Keystroke injector",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 6 },
+          "takeable": true,
+          "usbClass": "hid",
+          "observations": "A USB device that types on its own once plugged into a PC. It needs a desk you are already signed in at."
+        },
+        {
+          "type": "pc",
+          "id": "kit_stick",
+          "name": "Spare USB stick",
+          "sprite": "drop_box1",
+          "position": { "x": 6, "y": 6 },
+          "takeable": true,
+          "droppable": true,
+          "usbClass": "storage",
+          "observations": "An ordinary USB stick. Left lying about, someone might plug it in."
+        },
+        {
+          "type": "pc",
+          "id": "guest_ap",
+          "name": "Guest access point",
+          "sprite": "network_rack1",
+          "position": { "x": 8, "y": 5 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "guest_wifi",
+          "observations": "A small wireless access point on the wall. Its label reads Harbour-Guest."
+        },
+        {
+          "type": "pc",
+          "id": "guest_ap2",
+          "name": "Guest access point (lift lobby)",
+          "sprite": "network_rack1",
+          "position": { "x": 8, "y": 8 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "guest_wifi",
+          "observations": "A second access point for the same guest network, by the lift."
+        },
+        {
+          "type": "notes1",
+          "id": "wifi_note",
+          "name": "Reception Wi-Fi card",
+          "position": { "x": 6, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Visitors: connect your laptop to the wireless.\nNetwork name (SSID): Harbour-Guest\nKey: seabreeze-2025\n\n(N8: click an access point and enter the key. N9: the second point by the lift joins the same network.)",
+          "observations": "A printed card on the reception desk with the guest Wi-Fi details."
         },
         {
           "type": "safe",
@@ -231,7 +345,14 @@
             { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.remote !== true && globalVars.p5_lena_remote", "onceOnly": true, "completeTask": "p9_sit_down" },
             { "eventPattern": "network_device_unplugged", "condition": "data.jackId === 'comms_port' && data.endedPcIds.includes('door_box')", "onceOnly": true, "completeTask": "p10_unplug" },
             { "eventPattern": "network_viewed", "condition": "data.networkId === 'workshop_lan'", "onceOnly": true, "completeTask": "p11_other_network" },
-            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.restored === true && data.remote === true", "onceOnly": true, "completeTask": "p12_reload" }
+            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.restored === true && data.remote === true", "onceOnly": true, "completeTask": "p12_reload" },
+            { "eventPattern": "network_viewed", "condition": "data.networkId === 'server_net' && data.footholdId === 'jack_comms_port'", "onceOnly": true, "completeTask": "n2_pivot" },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'sv_fs02' && data.remote === true", "onceOnly": true, "completeTask": "n3_signin_across" },
+            { "eventPattern": "pc_signed_out", "condition": "data.pcId === 'sv_fs02' && data.reason === 'link_dropped'", "onceOnly": true, "completeTask": "n4_signout" },
+            { "eventPattern": "network_device_refused", "condition": "data.jackId === 'secure_port' && data.reason === 'port_security'", "onceOnly": true, "completeTask": "n10_port_security" },
+            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'sv_fs02' && data.remote === true && globalVars.n7_armed && !globalVars.servers_offline", "onceOnly": true, "completeTask": "n7_held_route" },
+            { "eventPattern": "network_viewed", "condition": "data.networkId === 'workshop_lan' && globalVars.bench_pc_off", "onceOnly": true, "setGlobal": { "n14_seen_off": true } },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'bench_pc' && data.remote === true && globalVars.n14_seen_off", "onceOnly": true, "completeTask": "n14_host_off" }
           ]
         },
         {
@@ -269,7 +390,7 @@
       "type": "room_office",
       "door_sign": "Comms room",
       "network": "office_lan",
-      "connections": { "south": "lobby" },
+      "connections": { "south": "lobby", "north": "server_room" },
       "objects": [
         {
           "type": "pc",
@@ -323,6 +444,108 @@
           "addToNotes": false,
           "text": "P10. Click the port again: it says the box is plugged in here, with Unplug it and Leave it. Leave it does nothing.\nUnplug it gives the box back and ends the door controller's session. Lena's PC still opens at her desk. Plant again: the door controller asks for a password again.",
           "observations": "A sign by the wall port."
+        },
+        {
+          "type": "pc",
+          "id": "secure_port",
+          "name": "Locked switch port",
+          "sprite": "network_rack1",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "networkJack": true,
+          "network": "office_lan",
+          "portSecurity": true,
+          "portSecurityMessage": "The switch logs the device address and shuts the port. It only takes known machines; unused ports like this should be disabled.",
+          "jackConfirm": "Plug the drop box into this locked port?",
+          "requiresItemHint": "A second wall port. It looks locked down.",
+          "observations": "A second network port, with a switch label warning that the port is access controlled."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_n10",
+          "name": "Sign: N10 Port security",
+          "position": { "x": 6, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "N10. Take the drop box and plug it into the locked switch port.\nThe box goes in, the switch refuses it and shuts the port: no link item, no view, and the box stays in your bag. The switch's message names the fix: disable unused ports.",
+          "observations": "A sign by the locked port."
+        }
+      ]
+    },
+
+    "server_room": {
+      "type": "room_office",
+      "door_sign": "Server room",
+      "network": "server_net",
+      "connections": { "south": "comms_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "sv_fs02",
+          "name": "Server file host",
+          "host": "SV-FS02",
+          "sprite": "pc_desktop",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": false,
+          "access": { "roles": ["it"] },
+          "policy": "counted",
+          "observations": "A file host on the server network, managed by IT."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_n2",
+          "name": "Sign: N1 to N4 The pivot",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "The server network is linked to the office LAN, but the box's foothold does not reach it on its own (N1).\nSign in to an office PC through the box (Lena's), then the box's view gains a Server network block, through that PC (N2). Sign in to this host across the link with Ian's details (N3). Sign out of the office PC and this session ends with it (N4).",
+          "observations": "A sign by the server host."
+        },
+        {
+          "type": "pc",
+          "id": "server_breaker",
+          "name": "Server rack breaker",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "observations": "A breaker switch on the server rack. Flipping it takes the whole server network down.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "servers_offline", "value": true },
+            { "type": "set_global", "key": "n7_armed", "value": true },
+            { "type": "complete_task", "taskId": "n5_outage" }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "server_power",
+          "name": "Server rack power",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 6 },
+          "takeable": false,
+          "observations": "The power switch that restores the server network after the breaker trips.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "servers_offline", "value": false },
+            { "type": "complete_task", "taskId": "n6_repair" }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "sign_n5",
+          "name": "Sign: N5 to N7 Outages",
+          "position": { "x": 2, "y": 5 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Flip the rack breaker: the server network goes down, it leaves the box's view, and a sign-in on it is refused (N5). Flip the power back: its block fills in and its host signs in again (N6).\nSign in to this host first, then flip the breaker: your session is kept but shows no route; flip the power and its desktop opens again with no password (N7).",
+          "observations": "A sign by the server rack."
         }
       ]
     },
@@ -353,8 +576,82 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "P11. Unplug the box from the comms room, then plug it in here. The link item is named for this switch.\nIts view lists one open share and nothing from the office.",
+          "text": "P11. Unplug the box from the comms room, then plug it in here. The link item is named for this switch.\nIts view lists the bench PC, one open share and nothing from the office.",
           "observations": "A sign by the bench."
+        },
+        {
+          "type": "pc",
+          "id": "bench_pc",
+          "name": "Bench PC",
+          "host": "WS-BENCH-01",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "roles": ["staff"] },
+          "affordance": { "offWhen": "bench_pc_off" },
+          "spriteVariants": [
+            { "condition": "globalVars.bench_pc_off", "value": "aw_pc_off1" }
+          ],
+          "contents": [
+            {
+              "type": "safe",
+              "id": "bench_logs",
+              "name": "Bench logs",
+              "takeable": false,
+              "locked": true,
+              "lockType": "pin",
+              "requires": "3141",
+              "observations": "A PIN-locked folder of bench logs. The sticker on the folder icon says 3141.",
+              "contents": [
+                {
+                  "type": "text_file",
+                  "id": "bench_log",
+                  "name": "bench_log.txt",
+                  "takeable": true,
+                  "readable": true,
+                  "text": "Bench log: the soldering station passed its checks. (N14: the PIN folder on the bench PC opened.)",
+                  "observations": "The bench log."
+                }
+              ]
+            }
+          ],
+          "observations": "The workbench PC. Its power lead runs to the switch on the wall."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "bench_power",
+          "name": "Bench PC power",
+          "position": { "x": 8, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.bench_pc_off",
+              "text": "Switch the bench PC on?",
+              "onConfirm": [ { "type": "set_global", "key": "bench_pc_off", "value": false } ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.bench_pc_off",
+              "text": "Switch the bench PC off?",
+              "onConfirm": [ { "type": "set_global", "key": "bench_pc_off", "value": true } ]
+            }
+          ],
+          "observations": "The bench PC's power switch. Click it to switch the PC on, and again to switch it off."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_n14",
+          "name": "Sign: N14 A host that is switched off",
+          "position": { "x": 2, "y": 5 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "N14. With the box in this switch and the bench PC's power off, the box's view shows the bench PC as not responding, with no sign-in.\nSwitch the power on, look again, and sign in to it through the box with Sam's details.",
+          "observations": "A sign by the bench PC."
         }
       ]
     },
@@ -402,6 +699,20 @@
           "addToNotes": false,
           "text": "P9. After P5 and P8, open the finance door (north) with the code from the door controller.\nLena's PC then opens her desktop with no password: you are sitting at it now, so unplugging the box no longer ends that session.",
           "observations": "A sign by the finance door."
+        },
+        {
+          "type": "pc",
+          "id": "sam_dock",
+          "name": "USB socket by Sam's PC",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "observations": "A spare USB socket on Sam's desk. Useful only while you are signed in at his PC.",
+          "requiresItem": "kit_badusb",
+          "requiresItemHint": "You would need a device to plug in here.",
+          "triggerOnInteract": [
+            { "type": "grant_foothold", "pc": "sam_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: Sam's desk" }
+          ]
         }
       ]
     },
@@ -461,8 +772,22 @@
           "locked": true,
           "lockType": "login",
           "access": { "roles": ["staff"] },
-          "policy": "hardened",
-          "observations": "A visitor kiosk. Its policy turns remote sign-in off."
+          "policy": "kiosk_locked",
+          "observations": "A visitor kiosk. Its policy turns remote sign-in off and blocks USB devices."
+        },
+        {
+          "type": "pc",
+          "id": "kiosk_dock",
+          "name": "Kiosk USB socket",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "observations": "A USB socket on the kiosk stand.",
+          "requiresItem": "kit_badusb",
+          "requiresItemHint": "You would need a device to plug in here.",
+          "triggerOnInteract": [
+            { "type": "grant_foothold", "pc": "kiosk_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: kiosk" }
+          ]
         },
         {
           "type": "notes1",
@@ -521,6 +846,18 @@
           "addToNotes": false,
           "text": "P8. Clicking the door controller only describes it: there is nothing to sign in to here.\nIt is reached from the box's view, with Ian's details.",
           "observations": "A sign by the door controller."
+        },
+        {
+          "type": "pc",
+          "id": "door_dock",
+          "name": "Door controller USB port",
+          "sprite": "network_rack1",
+          "position": { "x": 6, "y": 3 },
+          "takeable": false,
+          "observations": "A USB port on the door controller. If a stick were left in it, the controller would read it.",
+          "triggerOnInteract": [
+            { "type": "grant_foothold", "pc": "door_box", "needsDropped": "kit_stick", "name": "USB foothold: door controller" }
+          ]
         }
       ]
     }
