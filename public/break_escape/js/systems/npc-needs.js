@@ -1301,7 +1301,9 @@ export class NPCNeedsSystem {
         // Coming back from a real leave: is the player at the desk? (once per return)
         if (s.mode === 'returning' && !s.atPost && !s.caughtEmitted) this._checkCaught(s, pos);
         // The same on a walk back that is also a job for the own post (a need for it, or a
-        // delivery to it): that walk is the return, so the player is checked on every tick of it
+        // delivery to it): that walk is the return, so the player is checked on every tick of
+        // it, the arrival tick included (it runs before _advanceJob). Only goto_target: on the
+        // goto_item leg of a delivery the owner is leaving the desk to fetch the item, not back.
         if (s.mode === 'job' && s.job?.phase === 'goto_target' && !s.atPost && !s.caughtEmitted && this._targetsOwnPost(s)) this._checkCaught(s, pos);
 
         if (s.mode === 'returning' && arrived) {
@@ -3040,9 +3042,9 @@ export class NPCNeedsSystem {
             // through the whole session before anything hears that it is back (a workstation
             // stayed locked, with its owner at it, for the length of the session). The test is
             // the target, not the job's kind; _atOwnPost stays `use` only for the wind-up and
-            // stayPut decisions.
+            // stayPut decisions. The player at the desk was already checked this tick, by the
+            // per-tick check on a goto_target walk to the own post in tick().
             if (!s.atPost && this._targetsOwnPost(s)) {
-                if (!s.caughtEmitted) this._checkCaught(s, this.world.npcPos(id));
                 s.atPost = true;
                 this._log(id, 'returned_post');
                 this._emit(`npc_returned_post:${id}`, { npcId: id, ...this._playerProximity(id) });
