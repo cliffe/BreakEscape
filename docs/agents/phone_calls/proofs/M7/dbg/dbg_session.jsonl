@@ -1,0 +1,20 @@
+{"seq":1,"t":"2026-11-12T18:58:21.861Z","dir":"out","ok":true,"event":"session-open","ready":{"ok":true,"label":"ready","value":true,"elapsedMs":5856},"speed":"fast","url":"http://127.0.0.1:3029/break_escape/games/2044","flagsConfigured":0,"logPath":"docs/agents/phone_calls/proofs/M7/dbg/dbg_session.jsonl","capturePath":null,"pid":498644}
+{"seq":2,"t":"2026-11-12T18:58:21.920Z","dir":"in","cmd":{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}}
+{"seq":3,"t":"2026-11-12T18:59:52.034Z","dir":"out","ok":false,"cmd":"bootstrap","error":"bootstrap: still not clear after 90000 ms (resume:\"new\"). Last steps: cutscene choice 1 of 2 ; cutscene choice 1 of 1 ; cutscene choice 1 of 3 ; cutscene choice 1 of 3. Screen: {\"room\":\"reception_lobby\",\"player\":{\"x\":160,\"y\":144,\"hp\":100},\"activeMinigame\":{\"id\":\"person-chat\",\"type\":\"PersonChatMinigame\",\"title\":\"Agent HaX\",\"isActive\":true},\"blockingUi\":null,\"dialogue\":{\"speaker\":\"System\",\"text\":\"(Conversation ended - press ESC to close)\",\"awaitingChoice\":false,\"canContinue\":true,\"choices\":[]},\"nearby\":[],\"inventory\":[\"Your Phone\",\"RFID Cloner\",\"Lock Pick Kit\",\"Notepad\"],\""}
+{"seq":4,"t":"2026-11-12T18:59:55.080Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn String(window.gameState.globalVariables.victoria_ko);\n\n}"}}
+{"seq":5,"t":"2026-11-12T18:59:55.099Z","dir":"out","ok":true,"cmd":"eval","result":"true"}
+{"seq":6,"t":"2026-11-12T18:59:55.331Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn String(window.gameState.globalVariables.night_confrontation_ready);\n\n}"}}
+{"seq":7,"t":"2026-11-12T18:59:55.334Z","dir":"out","ok":true,"cmd":"eval","result":"true"}
+{"seq":8,"t":"2026-11-12T18:59:55.387Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn String(window.gameState.globalVariables.victoria_choice_made);\n\n}"}}
+{"seq":9,"t":"2026-11-12T18:59:55.405Z","dir":"out","ok":true,"cmd":"eval","result":"true"}
+{"seq":10,"t":"2026-11-12T18:59:55.620Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn String(window.gameState.globalVariables.clone_call_done);\n\n}"}}
+{"seq":11,"t":"2026-11-12T18:59:55.636Z","dir":"out","ok":true,"cmd":"eval","result":"true"}
+{"seq":12,"t":"2026-11-12T18:59:55.856Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn String(window.gameState.globalVariables.exec_wing_night);\n\n}"}}
+{"seq":13,"t":"2026-11-12T18:59:55.866Z","dir":"out","ok":true,"cmd":"eval","result":"true"}
+{"seq":14,"t":"2026-11-12T18:59:56.098Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst m=window.MinigameFramework.currentMinigame; return m?m.constructor.name:null;\n\n}"}}
+{"seq":15,"t":"2026-11-12T18:59:56.121Z","dir":"out","ok":true,"cmd":"eval","result":"PersonChatMinigame"}
+{"seq":16,"t":"2026-11-12T19:00:00.920Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn window.gameState.globalVariables.victoria_choice_made\n\n}"}}
+{"seq":17,"t":"2026-11-12T19:00:00.944Z","dir":"out","ok":true,"cmd":"eval","result":true}
+{"seq":18,"t":"2026-11-12T19:00:01.144Z","dir":"in","cmd":{"cmd":"quit"}}
+{"seq":19,"t":"2026-11-12T19:00:01.144Z","dir":"out","event":"quit","commands":18,"flagsUsed":0}
+{"seq":20,"t":"2026-11-12T19:00:01.205Z","dir":"out","ok":true,"event":"session-closed","commands":19,"flagsUsed":0,"logPath":"docs/agents/phone_calls/proofs/M7/dbg/dbg_session.jsonl"}
