@@ -137,8 +137,8 @@ Tonight's about money. Where it comes in, where it lands, who it pays.
 // Playtest round: a phone first opened late lands here; send it to the recap.
 + {guard_resolved} [I've been busy. Where are we up to?]
     -> recap
-+ [I'll call if I need you.]
-    I'm on the line. Call anytime.
++ [I'll message if I need you.]
+    I'm here. Any time.
     #exit_conversation
     -> hub
 
@@ -216,7 +216,7 @@ Everything after that is joining up the cells' money.
 + [Remind me where we are.]
     -> recap
 + [I'm good for now.]
-    Copy that. Call anytime.
+    Copy that. I'm on the thread.
     #exit_conversation
     -> hub
 
@@ -622,7 +622,7 @@ For the file, that's Satoshi's Ghost, the Crypto Anarchists' leader. Not Ghost P
     #complete_task:call_in_after_sweep
     -> extract_confirm
 + [Not yet. I'm still looking.]
-    A few minutes. The police won't give you more.
+    Then be quick. They won't wait for you.
     #exit_conversation
     -> DONE
 
