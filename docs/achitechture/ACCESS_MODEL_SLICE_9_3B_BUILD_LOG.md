@@ -78,6 +78,30 @@ by its "Plug it in" button), not test helpers.
 - **Leak scan** over 26 captured responses: `VERDICT: no leaks found.` (the port-security refusal
   carries only the authored message).
 
+### Review R1 (`ACCESS_MODEL_SLICE_9_3B_P_CODE_REVIEW_R1.md`)
+
+Verdict: approve, no blocker or major. The two minors and the two nits are fixed in this slice;
+each fix has a test that fails without it (the nits are pinning tests).
+
+- **Minor 1 (fixed):** the `toast()` wrapper in `network-links.js` now passes `{ plainText: true }`
+  to `gameAlert`, so author and server text (port-security refusals, jack hints, network names) is
+  shown as plain text, not interpolated into `innerHTML`. This also fixes the pre-existing
+  `no_device` hint toast. Every toast in the file goes through this one wrapper, so no other author
+  or server text reaches `innerHTML`; the confirm dialogs already passed `plainText`.
+- **Minor 2 (fixed):** `validate_network.rb` now warns (not errors) when a `portSecurityMessage` is
+  present but blank or whitespace-only, because the runtime quietly falls back to the default line.
+- **Nit 1 (fixed):** the Rails port-security test now asserts the 422 body is exactly
+  `%w[error reason success]` (the leak guarantee of spec 5.4).
+- **Nit 2 (fixed):** a client test now exercises the `b.error` fallback (a `422 port_security` with
+  no `error`) and asserts the generic line is shown.
+
+Tests after R1:
+- `test/js/network-links.test.mjs`: 38 pass (was 35; +3 for minor 1 and nit 2).
+- `test/js/validator-network-model.test.mjs`: 35 pass (was 34; +1 for minor 2).
+- `bin/rails test test/controllers/break_escape/network_footholds_test.rb`: 31 runs, 338
+  assertions (was 337; +1 for nit 1), 0 failures.
+- Validator `scenarios/test_access_networks/scenario.json.erb --no-graph`: exit 0, no errors.
+
 ### Handover
 
 Sub-slice P complete. Nothing in progress. Open: the `portSecurity`/`wifiAp` combined validator

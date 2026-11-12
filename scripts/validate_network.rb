@@ -82,6 +82,9 @@ def check_network_model(json_data)
     end
     if obj.key?('portSecurityMessage') && !obj['portSecurity']
       err.call("'#{e[:path]}' has 'portSecurityMessage' without 'portSecurity': true.")
+    elsif obj.key?('portSecurityMessage') && obj['portSecurityMessage'].to_s.strip.empty?
+      warn.call("'#{e[:path]}' has a blank 'portSecurityMessage'; the default refusal line is shown instead. " \
+                'Remove the field, or write the line the switch should show.')
     end
     if obj['portSecurity'] && obj['wifiAp']
       err.call("'#{e[:path]}' is both 'portSecurity' and 'wifiAp'; a jack cannot be a secured port and an access point.")

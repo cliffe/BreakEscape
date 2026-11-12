@@ -198,6 +198,9 @@ module BreakEscape
       assert_equal 'port_security', body['reason']
       assert_equal NS::PORT_SECURITY_MESSAGE, body['error']
       assert_equal false, body['success']
+      # The body leaks nothing beyond the refusal: no network, host or share name (spec 5.4,
+      # review R1 nit 1).
+      assert_equal %w[error reason success], body.keys.sort
       # No foothold written, the device still in hand, nothing else changed.
       assert_equal before, state
       assert_includes held_ids, 'kit_dropbox'

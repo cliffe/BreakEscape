@@ -296,6 +296,21 @@ test('portSecurityMessage without portSecurity is an error', { skip }, () => {
     assertHas(errors(issues(sc)), "has 'portSecurityMessage' without 'portSecurity'");
 });
 
+test('a blank or whitespace-only portSecurityMessage warns (review R1 minor 2)', { skip }, () => {
+    for (const message of ['', '   ']) {
+        const sc = clean();
+        const port = obj(sc, 'comms_room', 'comms_port');
+        port.portSecurity = true;
+        port.portSecurityMessage = message;
+        assertHas(warnings(issues(sc)), "has a blank 'portSecurityMessage'");
+    }
+    const sc = clean();
+    const port = obj(sc, 'comms_room', 'comms_port');
+    port.portSecurity = true;
+    port.portSecurityMessage = 'Known machines only.';
+    assertNot(warnings(issues(sc)), 'blank');
+});
+
 test('a jack that is both portSecurity and wifiAp is an error', { skip }, () => {
     const sc = clean();
     const port = obj(sc, 'comms_room', 'comms_port');

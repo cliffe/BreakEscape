@@ -66,7 +66,10 @@ const footholdIdFor = (jackId) => `jack_${jackId}`;
 const plantedGlobal = (jackId) => `${jackId}_planted`;
 
 function toast(message, type = 'info', ms = 3000) {
-    try { win().gameAlert?.(message, type, '', ms); } catch (e) { /* no notification layer */ }
+    // Every toast here carries author or server text (jack hints, port-security refusals,
+    // network names), so it goes out as plain text: a `<` or markup renders literally
+    // (review R1 minor 1). The confirm dialogs on the same jack already pass plainText.
+    try { win().gameAlert?.(message, type, '', ms, { plainText: true }); } catch (e) { /* no notification layer */ }
 }
 
 function cleanFoothold(f) {
