@@ -293,3 +293,34 @@ test('R2 m4: a cryptex network error keeps the word sendable and counts no try',
     m._checkCompletion();
     assert.equal(submitBtn.disabled, false);
 });
+
+function answering(status) {
+    window.ApiClient = { unlock: async () => { const e = new Error(`HTTP ${status}`); e.status = status; throw e; } };
+}
+
+test('R3 n3: a 5xx from /unlock counts no try on the padlock or the cryptex; a 422 still counts', async () => {
+    const p = padlock();
+    p._rotateDial(0, 'right');
+    p._rotateDial(1, 'right');
+    p._rotateDial(2, 'right');
+    p.attemptCount = 0;
+    p.complete = () => {};
+    answering(500);
+    await p._handleUnlock();
+    assert.equal(p.attemptCount, 0, 'a 500 counts no attempt');
+    assert.deepEqual(p.dials, [1, 1, 1], 'the dials are kept');
+    assert.match(status(p).textContent, /was not checked/);
+    answering(422);
+    await p._handleUnlock();
+    assert.equal(p.attemptCount, 1, 'a 422 is a wrong combination');
+
+    const c = new CryptexMinigame(null, { lockable, type: 'object', cryptexConfig: { wheelCount: 3 } });
+    c.gameContainer = fakeContainer();
+    c.attemptCount = 0;
+    c._rotateWheel(0, 1);
+    answering(503);
+    await c._handleSubmit();
+    assert.equal(c.attemptCount, 0, 'a 503 counts no attempt');
+    assert.equal(c.lastTried, undefined);
+    assert.equal(c.gameContainer.querySelector('#cryptex-submit-btn').disabled, false);
+});

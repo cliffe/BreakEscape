@@ -349,7 +349,9 @@ export class CombinationMinigame extends MinigameScene {
                 this.scopeRefusal = refusal;
                 return false;
             }
-            if (error?.status) {
+            // A 5xx is a server fault, not a wrong answer (code review R3 n3): it takes the
+            // network path, so no attempt is counted and the entry stays sendable
+            if (error?.status && error.status < 500) {
                 return false;
             }
             console.error('Server validation error:', error);
