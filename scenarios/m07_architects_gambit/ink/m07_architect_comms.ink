@@ -221,7 +221,6 @@ Narrator: Dead air, then the ordinary hiss of the line.
 // who never logged in. A redirect is named first, whatever happened after it.
 {
 - team_redirected:
-    Ten minutes before your team is too committed to move.
     You moved them. I had wondered whether you would.
 - cascade_armed:
     You logged in. The door closed behind you.
@@ -331,7 +330,11 @@ The man in your control room would give you his figure and defend it to your fac
 
 === t5_close ===
 // lint: call-knot
-{team_assignment == "": You'll have to name all three, eventually, to somebody with a tablet.|Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet.}
+{team_assignment == "":
+    You'll have to name all three, eventually, to somebody with a tablet.
+- else:
+    Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet.
+}
 {late_first_contact and not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
@@ -482,8 +485,9 @@ Narrator: A carrier tone on a channel that should not have one. Nobody on it. He
 
 // ===========================================
 // PASS 2: the story never ends (a phone thread whose story has ended shows
-// "Conversation ended" on every reopen). Every exit parks here. Reopening
-// re-evaluates this knot, so a transmission that arrived since goes through.
+// "Conversation ended" on every reopen). The taunt and sign-off call knots end
+// -> DONE now; only the router's [Hang up] rests here. Reopening re-evaluates
+// this knot, so a transmission that arrived since goes through.
 // ===========================================
 
 === parked ===
@@ -554,7 +558,7 @@ Narrator: The line goes quiet.
 // phone's label, not his, so it is dropped.
 voice: You let it ring. Sensible. Don't look for the trace.
 voice: There is a decision in front of you tonight. Make it however you like. I only want to see it made.
-voice: Let it hurt afterwards, not during.
+voice: Let it hurt afterwards, not during. I expect you've been told that.
 -> DONE
 
 === taunt_t20_vm ===
@@ -595,7 +599,7 @@ voice: Stop this, and something else fails. Someone else dies. You simply won't 
 // window is open the live call's open-door line stands in, so the voicemail never tells a player who can
 // still redirect that they can't.
 {redirect_window_closed or team_assignment == "trojan_horse":
-    voice: Doors close. It is the one thing they reliably do.
+    voice: Doors close. It's the one thing they reliably do.
 - else:
     voice: You still have a door open. I'd hurry, but that's your business.
 }
@@ -637,11 +641,13 @@ voice: The man in your control room would give you his figure and defend it to y
 }
 // M6: the countdown alternative is a whole-line branch now (3.6, no inline alternatives in voiced lines).
 {countdown_expired:
-    voice: Late. I did wonder. But the grid was never the point.
+    voice: Late. I did wonder.
+    voice: But the grid was never the point.
 - else:
-    voice: Closer than the file suggested. But the grid was never the point.
+    voice: Closer than the file suggested. Not close enough to be comfortable.
+    voice: But the grid was never the point.
 }
-voice: You'll work it out, probably tonight, probably in a room with a tablet in it.
+voice: You'll work it out. Probably tonight. Probably in a room with a tablet in it.
 // M6: "them" had no referent in the message; name it, as the live call does.
 voice: Eight point four million people. I have written every one of them down.
 -> DONE
@@ -652,5 +658,5 @@ voice: Eight point four million people. I have written every one of them down.
 ~ heard_t5 = true
 // M8: the same two lines as the live seattle_call; it no longer reads as the mission's end.
 voice: Seattle first. Exactly as scheduled.
-voice: Three to go, and you're on the phone to me.
+voice: Three to go, and you let it ring.
 -> DONE
