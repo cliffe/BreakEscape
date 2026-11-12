@@ -29,7 +29,7 @@ Usage:
       The engine shows `<texture key>_locked` for a locked screen, so install under the
       sprite's texture key: `pc_desktop` (a copy of pc.png), not `pc` (which loads pc1.png).
       The texture key `pc` takes its locked look from pc1_locked.png: core/game.js loads
-      that file as both `pc_locked` and `pc1_locked`.
+      that file once as `pc1_locked` and makes `pc_locked` an alias of it in create().
 
 Output is deterministic: the same base sprite gives the same bytes.
 """

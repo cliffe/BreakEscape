@@ -15,8 +15,8 @@ workstation PC got the lock sounds and dots but kept its desktop on screen.
   edge); `ROUNDED` leaves pc7's four corner pixels alone (its glass has rounded corners); a
   screen under 12 rows takes the 7x6 padlock instead of the 7x8 one; the 17x12 minimum now only
   applies to candidates b and c, which are skipped on smaller screens.
-- `core/game.js`: preloads `pc1_locked`, `pc3_locked` to `pc12_locked`, and `pc_locked` from
-  `pc1_locked.png` (the texture key `pc` loads pc1.png, not pc.png).
+- `core/game.js`: preloads `pc1_locked` and `pc3_locked` to `pc12_locked`; `pc_locked` is an alias
+  of `pc1_locked` made at the start of `create()` (the texture key `pc` loads pc1.png, not pc.png).
 - `systems/screen-states.js`: header comment no longer says only `pc_desktop` has the art.
 - `test/js/screen-states.test.mjs`: one test that every workstation base key (`pc`, `pc1`,
   `pc3` to `pc12`, `pc_desktop`) has a `<key>_locked` preload, of the same size as its base,
