@@ -74,7 +74,7 @@
     text-align: center;
     z-index: 10001;
     font-size: 18px;
-    box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+    box-shadow: none;   /* pixel-art UI: no glow (UX access R2) */
 }
 
 .minigame-failure-message {
@@ -89,7 +89,7 @@
     text-align: center;
     z-index: 10001;
     font-size: 18px;
-    box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+    box-shadow: none;   /* pixel-art UI: no glow (UX access R2) */
 }
 
 .minigame-controls {

@@ -340,9 +340,13 @@ export class NpcActionIcons {
     }
 
     _make(scene) {
-        const bg = scene.add.rectangle(0, 0, 10, 10, 0x1b2a41).setOrigin(0.5, 1);
+        // UX access R2 (finding 11): the same light card and dark outline as the thought
+        // bubbles, square, so a doing icon and a wanting bubble read as one family. The dark
+        // chip it had read as a UI tile laid over the world.
+        const bg = scene.add.rectangle(0, 0, 10, 10, BUBBLE_FILL).setOrigin(0.5, 1);
+        bg.setStrokeStyle?.(1, BUBBLE_LINE, 1);
         const text = scene.add.text(0, 0, '', {
-            fontFamily: 'monospace', fontSize: `${ICON_TEXT_PX}px`, fontStyle: 'bold', color: '#ffffff'
+            fontFamily: "'VT323', monospace", fontSize: `${ICON_TEXT_PX}px`, color: '#1b2a41'
         }).setOrigin(0.5, 0.5);
         const img = scene.add.image(0, -2, '__DEFAULT').setOrigin(0.5, 1).setVisible(false);
         const box = scene.add.container(0, 0, [bg, text, img]).setDepth(5000);
@@ -373,7 +377,7 @@ export class NpcActionIcons {
     _makeBubble(scene) {
         const g = scene.add.graphics();
         const text = scene.add.text(0, 0, '', {
-            fontFamily: 'monospace', fontSize: `${ICON_TEXT_PX - 4}px`, fontStyle: 'bold', color: '#1b2a41'
+            fontFamily: "'VT323', monospace", fontSize: `${ICON_TEXT_PX - 4}px`, color: '#1b2a41'
         }).setOrigin(0.5, 0.5);
         const img = scene.add.image(0, 0, '__DEFAULT').setOrigin(0.5, 0.5).setVisible(false);
         // Slice 14: the avoided person's face (a crop of their frame), and a badge with its cross

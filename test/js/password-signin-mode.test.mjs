@@ -34,7 +34,8 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const {
-    PasswordMinigame, applyTilePortrait, isTalkSheetSize, tileInitials, portraitUrl, signInRefusalMessage, signInErrorMessage, capturedSignIns
+    PasswordMinigame, applyTilePortrait, isTalkSheetSize, tileInitials, portraitUrl, signInRefusalMessage, signInErrorMessage, capturedSignIns,
+    passwordScreenKind
 } = await import(pathToFileURL(join(dir, 'minigames/password/password-minigame.js')));
 
 const TILES = [
@@ -340,4 +341,14 @@ test('9.3a: a remote sign-in sends the foothold through pc-sessions', async () =
     await mg.submitPassword();
     assert.deepEqual(signIns, [['lena_pc', 'lfox', 'Ledger-Lena-9', { foothold: 'jack_comms_port' }]]);
     assert.equal(messageText(), 'Remote sign-in is turned off on this PC.');
+});
+
+test('UX access R2: a Wi-Fi key and a non-computer lock get the plain prompt; a computer keeps its screen', () => {
+    assert.equal(passwordScreenKind({ join: { apId: 'guest_ap', apName: 'Guest Wi-Fi' } }), 'prompt');
+    assert.equal(passwordScreenKind({ lockable: { scenarioData: { type: 'zip_archive' } } }), 'prompt');
+    assert.equal(passwordScreenKind({ lockable: { scenarioData: { type: 'safe' } } }), 'prompt');
+    assert.equal(passwordScreenKind({}), 'prompt');
+    for (const type of ['pc', 'pc3', 'laptop', 'workstation', 'lab-workstation', 'osint-workstation', 'kiosk', 'tablet', 'mail_terminal', 'smartscreen']) {
+        assert.equal(passwordScreenKind({ lockable: { scenarioData: { type } } }), 'screen', type);
+    }
 });

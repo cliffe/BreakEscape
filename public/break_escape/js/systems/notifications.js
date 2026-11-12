@@ -207,6 +207,35 @@ function setPlainLines(el, text) {
     });
 }
 
+// Toasts on screen at once; info and success toasts past this wait (renderNotification).
+export const MAX_SHOWN_TOASTS = 2;
+const waitingToasts = [];
+
+/** Toasts on screen that count towards the limit: not closing, not pulled back behind a panel. */
+export function shownToasts(container) {
+    const all = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
+    return all.filter((el) => el._toast && !el._toast.pulled && !el._toast.closing);
+}
+
+/** Number of info and success toasts waiting for a free place. */
+export function waitingToastCount() { return waitingToasts.length; }
+
+// Show the next waiting toast once a place is free. With a panel open it joins the held
+// queue instead, like any info or success toast raised then.
+function showNextWaiting() {
+    if (typeof document === 'undefined') return;
+    const container = document.getElementById('notification-container');
+    while (waitingToasts.length && shownToasts(container).length < MAX_SHOWN_TOASTS) {
+        const args = waitingToasts.shift();
+        if (shouldHoldNotification(args[1], fullScreenPanelOpen() || panelExpected())) {
+            if (!isQueuedDuplicate(heldNotifications, args[0], args[1], args[2], args[5])) heldNotifications.push(args);
+            if (!holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
+            continue;
+        }
+        if (!renderNotification(...args)) break;
+    }
+}
+
 function renderNotification(message, type, title, duration, seen = false, options = {}) {
     const plainText = options?.html !== true;
     const verbatim = plainText && options?.verbatim === true;
@@ -223,6 +252,16 @@ function renderNotification(message, type, title, duration, seen = false, option
             startCountdown(same, duration);
         }
         return same;
+    }
+
+    // UX access R2 (finding 12): at most MAX_SHOWN_TOASTS on screen. A further info or
+    // success toast waits its turn and shows as one goes; warnings and errors answer
+    // what the player just did, so they still show at once.
+    if (HOLDABLE_TYPES.has(type) && shownToasts(notificationContainer).length >= MAX_SHOWN_TOASTS) {
+        if (!isQueuedDuplicate(waitingToasts, message, type, title, options)) {
+            waitingToasts.push([message, type, title, duration, seen, options]);
+        }
+        return null;
     }
 
     // Create notification element
@@ -284,6 +323,7 @@ export function removeNotification(notification) {
         if (notification.parentNode) {
             notification.parentNode.removeChild(notification);
         }
+        showNextWaiting();
     }, 300);
 }
 

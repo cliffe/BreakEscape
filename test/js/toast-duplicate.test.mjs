@@ -57,8 +57,12 @@ test('a different message, type or title is its own toast', async () => {
     T.gameAlert('Requires key', 'info', '', 300);
     T.gameAlert(HINT, 'warning', '', 300);   // not 'error': a timed error lasts at least 5 s
     T.gameAlert(HINT, 'info', 'Locked', 300);
-    assert.equal(children.length, 4);
-    await wait(700);
+    // Three on screen: two info toasts fill the places, the warning shows at once, and the
+    // fourth (info) waits its turn (UX access R2, toast queue)
+    assert.equal(children.length, 3);
+    assert.equal(T.waitingToastCount(), 1);
+    await wait(1400);
+    assert.equal(T.waitingToastCount(), 0);
     assert.equal(children.length, 0);
 });
 
@@ -131,6 +135,7 @@ test('plain text (the default, and with plainText): the title and message go in 
     assert.equal(toast._toast.html, false);
     const byDefault = T.gameAlert(`Plain ${label}`, 'info', '', 300);
     assert.ok(!byDefault.html.includes(label), 'plain text without any option too (review R4 M1)');
+    await wait(700);   // two toasts on screen at most: let these go before the third
     const markup = T.gameAlert(`Marked <b>up</b>`, 'info', '', 300, { html: true });
     assert.ok(markup.html.includes('<b>up</b>'), 'html: true keeps the markup path');
     await wait(700);

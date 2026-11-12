@@ -29,6 +29,19 @@ export function passwordFieldLabel(title) {
     return t && t !== 'Enter password' && t !== 'Password Entry' ? t : 'Password:';
 }
 
+/**
+ * Which face the classic password screen wears: 'screen' (a monitor with the desktop
+ * wallpaper, for a computer's own lock) or 'prompt' (a plain panel). A Wi-Fi key and a
+ * zip archive's password are not a computer signing in, and on the wallpaper they read
+ * as one (UX access R2).
+ */
+const SCREEN_TYPE = /(^|[_-])(pc\d*|laptop|workstation|terminal|tablet|kiosk|desktop|computer|smartscreen|server)(\d*|[_-].*)$/;
+export function passwordScreenKind({ join = null, lockable = null } = {}) {
+    if (join) return 'prompt';
+    const t = String(lockable?.scenarioData?.type || lockable?.type || '').toLowerCase();
+    return SCREEN_TYPE.test(t) ? 'screen' : 'prompt';
+}
+
 // ── Sign-in mode (access model 5.3, step 8) ──────────────────────────────────
 // A sign-in PC's screen: account tiles (from the server, per the PC's loginPicker),
 // Other user (type a username), the password field and the PC's post-it. It has no
@@ -298,9 +311,12 @@ export class PasswordMinigame extends MinigameScene {
         // Name the lock over the field, as the PIN keypad does ("Enter PIN: Cable
         // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
         const fieldLabel = this.join ? 'Network key' : passwordFieldLabel(this.params.title);
+        const kind = passwordScreenKind({ join: this.join, lockable: this.params.lockable });
+        // The framework hides the header, so a Wi-Fi prompt names its network on the panel
+        const promptTitle = this.join ? `Join Wi-Fi: ${this.join.apName || 'network'}` : '';
         
         this.gameContainer.innerHTML = `
-            <div class="password-minigame-area">
+            <div class="password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}">
                 ${imageData ? `
                     <div class="password-image-section">
                         <img src="/break_escape/assets/objects/${escapeHtml(imageData.imageFile)}.png" 
@@ -315,12 +331,13 @@ export class PasswordMinigame extends MinigameScene {
                 <div class="monitor-bezel">
                     <div class="monitor-screen">
                         <div class="password-input-container">
+                            ${promptTitle ? `<div class="password-prompt-title">${escapeHtml(displayDashes(promptTitle))}</div>` : ''}
                             <label for="password-field">${escapeHtml(displayDashes(fieldLabel))}</label>
                             <div class="password-field-wrapper">
                                 <input type="${this.gameData.showPassword ? 'text' : 'password'}" 
                                        id="password-field" 
                                        class="password-field"
-                                       placeholder="Enter password..."
+                                       placeholder="${this.join ? 'Enter key...' : 'Enter password...'}"
                                        maxlength="50">
                                 <button type="button" class="toggle-password-btn" id="toggle-password">
                                     <img class="icon-small" src="/break_escape/assets/icons/${this.gameData.showPassword ? 'visible.png' : 'hidden.png'}" alt="Toggle password visibility">

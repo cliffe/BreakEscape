@@ -99,7 +99,8 @@ export function wrapLabel(text, maxChars = LABEL_MAX_CHARS) {
 }
 
 const win = () => (typeof window !== 'undefined' ? window : {});
-const FONT = { fontFamily: 'monospace', fontSize: '8px', color: '#ffffff', stroke: '#000000', strokeThickness: 2 };
+// VT323: a pixel font, like the rest of the game's text (UX access R2, finding 13)
+const FONT = { fontFamily: "'VT323', monospace", fontSize: '10px', color: '#ffffff', stroke: '#000000', strokeThickness: 2 };
 
 export class NpcNeedsDebug {
     constructor() {
