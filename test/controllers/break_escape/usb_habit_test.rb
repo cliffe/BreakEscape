@@ -270,6 +270,44 @@ module BreakEscape
       assert_equal ['work_file.txt'], container.parsed_body['contents'].map { |f| f['name'] }
     end
 
+    # Review R2 B1 and n5: the knock-out route on the real routes, as the browser drives it. The
+    # KO is reported, the drop is an add_object sourced from the defeated NPC, room data shows the
+    # stick on the floor with no files, a pickup is an unsourced inventory add, and then the stick
+    # opens. Before the pickup the floor stick opens nothing.
+    test 'a knock-out drops the stick; room data shows it with no files; a pickup opens it' do
+      build
+      post update_room_game_url(@game), params: { roomId: 'office', actionType: 'update_npc_state',
+                                                  data: { npcId: 'amy', stateChanges: { isKO: true } } }, as: :json
+      assert_response :success, response.body
+      post update_room_game_url(@game), params: {
+        roomId: 'office', actionType: 'add_object',
+        data: { type: 'usb', id: 'amy_usb', name: "Amy's USB stick", x: 5, y: 5 },
+        sourceNpcId: 'amy', sourceType: 'npc_defeated'
+      }, as: :json
+      assert_response :success, response.body
+
+      get room_game_url(@game, room_id: 'office'), as: :json
+      floor = Array(response.parsed_body.dig('room', 'objects')).find { |o| o['id'] == 'amy_usb' }
+      assert floor, 'the dropped stick is in room data'
+      assert_equal true, floor['takeable']
+      assert_equal true, floor['hasContents']
+      assert_equal false, floor['locked']
+      assert_not floor.key?('contents')
+      refute_includes response.body, DEFAULT_TEXT
+
+      unlock, container = open_stick
+      assert_equal 422, unlock.status, 'a stick on the floor is not held'
+      assert_equal 404, container.status
+
+      post inventory_game_url(@game), params: { action_type: 'add', item: { type: 'usb', id: 'amy_usb', name: "Amy's USB stick" } }, as: :json
+      assert_response :success, response.body
+      refute_includes response.body, DEFAULT_TEXT
+      unlock, container = open_stick
+      assert_equal 200, unlock.status, unlock.body
+      assert_equal 200, container.status, container.body
+      assert_equal ['work_file.txt'], container.parsed_body['contents'].map { |f| f['name'] }
+    end
+
     test 'once the stick has left amy the habit stops: a usb fail is refused and uses are not counted' do
       build
       report(station_use)
