@@ -118,9 +118,9 @@ export class NetworkViewMinigame extends MinigameScene {
     }
 
     /** GET /network for this foothold (through network-links.js), then the rows. */
-    async load() {
+    async load({ sync = true } = {}) {
         const links = this.links();
-        const answer = links?.view ? await links.view(this.footholdId) : { ok: false, reason: 'error' };
+        const answer = links?.view ? await links.view(this.footholdId, { sync }) : { ok: false, reason: 'error' };
         // Closed, or replaced by another screen, while the answer was on its way
         if (this._reported || (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this)) return answer;
         if (!answer.ok && answer.reason === 'gone') {
@@ -145,7 +145,8 @@ export class NetworkViewMinigame extends MinigameScene {
             this.refetched = Promise.resolve(answer.synced).then(ok => {
                 if (!ok || this._reported) return null;
                 if (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this) return null;
-                return this.load();
+                // The late sync has landed, so the globals are on the server: no second sync
+                return this.load({ sync: false });
             });
         }
         this.render();

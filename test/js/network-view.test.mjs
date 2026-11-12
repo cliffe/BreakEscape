@@ -373,7 +373,9 @@ test('a refetch that finds the foothold gone goes back to the world with foothol
 test('a stale view shows the "may be out of date" line and refetches once when the sync lands', async () => {
     setup();
     let land;
-    window.stateSync = { sync: () => new Promise(r => { land = r; }) };
+    let syncs = 0;
+    // A slow link: every sync takes longer than the limit
+    window.stateSync = { sync: () => { syncs++; return new Promise(r => { land = r; }); } };
     links.viewSyncWaitMs = 10;
     links.open('jack_comms_port');
     await new Promise(r => setTimeout(r, 30));
@@ -382,12 +384,12 @@ test('a stale view shows the "may be out of date" line and refetches once when t
     assert.ok(view().gameContainer.querySelector('.network-view-stale'), 'the line shows');
     assert.equal(view().gameContainer.querySelector('.network-view-stale').textContent, STALE_TEXT);
 
-    window.stateSync = { sync: async () => true };
     land(true);
     await view().refetched;
     await settle();
     assert.equal(requests.filter(r => r[0] === 'network').length, 2, 'fetched once more');
     assert.equal(view().gameContainer.querySelector('.network-view-stale'), null, 'the fresh view drops the line');
+    assert.equal(syncs, 1, 'the refetch sends no second sync: the globals have landed');
     delete links.viewSyncWaitMs;
     delete window.stateSync;
 });

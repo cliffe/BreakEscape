@@ -237,12 +237,13 @@ export class NetworkLinks {
      *   { ok: true, view, stale: true, synced }  the same, fetched after the sync's time limit,
      *                                      so it may predate a switch flipped a moment ago;
      *                                      `synced` resolves true once that sync has landed
-     *                                      (review R2 m3: the view then refetches once)
+     *                                      (review R2 m3: the view then refetches once,
+     *                                      with { sync: false }, as the globals are there)
      *   { ok: false, reason: 'gone' }      the server holds no such foothold (404): the
      *                                      local copy is dropped
      *   { ok: false, reason: 'error' }     no answer
      */
-    async view(footholdId) {
+    async view(footholdId, { sync = true } = {}) {
         const api = apiClient();
         if (!api?.network) return { ok: false, reason: 'error' };
         // The server judges outages and a host's own service from its copy of the globals, so
@@ -251,7 +252,7 @@ export class NetworkLinks {
         // after VIEW_SYNC_WAIT_MS it opens with the server's last known state (review R1 m1).
         let synced = null;
         let stale = false;
-        try {
+        if (sync) try {
             synced = Promise.resolve(win().stateSync?.sync?.()).then(ok => ok !== false, () => false);
             const TIMED_OUT = {};
             let timer;

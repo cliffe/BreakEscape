@@ -87,6 +87,73 @@ Decision from the coordinator: a switched-off PC is off for everything that goes
 - New tests: four in `network_host_service_off_test.rb` (M1 twice, M2, the kept-session row), all
   failing without the fix; JS tests for the sync time limit, two answers in flight and the row.
 
+## q72 and review R2 fixes (NET_FIXES_CODE_REVIEW_R2.md)
+
+User decision q72: a switched-off PC is off at its own keyboard too, "This PC is off."
+
+- Server: a keyboard sign-in (`attempt_login!` with no foothold), an owner or guest claim and
+  `GET /login_accounts` at the keyboard answer 403 `{ reason: "off", message: "This PC is off." }`
+  before the password is read (no failure counted). The keyboard desktop answers 403 `off`
+  (`Game#desktop_refusal`), without settling a remote session there.
+- `session_route_up?` is false for every session at an off PC, local ones included, so its
+  folders, profiles reached through it, its mapped shares and an inventory add from any of them
+  are refused. This settles R2 m1: a share's add path is refused as well as its read.
+  `resource_admits_player?` now relies on `session_route_up?` alone.
+- A session held there, local or remote, is kept and works again when the PC is back on. The
+  client keeps its copy on a 403 `off` (`container-minigame.js`), shows "This PC is off." and
+  opens no sign-in screen.
+- Client: `interactLoginPc` checks `affordance.offWhen` on the client's globals first
+  (`pcSwitchedOff`) and says "This PC is off." with no request; a PC that has an `offWhen` but is
+  on sends the globals first (at most 3 s), so a switch flipped back on is known to the server.
+  `openLoginSignIn` and the password screen word a server `off` answer the same way.
+  `ApiClient.get` now carries the refusal body (`err.body`), as `post` does.
+- How the PC looks when off: `bench_pc` in `test_access_networks` has no `sprite` or
+  `spriteVariants`, so it shows its map texture (`pc6`, a lit blue monitor) on and off. There is
+  an existing `aw_pc_off1.png` object in the assets, unused by this scenario. No art was made; the
+  author guide says to add a `spriteVariants` entry on the same global for an off look.
+- R2 m2: an up block's `via` skips off session hosts; a down block still names the off host.
+- R2 m3: `networkLinks.view()` returns `stale: true` and the sync promise when the 3 s limit won.
+  The view shows "Still updating, so this may be out of date." and, when that sync lands while
+  the same view is open, fetches once more with `{ sync: false }` (the globals are there, so a
+  slow link does not make the refetch stale too).
+- Nit 1: a remote refusal at an off host is now 403 `not_responding` (sign-in and desktop); the
+  password screen says "This PC is not responding." and the desktop landing
+  "<host> is not responding.", matching the row.
+- Nit 2: `reach_cache_key` builds the merged globals once for all session hosts
+  (`host_service_off?(pc, globals)`).
+- Nit 3: a test reloads and signs out of an unrelated session while a pivot host is off; both
+  sessions are kept.
+- Nit 4: `view_session_hosts`'s comment now says `seq` follows the jsonb key order. The tie-break
+  change itself stays in the backlog.
+
+Tests (no lock, per the test lock rule):
+
+- `network_host_service_off_test.rb`: 12 runs (4 new: keyboard refusals and claim, keyboard
+  session with desktop, file, share read and share add refused then restored, via skips an off
+  host, prune while off). Run against the previous server code, 5 fail (the 4 changed or new q72,
+  m2 and wording tests); the prune test is coverage only.
+- Rails: every `network_*_test.rb`, `game_test.rb`, `network_withholding_test.rb` and each test
+  file naming the touched login or session methods: 442 runs, 0 failures, 0 errors, 0 skips.
+- JS: new tests in `access-signin-routing` (3), `access-remote-signin` (2), `pc-sessions` (1),
+  `password-signin-mode` (1), `network-links` (2), `network-view` (2). Against the previous client
+  code 10 of them fail; "a stale view closed before the sync lands" is coverage only. All 60 JS
+  test files importing a changed module: 694 tests, 0 failures.
+
+Live check (keyless server on :3037, game 1501, `test_access_networks`):
+
+- q72 at the keyboard: `bench_pc` off at the start; a click showed "This PC is off." and opened
+  nothing. Switched on, the click opened the sign-in screen; signed in as Sam at the keyboard and
+  the desktop opened. Switched off with that session held: the click showed "This PC is off.",
+  the client kept the session, and forced `GET /container/bench_pc`, `GET /login_accounts` and a
+  wrong-password `POST /login` all answered 403 `off` with no failure counted. Switched back on,
+  the click opened the desktop again; the server still held `bench_pc = sam (password)`.
+- m3: the box planted at `bench_port`, every sync delayed 6 s, the PC switched off and the link
+  item opened at once: the view showed "Still updating, so this may be out of date." with the old
+  "Open (Sam Okafor)" row (screenshot `m3-stale.png` in the session scratchpad `net-fixes/`).
+  When the late sync landed the view refetched once, with no further sync: the row read "not
+  responding (still signed in as Sam Okafor)" and the line was gone.
+- Leak check over the captured responses: no leaks.
+
 ## Open
 
 - Plan 5.2's five-second refetch of an open view, and a sync before a remote sign-in or a desktop
