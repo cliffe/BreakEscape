@@ -134,6 +134,53 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     assert_equal ['jake'], scanner.feed_fallback
   end
 
+  # Review C R2 m2: an answer the capture logged with bodyError (the body was lost on a reload)
+  def lost_answer
+    ['r.jsonl', 0, { 'method' => 'POST', 'path' => FEED, 'status' => 200, 'bodyError' => 'Response body is unavailable' }]
+  end
+
+  def numbered(list)
+    list.each_with_index.map { |(src, _n, row), i| [src, i + 1, row] }
+  end
+
+  test 'review C R2 m2: a lost /feed_post body does not let an earlier bootstrap show a post' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'jake' => { 'n' => 2 } } })
+    early = bootstrap.merge('feedPosts' => jake_feed(feed_item(0)))
+    log = numbered(rows(['GET', SCENARIO, early], ['POST', FEED, first_answer]) + [lost_answer])
+    scanner = AccessLeakScanner.new(data, game: game)
+    found = summary(scanner.scan(log))
+    assert_includes found, [1, 'feed_text', 'feed:jake|jake_post_1'], 'the first bootstrap is judged with no post out'
+    assert_equal ['jake'], scanner.feed_unknown
+    assert_empty scanner.feed_fallback, 'no reveal is counted from the first line'
+  end
+
+  test 'review C R2 m2: after a lost /feed_post body the next post is allowed, from that line on' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'jake' => { 'n' => 2 } } })
+    later = bootstrap.merge('feedPosts' => jake_feed(feed_item(0), feed_item(1)))
+    log = numbered(rows(['POST', FEED, first_answer]) + [lost_answer] + rows(['GET', SCENARIO, later]))
+    scanner = AccessLeakScanner.new(data, game: game)
+    assert_empty scanner.scan(log)
+    assert_equal ['jake'], scanner.feed_unknown
+  end
+
+  test 'review C R2 m2: reveals beyond the lost bodies still count from the first line (a resumed game with a lost body)' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'jake' => { 'n' => 2 } } })
+    body = bootstrap.merge('feedPosts' => jake_feed(feed_item(0)))
+    body['social']['intelFacts']['jake_pet_name'] = first_answer['fact']['entry']
+    scanner = AccessLeakScanner.new(data, game: game)
+    assert_empty scanner.scan(numbered(rows(['GET', SCENARIO, body]) + [lost_answer]))
+    assert_equal ['jake'], scanner.feed_fallback
+    assert_equal ['jake'], scanner.feed_unknown
+  end
+
+  test 'review C R2 nit: a blank post id is skipped, as the server skips it' do
+    d = data.deep_dup
+    jake = d['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'jake' }
+    jake['feed']['posts'].unshift({ 'id' => '  ', 'text' => 'A blank id post the server never serves, long enough.' })
+    found = summary(AccessLeakScanner.new(d).scan(rows(['POST', FEED, first_answer])))
+    assert_empty found, 'the first answer serves jake_post_1, the first post with an id'
+  end
+
   test 'review R1 n3: two posts with the same text are both served by either' do
     d = data.deep_dup
     lena = d['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'lena' }

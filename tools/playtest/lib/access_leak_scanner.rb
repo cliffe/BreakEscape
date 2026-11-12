@@ -164,6 +164,12 @@ class AccessLeakScanner
     @feed_answers = Hash.new(0) # npc id => /feed_post answers with a post seen so far in the log
     @feed_base = {}             # npc id => reveals made before the log starts (a resumed game)
     @feed_fallback = []         # npc ids whose base came from the game's feedRevealed
+    # Review C R2 m2: /feed_post answers (200) whose body the capture could not read. Each
+    # stands for at most one reveal, at its own place in the log, for an NPC the game shows
+    # more reveals for than the log holds
+    @feed_unknown_share = {}    # npc id => unreadable answers that may have been its reveals
+    @feed_unknown_seen = 0      # unreadable /feed_post answers passed so far in the log
+    @feed_unknown = []          # npc ids that took a reveal from an unreadable answer
     collect_passwords
     collect_items
     collect_network_secrets
@@ -188,9 +194,14 @@ class AccessLeakScanner
   end
 
   # NPCs whose GET /scenario feedPosts were judged partly against the game's saved feedRevealed
-  # count, because the log holds fewer /feed_post answers than the game has revealed (a resumed
-  # game). Filled by scan.
+  # count from the log's first line, because the log holds fewer /feed_post answers than the
+  # game has revealed and the unreadable answers do not account for them all (a resumed game).
+  # Filled by scan.
   attr_reader :feed_fallback
+
+  # NPCs allowed one more reveal at an unreadable /feed_post answer (review C R2 m2: a lost
+  # response body), from that answer on and never before it. Filled by scan.
+  attr_reader :feed_unknown
 
   # lines: [[source, line_no, hash]]. Returns findings, deduplicated per response line, rule
   # and owner (the first JSON path is kept).
@@ -202,6 +213,7 @@ class AccessLeakScanner
     lines.each do |source, line_no, row|
       next unless row.is_a?(Hash)
 
+      @feed_unknown_seen += 1 if feed_unreadable?(row)
       body = if row.key?('dom') then row['dom']
              elsif row.key?('body') then row['body']
              else row['bodyText']
@@ -665,7 +677,9 @@ class AccessLeakScanner
       next unless feed.is_a?(Hash) && feed['posts'].is_a?(Array)
 
       feed['posts'].each do |post|
-        next unless post.is_a?(Hash) && post['id'].is_a?(String)
+        # Review C R2 nit: the server's own test (AccessWork.present_string? in feed_posts), so a
+        # blank id is skipped here too
+        next unless post.is_a?(Hash) && post['id'].is_a?(String) && !post['id'].strip.empty?
 
         key = "#{npc['id']}|#{post['id']}"
         fid = post['fact'].is_a?(String) && facts[post['fact']].is_a?(Hash) ? post['fact'] : nil
@@ -683,17 +697,34 @@ class AccessLeakScanner
     end
   end
 
-  # Reveals made before the log starts: the game's saved count less the /feed_post answers the
-  # log holds. A complete log gives 0, so every reveal is judged in log order.
+  # A /feed_post answer the server gave (200) whose body the log does not hold as JSON: the
+  # capture's bodyError (the browser dropped the body, as on a reload) or an unparsed bodyText
+  def feed_unreadable?(row)
+    row['path'].to_s.split('?').first.to_s.end_with?('/feed_post') && row['status'].to_i == 200 &&
+      !row['body'].is_a?(Hash)
+  end
+
+  # Reveals the log does not show: the game's saved count less the /feed_post answers the log
+  # holds. An unreadable answer (review C R2 m2) may be one of them, but only from its own place
+  # in the log, so up to one reveal per unreadable answer is granted there, and only what is
+  # still missing after that counts from the first line (a resumed game). A complete log gives 0,
+  # so every reveal is judged in log order.
   def prepare_feed_base(lines)
     @feed_answers.clear
     @feed_base = {}
     @feed_fallback = []
+    @feed_unknown_share = {}
+    @feed_unknown_seen = 0
+    @feed_unknown = []
     return if @feed_order.empty?
 
     in_log = Hash.new(0)
+    unreadable = 0
     lines.each do |_source, _no, row|
-      next unless row.is_a?(Hash) && row['body'].is_a?(Hash)
+      next unless row.is_a?(Hash)
+
+      unreadable += 1 if feed_unreadable?(row)
+      next unless row['body'].is_a?(Hash)
       next unless row['path'].to_s.split('?').first.to_s.end_with?('/feed_post') && row['body']['post'].is_a?(Hash)
 
       in_log[row['body']['npcId'].to_s] += 1
@@ -703,7 +734,15 @@ class AccessLeakScanner
 
     @feed_order.each_key do |npc_id|
       n = revealed[npc_id].is_a?(Hash) ? revealed[npc_id]['n'].to_i : 0
-      base = n - in_log[npc_id]
+      missing = n - in_log[npc_id]
+      next unless missing.positive?
+
+      share = [missing, unreadable].min
+      if share.positive?
+        @feed_unknown_share[npc_id] = share
+        @feed_unknown << npc_id
+      end
+      base = missing - share
       next unless base.positive?
 
       @feed_base[npc_id] = base
@@ -713,7 +752,8 @@ class AccessLeakScanner
 
   # How many of an NPC's posts the server had revealed at this point of the log
   def feed_revealed_now(npc_id)
-    (@feed_base[npc_id] || 0) + @feed_answers[npc_id]
+    unknown = [@feed_unknown_seen, @feed_unknown_share[npc_id] || 0].min
+    (@feed_base[npc_id] || 0) + unknown + @feed_answers[npc_id]
   end
 
   # A /feed_post answer with a post serves the NPC's next authored post and its fact, whatever

@@ -72,7 +72,11 @@ end
 scanner.report_lines(findings).each { |line| puts line }
 unless scanner.feed_fallback.empty?
   puts "note             feed posts for #{scanner.feed_fallback.join(', ')} judged partly by the game's saved feedRevealed: " \
-       'the log holds fewer /feed_post answers than the game revealed (a resumed game)'
+       'fewer /feed_post answers in the log than the game revealed (a resumed game or a lost response body)'
+end
+unless scanner.feed_unknown.empty?
+  puts "note             feed posts for #{scanner.feed_unknown.join(', ')} allowed one more reveal at each /feed_post " \
+       'answer whose body the log lost, from that answer on only'
 end
 if lines.any? { |_label, _no, row| row.is_a?(Hash) && (row.key?('dom') || row['path'].to_s.split('?').first.to_s.end_with?('/capture_secrets')) }
   puts 'note             capture answers judged against the proofs held now: run this after every beat to see order'
