@@ -115,8 +115,8 @@ function fakeContainer() {
 }
 
 const screens = [
-    ['combination', CombinationMinigame, '#comb-status', (m) => { m.dials = [1, 2, 3]; }, '_handleUnlock', 'Incorrect combination'],
-    ['cryptex', CryptexMinigame, '#cryptex-status', (m) => { m.currentIndices = [0, 0]; m.alphabets = [['A'], ['B']]; }, '_handleSubmit', 'Incorrect']
+    ['combination', CombinationMinigame, '#comb-status', (m) => { m.dials = [1, 2, 3]; }, '_handleUnlock', 'did not open it'],
+    ['cryptex', CryptexMinigame, '#cryptex-status', (m) => { m.currentIndices = [0, 0]; m.alphabets = [['A'], ['B']]; }, '_handleSubmit', 'did not open it']
 ];
 
 function makeDial(Cls, setup) {

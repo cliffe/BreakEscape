@@ -8,6 +8,9 @@ import { escapeHtml } from '../../utils/escape-html.js';
 // nodes after super.init().
 // Base class for minigame scenes
 export class MinigameScene {
+    // true on a full-window console that keeps Cancel overlaid on its own bottom bar
+    static controlsOverlay = false;
+
     constructor(container, params) {
         this.container = container;
         this.params = params;
@@ -35,6 +38,11 @@ export class MinigameScene {
             <div class="minigame-message-container"></div>
             ${showCancel ? `<div class="minigame-controls"><button class="minigame-button" id="minigame-cancel">${escapeHtml(this.params.cancelText || 'Cancel')}</button></div>` : ''}
         `;
+
+        // A full-window console whose frame keeps a bar at its bottom for Cancel opts in to
+        // the overlaid Cancel row (static controlsOverlay = true on the subclass); every
+        // other scene keeps Cancel in the flow under its game area (code review R2 m2)
+        this.container.classList?.toggle?.('minigame-controls-overlay', this.constructor.controlsOverlay === true);
 
         this.headerElement = this.container.querySelector('.minigame-header');
         this.gameContainer = this.container.querySelector('.minigame-game-container');

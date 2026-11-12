@@ -1178,12 +1178,13 @@ export function handleObjectInteraction(sprite) {
                 console.log('Notes minigame already running, navigating to notepad note instead');
                 // If notes minigame is already running, just navigate to the notepad note
                 if (window.MinigameFramework.currentMinigame.navigateToNoteIndex) {
-                    window.MinigameFramework.currentMinigame.navigateToNoteIndex(0);
+                    window.MinigameFramework.currentMinigame.navigateToNoteIndex(window.notepadStartIndex?.() ?? 0);
                 }
                 return;
             }
             
-            // Navigate to the notepad note (index 0) when clicking the notepad
+            // Open on the newest note when one was added since the notepad was last looked
+            // at, else on the page last shown (notes-minigame.js notepadStartIndex)
             // Create a minimal item just for navigation - no auto-add needed
             const notepadItem = {
                 scenarioData: {
@@ -1191,7 +1192,7 @@ export function handleObjectInteraction(sprite) {
                     name: 'Notepad'
                 }
             };
-            window.startNotesMinigame(notepadItem, '', '', 0, false, false);
+            window.startNotesMinigame(notepadItem, '', '', window.notepadStartIndex?.() ?? 0, false, false);
             return;
         }
     }

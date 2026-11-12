@@ -33,7 +33,7 @@ const rfidData = rewrite('minigames/rfid/rfid-data.js', {
 });
 const { RFIDMinigame } = await import(rewrite('minigames/rfid/rfid-minigame.js', {
     '../framework/base-minigame.js': dataUrl('export class MinigameScene { constructor(c, p) { this.params = p; } }'),
-    './rfid-ui.js': dataUrl('export class RFIDUIRenderer {}'),
+    './rfid-ui.js': dataUrl('export class RFIDUIRenderer {}\nexport const clonerNameInSentence = () => "card copier";'),
     './rfid-data.js': rfidData,
     './rfid-animations.js': dataUrl('export class RFIDAnimations {}'),
     './rfid-attacks.js': dataUrl('export class MIFAREAttackManager {}'),

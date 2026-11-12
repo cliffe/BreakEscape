@@ -11,7 +11,8 @@
  *
  * Two sources of actions:
  *   - Built-in: a keycard lying in the world (takeable, not yet held) while the
- *     player carries an RFID cloner — "Clone it with the flipper" (clone in place,
+ *     player carries an RFID cloner — "Copy it with the card copier" (the cloner's own
+ *     name, as the inventory shows it; clone in place,
  *     the card stays) or "Take it" (the normal pickup).
  *   - Experimental, author-declared: an object's `actions: [{ label, detail?, do: [actions] }]`
  *     array. Each entry's `do` is a normal applyActions list. Documented as
@@ -26,6 +27,17 @@
 function playerHasCloner() {
     const items = (typeof window !== 'undefined' && window.inventory && window.inventory.items) || [];
     return items.some(it => it && it.scenarioData && it.scenarioData.type === 'rfid_cloner');
+}
+
+/** The cloner's name inside a sentence, as the inventory shows it: "card copier". The rule
+ *  is rfid-ui.js clonerNameInSentence, reached through window (this module has no static
+ *  imports); before that module loads, the default name. */
+export function clonerLabel() {
+    const items = (typeof window !== 'undefined' && window.inventory && window.inventory.items) || [];
+    if (typeof window !== 'undefined' && typeof window.clonerNameInSentence === 'function') {
+        return window.clonerNameInSentence(items);
+    }
+    return 'card copier';
 }
 
 /** True when this sprite is an inventory copy, not a world object. */
@@ -61,9 +73,10 @@ export function objectActions(sprite) {
 
     // Built-in: a world keycard the player could clone or take, cloner in hand.
     if (data.type === 'keycard' && data.takeable === true && !isInventoryItem(sprite) && playerHasCloner()) {
+        const device = clonerLabel();
         actions.push({
-            label: 'Clone it with the flipper',
-            detail: 'Read and copy the card onto your cloner. The card stays where it is.',
+            label: `Copy it with the ${device}`,
+            detail: `Read the card and save a copy on the ${device}. The card stays where it is.`,
             onSelect: () => {
                 if (window.startRFIDMinigame) {
                     // A world keycard copied in place: its stamped id is the clone source, so the

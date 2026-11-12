@@ -214,7 +214,7 @@ module BreakEscape
       if delta
         network_inventory_delta(touched_ids)
       else
-        { inventory: player_state['inventory'] }
+        { inventory: client_inventory }
       end
     end
 

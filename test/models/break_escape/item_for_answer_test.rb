@@ -22,6 +22,19 @@ module BreakEscape
       assert stored.key?('saved_cards'), 'the stored item keeps its saved_cards'
     end
 
+    test 'item_for_answer strips a lock answer so a delta added item cannot leak it (unlock gaps R2 M2)' do
+      stored = { 'id' => 'padlock_box', 'type' => 'container', 'name' => 'Box',
+                 'lockType' => 'combination', 'combination' => '4471',
+                 'contents' => [{ 'id' => 'prize', 'name' => 'Prize' }] }
+      game = Game.new(player_state: { 'inventory' => [stored] })
+
+      answer = game.item_for_answer(stored)
+      refute answer.key?('combination'), 'the combination answer is stripped from the echo copy'
+      assert_equal 'Box', answer['name']
+      # The stored item is untouched (deep copy): the server still checks its lock answer.
+      assert_equal '4471', stored['combination']
+    end
+
     test 'item_for_answer returns a non-hash argument unchanged' do
       game = Game.new(player_state: {})
       assert_nil game.item_for_answer(nil)

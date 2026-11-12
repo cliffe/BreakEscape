@@ -426,7 +426,7 @@ def check_unknown_fields(json_data)
     type door_sign connections locked lockType requires keyPins lockedHint difficulty
     ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
     chatBackground doors needsPrivateTo access acceptsUIDOnly
-    network
+    network cryptexConfig
   ]
 
   # Known NPC fields
@@ -526,7 +526,7 @@ def check_unknown_fields(json_data)
     voice ttsVoice sender timestamp avatar sprite
     collection_group onRead onPickup onInteract
     lockType requires opens_lock key_id keyPins card_id difficulty
-    passwordHint showHint showKeyboard maxAttempts pinLength
+    passwordHint showHint showKeyboard maxAttempts pinLength cryptexConfig
     postitNote showPostit
     hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
     fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
@@ -2108,6 +2108,91 @@ def check_pin_locks(json_data)
     end
   end
   walk.call(json_data, '')
+  issues
+end
+
+# ─────────────────────────────────────────────────────────────
+# Combination padlocks and cryptexes the minigame can't open (unlock gaps build,
+# 2026-11-12). The server checks the answer against `requires`, which never reaches
+# the client. The padlock has three dials of 0-39 (minigames/combination); the
+# cryptex has `cryptexConfig.wheelCount` wheels (5 if unset) of `alphabets` (A-Z if
+# unset). The old client copies of the answer (`combination`, `cryptexConfig.answer`)
+# are stripped from every payload, so they no longer open anything.
+# ─────────────────────────────────────────────────────────────
+def check_combination_cryptex_locks(json_data)
+  issues = []
+  walk = lambda do |node, path|
+    case node
+    when Array then node.each_with_index { |n, i| walk.call(n, "#{path}[#{i}]") }
+    when Hash
+      kind = node['lockType']
+      if %w[combination cryptex].include?(kind)
+        where = "'#{path}'#{node['name'] ? " (#{node['name']})" : ''}"
+        secret = node['requires']
+        if secret.nil? || secret.to_s.strip.empty?
+          moved = kind == 'combination' ? node['combination'] : node.dig('cryptexConfig', 'answer')
+          note = moved ? " Move the answer from '#{kind == 'combination' ? 'combination' : 'cryptexConfig.answer'}' into 'requires'." : ''
+          issues << "❌ INVALID: #{where} is a #{kind} lock with no 'requires'. The server checks the answer " \
+                    "against 'requires' only, so it can never open.#{note}"
+        elsif kind == 'combination'
+          parts = secret.is_a?(Array) ? secret.map(&:to_s) : secret.to_s.split(/[^0-9]+/).reject(&:empty?)
+          unless parts.length == 3 && parts.all? { |p| p.match?(/\A\d+\z/) && p.to_i.between?(0, 39) }
+            issues << "❌ INVALID: #{where} combination '#{secret.is_a?(Array) ? secret.join('-') : secret}' must be " \
+                      "three numbers from 0 to 39 (the padlock's dials), such as \"12-30-5\"."
+          end
+        else
+          config = node['cryptexConfig'].is_a?(Hash) ? node['cryptexConfig'] : {}
+          wheels = config.key?('wheelCount') ? Integer(config['wheelCount'], exception: false) : 5
+          unless wheels.is_a?(Integer) && wheels.positive?
+            issues << "❌ INVALID: #{where} cryptexConfig.wheelCount must be a whole number such as 6, not " \
+                      "#{config['wheelCount'].inspect}."
+            wheels = 5
+          end
+          word = secret.to_s.strip
+          alphabets = config['alphabets'] || Array.new(wheels, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+          if word.length != wheels
+            issues << "❌ INVALID: #{where} cryptex word is #{word.length} letters but the cryptex has #{wheels} " \
+                      "wheels (cryptexConfig.wheelCount, 5 if unset), so it can never be spelt."
+          elsif word.chars.each_with_index.any? { |c, w| !alphabets[w].to_s.upcase.include?(c.upcase) }
+            issues << "❌ INVALID: #{where} cryptex word '#{word}' has a letter that is not on its wheel."
+          end
+        end
+        if node.key?('combination') || (node['cryptexConfig'].is_a?(Hash) && node['cryptexConfig'].key?('answer'))
+          issues << "⚠️ WARNING: #{where} still has the answer in '#{node.key?('combination') ? 'combination' : 'cryptexConfig.answer'}'. " \
+                    "The server strips it and reads 'requires' only; remove it."
+        end
+      end
+      node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+    end
+  end
+  walk.call(json_data, '')
+  issues
+end
+
+# A container an NPC carries is released (by a give or a KO) only through its scenario
+# `id` (Game#released_npc_containers). Without one the player can never open it, and
+# sees "Access denied" (unlock gaps R1 m2). The container test matches the server's:
+# contents, locked, or a container type.
+NPC_CONTAINER_TYPES = %w[suitcase briefcase bag1 bin1].freeze
+def check_npc_held_containers(json_data)
+  issues = []
+  npcs = []
+  (json_data['rooms'] || {}).each do |room_id, room|
+    Array(room.is_a?(Hash) ? room['npcs'] : nil).each { |n| npcs << [n, "rooms/#{room_id}/npcs"] if n.is_a?(Hash) }
+  end
+  Array(json_data['npcs']).each { |n| npcs << [n, 'npcs'] if n.is_a?(Hash) }
+  npcs.each do |npc, where|
+    Array(npc['itemsHeld']).each_with_index do |item, i|
+      next unless item.is_a?(Hash)
+      container = item.key?('contents') || item['locked'] == true || NPC_CONTAINER_TYPES.include?(item['type'])
+      next unless container
+      next if item['id'].is_a?(String) && !item['id'].strip.empty?
+
+      issues << "❌ INVALID: '#{where}/#{npc['id']}/itemsHeld[#{i}]'#{item['name'] ? " (#{item['name']})" : ''} is a " \
+                "container an NPC carries but has no 'id'. The server releases it after a give or a KO only by its " \
+                "id, so without one the player can never open it. Give it an id."
+    end
+  end
   issues
 end
 
@@ -6954,6 +7039,8 @@ def main
     common_issues = check_common_issues(json_data, valid_item_types)
     common_issues += check_lock_credentials(json_data)
     common_issues += check_pin_locks(json_data)
+    common_issues += check_combination_cryptex_locks(json_data)
+    common_issues += check_npc_held_containers(json_data)
     common_issues += check_npc_patrol_and_catch_locks(json_data, repo_root)
     common_issues += check_give_item_collectible(json_data)
     common_issues += check_interaction_warnings(json_data)
