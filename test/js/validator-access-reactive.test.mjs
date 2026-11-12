@@ -66,7 +66,7 @@ function reactiveClean() {
                         site: 'friendface', person: 'dana', order: 'reactive_first',
                         posts: [
                             { id: 'dana_ordered', text: 'Back from Crete, so many emails waiting.', date: 'Tuesday' },
-                            { id: 'dana_vent', text: 'Finance share down again, second time this week.',
+                            { id: 'dana_vent', text: 'Our drive is down again, second time this week.',
                               when: { cause: 'down', need: 'work' }, fact: 'dana_backups', deliberate: true }
                         ]
                     },

@@ -92,7 +92,7 @@ module BreakEscape
       refute len.key?('creds')
     end
 
-    test 'an NPC from scenario data without creds keeps its rfidCard and usePayload secret' do
+    test 'an NPC from scenario data without creds keeps its rfidCard, and its usePayload secret is withheld' do
       # A game created before the loader: Game.create! with hand-set data skips it.
       scenario = {
         'startRoom' => 'lobby',
@@ -104,7 +104,7 @@ module BreakEscape
                           scenario_data: scenario)
       len = game.filtered_room_data('lobby')['npcs'][0]
       assert_equal AccessModelScenario::LEN_CARD, len['rfidCard']
-      assert_equal '4471', len['usePayload']['secret'], 'not an account holder: today\'s behaviour'
+      assert_equal({ 'address' => 'l.okafor' }, len['usePayload'], 'no account, still no secret: /capture_secrets serves it once earned')
     end
 
     test 'an NPC added to a room by update_room is withheld, and player_state keeps the full record' do

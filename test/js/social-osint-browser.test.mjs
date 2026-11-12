@@ -616,3 +616,61 @@ test('9.2 C: hostile post text and dates render as plain text, never markup', ()
     assert.ok(b.textContent.includes('<i>today</i>'));
     assert.equal(window.__pwned, undefined);
 });
+
+// ── C3 (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md 4): threads under feed posts ───────────────────────
+const replyAnswer = (index, seq, id, text, thread, poster, named, person) => ({
+    index, seq, site: 'social', person, done: false, post: { id, text, replyTo: thread },
+    replyToNpc: poster, replyToPerson: poster, namedNpc: named, namedPerson: named
+});
+
+test('C3: a thread draws under its post, oldest first; the replier\'s profile lists its reply with "Replied to"', () => {
+    setGlobals({ se_intel_hampshire_careers: true });
+    const feed = feedFor();
+    feed.apply('pierce', { ...feedAnswer(0, 'feed_pierce_1', 'The shared drive is down again today.'), seq: 1 });
+    feed.apply('hampshire', replyAnswer(0, 2, 'hamp_re', 'Pierce, mine went down too this morning.', 'feed_pierce_1', 'pierce', 'pierce', 'hampshire'));
+    feed.apply('pierce', replyAnswer(1, 3, 'pierce_answer', 'Hampshire, did IT ever ring you back?', 'feed_pierce_1', 'pierce', 'hampshire', 'pierce'));
+    let s = open({ start: 'social.pierce', feed });
+    const replies = [...s.container.querySelectorAll('.ob-thread .ob-reply')].map((r) => r.getAttribute('data-post'));
+    assert.deepEqual(replies, ['hamp_re', 'pierce_answer']);
+    assert.equal(block(s, 'pierce_answer'), null, 'the answer is not a block of its own');
+    assert.equal(s.container.querySelector('.ob-reply-to'), null, 'no "Replied to" line in a thread');
+    s = open({ start: 'social.hampshire', feed });
+    const own = s.container.querySelector('.ob-reply-own');
+    assert.ok(own, 'the reply is listed on its replier\'s profile');
+    assert.match(own.querySelector('.ob-reply-to').textContent, /^Replied to /);
+    assert.equal(own.querySelector('.ob-thread'), null);
+    assert.ok(!text(s).includes('The shared drive is down again today.'), 'the thread post is not repeated');
+});
+
+test('C3: a stand-in feed with no repliesFor draws posts with no thread', () => {
+    setGlobals();
+    const feed = { postsFor: () => [{ id: 'feed_pierce_1', text: 'The shared drive is down again today.' }] };
+    const s = open({ start: 'social.pierce', feed });
+    assert.ok(block(s, 'feed_pierce_1'));
+    assert.equal(s.container.querySelector('.ob-thread'), null);
+});
+
+test('C3: a reply arriving re-renders the open thread poster\'s profile; reply text is plain text', () => {
+    setGlobals();
+    const handlers = new Map();
+    const saved = window.eventDispatcher;
+    window.eventDispatcher = {
+        on(n, cb) { handlers.set(n, [...(handlers.get(n) || []), cb]); },
+        off(n, cb) { handlers.set(n, (handlers.get(n) || []).filter((x) => x !== cb)); },
+        emit(n, d) { for (const [k, cbs] of handlers) if (k === n || (k.endsWith(':*') && n.startsWith(k.slice(0, -1)))) cbs.forEach((cb) => cb(d, n)); }
+    };
+    try {
+        const feed = feedFor();
+        feed.apply('pierce', { ...feedAnswer(0, 'feed_pierce_1', 'The shared drive is down again today.'), seq: 1 });
+        const s = open({ start: 'social.pierce', feed });
+        assert.equal(s.container.querySelector('.ob-thread'), null);
+        const hostile = '<b>bold</b> reply <img src=x onerror="window.__pwned2=1">';
+        feed.apply('hampshire', replyAnswer(0, 2, 'hamp_re', hostile, 'feed_pierce_1', 'pierce', 'pierce', 'hampshire'));
+        const r = s.container.querySelector('.ob-thread .ob-reply');
+        assert.ok(r, 'drawn without closing the browser');
+        assert.equal(r.querySelector('.ob-text b, .ob-text img, .ob-text *'), null, 'the headshot is the only image');
+        assert.ok(r.textContent.includes(hostile));
+        assert.equal(window.__pwned2, undefined);
+        s.cleanup();
+    } finally { window.eventDispatcher = saved; }
+});

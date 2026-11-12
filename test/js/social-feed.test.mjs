@@ -72,7 +72,7 @@ test('the fact entry is in intelFacts before npc_posted fires', async () => {
     await feed.onUse('jake');
     const emit = log.find((e) => e[0] === 'emit');
     assert.equal(emit[1], 'npc_posted:jake');
-    assert.deepEqual(emit[2], { npcId: 'jake', postId: 'p1', index: 0, site: 'friendface', person: 'jake' });
+    assert.deepEqual(emit[2], { npcId: 'jake', postId: 'p1', index: 0, seq: 0, site: 'friendface', person: 'jake' });
     assert.deepEqual(emit[3][FACT.id], STORED, 'merged before the event');
     assert.ok(log.findIndex((e) => e[0] === 'fact') < log.findIndex((e) => e[0] === 'emit'));
 });

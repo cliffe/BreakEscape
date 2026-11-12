@@ -616,6 +616,13 @@ export class NetworkLinks {
         win().syncInventoryFromServer?.(body.inventory, [foothold.itemId]);
         this.footholds.set(foothold.id, foothold);
         this.gained.add(apId);
+        // The display global, as load() writes it after a reload: true for the access point
+        // the network was first joined at, false for a second one (review R1 E2). The false
+        // over an unset global is written with no change event, as load() writes it (review
+        // R2 n1): a join at a second access point is not a planting.
+        const planted = this.heldAt(apId) !== null;
+        const unset = win().gameState?.globalVariables?.[plantedGlobal(apId)] === undefined;
+        writeGlobal(plantedGlobal(apId), planted, { deferEmit: !planted && unset });
         const networkId = foothold.network?.id ?? null;
         // Events are client-emitted from the answer (as the plant does); network_joined fires
         // for a second access point too, so a task or mapping on either one completes (5.3)

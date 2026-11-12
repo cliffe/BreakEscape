@@ -80,7 +80,8 @@ module BreakEscape
       assert_equal false, a['done']
       assert_equal true, a['tooSoon']
       assert_equal 1, a['revealed'], 'the posts out so far'
-      assert_equal({ 'shown' => ['jake_post_1'], 'at' => at }, @game.reload.player_state.dig('feedRevealed', 'jake'))
+      assert_equal({ 'shown' => ['jake_post_1'], 'at' => at, 'seq' => { 'jake_post_1' => 1 }, 'to' => {} },
+                   @game.reload.player_state.dig('feedRevealed', 'jake'))
       b = travel_to(t + FLOOR + 1) { ask('jake') }
       assert_equal 'jake_post_2', b.dig('post', 'id')
     end
