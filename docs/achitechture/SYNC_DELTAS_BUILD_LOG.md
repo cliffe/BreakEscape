@@ -46,7 +46,9 @@ Standing constraints for this build:
 | 6a-server review R1 fixes (M1, M2, N1-N4) + tests | Done, committed, tested (`5620ec5b6`). See "builder 6 session" |
 | Clone-merge verification (task 1): branch's `cloneFrom: 'world'` records a world-card copy | Done, code + live proven (game 1894); no fix needed. See "builder 8 session" |
 | 6b. R2 reveal/proof gating | Done, committed, tested (`9271f4435`). Route tests only; live cases D-F not run. See "builder 8 session" |
-| 7. Node + Rails size tests, then live proof A to F | Not started |
+| 7. Node request-size cases (10.1) + sync_bodies fixtures | Done, committed, tested (`7d73e62c7`). See "builder 9 session" |
+| 7. Rails answer-size test (10.2) | Done, committed, tested (`29a3a0815`). See "builder 9 session" |
+| 7. Live proof A to F (10.3) | In progress: see "builder 9 session" |
 | 8. One release later: remove transition code | Not started (separate release) |
 
 ## Plan amendment (orchestrator ruling, 2026-11-12): 6a reconciled with main's serving path
@@ -87,6 +89,41 @@ differ.
    (`capture_payload_secret_test`, `capture_payload_secret_routes_test`, `capture_secret_endpoint_test`,
    `lab_physical_pentest_secrets_test`, the `capture_proofs` tests), then Len's shoulder-surf beat
    played on the earned path in lab_physical_pentest.
+
+## This session (2026-11-12, builder 9: step 7 size tests + live proof)
+
+### Node request-size cases (10.1) -> `7d73e62c7`
+`test/js/sync-request-sizes.test.mjs` (8 cases, plain `node --test`, all green), the q77 size
+guard. Each builder case measures the real request body where the client builds it and writes it
+to `test/fixtures/files/sync_bodies/*.json` under `--write-fixtures`, so the Rails test posts the
+same bytes. Measured sizes (all within bound):
+- buildChanges after seedFromBootstrap: matching load -> `null` (0 B); different room ->
+  `buildchanges_room_only.json`, currentRoom + clock + timedMessages only, 174 B (< 1000).
+- exportPhoneState with `keyOf=stableJson` after a jsonb-reordered restore -> `{}` (no resend).
+- EM4100 clone_card body `clone_card_em4100.json` 417 B (< 600); fully cracked MIFARE Classic
+  (16 sectors) `clone_card_mifare.json` ~1861 B JSON file, body itself < 1500.
+- capture-client `captures` part, one credential (lab_social lord) 118 B, one foothold
+  (lab_physical store_controller) 60 B; both < 300. Fixtures wrap them as the sync body.
+- capture-log seen writes: three new rows -> three `__capture_log_seen:<key>` booleans, each < 60 B.
+No new static engine import, so no JS harness copy-list change.
+
+### Rails answer-size test (10.2) -> `29a3a0815`
+`test/integration/sync_payload_size_test.rb` (6 cases, green). Builds games from the real
+test_access_networks, test-rfid, lab_social_engineering and lab_physical_pentest through
+`Game#generate_scenario_data`, seeds a 50-card legacy `rfid_cloner` by hand (the old-save shape no
+route can fill), posts the 10.1 fixtures, and asserts `response.body.bytesize` only:
+- `/inventory` add + remove with the 50-card cloner held: both < 100 B, no `saved_cards`.
+- `/network/plant` + `/network/unplug` with `delta:true`, cloner held: both < 1500 B, no
+  `saved_cards`.
+- `/clone_card` MIFARE fixture (NPC path, guard holds master_keycard): recorded, < 200 B.
+- `PUT /sync_state` capture fixture, lab_social lord credential: answer records lord, < 600 B.
+- `PUT /sync_state` capture fixture, lab_physical store_controller foothold: the 693-char note
+  rides whole, answer < 1200 B.
+- `GET /scenario` for all four scenarios: within the base commit measure + 1 KB (base figures from
+  the Baseline table, commit 6a834437c, written as `BASE_BOOTSTRAP_BYTES`).
+
+### Live proof (10.3): in progress
+See the builder-9 handover section for what ran and what is open.
 
 ## This session (2026-11-12, builder 8: clone-merge verification + 6b)
 
