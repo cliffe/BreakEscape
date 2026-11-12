@@ -215,8 +215,8 @@ lock, called `leave_route` as authored and with attacks forced off. 176 rendered
 claimable PCs, the same 18 as the review. Only `test_access_habits noor_pc` returns nil. Routes:
 `lab_physical_pentest staff_pc_2`, `test_capture_log mel_pc` and `test_access_habits` dana, kai and
 lena by a need; the six `test_access_sessions` owners and the six `test_access_social` and
-`test_access_work` owners by a knock-out (every one of those PCs has a lock field that can leave it
-open), with a coffee need or a failure route behind it. `check_access_model` over all 176 gives the
+`test_access_work` owners by a knock-out (for each, the PC's lock field or the owner's habit can
+leave it open after a leave with no estimate), with a coffee need or a failure route behind it. `check_access_model` over all 176 gives the
 never-leaves warning for `noor_pc` only, beside the older untracked-owner warning for
 `test_access_work pat_pc`.
 
