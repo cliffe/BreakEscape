@@ -162,7 +162,7 @@ keeps `level, failAt, failWhy, easeAt, handed, lastSpent, done, lockedOut`, no h
 tests. A peak would also contradict `needMet` on the current level (an ease lowers `level`, so
 requiring the dropped level still be high is self-defeating). Dropping the magnitude keeps the slice
 small; a "fixed at last" post keys on `needMet` alone. If an author later wants magnitude, it is the
-follow-up in section 11.
+future-work follow-up in decision 2 (section 12).
 
 One caveat for authors. `needMet` records `easeAt[need]` on *any* met use once above level 0
 (`ease_report!`), including a use that was met only because the player performed a workaround (a
@@ -201,7 +201,7 @@ Notes and bounds:
   `frustrationBelow`-only reactive post sits on an NPC with no failable need (section 8).
 - **USB refusal is not a condition.** The brief lists it among the recorded causes, but sub-slice U
   records no server state for a refused device (section 3 of the C plan: "no route, no saved state,
-  no frustration"), so there is nothing to read. It is left out, and listed as an open question (11).
+  no frustration"), so there is nothing to read. It is left out (decision 1, section 12).
 
 ## 4. Selection and the order modes
 
@@ -215,8 +215,14 @@ given that state explicitly:
 AccessWork.select_feed_post(scenario_data, npc, feed_entry, frustration_entry, globals, lockout_keys)
 ```
 
-`feed_entry` is the `feedRevealed` record (`shown`, `at`, section 5); `frustration_entry` is
-`npcFrustration[npcId]` (or nil before the NPC has one); `globals` is `player_state.globalVariables`
+`feed_entry` is the `feedRevealed` record (`shown`, `at`, section 5); `frustration_entry` is the NPC's
+raw `npcFrustration[npcId]` (or nil before the NPC has one). The route reads it **read-only**, as
+`player_state['npcFrustration']&.dig(id)`, and must **not** call the instance method
+`frustration_entry(npc_id)` (`npc_frustration.rb:50`), which materialises and writes a defaulted entry
+into `player_state['npcFrustration']`: because `/feed_post` runs under `with_game_lock` and saves,
+calling it would create an empty frustration record for any NPC that has only used social media and
+never failed, polluting `npc_frustration_for_client`. `select_feed_post` takes the entry (or nil) as a
+value and never writes it. `globals` is `player_state.globalVariables`
 merged over the scenario defaults **by key presence** (a player key present wins even when its value
 is `false` or `0`, and the scenario default is used only when the key is absent), matching the live
 `frustration_global` rule so an explicit `false` is never dropped; `lockout_keys` is the
@@ -231,6 +237,18 @@ Define, against the recorded state at that moment:
 - the **ordered queue**: the posts with no `when`, in authored order, those not yet shown.
 - the **eligible reactive set**: the posts with a `when` whose condition holds now and that are not
   yet shown. Ties break by authored order.
+
+A `when` holds when every predicate holds (section 3). `select_feed_post` evaluates each predicate
+itself and `cause` is the one that is **not** a single helper call: a `cause` predicate holds only when
+**both** `frustration_entry.failWhy[need]` lists a matching `why` (the NPC has actually failed at that
+cause) **and** `AccessWork.cause_why_holds?(...)` holds now (a cause with that why is still live). The
+named helper `cause_why_holds?` does not take `failWhy`, so `select_feed_post` carries the `failWhy`
+conjunct, and a builder must not fire a `cause` post on `cause_why_holds?` alone: a printer down from
+mission start would otherwise post "Printer's down AGAIN" before the NPC had ever failed at it. The
+live `frustration_cause_holds?` has this gate implicitly (it is only ever called over the `missing`
+causes of a real failure report); the pure path makes it explicit. A unit case pins it: a post that
+does not fire while the cause holds but the NPC has not yet failed at it, then fires once a counted
+failure records the why (section 9).
 
 The three modes, each a precise rule for which post is served:
 
@@ -275,22 +293,35 @@ assertions), never as a fixed per-run total.
 **Done.** Every reactive post is served at most once, so `done: true` is sent only when:
 
 - the ordered queue is empty, **and**
-- every reactive post is either (a) already shown, or (b) statically unable ever to fire (its `when`
-  names a cause this NPC can never meet, the validator's static reachability check of section 8,
-  `AccessWork.cause_why_reachable?`; in a clean scenario this reduces to "shown").
+- every reactive post is either (a) already shown, or (b) statically unable ever to fire: its **whole
+  `when`** is unreachable, so no play can make the post eligible.
 
-This is one **named pure helper**, `AccessWork.feed_done?(scenario_data, npc, shown)`, a function of
-`shown` (the derived reveal list) and `scenario_data` only. Both call sites use this one function so the
-rule cannot drift (the same one-copy discipline as `cause_holds?`): `select_feed_post` returns its
-result alongside the chosen post id (so the `POST /feed_post` route does not recompute it), and
-`feed_posts_for_client` calls `feed_done?` directly with the derived `shown`. It never reads the live
-globals or lockouts `select_feed_post` is given: branch (b) is static reachability only, so a reactive
-post that is merely false right now but still reachable keeps `done: false`.
+Branch (b) is a static reachability test over the **entire `when`**, not over `cause` alone. A `when`
+is dead when any one of its ANDed predicates can never hold for this NPC, and the predicates fail
+statically for different reasons: a `cause` names a why the NPC can never meet
+(`AccessWork.cause_why_reachable?`); a `workaround` names a kind the NPC has no workaround of; a
+`global` is not declared in `globalVariables`; a `frustrationAtLeast`/`frustrationBelow`/`needMet`
+predicate sits on an NPC with no failable need (it never gets an `npcFrustration` entry, so the
+predicate stays false forever). These are exactly the per-predicate reachability cases the validator's
+dead-post warnings use (section 8). Branch (b) and the validator therefore share **one named pure
+helper**, `AccessWork.when_reachable?(scenario_data, npc, when_cond)`, which returns true only when
+every predicate in the `when` is statically reachable; branch (b) treats a reactive post as dead when
+`when_reachable?` is false. So a post killed by a dead non-cause predicate (an undeclared `global`, an
+absent workaround, a `frustrationBelow`-only post on a non-failing NPC) closes the feed just as a dead
+`cause` does, and in a clean scenario (the validator warns on all of these) every reactive post is
+either shown or dead, so the feed reaches `done`.
 
-Branch (b) reads **only `scenario_data` reachability**, never the live globals or lockouts
-`select_feed_post` is given: a reactive post whose condition is merely false right now but can still
-be reached keeps `done: false`, so a builder must not let a transiently-false but reachable post close
-the feed early. A feed holding an un-triggered, still-reachable reactive post therefore never reports
+The feed-completion test itself is one **named pure helper**,
+`AccessWork.feed_done?(scenario_data, npc, shown)`, a function of `shown` (the derived reveal list) and
+`scenario_data` only; it calls `when_reachable?` for branch (b). Both call sites use this one function
+so the rule cannot drift (the same one-copy discipline as `cause_holds?`): `select_feed_post` returns
+its result alongside the chosen post id (so the `POST /feed_post` route does not recompute it), and
+`feed_posts_for_client` calls `feed_done?` directly with the derived `shown`.
+
+`feed_done?` and `when_reachable?` read **only `scenario_data` reachability**, never the live globals
+or lockouts `select_feed_post` is given: a reactive post whose condition is merely false right now but
+can still be reached keeps `done: false`, so a builder must not let a transiently-false but reachable
+post close the feed early. A feed holding an un-triggered, still-reachable reactive post therefore never reports
 `done` until that post fires; the client stays askable and delivers it on a later use. The client
 stops asking on `done: true`, as in C.
 
@@ -332,9 +363,14 @@ C2 reads only state the frustration and feed systems already keep, and adds one 
 
   A reader treats a missing key as empty. **Migration:** a game saved under C holds `{ n, at }`; a
   helper `feed_shown_ids(npc, entry)` returns `entry['shown']` when present, else the first `n` ids of
-  the NPC's ordered posts (C only ever served those, in order), so a C save plays on. (This assumes the
-  feed's ordered posts kept their ids and relative order since the C save; a real upgrade that reordered
-  or renamed them would need a richer migration, but the one rebuilt test save does not.) **Both** route
+  `feed.posts` **in authored order that have no `when`** (C served `posts[0..n-1]` of the feed, which
+  under C were all ordered posts), so a C save plays on. This is C-equivalent only while the feed's
+  first `n` authored posts are all ordered: interleaving a reactive post before authored index `n`
+  would make `posts[0..n-1]` and "the first `n` ordered ids" diverge and break a real C save's
+  migration. The one rebuilt `test_access_social` save holds the assumption (ids and relative order
+  kept, no reactive post ahead of index `n`), and C2 is not merged, so no live C save with interleaved
+  reactive posts can exist; a feed that later reordered or renamed its posts would need a richer
+  migration. **Both** route
   paths that read the record derive `shown` through this helper so a migrated `{ n, at }` entry never
   reaches the new logic as a nil `shown`: `reveal_feed_post!` (section 6) and `feed_posts_for_client`
   (section 6), and the `done` recompute and the reveal-sequence `index` are computed from that derived
@@ -400,7 +436,9 @@ pure too but take live globals and lockout keys, so the route can call them whil
 the static reachability check instead (section 8).
 `social_feed.rb` holds only the state read/write and the HTTP shape.
 
-**Server authority.** The client posts only `npc_id`. Every condition input (frustration, failure
+**Server authority.** The client posts no condition input: only `npc_id` and, after the q33 merge, the
+`object_id` location, both server-checked (q33 refuses an `object_id` that is not one of the NPC's
+places before the selection runs). Every condition input (frustration, failure
 cause, workaround done, need met, globals) is the server's own record; none is read from the request.
 So a tampered client cannot pick a post, cannot fake a condition, and cannot pull a reactive post's
 text or fact before the server decides the condition holds. The withholding is C's and unchanged: the
@@ -440,9 +478,12 @@ In `scripts/validate_access_work.rb` (sub-slice C section) and its schema, shari
 the selection and eligibility logic and for the **static** reachability check. The validator has no
 `player_state`, so it never runs the live `cause_holds?` evaluator; its "can this ever hold" check is
 built from the static pieces `AccessWork` already exposes (`can_fail?`, `cause_belongs?`, admission,
-`downIf` declaration, workaround presence, global declaration). For a `cause` predicate the check is
-`AccessWork.cause_why_reachable?` (section 3), which the validator, the live evaluator and `done`'s
-branch (b) share so all three enumerate the same candidate set. New errors:
+`downIf` declaration, workaround presence, global declaration). The whole-`when` reachability check is
+the shared `AccessWork.when_reachable?(scenario_data, npc, when_cond)` (section 4): it is true only when
+every predicate in the `when` is statically reachable, testing each by its own rule, `cause` by
+`AccessWork.cause_why_reachable?` (section 3). The validator's dead-post warning and `done`'s branch (b)
+both call `when_reachable?`, and `cause_why_reachable?` is shared by the validator, the live evaluator
+and that helper, so all enumerate the same candidate set. New errors:
 
 - an unknown `feed.order` value (not one of the three);
 - a `when` that is empty, or holds an unknown predicate key;
@@ -456,10 +497,12 @@ branch (b) share so all three enumerate the same candidate set. New errors:
 
 New warnings:
 
-- a reactive post whose `when` can never hold for this NPC (the static reachability check): its
-  `cause` names a why the "can fail" rule does not allow the NPC (its station cannot be off, it is
-  admitted to every resource, its policy does not block social media, and so on), or its `workaround`
-  names a kind the NPC lacks, or its `global` is not declared in `globalVariables`. It will never fire;
+- a reactive post whose `when` can never hold for this NPC (the shared `when_reachable?` check,
+  section 4): its `cause` names a why the "can fail" rule does not allow the NPC (its station cannot be
+  off, it is admitted to every resource, its policy does not block social media, and so on), or its
+  `workaround` names a kind the NPC lacks, or its `global` is not declared in `globalVariables`. It
+  will never fire (and, being dead, does not hold the feed open: `done`'s branch (b) uses the same
+  helper);
 - a reactive post with a `fact` on a high-awareness NPC without `deliberate: true` (C's awareness
   warning, now also reaching reactive posts);
 - a reactive post or feed fact whose `text` is under 12 characters or occurs inside another shipped
@@ -541,10 +584,16 @@ Unit, tampered-client, leak scanner and a live run, matching C's approach.
     outside that prefix, so the branch skips it, never marks it served, and `scan_feed` then raises a
     **false `feed_text` leak** for it. This bites a resumed-from-save run (the `@feed_fallback` path),
     where there is no prior `/feed_post` answer line to mark the post served and the base comes from
-    `feedRevealed` alone. Fix: derive `allowed` from the **ids actually shown**, not the authored prefix.
-    When `@game.player_state['feedRevealed'][npc]['shown']` is available, use that id list as `allowed`;
-    for in-log reveals accumulate the served ids seen so far per NPC. Either way `allowed` is the set of
-    ids actually shown, so an out-of-order reactive post is recognised.
+    `feedRevealed` alone. Fix: derive `allowed` from the **ids actually shown**, not the authored prefix,
+    by this rule (the simplest sound one): for an in-log reveal, `allowed` is the **ids served so far in
+    this log**, accumulated per NPC as each `/feed_post` answer and `feedPosts` block is seen; only on
+    the resumed (`@feed_fallback`) path, where no prior log line exists, is `allowed` the saved
+    `@game.player_state['feedRevealed'][npc]['shown']` list (there the whole saved reveal set is
+    legitimately the base). Saved `shown` is **not** used as `allowed` on a live run, because it is the
+    *final* reveal set: using it mid-log would admit a post the server served **later** than the block
+    under scan, weakening detection of a genuinely-too-early `feedPosts` leak (it loses a true positive,
+    never adds a false one, so a clean run would still pass, but the accumulated form is exact). The
+    scanner already records served ids through `serve_feed`, so accumulating them adds little code.
   - `prepare_feed_base` reads `n = entry['n'].to_i` from `feedRevealed`, but C2's shape is `{ shown, at }`
     with no `n`. The resumed base count derives from `entry['shown'].length` when present, falling back
     to `entry['n'].to_i` so a legacy C save `{ n, at }` still counts correctly.
@@ -625,28 +674,30 @@ That is a scenario rebuild, not a field addition, and is out of scope for C2. If
 reactive OSINT posts later, it is a separate slice that first moves its social content onto the feed
 system.
 
-## 12. Open questions
+## 12. Decisions
 
-1. **USB refusal as a condition.** The brief lists USB refusal among the recorded causes, but
-   sub-slice U keeps no server state for a refused device, so there is nothing to read.
-   *Recommendation:* leave it out of C2. If the user wants a "had to email it to myself" post after a
-   refused USB stick, a small follow-up records the refusal server-side (a `usbRefusals` note written
-   when a plant or an NPC carry is blocked), and C2 gains a `cause: "usb_refused"` predicate over it.
-2. **"Fixed at last" magnitude.** C2 drops the "was at least this frustrated" test and keys "fixed at
-   last" on `needMet` alone (a recorded failure then a recovery), to avoid a new recorded peak field
-   and its save migration (section 3). *Recommendation:* keep it dropped; the trigger reads well
-   without it. If an author later needs "only celebrate a *bad* outage being fixed", the follow-up
-   records a per-need `peakLevel` in `fail_report!` and adds a `peakAtLeast` predicate; it is the one
-   predicate that needs new recording.
-3. **Default `order`.** The plan makes `facts_first` the default, so a feed that adds reactive posts
-   without an `order` keeps C's fact-post flow and treats reactive posts as extras after it.
-   *Recommendation:* keep `facts_first` as the default; it is the least surprising for an author
-   upgrading a C feed. An alternative is `mixed` as the default, which reads more naturally but
-   changes the order of an existing feed the moment a reactive post is added.
-4. **Repeatable reactive posts (dropped from C2, future work).** To keep this slice small, every
-   reactive post fires at most once: C2 adds no `repeatable` flag, no re-arm, and no `armed` state. A
+These five were open design calls; each is settled here, with its future-work note where one applies.
+
+1. **USB refusal is not a condition.** Sub-slice U keeps no server state for a refused device, so a
+   `usb_refused` predicate would be unbacked. C2 leaves it out, matching the minimal-slice framing.
+   *Future work:* if a "had to email it to myself" post is wanted after a refused USB stick, a small
+   follow-up records the refusal server-side (a `usbRefusals` note written when a plant or an NPC carry
+   is blocked), and C2 gains a `cause: "usb_refused"` predicate over it.
+2. **"Fixed at last" keys on `needMet` alone, no magnitude.** C2 drops the "was at least this
+   frustrated" test (section 3): the server stores only the current, decaying `level`, so a "reached n
+   at some point" test would need a new recorded peak field and its save migration, and a peak would
+   contradict `needMet` on the current level anyway. The trigger reads well without it. *Future work:*
+   if an author later needs "only celebrate a *bad* outage being fixed", a follow-up records a per-need
+   `peakLevel` in `fail_report!` and adds a `peakAtLeast` predicate; it is the one predicate that needs
+   new recording.
+3. **Default `order` is `facts_first`.** A feed that adds reactive posts without an `order` keeps C's
+   fact-post flow and treats reactive posts as extras after it: the backwards-compatible,
+   least-surprising default for an author upgrading a C feed. `mixed` reads more naturally but would
+   change an existing feed's order the moment a reactive post is added, so it is not the default.
+4. **Reactive posts are not repeatable (out of scope).** To keep this slice small, every reactive post
+   fires at most once: C2 adds no `repeatable` flag, no re-arm, and no `armed` state. *Future work:* a
    later slice that wants "Printer's down AGAIN" to fire on each fresh outage needs two things C2 does
-   not build, each a distinct problem found in review:
+   not build, each a distinct problem:
    - a **distinct client identity per reveal**. The client dedups on `post.id` (`social-feed.js`
      `_add`), and a `repeatable` post fires again with the same authored id, so the second firing would
      be dropped (no `npc_posted`, nothing on the osint list, and the same on reload). The reveal-sequence
@@ -662,8 +713,7 @@ system.
    It also reopens the `done` condition (a `repeatable` post with a recurring cause never closes, so the
    client must stay askable) and the per-beat request-budget reasoning. Until then the validator has no
    `repeatable` key and a feed's reactive posts each fire once.
-5. **`cause` scope default.** `cause` without a `need` ranges over all judged needs, so a work outage
-   and a blocked site both match `cause: "down"` only for the need that failed. *Recommendation:*
-   keep the any-need default and let an author narrow with `need`; it is the common case (one need
-   fails at a time) and the scoped form is there when two needs can fail together, with a validator
-   warning when an unscoped `cause` sits on an NPC that can fail two needs.
+5. **`cause` applies to any need by default, narrow with `need`.** `cause` without a `need` ranges over
+   all judged needs, matching the common one-need-fails-at-a-time case; the scoped form is there when
+   two needs can fail together, and the validator warns when an unscoped `cause` sits on an NPC that can
+   fail two needs (section 8).
