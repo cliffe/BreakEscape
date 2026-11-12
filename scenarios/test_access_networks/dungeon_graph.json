@@ -21,6 +21,12 @@
       "optional": false
     },
     {
+      "id": "lock_sv_fs02",
+      "label": "Server file host<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "lock_sam_pc",
       "label": "Sam's PC<br/>Sign-in",
       "kind": "lock",
@@ -93,6 +99,12 @@
       "optional": false
     },
     {
+      "id": "jack_secure_port",
+      "label": "Locked switch port<br/>Network jack<br/>(port security: refuses the device)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "jack_bench_port",
       "label": "Bench switch<br/>Network jack",
       "kind": "lock",
@@ -135,8 +147,92 @@
       "optional": false
     },
     {
+      "id": "net_server_net",
+      "label": "Server network<br/>Network<br/>down while servers_offline",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "resource_backup_vault",
+      "label": "Backup-Vault<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "net_guest_wifi",
+      "label": "Guest Wi-Fi<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "resource_guest_notice",
+      "label": "Guest-Notice<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "wifiap_guest_ap",
+      "label": "Guest access point<br/>Wi-Fi access point",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "wifikey_guest_wifi",
+      "label": "Wi-Fi key<br/>(Harbour-Guest)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "clue_wifi_note",
+      "label": "Reception Wi-Fi card",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "wifiap_guest_ap2",
+      "label": "Guest access point (lift lobby)<br/>Wi-Fi access point",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "implant_sam_pc",
+      "label": "BadUSB: Sam's desk<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "device_kit_badusb",
+      "label": "Keystroke injector<br/>(implant device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "implant_kiosk_pc",
+      "label": "BadUSB: kiosk<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "implant_door_box",
+      "label": "USB foothold: door controller<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "device_kit_stick",
+      "label": "Spare USB stick<br/>(implant device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
       "id": "desk_room",
       "label": "Desks",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server room",
       "kind": "room",
       "optional": false
     },
@@ -162,6 +258,11 @@
     {
       "from": "lobby",
       "to": "lock_lobby_vault",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "lock_sv_fs02",
       "soft": false
     },
     {
@@ -221,6 +322,11 @@
     },
     {
       "from": "signin_ian",
+      "to": "lock_sv_fs02",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
       "to": "lock_sam_pc",
       "soft": false
     },
@@ -252,6 +358,16 @@
     {
       "from": "jack_comms_port",
       "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "comms_room",
+      "to": "jack_secure_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_secure_port",
       "soft": false
     },
     {
@@ -317,6 +433,155 @@
       "label": "exposes"
     },
     {
+      "from": "net_server_net",
+      "to": "lock_sv_fs02",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "signin_ian",
+      "to": "resource_backup_vault",
+      "soft": false
+    },
+    {
+      "from": "net_guest_wifi",
+      "to": "resource_guest_notice",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "link",
+      "both": true
+    },
+    {
+      "from": "lock_door_box",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "lock_kiosk_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "lock_lena_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "lock_sam_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "lock_sv_fs02",
+      "to": "net_office_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "lobby",
+      "to": "wifiap_guest_ap",
+      "soft": false
+    },
+    {
+      "from": "wifiap_guest_ap",
+      "to": "net_guest_wifi",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "clue_wifi_note",
+      "soft": false
+    },
+    {
+      "from": "clue_wifi_note",
+      "to": "wifikey_guest_wifi",
+      "soft": false
+    },
+    {
+      "from": "wifikey_guest_wifi",
+      "to": "wifiap_guest_ap",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "wifiap_guest_ap2",
+      "soft": false
+    },
+    {
+      "from": "wifiap_guest_ap2",
+      "to": "net_guest_wifi",
+      "soft": false
+    },
+    {
+      "from": "wifikey_guest_wifi",
+      "to": "wifiap_guest_ap2",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_badusb",
+      "soft": false
+    },
+    {
+      "from": "device_kit_badusb",
+      "to": "implant_sam_pc",
+      "soft": false,
+      "label": "held"
+    },
+    {
+      "from": "lock_sam_pc",
+      "to": "implant_sam_pc",
+      "soft": false,
+      "label": "session at PC"
+    },
+    {
+      "from": "implant_sam_pc",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "device_kit_badusb",
+      "to": "implant_kiosk_pc",
+      "soft": false,
+      "label": "held"
+    },
+    {
+      "from": "lock_kiosk_pc",
+      "to": "implant_kiosk_pc",
+      "soft": false,
+      "label": "session at PC"
+    },
+    {
+      "from": "implant_kiosk_pc",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_stick",
+      "soft": false
+    },
+    {
+      "from": "device_kit_stick",
+      "to": "implant_door_box",
+      "soft": false,
+      "label": "dropped"
+    },
+    {
+      "from": "implant_door_box",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
       "from": "lobby",
       "to": "comms_room",
       "soft": false
@@ -329,6 +594,11 @@
     {
       "from": "lobby",
       "to": "workshop",
+      "soft": false
+    },
+    {
+      "from": "comms_room",
+      "to": "server_room",
       "soft": false
     },
     {

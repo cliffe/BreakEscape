@@ -138,13 +138,13 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
     </div>
     <table>
       <tr><th>Aims (story objectives)</th><td class="val">1</td></tr>
-      <tr><th>Total tasks</th><td class="val">15</td></tr>
-      <tr><th>Optional tasks</th><td class="val">0 / 15</td></tr>
+      <tr><th>Total tasks</th><td class="val">24</td></tr>
+      <tr><th>Optional tasks</th><td class="val">0 / 24</td></tr>
       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
-      <tr><th>Physical locks (puzzle)</th><td class="val">8</td></tr>
-      <tr><th>Rooms</th><td class="val">9</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">25 / 36</td></tr>
+      <tr><th>Physical locks (puzzle)</th><td class="val">15</td></tr>
+      <tr><th>Rooms</th><td class="val">12</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">41 / 68</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
     </table>
   </div>
@@ -176,6 +176,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   door_finance_office["Finance office<br/>PIN lock"]
   finance_office("Finance office")
   lock_lobby_vault["Lobby vault<br/>PIN lock"]
+  lock_sv_fs02["Server file host<br/>Sign-in"]
   lock_sam_pc["Sam's PC<br/>Sign-in"]
   lock_lena_pc["Lena's PC<br/>Sign-in"]
   lock_kiosk_pc["Reception kiosk<br/>Sign-in"]
@@ -188,6 +189,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   jack_comms_port["Spare wall port<br/>Network jack"]
   comms_room("Comms room")
   net_office_lan("Harbour office LAN<br/>Network")
+  jack_secure_port["Locked switch port<br/>Network jack<br/>(port security: refuses the device)"]
   jack_bench_port["Bench switch<br/>Network jack"]
   workshop("Workshop")
   net_workshop_lan("Workshop bench LAN<br/>Network")
@@ -195,12 +197,27 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   resource_print_queue[["Office print queue<br/>(printer)"]]
   resource_scanned_inbox[["Scanned-Inbox<br/>(file share)"]]
   resource_bench_notes[["Bench-Notes<br/>(file share)"]]
+  net_server_net("Server network<br/>Network<br/>down while servers_offline")
+  resource_backup_vault[["Backup-Vault<br/>(file share)"]]
+  net_guest_wifi("Guest Wi-Fi<br/>Network")
+  resource_guest_notice[["Guest-Notice<br/>(file share)"]]
+  wifiap_guest_ap["Guest access point<br/>Wi-Fi access point"]
+  wifikey_guest_wifi{"Wi-Fi key<br/>(Harbour-Guest)"}
+  clue_wifi_note{"Reception Wi-Fi card"}
+  wifiap_guest_ap2["Guest access point (lift lobby)<br/>Wi-Fi access point"]
+  implant_sam_pc["BadUSB: Sam's desk<br/>(implant)"]
+  device_kit_badusb{"Keystroke injector<br/>(implant device)"}
+  implant_kiosk_pc["BadUSB: kiosk<br/>(implant)"]
+  implant_door_box["USB foothold: door controller<br/>(implant)"]
+  device_kit_stick{"Spare USB stick<br/>(implant device)"}
   desk_room("Desks")
+  server_room("Server room")
   kiosk_room("Kiosk")
   store("Store")
 
   door_finance_office --> finance_office
   lobby --> lock_lobby_vault
+  server_room --> lock_sv_fs02
   desk_room --> lock_sam_pc
   finance_office --> lock_lena_pc
   kiosk_room --> lock_kiosk_pc
@@ -212,6 +229,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   signin_lena --> lock_lena_pc
   signin_lena --> lock_kiosk_pc
   lobby --> signin_ian
+  signin_ian --> lock_sv_fs02
   signin_ian --> lock_sam_pc
   signin_ian --> lock_kiosk_pc
   signin_ian --> lock_door_box
@@ -219,6 +237,8 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   comms_room --> jack_comms_port
   device_kit_dropbox --> jack_comms_port
   jack_comms_port --> net_office_lan
+  comms_room --> jack_secure_port
+  device_kit_dropbox --> jack_secure_port
   workshop --> jack_bench_port
   device_kit_dropbox --> jack_bench_port
   jack_bench_port --> net_workshop_lan
@@ -230,16 +250,45 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   net_office_lan -->|exposes| resource_print_queue
   net_office_lan -->|exposes| resource_scanned_inbox
   net_workshop_lan -->|exposes| resource_bench_notes
+  net_server_net -->|exposes| lock_sv_fs02
+  signin_ian --> resource_backup_vault
+  net_guest_wifi -->|exposes| resource_guest_notice
+  net_office_lan <-->|link| net_server_net
+  lock_door_box -->|pivot| net_server_net
+  lock_kiosk_pc -->|pivot| net_server_net
+  lock_lena_pc -->|pivot| net_server_net
+  lock_sam_pc -->|pivot| net_server_net
+  lock_sv_fs02 -->|pivot| net_office_lan
+  lobby --> wifiap_guest_ap
+  wifiap_guest_ap --> net_guest_wifi
+  lobby --> clue_wifi_note
+  clue_wifi_note --> wifikey_guest_wifi
+  wifikey_guest_wifi --> wifiap_guest_ap
+  lobby --> wifiap_guest_ap2
+  wifiap_guest_ap2 --> net_guest_wifi
+  wifikey_guest_wifi --> wifiap_guest_ap2
+  lobby --> device_kit_badusb
+  device_kit_badusb -->|held| implant_sam_pc
+  lock_sam_pc -->|session at PC| implant_sam_pc
+  implant_sam_pc --> net_office_lan
+  device_kit_badusb -->|held| implant_kiosk_pc
+  lock_kiosk_pc -->|session at PC| implant_kiosk_pc
+  implant_kiosk_pc --> net_office_lan
+  lobby --> device_kit_stick
+  device_kit_stick -->|dropped| implant_door_box
+  implant_door_box --> net_office_lan
   lobby --> comms_room
   lobby --> desk_room
   lobby --> workshop
+  comms_room --> server_room
   desk_room --> kiosk_room
   desk_room --> store
 
-  class door_finance_office,lock_lobby_vault,lock_sam_pc,lock_lena_pc,lock_kiosk_pc,lock_door_box,jack_comms_port,jack_bench_port lock
-  class finance_office,lobby,comms_room,net_office_lan,workshop,net_workshop_lan,desk_room,kiosk_room,store room
-  class signin_sam,signin_lena,signin_ian,device_kit_dropbox key
-  class resource_ledger_archive,resource_print_queue,resource_scanned_inbox,resource_bench_notes container
+  class door_finance_office,lock_lobby_vault,lock_sv_fs02,lock_sam_pc,lock_lena_pc,lock_kiosk_pc,lock_door_box,jack_comms_port,jack_secure_port,jack_bench_port,wifiap_guest_ap,wifiap_guest_ap2,implant_sam_pc,implant_kiosk_pc,implant_door_box lock
+  class finance_office,lobby,comms_room,net_office_lan,workshop,net_workshop_lan,net_server_net,net_guest_wifi,desk_room,server_room,kiosk_room,store room
+  class signin_sam,signin_lena,signin_ian,device_kit_dropbox,wifikey_guest_wifi,device_kit_badusb,device_kit_stick key
+  class resource_ledger_archive,resource_print_queue,resource_scanned_inbox,resource_bench_notes,resource_backup_vault,resource_guest_notice container
+  class clue_wifi_note item
   class node_start start`,
       story:      `flowchart TD
 
@@ -285,6 +334,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   door_finance_office["Finance office<br/>PIN lock"]
   finance_office("Finance office")
   lock_lobby_vault["Lobby vault<br/>PIN lock"]
+  lock_sv_fs02["Server file host<br/>Sign-in"]
   lock_sam_pc["Sam's PC<br/>Sign-in"]
   lock_lena_pc["Lena's PC<br/>Sign-in"]
   lock_kiosk_pc["Reception kiosk<br/>Sign-in"]
@@ -297,6 +347,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   jack_comms_port["Spare wall port<br/>Network jack"]
   comms_room("Comms room")
   net_office_lan("Harbour office LAN<br/>Network")
+  jack_secure_port["Locked switch port<br/>Network jack<br/>(port security: refuses the device)"]
   jack_bench_port["Bench switch<br/>Network jack"]
   workshop("Workshop")
   net_workshop_lan("Workshop bench LAN<br/>Network")
@@ -304,13 +355,28 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   resource_print_queue[["Office print queue<br/>(printer)"]]
   resource_scanned_inbox[["Scanned-Inbox<br/>(file share)"]]
   resource_bench_notes[["Bench-Notes<br/>(file share)"]]
+  net_server_net("Server network<br/>Network<br/>down while servers_offline")
+  resource_backup_vault[["Backup-Vault<br/>(file share)"]]
+  net_guest_wifi("Guest Wi-Fi<br/>Network")
+  resource_guest_notice[["Guest-Notice<br/>(file share)"]]
+  wifiap_guest_ap["Guest access point<br/>Wi-Fi access point"]
+  wifikey_guest_wifi{"Wi-Fi key<br/>(Harbour-Guest)"}
+  clue_wifi_note{"Reception Wi-Fi card"}
+  wifiap_guest_ap2["Guest access point (lift lobby)<br/>Wi-Fi access point"]
+  implant_sam_pc["BadUSB: Sam's desk<br/>(implant)"]
+  device_kit_badusb{"Keystroke injector<br/>(implant device)"}
+  implant_kiosk_pc["BadUSB: kiosk<br/>(implant)"]
+  implant_door_box["USB foothold: door controller<br/>(implant)"]
+  device_kit_stick{"Spare USB stick<br/>(implant device)"}
   desk_room("Desks")
+  server_room("Server room")
   kiosk_room("Kiosk")
   store("Store")
   aim_network_beats{{"Run the network beats"}}
 
   door_finance_office --> finance_office
   lobby --> lock_lobby_vault
+  server_room --> lock_sv_fs02
   desk_room --> lock_sam_pc
   finance_office --> lock_lena_pc
   kiosk_room --> lock_kiosk_pc
@@ -322,6 +388,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   signin_lena --> lock_lena_pc
   signin_lena --> lock_kiosk_pc
   lobby --> signin_ian
+  signin_ian --> lock_sv_fs02
   signin_ian --> lock_sam_pc
   signin_ian --> lock_kiosk_pc
   signin_ian --> lock_door_box
@@ -329,6 +396,8 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   comms_room --> jack_comms_port
   device_kit_dropbox --> jack_comms_port
   jack_comms_port --> net_office_lan
+  comms_room --> jack_secure_port
+  device_kit_dropbox --> jack_secure_port
   workshop --> jack_bench_port
   device_kit_dropbox --> jack_bench_port
   jack_bench_port --> net_workshop_lan
@@ -340,17 +409,46 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   net_office_lan -->|exposes| resource_print_queue
   net_office_lan -->|exposes| resource_scanned_inbox
   net_workshop_lan -->|exposes| resource_bench_notes
+  net_server_net -->|exposes| lock_sv_fs02
+  signin_ian --> resource_backup_vault
+  net_guest_wifi -->|exposes| resource_guest_notice
+  net_office_lan <-->|link| net_server_net
+  lock_door_box -->|pivot| net_server_net
+  lock_kiosk_pc -->|pivot| net_server_net
+  lock_lena_pc -->|pivot| net_server_net
+  lock_sam_pc -->|pivot| net_server_net
+  lock_sv_fs02 -->|pivot| net_office_lan
+  lobby --> wifiap_guest_ap
+  wifiap_guest_ap --> net_guest_wifi
+  lobby --> clue_wifi_note
+  clue_wifi_note --> wifikey_guest_wifi
+  wifikey_guest_wifi --> wifiap_guest_ap
+  lobby --> wifiap_guest_ap2
+  wifiap_guest_ap2 --> net_guest_wifi
+  wifikey_guest_wifi --> wifiap_guest_ap2
+  lobby --> device_kit_badusb
+  device_kit_badusb -->|held| implant_sam_pc
+  lock_sam_pc -->|session at PC| implant_sam_pc
+  implant_sam_pc --> net_office_lan
+  device_kit_badusb -->|held| implant_kiosk_pc
+  lock_kiosk_pc -->|session at PC| implant_kiosk_pc
+  implant_kiosk_pc --> net_office_lan
+  lobby --> device_kit_stick
+  device_kit_stick -->|dropped| implant_door_box
+  implant_door_box --> net_office_lan
   lobby --> comms_room
   lobby --> desk_room
   lobby --> workshop
+  comms_room --> server_room
   desk_room --> kiosk_room
   desk_room --> store
   lock_lobby_vault -.-> aim_network_beats
 
-  class door_finance_office,lock_lobby_vault,lock_sam_pc,lock_lena_pc,lock_kiosk_pc,lock_door_box,jack_comms_port,jack_bench_port lock
-  class finance_office,lobby,comms_room,net_office_lan,workshop,net_workshop_lan,desk_room,kiosk_room,store room
-  class signin_sam,signin_lena,signin_ian,device_kit_dropbox key
-  class resource_ledger_archive,resource_print_queue,resource_scanned_inbox,resource_bench_notes container
+  class door_finance_office,lock_lobby_vault,lock_sv_fs02,lock_sam_pc,lock_lena_pc,lock_kiosk_pc,lock_door_box,jack_comms_port,jack_secure_port,jack_bench_port,wifiap_guest_ap,wifiap_guest_ap2,implant_sam_pc,implant_kiosk_pc,implant_door_box lock
+  class finance_office,lobby,comms_room,net_office_lan,workshop,net_workshop_lan,net_server_net,net_guest_wifi,desk_room,server_room,kiosk_room,store room
+  class signin_sam,signin_lena,signin_ian,device_kit_dropbox,wifikey_guest_wifi,device_kit_badusb,device_kit_stick key
+  class resource_ledger_archive,resource_print_queue,resource_scanned_inbox,resource_bench_notes,resource_backup_vault,resource_guest_notice container
+  class clue_wifi_note item
   class aim_network_beats aim
   class node_start start`,
       rooms:      `flowchart TD
@@ -375,6 +473,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
 
   lobby("Lobby")
   comms_room("Comms room")
+  server_room("Server room")
   workshop("Workshop")
   desk_room("Desks")
   finance_office["Finance office<br/>(locked)"]
@@ -384,11 +483,12 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   lobby --> comms_room
   lobby --> desk_room
   lobby --> workshop
+  comms_room --> server_room
   desk_room --> finance_office
   desk_room --> kiosk_room
   desk_room --> store
 
-  class lobby,comms_room,workshop,desk_room,kiosk_room,store room
+  class lobby,comms_room,server_room,workshop,desk_room,kiosk_room,store room
   class finance_office lock
   class node_start start`,
       contents:   `flowchart TD
@@ -413,6 +513,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
 
   lobby("Lobby")
   comms_room("Comms room")
+  server_room("Server room")
   workshop("Workshop")
   desk_room("Desks")
   finance_office["Finance office<br/>(locked)"]
@@ -421,76 +522,97 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   rc_kit_dropbox_1{"Network drop box"}
   rc_kit_badusb_2{"Keystroke injector"}
   rc_kit_stick_3{"Spare USB stick"}
-  rc_lobby_vault_4[["Lobby vault"]]
-  rc_vault_prize_5{"Vault receipt"}
-  rc_sign_lobby_6{"Sign: Start here"}
-  rc_sign_p8_7{"Sign: P8 The vault"}
-  rc_sign_p12_8{"Sign: P12 Reload"}
-  rc_npc_sam_okafor_9("Sam Okafor")
-  rc_npc_lena_fox_10("Lena Fox")
-  rc_npc_ian_shaw_11("Ian Shaw")
-  rc_comms_port_12{"Spare wall port"}
-  rc_sign_p2_13{"Sign: P2 Plant"}
-  rc_sign_p3_14{"Sign: P3 See"}
-  rc_sign_p10_15{"Sign: P10 Unplug"}
-  rc_bench_port_16{"Bench switch"}
-  rc_sign_p11_17{"Sign: P11 The other network"}
-  rc_sam_pc_18{"Sam's PC"}
-  rc_sign_p1_19{"Sign: P1 An open share at the keyboard"}
-  rc_sign_p9_20{"Sign: P9 Sit down at it"}
-  rc_sam_dock_21{"USB socket by Sam's PC"}
-  rc_lena_pc_22{"Lena's PC"}
-  rc_sign_p5_23{"Sign: P5 and P6 Remote sign-in"}
-  rc_kiosk_pc_24{"Reception kiosk"}
-  rc_kiosk_dock_25{"Kiosk USB socket"}
-  rc_sign_p7_26{"Sign: P7 Remote sign-in off"}
-  rc_door_box_27[["Door controller"]]
-  rc_door_codes_28{"Door codes"}
-  rc_sign_p8_store_29{"Sign: P8 A host with no screen"}
-  rc_door_dock_30{"Door controller USB port"}
+  rc_guest_ap_4{"Guest access point"}
+  rc_guest_ap2_5{"Guest access point (lift lobby)"}
+  rc_wifi_note_6{"Reception Wi-Fi card"}
+  rc_lobby_vault_7[["Lobby vault"]]
+  rc_vault_prize_8{"Vault receipt"}
+  rc_sign_lobby_9{"Sign: Start here"}
+  rc_sign_p8_10{"Sign: P8 The vault"}
+  rc_sign_p12_11{"Sign: P12 Reload"}
+  rc_npc_sam_okafor_12("Sam Okafor")
+  rc_npc_lena_fox_13("Lena Fox")
+  rc_npc_ian_shaw_14("Ian Shaw")
+  rc_comms_port_15{"Spare wall port"}
+  rc_sign_p2_16{"Sign: P2 Plant"}
+  rc_sign_p3_17{"Sign: P3 See"}
+  rc_sign_p10_18{"Sign: P10 Unplug"}
+  rc_secure_port_19{"Locked switch port"}
+  rc_sign_n10_20{"Sign: N10 Port security"}
+  rc_sv_fs02_21{"Server file host"}
+  rc_sign_n2_22{"Sign: N1 to N4 The pivot"}
+  rc_server_breaker_23{"Server rack breaker"}
+  rc_server_power_24{"Server rack power"}
+  rc_sign_n5_25{"Sign: N5 to N7 Outages"}
+  rc_bench_port_26{"Bench switch"}
+  rc_sign_p11_27{"Sign: P11 The other network"}
+  rc_sam_pc_28{"Sam's PC"}
+  rc_sign_p1_29{"Sign: P1 An open share at the keyboard"}
+  rc_sign_p9_30{"Sign: P9 Sit down at it"}
+  rc_sam_dock_31{"USB socket by Sam's PC"}
+  rc_lena_pc_32{"Lena's PC"}
+  rc_sign_p5_33{"Sign: P5 and P6 Remote sign-in"}
+  rc_kiosk_pc_34{"Reception kiosk"}
+  rc_kiosk_dock_35{"Kiosk USB socket"}
+  rc_sign_p7_36{"Sign: P7 Remote sign-in off"}
+  rc_door_box_37[["Door controller"]]
+  rc_door_codes_38{"Door codes"}
+  rc_sign_p8_store_39{"Sign: P8 A host with no screen"}
+  rc_door_dock_40{"Door controller USB port"}
 
   lobby --> comms_room
   lobby --> desk_room
   lobby --> workshop
+  comms_room --> server_room
   desk_room --> finance_office
   desk_room --> kiosk_room
   desk_room --> store
   lobby --> rc_kit_dropbox_1
   lobby --> rc_kit_badusb_2
   lobby --> rc_kit_stick_3
-  lobby --> rc_lobby_vault_4
-  rc_lobby_vault_4 --> rc_vault_prize_5
-  lobby --> rc_sign_lobby_6
-  lobby --> rc_sign_p8_7
-  lobby --> rc_sign_p12_8
-  lobby --> rc_npc_sam_okafor_9
-  lobby --> rc_npc_lena_fox_10
-  lobby --> rc_npc_ian_shaw_11
-  comms_room --> rc_comms_port_12
-  comms_room --> rc_sign_p2_13
-  comms_room --> rc_sign_p3_14
-  comms_room --> rc_sign_p10_15
-  workshop --> rc_bench_port_16
-  workshop --> rc_sign_p11_17
-  desk_room --> rc_sam_pc_18
-  desk_room --> rc_sign_p1_19
-  desk_room --> rc_sign_p9_20
-  desk_room --> rc_sam_dock_21
-  finance_office --> rc_lena_pc_22
-  finance_office --> rc_sign_p5_23
-  kiosk_room --> rc_kiosk_pc_24
-  kiosk_room --> rc_kiosk_dock_25
-  kiosk_room --> rc_sign_p7_26
-  store --> rc_door_box_27
-  rc_door_box_27 --> rc_door_codes_28
-  store --> rc_sign_p8_store_29
-  store --> rc_door_dock_30
+  lobby --> rc_guest_ap_4
+  lobby --> rc_guest_ap2_5
+  lobby --> rc_wifi_note_6
+  lobby --> rc_lobby_vault_7
+  rc_lobby_vault_7 --> rc_vault_prize_8
+  lobby --> rc_sign_lobby_9
+  lobby --> rc_sign_p8_10
+  lobby --> rc_sign_p12_11
+  lobby --> rc_npc_sam_okafor_12
+  lobby --> rc_npc_lena_fox_13
+  lobby --> rc_npc_ian_shaw_14
+  comms_room --> rc_comms_port_15
+  comms_room --> rc_sign_p2_16
+  comms_room --> rc_sign_p3_17
+  comms_room --> rc_sign_p10_18
+  comms_room --> rc_secure_port_19
+  comms_room --> rc_sign_n10_20
+  server_room --> rc_sv_fs02_21
+  server_room --> rc_sign_n2_22
+  server_room --> rc_server_breaker_23
+  server_room --> rc_server_power_24
+  server_room --> rc_sign_n5_25
+  workshop --> rc_bench_port_26
+  workshop --> rc_sign_p11_27
+  desk_room --> rc_sam_pc_28
+  desk_room --> rc_sign_p1_29
+  desk_room --> rc_sign_p9_30
+  desk_room --> rc_sam_dock_31
+  finance_office --> rc_lena_pc_32
+  finance_office --> rc_sign_p5_33
+  kiosk_room --> rc_kiosk_pc_34
+  kiosk_room --> rc_kiosk_dock_35
+  kiosk_room --> rc_sign_p7_36
+  store --> rc_door_box_37
+  rc_door_box_37 --> rc_door_codes_38
+  store --> rc_sign_p8_store_39
+  store --> rc_door_dock_40
 
-  class lobby,comms_room,workshop,desk_room,kiosk_room,store room
+  class lobby,comms_room,server_room,workshop,desk_room,kiosk_room,store room
   class finance_office lock
-  class rc_kit_dropbox_1,rc_kit_badusb_2,rc_kit_stick_3,rc_vault_prize_5,rc_sign_lobby_6,rc_sign_p8_7,rc_sign_p12_8,rc_comms_port_12,rc_sign_p2_13,rc_sign_p3_14,rc_sign_p10_15,rc_bench_port_16,rc_sign_p11_17,rc_sam_pc_18,rc_sign_p1_19,rc_sign_p9_20,rc_sam_dock_21,rc_lena_pc_22,rc_sign_p5_23,rc_kiosk_pc_24,rc_kiosk_dock_25,rc_sign_p7_26,rc_door_codes_28,rc_sign_p8_store_29,rc_door_dock_30 item
-  class rc_lobby_vault_4,rc_door_box_27 container
-  class rc_npc_sam_okafor_9,rc_npc_lena_fox_10,rc_npc_ian_shaw_11 npc
+  class rc_kit_dropbox_1,rc_kit_badusb_2,rc_kit_stick_3,rc_guest_ap_4,rc_guest_ap2_5,rc_wifi_note_6,rc_vault_prize_8,rc_sign_lobby_9,rc_sign_p8_10,rc_sign_p12_11,rc_comms_port_15,rc_sign_p2_16,rc_sign_p3_17,rc_sign_p10_18,rc_secure_port_19,rc_sign_n10_20,rc_sv_fs02_21,rc_sign_n2_22,rc_server_breaker_23,rc_server_power_24,rc_sign_n5_25,rc_bench_port_26,rc_sign_p11_27,rc_sam_pc_28,rc_sign_p1_29,rc_sign_p9_30,rc_sam_dock_31,rc_lena_pc_32,rc_sign_p5_33,rc_kiosk_pc_34,rc_kiosk_dock_35,rc_sign_p7_36,rc_door_codes_38,rc_sign_p8_store_39,rc_door_dock_40 item
+  class rc_lobby_vault_7,rc_door_box_37 container
+  class rc_npc_sam_okafor_12,rc_npc_lena_fox_13,rc_npc_ian_shaw_14 npc
   class node_start start`
     };
     const rendered = {};

@@ -103,9 +103,11 @@ def add_node(id, label, klass, optional: false)
   id
 end
 
-def add_edge(from, to, dashed: false, label: nil)
+def add_edge(from, to, dashed: false, label: nil, both: false)
   return unless from && to && from != to
-  $edges << { from: from, to: to, dashed: dashed, label: label }
+  edge = { from: from, to: to, dashed: dashed, label: label }
+  edge[:both] = true if both # a two-way edge (a network link); the key is absent otherwise
+  $edges << edge
 end
 
 # ---------------------------------------------------------------------------
@@ -515,7 +517,19 @@ NETWORKS = BreakEscape::NetworkModel.networks(scenario)
 if NETWORKS.any?
   nm = BreakEscape::NetworkModel
   ai = BreakEscape::AccessIdentities
-  net_node = ->(net_id) { add_node("net_#{nid(net_id)}", "#{NETWORKS[net_id]['name'] || net_id}<br/>Network", 'room') }
+  # An outage (slice 9.3b, plan 9.3) is a condition on the network node, not a gate: the
+  # label names the downIf global and says whether the network starts down.
+  globals_g = scenario['globalVariables'].is_a?(Hash) ? scenario['globalVariables'] : {}
+  net_node = lambda do |net_id|
+    net = NETWORKS[net_id]
+    label = "#{net['name'] || net_id}<br/>Network"
+    down = net['downIf']
+    if nm.present_string?(down)
+      label += "<br/>down while #{down}"
+      label += ' (down at start)' if nm.truthy?(globals_g[down])
+    end
+    add_node("net_#{nid(net_id)}", label, 'room')
+  end
   room_node = lambda do |room_id|
     next nil unless room_id && rooms.key?(room_id)
 
@@ -528,22 +542,29 @@ if NETWORKS.any?
     node = add_node("device_#{nid(item['id'])}", "#{item['name'] || item['id']}<br/>(rogue device)", 'key')
     room_id = found[:path][%r{\Arooms/([^/\[]+)}, 1]
     from = case found[:home]
-           when 'start' then room_node.call(start_room)
-           when 'grant' then "grant_#{nid(BreakEscape::DeclaredGrants.identities(item).first)}"
-           else room_node.call(room_id)
-           end
+    when 'start' then room_node.call(start_room)
+    when 'grant' then "grant_#{nid(BreakEscape::DeclaredGrants.identities(item).first)}"
+    else room_node.call(room_id)
+    end
     add_edge(from, node) if from && $nodes.key?(from)
     node
   end
 
-  # Jacks: from their room and from each device; to their network.
+  # Jacks: from their room and from each device; to their network. A jack with port
+  # security (slice 9.3b, plan 4.4) refuses every device and gives no foothold, so it has
+  # no edge to its network and its label says so.
   nm.jacks(scenario).each do |entry|
     jack = entry[:object]
     jack_id = jack['id'] || nid(jack['name'] || 'jack')
-    node = add_node("jack_#{nid(jack_id)}", "#{jack['name'] || jack_id}<br/>Network jack", 'lock')
+    secured = jack['portSecurity'] == true
+    label = "#{jack['name'] || jack_id}<br/>Network jack"
+    label += '<br/>(port security: refuses the device)' if secured
+    node = add_node("jack_#{nid(jack_id)}", label, 'lock')
     from = room_node.call(entry[:room_id])
     add_edge(from, node) if from
     device_nodes.each { |d| add_edge(d, node) }
+    next if secured
+
     add_edge(node, net_node.call(entry[:network])) if entry[:network] && NETWORKS.key?(entry[:network])
   end
 
@@ -574,6 +595,98 @@ if NETWORKS.any?
       else
         add_edge(network, node, label: 'exposes')
       end
+    end
+  end
+
+  # Slice 9.3b (docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md, 9.3), all read through
+  # NetworkModel. Links: one two-way edge per link, between the network nodes.
+  links = nm.network_links(scenario)
+  links.each { |a, b| add_edge(net_node.call(a), net_node.call(b), label: 'link', both: true) }
+
+  # Pivots: a sign-in host is a member of its network, so a session there reaches every
+  # network the links join to it. One edge from the host to each such network.
+  if links.any?
+    NETWORKS.each_key do |net_id|
+      bridged = NETWORKS.keys.reject { |other| other == net_id || nm.reach_paths(scenario, net_id, other).empty? }
+      next if bridged.empty?
+
+      nm.sign_in_objects_on(net_id, scenario).each do |entry|
+        lock = access_lock_node({ kind: 'login', lock: entry[:object], room: entry[:room_id] }, rooms)
+        bridged.sort.each { |other| add_edge(lock, net_node.call(other), label: 'pivot') }
+      end
+    end
+  end
+
+  # Wi-Fi: an access point is a lock-like node, from its room, with an edge to its network.
+  # The network's key is a key node, from every text the player can read that holds it; an
+  # open network (no psk) needs no key.
+  wifi_texts = nil
+  nm.wifi_aps(scenario).each do |entry|
+    ap = entry[:object]
+    ap_id = ap['id'] || nid(ap['name'] || 'wifi_ap')
+    node = add_node("wifiap_#{nid(ap_id)}", "#{ap['name'] || ap_id}<br/>Wi-Fi access point", 'lock')
+    from = room_node.call(entry[:room_id])
+    add_edge(from, node) if from
+    add_edge(node, net_node.call(entry[:network]))
+    psk = nm.wifi_of(scenario, entry[:network])['psk']
+    next unless nm.present_string?(psk)
+
+    key = "wifikey_#{nid(entry[:network])}"
+    unless $nodes.key?(key)
+      ssid = nm.wifi_of(scenario, entry[:network])['ssid']
+      add_node(key, "Wi-Fi key<br/>(#{ssid || entry[:network]})", 'key')
+      wifi_texts ||= BreakEscape::NpcHabits::Clues.readable_texts(scenario, File.dirname(SCENARIO_FILE))
+      wifi_texts.select { |t| t[:text].include?(psk) }.uniq { |t| t[:path] }.each do |t|
+        src = if t[:scope].is_a?(Hash) && t[:scope][:pc]
+                "lock_#{t[:scope][:pc]}"
+        elsif t[:room]
+                room_node.call(t[:room])
+        end
+        next unless src && $nodes.key?(src)
+
+        clue = add_node("clue_#{nid(t[:path])}", t[:name] || t[:path].to_s.tr('_', ' '), 'item')
+        add_edge(src, clue)
+        add_edge(clue, key)
+      end
+    end
+    add_edge(key, node)
+  end
+
+  # Implants: a node the device opens (dropped for an NPC to use, or held while the player
+  # has a session at the PC), with an edge to the PC's network. One node per PC, as the
+  # server keeps one implant_<pcId> foothold.
+  implants = nm.grant_foothold_actions(scenario)
+  if implants.any?
+    objects_by_id = nm.room_objects(scenario).each_with_object({}) { |e, h| h[e[:object]['id']] ||= e if e[:object]['id'] }
+    device_node_for = lambda do |item_id|
+      next nil unless nm.present_string?(item_id)
+
+      node = "device_#{nid(item_id)}"
+      next node if $nodes.key?(node)
+
+      found = objects_by_id[item_id]
+      add_node(node, "#{(found && found[:object]['name']) || item_id}<br/>(implant device)", 'key')
+      from = found && room_node.call(found[:room_id])
+      add_edge(from, node) if from
+      node
+    end
+    implants.each do |act|
+      pc = objects_by_id[act[:pc]]
+      next unless pc
+
+      node = add_node("implant_#{nid(act[:pc])}", "#{act[:name] || "Implant: #{act[:pc]}"}<br/>(implant)", 'lock')
+      if act[:shape] == 'session'
+        device = device_node_for.call(act[:needs_held])
+        add_edge(device, node, label: 'held') if device
+        if nm.sign_in_object?(pc[:object])
+          add_edge(access_lock_node({ kind: 'login', lock: pc[:object], room: pc[:room_id] }, rooms), node,
+                   label: 'session at PC')
+        end
+      else
+        device = device_node_for.call(act[:needs_dropped])
+        add_edge(device, node, label: 'dropped') if device
+      end
+      add_edge(node, net_node.call(pc[:network])) if pc[:network] && NETWORKS.key?(pc[:network])
     end
   end
 end
@@ -1295,6 +1408,7 @@ def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil)
 
   edges.each do |e|
     arr  = e[:dashed] ? '-.->' : '-->'
+    arr  = "<#{arr}" if e[:both]
     elbl = e[:label] ? "|#{e[:label]}|" : ''
     lines << "  #{e[:from]} #{arr}#{elbl} #{e[:to]}"
   end
@@ -1769,7 +1883,7 @@ File.write(JSON_FILE, JSON.pretty_generate(
   'scenario' => File.basename(File.dirname(SCENARIO_FILE)),
   'start_room' => scenario['startRoom'],
   'nodes' => $nodes.map { |id, n| { 'id' => id, 'label' => n[:label], 'kind' => n[:klass], 'optional' => n[:optional] } },
-  'edges' => $edges.map { |e| { 'from' => e[:from], 'to' => e[:to], 'soft' => e[:dashed], 'label' => e[:label] }.compact }
+  'edges' => $edges.map { |e| { 'from' => e[:from], 'to' => e[:to], 'soft' => e[:dashed], 'label' => e[:label], 'both' => e[:both] }.compact }
 ))
 puts "Written: #{JSON_FILE}"
 puts "Written: #{MD_FILE}"
