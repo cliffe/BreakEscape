@@ -240,6 +240,22 @@ minigame in join mode. Drive the key field as any password field
 `{"cmd":"eval","fn":"() => window.__test.minigame?.()?.join"}`. The Wi-Fi key and SSID must reach
 the browser from no response; the leak check's `wifi_secret` rule proves it.
 
+## Slice 9.3b sub-slice P: Port security (N10)
+
+Added by sub-slice P. A new game. Take the drop box, go north to the comms room, and
+`interact` `secure_port` (the second, locked wall port). Confirm the plant. The switch refuses
+the device: a toast shows the switch message ("The switch logs the device address and shuts the
+port... unused ports like this should be disabled."), no view opens, no link item arrives, and the
+box is still in the inventory. `network_device_refused { jackId: 'secure_port', reason:
+'port_security' }` fires, so task `n10_port_security` completes. Planting at `comms_port`
+afterwards still works (an open port is unaffected). The state survives a reload (the box is still
+held, `secure_port` has no foothold).
+
+Server, after the refusal: no `footholds.jack_secure_port`, the drop box still in `inventory`, no
+`gainedFootholds` entry for `secure_port`; nothing else changed. The port-security refusal carries
+only the authored message: no network name, host or share reaches the browser (the leak check
+covers it).
+
 ## Earned secrets
 
 | Secret | In-game source | Used in |
@@ -259,7 +275,8 @@ reload.
 `LANG=C.UTF-8`): no errors. One warning, the `maxAttempts` lockout warning the first slice gives
 for `lena_pc` (policy `counted`). No "doors skipped" warning (`counted` writes `remote` out).
 Information lines: the identity reach of each account (every account holder has the implicit
-`staff` role, so Lena and Ian also sign in at `sam_pc` and `kiosk_pc`); each jack's reach; and
+`staff` role, so Lena and Ian also sign in at `sam_pc` and `kiosk_pc`); each jack's reach (now
+including `secure_port` on `office_lan`, sub-slice P); and
 "Reachable without a foothold" for `sam_pc` and `kiosk_pc` (open rooms, not headless) and for the
 finance share, which maps for Lena on both of those. The open shares are not on that list, nor is
 `lena_pc` (behind a PIN door) or `door_box` (headless): the chain's payoff, "Door codes", is on the

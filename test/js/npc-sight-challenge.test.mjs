@@ -281,3 +281,18 @@ test('near target missing (room not loaded): no event', () => {
     window.player = { x: 50, y: 0 };
     assert.deepEqual(watcher.update(1000, { force: true }), []);
 });
+
+test('access 9.2 C (8.2): no challenge while the NPC is distracted on its phone; once it puts it away it fires', () => {
+    const { emitted, watcher } = setup({ event: 'player_in_view_near:guard' });
+    let distracted = true;
+    window.npcNeedsSystem = { isDistracted: (id) => id === 'guard' && distracted };
+    try {
+        inView();
+        assert.deepEqual(watcher.update(1000, { force: true }), []);
+        assert.deepEqual(watcher.update(2000, { force: true }), []);
+        assert.equal(emitted.length, 0);
+        distracted = false;
+        assert.deepEqual(watcher.update(3000, { force: true }), ['guard']);
+        assert.equal(emitted[0].name, 'player_in_view_near:guard');
+    } finally { delete window.npcNeedsSystem; }
+});

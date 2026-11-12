@@ -35,7 +35,7 @@ test('the bridge exposes the access block', () => {
   const src = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
   assert.match(src, /import \{ accessBridge \} from '\.\/access\.js';/);
   assert.match(src, /\baccess: accessBridge,/);
-  assert.deepEqual(Object.keys(accessBridge).sort(), ['footholds', 'guest', 'networkView', 'reports', 'savedCards', 'screenTransitions', 'sessions', 'work', 'workstation']);
+  assert.deepEqual(Object.keys(accessBridge).sort(), ['feed', 'footholds', 'guest', 'networkView', 'reports', 'savedCards', 'screenTransitions', 'sessions', 'work', 'workstation']);
 });
 
 test('sessions() is empty without pc-sessions.js, and reads its list() or sessions map', () => {
@@ -199,4 +199,12 @@ test('slice 9.2: work(npcId) reads the plan and the needs state; reports() reads
   window.npcNeedsSystem = { getState: () => ({ frustration: 20, tell: 1, settled: false, failed: null, parked: [], lockedOut: ['dana_pc'], lockCheck: [] }) };
   assert.deepEqual(accessBridge.work('dana').lockedOut, ['dana_pc']);
   delete window.npcReports; delete window.npcManager; delete window.npcNeedsSystem;
+});
+
+test('feed() (slice 9.2 C): revealed post ids, done NPCs and the request count; empty without the module', () => {
+  delete window.socialFeed;
+  assert.deepEqual(accessBridge.feed(), { revealed: {}, done: [], requests: 0 });
+  window.socialFeed = { revealed: () => ({ jake: ['p1', 'p2'] }), done: new Set(['lena']), requests: 3 };
+  assert.deepEqual(accessBridge.feed(), { revealed: { jake: ['p1', 'p2'] }, done: ['lena'], requests: 3 });
+  delete window.socialFeed;
 });

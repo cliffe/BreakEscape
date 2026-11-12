@@ -18,6 +18,7 @@
  *   reports()           slice 9.2: how many POST /npc_frustration requests and reports were sent;
  *                       sub-slice L adds checks (how many were queued) and lockoutSeen (the PCs
  *                       where a sign-in answered locked_out in this page)
+ *   feed()              slice 9.2 C: revealed feed post ids by NPC, done NPCs, request count
  *   guest(pcId)         slice 9.2 H: the guest a borrower left at a hot desk ({ npcId, lockAt }),
  *                       who is using the PC now, and the NPC's pending borrow, if any
  *
@@ -62,6 +63,17 @@ export const accessBridge = {
             userId: window.npcNeedsSystem?.userOf?.(pcId) || null,
             session: s ? { npcId: s.npcId ?? null, via: s.via ?? null, guest: !!s.guest } : null
         });
+    },
+
+    /**
+     * Slice 9.2 C (ACCESS_MODEL_SLICE_9_2_PLAN.md 8.3): `{ revealed, done, requests }` from
+     * systems/social-feed.js: revealed post ids by NPC (oldest first), the NPCs whose feed is done,
+     * and how many POST /feed_post requests were sent. Ids only, never a post's text.
+     */
+    feed() {
+        const f = window.socialFeed;
+        if (!f) return { revealed: {}, done: [], requests: 0 };
+        return json({ revealed: f.revealed(), done: [...f.done].sort(), requests: f.requests });
     },
 
     /** Slice 9.2: `{ requests, reports, pending, settled }` from systems/npc-reports.js. */

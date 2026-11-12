@@ -1121,6 +1121,40 @@ A policy (top-level `policies`, referenced by an object's `policy` or by `defaul
 
 The validator errors on an unknown `usb`, `social` or `usbClass` value, and warns when a blocking policy governs only objects whose items have no `usbClass` (it refuses nothing), when an object no policy governs takes a device the default policy would refuse (you may have meant a refusal), and when an NPC that can be refused a device has no `usb_refused` line.
 
+#### Social media feeds
+
+An NPC with a `social_media` need checks social media about once a period of the need, and each check can put out its next post on a `social.osint` profile. A post can carry a fact the player can use: a pet's name and a year for a guessable password, who somebody trusts, when they are away. Test bed: `scenarios/test_access_social/` (beats F1 to F8 in its `PLAYTEST.md`).
+
+**Where the NPC checks it**, in this order:
+
+1. a hot desk borrowed for it (a `borrow_session` workaround, above), while the borrow is in hand;
+2. its own `needsHome`, when that is a workstation whose policy has `social: "allowed"` (or no `social`) and that is not off. No `affordance` entry is needed: the own workstation counts whatever its `satisfies` says. The NPC stays seated;
+3. any object that is not a workstation and whose `affordance.satisfies` lists `social_media` (a break room tablet), nearest first. Another person's PC, a kiosk included, is used only when borrowed;
+4. its **phone**, unless the NPC says `"phone": false`. A phone use starts where the NPC is, with no wind-up: an NPC at its desk stays at its desk and its screen stays attended, and one walking home stops, checks the phone and walks on. The NPC shows the `social` icon;
+5. its own workstation under `social: "blocked"`: the use fails. The NPC mutters a `social_blocked` line ("Blocked. Of course."), its frustration rises and its workarounds apply, exactly as for a failed work use. A `borrow_session` to a kiosk under a laxer policy is the natural workaround.
+
+`socialUse: { useSeconds, restores }` on the NPC sets the time and the amount of a use at its own PC or on its phone (defaults 20 s and 60). A use at any other object takes that object's `affordance`. With a phone the need never parks for want of a source, and a switched-off own PC sends the NPC to its phone with nothing counted.
+
+**The feed** goes on the NPC record:
+
+```json
+"feed": { "site": "friendface", "person": "jake", "posts": [
+  { "id": "jake_post_1", "text": "Biscuit turns five today! Best boy in the whole building.", "fact": "jake_pet_name", "date": "Monday" },
+  { "id": "jake_post_2", "text": "Back from Crete, three hundred emails waiting for me." }
+] }
+```
+
+`site` is a `social` site in `social.osint` and `person` a profile on it. Each post is an ordinary post block (`id`, `text`, optional `fact`, `date`, `note`) plus `deliberate` (below), which stays on the server. Posts come out in order, one per met use, so the posting pace is the need's own; the server refuses one that comes sooner than 0.9 of the need's period. When the last post is out the server says the feed is done and the browser stops asking.
+
+- **Posts and their facts are withheld together.** A feed fact (a fact named by a feed post) is an ordinary `social.intelFacts` entry with its `source` set to the post's id and its `se_intel_<id>` global declared. The server removes its entry from the scenario the browser receives and sends it with its post, so neither the post's text nor the fact's text is in the browser before the post is out. A feed fact may be granted only by its post: naming it as the `fact` of any other block, field or tool result, or in a `grant_fact` action or a call grant, is an error (those would need its text from the start). Naming it in a readiness slot (`needsIntel`) or as a phishing factor is fine.
+- **Reading.** Any `osint-workstation` whose `siteIds` include the site lists the revealed posts on the profile first, newest at the top, then the authored `posts`. Clicking one notes its fact as usual. A post made while the browser is open on that profile appears at once. The evidence note shows the fact's text exactly as written: markup in it is not formatted.
+- **The toast.** A post shows "<name> posted on <site>" once the player has opened that site in a browser before (so declare `se_osint_state`). Turn it off with `social.osint.postToasts: false`.
+- **Awareness.** An NPC whose awareness level is `high` would not overshare: a post with a `fact` warns unless it is marked `"deliberate": true`.
+- **The distracted guard.** While on the phone an NPC is distracted, and one with `los.challengeOnSight` does not challenge. The validator says such an NPC can be walked past once every period of the need. When the phone goes away the guard looks again from scratch, so a player still in view is challenged then (cooldown permitting): the phone lets the player get past, not stay.
+- **Reloads.** Revealed posts and their facts come back with the game; nothing unrevealed does.
+
+The validator errors on a feed whose site or person does not resolve, a bare list in place of `{ site, person, posts }`, a post with no id or one whose id is already a post or block id, a fact that names no `social.intelFacts` entry, a feed fact named anywhere else, an NPC's password in a post, a feed fact or a chatter line, and an NPC with the need, `"phone": false`, no workstation home and no object that satisfies it. It warns on a post or feed fact text under 12 characters, or one that occurs inside another shipped string (the server cannot tell them apart in a response), a feed with no `social_media` need, a high-awareness poster, a blocking policy with no `social_blocked` line, and the walkable guard. The work report prints one `Feed` line per NPC: the first urgent time, the period, the minute each post is expected and the server's floor. A guessable password whose pieces come from feed posts counts them as clues.
+
 ### Container Objects
 
 Containers hold `contents` arrays of nested items. Every container with `contents` **must** declare `locked: true` or `locked: false`.

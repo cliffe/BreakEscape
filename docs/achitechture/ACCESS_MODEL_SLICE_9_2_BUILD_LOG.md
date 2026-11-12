@@ -1579,3 +1579,384 @@ Review: `ACCESS_MODEL_SLICE_9_2_L_CODE_REVIEW_R2.md` (0 blockers, 0 majors, 2 mi
 failures, 0 errors, 1 skip; JS 494 of 494 files passed.
 
 Commits this round: `18488cea0` (fixes, tests, plan and README), merge `5a7b394cc`, and this log.
+
+## C: social media (2026-11-11, split at the context limit)
+
+Branch `build/9-2-c`, from `build/9-2-h` at `6192486b6`. Browser port 3020 (not used yet).
+
+### Built
+
+- **C-1 server** (`008df90ec`). New concern `app/models/break_escape/social_feed.rb` (`reveal_feed_post!`,
+  `feed_posts_for_client`, `withhold_feed_facts!`), included in `Game`; `game.rb` edits are four
+  small ones (include, `feedRevealed` in `ACCESS_STATE_DEFAULTS`, the bootstrap call after
+  `withhold_network_keys!`, `hasFeed` in `compile_npc_plan!`). `POST /feed_post` (locked, policy
+  `feed_post?`): 403 for an NPC not known (or a non-string `npc_id`); `{ post: null, done: true }`
+  with no feed or no need, or none left; `{ post: null, done: false, tooSoon: true, retryAfter }`
+  inside the floor; else `{ npcId, index, post, fact: { id, entry } | null, site, person, done }`.
+  A post carries only `id text fact date note` (string values); `deliberate` stays on the server.
+  `GET /scenario` adds `feedPosts`. Resolver (`access_work.rb`): `social_station?`, `feed_posts`,
+  `feeds?`, `feed_facts`, `post_period_seconds`, `post_floor`; `places` counts the own workstation
+  for `social_media`; `shortest_use_seconds` takes `socialUse` time at the own PC, not the PC's.
+  Tests: `test/controllers/break_escape/feed_post_test.rb` (12 runs), `test/unit/access_work_social_test.rb`
+  (6), fixture `test/support/access_social_scenario.rb`.
+- **C-3 needs core** (`40c513d75`). `npc-needs.js`: `_socialCandidate` (8.1's order: borrow, allowed
+  own PC, non-desk source, phone, blocked own PC), `_socialUseSeconds`/`_socialRestores`,
+  `_startSelfJob`/`_completeSelfJob` (job `{ kind: 'self', phase: 'using', targetId: null }`, no
+  wind-up, no `npc_left_post`, a walk home stopped and resumed, `npc_used_phone:<id>`, ease with
+  `objectId: null`), `job.socialDesk` for the at-desk use, `_deadStation` for a desk station,
+  `isDistracted(id)` and `getState().distracted`; adapter `describe` sets `socialBlocked` from
+  `pcPolicy.effectivePolicy(...).social`, and `useVerdict` reads it. `npc-sight-challenge.js` skips
+  a distracted NPC; `seating.js` `needsStop` keeps a phone user at its post seated;
+  `npc-action-icons.js` shows `social` for `social_media`. Tests: `npc-needs-social-media.test.mjs`
+  (14), one in `npc-sight-challenge.test.mjs`. `npc-work.js` needed nothing (A already had
+  `social_blocked`).
+- **C-4 feed and browser** (`b93b3bd51`). `systems/social-feed.js` (new): `SocialFeed`
+  (`onUse`, `apply`, `restore`, `postsFor`, `revealed`), `cleanPost`/`cleanFact` (strings only),
+  `installSocialFeed`. `core/game.js` installs it statically right after `gameScenario` is read,
+  so `feedPosts` and their facts are merged before anything can open. `api-client.js` `feedPost`.
+  `osint-browser-minigame.js`: `_feedPosts` lists revealed posts first, newest on top;
+  `_onPosted` re-renders an open profile on `npc_posted:*` (listener removed in `cleanup`).
+  Toast "<name> posted on <site>" with `plainText: true`. Tests: `social-feed.test.mjs` (12),
+  six in `social-osint-browser.test.mjs` (including hostile post text rendered as text).
+- **C-2 validator** (`076e098ff`). `validate_access_work.rb` `check_social`, `check_social_need`,
+  `feed_report_lines` (each in its own method). Errors: feed site/person, bare-list feed, post
+  without id, duplicate ids (osint and other feeds), unknown fact, a feed fact named anywhere
+  else (any `fact` key, a `grants.intel` list), a password in a post, a feed fact or a chatter
+  line, no source at all with `"phone": false`. Warnings: short text, text inside a shipped
+  string (equal counts), feed with no need, high awareness unless `deliberate`, no
+  `social_blocked` line, no station line for a social-only NPC, challengeOnSight with a phone.
+  Report line `ℹ️ Feed <npc>`: first urgent, period, expected times, server floor.
+  `validate_npc_needs.rb` counts the own workstation as a source. `clues.rb` reads each feed
+  post's text (feed facts were already read through `intelFacts`). Schema: `social.osint.postToasts`.
+  Tests: `validator-access-social.test.mjs` (13), one in `npc_habits_clues_test.rb`.
+- **C-5 tooling** (`29dcab141`). Leak scanner: feed post and feed fact whole texts (12 or more
+  characters) and any object keyed by a feed fact id with `text`, allowed once a `/feed_post`
+  answer served them or a `GET /scenario` `feedPosts` entry within the game's `feedRevealed`
+  count; `feed`, `workNeeds`, `frustration` join the withheld NPC keys; counts printed.
+  `verify-run --access` prints `feedRevealed`. `__test.access.feed()`. Tests:
+  `access_leak_scanner_feed_test.rb` (8), bridge and verify-run tests updated.
+
+### Choices made (where the plan left one open)
+
+1. The own workstation (`needsHome`, a desk) is a `social_media` source whatever its affordance,
+   on both sides (JS `_socialCandidate`, Ruby `social_station?`), so an author need not add
+   `social_media` to a sign-in PC's `satisfies`. A use there takes `socialUse` time and restores.
+2. Post floor: `0.9 x period - 3` s (the 3 s allowance the other floors give), with the smallest
+   `restores` taken at the low end of the need's `jitterPct`, so an honest jittered use is never
+   refused.
+3. `/feed_post` for an NPC not known is 403; a too-soon answer adds `tooSoon` and `retryAfter`.
+   The client does not retry on `tooSoon`: the next met use asks again.
+4. A feed text equal to another shipped string also warns ("occurs inside").
+5. The toast title is "New post".
+
+### Handover: open, in order
+
+1. **Needs regression captures.** The "before" captures were not taken before C-3. Take them
+   from a worktree at `6192486b6` (or by running the capture with the base's
+   `npc-needs.js`, `seating.js`, `npc-action-icons.js`, `npc-sight-challenge.js`), then "after" on
+   this branch, for `test_npc_needs` and `test_needs_leash`, into
+   `docs/achitechture/access_model_needs_baseline/slice_9_2_c/` with `COMPARISON.md`. H's script
+   was `.../scratchpad/h_capture.sh <suffix>` (port 3018; use 3020).
+2. **`scenarios/test_access_social`** (plan 11.2, F1 to F8) and its `PLAYTEST.md`, with
+   `mission.json` in `test_scenarios`. Top-level `chatter` with `social_blocked`, the work pools
+   and `wk_borrow`. Omar's kiosk: a sign-in PC under `lax` with an authored
+   `affordance: { satisfies: ["social_media"], restores, useSeconds }`. Run the validator; expect
+   only the challengeOnSight warning for F8's guard.
+3. **Live browser proof on :3020** through the real path (need, post, feed, use of the fact,
+   reload by `location.href` with `?skip_resume=1`), the F5 password at the hot desk, plus
+   tampered-client checks (`/feed_post` for an unmet NPC, too soon, a forged `grantFact` of an
+   unrevealed fact) and hostile text (a post with markup in this game's `scenario_data`).
+   `verify-run --access` and `access-leak-check.rb` after each beat.
+4. **C-6 documents**: "Social media feeds" in `README_scenario_design.md`; the `self` job in
+   `NPC_NEEDS_SYSTEM.md`; `feed()` and `distracted` in `docs/test-bridge.md`.
+5. Both full suites under the lock; then this section's outcomes.
+
+### Single-file results at this split
+
+`feed_post_test` 12, `access_work_social_test` 6, frustration/workaround/H/access_work 111,
+`npc_habits_clues_test` 14, leak scanner 37: all pass. JS: `npc-needs-social-media` 14, needs and
+seating files 224, `social-feed` 12, `social-osint-browser` 33, `validator-access-social` 13,
+`validator-access-work`/leash/habits 85, bridge and verify-run 25: all pass. Full suites not run.
+
+### Gotchas
+
+- `seating.js` reads `window` at import: import it dynamically in a node test after stubbing.
+- The needs work fixture's `log()` helper defaults to Dana; pass the NPC id.
+- No server or browser was started; no games were made.
+
+## C: social media, finished (2026-11-11)
+
+Resumed from the handover above. Port 3020 (this branch), and a second worktree at `6192486b6` on
+port 3023 for the "before" captures only.
+
+### Done
+
+- **Needs regression** (`bac489521`, `a655326c3`): before games 1240 and 1244 (base worktree,
+  :3023), after games 1246 and 1249 (:3020). `test_npc_needs` 0 subjects differ,
+  `test_needs_leash` 0. `access_model_needs_baseline/slice_9_2_c/COMPARISON.md`.
+- **`scenarios/test_access_social`** (`911d3a4bc`, `ccc28caca`): F1 to F8 as plan 11.2, with
+  `mission.json` in `test_scenarios`, `PLAYTEST.md` (beats, budgets, earned secrets, tampered
+  checks). Validator: no errors; two expected warnings (Jake's two `npc_posted` mappings, the
+  walkable guard). The kiosk first stood at x 9, on the lobby's east wall, so it was unreachable;
+  moved to x 7 after the live run found it.
+- **Two validator gaps found by the scenario** (`911d3a4bc`): the OSINT lint counted no feed post
+  as a fact's granting element, so every feed fact was "granted by nothing"; a feed post is now
+  that fact's element and the fact's `source` names the post (`scripts/validate_social/osint.rb`
+  `feed_elements`). The needs timing line read the own PC's `affordance.restores` (0 for a sign-in
+  PC) and printed `P = 0.0 min`; it now takes `socialUse.restores` (default 60) at the own PC.
+  Two tests in `validator-access-social.test.mjs`.
+- **Feed facts in the notebook** (`7622d75c2`, `a6631b5be`): `grantFact` wrote a fact's text to
+  the notebook raw, and the notebook renders a markdown subset, so a feed fact with `**`, `_`,
+  backticks, `#`, `|` or `--` was formatted. As sub-slice H did for overheard logins, the text is
+  escaped once at storage: `social-feed.js` sets `entry.noteText = escapeNoteText(entry.text)`
+  when it merges a feed fact (any `noteText` in the answer is overwritten), and `grantFact` writes
+  `noteText` when present, else `text`, so authored facts are unchanged. `escapeNoteText` is a
+  local copy of H's (no new import for the harness copy lists). The post toast now passes
+  `verbatim: true` as well as `plainText`. Tests: hostile strings (HTML, markdown, `--`,
+  backslashes, a list marker, tab and BEL) come out of the real `renderNoteMarkdown(displayDashes())`
+  exactly with no element; `grantFact` writes the escaped text for a feed fact and the authored
+  text for an ordinary one; main's `noteMatches` finds the escaped text by the text as written.
+- **C-6 documents** (`4adf39477`): "Social media feeds" under "Work, frustration and workarounds"
+  in `README_scenario_design.md`; 5.10 (the need, the phone, the `self` job, distracted) and the
+  `npc_used_phone` and `npc_posted` events in `NPC_NEEDS_SYSTEM.md`; `feed()` and `distracted` in
+  `docs/test-bridge.md`.
+- **Merge of `main`** (`7c5d331ac`): one code conflict, `_startJob`: main clears
+  `workaroundShow` and `failedShow` when a job starts; the `self` branch now comes after those two
+  lines, so a phone use clears them too. The build log conflict kept both sides (H review rounds
+  2 and 3 from main, then this section).
+
+### Live proof (game 1250, then game 1254 for the tampered client; port 3020, headless)
+
+Game 1250's `scenario_data` was edited before the browser loaded it: Lena's `displayName` and
+profile name `Lena <i>Fox</i> **Q**`, her post and a new feed fact `lena_race` holding HTML
+(`<b>`, an `<img onerror>`), markdown (`**`, `_`, backticks, `#`, `|`, a link), `--`, BEL and a
+right-to-left override. `verify-run --access` and `access-leak-check.rb` after each beat; the leak
+check counted 5 feed posts and 3 feed facts every time and reported no leaks.
+
+| Beat | Result |
+|---|---|
+| F1 | Bootstrap `social.intelFacts` held `jake_office` only; each profile showed its one authored post; the hostile name listed as text. `feedRevealed` empty, no leaks |
+| F2 | Jake used his phone at his desk: job `{ kind: self, phase: using, targetId: null }`, `atPost` true, `distracted` true, no `npc_left_post`; a click on his PC said "Jake Brooks is using this PC." `npc_used_phone:jake`, then `npc_posted:jake` and the "New post" toast (the terminal had been opened in F1). The terminal listed the feed post above the authored one; clicking it noted `jake_pet_name` with its text |
+| F3 | `npc_used:lena_pc` with need `social_media`, `met: true`; her post listed; her feed done after one request |
+| F4 | First failure muttered `social_blocked`, second `wk_borrow`. The first two borrows were dropped: the kiosk was on the wall (fixed), then the player stood in Omar's doorway and the walk timed out. With the player moved aside: `npc_borrowed_session:kiosk` (`met: true`), `npc_used:kiosk`, `npc_posted:omar`; a click on the kiosk opened "Signed in as Omar Haddad" (`via: claim`, `guest: true`). Server: `guestSessions` kiosk omar, `feedRevealed.omar` 1 |
+| F5 | Password built from Jake's two posts and the IT poster signed in at the hot desk (`pc_signed_in:hot_desk`, `via: password`); his desktop held `F5.txt`; server `sessions.hot_desk` jake by password. The task did not tick: after the reload Jake's room had not loaded, so his mappings were not registered (PLAYTEST now says to enter his room first) |
+| F6 | Jake's third post came with `done: true`; no further request for him (feed requests 4 in all, flat) |
+| F7 | Reload by `location.href` with `?skip_resume=1`: the terminal listed all three of Jake's posts, the two noted ones marked; the three evidence notes kept their text; `feedRevealed` unchanged; no request from the reload |
+| F8 | Challenge at entry; none in the 15 s the guard was on his phone with the player walking in view (cooldown 5 s); the next one as he put it away (`f8_distracted`, `f8_challenged`) |
+
+Hostile text: Lena's name in the profile list, the profile heading and the toast message; her
+post and the "Noted:" line in the browser; and the notebook page (opened from the Notepad,
+found by searching "Lena runs") all showed the text exactly, with no element made from it and
+the `<img onerror>` never run. The notebook stores the escaped form.
+
+Tampered client:
+- `POST /feed_post` for `guard` (no feed): `{ post: null, done: true }`; for `nobody` and for a
+  non-string id: 403; for Jake after his feed was done: `done: true`; with no CSRF token: 422.
+- Game 1254: before Jake's room loaded, a forged `/feed_post` for him was 403. After it loaded, a
+  forged first request was answered with post 1 (a tampered browser can take a post early, plan
+  9.3) and a second straight after was `tooSoon` (`retryAfter` 51).
+- `grantFact('jake_wedding_year')` and `grantFact('jake_pet_name')` before their posts: refused,
+  globals stayed false.
+- A post the server never revealed (`jake_post_3` with a made-up `jake_wedding_year` entry),
+  pushed into `window.socialFeed` by hand: listed and grantable in that page only. After a reload
+  `GET /scenario` `feedPosts` held only post 1 and `social.intelFacts` no `jake_wedding_year`. The
+  client-written `se_intel_jake_wedding_year` global and the player's own saved note kept the
+  forged text: the server cannot tell those from honest ones (as plan 9.3 says for globals).
+  The leak check on 1254: no leaks.
+
+### Findings for review
+
+1. A player standing in a doorway blocks an NPC's walk between rooms: the walk times out (20 s),
+   the borrow is dropped (60 s), the next failure is counted and the workaround handed again.
+   Omar's level reached 100 this way. Sub-slice H behaviour, not changed here.
+2. An NPC's `eventMappings` are registered only when its room loads, so a task mapped on an NPC
+   does not tick for events that happen while its room is unloaded (F5 after a reload).
+3. The objective wiring check cannot tell that `data.index === 0` and `data.index === 2` never
+   pass together, so it warns on Jake's two `npc_posted` mappings.
+
+### Leftover games
+
+1240, 1244 (before captures, base worktree); 1246, 1249 (after captures); 1250 (live proof, with
+hostile text in its `scenario_data`); 1254 (tampered client). A mission record for
+`test_access_social` (id 245) was added to the shared database the way `db/seeds.rb` makes one,
+since `new-game.rb` needs it; the full seed was not run. Servers on 3020 and 3023 stopped by PID.
+
+### Suites (after the merge of `main`, at `a6631b5be`)
+
+Rails 1633 runs, 23769 assertions, 0 failures, 0 errors, 1 skip. JS 495 of 495 files.
+
+## C review round 1 outcomes (2026-11-12)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_C_CODE_REVIEW_R1_SERVER.md` (2 majors, 4 minors, 6 nits) and
+`..._R1_CLIENT.md` (2 majors, 5 minors, 7 nits). Each must-fix item has a test that fails with the
+fix reverted (checked by putting the old file back and rerunning).
+
+### Server review
+
+- **M1** (`8c7a046a9`): the leak scanner counts `/feed_post` answers in log order. A `feedPosts`
+  item is allowed only when its post id is among the NPC's first n authored posts revealed so far
+  (looked up in the catalogue, never by the response's `index`), and its fact only when it is that
+  post's fact. A `/feed_post` answer serves the next authored post whatever it says, so an answer
+  out of order is reported. The game's saved `feedRevealed` is used only for reveals the log does
+  not hold (a resumed game), and `access-leak-check.rb` prints a note naming those NPCs. Tests: the
+  review's case (one answer, then `GET /scenario` with posts 1 and 2, a final n of 3), a mislabelled
+  index, an out-of-order answer, the resumed fallback. n3 (duplicate texts share one entry) and n4
+  (a bootstrap whose `social.intelFacts` is not an object) in the same commit.
+- **M2** (`1493e7f9a`): the no-password test gains Fay, a lobby NPC with work needs, a frustration
+  block, a workaround and a feed with two feed facts. Fifteen routes (scenario, scenario_map, both
+  rooms, ink, objectives, capture_secrets, login_accounts, container, door unlock, update_room,
+  inventory, login, npc_frustration, npc_workaround) are checked before and after one `/feed_post`:
+  no post or feed fact text, no object keyed by a feed fact id with text, no `feed`, `workNeeds` or
+  `frustration` on her record. Fails with `feed` out of `WITHHELD_WORK_NPC_KEYS`, and with
+  `withhold_feed_facts!` off.
+- **m1** (`c65c52da7`): `clues.rb` and the OSINT lint take only posts the server serves
+  (`AccessWork.feeds?` and `feed_posts`). A feed with no `social_media` need is now an error when a
+  post names a fact (the fact can never be granted), a warning otherwise.
+- **m2** (`ce13a102b`, plan 8.3): the client asks again once after a `tooSoon` answer's
+  `retryAfter` (capped at 300 s, plus 1 s), so a use inside the floor still yields its post; a use
+  while that retry waits asks nothing. The server is unchanged.
+- **m3** (`9786c837d`): the comment is corrected and a feed alone no longer writes an
+  `npcFrustration` entry. The optional first-post floor was not adopted.
+- **m4**: not adopted (it needs the server to judge whether an honest source exists); named in
+  plan 9.3's residual list with the first-post-at-once case.
+- **n1, n2, n5** (`985968160`): `feeds?` needs a numeric `decayPerMin` above 0; `urgentAt` is
+  clamped to 1..99 and `socialUse.restores` to 0..100 as the client does. The schedule rounds
+  seconds before splitting minutes. Tests for a save with no `feedRevealed` key and for
+  `feed_post` in the lock list. **n6** checked at the merge: L's lockout stays work only
+  (`access_work.rb` `need == 'work'`; the needs core's lockout line is work only; the adapter's
+  station keeps `lockedOut: false`).
+
+### Client review
+
+- **M1** (`ce13a102b`): `cleanFact` copies the entry as plain JSON data (strings, finite numbers,
+  booleans, null, arrays, plain objects, six levels; `__proto__`, `constructor`, `prototype` keys
+  skipped), so `provides` and `stale` survive. The wrong-shape test is replaced; a new test merges a
+  feed fact with `provides` and reads it through `heldProvides`, `buildBoardModel` (Jake identified
+  by the name in `provides` alone) and `blankSlot`. A network failure (no HTTP status) is asked
+  again once after 5 s (nit).
+- **M2** (`29ac1e0c6`): the engine adapter lists the `needsHome` desk of an NPC with a
+  `social_media` need even with no affordance (it gets an empty one, in `listObjects` and
+  `getObject`). Tests through the real `createEngineWorld` over a stub window, and a needs run in
+  which an NPC with `"phone": false` uses that PC (`npc_used:jake_pc`, `met: true`). The validator
+  now warns when an NPC with `"phone": false` has only its own PC, that PC blocks social media,
+  and no `borrow_session` workaround: the need is never met.
+- **m1** (`db8d9fc80`): `needsStop` returns null for a `self` job away from the post.
+- **m2**: a test sets a barrier and a workaround icon, starts a phone use and finds both cleared;
+  it fails with the `self` line moved above the two resets.
+- **m3** (`29ac1e0c6`): an adapter test for `socialBlocked` from the policy and the verdict's
+  `social_blocked`; it fails with the `describe` line broken.
+- **m4** (`afca40b3f`): `f5_signed_in` is an `unlock_object` task on `hot_desk` (only Jake's
+  account works there), so it ticks with Jake's room unloaded; the mapping and the PLAYTEST note
+  are gone. Build log finding 2 stays an engine item.
+- **m5**: kept as it is; a sentence in `NPC_NEEDS_SYSTEM.md` 5.10 and a test.
+- **Nits**: README says the guard challenges again when the phone goes away; the osint browser
+  keeps its scroll on a post (`e02251431`); `mergeFact` skips a prototype id; the two
+  `escapeNoteText` copies point at each other (`658f92759`). Not changed: the `_noteLeash` log
+  noise for a phone NPC (log only, and changing the candidate order risks the 8.1 order), and
+  `_wakeStationFor` using the station's `useSeconds` (harmless, in A and H code).
+
+### Live check (game 1259, port 3020, headless)
+
+Game 1259's `scenario_data` gave `jake_pet_name` a `provides` (a name and a pet) and Lena
+`"phone": false` with no `affordance` on `lena_pc`. Jake posted from his phone; the merged entry
+in `intelFacts` kept both `provides` items; clicking his post in the Friendface terminal granted
+the fact, and the page's own `heldProvides` and `buildBoardModel` read it (Jake identified by the
+name alone). Lena used her PC for social media (`npc_used:lena_pc`, `met: true`), posted, and F3
+ticked. After a reload by `location.href` with `?skip_resume=1` the posts and `provides` were
+back with no request. `access-leak-check.rb` after the run and after the reload: no leaks
+(5 feed posts, 2 feed facts checked). Server on 3020 stopped by PID.
+
+### Merge
+
+`main` merged at `d418c4cc8` (it holds L, `ea19141bb`). Conflicts kept both sides:
+`feedPosts` and `lockoutPcs` in `GET /scenario`; the adapter's station takes L's
+`lockedOut: false` and C's `socialBlocked`; the scanner counts, rules and rule texts of both; the
+bridge and test-bridge docs; plan 9.3's residual list; this log (L's sections, then C's).
+
+### Leftover games
+
+1259 (live check, with the edits above in its `scenario_data`).
+
+### Suites after C review round 1 (after the merge of `main`, at `d418c4cc8`)
+
+Rails 1670 runs, 24768 assertions, 0 failures, 0 errors, 1 skip. JS 497 of 497 files.
+
+## C review round 2 outcomes (2026-11-12)
+
+Review: `ACCESS_MODEL_SLICE_9_2_C_CODE_REVIEW_R2.md` (no blocker, 1 major, 2 minor, 4 nits).
+
+- **M1** (`b975d63db`): the no-exposure test now gets a 200 from every one of its 15 routes and
+  asserts that status before the leak checks, so a route that starts refusing fails the test.
+  Fay moves to finance, behind the PIN door, and each pass locks finance again first, so the door
+  unlock answers with her room. The sign-in uses Jake's password, so `GET /container/jake_pc`
+  answers; the inventory add takes a takeable lobby flyer; Fay has a `storyPath` for `GET /ink`;
+  the frustration report is a real `ease` (with `npc_id`, which the old call misspelt); her
+  workaround is an `emit` handed over in the saved state, so its "done" is answered; the
+  `move_npc` takes her from finance to the lobby, and `GET /room/lobby` then serves the record
+  the move stored. Fay's record is required on the door unlock, `GET /room/finance` and
+  `GET /room/lobby`, and the ease answer must name her and not be refused. `GET /scenario` strips
+  every room's NPCs, so it gets only the text and fact-key checks. Proof by reverting: with
+  `serve_opened_room` sending the raw room, the test fails on the door unlock ("carries a feed
+  text").
+- **m1** (`6066a1eb1`, plan 8.3 in `5e78e3efa`): the `tooSoon` retry waits the whole
+  `retryAfter` plus 1 s, with no cap, and a use makes at most four requests (`MAX_TRIES`), so a
+  server that always says `tooSoon` cannot keep it asking. Tests: `retryAfter` 420 (the review's
+  mission pace) waits 421 s and reveals the post; an always-`tooSoon` server is asked four times
+  and then a later honest use asks again. Both fail on the old code.
+- **m2** (`24309e1ac`): a `/feed_post` row with status 200 and no readable body (`bodyError`, or
+  a `bodyText`) stands for at most one reveal, from its own line on, for each NPC whose saved count
+  exceeds the log's answers. Only what is still missing after those counts from the first line (a
+  resumed game). `access-leak-check.rb` names the NPCs in a new note, and the fallback note now
+  says "a resumed game or a lost response body". Tests: the review's case (an early bootstrap
+  before a lost body is reported), a later bootstrap after it passes, and a resumed game with a
+  lost body uses both. They fail on the old scanner.
+- **Nits**: PLAYTEST.md (`081ba9d7b`) describes the retry, says the budgets gain a request per
+  `tooSoon`, and the F5 row says the task ticks on any sign-in at the hot desk, the "by password"
+  check being the server column's. The scanner skips a blank post id as `AccessWork.feed_posts`
+  does, with a test (`24309e1ac`). `cleanFact` refuses an entry whose `text` is present and not a
+  string, with a test (`6066a1eb1`).
+- **Not changed**: `locked_out` stays work only, as on `main`. Whether a locked-out NPC should
+  still browse at its PC is with the user.
+
+### Merge
+
+`main` (`94b88373d`) was already in the branch; nothing to merge.
+
+### Suites after C review round 2 (at `5e78e3efa`)
+
+Rails 1674 runs, 24848 assertions, 0 failures, 0 errors, 1 skip. JS 497 of 497 files.
+
+## C review round 3 outcomes (2026-11-12)
+
+Review: `ACCESS_MODEL_SLICE_9_2_C_CODE_REVIEW_R3.md` (approve; no blocker or major, 1 minor, 4 nits).
+
+- **m1** (`841390e82`): the leak scanner no longer credits a lost `/feed_post` answer to an NPC
+  whose saved last reveal (`feedRevealed[npc].at`) came more than 5 s before the capture's `t` on
+  that row: it was another NPC's answer or a `tooSoon` or `done`. The review's scenario A (a
+  resumed game, Lena's post in the first bootstrap, a lost answer later) and scenario B (two NPCs,
+  the lost row Jake's reveal) are clean now, and a bootstrap that shows Jake's post before the lost
+  answer that revealed it is still reported. A and B fail on the round 2 scanner. A row with no
+  `t`, or a game with no `at`, keeps round 2's rule. The `access-leak-check.rb` note says so.
+  What is left (one lost row credited to every NPC whose last reveal follows it) needs the
+  request's `npc_id` in `response-capture.js`, a skill script: entry in `docs/IDEAS_BACKLOG.md`
+  for the user.
+- **Nits** (`040170445`): the retry wait is capped at `MAX_WAIT_S` (2147483 s), below
+  `setTimeout`'s limit, with a test. A `tooSoon` answer now carries `revealed` (the posts out so
+  far; plan 9.1 routes table in `774da68ac`), and a use whose earlier ask failed in the network stops
+  when `revealed` is above the posts the client holds, so a lost answer that revealed a post is
+  not followed by a second post for that use; the missed post shows after a reload. Test, and
+  the controller test asserts `revealed`. The network-failure test is renamed and asserts four
+  asks five seconds apart. The no-exposure test's comment now says "every route that can carry
+  NPC or feed data and the ones next to them" and names what it leaves out.
+- **Not changed**: `locked_out` stays work only, on both sides of the merge.
+
+### Merge
+
+`main` at `0786f4fae` (9.3b W and the q33 user decision) merged in `c800f80f4`. Two conflicts,
+both lists: the controller's `before_action` action lists keep `network_join` and `feed_post`,
+and the scanner keeps both the `wifi_secret` rule and the feed `withheld_key` text, with Wi-Fi
+secrets and feed texts both in the redaction list.
+
+### Suites after C review round 3 (after the merge of `main`, at `c800f80f4`)
+
+Rails 1690 runs, 24930 assertions, 0 failures, 0 errors, 1 skip. JS 498 of 498 files.
