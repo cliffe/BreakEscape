@@ -15,7 +15,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const chat = join(here, '../../public/break_escape/js/minigames/phone-chat');
 const dataUrl = (s) => 'data:text/javascript;base64,' + Buffer.from(s).toString('base64');
 const lock = await import(dataUrl(readFileSync(join(chat, 'phone-call-lock.js'), 'utf8')));
-const { TERMINAL_CALL_END_READ_MS } = lock;
+const { TERMINAL_CALL_END_READ_MS, FORCED_CALL_END_CLOSE_MS } = lock;
 const CALL_ENDED_BEAT_MS = 900;   // the module-local handset beat
 const POLL = 200;
 
@@ -118,4 +118,47 @@ test('the terminal read beat is idempotent: a second call schedules nothing new'
     i._completeRingerCallWithBeat(true);      // e.g. two story-end paths both reach it
     tick(TERMINAL_CALL_END_READ_MS + 100);
     assert.deepEqual(state.completed, [true], 'closed exactly once');
+});
+
+// ---- R2 n5: the read beat's call sites pass the right selfClose -------------------------------
+// _completeRingerCallWithBeat is correct per the tests above; what was untested is that each entry
+// point hands it the right selfClose: a player hang-up (closeConversation) is false, the call closing
+// itself (#exit_conversation, a forced call's story end) is true. A recorder stands in for the beat.
+function callerInstance() {
+    const calls = [];
+    const i = Object.create(PhoneChatMinigame.prototype);
+    i.params = { ringerCall: { id: 'c1' } };
+    i.gameState = { isActive: true };
+    i.currentNPCId = 'hax';
+    i._callVoice = { stop() {} };
+    i._completeRingerCallWithBeat = (selfClose = false) => { calls.push(selfClose); };
+    i._flushPendingMessages = () => {};
+    i._resetAfterRingerCall = () => {};
+    i._endSocialRun = () => {};
+    i._emitConversationClosed = () => {};
+    i.saveStoryState = () => {};
+    i.ui = { showContactList() {} };
+    return { i, calls };
+}
+
+test('closeConversation (End / the back arrow) completes the ringer call as a player hang-up (selfClose false)', () => {
+    const { i, calls } = callerInstance();
+    i.closeConversation();
+    assert.deepEqual(calls, [false], 'the player hung up: no terminal read beat');
+});
+
+test('_exitRingerCall (#exit_conversation) completes the ringer call as a self-close (selfClose true)', () => {
+    const { i, calls } = callerInstance();
+    i._exitRingerCall();
+    assert.deepEqual(calls, [true], 'the call closed itself: a read beat');
+});
+
+test('_releaseForcedCall (a forced call whose story ended) self-closes after the close delay (selfClose true)', async () => {
+    const tick = clock();
+    const { i, calls } = callerInstance();
+    i._releaseForcedCall();
+    await Promise.resolve();                   // whenSessionOverlayClosed() resolves, scheduling the timer
+    assert.deepEqual(calls, [], 'nothing before the close delay');
+    tick(FORCED_CALL_END_CLOSE_MS);
+    assert.deepEqual(calls, [true], 'self-close once the forced-call timer fires');
 });

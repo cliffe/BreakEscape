@@ -125,6 +125,53 @@ test('R1 m2: a ringWhile ring dropped quietly restores its own setGlobal latch f
     } finally { w.restore(); }
 });
 
+// ---- R2 n1: the quiet restore does not re-emit global_variable_changed (no self-trigger loop) --
+test('R2 n1: a ringWhile drop restores its latch without re-emitting global_variable_changed', async () => {
+    const nightshade = { id: 'nightshade', displayName: 'Nightshade', avatar: 'assets/x.png' };
+    const w = makeWorld({ npcs: [nightshade] });
+    try {
+        const g = w.win.gameState.globalVariables;
+        g.flag1_read_heard = false;
+        const latchEmits = () => w.dispatcher.emitted.filter(([n]) => n === 'global_variable_changed:nightshade_rang').length;
+        w.nm._handleEventMapping('nightshade', 'cage_opened', ringConfig({
+            knot: 'cage_ring', targetKnot: 'cage_ring',
+            ring: { onMissed: 'callback', ringWhile: 'globalVars.flag1_read_heard !== true' },
+            setGlobal: { nightshade_rang: true },
+        }), {});
+        await w.advance(1000);
+        assert.equal(latchEmits(), 1, 'the offer-time set emits global_variable_changed once');
+        g.flag1_read_heard = true;                     // the read-out is heard while it rings
+        await w.advance(1000);
+        assert.equal(w.ringer.stateOf('nightshade'), null, 'the ring is dropped');
+        assert.ok(!g.nightshade_rang, 'the latch is restored to its pre-offer value');
+        // Without the restore emitting, a mapping that re-fires on the latch's own change cannot loop.
+        assert.equal(latchEmits(), 1, 'the restore emits no second global_variable_changed');
+    } finally { w.restore(); }
+});
+
+// ---- R2 n2: a write to the latch key after the offer stands; the restore skips it --------------
+test('R2 n2: a ringWhile drop restores only a key still holding what the mapping wrote', async () => {
+    const hax = { id: 'hax', displayName: 'Agent HaX', avatar: 'assets/x.png' };
+    const w = makeWorld({ npcs: [hax] });
+    try {
+        const g = w.win.gameState.globalVariables;
+        g.esd_authorized = false; g.stage = 1;
+        w.nm._handleEventMapping('hax', 'cage_opened', ringConfig({
+            knot: 'ring_call', targetKnot: 'ring_call',
+            ring: { onMissed: 'callback', ringWhile: 'globalVars.esd_authorized !== true' },
+            setGlobal: { stage: 2 },
+        }), {});
+        await w.advance(1000);
+        assert.equal(w.ringer.stateOf('hax'), 'ringing', 'it rings');
+        assert.equal(g.stage, 2, 'the mapping wrote stage 2 at the offer');
+        g.stage = 3;                                   // something else moves the story on while it rings
+        g.esd_authorized = true;                       // ringWhile now fails
+        await w.advance(1000);
+        assert.equal(w.ringer.stateOf('hax'), null, 'dropped');
+        assert.equal(g.stage, 3, 'R2 n2: the later write to stage stands; the restore did not put back 1');
+    } finally { w.restore(); }
+});
+
 // ---- the ring banner falls back to the contact's callLabel (M5 R3 n1 / M4 R3 m2) --------------
 test('ring banner: no mapping callLabel shows the contact-level callLabel', async () => {
     const hax = { id: 'hax', displayName: 'Agent HaX', avatar: 'assets/x.png', callLabel: 'SAFETYNET secure line' };

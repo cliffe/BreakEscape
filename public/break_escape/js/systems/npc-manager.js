@@ -1261,14 +1261,15 @@ export default class NPCManager {
       : () => {};
     
     // Set global variables if specified. For a ring mapping (R1 m2) snapshot the keys' pre-offer
-    // values first: a ring dropped quietly by the item-8 re-check restores them, so the mapping's
+    // values first: a ring dropped quietly by the `ringWhile` re-check restores them, so the mapping's
     // own latch does not block its twin (or the same trigger later) for a ring that never happened.
+    // Keep what the mapping wrote too, so the restore can skip a key something else has since changed.
     let ringSetGlobalRestore = null;
     if (config.setGlobal && window.gameState?.globalVariables) {
       if (isRing) ringSetGlobalRestore = {};
       Object.entries(config.setGlobal).forEach(([varName, value]) => {
         const oldValue = window.gameState.globalVariables[varName];
-        if (isRing) ringSetGlobalRestore[varName] = oldValue;
+        if (isRing) ringSetGlobalRestore[varName] = { wrote: value, prev: oldValue };
         window.gameState.globalVariables[varName] = value;
         console.log(`🌐 Event setGlobal: ${varName} = ${value}`);
         if (window.npcConversationStateManager) {

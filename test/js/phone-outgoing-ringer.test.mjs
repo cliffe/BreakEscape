@@ -201,6 +201,27 @@ test('no answer: a no_answer outcome, no ended row, the phone comes back, nothin
     assert.ok(slots.every((x) => x === null), 'an outgoing call is never saved: a reload mid-call is not a missed call');
 });
 
+test('n6: a ring-out that never connected carries no callOpened on the descriptor it reopens or drops', () => {
+    // callOpened is stamped only when the call opened its own conversation (connect). A ring-out
+    // never reaches that, so the put-aside phone it hands back owes its conversation_closed and must
+    // not look like a call that opened. Ended by the call (no answer): reopen the phone.
+    const out = setup();
+    out.ringer.dial('ceo', entry(), {});
+    out.w.callOpen = false;
+    endOutgoing(out, { endedByCall: true, noAnswer: true });
+    const reopened = out.last('reopen')[1];
+    assert.equal(reopened.thread, 'ceo');
+    assert.ok(!('callOpened' in reopened), 'a ring-out reopens a descriptor with no callOpened');
+    // Closed by another minigame while it rang out (row 32, never connected): dropped, still no callOpened.
+    const row32 = setup();
+    row32.ringer.dial('ceo', entry(), {});
+    row32.w.callOpen = false;
+    endOutgoing(row32, {});                                      // not endedByCall
+    const dropped = row32.last('dropDisplaced')[1];
+    assert.equal(dropped.thread, 'ceo');
+    assert.ok(!('callOpened' in dropped), 'a ring-out dropped by another minigame carries no callOpened');
+});
+
 test('End while dialling (never connected) adds no row but reopens the phone', () => {
     const s = setup();
     s.ringer.dial('ceo', entry(), {});

@@ -223,3 +223,19 @@ sees" table (item 9, 20 s rule), and the call look / `phoneTheme` with the termi
 - `TERMINAL_CALL_END_READ_MS` (`phone-call-lock.js`) and `PhoneChatMinigame._waitForCallClipThen` (item 10).
 - R1 fixes: the offer carries `ringSetGlobalRestore` (in memory only) and a displaced phone descriptor carries `callOpened`; `PhoneChatMinigame._completeRingerCallWithBeat(selfClose)` takes a flag.
 No new static import was added (item 10 adds a named export to `phone-call-lock.js`, already imported), so no test harness copy list changed.
+
+## Engine sweep review R2 fixes (Opus 4.8, 2026-11-12)
+Outcomes: `REVIEW_ENGINE_SWEEP_R2_OUTCOMES.md`. Summary:
+- **m1** validator (`validate_phone_calls.rb` `ring_grammar_misuse`): `ring.ringWhile` / `ring.callbackWhen`
+  that contain `||` or a non-`globalVars.` term are now errors, matching the engine's `globalOnly` slicing.
+- **Latch restore** (`npc-manager.js` + new `phone-ringer-dom.js` `restoreGlobals`): restore a key only
+  while it still holds what the mapping wrote (no clobber of a later write), and without emitting
+  `global_variable_changed` (a self-triggering mapping can't loop on the drop).
+- **n4** three stale "item 8" comments renamed to the `ringWhile` re-check.
+- **README** `ringWhile`/`callbackWhen` grammar made explicit, the n3 "repeat the terms in `condition`"
+  line added, the restore paragraph corrected.
+- **n5/n6** tests: the read beat's call sites (`phone-call-terminal-beat.test.mjs`) and a ring-out with no
+  `callOpened` (`phone-outgoing-ringer.test.mjs`).
+- Also the M1 R4/R5 n1 "Voice call" caption flash: `phone-chat-ui.js` `_renderCallChrome` resolves the
+  caption at render.
+No new static import, so no harness copy list changed.

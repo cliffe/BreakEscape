@@ -142,3 +142,19 @@ test('m3: the dial screen is captioned with the call\'s callLabel, else the cont
     assert.equal(dial({ voiced: true }, { id: 'vance' }), 'Voice call');
     assert.equal(document.getElementById('call-status-bar').querySelector('.call-status-label').textContent, 'CALLING');
 });
+
+test('_renderCallChrome: the caption resolves at render, no "Voice call" flash (M1 R4/R5 n1)', () => {
+    const render = (params, npc) => {
+        const ui = makeUi({ voiced: true });
+        ui.params = params;
+        ui.npcManager = { getNPC: (id) => (id === params.npcId ? npc : null) };
+        ui._renderCallChrome();
+        return ui.container.querySelector('#call-caption')?.textContent;
+    };
+    // The contact-level callLabel (what used to flash in after "Voice call") is resolved up front.
+    assert.equal(render({ voiced: true, npcId: 'hax' }, { id: 'hax', callLabel: 'SAFETYNET secure line' }), 'SAFETYNET secure line');
+    // The offer/mapping callLabel still wins over the contact's.
+    assert.equal(render({ voiced: true, npcId: 'hax', callLabel: 'ENTROPY' }, { id: 'hax', callLabel: 'SAFETYNET secure line' }), 'ENTROPY');
+    // Nothing authored: the plain fallback.
+    assert.equal(render({ voiced: true, npcId: 'hax' }, { id: 'hax' }), 'Voice call');
+});

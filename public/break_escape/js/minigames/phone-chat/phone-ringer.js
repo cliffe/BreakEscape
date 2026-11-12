@@ -419,8 +419,10 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         finishOffer(o);
         // R1 m2: the mapping's own setGlobal (its latch) ran at offer time. Put those globals back to
         // their pre-offer values, so a twin mapping, or the same trigger later, is not blocked by a
-        // latch for a ring that never happened. The adapter owns the globals and re-emits the changes.
-        if (o.ringSetGlobalRestore) call('setGlobal', o.ringSetGlobalRestore);
+        // latch for a ring that never happened. The adapter owns the globals; restoreGlobals puts back
+        // only a key still holding what the ring wrote (a later write wins, R2 n2) and does not emit
+        // global_variable_changed, so a mapping listening on its own latch cannot loop on the drop (R2 n1).
+        if (o.ringSetGlobalRestore) call('restoreGlobals', o.ringSetGlobalRestore);
         call('onOutcome', 'dropped', o);
         if (d) reopenDisplaced(d);
     }
@@ -877,9 +879,9 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             voicemailKnot: typeof raw.voicemailKnot === 'string' ? raw.voicemailKnot : null,
             callbackWhen: typeof raw.callbackWhen === 'string' && raw.callbackWhen ? raw.callbackWhen : null,
             ringCondition: typeof raw.ringCondition === 'string' && raw.ringCondition ? raw.ringCondition : null,
-            // R1 m2: in memory only (not saved). The pre-offer values of the mapping's own setGlobal
-            // keys, put back if the item-8 re-check drops this ring quietly, so its latch does not
-            // block a twin for a ring that never happened.
+            // R1 m2: in memory only (not saved). Per key, { wrote, prev } for the mapping's own
+            // setGlobal, put back if the `ringWhile` re-check drops this ring quietly, so its latch
+            // does not block a twin for a ring that never happened.
             ringSetGlobalRestore: raw.ringSetGlobalRestore && typeof raw.ringSetGlobalRestore === 'object'
                 ? raw.ringSetGlobalRestore : null,
             withheld: !!raw.withheld,

@@ -466,6 +466,15 @@ test('sweep item 7: ring.callbackWhen is validated like a call condition', { ski
     // error: a non-event-mapping term
     assertHas(errors(check({ eventMappings: [ringMap({ ring: { callbackWhen: 'data.x === true' } })] }, { hax: INK }, glob)),
         'ring.callbackWhen uses');
+    // error: an || (the condition reads only && chains of globalVars. terms)
+    const glob2cb = { globalVariables: { live: false, other: false } };
+    assertHas(errors(check({ eventMappings: [ringMap({ ring: { callbackWhen: 'globalVars.live !== true || globalVars.other !== true' } })] }, { hax: INK }, glob2cb)),
+        'ring.callbackWhen contains `||`');
+    // error: a non-globalVars term the engine would skip
+    assertHas(errors(check({ eventMappings: [ringMap({ ring: { callbackWhen: 'globalVars.live !== true && someFn()' } })] }, { hax: INK }, glob)),
+        'non-globalVars. term');
+    // clean: a negated global and a comparison to a globalVars value
+    assert.deepEqual(errors(check({ eventMappings: [ringMap({ ring: { callbackWhen: '!globalVars.live && globalVars.other !== true' } })] }, { hax: INK }, glob2cb)), []);
     // error: a non-string
     assertHas(errors(check({ eventMappings: [ringMap({ ring: { callbackWhen: 7 } })] })), 'ring.callbackWhen must be a non-empty condition string');
     // warn: callbackWhen with onMissed voicemail has no effect
@@ -485,6 +494,15 @@ test('M1 R4: ring.ringWhile is validated like a call condition', { skip }, () =>
     // error: a non-event-mapping term
     assertHas(errors(check({ eventMappings: [ringMap({ ring: { ringWhile: 'data.x === true' } })] }, { hax: INK }, glob)),
         'ring.ringWhile uses');
+    // error (m1): an || passes the old slicing but the engine never drops the ring on it
+    const glob2rw = { globalVariables: { live: false, other: false } };
+    assertHas(errors(check({ eventMappings: [ringMap({ ring: { ringWhile: 'globalVars.live !== true || globalVars.other !== true' } })] }, { hax: INK }, glob2rw)),
+        'ring.ringWhile contains `||`');
+    // error (m1): a non-globalVars term the engine's globalOnly would skip
+    assertHas(errors(check({ eventMappings: [ringMap({ ring: { ringWhile: 'globalVars.live !== true && someFn()' } })] }, { hax: INK }, glob)),
+        'non-globalVars. term');
+    // clean: a negated global and a comparison to a globalVars value
+    assert.deepEqual(errors(check({ eventMappings: [ringMap({ ring: { ringWhile: '!globalVars.live && globalVars.other !== true' } })] }, { hax: INK }, glob2rw)), []);
     // error: a non-string
     assertHas(errors(check({ eventMappings: [ringMap({ ring: { ringWhile: 7 } })] })), 'ring.ringWhile must be a non-empty condition string');
     // warn: ringWhile on a forced call has no effect

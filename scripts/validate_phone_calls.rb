@@ -350,7 +350,11 @@ module ValidatePhoneCalls
         cbw = src['callbackWhen']
         if cbw.is_a?(String) && !cbw.strip.empty?
           bad = when_misuse(cbw)
-          err.call("#{where}: ring.callbackWhen uses #{bad}, which a call condition cannot read (only globalVars. terms; plan 3.1)") if bad
+          if bad
+            err.call("#{where}: ring.callbackWhen uses #{bad}, which a call condition cannot read (only globalVars. terms; plan 3.1)")
+          elsif (gbad = ring_grammar_misuse(cbw))
+            err.call("#{where}: ring.callbackWhen #{gbad}")
+          end
           global_names(cbw).reject { |n| globals.include?(n) }.each do |n|
             err.call("#{where}: ring.callbackWhen reads globalVars.#{n}, which is not in globalVariables and nothing sets it: the condition sees undefined#{var_hint(source, n)}")
           end
@@ -364,7 +368,11 @@ module ValidatePhoneCalls
         rw = src['ringWhile']
         if rw.is_a?(String) && !rw.strip.empty?
           bad = when_misuse(rw)
-          err.call("#{where}: ring.ringWhile uses #{bad}, which a call condition cannot read (only globalVars. terms; plan 3.1)") if bad
+          if bad
+            err.call("#{where}: ring.ringWhile uses #{bad}, which a call condition cannot read (only globalVars. terms; plan 3.1)")
+          elsif (gbad = ring_grammar_misuse(rw))
+            err.call("#{where}: ring.ringWhile #{gbad}")
+          end
           global_names(rw).reject { |n| globals.include?(n) }.each do |n|
             err.call("#{where}: ring.ringWhile reads globalVars.#{n}, which is not in globalVariables and nothing sets it: the condition sees undefined#{var_hint(source, n)}")
           end
@@ -552,6 +560,25 @@ module ValidatePhoneCalls
     return '`value`' if s =~ /\bvalue\b/
     return '`name`' if s =~ /\bname\b/
 
+    nil
+  end
+
+  # ring.ringWhile / ring.callbackWhen are an `&&` chain of `globalVars.` terms — the only grammar
+  # the engine's ringConditionHolds / callConditionHolds evaluates (mirrors globalOnly in
+  # npc-manager.js). An `||`, or a term that reads anything but a single-segment `globalVars.` value
+  # (optionally negated or compared to a literal or another `globalVars.` value), is skipped by the
+  # engine, so the ring would never drop (ringWhile) or the callback never be offered (callbackWhen).
+  # Returns a predicate fragment for the error message, or nil when the condition is a clean chain.
+  # Assumes when_misuse has already cleared `value`, `name` and `data.`.
+  RING_GRAMMAR_LITERALS = %w[true false null undefined].freeze
+  def ring_grammar_misuse(cond)
+    s = cond.to_s
+    return 'contains `||`, but only `&&` chains of globalVars. terms are evaluated' if s.include?('||')
+    s.split('&&').map(&:strip).reject(&:empty?).each do |term|
+      rest = term.gsub(/globalVars\.[A-Za-z_$][\w$]*/, ' ').gsub(/(['"])(?:\\.|(?!\1).)*\1/, ' ')
+      ids = rest.scan(/[A-Za-z_$][\w$]*/).reject { |id| RING_GRAMMAR_LITERALS.include?(id) }
+      return "has the non-globalVars. term `#{term}`; only globalVars. terms (optionally negated or compared to a literal) are evaluated" unless ids.empty?
+    end
     nil
   end
 

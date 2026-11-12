@@ -419,8 +419,8 @@ export function installPhoneRinger(win = window) {
         },
         toast(text) { win.showNotification?.(text, 'info', 'Phone'); },
         displayName: (npcId) => nm()?.getNPC?.(npcId)?.displayName || null,
-        // Item 8: re-check a queued or ringing offer's mapping condition. Returns false (stale, drop)
-        // only when npcManager can confidently say so (a purely globalVars condition that now fails);
+        // Re-check a queued or ringing offer's opt-in `ring.ringWhile`. Returns false (stale, drop)
+        // only when npcManager can confidently say so (a globalVars-only condition that now fails);
         // otherwise true (keep ringing). Missing npcManager keeps the offer.
         ringConditionHolds: (cond) => { const m = nm(); return m?.ringConditionHolds ? m.ringConditionHolds(cond) : true; },
         emit(name, data) { win.eventDispatcher?.emit?.(name, data); },
@@ -432,6 +432,21 @@ export function installPhoneRinger(win = window) {
                 globals[name] = value;
                 win.npcConversationStateManager?.broadcastGlobalVariableChange?.(name, value, null);
                 win.eventDispatcher?.emit?.(`global_variable_changed:${name}`, { name, value, oldValue });
+            }
+        },
+        // R2: put a dropped `ringWhile` ring's own setGlobal latch back. The map is { name: { wrote,
+        // prev } }. Restore only a key still holding `wrote`, so a write after the offer stands (n2),
+        // and do NOT emit global_variable_changed: a dropped ring never happened, so no event mapping
+        // should react, and a mapping that listens on its own latch's change cannot loop (n1). The ink
+        // VAR sync (broadcast) still runs so loaded stories stay in step; it does not re-enter mappings.
+        restoreGlobals(map) {
+            const globals = win.gameState?.globalVariables;
+            if (!globals || !map) return;
+            for (const [name, rec] of Object.entries(map)) {
+                if (!rec || typeof rec !== 'object') continue;
+                if (globals[name] !== rec.wrote) continue;
+                globals[name] = rec.prev;
+                win.npcConversationStateManager?.broadcastGlobalVariableChange?.(name, rec.prev, null);
             }
         },
         // Kept on the NPC; exportPhoneState saves it with the thread (plan 2.7)

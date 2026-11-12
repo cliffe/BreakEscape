@@ -196,6 +196,14 @@ export default class PhoneChatUI {
         view.insertAdjacentHTML('afterbegin', CALL_STATUS_HTML);
         header.insertAdjacentHTML('beforeend', CALL_SPEAKING_HTML);
         view.insertAdjacentHTML('beforeend', CALL_CONTROLS_HTML);
+        // Resolve the caption now, before the first paint: otherwise the static "Voice call" shows
+        // for a frame or two until showConversation sets the real one (M1 R4/R5 n1). currentNPCId is
+        // not set at first render, so read the contact from params.npcId (a call opens one contact).
+        const caption = header.querySelector('#call-caption');
+        if (caption) {
+            const npc = this.params?.npcId ? this.npcManager?.getNPC?.(this.params.npcId) : null;
+            caption.textContent = callLabelFor(this.params, npc);
+        }
         const messages = view.querySelector('#messages-container');
         messages?.setAttribute('aria-live', 'polite');
         messages?.setAttribute('title', 'Click to skip the line');
