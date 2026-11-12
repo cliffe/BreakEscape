@@ -33,7 +33,8 @@ export function cleanPost(raw) {
 }
 
 /**
- * Plain text for the notebook (as npc-workarounds.js escapeNoteText, sub-slice H R1 M1): the notes
+ * Plain text for the notebook (a copy of npc-workarounds.js escapeNoteText, sub-slice H R1 M1; widen
+ * both together): the notes
  * page renders a markdown subset after the dash display, so each of its escapable characters gets
  * a backslash and the page shows a feed fact's text exactly as written. HTML needs nothing: the
  * renderer escapes it first. Kept here rather than imported, so the test harness copies of this
@@ -44,43 +45,93 @@ export function escapeNoteText(text) {
     return String(text).replace(NOTE_ESCAPABLE, (ch) => `\\${ch}`);
 }
 
-/** A fact entry with string fields only (text, label, subject) and a provides list of strings. */
-export function cleanFact(raw) {
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+/**
+ * Plain JSON data, copied: strings, finite numbers, booleans, null, arrays and plain objects, to a
+ * fixed depth. A key that would set a prototype is skipped; anything else (a function, a
+ * non-finite number) is dropped. Review C R1 M1: a fact entry keeps every field its readers use,
+ * among them `provides` (an array of objects: board-model.js, mail-composer.js heldProvides,
+ * pretext-card.js blankSlot, social-intel.js subjectLabel) and `stale` (a boolean).
+ */
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+function plainJson(v, depth) {
+    if (typeof v === 'string' || typeof v === 'boolean' || v === null) return v;
+    if (typeof v === 'number') return Number.isFinite(v) ? v : undefined;
+    if (depth <= 0 || typeof v !== 'object') return undefined;
+    if (Array.isArray(v)) return v.map((x) => plainJson(x, depth - 1)).filter((x) => x !== undefined);
     const out = {};
-    for (const [k, v] of Object.entries(raw)) {
-        if (typeof v === 'string') out[k] = v;
-        else if (Array.isArray(v) && v.every((x) => typeof x === 'string')) out[k] = [...v];
+    for (const [k, x] of Object.entries(v)) {
+        if (UNSAFE_KEYS.has(k)) continue;
+        const c = plainJson(x, depth - 1);
+        if (c !== undefined) out[k] = c;
     }
     return out;
 }
 
+/** A fact entry as authored (plain JSON data, copied), or null when it is not an object. */
+export function cleanFact(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    return plainJson(raw, 6);
+}
+
+/** Review C R1 server m2: a too-soon answer is asked again once, after its retryAfter (capped). */
+const RETRY_CAP_S = 300;
+/** A request that failed without an HTTP status (the network) is asked again once, after this. */
+const NETWORK_RETRY_S = 5;
+
 export class SocialFeed {
     /**
      * deps: { send(npcId) -> Promise<body>, hasFeed(npcId), mergeFact(id, entry), emit(name, data),
-     *         toast(message, title), siteVisited(siteId), toastsOn(), npcName(npcId), siteName(siteId) }
+     *         toast(message, title), siteVisited(siteId), toastsOn(), npcName(npcId), siteName(siteId),
+     *         later(fn, ms) (optional; setTimeout) }
      */
     constructor(deps = {}) {
         this.deps = deps;
         this.posts = new Map();      // npcId -> [{ index, post, site, person }], oldest first
         this.done = new Set();
         this.inFlight = new Set();
+        this.retrying = new Set();   // npcIds with one retry waiting (the use it belongs to)
         this.requests = 0;
     }
 
-    /** A met social media use by `npcId`: ask for its next post, once at a time, never after done. */
+    /**
+     * A met social media use by `npcId`: ask for its next post, once at a time, never after done.
+     * A too-soon answer (the server's pace floor: a use that came early, after a reload or from
+     * a tempt band) or a network failure is asked again once, after the wait, so the use still
+     * yields its post. A use while that retry waits asks nothing more.
+     */
     onUse(npcId) {
-        if (!isStr(npcId) || this.done.has(npcId) || this.inFlight.has(npcId)) return null;
+        if (!isStr(npcId) || this.done.has(npcId) || this.inFlight.has(npcId) || this.retrying.has(npcId)) return null;
         if (!this.deps.hasFeed?.(npcId)) return null;
+        return this._ask(npcId, true);
+    }
+
+    _ask(npcId, mayRetry) {
         this.inFlight.add(npcId);
         this.requests++;
+        let retryIn = null;
         return Promise.resolve()
             .then(() => this.deps.send(npcId))
-            .then((body) => this.apply(npcId, body), (err) => {
+            .then((body) => {
+                this.apply(npcId, body);
+                const wait = Number(body?.retryAfter);
+                if (body?.tooSoon === true && Number.isFinite(wait)) retryIn = Math.min(Math.max(wait, 0), RETRY_CAP_S) + 1;
+            }, (err) => {
                 // 403: the server does not know the NPC (yet); a later use asks again
-                if (err?.status !== 403) console.warn('[social-feed] feed_post failed', err?.message || err);
+                if (err?.status === 403) return;
+                console.warn('[social-feed] feed_post failed', err?.message || err);
+                if (err?.status === undefined) retryIn = NETWORK_RETRY_S;
             })
-            .finally(() => this.inFlight.delete(npcId));
+            .finally(() => {
+                this.inFlight.delete(npcId);
+                if (mayRetry && retryIn !== null && !this.done.has(npcId)) {
+                    this.retrying.add(npcId);
+                    const later = this.deps.later || ((fn, ms) => setTimeout(fn, ms));
+                    later(() => {
+                        this.retrying.delete(npcId);
+                        if (!this.done.has(npcId)) this._ask(npcId, false);
+                    }, retryIn * 1000);
+                }
+            });
     }
 
     /** One /feed_post answer. */
@@ -161,6 +212,7 @@ export function liveDeps(api, w) {
             if (!sc || typeof sc !== 'object') return;
             if (!sc.social || typeof sc.social !== 'object') sc.social = {};
             if (!sc.social.intelFacts || typeof sc.social.intelFacts !== 'object') sc.social.intelFacts = {};
+            if (id === '__proto__' || id === 'constructor' || id === 'prototype') return;
             sc.social.intelFacts[id] = entry;
         },
         emit: (name, data) => w.eventDispatcher?.emit?.(name, data),

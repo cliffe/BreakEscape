@@ -110,11 +110,64 @@ test('restore on load: every revealed post and its fact, no event, no toast; don
     assert.deepEqual(feed.revealed(), { jake: ['p1', 'p2'] }, 'a repeat restore adds nothing');
 });
 
-test('cleanPost and cleanFact keep strings only; a post with no id is dropped', () => {
+test('cleanPost keeps strings only and needs an id; cleanFact keeps the entry as authored (plain JSON data)', () => {
     assert.equal(cleanPost({ text: 'no id' }), null);
     assert.deepEqual(cleanPost({ id: 'p', text: 'ok', date: 5, note: { html: '<b>' }, extra: 'x' }), { id: 'p', text: 'ok' });
-    assert.deepEqual(cleanFact({ text: 't', provides: ['a', 'b'], bad: { x: 1 }, n: 3 }), { text: 't', provides: ['a', 'b'] });
+    // Review C R1 M1: provides is an array of objects; stale is a boolean; numbers stay
+    const provides = [{ type: 'name', value: 'jake_biscuit', label: 'Biscuit', kind: 'pet' }, { type: 'address', rule: 'first.last', n: 2 }];
+    const raw = { text: 't', label: 'Pet', provides, stale: false, n: 3, fn: () => 1, inf: Infinity };
+    const clean = cleanFact(raw);
+    assert.deepEqual(clean, { text: 't', label: 'Pet', provides, stale: false, n: 3 });
+    assert.notEqual(clean.provides, provides, 'a copy');
+    assert.equal(Object.getPrototypeOf(cleanFact(JSON.parse('{"__proto__": {"polluted": 1}, "text": "t"}'))), Object.prototype);
     assert.equal(cleanFact(['x']), null);
+});
+
+test('review C R1 M1: a merged feed fact with provides is read by the mail composer, the intel board and the pretext card', async () => {
+    const { heldProvides, heldFactIds } = await import('../../public/break_escape/js/minigames/mail-client/mail-composer.js');
+    const { buildBoardModel } = await import('../../public/break_escape/js/minigames/intel-board/board-model.js');
+    const { blankSlot } = await import('../../public/break_escape/js/minigames/pretext-prep/pretext-card.js');
+    const entry = { label: 'Pet', subject: 'jake', text: 'Jake Brooks has a dog called Biscuit.',
+        provides: [{ type: 'name', value: 'jake_brooks', label: 'Jake Brooks' }, { type: 'pet', value: 'biscuit', about: 'jake_pet' }] };
+    const { feed, facts } = harness({ answers: [answer(0, 'p1', { post: { id: 'p1', text: 'x', fact: 'jake_pet_name' }, fact: { id: 'jake_pet_name', entry } })] });
+    await feed.onUse('jake');
+    const globals = { se_intel_jake_pet_name: true };
+    assert.deepEqual(heldProvides(heldFactIds(facts, globals), facts).map((p) => p.value), ['jake_brooks', 'biscuit']);
+    // subject 'company', so only provides' name can identify Jake on the board
+    const social = { intelFacts: { jake_pet_name: { ...facts.jake_pet_name, subject: 'company' } }, people: [{ id: 'jake', name: 'Jake Brooks' }], intelBoard: { people: ['jake'] } };
+    const card = buildBoardModel(social, globals).targets.find((t) => t.id === 'jake');
+    assert.equal(card.identified, true);
+    assert.deepEqual(blankSlot('jake_pet', { knows: { jake_pet: { value: 'biscuit' } } }, facts), { type: 'pet', about: 'jake_pet' });
+});
+
+test('review C R1 server m2: a too-soon answer is asked again once after retryAfter, so the use yields its post', async () => {
+    const timers = [];
+    const { feed, log } = harness({ answers: [{ npcId: 'jake', post: null, done: false, tooSoon: true, retryAfter: 12 }, answer(0, 'p1')] });
+    feed.deps.later = (fn, ms) => timers.push([fn, ms]);
+    await feed.onUse('jake');
+    assert.deepEqual(timers.map((t) => t[1]), [13000]);
+    assert.equal(feed.onUse('jake'), null, 'a use while the retry waits asks nothing more');
+    await timers[0][0]();
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(feed.revealed(), { jake: ['p1'] });
+    assert.equal(log.filter((e) => e[0] === 'send').length, 2);
+    assert.equal(timers.length, 1, 'the retry itself is not retried');
+});
+
+test('review C R1 nit: a network failure is asked again once; a 403 is not', async () => {
+    const timers = [];
+    const { feed } = harness({ answers: [new Error('offline'), answer(0, 'p1')] });
+    feed.deps.later = (fn, ms) => timers.push([fn, ms]);
+    await feed.onUse('jake');
+    assert.equal(timers.length, 1);
+    timers[0][0]();
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(feed.revealed(), { jake: ['p1'] });
+    const t2 = [];
+    const h2 = harness({ answers: [Object.assign(new Error('no'), { status: 403 })] });
+    h2.feed.deps.later = (fn, ms) => t2.push(ms);
+    await h2.feed.onUse('jake');
+    assert.deepEqual(t2, []);
 });
 
 test('installSocialFeed: listens on npc_used (met social_media only) and npc_used_phone; toast is plain text', async () => {
