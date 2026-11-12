@@ -289,7 +289,34 @@ conflicts by hand. Conflicts and resolutions:
   room tile, clear of the P1-P12 signs and W's lobby objects.
 - This build log: kept both the W and P sections.
 
-Suites after the merge recorded below.
+### Live check after the merge (port 3025, keyless server, game 1264)
+
+Walked N8 to N10 by hand on the merged scenario through the real client path (`window.__test`
+interact, the plant confirm clicked by its "Plug it in" button; the Wi-Fi join driven through the
+join minigame), not test helpers.
+
+- **N8 Wi-Fi join:** interact `guest_ap`, join minigame titled "Join Wi-Fi" (the W R2 constant). A
+  wrong key is refused (`POST /network/join` 422), no foothold; the right key (`seabreeze-2025`,
+  read from the reception card) joins: `network_joined { apId: 'guest_ap', already: false }`,
+  foothold `wifi_guest_wifi`, the view opens, `n8_wifi_join` completes.
+- **N9 second access point:** joining again through `guest_ap2` on the same network answers
+  `already`, emits `network_joined { apId: 'guest_ap2', already: true }` with no second minigame,
+  and completes `n9_second_ap`; both AP ids are in `gained`, one Wi-Fi foothold.
+- **N10 secured port refuses:** take the drop box, enter the comms room, interact `secure_port`,
+  confirm. The authored switch message shows as a toast, `network_device_refused { jackId:
+  'secure_port', reason: 'port_security' }` fires, `n10_port_security` completes, the drop box
+  stays in the inventory and `secure_port` has no foothold.
+- **Open port still plants:** interact `comms_port` (open) and confirm: `jack_comms_port` foothold
+  gained, the box becomes the "Drop box: comms room" link item.
+- **Reload (`?skip_resume=1`):** the `wifi_guest_wifi` and `jack_comms_port` footholds, both link
+  items and the three completed tasks all come back; no `secure_port` foothold.
+
+### Suites after the merge (both under the shared lock)
+
+- `bin/rails test`: 1648 runs, 24304 assertions, 0 failures, 0 errors, 1 skip.
+- `bin/test-js -j 3`: 495 files passed, 0 failed.
+- Validator `scenarios/test_access_networks/scenario.json.erb --no-graph`: no error lines (two
+  info lines for the `secure_port` reach and the `guest_wifi` NPC-only network).
 
 ### Handover
 
