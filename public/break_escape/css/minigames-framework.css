@@ -92,15 +92,19 @@
     box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
 }
 
+/* The Cancel/Close row sits in the window's column under the game area, never
+   over it. It used to be absolutely placed at the bottom of the screen, where it
+   covered any footer a minigame draws at the bottom of its own area (the padlock's
+   Reset and Unlock, the cryptex's Submit, the container's Take button). Examine,
+   the forensic platform and the fingerprint reader had each fixed this for
+   themselves; this does it for all (UX pass, 2026-11-12). */
 .minigame-controls {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-top: 10px;
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    margin: 0 0 16px;
+    position: static;
+    flex-shrink: 0;
 }
 
 .minigame-button {

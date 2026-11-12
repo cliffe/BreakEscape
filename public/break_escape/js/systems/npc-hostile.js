@@ -450,7 +450,8 @@ function playNPCDeathAnimation(npcId, sprite) {
 
 /**
  * Drop items around a defeated NPC
- * Items spawn directly at the NPC's position (which is always player-accessible).
+ * Items land on walkable floor round the body (koDropSpots), spread apart and clear
+ * of furniture where possible.
  * Physics launches are intentionally avoided: when an NPC dies near a wall or
  * furniture, velocity-based drops collide with geometry and leave items in
  * unreachable positions. Instead each item is placed at a small static offset
@@ -528,6 +529,56 @@ export function dropTextureFor(item, exists) {
   return 'key';
 }
 
+/**
+ * Where a KO'd NPC's items land (UX pass, 2026-11-12; backlog "KO item drops land on
+ * top of each other"). The old 8 px ring put every item on the body, often under the
+ * desk or chair the NPC fell by, where the player could not see it. Each spot here:
+ *  - is a walkable cell (nearestWalkable, when the pathfinder is up), so it is never
+ *    inside a wall or furniture body;
+ *  - is at least MIN_GAP from the body and from every other drop;
+ *  - draws clear of the shown room objects (obstacles: {x, y, w, h} rects), so a desk
+ *    top or a chair does not hide it, when such a spot exists within reach.
+ * Returns the centre of each spot; the caller places a sprite of size (w, h) there.
+ * Pure, so it is tested in node.
+ */
+export const KO_DROP_MIN_GAP = 32;
+export function koDropSpots(feet, count, { nearestWalkable = null, obstacles = [], size = { w: 32, h: 32 } } = {}) {
+  const gap = KO_DROP_MIN_GAP;
+  const spots = [];
+  const far = (p, q, d) => (p.x - q.x) ** 2 + (p.y - q.y) ** 2 >= d * d;
+  const clear = (p) => {
+    const r = { x: p.x - size.w / 2, y: p.y - size.h / 2, w: size.w, h: size.h };
+    return !obstacles.some(o => r.x < o.x + o.w && r.x + r.w > o.x && r.y < o.y + o.h && r.y + r.h > o.y);
+  };
+  const candidates = [];
+  for (const radius of [gap, gap * 1.5, gap * 2, gap * 3]) {
+    // Below the body first (the side the player usually sees), then round the ring
+    for (const deg of [90, 45, 135, 0, 180, 270, 225, 315]) {
+      const a = deg * Math.PI / 180;
+      const raw = { x: feet.x + Math.cos(a) * radius, y: feet.y + Math.sin(a) * radius };
+      const snapped = nearestWalkable ? nearestWalkable(raw.x, raw.y, 1) : raw;
+      if (snapped) candidates.push({ x: Math.round(snapped.x), y: Math.round(snapped.y) });
+    }
+  }
+  const pick = (needClear) => {
+    for (const c of candidates) {
+      if (spots.length >= count) return;
+      if (!far(c, feet, gap * 0.75)) continue;
+      if (!spots.every(s => far(c, s, gap))) continue;
+      if (needClear && !clear(c)) continue;
+      spots.push(c);
+    }
+  };
+  pick(true);
+  pick(false);
+  // Nowhere walkable in reach: a fixed spread round the body, still MIN_GAP apart
+  for (let i = spots.length; i < count; i++) {
+    const a = (i / Math.max(count, 1)) * Math.PI * 2 + Math.PI / 2;
+    spots.push({ x: Math.round(feet.x + Math.cos(a) * gap), y: Math.round(feet.y + Math.sin(a) * gap) });
+  }
+  return spots;
+}
+
 function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
   const npc = window.npcManager?.getNPC(npcId);
   let sprite = npc?._sprite || npc?.sprite;
@@ -561,27 +612,38 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
 
   const room = window.rooms[npcRoomId];
   const gameRef = window.game;
-  const itemCount = toDrop.length;
-  
+
+  // Spread the drops round the body on walkable floor, clear of furniture and at
+  // least KO_DROP_MIN_GAP apart (koDropSpots), so each one can be seen and picked.
+  const feet = bc ? { x: bc.x, y: bc.y } : { x: sprite.x, y: sprite.y };
+  const pm = window.pathfindingManager;
+  const obstacles = [];
+  for (const o of Object.values(room.objects || {})) {
+    if (!o || o.destroyed || o.active === false || o.visible === false || o === sprite) continue;
+    const w = o.displayWidth ?? o.width ?? 0, h = o.displayHeight ?? o.height ?? 0;
+    if (!(w > 0) || !(h > 0)) continue;
+    obstacles.push({ x: o.x - (o.originX ?? 0.5) * w, y: o.y - (o.originY ?? 0.5) * h, w, h });
+  }
+  const spots = koDropSpots(feet, toDrop.length, {
+    nearestWalkable: pm?.findNearestWalkableWorldCell ? (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r) : null,
+    obstacles
+  });
+
   toDrop.forEach((item, index) => {
-    // Place items at the NPC's location with a small static offset per item so
-    // they don't perfectly stack. Using a fixed ring radius (8px) keeps them
-    // close together and always within the walkable area the NPC occupied.
-    const angle = (index / itemCount) * Math.PI * 2;
-    const SCATTER_RADIUS = 8; // px — small enough to stay away from walls
-
-    const spawnX = Math.round(sprite.x + Math.cos(angle) * SCATTER_RADIUS);
-    const spawnY = Math.round(sprite.y + Math.sin(angle) * SCATTER_RADIUS);
-
     // Create actual Phaser sprite for the dropped item, drawn as a reload draws it
     // (dropTextureFor: its own sprite, then its type's picture, 'key' only as a last resort)
     const texture = dropTextureFor(item, (key) => gameRef.textures.exists(key));
     console.log(`💧 Dropping item: type="${item.type}", name="${item.name}", texture="${texture}"`);
-    
-    const spriteObj = gameRef.add.sprite(spawnX, spawnY, texture);
-    
-    // Set origin to match standard object creation
+
+    const spriteObj = gameRef.add.sprite(0, 0, texture);
+
+    // Set origin to match standard object creation, then centre the picture on its spot
     spriteObj.setOrigin(0, 0);
+    const spot = spots[index];
+    const spawnX = Math.round(spot.x - (spriteObj.width || 32) / 2);
+    const spawnY = Math.round(spot.y - (spriteObj.height || 32) / 2);
+    spriteObj.x = spawnX;
+    spriteObj.y = spawnY;
     
     // Create scenario data from the dropped item
     const droppedItemData = {

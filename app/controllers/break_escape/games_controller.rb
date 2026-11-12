@@ -405,7 +405,7 @@ module BreakEscape
         @game.end_guest_sessions!
 
         if @game.player_state['inventory'].present? && @game.player_state['inventory'].is_a?(Array)
-          filtered['playerInventory'] = @game.player_state['inventory']
+          filtered['playerInventory'] = client_inventory
 
           # Remove startItemsInInventory from scenario to prevent duplicates
           # Since we're sending the actual inventory, we don't need the starting items
@@ -1049,7 +1049,7 @@ module BreakEscape
           # gift record for that NPC is kept.
           if source_npc_id.blank? && source_pc_id.blank? && source_resource_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
             Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
-            return render json: { success: true, inventory: @game.player_state['inventory'] }
+            return render json: { success: true, inventory: client_inventory }
           end
           validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
                                                                           source_resource_id: source_resource_id)
@@ -1075,7 +1075,7 @@ module BreakEscape
           # Copy: the file stays on the PC and in its profile (access model 5.1)
           @game.record_copied_item!(@collectible_item['id']) if (source_pc_id || source_resource_id) && @collectible_transfer == 'copy'
           Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
-          render json: { success: true, inventory: @game.player_state['inventory'] }
+          render json: { success: true, inventory: client_inventory }
 
         when 'remove'
           # A plant (engine plan section 6): the client names the object the device was used
@@ -1083,7 +1083,7 @@ module BreakEscape
           used_on = params[:used_on] || params[:usedOn]
           @game.record_planted_item!(item['id'], used_on) if used_on.present?
           @game.remove_inventory_item!(item['id'])
-          render json: { success: true, inventory: @game.player_state['inventory'] }
+          render json: { success: true, inventory: client_inventory }
 
         when 'update_saved_cards'
           # The RFID cloner's saved cards, so a reload doesn't empty it
@@ -1912,6 +1912,17 @@ module BreakEscape
     # so it operates on the post-commit state instead of a stale copy.
     def with_game_lock
       @game.with_lock { yield }
+    end
+
+    # The inventory as the browser may see it: a deep copy run through the same filter as
+    # every other payload, so a held lock (a start item such as a padlocked case or a
+    # cryptex) never ships its answer (unlock gaps R1 m3). player_state keeps the full
+    # copy, which the server's own checks read.
+    def client_inventory
+      inventory = @game.player_state['inventory']
+      return inventory unless inventory.is_a?(Array)
+
+      inventory.deep_dup.tap { |items| filter_requires_recursive(items) }
     end
 
     def filter_requires_recursive(obj)

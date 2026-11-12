@@ -122,6 +122,66 @@ module BreakEscape
       refute_includes response.body, '7-21-39'
     end
 
+    # ── R1 M2: a cryptex door ────────────────────────────────────────────
+
+    test 'a cryptex door ships its wheels in the bootstrap, never its word, and opens with it' do
+      get scenario_game_url(@game), as: :json
+      assert_response :success
+      archive = response.parsed_body.dig('rooms', 'archive')
+      refute_nil archive
+      assert_equal 'cryptex', archive['lockType']
+      assert_equal 4, archive.dig('cryptexConfig', 'wheelCount'), 'the door pad needs the wheel count'
+      assert_equal 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0', archive.dig('cryptexConfig', 'alphabets', 0)
+      refute archive.key?('requires')
+      refute archive['cryptexConfig'].key?('answer')
+      refute_includes response.body, 'KEYS'
+
+      unlock('archive', 'KEYZ', 'cryptex', type: 'door')
+      assert_response :unprocessable_entity
+      unlock('archive', 'KEYS', 'combination', type: 'door')
+      assert_response :unprocessable_entity
+      unlock('archive', 'keys', 'cryptex', type: 'door')
+      assert_response :success, response.body
+      assert_includes @game.reload.player_state['unlockedRooms'], 'archive'
+    end
+
+    # ── R1 m3: a locked start item never ships its answer ────────────────
+
+    test 'a locked start item keeps its answer on the server, out of playerInventory and inventory replies' do
+      data = scenario.merge('startItemsInInventory' => [
+        { 'type' => 'cryptex', 'id' => 'pocket_cryptex', 'name' => 'Pocket Cryptex', 'takeable' => true,
+          'locked' => true, 'lockType' => 'cryptex', 'requires' => 'RIDDLE',
+          'cryptexConfig' => { 'wheelCount' => 6, 'answer' => 'RIDDLE' } },
+        { 'type' => 'briefcase', 'id' => 'start_case', 'name' => 'Case', 'takeable' => true,
+          'locked' => true, 'lockType' => 'combination', 'requires' => '3-14-15', 'combination' => [3, 14, 15] }
+      ])
+      @game = Game.create!(mission: @mission, player: @owner, scenario_data: data, player_state: state)
+      held = @game.reload.player_state['inventory']
+      assert_equal 'RIDDLE', held.find { |i| i['id'] == 'pocket_cryptex' }['requires'], 'the server keeps the answer'
+
+      get scenario_game_url(@game), as: :json
+      assert_response :success
+      inv = response.parsed_body['playerInventory']
+      refute_nil inv, response.body[0, 300]
+      cryptex = inv.find { |i| i['id'] == 'pocket_cryptex' }
+      kase = inv.find { |i| i['id'] == 'start_case' }
+      refute cryptex.key?('requires')
+      refute cryptex['cryptexConfig'].key?('answer')
+      assert_equal 6, cryptex.dig('cryptexConfig', 'wheelCount')
+      refute kase.key?('requires')
+      refute kase.key?('combination')
+      refute_includes response.body, 'RIDDLE'
+      refute_includes response.body, '3-14-15'
+
+      # The add reply (here the "already held" path) sends the inventory back filtered too
+      post inventory_game_url(@game), params: { action_type: 'add', item: { type: 'cryptex', id: 'pocket_cryptex', name: 'Pocket Cryptex' } }, as: :json
+      assert_response :success, response.body
+      refute_includes response.body, 'RIDDLE'
+      refute_includes response.body, '3-14-15'
+      assert_equal 'RIDDLE', @game.reload.player_state['inventory'].find { |i| i['id'] == 'pocket_cryptex' }['requires'],
+                   'filtering the reply leaves the stored copy whole'
+    end
+
     # ── answer comparison ────────────────────────────────────────────────
 
     test 'a combination compares its numbers, a cryptex ignores case and outer spaces' do
@@ -170,7 +230,13 @@ module BreakEscape
           },
           'vault' => {
             'type' => 'room_office', 'locked' => true, 'lockType' => 'combination', 'requires' => '7-21-39',
-            'connections' => { 'south' => 'lobby' }, 'objects' => []
+            'connections' => { 'south' => 'lobby', 'north' => 'archive' }, 'objects' => []
+          },
+          'archive' => {
+            'type' => 'room_office', 'locked' => true, 'lockType' => 'cryptex', 'requires' => 'KEYS',
+            'cryptexConfig' => { 'wheelCount' => 4, 'answer' => 'KEYS',
+                                 'alphabets' => Array.new(4, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0') },
+            'connections' => { 'south' => 'vault' }, 'objects' => []
           }
         }
       }

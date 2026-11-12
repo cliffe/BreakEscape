@@ -25,6 +25,16 @@ export function passwordFieldLabel(title) {
     return t && t !== 'Enter password' && t !== 'Password Entry' ? t : 'Password:';
 }
 
+/**
+ * True for a container that is a bag or case rather than a device: its password
+ * screen is drawn as a code lock on the case, not as a computer's sign-in screen.
+ */
+export const CASE_LOCK_TYPES = ['suitcase', 'briefcase', 'bag', 'bag1', 'backpack', 'satchel', 'holdall'];
+export function isCaseLockTarget(data) {
+    const type = String(data?.type || '').toLowerCase();
+    return CASE_LOCK_TYPES.includes(type);
+}
+
 // ── Sign-in mode (access model 5.3, step 8) ──────────────────────────────────
 // A sign-in PC's screen: account tiles (from the server, per the PC's loginPicker),
 // Other user (type a username), the password field and the PC's post-it. It has no
@@ -295,8 +305,12 @@ export class PasswordMinigame extends MinigameScene {
         // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
         const fieldLabel = this.join ? 'Network key' : passwordFieldLabel(this.params.title);
         
+        // A carried case (a bag, briefcase or suitcase) has a code lock, not a computer
+        // screen: it gets the case-lock look, with no desktop wallpaper (UX pass, 2026-11-12)
+        const caseLock = isCaseLockTarget((this.params.lockable || this.params.sprite)?.scenarioData);
+
         this.gameContainer.innerHTML = `
-            <div class="password-minigame-area">
+            <div class="password-minigame-area${caseLock ? ' case-lock' : ''}">
                 ${imageData ? `
                     <div class="password-image-section">
                         <img src="/break_escape/assets/objects/${escapeHtml(imageData.imageFile)}.png" 

@@ -424,7 +424,7 @@ def check_unknown_fields(json_data)
     type door_sign connections locked lockType requires keyPins lockedHint difficulty
     ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
     chatBackground doors needsPrivateTo access acceptsUIDOnly
-    network
+    network cryptexConfig
   ]
 
   # Known NPC fields
@@ -2140,7 +2140,12 @@ def check_combination_cryptex_locks(json_data)
           end
         else
           config = node['cryptexConfig'].is_a?(Hash) ? node['cryptexConfig'] : {}
-          wheels = config['wheelCount'] || 5
+          wheels = config.key?('wheelCount') ? Integer(config['wheelCount'], exception: false) : 5
+          unless wheels.is_a?(Integer) && wheels.positive?
+            issues << "❌ INVALID: #{where} cryptexConfig.wheelCount must be a whole number such as 6, not " \
+                      "#{config['wheelCount'].inspect}."
+            wheels = 5
+          end
           word = secret.to_s.strip
           alphabets = config['alphabets'] || Array.new(wheels, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
           if word.length != wheels
@@ -2159,6 +2164,33 @@ def check_combination_cryptex_locks(json_data)
     end
   end
   walk.call(json_data, '')
+  issues
+end
+
+# A container an NPC carries is released (by a give or a KO) only through its scenario
+# `id` (Game#released_npc_containers). Without one the player can never open it, and
+# sees "Access denied" (unlock gaps R1 m2). The container test matches the server's:
+# contents, locked, or a container type.
+NPC_CONTAINER_TYPES = %w[suitcase briefcase bag1 bin1].freeze
+def check_npc_held_containers(json_data)
+  issues = []
+  npcs = []
+  (json_data['rooms'] || {}).each do |room_id, room|
+    Array(room.is_a?(Hash) ? room['npcs'] : nil).each { |n| npcs << [n, "rooms/#{room_id}/npcs"] if n.is_a?(Hash) }
+  end
+  Array(json_data['npcs']).each { |n| npcs << [n, 'npcs'] if n.is_a?(Hash) }
+  npcs.each do |npc, where|
+    Array(npc['itemsHeld']).each_with_index do |item, i|
+      next unless item.is_a?(Hash)
+      container = item.key?('contents') || item['locked'] == true || NPC_CONTAINER_TYPES.include?(item['type'])
+      next unless container
+      next if item['id'].is_a?(String) && !item['id'].strip.empty?
+
+      issues << "❌ INVALID: '#{where}/#{npc['id']}/itemsHeld[#{i}]'#{item['name'] ? " (#{item['name']})" : ''} is a " \
+                "container an NPC carries but has no 'id'. The server releases it after a give or a KO only by its " \
+                "id, so without one the player can never open it. Give it an id."
+    end
+  end
   issues
 end
 
@@ -6935,6 +6967,7 @@ def main
     common_issues += check_lock_credentials(json_data)
     common_issues += check_pin_locks(json_data)
     common_issues += check_combination_cryptex_locks(json_data)
+    common_issues += check_npc_held_containers(json_data)
     common_issues += check_npc_patrol_and_catch_locks(json_data, repo_root)
     common_issues += check_give_item_collectible(json_data)
     common_issues += check_interaction_warnings(json_data)

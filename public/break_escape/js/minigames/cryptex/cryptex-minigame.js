@@ -59,7 +59,7 @@ export class CryptexMinigame extends MinigameScene {
 <div class="cryptex-wrapper">
   <div class="cryptex-header">
     <h2>Cryptex Password</h2>
-    <p>Turn wheels to spell the word</p>
+    <p id="cryptex-subtitle">Turn the wheels with ▲ ▼ to spell the word, then Submit</p>
   </div>
 
   <div class="cryptex-wheels" id="cryptex-wheels"></div>
@@ -74,7 +74,7 @@ export class CryptexMinigame extends MinigameScene {
 
   <div class="cryptex-footer">
     <button class="cryptex-reset-btn" id="cryptex-reset-btn">Reset</button>
-    <button class="cryptex-submit-btn" id="cryptex-submit-btn" disabled>Submit</button>
+    <button class="cryptex-submit-btn ready" id="cryptex-submit-btn">Submit</button>
   </div>
 </div>`;
 
@@ -87,7 +87,7 @@ export class CryptexMinigame extends MinigameScene {
 
             const label = document.createElement('div');
             label.className = 'cryptex-wheel-label';
-            label.textContent = `Pos ${i + 1}`;
+            label.textContent = `Wheel ${i + 1}`;
             wheelGroup.appendChild(label);
 
             const row = document.createElement('div');
@@ -96,10 +96,12 @@ export class CryptexMinigame extends MinigameScene {
             // Up arrow
             const upBtn = document.createElement('button');
             upBtn.className = 'cryptex-wheel-arrow';
-            upBtn.textContent = '↑';
+            // Up brings the next letter into view (A to B), down the one before (B to A)
+            upBtn.textContent = '▲';
+            upBtn.title = 'Next letter';
             upBtn.dataset.wheel = i;
             upBtn.dataset.direction = 'up';
-            this.addEventListener(upBtn, 'click', () => this._rotateWheel(i, -1));
+            this.addEventListener(upBtn, 'click', () => this._rotateWheel(i, 1));
             row.appendChild(upBtn);
 
             // Display
@@ -112,10 +114,11 @@ export class CryptexMinigame extends MinigameScene {
             // Down arrow
             const downBtn = document.createElement('button');
             downBtn.className = 'cryptex-wheel-arrow';
-            downBtn.textContent = '↓';
+            downBtn.textContent = '▼';
+            downBtn.title = 'Previous letter';
             downBtn.dataset.wheel = i;
             downBtn.dataset.direction = 'down';
-            this.addEventListener(downBtn, 'click', () => this._rotateWheel(i, 1));
+            this.addEventListener(downBtn, 'click', () => this._rotateWheel(i, -1));
             row.appendChild(downBtn);
 
             wheelGroup.appendChild(row);
@@ -166,7 +169,7 @@ export class CryptexMinigame extends MinigameScene {
         const alphabet = this.alphabets[wheelIndex];
         const alphabetLength = alphabet.length;
 
-        // Rotate: direction -1 goes backward (up), +1 goes forward (down)
+        // Rotate: +1 is the next letter (up arrow), -1 the one before (down arrow)
         this.currentIndices[wheelIndex] = (this.currentIndices[wheelIndex] + direction + alphabetLength) % alphabetLength;
 
         // Update display
@@ -200,11 +203,20 @@ export class CryptexMinigame extends MinigameScene {
         }
     }
 
-    // Any word can be tried once a wheel has turned; only the server knows the answer
+    _word() {
+        return this.currentIndices.map((idx, w) => this.alphabets[w][idx]).join('');
+    }
+
+    // Any word can be tried, the opening one included; only the server knows the
+    // answer. The word just refused cannot be sent again until a wheel changes.
     _checkCompletion() {
         const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
-        submitBtn.disabled = false;
-        submitBtn.classList.add('ready');
+        const same = this.lastTried !== undefined && this._word() === this.lastTried;
+        submitBtn.disabled = same;
+        submitBtn.classList[same ? 'remove' : 'add']('ready');
+        if (!same && this.lastTried !== undefined) {
+            this._setStatus(`Ready to try ${this._word()}.`, '');
+        }
     }
 
     _setStatus(message, cssClass = '') {
@@ -227,11 +239,8 @@ export class CryptexMinigame extends MinigameScene {
             this._updateWheelDisplay(i);
         }
 
-        const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
-        submitBtn.disabled = true;
-        submitBtn.classList.remove('ready');
-
-        this._setStatus('');
+        this._checkCompletion();
+        this._setStatus('Wheels back at the start.');
     }
 
     // ── Submit ──────────────────────────────────────────────────────────────
@@ -322,7 +331,12 @@ export class CryptexMinigame extends MinigameScene {
 
     _handleSuccess() {
         this.isLocked = true;
-        this._setStatus('✓ Cryptex Unlocked! Access Granted.', 'success');
+        this._setStatus('✓ Cryptex Unlocked! The end cap slides free.', 'success');
+        this.gameContainer.querySelector('.cryptex-wrapper')?.classList.add('opened');
+        const subtitle = this.gameContainer.querySelector('#cryptex-subtitle');
+        if (subtitle) subtitle.textContent = 'Open';
+        const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
+        if (submitBtn) { submitBtn.textContent = 'Open'; submitBtn.disabled = true; }
 
         if (window.playUISound) window.playUISound('confirm');
 
@@ -354,13 +368,13 @@ export class CryptexMinigame extends MinigameScene {
             setTimeout(() => this.complete(false), 2000);
         } else {
             const remaining = this.maxAttempts - this.attemptCount;
-            this._setStatus(`✗ Incorrect. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`, 'wrong');
             if (window.playUISound) window.playUISound('reject');
 
-            // Keep wheels in place (don't reset)
-            const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.classList.remove('ready');
+            // Keep wheels in place (don't reset). The same word cannot be sent twice,
+            // so Submit waits for a wheel to turn, and the message says so.
+            this.lastTried = this._word();
+            this._checkCompletion();
+            this._setStatus(`✗ ${this.lastTried} did not open it. ${remaining} attempt${remaining > 1 ? 's' : ''} left. Turn a wheel to try another word.`, 'wrong');
         }
     }
 }

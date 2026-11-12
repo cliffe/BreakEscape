@@ -639,8 +639,8 @@ Applies to both rooms and objects (safes, PCs, briefcases, doors, etc.):
 | `bluetooth` | Bluetooth device MAC address | Requires `bluetooth_scanner` tool; device must be discovered |
 | `biometric` | Fingerprint owner name | Requires `fingerprint_kit`; `biometricMatchThreshold` (0.0–1.0) sets difficulty |
 | `flag` | `"vm_name:flag_id"` string | Unlocked by submitting a VM flag at a `flag-station`; supports `flagRewards` array |
-| `combination` | three dial numbers from 0 to 39 (e.g., `"12-30-5"` or `[12, 30, 5]`) | Combination padlock: dial 1 LEFT, dial 2 RIGHT, dial 3 LEFT. The server compares the numbers in order, so `"12-30-05"` matches too. Checked on the server only; the minigame is never told the answer |
-| `cryptex` | the word (e.g., `"CIPHER"`) | Letter wheels; `cryptexConfig: { "wheelCount": 6 }` (5 if unset) must match the word's length, and `alphabets` (A to Z if unset) must hold its letters. Compared ignoring case. `cryptexConfig.hintStrip` and `wornRings` still ship; never put the word in `cryptexConfig.answer` (stripped, and the validator warns) |
+| `combination` | three dial numbers from 0 to 39, as a string (`"12-30-5"`) or an array of numbers (`[12, 30, 5]`); the schema takes both | Combination padlock: the player sets dial 1, then dial 2, then dial 3 (either arrow turns the current dial, and turning the next dial sets the one before). The server compares the numbers in order, so `"12-30-05"` matches too. Checked on the server only; the minigame is never told the answer |
+| `cryptex` | the word (e.g., `"CIPHER"`) | Letter wheels; `cryptexConfig: { "wheelCount": 6 }` (5 if unset, a whole number) must match the word's length, and `alphabets` (A to Z if unset) must hold its letters. Compared ignoring case. Works on objects and on doors (a room's `cryptexConfig` reaches the door pad before the room loads). `cryptexConfig.hintStrip` and `wornRings` still ship; never put the word in `cryptexConfig.answer` (stripped, and the validator warns) |
 
 ```json
 "locked": true,
@@ -650,7 +650,7 @@ Applies to both rooms and objects (safes, PCs, briefcases, doors, etc.):
 "difficulty": "medium"
 ```
 
-An NPC can carry a container (a bag, a briefcase or a folder with `contents`, locked or not) in `itemsHeld`. Give it an `id`. Once the NPC gives it to the player, or is knocked out and drops it, the server finds it through that give or knock-out record, so it opens and its contents can be taken as for any container (a locked one still needs its own key, PIN or password). Before that, the server refuses it, even with the right answer. `scenarios/test_unlock_gaps` shows a dropped bag, two combination locks and a cryptex.
+An NPC can carry a container (a bag, a briefcase or a folder with `contents`, locked or not) in `itemsHeld`. Give it an `id` (the validator errors without one). Once the NPC gives it to the player, or is knocked out and drops it, the server finds it through that give or knock-out record, so it opens and its contents can be taken as for any container (a locked one still needs its own key, PIN or password). Before that, the server refuses it, even with the right answer. `scenarios/test_unlock_gaps` shows a dropped bag, two combination locks, a cryptex box and a cryptex door.
 
 ### Minigame Configuration
 

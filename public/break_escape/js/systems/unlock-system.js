@@ -772,7 +772,7 @@ export function handleUnlock(lockable, type) {
         case 'cryptex':
             console.log('CRYPTEX PASSWORD REQUESTED');
             // Get cryptex config from lockable object
-            const cryptexConfig = lockable.cryptexConfig || lockable.scenarioData?.cryptexConfig || {};
+            const cryptexConfig = lockable.cryptexConfig || lockable.scenarioData?.cryptexConfig || lockable.doorProperties?.cryptexConfig || {};
 
             startCryptexMinigame(lockable, type, cryptexConfig, (success, result) => {
                 if (success) {
