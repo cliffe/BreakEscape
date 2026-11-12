@@ -260,13 +260,11 @@ test('an account password in a network or resource string is an error, and is ne
 
 test('the fields still reserved for later 9.3b sub-slices are refused with "needs slice 9.3b"', { skip }, () => {
     const sc = clean();
-    sc.networkLinks = [['office_lan', 'plant_net']];
     sc.networks.office_lan.downIf = 'power_off';
     // grant_foothold (I), wifiAp (W) and portSecurity (P) have all landed on this branch, so none
     // is reserved any more; only the sub-slices not built here (K's networkLinks, O's downIf)
     // still error as "needs slice 9.3b".
     const out = errors(issues(sc));
-    assertHas(out, "top-level 'networkLinks' needs slice 9.3b");
     assertHas(out, "'networks/office_lan' has 'downIf', which needs slice 9.3b");
 });
 
@@ -608,6 +606,57 @@ test('the network fields are known fields and pass the schema', { skip }, () => 
 
 test('validate_scenario.rb loads the network checks', { skip }, () => {
     const sc = clean();
-    sc.networkLinks = [['a', 'b']];
-    assertHas(errors(validatorRun(sc, 'check_network_model(data)')), 'needs slice 9.3b');
+    sc.networkLinks = [['office_lan', 'ghost_net']];
+    assertHas(errors(validatorRun(sc, 'check_network_model(data)')), "names no entry in 'networks'");
+});
+
+// ---- Links and the pivot (slice 9.3b sub-slice K, 5.1) ----
+
+// A server network linked to the office LAN, reached by a pivot through the office hosts.
+function linkClean() {
+    const sc = clean();
+    sc.networks.server_net = { name: 'Server network' };
+    sc.networkLinks = [['office_lan', 'server_net']];
+    sc.resources.backup_vault = { kind: 'file_share', name: 'Backup-Vault', host: 'SV-FS02', network: 'server_net',
+        access: { roles: ['it'] }, contents: [{ id: 'bk', type: 'text_file', name: 'r.txt', takeable: true, text: 'x' }] };
+    room(sc, 'store').objects.push({ id: 'sv_fs02', type: 'pc', name: 'Server host', host: 'SV-FS02', network: 'server_net',
+        locked: true, lockType: 'login', access: { roles: ['it'] } });
+    return sc;
+}
+
+test('a clean linked scenario raises no link error or warning and prints link reach', { skip }, () => {
+    const list = issues(linkClean());
+    assertNot(errors(list), 'networkLinks');
+    assertNot(warnings(list), 'pivot');
+    assertHas(list, "ℹ️ Link reach: from 'office_lan' a pivot reaches 'server_net'");
+});
+
+test('a networkLinks entry must be a two-item list of defined, distinct networks', { skip }, () => {
+    const sc = linkClean();
+    sc.networkLinks = [['office_lan'], ['office_lan', 'ghost_net'], ['office_lan', 'office_lan'], 'junk'];
+    const out = errors(issues(sc));
+    assertHas(out, 'must be a two-item list of network ids');
+    assertHas(out, "names no entry in 'networks'");
+    assertHas(out, 'links a network to itself');
+});
+
+test('a network reachable only by a pivot with no host to open it warns', { skip }, () => {
+    const sc = linkClean();
+    // Drop every office-LAN sign-in host so no pivot session can be opened.
+    for (const r of Object.values(sc.rooms)) {
+        if (Array.isArray(r.objects)) r.objects = r.objects.filter(o => !(o.lockType === 'login' && o.network !== 'server_net'));
+    }
+    const out = warnings(issues(sc));
+    assertHas(out, "network 'server_net' is reachable only by pivoting");
+});
+
+test('more than eight link paths between two carrying networks warns', { skip }, () => {
+    const sc = clean();
+    const links = [['office_lan', 'server_net']];
+    for (let i = 1; i <= 10; i++) { sc.networks['m' + i] = { name: 'M' + i }; links.push(['office_lan', 'm' + i], ['m' + i, 'server_net']); }
+    sc.networks.server_net = { name: 'Server network' };
+    sc.resources.backup_vault = { kind: 'file_share', name: 'Backup-Vault', host: 'SV-FS02', network: 'server_net',
+        contents: [{ id: 'bk', type: 'text_file', name: 'r.txt', takeable: true, text: 'x' }] };
+    sc.networkLinks = links;
+    assertHas(warnings(issues(sc)), 'link paths; the pivot keeps only the first');
 });

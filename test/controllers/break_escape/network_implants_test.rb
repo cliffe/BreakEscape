@@ -178,6 +178,31 @@ module BreakEscape
       refute_includes host_ids, 'bench_pc' # a workshop_lan host
     end
 
+    # Sub-slice K's segmentation rule still holds for an implant foothold (not only a
+    # planted jack): the foothold reaches its own network, and a network linked to it is
+    # reached only by pivoting through a held session, never by the bare foothold.
+    def implant_scenario_with_link
+      data = implant_scenario
+      data['networks']['server_net'] = { 'name' => NS::SERVER_NAME }
+      data['networkLinks'] = [%w[office_lan server_net]]
+      data['rooms']['server_room']['objects'] << {
+        'id' => 'sv_fs02', 'type' => 'pc', 'name' => 'Server file host', 'host' => NS::SV_HOST,
+        'network' => 'server_net', 'locked' => true, 'lockType' => 'login',
+        'access' => { 'roles' => ['it'] }, 'policy' => 'counted'
+      }
+      data
+    end
+
+    test 'an implant foothold reaches its own network only, not a linked one, without a pivot' do
+      @game = build_network_game({ 'droppedItems' => ['kit_stick'] }, implant_scenario_with_link)
+      implant('sam_pc', 'dropped')
+      view = network_view('implant_sam_pc')
+      entry = view['footholds'].find { |f| f['id'] == 'implant_sam_pc' }
+      nets = entry['networks'].map { |n| n['id'] }
+      assert_includes nets, 'office_lan'        # the PC's own network
+      refute_includes nets, 'server_net'        # the link needs a pivot through a held session
+    end
+
     # ---- tampered-client checks ----
 
     test 'a forged implant on a PC with no grant_foothold action is refused 404' do

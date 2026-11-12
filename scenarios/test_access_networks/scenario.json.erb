@@ -10,10 +10,33 @@
   "networks": {
     "office_lan": { "name": "Harbour office LAN" },
     "workshop_lan": { "name": "Workshop bench LAN" },
+    "server_net": { "name": "Server network" },
     "guest_wifi": { "name": "Guest Wi-Fi", "wifi": { "ssid": "Harbour-Guest", "psk": "seabreeze-2025" } }
   },
 
+  "networkLinks": [
+    ["office_lan", "server_net"]
+  ],
+
   "resources": {
+    "backup_vault": {
+      "kind": "file_share",
+      "name": "Backup-Vault",
+      "host": "SV-FS02",
+      "network": "server_net",
+      "access": { "roles": ["it"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "backup_note",
+          "name": "backup_readme.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Backup vault on the server network. (N3: reached only by pivoting through an office session.)",
+          "observations": "A readme in the server network's backup share."
+        }
+      ]
+    },
     "scanned_inbox": {
       "kind": "file_share",
       "name": "Scanned-Inbox",
@@ -151,6 +174,9 @@
         { "taskId": "n13_usb_refused", "title": "N13: the kiosk's USB policy refuses the BadUSB", "type": "custom", "status": "active" },
         { "taskId": "n8_wifi_join", "title": "N8: join the guest Wi-Fi with the key and look at what it reaches", "type": "custom", "status": "active" },
         { "taskId": "n9_second_ap", "title": "N9: join again through the second guest access point", "type": "custom", "status": "active" },
+        { "taskId": "n2_pivot", "title": "N2: after signing in to an office PC through the box, the server network appears", "type": "custom", "status": "active" },
+        { "taskId": "n3_signin_across", "title": "N3: sign in to the server host across the link", "type": "custom", "status": "active" },
+        { "taskId": "n4_signout", "title": "N4: sign out of the office pivot and the server session ends", "type": "custom", "status": "active" },
         { "taskId": "n10_port_security", "title": "N10: a secured port refuses the box and keeps it", "type": "custom", "status": "active" }
       ]
     }
@@ -314,6 +340,9 @@
             { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.restored === true && data.remote === true", "onceOnly": true, "completeTask": "p12_reload" },
             { "eventPattern": "network_joined", "condition": "data.networkId === 'guest_wifi'", "onceOnly": true, "completeTask": "n8_wifi_join" },
             { "eventPattern": "network_joined", "condition": "data.apId === 'guest_ap2' && data.already === true", "onceOnly": true, "completeTask": "n9_second_ap" },
+            { "eventPattern": "network_viewed", "condition": "data.networkId === 'server_net' && data.footholdId === 'jack_comms_port'", "onceOnly": true, "completeTask": "n2_pivot" },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'sv_fs02' && data.remote === true", "onceOnly": true, "completeTask": "n3_signin_across" },
+            { "eventPattern": "pc_signed_out", "condition": "data.pcId === 'sv_fs02' && data.reason === 'link_dropped'", "onceOnly": true, "completeTask": "n4_signout" },
             { "eventPattern": "network_device_refused", "condition": "data.jackId === 'secure_port' && data.reason === 'port_security'", "onceOnly": true, "completeTask": "n10_port_security" }
           ]
         },
@@ -352,7 +381,7 @@
       "type": "room_office",
       "door_sign": "Comms room",
       "network": "office_lan",
-      "connections": { "south": "lobby" },
+      "connections": { "south": "lobby", "north": "server_room" },
       "objects": [
         {
           "type": "pc",
@@ -433,6 +462,42 @@
           "addToNotes": false,
           "text": "N10. Take the drop box and plug it into the locked switch port.\nThe box goes in, the switch refuses it and shuts the port: no link item, no view, and the box stays in your bag. The switch's message names the fix: disable unused ports.",
           "observations": "A sign by the locked port."
+        }
+      ]
+    },
+
+    "server_room": {
+      "type": "room_office",
+      "door_sign": "Server room",
+      "network": "server_net",
+      "connections": { "south": "comms_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "sv_fs02",
+          "name": "Server file host",
+          "host": "SV-FS02",
+          "sprite": "pc_desktop",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": false,
+          "access": { "roles": ["it"] },
+          "policy": "counted",
+          "observations": "A file host on the server network, managed by IT."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_n2",
+          "name": "Sign: N1 to N4 The pivot",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "The server network is linked to the office LAN, but the box's foothold does not reach it on its own (N1).\nSign in to an office PC through the box (Lena's), then the box's view gains a Server network block, through that PC (N2). Sign in to this host across the link with Ian's details (N3). Sign out of the office PC and this session ends with it (N4).",
+          "observations": "A sign by the server host."
         }
       ]
     },

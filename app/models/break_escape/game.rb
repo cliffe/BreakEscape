@@ -1707,7 +1707,11 @@ module BreakEscape
       if ended.is_a?(Hash) && ended['via'] == 'claim' && guest_sessions[key] == ended['id']
         end_guest_session_at!(key)
       end
+      # Ending a session can break a pivot; end every onward session whose route is now gone
+      # (networks slice 9.3b, 5.1). Returns the ended ids for pc-sessions.js.
+      pruned = prune_unreachable_sessions!
       save!
+      pruned
     end
 
     # A reload ends every claimed session (5.3): the workstation state restarts with every
@@ -1727,6 +1731,9 @@ module BreakEscape
         next if claimed.empty?
 
         player_state['sessions'] = access_sessions.except(*claimed)
+        # An onward session whose only route was a claimed pivot ends too (networks slice
+        # 9.3b, 5.1), so no orphaned onward desktop survives a reload.
+        prune_unreachable_sessions!
         save!
       end
     end

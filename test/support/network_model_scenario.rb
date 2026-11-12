@@ -207,6 +207,33 @@ module NetworkModelScenario
     }
   end
 
+  # Slice 9.3b sub-slice K: the fixture with a server_net linked to office_lan, a host on
+  # it (sv_fs02, it only) reached only by pivoting through an office session, and a
+  # protected backup share. server_net has no jack, so a foothold never seeds it.
+  SERVER_NAME = 'Server network'.freeze
+  BACKUP_NAME = 'Backup-Vault'.freeze
+  SV_HOST = 'SV-FS02'.freeze
+  BACKUP_NOTE_TEXT = 'BACKUP-NOTE-TEXT-7788'.freeze
+  SERVER_STRINGS = [SERVER_NAME, BACKUP_NAME, SV_HOST, BACKUP_NOTE_TEXT].freeze
+
+  def with_pivot
+    data = scenario
+    data['networks']['server_net'] = { 'name' => SERVER_NAME }
+    data['networkLinks'] = [%w[office_lan server_net]]
+    data['resources']['backup_vault'] = {
+      'kind' => 'file_share', 'name' => BACKUP_NAME, 'host' => SV_HOST, 'network' => 'server_net',
+      'access' => { 'roles' => ['it'] },
+      'contents' => [{ 'id' => 'backup_note', 'type' => 'text_file', 'name' => 'backup_readme.txt',
+                       'takeable' => true, 'text' => BACKUP_NOTE_TEXT }]
+    }
+    data['rooms']['server_room']['objects'] << {
+      'id' => 'sv_fs02', 'type' => 'pc', 'name' => 'Server file host', 'host' => SV_HOST,
+      'network' => 'server_net', 'locked' => true, 'lockType' => 'login',
+      'access' => { 'roles' => ['it'] }, 'policy' => 'counted'
+    }
+    data
+  end
+
   # Port security message on the secured jack (sub-slice P, 5.4).
   PORT_SECURITY_MESSAGE = 'The switch logs the device address and shuts the port. Known machines only.'.freeze
 
