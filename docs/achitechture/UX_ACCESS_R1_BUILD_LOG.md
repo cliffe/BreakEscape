@@ -149,3 +149,39 @@ Keyless server on :3067, headless, 1400x1000, setFPS(20) with fixed steps. Games
 
 ### Tests (single files, no lock)
 toast-queue 5, toast-duplicate 8, password-signin-mode 19, network-view 26, npc-action-icons 4, npc-needs-debug 8, minigame-title-escape 23, grant-foothold-action, pc-policy, dungeon-graph-networks; every test file importing notifications.js, npc-action-icons, npc-needs-debug, password-minigame or network-view-minigame: 0 failures. Validator on test_access_networks: 0 failures. No Rails files changed.
+
+## Code review R1 fixes
+
+Review: `UX_ACCESS_CODE_REVIEW_R1.md` (0 blockers, 2 majors, 6 minors, 3 nits). Main 33c003230 and build/dup-toast d8b6721fb merged in first (fa6991cc1, f71eee5eb), both clean; the 8 toast test files passed on the merged tree before any change.
+
+| # | Status | What changed |
+|---|--------|--------------|
+| M1 | Left for later | The build/unlock-gaps-r1 merge. That branch is still in review; the resolution to apply when it reaches main is below. |
+| M2 | Fixed (0dc6762dc) | notifications.js: `shownToasts` counts only timed toasts, so a toast that stays until closed (Key Ring, the Mission Brief fallback) takes no place and never waits for one. A waiting toast shows after `MAX_TOAST_WAIT_MS` (4 s) even with both places taken, going over the cap for a moment. A waiting toast that comes up while a panel is open still joins the held queue. |
+| m1 | Fixed (8536d5775) | `makeDraggable` (helpers.js) pins the element's drawn box as top/left on every press, so an element already absolute but placed by `bottom` (the desktop post-it) no longer snaps to its static place. Test: `draggable-bottom-anchored.test.mjs`. |
+| m2 | Fixed (8536d5775) | A lockout keeps the sign-in screen open, form disabled, until the player closes it. `LOCKOUT_CLOSE_MS` is gone. The Cancel button reads Close and has focus; `cleanup()` had taken every listener, so Close, the cross and Esc are bound again. |
+| m3 | Fixed (8536d5775) | New `utils/computer-keywords.js` holds one keyword list. The container's desktop mode keeps its substring test over name, type and sprite name (`mentionsComputer`): whole segments would drop m01's "IT Monitoring Station" desktop and `cctv_monitors1`. The password screen tests whole segments of the type and the sprite's texture key (`isComputerType`), not the name, so a door named "Server Room" and room types such as `room_servers` keep the plain panel. It now reads `params.lockable \|\| params.sprite`. A scan of every scenario's password-locked objects found none that changes face. Eight test harness copy lists gained the new file. |
+| m4 | Fixed (7daaffd25) | The computer password screen's gradient overlay is a flat tint; `.password-hint`, `.key` and `.attempts-counter` borders are 2px; the desktop icon label outline is 2px (one GNF pixel at 16px). |
+| m5 | Fixed (e2da2ee78, 7ded34fe6) | New `utils/canvas-fonts.js`: main.js asks for VT323 before it creates the game and publishes `window.canvasFontsReady`. Action icons, thought bubbles and the needs-debug label and letters redraw (and the icons re-lay out) once it resolves, with no new import in those modules. Live, the first version resolved at once with nothing fetched: the `@font-face` rules come from a stylesheet `@import` that had not loaded yet. The load now waits for the page's load event, and a load that matches no face resolves false. Live after the fix: `document.fonts.check("16px 'VT323'")` true straight after boot with no minigame opened. |
+| m6 | Fixed (71b2d809e) | `kiosk_dock` wraps its `grant_foothold` in a `confirm_action` like `sam_dock`. PLAYTEST.md: a harness note lists the three confirms and how to answer them, and N5, N7, N12 and N13 say to answer them. Validator: 0 lines with ❌. |
+| n1 | Fixed (71b2d809e) | No session global exists to gate on, so both socket confirms now say the injector only types into a PC you are signed in at, rather than promising the plug-in. |
+| n2 | Fixed (0dc6762dc) | `holdRecentNotifications` moves waiting toasts into the held queue behind the pulled ones, so they show ahead of toasts raised while the panel is open. |
+| n3 | Fixed (1cce475bc) | A down block draws each row as its own kind and icon, through `rowsHtml`, so group headings show there too. |
+
+Choices to check: a duration-0 info toast raised with both places taken shows at once rather than waiting (it answers a click, like the Key Ring). The wait limit is 4 s as the brief suggested, not the review's 8 s.
+
+### M1: resolution to apply when build/unlock-gaps-r1 reaches main
+- password-minigame.js, two conflict hunks. Keep both helpers: close `passwordScreenKind` with its `}` before unlock-gaps' `isCaseLockTarget` doc comment. Keep both classes: `password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}${caseLock ? ' case-lock' : ''}`. A case is never a computer type, so it gets both; `.case-lock` rules are more specific and win. Note: since m3, `passwordScreenKind` is called with `this.params.lockable || this.params.sprite`, the same target `isCaseLockTarget` reads.
+- container-minigame.css merges silently: the `.container-minigame.desktop-mode` rule ends up with unlock-gaps' `height: calc(100% - 40px)` and this branch's `height: auto`. Keep `auto` (the 16:10 screen needs it) and delete the `calc` line.
+- `test/js/minigame-controls-layout.test.mjs` test 4 ("the password and container panels fit inside the game area"): change the desktop-mode expectation from `calc(100% - 40px)` to `auto`, with a comment that the desktop sizes itself to its 16:10 screen.
+- unlock-gaps moves the framework's Cancel row into the flow, so this branch's `max-height: calc(100vh - 440px)` on the desktop screen is unproven. Check live at 1400x1000 and 1280x720 on a sign-in desktop (test_access_networks Sam's PC) and a mission desktop (m01 IT Monitoring Station): Close must stay on screen. Retune the 440px if it is cut off.
+
+### Live proof
+Keyless server on :3150 from this worktree, headless, 1400x1000, setFPS(20) with fixed steps on. Games 1832 (test_access_networks, made and not used), 1833 (test_access_networks, injector given) and 1843 (test_access_networks, start in desk_room, finance office unlocked). Server and sessions stopped afterwards.
+- Toast cap (game 1833): a Key Ring toast through the real `handleKeyRingInteraction` with two stand-in keys, then two task toasts: all three on screen, nothing waiting; a third timed toast waited and showed 4.9 s later over the cap. Shots c01, c02.
+- Post-it (game 1843, Sam's PC desktop): on press the note stayed at (246, 717); moved by (+60, -50) it sat at (306, 667). Shots c03, c04. The drag used dispatched mouse events on the note and the document, the same handlers a real drag reaches.
+- Lockout (game 1843, Lena's PC, five wrong passwords for lfox): the message stayed with the screen open 6.5 s later, Close focused; Close ended it with no toast. Shot c05. The disabled Sign in button still looks active (no disabled style); not changed here.
+After shots c01 to c05 appended to the session scratchpad's `ux-shots/after_access/manifest.json`.
+
+### Tests (single files, no lock)
+toast-queue 10, toast-duplicate, toast-hold-over-panels, toast-hold-verbatim, toast-once-across-panel-handover, toast-once-before-container, toast-verbatim, toast-click-through, error-toast-floor, lockpick-close-toast, social-ready-toast, f18-toast-flag-rfid; password-signin-mode 19, draggable-bottom-anchored 1, canvas-fonts 4, network-view 27; every test file that copies or imports the password, container or network-view minigames, helpers.js, main.js, npc-action-icons or npc-needs-debug (about 30 files): 0 failures. Validator on test_access_networks: 0 lines with ❌. Full suites not run (orchestrator's merge batch).
