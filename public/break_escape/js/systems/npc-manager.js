@@ -570,6 +570,28 @@ export default class NPCManager {
   }
 
   /**
+   * The slice of a ring mapping's `condition` worth re-checking while the call is queued or ringing
+   * (sweep item 8). A mapping's own `setGlobal` runs at offer time (`_handleEventMapping`), so a term
+   * reading a variable that same mapping writes — a latch like `recruiter_texted` or
+   * `revelation_ring_offered` — is already false by the first re-check and would drop the ring on its
+   * own latch (M5 R2 cross-track). Drop those terms and re-check only the rest; the ring is carried
+   * on the condition the ringer stores (`ringCondition`).
+   * @param {string|null} condition - the mapping's `condition`
+   * @param {Object|null} setGlobal - the mapping's own `setGlobal` ({ varName: value })
+   * @returns {string|null} the condition to re-check, or null (nothing left to re-check: always holds)
+   */
+  _ringRecheckCondition(condition, setGlobal) {
+    if (typeof condition !== 'string' || !condition.trim()) return null;
+    const keys = setGlobal && typeof setGlobal === 'object' ? Object.keys(setGlobal) : [];
+    if (!keys.length) return condition;
+    const self = new Set(keys);
+    const kept = condition.split('&&').map((t) => t.trim()).filter(Boolean)
+      .filter((t) => !(t.match(/globalVars\.([A-Za-z_$][\w$]*)/g) || [])
+        .some((ref) => self.has(ref.replace('globalVars.', ''))));
+    return kept.length ? kept.join(' && ') : null;
+  }
+
+  /**
    * Add a call row to a contact's thread (plan 2.6): `{ type: 'call', callEvent, text, timestamp,
    * read }` with fixed plain text. Only the ringer's outcomes call this (never a pretext call or a
    * legacy voiced mapping). A missed call is unread; the others are read.
@@ -1699,8 +1721,9 @@ export default class NPCManager {
             resume: config.resume === true,
             callLabel: config.callLabel || null,
             // Sweep item 8: the mapping's condition, re-checked while queued or ringing (a global
-            // that changes under a pending ring can drop it). A string condition only.
-            ringCondition: typeof config.condition === 'string' ? config.condition : null
+            // that changes under a pending ring can drop it). A term the mapping's own setGlobal
+            // writes is left out, so a self-latching ring is not dropped by its own latch (M5 R2).
+            ringCondition: this._ringRecheckCondition(config.condition, config.setGlobal)
           });
           console.log(`[NPCManager] Event '${eventPattern}' for NPC '${npcId}' → ring offer: ${outcome}`);
           return;
