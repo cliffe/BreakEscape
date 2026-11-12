@@ -44,6 +44,27 @@ module BreakEscape
       refute_exposed('/capture_secrets with captures')
     end
 
+    # Slice 9.3b sub-slice K (5.1, beat N1): a bare jack foothold with no pivot session
+    # names no linked network. The foothold reaches office_lan only; server_net is unnamed
+    # everywhere and its host is refused exactly as an invented id is.
+    test 'a bare foothold with no pivot session names no linked network' do
+      build_network_game({ 'unlockedRooms' => ALL_ROOMS.dup }, NS.with_pivot)
+      take_drop_box
+      plant('comms_port')
+      assert_response :success
+
+      network_view('jack_comms_port')
+      refute_exposed('/network bare foothold', NS::SERVER_STRINGS)
+
+      sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: 'jack_comms_port')
+      assert_response :forbidden
+      refute_exposed('/login server host', NS::SERVER_STRINGS)
+
+      get game_path('scenario'), as: :json
+      assert_response :success
+      refute_exposed('/scenario with office foothold', NS::SERVER_STRINGS)
+    end
+
     # se_captures as any browser can write it through PUT /sync_state: a credential
     # capture of Lena's username and one of the landing page's address, with no phish.
     def forge_captures
