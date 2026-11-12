@@ -6,7 +6,7 @@
 # itself (the engine event the door raises), because the player cannot open the CyberChef popup and the keypad together.
 export OUT=${OUT:-docs/agents/phone_calls/proofs/M1} NODE_PATH=$PWD/node_modules BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle
 source "$(dirname "${BASH_SOURCE[0]}")/a2b_lib.sh"
-IMP=$OUT/imports.json
+IMP=${IMP:-$OUT/imports.json}
 open_m09() { LABEL=$1; shift; mkdir -p $OUT
   GID=$(tools/phone_calls/newgame.sh m09_digital_archaeology --imports=$IMP "$@" | sed -n 's/^GAME_ID=//p'); [ -n "$GID" ] || { echo "no game" >&2; exit 1; }
   echo $GID > $OUT/${LABEL}_game_id.txt
@@ -60,6 +60,7 @@ reload_fast() { # reload with no leading sync (caller syncs first): close-to-nav
   $S $GID '{"cmd":"waitFor","kind":"condition","fn":"() => { setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}' >/dev/null
   sleep 8; $S $GID '{"cmd":"bootstrap","tutorial":"decline","resume":"resume","autoBrief":true}' 120 >/dev/null; sleep 3; }
 no_ring_for() { local n=0; for i in $(seq 1 ${1:-12}); do sleep 1; r=$(a2b_ev "const c=window.phoneRinger.current(); return c?c.npcId+':'+c.state:null"); [ "$r" != "null" ] && { echo "  RANG at ${i}s: $r"; n=1; }; done; [ $n = 0 ] && echo "  no ring in ${1:-12}s (good)"; }
+wait_choice() { for i in $(seq 1 ${2:-25}); do a2b_ev "return [...document.querySelectorAll('.choice-button,.choice')].some(b=>/$1/.test(b.innerText))" | grep -qx true && return 0; sleep 1; done; echo "  WARN choice /$1/ never showed"; return 1; }
 case $1 in
 gary_hold)   # rings over the keypad, Answer puts it on hold, closing the keypad opens the call
   open_m09 gary_hold --start-room tape_room
@@ -166,7 +167,7 @@ readout_reload)  # read-out heard in full, reload inside the 3 s ring delay, bac
   # advance to the choice menu, then take the first choice so the card line + Tomb Beta line play and
   # flag1_read_done is set, but the thread stays open at [Got it] -- do NOT take [Got it], or the thread
   # self-closes and mapping A rings before the reload.
-  echo "play past the card line (thread stays open at [Got it]):"; $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; sleep 4; $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; sleep 4
+  echo "play past the card line (thread stays open at [Got it]):"; wait_choice "Ledger or stacks"; $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; wait_choice "Got it"
   echo "  after the card line: $(ns_flags)  (flag1_read_done expected true, nightshade_rang still false)"; a2b_shot readout_played
   echo "persist state, then close + reload with a millisecond gap (inside the 3 s ring delay):"; sync_now; close_mg >/dev/null 2>&1; reload_fast
   echo "  after reload: $(ns_flags)  (the close mapping's +3 s timer died with the page)"; a2b_shot after_reload
@@ -180,7 +181,7 @@ readout_full)  # the normal path: hear the read-out in full, close at [Got it]; 
   open_m09 readout_full --start-room reading_room
   submit_flag1; close_mg; sleep 1
   echo "walk into the stacks and open HaX's read-out:"; enter_stacks; tap_readout
-  echo "play it to the end ([Got it] closes the thread):"; for n in 1 2 3; do $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; sleep 4; done
+  echo "play it to the end ([Got it] closes the thread):"; wait_choice "Ledger or stacks"; $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; wait_choice "Got it"; $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; sleep 4
   echo "  after the read-out: $(ns_flags)  (flag1_read_done expected true)"
   gate wait_ring nightshade_phone 10; a2b_shot ring_after_readout; echo "  ring (mapping A, after the card line): $(tl)"
   a2b_answer >/dev/null; sleep 2; a2b_shot ns_call; echo "call: $(call_screen)"; play_call; end_call; a2b_shot after_end
@@ -190,7 +191,7 @@ first_choice_close)  # close the read-out at its first choice (before the card l
   open_m09 first_choice_close --start-room reading_room
   submit_flag1; close_mg; sleep 1
   echo "walk into the stacks and open HaX's read-out:"; enter_stacks; tap_readout
-  echo "advance to the first choice menu (before the card line):"; $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; sleep 4
+  echo "wait for the first choice menu (before the card line; no pick, so no timing slop):"; for i in $(seq 1 20); do a2b_ev "return [...document.querySelectorAll('.choice-button,.choice')].some(b=>/Ledger or stacks/.test(b.innerText))" | grep -qx true && break; sleep 1; done
   echo "  choices: $(a2b_ev "return [...document.querySelectorAll('.choice-button,.choice')].map(b=>b.innerText.trim().slice(0,28))")"
   echo "  $(ns_flags)  (expect flag1_read_heard true, flag1_read_done false)"
   echo "close at the first choice (do not pick one):"; close_mg >/dev/null 2>&1; sleep 1

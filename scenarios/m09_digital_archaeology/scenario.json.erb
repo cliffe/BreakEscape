@@ -239,7 +239,7 @@ hax_maps << text_map("global_variable_changed:flag1_submitted", "value === true"
                      delay: 15000, set: { "ledger_guide_offered" => true })
 hax_maps << text_map("conversation_closed:agent_0x99",
                      "globalVars.flag1_submitted && globalVars.m01_maya_ko && !globalVars.old_coyote_told && !globalVars.old_coyote_ko && globalVars.tran_outcome === 'left'",
-                     "Tran's just sent the guard to your door.", delay: 3000)
+                     "Tran's just sent the guard to your door.", delay: 1000)
 hax_maps << { "eventPattern" => "room_entered:restricted_stacks", "onceOnly" => true, "setGlobal" => { "stacks_entered" => true } }
 # Scenario design R1 m1: Victoria's m03 payoff announces itself (A3-36).
 hax_maps << text_map("room_entered:restricted_stacks", "globalVars.m03_victoria_fate === 'recruited' && !globalVars.cage_opened && !globalVars.maintenance_code_used",
@@ -978,11 +978,15 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
   # restricted cage's gate (door_unlock_attempt), where his "crack the keys first" advice
   # lands. M1 R2: moved off room_entered:restricted_stacks, which rang before the read-out on
   # the direct path (the drop terminal is one room south of the stacks). Same latch.
-  call_map("door_unlock_attempt", "data.connectedRoom === 'restricted_cage' && globalVars.flag1_submitted && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
+  call_map("door_unlock_attempt", "data.connectedRoom === 'restricted_cage' && globalVars.flag1_submitted && !globalVars.flag1_read_heard && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 10000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
   # Reload backstop: a reload between the read-out closing and the 3 s ring loses the close
   # mapping's timer. Ring on entering any room once the read-out has been heard (flag1_read_heard).
   # Same latch, and the pending offers re-check !nightshade_rang at fire time, so still one ring.
   call_map("room_entered", "globalVars.flag1_read_heard && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
+  # M1 R3 n3: the Victoria maintenance code opens the cage with no gate try, so a player who never
+  # opens the read-out would never get him. Ring once the cage is open (his "You're past her gate" arm).
+  # 10 s so it clears HaX's cage_opened texts; same latch and read-out guard as the gate fallback.
+  call_map("global_variable_changed:cage_opened", "value === true && globalVars.flag1_submitted && !globalVars.flag1_read_heard && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 10000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin === 'nightshade_copy'",
            "You found what I cleared, too. Then you know I kept his notes. I'd have burned anything else.", delay: 4000),
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin !== 'nightshade_copy'",

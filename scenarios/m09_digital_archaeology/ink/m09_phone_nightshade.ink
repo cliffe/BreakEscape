@@ -31,7 +31,7 @@ Agent 0x00. I'd ask how the leave was, but HaX would tell me to get off her line
 // m2: by how far on the player is when the call connects (a late call back).
 {
     - nightshade_file_held:
-        So you've found my file. Read the hand on it, not the boy. She's still feeding the shredder.
+        So you've found my file. Never mind the boy in it. Look at the handwriting.
     - cage_opened:
         You're past her gate. The plan cabinet was never on her schedule -- that's how you know he wanted it kept. Read it.
     - else:
