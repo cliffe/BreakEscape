@@ -341,6 +341,311 @@ module BreakEscape
       period ? [(0.9 * period) - 3, 0].max : 0
     end
 
+    # ── reactive feed posts (sub-slice C2, plan ACCESS_MODEL_SLICE_9_2_C2_PLAN.md) ────────
+    #
+    # A feed post with a `when` is a reactive post: the server serves it only when its condition
+    # holds, read from state the server already records. A post with no `when` is an ordered post
+    # (C's behaviour). `feed.order` interleaves the two kinds. All of the selection, the condition
+    # evaluation and the static reachability live here so the route and the validator share one
+    # copy and cannot drift.
+
+    FEED_ORDERS = %w[facts_first reactive_first mixed].freeze
+    WHEN_KEYS = %w[frustrationAtLeast frustrationBelow cause need workaround needMet global].freeze
+
+    def reactive_post?(post)
+      post.is_a?(Hash) && post['when'].is_a?(Hash)
+    end
+
+    def feed_order(npc)
+      o = npc.is_a?(Hash) ? npc.dig('feed', 'order') : nil
+      FEED_ORDERS.include?(o) ? o : 'facts_first'
+    end
+
+    # The post ids a feedRevealed entry records as shown, in reveal order. C2 stores `shown`; a
+    # game saved under C holds `{ n, at }`, so a legacy entry migrates to the first `n` ids of
+    # the feed's posts (authored order) that have no `when` (C served `posts[0..n-1]`, all ordered).
+    def feed_shown_ids(npc, entry)
+      return [] unless entry.is_a?(Hash)
+
+      shown = entry['shown']
+      return shown.select { |i| present_string?(i) } if shown.is_a?(Array)
+
+      n = entry['n'].is_a?(Integer) ? [entry['n'], 0].max : 0
+      feed_posts(npc).reject { |p| reactive_post?(p) }.first(n).map { |p| p['id'] }
+    end
+
+    # The extracted live checks (plan 3): a cause condition and a global condition, pure over the
+    # arguments. `globals` is player globals merged over the scenario defaults by key presence;
+    # `lockout_keys` is player_state.loginLockouts, pre-gated by the per-NPC check record (empty
+    # when no check holds), so a `locked_out` cause matches only behind the record.
+    def truthy_global?(value)
+      !(value.nil? || value == false || value == 0 || value == '')
+    end
+
+    def globals_hold?(cond, globals)
+      globals = {} unless globals.is_a?(Hash)
+      case cond
+      when String then truthy_global?(globals[cond])
+      when Hash then cond.all? { |k, v| globals[k.to_s] == v }
+      else false
+      end
+    end
+
+    # A per-cause primitive: it takes a full cause `{ 'id', 'why' }` and branches on the `why`.
+    # The same rule NpcFrustration#frustration_cause_holds? used, lifted out so the live route and
+    # the frustration path share one copy.
+    def cause_holds?(data, npc, need, cause, globals, lockout_keys)
+      return false unless cause.is_a?(Hash)
+
+      globals = {} unless globals.is_a?(Hash)
+      id = cause['id']
+      case cause['why']
+      when 'down'
+        dn = resources(data)[id]&.dig('downIf')
+        present_string?(dn) && truthy_global?(globals[dn])
+      when 'unreachable'
+        rt = routes(data, npc, resources(data)[id])
+        !rt.nil? && rt.none? { |route| route.none? { |g| truthy_global?(globals[g.to_s]) } }
+      when 'no_access'
+        !admitted?(resources(data)[id], npc)
+      when 'off'
+        cond = affordance(data, object(data, id))&.dig('offWhen')
+        !cond.nil? && globals_hold?(cond, globals)
+      when 'social_blocked'
+        need == 'social_media' && social_blocked?(data, npc)
+      when 'locked_out'
+        locked_out_at?(npc, object(data, id), lockout_keys)
+      else
+        false
+      end
+    end
+
+    # The candidate causes of a `why` the NPC can meet for a need (plan 3): the NPC's work-list
+    # resources for down/unreachable/no_access, its station for off/social_blocked/locked_out.
+    def cause_candidates(data, npc, need, why)
+      st = station(data, npc)
+      case why
+      when 'down', 'unreachable', 'no_access'
+        return [] unless need == 'work'
+
+        work_list(data, npc).select { |id| resources(data).key?(id) }.map { |id| { 'id' => id, 'why' => why } }
+      when 'off'
+        st ? [{ 'id' => st['id'], 'why' => 'off' }] : []
+      when 'social_blocked'
+        need == 'social_media' && st ? [{ 'id' => st['id'], 'why' => 'social_blocked' }] : []
+      when 'locked_out'
+        LOCKOUT_NEEDS.include?(need) && st ? [{ 'id' => st['id'], 'why' => 'locked_out' }] : []
+      else
+        []
+      end
+    end
+
+    # Whether a cause with this `why` still holds now for the NPC and need: a per-why enumeration
+    # over the candidate causes, true when any one holds by cause_holds? (so "Printer's down AGAIN"
+    # fires only while a down-able work resource is actually down).
+    def cause_why_holds?(data, npc, need, why, globals, lockout_keys)
+      cause_candidates(data, npc, need, why).any? { |c| cause_holds?(data, npc, need, c, globals, lockout_keys) }
+    end
+
+    # The static sibling of cause_why_holds? (plan 3): can a cause with this `why` ever hold for
+    # the NPC and need, from the scenario alone. Mirrors the can_fail? pieces.
+    def cause_why_reachable?(data, npc, need, why)
+      st = station(data, npc)
+      case why
+      when 'down'
+        need == 'work' && work_list(data, npc).any? { |id| present_string?(resources(data)[id]&.dig('downIf')) }
+      when 'unreachable'
+        need == 'work' && work_list(data, npc).any? do |id|
+          r = resources(data)[id]
+          r && (rt = routes(data, npc, r)) && (rt.empty? || rt.any? { |route| !route.empty? })
+        end
+      when 'no_access'
+        need == 'work' && work_list(data, npc).any? { |id| (r = resources(data)[id]) && !admitted?(r, npc) }
+      when 'off'
+        !st.nil? && off_when?(data, st)
+      when 'social_blocked'
+        need == 'social_media' && social_blocked?(data, npc)
+      when 'locked_out'
+        LOCKOUT_NEEDS.include?(need) && lockout_station?(data, npc)
+      else
+        false
+      end
+    end
+
+    # ── condition evaluation (live) ─────────────────────────────────────
+
+    # Whether a `when` holds now: every predicate holds (logical AND). `entry` is the NPC's raw
+    # npcFrustration record, or nil before it has one (then every predicate but `global` is false).
+    def when_holds?(data, npc, cond, entry, globals, lockout_keys)
+      return false unless cond.is_a?(Hash) && !cond.empty?
+
+      need = cond['need'].is_a?(String) ? cond['need'] : nil
+      cond.all? { |key, val| when_predicate_holds?(data, npc, key, val, need, entry, globals, lockout_keys) }
+    end
+
+    def when_predicate_holds?(data, npc, key, val, need, entry, globals, lockout_keys)
+      case key
+      when 'need'
+        true # a scope for cause/needMet, not a predicate of its own
+      when 'global'
+        globals_hold?(val, globals)
+      when 'frustrationAtLeast'
+        entry.is_a?(Hash) && entry['level'].to_f >= val.to_f
+      when 'frustrationBelow'
+        entry.is_a?(Hash) && entry['level'].to_f < val.to_f
+      when 'workaround'
+        entry.is_a?(Hash) && workaround_performed?(data, npc, val, entry)
+      when 'needMet'
+        entry.is_a?(Hash) && need_met_now?(val, need, entry)
+      when 'cause'
+        entry.is_a?(Hash) && cause_predicate_holds?(data, npc, val, need, entry, globals, lockout_keys)
+      else
+        false
+      end
+    end
+
+    # The named workaround has been performed: a lasting kind in `done`, or a repeating kind whose
+    # lastSpent[index].done is true. A string matches any of the NPC's workarounds of that `do`; an
+    # integer names the workarounds[index].
+    def workaround_performed?(data, npc, val, entry)
+      was = workarounds(data, npc)
+      idxs = case val
+      when Integer then [val]
+      when String then was.each_index.select { |i| was[i]['do'] == val }
+      else []
+      end
+      return false if idxs.empty?
+
+      done = entry['done'].is_a?(Array) ? entry['done'] : []
+      spent = entry['lastSpent'].is_a?(Hash) ? entry['lastSpent'] : {}
+      idxs.any? do |i|
+        i.is_a?(Integer) && i >= 0 && i < was.size &&
+          (done.include?(i) || (spent[i.to_s].is_a?(Hash) && spent[i.to_s]['done'] == true))
+      end
+    end
+
+    # "Fixed at last": the need had a recorded failure and its last event was a met use
+    # (failAt set, easeAt set and later). `true` means any judged need; a `need` scope narrows it.
+    def need_met_now?(val, need, entry)
+      needs = if JUDGED_NEEDS.include?(val) then [val]
+      elsif val == true then (need ? [need] : JUDGED_NEEDS)
+      else []
+      end
+      fails = entry['failAt']
+      eases = entry['easeAt']
+      return false unless fails.is_a?(Hash) && eases.is_a?(Hash)
+
+      needs.any? { |n| fails[n] && eases[n] && eases[n].to_f > fails[n].to_f }
+    end
+
+    # A `cause` predicate holds only when both the NPC has actually failed at that why
+    # (failWhy[need] lists it) and a cause with that why still holds now (cause_why_holds?).
+    def cause_predicate_holds?(data, npc, val, need, entry, globals, lockout_keys)
+      whys = Array(val).select { |w| FAIL_CAUSES.include?(w) }
+      return false if whys.empty?
+
+      needs = need ? [need] : JUDGED_NEEDS
+      failwhy = entry['failWhy'].is_a?(Hash) ? entry['failWhy'] : {}
+      needs.any? do |n|
+        listed = Array(failwhy[n])
+        whys.any? { |w| listed.include?(w) && cause_why_holds?(data, npc, n, w, globals, lockout_keys) }
+      end
+    end
+
+    # ── static reachability (validator and the `done` test) ─────────────
+
+    def declared_global?(data, val)
+      names = case val
+      when String then [val]
+      when Hash then val.keys.map(&:to_s)
+      else return false
+      end
+      gv = data.is_a?(Hash) ? data['globalVariables'] : nil
+      gv.is_a?(Hash) && !names.empty? && names.all? { |n| gv.key?(n) }
+    end
+
+    def workaround_present?(data, npc, val)
+      was = workarounds(data, npc)
+      case val
+      when Integer then val >= 0 && val < was.size
+      when String then was.any? { |w| w['do'] == val }
+      else false
+      end
+    end
+
+    def cause_reachable?(data, npc, val, need)
+      whys = Array(val).select { |w| FAIL_CAUSES.include?(w) }
+      return false if whys.empty?
+
+      needs = need ? [need] : JUDGED_NEEDS
+      whys.any? { |w| needs.any? { |n| cause_why_reachable?(data, npc, n, w) } }
+    end
+
+    # True only when every predicate in the `when` is statically reachable for the NPC. Shared by
+    # the validator's dead-post warning and the `done` test's branch (b).
+    def when_reachable?(data, npc, cond)
+      return false unless cond.is_a?(Hash) && !cond.empty?
+
+      need = cond['need'].is_a?(String) ? cond['need'] : nil
+      cond.all? { |key, val| when_predicate_reachable?(data, npc, key, val, need) }
+    end
+
+    def when_predicate_reachable?(data, npc, key, val, need)
+      case key
+      when 'need' then true
+      when 'global' then declared_global?(data, val)
+      when 'cause' then cause_reachable?(data, npc, val, need)
+      when 'workaround' then workaround_present?(data, npc, val)
+      when 'frustrationAtLeast', 'frustrationBelow', 'needMet'
+        JUDGED_NEEDS.any? { |n| can_fail?(data, npc, n) }
+      else
+        false
+      end
+    end
+
+    # ── selection and completion ────────────────────────────────────────
+
+    # Whether the feed is finished (plan 4): the ordered queue is empty and every reactive post is
+    # already shown or statically unable ever to fire. Reads only scenario reachability, never the
+    # live globals or lockouts, so a transiently-false but reachable post keeps the feed open.
+    def feed_done?(data, npc, shown)
+      shown = Array(shown)
+      feed_posts(npc).all? do |post|
+        shown.include?(post['id']) || (reactive_post?(post) && !when_reachable?(data, npc, post['when']))
+      end
+    end
+
+    # Pick the next post to serve by the feed's `order` and the eligibility tests (plan 4).
+    # Returns { 'post' => id or nil, 'done' => bool }. Pure: every piece of state it reads is
+    # passed in. `feed_entry` is the feedRevealed record, `frustration_entry` the raw
+    # npcFrustration[id] (or nil), `globals` the merged globals, `lockout_keys` the pre-gated set.
+    def select_feed_post(data, npc, feed_entry, frustration_entry, globals, lockout_keys)
+      posts = feed_posts(npc)
+      shown = feed_shown_ids(npc, feed_entry)
+      eligible = lambda do |post|
+        next false if shown.include?(post['id'])
+
+        reactive_post?(post) ? when_holds?(data, npc, post['when'], frustration_entry, globals, lockout_keys) : true
+      end
+
+      chosen =
+        case feed_order(npc)
+        when 'reactive_first'
+          posts.find { |p| reactive_post?(p) && eligible.call(p) } ||
+            posts.find { |p| !reactive_post?(p) && eligible.call(p) }
+        when 'mixed'
+          posts.find { |p| eligible.call(p) }
+        else # facts_first
+          posts.find { |p| !reactive_post?(p) && eligible.call(p) } ||
+            posts.find { |p| reactive_post?(p) && eligible.call(p) }
+        end
+
+      # `done` reflects the state after this serve: when a post is chosen it counts as shown, so
+      # the reveal of the last post answers done (matching C's n + 1 >= posts.size)
+      after = chosen ? shown + [chosen['id']] : shown
+      { 'post' => chosen ? chosen['id'] : nil, 'done' => feed_done?(data, npc, after) }
+    end
+
     # ── resources, admission, reach ─────────────────────────────────────
 
     def admitted?(resource, npc)

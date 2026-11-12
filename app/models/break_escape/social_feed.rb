@@ -6,12 +6,17 @@ module BreakEscape
   # is withheld from the bootstrap with it and travels with the post.
   #
   # player_state key (in Game::ACCESS_STATE_DEFAULTS):
-  #   feedRevealed { npcId => { 'n' => posts out, 'at' => server time of the last } }
+  #   feedRevealed { npcId => { 'shown' => [postId, ...] in reveal order, 'at' => server time of
+  #                  the last reveal } }
+  # Sub-slice C2 (ACCESS_MODEL_SLICE_9_2_C2_PLAN.md) changed the record from C's `{ n, at }`: a
+  # reactive post is served out of authored order, so the actual set of shown ids is kept, and its
+  # length is the reveal sequence. AccessWork.feed_shown_ids migrates a C `{ n, at }` save.
   module SocialFeed
     extend ActiveSupport::Concern
 
     # The keys of a post block the browser renders (the osint browser's post block); anything
-    # else authored on a post (`deliberate`) stays on the server
+    # else authored on a post (`deliberate`, and C2's `when`, server-only `order` on the feed)
+    # stays on the server and never ships
     POST_KEYS = %w[id text fact date note].freeze
 
     def feed_revealed
@@ -34,26 +39,40 @@ module BreakEscape
       npc = id && scenario_room_npc(id)
       return { status: :forbidden, body: { error: 'unknown NPC' } } unless npc && Array(player_state['encounteredNPCs']).include?(id)
 
-      posts = AccessWork.feed_posts(npc)
       return { status: :ok, body: { npcId: id, post: nil, done: true } } unless AccessWork.feeds?(npc)
 
       store = feed_revealed
       entry = store[id].is_a?(Hash) ? store[id] : {}
-      n = entry['n'].is_a?(Integer) ? entry['n'].clamp(0, posts.size) : 0
-      return { status: :ok, body: { npcId: id, post: nil, done: true } } if n >= posts.size
+      shown = AccessWork.feed_shown_ids(npc, entry)
+
+      # q33: a refused use (a locked-out PC, an object not one of the NPC's places, the phone for a
+      # "phone": false NPC) never reaches the selection, so a tampered client cannot pick a post
       return { status: :ok, body: { npcId: id, post: nil, done: false, refused: true } } unless feed_source_ok?(npc, source)
 
+      # C2: the server picks one eligible post by the feed's order from state it records. The raw
+      # npcFrustration entry is read read-only (never frustration_entry(id), which would write a
+      # defaulted record); the lockout keys are pre-gated by the per-NPC check record.
+      raw_frustration = player_state['npcFrustration'].is_a?(Hash) ? player_state['npcFrustration'][id] : nil
+      keys = lockout_recorded?(npc) ? lockout_keys : []
+      selected = AccessWork.select_feed_post(scenario_data, npc, entry, raw_frustration, frustration_globals, keys)
+      post_id = selected['post']
+      done = selected['done'] == true
+
+      # Nothing eligible (an ordered post behind a mode that does not reach it, or a reactive post
+      # whose condition is not yet true): no write, the client asks again on the next met use
+      return { status: :ok, body: { npcId: id, post: nil, done: done } } if post_id.nil?
+
       now = Time.current.to_f
-      if n.positive?
+      unless shown.empty?
         wait = AccessWork.post_floor(scenario_data, npc) - (now - entry['at'].to_f)
         # `revealed` (posts out so far) lets a client whose last answer was lost see that the
         # lost request revealed a post, so it stops asking for this use (review C R3 nit)
-        return { status: :ok, body: { npcId: id, post: nil, done: false, tooSoon: true, retryAfter: wait.ceil, revealed: n } } if wait.positive?
+        return { status: :ok, body: { npcId: id, post: nil, done: false, tooSoon: true, retryAfter: wait.ceil, revealed: shown.length } } if wait.positive?
       end
 
-      store[id] = { 'n' => n + 1, 'at' => now }
+      store[id] = { 'shown' => shown + [post_id], 'at' => now }
       save!
-      { status: :ok, body: feed_answer(npc, posts, n).merge('npcId' => id, 'done' => n + 1 >= posts.size) }
+      { status: :ok, body: feed_answer(npc, post_id, shown.length).merge('npcId' => id, 'done' => done) }
     end
 
     # The feedPosts block GET /scenario carries (9.4): per NPC with a post out, its site and
@@ -67,14 +86,15 @@ module BreakEscape
         npc = scenario_room_npc(id)
         next unless npc && entry.is_a?(Hash) && AccessWork.feeds?(npc)
 
-        posts = AccessWork.feed_posts(npc)
-        n = entry['n'].is_a?(Integer) ? entry['n'].clamp(0, posts.size) : 0
-        next if n.zero?
+        # C2: derive shown via feed_shown_ids so a C-shape { n, at } entry renders without a nil
+        # error, then list the posts in reveal order with their reveal-sequence index
+        shown = AccessWork.feed_shown_ids(npc, entry)
+        next if shown.empty?
 
         feed = npc['feed']
         out[id] = { 'site' => feed['site'], 'person' => feed['person'],
-                    'posts' => (0...n).map { |i| feed_answer(npc, posts, i).slice('index', 'post', 'fact') },
-                    'done' => n >= posts.size }
+                    'posts' => shown.each_with_index.map { |pid, i| feed_answer(npc, pid, i).slice('index', 'post', 'fact') },
+                    'done' => AccessWork.feed_done?(scenario_data, npc, shown) }
       end
     end
 
@@ -108,15 +128,17 @@ module BreakEscape
       !(pc && AccessIdentities.login_pc?(pc) && AccessWork.locked_out_at?(npc, pc, lockout_keys))
     end
 
-    # { index, post, fact, site, person } for the NPC's post at `index`; `fact` is
-    # { id, entry } for a post whose fact names an intelFacts entry, else nil
-    def feed_answer(npc, posts, index)
-      raw = posts[index]
-      post = raw.slice(*POST_KEYS).select { |_k, v| v.is_a?(String) }
+    # { index, post, fact, site, person } for the NPC's post named by `post_id`, with `index` the
+    # reveal sequence (C2: a reactive post comes out of authored order, so the served post is
+    # looked up by id and the reveal position is emitted separately). `fact` is { id, entry } for a
+    # post whose fact names an intelFacts entry, else nil.
+    def feed_answer(npc, post_id, reveal_index)
+      raw = AccessWork.feed_posts(npc).find { |p| p['id'] == post_id }
+      post = raw ? raw.slice(*POST_KEYS).select { |_k, v| v.is_a?(String) } : {}
       fid = post['fact']
       facts = scenario_data.dig('social', 'intelFacts')
       entry = fid && facts.is_a?(Hash) && facts[fid].is_a?(Hash) ? facts[fid].deep_dup : nil
-      { 'index' => index, 'post' => post, 'fact' => entry ? { 'id' => fid, 'entry' => entry } : nil,
+      { 'index' => reveal_index, 'post' => post, 'fact' => entry ? { 'id' => fid, 'entry' => entry } : nil,
         'site' => npc['feed']['site'], 'person' => npc['feed']['person'] }
     end
   end

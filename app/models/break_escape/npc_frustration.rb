@@ -412,12 +412,12 @@ module BreakEscape
     # a resend gets the same body
     def workaround_body(npc, w, heard: false)
       body = case w['do']
-             when 'writes_down' then { 'pcId' => npc['needsHome'], 'hasPostit' => true }
-             when 'prop_door' then { 'roomId' => w['door'] }
-             when 'borrow_session' then borrow_body(npc, w)
-             when 'share_login' then heard ? shared_login_body(npc, w) : {}
-             else {}
-             end
+      when 'writes_down' then { 'pcId' => npc['needsHome'], 'hasPostit' => true }
+      when 'prop_door' then { 'roomId' => w['door'] }
+      when 'borrow_session' then borrow_body(npc, w)
+      when 'share_login' then heard ? shared_login_body(npc, w) : {}
+      else {}
+      end
       body['setGlobal'] = w['setGlobal'] if declared_global?(w['setGlobal'])
       { status: :ok, body: body, open_room: w['do'] == 'prop_door' ? w['door'] : nil }
     end
@@ -716,51 +716,28 @@ module BreakEscape
       gap < floor
     end
 
-    def frustration_global(name)
-      globals = player_state['globalVariables']
-      return globals[name] if globals.is_a?(Hash) && globals.key?(name)
-
+    # player_state.globalVariables merged over the scenario defaults by key presence (a player
+    # key present wins even when its value is false or 0; the default is used only when the key is
+    # absent), matching npc-needs.js. The pure AccessWork checks take this merged hash (C2).
+    def frustration_globals
       defaults = scenario_data['globalVariables']
-      defaults.is_a?(Hash) ? defaults[name] : nil
+      base = defaults.is_a?(Hash) ? defaults.dup : {}
+      live = player_state['globalVariables']
+      live.is_a?(Hash) ? base.merge(live) : base
     end
 
-    # npc-needs.js requiredGlobalsHold: a name is truthy; { name: value } matches every value
+    # Thin wrappers (sub-slice C2): the one copy of the rule lives in AccessWork, so the
+    # frustration path and the feed route cannot drift. npc-needs.js requiredGlobalsHold.
     def frustration_globals_hold?(cond)
-      case cond
-      when String then truthy_global?(frustration_global(cond))
-      when Hash then cond.all? { |k, v| frustration_global(k.to_s) == v }
-      else false
-      end
+      AccessWork.globals_hold?(cond, frustration_globals)
     end
 
-    def truthy_global?(value)
-      !(value.nil? || value == false || value == 0 || value == '')
-    end
-
+    # Sub-slice L: the loginLockouts keys are pre-gated by the per-NPC check record, so a
+    # `locked_out` cause matches only behind a `check` (a fail with no record is refused before
+    # this). AccessWork.cause_holds? then branches on the cause's why.
     def frustration_cause_holds?(npc, need, cause)
-      id = cause['id']
-      case cause['why']
-      when 'down'
-        # Review R2 m1: a resource with no downIf never goes down (a global named "" is not one)
-        dn = AccessWork.resources(scenario_data)[id]&.dig('downIf')
-        AccessWork.present_string?(dn) && truthy_global?(frustration_global(dn))
-      when 'unreachable'
-        routes = AccessWork.routes(scenario_data, npc, AccessWork.resources(scenario_data)[id])
-        !routes.nil? && routes.none? { |route| route.none? { |g| truthy_global?(frustration_global(g.to_s)) } }
-      when 'no_access'
-        !AccessWork.admitted?(AccessWork.resources(scenario_data)[id], npc)
-      when 'off'
-        cond = AccessWork.affordance(scenario_data, AccessWork.object(scenario_data, id))&.dig('offWhen')
-        !cond.nil? && frustration_globals_hold?(cond)
-      when 'social_blocked'
-        need == 'social_media' && AccessWork.social_blocked?(scenario_data, npc)
-      when 'locked_out'
-        # Sub-slice L: the server's own loginLockouts, behind the check record (a fail with no
-        # record is refused before this)
-        lockout_recorded?(npc)
-      else
-        false
-      end
+      keys = lockout_recorded?(npc) ? lockout_keys : []
+      AccessWork.cause_holds?(scenario_data, npc, need, cause, frustration_globals, keys)
     end
 
     # tell (5.5): 0 at level 0; 2 when a workaround is in force (the level is at or above its

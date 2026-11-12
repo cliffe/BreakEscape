@@ -67,7 +67,7 @@ module BreakEscape
       assert_equal [2, 'jake_post_3', nil, true], [c['index'], c.dig('post', 'id'), c['fact'], c['done']]
       d = travel_to(t + (3 * (FLOOR + 1))) { ask('jake') }
       assert_equal({ 'npcId' => 'jake', 'post' => nil, 'done' => true }, d)
-      assert_equal 3, @game.reload.player_state.dig('feedRevealed', 'jake', 'n')
+      assert_equal %w[jake_post_1 jake_post_2 jake_post_3], @game.reload.player_state.dig('feedRevealed', 'jake', 'shown')
     end
 
     test 'the pace floor: a second post too soon is refused and writes nothing' do
@@ -80,7 +80,7 @@ module BreakEscape
       assert_equal false, a['done']
       assert_equal true, a['tooSoon']
       assert_equal 1, a['revealed'], 'the posts out so far'
-      assert_equal({ 'n' => 1, 'at' => at }, @game.reload.player_state.dig('feedRevealed', 'jake'))
+      assert_equal({ 'shown' => ['jake_post_1'], 'at' => at }, @game.reload.player_state.dig('feedRevealed', 'jake'))
       b = travel_to(t + FLOOR + 1) { ask('jake') }
       assert_equal 'jake_post_2', b.dig('post', 'id')
     end
@@ -206,7 +206,7 @@ module BreakEscape
       assert_response :success
       assert_equal({}, response.parsed_body['feedPosts'])
       assert_equal 'jake_post_1', ask('jake').dig('post', 'id')
-      assert_equal 1, @game.reload.player_state.dig('feedRevealed', 'jake', 'n')
+      assert_equal ['jake_post_1'], @game.reload.player_state.dig('feedRevealed', 'jake', 'shown')
     end
 
     test 'review C R1 n5: /feed_post runs under the game lock' do
