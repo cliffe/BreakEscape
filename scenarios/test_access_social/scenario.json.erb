@@ -57,7 +57,9 @@
     "se_intel_jake_wedding_year": false,
     "f10_share_down": false,
     "f12_crm_down": false,
-    "f12_pc_unplugged": false
+    "f12_pc_unplugged": false,
+    "f15_pc_off": true,
+    "f15_ledger_down": false
   },
   "objectives": [
     {
@@ -173,6 +175,18 @@
         {
           "taskId": "f14_borrow_failed",
           "title": "F14: Sade's borrowed use at the hot desk fails",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f15_locked_out",
+          "title": "F15: Hamid finds out he is locked out at the hot desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f15_borrow_failed",
+          "title": "F15: Hamid's borrowed work at the hot desk fails",
           "type": "custom",
           "status": "active"
         }
@@ -1609,7 +1623,8 @@
       "type": "room_office",
       "door_sign": "F14 Sade",
       "connections": {
-        "west": "f13_room"
+        "west": "f13_room",
+        "east": "f15_room"
       },
       "objects": [
         {
@@ -1740,6 +1755,172 @@
           ]
         }
       ]
+    },
+    "f15_room": {
+      "type": "room_office",
+      "door_sign": "F15 Hamid",
+      "connections": {
+        "west": "f14_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f15",
+          "name": "Sign: F15 Locked out at the hot desk, for work",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F15. Hamid's PC is broken, so after two failures he takes his work to the hot desk. Before he gets there, lock out his username, hrahimi, at the hot desk: three wrong passwords. When he sits down he finds out, and his work there fails as well.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "f15_pc",
+          "name": "Hamid's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10,
+            "offWhen": "f15_pc_off"
+          },
+          "observations": "Hamid's PC. It has not worked all morning."
+        },
+        {
+          "type": "pc3",
+          "id": "f15_hot_desk",
+          "name": "Hot desk",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "locking",
+          "access": {
+            "people": [
+              "hamid"
+            ]
+          },
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A hot desk under the locking policy: three wrong passwords lock an account here."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "f15_pc_power",
+          "name": "Hamid's PC power",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.f15_pc_off",
+              "text": "Switch Hamid's PC back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f15_pc_off",
+                  "value": false
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.f15_pc_off",
+              "text": "Switch Hamid's PC off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f15_pc_off",
+                  "value": true
+                }
+              ]
+            }
+          ],
+          "observations": "The power switch for Hamid's PC. It starts off; click it to switch the PC on, and again to switch it off."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "hamid",
+          "displayName": "Hamid Rahimi",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "f15_pc",
+          "needsDeferMin": 0.5,
+          "workNeeds": [
+            "f15_ledger"
+          ],
+          "creds": {
+            "username": "hrahimi",
+            "password": "Curlew-Hamid-62"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "f15_hot_desk"
+            }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_locked_out:hamid",
+              "onceOnly": true,
+              "completeTask": "f15_locked_out",
+              "condition": "data.objectId === 'f15_hot_desk'"
+            },
+            {
+              "eventPattern": "npc_borrow_done:hamid",
+              "onceOnly": true,
+              "completeTask": "f15_borrow_failed",
+              "condition": "data.met === false && data.objectId === 'f15_hot_desk'"
+            }
+          ]
+        }
+      ]
     }
   },
   "resources": {
@@ -1752,6 +1933,11 @@
       "name": "Revenue tracker",
       "kind": "crm",
       "downIf": "f12_crm_down"
+    },
+    "f15_ledger": {
+      "name": "Facilities ledger",
+      "kind": "file_share",
+      "downIf": "f15_ledger_down"
     }
   },
   "accountProfiles": {

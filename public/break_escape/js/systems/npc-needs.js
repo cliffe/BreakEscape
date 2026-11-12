@@ -144,6 +144,8 @@ export const BORROW_START_MS = 60000;
 // Access 9.2 L (6.6): how long a use at its own station waits for a lockout check in flight (the
 // queue sends at most one request every two seconds; a lost one is sent again once)
 export const LOCK_CHECK_WAIT_MS = 30000;
+// Review R1 m1 (q36): the longest a borrowed use waits at a hot desk for its check's answer
+export const BORROW_CHECK_WAIT_MS = 5000;
 /** Slice 18b-i (OFFICE_LIFE_PLAN 12.4): temptation's default band above urgentAt, in points. */
 export const MAGNET_TEMPT = 30;
 /** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
@@ -3101,14 +3103,17 @@ export class NPCNeedsSystem {
         const judged = job.kind === 'use' && job.need && this._judged(s, job.need);
         // Access 9.2 L (6.6): at its own station, a use waits at the desk for a check in flight
         const atStation = judged && !job.borrowed && job.targetId === this._stationId(s);
-        // User decision q36: at a borrowed PC too, for the check sent as the borrower sat down. The
-        // report queue answers every check (lockedOut false when refused or lost), so the wait
-        // there has no lapse: past LOCK_CHECK_WAIT_MS it only starts again
+        // User decision q36: at a borrowed PC too, for the check sent as the borrower sat down.
+        // Review R1 m1: the report queue can stall before it sends (a sync PUT that never
+        // settles), so the hold there lasts at most BORROW_CHECK_WAIT_MS from when it began. Past
+        // that the use goes ahead as if not locked out; the server still refuses the ease, the post
+        // and the guest record, and a late answer still flags the PC for the next use
         const atBorrow = judged && !!job.borrowed && (job.need === 'work' || job.need === 'social_media');
-        if (atBorrow && s.lockCheck[job.targetId] !== undefined) {
-            if (!job.lockHeld) { job.lockHeld = true; this._log(id, 'use_held', { target: job.targetId }); }
-            if (this.clockMs - s.lockCheck[job.targetId] >= LOCK_CHECK_WAIT_MS) s.lockCheck[job.targetId] = this.clockMs;
-            return;
+        if (atBorrow && s.lockCheck[job.targetId] !== undefined && !job.lockLapsed) {
+            if (!job.lockHeld) { job.lockHeld = true; job.lockHeldAt = this.clockMs; this._log(id, 'use_held', { target: job.targetId }); }
+            if (this.clockMs - job.lockHeldAt < BORROW_CHECK_WAIT_MS) return;
+            job.lockLapsed = true;
+            this._log(id, 'lock_check_lapsed', { target: job.targetId, borrowed: true });
         }
         if (atStation && s.lockCheck[job.targetId] !== undefined) {
             if (this.clockMs - s.lockCheck[job.targetId] < LOCK_CHECK_WAIT_MS) {

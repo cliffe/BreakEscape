@@ -323,8 +323,70 @@ module BreakEscape
       @game.save!
       fp = JSON.parse(scenario_body)['feedPosts']['jake']
       assert_equal %w[jake_post_1 jake_post_2], fp['posts'].map { |p| p.dig('post', 'id') }
-      assert_equal [0, 2], fp['posts'].map { |p| p['index'] }, 'each kept post keeps its reveal index'
+      assert_equal [0, 1], fp['posts'].map { |p| p['index'] }, 'the stale id takes no reveal index'
       refute(fp['posts'].any? { |p| p['post'].nil? || p['post'].empty? })
+    end
+
+    test 'C2 R1 n4: a stale shown id counts neither in revealed nor in the next post\'s index' do
+      build(scenario: reactive_scenario(order: 'facts_first'))
+      t = Time.current
+      @game.reload
+      @game.player_state['feedRevealed'] = { 'jake' => { 'shown' => %w[jake_post_1 gone_post], 'at' => t.to_f } }
+      @game.save!
+      soon = travel_to(t + 5) { ask('jake') }
+      assert_equal true, soon['tooSoon']
+      assert_equal 1, soon['revealed'], 'one known post is out'
+      served = travel_to(t + FLOOR + 1) { ask('jake') }
+      assert_equal 'jake_post_2', served.dig('post', 'id')
+      assert_equal 1, served['index']
+      assert_equal %w[jake_post_1 jake_post_2], @game.reload.player_state.dig('feedRevealed', 'jake', 'shown'), 'the stale id is dropped on the write'
+      assert_equal [0, 1], JSON.parse(scenario_body)['feedPosts']['jake']['posts'].map { |p| p['index'] }
+    end
+
+    # ── user decision q38: the feed request is itself the met use for needMet ──
+
+    # jake's feed is one reactive post keyed on needMet; his last social media failure was
+    # `failed_ago` seconds before the request and his last ease before that
+    def need_met_game(failed_ago, t)
+      data = AccessSocialScenario.scenario
+      jake = data['rooms']['office']['npcs'][0]
+      jake['feed']['order'] = 'reactive_first'
+      jake['feed']['posts'] = [{ 'id' => 'jake_fixed', 'text' => 'Fixed at last.', 'when' => { 'needMet' => 'social_media' } }]
+      build(scenario: data)
+      @game.reload
+      @game.player_state['npcFrustration'] = { 'jake' => { 'level' => 30, 'failWhy' => { 'social_media' => ['social_blocked'] },
+                                                          'failAt' => { 'social_media' => t.to_f - failed_ago },
+                                                          'easeAt' => { 'social_media' => t.to_f - 100 },
+                                                          'done' => [], 'lastSpent' => {}, 'lockedOut' => [] } }
+      @game.save!
+    end
+
+    test 'q38: POST /feed_post serves the needMet post once the last failure is NEED_MET_QUIET_S old' do
+      t = Time.current
+      need_met_game(AccessWork::NEED_MET_QUIET_S + 1, t)
+      a = travel_to(t) { ask('jake') }
+      assert_equal 'jake_fixed', a.dig('post', 'id')
+      assert_equal ['jake_fixed'], @game.reload.player_state.dig('feedRevealed', 'jake', 'shown')
+    end
+
+    test 'q38: inside the quiet window the needMet post is not served and nothing is written' do
+      t = Time.current
+      need_met_game(AccessWork::NEED_MET_QUIET_S - 1, t)
+      a = travel_to(t) { ask('jake') }
+      assert_nil a['post']
+      assert_nil @game.reload.player_state.dig('feedRevealed', 'jake')
+    end
+
+    test 'q38: a refused source with a met use serves nothing' do
+      t = Time.current
+      need_met_game(AccessWork::NEED_MET_QUIET_S + 1, t)
+      a = travel_to(t) do
+        post feed_post_game_url(@game), params: { npc_id: 'jake', object_id: 'not_a_place' }, as: :json
+        response.parsed_body
+      end
+      assert_equal true, a['refused']
+      assert_nil a['post']
+      assert_nil @game.reload.player_state.dig('feedRevealed', 'jake')
     end
 
     test 'C2: a C-shape { n, at } entry migrates through reveal_feed_post! and feed_posts_for_client with no nil error' do

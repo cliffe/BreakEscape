@@ -100,8 +100,8 @@ module BreakEscape
 
         feed = npc['feed']
         out[id] = { 'site' => feed['site'], 'person' => feed['person'],
-                    # C2 R2 nit: a saved id the scenario no longer has is skipped, not sent empty
-                    'posts' => shown.each_with_index.filter_map { |pid, i| feed_answer(npc, pid, i).slice('index', 'post', 'fact') if feed_post_known?(npc, pid) },
+                    # C2 R2 nit: feed_shown_ids drops a saved id the scenario no longer has
+                    'posts' => shown.each_with_index.map { |pid, i| feed_answer(npc, pid, i).slice('index', 'post', 'fact') },
                     'done' => AccessWork.feed_done?(scenario_data, npc, shown) }
       end
     end
@@ -141,10 +141,6 @@ module BreakEscape
         return false if frustration_cause_holds?(npc, 'social_media', { 'id' => source, 'why' => 'off' })
       end
       !(AccessWork.lockout_pc?(scenario_data, npc, pc) && AccessWork.locked_out_at?(npc, pc, lockout_keys))
-    end
-
-    def feed_post_known?(npc, post_id)
-      AccessWork.feed_posts(npc).any? { |p| p['id'] == post_id }
     end
 
     # { index, post, fact, site, person } for the NPC's post named by `post_id`, with `index` the

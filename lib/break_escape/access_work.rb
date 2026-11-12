@@ -371,7 +371,12 @@ module BreakEscape
       return [] unless entry.is_a?(Hash)
 
       shown = entry['shown']
-      return shown.select { |i| present_string?(i) } if shown.is_a?(Array)
+      # C2 R1 n4: a saved id the scenario no longer has is dropped, so `revealed`, the next post's
+      # index and GET /scenario's block all count the same posts
+      if shown.is_a?(Array)
+        known = feed_posts(npc).map { |p| p['id'] }
+        return shown.select { |i| present_string?(i) && known.include?(i) }
+      end
 
       n = entry['n'].is_a?(Integer) ? [entry['n'], 0].max : 0
       feed_posts(npc).reject { |p| reactive_post?(p) }.first(n).map { |p| p['id'] }
