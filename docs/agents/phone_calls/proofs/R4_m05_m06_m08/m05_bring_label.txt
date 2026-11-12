@@ -1,0 +1,22 @@
+=== bring_label
+game 2317 (bring_label)
+twin ring at load: "The Recruiter | TalentStack Executive Recruiting | Incoming call | Answer | Decline"
+after decline: recruiter_texted=true contacted=false rows=["Missed call"]
+optional open: [] -> cleared, still open: []
+"opened agent_0x99_handler"
+hub: {"choices":["1. I'm done here. Bring me in.","2. About that flag.","3. Where do I stand?","4. Nothing right now."]}
+dialling bar: {"bar":"CALLING"}
+shot bring_label_dialling
+call bar: {"bar":"ON CALL | 0:07"}
+shot bring_label_call
+after Bring me in: {"subs":["Agent HaX: Once you're out, QDC's own people go through that vault before ours do. Whatever you haven't read could walk.","Agent HaX: There's an envelope under the terminal keyboard nobody's opened.","Agent HaX: His upload schedule's still on the desk.","Agent HaX: The package manifest's still there as well.","Agent HaX: TalentStack's line is still open. She's lost him. Ring her if you want to hear her lose.","YOU: Bring me in.","AGENT HAX: Front entrance. Walk like you work there."],"choices":["1. On my way."]}
+shot bring_label_confirm
+overlay (expect null): null
+after bring-in: mission_complete=true mg="PersonChatMinigame person-chat" ringer=null
+shot bring_label_debrief
+rings in 15s: 0
+debrief later: mg="PersonChatMinigame person-chat" queue=0
+shot bring_label_debrief_later
+HaX /tts: "Once you're out, QDC's own people go through that vault before ours do. Whatever you haven't read could walk." "There's an envelope under the terminal keyboard nobody's opened." "His upload schedule's still on the desk." "The package manifest's still there as well." "TalentStack's line is still open. She's lost him. Ring her if you want to hear her lose." "Front entrance. Walk like you work there." "Thursday, nine o'clock. My office." 
+recruiter /tts after load: 
+["phone_call_declined:recruiter@41.4","objective_task_completed:call_in_after_sweep@63.9","global_variable_changed:mission_complete@65.7","global_variable_changed:mission_complete@65.7","conversation_closed:agent_0x99_handler@67.7"]

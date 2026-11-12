@@ -1,0 +1,12 @@
+=== patricia
+game 2323 (patricia)
+"opened patricia_phone"
+thread: {"choices":["1. (Close.)"],"header":"☎\nCall","thread":""}
+shot patricia_thread
+header="☎\nCall"
+dialling: {"bar":"CALLING"}
+shot patricia_calling
+call: {"bar":"ON CALL | 0:01","subs":["PATRICIA MORGAN: Morgan."],"choices":["1. I know who it is.","2. Just checking in."]}
+shot patricia_call
+/tts requests: ["narrator","A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open."] ["director_netherton","Agent 0x00. This one is close to home in a way I dislike. Someone inside a Home Office contractor is handing ENTROPY the crown jewels."] ["director_netherton","I have brought Nightshade in because catching a mole is precisely his trade. Learn from him. HaX will run you on the ground."] ["director_nethert
+[]

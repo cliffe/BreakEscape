@@ -1,0 +1,15 @@
+=== rec_reload
+game 2297 (rec_reload)
+"opened patricia_phone"
+patricia header="☎\nCall"
+patricia call: {"bar":"ON CALL | 0:01","choices":["1. I know who it is.","2. Just checking in."]}
+after naming: torres_identified=true {"subs":["Patricia Morgan: Morgan.","You: I know who it is.","Patricia Morgan: Go on, then. Who?","You: David Torres.","Patricia Morgan: David. Why?","You: Money. His wife's treatment isn't covered, and he's borrowed against the house.","Patricia Morgan: Money. All right. And the proof it's leaving?","YOU: The upload schedule. He's the operator, on site, tonight.","PATRICIA MORGAN: ...Damn. His kids drew on the tablecloth at our Christmas party."],"choices":[]}
+shot rec_reload_named
+naming call closed; mg="PhoneChatMinigame phone-chat" recruiter_texted=false
+3 s after close, before reload: ringer=null recruiter_texted=false
+after reload: torres=true recruiter_texted=false ringer=null rows=[]
+  ring #1 at 3s: recruiter banner="The Recruiter | TalentStack Executive Recruiting | Incoming call | Answer | Decline"
+rings in 30s: 1
+shot rec_reload_after_window
+end: recruiter_texted=true rows=["Missed call"] queue=0
+["phone_call_missed:recruiter@38.6"]

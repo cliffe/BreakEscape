@@ -1,0 +1,15 @@
+=== m08_ko
+game 2339 (m08_ko)
+"opened agent_0x99"
+thread: {"choices":["1. I can name the leak.","2. What does the Director need from me?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."],"thread":"Line's open. Same as Portland, except this time the target has a SAFETYNET lanyard and a name I probably know. | So I'm going to be very professional tonight. Bear with me. | I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine. | That's the door audit. With the Director on his floor, you read it to me: the door against the minute the plan was opened. Call me when you've got both."}
+shot m08_ko_thread_call_me
+header call buttons: 0
+dialling: {"bar":"CALLING"} caption="SAFETYNET secure line"
+shot m08_ko_calling
+call: {"subs":["AGENT HAX: Two questions, the ones he'd ask. When was the plan opened?"],"choices":["1. 10:15 UTC.","2. 10:32 UTC.","3. 10:38 UTC.","4. 11:25 UTC.","5. Let me read it again."]}
+who: {"subs":["AGENT HAX: Who was behind the lab door at 10:38, and still inside?"],"choices":["1. Vector.","2. Nightshade.","3. Phantom.","4. None of them.","5. Let me read it again."]}
+after: mole=true named_by_hax=true task=["completed"] rows=["Outgoing call, 0:17"]
+thread: {"choices":["1. It's really Nightshade.","2. Why isn't he in the interrogation room yet?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."]}
+shot m08_ko_after
+HaX /tts: "Two questions, the ones he'd ask. When was the plan opened?" "Who was behind the lab door at 10:38, and still inside?" "In at 10:15, out at 11:43. Vector was gone by 10:32, and Phantom was on a plane." "Nightshade. I trained with him." "I'll put it in front of the Director when he can stand." "You finish the chain." 
+["global_variable_changed:mole_identified@54.8","global_variable_changed:mole_identified@54.8","objective_task_completed:name_the_mole@54.9","minigame_completed@61.3","conversation_closed:agent_0x99@61.3"]
