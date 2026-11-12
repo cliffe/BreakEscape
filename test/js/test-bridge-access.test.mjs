@@ -208,9 +208,9 @@ test('slice 9.2: work(npcId) reads the plan and the needs state; reports() reads
 
 test('feed() (slice 9.2 C): revealed post ids, done NPCs and the request count; empty without the module', () => {
   delete window.socialFeed;
-  assert.deepEqual(accessBridge.feed(), { revealed: {}, done: [], requests: 0, threads: {} });
+  assert.deepEqual(accessBridge.feed(), { revealed: {}, done: [], requests: 0, threads: {}, reactions: {} });
   window.socialFeed = { revealed: () => ({ jake: ['p1', 'p2'] }), done: new Set(['lena']), requests: 3 };
-  assert.deepEqual(accessBridge.feed(), { revealed: { jake: ['p1', 'p2'] }, done: ['lena'], requests: 3, threads: {} });
+  assert.deepEqual(accessBridge.feed(), { revealed: { jake: ['p1', 'p2'] }, done: ['lena'], requests: 3, threads: {}, reactions: {} });
   delete window.socialFeed;
 });
 
@@ -227,5 +227,19 @@ test('feed() C3: threads in thread order, on a null-prototype object, a __proto_
   assert.deepEqual(Object.getOwnPropertyDescriptor(out.threads, '__proto__').value, ['r3']);
   assert.equal(Object.getPrototypeOf(out.threads), Object.prototype, 'json() copies it into a plain object');
   assert.equal({}.r3, undefined);
+  delete window.socialFeed;
+});
+
+test('feed() reactions: { postId: { key: [npcId] } } on null-prototype objects, a __proto__ post id included', async () => {
+  const { SocialFeed } = await import('../../public/break_escape/js/systems/social-feed.js');
+  const f = new SocialFeed({ emit() {}, hasFeed: () => true });
+  f.apply('ivy', { index: 0, seq: 1, site: 'friendface', person: 'ivy', post: { id: 'p1', text: 't' },
+    reactions: [{ postId: 'p1', npc: 'tom', person: 'tom', key: 'sad' }, { postId: 'p1', npc: 'kofi', person: 'kofi', key: 'sad' },
+      { postId: '__proto__', npc: 'mei', person: 'mei', key: 'like' }] });
+  window.socialFeed = f;
+  const out = accessBridge.feed();
+  assert.deepEqual(out.reactions.p1, { sad: ['kofi', 'tom'] });
+  assert.deepEqual(Object.getOwnPropertyDescriptor(out.reactions, '__proto__').value, { like: ['mei'] });
+  assert.equal({}.like, undefined);
   delete window.socialFeed;
 });
