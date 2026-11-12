@@ -23,7 +23,7 @@ a2b_open() {
 a2b_ev() {
   local f=/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/ev-$GID.js
   printf '%s\n' "$1" > "$f"
-  tools/phone_calls/ev.sh "$GID" "$f" | tail -n 1 | jq -c '.result // .'
+  tools/phone_calls/ev.sh "$GID" "$f" | tail -n 1 | jq -c 'if type == "object" and has("result") then .result else . end'
 }
 a2b_status() {
   a2b_ev "const r = window.phoneRinger; const cur = r && r.current && r.current(); const b = document.querySelector('.incoming-call'); const mg = window.MinigameFramework && window.MinigameFramework.currentMinigame; return {ringer: cur && {npcId: cur.npcId, state: cur.state, knot: cur.knot, opened: cur.opened}, queue: r && r.queueLength(), callActive: r && r.callActive(), closed: r && r.isClosed(), banner: b ? b.innerText.replace(/\n+/g,' | ') : null, bannerImg: b && b.querySelector('img') ? {src: b.querySelector('img').getAttribute('src'), ok: b.querySelector('img').complete && b.querySelector('img').naturalWidth > 0} : null, mg: mg ? (mg.constructor.name + ' ' + (mg.params && mg.params.npcId || '')) : null, globals: {debrief_go: window.gameState.globalVariables.debrief_go, declined_seen: window.gameState.globalVariables.declined_seen, missed_seen: window.gameState.globalVariables.missed_seen, timed_ringing: window.gameState.globalVariables.timed_ringing}};"

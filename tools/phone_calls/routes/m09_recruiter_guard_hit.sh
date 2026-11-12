@@ -24,7 +24,7 @@ return { t: Math.round(performance.now()/1000), mg: mg ? (mg._sceneType || mg.co
   sub: (document.querySelector('.call-subtitle, #call-subtitle, .call-line') || {}).innerText || null,
   ended: !!document.querySelector('.call-ended'), bubbles: document.querySelectorAll('#messages-container .message, .phone-message').length };
 J
-tl() { tools/phone_calls/ev.sh $GID /tmp/pc-tl-$GID.js 30 | tail -n 1 | jq -c '.result // .'; }
+tl() { tools/phone_calls/ev.sh $GID /tmp/pc-tl-$GID.js 30 | tail -n 1 | jq -c 'if type == "object" and has("result") then .result else . end'; }
 echo "const c = window.npcManager.getNPC('old_coyote'); if (c && c.los) c.los.enabled = false; return !!(c && c.los);" > /tmp/pc-los-$GID.js
 tools/phone_calls/ev.sh $GID /tmp/pc-los-$GID.js | tail -n 1
 for i in $(seq 1 90); do T=$($S $GID '{"cmd":"brief"}' 20 | jq -r '.result.activeMinigame.id // empty'); [ "$T" = "phone-chat" ] && break; sleep 1; done
