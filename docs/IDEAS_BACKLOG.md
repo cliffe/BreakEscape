@@ -219,15 +219,6 @@ From the build, reviews and playtests of the `lab_physical_pentest` access model
 - **Click targets crowded along a wall** (lab playtest fixes; S, by eye). In the lab's `open_plan` the door, reader, shelves, terminal and a PC sit within about 100 px, and a click-move there often opens something. Worth a look with a mouse before changing anything; it may only affect scripted players.
 - **Locked look for a sign-in PC with no owner, and for an NPC's own PC while they fetch something** (follow-up plan, left out; S to M). A hot desk shows no padlock because it has no leave or return to follow, and Sofia's PC in the lab is not a workstation. Only if a scenario needs either.
 
-## Lab follow-up: code review round 5 minors (2026-11-10, docs/achitechture/PHYSICAL_PENTEST_ACCESS_FOLLOWUP_CODE_REVIEW_R5.md)
-Do the first three before a second scenario uses an action `condition`.
-- **Timer gives pair by position** (S). A conditioned `give_item` that is skipped shifts the pairing of give results with give actions, so a network retry can re-apply the wrong action and lose an item. Needs two gives in one timer plus a network error.
-- **Validator and engine condition grammar** (S). They differ on non-ASCII whitespace and NUL; use one explicit ASCII whitespace set on both sides.
-- **Validator `||` exemption for action lists is untested** (S), and it switches off the `&&`-only check for anything nested inside an action.
-- **Dead caught check on arrival** (S). `npc-needs.js` arrival check is shadowed by the per-tick check; remove it and pin the `goto_target` restriction with a test.
-- **Late route answers in single-room and random patrols** (S). The same race fixed for routed patrols; same one-line guard.
-- **Both routes credited within 0.6 s shows neither route line** (S, lab_physical_pentest). Silent, not false; one "both counted" line would cover it. User's call.
-
 ## Lab content pass: not scheduled (2026-11-10, docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_CONTENT.md)
 - **Per-line performance notes in voiced lines** (plan B10, question C4; M, engine). The TTS reads a starred stage direction aloud, so the lab's directions were removed and manner lives in each NPC's `voice.style`. If per-line notes are wanted: an ink tag (`# perform: wry`) that `InkLineWalker`, `TtsLineExtractor` and the client pass with the line, added to that line's `speech_metadata` style and to its cache key. Only if the user answers yes to C4.
 - **The physical pentest device pitch** (plan C3; `planning_notes/physical_pentest_devices/DEVICE_PITCH.md`, commit `e1eb7004f`). Not built in this pass; the drop box beat goes through the networks slice (9.3a). Route any device from the pitch through 9.3b.
