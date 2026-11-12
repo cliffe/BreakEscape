@@ -369,6 +369,16 @@ export class TextFileMinigame extends MinigameScene {
         console.log("Content length:", this.textFileData.fileContent.length);
     }
     
+    /**
+     * Whether this file was opened from the container in `back` (window.pendingContainerReturn):
+     * the file is among that container's contents. A return left over from a container the
+     * player closed some other way never matches a file read from the world.
+     */
+    static cameFrom(back, fileName) {
+        if (!back?.containerItem || !Array.isArray(back.contents)) return false;
+        return back.contents.some(item => item && item.name === fileName);
+    }
+
     cleanup() {
         // Call parent cleanup (handles event listeners)
         super.cleanup();
@@ -389,6 +399,23 @@ export class TextFileMinigame extends MinigameScene {
                     if (window.MinigameFramework?.currentMinigame) return;
                     window.startContainerMinigame?.(back.containerItem, null, !!back.isTakeable, true);
                 }, 50);
+                return;
+            }
+            // Any other container (a desk drawer, a PC's file list, an NPC's items) reopens
+            // too, as the notes viewer does, so a second file is one click away (lab
+            // playtest fixes). If something else has opened by then, the return is dropped.
+            if (TextFileMinigame.cameFrom(back, this.textFileData.fileName)
+                && typeof window.returnToContainerAfterNotes === 'function') {
+                window.pendingPhoneReturn = null;
+                window.expectPanelWithin?.(1000); // held toasts wait for the container (F13, engine F24)
+                setTimeout(() => {
+                    if (window.pendingContainerReturn !== back) return;
+                    if (window.MinigameFramework?.currentMinigame) {
+                        window.pendingContainerReturn = null;
+                        return;
+                    }
+                    window.returnToContainerAfterNotes();
+                }, 100);
                 return;
             }
             window.pendingContainerReturn = null;

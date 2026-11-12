@@ -68,3 +68,30 @@ export function withoutChairsIfOthers(candidates) {
     const others = candidates.filter(c => !c.isChair);
     return others.length ? others : candidates;
 }
+
+/**
+ * An NPC walking away from the player: moving (body speed at least minSpeed px/s) with
+ * its velocity pointing away from the player. An owner who has just left the PC
+ * (npc_left_post) is still beside it for a moment, and a tap on the PC used to open a
+ * conversation with them instead (access model step 9 playtests).
+ */
+export function npcWalkingAway(player, sprite, minSpeed = 10) {
+    const v = sprite?.body?.velocity;
+    if (!player || !v || !Number.isFinite(v.x) || !Number.isFinite(v.y)) return false;
+    if (Math.hypot(v.x, v.y) < minSpeed) return false;
+    const dx = sprite.x - player.x;
+    const dy = sprite.y - player.y;
+    return v.x * dx + v.y * dy > 0;
+}
+
+/**
+ * Drop NPCs who are walking away from a tap's pick list when an object (not a chair)
+ * was gathered with them: the player tapped the thing, not the person leaving it.
+ * The NPC stays when nothing else is there.
+ *
+ * @param {Array<{isObject?:boolean, isChair?:boolean, leavingNpc?:boolean}>} candidates
+ */
+export function withoutLeavingNpcsIfObjects(candidates) {
+    if (!candidates.some(c => c.isObject && !c.isChair)) return candidates;
+    return candidates.filter(c => !c.leavingNpc);
+}

@@ -6,7 +6,7 @@ import { resumeSpawnFor } from './resume-spawn.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
-import { aimX, withoutChairsIfOthers } from '../systems/interaction-reach.js';
+import { aimX, withoutChairsIfOthers, npcWalkingAway, withoutLeavingNpcsIfObjects } from '../systems/interaction-reach.js';
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
@@ -2222,7 +2222,9 @@ export async function create() {
         // reach (e.g. a memo lying right next to an NPC), don't guess — show a
         // disambiguation menu listing each by its observation text. This fixes the
         // "can't pick up items next to characters" problem, especially on touch.
-        const nearbyInteractables = withoutChairsIfOthers(gatherInteractablesNearClick(worldX, worldY));
+        // An NPC walking away is dropped when the tap also gathered an object: a tap on
+        // the PC its owner has just left is for the PC (q55 d)
+        const nearbyInteractables = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(gatherInteractablesNearClick(worldX, worldY)));
         if (nearbyInteractables.length > 1) {
             const nativeEvent = pointer.event || {};
             showInteractionMenu(nearbyInteractables, nativeEvent.clientX, nativeEvent.clientY);
@@ -2236,8 +2238,13 @@ export async function create() {
             return;
         }
 
-        // Check for NPC sprites at the clicked position first
-        const npcAtPosition = findNPCAtPosition(worldX, worldY);
+        // Check for NPC sprites at the clicked position first. One walking away from the
+        // player gives way to an interactable object under the same tap (q55 d).
+        let npcAtPosition = findNPCAtPosition(worldX, worldY);
+        if (npcAtPosition && npcWalkingAway(window.player, npcAtPosition)
+            && findObjectsAtPosition(worldX, worldY).some(o => o.interactable && !o.isSwivelChair)) {
+            npcAtPosition = null;
+        }
         if (npcAtPosition) {
             if (isObjectInInteractionRange(npcAtPosition)) {
                 // NPC is in range - face toward them then interact.
@@ -2363,6 +2370,14 @@ export async function create() {
         if (doorAtPosition) {
             const player = window.player;
             if (player) {
+                // An open gate the player may pass: walk through it, near or far, as a
+                // click on an open ordinary door does. Its own click (doors.js) says nothing
+                // for an open gate, and a refused one still refuses (door-gates.js).
+                const through = doorGates.walkThroughTarget(doorAtPosition, playerFeet(player));
+                if (through) {
+                    movePlayerToPoint(through.x, through.y);
+                    return;
+                }
                 const distance = Phaser.Math.Distance.Between(
                     player.x, player.y,
                     doorAtPosition.x, doorAtPosition.y
@@ -2710,6 +2725,7 @@ function gatherInteractablesNearClick(worldX, worldY) {
                     label: seat ? `Sit: ${name}` : name,
                     detail,
                     icon,
+                    isObject: true,
                     isChair: !!obj.isSwivelChair || seat,
                     onSelect: () => {
                         facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
@@ -2736,6 +2752,7 @@ function gatherInteractablesNearClick(worldX, worldY) {
                     label: name,
                     detail: npc?.observations || null,
                     icon: hostile ? jabHandIcon() : talkIcon(),
+                    leavingNpc: npcWalkingAway(player, sprite),
                     onSelect: () => {
                         facePlayerToward(sprite.x, sprite.y);
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();

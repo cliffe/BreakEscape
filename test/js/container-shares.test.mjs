@@ -2,8 +2,8 @@
 // container minigame. A share stub fetches its contents on open; the inventory add from a mapped
 // share carries source_pc_id, from a share opened in the view source_resource_id; the remote
 // desktop fetch carries the foothold; a share stub never calls handleObjectInteraction or
-// /unlock; a text file read from a remote desktop reopens it when closed, and one read from an
-// ordinary container still closes to the world; a folder opened below a network screen reopens
+// /unlock; a text file read from a remote desktop reopens it when closed, and so does one read from
+// an ordinary container (lab UX build); a folder opened below a network screen reopens
 // its parent (the round 3 review's R3-M1); network_share_opened says how the share was reached.
 // The real container-minigame.js, base-minigame.js, text-file-minigame.js and pc-sessions.js
 // run against jsdom.
@@ -220,19 +220,49 @@ test('a text file read from a remote desktop folder reopens that folder when the
     assert.equal(window.pendingContainerReturn, null);
 });
 
-test('a text file read from an ordinary container still closes to the world', async (t) => {
+test('a text file read from an ordinary container reopens its file list when the reader closes', async (t) => {
     if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
     setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
     window.startContainerMinigame({ scenarioData: { id: 'cabinet', name: 'Cabinet', type: 'safe', locked: false } }, null, false, false);
     await settle();
     current().handleInteractiveItem({ ...LETTER, takeable: false }, null);
     assert.equal(isNetworkScreenContainer(window.pendingContainerReturn.containerItem), false);
     window.MinigameFramework.startMinigame('text-file', null, { fileName: 'scan_0412.pdf', fileContent: 'A letter.' });
     window.MinigameFramework.endMinigame(false, null);
-    await new Promise(r => setTimeout(r, 80));
-    assert.equal(current(), null);
-    assert.equal(window.pendingContainerReturn, null);
+    await new Promise(r => setTimeout(r, 160));
+    await settle();
+    assert.equal(current()?.containerItem?.scenarioData?.id, 'cabinet', 'back in the cabinet');
+    assert.equal(window.pendingContainerReturn, null, 'the return is spent');
     assert.equal(landings.length, 0, 'an ordinary container reports nothing');
+});
+
+test('a text file read from the world closes to the world, even with a stale container return', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    window.pendingContainerReturn = { containerItem: { scenarioData: { id: 'cabinet', name: 'Cabinet', type: 'safe' } },
+        contents: [LETTER], isTakeable: false, npcOptions: null };
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'Wall notice.txt', fileContent: 'Not in the cabinet.' });
+    window.MinigameFramework.endMinigame(false, null);
+    await new Promise(r => setTimeout(r, 160));
+    assert.equal(current(), null);
+    assert.equal(window.pendingContainerReturn, null, 'the stale return is cleared');
+});
+
+test('the container return is dropped when something else opens before it', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    window.startContainerMinigame({ scenarioData: { id: 'cabinet', name: 'Cabinet', type: 'safe', locked: false } }, null, false, false);
+    await settle();
+    current().handleInteractiveItem({ ...LETTER, takeable: false }, null);
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'scan_0412.pdf', fileContent: 'A letter.' });
+    window.MinigameFramework.endMinigame(false, null);
+    window.MinigameFramework.startMinigame('phone', null, {});
+    await new Promise(r => setTimeout(r, 160));
+    assert.equal(current()?._sceneType, 'phone', 'the phone stays open');
+    assert.equal(window.pendingContainerReturn, null);
 });
 
 test('a locked folder opened below a network screen carries its parent, and reopens it on Close (R3-M1)', async () => {

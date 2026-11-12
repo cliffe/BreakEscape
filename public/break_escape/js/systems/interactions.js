@@ -20,7 +20,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, aimX } from './interaction-reach.js';
+import { reachX, aimX, npcWalkingAway } from './interaction-reach.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
 // The inventory click menu (feedback plan, section 5) decides with the same two tests as
 // the chain's first two branches for a held item, imported from one place.
@@ -1109,7 +1109,8 @@ export function handleObjectInteraction(sprite) {
             return;
         }
         playUISound('item');
-        addToInventory(sprite);
+        // The tool opens a second later; the toast says it was picked up first
+        Promise.resolve(addToInventory(sprite)).then(res => window.announcePickup?.(sprite, res));
         setTimeout(() => {
             // A pickup mapping may already have opened this phone's thread (m02 Ghost terminal:
             // item_picked_up:phone -> phone-chat at knot start). Opening the contact list over it
@@ -1870,6 +1871,8 @@ export function handleObjectInteraction(sprite) {
                 Promise.resolve(addToInventory(sprite)).then(res => {
                     // Server refused or network failed: let the player try again
                     if (res && res.ok === false) data.takeable = true;
+                    // Shown once the reader closes (notifications.js holds it)
+                    window.announcePickup?.(sprite, res);
                 });
             }
             return; // Exit early since minigame handles the interaction
@@ -1976,6 +1979,9 @@ export function handleObjectInteraction(sprite) {
         // not a blind edit. Fixing it is tracked separately from the giveItem
         // item-loss fix that changed addToInventory's return contract.
         const added = addToInventory(sprite);
+        // Every pickup says so ("Picked up <name>"), not only the few types with a
+        // toast of their own (inventory.js announcePickup)
+        Promise.resolve(added).then(res => window.announcePickup?.(sprite, res));
 
         // Only show the observation notification if item was NOT added (duplicate)
         // because addToInventory() already shows its own notification
@@ -2147,6 +2153,7 @@ export function tryInteractWithNearest() {
         const dist = Math.sqrt(distSq);
         let score = angularDiff(faceX, objY) * 1000 + dist; // angle to the object's centre, range to its nearest part
         if (target && !npcSprite && window.seating?.isSeat(target)) score += 30000; // a chair loses to anything else faced
+        if (npcSprite && npcWalkingAway(player, npcSprite)) score += 30000; // so does someone walking away (q55 d)
         if (score < bestScore) { bestScore = score; best = { objX: faceX, objY, handleFn }; }
     }
 
