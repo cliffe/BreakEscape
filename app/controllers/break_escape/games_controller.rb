@@ -1914,15 +1914,12 @@ module BreakEscape
       @game.with_lock { yield }
     end
 
-    # The inventory as the browser may see it: a deep copy run through the same filter as
-    # every other payload, so a held lock (a start item such as a padlocked case or a
-    # cryptex) never ships its answer (unlock gaps R1 m3). player_state keeps the full
-    # copy, which the server's own checks read.
+    # The inventory as the browser may see it: a filtered deep copy, so a held lock (a start
+    # item such as a padlocked case or a cryptex) never ships its answer (unlock gaps R1 m3).
+    # One filter for every inventory echo (code review R2 M2): Game#client_inventory, which
+    # the network routes use too.
     def client_inventory
-      inventory = @game.player_state['inventory']
-      return inventory unless inventory.is_a?(Array)
-
-      inventory.deep_dup.tap { |items| filter_requires_recursive(items) }
+      @game.client_inventory
     end
 
     def filter_requires_recursive(obj)

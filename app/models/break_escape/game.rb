@@ -723,7 +723,36 @@ module BreakEscape
       true
     end
 
+    # The player's inventory as any response may send it (code review R2 M2): a filtered
+    # copy, never the stored array. Start items and picked-up items are stored filtered
+    # already; this also covers games created before that, and an item stored any other
+    # way. Strips lock answers (requires on answer locks, combination, cryptexConfig.answer),
+    # the PIN, generator-only keys, declared grant contents and capture secrets. Keeps
+    # contents and everything else the client reads, as the bootstrap always did.
+    def client_inventory
+      inventory = player_state.is_a?(Hash) ? player_state['inventory'] : nil
+      return inventory unless inventory.is_a?(Array)
+
+      inventory.deep_dup.tap { |items| filter_inventory_for_client!(items) }
+    end
+
     private
+
+    def filter_inventory_for_client!(obj)
+      case obj
+      when Hash
+        lock_type = obj['lockType']
+        self.class.set_pin_length!(obj)
+        self.class.strip_lock_answers!(obj)
+        self.class.strip_puzzle_graph_keys!(obj)
+        BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
+        strip_capture_secrets!(obj)
+        obj.delete('requires') if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
+        obj.each_value { |value| filter_inventory_for_client!(value) }
+      when Array
+        obj.each { |item| filter_inventory_for_client!(item) }
+      end
+    end
 
     def sync_vm_set_id_column
       state = player_state.is_a?(String) ? JSON.parse(player_state) : player_state
@@ -5068,9 +5097,19 @@ module BreakEscape
       if scenario_data && scenario_data['startItemsInInventory'] && self.player_state['inventory'].empty?
         start_items = scenario_data['startItemsInInventory']
         if start_items.is_a?(Array)
-          # Use dup instead of deep_dup to avoid issues with ActiveSupport extensions
+          # Stored already filtered, as a picked-up item is (canonical_inventory_item): a
+          # locked start item's answer (requires, combination, cryptexConfig.answer) never
+          # enters player_state, so no inventory echo can ship it (code review R2 M2). No
+          # server check reads a lock answer or locked contents from this copy (keys match
+          # on key_id and opens_lock, which the filter keeps).
           start_items.each do |item|
-            self.player_state['inventory'] << (item.is_a?(Hash) ? item.dup : item)
+            if item.is_a?(Hash)
+              copy = item.deep_dup
+              filter_requires_and_contents_recursive(copy)
+              self.player_state['inventory'] << copy
+            else
+              self.player_state['inventory'] << item
+            end
           end
         else
           Rails.logger.warn "[BreakEscape] startItemsInInventory is not an Array: #{start_items.class}"

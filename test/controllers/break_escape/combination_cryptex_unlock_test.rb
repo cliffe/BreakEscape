@@ -147,7 +147,7 @@ module BreakEscape
 
     # ── R1 m3: a locked start item never ships its answer ────────────────
 
-    test 'a locked start item keeps its answer on the server, out of playerInventory and inventory replies' do
+    test 'a locked start item is stored without its answer and ships none' do
       data = scenario.merge('startItemsInInventory' => [
         { 'type' => 'cryptex', 'id' => 'pocket_cryptex', 'name' => 'Pocket Cryptex', 'takeable' => true,
           'locked' => true, 'lockType' => 'cryptex', 'requires' => 'RIDDLE',
@@ -156,8 +156,11 @@ module BreakEscape
           'locked' => true, 'lockType' => 'combination', 'requires' => '3-14-15', 'combination' => [3, 14, 15] }
       ])
       @game = Game.create!(mission: @mission, player: @owner, scenario_data: data, player_state: state)
+      # R2 M2: stored filtered, as a picked-up item is; the server's check reads the scenario
       held = @game.reload.player_state['inventory']
-      assert_equal 'RIDDLE', held.find { |i| i['id'] == 'pocket_cryptex' }['requires'], 'the server keeps the answer'
+      refute_includes held.to_json, 'RIDDLE', 'the stored start item holds no answer'
+      refute_includes held.to_json, '3-14-15'
+      assert_equal 6, held.find { |i| i['id'] == 'pocket_cryptex' }.dig('cryptexConfig', 'wheelCount')
 
       get scenario_game_url(@game), as: :json
       assert_response :success
@@ -178,8 +181,8 @@ module BreakEscape
       assert_response :success, response.body
       refute_includes response.body, 'RIDDLE'
       refute_includes response.body, '3-14-15'
-      assert_equal 'RIDDLE', @game.reload.player_state['inventory'].find { |i| i['id'] == 'pocket_cryptex' }['requires'],
-                   'filtering the reply leaves the stored copy whole'
+      assert_equal false, @game.reload.player_state['inventory'].to_json.include?('RIDDLE'),
+                   'the stored copy holds no answer either'
     end
 
     # ── answer comparison ────────────────────────────────────────────────
