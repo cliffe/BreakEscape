@@ -220,7 +220,7 @@
     },
     "networkLinks": {
       "type": "array",
-      "description": "Reserved for slice 9.3b: pairs of network ids a link joins. Refused by the 9.3a validator.",
+      "description": "Links (ACCESS_MODEL_SLICE_9_3B_PLAN.md 4.1): an undirected link joins two in-game networks. Each entry is a two-item list of network ids. A rogue device's foothold is not a member of a linked network; the linked network is reached only by pivoting through a host the player holds a session on.",
       "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 }
     },
     "resources": {

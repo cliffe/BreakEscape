@@ -1149,8 +1149,10 @@ module BreakEscape
       pc_id = params[:pc_id].to_s
       return render json: { success: false, message: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
 
-      @game.logout_session!(pc_id)
-      render json: { success: true }
+      # Ending a session can break a pivot; the model ends the onward sessions and returns
+      # their ids (networks slice 9.3b, 5.1) for pc-sessions.js.
+      ended = @game.logout_session!(pc_id)
+      render json: { success: true, endedPcIds: Array(ended) }
     end
 
     # GET /games/:id/login_accounts?pc_id=
