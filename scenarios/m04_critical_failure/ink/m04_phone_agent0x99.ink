@@ -448,7 +448,7 @@ Not from here. The site's evacuation alarm is on Vance's desk.
 // lint: call-knot
 #speaker:agent_0x99
 { extract_choices > 0:
-    Forensics are almost on-site. Time to go.
+    Forensics are almost on-site. Last chance.
 - else:
     Past the gate it's forensics' site, not ours. Anything you want, take it now.
 }
@@ -520,7 +520,7 @@ Relay's down. I've pulled her Level 2 number off the reader logs and pushed you 
 }
 Nightshade's had a look at your reading. Thirty-three degrees over what the screens show.
 His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger.
-ENTROPY feed those screens. That dial isn't on their network.
+ENTROPY feed the control room. That dial isn't on their network.
 -> on_anomaly_confirmed_choices
 
 === on_anomaly_confirmed_choices ===
