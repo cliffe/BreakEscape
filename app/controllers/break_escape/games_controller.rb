@@ -1227,11 +1227,14 @@ module BreakEscape
     end
 
     # POST /games/:id/feed_post (slice 9.2 C, ACCESS_MODEL_SLICE_9_2_PLAN.md 8.3 and 9.1):
-    # { npc_id }, sent after a met social media use. The NPC's next post and its fact, or
-    # { post: null, done } when none is left or it is too soon.
+    # { npc_id, object_id }, sent after a met social media use; object_id is where the use was,
+    # null for the NPC's phone (user decision q33). The NPC's next post and its fact, or
+    # { post: null, done } when none is left, it is too soon or the source is refused.
     def feed_post
       authorize @game if defined?(Pundit)
-      result = @game.reveal_feed_post!(params[:npc_id].is_a?(String) ? params[:npc_id] : nil)
+      source = params[:object_id]
+      source = false unless source.nil? || source.is_a?(String) # any other shape is refused
+      result = @game.reveal_feed_post!(params[:npc_id].is_a?(String) ? params[:npc_id] : nil, source)
       render json: result[:body], status: result[:status]
     end
 

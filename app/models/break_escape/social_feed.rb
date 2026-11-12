@@ -20,9 +20,16 @@ module BreakEscape
     end
 
     # POST /feed_post. Returns { status:, body: }. Checks in order (plan 9.1): the NPC is known;
-    # it has a feed with posts and a social_media need; a post is left; for a second or later
-    # post, the pace floor.
-    def reveal_feed_post!(npc_id)
+    # it has a feed with posts and a social_media need; a post is left; the use's source (user
+    # decision q33); for a second or later post, the pace floor.
+    #
+    # `source` is the object the use was at (`object_id`), or nil for the NPC's phone. A post is
+    # refused (`refused: true`, nothing written) for the phone of an NPC with `"phone": false`,
+    # for an object that is not one of the NPC's social media places the player can know of, and
+    # for a sign-in PC where loginLockouts holds the NPC's username: a lockout stops every use of
+    # that PC, social media included, so a tampered client cannot post from a locked-out PC. The
+    # refusal says no more than a `check` answer would (6.6).
+    def reveal_feed_post!(npc_id, source = nil)
       id = npc_id.is_a?(String) ? npc_id : nil
       npc = id && scenario_room_npc(id)
       return { status: :forbidden, body: { error: 'unknown NPC' } } unless npc && Array(player_state['encounteredNPCs']).include?(id)
@@ -34,6 +41,7 @@ module BreakEscape
       entry = store[id].is_a?(Hash) ? store[id] : {}
       n = entry['n'].is_a?(Integer) ? entry['n'].clamp(0, posts.size) : 0
       return { status: :ok, body: { npcId: id, post: nil, done: true } } if n >= posts.size
+      return { status: :ok, body: { npcId: id, post: nil, done: false, refused: true } } unless feed_source_ok?(npc, source)
 
       now = Time.current.to_f
       if n.positive?
@@ -88,6 +96,17 @@ module BreakEscape
     end
 
     private
+
+    # q33: the phone (nil) when the NPC has one; else a social media place of the NPC (its own
+    # station, a non-desk source, a borrowed PC handed over) in a room the player can know of,
+    # where the NPC's username is not locked out
+    def feed_source_ok?(npc, source)
+      return AccessWork.phone?(npc) if source.nil?
+      return false unless source.is_a?(String) && frustration_places(npc, 'social_media').include?(source)
+
+      pc = AccessWork.object(scenario_data, source)
+      !(pc && AccessIdentities.login_pc?(pc) && AccessWork.locked_out_at?(npc, pc, lockout_keys))
+    end
 
     # { index, post, fact, site, person } for the NPC's post at `index`; `fact` is
     # { id, entry } for a post whose fact names an intelFacts entry, else nil

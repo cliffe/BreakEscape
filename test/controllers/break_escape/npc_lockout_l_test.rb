@@ -291,7 +291,9 @@ module BreakEscape
       assert_equal 200, guest_claim('hot_desk').status, 'granted once no lockout holds'
     end
 
-    test 'R1 m2: a recorded lockout is a work cause only; a social_media ease at the station is answered and its fail refused' do
+    # User decision q33 (2026-11-12) reverses R1 m2: a lockout stops every use of the PC, social
+    # media included (social_lockout_q33_test.rb has the rest)
+    test 'q33: a recorded lockout is a social_media cause too; its fail counts and a social ease at the station is refused' do
       data = scenario
       jake_pc = data['rooms']['office']['objects'].find { |o| o['id'] == 'jake_pc' }
       jake_pc['affordance'] = { 'satisfies' => %w[work social_media], 'useSeconds' => 5, 'offWhen' => 'jake_pc_off' }
@@ -303,10 +305,9 @@ module BreakEscape
       t = Time.current
       assert_equal 20, travel_to(t) { report(locked_fail).first['level'] }
       social_fail = { npc_id: 'jake', event: 'fail', need: 'social_media', object_id: 'jake_pc', missing: [{ id: 'jake_pc', why: 'locked_out' }] }
-      assert_equal({ 'npcId' => 'jake', 'refused' => true }, travel_to(t + 30) { report(social_fail).first }, 'locked_out is no social_media cause')
+      assert_equal 40, travel_to(t + 30) { report(social_fail).first['level'] }, 'locked_out is a social_media cause'
       ease = travel_to(t + 31) { report({ npc_id: 'jake', event: 'ease', need: 'social_media', object_id: 'jake_pc' }).first }
-      refute ease['refused'], 'a social ease at the station is not refused'
-      assert ease['level'] < 20
+      assert ease['refused'], 'a social ease at the locked-out station is refused'
     end
 
     test 'R1 m3: a check is refused for an owner with no work plan' do
