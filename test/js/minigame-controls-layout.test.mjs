@@ -95,6 +95,16 @@ test('the password and container panels fit inside the game area; the desktop si
     assert.equal(rule(css('container-minigame.css'), '.container-minigame.desktop-mode').height, 'auto');
 });
 
+test('a disabled Sign in looks disabled: flat fill, no hover change, not-allowed cursor', () => {
+    const src = css('password-minigame.css');
+    const off = rule(src, '.submit-btn:disabled');
+    assert.notEqual(off.background, rule(src, '.submit-btn').background);
+    assert.equal(off.cursor, 'not-allowed');
+    assert.equal(rule(src, '.submit-btn:disabled:hover').background, off.background);
+    assert.doesNotMatch(Object.values(off).join(' '), /gradient|radius|blur|rgba/);
+    assert.equal(rule(src, '.signin-tile:disabled').cursor, 'not-allowed');
+});
+
 test('on a short landscape screen the notes Continue stays beside the notepad', () => {
     const src = css('notes.css');
     const media = src.slice(src.indexOf('@media (orientation: landscape) and (max-height: 640px)'));
