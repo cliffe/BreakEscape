@@ -163,6 +163,12 @@
           "title": "F13: Ruth posts once the kiosk gets her back online",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "taskId": "f14_jake_phone",
+          "title": "F14: ask Jake for his phone",
+          "type": "custom",
+          "status": "active"
         }
       ]
     }
@@ -409,6 +415,32 @@
             "useSeconds": 10
           },
           "observations": "A spare kiosk PC under the lax policy: social media is allowed."
+        },
+        {
+          "type": "phone_friendface",
+          "id": "player_phone",
+          "name": "Your phone",
+          "takeable": true,
+          "position": {
+            "x": 5,
+            "y": 6
+          },
+          "observations": "Your own mobile, signed in to Friendface."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_f14",
+          "name": "Sign: F14",
+          "position": {
+            "x": 4,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F14. Pick up your phone here: it opens the Friendface feed, and buzzes when someone posts.\nThen ask Jake (north) for his phone: it opens on his profile, and he has to post from his PC instead.",
+          "observations": "A beat sign on a stand."
         }
       ],
       "npcs": []
@@ -466,7 +498,7 @@
           "spriteSheet": "male_office_worker_v2",
           "spriteTalk": "assets/characters/male_office_worker_talk.png",
           "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
-          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "storyPath": "scenarios/test_access_social/ink/jake.json",
           "currentKnot": "start",
           "behavior": {
             "facePlayer": true,
@@ -529,6 +561,23 @@
               "onceOnly": true,
               "completeTask": "f6_last_post",
               "condition": "data.index === 2"
+            },
+            {
+              "eventPattern": "item_picked_up:phone_friendface",
+              "onceOnly": true,
+              "completeTask": "f14_jake_phone",
+              "condition": "data.itemId === 'jake_phone'",
+              "fireOnlyWhenLoaded": true
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "jake_phone",
+              "name": "Jake's phone",
+              "takeable": true,
+              "phoneOf": "jake",
+              "observations": "Jake's mobile, open on Friendface."
             }
           ]
         }
@@ -620,6 +669,16 @@
               "onceOnly": true,
               "completeTask": "f3_pc",
               "condition": "data.need === 'social_media' && data.met === true"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "lena_phone",
+              "name": "Lena's phone",
+              "takeable": true,
+              "phoneOf": "lena",
+              "observations": "Lena's mobile, open on Friendface."
             }
           ]
         }
@@ -938,6 +997,16 @@
               "completeTask": "f9_posted",
               "condition": "data.index === 1"
             }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "priya_phone",
+              "name": "Priya's phone",
+              "takeable": true,
+              "phoneOf": "priya",
+              "observations": "Priya's mobile, open on Friendface."
+            }
           ]
         }
       ]
@@ -1092,6 +1161,16 @@
               "onceOnly": true,
               "completeTask": "f10_posted",
               "condition": "data.postId === 'f10_vent'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "nadia_phone",
+              "name": "Nadia's phone",
+              "takeable": true,
+              "phoneOf": "nadia",
+              "observations": "Nadia's mobile, open on Friendface."
             }
           ]
         }
@@ -1429,6 +1508,16 @@
               "onceOnly": true,
               "completeTask": "f12_posted",
               "condition": "data.postId === 'f12_vent'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "greg_phone",
+              "name": "Greg's phone",
+              "takeable": true,
+              "phoneOf": "greg",
+              "observations": "Greg's mobile, open on Friendface."
             }
           ]
         }

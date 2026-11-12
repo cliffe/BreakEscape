@@ -53,13 +53,16 @@ function clean() {
                     feed: { site: 'friendface', person: 'jake', posts: [
                         { id: 'jake_post_1', text: 'Biscuit turns 5 today! Best boy.', fact: 'jake_pet_name' },
                         { id: 'jake_post_2', text: 'Back from Crete, three hundred emails waiting.' }
-                    ] }
+                    ] },
+                    itemsHeld: [{ type: 'phone_friendface', id: 'jake_phone', name: "Jake's phone", takeable: true, phoneOf: 'jake' }]
                 }]
             }
         }
     };
 }
 const jake = s => s.rooms.lobby.npcs[0];
+// "phone": false, and so no Friendface phone to hold (q35)
+const noPhone = s => { jake(s).phone = false; delete jake(s).itemsHeld; };
 
 test('social: a clean fixture raises nothing', { skip }, () => {
     assert.deepEqual(issues(clean()), []);
@@ -109,7 +112,7 @@ test('social: a password in a feed post, a feed fact or a chatter line is an err
 
 test('social: no phone, no workstation home and no source is an error; a workstation home is enough', { skip }, () => {
     const s = clean();
-    jake(s).phone = false;
+    noPhone(s);
     jake(s).needsHome = { room: 'lobby', x: 2, y: 2 };
     assertHas(errors(issues(s)), 'no workstation for a home and no object whose affordance.satisfies social_media');
     jake(s).needsHome = 'jake_pc';
@@ -117,11 +120,11 @@ test('social: no phone, no workstation home and no source is an error; a worksta
 });
 
 test('review C R1 M2: "phone": false with only a blocked own PC and no borrow warns: the need is never met', { skip }, () => {
-    let s = clean(); jake(s).phone = false;
+    let s = clean(); noPhone(s);
     assertHas(warnings(issues(s)), "its only source is its own workstation 'jake_pc', whose policy blocks social media");
-    s = clean(); jake(s).phone = false; s.rooms.lobby.objects[0].policy = 'lax';
+    s = clean(); noPhone(s); s.rooms.lobby.objects[0].policy = 'lax';
     assertLacks(warnings(issues(s)), 'its only source is its own workstation');
-    s = clean(); jake(s).phone = false; jake(s).workarounds = [{ at: 50, do: 'borrow_session', pc: 'kiosk' }];
+    s = clean(); noPhone(s); jake(s).workarounds = [{ at: 50, do: 'borrow_session', pc: 'kiosk' }];
     assertLacks(warnings(issues(s)), 'its only source is its own workstation');
     s = clean();
     assertLacks(warnings(issues(s)), 'its only source is its own workstation');
@@ -129,7 +132,7 @@ test('review C R1 M2: "phone": false with only a blocked own PC and no borrow wa
 
 test('q33 review R1 m3: "phone": false, social only, at a maxAttempts sign-in PC wants a station_fail or work_fail line', { skip }, () => {
     const lockable = () => {
-        const s = clean(); jake(s).phone = false;
+        const s = clean(); noPhone(s);
         s.policies.locking = { social: 'allowed', maxAttempts: 3 };
         s.rooms.lobby.objects[0].policy = 'locking';
         return s;
@@ -142,7 +145,7 @@ test('q33 review R1 m3: "phone": false, social only, at a maxAttempts sign-in PC
     assertLacks(warnings(issues(s)), 'can fail social media with');
     s = lockable(); delete jake(s).phone;
     assertLacks(warnings(issues(s)), 'can fail social media with');
-    s = clean(); jake(s).phone = false; s.rooms.lobby.objects[0].policy = 'lax';
+    s = clean(); noPhone(s); s.rooms.lobby.objects[0].policy = 'lax';
     assertLacks(warnings(issues(s)), 'can fail social media with');
 });
 
@@ -150,13 +153,13 @@ test('social: needsDeferMin under 0.5 warns with "phone": false and not with a p
     const s = clean();
     jake(s).needsDeferMin = 0.2;
     assertLacks(warnings(issues(s)), 'needsDeferMin');
-    jake(s).phone = false;
+    noPhone(s);
     assertHas(warnings(issues(s)), 'needsDeferMin 0.2');
 });
 
 test('social: a blocking policy with no phone wants a social_blocked line', { skip }, () => {
     const s = clean();
-    jake(s).phone = false;
+    noPhone(s);
     s.chatter = {};
     assertHas(warnings(issues(s)), 'no social_blocked line');
     s.chatter = { social_blocked: ['Blocked. Of course.'] };
@@ -192,7 +195,7 @@ test('social: a guard with challengeOnSight, the need and a phone is walkable on
     const s = clean();
     jake(s).los = { enabled: true, challengeOnSight: { event: 'player_in_view_near:jake' } };
     assertHas(warnings(issues(s)), 'can be walked past once every period of the need (about every 60 s)');
-    jake(s).phone = false;
+    noPhone(s);
     assertLacks(warnings(issues(s)), 'walked past');
 });
 
@@ -206,7 +209,7 @@ test('social: the report gives each feed its posting schedule and the server flo
 
 test('social: the needs validator counts the own workstation as a social_media source with "phone": false', { skip }, () => {
     const s = clean();
-    jake(s).phone = false;
+    noPhone(s);
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
       puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
     const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(s), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
@@ -256,4 +259,35 @@ test('social: a feed post is its fact\'s granting element in the OSINT lint; its
     t.social.intelFacts.jake_pet_name.source = 'jake_post_1';
     delete jake(t).needs;
     assertHas(lint(t), "fact 'jake_pet_name' is granted by nothing");
+});
+
+// q35 (FRIENDFACE_PHONE_ITEM_PLAN.md section 3): Friendface phone items
+test('phone: an NPC that posts from a phone must hold its Friendface phone; a "phone": false NPC needs none', { skip }, () => {
+    let s = clean(); delete jake(s).itemsHeld;
+    assertHas(errors(issues(s)), 'jake posts from a phone');
+    s = clean(); delete jake(s).itemsHeld; jake(s).phone = false;
+    jake(s).needsHome = 'jake_pc'; s.policies.no_social.social = 'allowed';
+    assertLacks(issues(s), 'posts from a phone');
+});
+
+test('phone: phoneOf must name the NPC holding it, which has a phone; one each; site only on the player\'s own', { skip }, () => {
+    let s = clean(); jake(s).itemsHeld[0].phoneOf = 'nobody';
+    assertHas(errors(issues(s)), "phoneOf 'nobody' names no room NPC");
+    s = clean(); s.rooms.lobby.objects.push({ type: 'phone_friendface', id: 'loose', name: 'Loose phone', takeable: true, phoneOf: 'jake' });
+    assertHas(errors(issues(s)), "is not in jake's itemsHeld");
+    s = clean(); jake(s).itemsHeld.push({ type: 'phone_friendface', id: 'jake_phone_2', name: 'Spare', takeable: true, phoneOf: 'jake' });
+    assertHas(errors(issues(s)), 'holds 2 Friendface phones');
+    s = clean(); jake(s).phone = false;
+    assertHas(errors(issues(s)), 'who is "phone": false');
+    s = clean(); jake(s).itemsHeld[0].site = 'friendface';
+    assertHas(errors(issues(s)), 'only the player\'s own phone');
+});
+
+test('phone: the player\'s own phone may be anywhere; its site must be a social site', { skip }, () => {
+    let s = clean(); s.startItemsInInventory = [{ type: 'phone_friendface', id: 'mine', name: 'Your phone' }];
+    assert.deepEqual(errors(issues(s)), []);
+    s.startItemsInInventory[0].site = 'corp';
+    assertHas(errors(issues(s)), "site 'corp' names no social osint site");
+    s.startItemsInInventory[0].site = 'friendface';
+    assert.deepEqual(errors(issues(s)), []);
 });

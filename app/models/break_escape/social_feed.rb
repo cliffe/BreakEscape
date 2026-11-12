@@ -98,6 +98,57 @@ module BreakEscape
       end
     end
 
+    # ── Friendface phone item (q35, docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md) ─────────
+
+    FRIENDFACE_PHONE = 'phone_friendface'.freeze
+
+    # The Friendface phone the player holds for `npc_id` (nil: the player's own phone, one with no
+    # phoneOf), or nil. Reads the server's inventory, whose phone items are always the scenario's
+    # own copies: phoneOf is a field a client-built item can never carry.
+    def held_friendface_phone(npc_id)
+      Array(player_state['inventory']).find do |item|
+        next false unless item.is_a?(Hash) && item['type'] == FRIENDFACE_PHONE
+
+        owner = item['phoneOf'].is_a?(String) && !item['phoneOf'].empty? ? item['phoneOf'] : nil
+        owner == npc_id
+      end
+    end
+
+    # True once an NPC's Friendface phone has left it: the player holds it, or the server holds a
+    # gift record of it from that NPC (given, taken from its items; still true after the player
+    # drops it). Such an NPC is "phone": false for the rest of the run (plan section 3).
+    def friendface_phone_taken?(npc_id)
+      return false unless npc_id.is_a?(String) && !npc_id.empty?
+
+      given = player_state['npc_given_items']
+      gifted = given.is_a?(Hash) && Array(given[npc_id]).any? { |g| g.is_a?(Hash) && g['type'] == FRIENDFACE_PHONE }
+      gifted || !held_friendface_phone(npc_id).nil?
+    end
+
+    # POST /friendface_phone. Returns { status:, body: }. Read only. `npc_id` a String opens that
+    # NPC's phone, nil the player's own. Refused (403) unless the player holds that phone. The body
+    # names the site and the profile to open, and carries the server's feedPosts for it (that
+    # NPC's, or all of them for the player's own phone): posts already revealed, nothing new.
+    def open_friendface_phone(npc_id)
+      return { status: :forbidden, body: { error: 'no such phone' } } unless npc_id.nil? || (npc_id.is_a?(String) && !npc_id.empty?)
+
+      item = held_friendface_phone(npc_id)
+      return { status: :forbidden, body: { error: 'no such phone' } } unless item
+
+      posts = feed_posts_for_client
+      if npc_id
+        npc = scenario_room_npc(npc_id)
+        feed = npc.is_a?(Hash) && npc['feed'].is_a?(Hash) ? npc['feed'] : {}
+        site = feed['site'].is_a?(String) ? feed['site'] : default_friendface_site
+        person = feed['person'].is_a?(String) ? feed['person'] : nil
+        posts = posts.slice(npc_id)
+      else
+        site = item['site'].is_a?(String) && !item['site'].empty? ? item['site'] : default_friendface_site
+        person = nil
+      end
+      { status: :ok, body: { 'npcId' => npc_id, 'site' => site, 'person' => person, 'feedPosts' => posts } }
+    end
+
     # Deletes every feed fact's entry from the bootstrap's social.intelFacts (plan 8.3), never the
     # block itself: an empty intelFacts stays an object, because grantFact grants any id when the
     # block is absent (social-intel.js).
@@ -116,6 +167,13 @@ module BreakEscape
     end
 
     private
+
+    # The first social site in the scenario's osint block, or nil
+    def default_friendface_site
+      sites = scenario_data.dig('social', 'osint', 'sites')
+      site = Array(sites).find { |st| st.is_a?(Hash) && st['type'] == 'social' && st['id'].is_a?(String) }
+      site && site['id']
+    end
 
     # q33: the phone (nil) when the NPC has one; else a social media place of the NPC (its own
     # station, a non-desk source, a borrowed PC handed over) in a room the player can know of,

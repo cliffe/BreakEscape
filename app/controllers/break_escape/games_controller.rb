@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
                                         :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
-                                        :npc_frustration, :npc_workaround, :feed_post, :wear]
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -1239,6 +1239,17 @@ module BreakEscape
       render json: result[:body], status: result[:status]
     end
 
+    # POST /games/:id/friendface_phone: open a Friendface phone the player holds (q35,
+    # FRIENDFACE_PHONE_ITEM_PLAN.md section 4). npc_id a string: that NPC's phone; null: the
+    # player's own. Read only; refused unless the server's inventory holds that phone.
+    def friendface_phone
+      authorize @game if defined?(Pundit)
+      npc_id = params[:npc_id]
+      npc_id = false unless npc_id.nil? || npc_id.is_a?(String) # any other shape is refused
+      result = @game.open_friendface_phone(npc_id)
+      render json: result[:body], status: result[:status]
+    end
+
     # ==========================================
     # Objectives System
     # ==========================================
@@ -2179,7 +2190,7 @@ module BreakEscape
     CLIENT_ITEM_FORBIDDEN_FIELDS = %w[
       opens_lock key_id keyId scenarioData requires lockType locked
       contents itemsHeld flags flagRewards keyPins saved_cards
-      droppable needsTag wearable holds storeIn
+      droppable needsTag wearable holds storeIn phoneOf
     ].freeze
 
     # What the inventory stores for an add that validate_item_collectible passed.

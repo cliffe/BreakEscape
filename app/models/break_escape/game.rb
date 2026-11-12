@@ -1183,6 +1183,14 @@ module BreakEscape
         end
       end
 
+      # q35: an NPC whose Friendface phone the player has taken starts the client as
+      # "phone": false (FRIENDFACE_PHONE_ITEM_PLAN.md section 3)
+      if room['npcs'].is_a?(Array)
+        room['npcs'] = room['npcs'].map do |npc|
+          npc.is_a?(Hash) && friendface_phone_taken?(npc['id']) ? npc.merge('phone' => false) : npc
+        end
+      end
+
       # Mark previously-unlocked objects as locked=false so the client skips the
       # lock minigame and opens them directly on interaction.
       if player_state['unlockedObjects'].present? && room['objects'].present?
@@ -1310,7 +1318,10 @@ module BreakEscape
     def scenario_room_npc(npc_id)
       return nil if npc_id.blank?
 
-      self.class.scenario_room_npcs(scenario_data).find { |npc| npc['id'] == npc_id.to_s }
+      npc = self.class.scenario_room_npcs(scenario_data).find { |n| n['id'] == npc_id.to_s }
+      # q35: an NPC whose Friendface phone the player has taken has no phone for the rest of
+      # the run (docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md section 3)
+      npc && friendface_phone_taken?(npc['id']) ? npc.merge('phone' => false) : npc
     end
 
     def account_npcs

@@ -4907,7 +4907,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "description": "Sprite name for this item. Any valid sprite asset name is accepted. Certain types have special engine behaviour: 'pc' (file container), 'safe'/'suitcase'/'briefcase'/'bin'/'bin1' (locked containers), 'vm-launcher' (VM terminal), 'launch-device' (launch/abort prop), 'flag-station' (flag submission), 'lockpick'/'key'/'keycard'/'rfid_cloner'/'pin-cracker'/'bluetooth_scanner'/'fingerprint_kit' (security tools), 'notes'/'notes2'/'notes4'/'notes5'/'text_file'/'chalkboard' (readable content). Can be combined with 'observations' for any sprite."
+          "description": "Sprite name for this item. Any valid sprite asset name is accepted. Certain types have special engine behaviour: 'pc' (file container), 'safe'/'suitcase'/'briefcase'/'bin'/'bin1' (locked containers), 'vm-launcher' (VM terminal), 'launch-device' (launch/abort prop), 'flag-station' (flag submission), 'lockpick'/'key'/'keycard'/'rfid_cloner'/'pin-cracker'/'bluetooth_scanner'/'fingerprint_kit' (security tools), 'phone_friendface' (a Friendface phone: opens the social feed; see phoneOf), 'notes'/'notes2'/'notes4'/'notes5'/'text_file'/'chalkboard' (readable content). Can be combined with 'observations' for any sprite."
         },
         "id": { "type": "string", "description": "This object's own unique identity, distinct from opens_lock (which names the lock it opens). Used to target this specific object." },
         "name": { "type": "string" },
@@ -5085,6 +5085,14 @@
         "mac": { "type": "string" },
         "canScanBluetooth": { "type": "boolean" },
         "phoneId": { "type": "string" },
+        "phoneOf": {
+          "type": "string",
+          "description": "A Friendface phone (type 'phone_friendface'): the id of the NPC whose phone it is. It sits in that NPC's itemsHeld; once the player has it the NPC has no phone for the rest of the run. Absent: the player's own phone, which opens the whole feed (FRIENDFACE_PHONE_ITEM_PLAN.md)."
+        },
+        "site": {
+          "type": "string",
+          "description": "The player's own Friendface phone (type 'phone_friendface', no phoneOf): the social.osint site it opens. Default: the first social site."
+        },
         "npcIds": {
           "type": "array",
           "items": { "type": "string" }

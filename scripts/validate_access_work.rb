@@ -35,7 +35,53 @@ module ValidateAccessWork
     check_work(json_data, issues)
     check_workarounds(json_data, issues)
     check_social(json_data, issues)
+    check_friendface_phones(json_data, issues)
     issues
+  end
+
+  # ── Friendface phone items (q35, docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md section 3) ──
+
+  FRIENDFACE_PHONE = 'phone_friendface'
+
+  # An NPC's Friendface phone (`phoneOf`) sits in that NPC's itemsHeld, the NPC has a phone, and it
+  # holds at most one; an NPC with a social_media need, a feed and a phone holds its phone. A phone
+  # with no phoneOf is the player's own and may be anywhere; its `site` must be a social site.
+  def check_friendface_phones(json_data, issues)
+    npcs = room_npcs(json_data).to_h { |e| [e[:npc]['id'], e[:npc]] }
+    sites = osint_sites(json_data).to_h { |site| [site['id'], site] }
+    held_by = Hash.new { |h, k| h[k] = [] }
+    room_npcs(json_data).each do |e|
+      Array(e[:npc]['itemsHeld']).each { |i| held_by[e[:npc]['id']] << i if i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE }
+    end
+    all_objects(json_data).each do |o|
+      item = o[:obj]
+      next unless item['type'] == FRIENDFACE_PHONE
+
+      owner = item['phoneOf']
+      name = item['name'] || item['id'] || FRIENDFACE_PHONE
+      if owner.nil?
+        if item.key?('site') && !(sites[item['site']] && sites[item['site']]['type'] == 'social')
+          err(issues, "Friendface phone '#{name}' site '#{item['site']}' names no social osint site.")
+        end
+        next
+      end
+      if !owner.is_a?(String) || !npcs.key?(owner)
+        err(issues, "Friendface phone '#{name}' phoneOf '#{owner}' names no room NPC.")
+      elsif !held_by[owner].any? { |i| i.equal?(item) }
+        err(issues, "Friendface phone '#{name}' is #{owner}'s (phoneOf) but is not in #{owner}'s itemsHeld: an NPC's phone starts with that NPC.")
+      elsif !AW.phone?(npcs[owner])
+        err(issues, "Friendface phone '#{name}' belongs to #{owner}, who is \"phone\": false: that NPC has no personal phone.")
+      end
+      err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no phoneOf) takes one.") if item.key?('site')
+    end
+    npcs.each do |nid, npc|
+      own = held_by[nid].select { |i| i['phoneOf'] == nid }
+      err(issues, "#{nid} holds #{own.size} Friendface phones of its own; an NPC carries one.") if own.size > 1
+      next unless AW.need?(npc, 'social_media') && npc['feed'].is_a?(Hash) && AW.phone?(npc) && own.empty?
+
+      err(issues, "#{nid} posts from a phone (social_media need, a feed, no \"phone\": false) but holds no Friendface phone: " \
+                  "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"phoneOf\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")
+    end
   end
 
   # ── shared walks ──────────────────────────────────────────────────────

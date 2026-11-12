@@ -529,6 +529,7 @@ def check_unknown_fields(json_data)
     hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
     fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
     mac canScanBluetooth phoneId npcIds app
+    phoneOf site
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents hasContents triggerOnInteract

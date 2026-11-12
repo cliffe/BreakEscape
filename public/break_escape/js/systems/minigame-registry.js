@@ -30,7 +30,9 @@ const BUILT_IN = {
     'page-builder':        { fn: 'startLandingPageBuilder',     unavailable: 'Page builder unavailable.' },
     'report-workstation':  { fn: 'startEngagementReport',       unavailable: 'Report workstation unavailable.' },
     'mail_terminal':       { fn: 'startMailClientMinigame',     unavailable: 'Mail terminal unavailable.' },
-    'exercise-station':    { start: startExerciseStation,        unavailable: 'Station unavailable.' }
+    'exercise-station':    { start: startExerciseStation,        unavailable: 'Station unavailable.' },
+    // q35: a Friendface phone opens the feed (systems/friendface-phone.js)
+    'phone_friendface':    { fn: 'startFriendfacePhone',        unavailable: 'Phone unavailable.' }
 };
 
 const registry = new Map(Object.entries(BUILT_IN));

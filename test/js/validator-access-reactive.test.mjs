@@ -69,7 +69,8 @@ function reactiveClean() {
                             { id: 'dana_vent', text: 'Finance share down again, second time this week.',
                               when: { cause: 'down', need: 'work' }, fact: 'dana_backups', deliberate: true }
                         ]
-                    }
+                    },
+                    itemsHeld: [{ type: 'phone_friendface', id: 'dana_phone', name: "Dana's phone", takeable: true, phoneOf: 'dana' }]
                 }]
             }
         }

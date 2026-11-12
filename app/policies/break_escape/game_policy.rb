@@ -109,6 +109,11 @@ module BreakEscape
       show?
     end
 
+    # q35: open a Friendface phone the player holds
+    def friendface_phone?
+      show?
+    end
+
     # Wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md)
     def wear?
       show?
