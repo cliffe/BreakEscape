@@ -106,7 +106,7 @@ Maya Chen: I suppose it doesn't matter now.
 - Keep the note under 200 characters, in plain ASCII words, with no `{braces}`. A note that prints anything (a variable `#delivery: {mood}`, a conditional `#delivery: {flag: loud|soft}` or a sequence `#delivery: {~one|two}`, with or without plain words before it) cannot be read by the server: the line plays untagged, and any note before it on the line or carried to it is dropped too. The same goes for a tag whose name is printed (`#{t}`), which may turn out to be a `#delivery:` note; to show a `#` in a spoken line, write `\#`. A longer note, or one with no letter or digit (`...`), is dropped and the line plays untagged.
 - Keep it short and about the voice: pace, volume, mood, a laugh or sigh in the voice (`quietly, almost to herself`, `flatly`, `with a tired laugh`, `slowly, choosing each word`). Things the character *does* are narration, or cut.
 - A note changes that line's audio, so adding, changing or removing one regenerates the clip. Untagged lines keep their existing clips.
-- Person-chat lines only, for now: a voiced phone call (`voiced: true`) doesn't send the note yet, so put nothing there you rely on.
+- Person-chat lines and voiced phone calls (the call's knots and what they reach) both send the note. A voicemail's `voice:` lines take none, and a text thread is not spoken.
 
 ❌ **WRONG**: an inline cue, and a line starting with `*`, which the compiler parses as a player choice:
 ```ink
@@ -586,6 +586,16 @@ Rules for a call knot:
 - **Never divert to the home knot, a hub, or any knot the text thread also uses.** After `#exit_conversation` the phone keeps running the story until it reaches choices. A `-> hub` there types the hub's lines, unvoiced, inside the call, and the call's voicing then reaches into the hub. The validator warns on a call that reaches the home knot, and on a home knot that reaches a call. Only a contact with contact-level `voiced: true` (the lab's Dev) diverts home.
 - **The home knot never routes into a call knot.** A thread opened by hand must not replay the call as silent texts. The call is delivered by the ring or the button.
 - **The thread comes back on the home knot after every call.** Write the home knot so it reads right after a call as well as before one. If the thread already shows the home knot's lines, the engine settles on its choices without typing them again, so a hub line is not shown twice.
+- **A contact who is only rung still needs a home knot that rests.** If it prints nothing and ends (`-> DONE`), the story is over: opening the thread by hand shows a "Conversation ended" notice and no choices, beside the Missed call row and its Call back button. Give it one choice whose whole text is in parentheses, looping home:
+
+  ```ink
+  === start ===
+  + [(Close.)]
+      #exit_conversation
+      -> start
+  ```
+
+  On the phone, a choice whose whole text is one pair of parentheses (`(Close.)`, `(Hang up.)`) is taken without a player bubble or the sent sound, and is not kept in the thread. That holds inside a call too, so put a real reply in parentheses only when the player saying nothing is the point.
 - **Where a call has several beats, give each its own knot** and list each in `call` (or ring it from its own mapping). Ringing again reruns the knot from the top, so the ink decides what a repeat says with visit counts or a `{once}` block.
 - **Two records, one name.** Where two characters or records share a display name (HaX on the phone and in the room), prefix the co-speaker line with the record's exact id (`agent_0x99: …`, `hax_voice: …`), not the display name. The id match is case-insensitive, never matches `narrator` or `player`, and the bubble and subtitle show the display name. With an id prefix, scenario order doesn't decide who speaks.
 
@@ -669,16 +679,29 @@ voice: Leave this with me. I will ring again.
 When a call ends by starting a scene (HaX's "Bring me in." and the in-person debrief), the call still says its last line and ends `#exit_conversation`. The scene waits for the call, opens when it ends, and the phone does not reopen on top of it.
 
 ```ink
-+ [I'm done here. Bring me in.]
-    #ending_check
+=== bring_in ===
+// lint: call-knot
+Forensics are ten minutes out. Anything you want, take it now.
++ [Bring me in.]
+    #complete_task:call_in
+    Loading dock. The van with no livery.
+    -> bring_in_confirm
++ [Not yet. I'm still looking.]
+    Fine. The site will keep.
+    #exit_conversation
+    -> DONE
+
+=== bring_in_confirm ===
+// lint: call-knot
++ [On my way. #ending_check]
     #set_global:debrief_go:true
-    Bringing you in now.
     Stay sharp in there, and say nothing you don't have to.
     #exit_conversation
     -> DONE
 ```
 
-`#ending_check` comes first. If the player chooses "Keep going", the reply's lines and tags are all dropped and the call hangs up, so the debrief global is never set.
+- **The call-in task completes on the "[Bring me in.]" reply**, before the confirm choice. The ending check lists every optional objective still open, so a task that waited for the confirm would always be listed as unfinished.
+- **`#ending_check` goes inside the confirm choice's brackets.** The engine asks before the choice is taken. "End the mission now" takes it. "Keep going" leaves the call on the same choices, so the player can hang up and carry on, and the debrief global is never set. Never put `#ending_check` on a line or after the brackets in a call. "Keep going" would then drop every line and tag of the reply, and the call would hang up 2 s later with nothing said.
 
 Put the hand-off line after the choice, so the player hears it before the scene opens. A bring-in is two to four NPC lines, then the hand-off. It never reviews the mission ("Let's go over what happened" belongs to the debrief). Each mission's bring-in has its own opening, its own reply to "[Bring me in.]", its own "Not yet" reply and its own last line, tied to that mission's story.
 
