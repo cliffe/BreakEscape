@@ -126,6 +126,18 @@ must show the reactive post texts among the feed posts it checked. One reload du
 must show every revealed reactive post at once, in reveal order, with no unrevealed reactive post in
 any response.
 
+## Friendface phones (q35): F14
+
+Plan: `docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md`. Run F14 after F2 to F9: once Jake's phone
+is taken he has no phone for the rest of the run, which changes F2 and F6. Every NPC with a feed and
+a phone (Jake, Lena, Priya, Nadia, Greg) holds its own `phone_friendface` item.
+
+| Beat | Do | Expect | Server afterwards |
+|---|---|---|---|
+| F14a | In the lobby, pick up "Your phone" (beside the start) | It opens 1 s later on the Friendface home (every profile). Each post the server reveals from then on plays `phone_vibrate` once and adds 1 to the tray badge; while a conversation or the browser is open the sound waits and plays once on close. Opening the phone clears the badge | `inventory` holds `player_phone` (no `phoneOf`) |
+| F14b | In `jake_room`, ask Jake "Could I borrow your phone for a bit?" | "Received: Jake's phone"; task `f14_jake_phone`. Opening it shows Jake's profile with only his revealed posts. Jake's live record has `phone: false`; his next social media use is at `jake_pc`, which blocks it, so it fails (parked `failed`, frustration up) and he no longer posts from the phone | `inventory` holds `jake_phone` with `phoneOf: "jake"`; `npc_given_items.jake` lists it; `POST /feed_post` for Jake with `object_id` null is `refused` |
+| F14c | Reload (`?skip_resume=1`) | No sound and no badge for posts already shown; the room bootstrap sends Jake with `phone: false` | unchanged |
+
 ## Earned secrets
 
 | Secret | Where it is first read in the game |
@@ -162,3 +174,8 @@ any response.
   reads only `npc_id` and the `object_id` location, and the server decides the condition. The same for
   Greg's `f12_vent` before his outage, Theo's `f11_borrowed` before his borrow, and Ruth's
   `f13_blocked`/`f13_fixed` before her failure and recovery.
+- F14 (q35): `POST /friendface_phone` for a phone the server's inventory does not hold (`lena`, an
+  array, or `null` before the player's own phone is picked up) is 403 `no such phone` and writes
+  nothing. `window.startFriendfacePhone` called with a made-up phone item shows "You do not have that
+  phone." and opens nothing. `POST /inventory` adding a `phone_friendface` the scenario does not
+  have is 422; `phoneOf` on a client-built item (a notepad) is dropped before it is stored.
