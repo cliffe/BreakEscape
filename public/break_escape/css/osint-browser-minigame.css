@@ -224,7 +224,7 @@
 /* C3: a thread of replies under a feed post, indented, oldest first */
 .ob-thread { margin: -4px 0 10px 24px; padding-left: 10px; border-left: 2px solid #c9ccd4; display: flex; flex-direction: column; gap: 6px; }
 .ob-reply .ob-text { margin: 4px 0 0; }
-.ob-reply-to { color: #4a4f5c; font-size: 14px; font-style: italic; }
+.ob-reply-to { color: #4a4f5c; font-size: 14px; }
 .ob-field-label { font-weight: 700; }
 
 .ob-badge {

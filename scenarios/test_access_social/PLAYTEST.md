@@ -189,8 +189,10 @@ holds `player_phone` from F14a). Before F15, check that `se_osint_state.visited`
 Friendface), so this is a check, and the terminal visit is needed only when F14 was skipped. t = 0
 is the room's load (the `/unlock` answer that carries the room). Times below were measured in the
 dry run (games 1723 and 1731): each NPC's `down` work failure reached the server 5.5 s after load,
-the first post came about 30 s after load, then each NPC posted every 80 s. The validator's
-estimate is about 10 s later throughout (40 s for the first post). Keep a 5 s tolerance. The NPCs hold their phones: never take one in these
+the first post came about 30 s after load, then each NPC posted every 80 s. The failure comes
+before the first post because it drains the NPC's social need by `breakDrain` (default 10, so
+10 s at 60 a minute); the validator's `Feed` estimate takes that drain off and matches these
+times. Keep a 5 s tolerance. The NPCs hold their phones: never take one in these
 beats (a taken phone stops that NPC posting from it).
 
 | Beat | Do | Expect | Server afterwards | `/feed_post` this beat |

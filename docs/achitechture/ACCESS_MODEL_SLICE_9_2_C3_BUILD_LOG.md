@@ -241,16 +241,15 @@ Review: `ACCESS_MODEL_SLICE_9_2_C3_CODE_REVIEW_R1.md` (0 blockers, 0 majors, 6 m
 - **n4, fixed.** F16's `f16_ivy_re_tom` now reads "Not just you then, {name}. Mine has gone as
   well.", so its short piece is 17 characters and distinctive. Feed text, not voiced.
 
-**Timing estimate (not changed).** The validator's `Feed` estimate is right for Jake (live: phone
-use done 29 s after entering, estimate 0:30) but 10 s late for every F15 and F16 NPC. A start-room
-F15 game (1765) shows why it is not the formula's arithmetic: the room answer carries Asha's
-`social_media` `initial` 60, `urgentAt` 40, `decayPerMin` 60, and a live sample decays at 1 per
-second, yet the needs log has Asha urgent at tick 41 (10.25 s), Kofi at 101 (25.25 s) and Mei at
-161 (40.25 s) where the formula gives 20, 35 and 50 s. The use then takes 20 s as estimated. What
-these NPCs share and Jake lacks is a `work` need that is urgent at once and fails at about 5.75 s
-(parked, frustration 25), so the early start is probably tied to that failure. The cause was not
-found in a short read of `npc-needs.js` (`_decay`, `_select`, the tempt band); it is not small and
-clear, so the estimate is left as it is and PLAYTEST keeps the measured times.
+**Timing estimate (fixed in code review R2, m1).** The validator's `Feed` estimate was right for
+Jake (live: phone use done 29 s after entering, estimate 0:30) but 10 s late for every F15 and F16
+NPC. A start-room F15 game (1765) has Asha urgent at tick 41 (10.25 s), Kofi at 101 (25.25 s) and
+Mei at 161 (40.25 s) where the old formula gave 20, 35 and 50 s. The cause is the needs engine's
+`breakDrain`: each NPC's first counted work failure (about 5.5 s, its work resource starts down)
+drains every other unparked need by the plan's `breakDrain`, default 10
+(`NPCNeedsSystem._countFailure`, `AccessWork::FRUSTRATION_DEFAULTS`), and at 60 a minute that is
+10 s. Jake has no failing work plan, so his estimate held. The estimate now takes the drain off
+(see "Code review R2 fixes").
 
 **Regression replay** (keyless server on :3080 from this worktree, headless shell, the loop recipe
 with `setFPS(20)` and fixed steps after every bootstrap, `--capture-responses`, leak check on every
@@ -275,6 +274,37 @@ visible now that Kim drops two items; it is not fixed here (it changes the point
 mission and needs its own tests and live proof). A likely fix: skip the single-candidate shortcut
 when the tap lies inside an interactable object's bounds that is not that candidate. Until then
 U3 can be run by clicking the phone first or walking into reach of the stick.
+
+## Code review R2 fixes
+
+Review: `ACCESS_MODEL_SLICE_9_2_C3_CODE_REVIEW_R2.md` (0 blockers, 0 majors, 2 minors, 1 nit).
+
+- **m1, fixed.** `feed_report_lines` (`scripts/validate_access_work.rb`) now asks
+  `work_failure_seconds`: when the NPC's work plan reaches a resource that starts down (its `downIf`,
+  or its network's, truthy at load), the work need's first urgent time is the earliest its first
+  counted failure can come. If that is before the social need's first urgent time, the estimate
+  takes the NPC's `breakDrain` (`AccessWork.frustration`, default 10) off the social `initial`, and
+  the line says "(after one work failure's breakDrain of 10: its work resource starts down)". On
+  test_access_social the lines now read F15 Asha 0:30, Kofi 0:45, Mei 1:00; F16 Ivy 0:30 and 1:50,
+  Tomasz 0:50 and 2:10, matching the measured times; Jake and the other NPCs without a failing work
+  plan are unchanged. Node fixture: one failing NPC beside one without a work plan, an NPC's own
+  `breakDrain`, and a resource that starts up. PLAYTEST.md's timing note now gives the cause.
+- **m2, fixed.** The validator warns when an own post's text (or its fact's text), or a reply's text
+  with `{name}` filled, holds a string the live leak check registers as a network string: a network
+  `name`, a resource `name`, `host` or `observations` of 3 characters or more, matched whole, or as a
+  substring from 6 (the scanner's `MIN_NETWORK_STRING` and `MIN_SUBSTRING_NETWORK`). The scanner rule
+  is unchanged. The validator does not apply the scanner's exemption for a string that is also a
+  public room data string, so it can warn where the live check would stay quiet; that is the safe
+  side. Node fixture: a resource name in a vent, a network name in a vent, a resource name in a filled
+  reply, and none after a rename. One existing fixture (`validator-access-reactive`, Dana's vent)
+  named its own resource and now trips the warning, so its text was reworded.
+- **n1, fixed.** `.ob-reply-to` no longer sets `font-style: italic` (pixel font, no synthetic slant).
+  `.ob-empty` still does; it predates C3 and is left alone.
+- **Tests (no lock).** `node --test` on the 54 `test/js` files that spawn the validator or load the
+  osint browser: 853 tests, 0 failures. `event-mapping-unlock-door.test.mjs` passes 5 of 5 under plain
+  `node` (as `bin/test-js` runs it); under `node --test` it hits the runner's "Unable to deserialize
+  cloned data" error, which does not touch these changes. No Rails test file loads the validator or the
+  stylesheet. Validator on test_access_social: 0 lines with ❌, the same warnings as before.
 
 ## Interpretations
 
@@ -313,8 +343,8 @@ ff-phone owns them).
 PLAYTEST.md times, the Friendface check note and the counts line (35 feed posts, 2 feed facts).
 
 **Open:** the F1 to F14 live regression beyond what the walk covers (see step 8); the validator's
-post-time estimate runs about 10 s late for these beats (not changed: it is an estimate, and
-PLAYTEST.md now quotes measured times); the code review rounds.
+post-time estimate ran about 10 s late for these beats (cause found and fixed in code review R2:
+the work failure's `breakDrain`); the code review rounds.
 
 ## Handover (2026-11-12, second agent, context limit)
 

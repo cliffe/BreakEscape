@@ -308,3 +308,46 @@ test('a reply piece inside an ink line raises the unique-text warning; the fille
         rmSync(dir, { recursive: true, force: true });
     }
 });
+
+// Review C3 R2 m1: a counted work failure drains social_media by breakDrain (npc-needs.js
+// _countFailure), so the Feed estimate brings forward only the NPC whose work resource starts down
+test('report lines: the Feed estimate takes breakDrain off an NPC whose work resource starts down', { skip }, () => {
+    const s = pair();
+    s.resources = { drive: { name: 'Team storage area', kind: 'file_share', downIf: 'drive_down' } };
+    const ivy = s.rooms.office.npcs.find(n => n.id === 'ivy');
+    ivy.workNeeds = ['drive'];
+    ivy.needs.work = { decayPerMin: 6, urgentAt: 50, initial: 45 };
+    const lines = report(s);
+    const ivyLine = lines.find(l => l.includes('Feed ivy (friendface'));
+    const tomLine = lines.find(l => l.includes('Feed tomasz (friendface'));
+    // Ivy: social 60 less the drain of 10 reaches urgentAt 40 after 10 s; posts at 0:30 and 1:50
+    assert.match(ivyLine, /first urgent at 10 s \(after one work failure's breakDrain of 10: its work resource starts down\)/, ivyLine);
+    assert.match(ivyLine, /posts expected at about 0:30, 1:50 \(/, ivyLine);
+    // Tomasz has no work plan: no drain, 20 s, posts at 0:40 and 2:00
+    assert.match(tomLine, /first urgent at 20 s, then/, tomLine);
+    assert.match(tomLine, /posts expected at about 0:40, 2:00 \(/, tomLine);
+    // An NPC's own breakDrain is used, and a resource that starts up drains nothing
+    ivy.frustration = { breakDrain: 5 };
+    assert.match(report(s).find(l => l.includes('Feed ivy (friendface')), /first urgent at 15 s \(after one work failure's breakDrain of 5/);
+    s.globalVariables.drive_down = false;
+    assert.match(report(s).find(l => l.includes('Feed ivy (friendface')), /first urgent at 20 s, then/);
+});
+
+// Review C3 R2 m2: a feed post that holds a resource's name ships it, and the live leak check
+// reports network_string; the validator warns first
+test('a feed post or reply holding a resource or network name warns', { skip }, () => {
+    const s = pair();
+    s.resources = { drive: { name: 'Shared drive', kind: 'file_share', host: 'fs01' } };
+    s.networks = { corp: { name: 'Lovely start' } };
+    const list = issues(s);
+    assertHas(list, 'ivy.feed.posts[0].text contains "Shared drive" (resource \'drive\' name): it ships once the post is out, and the live leak check reports it as network_string');
+    assertHas(list, 'tomasz.feed.posts[0].text contains "Lovely start" (network \'corp\' name)');
+    assertNot(list, '"fs01"');
+    // A reply is read with {name} filled in
+    s.resources.drive.name = 'whole morning';
+    assertHas(issues(s), 'tomasz.feed.posts[1].text contains "whole morning" (resource \'drive\' name)');
+    // Renamed out of every post: no warning
+    s.resources.drive.name = 'Team storage area';
+    delete s.networks;
+    assertNot(issues(s), 'network_string');
+});

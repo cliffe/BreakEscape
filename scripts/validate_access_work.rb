@@ -1545,6 +1545,7 @@ module ValidateAccessWork
     block_ids = osint_block_ids(json_data)
     seen_posts = {}
     pws = passwords(json_data)
+    netstrs = network_leak_strings(json_data)
     shipped = nil
     reply_shipped = nil
     fed = []
@@ -1595,7 +1596,7 @@ module ValidateAccessWork
         check_reactive_post(json_data, npc, nid, tag, post, issues) if post.is_a?(Hash) && post.key?('when')
         reply = AW.reply_post?(post)
         texts = reply ? [] : [[post['text'], "#{tag}.text"]]
-        check_reply_text(json_data, npc, tag, post, pws, issues) { reply_shipped ||= shipped_strings(json_data, feed_facts) + story_texts(json_data) } if reply
+        check_reply_text(json_data, npc, tag, post, pws, issues, netstrs) { reply_shipped ||= shipped_strings(json_data, feed_facts) + story_texts(json_data) } if reply
         if !reply && post['text'].is_a?(String) && post['text'].include?('{name}')
           warn(issues, "#{tag}.text holds {name} but is not a reply: it would ship as written.")
         end
@@ -1618,6 +1619,7 @@ module ValidateAccessWork
           pws.each do |owner, pw|
             err(issues, "#{where} contains #{owner}'s password: feed text ships once its post is out.") if text.include?(pw)
           end
+          warn_network_text(text, where, netstrs, issues)
           if text.strip.length < SHORT_TEXT
             warn(issues, "#{where} is under #{SHORT_TEXT} characters: the leak checks match whole texts and cannot protect it.")
           else
@@ -1860,14 +1862,50 @@ module ValidateAccessWork
       end
       initial = n['initial'].is_a?(Numeric) ? n['initial'].to_f.clamp(0, 100) : 100.0
       first = [initial - urgent, 0].max / decay * 60
+      # Review C3 R2 m1: a counted work failure drains every other need by breakDrain
+      # (npc-needs.js _countFailure), so an NPC whose work resource starts down posts sooner
+      drain_note = ''
+      fail_at = work_failure_seconds(json_data, npc)
+      if fail_at && fail_at < first
+        drain = AW.frustration(json_data, npc)['breakDrain'].to_f
+        if drain.positive?
+          first = [[initial - drain - urgent, 0].max / decay * 60, fail_at].max
+          drain_note = " (after one work failure's breakDrain of #{drain.round}: its work resource starts down)"
+        end
+      end
       period = AW.post_period_seconds(json_data, npc)
       use = AW.shortest_use_seconds(json_data, npc, 'social_media')
       times = posts.each_index.map { |i| first + use + (i * (period + use)) }
       at = times.map { |t| secs = t.round; format('%d:%02d', secs / 60, secs % 60) }.join(', ')
       lines << "ℹ️ Feed #{npc['id']} (#{npc['feed']['site']}, #{npc['feed']['person']}): #{counted}; first urgent at " \
-               "#{first.round} s, then about every #{(period + use).round} s; posts expected at about #{at} (needs clock, " \
+               "#{first.round} s#{drain_note}, then about every #{(period + use).round} s; posts expected at about #{at} (needs clock, " \
                "after the room loads). Server floor #{AW.post_floor(json_data, npc).round} s between posts."
     end
+  end
+
+  # When the NPC's work need first turns urgent (seconds, needs clock), if its work plan reaches
+  # a resource that starts down (its downIf, or its network's, is truthy at load); else nil.
+  # That is the earliest its first counted work failure can come.
+  def work_failure_seconds(json_data, npc)
+    return nil unless AW.work_plan?(json_data, npc)
+
+    globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
+    nets = json_data['networks'].is_a?(Hash) ? json_data['networks'] : {}
+    res = AW.resources(json_data)
+    down = ->(item) { item.is_a?(Hash) && AW.present_string?(item['downIf']) && ![nil, false, 0, ''].include?(globals[item['downIf']]) }
+    starts_down = AW.work_list(json_data, npc).any? do |id|
+      r = res[id]
+      r && (down.call(r) || down.call(nets[r['network']]))
+    end
+    return nil unless starts_down
+
+    w = npc['needs']['work']
+    decay = w['decayPerMin'].is_a?(Numeric) && w['decayPerMin'].positive? ? w['decayPerMin'].to_f : nil
+    urgent = w['urgentAt'].is_a?(Numeric) ? w['urgentAt'].to_f : nil
+    return nil unless decay && urgent
+
+    initial = w['initial'].is_a?(Numeric) ? w['initial'].to_f.clamp(0, 100) : 100.0
+    [initial - urgent, 0].max / decay * 60
   end
 
   # ── Replies between NPCs (sub-slice C3, ACCESS_MODEL_SLICE_9_2_C3_PLAN.md section 7) ──────
@@ -1927,9 +1965,41 @@ module ValidateAccessWork
     who.map { |n| AW.friendface_name(json_data, n) }.uniq
   end
 
+  # Review C3 R2 m2: the strings the live leak check registers as network strings
+  # (tools/playtest/lib/access_leak_scanner.rb collect_network_secrets): each network name and each
+  # resource name, host and observations of MIN_NETWORK_STRING characters or more.
+  # { string => [owner, ...] }
+  NETWORK_STRING_MIN = 3        # AccessLeakScanner::MIN_NETWORK_STRING
+  NETWORK_SUBSTRING_MIN = 6     # AccessLeakScanner::MIN_SUBSTRING_NETWORK
+  def network_leak_strings(json_data)
+    out = {}
+    add = lambda do |val, owner|
+      next unless val.is_a?(String) && val.strip.length >= NETWORK_STRING_MIN
+
+      (out[val.strip] ||= []) << owner
+    end
+    nets = json_data['networks'].is_a?(Hash) ? json_data['networks'] : {}
+    nets.each { |id, net| add.call(net['name'], "network '#{id}' name") if net.is_a?(Hash) }
+    AW.resources(json_data).each do |id, res|
+      %w[name host observations].each { |f| add.call(res[f], "resource '#{id}' #{f}") }
+    end
+    out
+  end
+
+  # The scanner's network_match?: the whole text, or a substring from NETWORK_SUBSTRING_MIN
+  def warn_network_text(text, where, netstrs, issues)
+    s = text.strip
+    netstrs.each do |str, owners|
+      next unless s == str || (str.length >= NETWORK_SUBSTRING_MIN && s.include?(str))
+
+      warn(issues, "#{where} contains \"#{str}\" (#{owners.join(', ')}): it ships once the post is out, and the live leak " \
+                   'check reports it as network_string. Rename the resource or reword the post.')
+    end
+  end
+
   # The password scan, the 12-character warning and the unique-text warning for a reply, read
   # through each name {name} can take and piece by piece around it. `shipped` is a block.
-  def check_reply_text(json_data, npc, tag, post, pws, issues)
+  def check_reply_text(json_data, npc, tag, post, pws, issues, netstrs = {})
     text = post['text']
     return unless text.is_a?(String)
 
@@ -1941,6 +2011,7 @@ module ValidateAccessWork
         err(issues, "#{tag}.text contains #{owner}'s password: feed text ships once its post is out.") if f.include?(pw)
       end
     end
+    filled.each { |f| warn_network_text(f, "#{tag}.text", netstrs, issues) }
     longest = pieces.max_by(&:length).to_s
     if longest.length < SHORT_TEXT
       warn(issues, "#{tag}.text has no piece of #{SHORT_TEXT} characters or more around {name}: the leak checks " \
