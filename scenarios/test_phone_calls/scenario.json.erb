@@ -9,7 +9,8 @@
     "timed_ringing": false,
     "declined_seen": false,
     "missed_seen": false,
-    "guard_off": false
+    "guard_off": false,
+    "legacy_on": false
   },
   "objectives": [
     {
@@ -403,7 +404,7 @@
           "id": "guard",
           "displayName": "Guard",
           "npcType": "person",
-          "position": { "x": 3, "y": 8 },
+          "position": { "x": 4, "y": 8 },
           "spriteSheet": "female_blowse_v2",
           "spriteVisemes": "assets/characters/female_blowse_visemes.png",
           "storyPath": "scenarios/test_phone_calls/ink/guard.json",
@@ -418,7 +419,7 @@
               "enabled": true,
               "pauseForPlayer": false,
               "speed": 60,
-              "waypoints": [ { "x": 3, "y": 8 }, { "x": 8, "y": 8 } ]
+              "waypoints": [ { "x": 4, "y": 8 }, { "x": 7, "y": 8 } ]
             }
           },
           "los": {
@@ -475,6 +476,16 @@
               "targetKnot": "legacy_call",
               "voiced": true,
               "cooldown": 0
+            },
+            {
+              "_comment": "A2c row 15: set globalVars.legacy_on, hold a call over the keypad, then close the keypad: this scripted call opens as the minigame ends.",
+              "eventPattern": "minigame_completed",
+              "condition": "globalVars.legacy_on === true",
+              "onceOnly": true,
+              "conversationMode": "phone-chat",
+              "targetKnot": "legacy_call",
+              "voiced": true,
+              "cooldown": 0
             }
           ]
         },
@@ -507,8 +518,8 @@
           "type": "notes",
           "name": "Instructions",
           "position": {
-            "x": 2,
-            "y": 8
+            "x": 10,
+            "y": 3
           },
           "takeable": false,
           "readable": true,
@@ -718,11 +729,21 @@
           "type": "suitcase",
           "id": "open_case",
           "name": "Open Case (container with a note)",
-          "position": { "x": 6, "y": 6 },
+          "position": { "x": 5, "y": 5 },
           "takeable": false,
           "locked": false,
           "observations": "A container: open the note inside it to test the parent minigame returning.",
           "contents": [ { "type": "notes", "name": "Case Note", "takeable": true, "readable": true, "text": "A note inside the case.", "observations": "A note." } ]
+        },
+        {
+          "type": "pc",
+          "id": "terminal_pc",
+          "name": "Terminal PC (desktop with a file)",
+          "position": { "x": 8, "y": 5 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A PC desktop: a terminal-style minigame to ring over.",
+          "contents": [ { "type": "text_file", "name": "Terminal File", "takeable": false, "readable": true, "text": "A file on the terminal.", "observations": "A file." } ]
         },
         {
           "type": "workstation",
@@ -738,7 +759,7 @@
           "name": "Lab Sheet Workstation",
           "position": { "x": 9, "y": 8 },
           "takeable": false,
-          "labUrl": "about:blank",
+          "labUrl": "/break_escape/test-assets.html",
           "observations": "The lab-sheet popup."
         }
       ]
