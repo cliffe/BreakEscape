@@ -1234,7 +1234,80 @@ export default class PhoneChatUI {
     /**
      * Cleanup and remove UI
      */
+    /**
+     * Row 10 (phone calls plan 2.4): an incoming call rings inside the phone, as a panel over its
+     * content with the caller's avatar, name, caption and Answer / Decline buttons.
+     * @param {{npcId, name, caption, avatar, withheld, forced, onAnswer, onDecline}} view
+     */
+    showIncomingCall(view) {
+        this.hideIncomingCall();
+        const host = this.container.querySelector('.phone-screen') || this.container;
+        const panel = document.createElement('div');
+        panel.className = 'phone-incoming-call';
+        panel.dataset.npcId = view.npcId || '';
+        panel.setAttribute('role', 'alertdialog');
+        panel.setAttribute('aria-label', `Incoming call from ${view.name}`);
+        const avatar = document.createElement('div');
+        avatar.className = 'phone-incoming-call-avatar';
+        if (view.avatar) {
+            const img = document.createElement('img');
+            img.alt = '';
+            img.src = view.avatar;
+            avatar.appendChild(img);
+        } else {
+            avatar.textContent = '\u260E';   // a plain handset glyph
+        }
+        panel.appendChild(avatar);
+        const name = document.createElement('div');
+        name.className = 'phone-incoming-call-name';
+        name.textContent = view.name || '';
+        panel.appendChild(name);
+        if (view.caption) {
+            const caption = document.createElement('div');
+            caption.className = 'phone-incoming-call-caption';
+            caption.textContent = view.caption;
+            panel.appendChild(caption);
+        }
+        const status = document.createElement('div');
+        status.className = 'phone-incoming-call-status';
+        status.textContent = 'Incoming call';
+        panel.appendChild(status);
+        const buttons = document.createElement('div');
+        buttons.className = 'phone-incoming-call-buttons';
+        const answer = document.createElement('button');
+        answer.type = 'button';
+        answer.className = 'phone-incoming-call-answer';
+        answer.textContent = 'Answer';
+        answer.setAttribute('aria-label', `Answer call from ${view.name}`);
+        answer.addEventListener('click', () => view.onAnswer?.());
+        buttons.appendChild(answer);
+        if (!view.forced) {
+            const decline = document.createElement('button');
+            decline.type = 'button';
+            decline.className = 'phone-incoming-call-decline';
+            decline.textContent = 'Decline';
+            decline.setAttribute('aria-label', 'Decline call');
+            decline.addEventListener('click', () => view.onDecline?.());
+            buttons.appendChild(decline);
+        }
+        panel.appendChild(buttons);
+        host.appendChild(panel);
+        this._incomingCallPanel = panel;
+    }
+
+    hideIncomingCall() {
+        if (this._incomingCallPanel) {
+            this._incomingCallPanel.remove();
+            this._incomingCallPanel = null;
+        }
+    }
+
+    incomingCallShowing() {
+        return !!this._incomingCallPanel;
+    }
+
     cleanup() {
+        this.hideIncomingCall();
         this.stopCallTimer();
         this._chatInfluence?.destroy();
         this._chatInfluence = null;

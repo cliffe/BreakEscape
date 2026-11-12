@@ -186,6 +186,9 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Set up event listeners
         this.setupEventListeners();
+
+        // The player's phone registers with the ringer, so a call rings inside it (row 10)
+        this._registerWithRinger();
         
         console.log('✅ PhoneChatMinigame initialized');
         
@@ -283,11 +286,38 @@ export class PhoneChatMinigame extends MinigameScene {
     }
     
     /**
+     * Phone calls row 10: a text phone-chat (not a call, a voiced or forced chat, a pretext
+     * call or a cutscene) registers with the ringer while it is open. The ringer decides, per
+     * caller, whether this is the caller's own phone.
+     */
+    _registerWithRinger() {
+        const p = this.params || {};
+        if (p.ringerCall || p.voiced === true || p.disableClose === true || p.pretextCallId || p.cutscene === true) return;
+        window.phoneRinger?.registerPhone?.(this);
+    }
+
+    /** What the ringer needs to reopen this phone after a call: its params and the thread it was on (null: the list). */
+    callReopenState() {
+        const params = { ...this.params };
+        delete params._closingForCall;
+        return { params, thread: this.currentNPCId || null };
+    }
+
+    /** An incoming call rings inside the phone (row 10): see PhoneChatUI.showIncomingCall. */
+    showIncomingCall(view) { this.ui?.showIncomingCall?.(view); }
+    hideIncomingCall() { this.ui?.hideIncomingCall?.(); }
+
+    /**
      * Handle keyboard input
      * @param {KeyboardEvent} event - Keyboard event
      */
     handleKeyPress(event) {
         if (!this.gameState.isActive) return;
+        // The call panel covers the phone: a number key must not pick a reply nobody can see
+        if (this.ui?.incomingCallShowing?.() && /^[0-9]$/.test(event.key)) {
+            event.preventDefault();
+            return;
+        }
         
         switch(event.key) {
             case 'Escape': {
@@ -1817,9 +1847,12 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // A conversation still open at teardown counts as closed (closeConversation()
         // clears currentNPCId/conversation, so this can't double-emit)
+        window.phoneRinger?.unregisterPhone?.(this);
         this._flushPendingMessages();
         this._resetRingerCallOnTeardown();   // row 32
-        this._emitConversationClosed(this.currentNPCId);
+        // Row 10: closed for a call it will reopen on this thread after: the event fires when the
+        // player really closes it (the reopened phone emits it then)
+        if (!this.params?._closingForCall) this._emitConversationClosed(this.currentNPCId);
         this._callVoice?.destroy();
         this._callVoice = null;
         this._endSocialRun();      // end any live influence run (00 §8)

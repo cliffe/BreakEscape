@@ -29,11 +29,17 @@
  *     outgoingActive()   an outgoing call is dialling or connected (A5)
  *     callMinigameOpen() the connected call's minigame is the open minigame and not ending
  *     openCallId()       the open minigame's params.ringerCall.id, or null
+ *     phoneHost(npcId)   (A3, row 10) true when the player's own phone is open and is the
+ *                        caller's phone: the call rings inside it (view.inPhone) and opens over
+ *                        it. ringBlocked(npcId), openBlocked({ npcId, second? }) and
+ *                        minigameOpen(npcId) then treat that phone as no obstacle. Any other
+ *                        open phone-chat (a desk phone, a DM app) is a minigame (row 12).
  *   Effects
  *     openCall(offer, info)  start the call's phone-chat; returns falsy when it did not open.
  *                            info = { ringerCall: {id, direction, callback}, resume,
  *                            answerSeconds, isCallback }
- *     putAside()         close an open workstation popup, returning a descriptor, else null (row 11)
+ *     putAside(npcId)    close an open workstation popup (row 11) or the player's phone (row 10),
+ *                        returning a descriptor, else null
  *     reopen(descriptor) reopen what the call displaced (row 25)
  *     showBanner(view) / hideBanner()   the ringing banner (also called to refresh it)
  *     showPill(view) / hidePill()       the hold pill
@@ -137,8 +143,13 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     };
 
     /** The world's half of "a call may not open now" (2.2): the adapter and the hit quiet time. */
-    function worldOpenBlocked(second) {
-        return !!call('openBlocked', second ? { second: true } : undefined) || hitWithin(HIT_QUIET_MS);
+    function worldOpenBlocked(second, npcId) {
+        // `npcId` (A3): which contact is calling, so the adapter can tell the player's own phone
+        // (the call opens over it, row 10) from a desk phone or a DM app (a minigame, row 12).
+        const info = {};
+        if (second) info.second = true;
+        if (npcId) info.npcId = npcId;
+        return !!call('openBlocked', Object.keys(info).length ? info : undefined) || hitWithin(HIT_QUIET_MS);
     }
 
     /** Everything that stops a call opening, the ringer's own state included (2.2). */
@@ -147,8 +158,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     }
 
     /** The check the ringer itself uses before it opens: also holds while paused (the pause menu is no minigame). */
-    function cannotOpenNow(second) {
-        return isPaused() || worldOpenBlocked(second);
+    function cannotOpenNow(second, npcId) {
+        return isPaused() || worldOpenBlocked(second, npcId);
     }
 
     /** Everything that stops an offer starting to ring (2.2). */
@@ -156,11 +167,11 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (closed) return true;
         if (active) return true;
         if (call('outgoingActive')) return true;
-        return !!call('ringBlocked');
+        return !!call('ringBlocked', queue[0] && queue[0].npcId);
     }
 
     function pillShowing(o) {
-        return !!o && o.state === 'held' && !!call('minigameOpen')
+        return !!o && o.state === 'held' && !!call('minigameOpen', o.npcId)
             && !call('conversationOpen') && !call('knockedOut');
     }
 
@@ -267,8 +278,10 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         const o = active;
         let want = null;
         if (o && o.state === 'ringing') {
-            const over = !!call('minigameOpen');
-            want = { kind: 'banner', key: `b:${o.npcId}:${o.knot}:${over}`, v: view(o, { overMinigame: over }) };
+            const over = !!call('minigameOpen', o.npcId);
+            // A3: the call rings inside the player's own phone when it is open (row 10)
+            const inPhone = !!call('phoneHost', o.npcId);
+            want = { kind: 'banner', key: `b:${o.npcId}:${o.knot}:${over}:${inPhone}`, v: view(o, { overMinigame: over, inPhone }) };
         } else if (o && pillShowing(o)) {
             want = { kind: 'pill', key: `p:${o.npcId}:${o.knot}`, v: view(o, { canHangUp: !o.disableClose }) };
         }
@@ -398,7 +411,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             o.answerSeconds = Math.floor((auto ? Math.min(total, AUTO_ANSWER_MS) : total) / 1000);
         }
         ringtone(false);
-        if (cannotOpenNow(false)) {
+        if (cannotOpenNow(false, o.npcId)) {
             // Row 12: held. The ring has stopped for good.
             o.state = 'held';
             save(o);
@@ -462,11 +475,11 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         // term and the ringer's own `closed`: the call is answered, so it is connected
         // (opening included, 2.2) and a beat or the ending waits for it. It does hold
         // while paused (m8).
-        if (cannotOpenNow(true)) {
+        if (cannotOpenNow(true, o.npcId)) {
             if (closed) giveUp(o); else backToHeld(o);
             return;
         }
-        const d = call('putAside');
+        const d = call('putAside', o.npcId);
         if (d && !o.displaced) o.displaced = d;
         const id = `call-${++callSeq}`;
         connecting = { id, npcId: o.npcId, answerSeconds: o.answerSeconds || 0, isCallback: false };
@@ -593,7 +606,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (closed) return;
         const o = active;
         if (o && o.state === 'ringing') {
-            if (call('ringBlocked')) {
+            if (call('ringBlocked', o.npcId)) {
                 // Rows 23 and 24: a conversation opened, or the player was knocked out.
                 requeueHead(o);
             } else if (o.disableClose) {
@@ -614,7 +627,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             // Row 18: the hold limit, only while the pill shows (advance() counts only then).
             if (!o.disableClose && o.holdMs >= HOLD_MAX_MS) { miss(o, 'rang_off'); again = true; return; }
             // Rows 13 to 16: open once nothing blocks it; row 19 and the second check follow.
-            if (!cannotOpenNow(false) && now() >= o.retryAt) { beginOpen(o); }
+            if (!cannotOpenNow(false, o.npcId) && now() >= o.retryAt) { beginOpen(o); }
         }
         // Row 8: the head of the queue starts ringing.
         if (!active && queue.length > 0) {

@@ -9,9 +9,14 @@
  * Slice A2c: a non-conversation minigame or a workstation popup no longer blocks ringing. The
  * call rings over it; Answer over a minigame holds the call (the hold pill) until it closes, and
  * Answer over a popup puts the popup aside and restores it when the call ends (rows 11 to 16).
- * Until A3 registers the player's phone, an open phone-chat that is not a call counts as a
- * non-conversation minigame. A person-chat, a video call, a voiced or forced phone-chat and a
- * scripted scene are conversations and still block ringing.
+ * A person-chat, a video call, a voiced or forced phone-chat and a scripted scene are
+ * conversations and still block ringing.
+ *
+ * Slice A3 (row 10): the player's own phone (a text phone-chat that registers itself through
+ * `registerPhone`) is not an obstacle. A call for a contact on that phone rings inside it, as a
+ * panel over the phone's content, and Answer closes the phone (no `conversation_closed` for the
+ * thread it was on) and reopens it on the same screen when the call ends. Any other open
+ * phone-chat (a desk phone, a DM app) is a non-conversation minigame, as before (row 12).
  */
 import { createPhoneRinger } from './phone-ringer.js';
 import { normaliseRing } from './phone-ring-config.js';
@@ -49,6 +54,18 @@ export function installPhoneRinger(win = window) {
     const isConversation = (m) => !!m && (m._sceneType === 'person-chat'
         || (m._sceneType === 'phone-chat' && (m.params?.voiced === true || m.params?.disableClose === true)));
 
+    // ---- the player's phone (A3) -------------------------------------------------
+    /** The text phone-chat that registered itself (phone-chat-minigame.js `init`), or null. */
+    let registeredPhone = null;
+    const callerPhoneId = (npcId) => nm()?.getNPC?.(npcId)?.phoneId || 'player_phone';
+    /** The open minigame when it is the registered phone and the caller's own phone (row 10), else null. */
+    const hostPhone = (npcId) => {
+        const m = openMinigame();
+        if (!m || m !== registeredPhone || m._sceneType !== 'phone-chat') return null;
+        if (!m.gameState?.isActive) return null;
+        return (m.phoneId || 'player_phone') === callerPhoneId(npcId) ? m : null;
+    };
+
     // ---- banner and pill ---------------------------------------------------------
     let ownedCallId = null;
     /** True while putAside() runs: the popup's close hook must not nudge the ringer (plan 2.9). */
@@ -58,6 +75,11 @@ export function installPhoneRinger(win = window) {
         while (layer.firstChild) layer.removeChild(layer.firstChild);
     }
 
+    /** Take the in-phone panel down, wherever it is (the phone it was in may be gone already). */
+    function hidePhonePanel() {
+        try { registeredPhone?.hideIncomingCall?.(); } catch (e) { /* the phone is being torn down */ }
+    }
+
     function el(tag, className, text) {
         const e = doc.createElement(tag);
         if (className) e.className = className;
@@ -65,9 +87,38 @@ export function installPhoneRinger(win = window) {
         return e;
     }
 
-    function showBanner(view) {
+    function avatarSrc(npc) {
+        // A relative asset path is served under /break_escape/ (as npc-barks.js resolves it)
+        const a = String(npc.avatar);
+        return (a.startsWith('/') || a.startsWith('http')) ? a : `/break_escape/${a.replace(/^\/+/, '')}`;
+    }
+
+    /** Row 10: the same call, drawn inside the open phone instead of the top-centre layer. */
+    function showPhonePanel(view, npc, name) {
+        const phone = hostPhone(view.npcId);
+        if (!phone?.showIncomingCall) return false;
         clearLayer();
+        phone.showIncomingCall({
+            npcId: view.npcId,
+            name,
+            caption: (!view.withheld && view.callLabel) ? view.callLabel : '',
+            avatar: (!view.withheld && npc?.avatar) ? avatarSrc(npc) : null,
+            withheld: !!view.withheld,
+            forced: !!view.forced,
+            onAnswer: () => win.phoneRinger?.answer(view.npcId),
+            onDecline: () => win.phoneRinger?.decline(view.npcId),
+        });
+        return true;
+    }
+
+    function showBanner(view) {
         const npc = nm()?.getNPC?.(view.npcId);
+        if (view.inPhone) {
+            const phoneName = view.withheld ? 'No caller ID' : (npc?.displayName || view.npcId);
+            if (showPhonePanel(view, npc, phoneName)) return;
+        }
+        hidePhonePanel();
+        clearLayer();
         const name = view.withheld ? 'No caller ID' : (npc?.displayName || view.npcId);
         const box = el('div', 'incoming-call');
         box.dataset.npcId = view.npcId;
@@ -75,9 +126,7 @@ export function installPhoneRinger(win = window) {
         if (!view.withheld && npc?.avatar) {
             const img = doc.createElement('img');
             img.alt = '';
-            // A relative asset path is served under /break_escape/ (as npc-barks.js resolves it)
-            const a = String(npc.avatar);
-            img.src = (a.startsWith('/') || a.startsWith('http')) ? a : `/break_escape/${a.replace(/^\/+/, '')}`;
+            img.src = avatarSrc(npc);
             avatar.appendChild(img);
         } else {
             avatar.textContent = '☎';   // a plain handset glyph
@@ -107,6 +156,7 @@ export function installPhoneRinger(win = window) {
     }
 
     function showPill(view) {
+        hidePhonePanel();
         clearLayer();
         const npc = nm()?.getNPC?.(view.npcId);
         const name = view.withheld ? 'Caller' : (npc?.displayName || view.npcId);
@@ -152,20 +202,25 @@ export function installPhoneRinger(win = window) {
     // ---- the adapter -------------------------------------------------------------
     const adapter = {
         // A non-conversation minigame or a popup does not block: the call rings over it
+        // The player's own phone does not block either: the call rings inside it (row 10)
         ringBlocked() {
             return isConversation(openMinigame()) || sceneActive() || queuedBeats() || knockedOut();
         },
-        // A popup does not block opening either: row 11 puts it aside
+        // A popup does not block opening either: row 11 puts it aside; the caller's own phone is
+        // closed for the call (row 10)
         openBlocked(info) {
-            if (openMinigame() || sceneActive() || knockedOut()) return true;
+            const open = openMinigame();
+            if (open && open !== hostPhone(info?.npcId)) return true;
+            if (sceneActive() || knockedOut()) return true;
             return !(info && info.second) && queuedBeats();
         },
+        phoneHost: (npcId) => !!hostPhone(npcId),
         conversationOpen() {
             return isConversation(openMinigame()) || sceneActive();
         },
-        minigameOpen() {
+        minigameOpen(npcId) {
             const m = openMinigame();
-            return !!m && !isConversation(m);
+            return !!m && !isConversation(m) && m !== hostPhone(npcId);
         },
         knockedOut,
         isPaused() {
@@ -235,7 +290,21 @@ export function installPhoneRinger(win = window) {
         // plan 1.3) and say which one it was. The lab frame's `src` property is saved, never the
         // attribute: openLabWorkstation compares the property, and a different string would reload
         // the sheet and lose its scroll position.
-        putAside() {
+        putAside(npcId) {
+            // Row 10: close the player's phone with _closingForCall (its cleanup then emits no
+            // conversation_closed for the thread it was on) and remember its screen
+            const phone = hostPhone(npcId);
+            if (phone) {
+                const state = phone.callReopenState?.() || { params: { ...phone.params }, thread: null };
+                phone.params = phone.params || {};
+                phone.params._closingForCall = true;
+                try {
+                    fw().endMinigame(false, null);
+                } catch (err) {
+                    console.error('phone ringer: closing the phone for a call failed', err);
+                }
+                return { kind: 'phone', ...state };
+            }
             if (openMinigame()) return null;
             const laptop = doc.getElementById('laptop-popup');
             const lab = doc.getElementById('lab-popup');
@@ -258,10 +327,18 @@ export function installPhoneRinger(win = window) {
             if (!d || openMinigame() || popupOpen()) return;
             if (d.kind === 'laptop') win.openCryptoWorkstation?.();
             else if (d.kind === 'lab') win.openLabWorkstation?.(d.src);
-            // A3 adds the phone ({ kind: 'phone', ... })
+            else if (d.kind === 'phone') {
+                // The phone as it was opened, on the thread it was on (or its contact list). A
+                // reopen is not the first open: no startKnot, nothing re-run (as returnToPhoneAfterNotes).
+                const params = { ...(d.params || {}) };
+                delete params.startKnot;
+                delete params._closingForCall;
+                if (d.thread) params.npcId = d.thread; else delete params.npcId;
+                try { fw()?.startMinigame('phone-chat', null, params); } catch (err) { console.error('phone ringer: reopening the phone failed', err); }
+            }
         },
         showBanner,
-        hideBanner: clearLayer,
+        hideBanner() { hidePhonePanel(); clearLayer(); },
         showPill,
         hidePill: clearLayer,
         ringtone(on) {
@@ -332,6 +409,14 @@ export function installPhoneRinger(win = window) {
             // retryAt and a second open follows at once (test/js/phone-ring-aside.test.mjs, A2c R2 m3).
             if (settingAside) return;
             ringer.onPopupClosed();
+        },
+        /**
+         * A text phone-chat opened as a phone (phone-chat-minigame.js `init`) registers here and
+         * unregisters in `cleanup`. The ringer then rings inside it when it is the caller's phone.
+         */
+        registerPhone(minigame) { registeredPhone = minigame || null; },
+        unregisterPhone(minigame) {
+            if (registeredPhone === minigame) registeredPhone = null;
         },
         layer,
     };
