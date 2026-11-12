@@ -75,8 +75,8 @@ unless scanner.feed_fallback.empty?
        'fewer /feed_post answers in the log than the game revealed (a resumed game or a lost response body)'
 end
 unless scanner.feed_ruled_out.empty?
-  puts "note             feed posts for #{scanner.feed_ruled_out.join(', ')}: no lost /feed_post answer in the log was theirs " \
-       '(each was tagged for another NPC), so their missing reveals count from the first line: a resumed game or a ' \
+  puts "note             feed posts for #{scanner.feed_ruled_out.join(', ')}: no lost /feed_post answer in the log could be theirs " \
+       '(at least one was tagged for another NPC), so their missing reveals count from the first line: a resumed game or a ' \
        'response the capture missed. Check that the log began after their reveals'
 end
 if scanner.feed_tags_ignored

@@ -216,8 +216,8 @@ class AccessLeakScanner
   # response body), from that answer on and never before it. Filled by scan.
   attr_reader :feed_unknown
 
-  # NPCs that a lost answer's npcId tag ruled out of it and that still took first-line credit
-  # (no lost answer in the log was theirs). Filled by scan.
+  # NPCs with first-line credit that no lost answer could cover (share 0) while at least one
+  # lost answer was tagged for another NPC. Filled by scan.
   attr_reader :feed_ruled_out
 
   # Whether a readable /feed_post answer's npcId tag disagreed with the NPC its body names, so
@@ -772,7 +772,8 @@ class AccessLeakScanner
   def query_names_npc?(query)
     return false unless query.is_a?(String)
 
-    query.split('&').any? { |pair| CGI.unescape(pair.split('=', 2).first.to_s).start_with?('npc_id') }
+    # Rack splits the query on `;` as well as `&`; over-matching only falls back to the old rule
+    CGI.unescape(query).include?('npc_id')
   end
 
   # Whether an unreadable answer may have been one of `npc_id`'s reveals. A row the capture tagged
@@ -826,12 +827,14 @@ class AccessLeakScanner
       next unless row.is_a?(Hash)
 
       unreadable << row if feed_unreadable?(row)
-      next unless row['body'].is_a?(Hash)
-      next unless row['path'].to_s.split('?').first.to_s.end_with?('/feed_post') && row['body']['post'].is_a?(Hash)
+      next unless row['body'].is_a?(Hash) && row['path'].to_s.split('?').first.to_s.end_with?('/feed_post')
+
+      # every readable answer that names its NPC (a post, done, refused or tooSoon) checks the tag
+      tag = feed_row_tag(row)
+      @feed_tags_ignored = true if tag && row['body']['npcId'].is_a?(String) && tag != row['body']['npcId']
+      next unless row['body']['post'].is_a?(Hash)
 
       in_log[row['body']['npcId'].to_s] += 1
-      tag = feed_row_tag(row)
-      @feed_tags_ignored = true if tag && tag != row['body']['npcId']
     end
     revealed = @game&.player_state.is_a?(Hash) ? @game.player_state['feedRevealed'] : nil
     return unless revealed.is_a?(Hash)
@@ -857,7 +860,7 @@ class AccessLeakScanner
 
       @feed_base[npc_id] = base
       @feed_fallback << npc_id
-      @feed_ruled_out << npc_id if unreadable.any? { |row| (tag = feed_row_tag(row)) && tag != npc_id }
+      @feed_ruled_out << npc_id if share.zero? && unreadable.any? { |row| (tag = feed_row_tag(row)) && tag != npc_id }
     end
   end
 

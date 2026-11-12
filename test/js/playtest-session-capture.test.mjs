@@ -162,10 +162,11 @@ test('npcId is left out when the query string names an npc_id (the server takes 
   const body = JSON.stringify({ npc_id: 'jake' });
   cap.onResponse(res('/break_escape/games/7/feed_post?npc_id=lena', { method: 'POST', postData: body, body: {} }));
   cap.onResponse(res('/break_escape/games/7/feed_post?npc_id%5B%5D=lena', { method: 'POST', postData: body, body: {} }));
+  cap.onResponse(res('/break_escape/games/7/feed_post?x=1;npc_id=lena', { method: 'POST', postData: body, body: {} }));
   cap.onResponse(res('/break_escape/games/7/feed_post?x=1', { method: 'POST', postData: body, body: {} }));
   await cap.flush();
   const got = lines(file);
-  assert.deepEqual(got.map(l => l.npcId ?? null), [null, null, 'jake']);
+  assert.deepEqual(got.map(l => l.npcId ?? null), [null, null, null, 'jake'], 'Rack also splits on ;');
   assert.equal(got[0].query, 'npc_id=lena');
 });
 

@@ -325,6 +325,37 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     assert_includes found, [1, 'feed_text', 'feed:lena|lena_post_1']
   end
 
+  test 'capture npcId R2 m1: a semicolon-separated npc_id in the query also leaves the row untagged' do
+    game, log = two_reveals_after_lost_row('jake')
+    log[1][2]['query'] = 'x=1;npc_id=lena'
+    scanner = AccessLeakScanner.new(data, game: game)
+    scanner.scan(log)
+    assert_equal %w[jake lena], scanner.feed_unknown.sort
+  end
+
+  test 'capture npcId R2 m2: a readable tooSoon answer whose tag and body disagree makes the scanner ignore every tag' do
+    game, log = two_reveals_after_lost_row('jake')
+    too_soon = rows(['POST', FEED, { 'npcId' => 'jake', 'post' => nil, 'tooSoon' => true, 'retryAfter' => 30 }])[0]
+    too_soon[2]['npcId'] = 'lena'
+    scanner = AccessLeakScanner.new(data, game: game)
+    scanner.scan(numbered([log[0], at(too_soon, 10), log[1], log[2]]))
+    assert scanner.feed_tags_ignored
+    assert_equal %w[jake lena], scanner.feed_unknown.sort
+  end
+
+  test 'capture npcId R2 m3: an NPC that one of its own lost rows covers is not listed as ruled out' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'jake' => { 'n' => 2, 'at' => (T0 + 32).to_f } } })
+    mine = at(lost_answer, 20)
+    mine[2]['npcId'] = 'jake'
+    other = at(lost_answer, 30)
+    other[2]['npcId'] = 'lena'
+    scanner = AccessLeakScanner.new(data, game: game)
+    scanner.scan(numbered([at(rows(['GET', SCENARIO, bootstrap])[0], 0), mine, other]))
+    assert_equal ['jake'], scanner.feed_unknown
+    assert_equal ['jake'], scanner.feed_fallback, 'one share and one reveal from the first line'
+    assert_empty scanner.feed_ruled_out, 'one lost row was his, so the note would be wrong'
+  end
+
   test 'capture npcId R1 m2: an NPC that a tag ruled out of the only lost row is listed for the note' do
     game, log = two_reveals_after_lost_row('jake')
     scanner = AccessLeakScanner.new(data, game: game)

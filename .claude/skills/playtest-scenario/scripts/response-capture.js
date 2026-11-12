@@ -16,7 +16,8 @@
 // first command carry cmdSeq null. A /feed_post line also carries npcId, the
 // `npc_id` its request asked for, so the leak scanner can credit an answer whose
 // body was lost to the right NPC; it is left out when the request body is
-// missing, not JSON or names no NPC.
+// missing, not JSON or names no NPC, or when the URL's query names an `npc_id`
+// too.
 //
 // Only responses from the game's own origin, with a JSON content type, count;
 // static files (/js/, /css/, /assets/, /stylesheets/) and redirects are skipped.
@@ -39,7 +40,9 @@ const STATIC_PATH_RE = /\/(js|css|assets|stylesheets)\//;
  */
 function feedPostNpcId(request, url = null) {
   try {
-    if (url && [...url.searchParams.keys()].some(k => k.startsWith('npc_id'))) return null;
+    // Rack splits the query on `;` as well as `&`, so look at the whole decoded query;
+    // over-matching only leaves the row untagged (the old rule)
+    if (url && decodeURIComponent(url.search).includes('npc_id')) return null;
   } catch { return null; }
   let data;
   try { data = request.postData(); } catch { return null; }
