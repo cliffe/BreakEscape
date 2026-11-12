@@ -3374,7 +3374,7 @@ module BreakEscape
         kept = msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
           case key
           when 'deliveryTags' then false # cleaned below
-          when 'type' then true # length checked above (`next`)
+          when 'type' then value.length <= 20 # always true: the `next` above already refused a longer type (A4 R1 n1)
           when 'callEvent' then value.is_a?(String) && PHONE_CALL_EVENTS.include?(value)
           when 'text' then true
           # gameTime: elapsed game ms when the text arrived (the time its bubble shows)
