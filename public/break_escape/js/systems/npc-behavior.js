@@ -2003,6 +2003,7 @@ class NPCBehavior {
         // unlock below does not repeat it). With useMs the NPC stands there that long first
         // (chooseWaypointTargetMultiRoom holds him), then npc_used_object_done:<id>.
         if (action?.useObject && this._routeUse?.action !== action) {
+            if (this._turnBackBeforeUse(action)) return;
             this._faceRouteObject(action.useObject);
             const ms = routeUseMs(action);
             this._routeUse = { action, until: this.clockNow() + ms, done: ms === 0 };
@@ -2138,15 +2139,50 @@ class NPCBehavior {
      */
     turnBackFromGate(gate) {
         if (!this.wantsToCrossGate(gate)) return false;
+        return this._resumeOnThisSide(`Gate to ${this.config.patrol.route[this.config.patrol.currentSegmentIndex].room} held shut`);
+    }
+
+    /**
+     * Code review R2 (m4): a timed useObject (a PIN at a reader) at the last waypoint of his
+     * segment, with the next leg across a gate held shut against him (door-gates
+     * heldShutAgainst: a barred player at the door or a recent force-shut). He turns back
+     * there, as turnBackFromGate would 5 s later, but without keying: no
+     * npc_used_object event, so a watcher never sees him key with the door staying shut.
+     * Emits door_gate_guard_turned_back { ..., npcId, beforeUse: true }.
+     * @returns {boolean} true if he turned back
+     */
+    _turnBackBeforeUse(action) {
+        const patrol = this.config?.patrol;
+        if (!routeUseMs(action) || !patrol?.enabled || !patrol.multiRoom || !patrol.route?.length) return false;
+        const seg = patrol.route[patrol.currentSegmentIndex];
+        const here = this.roomId;
+        if (!here || seg?.room !== here) return false;
+        const wps = seg.waypoints || [];
+        if (wps[wps.length - 1]?.action !== action) return false;   // more stops in this room first
+        const next = patrol.route[(patrol.currentSegmentIndex + 1) % patrol.route.length]?.room;
+        if (!next || next === here) return false;
+        const gate = window.doorGates?.heldShutAgainst?.(this.npcId, here, next);
+        if (!gate) return false;
+        if (!this._resumeOnThisSide(`Gate to ${next} held shut before keying`, 1)) return false;
+        window.eventDispatcher?.emit?.('door_gate_guard_turned_back', { ...gate, npcId: this.npcId, beforeUse: true });
+        return true;
+    }
+
+    /**
+     * Resume the route at the next segment in the room he stands in, starting the search
+     * `from` segments on (1: the segment after the current one, which for a two-room loop
+     * comes back round to the current one), with a beat facing the player.
+     */
+    _resumeOnThisSide(why, from = 1) {
         const patrol = this.config.patrol;
         const route = patrol.route;
         let resume = -1;
-        for (let k = 1; k <= route.length; k++) {
+        for (let k = from; k <= route.length; k++) {
             const i = (patrol.currentSegmentIndex + k) % route.length;
             if (route[i]?.room === this.roomId) { resume = i; break; }
         }
         if (resume < 0) return false;
-        console.log(`↩️ [${this.npcId}] Gate to ${route[patrol.currentSegmentIndex].room} held shut: turning back to ${route[resume].room} segment ${resume}`);
+        console.log(`↩️ [${this.npcId}] ${why}: turning back to ${route[resume].room} segment ${resume}`);
         patrol.currentSegmentIndex = resume;
         patrol.waypointIndex = 0;
         this.patrolTarget = null;

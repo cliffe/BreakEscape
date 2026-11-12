@@ -692,6 +692,28 @@ export class DoorGates {
         }
     }
 
+    /**
+     * Is a shut gate between roomA and roomB held against this openFor guard now: he is
+     * within its openRadius and a barred player or a recent force-shut keeps it shut? The
+     * same rule as the turn-back timer. NPCBehavior asks it at a timed useObject (a PIN at
+     * the reader) just before a leg across the gate, so a held guard turns back there
+     * instead of keying with the door shut (code review R2, m4).
+     * @returns {object|null} the gate info, or null
+     */
+    heldShutAgainst(npcId, roomA, roomB, now = Date.now()) {
+        for (const g of this.groups.values()) {
+            if (!g.cfg || g.open || !g.sprites.size || !g.cfg.openFor.includes(npcId)) continue;
+            const rooms = [g.roomId, g.connectedRoom];
+            if (!rooms.includes(roomA) || !rooms.includes(roomB)) continue;
+            const s = npcSprite(npcId);
+            if (!s || s.visible === false) continue;
+            const c = centreOf(s);
+            if (Math.hypot(c.x - g.x, c.y - g.y) > g.cfg.openRadius) continue;
+            if (now < g.forcedUntil || this._playerBarred(g)) return this._gateInfo(g);
+        }
+        return null;
+    }
+
     /** Whether any openFor NPC is within openRadius (one distance rule: nearGuardIds). */
     _npcNear(g) {
         return this.nearGuardIds(g).length > 0;

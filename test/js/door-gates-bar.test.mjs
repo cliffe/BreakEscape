@@ -459,3 +459,27 @@ test('the bump: a player holding a credential the gate accepts is not refused', 
 });
 
 test.after(() => { console.log = quiet.log; console.warn = quiet.warn; });
+
+// Code review R2 (m4): heldShutAgainst, asked by NPCBehavior at a timed use (a PIN at the
+// reader) just before a leg across the gate, so a held guard turns back without keying.
+test('heldShutAgainst: a near guard at a shut gate with a barred player or a force-shut; null otherwise', () => {
+    const { gates, g, guard } = setup({ player: NEAR });
+    guard.x = 100; guard.y = 140;                                     // within 56 px of the gate
+    const info = gates.heldShutAgainst('guard', 'lobby', 'vault', 0);
+    assert.ok(info, 'barred player near: held');
+    assert.equal(info.connectedRoom, 'vault');
+    assert.ok(gates.heldShutAgainst('guard', 'vault', 'lobby', 0), 'either order of rooms');
+    assert.equal(gates.heldShutAgainst('guard', 'lobby', 'other', 0), null, 'another pair of rooms');
+    assert.equal(gates.heldShutAgainst('someone', 'lobby', 'vault', 0), null, 'not in openFor');
+    window.gameState.globalVariables.disguised = true;
+    assert.equal(gates.heldShutAgainst('guard', 'lobby', 'vault', 0), null, 'disguised: not barred, the gate will open');
+    g.forcedUntil = 5000;
+    assert.ok(gates.heldShutAgainst('guard', 'lobby', 'vault', 1000), 'a recent force-shut holds it');
+    assert.equal(gates.heldShutAgainst('guard', 'lobby', 'vault', 6000), null, 'force-shut over');
+    window.gameState.globalVariables.disguised = false;
+    guard.x = 300; guard.y = 300;
+    assert.equal(gates.heldShutAgainst('guard', 'lobby', 'vault', 0), null, 'guard not near');
+    guard.x = 100; guard.y = 140;
+    g.open = true;
+    assert.equal(gates.heldShutAgainst('guard', 'lobby', 'vault', 0), null, 'open gate');
+});

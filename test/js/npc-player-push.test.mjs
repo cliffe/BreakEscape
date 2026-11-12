@@ -63,7 +63,7 @@ test('the rule: a plain NPC separates as before; a routed one pins, or lets the 
 const overlapRectOver = (statics) => (x, y, w, h, dyn, stat) => !stat ? [] :
     statics.filter(b => x < b.x + b.width && x + w > b.x && y < b.y + b.height && y + h > b.y);
 
-function harness({ patrol = true, playerY = 100, playerX = 100, statics = null } = {}) {
+function harness({ patrol = true, playerY = 100, playerX = 100, statics = null, behavior = null } = {}) {
     let process = null, collide = null;
     const handlers = {};
     const scene = { physics: { add: { collider: (a, b, c, p) => { collide = c; process = p; } }, world: { on: (ev, fn) => { handlers[ev] = fn; } } } };
@@ -72,7 +72,7 @@ function harness({ patrol = true, playerY = 100, playerX = 100, statics = null }
     const player = { currentRoom: 'r', body: { x: playerX, y: playerY, width: 16, height: 10 } };
     window.rooms = { r: { wallCollisionBoxes: [{ body: { left: 0, top: 0, right: 320, bottom: 8 } }] } };
     window.player = player;
-    window.npcBehaviorManager = { getBehavior: () => ({ roomId: 'r', config: { patrol: { enabled: patrol } } }) };
+    window.npcBehaviorManager = { getBehavior: () => behavior || ({ roomId: 'r', config: { patrol: { enabled: patrol } } }) };
     console.log = () => {};
     createNPCCollision(scene, npc, player);
     console.log = quiet;
@@ -109,7 +109,7 @@ test('near a wall includes static furniture: a desk within the margin is near, o
     assert.deepEqual(staticRectsNear(scene, player(190)), [{ l: 120, t: 60, r: 184, b: 84 }], '6 px off the desk');
     assert.equal(staticRectsNear(scene, player(200)).length, 0, '16 px off the desk');
     assert.equal(staticRectsNear(scene, player(190)).length > 0 && bodyNearWall(player(190), staticRectsNear(scene, player(190))), true);
-    assert.equal(staticRectsNear({ physics: { overlapRect: overlapRectOver([{ ...desk, enable: false }]) } }, player(190)).length, 0, 'a disabled body (an open gate) does not count');
+    assert.equal(staticRectsNear({ physics: { overlapRect: overlapRectOver([{ ...desk, enable: false }]) } }, player(190)).length, 0, 'a disabled body does not count');
     assert.deepEqual(staticRectsNear({}, player(190)), [], 'no physics: nothing');
 });
 
@@ -123,4 +123,43 @@ test('collider: a patrolling NPC walking the player into a desk in open floor le
     assert.equal(far.process(), true, 'away from the desk the NPC holds as before');
     assert.equal(far.npc.body.pushable, false);
     far.step();
+});
+
+// Code review R2 (M1), the user's q53 call: "the player not shoving routed NPCs". A needs errand
+// and the walk home after a push both go through goToAndStay, which turns patrol on for the walk
+// and off on arrival, so they are routed NPCs too. Accepted on purpose: while an office NPC walks
+// an errand the player stops against it in open floor and passes through it by a wall or desk;
+// standing still at its spot it is pushed as before.
+test('goToAndStay turns patrol on for the walk (needs errands and the walk home use it)', () => {
+    const src = readFileSync(join(js, 'systems/npc-behavior.js'), 'utf8');
+    const body = src.slice(src.indexOf('goToAndStay(worldX, worldY, speed, opts = {}) {'));
+    assert.ok(body.length > 0, 'goToAndStay found');
+    const head = body.slice(0, body.indexOf('this._stopOnArrival = true'));
+    assert.match(head, /this\.config\.patrol\.enabled = true;\s*$/, 'patrol is enabled just before the stop-on-arrival flag');
+    const needs = readFileSync(join(js, 'systems/npc-needs.js'), 'utf8');
+    assert.match(needs, /goToAndStay\(id, x, y, speed, \{ owner: 'needs'/, 'needs errands walk through goToAndStay');
+});
+
+test('collider: a needs errand walker is held like a patrol: pin in open floor, slide by a desk, pushed once arrived', () => {
+    // the shape goToAndStay leaves on a needs errand (npc-behavior.js)
+    const walking = () => ({ roomId: 'r', _moveOwner: 'needs', _stopOnArrival: true, config: { patrol: { enabled: true, waypoints: [{ tileX: 3, tileY: 3 }] } } });
+    const open = harness({ playerY: 100, behavior: walking() });
+    assert.equal(open.process(), true, 'open floor: they collide, the player stops against the walker');
+    assert.equal(open.npc.body.pushable, false, 'the walker keeps its line');
+    open.step();
+    assert.equal(open.npc.body.pushable, true);
+
+    const desk = { x: 60, y: 96, width: 36, height: 24, enable: true };
+    const byDesk = harness({ playerX: 100, playerY: 100, statics: [desk], behavior: walking() });
+    assert.equal(byDesk.process(), false, 'by a desk the player passes through the walker: never trapped');
+    assert.equal(byDesk.npc.body.pushable, true);
+
+    const byWall = harness({ playerY: 12, behavior: walking() });
+    assert.equal(byWall.process(), false, 'by a wall (a doorway, a corridor) the player passes through');
+
+    const arrived = walking();
+    arrived.config.patrol.enabled = false; arrived._stopOnArrival = false; arrived._moveOwner = undefined;
+    const still = harness({ playerY: 100, behavior: arrived });
+    assert.equal(still.process(), true);
+    assert.equal(still.npc.body.pushable, true, 'arrived: pushed as before');
 });

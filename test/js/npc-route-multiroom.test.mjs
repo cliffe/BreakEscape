@@ -665,3 +665,64 @@ test('a timed useObject leg cut short beside its spot counts as the arrival (the
     assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader']);
     delete window.eventDispatcher;
 });
+
+// Code review R2 (m4): at the reader, with the next leg across a gate held shut against him
+// (door-gates heldShutAgainst), the guard turns back before keying: no npc_used_object, the
+// turned-back event with beforeUse, and his own room's loop again. Not held: he keys as before.
+test('a timed useObject before a gate held shut: he turns back without keying', async () => {
+    const { b, unlocks } = setup({ bLoaded: true, bLocked: false });
+    const events = captureEvents();
+    b.clockNow = () => 1000;
+    b.faceWorldPoint = () => {};
+    let faced = 0;
+    b.facePlayer = () => { faced++; };
+    window.player = { x: 120, y: 360 };
+    const asked = [];
+    let held = true;
+    window.doorGates = { heldShutAgainst: (id, from, to) => { asked.push([id, from, to]); return held ? { roomId: 'a', connectedRoom: 'b', direction: 'north' } : null; } };
+    const KEY_ROUTE = [
+        { room: 'a', waypoints: [{ x: 2, y: 2 }, { x: 4, y: 1, action: { unlockRoom: 'b', useObject: 'reader', useMs: 2500 } }] },
+        { room: 'b', waypoints: [{ x: 4, y: 6 }] }
+    ];
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: KEY_ROUTE } }));
+    b.config.patrol.waypointIndex = 1;
+    await silently(() => b.chooseNewPatrolTarget(0));                  // the reader leg
+    b._pendingRouteAction = b.patrolTarget.routeAction; b._routeUse = null; b.currentPath = [];
+    await silently(() => b.chooseNewPatrolTarget(0));                  // arrival, gate held
+    assert.deepEqual(asked, [['guard', 'a', 'b']]);
+    assert.deepEqual(events.map(e => e[0]), ['door_gate_guard_turned_back'], 'no keying events');
+    assert.equal(events[0][1].npcId, 'guard');
+    assert.equal(events[0][1].beforeUse, true);
+    assert.equal(b.config.patrol.currentSegmentIndex, 0);
+    assert.equal(b.config.patrol.waypointIndex, 0, 'back to his own room\'s loop');
+    assert.equal(b._pendingRouteAction, null);
+    assert.equal(faced, 1);
+    assert.deepEqual(unlocks, []);
+    // Next lap, not held: he keys as before
+    held = false; events.length = 0;
+    b.config.patrol.waypointIndex = 1;
+    await silently(() => b.chooseNewPatrolTarget(0));
+    b._pendingRouteAction = b.patrolTarget.routeAction; b._routeUse = null; b.currentPath = [];
+    await silently(() => b.chooseNewPatrolTarget(0));
+    assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader']);
+    delete window.doorGates;
+    delete window.eventDispatcher;
+});
+
+test('a timed useObject that is not the last stop before the gate never asks the gate', async () => {
+    const { b } = setup({ bLoaded: true, bLocked: false });
+    const events = captureEvents();
+    b.clockNow = () => 1000;
+    b.faceWorldPoint = () => {};
+    let asked = 0;
+    window.doorGates = { heldShutAgainst: () => { asked++; return { roomId: 'a', connectedRoom: 'b' }; } };
+    const action = { useObject: 'reader', useMs: 2000 };
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, multiRoom: true, route: [
+        { room: 'a', waypoints: [{ x: 4, y: 1, action }, { x: 2, y: 2 }] }, { room: 'b', waypoints: [{ x: 4, y: 6 }] }] } }));
+    b._pendingRouteAction = action; b._routeUse = null;
+    await silently(() => b.chooseWaypointTargetMultiRoom(0));
+    assert.equal(asked, 0);
+    assert.deepEqual(events.map(e => e[0]), ['npc_used_object:reader']);
+    delete window.doorGates;
+    delete window.eventDispatcher;
+});
