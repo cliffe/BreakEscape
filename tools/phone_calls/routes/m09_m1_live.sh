@@ -77,4 +77,40 @@ nightshade)
   open_m09 nightshade --start-room loading_dock
   a2b_ev "window.gameState.globalVariables.flag1_submitted=true; window.eventDispatcher.emit('global_variable_changed:flag1_submitted',{name:'flag1_submitted',value:true}); return true;" >/dev/null
   for i in $(seq 1 30); do sleep 2; echo "$i: $(tl | cut -c1-160)"; done; a2b_shot nightshade_state; tts; a2b_quit ;;
+nightshade_order)  # M1 R1: HaX's flag-1 read-out is heard first, THEN Nightshade rings on the thread close; else-branch lines (cage not open)
+  open_m09 nightshade_order --start-room loading_dock
+  # the drop terminal submits flag 1
+  a2b_ev "window.gameState.globalVariables.flag1_submitted=true; window.eventDispatcher.emit('global_variable_changed:flag1_submitted',{name:'flag1_submitted',value:true}); return true;" >/dev/null
+  sleep 9   # HaX read-out text is scheduled (delay 2500 + msg_delay 5000)
+  echo "HaX read-out text present: $(a2b_ev "return (window.npcManager.getConversationHistory('agent_0x99')||[]).some(m=>/First box is in/.test(m.text||''))")"
+  echo "nightshade ringing yet (want false): $(a2b_ev "const c=window.phoneRinger.current(); return c?c.npcId+':'+c.state:false")"
+  echo "flag1_read_heard yet (want false): $(a2b_ev "return !!window.gameState.globalVariables.flag1_read_heard")"
+  # open HaX's thread -> the hub guard plays flag1_read, which sets flag1_read_heard
+  $S $GID '{"cmd":"openInventoryItem","item":"phone"}' >/dev/null; sleep 2
+  a2b_ev "const c=document.querySelector('.contact-item[data-npc-id=\"agent_0x99\"]'); if(!c) return 'no contact'; c.click(); return 'opened';" >/dev/null; sleep 3
+  echo "HaX thread last rows: $(a2b_ev "return (window.npcManager.getConversationHistory('agent_0x99')||[]).slice(-3).map(m=>m.type+':'+(m.text||'').slice(0,46))")"
+  echo "flag1_read_heard now (want true): $(a2b_ev "return !!window.gameState.globalVariables.flag1_read_heard")"
+  echo "nightshade ringing while HaX thread open (want false): $(a2b_ev "const c=window.phoneRinger.current(); return c?c.npcId+':'+c.state:false")"
+  a2b_shot hax_readout_open
+  # close HaX's thread -> conversation_closed:agent_0x99 -> Nightshade rings 3 s later
+  close_mg; sleep 1
+  gate wait_ring nightshade_phone 15; a2b_shot nightshade_ring_after_readout; echo "ring: $(tl)"
+  a2b_answer >/dev/null; sleep 2; a2b_shot ns_call; echo "call: $(call_screen)"
+  play_call; end_call; a2b_shot ns_after_end; tts; a2b_quit ;;
+torres_once)  # m1 R1: one ring at the box; decline leaves only the callback; no second ring at the lid or on leaving the office
+  open_m09 torres_once --start-room open_stacks --set flag2_submitted=true
+  $S $GID '{"cmd":"moveToNear","id":"hl_box"}' 30 >/dev/null; $S $GID '{"cmd":"interact","id":"hl_box"}' 30 >/dev/null; sleep 1.5; echo "lid: $(mgc)"
+  gate wait_ring torres_phone 15; a2b_shot ring_over_lid; tl; a2b_decline >/dev/null; sleep 1; echo "declined: $(tl)"
+  echo "torres_rang latched (want true): $(a2b_ev "return !!window.gameState.globalVariables.torres_rang")"
+  echo "callback after decline: $(a2b_ev "return window.phoneRinger.callbackFor('torres_phone')")"
+  # open the lid: the item_unlocked mapping must NOT ring again (torres_rang gates it)
+  $S $GID '{"cmd":"mg","action":"type","args":[0,"HL2015-0477",{"submit":true}]}' 30 | cut -c1-120; sleep 2.5; echo "lid opened: $(mgc)"; close_mg; sleep 1
+  echo "second ring within 8 s? (want none):"; for i in $(seq 1 8); do sleep 1; r=$(a2b_ev "const c=window.phoneRinger.current(); return c?c.npcId+':'+c.state:null"); [ "$r" != "null" ] && echo "  RANG AGAIN: $r"; done; echo "  done"
+  echo "missed rows (want 1): $(a2b_ev "return (window.npcManager.getConversationHistory('torres_phone')||[]).filter(m=>/Missed call|Incoming call/.test(m.text||'')).length")"
+  a2b_shot after_decline_no_second_ring
+  # callback works
+  $S $GID '{"cmd":"openInventoryItem","item":"phone"}' >/dev/null; sleep 2
+  a2b_ev "const c=document.querySelector('.contact-item[data-npc-id=\"torres_phone\"]'); if(!c) return 'no contact'; c.click(); return 'opened';" >/dev/null; sleep 2
+  a2b_ev "const hb=document.querySelector('.call-button'); if(!hb) return 'no callback'; hb.click(); return 'dial';" >/dev/null; sleep 5; echo "callback: $(call_screen)"; a2b_shot callback_connected
+  play_call; end_call; a2b_shot after_callback; tts; a2b_quit ;;
 esac
