@@ -1504,5 +1504,24 @@ module BreakEscape
       @game.process_flag_task_completions!(["vm-flag1"])
       assert_equal 7, @game.reload.player_state["globalVariables"]["count"]
     end
+
+    # Friendface phone code review R5 M2: m01's find_derek_access lists names and a lock ref;
+    # stamped ids (NPC held items, container contents) must not hide them
+    test "validate_collection matches a listed target by the item's id, lock ref or name" do
+      task = { 'taskId' => 'find_derek_access', 'type' => 'collect_items', 'targetCount' => 1,
+               'targetItemIds' => ["Derek's Office Key", 'derek_office_key', 'Lock Pick Kit'] }
+      check = lambda do |item|
+        @game.player_state['inventory'] = [item]
+        @game.send(:validate_collection, task, {})
+      end
+      assert check.call({ 'type' => 'lockpick', 'id' => 'kevin_park_held_0', 'name' => 'Lock Pick Kit' }), 'by name'
+      assert check.call({ 'type' => 'key', 'id' => 'patricia_briefcase_content_0', 'name' => 'Office key',
+                          'opens_lock' => 'derek_office_key' }), 'by lock ref'
+      assert check.call({ 'type' => 'key', 'scenarioData' => { 'id' => 'x_content_0', 'key_id' => 'derek_office_key' } }),
+             'by the older key_id, under scenarioData'
+      refute check.call({ 'type' => 'keycard', 'id' => 'kevin_park_held_1', 'name' => 'Server Room Keycard',
+                          'opens_lock' => 'server_keycard' }), 'an unlisted item'
+      refute check.call('not a hash'), 'a malformed entry'
+    end
   end
 end

@@ -4305,10 +4305,15 @@ module BreakEscape
       target_item_ids = Array(task['targetItemIds'] || [])
 
       count = inventory.count do |item|
+        next false unless item.is_a?(Hash)
+
         item_type = item['type'] || item.dig('scenarioData', 'type')
-        item_id = item['id'] || item.dig('scenarioData', 'id')
-        item_name = item['name'] || item.dig('scenarioData', 'name')
-        identifier = item_id || item_name
+        # Code review R5 M2: a listed target names the item by its id, its lock ref or its name.
+        # Ids are stamped at game creation, so a task authored against a name or lock ref still
+        # matches (m01 find_derek_access); the client's objectives-manager matches the same way.
+        identifiers = [item, item['scenarioData']].flat_map do |h|
+          h.is_a?(Hash) ? [h['id'], h['opens_lock'], h['key_id'], h['name']] : []
+        end.select { |v| v.is_a?(String) && !v.empty? }
 
         matches = false
 
@@ -4319,14 +4324,12 @@ module BreakEscape
 
         # ID-based matching (more specific)
         if target_item_ids.any?
-          matches = target_item_ids.include?(identifier)
+          matches = (identifiers & target_item_ids).any?
         end
 
         # If both specified, match either
         if target_items.any? && target_item_ids.any?
-          type_match = target_items.include?(item_type)
-          id_match = target_item_ids.include?(identifier)
-          matches = type_match || id_match
+          matches = target_items.include?(item_type) || (identifiers & target_item_ids).any?
         end
 
         matches
