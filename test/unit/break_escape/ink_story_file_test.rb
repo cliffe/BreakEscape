@@ -40,6 +40,19 @@ module BreakEscape
       end
     end
 
+    test "a stale X.ink.json is recompiled in place, so the next lookup does not compile again" do
+      Dir.mktmpdir do |dir|
+        ink_json = write(File.join(dir, 'k.ink.json'), '{"stale":true}')
+        ink = write(File.join(dir, 'k.ink'), INK)
+        File.utime(Time.now - 60, Time.now - 60, ink_json)
+
+        assert_equal ink_json, InkStoryFile.find(ink_json).to_s
+        assert_includes File.read(ink_json, encoding: 'bom|utf-8'), 'Hello there.'
+        refute File.exist?(File.join(dir, 'k.json'))
+        refute InkStoryFile.needs_compilation?(ink, ink_json)
+      end
+    end
+
     test "a story with only an .ink is compiled beside it" do
       Dir.mktmpdir do |dir|
         write(File.join(dir, 'n.ink'), INK)

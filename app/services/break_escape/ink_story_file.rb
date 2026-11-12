@@ -7,7 +7,7 @@ module BreakEscape
   #
   # With compile: true (the game), an .ink newer than its compiled JSON (or with
   # no JSON) is compiled first. With compile: false (tests, tools), the lookup is
-  # the same but nothing is written; ink_story_file_staleness_test.rb checks that
+  # the same but nothing is written; ink_compiled_staleness_test.rb checks that
   # no committed JSON is stale, so both read the same content.
   module InkStoryFile
     module_function
@@ -20,7 +20,9 @@ module BreakEscape
       ink = ink_source(base)
       if compile && ink && needs_compilation?(ink, json)
         Rails.logger.info "[BreakEscape] Compiling #{File.basename(ink)}..."
-        json = compile!(ink)
+        # Into the file the lookup reads next time (a stale X.ink.json, say),
+        # or beside the .ink when there is none, so it compiles only once
+        json = compile!(ink, json || ink.to_s.sub(/\.ink\z/, '.json'))
       end
       json
     end
