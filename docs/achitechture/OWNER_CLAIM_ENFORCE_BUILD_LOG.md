@@ -419,7 +419,8 @@ The reviewer's R3 sweep script (session scratchpad, not the repo), run on this b
 rendered, none failed. Of the 16 PCs that pass claim checks 3 to 7, only
 `test_access_habits noor_pc` returns nil. The other 15 keep the same precise routes as in R3
 (needs for the habits PCs, `staff_pc_2` and `mel_pc`; a knock-out with a need or failure route
-behind it for the rest). `test_access_social` jake and lena reach `might:social_media` but check 6
+behind it for the rest). For `staff_pc_2` the label is the fallback `need:work:staff_pc`, used only
+while his own PC is busy; the leave play uses is caffeine at `coffee_station` (see R4 below). `test_access_social` jake and lena reach `might:social_media` but check 6
 refuses them first. The validator gives the never-leaves warning for `noor_pc` only, beside the
 older untracked-owner warning for `test_access_work pat_pc`. No shipped scenario changes behaviour.
 
@@ -512,8 +513,7 @@ validator's never-leaves warning fires for `noor_pc` only, beside the untracked-
 `lab_physical_pentest staff_pc_2` reports `need:work:staff_pc`, the first route found. Play
 rarely takes it: `_useCandidate` prefers Pierce's own `staff_pc_2`, so he uses `staff_pc` only
 while his own PC is busy. The leave play actually uses is caffeine at `coffee_station`, which the
-mirror also has. The R3 sweep note above that lists `staff_pc_2` under "needs" means this
-fallback route.
+mirror also has. The R3 sweep note above now says so.
 
 ### Tests (without the lock, affected files only)
 
