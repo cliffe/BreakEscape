@@ -261,3 +261,49 @@ Both compile, "All ink files valid", Schema passed, Validation complete.
 - m08: pre-existing lint error at :190. No new call-set issues.
 
 Voiced new/re-keyed: m06 ~6 (4 bring-in re-key + fund call lines keep wording); m08 ~10 (door-audit lines keep wording, now voiced).
+
+---
+
+## m07 bring-in (M6) — DONE, committed (HaX's bring-in ONLY)
+
+File: `scenarios/m07_architects_gambit/ink/m07_phone_agent_0x99.ink`.
+
+Scope per brief: m07 is "HaX's bring-in only". The Architect taunts/sign-off/voicemails/narration are the other writer's (file `m07_architect_comms.ink`). Both bring_me_in lines are "today" (already unique, 7.6) — no rewrites.
+
+| Line | Before | After |
+|---|---|---|
+| bring_me_in (grid saved) | "Putting you through. He's waiting." | unchanged (now voiced) |
+| bring_me_in (else) | "Not yet. Put the rest of the flags through the relay and he's on straight after." | unchanged (now voiced) |
+| end | `#exit_conversation` / `-> hub` | `#exit_conversation` / `-> DONE` |
+
+Marked `// lint: call-knot`. Hub choice `[Bring me in.]`: `-> bring_me_in` → `#place_call:bring_me_in` / `-> DONE`. No `#ending_check` (one-shot hand-off to Netherton's secure link via `debrief_requested`).
+
+### Config the implementer must add (M6)
+- m07 `agent_0x99` `call`: `[{ knot: "bring_me_in", button: false }]`.
+
+### NOT done by me (outside "HaX's bring-in only") — flag for the orchestrator
+The M6 slice also lists three HaX text rewords; they are **not** the bring-in, so I left them for whoever owns m07's non-bring-in HaX text:
+- ERB `:896`: "...call me and say which." → "...message me and say which." (7.3)
+- ERB `:904`: "...call me before you log in on their host." → "...tell me before you log in..." (7.3)
+- ink `:167`: "Call me the second you hit something you can't open." → "Message me the second..." (7.3)
+
+### Checks
+Compile OK. "All ink files valid", Schema passed, Validation complete.
+
+Voiced new/re-keyed: **2** (bring_me_in lines gain a voice).
+
+---
+
+## Totals (this writer)
+
+| Mission | Slice | Voiced new/re-key (approx) |
+|---|---|---|
+| m01 | M8 | 9 |
+| m03 | M7 | 18 |
+| m04 | M4 | 12 |
+| m05 | M5 | 10 |
+| m06 | M10 | 6 |
+| m08 | M10 | 10 |
+| m07 | M6 | 2 |
+
+All call knots marked `// lint: call-knot`; the engine also auto-discovers them by traversal (`voicedCallKnots`). `#place_call` validation and the engine-written-VAR awareness are A7/validator work not yet on this branch, so `#place_call` tags don't error and the "call VAR read but never set" warnings are expected (see top).
