@@ -217,7 +217,9 @@ test('a fully cracked MIFARE Classic clone_card body is under 1500 bytes', async
   const saved = dataMgr.savedCardForServer(card);
   assert.equal(Object.keys(saved.rfid_data.sectors).length, 16, 'all 16 sectors are kept');
   cloneBodies.length = 0;
-  await CardApi.cloneCard({ object_id: 'master_keycard' }, 'master_keycard', saved);
+  // A clone started in a conversation (the guard who holds master_keycard in test-rfid):
+  // the body names the npc, as ApiClient.cloneCard builds it.
+  await CardApi.cloneCard({ npc_id: 'security_guard' }, 'master_keycard', saved);
   const body = cloneBodies[0].data;
   const size = bytes(body);
   assert.ok(size < 1500, `MIFARE clone_card body ${size} bytes, expected < 1500`);

@@ -1,5 +1,5 @@
 {
-  "object_id": "master_keycard",
+  "npc_id": "security_guard",
   "card_id": "master_keycard",
   "card": {
     "card_id": "master_keycard",
