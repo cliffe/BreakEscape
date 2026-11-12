@@ -43,28 +43,19 @@ VAR t1_first_contact = false // PASS 5 design r2 (N1): T-1 was the first call he
 VAR t20_folded = false // Phase 4 dialogue C1 (D7-3): T-20 was unheard when T-10 played; T-10 carries its naming line
 
 === start ===
-// PASS 2 playtest D2: after the win he is done. Synced global, so a reset
-// story (bark with an explicit knot) can't replay a stale taunt either.
+// Phone-calls M6 (the Architect). His taunts and the sign-off are withheld voiced calls now (C6),
+// delivered by the ringer straight to their own knots (taunt_t30..taunt_t1, seattle_call, sign_off).
+// So this home router never enters a taunt or the sign-off -- the ringer does. It keeps only the
+// after-win, dormant and dead-air routes. A missed or declined taunt leaves a voicemail (its *_vm
+// knot); the forced sign-off cannot be missed and has none.
 {grid_saved and (heard_signoff or architect_signoff_done):
     -> after_win
 }
+// B1 fix: while the grid is saved but the sign-off has not rung yet, rest on dead air. Without this the
+// start<->dead_air and start<->dormant back-edges ran away (loopcheck RUNAWAY/hang). The ringer rings the
+// forced sign-off; this branch is only the quiet gap before it.
 {grid_saved:
-    -> sign_off
-}
-{architect_t1_played and not heard_t1:
-    -> taunt_t1
-}
-{architect_t5_played and not heard_t5:
-    -> taunt_t5
-}
-{architect_t10_played and not heard_t10 and not architect_t5_played:
-    -> taunt_t10
-}
-// PASS 5 design r2 (N1): T-20 retires once T-5 has played, as T-10 does, so a
-// player who left his calls unread doesn't hear them newest first.
-// Phase 4 dialogue C1 (D7-3): and once T-10 has played (T-10 folds in its line).
-{architect_t20_played and not heard_t20 and not architect_t10_played and not architect_t5_played:
-    -> taunt_t20
+    -> dead_air
 }
 // PASS 2 review M3 (lesson 36): the phone preloads this contact's start knot
 // on first open. Until the ops-floor mapping sets architect_contact, stay
@@ -72,16 +63,17 @@ VAR t20_folded = false // Phase 4 dialogue C1 (D7-3): T-20 was unheard when T-10
 {not architect_contact and not architect_t20_played:
     -> dormant
 }
-{not heard_t30:
-    -> taunt_t30
-}
 -> dead_air
 
 === dormant ===
 // PASS 3 (phone-chat rule, E10): a reopen re-navigates to the knot that owns
 // the saved choice. If first contact or a taunt has arrived since, go through.
 // Prints nothing, so the preload still saves no unread text here.
-{architect_contact or architect_t20_played or grid_saved:
+// B1 fix: once the grid is saved, rest on dead air rather than bouncing back to start.
+{grid_saved:
+    -> dead_air
+}
+{architect_contact or architect_t20_played:
     -> start
 }
 + [Hang up.]
@@ -93,8 +85,9 @@ VAR t20_folded = false // Phase 4 dialogue C1 (D7-3): T-20 was unheard when T-10
 // ===========================================
 
 === taunt_t30 ===
+// lint: call-knot
 ~ heard_t30 = true
-Narrator: Your handset lights without ringing. The call is already connected, and has been for some seconds.
+Narrator: No caller ID. The line opens before you speak.
 
 Don't look for the trace. It isn't there.
 
@@ -104,6 +97,7 @@ I've read your file. Files are written by people who need you to be a particular
 
 // PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
 === taunt_t30_choices ===
+// lint: call-knot
 + [Who am I speaking to?]
     Someone with a little of your attention tonight and no interest in wasting it.
     -> t30_close
@@ -112,6 +106,7 @@ I've read your file. Files are written by people who need you to be a particular
     -> t30_close
 
 === t30_close ===
+// lint: call-knot
 // PASS 4 (user decision P6, the Tesseract thread from m06): HaX says the
 // same thing to her agents (moral_soundingboard) because he taught it to her.
 // He knows who runs this agent. HaX's hub picks it up (topic_teacher). The tag
@@ -121,16 +116,17 @@ There is a decision in front of you tonight. Make it however you like. I only wa
 
 Let it hurt afterwards, not during. I expect you've been told that.
 
-Narrator: The line drops. Your handset reports no call in the log.
+Narrator: The line drops. The log shows one call: no number, no name.
 
 #exit_conversation
--> parked
+-> DONE
 
 // ===========================================
 // T-20 -- he names what was left. Reads team_assignment.
 // ===========================================
 
 === taunt_t20 ===
+// lint: call-knot
 ~ heard_t20 = true
 // PASS 5 scenario design r1 (m4): a player held at the checkpoint for ten
 // minutes gets T-20 before first contact. Open as T-30 does and skip T-30;
@@ -138,7 +134,7 @@ Narrator: The line drops. Your handset reports no call in the log.
 {not heard_t30:
     ~ heard_t30 = true
     ~ late_first_contact = true
-    Narrator: Your handset lights without ringing. The call is already connected, and has been for some seconds.
+    Narrator: No caller ID. The line opens before you speak.
 - else:
     Narrator: The handset cuts across the facility alarm. Same voice, same absence of hurry.
 }
@@ -171,6 +167,7 @@ You've sent your team.
 
 // PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
 === taunt_t20_choices ===
+// lint: call-knot
 + [You're wasting my time.]
     Then you'll have spent it on something.
     -> t20_close
@@ -180,18 +177,19 @@ You've sent your team.
     -> t20_close
 
 === t20_close ===
+// lint: call-knot
 // PASS 5 alignment r2 (m9): T-20 needs a commit, so the uncommitted "Choose
 // slowly" branch is gone.
 Answer honestly. I'll know either way. Did you decide with a number, or with your stomach?
-{late_first_contact and not architect_echo_heard:
+{not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
 }
 
-Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been idle for twenty minutes.
+Narrator: Dead air, then the ordinary hiss of the line.
 
 #exit_conversation
--> parked
+-> DONE
 
 // ===========================================
 // T-10 -- the redirect window. Reads redirect_window_closed (boolean only).
@@ -201,6 +199,7 @@ Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been 
 // ===========================================
 
 === taunt_t10 ===
+// lint: call-knot
 ~ heard_t10 = true
 // Phase 4 dialogue C1 (D7-3): T-20 retires here. If it went unheard, its one
 // essential line (which two are left) is folded into this call.
@@ -212,9 +211,9 @@ Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been 
 {not heard_t30:
     ~ heard_t30 = true
     ~ late_first_contact = true
-    Narrator: Your screen wakes on its own. The call is already connected, and has been for some seconds.
+    Narrator: No caller ID. The line opens before you speak.
 - else:
-    Narrator: Your screen wakes on its own. Nothing else on it moves.
+    Narrator: Again, no number. Nothing else on your screen moves.
 }
 
 // PASS 5 alignment r2 (A1): the login line keys on cascade_armed, not on the
@@ -228,12 +227,15 @@ Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been 
 - redirect_window_closed:
     Forty minutes. Your team is committed now, wherever you left it.
 // Phase 4 dialogue C1 (D7-20): a direct Trojan player has heard "no bodies in
-// the brief" twice already. (D7-14): the bark says "ten minutes"; the line doesn't.
+// the brief" twice already. (M7): the dropped T-10 bark carried "ten minutes";
+// the open-window branches now speak it (one clip), since the window is still open on them.
 - team_assignment == "trojan_horse":
     You sent them to Austin. I'd like to know what you saw in it.
 - projection_revised:
+    Ten minutes before your team is too committed to move.
     You've found the discrepancy. Good. Now watch how long it takes you to act on it.
 - else:
+    Ten minutes before your team is too committed to move.
     The beauty of entropy is that it doesn't require me to win. It only requires you to wait.
 }
 {t20_folded and not team_redirected and team_assignment != "trojan_horse":
@@ -250,6 +252,7 @@ Stop this, and something else fails. Someone else dies. You simply won't be in t
 
 // PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
 === taunt_t10_choices ===
+// lint: call-knot
 + [Then I'll be in this one.]
     Yes. That's rather the point.
     -> t10_close
@@ -258,13 +261,14 @@ Stop this, and something else fails. Someone else dies. You simply won't be in t
     -> t10_close
 
 === t10_close ===
+// lint: call-knot
 {redirect_window_closed or team_assignment == "trojan_horse":
     Doors close. It's the one thing they reliably do.
 - else:
     You still have a door open. I'd hurry, but that's your business.
 }
 
-{late_first_contact and not architect_echo_heard:
+{not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
 }
@@ -272,13 +276,14 @@ Stop this, and something else fails. Someone else dies. You simply won't be in t
 Narrator: The call ends mid-syllable.
 
 #exit_conversation
--> parked
+-> DONE
 
 // ===========================================
 // T-5 -- he asks the player to name what they abandoned.
 // ===========================================
 
 === taunt_t5 ===
+// lint: call-knot
 ~ heard_t5 = true
 // Phase 4 dialogue C1 (D7-3): T-20 retires on T-5 as well.
 ~ heard_t20 = true
@@ -286,9 +291,9 @@ Narrator: The call ends mid-syllable.
 {not heard_t30:
     ~ heard_t30 = true
     ~ late_first_contact = true
-    Narrator: Your handset lights without ringing. The call is already connected, and has been for some seconds.
+    Narrator: No caller ID. The line opens before you speak.
 - else:
-    Narrator: The handset opens the line without asking.
+    Narrator: No caller ID. The same silence, then his voice.
 }
 
 // Phase 4 dialogue C1 (D7-16): the player may not know Mercer's name yet.
@@ -312,6 +317,7 @@ The man in your control room would give you his figure and defend it to your fac
 
 // PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
 === taunt_t5_choices ===
+// lint: call-knot
 + {team_assignment != ""} [I made a call. I'll carry it.]
     Noted.
     -> t5_close
@@ -323,8 +329,13 @@ The man in your control room would give you his figure and defend it to your fac
     -> t5_close
 
 === t5_close ===
-{team_assignment == "": You'll have to name all three, eventually, to somebody with a tablet.|Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet.}
-{late_first_contact and not architect_echo_heard:
+// lint: call-knot
+{team_assignment == "":
+    You'll have to name all three, eventually, to somebody with a tablet.
+- else:
+    Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet.
+}
+{not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
 }
@@ -332,13 +343,14 @@ The man in your control room would give you his figure and defend it to your fac
 Narrator: Static. Then nothing.
 
 #exit_conversation
--> parked
+-> DONE
 
 // ===========================================
 // T-1 -- the last minute. He is not measuring the grid.
 // ===========================================
 
 === taunt_t1 ===
+// lint: call-knot
 ~ heard_t1 = true
 // PASS 5 design r2 (N1): T-1 retires T-5, so T-5 doesn't follow it on the
 // next open; first-contact opener if T-30 never played. The narration no
@@ -348,9 +360,9 @@ Narrator: Static. Then nothing.
     ~ heard_t30 = true
     ~ late_first_contact = true
     ~ t1_first_contact = true
-    Narrator: {countdown_expired:The countdown has run out. }Your handset lights without ringing. The call is already connected, and has been for some seconds.
+    Narrator: {countdown_expired:The countdown has run out. }No caller ID. The line opens before you speak.
 - else:
-    Narrator: {countdown_expired:The countdown has run out. }The handset is warm in your hand and the line is already open.
+    Narrator: {countdown_expired:The countdown has run out. }No caller ID. You answer; he is already mid-sentence.
 }
 
 {countdown_expired:
@@ -365,6 +377,7 @@ But the grid was never the point.
 
 // PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
 === taunt_t1_choices ===
+// lint: call-knot
 + [Eight point four million people say otherwise.]
     They do. And I have written every one of them down.
     -> t1_close
@@ -373,7 +386,8 @@ But the grid was never the point.
     -> t1_close
 
 === t1_close ===
-{late_first_contact and not architect_echo_heard:
+// lint: call-knot
+{not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
 }
@@ -384,13 +398,14 @@ But the grid was never the point.
 }
 
 #exit_conversation
--> parked
+-> DONE
 
 // ===========================================
 // Sign-off -- after grid_saved. No gloating. No rattle.
 // ===========================================
 
 === sign_off ===
+// lint: call-knot
 // PASS 2: the debrief waits for this global (set at the top, so an early
 // close still releases it).
 #set_global:architect_signoff_done:true
@@ -429,6 +444,7 @@ But the grid was never the point.
 
 // PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
 === sign_off_choices ===
+// lint: call-knot
 + [You lost tonight.]
     I wasn't playing for tonight.
     -> signoff_close
@@ -437,12 +453,13 @@ But the grid was never the point.
     -> signoff_close
 
 === signoff_close ===
+// lint: call-knot
 You'll have the figures too. Then we'll both know the same thing about you.
 
-Narrator: The line goes quiet. Your call log holds no record of any of it.
+Narrator: The line goes quiet. The log shows the calls now: no number against any of them.
 
 #exit_conversation
--> parked
+-> DONE
 
 // ===========================================
 // Nothing scheduled. He is not available on request.
@@ -454,13 +471,13 @@ Narrator: A carrier tone on a channel that should not have one. Nobody on it. He
 
 // PASS 3 (E13): choices-only.
 === dead_air_choices ===
-{grid_saved:
-    -> start
+// B1 fix: only leave dead air for after_win once the sign-off has actually run. The old {grid_saved: -> start}
+// bounced through start -> dead_air -> here and ran away (loopcheck RUNAWAY). In the gap before the sign-off
+// rings, this rests on the [Hang up] choice.
+{grid_saved and (heard_signoff or architect_signoff_done):
+    -> after_win
 }
-// PASS 3: a taunt that arrived while this menu was open goes through, as parked does.
-{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20 and not architect_t10_played and not architect_t5_played):
-    -> start
-}
+// M6: the ringer delivers every taunt and the sign-off now, so this menu no longer routes into them.
 + [Hang up.]
     Narrator: The tone stops a half-second before you do.
     #exit_conversation
@@ -468,19 +485,16 @@ Narrator: A carrier tone on a channel that should not have one. Nobody on it. He
 
 // ===========================================
 // PASS 2: the story never ends (a phone thread whose story has ended shows
-// "Conversation ended" on every reopen). Every exit parks here. Reopening
-// re-evaluates this knot, so a transmission that arrived since goes through.
+// "Conversation ended" on every reopen). The taunt and sign-off call knots end
+// -> DONE now; only the router's [Hang up] rests here. Reopening re-evaluates
+// this knot, so a transmission that arrived since goes through.
 // ===========================================
 
 === parked ===
+// M6: reopening rests here. The ringer delivers every taunt and the sign-off, so this no longer
+// routes into them; only the finished-with-him route stays.
 {grid_saved and (heard_signoff or architect_signoff_done):
     -> after_win
-}
-{grid_saved:
-    -> sign_off
-}
-{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20 and not architect_t10_played and not architect_t5_played):
-    -> start
 }
 + [Check the line.]
     -> dead_air
@@ -489,4 +503,160 @@ Narrator: A carrier tone on a channel that should not have one. Nobody on it. He
 // confirmation): the call is finished, so the story ends here and offers
 // nothing. A reopen restarts at start, which routes straight back here.
 === after_win ===
+-> DONE
+
+// ===========================================
+// M6: Post-countdown. If the countdown runs out with the grid unsaved, he calls
+// (withheld), opened on seattle_call. Mirrors the old "Seattle first" bark.
+// ===========================================
+
+=== seattle_call ===
+// lint: call-knot
+~ heard_t1 = true
+~ heard_t5 = true
+Narrator: No caller ID. The line opens before you speak.
+
+// M8: step one has run, but steps two to four are still the player's to do, and HaX's text five seconds
+// later says so. So this keeps the pressure and leaves the next step to HaX; it no longer reads as the
+// end of the mission. The opener is not the bark's exact words (the bark is dropped in config).
+Seattle first. Exactly as scheduled.
+
+Three to go, and you're on the phone to me.
+
+-> seattle_call_choices
+
+=== seattle_call_choices ===
+// lint: call-knot
++ [How many?]
+    You'll have the figure by morning. Better you heard it from them than from me.
+    -> seattle_close
++ [This isn't over.]
+    No. That's rather why I rang.
+    -> seattle_close
+
+=== seattle_close ===
+// lint: call-knot
+Narrator: The line goes quiet.
+
+#exit_conversation
+-> DONE
+
+// ===========================================
+// M6: Voicemails. A declined or missed taunt is a withheld call that leaves a
+// recorded message (onMissed: "voicemail"). Each sets the same heard_* VARs the
+// live taunt would, folds included, so a voicemail counts as heard and a later
+// taunt never opens as first contact after it. Run silently into the thread; the
+// voice: lines become voice-message bubbles. The forced sign-off cannot be missed,
+// so it has no voicemail.
+// ===========================================
+
+=== taunt_t30_vm ===
+// lint: call-knot
+~ heard_t30 = true
+#set_global:architect_echo_heard:true
+// M6: an opener in his voice, since this is a message to someone who let it ring; "No caller ID" is the
+// phone's label, not his, so it is dropped.
+voice: You let it ring. Sensible. Don't look for the trace.
+voice: There is a decision in front of you tonight. Make it however you like. I only want to see it made.
+voice: Let it hurt afterwards, not during. I expect you've been told that.
+-> DONE
+
+=== taunt_t20_vm ===
+// lint: call-knot
+~ heard_t20 = true
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+}
+// M6: an opener in his voice; the "which two are left" alternatives are whole-line branches now
+// (no inline alternatives in voiced lines, 3.6), and read as speech rather than notes.
+voice: Busy. Of course. You've sent your team.
+{team_assignment == "fracture":
+    voice: You covered Washington. San Francisco and the vendors are on your clock.
+- else:
+    {team_assignment == "trojan_horse":
+        voice: You covered the pipeline. Washington and San Francisco are unanswered.
+    - else:
+        voice: You covered San Francisco. Washington and the vendors stand open.
+    }
+}
+voice: Did you decide with a number, or with your stomach?
+-> DONE
+
+=== taunt_t10_vm ===
+// lint: call-knot
+~ heard_t10 = true
+{architect_t20_played and not heard_t20:
+    ~ heard_t20 = true
+    ~ t20_folded = true
+}
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+}
+voice: Stop this, and something else fails. Someone else dies. You simply won't be in the room for it.
+// M6: when T-20 went unheard and folds in here, carry its one essential line (which two are left).
+{t20_folded and not team_redirected and team_assignment != "trojan_horse":
+    {team_assignment == "fracture":
+        voice: Washington, then. San Francisco and the vendors are on your clock.
+    - else:
+        voice: San Francisco, then. Washington and the vendors stand open.
+    }
+}
+// M6: "Doors close" plays only when the redirect window is shut (or a direct Trojan commit); while the
+// window is open the live call's open-door line stands in, so the voicemail never tells a player who can
+// still redirect that they can't.
+{redirect_window_closed or team_assignment == "trojan_horse":
+    voice: Doors close. It's the one thing they reliably do.
+- else:
+    voice: You still have a door open. I'd hurry, but that's your business.
+}
+-> DONE
+
+=== taunt_t5_vm ===
+// lint: call-knot
+~ heard_t5 = true
+~ heard_t20 = true
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+}
+voice: The man in your control room would give you his figure and defend it to your face.
+// M6: "the other two" is wrong when the player covered nothing; branch as t5_close does.
+{team_assignment == "":
+    voice: You covered nothing tonight. You'll name all three eventually, to somebody with a tablet.
+- else:
+    voice: Whatever you covered tonight, you'll name the other two eventually, to somebody with a tablet.
+}
+-> DONE
+
+=== taunt_t1_vm ===
+// lint: call-knot
+~ heard_t1 = true
+~ heard_t5 = true
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+    ~ t1_first_contact = true
+}
+// M6: the countdown alternative is a whole-line branch now (3.6, no inline alternatives in voiced lines).
+{countdown_expired:
+    voice: Late. I did wonder.
+    voice: But the grid was never the point.
+- else:
+    voice: Closer than the file suggested. Not close enough to be comfortable.
+    voice: But the grid was never the point.
+}
+voice: You'll work it out. Probably tonight. Probably in a room with a tablet in it.
+// M6: "them" had no referent in the message; name it, as the live call does.
+voice: Eight point four million people. I have written every one of them down.
+-> DONE
+
+=== seattle_call_vm ===
+// lint: call-knot
+~ heard_t1 = true
+~ heard_t5 = true
+// M8: the same two lines as the live seattle_call; it no longer reads as the mission's end.
+voice: Seattle first. Exactly as scheduled.
+voice: Three to go, and you let it ring.
 -> DONE
