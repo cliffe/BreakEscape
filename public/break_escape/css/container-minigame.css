@@ -245,7 +245,9 @@
     text-align: center;
     margin-top: 4px;
     line-height: 1.1;
-    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    /* A 2px square outline, one GNF pixel at this size (pixel-art UI rule) */
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
+        2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000;
     /* Words wrap at spaces only; a name too long for the line breaks only as a last resort
        ("Staff handbook.txt" broke as "handbook.t / xt" at 80px). */
     overflow-wrap: anywhere;
