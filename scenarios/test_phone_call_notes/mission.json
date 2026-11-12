@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Phone Call Delivery Notes",
+  "description": "Engine trial (phone calls A1 R1 M1): a voiced call whose tagged lines are spoken with their #delivery: notes on the preloaded-opening and reopen re-run paths.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 2,
+  "test_type": "phone_call_notes",
+  "test_objective": "Voiced call: tagged lines send their note to /tts; a reopen after a global change speaks the new lines with their notes"
+}
