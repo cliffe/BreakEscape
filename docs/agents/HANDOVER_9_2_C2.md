@@ -35,18 +35,36 @@ hashes):
 - Full suites under the lock: `bin/rails test` 1777 runs, 0 failures, 1 skip; `bin/test-js -j 3`
   (see build log for the count).
 
-**Still open (both blocked on one decision):**
+## Session 3 update (2026-11-12)
 
-1. **Scenario beats F9 to F12 + PLAYTEST (plan 10) — NUMBERING COLLISION.** F9 is already in use:
-   q33 (`460f46329`) added an F9 Priya-lockout beat to `test_access_social` before this branch
-   split. The plan's four reactive beats (F9 reactive_first `cause:down`, F10 mixed
-   `borrow_session`, F11 facts_first, F12 `social_blocked`) therefore cannot be authored as F9 to
-   F12 without clobbering Priya. Renumber to F10 to F13 (recommended) or decide otherwise, then
-   author one room/sign/task per beat, reactive post text in the scenario only (plain, voiceable,
-   >=12 chars, not a substring of another shipped string), keep F1 to F8 (and the existing F9)
-   undisturbed, validator 0 ❌.
-2. **Live proof** (plan 9, port 3030, headless, `--capture-responses`) — depends on the beats, so
-   also not started.
+The numbering collision is resolved: the plan's F9 to F12 were authored as **F10 to F13**. See the
+C2 build-log "Session 3" block for detail and the three commits (`8101376f8`, `0efbace73`,
+`940bdfd8e`) plus the build-log commit (`a2abc2466`). Then **merged main** (`1c54bce6d`, minigame
+title/toast escaping) into `build/9-2-c2`: clean, no conflicts; `social-feed.js` already passes
+`{ plainText: true }` to its toast, so nothing changed there.
+
+Done this session:
+
+- Four reactive beats authored in `scenarios/test_access_social/scenario.json.erb` + `PLAYTEST.md`:
+  F10 Nadia (`reactive_first`, `cause:{down,work}`), F11 Theo (`mixed`, `workaround:borrow_session`),
+  F12 Greg (`facts_first`, `cause:[down,off]`), F13 Ruth (`reactive_first`, `cause:social_blocked`
+  then `needMet`). New `resources` block, three outage globals, five tasks. Validator **0 ❌**.
+- **F10 live proof** (:3030, headless, game 1323): reactive_first pre-emption
+  (`feedRevealed.nadia.shown = ["f10_vent"]`), `failWhy.work=["down"]`, a tampered `/feed_post`
+  (forged `post_id`/`index`/`when`/`force`) ignored, a `?skip_resume=1` reload restored the vent in
+  reveal order, `access-leak-check.rb` over 23 responses **no leaks**. Beat `/feed_post` 3.
+
+**Still open:**
+
+1. **Live proof for F11, F12, F13** on :3030 (same pattern as F10; each slower because the
+   borrow/outage takes real time). Per beat: `enter` east room by room from the lobby, drive the cause
+   (F11/F13: wait for the blocked social use then the borrow; F12: wait for the first ordered post,
+   throw the breaker, wait for a work failure, then the next social use), wait on the beat task(s),
+   then `access-leak-check.rb` + `verify-run.rb --access`, plus a tampered `/feed_post` per NPC before
+   its condition holds. A post-merge F10 re-check is cheap to repeat too. Nothing is known-broken; F10
+   exercised the whole engine path. The :3030 server and browser sessions were stopped at session end.
+2. **Final suites under the lock** after the main merge (session 3 ran them as the post-merge gate; see
+   the build log for counts).
 
 ## Original open-work list (for reference; items 1-4 and 7-suites are done)
 
