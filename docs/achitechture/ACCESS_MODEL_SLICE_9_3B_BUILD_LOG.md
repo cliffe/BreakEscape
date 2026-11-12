@@ -137,3 +137,31 @@ player reaches them). Validator on the scenario: 0 errors.
 Merged `main` into `build/9-3b-w` (kept both sides; one conflict in
 `test/unit/access_leak_scanner_test.rb` where main's slice 9.2 H block met the W netlink test,
 resolved by keeping both).
+
+## Round 2 code review fixes (sub-slice W)
+
+Review R2 (docs/achitechture/ACCESS_MODEL_SLICE_9_3B_W_CODE_REVIEW_R2.md): approve, no
+blocker/major; one minor (title sink) and one nit (`already` payload untested). Both addressed.
+
+- **Minor: author access-point name reached the unescaped `params.title` HTML sink.**
+  `_promptWifiKey` (`network-links.js`) passed the author AP name as the base minigame `title`,
+  which `base-minigame.js` renders as HTML before the password join branch overrides the header
+  with its own escaped version. `_promptWifiKey` now passes a constant `title: 'Join Wi-Fi'`; the
+  join branch still receives the real name in `join.apName` and escapes it for the visible header,
+  so no author text reaches the base template. Added a `network-links.test.mjs` test asserting that
+  an AP name containing HTML never reaches `params.title` (title stays the constant, `join.apName`
+  still carries the real name).
+- **Nit: N9 `already` payload field untested.** The second-AP test in `network-links.test.mjs` now
+  asserts the first `network_joined` carries a falsey `already` and the second-AP already-join
+  carries `already === true`, so a regression dropping the field or flipping the N9 gate fails a test.
+- The shared sink itself (`base-minigame.js` renders `params.title` as HTML for every minigame) is
+  pre-existing and out of W's scope; logged in `docs/IDEAS_BACKLOG.md` as a central follow-up
+  (escape `params.title` after checking no caller relies on HTML in a title).
+
+### R2 suites (both under the shared lock, after the main merge)
+
+- `bin/rails test`: 1645 runs, 24287 assertions, 0 failures, 0 errors, 1 skip.
+- `bin/test-js -j 3`: 495 files passed, 0 failed.
+- `node --test test/js/network-links.test.mjs` (changed file, alone): 42 pass, 0 fail.
+- Merge of `main` into `build/9-3b-w`: already up to date (the branch already contained all of
+  main), no new conflicts.
