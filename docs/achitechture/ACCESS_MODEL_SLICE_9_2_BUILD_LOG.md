@@ -2137,19 +2137,64 @@ kinds; every reactive post is served at most once.
 - `bin/rails test`: 1777 runs, 25413 assertions, 0 failures, 0 errors, 1 skip.
 - `bin/test-js -j 3`: 501 files passed, 0 failed.
 
+### Session 3 (2026-11-12): scenario beats F10 to F13 and the F10 live proof
+
+The numbering collision is settled: the plan's four reactive beats F9 to F12 became **F10 to F13**
+(q33's F9 Priya-lockout already holds F9). F1 to F9 are untouched; Priya's room gained only an `east`
+door to the new corridor.
+
+- **Beats authored** (`scenarios/test_access_social/scenario.json.erb`, `0efbace73`, `8101376f8`): four
+  new rooms east of Priya's room, each with its own sign, PC, task(s) and a feed NPC.
+  - **F10 Nadia, `reactive_first`, `cause: {down, work}`.** Work need on a `f10_share` resource
+    (`downIf f10_share_down`), a breaker to throw it, plus a `social_media` need. Two ordered posts and
+    one vent; the vent pre-empts the ordered queue once the outage has made her work fail. Task
+    `f10_posted` on the vent id.
+  - **F11 Theo, `mixed`, `workaround: borrow_session`.** Social-only NPC, no phone, blocked PC, a
+    `borrow_session` to `f11_kiosk`. Authored `[ordered, reactive, ordered]`; the borrow post slots at
+    its authored place. Task `f11_posted`.
+  - **F12 Greg, `facts_first`, `cause: [down, off]`.** Work need on `f12_crm`, a breaker and a socket
+    (`offWhen f12_pc_unplugged`) so both whys are statically reachable. Ordered post first, then the
+    vent after the outage. Task `f12_posted`.
+  - **F13 Ruth, `reactive_first`, `cause: social_blocked` then `needMet`.** Social-only, blocked PC, no
+    phone, a `borrow_session` to `f13_kiosk`. A blocked-site vent and a recovery post keyed on
+    `needMet`. Tasks `f13_blocked`, `f13_recovered`.
+  - Covers all three order modes and the predicate kinds `cause` (single, array, `social_blocked`),
+    `workaround` and `needMet`. Added a `resources` block, three outage globals and five tasks.
+  - Two authoring fixes after the first live run: F10 gained a second ordered post so `reactive_first`
+    pre-emption is unambiguous (`0efbace73`); the `f10_share`/`f12_crm` resource **names** were renamed
+    ("Finance drive", "Revenue tracker") out of all player-facing text so the leak scanner's
+    `network_string` check stays clean (`940bdfd8e`).
+- **Validator**: `LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb
+  scenarios/test_access_social/scenario.json.erb --no-graph` is **0 ❌**. Warnings unchanged (the three
+  expected: Jake's two `npc_posted` mappings, `priya_pc` maxAttempts, the guard). The work report now
+  prints the four `Reactive feed` lines and the per-post `fires when ...` lines.
+- **F10 live proof** (keyless server :3030, headless, `--capture-responses`, game 1323): entered
+  `f10_room`, threw the breaker, Nadia's work failed (`failWhy.work = ["down"]`), and her next met
+  social use served the vent **ahead of both ordered posts** (`feedRevealed.nadia.shown = ["f10_vent"]`),
+  proving `reactive_first`. Tampered client: a `/feed_post` for Nadia with forged `post_id`, `index`,
+  `when` and `force` fields was ignored and answered `{ post:null, tooSoon:true }` (no forced or picked
+  post). A `?skip_resume=1` reload restored the vent in reveal order
+  (`__test.access.feed().revealed.nadia = ["f10_vent"]`). `access-leak-check.rb` over all 23 captured
+  responses: **VERDICT: no leaks found** (17 feed posts, 2 feed facts checked). Beat `/feed_post` count 3.
+
 ### Open (handover `docs/agents/HANDOVER_9_2_C2.md`)
 
-Two items remain, both blocked on one decision:
-
-- **Scenario beats + PLAYTEST.** The C2 plan (section 10) numbers its four reactive beats F9 to F12,
-  but F9 is already taken: q33 (`460f46329`) added an F9 Priya-lockout beat to `test_access_social`
-  before this branch split, so the plan's F9 to F12 collide with it. These beats need renumbering
-  (F10 to F13 is the obvious fix) before authoring, which is an orchestrator call. Not started.
-- **Live proof** on the keyless server (port 3030, headless, `--capture-responses`): depends on the
-  beats above, so also not started. Still to do: cause/clear outages and read the vents, a workaround
-  post, one reload proving `feedPosts` restores reactive posts in reveal order, a tampered client,
-  `access-leak-check.rb` over the captured responses, `verify-run.rb --access`, the per-beat
-  `/feed_post` request budget.
+- **Live proof for F11, F12, F13** on :3030 (the F10 pattern repeats; each is a slower beat because the
+  borrow/outage takes real time). For each: enter the room, drive the cause (F11/F13 wait for the
+  blocked social use then the borrow; F12 wait for the first ordered post, throw the breaker, wait for a
+  work failure, then the next social use), wait on the beat's task(s), then `access-leak-check.rb` and
+  `verify-run.rb --access`, with one tampered `/feed_post` per NPC before its condition holds. Nothing in
+  the beats is known-broken; F10 exercised the same engine path end to end. Navigation is
+  `enter`-per-room east from the lobby (`lena_room` -> `priya_room` -> `f10_room` -> ...). The server on
+  :3030 and the browser sessions were stopped at the end of session 3.
+- The full suites should be rerun once more under the lock as a final gate, though session 3 changed only
+  scenario JSON, PLAYTEST and this log (no Ruby or JS), so the session-2 counts stand logically.
 
 Everything else from the handover is done and committed (merge, helper-equality, route/tampered,
 scanner fixture, validator tests, both suites green).
+
+### Session 3 commits
+
+- `8101376f8` reactive beats F10 to F13 and PLAYTEST
+- `0efbace73` F10 second ordered post (reactive_first pre-emption unambiguous)
+- `940bdfd8e` rename F10/F12 resource names out of player text (leak scanner clean)
