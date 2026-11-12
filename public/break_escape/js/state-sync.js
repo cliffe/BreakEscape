@@ -48,6 +48,23 @@ const CAPTURE_ENTRY_KEYS = ['targetId', 'roleLabel', 'address', 'kind', 'secret'
 
 const json = v => JSON.stringify(v);
 
+// Deterministic JSON: object keys sorted at every depth, arrays kept in order,
+// undefined dropped as JSON.stringify drops it. A value stored in the jsonb
+// player_state column comes back with its object keys reordered (jsonb sorts
+// keys by length then bytes), so a plain JSON.stringify of the current value
+// never matches the stored copy. Comparing stableJson of each makes the first
+// sync after a reload send only what truly changed (SYNC_DELTAS_PLAN 2.1).
+export function stableJson(value) {
+  return JSON.stringify(value, function sortKeys(_key, val) {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const sorted = {};
+      for (const k of Object.keys(val).sort()) sorted[k] = val[k];
+      return sorted;
+    }
+    return val;
+  });
+}
+
 const isPlainObject = v => v != null && typeof v === 'object' && !Array.isArray(v);
 const pickKeys = (obj, keys) => {
   const out = {};
@@ -536,3 +553,7 @@ export class StateSync {
     }
   }
 }
+
+// Exposed on the class so a caller holding window.stateSync can reach it as
+// window.stateSync.constructor.stableJson without importing the module.
+StateSync.stableJson = stableJson;

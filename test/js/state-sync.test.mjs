@@ -26,7 +26,7 @@ copy('state-sync.js', 'state-sync.mjs', toMjs);
 globalThis.window = { breakEscapeConfig: { gameId: 1, apiBasePath: '/games/1', csrfToken: 't' } };
 globalThis.document = { querySelector: () => null };
 const quiet = { log: () => {}, warn: () => {}, error: () => {} };
-const { StateSync } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).href);
+const { StateSync, stableJson } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).href);
 
 // A fetch that records each request; reply() decides the answer
 let requests = [];
@@ -285,4 +285,23 @@ test('scenarioBriefShown is sent once, then not again once confirmed', async () 
   window.gameState.globalVariables.a = 2;
   await sync.sync();
   assert.equal(requests[2].body.scenarioBriefShown, undefined);
+});
+
+// stableJson: an order-independent string for comparing a current value with
+// the jsonb-reordered copy the bootstrap sends back (plan 2.1).
+test('stableJson sorts object keys at every depth and keeps array order', () => {
+  assert.equal(
+    stableJson({ b: 1, a: { d: 2, c: 3 } }),
+    stableJson({ a: { c: 3, d: 2 }, b: 1 }),
+    'two objects differing only in key order compare equal'
+  );
+  assert.equal(stableJson({ b: 1, a: 2 }), '{"a":2,"b":1}');
+  // arrays keep their order; nested objects inside them are still sorted
+  assert.equal(stableJson([{ y: 1, x: 2 }]), '[{"x":2,"y":1}]');
+  assert.notEqual(stableJson([1, 2]), stableJson([2, 1]), 'array order is significant');
+  // undefined is dropped from objects and nulled in arrays, as JSON.stringify does
+  assert.equal(stableJson({ a: undefined, b: 1 }), '{"b":1}');
+  assert.equal(stableJson([undefined]), '[null]');
+  // reachable as a static on the class for callers holding the instance
+  assert.equal(StateSync.stableJson({ b: 1, a: 2 }), '{"a":2,"b":1}');
 });
