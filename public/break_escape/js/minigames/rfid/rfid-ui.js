@@ -35,6 +35,8 @@ export function clonerNameInSentence(items) {
     const name = clonerName(items);
     return /^[A-Z][a-z]/.test(name) ? name[0].toLowerCase() + name.slice(1) : name;
 }
+// The one rule for the device's name: systems/action-menu.js (no static imports) reads it here
+if (typeof window !== 'undefined') window.clonerNameInSentence = clonerNameInSentence;
 
 // Pixel-art icons (UI rule: no emoji in game UI). Each is a grid of palette letters, drawn as
 // an inline SVG of whole pixels at a whole-number scale with crisp edges. '.' is clear.
@@ -57,7 +59,10 @@ export const PIXEL_ICONS = {
               '.KYYYYYK.', '.KYYKYYK.', 'KKKKKKKKK'],
     battery: ['KKKKKKKKKKK.', 'KGGGGGGGGGKK', 'KGGGGGGGGGKK', 'KGGGGGGGGGKK', 'KKKKKKKKKKK.'],
     reader: ['KKKKKKKK', 'KDDDDDDK', 'KDGGGGDK', 'KDDDDDDK', 'KDDDDDDK',
-             'KDDWWDDK', 'KDWDDWDK', 'KDDWWDDK', 'KDDDDDDK', 'KKKKKKKK']
+             'KDDWWDDK', 'KDWDDWDK', 'KDDWWDDK', 'KDDDDDDK', 'KKKKKKKK'],
+    back: ['...K.....', '..KWK....', '.KWWKKKKK', 'KWWWWWWWK', '.KWWKKKKK', '..KWK....', '...K.....'],
+    tick: ['.......GG', '......GG.', 'G....GG..', 'GG..GG...', '.GGGG....', '..GG.....'],
+    cross: ['RR...RR', 'RRR.RRR', '.RRRRR.', '..RRR..', '.RRRRR.', 'RRR.RRR', 'RR...RR']
 };
 
 /**
@@ -83,6 +88,21 @@ export function pixelIcon(name, scale = 3) {
     });
     return `<svg class="px-icon px-icon-${name}" width="${w * k}" height="${h * k}" viewBox="0 0 ${w} ${h}" ` +
         `shape-rendering="crispEdges" aria-hidden="true" focusable="false">${rects}</svg>`;
+}
+
+/** A Back button: the pixel arrow, then the word (no text arrow glyph). */
+function backButton(onClick) {
+    const back = document.createElement('div');
+    back.className = 'flipper-button-back';
+    const art = document.createElement('span');
+    art.className = 'px-icon-holder';
+    art.innerHTML = pixelIcon('back', 2);
+    const words = document.createElement('span');
+    words.textContent = 'Back';
+    back.appendChild(art);
+    back.appendChild(words);
+    back.addEventListener('click', onClick);
+    return back;
 }
 
 /** A line with a pixel icon in front of (escaped) text. */
@@ -366,10 +386,7 @@ export class RFIDUIRenderer {
         screen.appendChild(cardList);
 
         // Back button
-        const back = document.createElement('div');
-        back.className = 'flipper-button-back';
-        back.textContent = '← Back';
-        back.addEventListener('click', () => this.showMainMenu('unlock'));
+        const back = backButton(() => this.showMainMenu('unlock'));
         screen.appendChild(back);
     }
 
@@ -418,10 +435,7 @@ export class RFIDUIRenderer {
         }
 
         // Back button
-        const back = document.createElement('div');
-        back.className = 'flipper-button-back';
-        back.textContent = '← Back';
-        back.addEventListener('click', () => this.showMainMenu('unlock'));
+        const back = backButton(() => this.showMainMenu('unlock'));
         screen.appendChild(back);
     }
 
@@ -477,10 +491,7 @@ export class RFIDUIRenderer {
         screen.appendChild(emulateBtn);
 
         // Back button
-        const back = document.createElement('div');
-        back.className = 'flipper-button-back';
-        back.textContent = '← Back';
-        back.addEventListener('click', () => this.showSavedCards());
+        const back = backButton(() => this.showSavedCards());
         screen.appendChild(back);
     }
 
@@ -705,10 +716,7 @@ export class RFIDUIRenderer {
 
         // Back goes one step, to the read screen, keeping the read and any keys
         // already cracked. Abandoning the read is a separate, explicit choice.
-        const backBtn = document.createElement('div');
-        backBtn.className = 'flipper-button-back';
-        backBtn.textContent = '← Back';
-        backBtn.addEventListener('click', () => this.showCardDataScreen(cardData));
+        const backBtn = backButton(() => this.showCardDataScreen(cardData));
         actions.appendChild(backBtn);
 
         const abandonBtn = document.createElement('div');
@@ -1058,7 +1066,7 @@ export class RFIDUIRenderer {
         success.className = 'flipper-success';
         // The message can name a card from the scenario: escaped, not parsed
         success.innerHTML = `
-            <div class="flipper-success-icon">✓</div>
+            <div class="flipper-success-icon">${pixelIcon('tick', 6)}</div>
             <div class="flipper-success-message">${escapeHtml(message)}</div>
         `;
         screen.appendChild(success);
@@ -1079,7 +1087,7 @@ export class RFIDUIRenderer {
         const error = document.createElement('div');
         error.className = notice ? 'flipper-error flipper-notice' : 'flipper-error';
         error.innerHTML = `
-            <div class="flipper-error-icon">${notice ? pixelIcon('signal', 5) : '✗'}</div>
+            <div class="flipper-error-icon">${notice ? pixelIcon('signal', 5) : pixelIcon('cross', 6)}</div>
             <div class="flipper-error-message">${escapeHtml(message)}</div>
         `;
         if (detail) {

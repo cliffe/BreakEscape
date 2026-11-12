@@ -29,14 +29,15 @@ function playerHasCloner() {
     return items.some(it => it && it.scenarioData && it.scenarioData.type === 'rfid_cloner');
 }
 
-/** The cloner's name inside a sentence, as the inventory shows it: "card copier". Same rule
- *  as rfid-ui.js clonerNameInSentence (not imported: this module has no static imports). */
+/** The cloner's name inside a sentence, as the inventory shows it: "card copier". The rule
+ *  is rfid-ui.js clonerNameInSentence, reached through window (this module has no static
+ *  imports); before that module loads, the default name. */
 export function clonerLabel() {
     const items = (typeof window !== 'undefined' && window.inventory && window.inventory.items) || [];
-    const cloner = items.find(it => it && it.scenarioData && it.scenarioData.type === 'rfid_cloner');
-    const raw = cloner && typeof cloner.scenarioData.name === 'string' ? cloner.scenarioData.name.trim() : '';
-    const name = raw || 'Card copier';
-    return /^[A-Z][a-z]/.test(name) ? name[0].toLowerCase() + name.slice(1) : name;
+    if (typeof window !== 'undefined' && typeof window.clonerNameInSentence === 'function') {
+        return window.clonerNameInSentence(items);
+    }
+    return 'card copier';
 }
 
 /** True when this sprite is an inventory copy, not a world object. */

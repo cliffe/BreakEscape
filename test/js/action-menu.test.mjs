@@ -57,7 +57,10 @@ test('Clone opens the RFID minigame in clone mode with the card, leaving it in p
 });
 
 test('the menu uses the cloner\'s own name and Clone records the copy\'s source', () => {
-    resetWindow({ inventory: { items: [{ scenarioData: { type: 'rfid_cloner', name: 'RFID cloner' } }] } });
+    // rfid-ui.js puts its name rule on window (rfid-door-screen.test.mjs checks the rule itself)
+    const named = [{ scenarioData: { type: 'rfid_cloner', name: 'RFID cloner' } }];
+    resetWindow({ inventory: { items: named },
+        clonerNameInSentence: (items) => (items === named ? 'RFID cloner' : 'wrong items') });
     const card = worldKeycard();
     card.scenarioData.id = 'clerk_card_item';
     const acts = objectActions(card);

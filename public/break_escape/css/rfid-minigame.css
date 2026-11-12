@@ -52,7 +52,7 @@
 
 .flipper-logo {
     font-size: 20px;
-        color: white;
+    color: white;
     letter-spacing: 2px;
     font-family: 'GNF', monospace;
 }
@@ -82,7 +82,7 @@
     font-size: 14px;
     color: #FFA500;
     margin-bottom: 15px;
-        font-family: 'GNF', monospace;
+    font-family: 'GNF', monospace;
 }
 
 /* Menu */
@@ -141,7 +141,7 @@
 /* Card Name */
 .flipper-card-name {
     font-size: 20px;
-        color: #FFA500;
+    color: #FFA500;
     margin: 10px 0;
     text-align: center;
     font-family: 'GNF', monospace;
@@ -293,7 +293,7 @@
     color: #00FF00;
     text-align: center;
     margin: 15px 0;
-        animation: blink 1s steps(2) infinite;
+    animation: blink 1s steps(2) infinite;
     font-family: 'GNF', monospace;
 }
 
@@ -333,7 +333,7 @@
 .flipper-success-message,
 .flipper-error-message {
     font-size: 20px;
-        font-family: 'GNF', monospace;
+    font-family: 'GNF', monospace;
 }
 
 .flipper-success-message {
@@ -412,7 +412,7 @@
 
 .protocol-name {
     font-size: 16px;
-        color: white;
+    color: white;
     font-family: 'GNF', monospace;
 }
 
@@ -466,7 +466,7 @@
 
 #attack-percentage {
     font-size: 18px;
-        color: white;
+    color: white;
     font-family: 'GNF', monospace;
 }
 
@@ -496,7 +496,7 @@
 
 .flipper-crack-hint {
     margin: 4px 0;
-    font-size: 0.85em;
+    font-size: 14px;
 }
 
 /* Under a refusal or notice: why it happened (rfid-minigame.js _showDenial) */
@@ -614,7 +614,16 @@
     margin-top: 4px;
 }
 
+.flipper-success-icon .px-icon,
 .flipper-error-icon .px-icon {
     display: block;
     margin: 0 auto;
+}
+
+/* Back: the pixel arrow, then the word */
+.flipper-button-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }

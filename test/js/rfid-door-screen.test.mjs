@@ -152,6 +152,7 @@ test('the device takes the inventory item\'s name', () => {
     assert.equal(clonerName([{ scenarioData: { type: 'rfid_cloner', name: 'RFID cloner' } }]), 'RFID cloner');
     assert.equal(clonerNameInSentence([{ scenarioData: { type: 'rfid_cloner', name: 'RFID cloner' } }]), 'RFID cloner');
     assert.equal(clonerNameInSentence([{ scenarioData: { type: 'rfid_cloner', name: 'Card copier' } }]), 'card copier');
+    assert.equal(window.clonerNameInSentence, clonerNameInSentence, 'action-menu.js reads the same rule through window');
 });
 
 test('pixel icons: crisp SVG at a whole-number scale, every row the same width, no emoji left', () => {
@@ -164,6 +165,8 @@ test('pixel icons: crisp SVG at a whole-number scale, every row the same width, 
     assert.equal(pixelIcon('nope'), '');
     const ui = readFileSync(src('minigames/rfid/rfid-ui.js'), 'utf8');
     assert.doesNotMatch(ui, /[\u{1F300}-\u{1FAFF}\u{26A0}\u{26A1}]/u, 'no emoji in the copier UI');
+    assert.doesNotMatch(ui, /[\u2190\u2713\u2717]/u, 'no text arrow, tick or cross glyphs (pixel icons instead)');
     const css = readFileSync(src('../css/rfid-minigame.css'), 'utf8');
     assert.doesNotMatch(css, /border-radius|clip-path|1px solid/, 'square corners, 2px borders');
+    assert.doesNotMatch(css, /font-size:\s*[\d.]+em/, 'whole pixel font sizes');
 });
