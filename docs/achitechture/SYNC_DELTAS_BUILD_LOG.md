@@ -49,7 +49,7 @@ Standing constraints for this build:
 | 6b review R1 fixes (M1 doc, m1, n1, n2) | Done, committed, tested. See "builder 10 session" |
 | 7. Node request-size cases (10.1) + sync_bodies fixtures | Done, committed, tested (`7d73e62c7`). See "builder 9 session" |
 | 7. Rails answer-size test (10.2) | Done, committed, tested (`29a3a0815`). See "builder 9 session" |
-| 7. Live proof A to F (10.3) | A/B-bootstrap (builder 9) + E done (builder 11); B/C/D full drives and F open |
+| 7. Live proof A to F (10.3) | A/B-bootstrap (builder 9), E (builder 11) and F (builder 12) done; B/C/D full drives open |
 | Merge main (b7d500ccf) into the branch | Done (`c6df37c82`); 1 conflict (IDEAS_BACKLOG), affected tests + validator green. See "builder 11 session" |
 | 8. One release later: remove transition code | Not started (separate release) |
 
@@ -193,6 +193,104 @@ The clearest portable harness is one Playwright script that keeps the page open 
 process restarts :3246 onto the branch.
 
 Both servers stopped at the end of this session.
+
+## This session (2026-11-12, builder 12: live case F, an old tab across a server swap) -> PASS
+
+One Playwright page held open for the whole run while a child process swapped the server on
+:3246: base `6a834437c` (p-sync-base) first, then the branch `1fba1baa7` (p-sync-build) on the
+same port, same dev DB. Keyless headless servers, `setFPS(20)`, fixed steps on. No engine or
+server code changed. Games created by the base worktree's `new-game.rb lab_physical_pentest
+--give kit_cloner --give kit_dropbox --unlock store_room --unlock open_plan`, so the stored
+`scenario_data` is base-era.
+
+- **Game 1972 (main run):** every old-shape action on the base server, then the same actions
+  again from the old tab after the swap.
+- **Game 1977 (variant):** as 1972, but the action-menu clone of Melanie's comms card happens
+  only on the old tab after the swap, to test the predicted comms-card exception.
+- Game 1964 was a first attempt with a driver fault (Len not yet encountered, so `/clone_card`
+  answered 403 "NPC not encountered"; the authored captures not found in `window.gameScenario`).
+  Not a result; ignore it.
+
+Swap fidelity: the two worktrees have different `test/dummy/tmp/development_secret.txt`, so a
+plain swap would have failed every POST on the CSRF check (a deploy keeps one secret_key_base).
+For the run the base worktree's secret file was set to the branch's, and restored afterwards.
+
+### Old-shape state driven on the base server (the real page)
+- `GET /room/open_plan` (as the client loads a room): records Len and Melanie as encountered and
+  supplies Len's `rfidCard` and the `pierce_comms_card` object.
+- Len's PIN: `window.recordSECapture` with the authored `player_watched_reader` capture object
+  (`len`, `4471`). The `PUT /sync_state` body carried `globalVariables.se_captures` (old shape).
+- Chat clone of `cm_records_badge`: `startRFIDMinigame` clone mode with `cloneSource { npc_id: 'len' }`,
+  the reader's real Save button: `POST /clone_card {npc_id, card_id}` 200 `recorded: true`, then
+  `POST /inventory update_saved_cards` (full list) 200.
+- Action-menu clone (1972 only on base): `window.objectActions()` on the card, "Clone it with the
+  flipper", Save. No `cloneSource`, so no `/clone_card`; `update_saved_cards` 200. Ruth's
+  `card_cloned` mapping added the `comms_card_cloned` capture to the old global.
+- Device plant: `networkLinks.plant('network_port', 'kit_dropbox')`: `POST /network/plant` 200;
+  the engine events added `network_drop` and `dropbox_view` captures to the old global.
+- Base DB after (1972): `globalVariables.se_captures = {len, dropbox_view, network_drop,
+  comms_card_cloned}`, `seCaptures` nil, `saved_cards = [cm_records_badge, lw_comms_card]`,
+  `serverClones = {cm_records_badge}`, foothold `jack_network_port`, notes 3.
+
+### Old tab on the branch server (base modules still loaded)
+DB dump straight after the swap is identical to the base dump (the restart changes nothing).
+Every request from the old tab, both games:
+
+| Request (old tab, branch server) | 1972 | 1977 | Notes |
+|---|---|---|---|
+| `GET /room/open_plan` | 200 | 200 | |
+| `PUT /sync_state` (new `reception_pretext` capture, whole old `se_captures` map) | 200, req 2,281 B, resp 2,082 B | 200, req 1,797 B, resp 1,598 B | server intercepts the global and migrates it |
+| `POST /inventory update_saved_cards` (chat-clone overwrite) | 200 | 200 | filtered merge |
+| `POST /clone_card {npc_id: len}` | 200 `recorded: true` | 200 `recorded: true` | |
+| `PUT /sync_state` (comms clone capture) | none (already held) | 200, req 4,472 B, resp 2,082 B | |
+| `POST /inventory update_saved_cards` (menu clone, no source) | 200 | 200 | `lw_comms_card` not added (no `serverClones` key) |
+| `POST /network/unplug` | 200 | 200 | |
+| `POST /network/plant` | 200 (`first: false`) | 200 (`first: false`) | |
+
+No 4xx or 5xx on any watched request in either game after the swap.
+
+State diff, old-tab phase (DB dump before and after, path level):
+- `globalVariables.se_captures` removed; `seCaptures` added with the same keys plus the new one
+  (1972: len, dropbox_view, network_drop, comms_card_cloned, reception_pretext; 1977 the same).
+  Each migrated entry carries `proven: true`; `len` no longer stores `secret` (served from the
+  scenario, as the 6a ruling says).
+- cloner `saved_cards`: only the `cm_records_badge` timestamp changed; nothing dropped.
+- footholds: unplug then plant left `jack_network_port` at `seq 1`, `gainedFootholds =
+  [network_port]`, the link item back in the inventory and `kit_dropbox` not duplicated.
+- 1977 also gained `kp_comms_cloned: true`, `opt_clone_in_place` completed and the two
+  `card_cloned` triggered events, all from the old tab's own syncs (as on the base).
+- Nothing else changed apart from the clock and `lastSyncClientTs`. Notes count stayed 3.
+
+### After the reload onto branch code
+| Check | 1972 | 1977 |
+|---|---|---|
+| captures in the record (`seCaptures`, DB) | 5 entries, legacy global gone | 5 entries, legacy global gone |
+| `GET /capture_secrets` | 200 `{"secrets":{"len":"4471"},"accounts":{}}` | same |
+| Len's badge listed (client cloner `saved_cards`) | yes | yes |
+| comms card listed | yes (see below) | no (the expected exception) |
+| foothold shown by the client | `jack_network_port` | `jack_network_port` |
+| branch `PUT /sync_state` after reload | none fired | 200, 1,036 B, no `se_captures` |
+
+The comms-card exception holds as predicted when the card is first copied on the old tab after
+the swap (1977): no source, no `serverClones` key, so the branch's filtered `update_saved_cards`
+does not add it and it is not listed after the reload. Copying it again on the new client lists
+it. When the card was already copied and stored on the base server before the swap (1972), it
+stays listed after the reload, because the filtered merge never removes a stored card. Such a
+card has no `serverClones` entry, so it is the same case as an old save's legacy card (case E).
+
+### Observations (no bug found)
+- For one release an old tab keeps re-sending its whole `globalVariables.se_captures` map on each
+  sync that touches it (up to 4,472 B here), and the branch answers each with a `captures` part
+  listing every entry it sent (1,598 to 2,082 B). The old client ignores the answer part. Bounded by
+  the authored capture count and gone once the tab reloads; the new client sends no `se_captures`.
+- The empty `{}` third note in both games is a driver artefact: the base phase pushed a plain
+  string into `gameState.notes`, which the base stored as `{}`. It was there before the swap and
+  is unchanged by it.
+
+Driver (scratchpad, not committed): `p-sync-f/f_drive.mjs` (one page, child-process server swap;
+`GAME`, `MENU_ON_BASE=0`, `RUN_TAG`), `p-sync-f/dump.rb`, `p-sync-f/diff.mjs`; results
+`f_result.json` (1972) and `v2_f_result.json` (1977) with per-phase `state_*.json` dumps. Both
+servers stopped at the end.
 
 ## This session (2026-11-12, builder 10: 6b review R1 fixes M1/m1/n1/n2)
 
