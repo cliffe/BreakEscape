@@ -6,10 +6,11 @@
  * - no `phoneOf` is the player's own phone: it opens the site's home.
  * The browser keeps its own title (the osint block's), as at any terminal.
  * Opening asks the server first (POST /friendface_phone). The server refuses a phone the player
- * does not hold. Its answer also carries the server's feedPosts for that phone, which the client
- * does not merge: the feed already holds every revealed post (bootstrap plus each live answer), and
- * a restore racing a /feed_post in flight would list that post silently, so its npc_posted, blip
- * and task mappings would never fire (review R1 M2). An open never reveals a post.
+ * does not hold. Its answer carries no posts (review R3 n5: only a test asks for them, with
+ * posts: 1), and the client would not merge them: the feed already holds every revealed post
+ * (bootstrap plus each live answer), and a restore racing a /feed_post in flight would list that
+ * post silently, so its npc_posted, blip and task mappings would never fire (review R1 M2). An
+ * open never reveals a post.
  *
  * Holding a phone whose NPC owner is known also makes that NPC "phone": false on the client (its
  * live record), as the server already treats it (plan section 3).

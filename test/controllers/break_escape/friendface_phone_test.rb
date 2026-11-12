@@ -37,8 +37,10 @@ module BreakEscape
       )
     end
 
-    def open_phone(npc_id)
-      post friendface_phone_game_url(@game), params: { npc_id: npc_id }, as: :json
+    def open_phone(npc_id, posts: true)
+      params = { npc_id: npc_id }
+      params[:posts] = 1 if posts
+      post friendface_phone_game_url(@game), params: params, as: :json
       response.parsed_body
     end
 
@@ -77,6 +79,15 @@ module BreakEscape
       assert_equal 'friendface', body['site']
       assert_nil body['person']
       assert_equal %w[jake lena], body['feedPosts'].keys.sort
+    end
+
+    test 'review R3 n5: an open without posts=1 leaves the revealed posts out' do
+      build('inventory' => [JAKE_PHONE.dup],
+            'feedRevealed' => { 'jake' => { 'shown' => ['jake_post_1'], 'at' => 1.0 } })
+      body = open_phone('jake', posts: false)
+      assert_response :success
+      assert_equal 'jake', body['person']
+      refute body.key?('feedPosts')
     end
 
     test 'a phone the player does not hold is refused: none held, another NPC, the own phone, a bad id' do
@@ -177,8 +188,8 @@ module BreakEscape
       refute offers.call("Here.\n# give_npc_inventory_items:keycard # exit_conversation\nphone_friendface\n")
     end
 
-    def room_add(npc_id, item, source_type = nil)
-      post update_room_game_url(@game), params: { roomId: 'office', actionType: 'add_object', sourceNpcId: npc_id,
+    def room_add(npc_id, item, source_type = nil, room: 'office')
+      post update_room_game_url(@game), params: { roomId: room, actionType: 'add_object', sourceNpcId: npc_id,
                                                   sourceType: source_type, data: item }.compact, as: :json
       response
     end
@@ -199,9 +210,8 @@ module BreakEscape
       assert(added.none? { |o| o['type'] == 'phone_friendface' }, 'the drop was stored')
       add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" })
       assert_response :unprocessable_entity
-      # The same with the KO drop's source type but no KO recorded
-      room_add('lena', LENA_SENT, 'npc_defeated')
-      assert(Array(@game.reload.player_state.dig('room_states', 'office', 'objects_added')).none? { |o| o['type'] == 'phone_friendface' })
+      # (Review R3 m2: the KO drop's source type from Lena in her room is now a KO claim, which
+      # the server records, as update_npc_state would; see the R3 tests below.)
 
       @game.reload
       refute @game.friendface_phone_taken?('lena')
@@ -210,6 +220,61 @@ module BreakEscape
       open_phone('lena')
       assert_response :forbidden
       assert_equal 'lena_post_1', feed_post('lena').dig('post', 'id')
+    end
+
+    def office_objects_added
+      Array(@game.reload.player_state.dig('room_states', 'office', 'objects_added'))
+    end
+
+    def room_npc(room_id, npc_id)
+      get room_game_url(@game, room_id: room_id), as: :json
+      assert_response :success
+      response.parsed_body.dig('room', 'npcs').find { |n| n['id'] == npc_id }
+    end
+
+    test 'review R3 m2: an in-room KO drop whose KO sync never landed records the KO itself; a repeat adds nothing' do
+      build
+      room_add('lena', LENA_SENT, 'npc_defeated')
+      assert_response :success
+      assert_equal true, @game.reload.player_state.dig('room_states', 'office', 'npc_states', 'lena', 'isKO')
+      assert_equal ['lena_phone'], office_objects_added.map { |o| o['id'] }
+      # A retry whose first answer was lost: the same answer, no second copy
+      room_add('lena', LENA_SENT, 'npc_defeated')
+      assert_response :success
+      assert_equal ['lena_phone'], office_objects_added.map { |o| o['id'] }
+      # Picked up, then a late retry: still nothing added
+      add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, source_npc_id: 'lena')
+      assert_response :success
+      post update_room_game_url(@game), params: { roomId: 'office', actionType: 'remove_object', data: { id: 'lena_phone' } }, as: :json
+      room_add('lena', LENA_SENT, 'npc_defeated')
+      assert_equal [], office_objects_added.map { |o| o['id'] }
+    end
+
+    test 'review R3 m2: a koImmune NPC records no KO from a drop, and its drop is refused' do
+      build
+      data = @game.scenario_data.deep_dup
+      data['rooms']['office']['npcs'].find { |n| n['id'] == 'lena' }['koImmune'] = true
+      @game.update!(scenario_data: data)
+      room_add('lena', LENA_SENT, 'npc_defeated')
+      assert_nil @game.reload.player_state.dig('room_states', 'office', 'npc_states', 'lena')
+      assert_equal [], office_objects_added
+    end
+
+    test 'review R3 m2: the KO in the hostility record (sync_state) lets a drop in another room land' do
+      build('npcHostility' => { 'lena' => { 'hostile' => true, 'ko' => true } })
+      room_add('lena', LENA_SENT, 'npc_defeated', room: 'lobby')
+      assert_response :success
+      added = Array(@game.reload.player_state.dig('room_states', 'lobby', 'objects_added'))
+      assert_equal ['lena_phone'], added.map { |o| o['id'] }
+    end
+
+    test 'review R3 m2: after a reload a KO\'d NPC whose drop never landed lists it as koDropPending, and not once it has' do
+      build('npcHostility' => { 'lena' => { 'hostile' => true, 'ko' => true } })
+      assert_equal ['lena_phone'], room_npc('office', 'lena')['koDropPending']
+      assert_nil room_npc('office', 'jake')['koDropPending'], 'Jake is not KO\'d'
+      room_add('lena', LENA_SENT, 'npc_defeated')
+      assert_response :success
+      assert_nil room_npc('office', 'lena')['koDropPending']
     end
 
     test 'review R2 M1: the KO drop still hands Lena\'s phone over' do

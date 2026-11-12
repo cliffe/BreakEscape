@@ -150,9 +150,12 @@ module BreakEscape
       given = player_state['npc_given_items']
       gifted = given.is_a?(Hash) && Array(given[npc_id]).any? { |g| g.is_a?(Hash) && g['type'] == FRIENDFACE_PHONE }
       return true if gifted
-      # Review R2 n3: scenario_room_npc asks this on every call; skip the scenario walk in
-      # held_friendface_phone when the inventory holds no Friendface phone at all
-      return false unless Array(player_state['inventory']).any? { |i| i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE }
+      # Review R2 n3, R3 n3: scenario_room_npc asks this on every call; skip the scenario walk in
+      # held_friendface_phone unless the inventory holds a Friendface phone of this NPC's (the
+      # player's own phone, with no phoneOf, never brings the walk back)
+      return false unless Array(player_state['inventory']).any? do |i|
+        i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE && friendface_owner(i) == npc_id
+      end
 
       !held_friendface_phone(npc_id).nil?
     end
@@ -190,9 +193,11 @@ module BreakEscape
 
     # POST /friendface_phone. Returns { status:, body: }. Read only. `npc_id` a String opens that
     # NPC's phone, nil the player's own. Refused (403) unless the player holds that phone. The body
-    # names the site and the profile to open, and carries the server's feedPosts for it (that
-    # NPC's, or all of them for the player's own phone): posts already revealed, nothing new.
-    def open_friendface_phone(npc_id)
+    # names the site and the profile to open. With `with_posts` (a test asks, `posts: 1`) it also
+    # carries the server's feedPosts for it (that NPC's, or all of them for the player's own
+    # phone): posts already revealed, nothing new. The client never merges them (review R1 M2), so
+    # a game open leaves them out (review R3 n5).
+    def open_friendface_phone(npc_id, with_posts: false)
       return { status: :forbidden, body: { error: 'no such phone' } } unless npc_id.nil? || (npc_id.is_a?(String) && !npc_id.empty?)
 
       item = held_friendface_phone(npc_id)
@@ -209,7 +214,9 @@ module BreakEscape
         site = item['site'].is_a?(String) && !item['site'].empty? ? item['site'] : default_friendface_site
         person = nil
       end
-      { status: :ok, body: { 'npcId' => npc_id, 'site' => site, 'person' => person, 'feedPosts' => posts } }
+      body = { 'npcId' => npc_id, 'site' => site, 'person' => person }
+      body['feedPosts'] = posts if with_posts
+      { status: :ok, body: body }
     end
 
     # Deletes every feed fact's entry from the bootstrap's social.intelFacts (plan 8.3), never the

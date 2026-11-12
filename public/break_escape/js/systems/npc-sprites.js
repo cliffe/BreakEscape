@@ -182,6 +182,11 @@ export function createNPCSprite(scene, npc, roomData) {
         // Check if NPC was previously defeated (KO state persisted from server)
         if (window.npcHostileSystem && window.npcHostileSystem.isNPCKO(npc.id)) {
             console.log(`💀 NPC ${npc.id} is KO'd - disabling sprite and playing death animation`);
+            // Review R3 m2: held items whose KO drop never reached the server are dropped again
+            // once the room is set up (the server lists them as koDropPending)
+            if (Array.isArray(npc.koDropPending) && npc.koDropPending.length > 0) {
+                setTimeout(() => window.npcHostileSystem?.redropPending?.(npc.id), 0);
+            }
             
             // Disable collision immediately
             if (sprite.body) {

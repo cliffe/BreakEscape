@@ -1246,7 +1246,8 @@ module BreakEscape
       authorize @game if defined?(Pundit)
       npc_id = params[:npc_id]
       npc_id = false unless npc_id.nil? || npc_id.is_a?(String) # any other shape is refused
-      result = @game.open_friendface_phone(npc_id)
+      # Review R3 n5: the revealed posts come back only when asked for (tests); the game never reads them
+      result = @game.open_friendface_phone(npc_id, with_posts: params[:posts].to_s == '1')
       render json: result[:body], status: result[:status]
     end
 
