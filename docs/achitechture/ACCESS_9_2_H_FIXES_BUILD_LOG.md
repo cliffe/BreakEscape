@@ -58,7 +58,7 @@ Branch `build/h-fixes`. Source: the "Access 9.2 H: deferred review items" sectio
   `pc-sessions.test.mjs` (pc_signing_out before each slow logout), `workstation-state.test.mjs`
   (2 slow-logout cases), `validator-access-work.test.mjs` (hot desk reach), 
   `toast-hold-verbatim.test.mjs`.
-- Full suites: see the report at the end of this log.
+- Full JS suite under the shared lock: 508 of 508 files pass. Rails suite not run: no Rails or server code changed (the validator script is tested from the JS suite).
 
 ## Live proof (port 3036, `test_access_work`)
 
