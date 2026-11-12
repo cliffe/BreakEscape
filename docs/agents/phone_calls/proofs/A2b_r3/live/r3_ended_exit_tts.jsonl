@@ -3,3 +3,8 @@
 {"t":1794485247878,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
 {"t":1794485249299,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
 {"t":1794485250828,"npc_id":"caller_basic","text":"Understood. Goodbye.","delivery":null,"status":503}
+{"t":1794486576230,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794486576994,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794486591640,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794486593056,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794486594591,"npc_id":"caller_basic","text":"Understood. Goodbye.","delivery":null,"status":503}

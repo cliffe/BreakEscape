@@ -1327,6 +1327,7 @@ export class PhoneChatMinigame extends MinigameScene {
         whenSessionOverlayClosed().then(() => setTimeout(() => {
             if (!this.gameState.isActive) return;
             if (ringer) {
+                if (this._callEndedPending) return;   // End was pressed in the gap; its beat is running
                 // Inside the timer: two branches save the story after this returns, so the
                 // reset's save comes last
                 this._endedByCall = true;
@@ -1386,6 +1387,7 @@ export class PhoneChatMinigame extends MinigameScene {
      * are set before the beat, so a hit during it is still read as a call that ended.
      */
     _completeRingerCallWithBeat() {
+        if (this._callEndedPending) return;   // idempotent: one beat, one complete timer
         this._callVoice?.stop();
         if (this.ui.showCallEnded?.()) {
             this._callEndedPending = true;

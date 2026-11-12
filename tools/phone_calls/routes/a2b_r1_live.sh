@@ -7,7 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/a2b_lib.sh"
 LOGJS='window.__r1=[]; setInterval(()=>{ const r=window.phoneRinger, c=r&&r.current&&r.current(); const mg=window.MinigameFramework.currentMinigame; window.__r1.push({t:Math.round(performance.now()), st:c?c.npcId+':'+c.state+(c.opening?'*':''):null, mg:mg?mg._sceneType:null, brief:/Mission Brief/.test(document.body.innerText), barks:document.querySelectorAll(".npc-bark").length}); }, 100); return true;'
 collapse() { a2b_ev 'const o=[]; let p=""; for (const e of window.__r1) { const k=[e.st,e.mg,e.brief,e.barks].join("|"); if (k!==p) { o.push((e.t/1000).toFixed(1)+"s "+k); p=k; } } return o;' | jq -r '.[]'; }
 node_npc() { a2b_ev "const n=window.npcManager.getNPC('$1'); return {currentKnot:n.currentKnot, homeKnot:n.homeKnot};"; }
-wait_ring() { for i in $(seq 1 ${2:-60}); do a2b_ev "const c=window.phoneRinger.current(); return !!c && c.npcId==='$1' && c.state==='ringing';" | grep -q true && return 0; sleep 1; done; return 1; }
+wait_ring() { for i in $(seq 1 ${2:-60}); do a2b_ev "const c=window.phoneRinger.current(); return !!c && c.npcId==='$1' && c.state==='ringing';" | grep -qx true && return 0; sleep 1; done; return 1; }
 # the timed caller rings first when it was offered during the briefing; if another call rings first, end it and wait on
 ring_timed() { for i in $(seq 1 90); do a2b_ev "const c=window.phoneRinger.current(); return c ? c.npcId+':'+c.state : null;" | tr -d '"' | { read v; echo "$v" >> $OUT/${LABEL}_ringseq.txt; [ "$v" = "timed_caller:ringing" ]; } && return 0; sleep 1; done; return 1; }
 case $1 in
@@ -30,7 +30,7 @@ m2)
   done ;;
 m3)
   AUTOBRIEF=true a2b_open m3; a2b_ev "$LOGJS" >/dev/null
-  a2b_lever lever_basic_again caller_basic; wait_ring caller_basic 20; a2b_answer; sleep 3
+  a2b_lever lever_basic_again caller_basic || { a2b_quit; exit 1; }; wait_ring caller_basic 20 || { echo "no ring" >&2; a2b_quit; exit 1; }; a2b_answer; sleep 3
   a2b_status | cut -c1-260
   a2b_ev "window.eventDispatcher.emit('send_text', {}); return 'send_text emitted during the call';"; sleep 5
   echo "during call: barks=$(a2b_ev 'return document.querySelectorAll(".npc-bark").length;') callActive=$(a2b_ev 'return window.phoneRinger.callActive();')"; a2b_shot during_call

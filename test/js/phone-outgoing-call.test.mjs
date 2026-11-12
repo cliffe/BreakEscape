@@ -348,6 +348,23 @@ test('m5: End call holds "Call ended m:ss" for a beat, then completes once; a se
     } finally { t.restore(); }
 });
 
+test('A2b R4 m3: End pressed in the two-second story-end gap leaves one beat and one complete timer', async () => {
+    const t = timers();
+    try {
+        const { inst, log } = make({ ended: true });
+        let ended = 0;
+        inst.ui.showCallEnded = () => { ended++; return true; };
+        inst._releaseForcedCall();
+        await Promise.resolve(); await Promise.resolve();
+        inst.closeConversation();                  // End, before the 2 s timer fires
+        assert.equal(ended, 1);
+        t.run();                                   // the 2 s timer and the beat timer
+        t.run();                                   // a second beat timer, if one was set
+        assert.equal(ended, 1, 'the beat is shown once');
+        assert.deepEqual(log.completed, [true], 'complete once');
+    } finally { t.restore(); }
+});
+
 test('A2b R2 m2: after "Keep going" a text thread still runs the batch tags; a ringer call drops them', async () => {
     for (const ringer of [true, false]) {
         const t = make({ ringer });

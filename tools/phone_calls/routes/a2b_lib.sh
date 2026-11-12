@@ -29,7 +29,7 @@ a2b_status() {
   a2b_ev "const r = window.phoneRinger; const cur = r && r.current && r.current(); const b = document.querySelector('.incoming-call'); const mg = window.MinigameFramework && window.MinigameFramework.currentMinigame; return {ringer: cur && {npcId: cur.npcId, state: cur.state, knot: cur.knot, opened: cur.opened}, queue: r && r.queueLength(), callActive: r && r.callActive(), closed: r && r.isClosed(), banner: b ? b.innerText.replace(/\n+/g,' | ') : null, bannerImg: b && b.querySelector('img') ? {src: b.querySelector('img').getAttribute('src'), ok: b.querySelector('img').complete && b.querySelector('img').naturalWidth > 0} : null, mg: mg ? (mg.constructor.name + ' ' + (mg.params && mg.params.npcId || '')) : null, globals: {debrief_go: window.gameState.globalVariables.debrief_go, declined_seen: window.gameState.globalVariables.declined_seen, missed_seen: window.gameState.globalVariables.missed_seen, timed_ringing: window.gameState.globalVariables.timed_ringing}};"
 }
 # a2b_lever <object id> [expected caller npc id]: the interaction menu sometimes picks a neighbouring lever
-# or none, so with an expected caller it retries (up to 4 times) until the ringer holds or queues that caller.
+# or none, so with an expected caller it retries (up to 4 times) until the ringer's current call is that caller.
 a2b_lever() {
   local n
   for n in 1 2 3 4; do
@@ -37,7 +37,7 @@ a2b_lever() {
     $S $GID "{\"cmd\":\"interact\",\"id\":\"$1\"}" 30 >/dev/null
     [ -z "$2" ] && return 0
     sleep 1.5
-    a2b_ev "const r=window.phoneRinger; const c=r.current(); return (c&&c.npcId==='$2')||(r.queueLength()>0)||r.callActive();" | grep -q true && return 0
+    a2b_ev "const r=window.phoneRinger; const c=r.current(); return !!c && c.npcId==='$2';" | grep -qx true && return 0
   done
   echo "lever $1 did not ring $2" >&2; return 1
 }
