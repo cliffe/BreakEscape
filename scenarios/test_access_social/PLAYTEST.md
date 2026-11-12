@@ -137,6 +137,10 @@ u1_room` to run the beat alone.
 |---|---|---|---|---|
 | U1 | Enter `u1_room`, stand clear of Kim and wait about two minutes | Her first work use is met; her second fails: `npc_use_failed:kim` with `missing` `[{ id: kim_pc, why: usb_refused }]`, the line "IT blocked my USB. Email it is, then.", `npc_usb_refused:kim`, tasks `u1_refused` and `u1_emailed`. Her next met social use serves the vent `u1_usb_vent` (task `u1_posted`); her next work use is met and eases | `npcFrustration.kim.failWhy.work` is `["usb_refused"]`; `globalVariables.u1_kim_emailed_file` true; `feedRevealed.kim.shown` is `["u1_ordered", "u1_usb_vent"]` (or the vent alone if her first social use comes after the refusal), done | Kim 2 |
 
+| U2 | After U1, talk to Kim and choose "Could I borrow your USB stick?". Open the stick from the inventory and read `work_file.txt`. Wait for three or four more of her work uses | The stick (`kim_usb`) leaves her itemsHeld and joins the inventory; it opens to one file, `work_file.txt`, whose text is served by `/unlock` and `GET /container` only now. Her later work uses are all met: no `usb_refused`, no `npc_usb_refused:kim` | `npc_given_items.kim` names `kim_usb`; no new `failWhy` | none |
+
+Tampered (U2): with Kim still holding the stick, `POST /unlock` and `GET /container` for `kim_usb` (or any invented stick id) answer 422 and 404, and a forged stick in the browser's own tray opens nothing. No room, bootstrap or inventory response carries the file's text or name.
+
 Tampered: a `fail` for Kim naming `usb_refused` for `social_media`, or naming another PC, is refused,
 and so is one for an NPC with no `usbHabit` (Nadia). Room data for Kim carries `work.usb` and no
 `usbHabit`.

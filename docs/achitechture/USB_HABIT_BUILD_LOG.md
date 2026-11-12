@@ -124,30 +124,91 @@ Live (keyless :3035, `--start-room u1_room`):
 Suites under the shared lock on `1109bee39`: `bin/rails test` 1816 runs, 25657 assertions, 0
 failures, 0 errors, 1 skip; `bin/test-js -j 3` 509 files passed, 0 failed.
 
-## Added scope, not started: Kim's USB stick (coordinator, 2026-11-12)
+## Added scope: the habit's USB stick (user request 2026-11-12)
 
-Asked: an NPC with `usbHabit` holds a USB stick in `itemsHeld` (default contents one
-`work_file.txt`; a scenario can list others); the validator errors when it has none and checks the
-contents; a player who takes it (given, pickpocketed, picked up after a knock-out) can open it and
-read its files, contents served from the server only; once the stick is gone the habit stops; demo
-on Kim in U1; tests and a live check.
+Asked: an NPC with `usbHabit` holds a USB stick in `itemsHeld` (default one `work_file.txt`; a
+scenario can list others); the validator errors when it has none and checks the contents; a player
+who takes it can open it and read its files, served from the server only; once the stick is gone the
+habit stops (the user's decision: a missing stick is no frustration cause, the use is met).
 
-Not built: this builder's context ran out. Research for the next builder:
+### What changed
 
-- An item type exists: `"type": "usb"` with `"sprite": "usb_bowl1"` and `usbClass` (see
-  `scenarios/test_access_work` `kit_usb`). `inventory.js` (about line 383) keeps the sprite apart
-  from the type on reload. No new art needed.
-- Opening: `interactions.js` (about line 1712) opens anything with `contents` or `hasContents` as
-  a container (`startContainerMinigame`); the server strips locked contents and marks
-  `hasContents`. `GET container/:id` (`games_controller.rb#container`) finds containers in room
-  objects, nested contents and `@game.held_grant_items`, and serves them only when
-  `check_container_unlocked` (the id in `unlockedObjects`). An NPC's `itemsHeld` is not searched,
-  so a held stick's contents need a lookup (held by the player: from the give record
-  `player_state['npc_given_items']`, or the inventory) and must be withheld from room data.
-- `Game` (about line 1170) drops from each NPC's `itemsHeld` what the give record says the NPC
-  handed over; `ItemIdentity.addressed_by?` matches. The habit stopping should read the same record
-  (server: in `usb_habit_refused?` or a wrapper that takes `player_state`, which makes it no longer
-  static; client: `_usbAttempt` checks the NPC still holds the stick).
-- Recommended answer for "is a missing stick a frustration cause": no. Without a stick there is
-  nothing to copy, so the use is a plain met use; no new cause, no mutter. A missing stick is the
-  player's doing and should calm the NPC, not wind it up.
+- `lib/break_escape/access_work.rb`: `usb_stick(npc)` (the first `usb` item with an id in a habit
+  NPC's itemsHeld), `usb_stick_files(stick)` (its `contents`, else one `text_file`
+  `<stick id>_work_file` named `work_file.txt` with `USB_STICK_DEFAULT_TEXT`),
+  `usb_habit_sticks(data)`; the plan's `work.usb` gains `stick` (the stick's id).
+- `app/models/break_escape/game.rb`: `usb_stick_taken?(npc)` (the give record
+  `npc_given_items` addresses it, or the NPC is knocked out), `usb_stick_with_npc?`,
+  `usb_habit_stick_ids`, `held_usb_sticks` (habit sticks with the taken record whose id the server
+  inventory holds, ignoring `clientAdded` entries, with their files resolved from the scenario).
+  `find_scenario_object` (the `/unlock` lookup) falls back to them. In
+  `filter_requires_and_contents_recursive` a habit stick loses `contents` and gets
+  `hasContents: true`, so room data, NPC itemsHeld, knock-out drops and the inventory copy never
+  carry the files.
+- `app/controllers/break_escape/games_controller.rb`: `find_container_in_scenario` (GET
+  `/container`) and `find_object_in_scenario` (the `/unlock` answer) fall back to
+  `held_usb_sticks`. The client's contents are never read.
+- `app/models/break_escape/npc_frustration.rb`: a fail naming `usb_refused` is refused once the
+  stick has left the NPC, and such uses are no longer counted.
+- `public/break_escape/js/systems/npc-needs.js`: `_usbStickHeld(s)` (the plan names a stick and
+  the NPC record's itemsHeld still has that id); `_usbAttempt` and the level-0 ease report need it.
+  A give, a pickpocket and a knock-out already splice the record's itemsHeld; on a reload the
+  server leaves a given stick out. No new imports.
+- `scripts/validate_access_work.rb`: `check_usb_stick`: errors for no stick, a locked stick, empty
+  `contents`, an entry that is not a `text_file`, a file with no id, name or text, a locked file or
+  one with contents, duplicate file ids; a warning for a stick that is not takeable.
+  `scripts/scenario-schema.json`: the `usbHabit` description covers the stick (the item schema
+  already took `contents`).
+- `scenarios/test_access_social`: Kim holds `kim_usb` (default contents) and has her own ink
+  `ink/kim.ink` (the staff hub plus a once-only "Could I borrow your USB stick?" that gives it).
+  PLAYTEST.md gains beat U2. `README_scenario_design.md`: "The stick" bullet and the validator
+  line.
+
+Spoken line (test scenario, not voiced): Kim, "Take it. My PC won't read it anyway."
+
+### Tests
+
+- `test/controllers/break_escape/usb_habit_test.rb`: 18 runs (8 new): no files in room data, the
+  bootstrap or the inventory copy; a given stick opens to the default file through `/unlock` and
+  GET `/container`; authored files instead of the default; an unheld stick gives 422 and 404; a
+  forged inventory entry (no record, or `clientAdded`) opens nothing; a stick picked up after a
+  knock-out opens; after the give a `usb_refused` fail is refused and uses are not counted; a
+  habit NPC with no stick never fails for USB. The existing fixtures gained a stick.
+- `test/unit/access_work_usb_habit_test.rb`: 13 runs (4 new: the stick, the plan names it, the
+  files, the sticks in the rooms).
+- `test/js/npc-needs-usb-habit.test.mjs`: 12 tests (3 new: no stick, the stick taken after the
+  first use, a plan with no stick named). The three fail with the stick guard removed. The
+  away-from-station test now has a stick, so it still tests the station guard.
+- `test/js/validator-usb-habit.test.mjs`: 13 tests (4 new).
+- Run without the lock (the test lock rule), before the `locked: false` fix (the controller file
+  was rerun after it: 18 runs, 0 failures): every model test plus every controller, unit and
+  integration test that touches the frustration, room, inventory, unlock or container routes or
+  the USB habit: 48 files, 1003 runs, 0 failures. JS files importing npc-needs.js, the needs-work
+  fixture or the validator: 77 files, 1301 tests, 0 failures. Full suites left to the orchestrator.
+
+Validator, `test_access_social`: 0 errors; the three expected warnings only.
+
+### Live proof (keyless :3035, headless, `--start-room u1_room`)
+
+- Game 1530 and again 1537 (after the fix below), honest client: Kim's second work use is refused
+  while she holds the stick (`usb_refused kim_pc`, a `usb_refused` fail posted). No response up to
+  then carried `work_file.txt` or its text. Asked "Could I borrow your USB stick?", she gives it:
+  her itemsHeld is empty and the inventory holds `kim_usb`. Her next four work uses are all met,
+  with 0 refusals; only eases are posted.
+- Game 1537: opening the stick from the tray sends `POST /unlock` and `GET /container/kim_usb`, the
+  container minigame lists `work_file.txt`, and clicking it opens the text-file minigame with the
+  default text.
+- Game 1511, Kim still holding the stick, tampered client: `POST /unlock` and `GET /container` for
+  `kim_usb` and for an invented `evil_usb` answer 422 and 404; a stick forged in the browser's own
+  tray opens nothing. No response carried the file text.
+- Found live and fixed (`24cb39203`): the client reads an item with no `locked` field as
+  key-locked, so the first try showed "Locked, requires key". A habit stick now ships
+  `locked: false`, and a controller test asserts it.
+
+### Left open
+
+- A stick dropped on the floor by a knock-out and not yet picked up still stops the habit (the NPC
+  is out anyway). Its saved `objects_added` copy keeps the files server-side, like any drop.
+- The forged tray check used a client-built stub, which takes the client's lock path; the server
+  refusals above are what make it safe.
+- No mission uses the habit or the stick yet.
