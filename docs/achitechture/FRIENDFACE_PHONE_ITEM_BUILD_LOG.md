@@ -103,6 +103,63 @@ Screenshots: the scratchpad `ffp/` folder of the session (not committed).
   - a post that arrived while the browser was open played its sound once, on close;
   - task `f14_jake_phone` completed.
 
+## R2 fixes (FRIENDFACE_PHONE_ITEM_CODE_REVIEW_R2.md)
+
+- M1: `Game#add_item_to_room!` stores an NPC-sourced add only when `npc_room_drop_allowed?`
+  says so: the NPC's KO is recorded (`npc_defeated?`), or the player has met the NPC and its story
+  or record offers the item's type (`npc_offers_item?`, the same patterns as a give). This holds
+  for every item type, not only phones. The only client route that sends an NPC-sourced add is the
+  KO drop (`npc-hostile.js` `dropNPCItems`, sent after the KO sync), and no scenario sends one any
+  other way (grep of `scenarios/` for `sourceNpcId` and `npc_defeated`: only an ink event name in
+  m01). `validate_item_collectible` asks the same question when a stored NPC phone is picked up,
+  for a save made before the fix. Three existing model tests sent a drop from a live NPC; they now
+  record the KO first, as the client does.
+- m1: the room bootstrap drops a taken NPC phone (by `phoneOf`) from that NPC's `itemsHeld`, so a
+  KO pickup with no gift record no longer leaves the phone listed after a reload.
+- m2: `check_friendface_phones` warns when no `give_item:phone_friendface` and no
+  `give_npc_inventory_items` that includes the phone appears in the owner's story or record:
+  "only a KO drop hands this phone over". The patterns moved to `AccessWork.offers_item_text?`
+  (with `AccessWork.offer_texts`), which the server and the validator both read. In
+  `test_access_social` it warns for Lena, Priya, Nadia and Greg, which is intended: their phones
+  come only from a KO.
+- n1: the offer check falls back to the `.ink` source when a story has no compiled JSON (a stale
+  compiled file is still read as it is; the game compiles on the first `/ink` request). A tag ends
+  at a newline or the next `#`, so an `.ink` line reads as the client splits it.
+- n2: written into plan section 3 (only a room NPC can offer a phone).
+- n3: `friendface_phone_taken?` returns before walking the scenario when the inventory holds no
+  Friendface phone.
+- n4: the validator refuses two Friendface phones that share an id.
+- n5: left as an accepted risk. An offered phone can be claimed without the conversation, from
+  any room, because the server checks only that the NPC is met and that its story offers the
+  phone. Under the cheat-resistance rule this is a best-effort ink step with an NPC sanity check.
+  Plan section 3 tells authors not to gate a phone give behind a condition the server must enforce.
+- Out of scope, filed: the client can claim `isKO` for any NPC in the room, and a claimed KO hands
+  over every item the NPC holds. `docs/IDEAS_BACKLOG.md`, "Server-checked knock-outs".
+
+Tests (affected files only, no full suites, per the 2026-11-12 test rule):
+- Rails `friendface_phone_test.rb` and `game_test.rb`: 114 runs, 490 assertions, 0 failures. With
+  the M1 check disabled, 4 of them fail (the review's Lena probe, the offered drop, and two model
+  tests), so the probe test reproduces the hole.
+- Rails, every file touching room adds, gifts, social feeds or `AccessWork`, plus
+  `games_controller_test.rb` and `inventory_canonical_item_test.rb`: 286 + 72 runs, 0 failures.
+- JS `validator-access-social`, `validator-access-reactive`: 33 passed;
+  `validator-access-work`, `validator-access-model`: 65 passed.
+
+Live proof (keyless server on :3061, headless, stopped afterwards; games 1519, 1522, 1523, 1526):
+- Game 1519, in Lena's room, Lena not KO'd: `update_room add_object` sourced from Lena was 422,
+  with and without `sourceType: npc_defeated`; the unsourced inventory add was 422 ("NPC does not
+  give this item"); opening Lena's phone was 403.
+- Same game, Lena knocked out (`debugKO`, the real KO path with the fight skipped): the drop was
+  stored as `lena_phone` with `phoneOf: lena`; picking it up put it in the inventory and opened her
+  profile (`lena_authored`); Lena's live record `phone: false`; the room bootstrap then sent Lena
+  with `phone: false` and an empty `itemsHeld`, Jake still holding his phone; `/friendface_phone`
+  for Lena 200.
+- Game 1526: asked Jake for his phone in conversation: "Received", inventory holds `jake_phone`
+  with `phoneOf: jake`, Jake's live record `phone: false`, his bootstrap `phone: false` and empty
+  `itemsHeld`, `/friendface_phone` for Jake 200, task F14 completed.
+- Games 1522 and 1523 were driver retries (the harness's `converse` did not find Jake's opening
+  line in time), with no result to report.
+
 ## Handover
 
 Not needed: the build finished in one session.

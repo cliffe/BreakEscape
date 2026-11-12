@@ -59,6 +59,23 @@ phone-less on both sides. An NPC hands its phone over only when the scenario off
 a KO drop picked up from the floor stays allowed. A held phone counts only when its id matches a
 phone the scenario declares, and `update_room add_object` refuses an unsourced Friendface phone.
 
+Review R2 changes: an NPC-sourced `update_room add_object` (any item, not only phones) is stored
+only when the NPC's KO is recorded, or when its story or record offers the item and the player has
+met it; picking up a stored NPC phone asks the same, for older saves. After a reload, an NPC whose
+phone is taken no longer lists it in `itemsHeld`. The validator warns when no give offers an NPC's
+phone ("only a KO drop hands this phone over") and refuses two phones that share an id. The offer
+patterns live in `AccessWork.offers_item_text?`, read by the server and the validator.
+
+Limits authors should know:
+- Do not gate a phone give behind a condition the server must enforce. The server checks that
+  the NPC is met and that its story offers the phone, not that the conversation reached the give,
+  so a tampered client can claim an offered phone at any time (review R2 n5, accepted under the
+  cheat-resistance rule: ink-gated steps stay best effort).
+- Only a room NPC can offer a phone. A headless email record can give items, but the offer check
+  reads room NPCs only, and the validator already requires `phoneOf` to name a room NPC.
+- A KO drop trusts the client's KO (`update_npc_state` takes `isKO` from the browser), so a
+  claimed KO hands over any phone. Filed in `docs/IDEAS_BACKLOG.md` as server-checked knock-outs.
+
 Server: `Game#scenario_room_npc` returns the NPC with `phone: false` merged in when its phone is
 taken. Every phone check (`feed_source_ok?`, `ease_report!`, `AccessWork.can_fail?`,
 `shortest_use_seconds`) already reads that record, so nothing else changes. The room bootstrap
