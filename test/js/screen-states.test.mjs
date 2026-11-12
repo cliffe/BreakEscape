@@ -399,3 +399,60 @@ test('art: pc_desktop_locked.png is the same size as pc_desktop.png, which is pc
     assert.deepEqual(size('pc_desktop_locked.png'), size('pc_desktop.png'));
     assert.ok(readFileSync(join(dir, 'pc_desktop.png')).equals(readFileSync(join(dir, 'pc.png'))));
 });
+
+/** RGBA pixels of an 8-bit RGBA non-interlaced PNG (every PC sprite is one), via node's zlib. */
+async function rgba(path) {
+    const { inflateSync } = await import('node:zlib');
+    const b = readFileSync(path);
+    const w = b.readUInt32BE(16), h = b.readUInt32BE(20);
+    assert.ok(b[24] === 8 && b[25] === 6 && b[28] === 0, `${path} is 8-bit RGBA, not interlaced`);
+    const idat = [];
+    for (let o = 8; o < b.length;) {
+        const len = b.readUInt32BE(o), type = b.toString('ascii', o + 4, o + 8);
+        if (type === 'IDAT') idat.push(b.subarray(o + 8, o + 8 + len));
+        o += 12 + len;
+    }
+    const raw = inflateSync(Buffer.concat(idat));
+    const stride = w * 4, out = Buffer.alloc(stride * h);
+    for (let y = 0; y < h; y++) {
+        const f = raw[y * (stride + 1)];
+        for (let x = 0; x < stride; x++) {
+            const v = raw[y * (stride + 1) + 1 + x];
+            const a = x >= 4 ? out[y * stride + x - 4] : 0;
+            const up = y > 0 ? out[(y - 1) * stride + x] : 0;
+            const c = x >= 4 && y > 0 ? out[(y - 1) * stride + x - 4] : 0;
+            const pa = Math.abs(up - c), pb = Math.abs(a - c), pc = Math.abs(a + up - 2 * c);
+            const pred = [0, a, up, (a + up) >> 1, pa <= pb && pa <= pc ? a : pb <= pc ? up : c][f];
+            out[y * stride + x] = (v + pred) & 255;
+        }
+    }
+    return out;
+}
+
+test('art: every workstation PC base has a locked picture, preloaded as <key>_locked, the size of the base, changed only inside the screen', async () => {
+    const game = readFileSync(join(root, 'public/break_escape/js/core/game.js'), 'utf8');
+    const dir = join(root, 'public/break_escape/assets/objects');
+    const loaded = new Map([...game.matchAll(/load\.image\('([^']+)', 'objects\/([^']+)'\)/g)].map(m => [m[1], m[2]]));
+    const size = (name) => { const b = readFileSync(join(dir, name)); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
+    const keys = ['pc', 'pc1', 'pc3', 'pc4', 'pc5', 'pc6', 'pc7', 'pc8', 'pc9', 'pc10', 'pc11', 'pc12', 'pc_desktop'];
+    for (const key of keys) {
+        const base = loaded.get(key);
+        const locked = loaded.get(`${key}_locked`);
+        assert.ok(base, `${key} is preloaded`);
+        assert.ok(locked, `${key}_locked is preloaded`);
+        assert.deepEqual(size(locked), size(base), `${key}_locked is the size of ${base}`);
+        assert.ok(!readFileSync(join(dir, locked)).equals(readFileSync(join(dir, base))), `${locked} differs from ${base}`);
+        // the body keeps its outline (no pixel turns transparent or opaque) and the screen is repainted
+        const a = await rgba(join(dir, base));
+        const b = await rgba(join(dir, locked));
+        let changed = 0;
+        for (let i = 0; i < a.length; i += 4) {
+            if (a[i + 3] !== b[i + 3]) assert.fail(`${locked} changes the outline at pixel ${i / 4}`);
+            if (a.readUInt32BE(i) !== b.readUInt32BE(i)) changed++;
+        }
+        assert.ok(changed > 40, `${locked} repaints the screen (${changed} px)`);
+    }
+    // the key `pc` is pc1.png, so it shares pc1's locked picture
+    assert.equal(loaded.get('pc'), 'pc1.png');
+    assert.equal(loaded.get('pc_locked'), 'pc1_locked.png');
+});

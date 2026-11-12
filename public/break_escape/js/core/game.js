@@ -803,6 +803,21 @@ export function preload() {
     this.load.image('pc10', 'objects/pc10.png');
     this.load.image('pc11', 'objects/pc11.png');
     this.load.image('pc12', 'objects/pc12.png');
+    // Locked screens for the workstation PCs (systems/screen-states.js shows `<key>_locked`
+    // while the owner is away with the screen locked; scripts/room_gen/make_locked_screen.py).
+    // The key `pc` is pc1.png, so it shares pc1's locked picture.
+    this.load.image('pc_locked', 'objects/pc1_locked.png');
+    this.load.image('pc1_locked', 'objects/pc1_locked.png');
+    this.load.image('pc3_locked', 'objects/pc3_locked.png');
+    this.load.image('pc4_locked', 'objects/pc4_locked.png');
+    this.load.image('pc5_locked', 'objects/pc5_locked.png');
+    this.load.image('pc6_locked', 'objects/pc6_locked.png');
+    this.load.image('pc7_locked', 'objects/pc7_locked.png');
+    this.load.image('pc8_locked', 'objects/pc8_locked.png');
+    this.load.image('pc9_locked', 'objects/pc9_locked.png');
+    this.load.image('pc10_locked', 'objects/pc10_locked.png');
+    this.load.image('pc11_locked', 'objects/pc11_locked.png');
+    this.load.image('pc12_locked', 'objects/pc12_locked.png');
 
     // VMs Launchers and Flag Stations
     this.load.image('vm-launcher', 'objects/vm-launcher.png');
