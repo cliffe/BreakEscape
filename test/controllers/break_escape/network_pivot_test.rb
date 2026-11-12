@@ -128,5 +128,80 @@ module BreakEscape
       @game.save!
       assert_equal Set['office_lan', 'server_net'], @game.structural_reach(OFFICE)
     end
+
+    # ---- m1/m2: via tie-break and displayName (code review R1) --------------------------
+
+    test 'm1/m2: via names the earliest pivot session (lowest seq) then host id, with its account displayName' do
+      with_pivot_foothold
+      # Two office hosts bridge server_net. Sam signs in first (lower seq) though his host id
+      # sorts after Lena's, so the seq tie-break names Sam's host, not the lower host id.
+      sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD, foothold: OFFICE)
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      @game.reload
+
+      server = networks_block(OFFICE).find { |b| b['id'] == 'server_net' }
+      assert server, 'the server_net block appears'
+      assert_equal 'sam_pc', server['via']['hostId'], 'the earliest session bridges, not the lower host id'
+      assert_equal 'HB-DESK-01', server['via']['host']
+      assert_equal 'Sam Okafor', server['via']['displayName'], 'the bridging account display name'
+    end
+
+    # ---- m3: an open share on a linked network needs a pivot, not a bare session --------
+
+    # with_pivot's backup_vault is access-listed; add an open share on server_net to exercise
+    # the open-share reach rule across a link.
+    def with_open_server_share
+      data = NS.with_pivot
+      data['resources']['server_public'] = {
+        'kind' => 'file_share', 'name' => 'Server-Public', 'host' => NS::SV_HOST, 'network' => 'server_net',
+        'contents' => [{ 'id' => 'server_pub_note', 'type' => 'text_file', 'name' => 'public.txt',
+                         'takeable' => true, 'text' => 'SERVER-PUBLIC-TEXT-5501' }]
+      }
+      data
+    end
+
+    test 'm3: a bare office session does not open or map a linked open share, but a same-network session does' do
+      build_network_game({}, with_open_server_share)
+      @game.reload
+      share = @game.scenario_data['resources']['server_public']
+
+      # A session on the adjacent office network with no foothold is not a pivot into the
+      # server network: the linked open share is out of reach and unnamed on the desktop.
+      @game.player_state['footholds'] = {}
+      @game.player_state['sessions'] = { 'lena_pc' => { 'id' => 'lena', 'via' => 'password' } }
+      @game.save!
+      refute @game.resource_admits_player?(share), 'a bare office session does not open a linked open share'
+      lena_pc = @game.find_login_pc('lena_pc')[:object]
+      refute_includes @game.mapped_shares(lena_pc, @game.scenario_room_npc('lena')).map(&:first), 'server_public',
+                      'the linked open share is not mapped on an adjacent desktop'
+
+      # A session on the open share's own network opens and maps it (same network, no link).
+      @game.player_state['sessions'] = { 'sv_fs02' => { 'id' => 'ian', 'via' => 'password' } }
+      @game.save!
+      assert @game.resource_admits_player?(share), 'a session on the share\'s own network opens the open share'
+      sv = @game.find_login_pc('sv_fs02')[:object]
+      assert_includes @game.mapped_shares(sv, @game.scenario_room_npc('ian')).map(&:first), 'server_public'
+    end
+
+    test 'm3: a foothold that pivots through a held office session reaches the linked open share' do
+      build_network_game({}, with_open_server_share)
+      take_drop_box
+      plant('comms_port')
+      @game.reload
+      share = @game.scenario_data['resources']['server_public']
+
+      # A foothold alone reaches only its own network, so the linked open share is refused.
+      refute @game.resource_admits_player?(share), 'a foothold with no pivot session does not reach it'
+      container('server_public', foothold: OFFICE)
+      assert_response :not_found
+
+      # Pivoting through a held office session brings server_net into the foothold's reach.
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      @game.reload
+      assert_includes @game.player_reach(OFFICE), 'server_net'
+      assert @game.resource_admits_player?(@game.scenario_data['resources']['server_public'])
+      body = container('server_public', foothold: OFFICE)
+      assert_equal ['server_pub_note'], body['contents'].map { |c| c['id'] }
+    end
   end
 end

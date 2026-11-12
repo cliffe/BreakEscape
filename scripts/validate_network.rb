@@ -286,7 +286,11 @@ def check_network_model(json_data, scenario_dir = nil)
     count = nm.all_reach_paths(json_data, a, b).length
     next if count <= BreakEscape::NetworkModel::REACH_PATHS_CAP
 
-    warn.call("networks '#{a}' and '#{b}' are joined by #{count} link paths; the pivot keeps only the first " \
+    # all_reach_paths stops at REACH_PATHS_CEILING, so a count at the ceiling may understate
+    # the true total; word it "at least" so a very dense graph is not reported as exact.
+    ceiling = BreakEscape::NetworkModel::REACH_PATHS_CEILING
+    shown = count >= ceiling ? "at least #{ceiling}" : count.to_s
+    warn.call("networks '#{a}' and '#{b}' are joined by #{shown} link paths; the pivot keeps only the first " \
               "#{BreakEscape::NetworkModel::REACH_PATHS_CAP}. Simplify the link graph.")
   end
 

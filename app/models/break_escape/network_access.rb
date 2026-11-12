@@ -469,30 +469,37 @@ module BreakEscape
       end
     end
 
-    # [{ pc_id:, pc:, host_id:, net: }] for every held session at a sign-in host, for the
-    # view blocks. The `via` of a pivot-reached network names the bridging session.
+    # [{ pc_id:, pc:, host_id:, net:, seq: }] for every held session at a sign-in host, for
+    # the view blocks. The `via` of a pivot-reached network names the bridging session. `seq`
+    # is the session's position in insertion order (its creation order, kept across prunes
+    # and keyboard settles), the primary tie-break for `via` (5.1).
     def view_session_hosts
-      access_sessions.filter_map do |pc_id, session|
+      access_sessions.each_with_index.filter_map do |(pc_id, session), seq|
         next unless session.is_a?(Hash)
 
         info = find_login_pc(pc_id)
         next unless info
 
         net = object_network(info[:object])
-        net ? { pc_id: pc_id.to_s, pc: info[:object], host_id: info[:object]['id'], net: net } : nil
+        net ? { pc_id: pc_id.to_s, pc: info[:object], host_id: info[:object]['id'], net: net, seq: seq } : nil
       end
     end
 
     # The bridging host a network is reached through (5.1): a held session at a host on a
-    # network linked to it and itself reached; the lowest host id when several bridge, so the
-    # label is deterministic. nil when none (the own network, via null).
+    # network linked to it and itself reached; when several bridge, the one with the lowest
+    # session seq, then by host id, so the label is deterministic (plan 5.1). nil when none
+    # (the own network, via null). `displayName` is the bridging session's account.
     def via_for(network, session_hosts, reach)
       linked = NetworkModel.linked_networks(scenario_data, network)
       candidates = session_hosts.select { |h| linked.include?(h[:net]) && reach.include?(h[:net]) }
       return nil if candidates.empty?
 
-      best = candidates.min_by { |h| h[:host_id].to_s }
-      { 'hostId' => best[:host_id], 'host' => host_label(best[:pc]) }
+      best = candidates.min_by { |h| [h[:seq].to_i, h[:host_id].to_s] }
+      via = { 'hostId' => best[:host_id], 'host' => host_label(best[:pc]) }
+      session = access_sessions[best[:host_id].to_s]
+      npc = session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
+      via['displayName'] = npc['displayName'] || npc['id'] if npc
+      via
     end
 
     # The rows of a network's view: each sign-in host, then each resource, each sorted by id.
@@ -729,9 +736,13 @@ module BreakEscape
         return true
       end
 
-      # A session the player holds at a host whose network reaches the resource's network
-      # over up links (the pivot walk), whose identity the list admits (an open share admits
-      # everyone), opens it from that desktop.
+      # A session the player holds at a host whose network reaches the resource's network,
+      # whose identity the list admits, opens it from that desktop. An access-listed share
+      # maps across the pivot walk over up links (the member-of-staff model); an open share
+      # is reached from a session only on its own network, never across a link (m3): a linked
+      # open share needs a foothold that pivots to it (the branch above), like every other
+      # resource on a linked network.
+      open_share = resource['access'].nil?
       access_sessions.any? do |pc_id, session|
         next false unless session.is_a?(Hash)
 
@@ -740,7 +751,10 @@ module BreakEscape
         next false unless info && npc
 
         host_net = object_network(info[:object])
-        host_net && networks_reachable_from(host_net).include?(network) && resource_acl_admits?(resource, npc)
+        next false unless host_net
+
+        reaches = open_share ? host_net == network : networks_reachable_from(host_net).include?(network)
+        reaches && resource_acl_admits?(resource, npc)
       end
     end
 
@@ -755,16 +769,20 @@ module BreakEscape
       return [] unless network
 
       # Every file_share on a network reachable from the PC's own network over up links (the
-      # pivot walk, 5.1), so a finance PC maps a share on a linked server network as it does
-      # for the member of staff. Across networks the result is sorted by resource id.
+      # pivot walk, 5.1), so a finance PC maps an access-listed share on a linked server
+      # network as it does for the member of staff. An open share maps only on its own
+      # network, never across a link (m3), so a linked open share is not named here without a
+      # foothold that pivots to it. Across networks the result is sorted by resource id.
       shares = []
       networks_reachable_from(network).each do |net|
-        shares.concat(NetworkModel.resources_on(net, scenario_data))
+        NetworkModel.resources_on(net, scenario_data).each do |id, resource|
+          next unless resource['kind'] == 'file_share' && !NetworkModel.listed_only_share?(resource)
+
+          admit = resource['access'].nil? ? net == network : resource_acl_admits?(resource, npc)
+          shares << [id, resource] if admit
+        end
       end
-      shares.select do |_id, resource|
-        resource['kind'] == 'file_share' && !NetworkModel.listed_only_share?(resource) &&
-          resource_acl_admits?(resource, npc)
-      end.sort_by { |id, _resource| id.to_s }
+      shares.sort_by { |id, _resource| id.to_s }
     end
 
     # The folder stub for each mapped share, appended to a desktop after the profiles.
