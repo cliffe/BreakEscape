@@ -657,9 +657,81 @@ test('H-3: a borrowed PC is chosen ahead of the home object for the failing need
     assert.deepEqual(st.parked, [], 'unparked without waiting out the retry');
     assert.equal(st.job?.targetId, 'hot_desk');
     assert.equal(sys.states.get('dana').job.borrowed, true);
-    assert.deepEqual(st.borrow, { index: 1, hand: 1, pcId: 'hot_desk', need: 'work', leavesOpen: true, started: true });
-    // the caffeine need never takes the hot desk
+    // q43: `started` means the borrower sat down; on the way it is still false
+    assert.deepEqual(st.borrow, { index: 1, hand: 1, pcId: 'hot_desk', need: 'work', leavesOpen: true, started: false });
     assert.ok(log('job_start').every(e => e.target !== 'hot_desk' || e.need === 'work'));
+});
+
+// Review R1 n3, R2 n6 (q44): the hot desk also serves caffeine, nearer than it is the coffee, and
+// caffeine falls due while the borrow is held, so a borrow that pulled every need to the PC fails here
+test('H-3: the caffeine need never takes the hot desk while a work borrow is held', () => {
+    const hot = HOT();
+    hot.affordance.satisfies = ['work', 'caffeine'];
+    const { sys, evs, log } = workWorld({ objects: [...baseObjects(), hot], globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    failOnce(sys, evs);
+    const s = sys.states.get('dana');
+    s.levels.caffeine = 1;   // due, and more urgent than work
+    assert.equal(sys.setBorrow('dana', RUN()), true);
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 60000));
+    const starts = log('job_start');
+    const caffeine = starts.filter(e => e.need === 'caffeine');
+    assert.ok(caffeine.length >= 1, 'a caffeine job ran while the borrow was held');
+    assert.ok(caffeine.every(e => e.target === 'coffee'), `caffeine went to ${caffeine.map(e => e.target).join(',')}`);
+    assert.ok(starts.filter(e => e.target === 'hot_desk').every(e => e.need === 'work'));
+});
+
+// User decision q43: a borrow cut short after the borrower sat down counts as done, session left
+test('q43: a borrow aborted while the NPC uses the PC is done: npc_borrowed_session and npc_borrow_done, no second sit', () => {
+    const { sys, evs } = workWorld({ objects: [...baseObjects(), HOT()], globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    failOnce(sys, evs);
+    sys.setBorrow('dana', RUN());
+    assert.ok(stepUntil(sys, () => sys.getState('dana').job?.phase === 'using' && sys.getState('dana').job?.targetId === 'hot_desk', 30000));
+    assert.equal(sys.getState('dana').borrow.started, true, 'started when she sat down');
+    assert.equal(evs('npc_sat_at:hot_desk').length, 1);
+    assert.equal(sys.control('dana', 'suspend'), true);   // a mapping's needs: suspend, mid-use
+    assert.deepEqual(evs('npc_borrowed_session:hot_desk').map(e => e.data), [{ npcId: 'dana', objectId: 'hot_desk', met: false, cut: 'suspend' }]);
+    assert.deepEqual(evs('npc_borrow_done:dana').map(e => e.data),
+        [{ npcId: 'dana', objectId: 'hot_desk', met: false, leftOpen: true, index: 1, hand: 1, cut: 'suspend' }]);
+    assert.equal(sys.getState('dana').borrow, null);
+    sys.control('dana', 'resume');
+    sys.step(60000);
+    assert.equal(evs('npc_sat_at:hot_desk').length, 1, 'she does not sit there again');
+    assert.equal(evs('npc_borrow_dropped:dana').length, 0, 'never reported dropped');
+    assert.equal(evs('npc_borrow_done:dana').length, 1);
+});
+
+test('q43: a script move in using counts the same; an abort on the way leaves the borrow waiting, not done', () => {
+    const a = workWorld({ objects: [...baseObjects(), HOT()], globals: { dana_pc_off: true }, chatter: CHATTER });
+    a.sys.registerAll();
+    failOnce(a.sys, a.evs);
+    a.sys.setBorrow('dana', RUN());
+    assert.ok(stepUntil(a.sys, () => a.evs('npc_sat_at:hot_desk').length > 0, 30000));
+    a.sys.onExternalMove('dana', 'script');
+    assert.equal(a.evs('npc_borrow_done:dana')[0].data.cut, 'script');
+
+    const b = workWorld({ objects: [...baseObjects(), HOT()], globals: { dana_pc_off: true }, chatter: CHATTER });
+    b.sys.registerAll();
+    failOnce(b.sys, b.evs);
+    b.sys.setBorrow('dana', RUN());
+    b.sys.step(250);
+    assert.equal(b.sys.getState('dana').job?.phase, 'goto_target');
+    b.sys.control('dana', 'suspend');
+    assert.equal(b.evs('npc_borrow_done:dana').length, 0, 'never sat, so nothing was left');
+    assert.equal(b.sys.getState('dana').borrow.started, false);
+});
+
+test('q43: a failed borrowed use is done once, though its turn-back aborts the job after the sit', () => {
+    const { sys, evs } = workWorld({ objects: [...baseObjects(), HOT()], globals: { share_down: true }, chatter: CHATTER });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 30000));
+    sys.setBorrow('dana', RUN());
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 30000));
+    sys.step(1000);
+    assert.equal(evs('npc_borrow_done:dana').length, 1);
+    assert.equal(evs('npc_borrowed_session:hot_desk').length, 1);
+    assert.equal(evs('npc_borrow_done:dana')[0].data.cut, undefined);
 });
 
 test('H-3: sitting down emits npc_sat_at and makes the borrower the PC\'s user; a met use eases and leaves the session', () => {

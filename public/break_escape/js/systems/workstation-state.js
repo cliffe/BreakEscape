@@ -191,6 +191,7 @@ export class WorkstationState {
         this.pendingLocks = new Map(); // objectId -> data, open screens with a policy lockAt
         this.idle = new Map(); // objectId -> needs-clock ms the idle clock started (open, owner away)
         this.guests = new Map(); // pcId -> { npcId, lockAt? }: a borrower left the session open (9.2 H)
+        this.signingOut = new Map(); // pcId -> the guest record there when a sign-out's /logout was sent (q44)
     }
 
     _changed(data, ownerId, locked, how) {
@@ -205,7 +206,8 @@ export class WorkstationState {
         this.env.on('npc_sat_at:*', (d) => this.onSatAt(d?.objectId, d?.npcId));
         // Review R1 M1: the player's own sign-out at a PC, or a sign-in there that is not a
         // claim, ends the guest session there, as the server does
-        this.env.on('pc_signed_out', (d) => this.onSignedOut(d?.pcId));
+        this.env.on('pc_signing_out', (d) => this.onSigningOut(d?.pcId));
+        this.env.on('pc_signed_out', (d) => this.onSignedOut(d?.pcId, true));
         this.env.on('pc_signed_in', (d) => { if (d?.via !== 'claim') this.onSignedOut(d?.pcId); });
         if (typeof this.env.onTick === 'function') this.env.onTick(() => this.checkAutoLocks());
         this.resetGlobals();
@@ -289,14 +291,26 @@ export class WorkstationState {
      * pc_signed_out (any reason) at pcId, or a password or remote pc_signed_in there: the guest
      * record goes, so the next click is the sign-in screen (review R1 M1). A displacement's
      * pc_signed_out comes before the new borrower's npc_guest_left, so that guest is kept.
-     * Known gap (review R2 n3): _endClaim and signOut emit pc_signed_out after awaiting
-     * /logout, so a guest recorded during a very slow /logout would be dropped here while the
-     * server keeps it; the next claim is then never sent and the click shows the sign-in screen.
+     * Review R2 n3 (q44): a sign-out that awaits /logout says so first (pc_signing_out), and
+     * its pc_signed_out ends only the guest record that was there when the request went: a
+     * guest recorded during a slow /logout came after it on the server too, so it is kept.
      */
-    onSignedOut(pcId) {
-        if (typeof pcId !== 'string' || !this.guests.has(pcId)) return false;
+    onSignedOut(pcId, fromSignOut = false) {
+        if (typeof pcId !== 'string') return false;
+        const pending = fromSignOut && this.signingOut.has(pcId);
+        const before = pending ? this.signingOut.get(pcId) : null;
+        if (pending) this.signingOut.delete(pcId);
+        if (!this.guests.has(pcId)) return false;
+        if (pending && this.guests.get(pcId) !== before) return false;
         this.guests.delete(pcId);
         this._publishGuest(pcId, false, false);
+        return true;
+    }
+
+    /** pc_signing_out: a sign-out's /logout is on its way; remember the guest record it ends (q44). */
+    onSigningOut(pcId) {
+        if (typeof pcId !== 'string' || !pcId) return false;
+        this.signingOut.set(pcId, this.guests.get(pcId) || null);
         return true;
     }
 

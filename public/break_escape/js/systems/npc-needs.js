@@ -1659,6 +1659,20 @@ export class NPCNeedsSystem {
         return !!(this.world.playerHears(npcId, radius) || {}).overheard;
     }
 
+    /**
+     * User decision q42: a running visit's dwell ends `ms` from now (0 ends it at the next tick).
+     * The runner holds a share beside its colleague while its line waits for the speech lock,
+     * then gives it the share's dwell from the moment the line is said. False when the NPC is not
+     * standing out a visit.
+     */
+    holdVisit(npcId, ms) {
+        const job = this.states.get(npcId)?.job;
+        if (!job || job.kind !== 'visit' || job.phase !== 'using') return false;
+        const v = Number(ms);
+        job.useUntil = this.clockMs + (Number.isFinite(v) ? clamp(v, 0, 600000) : 0);
+        return true;
+    }
+
     /** A borrow that has not started by its startBy is dropped and reported (6.4). */
     _tickBorrow(s) {
         const b = s.borrow;
@@ -2701,8 +2715,9 @@ export class NPCNeedsSystem {
         };
         if (pick.offWhen !== undefined) s.job.offWhen = pick.offWhen;   // slice 18a: checked on the way
         if (pick.visit) s.job.visit = pick.visit;   // access 9.2 A: a visit (5.3)
-        // Access 9.2 H (6.4): a borrowed use carries its borrow (cleared on completion, dropped if never done)
-        if (pick.borrowed && s.borrow) { s.job.borrowed = true; s.job.borrow = s.borrow; s.borrow.started = true; }
+        // Access 9.2 H (6.4): a borrowed use carries its borrow (cleared on completion, dropped if never done).
+        // `started` is set when the borrower sits down (q43), not here
+        if (pick.borrowed && s.borrow) { s.job.borrowed = true; s.job.borrow = s.borrow; }
         // Access 9.2 C (8.1): social media at the own PC takes socialUse's time and restores
         if (pick.need === 'social_media' && pick.kind === 'use' && pick.targetId === this._stationId(s) && !pick.borrowed) s.job.socialDesk = true;
         if (pick.tempted) s.job.tempted = true;   // slice 18b-i: recorded now, the level may decay on the way
@@ -3071,8 +3086,12 @@ export class NPCNeedsSystem {
             this._log(id, 'using', { need: job.need, target: job.targetId });
             // Slice 20: room tone's startSound. world.emit, not _emit: the per-tick object cache stays
             this.world.emit(`npc_use_started:${job.targetId}`, { npcId: id, objectId: job.targetId, need: job.need });
-            // Access 9.2 H (6.4): the borrower signs in there; the workstation layer displaces a held session
-            if (job.borrowed) this._emit(`npc_sat_at:${job.targetId}`, { npcId: id, objectId: job.targetId });
+            // Access 9.2 H (6.4): the borrower signs in there; the workstation layer displaces a held session.
+            // From here the borrow has started (q43): cut short, it still counts as done (_abortJob)
+            if (job.borrowed) {
+                if (job.borrow) job.borrow.started = true;
+                this._emit(`npc_sat_at:${job.targetId}`, { npcId: id, objectId: job.targetId });
+            }
             if (obj) this._maybePair(s, obj);
             return;
         }
@@ -3241,14 +3260,17 @@ export class NPCNeedsSystem {
         this._goHome(s, { stayPut });
     }
 
-    _borrowDone(s, job, met) {
+    /** The borrower leaves the borrowed PC, once per borrow; `cut` names the abort that ended the use early (q43). */
+    _borrowDone(s, job, met, cut = null) {
         const id = s.npcId;
         const b = job.borrow;
-        if (!b) return;
+        if (!b || b.done) return;
+        b.done = true;   // a failed use is done before its turn-back aborts the job
         if (s.borrow === b) s.borrow = null;
-        this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen });
-        if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met });
-        this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand });
+        const extra = cut ? { cut } : {};
+        this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen, ...extra });
+        if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met, ...extra });
+        this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand, ...extra });
         // Review R1 m1: as a workaround visit, the start line can hide a short borrowed use's icon
         this._showWorkaround(s);
     }
@@ -3490,6 +3512,11 @@ export class NPCNeedsSystem {
         if (job.carrying && job.slot && typeof this.world.stowHeld === 'function') { this.world.stowHeld(s.npcId, job.itemId); this._worldChanged(); }
         else if (job.carrying) { this.world.dropHeld(s.npcId, job.itemId); this._worldChanged(); }
         this._log(s.npcId, failed ? 'job_failed' : 'job_aborted', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, reason });
+        // User decision q43: a borrow cut short after the borrower sat down (a conversation, a
+        // script, a suspend) counts as done with the session left: the borrower signed in there,
+        // so the runner reports it done and the player can find the guest session. Unmet, since
+        // the use never finished. A reset reports it dropped instead (reset())
+        if (job.borrowed && job.borrow?.started && reason !== 'reset') this._borrowDone(s, job, false, reason);
         // Slice 17: a print errand that never picked its slot up may try again; one that did, or found
         // it gone, is over (the slot was filed, or the player has it)
         if (job.errand) {

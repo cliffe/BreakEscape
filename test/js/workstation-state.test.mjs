@@ -844,3 +844,35 @@ test('R1 M1: a displacement before the new guest is recorded keeps that guest', 
     handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
     assert.equal(ws.guestOf('hot_desk'), 'ian');
 });
+
+// Review R2 n3 (q44): a sign-out that awaits /logout says pc_signing_out first; its pc_signed_out
+// ends only the guest record that was there when the request went
+test('q44: a guest recorded during a slow /logout is kept; the one there when it was sent goes', () => {
+    const { ws, handlers } = hotRig();
+    handlers['pc_signing_out']({ pcId: 'hot_desk', reason: 'sign_out' });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });   // the borrower sat, worked and left meanwhile
+    handlers['pc_signed_out']({ pcId: 'hot_desk', reason: 'sign_out' });
+    assert.equal(ws.guestOf('hot_desk'), 'ian', 'recorded after the request: the server keeps it too');
+
+    handlers['pc_signing_out']({ pcId: 'hot_desk', reason: 'owner_returned' });
+    handlers['pc_signed_out']({ pcId: 'hot_desk', reason: 'owner_returned' });
+    assert.equal(ws.guestOf('hot_desk'), null, 'there when the request went: it ends');
+});
+
+test('q44: a guest replaced during a slow /logout is kept; a sign-out with no pc_signing_out ends the guest as before', () => {
+    const { ws, handlers } = hotRig();
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    handlers['pc_signing_out']({ pcId: 'hot_desk', reason: 'sign_out' });
+    handlers['npc_sat_at:*']({ npcId: 'rosa', objectId: 'hot_desk' });
+    handlers['npc_guest_left:*']({ npcId: 'rosa', objectId: 'hot_desk' });
+    handlers['pc_signed_out']({ pcId: 'hot_desk', reason: 'sign_out' });
+    assert.equal(ws.guestOf('hot_desk'), 'rosa');
+    handlers['pc_signed_out']({ pcId: 'hot_desk', reason: 'displaced' });
+    assert.equal(ws.guestOf('hot_desk'), null, 'no request in flight (a displacement emits before its /logout)');
+    // a password sign-in there does not spend a pending sign-out's mark
+    handlers['pc_signing_out']({ pcId: 'hot_desk', reason: 'sign_out' });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    handlers['pc_signed_in']({ pcId: 'pc_a', via: 'password' });
+    handlers['pc_signed_out']({ pcId: 'hot_desk', reason: 'sign_out' });
+    assert.equal(ws.guestOf('hot_desk'), 'ian');
+});

@@ -6,10 +6,11 @@
 // emit fires its event and then confirms. The needs side runs on fixtures/needs-work-world.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NpcWorkarounds, openProppedDoor, START_POOLS, installNpcWorkarounds, retryDelay, RETRY_MAX_MS, escapeNoteText } from '../../public/break_escape/js/systems/npc-workarounds.js';
+import { NpcWorkarounds, openProppedDoor, START_POOLS, installNpcWorkarounds, retryDelay, RETRY_MAX_MS, escapeNoteText, LINE_WAIT_MS } from '../../public/break_escape/js/systems/npc-workarounds.js';
 import { renderNoteMarkdown, noteMatches, noteSearchText } from '../../public/break_escape/js/utils/note-markdown.js';
 import { displayDashes } from '../../public/break_escape/js/utils/display-dashes.js';
 import { workWorld, baseObjects, dana } from './fixtures/needs-work-world.mjs';
+import { MUTTER_WAIT_MS } from '../../public/break_escape/js/systems/npc-needs.js';
 
 function stub({ answers = {}, failures = [] } = {}) {
     const calls = { sends: [], emits: [], globals: [], postits: [], doors: [], mutters: [], visits: [], timers: [] };
@@ -419,7 +420,7 @@ test('R1 m6: installNpcWorkarounds twice gives the same runner and one set of li
         const a = installNpcWorkarounds({});
         const b = installNpcWorkarounds({});
         assert.equal(a, b);
-        assert.deepEqual(added, ['npc_workaround_due:*', 'npc_visit_done:*', 'npc_visit_dropped:*', 'npc_visit_arrived:*', 'npc_borrow_done:*', 'npc_borrow_dropped:*']);
+        assert.deepEqual(added, ['npc_workaround_due:*', 'npc_visit_done:*', 'npc_visit_dropped:*', 'npc_visit_arrived:*', 'npc_mutter:*', 'npc_borrow_done:*', 'npc_borrow_dropped:*']);
     } finally {
         globalThis.window = prev;
     }
@@ -699,8 +700,16 @@ const IAN_RUN = { index: 0, hand: 4, do: 'borrow_session', dwell: 2, pc: 'hot_de
 const SAM_RUN = { index: 0, hand: 2, do: 'share_login', dwell: 6, with: 'ruth' };
 const SAM_HEARD = { capture: { targetId: 'sam', kind: 'credential', address: 'sokafor', note: 'n' }, line: "It's sokafor. Password's x.", note: 'Sam Okafor told Ruth Adeyemi his login out loud: sokafor / x', displayName: 'Sam Okafor' };
 
-function hStub(answers, { hears = () => false, room = 'open_office' } = {}) {
+// lineNow: the login_aloud line is said at once (npc_mutter at the mutter call), as with a free lock
+function hStub(answers, { hears = () => false, room = 'open_office', lineNow = true } = {}) {
     const s = stub({ answers });
+    s.calls.holds = [];
+    s.needs.mutter = (id, topic) => {
+        s.calls.mutters.push([id, topic]);
+        if (topic === 'login_aloud' && lineNow) s.runner.lineSaid({ npcId: id, topic, line: "It's sokafor.", picture: null });
+        return true;
+    };
+    s.needs.holdVisit = (id, ms) => { s.calls.holds.push([id, ms]); return true; };
     s.calls.borrows = [];
     s.calls.toasts = [];
     s.calls.notes = [];
@@ -878,4 +887,94 @@ test('R2 client m3: the notebook search finds an overheard username or password 
     for (const term of ['s_okafor', 'Spring-24', 'SPRING-24*#', 'okafor / spring']) assert.equal(noteMatches(note, term), true, term);
     assert.equal(noteMatches(note, 'autumn'), false);
     assert.equal(noteSearchText('a \\\\ b \\q'), 'a \\ b \\q', 'an escaped backslash reads as one; an unknown escape is kept');
+});
+
+// ── User decision q42: the listening window opens when the line is said ──
+
+test('q42: the line wait matches the needs system\'s mutter wait', () => {
+    assert.equal(LINE_WAIT_MS, MUTTER_WAIT_MS);
+});
+
+test('q42: a line waiting for the speech lock holds the visit and opens no window; a hearing before it counts for nothing', async () => {
+    const { runner, calls } = hStub({ sam: {} }, { hears: () => true, lineNow: false });
+    runner.due({ npcId: 'sam', run: SAM_RUN });
+    runner.visitArrived(visitDone('sam', SAM_RUN));
+    assert.deepEqual(calls.mutters.at(-1), ['sam', 'login_aloud']);
+    assert.deepEqual(calls.holds, [['sam', LINE_WAIT_MS + 6000]], 'held beside the colleague while the line waits');
+    assert.equal(calls.timers.length, 0, 'no hearing tick before the line');
+    runner.visitDone(visitDone('sam', SAM_RUN));
+    await flush();
+    assert.deepEqual(calls.sends, [{ npc_id: 'sam', index: 0, hand: 2, dropped: false, heard: false }]);
+});
+
+test('q42: the window opens on the line\'s npc_mutter, the visit stands the dwell from there, and a hearing then counts', async () => {
+    const { runner, calls } = hStub({ sam: SAM_HEARD }, { hears: () => true, lineNow: false });
+    runner.due({ npcId: 'sam', run: { ...SAM_RUN, dwell: 9 } });
+    runner.visitArrived(visitDone('sam', SAM_RUN));
+    runner.lineSaid({ npcId: 'sam', topic: 'wk_share_login', line: 'other topic' });
+    runner.lineSaid({ npcId: 'ruth', topic: 'login_aloud', line: 'another NPC' });
+    assert.equal(calls.holds.length, 1, 'another topic or NPC opens nothing');
+    runner.lineSaid({ npcId: 'sam', topic: 'login_aloud', line: "It's sokafor.", picture: null });
+    assert.deepEqual(calls.holds.at(-1), ['sam', 9000], 'the dwell left, from the line');
+    runTimers(calls, 2);
+    runner.visitDone(visitDone('sam', SAM_RUN));
+    await flush();
+    assert.deepEqual(calls.sends, [{ npc_id: 'sam', index: 0, hand: 2, dropped: false, heard: true, room_id: 'open_office' }]);
+    assert.equal(calls.toasts.length, 1);
+});
+
+test('q42: a picture with no line says nothing to hear: the visit ends at once, not heard', async () => {
+    const { runner, calls } = hStub({ sam: {} }, { hears: () => true, lineNow: false });
+    runner.due({ npcId: 'sam', run: SAM_RUN });
+    runner.visitArrived(visitDone('sam', SAM_RUN));
+    runner.lineSaid({ npcId: 'sam', topic: 'login_aloud', line: null, picture: 'login_aloud' });
+    assert.deepEqual(calls.holds.at(-1), ['sam', 0]);
+    assert.equal(calls.timers.length, 0);
+    runner.visitDone(visitDone('sam', SAM_RUN));
+    await flush();
+    assert.equal(calls.sends[0].heard, false);
+});
+
+test('q42 on the needs system: behind another NPC\'s line, the share\'s line comes later and the dwell runs from it', async () => {
+    // Mei is the chatter in the room; Ruth, the colleague, runs no needs
+    const npcs = { dana: { pos: { x: 100, y: 100 }, rec: dana() }, ruth: { pos: { x: 400, y: 100 }, rec: { id: 'ruth' } },
+        mei: { pos: { x: 160, y: 100 }, rec: dana({ id: 'mei', needsHome: 'mei_pc' }) } };
+    const objects = [...baseObjects(), { id: 'mei_pc', x: 160, y: 68, desk: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 5 } }];
+    const long = 'This is a long line that holds the shared speech lock for a good few seconds while it plays out.';
+    const t = workWorld({ npcs, objects, chatter: { login_aloud: ["It's dmorgan. Password's in my head."], mei_talk: [long] } });
+    t.w.world.cellBeside = id => (id === 'ruth' ? { x: 432, y: 100 } : null);
+    let hearsFrom = Infinity;
+    t.w.world.playerHears = () => ({ overheard: t.sys.clockMs >= hearsFrom });
+    const sends = [];
+    const runner = new NpcWorkarounds({
+        send: async body => { sends.push(body); return {}; },
+        needs: () => t.sys, emit: () => {}, npcRecord: () => null, playerRoom: () => 'open_office',
+        setTimer: (fn, ms) => setTimeout(fn, 0)
+    });
+    // The live wiring: every event the needs system emits reaches the runner, as installNpcWorkarounds does
+    const marks = {};
+    const orig = t.w.world.emit.bind(t.w.world);
+    t.w.world.emit = (name, data) => {
+        orig(name, data);
+        if (name === 'npc_visit_arrived:dana') {
+            marks.arrived = t.sys.clockMs;
+            assert.equal(t.sys.mutter('mei', 'mei_talk'), true);   // chatter takes the lock just before the line
+            runner.visitArrived(data);
+        } else if (name === 'npc_mutter:dana' && data.topic === 'login_aloud') {
+            marks.line = t.sys.clockMs;
+            hearsFrom = t.sys.clockMs;   // the player walks up as the line is said
+            runner.lineSaid(data);
+        } else if (name === 'npc_visit_done:dana') {
+            marks.done = t.sys.clockMs;
+            runner.visitDone(data);
+        }
+    };
+    t.sys.registerAll();
+    const run = { index: 0, hand: 1, do: 'share_login', with: 'ruth', dwell: 6 };
+    runner.due({ npcId: 'dana', run, level: 70 });
+    assert.ok(stepUntil(t.sys, () => marks.done !== undefined, 60000), 'the visit ends');
+    assert.ok(marks.line - marks.arrived >= 2000, `the line waited for the lock (${marks.line - marks.arrived} ms)`);
+    assert.ok(marks.done - marks.line >= 6000 && marks.done - marks.line <= 6500, `the dwell ran from the line (${marks.done - marks.line} ms)`);
+    for (let i = 0; i < 5 && !sends.length; i++) await flush();
+    assert.equal(sends[0].heard, true, 'heard in the window that opened with the line');
 });
