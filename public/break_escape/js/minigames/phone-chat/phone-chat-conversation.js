@@ -1044,6 +1044,43 @@ export default class PhoneChatConversation {
     }
 
     /**
+     * A reload found the thread's saved story inside a ringer call (A5 R1 M1): its position is on the
+     * call's choices, which would show as silent text. Restore it, move it to the home knot as
+     * `_resetAfterRingerCall` does at End, put the contact's knots back there and save it once.
+     * @param {Object} npc
+     * @param {Object} npcManager
+     * @param {Object} inkEngine - an InkEngine to run it in (its story is replaced)
+     * @returns {Promise<boolean>} true when the story was moved
+     */
+    static async resetToHome(npc, npcManager, inkEngine) {
+        if (!npc || !npcManager || typeof npc.storyState !== 'string' || !npc.storyState) return false;
+        if (!npc.storyPath && !npc.storyJSON) return false;
+        const conversation = new PhoneChatConversation(npc.id, npcManager, inkEngine);
+        conversation.observeGlobals = false;
+        try {
+            let storySource = npc.storyJSON;
+            if (!storySource && npc.storyPath) {
+                const gameId = window.breakEscapeConfig?.gameId;
+                if (gameId) storySource = `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npc.id)}`;
+            }
+            if (!storySource || !(await conversation.loadStory(storySource))) return false;
+            const saved = npc.storyState;
+            if (!conversation.restoreState(saved)) return false;
+            // A thread that moved on while the story loaded is no longer ours to reset
+            if (npc.storyState !== saved) return false;
+            const home = String(npc.homeKnot || 'start').split('.')[0];
+            if (!conversation.goToKnot(home)) return false;
+            npc.currentKnot = home;
+            npc.lastEnteredKnot = home;
+            npc.storyState = conversation.saveState();
+            window.npcConversationStateManager?.recordInkVariables?.(npc.id, conversation.engine?.story);
+            return true;
+        } finally {
+            try { conversation.cleanup(); } catch (e) { /* nothing to clean */ }
+        }
+    }
+
+    /**
      * Apply a preload's deferred globals when the thread is first opened (the
      * phone-chat minigame). Each is written only if the global still holds the value
      * it had at preload (npc.deferredGlobalsBase): a global something else has set

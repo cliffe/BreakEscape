@@ -128,3 +128,45 @@ test('a voicemail row and its lines survive a reload (the callEvent and the voic
         assert.equal(w2.nm.getConversationHistory('caller')[0].callEvent, 'voicemail');
     } finally { w.restore(); w2?.restore(); }
 });
+
+// ---- A5 R1 M1: a reload during a call leaves the story on the call's choices ----------------------------
+
+/** The call is open on `ring_talk`, at its choices, and the story is saved as the minigame saves it. */
+async function midCall(w) {
+    const conv = new PhoneChatConversation('caller', w.nm, new InkEngine('caller'));
+    await conv.loadStory(json);
+    conv.goToKnot('ring_talk');
+    conv.continue();
+    assert.deepEqual(conv.engine.story.currentChoices.map((c) => c.text), ['Keep talking.', 'Goodbye.']);
+    const npc = w.nm.getNPC('caller');
+    npc.storyState = conv.saveState();
+    return npc;
+}
+
+test('M1: resetToHome moves a story saved on a call\'s choices to the home knot and puts currentKnot back', async () => {
+    const w = makeWorld({ npcs: [{ ...base }] });
+    try {
+        const npc = await midCall(w);
+        npc.currentKnot = 'ring_talk';
+        const before = npc.storyState;
+        assert.equal(await PhoneChatConversation.resetToHome(npc, w.nm, new InkEngine('caller')), true);
+        assert.equal(npc.currentKnot, 'start');
+        assert.equal(npc.lastEnteredKnot, 'start');
+        assert.notEqual(npc.storyState, before);
+        const conv = await reopened(w);
+        const home = conv.continue();
+        assert.equal(home.text.trim(), 'Home line one.', 'the home knot is next, not the call');
+        assert.deepEqual(home.choices.map((c) => c.text), ['Anything new?', 'Bye.'], 'no call choices');
+    } finally { w.restore(); }
+});
+
+test('M1: resetToHome with no saved story or an unloadable one changes nothing and says so', async () => {
+    const w = makeWorld({ npcs: [{ ...base, currentKnot: 'ring_talk' }] });
+    try {
+        const npc = w.nm.getNPC('caller');
+        assert.equal(await PhoneChatConversation.resetToHome(npc, w.nm, new InkEngine('caller')), false);
+        npc.storyState = '{not json';
+        assert.equal(await PhoneChatConversation.resetToHome(npc, w.nm, new InkEngine('caller')), false);
+        assert.equal(npc.storyState, '{not json');
+    } finally { w.restore(); }
+});

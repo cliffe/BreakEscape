@@ -2571,9 +2571,9 @@ export default class NPCManager {
     }
     if (saved.pendingCall && typeof saved.pendingCall === 'object' && !npc.pendingCall) {
       npc.pendingCall = saved.pendingCall;
-      // After game_loaded the ringer is waiting for it already (resumePendingCalls)
-      if (this._pendingCallsResumed) this._resumePendingCall(npc);
     }
+    // After game_loaded the ringer is waiting for it already (resumePendingCalls)
+    if (this._pendingCallsResumed) this._resumeCallState(npc);
     if (Array.isArray(saved.deferredTags) && saved.deferredTags.length > 0) {
       npc.deferredTags = saved.deferredTags.filter(t => typeof t === 'string');
     }
@@ -2600,14 +2600,69 @@ export default class NPCManager {
    */
   resumePendingCalls() {
     this._pendingCallsResumed = true;
-    for (const npc of this.npcs.values()) this._resumePendingCall(npc);
+    for (const npc of this.npcs.values()) this._resumeCallState(npc);
+  }
+
+  /** What a reload does for one contact: its saved call slot (row 27), then a thread left inside a call (A5 R1 M1). */
+  _resumeCallState(npc) {
+    const forcedResumed = this._resumePendingCall(npc);
+    if (!forcedResumed) this._resumeMidCallStory(npc);
+  }
+
+  /** The knots a ringer call opens on: `call` entries, `ring` mappings and a `ring` timedConversation (never a legacy voiced call). */
+  _ringerCallKnots(npc) {
+    const knotOf = (path) => String(path || '').split('.')[0];
+    const knots = new Set();
+    const rings = (v) => !!v && v.ring !== undefined && v.ring !== null && v.ring !== false;
+    const timed = npc?.timedConversation;
+    if (timed && rings(timed) && timed.targetKnot && timed.videoCall !== true && timed.conversationMode !== 'video-call') knots.add(knotOf(timed.targetKnot));
+    for (const m of (Array.isArray(npc?.eventMappings) ? npc.eventMappings : [])) {
+      const target = m && (m.targetKnot || m.knot);
+      if (m && rings(m) && m.conversationMode === 'phone-chat' && target) knots.add(knotOf(target));
+    }
+    const entries = npc?.call === undefined || npc?.call === null ? [] : (Array.isArray(npc.call) ? npc.call : [npc.call]);
+    for (const e of entries) {
+      if (e && typeof e.knot === 'string' && e.knot.trim()) knots.add(knotOf(e.knot.trim()));
+    }
+    return knots;
+  }
+
+  /**
+   * A call that was dialling, connected or held when the game was saved (incoming or outgoing) leaves the
+   * thread on the call's knot and its choices, which would show as silent text. The call is gone after a
+   * reload, so the thread goes back to its home knot, as at End (`_resetAfterRingerCall`); the thread's own
+   * read-ahead settles on the lines it already shows. A forced call that resumes keeps its place (the
+   * caller skips it). An outgoing call cut by a reload leaves no row: the time on the line is not known.
+   */
+  _resumeMidCallStory(npc) {
+    if (!npc || npc._midCallChecked) return;
+    npc._midCallChecked = true;
+    const knotOf = (path) => String(path || '').split('.')[0];
+    const home = knotOf(npc.homeKnot || 'start');
+    const current = knotOf(npc.currentKnot);
+    if (!current || current === home || !this._ringerCallKnots(npc).has(current)) return;
+    npc.currentKnot = home;
+    npc.lastEnteredKnot = home;
+    if (typeof npc.storyState !== 'string' || !npc.storyState) return;
+    Promise.resolve(this._resetStoryToHome(npc)).then(() => {
+      try { window.stateSync?.sync?.()?.catch?.(() => {}); } catch (e) { /* the next tick sends it */ }
+    }).catch((e) => console.error('[NPCManager] reset after a reload mid-call failed', e));
+  }
+
+  /** Move a contact's saved story to its home knot (see PhoneChatConversation.resetToHome). */
+  async _resetStoryToHome(npc) {
+    const [conversationModule, inkModule] = await Promise.all([
+      import('../minigames/phone-chat/phone-chat-conversation.js'),
+      import('./ink/ink-engine.js'),
+    ]);
+    return conversationModule.default.resetToHome(npc, this, new inkModule.default(npc.id));
   }
 
   _resumePendingCall(npc) {
     const raw = npc?.pendingCall;
-    if (!raw || typeof raw !== 'object' || npc._pendingCallResumed) return;
+    if (!raw || typeof raw !== 'object' || npc._pendingCallResumed) return false;
     const ringer = typeof window !== 'undefined' ? window.phoneRinger : null;
-    if (!ringer || typeof ringer.restore !== 'function') return;
+    if (!ringer || typeof ringer.restore !== 'function') return false;
     npc._pendingCallResumed = true;
     // The old single record is one forced entry when forced, else a live one
     const slot = Array.isArray(raw.forced) || raw.live ? raw
@@ -2636,6 +2691,7 @@ export default class NPCManager {
     // Without this a second reload inside the 30 s tick, with an oversized unload flush, would
     // find the old slot and miss the call again (A4 R2 m1)
     ringer.refreshSave?.(npc.id);
+    return forced.length > 0;
   }
 
   // Load timed messages from scenario data

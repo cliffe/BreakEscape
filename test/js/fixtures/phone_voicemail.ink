@@ -32,3 +32,14 @@ voice: Call me when you can.
 // lint: call-knot
 {heard_vm: voice: I already left one.|voice: First message.}
 -> DONE
+
+=== ring_talk ===
+// lint: call-knot
+Go ahead.
++ [Keep talking.]
+    More.
+    -> ring_talk
++ [Goodbye.]
+    Bye.
+    #exit_conversation
+    -> DONE

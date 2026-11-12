@@ -534,7 +534,7 @@ test('row 20 (★): Decline emits phone_call_declined and clears the offer', () 
     assert.equal(s.ringer.decline('ceo'), true);
     assert.deepEqual(s.events(), ['phone_call_declined:ceo']);
     assert.equal(s.ringer.stateOf('ceo'), null);
-    assert.deepEqual(s.last('save'), ['save', 'ceo', null]);
+    assert.equal(s.last('save')[2].state, 'missed', 'what is saved is the callback the miss leaves (A6)');
     assert.deepEqual(s.last('hideBanner'), ['hideBanner']);
     assert.deepEqual(s.last('ringtone'), ['ringtone', false]);
     assert.equal(s.last('outcome')[1], 'declined');
@@ -999,7 +999,7 @@ test('M3: a refusal that never clears is given up on: missed, dropped, and the n
     assert.equal(s.ringer.stateOf('a'), null);
     assert.ok(s.events().includes('phone_call_missed:a'));
     assert.ok(s.log.some((e) => e[0] === 'outcome' && e[1] === 'dropped' && e[2] === 'a'));
-    assert.equal(saves(s, 'a').pop(), null);
+    assert.equal(saves(s, 'a').pop().state, 'missed', 'a callback is left (A6)');
     assert.equal(s.ringer.stateOf('b'), 'ringing');
     assert.equal(s.count('openCall') >= 5, true);
     assert.ok(s.count('openCall') < 12, 'retries are paced');
@@ -1115,7 +1115,7 @@ test('M7: when the connected call ends, the slot holds the queued one, which the
     assert.equal(s.ringer.current().knot, 'call_b');
     assert.equal(saves(s).pop().state, 'ringing');
     s.ringer.decline('ceo');
-    assert.equal(saves(s).pop(), null);
+    assert.equal(saves(s).pop().state, 'missed', 'a callback is left (A6)');
 });
 
 test('M7: a forced call waiting to re-ring keeps the slot against a queued offer for the same contact', () => {
@@ -1426,7 +1426,7 @@ test('R2 M2: an end report that never comes ends the call after CALL_GONE_AFTER_
     assert.equal(s.ringer.stateOf('a'), null);
     assert.ok(s.events().includes('phone_call_missed:a'));
     assert.ok(s.log.some((e) => e[0] === 'outcome' && e[1] === 'dropped' && e[2] === 'a'));
-    assert.equal(saves(s, 'a').pop(), null);
+    assert.equal(saves(s, 'a').pop().state, 'missed', 'a callback is left (A6)');
     assert.equal(s.count('reopen'), 0);
     assert.equal(s.ringer.stateOf('b'), 'ringing');
 });

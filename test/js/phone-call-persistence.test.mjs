@@ -91,7 +91,9 @@ test('the call ending clears the saved slot, and a pendingCall-only entry disapp
         await ring(w);
         w.click('.incoming-call-decline');
         const entry = w.nm.exportPhoneState().caller;
-        assert.equal(entry.pendingCall, undefined);
+        // A6: a missed call leaves a callback (the default onMissed), saved as state "missed"; the call itself is gone
+        assert.equal(entry.pendingCall.live.state, 'missed');
+        assert.equal(entry.pendingCall.live.knot, 'ring_call');
         assert.equal(entry.history.length, 1, 'only the missed row is left');
     } finally { w.restore(); }
 });
@@ -136,7 +138,8 @@ for (const state of ['ringing', 'held', 'connected']) {
             assert.equal(rows(w2)[0].read, false);
             assert.deepEqual(events(w2, 'phone_call_missed'), ['phone_call_missed:caller']);
             assert.deepEqual(toasts, []);
-            assert.equal(w2.nm.exportPhoneState().caller.pendingCall, undefined, 'the slot is cleared');
+            // A6: the call is gone; what is saved is its callback (onMissed defaults to "callback")
+            assert.equal(w2.nm.exportPhoneState().caller.pendingCall.live.state, 'missed', 'the live call is replaced by its callback');
         } finally { w.restore(); w2?.restore(); }
     });
 }
@@ -379,6 +382,7 @@ test('m2: a slot restored from the server and cleared by the reload resume is se
         assert.equal(rows(w2).length, 1);
         assert.equal(w2.nm.getConversationHistory('caller').length, 1);
         const entry = w2.nm.exportPhoneState({ onlyChanged: true }).caller;
-        assert.equal(entry.pendingCall, undefined);
+        // A6: the ringing slot is replaced by the callback the miss leaves
+        assert.equal(entry.pendingCall.live.state, 'missed');
     } finally { w.restore(); w2?.restore(); }
 });

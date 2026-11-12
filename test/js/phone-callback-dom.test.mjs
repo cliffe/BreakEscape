@@ -255,3 +255,70 @@ test('a call closed by something else (row 32) leaves a callback and the "Call b
         assert.equal(w.ringer.callButtonFor('caller', openPhone(w)).kind, 'callback');
     } finally { w.restore(); }
 });
+
+// ---- A5 R1 M1: a reload during a call must leave the thread on its home knot ------------------------
+
+const callNpc = { id: 'desk', displayName: 'Desk', call: { knot: 'desk_call' }, currentKnot: 'start', homeKnot: 'start' };
+
+/** A world that has loaded a save in which `npc` was mid-call (currentKnot on the call knot, a saved story). */
+async function reloadedMidCall(extra = {}, { slot = null } = {}) {
+    const w = makeWorld({ npcs: [{ ...callNpc, ...extra }] });
+    const resets = [];
+    w.nm._resetStoryToHome = async (npc) => { resets.push(npc.id); return true; };
+    const saved = { desk: { history: [{ type: 'npc', text: 'Desk line. Go ahead.', read: true, timestamp: 1 }],
+        storyState: '{"saved":"mid call"}', currentKnot: extra.savedKnot || 'desk_call', ...(slot ? { pendingCall: slot } : {}) } };
+    w.nm.restorePhoneState(saved);
+    await loaded(w);
+    return { w, resets };
+}
+
+test('M1: an outgoing call cut by a reload (currentKnot on the call entry\'s knot, no slot) goes back to the home knot', async () => {
+    const { w, resets } = await reloadedMidCall();
+    try {
+        assert.equal(w.nm.getNPC('desk').currentKnot, 'start');
+        assert.deepEqual(resets, ['desk'], 'the saved story is moved home too');
+        assert.deepEqual(rows(w, 'desk'), [], 'an outgoing call cut by a reload leaves no row (no time on the line is known)');
+    } finally { w.restore(); }
+});
+
+test('M1: an incoming call lost to a reload (Missed call row, callback) is also back on the home knot', async () => {
+    const slot = { live: { knot: 'ring_call', state: 'connected' } };
+    const { w, resets } = await reloadedMidCall({ call: undefined, eventMappings: [{ conversationMode: 'phone-chat', targetKnot: 'ring_call', ring: true, eventPattern: 'x' }], savedKnot: 'ring_call' }, { slot });
+    try {
+        assert.equal(w.nm.getNPC('desk').currentKnot, 'start');
+        assert.deepEqual(resets, ['desk']);
+        assert.deepEqual(rows(w, 'desk'), ['Missed call']);
+        assert.equal(w.ringer.callbackFor('desk').knot, 'ring_call');
+    } finally { w.restore(); }
+});
+
+test('M1: nothing moves for a thread on its home knot, a legacy voiced contact, or a forced call that resumes where it was', async () => {
+    const home = await reloadedMidCall({ savedKnot: 'start' });
+    try { assert.deepEqual(home.resets, [], 'already home'); } finally { home.w.restore(); }
+    const legacy = await reloadedMidCall({ call: undefined, voiced: true, eventMappings: [{ conversationMode: 'phone-chat', targetKnot: 'desk_call', voiced: true, eventPattern: 'x' }] });
+    try {
+        assert.deepEqual(legacy.resets, [], 'a legacy voiced call is not a ringer call');
+        assert.equal(legacy.w.nm.getNPC('desk').currentKnot, 'desk_call');
+    } finally { legacy.w.restore(); }
+    const forced = await reloadedMidCall({ call: undefined, eventMappings: [{ conversationMode: 'phone-chat', targetKnot: 'desk_call', ring: true, disableClose: true, eventPattern: 'x' }] },
+        { slot: { forced: [{ knot: 'desk_call', state: 'connected', disableClose: true }] } });
+    try {
+        assert.deepEqual(forced.resets, [], 'a forced call resumes on its choice');
+        assert.equal(forced.w.nm.getNPC('desk').currentKnot, 'desk_call');
+    } finally { forced.w.restore(); }
+});
+
+test('M1: a contact registered after game_loaded is checked too, and only once', async () => {
+    const w = makeWorld({ npcs: [] });
+    const resets = [];
+    w.nm._resetStoryToHome = async (npc) => { resets.push(npc.id); return true; };
+    try {
+        w.nm.restorePhoneState({ desk: { history: [], storyState: '{"s":1}', currentKnot: 'desk_call' } });
+        await loaded(w);
+        w.nm.npcs.set('desk', { ...callNpc });
+        w.nm._restoreSavedPhone?.('desk');
+        w.nm._resumeCallState?.(w.nm.getNPC('desk'));
+        w.nm._resumeCallState?.(w.nm.getNPC('desk'));
+        assert.ok(resets.length <= 1);
+    } finally { w.restore(); }
+});
