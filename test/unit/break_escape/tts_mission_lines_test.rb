@@ -9,8 +9,11 @@ module BreakEscape
   # Rows: every batch entry (host lines, co-speakers in another NPC's story,
   # narrator lines, pretext outcomes, room objects), every chatter line, every
   # bark, and every line of a host story the walker can't place (glue, a
-  # divert mid-line, player_name()). Stories are the committed compiled JSON,
-  # as the endpoint reads them when the .ink is not newer.
+  # divert mid-line, player_name()). Stories are found by InkStoryFile, the
+  # endpoint's own lookup, without compiling (ink_compiled_staleness_test.rb
+  # checks the committed JSON is what the .ink compiles to). The endpoint's
+  # side reads the scenario as a game holds it (Game#generate_scenario_data);
+  # the batch's side (TtsLineExtractor) reads the raw render, as the batch does.
   class TtsMissionLinesTest < ActiveSupport::TestCase
     MISSIONS = /\A(m(0[1-9]|10)_[a-z_]+|lab_physical_pentest)\z/.freeze
 
@@ -19,19 +22,32 @@ module BreakEscape
     # state, and must not be voiced.
     PRINTED_ALLOWED = { 'm08_the_mole' => %w[suite_code] }.freeze
 
+    # [name, raw render (the batch's reading), the game's scenario_data]
     def self.missions
       Dir.glob(Engine.root.join('scenarios', '*', 'scenario.json.erb').to_s).sort.filter_map do |erb|
         name = File.basename(File.dirname(erb))
         next unless name.match?(MISSIONS)
 
-        [name, JSON.parse(ERB.new(File.read(erb)).result(Mission::ScenarioBinding.new({}).get_binding))]
+        raw = JSON.parse(ERB.new(File.read(erb)).result(Mission::ScenarioBinding.new({}).get_binding))
+        [name, raw, game_scenario_data(name)]
       end
+    end
+
+    # The scenario as a new game of this mission holds it, built by the game's
+    # own pipeline (player preferences, prepare_scenario_data!); not saved
+    def self.game_scenario_data(name)
+      game = Game.new(mission: Mission.new(name: name), player_state: {})
+      game.send(:generate_scenario_data)
+      game.scenario_data
     end
 
     # The compiled story the endpoint reads for a storyPath (without compiling)
     def self.story_file(story_path)
-      base = Engine.root.join(story_path).to_s
-      [base, base.sub(/\.json\z/, '.ink.json'), base.sub(/\.ink\.json\z/, '.json')].find { |c| File.exist?(c) }
+      InkStoryFile.find(story_path, compile: false)&.to_s
+    end
+
+    def self.resolver(name, game_data)
+      TtsLineResolver.new(scenario_name: name, scenario_data: game_data, compile: false)
     end
 
     def self.missions_data
@@ -42,20 +58,24 @@ module BreakEscape
       @svc = TtsService.new
     end
 
-    test "the mission list is the expected eleven" do
+    test "the mission list is the expected eleven, each with the game's own scenario data" do
       assert_equal 11, self.class.missions_data.size
+      self.class.missions_data.each do |name, _raw, game_data|
+        # stamp_scenario_object_ids! ran: every room object has an id
+        objects = game_data['rooms'].values.flat_map { |room| Array(room['objects']) }
+        assert objects.all? { |obj| obj['id'].present? }, "#{name}: not built by Game#generate_scenario_data"
+      end
     end
 
     test "every line normal play voices resolves at the endpoint to its existing key, none refused" do
       counts = Hash.new(0)
       failures = []
-      self.class.missions_data.each do |name, data|
+      self.class.missions_data.each do |name, data, game_data|
         ex = TtsLineExtractor.new(name, data)
-        resolver = TtsLineResolver.new(scenario_name: name, scenario_data: data,
-                                       story_file: self.class.method(:story_file))
+        resolver = self.class.resolver(name, game_data)
         check = lambda do |kind, npc_id, text, expected_key, delivery = nil|
           counts[kind] += 1
-          npc = TtsLineResolver.find_npc(data, npc_id)
+          npc = TtsLineResolver.find_npc(game_data, npc_id)
           voice = npc && (npc['voice'].is_a?(Hash) ? npc['voice'] : npc['ttsVoice'])
           next failures << "#{name} #{kind} #{npc_id}: no NPC or voice" unless voice
 
@@ -74,7 +94,7 @@ module BreakEscape
           check.call(kind, e.npc_id, e.text, e.key, e.delivery)
         end
         ex.each_chatter_line { |npc_id, text, _path| check.call(:chatter, npc_id, text, nil) }
-        each_bark(data) { |npc_id, text| check.call(:bark, npc_id, text, nil) }
+        each_bark(game_data) { |npc_id, text| check.call(:bark, npc_id, text, nil) }
         each_unplaced_line(ex) { |npc_id, text| check.call(:unplaced, npc_id, text, nil) }
       end
 
@@ -103,13 +123,12 @@ module BreakEscape
     test "every line a voiced conversation can request resolves, video calls and voiced phone calls included" do
       counts = Hash.new(0)
       failures = []
-      self.class.missions_data.each do |name, data|
+      self.class.missions_data.each do |name, data, game_data|
         ex = TtsLineExtractor.new(name, data)
-        resolver = TtsLineResolver.new(scenario_name: name, scenario_data: data,
-                                       story_file: self.class.method(:story_file))
+        resolver = self.class.resolver(name, game_data)
         variables = ex.instance_variable_get(:@variables)
         dynamic = ex.send(:dynamic_variables)
-        each_story_npc(data) do |npc|
+        each_story_npc(game_data) do |npc|
           Array(npc['eventMappings']).each do |m|
             mode = m.is_a?(Hash) ? m['conversationMode'] : nil
             failures << "#{name} #{npc['id']}: unknown conversationMode #{mode}" if mode && !CLIENT_MODES.include?(mode)
@@ -132,7 +151,7 @@ module BreakEscape
               next if kind == :phone_call && (speaker == 'narrator' || ex.send(:phone_narration?, line.tags))
 
               counts[kind] += 1
-              record = TtsLineResolver.find_npc(data, speaker)
+              record = TtsLineResolver.find_npc(game_data, speaker)
               next failures << "#{name} #{kind} #{speaker}: no record" unless record
 
               result = resolver.resolve(speaker, record, text)

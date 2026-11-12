@@ -666,7 +666,6 @@ module BreakEscape
       resolved = TtsLineResolver.new(
         scenario_name: @game.mission&.name,
         scenario_data: @game.scenario_data,
-        story_file: method(:resolve_and_compile_ink),
         player_name: tts_player_name
       ).resolve(npc_id, npc, text)
       return render_error(resolved.error, resolved.status) unless resolved.line
@@ -2667,66 +2666,10 @@ module BreakEscape
       nil
     end
 
-    # Resolve ink path and compile if necessary
+    # The compiled story for a storyPath, compiling a newer .ink first
+    # (InkStoryFile, the lookup TtsLineResolver uses too)
     def resolve_and_compile_ink(story_path)
-      # Use Engine root for Rails Engine context
-      engine_root = BreakEscape::Engine.root
-      base_path = engine_root.join(story_path)
-      json_path = find_compiled_json(base_path)
-      ink_path = find_ink_source(base_path)
-
-      if ink_path && needs_compilation?(ink_path, json_path)
-        Rails.logger.info "[BreakEscape] Compiling #{File.basename(ink_path)}..."
-        json_path = compile_ink(ink_path)
-      end
-
-      json_path
-    end
-
-    def find_compiled_json(base_path)
-      return base_path if File.exist?(base_path)
-
-      ink_json_path = base_path.to_s.gsub(/\.json$/, '.ink.json')
-      return Pathname.new(ink_json_path) if File.exist?(ink_json_path)
-
-      json_path = base_path.to_s.gsub(/\.ink\.json$/, '.json')
-      return Pathname.new(json_path) if File.exist?(json_path)
-
-      nil
-    end
-
-    def find_ink_source(base_path)
-      ink_path = base_path.to_s.gsub(/\.(ink\.)?json$/, '.ink')
-      File.exist?(ink_path) ? Pathname.new(ink_path) : nil
-    end
-
-    def needs_compilation?(ink_path, json_path)
-      return true unless json_path && File.exist?(json_path)
-      File.mtime(ink_path) > File.mtime(json_path)
-    end
-
-    def compile_ink(ink_path)
-      output_path = ink_path.to_s.gsub(/\.ink$/, '.json')
-      inklecate_path = BreakEscape::Engine.root.join('bin', 'inklecate')
-
-      stdout, stderr, status = Open3.capture3(
-        inklecate_path.to_s,
-        '-jo', output_path,
-        ink_path.to_s
-      )
-
-      unless status.success?
-        Rails.logger.error "[BreakEscape] Ink compilation failed: #{stderr}"
-        raise "Ink compilation failed for #{File.basename(ink_path)}: #{stderr}"
-      end
-
-      if stderr.present?
-        Rails.logger.warn "[BreakEscape] Ink compilation warnings: #{stderr}"
-      end
-
-      Rails.logger.info "[BreakEscape] Compiled #{File.basename(ink_path)} (#{(File.size(output_path) / 1024.0).round(2)} KB)"
-
-      Pathname.new(output_path)
+      InkStoryFile.find(story_path)
     end
 
     def render_error(message, status)
