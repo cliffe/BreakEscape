@@ -11,6 +11,13 @@
     color: #e8eef2;
     font-size: 18px;
     min-height: 220px;
+    /* Pixel fonts have no italic or bold cut: never let the browser fake one */
+    font-style: normal;
+    font-synthesis: none;
+}
+
+.network-view * {
+    font-style: normal;
 }
 
 .network-view-header {

@@ -223,7 +223,7 @@ test('a pivot-reached network renders an up block through its host, actionable a
     await settle();
     const block = document.querySelector('.network-block-up');
     assert.ok(block, 'an up block is drawn');
-    assert.match(block.querySelector('.network-block-title').textContent, /Server network — through HB-FIN-02/);
+    assert.match(block.querySelector('.network-block-title').textContent, /Server network, through HB-FIN-02/);
     assert.equal(row('data-host-id', 'sv_fs02').querySelector('[data-action]').dataset.action, 'sign-in');
     // The pivot network emits its own network_viewed, so a task on it completes
     assert.deepEqual(named('network_viewed:server_net'), [{ footholdId: 'jack_comms_port', networkId: 'server_net',
