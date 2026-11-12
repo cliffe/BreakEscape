@@ -137,6 +137,52 @@ module BreakEscape
       refute null.key?('reactions')
     end
 
+    # feed_answer is a private SocialFeed method run on the controller's own Game instance, so the
+    # stub swaps the module method for the block and puts it back afterwards
+    def with_no_answer_for(post_id)
+      SocialFeed.send(:alias_method, :__feed_answer_unstubbed, :feed_answer)
+      SocialFeed.send(:define_method, :feed_answer) do |npc, pid, *args, **kw|
+        pid == post_id ? nil : __feed_answer_unstubbed(npc, pid, *args, **kw)
+      end
+      SocialFeed.send(:private, :feed_answer)
+      yield
+    ensure
+      SocialFeed.send(:alias_method, :feed_answer, :__feed_answer_unstubbed)
+      SocialFeed.send(:private, :feed_answer)
+      SocialFeed.send(:remove_method, :__feed_answer_unstubbed)
+    end
+
+    # Plan section 11 (review R1 m3): feed_answer gives nil for a reply whose thread poster is
+    # unknown, which the honest route cannot reach, so it is stubbed for Ivy's answer. That serve
+    # would carry Ivy's like on tom_re_ivy; with no post it carries none. A load while the answer
+    # is still unavailable leaves the item out and puts none of its reactions anywhere, beside the
+    # other posts' reactions. Once the answer can be built again, the load draws the post (it is
+    # stored and drawable) and equals the same run with no stub.
+    test 'an answer with no post carries none, and the next load agrees' do
+      build
+      normal = full_thread
+      normal_posts = feed_posts
+      assert_equal [rx('tom_re_ivy', 'ivy', 'like')], normal[2]['reactions']
+      build
+      t = Time.current
+      res = [travel_to(t) { ask('ivy') }, travel_to(t + 1) { ask('tomasz') }]
+      with_no_answer_for('ivy_answer') do
+        res << travel_to(t + FLOOR + 2) { ask('ivy') }
+        assert_nil res[2]['post']
+        refute res[2].key?('reactions')
+        assert_includes @game.reload.player_state['feedRevealed']['ivy']['shown'], 'ivy_answer', 'the post is still saved'
+        # Paired: the next serve in the same run carries its reactions, including one on the post
+        res << travel_to(t + FLOOR + 3) { ask('tomasz') }
+        assert_equal [rx('tom_again', 'ivy', 'laugh'), rx('ivy_answer', 'tomasz', 'sad')], res[3]['reactions']
+        posts = feed_posts
+        assert_nil item(posts, 'ivy', 'ivy_answer')
+        refute_includes posts.to_json, '"sad"', 'no reaction on the missing item lands elsewhere'
+        assert_equal [{ 'npc' => 'ivy', 'person' => 'ivy', 'key' => 'like' }], item(posts, 'tomasz', 'tom_re_ivy')['reactions']
+        assert_equal [{ 'npc' => 'ivy', 'person' => 'ivy', 'key' => 'laugh' }], item(posts, 'tomasz', 'tom_again')['reactions']
+      end
+      assert_equal normal_posts, feed_posts
+    end
+
     test 'player_state and feedRevealed are identical to the same run with reacts removed' do
       build(reacts: false)
       plain = full_thread

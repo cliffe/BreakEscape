@@ -50,7 +50,11 @@ after the `FEED_ITEM_KEYS` slice, with one map per load; both calls go through
   and the next load agrees". In the route, `feed_answer` can return nil only if the thread poster
   or named NPC stops being a room NPC between selection and answer, which the honest route cannot
   reach; the `if answer` guard is in place and the derivation's drawable tests cover the same
-  conditions. A test would need a stub of `feed_answer`.
+  conditions. A test would need a stub of `feed_answer`. Covered since code review R1 m3: "an
+  answer with no post carries none, and the next load agrees" stubs `feed_answer` to nil for
+  Ivy's answer. The answer has no post and no `reactions`; a load while the stub holds leaves the
+  item out and puts none of its reactions on another item; once the answer builds again, the load
+  draws the post (stored and drawable) and equals the run with no stub.
 
 ## Step 4: validator (commit a6b3df22f)
 
