@@ -76,7 +76,7 @@ const implantLink = { id: 'netlink_implant_lena_pc', type: 'network_link', name:
     takeable: false, footholdId: 'implant_lena_pc', sourceId: 'lena_pc',
     observations: 'Your implant on HB-FIN-02. Open it to see what it reaches.' };
 
-let calls, requests, toasts, events, confirms, confirmAnswer, views, desktops, links, implantAnswer;
+let calls, requests, toasts, events, confirms, confirmAnswer, views, desktops, links, implantAnswer, implantThrowsLeft;
 
 function jackSprite(extra = {}) {
     const sprite = {
@@ -98,6 +98,7 @@ async function reset({ items = [], planted = false } = {}) {
     desktops = [];
     confirmAnswer = true;
     implantAnswer = {};
+    implantThrowsLeft = 0;
     globalThis.fetch = async (url, opts) => {
         const body = JSON.parse(opts?.body || '{}');
         if (body?.item?.type !== 'notepad') requests.push({ url, body });
@@ -138,6 +139,7 @@ async function reset({ items = [], planted = false } = {}) {
         },
         async networkImplant(pcId, shape, path) {
             calls.push(['implant', pcId, shape, path]);
+            if (implantThrowsLeft > 0) { implantThrowsLeft--; const e = new Error('network down'); e.status = 500; throw e; }
             if (implantAnswer instanceof Error) throw implantAnswer;
             const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
             return { success: true, foothold: implantFoothold, inventory: [...inv, implantLink], first: true, ...implantAnswer };
@@ -563,15 +565,69 @@ test('an implant adds the foothold, syncs the link item and emits foothold_gaine
     assert.equal(views.length, 1, 'the first foothold opens the view');
 });
 
-test('an implant removes a consumed device the server left out of its inventory', async () => {
+test('an implant removes the consumed device the server names in consumedId', async () => {
     await reset({ items: [box] });
     withStarters();
-    // The server consumed the box: its answer inventory holds only the link item.
-    implantAnswer = { inventory: [implantLink] };
+    // The server consumed the box: its answer names it in consumedId and omits it from inventory.
+    implantAnswer = { inventory: [implantLink], consumedId: 'kit_dropbox' };
     await links.implant('lena_pc', 'session', null);
     await settle();
     assert.equal(held('kit_dropbox').length, 0, 'the consumed device is gone from the tray');
     assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item is there');
+});
+
+test('an implant keeps an unrelated tray item the server has not synced yet (M1)', async () => {
+    await reset({ items: [box, lockpick] });
+    withStarters();
+    // The server consumed the box; the lockpick was picked up a tick earlier and its own
+    // POST /inventory persist is still in flight, so the server snapshot omits it. The
+    // reconcile must touch only the link item and the consumed device, never the lockpick.
+    implantAnswer = { inventory: [implantLink], consumedId: 'kit_dropbox' };
+    await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(held('lockpick').length, 1, 'the unrelated, not-yet-synced item survives');
+    assert.equal(held('kit_dropbox').length, 0, 'the consumed device is gone');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item arrived');
+});
+
+test('a dropped-shape implant (N11) consumes nothing from the tray', async () => {
+    await reset({ items: [lockpick] });
+    withStarters();
+    // The dropped shape: an NPC used a dropped device, so nothing leaves the player's tray.
+    // The server names no consumedId; the reconcile adds only the link item.
+    implantAnswer = { inventory: [implantLink] };
+    const out = await links.implant('door_box', 'dropped', null);
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.deepEqual(calls.at(-1), ['implant', 'door_box', 'dropped', null]);
+    assert.equal(held('lockpick').length, 1, 'the unrelated item is kept');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item arrived');
+});
+
+test('an implant retries once after a network error and then succeeds', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantThrowsLeft = 1; // first call throws a 500, the retry succeeds
+    implantAnswer = { inventory: [implantLink], consumedId: 'kit_dropbox' };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 2, 'it retried exactly once');
+    assert.deepEqual(toasts, [], 'a recovered retry shows nothing');
+    assert.equal(held('netlink_implant_lena_pc').length, 1);
+});
+
+test('an implant lost to both retries shows a message and grants nothing (n2)', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    const err = new Error('still down'); err.status = 500;
+    implantAnswer = err; // every call throws
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'error');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 2, 'it retried once then gave up');
+    assert.equal(toasts.length, 1, 'a plain-text message is shown');
+    assert.equal(links.get('implant_lena_pc'), null, 'no foothold');
 });
 
 test('an implant that answers already does not re-emit or reopen', async () => {
@@ -582,6 +638,8 @@ test('an implant that answers already does not re-emit or reopen', async () => {
     assert.equal(out.action, 'already');
     assert.equal(named('network_foothold_gained').length, 0);
     assert.equal(views.length, 0);
+    // n1: the planted global is published before the already return, as plant() does
+    assert.equal(window.gameState.globalVariables.lena_pc_planted, true);
 });
 
 test('a usb_refused answer toasts the authored line and emits the refusal, no foothold', async () => {

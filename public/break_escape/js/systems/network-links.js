@@ -67,7 +67,10 @@ const footholdIdFor = (jackId) => `jack_${jackId}`;
 const plantedGlobal = (jackId) => `${jackId}_planted`;
 
 function toast(message, type = 'info', ms = 3000) {
-    try { win().gameAlert?.(message, type, '', ms); } catch (e) { /* no notification layer */ }
+    // Every toast here carries author or server text (jack hints, port-security refusals,
+    // network names), so it goes out as plain text: a `<` or markup renders literally
+    // (review R1 minor 1). The confirm dialogs on the same jack already pass plainText.
+    try { win().gameAlert?.(message, type, '', ms, { plainText: true }); } catch (e) { /* no notification layer */ }
 }
 
 function cleanFoothold(f) {
@@ -437,24 +440,31 @@ export class NetworkLinks {
                 if (err?.status === 422 || err?.status === 404) {
                     return { action: 'not_ready', reason: b.reason || null };
                 }
-                if (attempt === 1) return { action: 'error', status: err?.status ?? null };
+                if (attempt === 1) {
+                    // Both tries lost to a transient network error: the timer that fired this
+                    // beat is saved fired and never re-runs, so the foothold is gone for good.
+                    // Say so in plain text rather than fail silently (review R1 nit 2).
+                    toast('The device could not reach the network. The foothold was lost.', 'error', 4000);
+                    return { action: 'error', status: err?.status ?? null };
+                }
             }
         }
         const foothold = cleanFoothold(body?.foothold);
         if (!body?.success || !foothold) return { action: 'error' };
 
-        // Reconcile the link item added and the consumed device removed: syncInventoryFromServer
-        // only touches the ids it is given, so pass every id in the tray or the server's list.
-        const serverIds = (Array.isArray(body.inventory) ? body.inventory : []).map(it => it && it.id).filter(Boolean);
-        const trayIds = (win().inventory?.items || []).map(it => it?.scenarioData?.id).filter(Boolean);
-        const ids = [...new Set([foothold.itemId, ...serverIds, ...trayIds])];
+        // Reconcile only the ids the server says changed, as plant() does (review R1 client M1):
+        // the link item added, and the one device the session shape consumed (consumedId). The
+        // dropped shape consumes nothing. Never pass the whole tray: an item whose own pickup
+        // persist is still in flight would be absent from the server snapshot and wrongly removed.
+        const ids = [foothold.itemId];
+        if (body.consumedId) ids.push(body.consumedId);
         win().syncInventoryFromServer?.(body.inventory, ids);
         this.footholds.set(foothold.id, foothold);
         if (foothold.sourceId) this.gained.add(foothold.sourceId);
+        this._publishPlanted(pcId, true);
         if (body.already) return { action: 'already', footholdId: foothold.id };
 
         const networkId = foothold.network?.id ?? null;
-        this._publishPlanted(pcId, true);
         this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: pcId }, pcId);
         if (body.first) this.open(foothold.id);
         return { action: 'implanted', footholdId: foothold.id, first: !!body.first };

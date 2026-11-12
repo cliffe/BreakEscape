@@ -266,16 +266,21 @@ module BreakEscape
       list.is_a?(Array) ? list : []
     end
 
-    # The declared grant_foothold action for this PC and shape (5.5): selected by its path
-    # when the PC has more than one, so the choice is unambiguous (the validator forbids two
-    # the path cannot tell apart).
+    # The declared grant_foothold action for this PC and shape (5.5). The rule is one action
+    # per [pc, shape]: the validator (validate_network.rb) errors on two grant_footholds that
+    # share a PC and shape, so the spec, the validator and this selection all key on the pair.
+    # `path` is still forwarded from the client (apply-actions passes action.path) and used only
+    # as an extra tie-break if ever present; it is not load-bearing, because the validator never
+    # lets two actions reach the same [pc, shape] for it to tell apart (review R1 server minor 1).
     def grant_foothold_action_for(pc_id, shape, path)
       NetworkModel.grant_foothold_actions(scenario_data).find do |a|
         a[:pc] == pc_id.to_s && a[:shape] == shape.to_s && (path.to_s.empty? || a[:path] == path.to_s)
       end
     end
 
-    # A held inventory item named by needsHeld (its id, type or name), or nil.
+    # A held inventory item named by needsHeld (its id, type or name), or nil. needsHeld should
+    # name a device by its id when two held items share a type: id is matched first, so an
+    # id-named needsHeld is unambiguous where a type-named one could pick either (review R1 nit 2).
     def inventory_item_matching(needs_held)
       needs = needs_held.to_s
       return nil if needs.empty?
@@ -332,6 +337,9 @@ module BreakEscape
       end
 
       first = !gained_footholds.include?(pc_id)
+      # The dropped branch never normalised the inventory (the session branch did at its reject);
+      # guard once here so the << below is safe on a nil/non-array inventory (review R1 nit 1).
+      player_state['inventory'] = Array(player_state['inventory'])
       player_state['footholds'] = network_footholds
       seq = network_footholds.values.map { |f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.max.to_i + 1
       record = { 'via' => 'implant', 'network' => network, 'source' => pc_id, 'seq' => seq,
@@ -343,7 +351,10 @@ module BreakEscape
       player_state['inventory'] << link_item_for(foothold_id)
       save!
 
-      { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id),
+      # consumedId names the one tray device the session shape removed, so the client reconciles
+      # only the ids that changed (review R1 client M1); the dropped shape consumes nothing.
+      consumed_id = device_copy['id'] if device_copy.is_a?(Hash)
+      { status: :ok, body: { success: true, consumedId: consumed_id, foothold: foothold_for_client(foothold_id),
                              inventory: player_state['inventory'], first: first } }
     end
 

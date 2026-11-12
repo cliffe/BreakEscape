@@ -55,6 +55,25 @@ module BreakEscape
       assert_response :success, response.body
     end
 
+    # POST /network/implant is the one implant path a non-holder can reach: with no session
+    # and no drop it answers not_ready, whose body is generic. Guard against a future edit
+    # that starts echoing the pc or the network into the error (review R1 server minor 2).
+    test 'an implant with no session and no drop answers not_ready and names nothing' do
+      scenario = NS.scenario
+      scenario['rooms']['finance_office']['objects'] << {
+        'id' => 'lena_usb_socket', 'type' => 'pc', 'name' => 'Desk USB socket',
+        'triggerOnInteract' => [
+          { 'type' => 'grant_foothold', 'pc' => 'lena_pc', 'needsSession' => true,
+            'needsHeld' => 'kit_badusb', 'name' => 'BadUSB: Lena desk' }
+        ]
+      }
+      build_network_game({ 'unlockedRooms' => ALL_ROOMS.dup }, scenario)
+      post game_path('network/implant'), params: { pc_id: 'lena_pc', shape: 'session' }, as: :json
+      assert_response :unprocessable_entity
+      assert_equal 'not_ready', response.parsed_body['reason']
+      refute_exposed('/network/implant not_ready')
+    end
+
     # The fixture with Lena's capture route declaring her target id, so an entry keyed
     # 'lena' is one the scenario could have written. With proof: her capture proof, a
     # session on her own PC (which admits only finance).

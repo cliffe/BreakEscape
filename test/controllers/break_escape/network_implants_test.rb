@@ -75,6 +75,8 @@ module BreakEscape
       assert_nil state['sessions'] && state['sessions']['sam_pc']
       assert state['footholds'].key?('implant_sam_pc')
       assert_includes state['gainedFootholds'], 'sam_pc'
+      # the dropped shape consumes nothing from the tray, so it names no consumedId (M1)
+      assert_nil body['consumedId']
     end
 
     test 'the dropped shape is not ready until the item is dropped' do
@@ -103,6 +105,8 @@ module BreakEscape
       refute_includes state['inventory'].map { |i| i['id'] }, 'kit_badusb'
       # the link item arrived
       assert_includes body['inventory'].map { |i| i['id'] }, 'netlink_implant_lena_pc'
+      # the answer names the one consumed device so the client reconciles only what changed (M1)
+      assert_equal 'kit_badusb', body['consumedId']
     end
 
     test 'the session shape needs a non-foothold session, not a remote-through-foothold one' do
