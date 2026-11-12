@@ -69,7 +69,7 @@ const viewEntry = { ...foothold, hosts: [
     { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, remoteSignIn: true }
 ] };
 
-let calls, requests, toasts, events, confirms, confirmAnswer, views, desktops, links;
+let calls, requests, toasts, toastCalls, events, confirms, confirmAnswer, views, desktops, links;
 let joinAnswer = null; // override the networkJoin mock per test
 
 // Wi-Fi fixtures (slice 9.3b sub-slice W)
@@ -97,6 +97,7 @@ async function reset({ items = [], planted = false } = {}) {
     calls = [];
     requests = [];
     toasts = [];
+    toastCalls = [];
     events = [];
     confirms = [];
     views = [];
@@ -111,7 +112,7 @@ async function reset({ items = [], planted = false } = {}) {
     window.breakEscapeConfig = { gameId: 77 };
     window.lockRef = item => item?.opens_lock || item?.key_id || null;
     window.gameState = { notes: [], globalVariables: {} };
-    window.gameAlert = (msg) => toasts.push(msg);
+    window.gameAlert = (msg, type, title, ms, opts) => { toasts.push(msg); toastCalls.push({ msg, type, ms, opts }); };
     window.gameConfirm = async (message, ok, cancel, opts) => {
         confirms.push({ message, ok, cancel, opts });
         return typeof confirmAnswer === 'function' ? confirmAnswer(message) : confirmAnswer;
@@ -252,6 +253,51 @@ test('a server refusal (no_device) shows the hint and emits the refusal', async 
     assert.equal(named('network_device_refused').length, 1);
     assert.equal(held('kit_dropbox').length, 1, 'nothing changed in the tray');
     assert.deepEqual(links.list(), []);
+});
+
+test('a port-security refusal shows the authored message, keeps the device and emits the refusal', async () => {
+    await reset({ items: [box] });
+    const message = 'This port only takes known machines. Disable unused ports.';
+    window.ApiClient.networkPlant = async () => {
+        const e = new Error('x'); e.status = 422; e.body = { reason: 'port_security', error: message }; throw e;
+    };
+    const out = await links.interactJack(jackSprite());
+    assert.equal(out.action, 'refused');
+    assert.equal(out.reason, 'port_security');
+    assert.deepEqual(named('network_device_refused').map(e => e.data), [{ jackId: 'comms_port', reason: 'port_security' }]);
+    assert.ok(toasts.includes(message), 'the authored message is shown');
+    assert.equal(held('kit_dropbox').length, 1, 'the device stays in the tray');
+    assert.deepEqual(links.list(), []);
+});
+
+test('the port-security refusal toast carries author text as plain text (review R1 minor 1)', async () => {
+    await reset({ items: [box] });
+    const message = 'Known machines only. <disable> unused ports.';
+    window.ApiClient.networkPlant = async () => {
+        const e = new Error('x'); e.status = 422; e.body = { reason: 'port_security', error: message }; throw e;
+    };
+    await links.interactJack(jackSprite());
+    const call = toastCalls.find(c => c.msg === message);
+    assert.ok(call, 'the authored message was shown');
+    assert.equal(call.opts?.plainText, true, 'author text is shown as plain text, not HTML');
+});
+
+test('the no-device hint toast is shown as plain text too (review R1 minor 1)', async () => {
+    await reset({ items: [lockpick] });
+    await links.interactJack(jackSprite());
+    const call = toastCalls.find(c => c.msg === NO_DEVICE_HINT);
+    assert.ok(call, 'the hint was shown');
+    assert.equal(call.opts?.plainText, true, 'the hint is shown as plain text');
+});
+
+test('a port-security refusal with no server message shows the fallback line (review R1 nit 2)', async () => {
+    await reset({ items: [box] });
+    window.ApiClient.networkPlant = async () => {
+        const e = new Error('x'); e.status = 422; e.body = { reason: 'port_security' }; throw e;
+    };
+    const out = await links.interactJack(jackSprite());
+    assert.equal(out.reason, 'port_security');
+    assert.ok(toasts.includes('That port only takes known machines.'), 'the generic fallback is shown when b.error is absent');
 });
 
 test('a planted jack asks "Unplug it" / "Leave it"; "Leave it" and Esc send nothing', async () => {
