@@ -1289,6 +1289,7 @@ module ValidateAccessWork
     lines = []
     feed_report_lines(json_data, lines)
     reactive_report_lines(json_data, lines)
+    reply_report_lines(json_data, lines)
     room_npcs(json_data).each do |e|
       npc = e[:npc]
       next unless AW.work_plan?(json_data, npc)
@@ -1328,7 +1329,7 @@ module ValidateAccessWork
     end
     return [] if lines.empty?
 
-    ['Work report (access slice 9.2):'] + lines.sort_by.with_index { |l, i| [l.start_with?('ℹ️ Feed', 'ℹ️ Reactive feed', 'ℹ️   ') ? 1 : 0, i] }
+    ['Work report (access slice 9.2):'] + lines.sort_by.with_index { |l, i| [l.start_with?('ℹ️ Feed', 'ℹ️ Reactive feed', 'ℹ️   ', 'ℹ️ Reply', 'ℹ️ Complaint') ? 1 : 0, i] }
   end
 
   def workaround_opens(npc, w)
@@ -1568,7 +1569,12 @@ module ValidateAccessWork
         end
         seen_posts[pid] ||= nid
         check_reactive_post(json_data, npc, nid, tag, post, issues) if post.is_a?(Hash) && post.key?('when')
-        texts = [[post['text'], "#{tag}.text"]]
+        reply = AW.reply_post?(post)
+        texts = reply ? [] : [[post['text'], "#{tag}.text"]]
+        check_reply_text(json_data, npc, tag, post, pws, issues) { shipped ||= shipped_strings(json_data, feed_facts) } if reply
+        if !reply && post['text'].is_a?(String) && post['text'].include?('{name}')
+          warn(issues, "#{tag}.text holds {name} but is not a reply: it would ship as written.")
+        end
         if post.key?('fact')
           fid = post['fact']
           if !AW.present_string?(fid) || !facts[fid].is_a?(Hash)
@@ -1599,6 +1605,8 @@ module ValidateAccessWork
         end
       end
     end
+
+    check_replies(json_data, issues)
 
     # A feed fact may be granted only by its feed post (plan 8.3)
     unless feed_facts.empty?
@@ -1824,6 +1832,270 @@ module ValidateAccessWork
       lines << "ℹ️ Feed #{npc['id']} (#{npc['feed']['site']}, #{npc['feed']['person']}): #{posts.size} posts; first urgent at " \
                "#{first.round} s, then about every #{(period + use).round} s; posts expected at about #{at} (needs clock, " \
                "after the room loads). Server floor #{AW.post_floor(json_data, npc).round} s between posts."
+    end
+  end
+
+  # ── Replies between NPCs (sub-slice C3, ACCESS_MODEL_SLICE_9_2_C3_PLAN.md section 7) ──────
+
+  # { postId => [npc, post] } over every room NPC's feed
+  def feed_post_index(json_data)
+    out = {}
+    room_npcs(json_data).each do |e|
+      AW.feed_posts(e[:npc]).each { |p| out[p['id']] ||= [e[:npc], p] }
+    end
+    out
+  end
+
+  def same_site?(a, b)
+    a.dig('feed', 'site') == b.dig('feed', 'site')
+  end
+
+  # [[poster, thread post], ...] a reply can ever join, read statically
+  def reply_threads(json_data, npc, reply, index = feed_post_index(json_data))
+    if AW.present_string?(reply['replyTo'])
+      owner, post = index[reply['replyTo']]
+      return [] unless owner && !AW.reply_post?(post) && same_site?(owner, npc)
+
+      [[owner, post]]
+    elsif AW.present_string?(reply['replyToComplaint'])
+      room_npcs(json_data).flat_map do |e|
+        other = e[:npc]
+        next [] if other['id'] == npc['id'] || !same_site?(other, npc)
+
+        AW.own_feed_posts(other).select { |p| p['complaint'] == reply['replyToComplaint'] }.map { |p| [other, p] }
+      end
+    else
+      []
+    end
+  end
+
+  def answer?(npc, reply)
+    AW.present_string?(reply['replyTo']) && AW.own_feed_posts(npc).any? { |p| p['id'] == reply['replyTo'] }
+  end
+
+  # The NPCs whose replies can open an answer's thread
+  def answer_repliers(json_data, npc, reply)
+    tpost = AW.own_feed_posts(npc).find { |p| p['id'] == reply['replyTo'] }
+    room_npcs(json_data).map { |e| e[:npc] }.select do |other|
+      next false if other['id'] == npc['id'] || !same_site?(other, npc)
+
+      AW.feed_replies(other).any? do |r|
+        r['replyTo'] == reply['replyTo'] ||
+          (tpost && AW.present_string?(tpost['complaint']) && r['replyToComplaint'] == tpost['complaint'])
+      end
+    end
+  end
+
+  # Every Friendface name a reply's {name} can take (section 7), through the route's helper
+  def reply_names(json_data, npc, reply)
+    who = answer?(npc, reply) ? answer_repliers(json_data, npc, reply) : reply_threads(json_data, npc, reply).map(&:first)
+    who.map { |n| AW.friendface_name(json_data, n) }.uniq
+  end
+
+  # The password scan, the 12-character warning and the unique-text warning for a reply, read
+  # through each name {name} can take and piece by piece around it. `shipped` is a block.
+  def check_reply_text(json_data, npc, tag, post, pws, issues)
+    text = post['text']
+    return unless text.is_a?(String)
+
+    pieces = text.split('{name}', -1)
+    names = reply_names(json_data, npc, post)
+    filled = names.empty? ? [text.gsub('{name}', '')] : names.map { |n| text.gsub('{name}', n) }
+    filled.each do |f|
+      pws.each do |owner, pw|
+        err(issues, "#{tag}.text contains #{owner}'s password: feed text ships once its post is out.") if f.include?(pw)
+      end
+    end
+    longest = pieces.map(&:strip).max_by(&:length).to_s
+    if longest.length < SHORT_TEXT
+      warn(issues, "#{tag}.text has no piece of #{SHORT_TEXT} characters or more around {name}: the leak checks " \
+                   'match a reply by those pieces and cannot protect it.')
+      return
+    end
+    shipped = yield
+    (pieces.select { |pc| pc.strip.length >= SHORT_TEXT } + filled).uniq.each do |piece|
+      next unless shipped.any? { |str| str.include?(piece) }
+
+      warn(issues, "#{tag}.text piece \"#{piece.strip}\" occurs inside another string that ships from the start: the leak checks cannot protect it.")
+    end
+  end
+
+  def walk_pos(npc, id)
+    AW.walk_order(npc).index { |p| p['id'] == id }
+  end
+
+  def check_replies(json_data, issues)
+    index = feed_post_index(json_data)
+    room_npcs(json_data).each do |e|
+      npc = e[:npc]
+      nid = npc['id']
+      own = AW.own_feed_posts(npc)
+      replies = AW.feed_replies(npc)
+      AW.feed_posts(npc).each_with_index do |post, i|
+        next unless AW.reply_post?(post)
+
+        check_reply(json_data, npc, "#{nid}.feed.posts[#{i}]", post, index, issues)
+      end
+
+      # A complaint member with no complaint reply
+      own.map { |p| p['complaint'] }.select { |c| AW.present_string?(c) }.uniq.each do |c|
+        next if replies.any? { |r| r['replyToComplaint'] == c }
+
+        warn(issues, "#{nid} vents in complaint '#{c}' but has no replyToComplaint reply to it: if #{nid} posts after another member, it vents too.")
+      end
+
+      # Order: two replies by one NPC into one thread, or two answers in one thread
+      replies.group_by { |r| r['replyTo'] || "c:#{r['replyToComplaint']}" }.each_value do |group|
+        group.each_cons(2) do |a, b|
+          pa = walk_pos(npc, a['insteadOf'])
+          pb = walk_pos(npc, b['insteadOf'])
+          next unless pa && pb && pb < pa
+
+          warn(issues, "#{nid}'s replies '#{a['id']}' and '#{b['id']}' join the same thread but '#{b['id']}' stands in for a post " \
+                       'earlier in walk order: these come out the other way round.')
+        end
+      end
+    end
+  end
+
+  def check_reply(json_data, npc, tag, post, index, issues)
+    nid = npc['id']
+    err(issues, "#{tag} is a reply with no `when`: a reply carries a when, an insteadOf and one thread field.") unless AW.reactive_post?(post)
+    err(issues, "#{tag} is a reply with no insteadOf: every reply stands in for one of its NPC's own reactive posts.") unless AW.present_string?(post['insteadOf'])
+    named = [AW.present_string?(post['replyTo']), AW.present_string?(post['replyToComplaint'])].count(true)
+    err(issues, "#{tag} needs exactly one of replyTo and replyToComplaint (it has #{named}).") unless named == 1
+    err(issues, "#{tag} is a reply and carries `complaint`: only an own post (a vent) can be tagged.") unless post['complaint'].nil?
+    err(issues, "#{tag} is a reply and carries a fact: replies are about the needs only (q60).") unless post['fact'].nil?
+
+    if AW.present_string?(post['replyTo'])
+      owner, target = index[post['replyTo']]
+      if !owner
+        err(issues, "#{tag}.replyTo '#{post['replyTo']}' names no post on any room NPC's feed.")
+      elsif AW.reply_post?(target)
+        err(issues, "#{tag}.replyTo '#{post['replyTo']}' names a reply: nothing replies to a reply.")
+      elsif !same_site?(owner, npc)
+        err(issues, "#{tag}.replyTo '#{post['replyTo']}' is on '#{owner.dig('feed', 'site')}', not #{nid}'s site.")
+      end
+    end
+    if AW.present_string?(post['replyToComplaint']) && reply_threads(json_data, npc, post, index).empty?
+      err(issues, "#{tag}.replyToComplaint '#{post['replyToComplaint']}' is carried by no own post on another NPC's feed on the same site.")
+    end
+
+    instead = AW.feed_posts(npc).find { |p| p['id'] == post['insteadOf'] }
+    if AW.present_string?(post['insteadOf'])
+      if !instead
+        err(issues, "#{tag}.insteadOf '#{post['insteadOf']}' names no post of #{nid}.")
+      elsif AW.reply_post?(instead)
+        err(issues, "#{tag}.insteadOf '#{post['insteadOf']}' names a reply.")
+      elsif !AW.reactive_post?(instead)
+        err(issues, "#{tag}.insteadOf '#{post['insteadOf']}' names an ordered post: a reply stands in for a reactive post.")
+      elsif post['insteadOf'] == post['replyTo']
+        err(issues, "#{tag}.insteadOf names the post its own replyTo names.")
+      elsif !instead['fact'].nil?
+        err(issues, "#{tag}.insteadOf '#{post['insteadOf']}' carries a fact: a post a reply stands in for carries none (q60).")
+      end
+    end
+
+    if AW.reactive_post?(post) && !AW.when_reachable?(json_data, npc, post['when'])
+      warn(issues, "#{tag}.when can never hold for #{nid}: the reply never fires, and its insteadOf post always comes out instead.")
+    end
+    if instead && AW.reactive_post?(instead) && !AW.when_reachable?(json_data, npc, instead['when'])
+      warn(issues, "#{tag}.insteadOf '#{instead['id']}' can never fire: the reply cannot fire either.")
+    end
+
+    if answer?(npc, post)
+      if answer_repliers(json_data, npc, post).empty?
+        warn(issues, "#{tag} is an answer in '#{post['replyTo']}' that no reply can open: no other NPC replies to it. The answer never fires.")
+      end
+      tp = walk_pos(npc, post['replyTo'])
+      ip = walk_pos(npc, post['insteadOf'])
+      if tp && ip && ip < tp
+        warn(issues, "#{tag} is an answer whose insteadOf comes before its thread post in walk order: if both are due at one use, " \
+                     "'#{post['insteadOf']}' comes out first and the answer is spent.")
+      end
+      return
+    end
+
+    threads = reply_threads(json_data, npc, post, index)
+    if !threads.empty? && threads.none? { |poster, t| AW.feeds?(poster) && (!AW.reactive_post?(t) || AW.when_reachable?(json_data, poster, t['when'])) }
+      warn(issues, "#{tag}'s thread can never open: every post it can join belongs to an NPC that never posts or has an unreachable when. " \
+                   'The reply never fires; its own post comes out instead.')
+    end
+
+    # A one-way named link
+    if AW.present_string?(post['replyTo']) && (owner = index[post['replyTo']]&.first) && owner['id'] != nid
+      mine = AW.own_feed_posts(npc).map { |p| p['id'] }
+      unless AW.feed_replies(owner).any? { |r| mine.include?(r['replyTo']) }
+        warn(issues, "#{tag}: #{nid} replies to #{owner['id']} but #{owner['id']} has no reply to #{nid}: if #{owner['id']} " \
+                     "posts after #{nid}, both post their own vent.")
+      end
+    end
+
+    # A second reply that no answer can open
+    same = AW.feed_replies(npc).select do |r|
+      (AW.present_string?(post['replyTo']) && r['replyTo'] == post['replyTo']) ||
+        (AW.present_string?(post['replyToComplaint']) && r['replyToComplaint'] == post['replyToComplaint'])
+    end
+    return unless same.index(post).to_i.positive?
+
+    opened = threads.any? do |poster, t|
+      AW.feed_replies(poster).any? { |r| r['replyTo'] == t['id'] }
+    end
+    return if opened
+
+    extra = AW.present_string?(post['replyToComplaint']) ? ' It can still land in another member\'s vent when two vents are out.' : ''
+    warn(issues, "#{tag} is a second reply that no answer can open: the thread's poster has no answer to it.#{extra}")
+  end
+
+  def reply_report_lines(json_data, lines)
+    index = feed_post_index(json_data)
+    name = ->(n) { AW.friendface_name(json_data, n) }
+    complaints = {}
+    room_npcs(json_data).each do |e|
+      npc = e[:npc]
+      AW.own_feed_posts(npc).each { |p| (complaints[p['complaint']] ||= []) << npc if AW.present_string?(p['complaint']) }
+      seen = Hash.new(0)
+      AW.feed_replies(npc).each do |r|
+        key = r['replyTo'] || "c:#{r['replyToComplaint']}"
+        nth = (seen[key] += 1)
+        if AW.present_string?(r['replyToComplaint'])
+          (complaints[r['replyToComplaint']] ||= []) << npc
+          next if nth == 1
+
+          lines << "ℹ️ Reply #{name.call(npc)} may reply again in a '#{r['replyToComplaint']}' vent's thread, in place of " \
+                   "'#{r['insteadOf']}', only if the vent's poster has answered since #{name.call(npc)}'s last reply in it."
+          next
+        end
+        owner, tpost = index[r['replyTo']]
+        next unless owner
+
+        if owner['id'] == npc['id']
+          lines << if nth == 1
+                     "ℹ️ Reply #{name.call(npc)} answers in '#{r['replyTo']}''s thread, in place of '#{r['insteadOf']}', only if a reply " \
+                       'is out by the time that post is due.'
+                   else
+                     "ℹ️ Reply #{name.call(npc)} may answer again in '#{r['replyTo']}''s thread, in place of '#{r['insteadOf']}', only " \
+                       "if another NPC has replied since #{name.call(npc)}'s last answer by the time that post is due."
+                   end
+          next
+        end
+        line = if nth == 1
+                 "ℹ️ Reply #{name.call(npc)} replies to #{name.call(owner)}'s '#{r['replyTo']}', in place of '#{r['insteadOf']}'"
+               else
+                 "ℹ️ Reply #{name.call(npc)} may reply again in '#{r['replyTo']}''s thread, in place of '#{r['insteadOf']}', only if " \
+                   "#{name.call(owner)} has answered there since #{name.call(npc)}'s last reply by the time that post is due"
+               end
+        line += ". When: #{reactive_condition_words(json_data, npc, r['when'])}" if r['when'].is_a?(Hash)
+        if r['when'].is_a?(Hash) && tpost && tpost['when'].is_a?(Hash) &&
+           %w[cause need].none? { |k| !r['when'][k].nil? && r['when'][k] == tpost['when'][k] }
+          line += ' (the reply and its thread post share no cause or need: is this the same complaint?)'
+        end
+        lines << "#{line}."
+      end
+    end
+    complaints.each do |c, members|
+      who = members.uniq.map { |n| name.call(n) }
+      lines << "ℹ️ Complaint '#{c}': #{who.join(', ')}, each replying in place of their vent. Possible members: #{who.join(', ')}."
     end
   end
 end
