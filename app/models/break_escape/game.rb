@@ -1168,13 +1168,14 @@ module BreakEscape
       # Slice 9.2 C (8.3): a feed post's fact travels with its post, never in the bootstrap
       withhold_feed_facts!(filtered)
 
-      # Strip the authored capture secret (e.g. the phished portal password) from the
-      # bootstrap: the browser must not hold it until the capture is earned. The real
-      # secret is served by GET /capture_secrets once the server's own se_captures record
-      # shows the phish landed (see capture_secrets_for_client). The capture's address,
-      # note and the revealSecret flag are not secret and stay. Today the only capture
-      # secret lives under social.landingPages[].capture, so the walk is scoped to social.
-      strip_capture_secrets!(filtered['social']) if filtered['social'].is_a?(Hash)
+      # Strip every authored capture secret from the bootstrap: a landing page's capture (the
+      # phished portal password), an NPC's usePayload, a mapping's addCapture and an
+      # add_capture action's capture, wherever they sit (top-level npcs, phoneNPCs, timers).
+      # The browser must not hold one until the capture is earned. The real secret is served
+      # by GET /capture_secrets once the server's own se_captures record shows the capture
+      # was made (see capture_secrets_for_client). The capture's address, host, note and the
+      # revealSecret flag are not secret and stay.
+      strip_capture_secrets!(filtered)
 
       # A declared grant's contents (a timer's give_item, a triggerOnInteract reward) are
       # served from the held item, never shipped. GamesController#filter_requires_recursive
@@ -1233,6 +1234,7 @@ module BreakEscape
       # declared one.
       declared = declared_capture_target_ids
       phish_targets = CaptureModel.phish_target_ids(scenario_data).to_set
+      authored = authored_capture_secrets
 
       out = {}
       earned.each do |target_id, entry|
@@ -1245,9 +1247,94 @@ module BreakEscape
         secret ||= by_username[self.class.normalise_username(address)] if address.is_a?(String)
         # The single-secret fallback counts landing-page captures only: a phish target's.
         secret ||= only_secret if secret_count == 1 && phish_targets.include?(target_id.to_s)
+        secret ||= authored_capture_secret(authored[target_id.to_s])
         out[target_id] = secret if secret
       end
       out
+    end
+
+    # The authored secret of a capture that is not an account password: a usePayload.secret, a
+    # mapping's addCapture.secret or an add_capture action's capture.secret (a PIN read over a
+    # shoulder at a keypad, a code copied off a desk), found by its target id (a usePayload
+    # by usepayload_captures). Never an account's: a writer on an account
+    # holder, or whose address is an account's username, is served by the account pass with
+    # its capture proofs. A writer with a `proof` is served only once that proof holds. A
+    # secret that is a hard-access value (a password or PIN lock code, a Wi-Fi PSK, an RFID or
+    # biometric requires, or a flag) with no proof is never served on the capture record alone,
+    # as the account gate withholds a password that opens something (account_capture_served?).
+    def authored_capture_secret(entry)
+      return nil unless entry
+
+      proof = entry[:proof]
+      return (capture_proof_holds?(proof) ? entry[:secret] : nil) if proof.is_a?(Hash)
+      # A hard-access value is withheld whether or not the scenario declares proofs. A secret
+      # that opens nothing (an event-gated PIN for a badge-only door) still serves: the cheat
+      # policy keeps that best-effort (q78), it only saves the player time.
+      return nil if hard_access_capture_value?(entry[:secret])
+
+      entry[:secret]
+    end
+
+    # Whether a capture secret is a value that grants hard access if known: the code of a
+    # password or PIN lock, the requires of an RFID or biometric lock, a Wi-Fi PSK, or a flag.
+    # Memoised per request (the set is read from the authored scenario, which does not change).
+    def hard_access_capture_value?(secret)
+      return false unless secret.is_a?(String) && !secret.empty?
+
+      (@hard_access_capture_values ||= CaptureModel.hard_access_values(scenario_data)).include?(secret)
+    end
+
+    # { target_id => { secret:, address:, proof: } } for every non-account capture writer with
+    # an authored secret, first writer per target id. Read from the authored scenario_data.
+    # Memoised per request: the scenario is fixed, so this is recomputed only once a poll.
+    def authored_capture_secrets
+      @authored_capture_secrets ||= build_authored_capture_secrets
+    end
+
+    def build_authored_capture_secrets
+      holders = self.class.scenario_room_npcs(scenario_data).select { |npc| self.class.account_holder?(npc) }
+      usernames = holders.map { |npc| self.class.normalise_username(npc['creds']['username']) }.to_set
+      out = {}
+      add = lambda do |id, capture|
+        secret = capture['secret']
+        next unless id.is_a?(String) && !id.empty? && secret.is_a?(String) && !secret.empty?
+        next if capture['address'].is_a?(String) && usernames.include?(self.class.normalise_username(capture['address']))
+
+        out[id] ||= { secret: secret, address: capture['address'], proof: capture['proof'] }
+      end
+      CaptureModel.each_capture_writer(scenario_data) do |capture, _kind, _path, owner|
+        next if owner && holders.any? { |npc| npc.equal?(owner) }
+
+        add.call(capture['targetId'], capture)
+      end
+      self.class.scenario_room_npcs(scenario_data).each do |npc|
+        payload = npc['usePayload']
+        next unless payload.is_a?(Hash) && !self.class.account_holder?(npc)
+
+        usepayload_captures(npc, payload).each { |id, capture| add.call(id, capture) }
+      end
+      out
+    end
+
+    # The captures a usePayload fills, as [target_id, capture] pairs. With its own targetId the
+    # payload fills that one. Otherwise it fills each addCapture mapping on the same NPC, and the
+    # server reads each mapping's own gate: npc-manager.js overlays the payload onto the mapping's
+    # addCapture (the mapping is the base, the payload overrides), so the mapping's proof and
+    # address hold unless the payload carries its own (review R1 minor 1). The secret comes from
+    # the payload; the mapping has none of its own on a usePayload NPC.
+    def usepayload_captures(npc, payload)
+      own = payload['targetId']
+      return [[own, payload]] if own.is_a?(String) && !own.empty?
+
+      Array(npc['eventMappings']).filter_map do |mapping|
+        add_capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
+        next nil unless add_capture.is_a?(Hash)
+
+        id = add_capture['targetId']
+        next nil unless id.is_a?(String) && !id.empty?
+
+        [id, add_capture.merge(payload)]
+      end
     end
 
     # { normalised username => password } for each room NPC with an account and a
@@ -4559,13 +4646,18 @@ module BreakEscape
       end
     end
 
-    # Delete the 'secret' field from every capture descriptor ({ "capture": { "secret": ... } })
-    # anywhere in the given tree. Walks the whole subtree so a capture nested under any key is
-    # covered; everything else in the capture (address, note) is left intact.
+    # The keys whose hash value is a capture descriptor carrying an authored secret: a landing
+    # page's or an add_capture action's capture, an NPC mapping's addCapture, an NPC's usePayload.
+    CAPTURE_SECRET_KEYS = %w[capture addCapture usePayload].freeze
+
+    # Delete the 'secret' field from every capture descriptor anywhere in the given tree
+    # ({ "capture" | "addCapture" | "usePayload": { "secret": ... } }), for every NPC, with or
+    # without an account. Walks the whole subtree so a descriptor nested under any key is
+    # covered; everything else in it (address, host, note, targetId) is left intact.
     def strip_capture_secrets!(node)
       case node
       when Hash
-        node['capture'].delete('secret') if node['capture'].is_a?(Hash)
+        CAPTURE_SECRET_KEYS.each { |key| node[key].delete('secret') if node[key].is_a?(Hash) }
         node.each_value { |v| strip_capture_secrets!(v) }
       when Array
         node.each { |v| strip_capture_secrets!(v) }
@@ -4581,6 +4673,9 @@ module BreakEscape
         # Deep, because this filter descends only into objects, npcs, contents and the
         # like, not into an object's triggerOnInteract or onInteract actions.
         BreakEscape::DeclaredGrants.strip_all_grant_contents!(obj)
+        # Every authored capture secret, at any depth (an object's triggerOnInteract, an NPC's
+        # usePayload and eventMappings, a held item's actions): served by GET /capture_secrets
+        strip_capture_secrets!(obj)
 
         # Remove 'requires' for exploitable lock types (key/pin/password)
         # Keep it for biometric/bluetooth/rfid since they reference collectible items, not answers
@@ -4679,9 +4774,9 @@ module BreakEscape
     end
 
     # Access model 5.6: what an NPC record never takes to the browser. Sign-in details,
-    # role and (later slices) awareness, habits and workarounds go; for an account
-    # holder so do usePayload.secret and every addCapture.secret in its eventMappings,
-    # so an npc_used event carries the address and host only. The card is not secret
+    # role and (later slices) awareness, habits and workarounds go; so do usePayload.secret
+    # and every addCapture.secret in its eventMappings, for every NPC, so an npc_used event
+    # carries the address and host only. The card is not secret
     # (copying it is the game): rfidCard is set from creds.card, as authored, so
     # clone_keycard and the RFID minigame keep working; an NPC with no creds.card
     # keeps any rfidCard it already has.
@@ -4720,13 +4815,14 @@ module BreakEscape
     def withhold_npc_secrets!(npc)
       return unless npc.is_a?(Hash)
 
-      account = self.class.account_holder?(npc)
       card = npc['creds'].is_a?(Hash) ? npc['creds']['card'] : nil
       WITHHELD_NPC_KEYS.each { |key| npc.delete(key) }
       WITHHELD_WORK_NPC_KEYS.each { |key| npc.delete(key) }
       npc['rfidCard'] = card if card.is_a?(Hash)
-      return unless account
 
+      # Every NPC, account or not (an account's secret is its password; another's is a PIN
+      # read at a keypad or any code a capture records): GET /capture_secrets serves it once
+      # earned. filter_requires_and_contents_recursive also strips these at any depth.
       npc['usePayload'].delete('secret') if npc['usePayload'].is_a?(Hash)
       mappings = npc['eventMappings']
       return unless mappings.is_a?(Array)
