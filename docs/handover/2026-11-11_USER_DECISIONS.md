@@ -33,6 +33,7 @@ Answers to the access model form (https://claude.ai/artifact/PanecaCQBMChKnqsDGa
 - q30 Frustration icon: keep the no-entry sign (npc-barrier stays "this attempt failed").
 - q31 Agent HaX's new canonical voice style (origin commit 1fd322e67) re-keys about 525 m01 to m03 clips: leave for a separate session. Until then m02 shows 308 and m03 205 HaX clips unrequested, with the same lines missing.
 - q32 9.3b plan: all 8 recommended answers accepted (ACCESS_MODEL_SLICE_9_3B_PLAN.md section 13): K and O after 9.2 L and C land; W, P and I in parallel; lab port security later; ids wifi_<net>, implant_<pc>; outages keep sessions; port security refuse-only; 8-path cap; Wi-Fi and implant footholds permanent; sign-out ends onward sessions.
+- q33 (2026-11-12) Lockout scope: a lockout stops every use of that PC, social media too ("depends on the nature of the lockout"). Applied as: the lockout locks the account at that PC, so the NPC falls back to its personal phone (its own accounts, unaffected). Follow-up build after 9.2 C merges; a per-lockout scope field (for example a domain account that locks every PC the account signs in to) only if the user wants it.
 
 ## Carried out
 
