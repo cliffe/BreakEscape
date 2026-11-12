@@ -14,12 +14,17 @@ const here = dirname(fileURLToPath(import.meta.url));
 const chat = join(here, '../../public/break_escape/js/minigames/phone-chat');
 const dataUrl = (s) => 'data:text/javascript;base64,' + Buffer.from(s).toString('base64');
 const lock = await import(dataUrl(readFileSync(join(chat, 'phone-call-lock.js'), 'utf8')));
+const ringConfig = await import(dataUrl(readFileSync(join(chat, 'phone-ring-config.js'), 'utf8')));
+const dialMod = await import(dataUrl(readFileSync(join(chat, 'phone-dial.js'), 'utf8')));
 
 globalThis.window = { eventDispatcher: null, dismissPhoneHitNotice() {} };
 globalThis.document = { listeners: [], addEventListener(t, f) { this.listeners.push(f); }, removeEventListener(t, f) { this.listeners = this.listeners.filter((x) => x !== f); } };
 globalThis.__stubs = {
     history: {},
     lock,
+    ringConfig,
+    dialMod,
+    startRingback: () => ({ stop() { (globalThis.__stubs.ringbackStops = (globalThis.__stubs.ringbackStops || 0) + 1); } }),
     callHomeKnot: (npc) => String(npc?.homeKnot || npc?.currentKnot || 'start').split('.')[0],
 };
 const noop = () => {};
@@ -27,6 +32,9 @@ const header = `
 const S = globalThis.__stubs;
 const { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } = S.lock;
 const callHomeKnot = S.callHomeKnot;
+const { placeCallFromTags } = S.ringConfig;
+const { DIAL_MS, RING_OUT_MS, NO_ANSWER_BEAT_MS } = S.dialMod;
+const startRingback = (...a) => S.startRingback(...a);
 class MinigameScene { constructor(c, p) { this.container = c; this.params = p; } addEventListener() {} start() { if (S.baseStart) S.baseStart.call(this); } }
 class PhoneChatUI {} class PhoneChatHistory { constructor() { Object.assign(this, S.history); } } class InkEngine {} class PhoneCallVoice {} class TTSManager {}
 class PhoneChatConversation { constructor() {} static stepKnot(story) { return story && story.__knot || null; } static async waitForPreload() {} static isPreloadedOpening() { return false; } }

@@ -542,6 +542,17 @@ export default class NPCManager {
   }
 
   /**
+   * Whether a `call` entry's `when` holds now (plan 3.2): the event-mapping grammar over
+   * `globalVars.` terms joined by `&&`. A condition that cannot be evaluated does not hold.
+   * @param {string|null} when
+   * @returns {boolean}
+   */
+  callConditionHolds(when) {
+    if (!when) return true;
+    try { return !!safeEvaluateCondition(String(when), {}); } catch (e) { return false; }
+  }
+
+  /**
    * Add a call row to a contact's thread (plan 2.6): `{ type: 'call', callEvent, text, timestamp,
    * read }` with fixed plain text. Only the ringer's outcomes call this (never a pretext call or a
    * legacy voiced mapping). A missed call is unread; the others are read.

@@ -142,3 +142,57 @@ export function normaliseCall(raw, opts) {
     });
     return out;
 }
+
+/**
+ * Which call the header button dials (plan 2.5, "What the button dials"), in order: a pending
+ * callback (it connects at once, skipping `when`); else the first entry with `button` not false
+ * whose `when` holds; else, if any button entry has `unavailable: "no_answer"`, a call that rings
+ * out; else nothing, and the button is hidden. Entries with `button: false` are reached only by
+ * {@link entryForKnot}.
+ *
+ * @param {Array} entries - normaliseCall() output
+ * @param {(when: string) => boolean} holds - the mapping-grammar condition test
+ * @param {{knot: string}|null} [callback] - the contact's pending callback, if any
+ * @returns {{kind: 'callback'|'connect'|'no_answer', entry: Object}|null}
+ */
+export function pickButtonCall(entries, holds, callback) {
+    if (callback && typeof callback.knot === 'string' && callback.knot) {
+        return { kind: 'callback', entry: { knot: callback.knot, when: null, unavailable: 'no_answer', button: true } };
+    }
+    const list = Array.isArray(entries) ? entries.filter((e) => e && e.button !== false) : [];
+    for (const e of list) {
+        if (!e.when || safeHolds(holds, e.when)) return { kind: 'connect', entry: e };
+    }
+    const ringOut = list.find((e) => e.unavailable === 'no_answer');
+    return ringOut ? { kind: 'no_answer', entry: ringOut } : null;
+}
+
+/**
+ * What `#place_call` dials: with a knot, that entry (whatever its `button`), checked against its
+ * `when` as the call connects; with no knot, what the button would dial. A knot that is not one of
+ * the entries gives null.
+ *
+ * @returns {{kind: 'callback'|'connect'|'no_answer', entry: Object}|null}
+ */
+export function pickPlacedCall(entries, holds, knot, callback) {
+    if (!knot) return pickButtonCall(entries, holds, callback);
+    const entry = (Array.isArray(entries) ? entries : []).find((e) => e && e.knot === knot);
+    if (!entry) return null;
+    if (callback && callback.knot === knot) return { kind: 'callback', entry };
+    return { kind: !entry.when || safeHolds(holds, entry.when) ? 'connect' : 'no_answer', entry };
+}
+
+/** A condition that cannot be evaluated does not hold. */
+function safeHolds(holds, when) {
+    try { return !!holds(when); } catch (e) { return false; }
+}
+
+/** The knot named by a `place_call` tag among a step's tags: `{ found, knot }`, knot null for the bare form. */
+export function placeCallFromTags(tags) {
+    for (const raw of (Array.isArray(tags) ? tags : [])) {
+        const t = String(raw ?? '').trim();
+        const m = t.match(/^place_call(?:\s*:\s*(\S+))?$/i);
+        if (m) return { found: true, knot: m[1] ? m[1].split('.')[0] : null };
+    }
+    return { found: false, knot: null };
+}

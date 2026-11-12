@@ -19,7 +19,7 @@
  * phone-chat (a desk phone, a DM app) is a non-conversation minigame, as before (row 12).
  */
 import { createPhoneRinger } from './phone-ringer.js';
-import { normaliseRing } from './phone-ring-config.js';
+import { normaliseRing, normaliseCall, pickButtonCall, pickPlacedCall } from './phone-ring-config.js';
 
 const POPUP_IDS = ['laptop-popup', 'lab-popup'];
 
@@ -238,7 +238,7 @@ export function installPhoneRinger(win = window) {
             const t = win.lastPlayerHitAt?.();
             return typeof t === 'number' ? t : null;
         },
-        outgoingActive: () => false,             // A5
+        outgoingActive: () => false,             // the ringer owns the outgoing call as its active offer (A5)
         callMinigameOpen() {
             const m = fw()?.currentMinigame;
             return !!m && !m._ending && !!ownedCallId && m.params?.ringerCall?.id === ownedCallId;
@@ -259,21 +259,26 @@ export function installPhoneRinger(win = window) {
             // The call knot is the contact's position only while the call is open; the thread
             // reads currentKnot, so a ring that is declined or missed never moved it (R2 M1)
             // (put back if the open is refused or throws, so a refusal leaves no moved knot)
+            // An outgoing call moves it at the connect (goToKnot), after the dial has decided
+            // whether anyone answers (A5).
+            const outgoing = info.ringerCall.direction === 'outgoing';
             const previousKnot = npc.currentKnot;
-            if (offer.knot) npc.currentKnot = offer.knot;
+            if (offer.knot && !outgoing) npc.currentKnot = offer.knot;
             try {
                 started = fw().startMinigame('phone-chat', null, {
                     npcId: offer.npcId,
                     phoneId: npc.phoneId || 'player_phone',
                     // resume: a re-ring of an unfinished call restores the saved story
-                    startKnot: (info.resume && npc.storyState) ? null : offer.knot,
+                    startKnot: (!outgoing && info.resume && npc.storyState) ? null : offer.knot,
                     title: npc.displayName || 'Phone',
                     theme: npc.phoneTheme,
                     disableClose: !!offer.disableClose,
                     voiced: true,
                     callLabel: offer.callLabel || null,
                     showCancel: false,
-                    ringerCall: { id, direction: info.ringerCall.direction, callback: !!info.ringerCall.callback }
+                    ringerCall: { id, direction: info.ringerCall.direction, callback: !!info.ringerCall.callback },
+                    // An outgoing call: the entry's `when` is checked as it connects (A5)
+                    ...(outgoing ? { dial: { when: info.dial?.when || null, callback: !!info.ringerCall.callback } } : {})
                 });
             } catch (err) {
                 console.error('phone ringer: the call failed to open', err);
@@ -392,6 +397,8 @@ export function installPhoneRinger(win = window) {
             if (kind === 'declined' || kind === 'missed' || kind === 'rang_off'
                 || (kind === 'dropped' && extra && extra.missed)) {
                 mgr.addCallRow(offer.npcId, 'missed', { withheld });
+            } else if (kind === 'no_answer') {
+                mgr.addCallRow(offer.npcId, 'no_answer');
             } else if (kind === 'ended') {
                 mgr.addCallRow(offer.npcId, offer.direction === 'outgoing' ? 'outgoing' : 'incoming',
                     { seconds: extra && extra.seconds, withheld });
@@ -421,6 +428,43 @@ export function installPhoneRinger(win = window) {
                 untilAnswered: ring ? ring.untilAnswered : raw?.untilAnswered,
             });
         },
+        /**
+         * The header button's state for `npcId` in this phone (A5, plan 2.5): `{ label, ariaLabel }`
+         * or null when the button is hidden. Only the caller's own phone shows it, never a pretext
+         * contact (`callId`) or a phone opened with `disableClose`; the contact needs a `call` entry
+         * that applies now. "Call back" with a callback pending is A6's.
+         */
+        callButtonFor(npcId, phone) {
+            if (ringer.isClosed()) return null;
+            const npc = nm()?.getNPC?.(npcId);
+            if (!npc || npc.callId || !phone || phone.params?.disableClose || phone.params?.ringerCall) return null;
+            if (hostPhone(npcId) !== phone) return null;
+            const entries = normaliseCall(npc.call);
+            if (!entries.length) return null;
+            const pick = pickButtonCall(entries, (w) => !!nm()?.callConditionHolds?.(w), null);
+            if (!pick) return null;
+            const name = npc.displayName || npc.id;
+            return { label: 'Call', ariaLabel: `Call ${name}`, kind: pick.kind };
+        },
+        /**
+         * Place a call to `npcId` from the open thread: the header button (no knot) or `#place_call`
+         * (`knot` null or the entry's knot). Returns true when the call is dialling. Not callable: a
+         * `callId` contact, a phone opened with `disableClose`, a call screen.
+         */
+        placeCall(npcId, { knot = null } = {}) {
+            const npc = nm()?.getNPC?.(npcId);
+            if (!npc || npc.callId) return false;
+            const open = openMinigame();
+            if (!open || open.params?.disableClose || open.params?.ringerCall) return false;
+            const entries = normaliseCall(npc.call);
+            const holds = (w) => !!nm()?.callConditionHolds?.(w);
+            const pick = knot ? pickPlacedCall(entries, holds, knot, null) : pickButtonCall(entries, holds, null);
+            if (!pick) return false;
+            const result = ringer.dial(npcId,
+                { knot: pick.entry.knot, callLabel: typeof npc.callLabel === 'string' ? npc.callLabel : null },
+                { callback: pick.kind === 'callback', dial: { when: pick.kind === 'callback' ? null : pick.entry.when } });
+            return result === 'dialling';
+        },
         /** minigame-manager's end hook: report a ringer call's end, then re-check (row 25, 32). */
         onMinigameEnded(ending) {
             const rc = ending?.params?.ringerCall;
@@ -429,6 +473,7 @@ export function installPhoneRinger(win = window) {
                     id: rc.id,
                     endedByCall: ending._endedByCall === true,
                     callFinished: ending._callFinished === true,
+                    noAnswer: ending._noAnswer === true,
                 });
             }
             ringer.onMinigameEnded();

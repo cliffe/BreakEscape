@@ -153,12 +153,21 @@ module BreakEscape
     # phone: its start knot is the contact's currentKnot).
     def self.voiced_phone_call?(npc)
       return true if npc['voiced'] == true
+      return true if call_entries(npc).any?
       timed = npc['timedConversation']
       return true if timed.is_a?(Hash) && (timed['voiced'] == true || ring?(timed)) && !video_call_timed?(timed)
 
       Array(npc['eventMappings']).any? do |m|
         m.is_a?(Hash) && (m['voiced'] == true || ring?(m)) && m['conversationMode'] == 'phone-chat'
       end
+    end
+
+    # `call` (a contact the player can ring, plan 3.2): one entry or a list; entries without a
+    # string knot are dropped. `button: false` entries count (`#place_call:<knot>` dials them).
+    def self.call_entries(npc)
+      raw = npc['call']
+      list = raw.is_a?(Array) ? raw : [raw]
+      list.select { |e| e.is_a?(Hash) && e['knot'].is_a?(String) && !e['knot'].strip.empty? }
     end
 
     # `ring` (an incoming call that rings, plan 3.1) implies voiced: true, whether it is
@@ -229,6 +238,7 @@ module BreakEscape
         target = m['targetKnot'] || m['knot']
         knots << knot_name(target) if target
       end
+      call_entries(npc).each { |e| knots << knot_name(e['knot'].strip) }
       knots.uniq
     end
 

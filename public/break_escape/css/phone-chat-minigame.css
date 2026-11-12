@@ -1443,3 +1443,53 @@
         height: 16px;
     }
 }
+
+/* The header call button (phone calls A5): a green handset beside the contact's name */
+.conversation-header .call-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 4px 12px;
+    background: #2e9e4f;
+    border: 2px solid #000;
+    color: #fff;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.conversation-header .call-button:hover {
+    background: #25803f;
+}
+
+.conversation-header .call-button:focus-visible {
+    outline: 3px solid #000;
+    outline-offset: 2px;
+}
+
+.conversation-header .call-button-glyph {
+    font-size: 18px;
+}
+
+.phone-terminal-theme .conversation-header .call-button {
+    background: transparent;
+    border-color: rgba(0, 255, 65, 0.5);
+    color: #00ff41;
+}
+
+.phone-call-mode .call-status-bar.call-dialling .call-status-label {
+    animation: call-dialling-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes call-dialling-pulse {
+    50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .phone-call-mode .call-status-bar.call-dialling .call-status-label {
+        animation: none;
+    }
+}

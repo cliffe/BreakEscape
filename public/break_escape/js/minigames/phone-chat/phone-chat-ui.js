@@ -237,6 +237,57 @@ export default class PhoneChatUI {
         return true;
     }
 
+    /**
+     * The call bar's state (plan 2.5): 'oncall' (the running time), 'calling' (an outgoing call
+     * dialling: no timer, caption "Calling..."), 'noanswer' (it rang out). A no-op without a call screen.
+     */
+    setCallStatus(mode) {
+        if (!this.isCallMode) return;
+        const bar = document.getElementById('call-status-bar');
+        const timer = this.elements?.callTimer;
+        if (!bar || !timer) return;
+        const label = bar.querySelector('.call-status-label');
+        const caption = this.container.querySelector('#call-caption');
+        bar.classList.toggle('call-ended', mode === 'noanswer');
+        bar.classList.toggle('call-dialling', mode === 'calling');
+        if (mode === 'oncall') {
+            if (label) label.innerHTML = '<span class="call-status-dot" aria-hidden="true"></span>ON CALL';
+            return;
+        }
+        this.stopCallTimer();
+        timer.textContent = '';
+        if (label) label.textContent = mode === 'calling' ? 'CALLING' : 'NO ANSWER';
+        if (caption && mode === 'calling') caption.textContent = 'Calling\u2026';
+        if (caption && mode === 'noanswer') caption.textContent = 'No answer';
+    }
+
+    /**
+     * The header call button (plan 2.5): green phone, "Call" or "Call back". `state` is
+     * `{ label, ariaLabel }` from phoneRinger.callButtonFor, or null to remove it. `onClick` runs on a press.
+     */
+    setCallButton(state, onClick) {
+        const header = this.elements?.conversationHeader;
+        if (!header) return;
+        header.querySelector('.call-button')?.remove();
+        if (!state) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'call-button';
+        btn.setAttribute('aria-label', state.ariaLabel || state.label);
+        btn.title = state.label;
+        const glyph = document.createElement('span');
+        glyph.className = 'call-button-glyph';
+        glyph.setAttribute('aria-hidden', 'true');
+        glyph.textContent = '\u260E';
+        btn.appendChild(glyph);
+        const text = document.createElement('span');
+        text.className = 'call-button-text';
+        text.textContent = state.label;
+        btn.appendChild(text);
+        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); onClick?.(); });
+        header.appendChild(btn);
+    }
+
     /** The speaking indicator under the portrait: on while a call line plays. */
     setCallSpeaking(on) {
         if (!this.isCallMode) return;
@@ -707,6 +758,7 @@ export default class PhoneChatUI {
             this.elements.conversationView.classList.remove('call-has-choices', 'call-speaking-now');
             const caption = this.elements.conversationView.querySelector('#call-caption');
             if (caption) caption.textContent = callLabelFor(this.params, npc);
+            this.setCallStatus('oncall');
             this.startCallTimer();
         }
         

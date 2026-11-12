@@ -225,7 +225,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
      */
     function syncSave(npcId) {
         const mine = [];
-        if (active && active.npcId === npcId) mine.push(active);
+        // An outgoing call is the player's own and never saved: a reload mid-call is no missed call (A5)
+        if (active && active.npcId === npcId && active.direction !== 'outgoing') mine.push(active);
         for (const q of queue) if (q.npcId === npcId) mine.push(q);
         const forced = mine.filter((o) => o.keep);
         let best = null;
@@ -556,6 +557,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         // Only the end of the call this ringer opened counts (M6): a stale or duplicate
         // report, or one for another phone-chat of the contact, is ignored.
         if (!info || !connecting || info.id !== connecting.id) return false;
+        if (o.direction === 'outgoing') o.noAnswer = !!info.noAnswer;
         return finishCall(o, !!(info.endedByCall || info.callFinished));
     }
 
@@ -568,7 +570,15 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         o.goneSince = 0;
         let reopenWhat = null;
         let dropWhat = null;
-        if (own) {
+        if (o.direction === 'outgoing') {
+            // The player's own call (rows 25, 32 and A5): its row says how it went; no event, no callback
+            const connectedFor = o.connectedAt ? Math.max(0, Math.floor((now() - o.connectedAt) / 1000)) : 0;
+            if (own) { reopenWhat = o.displaced; } else { dropWhat = o.displaced; }
+            o.displaced = null;
+            finishOffer(o);
+            if (o.noAnswer) call('onOutcome', 'no_answer', o);
+            else if (o.connectedAt) call('onOutcome', 'ended', o, { displaced: !!reopenWhat, seconds: connectedFor });
+        } else if (own) {
             // Row 25: the story position was reset inside the call already.
             reopenWhat = o.displaced;
             o.displaced = null;
@@ -720,6 +730,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             goneSince: 0,
             saveAs: null,
             restored: false,
+            direction: 'incoming',
+            connectedAt: 0,
             keep: forced,       // R4 M1: a forced offer is protected from the moment it is offered, until it ends
         };
     }
@@ -791,6 +803,82 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (next.setGlobalOnStart) call('setGlobal', next.setGlobalOnStart);
         active = next;
         save(next);
+    }
+
+    // ---- outgoing calls (A5, plan 2.5) --------------------------------------------------
+
+    /**
+     * The player places a call to `npcId` on `entry` ({ knot, callLabel? }): the header button,
+     * `#place_call` or a callback. Opens the call's minigame at once (it shows "Calling..." and
+     * decides at the end of the dial whether the call connects). `opts.callback` marks a callback
+     * (2.11), `opts.dial` is passed to the minigame (the entry's `when`, whether the call rings out).
+     * Returns 'dialling' or 'refused'.
+     *
+     * A call that is connected or on hold, the ending, a paused scene or a knockout refuse it. A
+     * ringing offer (any contact's) goes back to the head of the queue and rings again afterwards
+     * (row 23). Row 31 is at the connect: see outgoingConnected().
+     */
+    function dial(npcId, entry, opts) {
+        const o_ = opts || {};
+        if (closed || suspended || typeof npcId !== 'string' || !npcId
+            || !entry || typeof entry.knot !== 'string' || !entry.knot) return 'refused';
+        advance();
+        if (active && (active.state === 'connected' || active.state === 'held')) return 'refused';
+        if (cannotOpenNow(true, npcId)) return 'refused';
+        const ringing = active && active.state === 'ringing' ? active : null;
+        if (ringing) requeueHead(ringing);
+        const o = makeOffer({ npcId, knot: entry.knot, callLabel: entry.callLabel });
+        o.direction = 'outgoing';
+        o.state = 'connected';
+        o.opened = true;
+        o.started = true;
+        o.answeredEmitted = true;
+        o.answerSeconds = 0;
+        active = o;
+        const d = call('putAside', npcId);
+        if (d) o.displaced = d;
+        const id = `call-${++callSeq}`;
+        connecting = { id, npcId, answerSeconds: 0, isCallback: !!o_.callback };
+        const opened = call('openCall', o, {
+            ringerCall: { id, direction: 'outgoing', callback: !!o_.callback },
+            resume: false,
+            answerSeconds: 0,
+            isCallback: !!o_.callback,
+            dial: o_.dial || null,
+        });
+        if (active !== o || !connecting || connecting.id !== id) return 'dialling';   // re-entered: already ended
+        if (!opened) {
+            // Row 19: an outgoing call that can't open goes back to the thread's return state, no row
+            active = null;
+            connecting = null;
+            o.displaced = null;
+            reopenDisplaced(d);
+            run();
+            return 'refused';
+        }
+        render();
+        return 'dialling';
+    }
+
+    /**
+     * The dialled call has connected (the dial ended with `when` holding, or a callback). Row 31:
+     * an incoming offer of this contact, queued or ringing-and-requeued, on the knot the call opened
+     * on is dropped with no row and no event, because the player rang first. Another knot's offer
+     * stays queued (row 5). Returns whether the id was the live outgoing call.
+     */
+    function outgoingConnected(npcId, id) {
+        const o = active;
+        if (!o || o.direction !== 'outgoing' || o.npcId !== npcId || !connecting || connecting.id !== id) return false;
+        o.connectedAt = now();
+        o.openedAt = o.connectedAt;
+        for (const q of queue.slice()) {
+            if (q.npcId === npcId && q.knot === o.knot && !q.keep) {
+                queue = queue.filter((x) => x !== q);
+                if (q.openTimer) { c.clearTimeout(q.openTimer); q.openTimer = null; }
+            }
+        }
+        syncSave(npcId);
+        return true;
     }
 
     // ---- row 28 --------------------------------------------------------------------
@@ -926,6 +1014,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
 
     return {
         offer,
+        dial,
+        outgoingConnected,
         restore,
         answer,
         decline,
