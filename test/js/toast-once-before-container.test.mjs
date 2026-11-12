@@ -26,11 +26,11 @@ const T = await import(dataUrl(notifSrc));
 const appended = [];
 const el = () => ({
     classList: { add() {}, remove() {} }, style: {}, set innerHTML(v) { this.html = v; },
-    querySelector: () => ({ style: {}, addEventListener() {} })
+    querySelector: () => ({ style: {}, addEventListener() {}, appendChild() {} })
 });
 globalThis.document = {
     getElementById: (id) => (id === 'notification-container' ? { appendChild: (n) => appended.push(n) } : null),
-    createElement: el
+    createElement: el, createTextNode: (text) => ({ text })
 };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -53,7 +53,7 @@ test('an unlock toast before an auto-opening container shows once, after it clos
     window.MinigameFramework.currentMinigame = null;
     await wait(400);
     assert.equal(appended.length, 1, 'shown once, when the container closes');
-    assert.match(appended[0].html, /Password Accepted/);
+    assert.equal(appended[0]._toast.title, 'Password Accepted');  // plain text: the title is not in the markup
 });
 
 test('the same toast raised twice while waiting still shows once', async () => {
