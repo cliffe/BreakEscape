@@ -638,4 +638,25 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     found = summary(AccessLeakScanner.new(data, game: game).scan(rows(['GET', SCENARIO, moved])))
     assert_equal [[1, 'feed_reaction_target', 'feed:jake|jake_post_2']], found
   end
+
+  # Reactions code review R1 m2: Ivy's vent answer is lost (its body never reached the log), then
+  # Tomasz's reply answer names her vent and carries reactions on it and from her. The saved reveals
+  # account for the lost answer from its own line on, so none of it is a leak; the same answer
+  # before the lost line is still reported.
+  test 'review R1 m2: after a lost answer, a reply, a reaction on its post and a reaction from its NPC are clean' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'ivy' => { 'shown' => ['ivy_vent'] }, 'tomasz' => { 'shown' => ['tom_re_ivy'] } } })
+    answer = reply_answer.merge('reactions' => [rx('ivy_vent', 'tomasz', 'sad'), rx('tom_re_ivy', 'ivy', 'like')])
+    lost = lost_answer.tap { |row| row[2]['npcId'] = 'ivy' }
+    scanner = AccessLeakScanner.new(reply_data, game: game)
+    assert_empty summary(scanner.scan(numbered([lost] + rows(['POST', FEED, answer]))))
+    assert_equal ['ivy'], scanner.feed_unknown
+    assert_equal 2, scanner.counts[:reaction_items]
+    early = summary(AccessLeakScanner.new(reply_data, game: game).scan(numbered(rows(['POST', FEED, answer]) + [lost])))
+    assert_includes early, [1, 'feed_reply_target', 'feed:ivy|ivy_vent']
+    assert_includes early, [1, 'feed_reaction_target', 'feed:ivy|ivy_vent']
+    assert_includes early, [1, 'feed_reaction_reactor', 'npc:ivy']
+    # with no lost line and no saved reveals the same answer is a leak on every count
+    bare = summary(AccessLeakScanner.new(reply_data).scan(rows(['POST', FEED, answer])))
+    assert_equal %w[feed_reaction_reactor feed_reaction_target feed_reply_target], bare.map { |f| f[1] }.uniq.sort
+  end
 end

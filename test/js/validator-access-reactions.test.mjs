@@ -250,7 +250,9 @@ test("C3's reply tests are the ones the fixtures were copied from", { skip }, ()
     "a feed post or reply holding a resource or network name warns"
 ];
     const src = readFileSync(join(root, 'test/js/validator-access-reply.test.mjs'), 'utf8');
-    const now = [...src.matchAll(/^test\('((?:[^'\\]|\\.)*)'/gm)].map(m => m[1]);
+    const now = [...src.matchAll(/^test\((['"`])((?:(?!\1)[^\\]|\\.)*)\1/gm)].map(m => m[2]);
+    const lines = src.split('\n').filter(l => l.startsWith('test(')).length;
+    assert.equal(now.length, lines, 'a test( line in C3\'s reply tests has a title the tripwire cannot read');
     assert.deepEqual(now, recorded, `C3's reply tests changed since the copy at ${C3_COMMIT}: re-check the copied fixtures`);
 });
 

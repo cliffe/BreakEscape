@@ -1049,12 +1049,29 @@ class AccessLeakScanner
 
   def judge_reaction(item, target, post_id, path, add)
     @reaction_items += 1
-    unless target && @feed_served.include?(target)
+    unless target && feed_target_out?(target)
       add.call('feed_reaction_target', target ? "feed:#{target}" : "post:#{post_id}", safe_path(path))
     end
     add.call('feed_reaction_key', "post:#{post_id}", safe_path("#{path}.key")) unless REACTION_KEYS.include?(item['key'])
     reactor = item['npc'].to_s
-    add.call('feed_reaction_reactor', "npc:#{reactor}", safe_path("#{path}.npc")) unless @feed_posters.include?(reactor)
+    add.call('feed_reaction_reactor', "npc:#{reactor}", safe_path("#{path}.npc")) unless feed_poster_out?(reactor)
+  end
+
+  # Whether a post ("npc|post_id") may be out at this point of the log: served by a line the log
+  # holds, or among the owner's saved reveal ids that a lost /feed_post answer passed so far (or a
+  # reveal before the log) accounts for (feed_allowed_ids). Reactions code review R1 m2: a post
+  # whose answer body was lost is never served by serve_feed, so a later reaction or reply on it
+  # would otherwise be a false leak.
+  def feed_target_out?(key)
+    return true if @feed_served.include?(key)
+
+    npc_id, post_id = key.split('|', 2)
+    @feed_order.key?(npc_id) && feed_allowed_ids(npc_id).include?(post_id)
+  end
+
+  # Whether an NPC may have a post out at this point of the log, by the same credit
+  def feed_poster_out?(npc_id)
+    @feed_posters.include?(npc_id) || (@feed_order.key?(npc_id) && feed_allowed_ids(npc_id).any?)
   end
 
   def scan_feed(body, ctx, add)
@@ -1066,7 +1083,7 @@ class AccessLeakScanner
     walk_hashes(body, '$') do |hash, json_path|
       target = hash['replyTo']
       next unless target.is_a?(String) && hash['id'].is_a?(String) && @feed_post_key.key?(target)
-      next if @feed_served.include?(@feed_post_key[target])
+      next if feed_target_out?(@feed_post_key[target])
 
       add.call('feed_reply_target', "feed:#{@feed_post_key[target]}", safe_path("#{json_path}.replyTo"))
     end
