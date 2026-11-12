@@ -51,11 +51,11 @@ export const QUEUE_MAX_WAIT_S = 30;   // affordance.queue.maxWaitSeconds default
 export const QUEUE_COOLDOWN_MS = 60000;   // after giving up on a queue, that object is skipped this long
 export const QUEUE_CHAT_RADIUS = 48;  // px (1.5 tiles) from the approach cell: the front of the queue chats
 // Avoidance at a distance, balking and parked needs (slice 14, OFFICE_LIFE_PLAN 10)
-export const AVOID_RADIUS_TILES = 2;
+export const AVOID_RADIUS_TILES = 2;  // needsCompany.avoidRadius default, only for an NPC that declares avoids
 // interests.<tag>.noticeRadius default (q53 f): tiles from the NPC within which a tagged item is
 // seen. 24 tiles (768 px) spans any two points of a 20 x 10 room, the largest any interest uses,
 // so an NPC in its notice room sees everything there as before; only a far-off item waits.
-export const NOTICE_RADIUS_TILES = 24;  // needsCompany.avoidRadius default, only for an NPC that declares avoids
+export const NOTICE_RADIUS_TILES = 24;
 export const NEEDS_DEFER_MIN = 4;     // needsDeferMin default: how long a given-up need stays parked
 export const AVOID_BUBBLE_MS = 4000;  // the avoided person's face shows this long after a turn-back's grumble
 export const WAKE_BASE_MS = 1000;     // a door opening or a room loading retries parked needs after this...

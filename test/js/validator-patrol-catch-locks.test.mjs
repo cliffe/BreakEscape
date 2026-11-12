@@ -114,3 +114,12 @@ test('a waypoint action on a single-room patrol warns: only routes run actions',
     const out = issues(withNpc(patrolNpc({ waypoints: [{ x: 1, y: 1, action: { useObject: 'reader' } }, { x: 2, y: 1 }] })));
     assert.ok(out.some(s => s.includes('waypoint actions run only on a multi-room route')), out.join('\n'));
 });
+
+test('a route with multiRoom off warns too: the engine runs actions only on a multi-room route (review R1, E3)', { skip }, () => {
+    const npc = routeNpc({ useObject: 'reader', useMs: 2500 });
+    npc.behavior.patrol.multiRoom = false;
+    let out = issues(withNpc(npc));
+    assert.ok(out.some(s => s.includes('waypoint actions run only on a multi-room route')), out.join('\n'));
+    out = issues(withNpc(routeNpc({ useObject: 'reader', useMs: 2500 })));
+    assert.ok(!out.some(s => s.includes('waypoint actions run only on a multi-room route')), out.join('\n'));
+});

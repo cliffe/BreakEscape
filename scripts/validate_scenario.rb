@@ -2243,8 +2243,10 @@ def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_leg
           issues << "❌ ERROR: '#{where}' (#{npc['id']}) waypoint #{wi} action.useMs must be a number of ms from 0 to 30000." unless ms.is_a?(Numeric) && ms >= 0 && ms <= 30000
           issues << "⚠️ WARNING: '#{where}' (#{npc['id']}) waypoint #{wi} has action.useMs but no useObject; it does nothing without one." unless action['useObject'].is_a?(String)
         end
-        if action && !patrol['route'].is_a?(Array) && (action['useObject'] || action['unlockRoom'])
-          issues << "⚠️ WARNING: '#{where}' (#{npc['id']}) waypoint #{wi} has an action, but waypoint actions run only on a multi-room route (behavior.patrol.route)."
+        # The engine runs actions only when multiRoom is true and the route has segments
+        multi_room = patrol['multiRoom'] == true && patrol['route'].is_a?(Array) && !patrol['route'].empty?
+        if action && !multi_room && (action['useObject'] || action['unlockRoom'])
+          issues << "⚠️ WARNING: '#{where}' (#{npc['id']}) waypoint #{wi} has an action, but waypoint actions run only on a multi-room route (behavior.patrol.multiRoom true with a route)."
         end
         target = action ? action['unlockRoom'] : nil
         next unless target.is_a?(String) && !mapped.include?(target)

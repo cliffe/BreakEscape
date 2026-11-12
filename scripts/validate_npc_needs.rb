@@ -130,6 +130,7 @@ module ValidateNpcNeeds
   # with heard_<knot> declared. Scenario-level 'phone' lines are said by every NPC: no names.
   PHONE_REACH_TILES = 1.5
   NEAR_CHAIR_TILES = 36.0 / 32
+  NOTICE_RADIUS_TILES = 24   # interests.<tag>.noticeRadius default (npc-needs.js NOTICE_RADIUS_TILES)
 
   def self.phone_cell(obj)
     uf = obj.data['affordance'].is_a?(Hash) ? obj.data['affordance']['useFrom'] : nil
@@ -1301,6 +1302,22 @@ module ValidateNpcNeeds
         elsif nr < 2
           issues << "⚠️ WARNING: #{where} interest '#{tag}' noticeRadius #{nr} is under 2 tiles: the NPC sees only an item dropped almost at its feet."
         end
+      end
+      # A notice room wider than the radius is cut short silently: from one corner the NPC
+      # does not see an item in the far corner (review R1, F1). Default 24 tiles.
+      given = raw.is_a?(Hash) && raw['noticeRadius'].is_a?(Numeric) && raw['noticeRadius'] >= 0.5 && raw['noticeRadius'] <= 100
+      radius = given ? raw['noticeRadius'] : NOTICE_RADIUS_TILES
+      seen_rooms = raw.is_a?(Hash) && raw['noticeRooms'].is_a?(Array) ? raw['noticeRooms'] : [home_room]
+      seen_rooms.each do |r|
+        room = r && json['rooms'].is_a?(Hash) ? json['rooms'][r] : nil
+        dims = room.is_a?(Hash) ? room_tiles(room['type']) : nil
+        next unless dims
+
+        diag = Math.hypot(dims[0], dims[1])
+        next unless radius < diag
+
+        what = given ? "noticeRadius #{radius}" : "the default noticeRadius (#{NOTICE_RADIUS_TILES})"
+        issues << "⚠️ WARNING: #{where} interest '#{tag}': #{what} tiles is less than notice room '#{r}' (#{dims[0]} x #{dims[1]} tiles, #{diag.round(1)} across), so from one end of it the NPC does not see an item at the other. Set noticeRadius to #{diag.ceil} or more if the whole room should count."
       end
       if leashed && raw.is_a?(Hash) && raw['noticeRooms'].is_a?(Array)
         raw['noticeRooms'].each do |r|

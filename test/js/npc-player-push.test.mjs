@@ -28,7 +28,7 @@ const quiet = console.log;
 console.log = () => {};
 const mod = await import(pathToFileURL(join(dir, 'npc-sprites.mjs')).href);
 console.log = quiet;
-const { keepsRouteAgainstPlayer, bodyNearWall, playerPushMode, PLAYER_WALL_MARGIN_PX, createNPCCollision } = mod;
+const { keepsRouteAgainstPlayer, bodyNearWall, playerPushMode, PLAYER_WALL_MARGIN_PX, createNPCCollision, staticRectsNear } = mod;
 
 test('who keeps a route against the player: patrol on, not hostile, not KO', () => {
     const patrol = { config: { patrol: { enabled: true } } };
@@ -59,12 +59,17 @@ test('the rule: a plain NPC separates as before; a routed one pins, or lets the 
 });
 
 // The real collider: createNPCCollision's process callback on a fake scene
-function harness({ patrol = true, playerY = 100 } = {}) {
+// A fake arcade overlapRect over a list of static bodies { x, y, width, height }
+const overlapRectOver = (statics) => (x, y, w, h, dyn, stat) => !stat ? [] :
+    statics.filter(b => x < b.x + b.width && x + w > b.x && y < b.y + b.height && y + h > b.y);
+
+function harness({ patrol = true, playerY = 100, playerX = 100, statics = null } = {}) {
     let process = null, collide = null;
     const handlers = {};
     const scene = { physics: { add: { collider: (a, b, c, p) => { collide = c; process = p; } }, world: { on: (ev, fn) => { handlers[ev] = fn; } } } };
+    if (statics) scene.physics.overlapRect = overlapRectOver(statics);
     const npc = { npcId: 'guard', body: { x: 100, y: 120, width: 16, height: 10, pushable: true } };
-    const player = { currentRoom: 'r', body: { x: 100, y: playerY, width: 16, height: 10 } };
+    const player = { currentRoom: 'r', body: { x: playerX, y: playerY, width: 16, height: 10 } };
     window.rooms = { r: { wallCollisionBoxes: [{ body: { left: 0, top: 0, right: 320, bottom: 8 } }] } };
     window.player = player;
     window.npcBehaviorManager = { getBehavior: () => ({ roomId: 'r', config: { patrol: { enabled: patrol } } }) };
@@ -92,4 +97,30 @@ test('collider: an NPC that does not patrol is pushed as before', () => {
     const h = harness({ patrol: false, playerY: 100 });
     assert.equal(h.process(), true);
     assert.equal(h.npc.body.pushable, true);
+});
+
+// Review R1 (G2): a desk or other static body in the path counts as a wall. Without it a pinned
+// NPC walking the player into a desk in open floor would press the player between an unpushable
+// body and a static one.
+test('near a wall includes static furniture: a desk within the margin is near, one further off is not', () => {
+    const desk = { x: 120, y: 60, width: 64, height: 24, enable: true };     // right edge at 184
+    const scene = { physics: { overlapRect: overlapRectOver([desk]) } };
+    const player = (x) => ({ x, y: 64, width: 16, height: 10 });
+    assert.deepEqual(staticRectsNear(scene, player(190)), [{ l: 120, t: 60, r: 184, b: 84 }], '6 px off the desk');
+    assert.equal(staticRectsNear(scene, player(200)).length, 0, '16 px off the desk');
+    assert.equal(staticRectsNear(scene, player(190)).length > 0 && bodyNearWall(player(190), staticRectsNear(scene, player(190))), true);
+    assert.equal(staticRectsNear({ physics: { overlapRect: overlapRectOver([{ ...desk, enable: false }]) } }, player(190)).length, 0, 'a disabled body (an open gate) does not count');
+    assert.deepEqual(staticRectsNear({}, player(190)), [], 'no physics: nothing');
+});
+
+test('collider: a patrolling NPC walking the player into a desk in open floor lets the player slide, never pins', () => {
+    // open floor: the only wall box is the north one at y 0..8, far from the player at y 100
+    const desk = { x: 60, y: 96, width: 36, height: 24, enable: true };      // desk just west of the player (right edge 96, player at 100)
+    const h = harness({ playerX: 100, playerY: 100, statics: [desk] });
+    assert.equal(h.process(), false, 'by the desk the pair do not separate');
+    assert.equal(h.npc.body.pushable, true, 'never pinned against furniture');
+    const far = harness({ playerX: 100, playerY: 100, statics: [{ ...desk, x: 20 }] });   // desk 44 px off
+    assert.equal(far.process(), true, 'away from the desk the NPC holds as before');
+    assert.equal(far.npc.body.pushable, false);
+    far.step();
 });

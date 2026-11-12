@@ -4418,7 +4418,7 @@
                               "properties": {
                                 "unlockRoom": { "type": "string", "description": "Room id: the NPC unlocks it on the server as itself (needs an eventMapping with unlockDoor naming it), loads it, then carries on" },
                                 "useObject": { "type": "string", "description": "Scenario object id the NPC turns to face. Emits npc_used_object:<id> { npcId, objectId, roomId, useMs } as he starts and npc_used_object_done:<id> when he has finished (at once without useMs)" },
-                                "useMs": { "type": "number", "minimum": 0, "maximum": 30000, "description": "With useObject: ms the NPC stands at the object using it (a PIN keyed at a reader) before npc_used_object_done and the rest of the action. Default 0" }
+                                "useMs": { "type": "number", "minimum": 0, "maximum": 30000, "description": "With useObject: ms the NPC stands at the object using it (a PIN keyed at a reader) before npc_used_object_done and the rest of the action. Default 0. The engine also reads a numeric string; the validator rejects one" }
                               }
                             }
                           }
@@ -4655,7 +4655,7 @@
                 "properties": {
                   "weight": { "type": "number", "minimum": 0.1, "maximum": 10 },
                   "noticeRooms": { "type": "array", "items": { "type": "string" }, "description": "Room ids where the NPC notices items (default: the room of needsHome)" },
-                  "noticeRadius": { "type": "number", "minimum": 0.5, "maximum": 100, "description": "Tiles from where the NPC stands within which it notices an item in its noticeRooms (default 24, a whole 20 x 10 room). Smaller makes placement matter: a drop near this NPC gets found by them, one across the room does not" },
+                  "noticeRadius": { "type": "number", "minimum": 0.5, "maximum": 100, "description": "Tiles from where the NPC stands within which it notices an item in its noticeRooms (default 24, a whole 20 x 10 room). Smaller makes placement matter: a drop near this NPC gets found by them, one across the room does not. The engine also reads a numeric string and treats 0 as the default; the validator rejects both" },
                   "_comment": { "type": "string" }
                 },
                 "required": ["weight"],
