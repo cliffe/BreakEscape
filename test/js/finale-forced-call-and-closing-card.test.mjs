@@ -228,7 +228,7 @@ test('another character speaking in a contact thread is labelled with their name
 
 test('the phone UI draws the other speaker as a name over the bubble', () => {
     const ui = read('minigames/phone-chat/phone-chat-ui.js');
-    assert.match(ui, /otherSpeaker\(trimmedText, contact, this\._knownSpeakerNames\(\)\)/);
+    assert.match(ui, /otherSpeaker\(trimmedText, contact, this\._knownSpeakerNames\(\), this\._knownSpeakerIds\(\)\)/);
     assert.match(ui, /sender\.className = 'message-sender'/);
     const css = readFileSync(join(here, '../../public/break_escape/css/phone-chat-minigame.css'), 'utf8');
     assert.match(css, /\.message-sender \{/);
