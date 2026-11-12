@@ -274,3 +274,70 @@ stopped.
 
 - `objectStandPoint` still does not route round NPC bodies (R2 m4, second half); the blocked
   walk now says why it stopped.
+
+## R3 fixes
+
+From docs/achitechture/TAP_PICK_CODE_REVIEW_R3.md (0 blockers, 0 majors, 2 minors, 5 nits).
+Commits 02a1721fe and 25a38140f.
+
+### Changes
+
+- **m1, stand point.** `objectStandPoint` returns the walkable cell it checked for reach and the
+  wall line, not the raw aim (which can sit inside a desk). The ring search already returned a
+  pathfinder cell.
+- **m1, the walk itself.** Live, the cell fix alone was not enough in m06: with the stand point
+  now a free cell, the direct line from (160, 230) to it was clear of walls, so the player went
+  straight and walked into the trader standing in the middle aisle. The player's click-to-move
+  line-of-sight tests ignored NPCs (only the EasyStar search avoids them). `movePlayerToPoint`
+  now takes `{ avoidNpcs: true }`, used only by a far tap's walk (`walkToObjectThenUse`). It
+  makes the direct-line check, the path smoothing, the last-leg shortcut and the waypoint
+  corner check (`hasPlayerLineOfSight`) also refuse a line through a standing NPC's body
+  (`NPCPathfindingManager.getNpcBodyRects`: visible, enabled, not knocked out). Floor taps and
+  every other walk are unchanged.
+- **m1, the message.** A far tap whose walk stops out of reach now says so (`onStoppedShort`):
+  "Someone's in the way." with an NPC beside the player, else "Can't reach it from here.".
+- **m2.** `busy` also counts a knocked-out player and `player.disableMovement` (game over,
+  success screen, the freeze action), so the use drops with no toast.
+- **n1.** The handler harness's free-name check is scope-aware: each declaration counts only
+  inside its block (parameters and catch names inside their function or catch body). A new
+  test shows `player` is a free name of the cut source, so dropping its stub fails the check.
+- **n2.** `npcBesidePlayer` skips knocked-out bodies.
+- **n3.** `opaqueAt` mirrors the row for `flipY` and undoes `rotation` about the origin before
+  the frame lookup, so a rotated or vertically flipped item reads the right texel.
+- **n4, n5.** No change, as the review says.
+
+### Tests
+
+tap-pick.test.mjs 44 pass (9 new: the snapped cell returned, the ring cell returned,
+onStoppedShort, the busy and stopped-short wiring, flipY and rotation, NPC rects in the player
+line of sight with and without the option and for a knocked-out body, and the avoidNpcs
+wiring). tap-pick-handler.test.mjs 30 pass (5 new: a short stop says so once and the walk asks
+to avoid NPCs, KO and frozen drop with no toast, a KO'd body is not "someone", the two n1
+tests). The m1 cell test, the m2 and n2 handler tests and the wiring test fail with the fixes
+reverted. Every test file that imports or reads game.js, player.js, tap-pick.js or
+npc-pathfinding.js, or uses gameAlert, hasPlayerLineOfSight or movePlayerToPoint: 110 files,
+1764 tests, 0 failures, run without the lock.
+
+### Live proof
+
+Keyless headless server on :3215 from this worktree, `session-start.sh --headless`, Phaser's
+loop on setTimeout, `smoothStep` off, `setFPS(20)` with fixed steps on. Taps are
+`window.__test.clickAt`; the player was placed with `body.reset`. Game 1891 (m06, started in
+trading_floor).
+
+| Check | Result |
+|---|---|
+| Far workstation from (160, 230), cell fix only | 3 runs: walked straight into the trader (standing at (160, 185)), stopped out of reach, toast "Can't reach it from here." (the walk is what failed) |
+| Same, with the NPC-aware walk, trader at (160, 224) | 3 of 3: walked, arrived at about (167, 103), ExamineMinigame "Trading Workstation" at 1.1 to 1.3 s, no toast |
+| Same, trader put back at (160, 185) in the aisle | 3 of 3: walked round both NPCs, ExamineMinigame at 1.1 to 1.2 s, no toast |
+| From (60, 200), (250, 200), (100, 80) | All opened the workstation, no toast |
+| Far tap, then `disableMovement` 150 ms in | Use dropped, no toast after 2.5 s |
+| Far tap, then `playerHealth.damage(1000)` 150 ms in | Knocked Out screen, use dropped, no toast after 2.5 s |
+
+Games created: 1891 (m06_follow_the_money). Server and session stopped.
+
+### Open
+
+- Floor taps still walk straight into a standing NPC when the line is clear of walls (the
+  `avoidNpcs` option is used only by a far tap's walk). Turning it on for every click-to-move
+  walk is a wider change to movement and was left alone.
