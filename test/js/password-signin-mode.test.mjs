@@ -25,6 +25,7 @@ put('config.js', 'export const ASSETS_PATH = "/break_escape/assets";\n');
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
+copy('utils/lock-scope-refusal.js');
 copy('utils/author-html.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/password/password-minigame.js');

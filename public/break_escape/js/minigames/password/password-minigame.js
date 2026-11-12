@@ -3,6 +3,7 @@ import { ASSETS_PATH } from '../../config.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 /**
  * The keypad's line after a wrong password. A near miss (right apart from letter
@@ -724,7 +725,17 @@ export class PasswordMinigame extends MinigameScene {
         } catch (error) {
             console.error('Server validation error:', error);
             // api-client sets err.status; a wrong password comes back 422 and is a real attempt.
-            if (error?.status === 422 || error?.message?.includes('422')) {
+            const refusal = lockScopeRefusal(error);
+            if (refusal) {
+                // The PC the lock sits on is off, not responding or out of reach (review R4
+                // m2): not an attempt and not a wrong password, so say why and close as cancelled
+                this.gameData.attempts--;
+                this.attemptsDisplay.textContent = this.gameData.attempts;
+                this.cleanup();
+                this.showFailure(LOCK_SCOPE_REFUSAL_TEXT[refusal], true, 2000);
+                this.gameResult = { success: false, reason: 'cancelled', cancelled: true, refused: refusal,
+                                    attempts: this.gameData.attempts };
+            } else if (error?.status === 422 || error?.message?.includes('422')) {
                 this.passwordIncorrect({ caseMismatch: error?.body?.caseMismatch === true });
             } else {
                 this.showFailure("Network error. Please try again.", false, 1500);

@@ -1,16 +1,14 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 // Attempts allowed per opening of the pad when the scenario doesn't set
 // maxAttempts and the player has no PIN cracker. With a cracker there is no
 // limit: the point is to read its lights and close in on the code.
 export const DEFAULT_PIN_MAX_ATTEMPTS = 5;
 // A 403 from POST /unlock with one of these reasons refuses the folder's PC, not the PIN
-// (review R3 m1): the pad says so and closes, and counts no attempt.
-export const PIN_SCOPE_REFUSAL_TEXT = Object.freeze({
-    off: 'This PC is off.',
-    not_responding: 'This PC is not responding.',
-    unreachable: "This PC can't be reached."
-});
+// (review R3 m1): the pad says so and closes, and counts no attempt. Shared with the other
+// lock screens (review R4 m2).
+export const PIN_SCOPE_REFUSAL_TEXT = LOCK_SCOPE_REFUSAL_TEXT;
 
 // Guesses (and their pips) per lock, kept for the page session so closing and
 // reopening a pad, or being locked out of it, doesn't wipe what the player has
@@ -451,9 +449,9 @@ export class PinMinigame extends MinigameScene {
             // That IS a real attempt: it must count, lock out at maxAttempts,
             // and tell the player they were wrong rather than blaming the
             // network. Only a genuinely failed request is refunded.
-            if (error?.status === 403 && PIN_SCOPE_REFUSAL_TEXT[error.body?.reason]) {
+            if (lockScopeRefusal(error)) {
                 this.attemptCount--;
-                this.lastAttemptRefusal = error.body.reason;
+                this.lastAttemptRefusal = lockScopeRefusal(error);
                 return false;
             }
             if (error?.status) {

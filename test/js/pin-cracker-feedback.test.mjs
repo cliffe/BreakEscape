@@ -15,8 +15,11 @@ import { tmpdir } from 'node:os';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '../../public/break_escape/js/minigames/pin/pin-minigame.js');
-const dir = mkdtempSync(join(tmpdir(), 'pin-cracker-'));
-mkdirSync(join(dir, 'pin'));
+const root = mkdtempSync(join(tmpdir(), 'pin-cracker-'));
+const dir = join(root, 'minigames');
+mkdirSync(join(dir, 'pin'), { recursive: true });
+mkdirSync(join(root, 'utils'));
+writeFileSync(join(root, 'utils', 'lock-scope-refusal.js'), readFileSync(join(here, '../../public/break_escape/js/utils/lock-scope-refusal.js'), 'utf8'));
 mkdirSync(join(dir, 'framework'));
 writeFileSync(join(dir, 'framework', 'base-minigame.js'), `
 export class MinigameScene {
@@ -26,7 +29,7 @@ export class MinigameScene {
     getTestState() { return {}; }
 }
 `);
-writeFileSync(join(dir, 'package.json'), '{"type":"module"}');
+writeFileSync(join(root, 'package.json'), '{"type":"module"}');
 writeFileSync(join(dir, 'pin', 'pin-minigame.mjs'), readFileSync(src, 'utf8'));
 
 // Mastermind scoring as the server does it (Game.mastermind_feedback).
