@@ -171,7 +171,9 @@ module BreakEscape
         voiced = voiced_as.call(raw)
         voiced&.match?(VOICE_MESSAGE) ? voiced.sub(VOICE_MESSAGE, '').strip.presence : nil
       end
-      line = InkTextValidator.canonical(story, "voice: #{text}", voiced_as: voice_message, **options)
+      # A host's voice messages the extractor has placed already (as their
+      # transcript), so only its unplaced ones are indexed here
+      line = InkTextValidator.canonical(story, "voice: #{text}", voiced_as: voice_message, placed: !host, **options)
       return line if line
       return nil if host || npc['npcType'] == 'phone'
 

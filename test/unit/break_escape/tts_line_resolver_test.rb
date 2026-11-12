@@ -50,6 +50,12 @@ module BreakEscape
         assert_equal 'Bring the badge.', line(data, 'ann', 'bring the badge')
         assert_nil line(data, 'ann', 'voice: Meet me by the lifts.')
         assert_equal 'Over here.', line(data, 'ann', 'Over here.')
+
+        # The batch voices the same transcript the endpoint serves
+        texts = TtsLineExtractor.new('resolver_test_batch', data).entries.map(&:text)
+        assert_includes texts, 'Meet me by the lifts.'
+        assert_includes texts, 'Bring the badge.'
+        assert(texts.none? { |t| t.match?(/voice:/i) }, texts.inspect)
       end
     end
 
