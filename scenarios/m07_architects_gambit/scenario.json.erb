@@ -893,7 +893,7 @@ scada_password = "CascadeWindow19"
               "eventPattern": "global_variable_changed:found_coordination_traffic",
               "condition": "value === true && !globalVars.projection_revised",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 3000, "message": "If a row in there doesn't match what we were told, call me and say which.", "skipIfGlobal": "projection_revised" }
+              "sendTimedMessage": { "delay": 3000, "message": "If a row in there doesn't match what we were told, message me and say which.", "skipIfGlobal": "projection_revised" }
             },
             {
               "_comment": "PASS 3 (P5): Elena's verdict, sent once (verdict_sent latch; the hub's deduce_right sets it too). Keyed on her chat closing, never mid-scene, and repeats none of her lines. PASS 5 r1: no longer requires the decode unread, because the decode no longer sets projection_revised.",
@@ -901,7 +901,7 @@ scada_password = "CascadeWindow19"
               "condition": "globalVars.projection_revised === true && !globalVars.verdict_sent && !globalVars.team_redirected && globalVars.team_assignment !== 'trojan_horse' && !globalVars.redirect_window_closed && globalVars.team_assigned === true",
               "onceOnly": true,
               "setGlobal": { "verdict_sent": true, "verdict_from_elena": true },
-              "sendTimedMessage": { "delay": 1500, "message": "One frightened engineer, but it fits. Their share will have it in writing. If the team's in the wrong place, call me before you log in on their host." }
+              "sendTimedMessage": { "delay": 1500, "message": "One frightened engineer, but it fits. Their share will have it in writing. If the team's in the wrong place, tell me before you log in on their host." }
             },
             {
               "_comment": "PASS 5 alignment r2 (m8): the team isn't committed yet, so there is no wrong place for it to be in.",

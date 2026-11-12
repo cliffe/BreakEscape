@@ -281,11 +281,10 @@ Marked `// lint: call-knot`. Hub choice `[Bring me in.]`: `-> bring_me_in` → `
 ### Config the implementer must add (M6)
 - m07 `agent_0x99` `call`: `[{ knot: "bring_me_in", button: false }]`.
 
-### NOT done by me (outside "HaX's bring-in only") — flag for the orchestrator
-The M6 slice also lists three HaX text rewords; they are **not** the bring-in, so I left them for whoever owns m07's non-bring-in HaX text:
-- ERB `:896`: "...call me and say which." → "...message me and say which." (7.3)
-- ERB `:904`: "...call me before you log in on their host." → "...tell me before you log in..." (7.3)
-- ink `:167`: "Call me the second you hit something you can't open." → "Message me the second..." (7.3)
+### HaX text rewords (7.3) — DONE (orchestrator confirmed these are mine)
+- ink `:167`: "Call me the second you hit something you can't open." → "Message me the second you hit something you can't open." (T)
+- ERB `:896`: "...call me and say which." → "...message me and say which." (T, `skipIfGlobal: projection_revised` unchanged)
+- ERB `:904`: "...call me before you log in on their host." → "...tell me before you log in on their host." (T)
 
 ### Checks
 Compile OK. "All ink files valid", Schema passed, Validation complete.

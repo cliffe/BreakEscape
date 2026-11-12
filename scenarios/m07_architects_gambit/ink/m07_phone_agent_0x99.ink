@@ -164,7 +164,7 @@ The team's logged for {team_assignment == "fracture": Fracture, Washington|{team
     }
     -> hub
 + [Understood. Let's go.]
-    Call me the second you hit something you can't open.
+    Message me the second you hit something you can't open.
     -> hub
 
 === first_call_open ===
