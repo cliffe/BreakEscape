@@ -40,7 +40,8 @@
  *
  * Sub-slice H (plan 6.4, 6.5). `borrow_session` calls `NPCNeedsSystem.setBorrow(npcId, run)`, so
  * the NPC's next use of the failing need is at the borrowed PC; `npc_borrow_done` posts "done",
- * `npc_borrow_dropped` posts it dropped, and an answer with `guest: true` emits
+ * `npc_borrow_dropped` posts it dropped (a "done" for a use cut short carries `cut: true`, which
+ * skips the server's floor, q43), and an answer with `guest: true` emits
  * `npc_guest_left:<pcId>` with { npcId, objectId }, which the workstation layer records as the
  * PC's guest. `share_login` is a visit to the colleague (`with`): on arrival the NPC says a
  * `login_aloud` line. The listening window opens when that line is said (`npc_mutter:<npcId>`,
@@ -254,7 +255,11 @@ export class NpcWorkarounds {
     /** `npc_borrow_done:<npcId>`: the borrower left the borrowed PC. */
     borrowDone(data) {
         const key = this._borrowKey(data);
-        if (key) this._send(key, false);
+        if (!key) return;
+        // q43 review R1 M1: a use cut short after the sit says so, and the server skips the
+        // borrow's floor, so "done" lands at once instead of after a password sign-in in the gap
+        if (typeof data.cut === 'string' && data.cut) this.active.get(key).cut = true;
+        this._send(key, false);
     }
 
     /** `npc_borrow_dropped:<npcId>`: the borrow never started in time. */
@@ -291,6 +296,7 @@ export class NpcWorkarounds {
                 body.heard = !!job.heard;
                 if (job.heard && job.roomId) body.room_id = job.roomId;
             }
+            if (job.run.do === 'borrow_session' && !dropped && job.cut) body.cut = true;
             answer = await this.deps.send(body);
         } catch (err) {
             const status = err?.status;

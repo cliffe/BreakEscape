@@ -158,6 +158,51 @@ module BreakEscape
       assert_equal({ 'pcId' => 'hot_desk', 'guest' => true }, done('ian', run, t + 41).parsed_body, 'a resend gets the same body')
     end
 
+    # q43 review R1 M1: a long use (30 s, a 27 s floor) cut short soon after the sit. A refused
+    # "done", resent after the floor, would end a password session the player opened meanwhile
+    def long_hot_desk
+      data = scenario
+      desk = data['rooms']['office']['objects'].find { |o| o['id'] == 'hot_desk' }
+      desk['affordance'] = desk['affordance'].merge('useSeconds' => 30)
+      data
+    end
+
+    test 'a cut-short borrow "done" skips the floor; a whole use and a cut on another kind do not' do
+      build(data: long_hot_desk)
+      t = Time.current
+      run = fails('ian', 2, t).last['run']
+      assert_equal 27.0, run['dwell']
+      assert_equal 425, done('ian', run, t + 30).status, 'a whole use waits out the floor'
+      assert_equal 425, done('ian', run, t + 30, cut: 'yes').status, 'only true or "true" is a cut'
+      res = done('ian', run, t + 30, cut: true)
+      assert_equal 200, res.status, 'cut short 5 s after the hand-over: accepted at once'
+      assert_equal({ 'pcId' => 'hot_desk', 'guest' => true }, res.parsed_body)
+      assert_equal({ 'hot_desk' => 'ian' }, state['guestSessions'])
+      assert_in_delta (t + 30).to_f, state['guestSessionsAt']['hot_desk'].to_f, 1.0, 'stamped when the use ended, not after a retry'
+
+      # a share's cut flag changes nothing
+      build(data: long_hot_desk)
+      srun = fails('sam', 2, t).last['run']
+      assert_equal 'share_login', srun['do']
+      assert_equal 425, done('sam', srun, t + 26, cut: true, heard: false).status
+    end
+
+    test 'the cut-short "done" lands before a password sign-in in the gap, which then ends the guest and keeps its own session' do
+      build(data: long_hot_desk)
+      t = Time.current
+      run = fails('ian', 2, t).last['run']
+      assert_equal 200, done('ian', run, t + 30, cut: true).status
+      travel_to(t + 35) do
+        post login_game_url(@game), params: { pc_id: 'hot_desk', username: 'ishaw', password: IAN_PASSWORD }, as: :json
+      end
+      assert_equal 200, response.status, response.body[0, 300]
+      assert_empty state['guestSessions'], 'a password sign-in ends the guest'
+      assert state['sessions']['hot_desk'], 'the player keeps the session'
+      # the runner's resend (a lost answer) writes nothing
+      assert_equal 200, done('ian', run, t + 60, cut: true).status
+      assert state['sessions']['hot_desk'], 'a resent "done" does not end it'
+    end
+
     test 'leavesOpen is false in run for each careful guest and absent for one who leaves it open' do
       careful = [nil, { 'lockChance' => 1 }, { 'note' => 'no numeric chance' }]
       careful.each do |habit|

@@ -140,7 +140,12 @@ module BreakEscape
     # POST /npc_workaround (plan 6 and 9.1): the runner reports a hand-over performed or
     # dropped. Returns { status:, body:, open_room: } where open_room is a room the controller
     # serves through serve_opened_room (prop_door).
-    def complete_npc_workaround!(npc_id:, index:, hand:, dropped: false, heard: false, room_id: nil)
+    # `cut` (user decision q43, review R1 M1): a borrow's "done" for a use cut short after the
+    # borrower sat down. It skips the borrow's dwell floor, so the "done" lands as soon as the
+    # use ends: a refused one, resent after the floor, would arrive after a password sign-in at
+    # that PC in the gap and end the player's new session there. No weaker than the floor: a
+    # client could always wait it out. Ignored for every other kind.
+    def complete_npc_workaround!(npc_id:, index:, hand:, dropped: false, heard: false, room_id: nil, cut: false)
       npc_id = npc_id.to_s
       npc = scenario_room_npc(npc_id)
       # 1. NPC known
@@ -170,8 +175,8 @@ module BreakEscape
       handed = view['handed'][key]
       return { status: :forbidden, body: { 'error' => 'unknown hand-over' } } unless handed.is_a?(Hash) && handed['hand'] == hand
 
-      # 4. the dwell, unless dropped
-      dwell = workaround_dwell(w)
+      # 4. the dwell, unless dropped or a borrow cut short
+      dwell = cut && w['do'] == 'borrow_session' ? 0 : workaround_dwell(w)
       elapsed = server_now - handed['time'].to_f
       if !dropped && elapsed < dwell
         return { status: :too_early, body: { 'error' => 'too early', 'retryAfter' => (dwell - elapsed).ceil(1) } }

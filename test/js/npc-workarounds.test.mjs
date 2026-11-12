@@ -978,3 +978,72 @@ test('q42 on the needs system: behind another NPC\'s line, the share\'s line com
     for (let i = 0; i < 5 && !sends.length; i++) await flush();
     assert.equal(sends[0].heard, true, 'heard in the window that opened with the line');
 });
+
+// ── q43 review R1 M1: a cut-short borrow's "done" against the server's dwell floor ──
+
+// A hot desk with a long use (30 s, a 27 s floor from the hand-over) and a server stub that
+// keeps the floor as npc_frustration.rb does: refused (425) unless dropped or a cut-short borrow
+function longBorrow() {
+    const hot = { id: 'hot_desk', x: 400, y: 68, desk: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 30 } };
+    const t = workWorld({ objects: [...baseObjects(), hot], globals: { dana_pc_off: true }, chatter: { work_fail: ['Why is nothing working?'] } });
+    const floorMs = 27000;
+    let handAt = null;
+    const server = body => {
+        const elapsed = t.sys.clockMs - handAt;
+        if (!body.dropped && !body.cut && elapsed < floorMs) {
+            const e = new Error('too early'); e.status = 425; e.body = { retryAfter: Math.ceil((floorMs - elapsed) / 100) / 10 }; throw e;
+        }
+        return { pcId: 'hot_desk', guest: true };
+    };
+    const sends = [];
+    const emits = [];
+    const timers = [];
+    const runner = new NpcWorkarounds({
+        send: async body => { sends.push({ ...body }); return server(body); },
+        needs: () => t.sys,
+        emit: (name, data) => emits.push({ name, data }),
+        npcRecord: () => null,
+        setTimer: (fn, ms) => timers.push({ fn, ms })
+    });
+    const orig = t.sys._emit.bind(t.sys);
+    t.sys._emit = (name, data) => {
+        orig(name, data);
+        if (name.startsWith('npc_borrow_done:')) runner.borrowDone(data);
+        else if (name.startsWith('npc_borrow_dropped:')) runner.borrowDropped(data);
+    };
+    t.sys.registerAll();
+    assert.ok(stepUntil(t.sys, () => t.evs('npc_need_parked:dana').length > 0, 30000));
+    handAt = t.sys.clockMs;
+    runner.due({ npcId: 'dana', run: { index: 1, hand: 1, do: 'borrow_session', pc: 'hot_desk', need: 'work', dwell: 27 } });
+    return { ...t, runner, sends, emits, timers, server, handAt: () => handAt };
+}
+
+test('q43 R1 M1: a long use cut short soon after the sit says cut, and the floor-keeping server takes its "done" at once', async () => {
+    const t = longBorrow();
+    assert.ok(stepUntil(t.sys, () => t.evs('npc_sat_at:hot_desk').length > 0, 30000));
+    t.sys.step(3000);   // 3 s into a 30 s use
+    assert.ok(t.sys.clockMs - t.handAt() < 27000, 'cut before the floor');
+    // the fixture reaches the floor: the same "done" without the cut is refused
+    assert.throws(() => t.server({ npc_id: 'dana', index: 1, hand: 1, dropped: false }), e => e.status === 425);
+    t.sys.control('dana', 'suspend');
+    for (let i = 0; i < 3; i++) await flush();
+    assert.deepEqual(t.sends, [{ npc_id: 'dana', index: 1, hand: 1, dropped: false, cut: true }]);
+    assert.equal(t.timers.length, 0, 'no resend: nothing waits in the gap for a password sign-in to be ended');
+    assert.deepEqual(t.emits.filter(e => e.name === 'npc_guest_left:hot_desk').map(e => e.data), [{ npcId: 'dana', objectId: 'hot_desk' }]);
+    assert.equal(t.runner.active.size, 0);
+});
+
+test('q43 R1 M1: a whole long use carries no cut and a drop never does; the floor still applies to them', async () => {
+    const t = longBorrow();
+    assert.ok(stepUntil(t.sys, () => t.evs('npc_borrow_done:dana').length > 0, 90000));
+    for (let i = 0; i < 3; i++) await flush();
+    assert.equal(t.sends.length, 1);
+    assert.equal(t.sends[0].cut, undefined, 'a met use is not cut');
+    // a drop with a cut flag on the job still posts no cut
+    const d = hStub({});
+    d.runner.due({ npcId: 'ian', run: IAN_RUN });
+    d.runner.active.get('ian:0:4').cut = true;
+    d.runner.borrowDropped({ npcId: 'ian', index: 0, hand: 4 });
+    await flush();
+    assert.deepEqual(d.calls.sends, [{ npc_id: 'ian', index: 0, hand: 4, dropped: true }]);
+});
