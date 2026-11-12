@@ -43,3 +43,14 @@ Go ahead.
     Bye.
     #exit_conversation
     -> DONE
+
+=== mirror_vm ===
+// lint: call-knot
+voice: First. #set_global:vm_global_flag:true
+{vm_global_flag: voice: Saw the flag.|voice: Missed the flag.}
+-> DONE
+
+=== empty_vm ===
+// lint: call-knot
+~ vm_count += 1
+-> DONE

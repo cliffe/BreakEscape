@@ -140,6 +140,9 @@ export function createPhoneRinger({ adapter, clock } = {}) {
      * (A4 R2 n5) and a reload hands them back through restoreCallback.
      */
     const callbacks = new Map();
+    // A voicemail that has not run yet (held behind the contact's open thread, or loading): npcId -> [{ knot, withheld }].
+    // Saved in the slot as a missed call that owes a voicemail, so a reload still delivers it (A6 R1 M1).
+    const voicemails = new Map();
     let callSeq = 0;
     let lastAdvance = c.now ? c.now() : 0;
     let tickId = null;
@@ -241,15 +244,17 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (active && active.npcId === npcId && active.direction !== 'outgoing') mine.push(active);
         for (const q of queue) if (q.npcId === npcId) mine.push(q);
         const forced = mine.filter((o) => o.keep);
+        const vm = (voicemails.get(npcId) || [])[0] || null;
         let best = null;
         for (const o of mine) if (!o.keep && (!best || rank(o) > rank(best))) best = o;
         let slot = null;
         const cb = callbacks.get(npcId);
-        if (forced.length || best || cb) {
+        if (forced.length || best || cb || vm) {
             slot = { forced: forced.map(record) };
             if (best) slot.live = record(best);
             // A pending callback is saved as a live record with state "missed" (2.7). A contact's
             // offer outranks it: a reload turns that offer into its own outcome (row 7 and 27).
+            else if (vm) slot.live = { knot: vm.knot, state: 'missed', onMissed: 'voicemail', voicemailKnot: vm.knot, withheld: vm.withheld || undefined };
             else if (cb) slot.live = { knot: cb.knot, state: 'missed', onMissed: 'callback', callLabel: cb.callLabel || undefined };
         }
         call('savePendingCall', npcId, slot);
@@ -426,6 +431,22 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         setCallback(o.npcId, o.knot, o.callLabel);
     }
 
+    /** A voicemail is waiting to run for this contact (held or loading): the slot carries it until releaseVoicemail. */
+    function holdVoicemail(npcId, { knot, withheld } = {}) {
+        if (typeof npcId !== 'string' || !npcId || typeof knot !== 'string' || !knot) return null;
+        const rec = { knot, withheld: withheld === true };
+        voicemails.set(npcId, [...(voicemails.get(npcId) || []), rec]);
+        syncSave(npcId);
+        return rec;
+    }
+
+    /** The voicemail ran (or failed): forget it and save the slot again. */
+    function releaseVoicemail(npcId, rec) {
+        const left = (voicemails.get(npcId) || []).filter((r) => r !== rec);
+        if (left.length) voicemails.set(npcId, left); else voicemails.delete(npcId);
+        syncSave(npcId);
+    }
+
     /** The call it displaced comes back, if the world allows it now (row 25; never once the ending has started, choice 2). */
     function reopenDisplaced(d) {
         if (!d) return;
@@ -479,8 +500,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         finishOffer(o);
         call('emit', `phone_call_missed:${o.npcId}`, eventData(o));
         if (cause === 'rang_off') {
-            if (o.onMissed !== 'voicemail') {
-                // With onMissed "voicemail" the voicemail toast (A6) replaces this one.
+            if (o.onMissed !== 'voicemail' || !o.voicemailKnot) {
+                // With a voicemail to leave the voicemail toast (A6) replaces this one.
                 const name = call('displayName', o.npcId);
                 call('toast', o.withheld || !name
                     ? 'The caller rang off.'
@@ -1152,6 +1173,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         hasOpeningOffer,
         callbackFor,
         restoreCallback,
+        holdVoicemail,
+        releaseVoicemail,
         missedOffline,
         refreshSave,
         stateOf,

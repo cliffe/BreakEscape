@@ -599,6 +599,12 @@ export default class NPCManager {
    * row, then its lines, unread; the thread then rests on its home knot). Runs one at a time per
    * contact. Toast "New voicemail from <name>" unless `quiet` (a reload) or `withheld`
    * ("New voicemail"). Resolves to whether the knot ran.
+   *
+   * While the contact's own thread is the open phone-chat the run is held until
+   * `conversation_closed:<npcId>`: that thread holds its own copy of the story and its next save would
+   * overwrite the voicemail's (A6 R1 M1). The thread is checked again after the story loads, just
+   * before anything is written. Until it runs, the voicemail is saved in the contact's slot, so a
+   * reload delivers it (quietly) too.
    * @param {string} npcId
    * @param {string} knot
    * @param {{ withheld?: boolean, quiet?: boolean }} [opts]
@@ -608,28 +614,33 @@ export default class NPCManager {
     const npc = this.npcs.get(npcId);
     if (!npc || typeof knot !== 'string' || !knot) return Promise.resolve(false);
     if (!this._voicemailRuns) this._voicemailRuns = new Map();
+    const ringer = typeof window !== 'undefined' ? window.phoneRinger : null;
+    const hold = ringer?.holdVoicemail?.(npcId, { knot, withheld: opts.withheld === true }) || null;
     const run = async () => {
       try {
-        const [conversationModule, inkModule, helpers] = await Promise.all([
-          import('../minigames/phone-chat/phone-chat-conversation.js'),
-          import('./ink/ink-engine.js'),
-          import('../minigames/helpers/chat-helpers.js'),
-        ]);
-        const result = await conversationModule.default.runVoicemail(npc, this, new inkModule.default(npcId), knot, {
-          withheld: opts.withheld === true,
-          applyTags: (tags, conversation) => helpers.processGameActionTags(tags, null,
-            { npcId, engine: conversation?.engine || null }),
-        });
-        if (!result.ran) return false;
-        this._drawVoicemailLive?.(npcId, result.lines);
-        if (!opts.quiet && typeof window !== 'undefined' && window.showNotification) {
-          const name = opts.withheld ? null : npc.displayName;
-          window.showNotification(name ? `New voicemail from ${name}` : 'New voicemail', 'info', 'Phone');
+        for (let attempt = 0; attempt < 20; attempt++) {
+          await this._whileThreadOpen(npcId);
+          const { Conversation, InkEngine, processGameActionTags } = await this._voicemailDeps();
+          const result = await Conversation.runVoicemail(npc, this, new InkEngine(npcId), knot, {
+            withheld: opts.withheld === true,
+            isBlocked: () => this._threadOpenOn(npcId),
+            applyTags: (tags, conversation) => processGameActionTags(tags, null,
+              { npcId, engine: conversation?.engine || null }),
+          });
+          if (result.blocked) continue;   // the thread opened while the story loaded: wait for its close and run afresh
+          if (!result.ran) return false;
+            if (!opts.quiet && typeof window !== 'undefined' && window.showNotification) {
+            const name = opts.withheld ? null : npc.displayName;
+            window.showNotification(name ? `New voicemail from ${name}` : 'New voicemail', 'info', 'Phone');
+          }
+          return true;
         }
-        return true;
+        return false;
       } catch (e) {
         console.error('[NPCManager] voicemail failed', e);
         return false;
+      } finally {
+        if (hold) ringer?.releaseVoicemail?.(npcId, hold);
       }
     };
     const previous = this._voicemailRuns.get(npcId) || Promise.resolve();
@@ -639,15 +650,34 @@ export default class NPCManager {
     return next;
   }
 
-  /** The thread is open on screen: draw a voicemail's lines now (the row was drawn by addCallRow). */
-  _drawVoicemailLive(npcId, lines) {
+  /** True while this contact's thread is the open phone-chat (its minigame holds its own copy of the story). */
+  _threadOpenOn(npcId) {
     const open = typeof window !== 'undefined' ? window.MinigameFramework?.currentMinigame : null;
-    if (!open || open._sceneType !== 'phone-chat' || open.currentNPCId !== npcId || typeof open.ui?.addMessage !== 'function') return;
-    const history = this.conversationHistory.get(npcId) || [];
-    const added = history.slice(-(lines || []).filter((l) => l && l.trim()).length);
-    for (const msg of added) {
-      try { open.ui.addMessage('npc', msg.text, true, msg); msg.read = true; } catch (e) { /* stays in the thread */ }
-    }
+    return !!open && open._sceneType === 'phone-chat' && open.currentNPCId === npcId
+      && !open._ending && open.isConversationActive !== false;
+  }
+
+  /** Resolves at once when the contact's thread is not open, else when conversation_closed:<npcId> fires. */
+  _whileThreadOpen(npcId) {
+    if (!this._threadOpenOn(npcId)) return Promise.resolve();
+    const dispatcher = typeof window !== 'undefined' ? window.eventDispatcher : null;
+    if (!dispatcher?.on) return Promise.resolve();
+    return new Promise((resolve) => {
+      const eventName = `conversation_closed:${npcId}`;
+      const onClosed = () => { dispatcher.off?.(eventName, onClosed); resolve(); };
+      dispatcher.on(eventName, onClosed);
+    });
+  }
+
+  /** The modules a voicemail run needs (loaded on first use; a test replaces this to supply its own copies). */
+  async _voicemailDeps() {
+    const [conversationModule, inkModule, helpers] = await Promise.all([
+      import('../minigames/phone-chat/phone-chat-conversation.js'),
+      import('./ink/ink-engine.js'),
+      import('../minigames/helpers/chat-helpers.js'),
+    ]);
+    return { Conversation: conversationModule.default, InkEngine: inkModule.default,
+      processGameActionTags: helpers.processGameActionTags };
   }
 
   /** { gameTime } for a wall-clock time, or {} when there's no game clock yet. */
@@ -2669,9 +2699,14 @@ export default class NPCManager {
       : (raw.knot ? (raw.disableClose ? { forced: [raw] } : { live: raw }) : {});
     const forced = (Array.isArray(slot.forced) ? slot.forced : []).filter(e => e && typeof e.knot === 'string');
     const live = slot.live && typeof slot.live === 'object' && typeof slot.live.knot === 'string' ? slot.live : null;
-    const keepCallback = live && live.state === 'missed';
+    // A voicemail that was still waiting to run (A6 R1 M1): deliver it now, quietly; its missed row is already in the thread
+    const heldVoicemail = !!live && live.state === 'missed' && live.onMissed === 'voicemail'
+      && typeof live.voicemailKnot === 'string' && !!live.voicemailKnot;
+    const keepCallback = live && live.state === 'missed' && !heldVoicemail;
     npc.pendingCall = null;
-    if (keepCallback) {
+    if (heldVoicemail) {
+      Promise.resolve(this.runVoicemail(npc.id, live.voicemailKnot, { withheld: live.withheld === true, quiet: true })).catch(() => {});
+    } else if (keepCallback) {
       // A callback saved before the reload (state "missed"): the ringer holds it again
       ringer.restoreCallback?.(npc.id, live);
     } else if (live) {
@@ -2691,7 +2726,9 @@ export default class NPCManager {
     // Without this a second reload inside the 30 s tick, with an oversized unload flush, would
     // find the old slot and miss the call again (A4 R2 m1)
     ringer.refreshSave?.(npc.id);
-    return forced.length > 0;
+    // Only a forced call on the line (not queued) on the knot the thread is on keeps its place (A6 R1 m3)
+    const knotOf = (path) => String(path || '').split('.')[0];
+    return forced.some((e) => e.state !== 'queued' && knotOf(e.knot) === knotOf(npc.currentKnot));
   }
 
   // Load timed messages from scenario data

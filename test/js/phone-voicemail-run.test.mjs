@@ -170,3 +170,32 @@ test('M1: resetToHome with no saved story or an unloadable one changes nothing a
         assert.equal(npc.storyState, '{not json');
     } finally { w.restore(); }
 });
+
+test('n2: resetToHome steps aside when the thread moved on while the story loaded', async () => {
+    const w = makeWorld({ npcs: [{ ...base }] });
+    try {
+        const npc = await midCall(w);
+        npc.currentKnot = 'ring_talk';
+        const pending = PhoneChatConversation.resetToHome(npc, w.nm, new InkEngine('caller'));
+        npc.storyState = '{"moved":"on"}';     // the player's thread saved over it during the load
+        assert.equal(await pending, false);
+        assert.equal(npc.storyState, '{"moved":"on"}', 'not overwritten');
+        assert.equal(npc.currentKnot, 'ring_talk', 'not moved');
+    } finally { w.restore(); }
+});
+
+test('n4: a #set_global the knot sets is mirrored into the story for the lines after it, and the ink variables are recorded after the save', async () => {
+    const w = makeWorld({ npcs: [{ ...base }] });
+    const recorded = [];
+    const saved = window.npcConversationStateManager;
+    window.npcConversationStateManager = { discoverGlobalVariables() {}, syncGlobalVariablesToStory() {}, observeGlobalVariableChanges() {}, recordInkVariables: (id, story) => recorded.push([id, !!story, w.nm.getNPC('caller').storyState]) };
+    try {
+        await run(w, 'mirror_vm');
+        const lines = texts(w).filter(([t]) => t === 'npc').map(([, x]) => x);
+        assert.deepEqual(lines, ['voice: First.', 'voice: Saw the flag.'], 'the second line read the global the first one set');
+        assert.equal(recorded.length, 1);
+        assert.equal(recorded[0][0], 'caller');
+        assert.equal(recorded[0][1], true);
+        assert.ok(recorded[0][2], 'recorded after the story position was saved');
+    } finally { window.npcConversationStateManager = saved; w.restore(); }
+});

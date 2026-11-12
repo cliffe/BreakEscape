@@ -1115,7 +1115,9 @@ test('M7: when the connected call ends, the slot holds the queued one, which the
     assert.equal(s.ringer.current().knot, 'call_b');
     assert.equal(saves(s).pop().state, 'ringing');
     s.ringer.decline('ceo');
-    assert.equal(saves(s).pop().state, 'missed', 'a callback is left (A6)');
+    const left = saves(s).pop();
+    assert.equal(left.state, 'missed', 'a callback is left (A6)');
+    assert.equal(left.knot, 'call_b', 'on the knot that was missed, not the call that ended before it');
 });
 
 test('M7: a forced call waiting to re-ring keeps the slot against a queued offer for the same contact', () => {

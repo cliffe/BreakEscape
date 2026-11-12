@@ -310,3 +310,23 @@ test('A4 R2 m2: suspend(false) reopens a kept descriptor once and empties the li
     s.ringer.suspend(false);
     assert.equal(s.all('reopen').length, 1, 'and a second cycle does not reopen it a second time');
 });
+
+test('n3: a voicemail left by a miss clears an older callback (an offer missed without ringing, e.g. lost to a reload)', () => {
+    const s = setup();
+    s.ringer.restoreCallback('ceo', { knot: 'old_call' });
+    assert.equal(s.ringer.callbackFor('ceo').knot, 'old_call');
+    s.ringer.missedOffline('ceo', { knot: 'ring_call', onMissed: 'voicemail', voicemailKnot: 'ring_vm', state: 'ringing' });
+    assert.equal(s.ringer.callbackFor('ceo'), null, 'the stale callback is gone');
+    assert.equal(s.all('voicemail').length, 1);
+    assert.equal(s.lastSlot('ceo'), null, 'and the slot is empty');
+});
+
+test('n5: the hold limit with onMissed voicemail but no voicemail knot falls back to a callback and keeps the "rang off" toast', () => {
+    const s = setup();
+    s.w.minigame = true; s.w.openBlocked = true;
+    s.ringer.offer(offer({ onMissed: 'voicemail' }));
+    s.ringer.answer('ceo');
+    s.clock.run(HOLD_MAX_MS + 1000);
+    assert.equal(s.ringer.callbackFor('ceo').knot, 'ring_call');
+    assert.equal(s.last('toast')[1], 'The CEO rang off. Call back from the thread.', 'the player is told, since no voicemail comes');
+});

@@ -979,7 +979,10 @@ export default class PhoneChatConversation {
      * @param {(tags: string[], conversation: PhoneChatConversation) => void} [opts.applyTags] - runs the
      *   knot's game-action tags (`#set_global:` and the like); the caller owns that module
      * @param {boolean} [opts.withheld] - the caller's number was withheld (the row text)
-     * @returns {Promise<{ran: boolean, lines: string[], tags: string[]}>}
+     * @param {() => boolean} [opts.isBlocked] - asked once the story has loaded, just before anything is
+     *   written: true when the contact's thread was opened meanwhile (its story would overwrite this
+     *   save), so nothing is run or written and the result says `blocked` (A6 R1 M1)
+     * @returns {Promise<{ran: boolean, blocked?: boolean, lines: string[], tags: string[]}>}
      */
     static async runVoicemail(npc, npcManager, inkEngine, knot, opts = {}) {
         const none = { ran: false, lines: [], tags: [] };
@@ -992,6 +995,8 @@ export default class PhoneChatConversation {
                 if (gameId) storySource = `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npc.id)}`;
             }
             if (!storySource || !(await conversation.loadStory(storySource))) return none;
+            // Checked again here, after the load: from now to the save everything is synchronous
+            if (typeof opts.isBlocked === 'function' && opts.isBlocked()) return { ...none, blocked: true };
             const story = conversation.engine?.story;
             const manager = window.npcConversationStateManager;
             manager?.applySavedInkVariables?.(npc.id, story);
@@ -1055,6 +1060,7 @@ export default class PhoneChatConversation {
     static async resetToHome(npc, npcManager, inkEngine) {
         if (!npc || !npcManager || typeof npc.storyState !== 'string' || !npc.storyState) return false;
         if (!npc.storyPath && !npc.storyJSON) return false;
+        const saved = npc.storyState;   // as it was when the reset was asked for
         const conversation = new PhoneChatConversation(npc.id, npcManager, inkEngine);
         conversation.observeGlobals = false;
         try {
@@ -1064,7 +1070,6 @@ export default class PhoneChatConversation {
                 if (gameId) storySource = `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npc.id)}`;
             }
             if (!storySource || !(await conversation.loadStory(storySource))) return false;
-            const saved = npc.storyState;
             if (!conversation.restoreState(saved)) return false;
             // A thread that moved on while the story loaded is no longer ours to reset
             if (npc.storyState !== saved) return false;

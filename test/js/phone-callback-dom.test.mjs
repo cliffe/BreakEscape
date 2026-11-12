@@ -190,7 +190,28 @@ test('a ringing call lost to a reload (row 27) leaves a callback and one missed 
     } finally { w.restore(); w2?.restore(); w3?.restore(); }
 });
 
-test('the resume that leaves nothing (no onMissed result) still schedules a sync that clears the server slot', async () => {
+test('the resume that leaves nothing (a withheld ring with no voicemail) still schedules a sync that clears the server slot (A4 R2 m1, A6 R1 m4)', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    let w2;
+    try {
+        w.nm._handleEventMapping('caller', 'room_entered', cfg({ ring: { withheld: true } }), {});
+        await w.advance(300);
+        const saved = saveOf(w);
+        assert.equal(saved.caller.pendingCall.live.state, 'ringing');
+        w2 = makeWorld({ npcs: [npc] });
+        let syncs = 0;
+        w2.win.stateSync = { sync: () => { syncs += 1; return Promise.resolve(); } };
+        w2.nm.restorePhoneState(saved);
+        await loaded(w2);
+        await w2.advance(1000);
+        assert.equal(w2.ringer.callbackFor('caller'), null, 'a withheld caller leaves nothing, so nothing in the resume saves the slot');
+        assert.equal(syncs, 1, 'only refreshSave schedules the sync here');
+        assert.equal(w2.nm.getNPC('caller').pendingCall, null);
+        assert.deepEqual(rows(w2), ['Missed call: No caller ID']);
+    } finally { w.restore(); w2?.restore(); }
+});
+
+test('a voicemail call lost to a reload runs the voicemail silently (quiet, withheld flag) and leaves the Missed call row', async () => {
     const w = makeWorld({ npcs: [npc] });
     let w2;
     try {
@@ -200,13 +221,8 @@ test('the resume that leaves nothing (no onMissed result) still schedules a sync
         w2 = makeWorld({ npcs: [npc] });
         const ran = [];
         w2.nm.runVoicemail = (id, knot, opts) => { ran.push([id, knot, opts]); return Promise.resolve(true); };
-        let syncs = 0;
-        w2.win.stateSync = { sync: () => { syncs += 1; return Promise.resolve(); } };
         w2.nm.restorePhoneState(saved);
         await loaded(w2);
-        await w2.advance(1000);
-        assert.equal(syncs, 1);
-        assert.equal(w2.nm.getNPC('caller').pendingCall, null, 'a voicemail leaves no callback, so the slot is empty');
         assert.deepEqual(ran, [['caller', 'ring_vm', { withheld: true, quiet: true }]], 'run silently after a reload');
         assert.deepEqual(rows(w2), ['Missed call: No caller ID']);
     } finally { w.restore(); w2?.restore(); }
@@ -316,9 +332,34 @@ test('M1: a contact registered after game_loaded is checked too, and only once',
         w.nm.restorePhoneState({ desk: { history: [], storyState: '{"s":1}', currentKnot: 'desk_call' } });
         await loaded(w);
         w.nm.npcs.set('desk', { ...callNpc });
-        w.nm._restoreSavedPhone?.('desk');
+        w.nm._applySavedPhoneState('desk');
         w.nm._resumeCallState?.(w.nm.getNPC('desk'));
         w.nm._resumeCallState?.(w.nm.getNPC('desk'));
-        assert.ok(resets.length <= 1);
+        assert.equal(resets.length, 1, 'checked once, not twice and not never');
     } finally { w.restore(); }
+});
+
+test('m3: a forced call restored but still queued does not stop the reset of an outgoing call\'s knot', async () => {
+    const forced = { call: { knot: 'desk_call' }, eventMappings: [{ conversationMode: 'phone-chat', targetKnot: 'desk_other', ring: true, disableClose: true, eventPattern: 'x' }] };
+    const { w, resets } = await reloadedMidCall(forced, { slot: { forced: [{ knot: 'desk_other', state: 'queued', disableClose: true }] } });
+    try {
+        assert.deepEqual(resets, ['desk'], 'the thread was on the outgoing call knot: it goes home');
+        assert.equal(w.nm.getNPC('desk').currentKnot, 'start');
+    } finally { w.restore(); }
+});
+
+test('m3: a forced call queued on the thread\'s own knot is not on the line yet, so the reset still runs', async () => {
+    const { w, resets } = await reloadedMidCall({ eventMappings: [{ conversationMode: 'phone-chat', targetKnot: 'desk_call', ring: true, disableClose: true, eventPattern: 'x' }] },
+        { slot: { forced: [{ knot: 'desk_call', state: 'queued', disableClose: true }] } });
+    try { assert.deepEqual(resets, ['desk']); } finally { w.restore(); }
+});
+
+test('m3: a forced call on the line on another knot does not stop the reset; one on this thread\'s own knot still does', async () => {
+    const mapping = (knot) => ({ conversationMode: 'phone-chat', targetKnot: knot, ring: true, disableClose: true, eventPattern: 'x' });
+    const other = await reloadedMidCall({ call: { knot: 'desk_call' }, eventMappings: [mapping('desk_other')] },
+        { slot: { forced: [{ knot: 'desk_other', state: 'ringing', disableClose: true }] } });
+    try { assert.deepEqual(other.resets, ['desk']); } finally { other.w.restore(); }
+    const same = await reloadedMidCall({ call: undefined, eventMappings: [mapping('desk_call')] },
+        { slot: { forced: [{ knot: 'desk_call', state: 'connected', disableClose: true }] } });
+    try { assert.deepEqual(same.resets, [], 'resumes on its choice'); } finally { same.w.restore(); }
 });

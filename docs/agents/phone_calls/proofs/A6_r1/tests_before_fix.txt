@@ -1,0 +1,26 @@
+=== phone-voicemail-hold (unfixed engine code)
+not ok 3 - m1: a voicemail with no lines adds nothing to the thread and redraws nothing (no slice(-0))
+not ok 4 - M1: a voicemail while the contact's thread is open waits for conversation_closed, then runs into the saved story and toasts
+not ok 5 - M1: a close of another contact's thread does not release it; a thread that is not the open phone-chat does not hold it
+not ok 6 - M1: the thread opens while the story loads: the result is dropped, no row twice, and a fresh run follows the close
+not ok 7 - M1: two voicemails for one contact held behind its open thread run in order after the close
+not ok 8 - M1: a held voicemail is in the contact's saved slot (state missed, onMissed voicemail) until it runs, then the slot clears
+not ok 9 - M1: a reload while a voicemail is held delivers it after the load, quietly, without a second "Missed call" row
+not ok 10 - M1: the ringer path: Decline of a voicemail call while its thread is open shows the missed row at once and the voicemail after the close
+# pass 2
+# fail 8
+=== phone-callback-dom (unfixed engine code)
+not ok 18 - m3: a forced call restored but still queued does not stop the reset of an outgoing call's knot
+not ok 19 - m3: a forced call on the line on another knot does not stop the reset; one on this thread's own knot still does
+# pass 17
+# fail 2
+=== phone-callback-ringer (unfixed engine code)
+not ok 19 - n5: onMissed voicemail with no voicemail knot falls back to a callback and keeps the "rang off" toast
+# pass 18
+# fail 1
+=== phone-voicemail-run (unfixed engine code)
+# pass 10
+# fail 0
+=== phone-ringer (unfixed engine code)
+# pass 122
+# fail 0
