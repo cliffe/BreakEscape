@@ -98,6 +98,8 @@ VAR dock_heard = false
 // skipIfGlobal reads it), so the shadow and the global share the name on purpose.
 VAR flag1_read_heard = false
 VAR ledger_read_here = false
+VAR flag1_read_done = false   // M3 R2 m1: the read-out has finished (ink-local)
+VAR ledger_read_done = false   // M3 R2 m1: the read-out has finished (ink-local)
 VAR afterwards_here = false
 VAR hour_read_here = false
 VAR catalogue_topic_given = false
@@ -219,7 +221,10 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
 // ================================================
 === flag1_read ===
 // Idempotent: a stale toast tap, or a thread opened before her text arrived, shows the hub.
-{flag1_read_heard: -> support_hub}
+// M3 R2 m1: a read-out that was started but not finished goes to its choices
+// (a reopen with changed globals re-runs this knot), a finished one to the hub.
+{flag1_read_done: -> support_hub}
+{flag1_read_heard: -> ask}
 ~ flag1_read_heard = true
 #set_global:flag1_read_heard:true
 // The stacks door opens on its own mapping (S4 §4 row 1), which can retry,
@@ -230,6 +235,9 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
 Series R is the restricted series. R-114 to R-161, bay ten, behind the cage mesh in the restricted stacks.
 Sorensen's in there with them. The boxes on the clerk's trolleys are the ones on this list.
 The catalogue keeps something else live. Their ledger.
+-> ask
+
+= ask
 + [Ledger or stacks first?]
     The ledger keeps. Her shredder doesn't. Stacks first.
 + [She's shredding Series R?]
@@ -244,6 +252,7 @@ Her card's on a reel at her hip. You've done this before.
 I've sent you the odd one. Salvage cage, their own code.
 // Scenario design R3 m2: name Act 3's target where the line is handed over.
 The catalogue calls what's in there Tomb Beta. It's still drawing power, and nobody's scheduled it for anything.
+~ flag1_read_done = true
 {flag1_to_hub: -> support_hub}
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
@@ -255,7 +264,8 @@ The catalogue calls what's in there Tomb Beta. It's still drawing power, and nob
 // LEDGER READ (Beat 2.3; unvoiced)
 // ================================================
 === ledger_read ===
-{ledger_read_here or ledger_read_heard: -> support_hub}
+{ledger_read_done: -> support_hub}
+{ledger_read_here or ledger_read_heard: -> ask}
 // First line sets ledger_read_heard: the Recruiter's ring (a) and ring (c)
 // key on it (CONTRACT §6.2; ring (b) removed at scenario design R4 m3). No pronoun for WREN.
 ~ ledger_read_here = true
@@ -263,6 +273,9 @@ The catalogue calls what's in there Tomb Beta. It's still drawing power, and nob
 The ledger's live. Twenty-three placements, forty-seven candidates.
 And a legacy section, older than any list we've ever had off them.
 One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation."
+-> ask
+
+= ask
 + [TF Null. That's the raid team.]
     WREN's on our team. One of the four you met at the briefing.
 + [Who is WREN?]
@@ -294,6 +307,7 @@ I've told the Director. He'll say nothing to them. Neither will you.
 - m08_named_on_evidence:
     You found Nightshade on paper. Same again.
 }
+~ ledger_read_done = true
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
 + [Got it.]

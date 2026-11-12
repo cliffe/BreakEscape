@@ -138,8 +138,8 @@ end
 
 # Phone calls M3: HaX's read-outs are texts, not calls. The toast carries
 # targetKnot (m03's form), so tapping it or opening her thread plays the knot;
-# the phone is never forced open. `latch` (where given) is set when the text is
-# sent so a second event or a backstop doesn't send it twice. The text itself
+# the phone is never forced open. `latch` (where given) is set when the mapping fires
+# (the text is then scheduled) so a second event or a backstop doesn't send it twice. The text itself
 # comes 5 s after the event, so it never stacks with HaX's other texts.
 # `skip` is a global that, once true, cancels the text and its toast at delivery
 # (sendTimedMessage skipIfGlobal), so a read-out heard by opening her thread first
