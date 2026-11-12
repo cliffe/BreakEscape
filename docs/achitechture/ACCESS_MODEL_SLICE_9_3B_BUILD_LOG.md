@@ -70,7 +70,7 @@ Leak scanner (`access-leak-check.rb` over the 39 captured responses): VERDICT no
 
 ### Suites
 
-FULL_SUITES_RESULT
+Under the shared lock: `bin/rails test` 1619 runs, 23653 assertions, 0 failures, 0 errors, 1 skip. `bin/test-js -j 3` 493 files passed, 0 failed. Phone reopen check: the 4 problems are all m09 phone ink files, unrelated to this change (no ink/phone code touched).
 
 ### Open / not done
 
