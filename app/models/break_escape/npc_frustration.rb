@@ -597,6 +597,9 @@ module BreakEscape
       # USB habit review R1 n1: the use is at the station the cause names; R1 m1: only a use that
       # carries a copy (every nth at the station, counted here) can be refused
       return refused if usb && (object_id != usb['id'] || !usb_copy_due?(npc_id, npc))
+      # The stick (2026-11-12): once it has left the NPC there is nothing to copy, so no use
+      # can be refused for it (a plain met use, not a new cause)
+      return refused if usb && !usb_stick_with_npc?(npc)
 
       # 3. a cause holds on the server
       holding = missing.select { |c| frustration_cause_holds?(npc, need, c) }
@@ -674,7 +677,7 @@ module BreakEscape
     # (usbUses, never sent to the client). A held-back report (tooSoon) is not counted, so a
     # forged report cannot pump it. Capped at 10, the largest `every`.
     def usb_counted_use?(npc, need, object_id)
-      return false unless need == 'work' && AccessWork.usb_habit_refused?(scenario_data, npc)
+      return false unless need == 'work' && AccessWork.usb_habit_refused?(scenario_data, npc) && usb_stick_with_npc?(npc)
 
       object_id == AccessWork.station(scenario_data, npc)&.dig('id')
     end

@@ -2547,6 +2547,11 @@ module BreakEscape
         found = find_object_in_contents(grant_item, target_id)
         return found if found
       end
+      # A habit NPC's USB stick the player holds (2026-11-12), with its files
+      held_usb_sticks.each do |stick|
+        found = find_object_in_contents(stick, target_id)
+        return found if found
+      end
       nil
     end
 
@@ -2564,6 +2569,47 @@ module BreakEscape
 
       declared_grants.map { |grant| grant['item'] }
                      .select { |item| BreakEscape::ItemIdentity.held_in?(item, inventory) }
+    end
+
+    # ── the USB habit's stick (USB_HABIT_BUILD_LOG.md, 2026-11-12) ──────
+
+    # Whether a habit NPC's stick has left it, by the server's own records: the give record
+    # (an NPC give or a pickpocket, record_npc_gift!) addresses it, or the NPC was knocked out
+    # (a KO drops everything it holds). Never from the browser's word.
+    def usb_stick_taken?(npc)
+      stick = BreakEscape::AccessWork.usb_stick(npc)
+      return false unless stick && npc['id'].is_a?(String)
+
+      given = player_state.is_a?(Hash) ? player_state.dig('npc_given_items', npc['id']) : nil
+      Array(given).any? { |g| g.is_a?(Hash) && BreakEscape::ItemIdentity.addressed_by?(stick, g['type'], g['id'], g['name']) } ||
+        npc_defeated?(npc['id'])
+    end
+
+    # The habit still copies: the NPC has a stick and it has not left it. With no stick there is
+    # nothing to copy, so a use is a plain use (the user's decision, 2026-11-12).
+    def usb_stick_with_npc?(npc)
+      !BreakEscape::AccessWork.usb_stick(npc).nil? && !usb_stick_taken?(npc)
+    end
+
+    # The ids of every habit stick in the scenario (memoised: the snapshot is fixed per request)
+    def usb_habit_stick_ids
+      @usb_habit_stick_ids ||= BreakEscape::AccessWork.usb_habit_sticks(scenario_data).map { |_npc, stick| stick['id'] }
+    end
+
+    # The habit sticks the player holds right now, each with its files resolved (its contents,
+    # or the default work_file.txt). Held means the server's inventory has it, from no
+    # client-added entry, and the server's give or take record says it left its NPC; a stick the
+    # browser only claims opens nothing. Not memoised: the inventory changes per request.
+    def held_usb_sticks
+      inventory = player_state.is_a?(Hash) ? Array(player_state['inventory']) : []
+      inventory = inventory.reject { |i| i.is_a?(Hash) && i['clientAdded'] }
+      return [] if inventory.empty?
+
+      BreakEscape::AccessWork.usb_habit_sticks(scenario_data).filter_map do |npc, stick|
+        next nil unless usb_stick_taken?(npc) && BreakEscape::ItemIdentity.held_in?(stick, inventory)
+
+        stick.deep_dup.merge('contents' => BreakEscape::AccessWork.usb_stick_files(stick).map(&:deep_dup))
+      end
     end
 
     # Match this object (by id/name, or the given client id at the top level) or any object nested
@@ -4197,6 +4243,15 @@ module BreakEscape
           obj.delete('contents')
           obj['hasContents'] = true
           obj['locked'] = true
+        end
+
+        # A habit NPC's USB stick (2026-11-12): its files are served only by GET /container to
+        # a player who holds it (Game#held_usb_sticks), so they leave every room, NPC and
+        # inventory copy. hasContents opens it as a container; one with no authored contents
+        # holds the default work_file.txt, so it is marked too.
+        if obj['type'] == 'usb' && obj['id'].is_a?(String) && usb_habit_stick_ids.include?(obj['id'])
+          obj.delete('contents')
+          obj['hasContents'] = true
         end
 
         # Remove 'contents' if locked (lazy-loaded via separate endpoint), but

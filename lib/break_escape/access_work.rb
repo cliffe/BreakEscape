@@ -712,6 +712,10 @@ module BreakEscape
       if usb
         out['usb'] = { 'every' => usb_every(npc) }
         out['usb']['setGlobal'] = usb['setGlobal'] if usb['setGlobal'].is_a?(String) && declared_global?(data, usb['setGlobal'])
+        # The stick the copy goes to (USB stick, 2026-11-12): the browser copies only while the
+        # NPC's record still holds an item with this id
+        stick = usb_stick(npc)
+        out['usb']['stick'] = stick['id'] if stick
       end
       out
     end
@@ -762,6 +766,39 @@ module BreakEscape
     def usb_every(npc)
       v = usb_habit(npc)&.dig('every')
       v.is_a?(Integer) && USB_EVERY_RANGE.cover?(v) ? v : USB_EVERY_DEFAULT
+    end
+
+    # The stick the habit copies to (USB stick, 2026-11-12): the first `usb` item with an id in
+    # the NPC's itemsHeld, or nil. The validator requires one on a habit NPC.
+    def usb_stick(npc)
+      return nil unless usb_habit(npc) && npc['itemsHeld'].is_a?(Array)
+
+      npc['itemsHeld'].find { |i| i.is_a?(Hash) && i['type'] == 'usb' && present_string?(i['id']) }
+    end
+
+    USB_STICK_DEFAULT_FILE = 'work_file.txt'
+    USB_STICK_DEFAULT_TEXT = "Work in progress.\n\nCopied to finish at home tonight. Do not lose this stick."
+
+    # The files on a habit stick: its authored `contents`, else one work_file.txt. Served only by
+    # GET /container (and /unlock) to a player who holds the stick; never in room data.
+    def usb_stick_files(stick)
+      list = stick.is_a?(Hash) && stick['contents'].is_a?(Array) ? stick['contents'].select { |f| f.is_a?(Hash) } : []
+      return list unless list.empty?
+
+      [{ 'type' => 'text_file', 'id' => "#{stick['id']}_work_file", 'name' => USB_STICK_DEFAULT_FILE,
+         'takeable' => false, 'readable' => true, 'text' => USB_STICK_DEFAULT_TEXT }]
+    end
+
+    # Every habit stick in the scenario's rooms, as [npc, stick] pairs
+    def usb_habit_sticks(data)
+      return [] unless data.is_a?(Hash) && data['rooms'].is_a?(Hash)
+
+      data['rooms'].each_value.flat_map do |room|
+        Array(room.is_a?(Hash) ? room['npcs'] : nil).filter_map do |npc|
+          stick = usb_stick(npc)
+          stick ? [npc, stick] : nil
+        end
+      end
     end
 
     # The habit can be refused: a usbHabit, a work plan and a station whose policy refuses a

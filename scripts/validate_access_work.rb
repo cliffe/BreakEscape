@@ -437,6 +437,7 @@ module ValidateAccessWork
     if h.key?('setGlobal') && !(h['setGlobal'].is_a?(String) && declared_globals(json_data).key?(h['setGlobal']))
       err(issues, "#{nid}.usbHabit.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
     end
+    check_usb_stick(npc, issues)
     unless plan
       warn(issues, "#{nid} has a usbHabit but no work plan (a work need and a non-empty workNeeds list): only judged work " \
                    'uses are checked, so the habit never acts. Give it a work plan, or remove the habit.')
@@ -454,6 +455,46 @@ module ValidateAccessWork
     warn(issues, "#{nid}.usbHabit.setGlobal '#{h['setGlobal']}' can never be set: the policy at '#{st['id']}' allows a USB " \
                  'stick, so the copy is never refused. Check the policy name (an unknown one falls back to the default) ' \
                  'or its usb field.')
+  end
+
+  # The habit's stick (2026-11-12): a `usb` item with an id in itemsHeld, its files well formed
+  def check_usb_stick(npc, issues)
+    nid = npc['id']
+    stick = AW.usb_stick(npc)
+    unless stick
+      err(issues, "#{nid} has a usbHabit but holds no USB stick: add a { \"type\": \"usb\", \"id\": ..., \"sprite\": " \
+                  "\"usb_bowl1\", \"usbClass\": \"storage\", \"takeable\": true } item to its itemsHeld. Its files default to " \
+                  "#{AW::USB_STICK_DEFAULT_FILE}; list others in its contents.")
+      return
+    end
+    sid = stick['id']
+    err(issues, "#{nid}'s USB stick '#{sid}' is locked: a habit stick opens for whoever holds it, so drop the lock.") if stick['locked']
+    unless stick['takeable']
+      warn(issues, "#{nid}'s USB stick '#{sid}' is not takeable, so the player can never get it to read its files.")
+    end
+    return unless stick.key?('contents')
+
+    files = stick['contents']
+    unless files.is_a?(Array) && !files.empty?
+      err(issues, "#{nid}'s USB stick '#{sid}'.contents must be a non-empty list of files (leave it out for the default " \
+                  "#{AW::USB_STICK_DEFAULT_FILE}).")
+      return
+    end
+    ids = []
+    files.each_with_index do |f, i|
+      where = "#{nid}'s USB stick '#{sid}'.contents[#{i}]"
+      unless f.is_a?(Hash) && f['type'] == 'text_file'
+        err(issues, "#{where} must be a file: { \"type\": \"text_file\", \"id\", \"name\", \"text\" }.")
+        next
+      end
+      err(issues, "#{where} needs an id (a string), so the file can be told apart.") unless AW.present_string?(f['id'])
+      err(issues, "#{where} needs a name (the file name the player sees).") unless AW.present_string?(f['name'])
+      err(issues, "#{where} needs a text (what the file says).") unless AW.present_string?(f['text'])
+      err(issues, "#{where} is locked or holds contents: a file on a stick is a plain readable file.") if f['locked'] || f.key?('contents')
+      ids << f['id'] if AW.present_string?(f['id'])
+    end
+    dup = ids.group_by(&:itself).select { |_id, v| v.size > 1 }.keys
+    err(issues, "#{nid}'s USB stick '#{sid}' lists the file id(s) #{dup.join(', ')} more than once.") unless dup.empty?
   end
 
   # For each cause the NPC can meet, the cause's own pool or work_fail needs a line (plan 5.5)

@@ -1997,7 +1997,10 @@ module BreakEscape
       end
       # A declared grant the player holds (Game#held_grant_items), after the rooms so a
       # game whose snapshot still has the old twin answers from it as before.
-      find_container_recursive(@game.held_grant_items, container_id)
+      find_container_recursive(@game.held_grant_items, container_id) ||
+        # A habit NPC's USB stick the player holds (2026-11-12): taken from itemsHeld, so in no
+        # room; its files come from the scenario (or the default), never from the browser
+        find_container_recursive(@game.held_usb_sticks, container_id)
     end
 
     def find_container_recursive(objects, container_id)
@@ -2045,6 +2048,11 @@ module BreakEscape
       # Then a declared grant the player holds, as find_container_in_scenario.
       @game.held_grant_items.each do |grant_item|
         found = find_object_in_object(grant_item, object_id)
+        return found if found
+      end
+      # Then a habit NPC's USB stick the player holds, as find_container_in_scenario.
+      @game.held_usb_sticks.each do |stick|
+        found = find_object_in_object(stick, object_id)
         return found if found
       end
       nil

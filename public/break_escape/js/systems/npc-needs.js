@@ -3181,7 +3181,7 @@ export class NPCNeedsSystem {
             if (job.need === 'work') s.checked.clear();
             // The USB habit (review R1 m1): every met work use at a station that refuses the stick is
             // reported, even at level 0, since the server counts them to know which use carries a copy
-            const usbCount = atStation && job.need === 'work' && !!this._plan(s)?.usb && usbRefusedBy(obj?.usbPolicy ?? null, 'storage');
+            const usbCount = atStation && job.need === 'work' && this._usbStickHeld(s) && usbRefusedBy(obj?.usbPolicy ?? null, 'storage');
             if ((s.frustration > 0 || s.failSent[job.need] || usbCount) && typeof this.world.reportUse === 'function') {
                 this.world.reportUse(id, { event: 'ease', need: job.need, objectId: job.targetId });
                 delete s.failSent[job.need];
@@ -3260,7 +3260,8 @@ export class NPCNeedsSystem {
     _usbAttempt(s, obj, v) {
         const usb = this._plan(s)?.usb;
         const every = Number.isInteger(usb?.every) && usb.every >= 1 && usb.every <= 10 ? usb.every : 0;
-        if (!every) return v;
+        // No stick, nothing to copy: the use is a plain use (2026-11-12), and the count stands still
+        if (!every || !this._usbStickHeld(s)) return v;
         s.usbUses += 1;
         if (s.usbUses % every !== 0) return v;
         const id = s.npcId;
@@ -3275,6 +3276,18 @@ export class NPCNeedsSystem {
         if (typeof usb.setGlobal === 'string' && usb.setGlobal) { this.world.setGlobal(usb.setGlobal, true); this._worldChanged(); }
         const rest = Array.isArray(v.missing) ? v.missing.filter(c => c && c.why !== 'usb_refused') : [];
         return { met: false, missing: [...rest, { id: objectId, why: 'usb_refused' }], station: !!v.station };
+    }
+
+    /**
+     * The USB habit's stick (2026-11-12): the plan names it (work.usb.stick) and the NPC's record
+     * still holds an item with that id. A give, a pickpocket or a knock-out takes it out of
+     * itemsHeld (and the server leaves it out of room data on a reload), so the habit stops.
+     */
+    _usbStickHeld(s) {
+        const stick = this._plan(s)?.usb?.stick;
+        if (typeof stick !== 'string' || !stick) return false;
+        const held = this._rec(s).itemsHeld;
+        return Array.isArray(held) && held.some(i => i && i.id === stick);
     }
 
     _borrowDone(s, job, met) {
