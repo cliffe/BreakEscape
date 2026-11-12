@@ -3164,7 +3164,14 @@ module BreakEscape
         # does not define is never met through unlockedObjects instead (review R1, m5).
         target_jack = network_room_object(task['targetObject'])
         target_jack = nil unless target_jack && NetworkModel.jack?(target_jack[:object])
-        if target_jack
+        # A Wi-Fi access point (slice 9.3b, 5.3): met once the player has joined there,
+        # a second access point of a joined network included (record_gained_ap!).
+        target_ap = target_jack ? nil : find_wifi_ap(task['targetObject'])
+        if target_ap
+          unless gained_footholds.include?(target_ap[:object]['id'].to_s)
+            return { success: false, error: 'Not joined here' }
+          end
+        elsif target_jack
           unless gained_footholds.include?(target_jack[:object]['id'].to_s)
             return { success: false, error: 'No device planted here' }
           end
