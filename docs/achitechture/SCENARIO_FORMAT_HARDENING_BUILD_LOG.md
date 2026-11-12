@@ -225,8 +225,32 @@ Validator after the change, all 177 `scenarios/*/scenario.json.erb`, ink on, `--
 - `validate_network.rb:19-20` still calls `grant_foothold` reserved (access review m1); untouched.
 - Plan section 7 (q84) closes the core kinds; until then a room, object or NPC slip is a warning.
 
+### R1 fixes
+
+Review: `docs/achitechture/SCENARIO_FORMAT_HARDENING_STEP2_REVIEW_R1.md` (0 blockers, 3 majors, 6 minors), all fixed. Code in 35c7c20fa, tests in df825084c. Each test below fails on the scripts at ff052383b and passes now (checked by putting the three old scripts back, running the test files, and restoring them from HEAD).
+
+| Finding | Fix | Commit | Test |
+|---|---|---|---|
+| M1. A habits, screenHabit or printHabit slip printed the schema line and a second hand-kept line | Dropped the unknown-habit error in `validate_npc_habits.rb` (it now checks values only, for the names it knows), the `printHabit has unknown key` and `screenHabit has unknown field` warnings and `PRINT_HABIT_KEYS` in `validate_npc_needs.rb`; the schema lists the same keys | 35c7c20fa | strict-keys "full validator: each slip prints exactly one line naming the key" (all 27 slips through the real validator, one line each, exit 1); validator-npc-habits and npc-office-visuals now assert the module prints nothing for an unknown name |
+| M2. `_` keys failed or warned in habits, screenHabit and printHabit | Same removal; habits values skip every `_` name, not only `_comment` | 35c7c20fa | strict-keys "full validator: `_` keys ... print nothing" (base fixture, no line names `_why` or `_comment`) |
+| M3. A grant_foothold type slip in triggerOnInteract printed twice | `format_schema_errors` returns `out.uniq`: the main schema and the walker give the same formatted line | 35c7c20fa | strict-keys "a type slip in a grant_foothold in triggerOnInteract prints once" (formatter and full run) |
+| m1. Swapped letters got no hint, and a swapped required key also printed "required" | `key_edit_distance` is now the optimal string alignment distance (a neighbour swap is one edit); with the hint in place the existing rule drops the "required" line, so nothing else was needed | 35c7c20fa | strict-keys "a swap of two neighbouring letters is one edit" (`ssdi`, `od`) |
+| m2. The grant_foothold walker checked actions under `_` keys | The walker skips `_` keys; README says the schema does not check a `_` key's value | 35c7c20fa | strict-keys "a grant_foothold under a `_` key is not checked" (top level and on an object, formatter and full run) |
+| m3. README promised one line per slip overall | README: one slip prints one schema line; a later check may report what the missing key breaks (`At` for `at`) | 35c7c20fa | wording only |
+| m4. A map-level `_comment` (under `roles`, `networks` and the rest) fails | Decision: it keeps failing. Those maps hold only ids, and only some readers skip non-object entries (the server's `NetworkModel` does, the clue and capture walks do, others were not audited), so allowing a string entry there needs a reader audit first. README says to put the note inside an entry | 35c7c20fa | strict-keys "... a map-level `_comment` under roles still fails" pins the decision |
+| m5. `comment` got no hint | `suggest_key` takes the block's declared `_` keys: with no closer key, `<k>` gets `_<k>` when the block declares it, and `comment` always gets `_comment`. The open-kind warnings get the same hint | 35c7c20fa | strict-keys "`comment` gets a hint towards `_comment`" |
+| m6. Tests ran the formatter only; the corpus test skipped render failures | The tests above run the full validator (in parallel, about 1 s each); the corpus test collects render failures and asserts the list is empty | df825084c | the corpus test itself (not proven failing: no scenario fails to render) |
+
+Left as is: `validate_network.rb`'s own grant_foothold walk still visits `_` keys. The server's `NetworkModel.grant_foothold_actions` also walks them, and `DeclaredGrants.executed?` looks only at the last path segments, so a grant inside, say, `_draft.triggerOnInteract` would be honoured at run time; keeping the network check there is the safer side.
+
+Checks after the fixes:
+
+- Corpus: all 177 `scenarios/*/scenario.json.erb`, ink on, `--no-graph`, the default list, 6 in parallel: every one exits 0; 81 errors, 81 known (unchanged); the same 13 scenarios print a `❌`; no `unknown key`, `could not run` or stale line; m01 to m10 each 0 `❌`; `git status` clean.
+
+- Node tests, no lock, `RBENV_VERSION=2.7.8`, plain `node`: every test file that loads `validate_scenario.rb`, `validate_npc_habits` or `validate_npc_needs` (66 files, including `validator-strict-keys` with 14 tests): 1084 pass, 0 fail. No Ruby test file was touched. Not run: the full suites (the orchestrator runs them at the merge batch).
+
 ## Handover
 
 Step 1 is done; nothing in progress. Commits on `build/harden-step1`: 22e29b9db (validator, list, decisions, fixtures), 42795f922 (tests), and the commit holding this log and the README edits.
 
-Step 2 is done; nothing in progress. Commits on `build/harden-step2`: 3f80b61cb (schema, validator, tests) and the commit holding this log and the README note.
+Step 2 is done; nothing in progress. Commits on `build/harden-step2`: 3f80b61cb (schema, validator, tests), 2a49c4341 (this log and the README note), and for review round 1: 35c7c20fa (fixes), df825084c (tests) and the commit holding the R1 section of this log.
