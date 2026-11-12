@@ -803,6 +803,11 @@ module BreakEscape
         authorize @game if defined?(Pundit)
 
         stale = stale_sync_request?
+        # 6b review m1: fingerprint the phish evidence before the merge, only when something is
+        # waiting on it, so the capture step can tell whether this request advanced that evidence
+        # and skip the scenario load otherwise. A forged, never-provable unproven entry no longer
+        # forces the scenario load on every later evidence-carrying sync.
+        @phish_fp_before = (!stale && @game.unproven_captures?) ? @game.phish_evidence_fingerprint : nil
         refusal = merge_last_write_wins_sections unless stale
         raise ActiveRecord::Rollback if refusal
 
@@ -852,8 +857,17 @@ module BreakEscape
       # 6b: a request that carries globalVariables or mailState can complete an unproven entry's
       # part 2 evidence, so the step runs (and loads the scenario) to stamp it, even with no new
       # capture. A stale request's mail is not merged and confirms nothing, so it never stamps.
-      carries_evidence = !stale && (params[:globalVariables].present? || params[:mailState].present?)
-      needs_stamp = carries_evidence && @game.unproven_captures?
+      # 6b review m1: only when this request actually advanced the phish evidence. The merge has
+      # already run, so compare the post-merge fingerprint (counting the request's own sent
+      # messages, so a mail section refused over a cap still counts) with the pre-merge one. When
+      # they match, no new evidence arrived and the scenario load is skipped, so a forged,
+      # never-provable unproven entry does not force the load on every later sync.
+      mail_incoming = params[:mailState].respond_to?(:to_unsafe_h) ? params[:mailState].to_unsafe_h : nil
+      extra_sent = stale ? [] : @game.incoming_sent_messages(mail_incoming)
+      needs_stamp = false
+      if !stale && !@phish_fp_before.nil?
+        needs_stamp = @game.phish_evidence_fingerprint(extra_sent: extra_sent) != @phish_fp_before
+      end
       return if incoming.empty? && !@game.legacy_captures? && !needs_stamp
 
       scenario = @game.stored_scenario_data
@@ -889,8 +903,7 @@ module BreakEscape
       # mail is not merged. The answers rebuild below from the stamped record.
       return if stale
 
-      mail_incoming = params[:mailState].respond_to?(:to_unsafe_h) ? params[:mailState].to_unsafe_h : nil
-      extra_sent = @game.incoming_sent_messages(mail_incoming)
+      # extra_sent was computed above (reused from the needs_stamp fingerprint check).
       @game.stamp_proven_captures!(scenario: scenario, extra_sent: extra_sent)
     end
 

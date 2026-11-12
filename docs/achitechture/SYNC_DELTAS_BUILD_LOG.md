@@ -46,6 +46,7 @@ Standing constraints for this build:
 | 6a-server review R1 fixes (M1, M2, N1-N4) + tests | Done, committed, tested (`5620ec5b6`). See "builder 6 session" |
 | Clone-merge verification (task 1): branch's `cloneFrom: 'world'` records a world-card copy | Done, code + live proven (game 1894); no fix needed. See "builder 8 session" |
 | 6b. R2 reveal/proof gating | Done, committed, tested (`9271f4435`). Route tests only; live cases D-F not run. See "builder 8 session" |
+| 6b review R1 fixes (M1 doc, m1, n1, n2) | Done, committed, tested. See "builder 10 session" |
 | 7. Node request-size cases (10.1) + sync_bodies fixtures | Done, committed, tested (`7d73e62c7`). See "builder 9 session" |
 | 7. Rails answer-size test (10.2) | Done, committed, tested (`29a3a0815`). See "builder 9 session" |
 | 7. Live proof A to F (10.3) | In progress: see "builder 9 session" |
@@ -89,6 +90,63 @@ differ.
    (`capture_payload_secret_test`, `capture_payload_secret_routes_test`, `capture_secret_endpoint_test`,
    `lab_physical_pentest_secrets_test`, the `capture_proofs` tests), then Len's shoulder-surf beat
    played on the earned path in lab_physical_pentest.
+
+## Plan amendment (6b review R1, M1, orchestrator ruling 2026-11-12): phish part 2 is advisory
+
+The 6b review's M1 (a forged phish serves a hard-access capture secret because part 2 evidence is
+client-synced) is accepted as best effort under q78, pending the user's answer to q87. The gate's
+behaviour is unchanged: a landing-page `capture.secret` that is a hard-access value (a lock code,
+PSK or flag) is served on the client-asserted part 2 evidence (a built landing-page record in
+`globalVariables.se_landing_pages` plus a landed sent mail). This is the same best-effort boundary
+the 6a review accepted for the bare-claim window: a forger only skips their own gameplay, there is
+no cross-player or system impact, and honest play produces the same evidence. Authors must not put
+a value behind a phish gate that they also want hard-enforced. The server-owned fix (record the
+landing-page build and each phishing send on the server) is logged in docs/IDEAS_BACKLOG.md.
+
+### 6b review n1 (logged, kept): part 3 is stricter than main's account pass
+
+The review's n1 notes that `capture_evidence_holds?` requires a non-empty proof list to hold even
+when the captured account's password opens nothing, where main's account pass short-circuits
+(`account_capture_served?` returns true when `account_password_opens_something?` is false). Kept
+deliberately: the direction is safe (it only ever withholds, never over-serves) and no authored
+scenario hits it today (the lab account passwords all open something). An author who adds a
+`captureProof` to an account whose password opens nothing would find the capture withheld until the
+proof holds. Noted at the code site (capture_proofs.rb `capture_evidence_holds?`) and here.
+
+## This session (2026-11-12, builder 10: 6b review R1 fixes M1/m1/n1/n2)
+
+Applied the sync deltas 6b review R1 fixes. Server-only Ruby plus docs; no JS changed, so no JS
+harness copy-list change and no JS rerun.
+
+- **M1 (doc only, no gate change):** the plan amendment above (part 2 advisory) and a
+  docs/IDEAS_BACKLOG.md entry (record the landing-page build and each phishing send on the server
+  so part 2's evidence is server-owned).
+- **m1 (`games_controller.rb`, `capture_proofs.rb`):** a forged, never-provable unproven entry no
+  longer makes every later evidence-carrying sync load `scenario_data` to run a stamp that finds
+  nothing. New `CaptureProofs#phish_evidence_fingerprint` is a cheap, bounded, scenario-free
+  fingerprint of the part 2 evidence (each page's built / meetsThreshold / victim.submitted flags
+  and the landed sent-mail (targetId, kitId) set, plus the request's own sent messages). sync_state
+  takes the fingerprint before the merge (only when an unproven entry exists), and the capture step
+  compares the post-merge fingerprint: when it is unchanged, no new phish evidence arrived and the
+  scenario load and stamp are skipped. Computed only, never stored, so no synced state grows.
+- **n2 (`capture_proofs.rb`):** `each_stored_sent_message` now materialises the mailbox scan once
+  per request and memoises it against the mailboxes hash identity, so several `capture_revealable?`
+  / stamp checks (or several unproven entries) reuse one walk. `merge_mail_state!` replaces
+  `player_state['mailState']` with a fresh object, so a merge within the request changes the
+  identity and the memo recomputes; the readers never mutate mail, so the memo holds through their
+  loop.
+- **n1 (logged, no behaviour change):** see the amendment above; a comment at
+  `capture_evidence_holds?` records the deliberate stricter part 3.
+
+**Tests (affected files, no lock):** `capture_record_test` (model: a `phish_evidence_fingerprint`
+stability/advance case and an `each_stored_sent_message` memo-identity case) and
+`capture_proofs_test` (controller: an `m1` case that counts the `SELECT scenario_data` queries and
+asserts 0 for a sync with no new phish evidence and >= 1 when the page is built, via a
+`sql.active_record` notification subscriber) -> 48 runs, 241 assertions, 0 failures. Regression set
+green: `captures_sync_test` + `mail_state_sync_test` (18 runs), `games_controller_test` (63 runs),
+`capture_secret_test` + `lab_physical_pentest_secrets_test` + `capture_payload_secret_test` +
+`capture_payload_secret_routes_test` + `capture_secret_endpoint_test` (55 + 61 runs across the two
+batches), all 0 failures.
 
 ## This session (2026-11-12, builder 9: step 7 size tests + live proof)
 

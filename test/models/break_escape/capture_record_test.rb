@@ -150,5 +150,41 @@ module BreakEscape
       assert @game.player_state['seCaptures']['sam'].is_a?(Hash)
       refute @game.unrecorded_shared_logins?
     end
+
+    # 6b review m1: the phish-evidence fingerprint is stable while the evidence is unchanged and
+    # moves when a landing page or a landed sent mail arrives, so the sync step can skip the
+    # scenario load when a request brought no new phish evidence.
+    test 'phish_evidence_fingerprint is stable until a landing page or sent mail changes' do
+      base = @game.phish_evidence_fingerprint
+      assert_equal base, @game.phish_evidence_fingerprint, 'stable for the same state'
+
+      @game.player_state['globalVariables'] = { 'se_landing_pages' => {
+        'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } }
+      } }
+      built = @game.phish_evidence_fingerprint
+      refute_equal base, built, 'a built page moves the fingerprint'
+
+      # A landed sent mail passed only in extra_sent (a mail section the merge refused over a cap)
+      # still moves it, so such a request is not mistaken for one with no new evidence.
+      sent = { 'folder' => 'sent', 'landed' => true, 'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } }
+      refute_equal built, @game.phish_evidence_fingerprint(extra_sent: [sent]), 'a landed sent mail moves it'
+
+      # A change that is not phish evidence (another global) does not move it.
+      @game.player_state['globalVariables']['unrelated'] = 'x'
+      assert_equal built, @game.phish_evidence_fingerprint, 'an unrelated global does not move it'
+    end
+
+    # 6b review n2: the stored-mail scan is memoised per request against the mailboxes identity, so
+    # several reveal / stamp checks reuse one walk. A fresh mailState object recomputes.
+    test 'each_stored_sent_message memoises against the mailboxes identity' do
+      @game.player_state['mailState'] = { 'mailboxes' => { 'inbox' => { 'messages' => [
+        { 'id' => 'm1', 'folder' => 'sent', 'landed' => true }
+      ] } } }
+      first = @game.send(:each_stored_sent_message)
+      assert_same first, @game.send(:each_stored_sent_message), 'same object reused while the mailbox is unchanged'
+
+      @game.player_state['mailState'] = { 'mailboxes' => { 'inbox' => { 'messages' => [] } } }
+      refute_same first, @game.send(:each_stored_sent_message), 'a replaced mailState recomputes'
+    end
   end
 end

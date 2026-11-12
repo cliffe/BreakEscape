@@ -45,6 +45,20 @@ module BreakEscape
       response.parsed_body['secrets']
     end
 
+    # Count the SELECT scenario_data queries (Game#stored_scenario_data's pick on the narrow sync
+    # load) issued during the block, to prove the m1 scenario-load skip.
+    def count_scenario_loads
+      count = 0
+      sub = ActiveSupport::Notifications.subscribe('sql.active_record') do |*, payload|
+        sql = payload[:sql].to_s
+        count += 1 if sql.start_with?('SELECT') && sql.include?('scenario_data') && !sql.include?('*')
+      end
+      yield
+      count
+    ensure
+      ActiveSupport::Notifications.unsubscribe(sub) if sub
+    end
+
     def take(id, type, name)
       post game_path('inventory'), params: { action_type: 'add', item: { type: type, id: id, name: name } }, as: :json
       response.parsed_body
@@ -332,6 +346,35 @@ module BreakEscape
         'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 }
       } } }, as: :json
       assert_equal({}, secrets)
+    end
+
+    # 6b review m1: a forged, never-provable unproven entry must not make every later
+    # evidence-carrying sync load the scenario to run a stamp that finds nothing. A sync that does
+    # not advance the phish evidence loads no scenario_data; one that builds the page does.
+    test 'm1: a later sync with no new phish evidence does not load the scenario, one with new evidence does' do
+      build_game(phish_scenario)
+      # Forge the unproven capture claim. seCaptures now holds a never-provable entry.
+      put game_path('sync_state'), params: { clientTs: 1, globalVariables: { 'se_captures' => {
+        'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 }
+      } } }, as: :json
+      refute @game.reload.player_state.dig('seCaptures', 'phished', 'proven'), 'entry is unproven'
+
+      # A later sync that carries globals/mail but no new phish evidence: no scenario load.
+      loads = count_scenario_loads do
+        put game_path('sync_state'), params: { clientTs: 2,
+          globalVariables: { 'some_flag' => true }, mailState: { 'metrics' => { 'opened' => 1 } } }, as: :json
+      end
+      assert_equal 0, loads, 'no scenario_data query when the request brought no new phish evidence'
+
+      # A sync that builds the landing page advances the evidence: the scenario loads to stamp.
+      loads = count_scenario_loads do
+        put game_path('sync_state'), params: { clientTs: 3, globalVariables: { 'se_landing_pages' => {
+          'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } }
+        } }, mailState: { 'mailboxes.inbox.m1' => { 'id' => 'm1', 'folder' => 'sent', 'landed' => true,
+                                                    'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } } } }, as: :json
+      end
+      assert loads >= 1, 'the scenario loads when the request advanced the phish evidence'
+      assert_equal true, @game.reload.player_state.dig('seCaptures', 'phished', 'proven'), 'now stamped proven'
     end
 
     # 6b: phish evidence that arrives in a later sync serves the secret and stamps proven: true,

@@ -301,12 +301,54 @@ module BreakEscape
         return false unless phish_page_evidence_holds?(page_id, target_id, scenario, extra_sent)
       end
 
+      # Part 3 (6b review n1): a non-empty proof list must have one proof hold, even for an account
+      # whose password opens nothing. This is stricter than main's account pass
+      # (account_capture_served? short-circuits when account_password_opens_something? is false), so
+      # a credential with a captureProof whose password opens nothing is withheld until the proof
+      # holds. The direction is safe (it only ever withholds, never over-serves) and no authored
+      # scenario hits it today; kept deliberately and logged here and in the build log.
       proofs = CaptureModel.target_capture_proofs(scenario, target_id)
       if proofs.any?
         return false unless proofs.any? { |pr| capture_proof_holds?(pr) }
       end
 
       true
+    end
+
+    # A cheap, bounded, scenario-free fingerprint of the part 2 phish evidence a sync_state request
+    # can advance: each landing page's built / meetsThreshold / victim.submitted flags, and the set
+    # of landed sent-mail (targetId, kitId) pairs, from stored state plus the request's own sent
+    # messages. It needs no scenario_data, so the sync step can compare it before and after the
+    # merge and skip the scenario load when a request brought no new phish evidence (6b review m1:
+    # a forged, never-provable unproven entry no longer forces the load on every later sync). The
+    # string is bounded by the declared pages and declared phish targets, so it never grows without
+    # bound; it is computed only, never stored.
+    def phish_evidence_fingerprint(extra_sent: [])
+      pages = player_state.dig('globalVariables', 'se_landing_pages')
+      page_part = if pages.is_a?(Hash)
+        pages.keys.sort.map do |pid|
+          rec = pages[pid]
+          next pid.to_s unless rec.is_a?(Hash)
+
+          victim = rec['victim']
+          submitted = victim.is_a?(Hash) && victim['submitted'] == true
+          "#{pid}:#{rec['built'] == true ? 1 : 0}#{rec['meetsThreshold'] == true ? 1 : 0}#{submitted ? 1 : 0}"
+        end.join(',')
+      else
+        ''
+      end
+
+      keys = []
+      add_sent_key = lambda do |msg|
+        next unless msg.is_a?(Hash) && msg['folder'] == 'sent' && msg['landed'] == true
+
+        link = msg['link']
+        keys << "#{msg['targetId']}/#{link.is_a?(Hash) ? link['kitId'] : nil}"
+      end
+      each_stored_sent_message.each(&add_sent_key)
+      Array(extra_sent).each(&add_sent_key)
+
+      "#{page_part}|#{keys.uniq.sort.join(',')}"
     end
 
     # entry['proven'] once stamped, else whether the evidence holds now (an honest capture whose
@@ -402,18 +444,25 @@ module BreakEscape
       Array(extra_sent).any?(&matcher)
     end
 
-    # Every stored sent (or any) mail message, as an Enumerator of hashes.
+    # Every stored mail message, as an Array of hashes. Memoised per request against the identity
+    # of the mailboxes hash (6b review n2): several capture_revealable? / stamp checks in one
+    # request, or several unproven entries, reuse one scan instead of walking the whole mailbox each
+    # time. merge_mail_state! replaces player_state['mailState'] with a fresh object, so a merge
+    # within the request changes the mailboxes identity and the memo recomputes.
     def each_stored_sent_message
       mail = player_state['mailState']
       boxes = mail.is_a?(Hash) ? mail['mailboxes'] : nil
-      return [].each unless boxes.is_a?(Hash)
+      return [] unless boxes.is_a?(Hash)
 
-      Enumerator.new do |y|
-        boxes.each_value do |box|
-          msgs = box.is_a?(Hash) ? box['messages'] : nil
-          Array(msgs).each { |m| y << m }
-        end
+      return @stored_sent_message_memo[1] if @stored_sent_message_memo && @stored_sent_message_memo[0].equal?(boxes)
+
+      list = []
+      boxes.each_value do |box|
+        msgs = box.is_a?(Hash) ? box['messages'] : nil
+        Array(msgs).each { |m| list << m }
       end
+      @stored_sent_message_memo = [boxes, list]
+      list
     end
 
     def capture_now_ms
