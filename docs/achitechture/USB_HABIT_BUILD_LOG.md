@@ -80,3 +80,8 @@ The feed posts are written text, not spoken.
   blocks USB.
 
 ## Suites
+
+Under the shared lock, on `a2ca5dd59` (code and tests; later commits are docs only):
+
+- `bin/rails test`: 1811 runs, 25632 assertions, 0 failures, 0 errors, 1 skip.
+- `bin/test-js -j 3`: 509 files passed, 0 failed.
