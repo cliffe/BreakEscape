@@ -169,8 +169,9 @@ SCADA's theirs, so the only thing that works is the hardwired shutdown in the pl
 // lint: call-knot
 One thing, and it isn't a keyboard.
 
-// Phase 4 dialogue C1: "the one thing they couldn't touch" is said once, in
-// charge_control_systems_explanation. D5-5: no "press it" before it can arm.
+// Phase 4 dialogue C1: the hardwired plant-room shutdown is introduced once, in
+// charge_control_systems_explanation ("the only thing that works is the hardwired
+// shutdown"). D5-5: no "press it" before it can arm.
 The shutdown button in the plant room is hardwired. Straight to the bank isolators, no network in the middle.
 
 {
