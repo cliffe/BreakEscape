@@ -5,6 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { makeWorld, endCall, jsRoot } from './phone-ring-harness.mjs';
 
@@ -248,4 +249,78 @@ test('m3: a legacy voiced call screen skips a call row, and still draws the cont
     await Promise.resolve();
     assert.deepEqual(subtitles, [['npc', 'Hello there']]);
     assert.equal(box.querySelector('.message-call-row'), null);
+});
+
+// ---- A4 review round 1 m5: wiring the handover claims ----
+
+// loadUi (above) points globalThis.window at its own DOM; the world needs its own back
+const makeM5World = (opts) => { const w = makeWorld(opts); globalThis.window = w.win; globalThis.document = w.win.document; return w; };
+
+const openThread = (w, npcId, drawn) => {
+    w.fw.currentMinigame = { _sceneType: 'phone-chat', currentNPCId: npcId, _ending: false, params: {},
+        ui: { addMessage: (type, text, scroll, row) => { drawn.push({ type, text, row }); return Promise.resolve(); } } };
+};
+
+test('m5: a row for the contact whose thread is open is drawn at once and counts as read', () => {
+    const w = makeM5World({ npcs: [npc, { id: 'other', displayName: 'Other' }] });
+    try {
+        const drawn = [];
+        openThread(w, 'caller', drawn);
+        const row = w.nm.addCallRow('caller', 'missed');
+        assert.equal(drawn.length, 1, 'drawn into the open thread');
+        assert.equal(drawn[0].type, 'call');
+        assert.equal(drawn[0].text, 'Missed call');
+        assert.equal(row.read, true, 'seen, so not unread');
+        assert.equal(w.nm.getTotalUnreadCount('player_phone'), 0);
+    } finally { w.restore(); }
+});
+
+test('m5: a row for a contact whose thread is not the open one is not drawn there and stays unread', () => {
+    const w = makeM5World({ npcs: [npc, { id: 'other', displayName: 'Other' }] });
+    try {
+        const drawn = [];
+        openThread(w, 'other', drawn);
+        const row = w.nm.addCallRow('caller', 'missed');
+        assert.equal(drawn.length, 0, "caller's row is not drawn in other's thread");
+        assert.equal(row.read, false);
+        // and with the contact list (no thread) or no phone open at all
+        w.fw.currentMinigame = { _sceneType: 'phone-chat', currentNPCId: null, _ending: false, params: {}, ui: { addMessage: () => drawn.push(1) } };
+        w.nm.addCallRow('caller', 'missed');
+        w.fw.currentMinigame = null;
+        w.nm.addCallRow('caller', 'missed');
+        assert.equal(drawn.length, 0);
+    } finally { w.restore(); }
+});
+
+test('m5: a call that cannot be opened for good is given up as a missed row (giveUp passes missed)', async () => {
+    const w = makeM5World({ npcs: [npc] });
+    try {
+        const start = w.fw.startMinigame.bind(w.fw);
+        w.fw.startMinigame = function (type, container, params) {
+            if (params?.ringerCall) return null;       // the open is refused every time
+            return start(type, container, params);
+        };
+        await ring(w);
+        w.click('.incoming-call-answer');
+        await w.advance(120000);
+        assert.equal(w.ringer.stateOf('caller'), null, 'given up');
+        assert.deepEqual(rows(w).map((m) => m.text), ['Missed call']);
+        assert.equal(rows(w)[0].read, false);
+    } finally { w.restore(); }
+});
+
+test('m5: PhoneChatHistory.markAllRead marks an unread row read and counts it', async () => {
+    const { default: PhoneChatHistory } = await import(pathToFileURL(join(chat, 'phone-chat-history.js')).href);
+    const w = makeM5World({ npcs: [npc] });
+    try {
+        w.nm.addCallRow('caller', 'missed');
+        w.nm.addMessage('caller', 'npc', 'hello');
+        assert.equal(w.nm.getTotalUnreadCount('player_phone'), 2);
+        const h = new PhoneChatHistory('caller', w.nm);
+        assert.equal(h.getUnreadCount(), 2);
+        assert.equal(h.markAllRead(), 2);
+        assert.ok(rows(w).every((m) => m.read), 'row read');
+        assert.equal(h.getUnreadCount(), 0);
+        assert.equal(w.nm.getTotalUnreadCount('player_phone'), 0);
+    } finally { w.restore(); }
 });
