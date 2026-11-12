@@ -874,8 +874,15 @@ export class ContainerMinigame extends MinigameScene {
             tooltip.className = 'container-content-tooltip';
             tooltip.textContent = displayDashes(item.name);
             
+            // A name under every item, so the player can read what is inside without
+            // hovering each one (UX pass, 2026-11-12)
+            const label = document.createElement('div');
+            label.className = 'container-content-label';
+            label.textContent = displayDashes(item.name);
+
             slot.appendChild(itemImg);
             slot.appendChild(tooltip);
+            slot.appendChild(label);
             contentsGrid.appendChild(slot);
         });
     }

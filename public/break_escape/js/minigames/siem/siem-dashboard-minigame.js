@@ -227,6 +227,9 @@ function createSeededAlerts() {
 }
 
 export class SiemDashboardMinigame extends MinigameScene {
+    // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
+    static controlsOverlay = true;
+
     constructor(container, params = {}) {
         super(container, {
             ...params,

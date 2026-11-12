@@ -41,6 +41,16 @@ export function passwordScreenKind({ join = null, lockable = null } = {}) {
     return names.some((n) => isComputerType(n)) ? 'screen' : 'prompt';
 }
 
+/**
+ * True for a container that is a bag or case rather than a device: its password
+ * screen is drawn as a code lock on the case, not as a computer's sign-in screen.
+ */
+export const CASE_LOCK_TYPES = ['suitcase', 'briefcase', 'bag', 'bag1', 'backpack', 'satchel', 'holdall'];
+export function isCaseLockTarget(data) {
+    const type = String(data?.type || '').toLowerCase();
+    return CASE_LOCK_TYPES.includes(type);
+}
+
 // ── Sign-in mode (access model 5.3, step 8) ──────────────────────────────────
 // A sign-in PC's screen: account tiles (from the server, per the PC's loginPicker),
 // Other user (type a username), the password field and the PC's post-it. It has no
@@ -314,8 +324,12 @@ export class PasswordMinigame extends MinigameScene {
         // The framework hides the header, so a Wi-Fi prompt names its network on the panel
         const promptTitle = this.join ? `Join Wi-Fi: ${this.join.apName || 'network'}` : '';
         
+        // A carried case (a bag, briefcase or suitcase) has a code lock, not a computer
+        // screen: it gets the case-lock look, with no desktop wallpaper (UX pass, 2026-11-12)
+        const caseLock = isCaseLockTarget((this.params.lockable || this.params.sprite)?.scenarioData);
+
         this.gameContainer.innerHTML = `
-            <div class="password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}">
+            <div class="password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}${caseLock ? ' case-lock' : ''}">
                 ${imageData ? `
                     <div class="password-image-section">
                         <img src="/break_escape/assets/objects/${escapeHtml(imageData.imageFile)}.png" 

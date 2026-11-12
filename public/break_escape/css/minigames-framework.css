@@ -50,6 +50,10 @@
     background: #1a1a1a;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.5) inset;
     position: relative;
+    /* Lets the game area shrink to leave room for the Cancel row under it when
+       its content is taller than the screen (a long text file), instead of
+       pushing Cancel off the bottom (minigame sweep, 2026-11-12) */
+    min-height: 0;
 }
 
 .minigame-message-container {
@@ -92,15 +96,41 @@
     box-shadow: none;   /* pixel-art UI: no glow (UX access R2) */
 }
 
+/* The Cancel/Close row sits in the window's column under the game area, never
+   over it. It used to be absolutely placed at the bottom of the screen, where it
+   covered any footer a minigame draws at the bottom of its own area (the padlock's
+   Reset and Unlock, the cryptex's Submit, the container's Take button). Examine,
+   the forensic platform and the fingerprint reader had each fixed this for
+   themselves; this does it for all (UX pass, 2026-11-12). */
 .minigame-controls {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-top: 10px;
+    margin: 0 0 16px;
+    /* In the flow, but painted above anything a game area lets spill past its
+       bottom, so Cancel can always be seen and clicked */
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+}
+
+/* Full-window consoles keep a bar at the bottom of their own frame for Cancel,
+   and their game area fills the screen, so in the flow Cancel would be pushed off
+   the bottom (and the header off the top). They keep the old overlay placement.
+   Found by the minigame sweep (2026-11-12). A scene opts in with
+   `static controlsOverlay = true`, which adds this class (code review R2 m2). */
+.minigame-controls-overlay .minigame-controls {
     position: absolute;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
+    margin: 0;
+}
+
+/* An overlay console's Cancel takes no room in the flow, so its game area keeps its
+   full height (code review R2 n1: the SIEM alert list showed half a row less) */
+.minigame-controls-overlay .minigame-game-container {
+    min-height: auto;
 }
 
 .minigame-button {
