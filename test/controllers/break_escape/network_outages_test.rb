@@ -280,5 +280,30 @@ module BreakEscape
       view = network_view(OFFICE)['footholds'].find { |f| f['id'] == OFFICE }
       assert_includes view['hosts'].map { |h| h['id'] }, 'archive_down', 'the resource row returns'
     end
+
+    # Review R1 E3 (plan 5.2): a foothold whose own network is down lists none of that
+    # network's rows, and they come back on repair.
+    test 'a foothold on a network that is down lists no rows of its own network, and they return on repair' do
+      data = NS.scenario
+      data['networks']['office_lan']['downIf'] = 'office_down'
+      data['globalVariables'] = (data['globalVariables'] || {}).merge('office_down' => false)
+      build_network_game({}, data)
+      take_drop_box
+      plant('comms_port')
+      assert_response :success, response.body
+      up = network_view(OFFICE)['footholds'].find { |f| f['id'] == OFFICE }
+      refute_empty up['hosts'], 'rows are listed while the network is up'
+
+      set_global('office_down', true)
+      view = network_view(OFFICE)
+      entry = view['footholds'].find { |f| f['id'] == OFFICE }
+      assert_equal [], entry['hosts']
+      refute(entry['networks'].any? { |b| b['route'] == 'up' }, entry['networks'].inspect)
+      up['hosts'].each { |h| refute_includes response.body, h['host'].to_s } if up['hosts'].all? { |h| h['host'].present? }
+
+      set_global('office_down', false)
+      back = network_view(OFFICE)['footholds'].find { |f| f['id'] == OFFICE }
+      assert_equal up['hosts'].map { |h| h['id'] }, back['hosts'].map { |h| h['id'] }
+    end
   end
 end

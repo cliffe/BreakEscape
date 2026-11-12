@@ -616,6 +616,9 @@ export class NetworkLinks {
         win().syncInventoryFromServer?.(body.inventory, [foothold.itemId]);
         this.footholds.set(foothold.id, foothold);
         this.gained.add(apId);
+        // The display global, as load() writes it after a reload: true for the access point
+        // the network was first joined at, false for a second one (review R1 E2)
+        this._publishPlanted(apId, this.heldAt(apId) !== null);
         const networkId = foothold.network?.id ?? null;
         // Events are client-emitted from the answer (as the plant does); network_joined fires
         // for a second access point too, so a task or mapping on either one completes (5.3)
