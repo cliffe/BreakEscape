@@ -27,6 +27,8 @@ const { applyActions } = await import(actionsUrl);
 const dispatcherSrc = readFileSync(join(js, 'ui/scenario-timer-dispatcher.js'), 'utf8')
     .split("'../systems/apply-actions.js'").join(`'${actionsUrl}'`);
 const { ScenarioTimerDispatcher } = await import(dataUrl(dispatcherSrc));
+// The real strict evaluator for action conditions (it publishes window.evaluateActionCondition)
+await import(join(js, 'utils/global-condition.js'));
 
 const silence = () => {
     const saved = [console.log, console.warn];
@@ -173,4 +175,56 @@ test('a timer with no give_item still fires at once', () => {
         d.update(Date.now() + 1000);
         assert.equal(d.isDone('grant'), true);
     } finally { restore(); }
+});
+
+// A conditioned give skipped when the timer fires starts no promise, so the gives no longer
+// line up with the timer's give_item entries by position. Each give promise carries its own
+// action, and the retry re-applies that one.
+const GIVE_A = { type: 'give_item', condition: 'globalVars.wants_a', item: { type: 'pc', id: 'remote_a', name: 'Remote A' } };
+const GIVE_B = { type: 'give_item', item: { type: 'pc', id: 'remote_b', name: 'Remote B' } };
+
+test('each give promise carries the action it ran; a skipped give has none', () => {
+    const restore = silence();
+    try {
+        inventory([]);
+        window.gameState.globalVariables = { wants_a: false };
+        const gives = applyActions([GIVE_A, { type: 'hint', message: 'x' }, GIVE_B]);
+        assert.equal(gives.length, 1);
+        assert.equal(gives[0].action, GIVE_B);
+        window.gameState.globalVariables = { wants_a: true };
+        assert.deepEqual(applyActions([GIVE_A, GIVE_B]).map(p => p.action), [GIVE_A, GIVE_B]);
+    } finally { restore(); }
+});
+
+test('two gives in one timer, the first skipped by its condition, the second lost to the network: the retry gives the second', async () => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+    const restore = silence();
+    try {
+        const calls = inventory(['error', 'added']);
+        const d = dispatcher([GIVE_A, GIVE_B]);   // wants_a is not set: A is skipped
+        d.update(Date.now() + 1000);
+        await flush();
+        assert.deepEqual(calls, ['remote_b'], 'only B was given at the fire');
+        assert.equal(d.isDone('grant'), false, 'not fired while B is unsettled');
+        mock.timers.tick(1000); await flush();
+        assert.deepEqual(calls, ['remote_b', 'remote_b'], 'the retry gives B again, not the skipped A');
+        assert.equal(d.isDone('grant'), true, 'fired once B settles');
+    } finally { restore(); mock.timers.reset(); }
+});
+
+test('a give whose condition held at the fire is retried even if the condition stops holding', async () => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+    const restore = silence();
+    try {
+        const calls = inventory(['added', 'error', 'added']);
+        window.gameState.globalVariables = { foothold: true, wants_a: true };
+        const d = new ScenarioTimerDispatcher({ timers: [{ id: 'grant', startOnGlobal: 'foothold', delayMs: 300, actions: [GIVE_B, GIVE_A] }] });
+        d.update(Date.now() + 1000);
+        await flush();
+        assert.deepEqual(calls, ['remote_b', 'remote_a']);
+        window.gameState.globalVariables.wants_a = false;
+        mock.timers.tick(1000); await flush();
+        assert.deepEqual(calls, ['remote_b', 'remote_a', 'remote_a'], 'A is retried, B is not given twice');
+        assert.equal(d.isDone('grant'), true);
+    } finally { restore(); mock.timers.reset(); }
 });
