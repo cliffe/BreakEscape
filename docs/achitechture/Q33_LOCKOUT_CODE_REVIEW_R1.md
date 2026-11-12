@@ -144,3 +144,25 @@ through `/feed_post`. Add the two tests.
 - Validator `station_fail` warning (m3): yes, small and in scope.
 - Client blindness at a borrowed PC (m2): no; record it in the plan's residual list and the
   backlog, and remove the dead guard (m1) so the code does not claim it is handled.
+
+## Outcomes (2026-11-12, commit `819420592`)
+
+Each finding was checked against the code before fixing.
+
+- **m1** confirmed (`lockedOut` holds stations only; `_useCandidate` returns the borrow first).
+  Guard removed; the docblock says a lockout at a borrowed PC is not seen by the client. Build log
+  corrected.
+- **m2** deferred as recommended: a paragraph in plan 9.3 and an entry in `docs/IDEAS_BACKLOG.md`.
+- **m3** fixed: the social-only mutter check now also fires for `lockout_station?`, and the message
+  names the cause. Test in `validator-access-social.test.mjs`. Validator on `test_access_social`
+  and `test_access_work`: 0 lines with ❌ in each, and the same warnings as before (6 and 11 ⚠️
+  lines); no new warning fires in either.
+- **m4** fixed: two tests in `social_lockout_q33_test.rb` (a borrow PC refused before the
+  hand-over, allowed after it, refused with the borrower locked out there; a tablet in an
+  unopened room refused until the room is unlocked).
+- **N1** README sentence added. **N2** recorded in the build log, no fallback. **N3** fixed as a
+  warning (a hot desk that satisfies some but not all of the borrower's can-fail needs), with a
+  test in `validator-access-work.test.mjs`. **N4** comment reworded. **N5** fallback send filters a
+  non-string source.
+
+Suites under the lock: Rails 1704 runs, 25008 assertions, 0 failures, 0 errors, 1 skip; JS 499 of 499 files.
