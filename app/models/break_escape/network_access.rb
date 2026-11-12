@@ -141,7 +141,15 @@ module BreakEscape
         seen[definition['id']] = true
         next if device_id.present? && definition['id'] != device_id.to_s
 
-        entry = inventory.find { |item| ItemIdentity.held_in?(definition, [item]) }
+        # A forged clientAdded device must never pass for a plantable rogue device:
+        # today held_in? blocks it only incidentally (its forced server id never
+        # equals the definition id), which fails if a scenario defines a device with
+        # no id. Guard explicitly on the marker (code review R2, m1).
+        entry = inventory.find do |item|
+          next false if ItemIdentity.client_forged?(item)
+
+          ItemIdentity.held_in?(definition, [item])
+        end
         return { definition: definition, entry: entry } if entry
       end
       nil

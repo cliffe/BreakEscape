@@ -151,6 +151,70 @@ not id) was in the same family and is closed here by the `clientAdded` skip, not
 only the id fix. Flagging it because it was beyond R1's stated identity_candidates
 sweep.
 
+## Review R2 follow-up
+
+R2 (`ADD_OBJECT_KEY_FORGE_FIX_CODE_REVIEW_R2.md`) confirmed the R1 blocker closed
+but found the "every credential matcher ignores a forged item" sweep incomplete.
+One blocker, two minors, one nit, all fixed.
+
+- **B1 (blocker): capture-proof plant forge.** `CaptureProofs#record_planted_item!`
+  read the inventory and matched a plant target's `requiresItem` by type/name, with
+  no `client_forged?` guard, so a forged `clientAdded` device named after the target
+  minted a `plantedItems` entry and served the gated account password. Both the
+  inventory read (`record_planted_item!`, guards the held entry) and
+  `CaptureModel.object_takes_item?` (guards on `item['clientAdded'] == true`, a
+  literal to keep `capture_model.rb` ActiveSupport-free for `validate_capture_log.rb`)
+  now skip a forged item.
+- **B1 sweep.** Swept every inventory read that grants anything, matching by type or
+  name. Newly guarded: `held_grant_items` (a grant serves its server-side contents by
+  id/name; a forged item could impersonate a grant item with no id),
+  `update_cloner_saved_cards!` (a forged `rfid_cloner` must not be picked as the
+  cloner), and `find_flag_station_by_id`'s inventory branch (a forged
+  flag-station/launch-device must not stand in). Explained safe, not guarded:
+  `held_clone_source_keycard` / `clone_source_keycard` (gated behind the guarded
+  `held_keycard_ids` and `card_id` is stripped), `planted_device?` and the room
+  reload filter (hide, never grant), the objective `collect_items` count (already
+  client-trusted via `currentCount`, grants no access credential), and the wear path
+  (needs the stripped `wearable` field).
+- **m1.** `NetworkAccess#held_rogue_device` now guards explicitly on the marker,
+  rather than relying incidentally on the forced server id never equalling a device
+  definition id.
+- **m2.** `CLIENT_ADDED_MARKER` added to `CLIENT_ITEM_FORBIDDEN_FIELDS`, so a client
+  cannot set `clientAdded` on an always-allowed item it builds. The server
+  (`add_item_to_room!`) is the only writer of the marker.
+- **n1.** Drop-and-repickup regressions added for a keycard (opens its rfid door
+  after the round trip, not marked forged) and a network device (still plants a
+  foothold after the round trip, not marked forged).
+
+### Tests (R2)
+
+- New: `capture_proofs_test.rb` (forged clientAdded device matching a plant target
+  records no plant and serves no secret), `access_model_rfid_test.rb` (keycard
+  drop-and-repickup), `network_footholds_test.rb` (network device drop-and-repickup).
+- Affected files rerun without the lock, all green:
+  `capture_proofs_test`, `access_model_rfid_test`, `network_footholds_test`,
+  `network_implants_test`, `add_object_key_forge_test` (113 runs, 718 assertions, 0
+  failures); `inventory_canonical_item_test`, `lab_physical_pentest_secrets_test`,
+  `capture_secret_test` (52 runs, 868 assertions, 0 failures).
+- `validate_capture_log.rb`'s shared `capture_model.rb` still loads AS-free under
+  ruby3.2 and `object_takes_item?` skips a `clientAdded` item.
+- Full suites not rerun here (test-lock congestion rule); the orchestrator runs them
+  once per merge batch.
+
+### Live proof (keyless server on :3044, test_capture_log mission)
+
+Driven over HTTP as a signed-in browser console would (session cookie + CSRF token
+from the real game page). Same correctly-keyed capture claim on both runs; the only
+difference is the device.
+
+- Tampered: unsourced `add_object` of a device named `kit_logger` (chris_desk's
+  `requiresItem`) -> stored with a server id and `clientAdded: true` -> pick up ->
+  `/inventory remove used_on: chris_desk` -> `plantedItems` stays `[]`,
+  `/capture_secrets` returns `{}` (chris's password withheld).
+- Legit: the real start-item `kit_logger` -> same plant -> `plantedItems` records
+  `{item: kit_logger, on: chris_desk}`, `/capture_secrets` returns
+  `{hampshire: "Test-Chris-Keys-41"}`.
+
 ## Open / left undone
 
 - None known. The fix is a strict strip on a path with no legitimate client

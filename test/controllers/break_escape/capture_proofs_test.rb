@@ -141,6 +141,40 @@ module BreakEscape
       assert_equal CP::PASSWORDS['ned'], secrets['ned']
     end
 
+    # Code review R2, B1: an object added to a room with no server-known source is stamped
+    # clientAdded (ItemIdentity::CLIENT_ADDED_MARKER) with a server id, but keeps its
+    # client-chosen type and name. object_takes_item? matches a plant target's requiresItem
+    # on id/type/name, so a forged device whose name equals the target's requiresItem would
+    # otherwise mint a plant and serve the gated secret. record_planted_item! and
+    # object_takes_item? now skip a client-forged item.
+    test 'a forged clientAdded device matching a plant target records no plant and serves no secret' do
+      build_game
+      forge('chris')
+      refute secrets.key?('chris'), 'chris starts gated behind the planted kit_logger proof'
+
+      # Unsourced add_object: the forged device takes the name of chris_desk's requiresItem.
+      post game_path('update_room'), params: {
+        roomId: 'office', actionType: 'add_object',
+        data: { type: 'usb', name: 'kit_logger', takeable: true, x: 5, y: 5 }
+      }, as: :json
+      assert_response :success, response.body
+      added = @game.reload.player_state.dig('room_states', 'office', 'objects_added').last
+      assert_equal true, added['clientAdded'], 'the unsourced add is marked client-added'
+      forged_id = added['id']
+      refute_equal 'kit_logger', forged_id, 'the client id was replaced with a server id'
+
+      post game_path('inventory'), params: { action_type: 'add',
+                                             item: { type: 'usb', id: forged_id, name: 'kit_logger' } }, as: :json
+      assert_response :success, response.body
+      held = @game.reload.player_state['inventory'].find { |i| i['id'] == forged_id }
+      assert held && BreakEscape::ItemIdentity.client_forged?(held), 'the forged item carried its marker into the inventory'
+
+      remove(forged_id, 'chris_desk')
+      assert_equal [], planted, 'a forged device records no plant'
+      refute secrets.key?('chris'), 'chris password served from a forged plant'
+      refute_includes response.body, CP::PASSWORDS['chris']
+    end
+
     test 'a remove with used_on that does not consume the item, matched only by name, or in a locked room records nothing' do
       build_game
       take('kit_logger', 'usb', 'Inline keylogger')

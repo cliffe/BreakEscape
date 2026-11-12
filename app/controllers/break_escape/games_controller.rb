@@ -2176,7 +2176,15 @@ module BreakEscape
     # Single source with the model's FORGEABLE_LOCK_FIELDS, via
     # ItemIdentity::FORGEABLE_ITEM_FIELDS, plus the whole scenarioData, which a
     # client-built item has no business carrying (code review R1, m1).
-    CLIENT_ITEM_FORBIDDEN_FIELDS = (BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS + %w[scenarioData]).freeze
+    # The clientAdded marker (ItemIdentity::CLIENT_ADDED_MARKER) is server-only: only
+    # Game#add_item_to_room! stamps it. A client must not set it on an item it builds
+    # (an always-allowed item reaches the non-Hash branch below with just this filter),
+    # so a security marker is never client-writable (code review R2, m2).
+    CLIENT_ITEM_FORBIDDEN_FIELDS = (
+      BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS +
+      %w[scenarioData] +
+      [BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER]
+    ).freeze
 
     # What the inventory stores for an add that validate_item_collectible passed.
     # A scenario item is stored as the server's own copy, filtered exactly as the
@@ -2940,8 +2948,12 @@ module BreakEscape
         end
       end
 
-      # Also search player inventory (takeable flag-stations/launch-devices end up here)
+      # Also search player inventory (takeable flag-stations/launch-devices end up here).
+      # A forged clientAdded item typed flag-station/launch-device must never stand in for
+      # a real station, even on a name match (code review R2, B1 sweep).
       @game.player_state['inventory']&.each do |item|
+        next if BreakEscape::ItemIdentity.client_forged?(item)
+
         return item if (item['id'] || item['name']) == flag_station_id && flag_station_types.include?(item['type'])
       end
 

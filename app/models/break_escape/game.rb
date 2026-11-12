@@ -2611,6 +2611,11 @@ module BreakEscape
     # memoised: the inventory changes per request and the container action reloads.
     def held_grant_items
       inventory = player_state.is_a?(Hash) ? (player_state['inventory'] || []) : []
+      # A declared grant serves its server-side contents to whoever holds the grant item.
+      # held_in? can match by name alone (when the grant item carries no id), so a forged
+      # clientAdded item with a matching name must not stand in for it (code review R2, B1
+      # sweep).
+      inventory = inventory.reject { |item| BreakEscape::ItemIdentity.client_forged?(item) }
       return [] if inventory.empty?
 
       declared_grants.map { |grant| grant['item'] }
@@ -3092,6 +3097,11 @@ module BreakEscape
       return false if cards.to_json.bytesize > MAX_SAVED_CARDS_BYTES
 
       cloner = (player_state['inventory'] || []).find do |item|
+        # A forged clientAdded item typed rfid_cloner must not be treated as the cloner
+        # (rfid_cloner_held? already skips it for cloning; keep writes off it too, so a
+        # real cloner is found when both are present) (code review R2, B1 sweep).
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
         item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'rfid_cloner'
       end
       return false unless cloner
