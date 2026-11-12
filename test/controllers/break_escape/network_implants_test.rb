@@ -203,6 +203,116 @@ module BreakEscape
       refute_includes nets, 'server_net'        # the link needs a pivot through a held session
     end
 
+    # ---- an implant on a switched-off PC (review R3 M1) ----
+
+    LENA_OFF = 'lena_pc_unplugged'.freeze
+    IMPLANT = 'implant_lena_pc'.freeze
+
+    # The BadUSB implant at lena_pc (session shape, a claim there), with lena_pc switchable
+    def with_lena_implant
+      data = implant_scenario
+      lena = data['rooms']['finance_office']['objects'].find { |o| o['id'] == 'lena_pc' }
+      lena['affordance'] = { 'offWhen' => LENA_OFF }
+      data['globalVariables'] = (data['globalVariables'] || {}).merge(LENA_OFF => false)
+      build_network_game({ 'sessions' => { 'lena_pc' => { 'id' => 'lena', 'via' => 'claim' } } }, data)
+      body = implant('lena_pc', 'session')
+      assert_response :success, body.inspect
+    end
+
+    def set_global(name, value)
+      @game.reload
+      @game.player_state['globalVariables'] ||= {}
+      @game.player_state['globalVariables'][name] = value
+      @game.save!
+    end
+
+    def implant_entry
+      view = network_view(IMPLANT)
+      assert_response :success
+      view['footholds'].find { |f| f['id'] == IMPLANT }
+    end
+
+    test 'the view of an implant whose PC is off lists it as not responding, reaching nothing' do
+      with_lena_implant
+      assert_includes implant_entry['hosts'].map { |h| h['id'] }, 'sam_pc', 'on: the office hosts are listed'
+
+      set_global(LENA_OFF, true)
+      entry = implant_entry
+      assert entry, 'the foothold is still listed'
+      assert_equal false, entry['responding']
+      assert_equal 'HB-FIN-02', entry['sourceHost']
+      assert_empty entry['hosts'], 'no host is reachable through it'
+      assert entry['networks'].none? { |b| b['route'] == 'up' }, 'no network is up through it'
+      refute_exposed('implant view while its PC is off', NS::OFFICE_RESOURCE_STRINGS + ['HB-DESK-01', 'HB-KIOSK-01'])
+      @game.reload
+      assert_empty @game.player_reach(IMPLANT)
+      assert @game.player_state['footholds'].key?(IMPLANT), 'the foothold is kept'
+
+      set_global(LENA_OFF, false)
+      entry = implant_entry
+      refute entry.key?('responding')
+      assert_includes entry['hosts'].map { |h| h['id'] }, 'sam_pc', 'back on: the same implant works again'
+    end
+
+    test 'a remote sign-in through an implant whose PC is off is refused with no failure counted' do
+      with_lena_implant
+      set_global(LENA_OFF, true)
+      body = sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD, foothold: IMPLANT)
+      assert_response :forbidden
+      assert_equal 'PC not reachable', body['message'], 'refused as a host the link cannot reach'
+      refute state['sessions'].key?('sam_pc'), 'no session is written'
+      assert_empty state['loginFailures'].to_h, 'no failed attempt is counted'
+
+      set_global(LENA_OFF, false)
+      body = sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD, foothold: IMPLANT)
+      assert_response :success, body.inspect
+      assert_equal IMPLANT, state['sessions']['sam_pc']['foothold']
+    end
+
+    test 'a remote session through an implant is kept while its PC is off, refused, and reopens' do
+      with_lena_implant
+      sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD, foothold: IMPLANT)
+      assert_response :success, response.body
+
+      set_global(LENA_OFF, true)
+      container('sam_pc', foothold: IMPLANT)
+      assert_response :forbidden
+      container('sam_local')
+      assert_response :forbidden, 'a file under the remote session is refused'
+      assert state['sessions'].key?('sam_pc'), 'the session is kept'
+
+      set_global(LENA_OFF, false)
+      body = container('sam_pc', foothold: IMPLANT)
+      assert_response :success, body.inspect
+    end
+
+    test 'an open share through an implant whose PC is off is not served, nor added from, and returns' do
+      with_lena_implant
+      body = container('scanned_inbox')
+      assert_response :success, body.inspect
+
+      set_global(LENA_OFF, true)
+      container('scanned_inbox')
+      assert_response :not_found
+      refute_includes response.body, NS::INBOX_LETTER_TEXT
+      add_item('text_file', 'inbox_letter', NS::INBOX_LETTER_NAME, source_resource_id: 'scanned_inbox')
+      refute_includes held_ids, 'inbox_letter', 'nothing is added from the share'
+
+      set_global(LENA_OFF, false)
+      body = container('scanned_inbox')
+      assert_response :success, body.inspect
+      assert_includes body['contents'].map { |c| c['id'] }, 'inbox_letter'
+    end
+
+    test 'GET /capture_secrets and the bootstrap name nothing new through an implant whose PC is off' do
+      with_lena_implant
+      set_global(LENA_OFF, true)
+      get game_path('capture_secrets'), as: :json
+      refute_exposed('/capture_secrets with the implant PC off', NS::SHARE_ITEM_STRINGS + NS::PASSWORDS)
+      bootstrap_scenario
+      refute_exposed('bootstrap with the implant PC off', NS::SHARE_ITEM_STRINGS + NS::PASSWORDS)
+    end
+
     # ---- tampered-client checks ----
 
     test 'a forged implant on a PC with no grant_foothold action is refused 404' do

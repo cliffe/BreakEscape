@@ -104,6 +104,38 @@ module BreakEscape
 
     # ---- prune both ways, at the model level -------------------------------------------
 
+    # ---- The other two onward-prune callers (review K R2 m2) ------------------------------
+
+    test 'a reload ends an onward session whose only pivot was a claim' do
+      # Lena's PC is claimed at the keyboard (a physical session, no foothold): the pivot
+      with_pivot_foothold('sessions' => { 'lena_pc' => { 'id' => 'lena', 'via' => 'claim' } })
+      assert_includes @game.reload.player_reach(OFFICE), 'server_net', 'the claim bridges the link'
+      body = sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: OFFICE)
+      assert_response :success, body.inspect
+
+      bootstrap_scenario # GET /scenario calls end_claimed_sessions!
+      assert_response :success
+      sessions = state['sessions']
+      refute sessions.key?('lena_pc'), 'the reload ended the claim'
+      refute sessions.key?('sv_fs02'), 'and the onward session it bridged, with no orphan desktop'
+      container('sv_fs02', foothold: OFFICE)
+      assert_response :forbidden
+    end
+
+    test 'an unplug ends the pivot and the onward server session' do
+      with_pivot_foothold
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      body = sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: OFFICE)
+      assert_response :success, body.inspect
+
+      body = unplug('comms_port')
+      assert_response :success, body.inspect
+      assert_includes body['endedPcIds'], 'sv_fs02', 'the client is told the onward session ended'
+      sessions = state['sessions'].to_h
+      refute sessions.key?('lena_pc')
+      refute sessions.key?('sv_fs02'), 'no onward session survives the unplug'
+    end
+
     test 'prune ends a session carrying a foothold on an unreachable network but keeps a local one' do
       with_pivot_foothold
       # A remote pivot session on server_net whose pivot is already gone, and a local claim

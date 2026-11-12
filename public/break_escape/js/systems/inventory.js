@@ -534,6 +534,45 @@ export function applyPickupAction(sprite) {
 }
 
 /**
+ * The toast for a world pickup that has no toast of its own (lab playtest round 2:
+ * a pickup showed only in the tray, with a sound, and students read the silence as
+ * nothing having happened). Returns null where something else already says it:
+ * notes go to the Notepad ("Added to your notes"), and the lockpick set, the crypto
+ * workstation and the lab workstation keep their own toasts in interactions.js.
+ */
+const OWN_PICKUP_TOAST_TYPES = new Set(['lockpick', 'lockpickset']);
+const PICKUP_TOAST_TEXT = {
+    workstation: (name) => `${name} added to inventory. You can now use it for cryptographic analysis.`,
+    'lab-workstation': (name) => `${name} added to inventory. You can now use it to access lab sheets.`
+};
+export function pickupToast(data) {
+    if (!data || typeof data !== 'object') return null;
+    const type = data.type || '';
+    if (/^notes\d*$/.test(type) || OWN_PICKUP_TOAST_TYPES.has(type)) return null;
+    const name = String(data.name || type || 'item');
+    const special = PICKUP_TOAST_TEXT[type];
+    if (special) return { message: special(name), type: 'success', title: 'Item Acquired', duration: 5000 };
+    return { message: `Picked up ${name}`, type: 'info', title: '', duration: 2500 };
+}
+
+/**
+ * Say a world pickup happened, once addToInventory has answered. Only a new slot
+ * ('added') is announced: 'already' has its own "Already in inventory", and a
+ * refusal its own error. An item filed in a holder (a tray rule's holderId) is
+ * announced by refreshInventoryTray as "Added to <holder>: <item>", so it is left to that.
+ */
+export function announcePickup(sprite, result) {
+    if (!result || result.ok !== true || result.reason !== 'added') return false;
+    const data = sprite?.scenarioData;
+    const toast = pickupToast(data);
+    if (!toast || !window.gameAlert) return false;
+    const held = (window.inventory?.items || []).find(item => item?.scenarioData === data);
+    if (held && trayStateOf(held).holderId) return false;
+    window.gameAlert(toast.message, toast.type, toast.title, toast.duration);
+    return true;
+}
+
+/**
  * Put an item in the player's inventory, validating with the server first.
  *
  * Returns a result object, not a boolean, because callers need to tell two
@@ -1320,6 +1359,7 @@ export function updatePhoneBadge(phoneId) {
 window.initializeInventory = initializeInventory;
 window.processInitialInventoryItems = processInitialInventoryItems;
 window.addToInventory = addToInventory;
+window.announcePickup = announcePickup;
 window.removeFromInventory = removeFromInventory;
 window.addNotepadToInventory = addNotepadToInventory;
 window.createItemIdentifier = createItemIdentifier;

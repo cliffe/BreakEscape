@@ -3,6 +3,7 @@ import { ASSETS_PATH } from '../../config.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 /**
  * The keypad's line after a wrong password. A near miss (right apart from letter
@@ -97,6 +98,19 @@ export function signInRefusalMessage(result) {
     const left = result?.attemptsLeft;
     if (result?.reason !== 'wrong' || !Number.isFinite(left)) return `${message}.`;
     return `${message}. ${left} attempt${left === 1 ? '' : 's'} left.`;
+}
+
+/**
+ * The line under the form when the sign-in got no usable answer (`result.error`): a PC that is
+ * switched off says so at its keyboard ("This PC is off.", q72) and through a foothold ("This
+ * PC is not responding.", as its row in the network view, 9.3b plan 5.2); any other 403 or
+ * 404 is a PC that can't be reached; anything else a network error.
+ */
+export function signInErrorMessage(result) {
+    if (result?.serverReason === 'off') return 'This PC is off.';
+    if (result?.serverReason === 'not_responding') return 'This PC is not responding.';
+    if (result?.status === 403 || result?.status === 404) return "This PC can't be reached.";
+    return 'Network error. Please try again.';
 }
 
 /**
@@ -711,7 +725,17 @@ export class PasswordMinigame extends MinigameScene {
         } catch (error) {
             console.error('Server validation error:', error);
             // api-client sets err.status; a wrong password comes back 422 and is a real attempt.
-            if (error?.status === 422 || error?.message?.includes('422')) {
+            const refusal = lockScopeRefusal(error);
+            if (refusal) {
+                // The PC the lock sits on is off, not responding or out of reach (review R4
+                // m2): not an attempt and not a wrong password, so say why and close as cancelled
+                this.gameData.attempts--;
+                this.attemptsDisplay.textContent = this.gameData.attempts;
+                this.cleanup();
+                this.showFailure(LOCK_SCOPE_REFUSAL_TEXT[refusal], true, 2000);
+                this.gameResult = { success: false, reason: 'cancelled', cancelled: true, refused: refusal,
+                                    attempts: this.gameData.attempts };
+            } else if (error?.status === 422 || error?.message?.includes('422')) {
                 this.passwordIncorrect({ caseMismatch: error?.body?.caseMismatch === true });
             } else {
                 this.showFailure("Network error. Please try again.", false, 1500);
@@ -1130,7 +1154,7 @@ export class PasswordMinigame extends MinigameScene {
             return;
         }
         if (result.error) {
-            this.setSignInMessage(result.status === 403 || result.status === 404 ? "This PC can't be reached." : 'Network error. Please try again.', 'error');
+            this.setSignInMessage(signInErrorMessage(result), 'error');
             return;
         }
         if (window.playUISound) window.playUISound('reject');

@@ -88,11 +88,53 @@ export class ObjectivesPanel {
     this.container.appendChild(header);
     this.container.appendChild(this.content);
     document.body.appendChild(this.container);
+
+    // The "more below" cue follows the list as it scrolls, folds and resizes
+    const cue = () => this.updateMoreBelow();
+    this._moreBelowCue = cue;
+    this.content.addEventListener('scroll', cue, { passive: true });
+    this.content.addEventListener('transitionend', cue);   // an aim folding open or shut
+    window.addEventListener?.('resize', cue);
+    if (typeof ResizeObserver === 'function') {
+      this._moreBelowObserver = new ResizeObserver(cue);
+      this._moreBelowObserver.observe(this.content);
+    }
+    // A late web font changes the list's height with no resize of the list's own box
+    document.fonts?.ready?.then?.(cue).catch?.(() => {});
+  }
+
+  /** Watch the rendered list too: an aim folding inside it changes its height, not the panel's (review m3). */
+  _observeListBody() {
+    const first = this.content?.firstElementChild;
+    if (!this._moreBelowObserver || !first || first === this._observedBody) return;
+    if (this._observedBody) this._moreBelowObserver.unobserve(this._observedBody);
+    this._observedBody = first;
+    this._moreBelowObserver.observe(first);
+  }
+
+  /**
+   * Whether the list goes on below what can be seen. The scrollbar was the only sign,
+   * and a long list ended mid-line at the panel's edge (lab playtest round 2). A pixel
+   * or two of rounding (a zoomed HUD) is not more below.
+   */
+  static hasMoreBelow({ scrollTop = 0, scrollHeight = 0, clientHeight = 0 } = {}) {
+    return scrollHeight - scrollTop - clientHeight > 2;
+  }
+
+  /** Show or hide the fade and arrow at the panel's bottom edge (css/objectives.css). */
+  updateMoreBelow() {
+    this._observeListBody();
+    const c = this.content;
+    const panel = this.container;
+    if (!c || !panel?.classList) return;
+    const more = !this.isCollapsed && ObjectivesPanel.hasMoreBelow(c);
+    panel.classList.toggle('has-more-below', more);
   }
   
   toggleCollapse() {
     this.isCollapsed = !this.isCollapsed;
     this.container.classList.toggle('collapsed', this.isCollapsed);
+    this.updateMoreBelow();
     const toggle = this.container.querySelector('.objectives-toggle');
     toggle.classList.toggle('is-collapsed', this.isCollapsed);
     if (window.getTutorialManager) window.getTutorialManager().notifyObjectivesToggled();
@@ -125,6 +167,7 @@ export class ObjectivesPanel {
   render(aims) {
     if (!aims || aims.length === 0) {
       this.content.innerHTML = '<div class="no-objectives">No active objectives</div>';
+      this.updateMoreBelow();
       return;
     }
     
@@ -216,6 +259,7 @@ export class ObjectivesPanel {
     }
     this.content.innerHTML = html;
     if (newAimIds.length) this.revealAim(this.aimToReveal(newAimIds, aims));
+    this.updateMoreBelow();
   }
 
   /**
@@ -323,6 +367,9 @@ export class ObjectivesPanel {
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container);
     }
+    if (this._moreBelowCue) window.removeEventListener?.('resize', this._moreBelowCue);
+    this._moreBelowObserver?.disconnect();
+    this._moreBelowObserver = null;
     this.manager.removeListener(this.render);
   }
 }

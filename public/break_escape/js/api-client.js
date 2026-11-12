@@ -19,6 +19,8 @@ export class ApiClient {
     if (!response.ok) {
       const err = new Error(`API Error: ${response.status} ${response.statusText}`);
       err.status = response.status;
+      // The refusal's reason, as POST carries it (a switched-off PC answers reason "off", q72)
+      err.body = typeof response.json === 'function' ? await response.json().catch(() => null) : null;
       throw err;
     }
 

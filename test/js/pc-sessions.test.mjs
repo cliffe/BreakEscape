@@ -592,6 +592,32 @@ test('R1 m4: a guest claim granted after someone sat down at the PC ends at once
     }
 });
 
+// q72: a 403 from a switched-off PC carries the server's reason, so the screen can say "off"
+test('a 403 sign-in refusal carries the server reason (off at the keyboard, not_responding remotely)', async () => {
+    for (const reason of ['off', 'not_responding']) {
+        const s = setup({ answer: () => { throw Object.assign(new Error('x'), { status: 403, body: { success: false, message: 'm', reason } }); } });
+        const r = await s.signIn('hot_desk', 'sokafor', 'right-sam');
+        assert.equal(r.ok, false);
+        assert.equal(r.error, true);
+        assert.equal(r.status, 403);
+        assert.equal(r.serverReason, reason);
+        assert.equal(s.has('hot_desk'), false);
+    }
+    const s = setup({ answer: () => { throw Object.assign(new Error('x'), { status: 500 }); } });
+    assert.equal((await s.signIn('hot_desk', 'sokafor', 'right-sam')).serverReason, null);
+});
+
+// Review R3 nit 4: a claim refused 403 off carries the server's reason too, as signIn does
+test('a 403 claim refusal carries the server reason, owner or guest', async () => {
+    for (const as of ['owner', 'guest']) {
+        const s = setup({ answer: () => { throw Object.assign(new Error('x'), { status: 403, body: { success: false, message: 'This PC is off.', reason: 'off' } }); } });
+        const r = await s.claim('hot_desk', { as });
+        assert.equal(r.ok, false);
+        assert.equal(r.serverReason, 'off', as);
+        assert.equal(s.has('hot_desk'), false);
+    }
+});
+
 // Review R2 n3 (q44): each sign-out that awaits /logout says pc_signing_out before the request
 test('q44: Sign out, a claim ended by the owner and a restored claim say pc_signing_out before POST /logout', async () => {
     const s = setup();
