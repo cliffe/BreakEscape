@@ -52,6 +52,10 @@ export const QUEUE_COOLDOWN_MS = 60000;   // after giving up on a queue, that ob
 export const QUEUE_CHAT_RADIUS = 48;  // px (1.5 tiles) from the approach cell: the front of the queue chats
 // Avoidance at a distance, balking and parked needs (slice 14, OFFICE_LIFE_PLAN 10)
 export const AVOID_RADIUS_TILES = 2;  // needsCompany.avoidRadius default, only for an NPC that declares avoids
+// interests.<tag>.noticeRadius default (q53 f): tiles from the NPC within which a tagged item is
+// seen. 24 tiles (768 px) spans any two points of a 20 x 10 room, the largest any interest uses,
+// so an NPC in its notice room sees everything there as before; only a far-off item waits.
+export const NOTICE_RADIUS_TILES = 24;
 export const NEEDS_DEFER_MIN = 4;     // needsDeferMin default: how long a given-up need stays parked
 export const AVOID_BUBBLE_MS = 4000;  // the avoided person's face shows this long after a turn-back's grumble
 export const WAKE_BASE_MS = 1000;     // a door opening or a room loading retries parked needs after this...
@@ -331,9 +335,12 @@ export function normaliseInterest(raw) {
     if (!r || typeof r !== 'object') return null;
     const w = Number(r.weight);
     if (!(w > 0)) return null;
+    const nr = Number(r.noticeRadius);
     return {
         weight: clamp(w, 0.1, 10),
-        noticeRooms: Array.isArray(r.noticeRooms) ? r.noticeRooms.slice() : null
+        noticeRooms: Array.isArray(r.noticeRooms) ? r.noticeRooms.slice() : null,
+        noticeRadius: r.noticeRadius !== undefined && r.noticeRadius !== null && Number.isFinite(nr) && nr > 0
+            ? clamp(nr, 0.5, 100) : NOTICE_RADIUS_TILES
     };
 }
 
@@ -2723,7 +2730,9 @@ export class NPCNeedsSystem {
 
     _carryCandidate(s, tag, it, objects, pos) {
         const rooms = it.noticeRooms || (s.home?.roomId ? [s.home.roomId] : (pos.roomId ? [pos.roomId] : []));
+        const reach = (it.noticeRadius || NOTICE_RADIUS_TILES) * 32;   // q53 f: seen from where the NPC stands
         const items = objects.filter(o => o.needsTag === tag && o.pickable && rooms.includes(o.roomId)
+            && Math.hypot(o.x - pos.x, o.y - pos.y) <= reach
             && !this._itemClaimed(o.id, s.npcId) && !(s.cooldowns[o.id] > this.clockMs) && this._permitted(s, o, false)
             && !this._reservedFrom(o.id, s.npcId)   // slice 17: someone else's printout
             && !s.refused?.has(o.id));   // access 9.2 U: a device refused with nowhere to take it

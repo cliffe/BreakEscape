@@ -640,6 +640,82 @@ export function updateNPCDepth(sprite) {
     sprite.setDepth(depth);
 }
 
+// The player and a patrolling NPC (q53 g). The player's body no longer shoves a routed or
+// patrolling NPC off its route: for the player pair only, the NPC is made unpushable for the
+// rest of the physics step, so the player stops against him and he keeps his line. With the
+// player against or within PLAYER_WALL_MARGIN_PX (12, more than one 20 fps step of a 200 px/s
+// NPC) of a wall the pair does not separate at all and the player slides past: an unpushable NPC would otherwise press the player into the 8 px wall
+// boxes, which is how bodies tunnel through walls. A desk, table or other static body counts as
+// a wall here too (code review R1, G2). The pin lasts until the end of that physics step, so an
+// NPC-NPC collider later in the same step also sees him unpushable: one step at most.
+export const PLAYER_WALL_MARGIN_PX = 12;
+
+/** Does this NPC keep a route the player must not push it off? Patrol on, not hostile, not KO'd. */
+export function keepsRouteAgainstPlayer(behavior, npcId) {
+    if (!behavior?.config?.patrol?.enabled) return false;
+    const hs = window.npcHostileSystem;
+    if (hs?.isNPCKO?.(npcId) || hs?.isNPCHostile?.(npcId)) return false;
+    return true;
+}
+
+/** Is a body rect { x, y, width, height } within `margin` px of any wall rect { l, t, r, b }? */
+export function bodyNearWall(body, wallRects, margin = PLAYER_WALL_MARGIN_PX) {
+    const l = body.x - margin, t = body.y - margin, r = body.x + body.width + margin, b = body.y + body.height + margin;
+    return wallRects.some(w => l < w.r && r > w.l && t < w.b && b > w.t);
+}
+
+/**
+ * The rule for one player and NPC contact: 'separate' (the old push, both move), 'pin' (the
+ * NPC holds, only the player moves), 'slide' (no separation: the player passes).
+ */
+export function playerPushMode({ routed, playerNearWall }) {
+    if (!routed) return 'separate';
+    return playerNearWall ? 'slide' : 'pin';
+}
+
+function wallRectsFor(roomIds) {
+    const out = [];
+    for (const id of roomIds) {
+        const room = id && window.rooms?.[id];
+        for (const wall of (room?.wallCollisionBoxes || [])) {
+            const b = wall?.body;
+            if (!b) continue;
+            const hasEdges = 'left' in b && 'right' in b;
+            out.push(hasEdges ? { l: b.left, t: b.top, r: b.right, b: b.bottom } : { l: b.x, t: b.y, r: b.x + b.width, b: b.y + b.height });
+        }
+    }
+    return out;
+}
+
+/**
+ * Static bodies (desks, tables, collision objects, wall boxes that are static) within `margin`
+ * px of a body, as wall rects { l, t, r, b }. Uses the arcade world's static tree; [] without one.
+ */
+export function staticRectsNear(scene, body, margin = PLAYER_WALL_MARGIN_PX) {
+    const physics = scene?.physics;
+    if (!body || typeof physics?.overlapRect !== 'function') return [];
+    const hits = physics.overlapRect(body.x - margin, body.y - margin, body.width + 2 * margin, body.height + 2 * margin, false, true) || [];
+    return hits.filter(b => b && b !== body && b.enable !== false)
+        .map(b => ({ l: b.x, t: b.y, r: b.x + b.width, b: b.y + b.height }));
+}
+
+// Bodies pinned for one player separation, unpinned after every physics step
+const pinnedForPlayer = new Map();   // body -> its pushable before
+let unpinHooked = null;
+function pinForPlayer(scene, body) {
+    if (!pinnedForPlayer.has(body)) pinnedForPlayer.set(body, body.pushable !== false);
+    body.pushable = false;
+    const world = scene?.physics?.world;
+    if (world && unpinHooked !== world) {
+        unpinHooked = world;
+        world.on('worldstep', unpinAfterStep);
+    }
+}
+function unpinAfterStep() {
+    for (const [body, was] of pinnedForPlayer) body.pushable = was;
+    pinnedForPlayer.clear();
+}
+
 /**
  * Process callback for NPC-player collision
  * Returns false to block collision if NPC is overlapping or would overlap a wall/table
@@ -760,7 +836,17 @@ export function createNPCCollision(scene, npcSprite, player) {
                 handleNPCPlayerCollision(npcSprite, player);
             },
             (npc, plyr) => {
-                return shouldAllowNPCPush(npc, plyr);
+                if (!shouldAllowNPCPush(npc, plyr)) return false;
+                // q53 g: a routed or patrolling NPC is not shoved off its route
+                const behavior = window.npcBehaviorManager?.getBehavior(npc.npcId);
+                const routed = keepsRouteAgainstPlayer(behavior, npc.npcId);
+                if (!routed) return true;
+                const walls = wallRectsFor([plyr.currentRoom || window.player?.currentRoom, behavior?.roomId])
+                    .concat(staticRectsNear(scene, plyr.body));
+                const mode = playerPushMode({ routed, playerNearWall: !!plyr.body && bodyNearWall(plyr.body, walls) });
+                if (mode === 'slide') return false;
+                pinForPlayer(scene, npc.body);
+                return true;
             }
         );
         console.log(`✅ NPC collision created for ${npcSprite.npcId} (with wall-aware blocking)`);

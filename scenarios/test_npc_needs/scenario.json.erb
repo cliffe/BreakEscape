@@ -1,5 +1,5 @@
 {
-  "scenario_brief": "TEST: NPC Needs\n\nA throwaway engine test for the generic NPC needs system. Nothing here is a mission. One NPC leaves her desk for a drink and returns, one collects the Sample Binder when you drop it and takes it to his desk, and one has no needs at all.",
+  "scenario_brief": "TEST: NPC Needs\n\nA throwaway engine test for the generic NPC needs system. Nothing here is a mission. One NPC leaves her desk for a drink and returns, one collects the Sample Binder when you drop it within 4 tiles of him (noticeRadius; where you start is near enough) and takes it to his desk, and one has no needs at all. Drop it in the far bottom-left corner and he leaves it there; pick it up and drop it nearer him and he fetches it.",
   "endGoal": "Engine test only.",
   "startRoom": "test_room",
   "startPosition": { "x": 4, "y": 6 },
@@ -157,7 +157,7 @@
           "voice": { "name": "Charon", "style": "Calm office worker.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "needsHome": "finder_pc",
-          "interests": { "found_item": { "weight": 3, "noticeRooms": ["test_room"] } },
+          "interests": { "found_item": { "weight": 3, "noticeRooms": ["test_room"], "noticeRadius": 4 } },
           "usePayload": { "role": "finder", "tag": "payload-finder" },
           "onUse": { "finder_pc": { "setGlobal": "finder_used_item" } },
           "eventMappings": [

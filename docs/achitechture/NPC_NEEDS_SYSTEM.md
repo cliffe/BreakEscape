@@ -102,8 +102,10 @@ Rules that hold throughout:
 Levels are clamped to 0–100; 100 = fully satisfied.
 
 **Interest** (key = item tag) (prov.): a number (the weight) or
-`{ "weight": 0.1–10, "noticeRooms": [roomId…] }`. `noticeRooms` defaults to the
-room of `needsHome`. An interest has **no level and no decay**. It produces an
+`{ "weight": 0.1–10, "noticeRooms": [roomId…], "noticeRadius": tiles }`. `noticeRooms` defaults to the
+room of `needsHome`. `noticeRadius` (q53, 2026-11-12) is the distance in tiles from where the NPC
+stands within which it sees an item in those rooms; default 24, which spans any 20 x 10 room, so
+only a small value changes anything (test_npc_needs uses 4). An interest has **no level and no decay**. It produces an
 option only while a matching item is present (section 5.2).
 
 **Other NPC fields** (all prov.):
