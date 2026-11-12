@@ -310,7 +310,7 @@ export class NpcWorkarounds {
             // Review R1 M1: the line holds a password the player must type exactly, so it goes in
             // as plain text with no dash display; the note is plain text too, escaped for the
             // notebook's markdown so `*`, backticks and `--` in it are kept as they are
-            if (typeof body.line === 'string') this.deps.toast?.(body.line, `Overheard: ${who}`, { plainText: true, verbatim: true });
+            if (typeof body.line === 'string') this.deps.toast?.(body.line, `Overheard: ${who}`, { verbatim: true });
             if (typeof body.note === 'string' && body.note) this.deps.addNote?.(`Overheard: ${who}`, escapeNoteText(body.note));
             this.deps.recordCapture?.(body.capture);
         }
@@ -429,7 +429,7 @@ export function installNpcWorkarounds(api) {
         },
         npcRecord: id => w.npcManager?.npcs?.get?.(id) || null,
         playerRoom: () => w.currentPlayerRoom || null,
-        toast: (line, title, opts) => (typeof w.gameAlert === 'function' ? w.gameAlert(line, 'info', title, 8000, opts || { plainText: true }) : null),
+        toast: (line, title, opts) => (typeof w.gameAlert === 'function' ? w.gameAlert(line, 'info', title, 8000, opts || {}) : null),
         addNote: (title, text) => (typeof w.addNote === 'function' ? w.addNote(title, text, true) : null),
         recordCapture: capture => (typeof w.recordSECapture === 'function' ? w.recordSECapture(capture) : null)
     });

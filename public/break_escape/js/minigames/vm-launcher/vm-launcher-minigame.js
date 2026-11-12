@@ -9,6 +9,34 @@
 
 import { MinigameScene } from '../framework/base-minigame.js';
 import { makeDraggable } from '../../utils/helpers.js';
+import { escapeHtml } from '../../utils/escape-html.js';
+
+/**
+ * The server's VM panel URL, or null when it is not one the launcher may use. It lands in
+ * an iframe src and an href, so only http and https are accepted, or a relative path that
+ * stays on the game's own origin (the server sends /break_escape/games/<id>/vm_panel).
+ * javascript:, data:, protocol-relative //host and any other scheme are refused.
+ */
+export function safeVmPanelUrl(raw, base = (typeof window !== 'undefined' ? window.location?.href : undefined)) {
+    if (typeof raw !== 'string') return null;
+    const text = raw.trim();
+    if (!text) return null;
+    let parsed;
+    try {
+        parsed = base ? new URL(text, base) : new URL(text);
+    } catch (e) {
+        return null;
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    // No scheme of its own: a relative path, which must resolve to the page's own origin
+    // (refuses //other.host and /\other.host, which browsers read as another host)
+    const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(text.replace(/[\t\n\r]/g, ''));
+    if (!hasScheme) {
+        if (!base) return null;
+        if (parsed.origin !== new URL(base).origin) return null;
+    }
+    return text;
+}
 
 export class VmLauncherMinigame extends MinigameScene {
     constructor(container, params) {
@@ -16,7 +44,7 @@ export class VmLauncherMinigame extends MinigameScene {
         this.vm = params.vm || null;
         this.hacktivityMode = params.hacktivityMode || false;
         this.isLaunching = false;
-        this.vmPanelUrl = window.breakEscapeConfig?.vmPanelUrl || null;
+        this.vmPanelUrl = safeVmPanelUrl(window.breakEscapeConfig?.vmPanelUrl);
         this.postitNote = params.postitNote || '';
         this.showPostit = params.showPostit || false;
     }
@@ -535,8 +563,7 @@ export class VmLauncherMinigame extends MinigameScene {
     // VM titles, IPs and the console URL are server text: escaped once, quotes
     // included, because the URL lands in an href attribute.
     escapeHtml(str) {
-        return String(str ?? '').replace(/[&<>"']/g, ch => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+        return escapeHtml(str);
     }
     
     start() {

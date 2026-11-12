@@ -16,7 +16,7 @@
  *   (se_osint_state.visited), unless social.osint.postToasts is false. Plain text.
  *
  * Every post field is author text: it is kept as a string and only ever rendered as text
- * (the browser's h() helper sets textContent; the toast uses plainText).
+ * (the browser's h() helper sets textContent; toasts are plain text by default).
  */
 
 const OSINT_STATE_KEY = 'se_osint_state';
@@ -241,7 +241,7 @@ export function liveDeps(api, w) {
             sc.social.intelFacts[id] = entry;
         },
         emit: (name, data) => w.eventDispatcher?.emit?.(name, data),
-        toast: (message, title) => (typeof w.gameAlert === 'function' ? w.gameAlert(message, 'info', title, 5000, { plainText: true, verbatim: true }) : null),
+        toast: (message, title) => (typeof w.gameAlert === 'function' ? w.gameAlert(message, 'info', title, 5000, { verbatim: true }) : null),
         siteVisited(siteId) {
             const raw = w.gameState?.globalVariables?.[OSINT_STATE_KEY];
             return Array.isArray(raw?.visited) && raw.visited.includes(siteId);

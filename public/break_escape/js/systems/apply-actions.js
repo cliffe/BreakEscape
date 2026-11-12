@@ -1,4 +1,5 @@
 import { displayDashes } from '../utils/display-dashes.js';
+import { authorHtml } from '../utils/author-html.js';
 import { writeGlobal } from './global-writer.js';
 import { grantFact, readyToastText, readyToastTitle } from './social-intel.js';
 
@@ -427,7 +428,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
 
             // Show a full-screen scenario end overlay — used for failure states (e.g. thermal runaway evacuation).
             // Disables player movement. Not dismissible; player must click through to missions.
-            // action: { type, outcome ('failure'|'success'|'neutral'), title, body (HTML), buttonText }
+            // action: { type, outcome ('failure'|'success'|'neutral'), title, body (author text, utils/author-html.js), buttonText }
             case 'show_end_screen': {
                 showEndScreen(action);
                 const { title = 'SCENARIO ENDED', outcome = 'neutral' } = action;
@@ -473,7 +474,8 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
  *
  * @param {Object} opts
  * @param {string} [opts.title]      Heading text. Defaults to 'MISSION COMPLETE'.
- * @param {string} [opts.body]       HTML body text.
+ * @param {string} [opts.body]       Body text: plain text plus entities and bare
+ *                                   <strong> <em> <b> <i> <br> (utils/author-html.js).
  * @param {string} [opts.buttonText] Button label. Defaults to 'Return to Missions'.
  * @param {string} [opts.outcome]    'success' | 'failure' | 'neutral'.
  */
@@ -512,7 +514,9 @@ export function showEndScreen(opts = {}) {
     ].join(';');
 
     const bodyEl = document.createElement('p');
-    bodyEl.innerHTML = displayDashes(body);
+    // Author text through the allow-list: entities and bare <strong> <em> <b> <i> <br>
+    // survive, every other tag and attribute shows as text
+    bodyEl.innerHTML = authorHtml(body);
     bodyEl.style.cssText = [
         'color:#cccccc', 'font-size:20px', 'font-family:"VT323",monospace',
         'margin:0', 'text-align:center', 'max-width:680px', 'line-height:1.7'

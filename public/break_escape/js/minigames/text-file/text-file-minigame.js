@@ -1,9 +1,8 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
 // File names, types and observations are scenario text: escaped before they reach HTML
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 /**
  * The notepad entry "Add to Notepad" makes for a text file: the raw file text as the

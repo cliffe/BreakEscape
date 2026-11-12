@@ -1,10 +1,9 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
 // Every label, description and attribute value comes from scenario params: plain text,
 // escaped exactly once on the way into the SVG and the detail panel.
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 const txt = (value) => escapeHtml(displayDashes(value));
 
 /**
