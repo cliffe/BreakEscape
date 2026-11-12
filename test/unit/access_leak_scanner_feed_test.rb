@@ -279,6 +279,53 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     assert_equal [[1, 'feed_fact_key', 'social.intelFacts']], summary(AccessLeakScanner.new(data).scan(rows(['GET', SCENARIO, b])))
   end
 
+  # ── sub-slice C2: a reactive post with a feed fact (no-exposure fixture) ──
+  REACTIVE_TEXT = 'Server down again, second time this week on the finance share.'.freeze
+  REACTIVE_FACT_TEXT = 'Jake Brooks keeps the finance backups on a personal drive.'.freeze
+
+  # jake's feed gains a reactive vent post carrying its own feed fact
+  def reactive_data
+    d = data.deep_dup
+    d['social']['intelFacts']['jake_vent_fact'] = { 'label' => 'Backups', 'subject' => 'jake', 'text' => REACTIVE_FACT_TEXT }
+    jake = d['rooms']['office']['npcs'][0]
+    jake['feed']['order'] = 'reactive_first'
+    jake['feed']['posts'] << { 'id' => 'jake_vent', 'text' => REACTIVE_TEXT, 'fact' => 'jake_vent_fact',
+                               'when' => { 'cause' => 'down', 'need' => 'work' } }
+    d
+  end
+
+  def vent_answer
+    entry = { 'label' => 'Backups', 'subject' => 'jake', 'text' => REACTIVE_FACT_TEXT }
+    { 'npcId' => 'jake', 'index' => 0, 'post' => { 'id' => 'jake_vent', 'text' => REACTIVE_TEXT, 'fact' => 'jake_vent_fact' },
+      'fact' => { 'id' => 'jake_vent_fact', 'entry' => entry }, 'site' => 'friendface', 'person' => 'jake', 'done' => false }
+  end
+
+  test 'C2: the scanner counts a reactive post and its feed fact' do
+    c = AccessLeakScanner.new(reactive_data).counts
+    assert_equal 6, c[:feed_posts], 'jake 4 (one reactive), lena 1, omar 1'
+    assert_equal 3, c[:feed_facts]
+  end
+
+  test 'C2 no-exposure: a reactive post or its fact in a bootstrap before its serve is reported; the serving answer is clean' do
+    d = reactive_data
+    # before the condition holds, the reactive post text in any response is a leak
+    leaked_post = bootstrap.merge('notes' => [{ 'text' => REACTIVE_TEXT }])
+    assert_equal [[1, 'feed_text', 'feed:jake|jake_vent']], summary(AccessLeakScanner.new(d).scan(rows(['GET', SCENARIO, leaked_post])))
+    # its fact text keyed by the feed fact id is both a text leak and a keyed-object leak
+    leaked_fact = bootstrap
+    leaked_fact['social']['intelFacts']['jake_vent_fact'] = { 'label' => 'Backups', 'text' => REACTIVE_FACT_TEXT }
+    assert_equal [[1, 'feed_text', 'fact:jake_vent_fact'], [1, 'feed_fact_key', 'fact:jake_vent_fact']],
+                 summary(AccessLeakScanner.new(d).scan(rows(['GET', SCENARIO, leaked_fact])))
+    # an object merely keyed by the fact id with an unrelated text is still the keyed-object leak
+    other = bootstrap
+    other['social']['intelFacts']['jake_vent_fact'] = { 'label' => 'Backups', 'text' => 'unrelated text, long enough here.' }
+    assert_equal [[1, 'feed_fact_key', 'fact:jake_vent_fact']], summary(AccessLeakScanner.new(d).scan(rows(['GET', SCENARIO, other])))
+    # once the server serves the vent, the post and fact are allowed in its answer and a later bootstrap
+    later = bootstrap.merge('feedPosts' => jake_feed(vent_answer.slice('index', 'post', 'fact')))
+    later['social']['intelFacts']['jake_vent_fact'] = vent_answer['fact']['entry']
+    assert_empty AccessLeakScanner.new(d).scan(rows(['POST', FEED, vent_answer], ['GET', SCENARIO, later]))
+  end
+
   test 'a report line never quotes a feed text' do
     b = bootstrap
     b['x'] = AccessSocialScenario::POSTS[2]
