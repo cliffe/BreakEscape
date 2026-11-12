@@ -104,9 +104,9 @@ VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wr
 // M2: she answers before the menu, varied by state (three whole lines, not inline).
 {
 - torres_identified and final_choice == "":
-    Morgan. Where is he?
+    Morgan. Have you got him?
 - final_choice != "":
-    Morgan. Is it over?
+    Morgan. I've been watching the vault log.
 - else:
     Morgan.
 }
@@ -216,9 +216,9 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
 // Struggling run A (D3): with both halves, the player states the case.
 {has_motive() and has_exfil():
     {torres_reason_guessed:
-        Again? Fine. I'm writing this down. Why him?
+        Again? Fine. Convince me this time.
     - else:
-        David. Slowly, I'm writing this down. Why?
+        David. Why?
     }
     -> phone_case_why
 }
@@ -390,7 +390,8 @@ Whatever you decide in front of him, ring me when it's done.
 {patricia_ko: -> no_answer}
 + {found_door_log and not door_log_reasoned} [And the badge log. He comes in the front door six minutes before her spare.]
     ~ door_log_reasoned = true
-    ...Every night. I sign that log off every Monday, and I never once read the front door.
+    ...Every night. And Ruth's own badge never comes in after seven.
+    I sign that log off every Monday. I never once read the front door.
     -> phone_significant_findings_choices
 + [On my way.]
     #exit_conversation

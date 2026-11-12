@@ -107,8 +107,6 @@ I run TalentStack. You've spent tonight putting a name to one of my placements. 
 // lint: call-knot
 #speaker:recruiter
 
-The only variable is what currency they'll take.
-
 Torres took debt relief and a standing consultancy retainer. Cheaper than most, if you're keeping score.
 
 -> recruiter_introduction_choices
@@ -162,7 +160,7 @@ We keep it. We integrate it. Operation Schrödinger, if your file needs a name.
 // M1: if the player has already heard the projection from HaX (architect_discussed), she says it once;
 // otherwise she delivers it in full. HaX gates her own casualty topic on the same global.
 {architect_discussed:
-    You've read the projection, then. I didn't file it. I just recruited the man who could get you the schedule.
+    You've read the projection, then. I didn't file it. I just recruited the man who could get us the schedule.
 - else:
     A forty-to-seventy-minute failover window at the cutover, across twelve regions: thirty to forty-five excess deaths, where minutes decide things.
     The Architect's office signed it off as an acceptable cost. I didn't file it. I recruited the man who could get us the schedule.
@@ -272,8 +270,6 @@ Do what you like with Torres. The other forty-seven were never your problem.
 Noted. For what it's worth, I expected it. Your file reads like someone who finishes what they start.
 
 You won't reach all of them before I've closed on a few more.
-
-Good luck with Torres. He was cheap. The next one might cost me more, and I'll enjoy the work regardless.
 
 ~ recruiter_deal_accepted = false
 #exit_conversation
