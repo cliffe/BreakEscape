@@ -220,6 +220,10 @@ module BreakEscape
         # A notepad or a room-map cup is built by the client, with no scenario
         # copy to check its id against, so it never counts as a key (M6).
         next false if item['type'] == 'notepad' || item['decor'] == true
+        # An object added to a room with no server-known source is a bare client
+        # hash: its id (which the key check accepts as a lock reference for
+        # pre-rename scenarios) must never pass for a key (R1 B1).
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
 
         data = item['scenarioData'] || item
         candidates = BreakEscape::ItemIdentity.identity_candidates(data)
@@ -244,6 +248,8 @@ module BreakEscape
 
       # Check for lockpick item in scenarioData or at top level
       found = inventory.any? do |item|
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
         is_lockpick = item['scenarioData']&.dig('type') == 'lockpick' ||
                       item['type'] == 'lockpick'
         Rails.logger.debug "[BreakEscape] Inventory item: type=#{item['type']}, scenarioData.type=#{item['scenarioData']&.dig('type')}, is_lockpick=#{is_lockpick}"
@@ -485,6 +491,17 @@ module BreakEscape
       # lockType and the authored-behaviour flags are stripped for the same reason).
       unless source_data['npc_id'].present? || source_data['source_type'] == 'player_drop'
         item = strip_forgeable_lock_fields(item)
+        # Even with the lock fields gone, a client-chosen id (or scenarioData.id)
+        # equal to a lock's `requires` value, or to a real scenario item id, would
+        # let the forged object pass for that key or item: has_key_in_inventory?
+        # and the other matchers accept an item's own id as a lock reference for
+        # pre-rename scenarios (code review R1, B1). Force a fresh server id the
+        # client cannot have chosen, drop any scenarioData.id, and mark the object
+        # client-added so no credential check ever treats it as a key, lockpick,
+        # card or cracker.
+        item['id'] = "#{room_id}_cadd_#{SecureRandom.hex(8)}"
+        item['scenarioData'].delete('id') if item['scenarioData'].is_a?(Hash)
+        item[BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER] = true
       end
 
       # Generate unique ID if not provided
@@ -502,13 +519,9 @@ module BreakEscape
     # Stripped from an unsourced add_object (add_item_to_room!), top level and inside
     # scenarioData, so a tampered client cannot mint a key, keycard or lock from thin
     # air. A legitimate dropped object carries these from the server's own scenario
-    # copy, not from here. Mirrors the controller's CLIENT_ITEM_FORBIDDEN_FIELDS, with
-    # the card/lock fields a room object can also carry added.
-    FORGEABLE_LOCK_FIELDS = %w[
-      opens_lock key_id keyId keyPins requires lockType locked access
-      card_id rfid_protocol acceptsUIDOnly contents itemsHeld flags flagRewards
-      droppable needsTag wearable holds storeIn saved_cards
-    ].freeze
+    # copy, not from here. Single source with the controller's
+    # CLIENT_ITEM_FORBIDDEN_FIELDS, via ItemIdentity::FORGEABLE_ITEM_FIELDS (R1 m1).
+    FORGEABLE_LOCK_FIELDS = BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS
 
     def strip_forgeable_lock_fields(item)
       return item unless item.is_a?(Hash)
@@ -1864,6 +1877,8 @@ module BreakEscape
 
     def rfid_cloner_held?
       (player_state['inventory'] || []).any? do |item|
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
         item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'rfid_cloner'
       end
     end
@@ -1878,6 +1893,7 @@ module BreakEscape
     # these are server-written, never a client's field.
     def held_keycard_ids
       Array(player_state['inventory']).filter_map do |item|
+        next if BreakEscape::ItemIdentity.client_forged?(item)
         next unless item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'keycard'
 
         card_id = item['card_id'].presence || item.dig('scenarioData', 'card_id').presence
@@ -2548,6 +2564,8 @@ module BreakEscape
 
     def has_pin_cracker_in_inventory?
       (player_state['inventory'] || []).any? do |item|
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
         item['scenarioData']&.dig('type') == 'pin-cracker' || item['type'] == 'pin-cracker'
       end
     end

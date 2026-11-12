@@ -2167,20 +2167,16 @@ module BreakEscape
       office-misc-cup5 coffee_cups1 mugs_tray1
     ].freeze
 
-    # Fields that make a stored item open something: the key check reads the
-    # first three and scenarioData, the lockpick and PIN-cracker checks read type
-    # and scenarioData.type, the flag-station lookup reads flags. A client-built
-    # item (notepad, decor cup) has no scenario copy, so these are removed.
-    # The last five are authored behaviour a client must not invent: a forged
-    # droppable would pass the player_drop check (Game#add_item_to_room!), a
-    # forged needsTag would feed an NPC need, a forged wearable would let POST wear
-    # put on a costume the scenario never offered (Wearables), and holds and storeIn
-    # are the holder fields (feedback plan, section 6).
-    CLIENT_ITEM_FORBIDDEN_FIELDS = %w[
-      opens_lock key_id keyId scenarioData requires lockType locked
-      contents itemsHeld flags flagRewards keyPins saved_cards
-      droppable needsTag wearable holds storeIn
-    ].freeze
+    # Fields a client-built inventory item (notepad, decor cup) must not carry:
+    # lock references the key check reads, the lockType/PIN-cracker fields, the
+    # flag-station list, the card fields, and the authored-behaviour fields a
+    # client must not invent (a forged droppable would pass the player_drop check
+    # in Game#add_item_to_room!, a forged needsTag would feed an NPC need, a forged
+    # wearable would let POST wear put on a costume the scenario never offered).
+    # Single source with the model's FORGEABLE_LOCK_FIELDS, via
+    # ItemIdentity::FORGEABLE_ITEM_FIELDS, plus the whole scenarioData, which a
+    # client-built item has no business carrying (code review R1, m1).
+    CLIENT_ITEM_FORBIDDEN_FIELDS = (BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS + %w[scenarioData]).freeze
 
     # What the inventory stores for an add that validate_item_collectible passed.
     # A scenario item is stored as the server's own copy, filtered exactly as the

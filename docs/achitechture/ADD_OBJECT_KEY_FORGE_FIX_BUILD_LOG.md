@@ -94,15 +94,62 @@ token from the real game page):
 
 ## Results
 
-- Full `bin/rails test` (under the shared lock): 1801 runs, 25607 assertions,
-  0 failures, 0 errors, 1 skip.
+- Full `bin/rails test` (under the shared lock): 1806 runs, 25624 assertions,
+  0 failures, 0 errors, 1 skip (post-R1).
 - Full `bin/test-js -j 3` (under the shared lock): 507 files passed, 0 failed.
-- New `add_object_key_forge_test.rb`: 5 runs, 0 failures.
-- Live proof on :3044: forged key refused (422 Invalid attempt), real key opens
-  the door (200).
+- `add_object_key_forge_test.rb`: 10 runs, 0 failures.
+- Live proof on :3044: forged key (via `opens_lock` and via an `id` equal to the
+  lock reference) refused (422 Invalid attempt); real key opens the door (200).
 
-Commit `54f722db6` carries the fix, test and this log; the Results numbers above
-were added as a follow-up commit.
+Commit `54f722db6` carried the first fix; `8430283ac` its suite numbers; the R1
+follow-up (B1 + sweep + m1/n1) and these numbers are in the later commit.
+
+## Review R1 follow-up
+
+R1 (`ADD_OBJECT_KEY_FORGE_FIX_CODE_REVIEW_R1.md`) found the first fix incomplete:
+stripping the lock fields left the client's `id`, and `has_key_in_inventory?`
+accepts an item's own id as a lock reference (the pre-rename compat leg), so a
+forged key with `id` equal to the lock's `requires` value still opened it
+(blocker B1). The same held for `scenarioData.id`.
+
+Closed in both directions, plus a sweep:
+
+- **Unsourced add now gets a server id and a marker** (`Game#add_item_to_room!`):
+  the client `id` is replaced with a fresh `"<room>_cadd_<hex>"`, `scenarioData.id`
+  is dropped, and the object is stamped `clientAdded: true`
+  (`ItemIdentity::CLIENT_ADDED_MARKER`). The marker travels into the inventory
+  through `canonical_inventory_item` and cannot be set or cleared by the client
+  (`item_add_params` does not permit it; sourced drops rebuild from the server
+  copy and never carry it).
+- **Every credential matcher now ignores a client-forged item**
+  (`ItemIdentity.client_forged?`): `has_key_in_inventory?`,
+  `has_lockpick_in_inventory?`, `has_pin_cracker_in_inventory?`,
+  `rfid_cloner_held?`, `held_keycard_ids` (which feeds `held_rfid_cards`), and
+  the network `needsHeld` matcher `NetworkAccess#inventory_item_matching`. So a
+  forged key, lockpick, PIN cracker, card copier, keycard or `needsHeld` device
+  is inert. The pre-rename bare-id leg still opens a real scenario key
+  (regression-tested).
+- **m1**: the two strip lists are now one source,
+  `ItemIdentity::FORGEABLE_ITEM_FIELDS`; `FORGEABLE_LOCK_FIELDS` is that list and
+  `CLIENT_ITEM_FORBIDDEN_FIELDS` is it plus `scenarioData`.
+- **n1**: the authored-behaviour strip on the unsourced branch is intentional
+  (no client path and no scenario performs a sourceless add); documented in the
+  code comment.
+
+New tests in `add_object_key_forge_test.rb`: forged id, forged `scenarioData.id`
+and forged `name` collisions with the lock reference, a forged lockpick, and a
+real pre-rename key (bare id, no `opens_lock`) that still opens. Live proof on
+:3044: a tampered console forge with `id: "vault_lock"` is stored with a
+server id and `clientAdded: true`, pickup by id and by name both yield one inert
+item, and `/unlock` returns 422.
+
+### Note for scheduling
+
+The forged-lockpick vector (B1's type-based cousin: a forged `{type: "lockpick"}`
+would have opened any key lock, since `has_lockpick_in_inventory?` keys on type,
+not id) was in the same family and is closed here by the `clientAdded` skip, not
+only the id fix. Flagging it because it was beyond R1's stated identity_candidates
+sweep.
 
 ## Open / left undone
 

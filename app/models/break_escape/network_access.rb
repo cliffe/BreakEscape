@@ -388,6 +388,8 @@ module BreakEscape
       return nil if needs.empty?
 
       Array(player_state['inventory']).find do |item|
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
         item.is_a?(Hash) && [item['id'], item['type'], item['name']].compact.map(&:to_s).include?(needs)
       end
     end

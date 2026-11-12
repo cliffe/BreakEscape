@@ -96,7 +96,82 @@ module BreakEscape
       end
     end
 
+    # ---- refused: id / name / scenarioData.id collisions (R1 B1) --------------
+
+    test 'a forged key whose id equals the lock reference does not open the lock' do
+      game = create_game
+      add_object(game, 'lobby', {
+        'type' => 'key', 'id' => 'vault_lock', 'name' => 'Shiny key', 'takeable' => true, 'x' => 5, 'y' => 5
+      })
+      assert_response :success, response.body
+
+      added = game.reload.player_state.dig('room_states', 'lobby', 'objects_added').first
+      refute_equal 'vault_lock', added['id'], 'client id was replaced with a server id'
+      assert_equal true, added['clientAdded']
+
+      pickup(game, { 'type' => 'key', 'id' => 'vault_lock', 'name' => 'Shiny key' })
+      door_unlock(game, 'key')
+      assert_response :unprocessable_entity
+      refute game.reload.player_state['unlockedRooms'].include?('vault')
+    end
+
+    test 'a forged key whose scenarioData.id equals the lock reference does not open the lock' do
+      game = create_game
+      add_object(game, 'lobby', {
+        'type' => 'key', 'id' => 'f1', 'name' => 'Shiny key', 'takeable' => true, 'x' => 5, 'y' => 5,
+        'scenarioData' => { 'type' => 'key', 'id' => 'vault_lock' }
+      })
+      assert_response :success, response.body
+      added = game.reload.player_state.dig('room_states', 'lobby', 'objects_added').first
+      assert_nil added.dig('scenarioData', 'id'), 'scenarioData.id was dropped'
+
+      pickup(game, { 'type' => 'key', 'id' => 'f1', 'name' => 'Shiny key' })
+      pickup(game, { 'type' => 'key', 'name' => 'Shiny key', 'scenarioData' => { 'id' => 'vault_lock' } })
+      door_unlock(game, 'key')
+      assert_response :unprocessable_entity
+      refute game.reload.player_state['unlockedRooms'].include?('vault')
+    end
+
+    test 'a forged key whose name collides with the real key does not open the lock' do
+      game = create_game
+      add_object(game, 'lobby', {
+        'type' => 'key', 'id' => 'f2', 'name' => 'Vault key', 'takeable' => true, 'x' => 5, 'y' => 5
+      })
+      assert_response :success, response.body
+
+      pickup(game, { 'type' => 'key', 'name' => 'Vault key' })
+      door_unlock(game, 'key')
+      assert_response :unprocessable_entity
+      refute game.reload.player_state['unlockedRooms'].include?('vault')
+    end
+
+    test 'a forged lockpick does not pick the key lock' do
+      game = create_game
+      add_object(game, 'lobby', {
+        'type' => 'lockpick', 'id' => 'f3', 'name' => 'Pick', 'takeable' => true, 'x' => 5, 'y' => 5
+      })
+      assert_response :success, response.body
+
+      pickup(game, { 'type' => 'lockpick', 'id' => 'f3', 'name' => 'Pick' })
+      door_unlock(game, 'lockpick')
+      assert_response :unprocessable_entity
+      refute game.reload.player_state['unlockedRooms'].include?('vault')
+    end
+
     # ---- allowed: real sources still mint working items -----------------------
+
+    test 'a real pre-rename key addressed by its own id (no opens_lock) still opens the lock' do
+      game = create_game(prerename_key_in_lobby: true)
+      pickup(game, { 'type' => 'key', 'id' => 'vault_lock', 'name' => 'Old key' })
+      assert_response :success, response.body
+      stored = game.reload.player_state['inventory'].find { |i| i['id'] == 'vault_lock' }
+      refute BreakEscape::ItemIdentity.client_forged?(stored), 'a real pickup is not marked client-added'
+
+      door_unlock(game, 'key')
+      assert_response :success, response.body
+      assert game.reload.player_state['unlockedRooms'].include?('vault')
+    end
+
 
     test 'an NPC drop of a real held key still opens the lock' do
       game = create_game(with_guard: true)
@@ -139,9 +214,13 @@ module BreakEscape
 
     private
 
-    def create_game(with_guard: false, key_in_lobby: false)
+    def create_game(with_guard: false, key_in_lobby: false, prerename_key_in_lobby: false)
       lobby_objects = []
       lobby_objects << VAULT_KEY.deep_dup if key_in_lobby
+      # A pre-rename key: its own id IS the lock reference, with no opens_lock.
+      if prerename_key_in_lobby
+        lobby_objects << { 'type' => 'key', 'id' => 'vault_lock', 'name' => 'Old key', 'takeable' => true }
+      end
       npcs = []
       if with_guard
         npcs << { 'id' => 'guard', 'name' => 'Guard', 'npcType' => 'person', 'hostile' => true,
