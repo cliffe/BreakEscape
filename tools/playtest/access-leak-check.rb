@@ -76,7 +76,8 @@ unless scanner.feed_fallback.empty?
 end
 unless scanner.feed_unknown.empty?
   puts "note             feed posts for #{scanner.feed_unknown.join(', ')} allowed one more reveal at each /feed_post " \
-       'answer whose body the log lost, from that answer on only'
+       'answer whose body the log lost, from that answer on only, and none at an answer captured after the ' \
+       "NPC's last saved reveal"
 end
 if lines.any? { |_label, _no, row| row.is_a?(Hash) && (row.key?('dom') || row['path'].to_s.split('?').first.to_s.end_with?('/capture_secrets')) }
   puts 'note             capture answers judged against the proofs held now: run this after every beat to see order'

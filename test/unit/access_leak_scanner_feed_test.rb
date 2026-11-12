@@ -173,6 +173,53 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     assert_equal ['jake'], scanner.feed_unknown
   end
 
+  # Review C R3 m1: a resumed game (the bootstrap already lists Lena's post) with a lost answer
+  # captured later. The capture's time and the saved time of each NPC's last reveal tell whether
+  # the lost answer could have been that NPC's reveal.
+  T0 = Time.utc(2026, 11, 12, 10, 0, 0)
+
+  def at(row, seconds)
+    row[2]['t'] = (T0 + seconds).iso8601(3)
+    row
+  end
+
+  def lena_feed
+    lena = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'lena' }
+    { 'lena' => { 'site' => 'friendface', 'person' => 'lena', 'done' => true,
+                  'posts' => [{ 'index' => 0, 'post' => lena['feed']['posts'][0].slice('id', 'text') }] } }
+  end
+
+  test "review C R3 m1: a lost answer after an NPC's last saved reveal is not counted for it (resumed game, one NPC)" do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'lena' => { 'n' => 1, 'at' => (T0 - 600).to_f } } })
+    resumed = bootstrap.merge('feedPosts' => lena_feed)
+    log = numbered([at(rows(['GET', SCENARIO, resumed])[0], 0), at(lost_answer, 30)])
+    scanner = AccessLeakScanner.new(data, game: game)
+    assert_empty scanner.scan(log), "Lena's post was out before the log began"
+    assert_equal ['lena'], scanner.feed_fallback
+    assert_empty scanner.feed_unknown
+  end
+
+  test "review C R3 m1: one lost answer is counted only for the NPC whose last reveal it could be (two NPCs)" do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'lena' => { 'n' => 1, 'at' => (T0 - 600).to_f },
+                                                               'jake' => { 'n' => 1, 'at' => (T0 + 29.5).to_f } } })
+    resumed = bootstrap.merge('feedPosts' => lena_feed)
+    later = bootstrap.merge('feedPosts' => lena_feed.merge(jake_feed(feed_item(0))))
+    later['social']['intelFacts']['jake_pet_name'] = first_answer['fact']['entry']
+    log = numbered([at(rows(['GET', SCENARIO, resumed])[0], 0), at(lost_answer, 30), at(rows(['GET', SCENARIO, later])[0], 40)])
+    scanner = AccessLeakScanner.new(data, game: game)
+    assert_empty scanner.scan(log)
+    assert_equal ['jake'], scanner.feed_unknown
+    assert_equal ['lena'], scanner.feed_fallback
+  end
+
+  test "review C R3 m1: Jake's post in a bootstrap before the lost answer that revealed it is still reported" do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'jake' => { 'n' => 1, 'at' => (T0 + 29.5).to_f } } })
+    early = bootstrap.merge('feedPosts' => jake_feed(feed_item(0)))
+    log = numbered([at(rows(['GET', SCENARIO, early])[0], 0), at(lost_answer, 30)])
+    found = summary(AccessLeakScanner.new(data, game: game).scan(log))
+    assert_includes found, [1, 'feed_text', 'feed:jake|jake_post_1']
+  end
+
   test 'review C R2 nit: a blank post id is skipped, as the server skips it' do
     d = data.deep_dup
     jake = d['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'jake' }

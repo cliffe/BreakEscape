@@ -168,7 +168,8 @@ class AccessLeakScanner
     # stands for at most one reveal, at its own place in the log, for an NPC the game shows
     # more reveals for than the log holds
     @feed_unknown_share = {}    # npc id => unreadable answers that may have been its reveals
-    @feed_unknown_seen = 0      # unreadable /feed_post answers passed so far in the log
+    @feed_unknown_seen = Hash.new(0) # npc id => unreadable answers passed so far that may be its reveals
+    @feed_at = {}               # npc id => the game's saved time of its last reveal (server seconds)
     @feed_unknown = []          # npc ids that took a reveal from an unreadable answer
     collect_passwords
     collect_items
@@ -213,7 +214,7 @@ class AccessLeakScanner
     lines.each do |source, line_no, row|
       next unless row.is_a?(Hash)
 
-      @feed_unknown_seen += 1 if feed_unreadable?(row)
+      note_feed_unreadable(row) if feed_unreadable?(row)
       body = if row.key?('dom') then row['dom']
              elsif row.key?('body') then row['body']
              else row['bodyText']
@@ -704,26 +705,52 @@ class AccessLeakScanner
       !row['body'].is_a?(Hash)
   end
 
+  # Review C R3 m1: the capture's time on an unreadable answer and the game's saved time of an
+  # NPC's last reveal (`feedRevealed[npc].at`) are both wall-clock times, so a lost answer
+  # captured more than this after that NPC's last reveal cannot have been one of its reveals
+  # (it was another NPC's answer, or a tooSoon or done answer).
+  LOST_ANSWER_SLACK_S = 5
+
+  # Whether an unreadable answer may have been one of `npc_id`'s reveals. Without a capture time
+  # or a saved time it may (the log cannot settle it, so the note says so).
+  def lost_answer_may_be?(npc_id, row)
+    at = @feed_at[npc_id]
+    t = capture_time(row)
+    at.nil? || t.nil? || t <= at + LOST_ANSWER_SLACK_S
+  end
+
+  def capture_time(row)
+    row['t'].is_a?(String) ? Time.iso8601(row['t']).to_f : nil
+  rescue ArgumentError
+    nil
+  end
+
+  def note_feed_unreadable(row)
+    @feed_unknown_share.each_key { |npc_id| @feed_unknown_seen[npc_id] += 1 if lost_answer_may_be?(npc_id, row) }
+  end
+
   # Reveals the log does not show: the game's saved count less the /feed_post answers the log
   # holds. An unreadable answer (review C R2 m2) may be one of them, but only from its own place
   # in the log, so up to one reveal per unreadable answer is granted there, and only what is
-  # still missing after that counts from the first line (a resumed game). A complete log gives 0,
-  # so every reveal is judged in log order.
+  # still missing after that counts from the first line (a resumed game). An unreadable answer
+  # captured after the NPC's last saved reveal is not counted for it (review C R3 m1). A complete
+  # log gives 0, so every reveal is judged in log order.
   def prepare_feed_base(lines)
     @feed_answers.clear
     @feed_base = {}
     @feed_fallback = []
     @feed_unknown_share = {}
-    @feed_unknown_seen = 0
+    @feed_unknown_seen = Hash.new(0)
     @feed_unknown = []
+    @feed_at = {}
     return if @feed_order.empty?
 
     in_log = Hash.new(0)
-    unreadable = 0
+    unreadable = []
     lines.each do |_source, _no, row|
       next unless row.is_a?(Hash)
 
-      unreadable += 1 if feed_unreadable?(row)
+      unreadable << row if feed_unreadable?(row)
       next unless row['body'].is_a?(Hash)
       next unless row['path'].to_s.split('?').first.to_s.end_with?('/feed_post') && row['body']['post'].is_a?(Hash)
 
@@ -733,11 +760,13 @@ class AccessLeakScanner
     return unless revealed.is_a?(Hash)
 
     @feed_order.each_key do |npc_id|
-      n = revealed[npc_id].is_a?(Hash) ? revealed[npc_id]['n'].to_i : 0
+      entry = revealed[npc_id].is_a?(Hash) ? revealed[npc_id] : {}
+      n = entry['n'].to_i
+      @feed_at[npc_id] = entry['at'].to_f if entry['at'].is_a?(Numeric)
       missing = n - in_log[npc_id]
       next unless missing.positive?
 
-      share = [missing, unreadable].min
+      share = [missing, unreadable.count { |row| lost_answer_may_be?(npc_id, row) }].min
       if share.positive?
         @feed_unknown_share[npc_id] = share
         @feed_unknown << npc_id
@@ -752,7 +781,7 @@ class AccessLeakScanner
 
   # How many of an NPC's posts the server had revealed at this point of the log
   def feed_revealed_now(npc_id)
-    unknown = [@feed_unknown_seen, @feed_unknown_share[npc_id] || 0].min
+    unknown = [@feed_unknown_seen[npc_id], @feed_unknown_share[npc_id] || 0].min
     (@feed_base[npc_id] || 0) + unknown + @feed_answers[npc_id]
   end
 
