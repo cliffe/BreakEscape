@@ -59,7 +59,7 @@ VAR mal_line_asked = false
     -> post
 }
 // Playtest R1 m-1: a condition, not a verdict, for the right officer too.
-Agent HaX: If that's wrong, I lose Malhotra's relay till you can clear him. Sure?
+agent_0x99: If that's wrong, I lose Malhotra's relay till you can clear him. Sure?
 + [I'm sure.]
     ~ officer_out = "malhotra"
     ~ wrong_accusation = true

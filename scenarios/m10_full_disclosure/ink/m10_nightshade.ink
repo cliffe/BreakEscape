@@ -58,7 +58,7 @@ VAR ns_arr_seen = false     // arrested branch: the opening has played
 Agent 0x47 'Nightshade': He wrote fifteen years of me in his own hand. I'd know it anywhere. I learned to write like it.
 Agent 0x47 'Nightshade': So you'll have all of it. Every door down there, and the catalogue entry he built it from.
 {m09_completed:
-    Agent HaX: Helena gave us the entries he built from. Not which door each one's on, or who stands where.
+    agent_0x99: Helena gave us the entries he built from. Not which door each one's on, or who stands where.
 }
 + [Go on. All of it.]
     -> shown_doors
@@ -146,9 +146,9 @@ Director Magnus Netherton: Take him down there and every guard in the place sees
 Agent 0x47 'Nightshade': The defences, written out as he briefed them to me. Read it before you go down.
 // Ruling 6: on an m09 save the pointer also sets m09's flag 4 list apart.
 {m09_completed:
-    Agent HaX: Helena gave us the entries he built from. Not which door each one's on. Check his against the plans.
+    agent_0x99: Helena gave us the entries he built from. Not which door each one's on. Check his against the plans.
 - else:
-    Agent HaX: He's brought his payment. You've got Helena's plans.
+    agent_0x99: He's brought his payment. You've got Helena's plans.
 }
 Director Magnus Netherton: I am keeping him. If he burns you twice, that is on my signature as well.
 + [What does he get out of this?]
@@ -184,7 +184,7 @@ Director Magnus Netherton: I am keeping him. If he burns you twice, that is on m
 }
 ~ ns_costs_said = true
 Agent 0x47 'Nightshade': My map has the refit. The tunnel post empties at half two. Helena's plans don't know the post exists.
-Agent HaX: He's only as right as the man who briefed him.
+agent_0x99: He's only as right as the man who briefed him.
 Director Magnus Netherton: The plans are good plans. They are old plans.
 -> unshown_menu
 
@@ -245,9 +245,9 @@ Agent 0x47 'Nightshade': Name the deal and you get the refit. Every door he chan
 }
 Director Magnus Netherton: Without him you have Helena's plans. They are good plans. They are old plans.
 {m09_completed:
-    Agent HaX: Helena gave us his entries, not where each one sits. He's only as right as the man who briefed him.
+    agent_0x99: Helena gave us his entries, not where each one sits. He's only as right as the man who briefed him.
 - else:
-    Agent HaX: He's only as right as the man who briefed him.
+    agent_0x99: He's only as right as the man who briefed him.
 }
 -> arrested_menu
 

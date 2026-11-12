@@ -122,7 +122,7 @@ Agent 0x2D 'Anchor': I've got the near end. Go do your work.
     -> menu
 }
 // Playtest R1 m-1: a condition, not a verdict, for the right officer too.
-Agent HaX: If that's wrong, Quintero's off the raid till you can clear her. Sure?
+agent_0x99: If that's wrong, Quintero's off the raid till you can clear her. Sure?
 + [I'm sure.]
     ~ officer_out = "quintero"
     ~ wrong_accusation = true

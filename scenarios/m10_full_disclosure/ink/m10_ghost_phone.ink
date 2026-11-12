@@ -106,7 +106,7 @@ You turned me down. Why?
 }
 Two hours' head start on everything in that bunker. Five buyers. One of them wants the hospitals.
 It's my leaving fee. After tonight there's nobody here to find.
-Agent HaX: If it sells, the release console can kill that share. It only does one.
+agent_0x99: If it sells, the release console can kill that share. It only does one.
 -> selling_menu
 
 === selling_menu ===
