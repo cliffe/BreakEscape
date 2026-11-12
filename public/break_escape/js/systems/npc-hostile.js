@@ -1,5 +1,5 @@
 import { COMBAT_CONFIG } from '../config/combat-config.js';
-import { roomIdAtFeet } from './interaction-walls.js';
+import { roomIdAtFeet, roomFloorRect } from './interaction-walls.js';
 import { CombatEvents } from '../events/combat-events.js';
 import { getNPCDirection } from './npc-sprites.js';
 
@@ -612,15 +612,30 @@ export function koDropSpots(feet, count, { reachable = null, obstacles = [], siz
  * keeping only cells inRoom(x, y) accepts (the room the NPC fell in). Walls and
  * furniture stop the fill, so a cell behind a wall or in an enclosed pocket is never
  * reached, and a door gap into the next room is cut off by inRoom.
+ * floor (optional, roomFloorRect's {left, right, top, bottom}) bounds the fill as well
+ * (code review R3 m1): the room's map rectangle includes its side wall tiles, and the
+ * strip of a side wall tile behind its collision box reads as walkable, so without it a
+ * body inside the wall's strip could fill a sealed column behind the wall. The start is
+ * also pulled onto the floor first, so such a body starts from the floor beside it.
  * bounds is the pathfinder's {minX, minY, cols, rows, step}. Returns cell centres,
  * nearest first in fill order. Pure, so it is tested in node.
  */
-export function koReachableCells(feet, { grid, bounds, maxDist = KO_DROP_RADII[KO_DROP_RADII.length - 1] + KO_DROP_MIN_GAP, inRoom = () => true } = {}) {
+export function clampToFloor(p, floor) {
+  if (!p || !floor) return p;
+  return {
+    x: Math.min(Math.max(p.x, floor.left), floor.right),
+    y: Math.min(Math.max(p.y, floor.top), floor.bottom)
+  };
+}
+export function koReachableCells(feet, { grid, bounds, maxDist = KO_DROP_RADII[KO_DROP_RADII.length - 1] + KO_DROP_MIN_GAP, inRoom: inRoomId = () => true, floor = null } = {}) {
   if (!grid || !bounds || !feet) return [];
   const { minX, minY, cols, rows, step } = bounds;
+  const onFloor = (x, y) => !floor || (x >= floor.left && x <= floor.right && y >= floor.top && y <= floor.bottom);
+  const inRoom = (x, y) => onFloor(x, y) && inRoomId(x, y);
   const centre = (cx, cy) => ({ x: minX + cx * step + step / 2, y: minY + cy * step + step / 2 });
   const ok = (cx, cy) => cx >= 0 && cy >= 0 && cx < cols && cy < rows && grid[cy]?.[cx] === 0;
   const within = (p) => (p.x - feet.x) ** 2 + (p.y - feet.y) ** 2 <= maxDist * maxDist;
+  feet = clampToFloor(feet, floor);
   let sx = Math.floor((feet.x - minX) / step), sy = Math.floor((feet.y - minY) / step);
   if (!ok(sx, sy) || !inRoom(centre(sx, sy).x, centre(sx, sy).y)) {
     // The body's own cell is often blocked (clearance by a wall or desk): start from the
@@ -691,7 +706,13 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
 
   // Spread the drops round the body on walkable floor, clear of furniture and at
   // least KO_DROP_MIN_GAP apart (koDropSpots), so each one can be seen and picked.
-  const feet = bc ? { x: bc.x, y: bc.y } : { x: sprite.x, y: sprite.y };
+  // Bounded by the room's floor as well as its id (code review R3 m1): a body inside a side
+  // wall's collision strip would otherwise reach the sealed column behind the wall. Its
+  // feet are pulled onto the floor, so the rings and the no-grid stack land there too.
+  // Only when the body is in that room: a body in no room keeps the home-room fallback
+  // as before (review R3 n4, logged), rather than moving its drops to that room's floor.
+  const floor = fellIn ? roomFloorRect(room) : null;
+  const feet = clampToFloor(bc ? { x: bc.x, y: bc.y } : { x: sprite.x, y: sprite.y }, floor);
   const pm = window.pathfindingManager;
   const obstacles = [];
   for (const o of Object.values(room.objects || {})) {
@@ -705,7 +726,8 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
   const reachable = koReachableCells(feet, {
     grid: pm?.worldGrid,
     bounds: pm?.worldGridBounds,
-    inRoom: (x, y) => roomIdAtFeet(x, y, window.rooms, 0) === npcRoomId
+    inRoom: (x, y) => roomIdAtFeet(x, y, window.rooms, 0) === npcRoomId,
+    floor
   });
   const spots = koDropSpots(feet, toDrop.length, { reachable, obstacles });
 

@@ -20,6 +20,7 @@ const swap = (src) => src
     .split("'../events/combat-events.js'").join(`'${dataUrl(read('events/combat-events.js'))}'`)
     .split("'./npc-sprites.js'").join(`'${dataUrl('export const getNPCDirection = () => "down";')}'`);
 const { koDropSpots, koReachableCells, KO_DROP_MIN_GAP } = await import(dataUrl(swap(read('systems/npc-hostile.js'))));
+const { roomIdAtFeet, roomFloorRect } = await import(dataUrl(read('systems/interaction-walls.js')));
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -140,6 +141,37 @@ test('R2 M1: a body on a blocked cell starts from the walkable cell beside it, i
     const reachable = koReachableCells(feet, g);
     assert.ok(reachable.length > 0);
     assert.ok(reachable.every(c => c.y > 26 * STEP - 1));
+});
+
+test('R3 m1: a body inside the east wall strip drops on the floor, never in the sealed column', () => {
+    // A 320 px room built as collision.js builds it: the east wall tile (x 288 to 320) has
+    // its 8 px box at x 288 to 296, the west wall tile's at x 24 to 32, the south wall
+    // row's at y 312 to 320; the back wall is the top two rows. The grid pads each box by
+    // one 8 px cell, so x 280 to 304 is blocked and x 304 to 320 is a sealed walkable column.
+    const rooms = { office: { position: { x: 0, y: 0 }, map: { width: 10, height: 10, tileWidth: 32, tileHeight: 32, widthInPixels: 320, heightInPixels: 320 } } };
+    const g = makeGrid(40, 40, (cx, cy) =>
+        cy < 8 || (cx >= 35 && cx <= 37) || (cx >= 2 && cx <= 4) || (cy >= 38 && cy <= 40));
+    const floor = roomFloorRect(rooms.office);
+    const inRoom = (x, y) => roomIdAtFeet(x, y, rooms, 0) === 'office';
+    for (const feet of [{ x: 294, y: 160 }, { x: 298, y: 160 }, { x: 286, y: 160 }]) {
+        // Without the floor bound the fault reproduces for a body deep in the strip
+        if (feet.x === 294) {
+            const unbounded = koReachableCells(feet, { ...g, inRoom });
+            assert.ok(unbounded.length > 0 && unbounded.every(c => c.x > 304), 'expected the sealed column without the floor bound');
+        }
+        const reachable = koReachableCells(feet, { ...g, inRoom, floor });
+        assert.ok(reachable.length > 0, `no floor reached from ${JSON.stringify(feet)}`);
+        for (const count of [1, 3, 5]) {
+            const spots = koDropSpots(feet, count, { reachable });
+            assert.equal(spots.length, count);
+            for (const s of spots) {
+                assert.ok(s.x < 288, `beyond the strip from ${JSON.stringify(feet)}: ${JSON.stringify(s)}`);
+                assert.ok(s.x >= floor.left && s.x <= floor.right && s.y >= floor.top && s.y <= floor.bottom, `off the floor: ${JSON.stringify(s)}`);
+                assert.ok(isWalkable(g, s), `not walkable: ${JSON.stringify(s)}`);
+            }
+            assertReached(spots, reachable);
+        }
+    }
 });
 
 test('with no grid, every drop lands on the body', () => {
