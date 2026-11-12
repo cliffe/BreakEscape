@@ -41,7 +41,7 @@ const stubs = {
   '../utils/locked-hint.js': 'export function hintToastMs(){ return 6000; }',
   './requires-item-hint.js': 'export function requiresItemHint(){ return ""; }',
   './pc-policy.js': readFileSync(join(js, 'systems/pc-policy.js'), 'utf8'),
-  './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;}',
+  './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;} export function npcGivesWay(){return false;} export function objectIdOf(o){return o && (o.objectId || o.scenarioData?.id) || null;}',
   './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
   '../utils/display-dashes.js': 'export function displayDashes(s){ return s; }',
   '../utils/escape-html.js': 'export function escapeHtml(s){ return String(s ?? ""); }',
