@@ -1,0 +1,125 @@
+{
+  "scenario_name": "test_author_notes",
+  "scenario_brief": "Author notes are not live: a step 2b fixture.",
+  "startRoom": "lobby",
+  "globalVariables": {
+    "_secretglobal": true,
+    "board_state": {
+      "_inner": "FREE-GLOBAL-VALUE-555"
+    }
+  },
+  "rooms": {
+    "lobby": {
+      "type": "room_office",
+      "connections": {
+        "north": "vault",
+        "east": "_annex"
+      },
+      "npcs": [
+        {
+          "id": "guard",
+          "npcType": "person",
+          "displayName": "Guard",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "creds": {
+            "username": "g.uard",
+            "password": "realpw"
+          },
+          "_creds_old": {
+            "password": "NOTE-CREDS-OLD-111"
+          }
+        }
+      ],
+      "objects": [
+        {
+          "id": "safe",
+          "type": "safe",
+          "name": "Safe",
+          "locked": true,
+          "lockType": "pin",
+          "requires": "9999",
+          "_draft": {
+            "triggerOnInteract": [
+              {
+                "type": "unlock",
+                "requires": "NOTE-DRAFT-PIN-222"
+              }
+            ]
+          },
+          "observations": "A plain prop."
+        },
+        {
+          "id": "crate",
+          "type": "notes",
+          "name": "Crate",
+          "contents": [
+            {
+              "id": "folder",
+              "type": "notes",
+              "name": "Folder",
+              "_note": {
+                "password": "NOTE-CONTENTS-PW-333"
+              }
+            }
+          ],
+          "observations": "A plain prop."
+        },
+        {
+          "id": "board",
+          "type": "command_board",
+          "name": "Board",
+          "commandBoard": {
+            "title": "Ops",
+            "_note": "NOTE-BOARD-444"
+          },
+          "observations": "A plain prop."
+        },
+        {
+          "id": "note_pc",
+          "type": "pc",
+          "name": "Reception PC",
+          "_draft": {
+            "triggerOnInteract": [
+              {
+                "type": "grant_foothold",
+                "pc": "note_pc",
+                "needsSession": true,
+                "name": "NOTE-FOOTHOLD-DEAD"
+              }
+            ]
+          },
+          "observations": "A plain prop."
+        }
+      ]
+    },
+    "vault": {
+      "type": "room_office",
+      "connections": {
+        "south": "lobby"
+      },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "9999"
+    },
+    "_annex": {
+      "type": "room_office",
+      "connections": {
+        "west": "lobby"
+      },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "9999",
+      "objects": [
+        {
+          "id": "annex_desk",
+          "type": "notes",
+          "name": "Annex desk",
+          "observations": "A desk in the annex."
+        }
+      ]
+    }
+  }
+}

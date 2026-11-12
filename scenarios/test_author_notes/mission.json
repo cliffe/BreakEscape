@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Author notes are not live",
+  "description": "Test of step 2b: a \"_\"-prefixed author note (an NPC's _creds_old, an object's _draft, a note in container contents, a command board's _note, a dead grant_foothold under _draft) never ships to the browser, while a room whose id starts with \"_\" (_annex), a \"_\" global name and free data (object-valued globals, minigameData) ship as authored. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 5,
+  "test_type": "scenario_format",
+  "test_objective": "Prove the client payload strips every author note while free data and \"_\" ids ship, through the real bootstrap, room and container routes"
+}
