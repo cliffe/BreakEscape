@@ -16,7 +16,7 @@ const KEYED_SECTIONS = ['globalVariables', 'npcVisibility', 'npcHostility', 'tri
 // mailState.jobs: remainingMs counts down every tick, so only which jobs exist
 // (ids, account, message) is a change, as timedMessages diffs its pending ids;
 // the current times ride along with anything else that is sent (00 S9).
-const mailJobsChangeKey = jobs => json((jobs || []).map(j =>
+const mailJobsChangeKey = jobs => stableJson((jobs || []).map(j =>
   [j.jobId, j.kind, j.accountId ?? null, j.msgId ?? null, j.messageId ?? null]));
 const CHANGE_KEYS = { mailState: { jobs: mailJobsChangeKey } };
 
@@ -45,8 +45,6 @@ const LANDING_TELL_IDS = ['brand', 'purpose', 'domain', 'logo', 'wording', 'form
 // save can never push an unknown key to the server (defence in depth, as for the landing state).
 const CAPTURES_KEY = 'se_captures';
 const CAPTURE_ENTRY_KEYS = ['targetId', 'roleLabel', 'address', 'kind', 'secret', 'host', 'note', 'at'];
-
-const json = v => JSON.stringify(v);
 
 // Deterministic JSON: object keys sorted at every depth, arrays kept in order,
 // undefined dropped as JSON.stringify drops it. A value stored in the jsonb
@@ -290,7 +288,7 @@ export class StateSync {
       const changeKeys = CHANGE_KEYS[section] || {};
       for (const [key, value] of Object.entries(current)) {
         if (value === undefined) continue;
-        const s = changeKeys[key] ? changeKeys[key](value) : json(value);
+        const s = changeKeys[key] ? changeKeys[key](value) : stableJson(value);
         if (confirmed[key] !== s) { changes[key] = value; acked[key] = s; }
       }
       for (const key of Object.keys(confirmed)) {
@@ -304,14 +302,14 @@ export class StateSync {
     const notes = [];
     const ackedNotes = {};
     for (const note of full.notes || []) {
-      const s = json(note);
+      const s = stableJson(note);
       if (confirmedNotes[note.id] !== s) { notes.push(note); ackedNotes[note.id] = s; }
     }
     if (notes.length > 0) { body.notes = notes; ack.notes = ackedNotes; }
 
     for (const section of WHOLE_SECTIONS) {
       if (full[section] === undefined) continue;
-      const s = json(full[section]);
+      const s = stableJson(full[section]);
       if (this.confirmed[section] !== s) { body[section] = full[section]; ack[section] = s; }
     }
 
@@ -333,7 +331,7 @@ export class StateSync {
     // current times ride along with anything else that is sent.
     let timedKey = null;
     if (full.timedMessages) {
-      timedKey = json({
+      timedKey = stableJson({
         pending: (full.timedMessages.pending || []).map(m => m.id),
         delivered: full.timedMessages.delivered || []
       });
@@ -344,7 +342,7 @@ export class StateSync {
     let clockKey = null;
     if (full.scenarioClock) {
       const t = full.scenarioClock.timers || {};
-      clockKey = json({ fired: t.fired || [], cancelled: t.cancelled || [], started: Object.keys(t.started || {}).sort() });
+      clockKey = stableJson({ fired: t.fired || [], cancelled: t.cancelled || [], started: Object.keys(t.started || {}).sort() });
     }
     const clockStateChanged = clockKey !== null && clockKey !== this.confirmed.clockKey;
     const somethingElse = Object.keys(body).length > 0 || ack.timedMessagesKey !== undefined;
