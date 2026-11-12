@@ -6473,12 +6473,14 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
         if !ai.needs_tracked?(owner[:npc])
           warn.call("#{where} is owned by '#{owner_id}', who has no valid needs or interests entry, so the owner " \
                     'never leaves and no unlocked session is possible there.')
-        elsif BreakEscape::OwnerClaim.never_leaves?(json_data, owner[:npc])
+        elsif BreakEscape::OwnerClaim.never_leaves?(json_data, owner[:npc], pc)
           # Owner claim q78: the server refuses a claim here too
-          warn.call("#{where} is owned by '#{owner_id}', whom nothing sends away from the post: no need is met " \
-                    'anywhere else they may go, no interest has an item and a place for it, no errand, phone or ' \
-                    'failure route, and nobody can knock them out (disableAttacks or koImmune). The screen is ' \
-                    'never left open, so no unlocked session is possible there and the server refuses a claim.')
+          warn.call("#{where} is owned by '#{owner_id}', whom nothing sends away from the post in a way that " \
+                    'can leave the screen open: no need is met anywhere else they may go, no interest has an item and a ' \
+                    "place for it, no print errand, colleague's phone or failure route, and a knock-out is either " \
+                    'impossible (disableAttacks or koImmune) or always locks this screen. No unlocked session is ' \
+                    'possible there and the server refuses a claim. If the screen is meant to be found open, give ' \
+                    'the owner a need met somewhere else, or allow attacks and give the PC a lockChance below 1.')
         end
       end
     end

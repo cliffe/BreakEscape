@@ -409,3 +409,67 @@ test('a hint action in triggerOnInteract passes the schema, and an unknown actio
     pc.triggerOnInteract.push({ type: 'no_such_action' });
     assertHas(schemaErrors(sc), 'triggerOnInteract');
 });
+
+// ---- owner claim q78: an owner whom nothing sends away (OwnerClaim.leave_route) ----
+
+const NEVER_LEAVES = "whom nothing sends away from the post";
+
+test('a tracked owner who never leaves the post is warned about, with a fix', { skip }, () => {
+    const sc = clean();
+    sc.disableAttacks = true;
+    const out = warnings(issues(sc));
+    assertHas(out, `sign-in PC 'jake_pc' is owned by 'jake', ${NEVER_LEAVES}`);
+    assertHas(out, 'give the owner a need met somewhere else');
+});
+
+test('a knock-out that always locks is no route; one that can find the PC open is', { skip }, () => {
+    let sc = clean();
+    delete obj(sc, 'jake_pc').lockChance;
+    obj(sc, 'jake_pc').locksScreenOnLeave = false;
+    assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), 'locksScreenOnLeave false: a knock-out leaves it open');
+    sc = clean();
+    delete obj(sc, 'jake_pc').lockChance;
+    npc(sc, 'jake').screenHabit = { lockIfAwayOverSeconds: 20 };
+    assertHas(warnings(issues(sc)), NEVER_LEAVES);
+});
+
+test('each leave route keeps the never-leaves warning silent', { skip }, () => {
+    const routes = {
+        'a need source elsewhere': sc => lobby(sc).objects.push({ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst' } }),
+        "a colleague's phone": sc => {
+            npc(sc, 'jake').answersPhones = true;
+            lobby(sc).objects.push({ id: 'dana_phone', type: 'notes', name: 'Phone', phoneOwner: 'dana' });
+        },
+        'a print command': sc => { npc(sc, 'jake').eventMappings = [{ eventPattern: 'go', needs: { print: 'copier' } }]; },
+        'an own print hook with a printHabit': sc => {
+            obj(sc, 'jake_pc').affordance = { satisfies: 'thirst' };
+            npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } };
+            npc(sc, 'jake').printHabit = {};
+        },
+        'an interest with an item and a place': sc => {
+            npc(sc, 'jake').interests = { mail: 2 };
+            lobby(sc).objects.push({ id: 'letter', type: 'notes', name: 'Letter', needsTag: 'mail', takeable: true },
+                { id: 'tray', type: 'notes', name: 'Tray', affordance: { accepts: 'mail' } });
+        }
+    };
+    for (const [label, edit] of Object.entries(routes)) {
+        const sc = clean();
+        sc.disableAttacks = true;
+        edit(sc);
+        assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), label);
+    }
+    // and the near misses still warn
+    const misses = {
+        'answersPhones with no colleague phone': sc => { npc(sc, 'jake').answersPhones = true; },
+        'a print hook with no printHabit': sc => {
+            obj(sc, 'jake_pc').affordance = { satisfies: 'thirst' };
+            npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } };
+        }
+    };
+    for (const [label, edit] of Object.entries(misses)) {
+        const sc = clean();
+        sc.disableAttacks = true;
+        edit(sc);
+        assertHas(warnings(issues(sc)), NEVER_LEAVES);
+    }
+});

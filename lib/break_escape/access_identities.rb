@@ -161,7 +161,9 @@ module BreakEscape
     end
 
     # JavaScript's Number(x) for a JSON value: nil, "" and false are 0, true is 1, a numeric
-    # string its number; anything else NaN.
+    # string its number; anything else NaN. Known gaps, which no scenario authors: an array is NaN
+    # here where Number([]) is 0 and Number([n]) is n, and Float() reads "1_000" as 1000 where
+    # Number() gives NaN. positive_number? (needs_tracked?) also rejects true, which Number() reads as 1.
     def js_number(value)
       case value
       when Numeric then value.to_f

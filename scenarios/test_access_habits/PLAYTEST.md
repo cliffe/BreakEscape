@@ -13,11 +13,13 @@ never for a tester playing blind. No password is written here or on a sign: the 
 ## Setup (each run)
 
 Keyless server on :3001 (never touch :3000). In a container, set
-`PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium` and pass `--headless`. The mission row
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE` to the Playwright headless shell (on this machine
+`$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell`)
+and pass `--headless`. The mission row
 must exist (`db:seed` in standalone Break Escape, or publish this one mission).
 
 ```bash
-export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH RBENV_VERSION=3.1.6
+export RBENV_VERSION=2.7.8
 tools/playtest/start-keyless-server.sh
 PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb test_access_habits
 S=<scratchpad>/test_access_habits-regress
@@ -298,7 +300,9 @@ knocked out either. The screen would never lock, but it is never left open.
    `workstation('noor_pc').present` stays true and `npc_left_post:noor` never fires.
 3. **The forged claim.** From the browser console (not the UI), send the claim a tampered client
    would send: `POST /break_escape/games/<id>/login` with
-   `{ pc_id: "noor_pc", claim: "owner", globals: { noor_pc_screen_locked: false, noor_pc_owner_away: true } }`.
+   `{ pc_id: "noor_pc", claim: "owner", globals: { noor_pc_screen_locked: false, noor_pc_owner_away: true } }`,
+   as JSON, with the page's CSRF token (`document.querySelector('meta[name=csrf-token]').content`) in
+   an `X-CSRF-Token` header; without it the request fails before the claim is judged.
    The answer is 422 `{ success: false, message: "Sign in required" }`, and the server log has
    `login claim refused at noor_pc: the owner never leaves the post`.
 4. **The honest claim still works.** In the same game, H1: wait in `dana_room` for Dana to leave

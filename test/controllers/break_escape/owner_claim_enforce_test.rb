@@ -113,7 +113,23 @@ module BreakEscape
           scenario(attacks: true) do |d|
             jake_pc(d).delete('lockChance')
             jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => -1 }
-          end
+          end,
+        # Review R1 M1: a knock-out leave has no time-away estimate, so a habit threshold never
+        # opens it and a habit with no lockChance locks
+        'attacks on, but a knock-out always locks (a habit threshold, no lock chance, no PC field)' =>
+          scenario(attacks: true) do |d|
+            jake_pc(d).delete('lockChance')
+            jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => '20' }
+          end,
+        'the owner answers phones, but nobody else has one' =>
+          scenario { |d| jake(d)['answersPhones'] = true },
+        'a print hook with no printHabit (the print is never fetched)' =>
+          scenario do |d|
+            jake_pc(d)['affordance'] = { 'satisfies' => 'caffeine' }
+            jake(d)['onUse'] = { 'jake_pc' => { 'revealOutput' => ['copier'] } }
+          end,
+        'revealOutput on a printer object is no print hook' =>
+          scenario { |d| add_object(d, 'finance', { 'id' => 'printer', 'type' => 'notes', 'name' => 'Printer', 'revealOutput' => ['slot_1'] }) }
       }
       cases.each do |label, data|
         build(data)
@@ -141,9 +157,26 @@ module BreakEscape
             d['officePresets'] = true
             add_object(d, 'finance', { 'id' => 'machine', 'type' => 'coffee_station', 'name' => 'Coffee machine' })
           end,
-        'the owner answers colleagues\' phones' => scenario { |d| jake(d)['answersPhones'] = true },
-        'a printer can give an errand' =>
-          scenario { |d| add_object(d, 'finance', { 'id' => 'printer', 'type' => 'notes', 'name' => 'Printer', 'revealOutput' => ['slot_1'] }) },
+        'the owner answers colleagues\' phones (a colleague\'s phone exists)' =>
+          scenario do |d|
+            jake(d)['answersPhones'] = true
+            add_object(d, 'finance', { 'id' => 'dana_phone', 'type' => 'notes', 'name' => 'Desk phone', 'phoneOwner' => 'dana' })
+          end,
+        'the owner\'s own print hook with a printHabit gives an errand' =>
+          scenario do |d|
+            jake_pc(d)['affordance'] = { 'satisfies' => 'caffeine' }
+            jake(d)['onUse'] = { 'jake_pc' => { 'revealOutput' => ['copier'] } }
+            jake(d)['printHabit'] = { 'fetchAfterSeconds' => [30, 60] }
+          end,
+        'a print command in the owner\'s event mappings gives an errand' =>
+          scenario do |d|
+            jake(d)['eventMappings'] << { 'eventPattern' => 'print_now', 'needs' => { 'print' => 'copier' } }
+          end,
+        'attacks on with a habit lock chance below 1: a knock-out can find the PC open' =>
+          scenario(attacks: true) do |d|
+            jake_pc(d).delete('lockChance')
+            jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => 20, 'lockChance' => 0.3 }
+          end,
         'an interest with an item and a place for it' =>
           scenario(needs: {}) do |d|
             jake(d)['interests'] = { 'mail' => { 'weight' => 1 } }
@@ -162,10 +195,11 @@ module BreakEscape
             add_object(d, 'finance', { 'id' => 'spare_pc', 'type' => 'pc', 'name' => 'Spare', 'workstation' => true,
                                        'affordance' => { 'satisfies' => 'work' } })
           end,
-        'a habit threshold written as a string, read as Number() reads it' =>
+        'a habit threshold written as a string, read as Number() reads it (a coffee in reach)' =>
           scenario(attacks: true) do |d|
             jake_pc(d).delete('lockChance')
             jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => '20' }
+            add_object(d, 'finance', coffee)
           end
       }
       cases.each do |label, data|

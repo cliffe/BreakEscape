@@ -22,22 +22,31 @@ module BreakEscape
     # The first way honest play can make this owner leave their post, as a short label, or nil
     # when nothing ever does. Labels: "knock_out", "answers_phones", "prints",
     # "need:<name>:<object id>", "fails:<need>" (a judged need that can fail, so checks and
-    # workarounds walk), "interest:<tag>".
-    def leave_route(data, owner)
+    # workarounds walk), "interest:<tag>". The label names the first route found, not
+    # necessarily the one play uses most (a need's source elsewhere counts even where the own
+    # needsHome usually serves it).
+    #
+    # pc: the PC the claim is for. A knock-out leave carries no time-away estimate, so it counts
+    # only where decideLocked can leave this PC open without one (open_without_estimate?). With
+    # no PC given the knock-out counts, the side that never refuses an honest claim.
+    def leave_route(data, owner, pc = nil)
       return nil unless data.is_a?(Hash) && owner.is_a?(Hash)
 
       # workstation-state.js onKnockedOut: a knock-out counts as a leave for a tracked owner.
       # The punch is refused only by disableAttacks (player-combat.js) or koImmune (npc-hostile.js).
-      return 'knock_out' unless data['disableAttacks'] == true || owner['koImmune'] == true
-      # A colleague's desk phone (npc-needs.js _claimAnswerer): a walk to it is a real leave
-      return 'answers_phones' if owner['answersPhones'] == true
+      can_ko = data['disableAttacks'] != true && owner['koImmune'] != true
+      return 'knock_out' if can_ko && (pc.nil? || open_without_estimate?(pc, owner))
 
       AccessWork.with_index(data) do
         objects = scenario_objects(data)
-        # A print errand (slice 17) fetches a printout: any printer hook may give one
-        return 'prints' if key_anywhere?(data, 'revealOutput')
+        # A colleague's desk phone (npc-needs.js _claimAnswerer): an answersPhones NPC walks only
+        # to a ringing phone whose phoneOwner is somebody else
+        return 'answers_phones' if owner['answersPhones'] == true && objects.any? { |e| colleague_phone?(e[:obj], owner) }
 
         home_id = owner['needsHome'].is_a?(String) ? owner['needsHome'] : nil
+        # A print errand (slice 17) carries an owned printout to the needsHome object
+        return 'prints' if prints?(data, owner, objects, home_id)
+
         home_room = home_room(data, owner, home_id)
         needs = owner['needs'].is_a?(Hash) ? owner['needs'] : {}
         needs.each do |name, raw|
@@ -66,16 +75,93 @@ module BreakEscape
           next unless valid_interest?(raw)
 
           # _carryCandidate: an item with the tag, and somewhere that accepts it
+          # (_permitted(s, o, false)). The item may be anywhere, since the player can drop one;
+          # the accepting place is fixed, so the room leash applies to it.
           item = objects.any? { |e| e[:obj]['needsTag'] == tag }
-          target = objects.any? { |e| Array(AccessWork.affordance(data, e[:obj])&.dig('accepts')).include?(tag) }
+          target = objects.any? do |e|
+            Array(AccessWork.affordance(data, e[:obj])&.dig('accepts')).include?(tag) &&
+              !room_forbidden?(data, owner, e[:room], home_room)
+          end
           return "interest:#{tag}" if item && target
         end
       end
       nil
     end
 
-    def never_leaves?(data, owner)
-      leave_route(data, owner).nil?
+    def never_leaves?(data, owner, pc = nil)
+      leave_route(data, owner, pc).nil?
+    end
+
+    # decideLocked (workstation-state.js) with expectedAwayMs null, as for a knock-out: can this
+    # leave find the PC open? The PC's numeric lockChance below 1 (0 opens, between 0 and 1 the
+    # roll can), else its locksScreenOnLeave key set to false, else the owner's screenHabit with
+    # a numeric lockChance below 1. A habit threshold (lockIfAwayOverSeconds) needs an estimate,
+    # so it never opens this leave; a habit with no numeric lockChance locks.
+    def open_without_estimate?(pc, owner)
+      pc = {} unless pc.is_a?(Hash)
+      chance = pc['lockChance']
+      return chance < 1 if chance.is_a?(Numeric)
+      return pc['locksScreenOnLeave'] == false if pc.key?('locksScreenOnLeave')
+
+      habit = owner.is_a?(Hash) ? owner['screenHabit'] : nil
+      return false unless habit.is_a?(Hash)
+
+      raw = habit['lockChance']
+      raw.is_a?(Numeric) && raw < 1
+    end
+
+    # An object somebody else answers to (phoneOwner set, and not this owner)
+    def colleague_phone?(obj, owner)
+      po = obj['phoneOwner']
+      po.is_a?(String) && !po.empty? && po != owner['id']
+    end
+
+    # npc-needs.js: an owned print is fetched by an errand (_errandCandidate), a carry job to the
+    # needsHome object, so needsHome must name an object. A print is owned when it comes from
+    # (a) a print command: an event mapping on the owner's record whose needs.print names a
+    # producer (control always owns it), or (b) the owner's own onUse hook with revealOutput on
+    # an object one of their needs uses (only a need use prints, _completeJob), with a printHabit
+    # (an unowned print is never fetched) and a hook chance that is not 0 or less.
+    def prints?(data, owner, objects, home_id)
+      return false unless home_id && objects.any? { |e| e[:obj]['id'] == home_id }
+      return true if print_command?(owner)
+
+      habit = owner['printHabit']
+      return false unless habit.is_a?(Hash) || habit.is_a?(Array)
+
+      hooks = owner['onUse'].is_a?(Hash) ? owner['onUse'] : {}
+      needs = owner['needs'].is_a?(Hash) ? owner['needs'].select { |_, raw| valid_need?(raw) }.keys : []
+      hooks.any? do |target_id, hook|
+        next false unless hook.is_a?(Hash) && !printer_list(hook['revealOutput']).empty?
+        if hook.key?('chance')
+          c = AccessIdentities.js_number(hook['chance'])
+          next false if c.finite? && c <= 0
+        end
+        target = objects.find { |e| e[:obj]['id'] == target_id }
+        target && needs.any? { |n| AccessWork.satisfies?(data, target[:obj], n) }
+      end
+    end
+
+    # An event mapping on the owner (eventMappings as a list or a pattern map, or the singular
+    # eventMapping that npc-manager.js normalises) whose needs is { print: <producer or spec> }
+    def print_command?(owner)
+      raw = owner['eventMappings'] || owner['eventMapping']
+      maps = raw.is_a?(Hash) ? raw.values : Array(raw)
+      maps.any? do |m|
+        cmd = m.is_a?(Hash) ? m['needs'] : nil
+        next false unless cmd.is_a?(Hash) && cmd.key?('print')
+
+        spec = cmd['print']
+        producer = spec.is_a?(String) || spec.is_a?(Array) ? spec : (spec.is_a?(Hash) ? spec['producer'] : nil)
+        !printer_list(producer).empty?
+      end
+    end
+
+    # printerList: a non-empty string, or the non-empty strings of a list
+    def printer_list(value)
+      return (value.empty? ? [] : [value]) if value.is_a?(String)
+
+      value.is_a?(Array) ? value.select { |x| x.is_a?(String) && !x.empty? } : []
     end
 
     # normaliseNeed: decayPerMin and urgentAt both read as numbers above 0
@@ -112,14 +198,6 @@ module BreakEscape
       rooms.each { |room_id, room| add.call(room, room_id) }
       data.each { |k, v| add.call(v, nil) unless k == 'rooms' }
       out
-    end
-
-    def key_anywhere?(node, key)
-      case node
-      when Hash then node.key?(key) || node.each_value.any? { |v| key_anywhere?(v, key) }
-      when Array then node.any? { |v| key_anywhere?(v, key) }
-      else false
-      end
     end
 
     # npc-needs.js _homeRoom: needsHome { room }, else the needsHome object's room, else the
