@@ -131,6 +131,20 @@ export function outcomeLineVoice(text, params, contact, characters) {
 }
 
 /**
+ * The delivery note for each line of one story step. A step's tags belong to the last line
+ * it printed (the line the tag ends), so a step of several lines with one #delivery: tag
+ * gives the note to the last and null to the others.
+ * @param {number} lineCount - lines the step printed
+ * @param {string|null} note - deliveryFromTags(step tags)
+ * @returns {Array<string|null>}
+ */
+export function stepDeliveries(lineCount, note) {
+    const out = new Array(Math.max(0, lineCount)).fill(null);
+    if (out.length && note) out[out.length - 1] = note;
+    return out;
+}
+
+/**
  * Plays one call line at a time and waits for it. speak() resolves when the line has
  * ended, was skipped or stopped, or could not play (no clip and no key: it resolves at
  * once, so a keyless server only loses the voice, never the call).
@@ -154,16 +168,18 @@ export class PhoneCallVoice {
      * @param {string} speakerId
      * @param {string} text
      * @param {string|Object|null} [fx] - the speaker's voice.fx, if any
+     * @param {{delivery?: string|null}} [options] - the line's #delivery: note (tts-delivery.js);
+     *   with none the request is exactly play(speakerId, text), so an untagged line keeps its clip
      * @returns {Promise<'played'|'silent'|'skipped'>}
      */
-    async speak(speakerId, text, fx = null) {
+    async speak(speakerId, text, fx = null, { delivery = null } = {}) {
         this._release();
         const token = {};
         this._token = token;
         if (fx) this.tts.setVoiceFX(speakerId, fx);
         let duration = null;
         try {
-            duration = await this.tts.play(speakerId, text);
+            duration = await this.tts.play(speakerId, text, delivery ? { delivery } : undefined);
         } catch (_) {
             duration = null;
         }

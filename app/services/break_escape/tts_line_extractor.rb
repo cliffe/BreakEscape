@@ -361,11 +361,12 @@ module BreakEscape
       @delivered_lines
     end
 
-    # The `#delivery:` note person-chat sends for a line (TtsService.delivery_from_tags).
-    # Voiced phone calls don't send one (phone-call-voice.js), so their lines have none;
-    # a phone contact's video call is person-chat and does.
-    def line_delivery(line, person_chat)
-      return nil unless person_chat
+    # The `#delivery:` note the client sends for a line (TtsService.delivery_from_tags):
+    # person-chat does, and so does a voiced phone call (phone-call-voice.js, A1) for the
+    # lines it speaks. `sends_delivery` is true for every line the host yields except the
+    # narration a voiced call leaves unspoken (those are skipped before they get here).
+    def line_delivery(line, sends_delivery)
+      return nil unless sends_delivery
 
       TtsService.delivery_from_tags(line.tags)
     end
@@ -526,7 +527,9 @@ module BreakEscape
           person_chat = !phone || video.include?(self.class.line_knot(line.path))
           next if !person_chat && (npc_id == 'narrator' || phone_narration?(line.tags))
 
-          yield host_id, ink_path, line, npc_id, text, person_chat
+          # Both kinds of line send their #delivery: note (A1): person-chat and a video call
+          # always did, a voiced phone call's spoken lines now do too.
+          yield host_id, ink_path, line, npc_id, text, true
         end
       end
     end

@@ -188,7 +188,7 @@ test('a reopen that re-runs the knot returns its new player line as the player\'
 
 test('the phone minigame types every story line through the speaker check, with no NPC typing for player lines', () => {
     const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
-    assert.equal((src.match(/this\._showStoryLine\(message, TYPING_DELAY_MS\)/g) || []).length, 2,
+    assert.equal((src.match(/this\._showStoryLine\(message, TYPING_DELAY_MS, (?:deliveries\?\.\[i\]|accumulatedDeliveries\[i\]) \|\| null\)/g) || []).length, 2,
         'both the continue and the choice paths');
     assert.equal((src.match(/phoneStepLines\(/g) || []).length, 3, 'every place story text is collected');
     assert.doesNotMatch(src, /addMessage\('npc', message/, 'no story line is added as the NPC\'s unchecked');

@@ -16,11 +16,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const src = readFileSync(join(js, 'minigames/phone-chat/phone-chat-minigame.js'), 'utf8');
 const { phoneStepLines } = await import(join(js, 'minigames/phone-chat/phone-chat-speaker.js'));
+const { stepDeliveries } = await import(join(js, 'minigames/phone-chat/phone-call-voice.js'));
+const { deliveryFromTags } = await import(join(js, 'systems/tts-delivery.js'));
 const { partitionSlowTags } = await import(join(js, 'minigames/person-chat/person-chat-pending-reply.js'));
 console.log = () => {};
 console.trace = () => {};
 
-const INJECT = ['phoneStepLines', 'processGameActionTags', 'partitionSlowTags'];
+const INJECT = ['phoneStepLines', 'processGameActionTags', 'partitionSlowTags', 'stepDeliveries', 'deliveryFromTags'];
 function method(name, deps, isAsync = true) {
     const m = src.match(new RegExp(`\\n    ${isAsync ? 'async ' : ''}${name}\\(([^)]*)\\) \\{\\n([\\s\\S]*?)\\n    \\}\\n`));
     assert.ok(m, `${name} found`);
@@ -53,7 +55,7 @@ function harness({ slowDelay = 0 } = {}) {
     globalThis.window = { currentConversationNPCId: 'hax', gameState: { globalVariables: globals } };
     const applied = [];
     const deps = {
-        phoneStepLines, partitionSlowTags,
+        phoneStepLines, partitionSlowTags, stepDeliveries, deliveryFromTags,
         processGameActionTags: async (tags) => {
             for (const tag of tags) {
                 const [action, name, value] = tag.split(':');

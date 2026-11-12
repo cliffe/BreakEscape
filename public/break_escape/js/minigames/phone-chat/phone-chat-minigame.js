@@ -19,8 +19,9 @@ import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-cha
 import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } from './phone-call-lock.js';
-import { isVoicedCall, phoneLineVoice, outcomeLineVoice, PhoneCallVoice, voicedCallKnots, callStartKnots, callHomeKnot } from './phone-call-voice.js';
+import { isVoicedCall, phoneLineVoice, outcomeLineVoice, PhoneCallVoice, stepDeliveries, voicedCallKnots, callStartKnots, callHomeKnot } from './phone-call-voice.js';
 import TTSManager from '../../systems/tts-manager.js';
+import { deliveryFromTags } from '../../systems/tts-delivery.js';
 import { resolvePhoneApp, npcDmFields, profileLaunch } from './phone-app.js';
 
 export class PhoneChatMinigame extends MinigameScene {
@@ -735,6 +736,8 @@ export class PhoneChatMinigame extends MinigameScene {
         // Accumulate messages and tags until we hit choices or end
         const accumulatedMessages = [];
         const accumulatedTags = [];
+        // One entry per message: the step's #delivery: note on the last line the tag ends (2.8)
+        const accumulatedDeliveries = [];
         let lastResult = null;
 
         // Keep reading lines until we get choices or the story ends
@@ -758,7 +761,9 @@ export class PhoneChatMinigame extends MinigameScene {
             }
 
             // Collect text (a line tagged #speaker:player comes back as "You: …")
-            accumulatedMessages.push(...phoneStepLines(result.text, result.tags));
+            const stepLines = phoneStepLines(result.text, result.tags);
+            accumulatedMessages.push(...stepLines);
+            accumulatedDeliveries.push(...stepDeliveries(stepLines.length, deliveryFromTags(result.tags)));
 
             // Stop conditions:
             // 1. Story has ended
@@ -793,7 +798,7 @@ export class PhoneChatMinigame extends MinigameScene {
             return;
         }
 
-        await this._presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied: true });
+        await this._presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied: true, deliveries: accumulatedDeliveries });
     }
 
     /**
@@ -805,8 +810,10 @@ export class PhoneChatMinigame extends MinigameScene {
      * @param {Object} [opts]
      * @param {boolean} [opts.tagsApplied] - the tags already ran line by line as the
      *   story continued (continueStory), so only the lines are shown
+     * @param {Array<string|null>} [opts.deliveries] - the #delivery: note for each message
+     *   (same order), spoken with the line on a voiced call; never shown
      */
-    async _presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied = false } = {}) {
+    async _presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied = false, deliveries = null } = {}) {
         const TYPING_DELAY_MS  = 1000;
         const INTER_MESSAGE_MS = 400;
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -861,7 +868,7 @@ export class PhoneChatMinigame extends MinigameScene {
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            if (!(await this._showStoryLine(message, TYPING_DELAY_MS))) return;
+            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, deliveries?.[i] || null))) return;
             this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
@@ -903,9 +910,10 @@ export class PhoneChatMinigame extends MinigameScene {
      * prefix stripped, with no "typing…" from the NPC (U3); phone texts are not voiced, except in a voiced call (F17).
      * @param {string} raw - the line as the ink printed it
      * @param {number} typingDelayMs
+     * @param {string|null} [delivery] - the line's #delivery: note, spoken on a voiced call
      * @returns {Promise<boolean>} false if the conversation was closed meanwhile
      */
-    async _showStoryLine(raw, typingDelayMs) {
+    async _showStoryLine(raw, typingDelayMs, delivery = null) {
         // A thread closed (or swapped for another contact) during the await is no longer
         // this typeout's: its untyped lines were flushed to the right history on close
         const run = this._typeoutRun;
@@ -930,7 +938,7 @@ export class PhoneChatMinigame extends MinigameScene {
         this.history.addMessage(line.type, line.text, { read: true });
         // A voiced call speaks the line now and the next one waits for it (F17). Already
         // in the history, so a close mid-line must not flush it again: always true here.
-        if (line.type === 'npc' && isVoicedCall(this.params)) await this._speakCallLine(line, raw);
+        if (line.type === 'npc' && isVoicedCall(this.params)) await this._speakCallLine(line, raw, { delivery });
         return true;
     }
 
@@ -941,7 +949,7 @@ export class PhoneChatMinigame extends MinigameScene {
      * @param {{type: string, text: string}} line - from classifyPhoneLine
      * @param {string} raw - the line as printed (its entry in _pendingNpcMessages)
      */
-    async _speakCallLine(line, raw, { preloaded = false } = {}) {
+    async _speakCallLine(line, raw, { preloaded = false, delivery = null } = {}) {
         // Only the call's own lines: a hub reply or text after the call stays silent (F20).
         // A preloaded opening came from a throwaway story, so it was never noted as one.
         if (!preloaded && this.conversation?.callKnots && !this.conversation.isCallLine(raw)) return;
@@ -960,7 +968,7 @@ export class PhoneChatMinigame extends MinigameScene {
         await whenSessionOverlayClosed();
         this.ui?.setCallSpeaking?.(true);
         try {
-            await this._callVoice?.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null);
+            await this._callVoice?.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null, { delivery });
         } finally {
             this.ui?.setCallSpeaking?.(false);
         }
@@ -1094,6 +1102,7 @@ export class PhoneChatMinigame extends MinigameScene {
         // Accumulate messages and tags until we hit choices or end
         const accumulatedMessages = [];
         const accumulatedTags = [];
+        const accumulatedDeliveries = [];
         let lastResult = firstResult;
 
         // Process the first result from makeChoice
@@ -1101,7 +1110,9 @@ export class PhoneChatMinigame extends MinigameScene {
             accumulatedTags.push(...firstResult.tags);
             this._applyLineTags(firstResult.tags, npcId, conversation);
         }
-        accumulatedMessages.push(...phoneStepLines(firstResult.text, firstResult.tags));
+        const firstLines = phoneStepLines(firstResult.text, firstResult.tags);
+        accumulatedMessages.push(...firstLines);
+        accumulatedDeliveries.push(...stepDeliveries(firstLines.length, deliveryFromTags(firstResult.tags)));
 
         // Keep reading lines until we get choices or the story ends
         while (lastResult.canContinue && (!lastResult.choices || lastResult.choices.length === 0)) {
@@ -1122,7 +1133,9 @@ export class PhoneChatMinigame extends MinigameScene {
             }
 
             // Collect text (a line tagged #speaker:player comes back as "You: …")
-            accumulatedMessages.push(...phoneStepLines(result.text, result.tags));
+            const stepLines = phoneStepLines(result.text, result.tags);
+            accumulatedMessages.push(...stepLines);
+            accumulatedDeliveries.push(...stepDeliveries(stepLines.length, deliveryFromTags(result.tags)));
 
             // Stop if story ended
             if (result.hasEnded) {
@@ -1165,7 +1178,7 @@ export class PhoneChatMinigame extends MinigameScene {
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            if (!(await this._showStoryLine(message, TYPING_DELAY_MS))) return;
+            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, accumulatedDeliveries[i] || null))) return;
             this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }

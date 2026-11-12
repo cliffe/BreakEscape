@@ -469,18 +469,22 @@ module BreakEscape
       refute extractor.delivered_by?('narrator', "I suppose it doesn't matter now.", 'quietly, almost to herself')
     end
 
-    test "a voiced phone call's lines carry no note (phone-call-voice.js doesn't send one)" do
+    test "a voiced phone call's spoken lines carry their note, as phone-call-voice.js sends it (A1)" do
       data = scenario
       kevin = data['rooms']['office']['npcs'].first
       kevin['npcType'] = 'phone'
       kevin['voiced'] = true
       extractor = TtsLineExtractor.new('walker_test', data)
-      assert(extractor.entries.all? { |e| e.delivery.nil? })
-      refute extractor.delivered_by?('kevin_park', "I suppose it doesn't matter now.", 'quietly, almost to herself')
+      quiet = extractor.entries.find { |e| e.text == "I suppose it doesn't matter now." }
+      assert_equal 'quietly, almost to herself', quiet.delivery
+      assert extractor.delivered_by?('kevin_park', quiet.text, 'Quietly, almost to herself.')
+      plain = extractor.entries.find { |e| e.text == 'An untagged line.' }
+      assert_nil plain.delivery
+      assert_equal TtsService.cache_key(plain.text, 'Puck', 'Nervous IT admin.', 'en-GB'), plain.key
     end
 
     # A phone contact's video call is person-chat, which sends the line's note
-    # (line_delivery). The same contact as a voiced phone call sends none (above).
+    # (line_delivery). As a voiced phone call it sends the same note since A1 (above).
     test "a phone contact's video-call lines keep their note, and only a tagged line's key has one" do
       data = scenario
       kevin = data['rooms']['office']['npcs'].first
@@ -503,12 +507,12 @@ module BreakEscape
 
       assert_equal 'hushed', by_text['The lights hum.'].delivery
 
-      # The same knot as a voiced phone call: no note, untagged key
+      # The same knot as a voiced phone call: the same note and key (A1)
       kevin.delete('eventMappings')
       kevin['voiced'] = true
       phone = TtsLineExtractor.new('walker_test', data).entries.to_h { |e| [e.text, e] }
-      assert_nil phone[quiet.text].delivery
-      assert_equal TtsService.cache_key(quiet.text, 'Puck', 'Nervous IT admin.', 'en-GB'), phone[quiet.text].key
+      assert_equal 'quietly, almost to herself', phone[quiet.text].delivery
+      assert_equal quiet.key, phone[quiet.text].key
     end
 
     test "expected lines (the pruner's set) include the tagged key" do
