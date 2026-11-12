@@ -327,12 +327,11 @@ That should worry you more than the pitch. He understands the cost. He decided h
 === topic_architect ===
 // lint: call-knot
 #speaker:agent_0x99
-~ architect_discussed = true
 {
     - call_is_callback: Thank you. Listen.
     - call_answer_seconds > 10: Finally. Sit down for this.
 }
-Read it twice. A casualty projection, reviewed, and signed off as an acceptable cost.
+The Architect's own authorisation. I've read it twice. A casualty projection, reviewed, and signed off as an acceptable cost.
 
 No rogue cell improvised that. Someone priced human lives and approved the invoice.
 
@@ -356,16 +355,19 @@ No rogue cell improvised that. Someone priced human lives and approved the invoi
     - else:
         It always was. Your insider is the delivery. The Architect is the decision. Keep both in the file.
     }
+    ~ architect_discussed = true
     #exit_conversation
     -> DONE
 
 + {torres_identified} [Then Torres is the only thread we've got to it.]
     For tonight, yes. Bear that in mind when you decide what happens to him.
+    ~ architect_discussed = true
     #exit_conversation
     -> DONE
 
 + {not torres_identified} [Then the insider is the only thread we've got to it.]
     For tonight, yes. Find them first. Then bear it in mind when you decide what happens to them.
+    ~ architect_discussed = true
     #exit_conversation
     -> DONE
 
@@ -966,7 +968,11 @@ Ask me what you want to ask.
     #exit_conversation
     -> DONE
 }
-Once you're out, QDC's own people go through that vault before ours do. Whatever you haven't read could walk.
+{ extract_choices > 0:
+    QDC's people are nearly at the vault. Say when.
+- else:
+    Once you're out, QDC's own people go through that vault before ours do. Whatever you haven't read could walk.
+}
 {not found_pipeline_list:
     There's an envelope under the terminal keyboard nobody's opened.
 }
