@@ -132,7 +132,8 @@ module BreakEscape
           sources: sources(npc, scenario) }
       end
       stations = owned_workstations(scenario)
-      gates = gate_entries(scenario)
+      # A gate on an entry no doorway reads (doorway_problem) does nothing: no fill, no report
+      gates = gate_entries(scenario).reject { |gate| gate[:doorway] }
       holds = plans.to_h { |plan| [plan[:entry][:npc]['id'], plan[:habits]['holdsDoors']] }
       gate_fills = gates.to_h { |gate| [gate[:path], no_hold_for(gate, holds)] }
 
@@ -200,10 +201,11 @@ module BreakEscape
       screen
     end
 
-    # Every gate door: { gate:, path:, room:, index:, connected_room:, direction:, open_for: }. `doors` that is not
-    # a list and a `gate` that is not an object are skipped; a gate with enabled: false is
-    # not a gate (the client ignores it). An openFor string is a one-item list, as the
-    # client reads it.
+    # Every gate door: { gate:, path:, room:, index:, connected_room:, direction:, open_for:,
+    # doorway: }. `doors` that is not a list and a `gate` that is not an object are skipped; a
+    # gate with enabled: false is not a gate (the client ignores it). An openFor string is a
+    # one-item list, as the client reads it. `doorway` is doorway_problem for the entry: nil
+    # when doors.js reads it, else why it never does (the gate is then dead).
     def gate_entries(scenario)
       out = []
       scenario['rooms'].each do |room_id, room|
@@ -217,11 +219,14 @@ module BreakEscape
 
           open_for = gate['openFor'].is_a?(Array) ? gate['openFor'].grep(String) : [gate['openFor']].grep(String)
           out << { gate: gate, path: "rooms/#{room_id}/doors/#{i}", room: room_id, index: i,
-                   connected_room: door['connectedRoom'], direction: door['direction'], open_for: open_for }
+                   connected_room: door['connectedRoom'], direction: door['direction'], open_for: open_for,
+                   doorway: doorway_problem(room, i) }
         end
       end
       out
     end
+
+    DOOR_DIRECTIONS = %w[north south east west].freeze
 
     # Why door entry `index` of `room` never reaches a doorway, or nil when it does. doors.js
     # builds a doorway for each room id its room lists under connections.north, south, east
@@ -230,8 +235,6 @@ module BreakEscape
     # and the gate on it, is never read: :no_direction (none, or not one of the four),
     # :no_connection (connections lists no connectedRoom under that direction) or :shadowed
     # (an earlier entry matches the same doorway).
-    DOOR_DIRECTIONS = %w[north south east west].freeze
-
     def doorway_problem(room, index)
       doors = room.is_a?(Hash) && room['doors'].is_a?(Array) ? room['doors'] : []
       door = doors[index]

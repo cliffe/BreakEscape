@@ -380,4 +380,24 @@ class NpcHabitsTest < ActiveSupport::TestCase
     assert_equal :no_direction, NH.doorway_problem(room, 7)
     assert_equal :no_connection, NH.doorway_problem({ 'doors' => [{ 'connectedRoom' => 'vault', 'direction' => 'north' }] }, 0)
   end
+
+  # A gate on an entry no doorway reads does nothing: expand! fills no noHold on it and the
+  # report has no gate for its guard
+  test 'a gate on an entry doors.js never reads gets no fill and counts as no gate' do
+    data = scenario_with([npc('id' => 'sara', 'npcType' => 'person', 'awareness' => 'high')])
+    data['rooms']['office']['connections'] = { 'north' => 'vault' }
+    data['rooms']['office']['doors'] = [{ 'connectedRoom' => 'vault', 'gate' => { 'openFor' => ['sara'] } }]
+    data['rooms']['vault'] = { 'type' => 'room_office', 'connections' => { 'south' => 'office' } }
+    live = deep(data)
+    live['rooms']['office']['doors'][0]['direction'] = 'north'
+
+    assert_equal :no_direction, NH.gate_entries(data)[0][:doorway]
+    doors = report_for(NH.expand!(data), 'sara')[:doors]
+    assert_equal :no_gate, doors[:reason]
+    refute data['rooms']['office']['doors'][0]['gate'].key?('noHold')
+    # mirror: with its direction the gate is read and filled
+    assert_nil NH.gate_entries(live)[0][:doorway]
+    assert_nil report_for(NH.expand!(live), 'sara')[:doors][:reason]
+    assert_equal ['sara'], live['rooms']['office']['doors'][0]['gate']['noHold']
+  end
 end

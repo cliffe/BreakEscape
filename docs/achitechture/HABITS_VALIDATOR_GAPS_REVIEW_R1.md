@@ -88,3 +88,18 @@ lib/break_escape/npc_habits.rb:226-235. Move `DOOR_DIRECTIONS` above the comment
 ### n4. Over-long comment lines left from the edit
 
 scripts/validate_scenario.rb:1926 and :1930 run well past the file's usual width. Reflow them.
+
+## Outcomes (builder)
+
+All eight findings were checked against the code and fixed.
+
+- M1: door entries are skipped by the other-locks walk; `check_access_model` warns on `locked` or `lockType` on a door entry (not on `requires`). The test now asserts that no door-entry path is reported, for a gate entry and for another entry.
+- m1: `gate_entries` carries `doorway:`. `expand!`, the habits report, the dungeon graph and `check_lock_credentials` skip dead gates. A unit test covers a dead gate, which gets no fill and reports `:no_gate`, with a live mirror.
+- m2: there is now a test for two real gates into one room from two doorways, with a mirror, and a `:shadowed` case with a disabled first entry.
+- m3: a lock counts only when `locked` is `true`. interactions.js locks an object only on `locked === true`, and doors.js locks a door on a truthy room `locked`. The mirrors cover `locked: false` and a missing `locked`.
+- n1: a wrong-case direction is named in the warning.
+- n2: a door entry that is not an object is now an error.
+- n3: `DOOR_DIRECTIONS` moved above the comment.
+- n4: comment lines reflowed.
+
+Validator over all 175 scenarios: no line differs from the main baseline.
