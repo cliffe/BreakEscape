@@ -261,6 +261,19 @@ test('a down block is greyed with "No route" and offers no control', async () =>
     assert.deepEqual(named('network_viewed:server_net'), [], 'a down block emits no network_viewed');
 });
 
+test('a down block draws each row as its own kind, under group headings (code review R1 n3)', async () => {
+    const share = { id: 'sv_archive', kind: 'file_share', name: 'Archive share', host: 'SV-FS02' };
+    withBlocks([{ id: 'server_net', name: 'Server network', via: { hostId: 'lena_pc', host: 'HB-FIN-02' }, route: 'down', hosts: [share, { ...SERVER_ROW }] }]);
+    links.open('jack_comms_port');
+    await settle();
+    const block = document.querySelector('.network-block-down');
+    const kinds = [...block.querySelectorAll('.network-row-down')].map(li => li.dataset.kind);
+    assert.deepEqual(kinds, ['pc', 'file_share'], 'computers first, the share drawn as a share');
+    assert.match(block.querySelector('[data-kind="file_share"] img').getAttribute('src'), /folder/);
+    assert.equal(block.querySelectorAll('.network-row-group').length, 2, 'a heading for each group');
+    assert.equal(block.querySelector('[data-action]'), null, 'still no control');
+});
+
 // Review R2 M1 (plan 5.2): the own network down, a session held there. The server sends no
 // own rows and one down block for the own network holding only the held-session row; the view
 // keeps that block, greyed, and does not also say nothing answers.

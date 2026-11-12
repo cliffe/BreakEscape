@@ -225,13 +225,19 @@ export class NetworkViewMinigame extends MinigameScene {
     blockSectionHtml(block) {
         const via = block.via ? `, through ${escapeHtml(block.via.host || block.via.hostId || '')}` : '';
         if (block.route === 'down') {
-            const rows = displayOrder(this.blockRows(block)).map(r => `
-                <li class="network-row network-row-host network-row-down" data-kind="pc">
-                    <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
+            // Each row drawn as its own kind, under the same group headings as an up block
+            // (code review R1 n3: every row was drawn as a PC, so a share sorted after the
+            // computers with nothing to say why)
+            const rows = this.rowsHtml(this.blockRows(block), (r) => {
+                const kind = KIND_ICONS[r.kind] ? r.kind : 'pc';
+                return `
+                <li class="network-row network-row-host network-row-down" data-kind="${escapeHtml(kind)}">
+                    <img class="network-row-icon" src="${KIND_ICONS[kind]}" alt="">
                     <span class="network-row-label"><strong>${escapeHtml(r.host || r.id)}</strong>
                         <span class="network-row-name">${escapeHtml(r.name || '')}</span></span>
                     <span class="network-row-control"><span class="network-row-off">No route to ${escapeHtml(r.host || r.id)}</span></span>
-                </li>`).join('');
+                </li>`;
+            });
             return `<div class="network-block network-block-down"><h5 class="network-block-title">${escapeHtml(block.name || block.id)} (no route)</h5><ul class="network-view-rows">${rows}</ul></div>`;
         }
         const rows = this.blockRows(block);
