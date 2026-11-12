@@ -45,3 +45,17 @@ Second hub line.
 === ends ===
 Last word.
 -> DONE
+
+// A3 R2 m3: a home knot that assigns a synced global, and one that starts with narration
+VAR hub_seen = false
+
+=== synced_home ===
+~ hub_seen = true
+Synced hub line.
++ [Go]
+    -> synced_home
+
+=== narrated_home ===
+Narrator: A carrier tone hums on the line.
++ [Listen]
+    -> narrated_home

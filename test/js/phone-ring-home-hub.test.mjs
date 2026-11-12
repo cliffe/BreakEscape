@@ -129,3 +129,61 @@ test('the read-ahead writes no global and fires no change event', async () => {
     assert.equal(fired, 0);
     assert.equal(typeof conv.engine.story.variablesState.variableChangedEvent, 'function', 'the observer is put back');
 });
+
+// ---- A3 R2 m3: the observer guard and the prefix-stripped match ----
+
+test('A3 R2 m3: an unseen read-ahead that assigns a synced global fires no event and leaves the game value alone', async () => {
+    window.gameState.globalVariables = { hub_seen: false };
+    try {
+        const conv = await conversationAfterCall('synced_home');
+        const vars = conv.engine.story.variablesState;
+        const realObserver = vars.variableChangedEvent;
+        let fired = 0;
+        const probe = () => { fired++; };
+        vars.variableChangedEvent = probe;
+        const before = conv.saveState();
+        assert.equal(conv.settleOnSeenLines(msgs('Some other line')), false, 'unseen: the read-ahead is undone');
+        assert.equal(fired, 0, 'the assignment did not reach the observer');
+        assert.equal(window.gameState.globalVariables.hub_seen, false, 'no write to the game');
+        assert.equal(vars.variableChangedEvent, probe, 'the observer is put back');
+        assert.equal(conv.saveState(), before);
+        // the same with the lines seen (the settle keeps the new value in the story, not in the game)
+        fired = 0;
+        assert.equal(conv.settleOnSeenLines(msgs('Synced hub line.')), true);
+        assert.equal(fired, 0);
+        assert.equal(window.gameState.globalVariables.hub_seen, false, 'the next open applies it (n2)');
+        assert.equal(vars.variableChangedEvent, probe);
+        void realObserver;
+    } finally { window.gameState.globalVariables = {}; }
+});
+
+test('A3 R2 m3: the real observer of a loaded story is not called by the read-ahead either', async () => {
+    window.gameState.globalVariables = { hub_seen: false };
+    try {
+        const conv = await conversationAfterCall('synced_home');
+        const vars = conv.engine.story.variablesState;
+        const real = vars.variableChangedEvent;
+        const calls = [];
+        // wrap whatever the engine installed (or install one) so a leak is visible
+        vars.variableChangedEvent = (...a) => { calls.push(a); return real?.(...a); };
+        conv.settleOnSeenLines(msgs('Synced hub line.'));
+        assert.equal(calls.length, 0);
+        assert.equal(window.gameState.globalVariables.hub_seen, false);
+    } finally { window.gameState.globalVariables = {}; }
+});
+
+test('A3 R2 m3: a "Narrator:" home line stored stripped (type narrator) counts as shown', async () => {
+    const conv = await conversationAfterCall('narrated_home');
+    const before = conv.saveState();
+    // as the thread holds it: the prefix stripped, stored as narration (m07 dead_air)
+    const stripped = [{ type: 'narrator', text: 'A carrier tone hums on the line.' }];
+    assert.equal(conv.settleOnSeenLines(stripped), true, 'the prefix-stripped text matches the raw home line');
+    assert.equal(conv.engine.story.canContinue, false);
+    assert.notEqual(conv.saveState(), before);
+});
+
+test('A3 R2 m3: a narrated home line that is not in the thread stays for the next open', async () => {
+    const conv = await conversationAfterCall('narrated_home');
+    assert.equal(conv.settleOnSeenLines([{ type: 'narrator', text: 'A different tone.' }]), false);
+    assert.equal(conv.engine.story.canContinue, true);
+});
