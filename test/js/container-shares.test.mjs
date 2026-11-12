@@ -415,3 +415,68 @@ test('through the real minigame manager: desktop, share, a cancelled PIN pad, ba
         if (MF.currentMinigame) MF.endMinigame(false, null);
     }
 });
+
+// Review R3 nit 2: a desktop left open when its PC is switched off closes, and so does a share
+// opened from it; the session is kept. At the keyboard: "This PC is off."; remotely: not_responding.
+const samDesktop = () => ({ scenarioData: { id: 'sam_pc', name: "Sam's PC", type: 'pc', lockType: 'login', locked: true,
+    affordance: { offWhen: 'sam_pc_off' } } });
+
+function switchSamOff() {
+    window.gameState.globalVariables.sam_pc_off = true;
+    window.eventDispatcher.emit('global_variable_changed:sam_pc_off', { name: 'sam_pc_off', value: true, oldValue: false });
+}
+
+test('a keyboard desktop open when its PC goes off closes with "This PC is off." and keeps the session', async () => {
+    setup();
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a);
+    window.gameState = { globalVariables: { sam_pc_off: false } };
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    window.startContainerMinigame(samDesktop(), null, false, true);
+    await settle();
+    assert.equal(current()?.loginPcId, 'sam_pc');
+    window.eventDispatcher.emit('global_variable_changed:sam_pc_off', { name: 'sam_pc_off', value: false });
+    assert.equal(current()?.loginPcId, 'sam_pc', 'a change that leaves it on keeps it open');
+    switchSamOff();
+    await settle();
+    assert.equal(current(), null, 'the desktop closed');
+    assert.deepEqual(alerts.map(a => a[0]), ['This PC is off.']);
+    assert.ok(sessions.get('sam_pc'), 'the session is kept');
+});
+
+test('a share opened from that desktop closes too when the PC goes off', async () => {
+    setup();
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a);
+    window.gameState = { globalVariables: { sam_pc_off: false } };
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    window.startContainerMinigame(samDesktop(), null, false, true);
+    await settle();
+    icon('Scanned-Inbox').click();
+    await settle();
+    assert.equal(current().containerItem.scenarioData.id, 'scanned_inbox');
+    switchSamOff();
+    await settle();
+    assert.equal(current(), null, 'the share closed rather than stay open on an off PC');
+    assert.deepEqual(alerts.map(a => a[0]), ['This PC is off.']);
+});
+
+test('a share clicked on a desktop whose PC is already off says "This PC is off.", not a load error', async () => {
+    setup();
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a);
+    window.gameState = { globalVariables: { sam_pc_off: false } };
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    window.startContainerMinigame(samDesktop(), null, false, true);
+    await settle();
+    // The global changed with no event (a server-side or silent write), and the share is refused
+    window.gameState.globalVariables.sam_pc_off = true;
+    const saved = ANSWERS.scanned_inbox;
+    delete ANSWERS.scanned_inbox;
+    try {
+        icon('Scanned-Inbox').click();
+        await settle();
+    } finally { ANSWERS.scanned_inbox = saved; }
+    assert.equal(current(), null);
+    assert.deepEqual(alerts.map(a => a[0]), ['This PC is off.'], 'no "Could not load container contents"');
+});

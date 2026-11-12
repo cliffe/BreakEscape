@@ -63,6 +63,28 @@ export function networkScreenKind(item) {
 export const PC_OFF_TEXT = 'This PC is off.';
 
 /**
+ * Does a sign-in PC's `affordance.offWhen` hold on these globals? The same reading as
+ * unlock-system.js pcSwitchedOff and the server's host_service_off? (a global name, or
+ * { name: value } all to match). Kept here so this module imports nothing more.
+ */
+export function offWhenHolds(pcData, globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {}) {
+    const cond = pcData?.affordance?.offWhen;
+    if (cond === undefined || cond === null || cond === false || cond === '') return false;
+    const g = globals || {};
+    if (typeof cond === 'string') return !!g[cond];
+    if (typeof cond === 'object') return Object.entries(cond).every(([name, value]) => g[name] === value);
+    return false;
+}
+
+/** The globals an offWhen reads, for the global_variable_changed listeners. */
+export function offWhenGlobals(pcData) {
+    const cond = pcData?.affordance?.offWhen;
+    if (typeof cond === 'string' && cond) return [cond];
+    if (cond && typeof cond === 'object') return Object.keys(cond);
+    return [];
+}
+
+/**
  * The way back from a hand-over to something that is neither a reader nor a container
  * (slice 9.3a, 4.3): a lock screen (a PIN pad, a password, a key or a lockpick), a key
  * alert, a lockout, a phone or a workstation opened from a network screen. Such a screen
@@ -311,6 +333,12 @@ export class ContainerMinigame extends MinigameScene {
             this._loadStatus = response.status;
 
             if (!response.ok) {
+                // A folder or share from a desktop whose PC is now off (review R3 nit 2): say so,
+                // rather than open it empty with a generic error
+                if (offWhenHolds(this.powerPcData())) {
+                    this.closeForPowerOff({ evenIfNotCurrent: true });
+                    return [];
+                }
                 if (response.status === 403) {
                     if (window.gameAlert) {
                         window.gameAlert('Container is locked', 'error', 'Locked', 2000);
@@ -401,7 +429,58 @@ export class ContainerMinigame extends MinigameScene {
         if (message) window.gameAlert?.(message, 'info', name, 3000);
     }
 
+    /** The sign-in PC this screen shows or came from, as the scenario defines it, or null. */
+    powerPcData() {
+        const pcId = this.loginPcId || this.sourcePcId;
+        if (!pcId) return null;
+        if (this.loginPcId) return this.containerItem?.scenarioData || null;
+        const parent = this.parentLockable?.scenarioData;
+        if (parent?.id === pcId) return parent;
+        const rooms = window.gameScenario?.rooms || {};
+        for (const room of Object.values(rooms)) {
+            const found = (Array.isArray(room?.objects) ? room.objects : []).find(o => o?.id === pcId);
+            if (found) return found;
+        }
+        return null;
+    }
+
+    /**
+     * A desktop (or a folder or share opened from one) left open when its PC is switched
+     * off closes (review R3 nit 2): at the keyboard with "This PC is off.", remotely back to
+     * the network view as "not responding". The session itself is kept, as the server keeps it.
+     */
+    watchPcPower() {
+        if (this.mode === 'npc' || this._unwatchPower) return;
+        const pc = this.powerPcData();
+        const names = offWhenGlobals(pc);
+        const d = window.eventDispatcher;
+        if (!names.length || typeof d?.on !== 'function') return;
+        const handler = () => { if (offWhenHolds(pc)) this.closeForPowerOff(); };
+        names.forEach(n => d.on(`global_variable_changed:${n}`, handler));
+        this._unwatchPower = () => names.forEach(n => d.off?.(`global_variable_changed:${n}`, handler));
+    }
+
+    closeForPowerOff({ evenIfNotCurrent = false } = {}) {
+        if (this._unwatchPower) { this._unwatchPower(); this._unwatchPower = null; }
+        if (!evenIfNotCurrent && window.MinigameFramework?.currentMinigame !== this) return;
+        const pcId = this.loginPcId || this.sourcePcId;
+        const remote = !!this.remote || window.pcSessions?.get?.(pcId)?.remote === true;
+        if (remote) {
+            this.exitReason = 'not_responding';
+            this.complete(false);
+            return;
+        }
+        // 'off': a share or folder does not reopen the desktop it came from (reportNetworkExit)
+        this.exitReason = 'off';
+        this.complete(false);
+        window.gameAlert?.(PC_OFF_TEXT, 'info', this.powerPcData()?.name || 'PC', 3000);
+    }
+
     cleanup() {
+        if (this._unwatchPower) {
+            this._unwatchPower();
+            this._unwatchPower = null;
+        }
         if (this._unregisterDesktop) {
             this._unregisterDesktop();
             this._unregisterDesktop = null;
@@ -500,6 +579,9 @@ export class ContainerMinigame extends MinigameScene {
         if (!this.loginPcId && this.sourcePcId && this.mode !== 'npc' && window.pcSessions?.registerDesktop) {
             this._unregisterDesktop = window.pcSessions.registerDesktop(this.sourcePcId, (message, reason) => this.closeForSessionEnd(message, reason));
         }
+
+        // Switched off while open: close rather than serve an empty share (review R3 nit 2)
+        this.watchPcPower();
 
         // Play drawer/container opening sound (not for PC/desktop containers)
         if (this.mode !== 'pc' && !this.desktopMode) {
