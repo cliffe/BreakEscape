@@ -181,7 +181,7 @@ You've sent your team.
 // PASS 5 alignment r2 (m9): T-20 needs a commit, so the uncommitted "Choose
 // slowly" branch is gone.
 Answer honestly. I'll know either way. Did you decide with a number, or with your stomach?
-{late_first_contact and not architect_echo_heard:
+{not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
 }
@@ -268,7 +268,7 @@ Stop this, and something else fails. Someone else dies. You simply won't be in t
     You still have a door open. I'd hurry, but that's your business.
 }
 
-{late_first_contact and not architect_echo_heard:
+{not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
 }
@@ -335,7 +335,7 @@ The man in your control room would give you his figure and defend it to your fac
 - else:
     Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet.
 }
-{late_first_contact and not architect_echo_heard:
+{not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
 }
@@ -387,7 +387,7 @@ But the grid was never the point.
 
 === t1_close ===
 // lint: call-knot
-{late_first_contact and not architect_echo_heard:
+{not architect_echo_heard:
     ~ architect_echo_heard = true
     Let it hurt afterwards, not during. I expect you've been told that.
 }
@@ -595,14 +595,6 @@ voice: Did you decide with a number, or with your stomach?
     ~ late_first_contact = true
 }
 voice: Stop this, and something else fails. Someone else dies. You simply won't be in the room for it.
-// M6: "Doors close" plays only when the redirect window is shut (or a direct Trojan commit); while the
-// window is open the live call's open-door line stands in, so the voicemail never tells a player who can
-// still redirect that they can't.
-{redirect_window_closed or team_assignment == "trojan_horse":
-    voice: Doors close. It's the one thing they reliably do.
-- else:
-    voice: You still have a door open. I'd hurry, but that's your business.
-}
 // M6: when T-20 went unheard and folds in here, carry its one essential line (which two are left).
 {t20_folded and not team_redirected and team_assignment != "trojan_horse":
     {team_assignment == "fracture":
@@ -610,6 +602,14 @@ voice: Stop this, and something else fails. Someone else dies. You simply won't 
     - else:
         voice: San Francisco, then. Washington and the vendors stand open.
     }
+}
+// M6: "Doors close" plays only when the redirect window is shut (or a direct Trojan commit); while the
+// window is open the live call's open-door line stands in, so the voicemail never tells a player who can
+// still redirect that they can't.
+{redirect_window_closed or team_assignment == "trojan_horse":
+    voice: Doors close. It's the one thing they reliably do.
+- else:
+    voice: You still have a door open. I'd hurry, but that's your business.
 }
 -> DONE
 
