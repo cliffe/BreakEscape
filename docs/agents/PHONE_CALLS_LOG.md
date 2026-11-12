@@ -23,3 +23,4 @@ Brief: `docs/agents/PHONE_CALLS_BRIEF.md`.
   - **Debriefs often in person.** End-of-mission debriefs should usually happen in person, because that has more impact. Vary them by story: a call or video debrief is fine where the story calls for it (m07's Netherton on the secure link stays).
   - **Ring until answered.** An incoming call can keep ringing until it's answered. The engine sets a variable the NPC's ink can read for how long the player took, so the NPC can comment when it was over 10 seconds.
   - **Ring-out and call back.** If a call rings out, the phone UI shows a "Call back" button. Calling back opens the same conversation with a callback variable set, so the NPC can open with something like "Thanks for returning my call."
+  - User correction, 2026-11-12: ring-out by default is fine (keep a ring timeout as the default; ring-until-answered is optional per call). The answer-delay variable and the callback variable are still wanted.
