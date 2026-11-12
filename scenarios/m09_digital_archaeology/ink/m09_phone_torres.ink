@@ -18,7 +18,7 @@ VAR hl_box_opened = false   // Synced scenario global (puzzle chains R1 P2): HaX
 
 === start ===
 // Home stub (lesson 21): not reached by the call. A finished call rests the thread here and shows
-// the transcript; the Close choice keeps the story live, so no "(End of conversation)" shows next to
+// the transcript; the Close choice keeps the story live, so no "Conversation ended" notice shows next to
 // a missed call's Call back button. A missed call still leaves the engine's Call back (no fake ring-back).
 + [(Close.)]
     #exit_conversation
