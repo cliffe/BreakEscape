@@ -3179,7 +3179,10 @@ export class NPCNeedsSystem {
             s.rearm[job.need] = true;
             s.failCause[job.need] = [];   // met: nothing holds for this need now
             if (job.need === 'work') s.checked.clear();
-            if ((s.frustration > 0 || s.failSent[job.need]) && typeof this.world.reportUse === 'function') {
+            // The USB habit (review R1 m1): every met work use at a station that refuses the stick is
+            // reported, even at level 0, since the server counts them to know which use carries a copy
+            const usbCount = atStation && job.need === 'work' && !!this._plan(s)?.usb && usbRefusedBy(obj?.usbPolicy ?? null, 'storage');
+            if ((s.frustration > 0 || s.failSent[job.need] || usbCount) && typeof this.world.reportUse === 'function') {
                 this.world.reportUse(id, { event: 'ease', need: job.need, objectId: job.targetId });
                 delete s.failSent[job.need];
             }

@@ -65,6 +65,24 @@ test('USB habit: no work plan is warned', { skip }, () => {
     assertHas(issues(s), 'kim has a usbHabit but no work plan');
 });
 
+// Review R1 m5
+test('USB habit: no station is warned', { skip }, () => {
+    const s = clean();
+    delete kim(s).needsHome;
+    assertHas(issues(s), 'kim has a usbHabit but no station');
+    const t = clean();
+    kim(t).needsHome = 'missing_pc';
+    assertHas(issues(t), 'kim has a usbHabit but no station');
+});
+
+test('USB habit: a setGlobal at a PC that allows USB is warned', { skip }, () => {
+    const s = clean();
+    s.rooms.office.objects[0].policy = 'lax';
+    assertHas(issues(s), "kim.usbHabit.setGlobal 'kim_emailed' can never be set");
+    delete kim(s).usbHabit.setGlobal;
+    assert.ok(!has(issues(s), 'can never be set'), 'no global, nothing to warn');
+});
+
 test('USB habit: a refusing PC needs a usb_refused (or work_fail) line', { skip }, () => {
     const s = clean();
     delete s.chatter;

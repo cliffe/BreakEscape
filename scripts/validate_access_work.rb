@@ -437,10 +437,23 @@ module ValidateAccessWork
     if h.key?('setGlobal') && !(h['setGlobal'].is_a?(String) && declared_globals(json_data).key?(h['setGlobal']))
       err(issues, "#{nid}.usbHabit.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
     end
-    return if plan
+    unless plan
+      warn(issues, "#{nid} has a usbHabit but no work plan (a work need and a non-empty workNeeds list): only judged work " \
+                   'uses are checked, so the habit never acts. Give it a work plan, or remove the habit.')
+      return
+    end
+    # Review R1 m5: the copy is made at the NPC's own PC only
+    st = AW.station(json_data, npc)
+    unless st
+      warn(issues, "#{nid} has a usbHabit but no station (needsHome naming an object in a room): the copy is made only " \
+                   "at the NPC's own PC, so the habit never acts. Set needsHome, or remove the habit.")
+      return
+    end
+    return unless h['setGlobal'].is_a?(String) && !AW.usb_habit_refused?(json_data, npc)
 
-    warn(issues, "#{nid} has a usbHabit but no work plan (a work need and a non-empty workNeeds list): only judged work " \
-                 'uses are checked, so the habit never acts. Give it a work plan, or remove the habit.')
+    warn(issues, "#{nid}.usbHabit.setGlobal '#{h['setGlobal']}' can never be set: the policy at '#{st['id']}' allows a USB " \
+                 'stick, so the copy is never refused. Check the policy name (an unknown one falls back to the default) ' \
+                 'or its usb field.')
   end
 
   # For each cause the NPC can meet, the cause's own pool or work_fail needs a line (plan 5.5)

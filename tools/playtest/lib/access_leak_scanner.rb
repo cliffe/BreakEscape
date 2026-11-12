@@ -128,7 +128,7 @@ class AccessLeakScanner
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
   WITHHELD_KEYS = %w[creds role awareness habits workarounds].freeze
   # Slice 9.2 (9.2): the NPC keys the server withholds beside them (Game::WITHHELD_WORK_NPC_KEYS)
-  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed].freeze
+  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed usbHabit].freeze
   # Feed texts shorter than this are not searched for (the validator warns about them, 9.2)
   MIN_FEED_TEXT = 12
 
@@ -277,7 +277,7 @@ class AccessLeakScanner
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
     'wifi_secret' => 'a Wi-Fi SSID or pre-shared key in any response (the key is compared on the server, never served)',
-    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds, workNeeds, frustration, feed) on an NPC record',
+    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds, workNeeds, frustration, feed, usbHabit) on an NPC record',
     'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
     'feed_text' => "a feed post's or feed fact's whole text before the server served it",
     'feed_fact_key' => 'an object keyed by a feed fact id with a text key before its post was served, or a bootstrap social.intelFacts that is not an object',

@@ -99,3 +99,28 @@ test('with no usb_refused line the mutter falls back to work_fail', () => {
     assert.ok(stepUntil(sys, () => log('turned_back').length > 0, 60000));
     assert.equal(log('turned_back')[0].grumble, 'work_fail', 'falls back to work_fail when it has a line');
 });
+
+// Review R1 m1: the server counts the uses, so a met use at a refusing station is reported even at
+// level 0; at a PC that allows USB the count is not needed (the test above: nothing reported)
+test('at a refusing station the first met use is reported at level 0', () => {
+    const { sys, evs, reports } = habitWorld();
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length > 0, 60000));
+    assert.equal(sys.getState('dana').frustration, 0);
+    assert.deepEqual(reports, [{ npcId: 'dana', event: 'ease', need: 'work', objectId: 'dana_pc' }]);
+});
+
+// Review R1 n2: a work use away from the station neither attempts nor moves the counter
+test('a work use away from the station: no attempt, the counter stays at 0', () => {
+    const rec = dana();
+    rec.work.needs = [{ id: 'email', kind: 'email', admitted: true }];
+    rec.work.usb = { every: 1, setGlobal: 'dana_emailed' };
+    const objects = baseObjects();
+    objects[0].usbPolicy = 'storage_blocked';
+    objects.push({ id: 'kiosk', x: 140, y: 100, usbPolicy: 'storage_blocked', affordance: { satisfies: 'work', restores: 30, useSeconds: 5 } });
+    const { sys, evs } = workWorld({ npcs: { dana: { pos: { x: 100, y: 100 }, rec } }, objects, globals: { dana_pc_off: true }, chatter: CHATTER });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_used:kiosk').length > 0, 180000), 'she works at the kiosk');
+    assert.equal(evs('npc_usb_refused:').length + evs('npc_usb_copied:').length, 0);
+    assert.equal(sys.states.get('dana').usbUses, 0);
+});

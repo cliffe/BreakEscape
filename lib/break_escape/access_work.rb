@@ -831,9 +831,10 @@ module BreakEscape
         need == 'work' && work_list(data, npc).include?(id) && resources(data).key?(id)
       when 'no_access'
         need == 'work' && work_list(data, npc).include?(id) && !admitted?(resources(data)[id], npc)
-      when 'usb_refused' # the USB habit (q39): a work use at the station only
+      when 'usb_refused' # the USB habit (q39): a work use at the station only, of an NPC whose
+        # habit its station refuses (review R1 m2)
         st = station(data, npc)
-        need == 'work' && !st.nil? && st['id'] == id
+        need == 'work' && !st.nil? && st['id'] == id && usb_habit_refused?(data, npc)
       else # off, locked_out, social_blocked: the station only (a lockout is per PC, and a failed
         # borrowed use is never reported, 6.4)
         st = station(data, npc)

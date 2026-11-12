@@ -439,6 +439,12 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     lines.each { |line| refute_includes line, 'guard' }
   end
 
+  # USB habit review R1 m3: usbHabit ships only inside the resolved plan (work.usb)
+  test 'an NPC record carrying usbHabit is reported; work.usb is not' do
+    body = { 'room' => { 'npcs' => [{ 'id' => 'omar', 'usbHabit' => { 'every' => 2 }, 'work' => { 'usb' => { 'every' => 2 } } }] } }
+    assert_equal [[1, 'withheld_key', 'npc:omar/usbHabit']], summary(scan(body, data: habits_scenario))
+  end
+
   private
 
   def run_check(game_id, *files)

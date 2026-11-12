@@ -63,6 +63,9 @@ class AccessWorkUsbHabitTest < ActiveSupport::TestCase
     assert AW.cause_belongs?(scenario, kim, 'work', USB)
     assert_not AW.cause_belongs?(scenario, kim, 'work', { 'id' => 'other_pc', 'why' => 'usb_refused' })
     assert_not AW.cause_belongs?(scenario, kim, 'social_media', USB)
+    # Review R1 m2: only for an NPC whose station refuses its habit
+    assert_not AW.cause_belongs?(scenario, kim('usbHabit' => nil), 'work', USB), 'no habit'
+    assert_not AW.cause_belongs?(scenario(usb: 'allowed'), kim, 'work', USB), 'the policy allows USB'
   end
 
   test 'holds: work at the station while the policy refuses; never owned' do
