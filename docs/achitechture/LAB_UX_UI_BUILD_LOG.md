@@ -62,6 +62,27 @@ The interface half of the user's answer q53 (docs/handover/2026-11-11_USER_DECIS
 - Proof scripts (not committed): scratchpad `uxui_r1/proof_m1_m4.js`, `uxui_r1/proof_m3.js`.
 - The far gate click (m2) and the pickup toast hold (m1) have no unit test and no live proof in this round.
 
+## R2 fixes (LAB_UX_UI_CODE_REVIEW_R2.md)
+- R2-m1, the player who has just walked up to the desk. Of the review's two fixes, the second: an NPC on the move who has left one of the objects under the tap gives way to it, read from the workstation state's away record (`workstationState.leftBy(objectId, npcId)`: her own PC with a current away record, or the hot desk she left signed in as a guest). The record is set by `npc_left_post`, as she gets up, so it holds from the start of her walk. `interaction-reach.js` `npcLeftObject` and `npcGivesWay` (the tracker's answer, or this one) replace `npcWalkingAway` at the three tap sites in `game.js` (pick list, NPC under the tap) and in the E-key scoring (`interactions.js`, which now scores NPCs after every object, so the objects in reach are known). Never a hostile NPC, one in knockback or one standing still. The first fix (count the player as standing once he stops) was not taken: it reopens R1 M3's "just stopped after following" case, which the suite tests, and it would apply to every NPC rather than an owner leaving her own PC.
+- R2-n1: a minigame opening on a far gate walk drops it, so he never walks through under the panel or when it closes.
+- R2-n2 and the second half of R2-n5: the far gate walk is now `systems/pending-gate-walk.js` (no imports, loaded by the tests on its own); `game.js` keeps `allNpcSprites` and the instance above the JSDoc of `findNPCAtPosition`, which heads its function again.
+- R2-n3: Open from the transfer dialog arms the return only for a text file or a readable note, the two whose readers spend it.
+- R2-n5: the review's m1 and m2 tests are in `test/js/lab-ux-ui.test.mjs` ("pick-up-then-open ...", "pickup toast raised before the tool opens ...", "pending gate walk ..."); the gate tests run against the new module rather than text lifted from game.js.
+- R1-n2: `cameFrom` matches the file by id when the reader was given one (`interactions.js` passes `itemId`), by name otherwise.
+- R1-n3: kept, with a comment that `register()` declines side gates so the east and west branch is for a side gate later.
+- R1-n4: the far side of a gate is the other room (`g.direction` points from `g.roomId` into `g.connectedRoom`); the feet against the centre line only when the player's room is neither.
+- Also: the R1 E-key test passed whatever the rule said (its PC was 90 degrees off the facing, beyond the 30-degree give-way weight, its tracker was the unit tests' copy rather than the one `interactions.js` reads, and its assertion only looked for a chat minigame that a null NPC never starts). It now places the PC 23 degrees off, samples the tracker `interactions.js` uses, and checks the NPC branch did not run.
+- Not done: R2-n4 (Add to notes from a container file fires both returns; the same order is on `main`) and R1-n1 (m02 Planted Network Device toast after the phone thread; mission content, harmless). R1-n5 (the broken Notepad icon in the test_gate_tailgate screenshots) not looked at: no inventory art changed on this branch.
+- Sync size: nothing new is synced; the away record and the pending gate walk are client memory only.
+
+### Tests (R2 fixes)
+- `test/js/lab-ux-ui.test.mjs` 29 pass (new: the E-key arrival case, `npcGivesWay` arrival and follower cases, `leftBy`, the far side by room, the three moved review tests and two more gate walk tests). The E-key arrival test fails with the previous `interactions.js`.
+- `test/js/container-shares.test.mjs` 25 pass (new: `cameFrom` by id, Open arming only for readers).
+- Every test file that loads or reads a changed module (interaction-reach, interactions, workstation-state, game.js, door-gates, pending-gate-walk, text-file, container and notes minigames): 74 files, 985 tests, all pass.
+
+### Live check (R2-m1, keyless server on :3053)
+- test_access_habits game 1582 (1580 a set-up run): the player waits two tiles west of Dana's desk and walks back as `npc_left_post:dana` fires. He stops at the desk about 300 ms later, with Dana walking at 90 px/s and her sprite over the PC; the tracker alone says "not walking away" and `leftBy('dana_pc', 'dana')` says yes. A tap where she covers the PC opened her desktop. With `leftBy` stubbed to false (the rule before this fix) the same tap also opened the desktop: in this room she is not among the tap's in-reach candidates by then, so the live run shows the new path engaging but does not reproduce the review's loss. The unit tests are what tell the cases apart. Script (not committed): scratchpad `uxui_r2fix/proof_r2m1.js`.
+
 ## Open
 - The pick-up-then-open branch re-runs the world sprite a second later; its second add answers "already", so no second toast, but the existing re-entry is unchanged.
 
