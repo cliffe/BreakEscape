@@ -1540,12 +1540,10 @@ module BreakEscape
       end
     end
 
-    # JavaScript's Number(x) > 0 for the values a scenario can hold: a number, or a
-    # string that reads as one.
+    # JavaScript's Number(x) > 0 for the values a scenario can hold (AccessIdentities.js_positive?:
+    # a number, a string that reads as one, true, or a one-element array of such a value)
     def self.positive_number?(value)
-      number = value if value.is_a?(Numeric)
-      number = Float(value.strip, exception: false) if value.is_a?(String)
-      !number.nil? && number.finite? && number.positive?
+      BreakEscape::AccessIdentities.js_positive?(value)
     end
 
     # The talk portrait person-chat would use for an NPC: spriteTalk, else the path

@@ -81,12 +81,6 @@ module BreakEscape
           scenario(attacks: true) { |d| jake(d)['koImmune'] = true },
         'the need is met only at the owner\'s own PC' =>
           scenario { |d| jake_pc(d)['affordance'] = { 'satisfies' => 'caffeine' } },
-        'the only source is in a room outside needsRooms' =>
-          scenario { |d| jake(d)['needsRooms'] = ['finance']; add_object(d, 'lobby', coffee) },
-        'the only source is in a room in needsAvoidRooms' =>
-          scenario { |d| jake(d)['needsAvoidRooms'] = ['lobby']; add_object(d, 'lobby', coffee) },
-        'the only source is in a room private to somebody else' =>
-          scenario { |d| d['rooms']['lobby']['needsPrivateTo'] = ['len']; add_object(d, 'lobby', coffee) },
         'the only source is private to another owner' =>
           scenario { |d| add_object(d, 'finance', coffee('private' => true, 'owners' => ['dana'])) },
         'a judged need that cannot fail, met only at another desk' =>
@@ -192,6 +186,49 @@ module BreakEscape
             jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => '20' }
             add_object(d, 'finance', coffee)
           end,
+        # Review R3 B1: no room or leash test refuses a claim, since objects change room in play
+        'a source authored in a room outside needsRooms' =>
+          scenario { |d| jake(d)['needsRooms'] = ['finance']; add_object(d, 'lobby', coffee) },
+        'a source authored in a room in needsAvoidRooms' =>
+          scenario { |d| jake(d)['needsAvoidRooms'] = ['lobby']; add_object(d, 'lobby', coffee) },
+        'a source authored in a room private to somebody else' =>
+          scenario { |d| d['rooms']['lobby']['needsPrivateTo'] = ['len']; add_object(d, 'lobby', coffee) },
+        'a knock-out drop: a colleague holds a source, the owner\'s knock-out always locks' =>
+          scenario(attacks: true) do |d|
+            jake_pc(d).delete('lockChance')
+            jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => 120 }
+            jake(d)['needsRooms'] = ['finance']
+            d['rooms']['lobby']['npcs'].find { |n| n['id'] == 'imran' }['itemsHeld'] = [coffee]
+          end,
+        'a knock-out drop: a colleague holds a source, the owner is koImmune' =>
+          scenario(attacks: true) do |d|
+            jake(d)['koImmune'] = true
+            jake(d)['needsRooms'] = ['finance']
+            d['rooms']['lobby']['npcs'].find { |n| n['id'] == 'imran' }['itemsHeld'] = [coffee]
+          end,
+        'a carry drop: a tagged source authored outside needsRooms' =>
+          scenario do |d|
+            jake(d)['needsRooms'] = ['finance']
+            add_object(d, 'lobby', coffee.merge('needsTag' => 'mug', 'takeable' => true))
+          end,
+        'a reveal slot: a source with outputOf authored outside needsRooms' =>
+          scenario do |d|
+            jake(d)['needsRooms'] = ['finance']
+            add_object(d, 'lobby', coffee.merge('outputOf' => 'copier'))
+          end,
+        'an accepting place authored outside needsRooms' =>
+          scenario(needs: {}) do |d|
+            jake(d)['interests'] = { 'mail' => 2 }
+            jake(d)['needsRooms'] = ['finance']
+            add_object(d, 'finance', { 'id' => 'letter', 'type' => 'notes', 'name' => 'Letter', 'needsTag' => 'mail', 'takeable' => true })
+            add_object(d, 'lobby', { 'id' => 'tray', 'type' => 'notes', 'name' => 'Tray', 'affordance' => { 'accepts' => 'mail' } })
+          end,
+        # Review R3 m1: a named story the server's reader cannot find might hold a patrol tag
+        'cautious: a storyPath the server cannot read' =>
+          scenario { |d| jake(d)['storyPath'] = 'scenarios/no_such_scenario/ink/none.json' },
+        # Review R3 n4: decayPerMin and urgentAt read as Number() reads them
+        'a need written with true and a one-element array, met elsewhere' =>
+          scenario(needs: { 'caffeine' => { 'decayPerMin' => true, 'urgentAt' => [40] } }) { |d| add_object(d, 'lobby', coffee) },
         # Review R2 B1: a droppable source goes wherever the player puts it
         'a droppable source authored in a room outside needsRooms' =>
           scenario do |d|

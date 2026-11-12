@@ -15,11 +15,18 @@ module BreakEscape
   # owner). Every test leans towards "can leave": a route that might exist counts, so a claim is
   # never refused where honest play could produce an open screen.
   #
+  # No room or leash reasoning refuses a claim. Objects change room in play (the player drops
+  # them, a knocked-out NPC drops what it held, a carry is put down where the carrier stands, a
+  # reveal slot lands at its accepting place), so every object anywhere in the scenario counts as
+  # reachable, whatever room it is authored in. The fixed rules kept are the ones play can never
+  # get round: the owner's own needsHome is no leave, a private affordance serves only its owners,
+  # and a judged need never uses another person's desk.
+  #
   # Two layers. The precise routes (knock-out, phones, prints, need sources, failures, interests)
   # follow the client closely. Behind them, might_leave allows the claim wherever the owner has
   # any movement source the precise layer does not model exactly (a patrol, a scripted move, a
-  # station hook, social media, a droppable source, an interest, phones, prints): a refusal needs
-  # an owner with no movement source at all.
+  # patrol_mode tag or a story that cannot be read, a station hook, social media, a movable
+  # source, an interest, phones, prints): a refusal needs an owner with no movement source at all.
   #
   # Plain Ruby with no Rails methods, as AccessIdentities and AccessWork are.
   module OwnerClaim
@@ -75,7 +82,6 @@ module BreakEscape
         # A print errand (slice 17) carries an owned printout to the needsHome object
         return 'prints' if prints?(data, owner, objects, home_id)
 
-        home_room = home_room(data, owner, home_id)
         needs = owner['needs'].is_a?(Hash) ? owner['needs'] : {}
         needs.each do |name, raw|
           next unless valid_need?(raw)
@@ -93,9 +99,8 @@ module BreakEscape
             # workaround, which needs a failure, handled above)
             next false if judged && AccessWork.desk?(data, o)
 
-            # A droppable object goes wherever the player puts it, so its authored room is no
-            # leash test (item-drop.js copies its affordance to where it lands)
-            permitted?(data, owner, o, droppable?(o) ? nil : e[:room], home_room)
+            # Any room counts (see the module comment): only a private affordance's owners
+            permitted?(data, owner, o)
           end
           return "need:#{name}:#{found[:obj]['id']}" if found
         end
@@ -105,13 +110,9 @@ module BreakEscape
           next unless valid_interest?(raw)
 
           # _carryCandidate: an item with the tag, and somewhere that accepts it
-          # (_permitted(s, o, false)). The item may be anywhere, since the player can drop one;
-          # the accepting place is fixed, so the room leash applies to it.
+          # (_permitted(s, o, false): no private test for a delivery). Both may be in any room.
           item = objects.any? { |e| e[:obj]['needsTag'] == tag }
-          target = objects.any? do |e|
-            Array(AccessWork.affordance(data, e[:obj])&.dig('accepts')).include?(tag) &&
-              !room_forbidden?(data, owner, droppable?(e[:obj]) ? nil : e[:room], home_room)
-          end
+          target = objects.any? { |e| Array(AccessWork.affordance(data, e[:obj])&.dig('accepts')).include?(tag) }
           return "interest:#{tag}" if item && target
         end
       end
@@ -120,8 +121,8 @@ module BreakEscape
 
     # The cautious layer: the first movement source on this owner that the precise routes do not
     # model exactly, or nil. Each is allowed without asking whether it can really leave the
-    # screen open. OWNER_CLAIM_ENFORCE_BUILD_LOG.md ("R2 fixes") lists every client path that
-    # moves an NPC and how it is treated.
+    # screen open. OWNER_CLAIM_ENFORCE_BUILD_LOG.md ("R2 fixes", completed in "R3 fixes") lists
+    # every client path that moves an NPC or an object and how it is treated.
     def might_leave(data, owner, objects, story)
       behavior = owner['behavior']
       # npc-behavior.js: a patrol (waypoints, bounds, a multi-room route, or enabled)
@@ -134,7 +135,10 @@ module BreakEscape
       # person-chat-conversation.js: #patrol_mode in the owner's story, or in a story a mapping
       # switches to (changeStoryPath)
       paths = ([owner['storyPath']] + maps.map { |m| m['changeStoryPath'] }).select { |p| p.is_a?(String) && !p.empty? }.uniq
-      return 'ink_patrol' if paths.any? { |p| story.call(p).to_s.include?('patrol_mode') }
+      texts = paths.map { |p| story.call(p) }
+      return 'ink_patrol' if texts.any? { |t| t.to_s.include?('patrol_mode') }
+      # A story that is named but cannot be read might hold the tag: allow (q78 leans that way)
+      return 'story_unread' if texts.any?(&:nil?)
 
       needs = owner['needs'].is_a?(Hash) ? owner['needs'].select { |_, raw| valid_need?(raw) }.keys : []
       interests = owner['interests'].is_a?(Hash) ? owner['interests'].select { |_, raw| valid_interest?(raw) }.keys : []
@@ -145,18 +149,27 @@ module BreakEscape
       return 'phones' if owner['answersPhones'] == true
       return 'prints' if owner['printHabit'] || print_command?(owner)
 
-      # item-drop.js: a droppable source or accepting place, wherever it is and whoever may use it
-      dropped = objects.any? do |e|
-        next false unless droppable?(e[:obj])
+      # A source that can change room (movable?), whoever may use it and wherever it lands,
+      # even where it is the owner's own needsHome. A hedge: the precise layer already counts
+      # every room, so this only adds the private and own-post cases.
+      moved = objects.any? do |e|
+        next false unless movable?(e)
 
         aff = AccessWork.affordance(data, e[:obj])
         aff.is_a?(Hash) && (Array(aff['satisfies']) & needs).any?
       end
-      dropped ? 'droppable' : nil
+      moved ? 'movable' : nil
     end
 
-    def droppable?(obj)
-      obj.is_a?(Hash) && obj['droppable'] == true
+    # An object play can move to another room: droppable (item-drop.js), held by an NPC
+    # (npc-hostile.js dropNPCItems drops it where the NPC falls), carried by an NPC (a needsTag:
+    # npc-needs.js dropHeld puts it down where the carrier stands) or a reveal slot (outputOf:
+    # placeHeld sets it down at an accepting place)
+    def movable?(entry)
+      o = entry[:obj]
+      return false unless o.is_a?(Hash)
+
+      o['droppable'] == true || entry[:held] == true || o['needsTag'].is_a?(String) || o.key?('outputOf')
     end
 
     # Every hash inside the owner's event mappings (eventMappings, else the singular
@@ -179,15 +192,19 @@ module BreakEscape
     STORY_ROOT = File.expand_path('../..', __dir__)
 
     # A storyPath's text, read as InkStoryFile confines it: a .json path inside scenarios/,
-    # symlinks resolved. Both the compiled JSON and the .ink source are read, so a story edited
-    # since its last compile still counts. nil when neither can be read.
+    # symlinks resolved. Every spelling InkStoryFile.compiled_json tries (the path, its .ink.json
+    # form and its plain .json form) is read, and the .ink source, so a story edited since its
+    # last compile still counts. Reading every spelling, where the server takes the first, is
+    # wider, so the validator never warns where the server allows. nil when none can be read.
     def default_story_text(story_path)
       return nil unless story_path.is_a?(String) && story_path.end_with?('.json') && !story_path.include?("\0")
 
       root = File.join(STORY_ROOT, 'scenarios')
       real_root = File.exist?(root) ? File.realpath(root) : root
       full = File.expand_path(story_path, STORY_ROOT)
-      texts = [full, full.sub(/\.(ink\.)?json\z/, '.ink')].uniq.filter_map do |f|
+      spellings = [full, full.sub(/(?<!\.ink)\.json\z/, '.ink.json'), full.sub(/\.ink\.json\z/, '.json'),
+                   full.sub(/\.(ink\.)?json\z/, '.ink')]
+      texts = spellings.uniq.filter_map do |f|
         real = File.realpath(f)
         real.start_with?("#{real_root}/") && File.file?(real) ? File.read(real) : nil
       rescue SystemCallError
@@ -273,82 +290,61 @@ module BreakEscape
       value.is_a?(Array) ? value.select { |x| x.is_a?(String) && !x.empty? } : []
     end
 
-    # normaliseNeed: decayPerMin and urgentAt both read as numbers above 0
+    # normaliseNeed: decayPerMin and urgentAt both read by Number() as above 0
     def valid_need?(raw)
-      raw.is_a?(Hash) && AccessIdentities.positive_number?(raw['decayPerMin']) &&
-        AccessIdentities.positive_number?(raw['urgentAt'])
+      raw.is_a?(Hash) && AccessIdentities.js_positive?(raw['decayPerMin']) &&
+        AccessIdentities.js_positive?(raw['urgentAt'])
     end
 
-    # normaliseInterest: a number, or { weight }, above 0
+    # normaliseInterest: a number, or { weight } read by Number(), above 0
     def valid_interest?(raw)
       return raw.positive? if raw.is_a?(Numeric)
 
-      raw.is_a?(Hash) && AccessIdentities.positive_number?(raw['weight'])
+      raw.is_a?(Hash) && AccessIdentities.js_positive?(raw['weight'])
     end
 
-    # Every hash with a non-empty string id anywhere in the scenario, with the room it sits in
-    # (nil outside rooms: start inventory, items given later). Wider than the needs system's
-    # loaded room objects on purpose: an item the player or a script can drop counts too.
+    # Every hash with a non-empty string id anywhere in the scenario, with the room it is authored
+    # in (nil outside rooms: start inventory, items given later) and held: true for one nested
+    # inside an NPC record (an npcs entry). Wider than the needs system's loaded room objects on
+    # purpose: an item the player or a script can drop counts too. The room is informative only;
+    # no test refuses on it.
     def scenario_objects(data)
       out = []
       seen = {}.compare_by_identity
-      add = lambda do |node, room_id|
+      add = nil
+      # A hash's values; under an npcs key the NPC records keep this level's flag and what they
+      # contain is held
+      add_values = lambda do |node, room_id, held|
+        node.each do |k, v|
+          next add.call(v, room_id, held) unless k == 'npcs' && v.is_a?(Array)
+
+          v.each { |npc| add.call(npc, room_id, held, true) }
+        end
+      end
+      add = lambda do |node, room_id, held, npc = false|
         case node
-        when Array then node.each { |n| add.call(n, room_id) }
+        when Array then node.each { |n| add.call(n, room_id, held) }
         when Hash
           next if seen[node]
 
           seen[node] = true
-          out << { obj: node, room: room_id } if node['id'].is_a?(String) && !node['id'].empty?
-          node.each_value { |v| add.call(v, room_id) }
+          out << { obj: node, room: room_id, held: held } if node['id'].is_a?(String) && !node['id'].empty?
+          add_values.call(node, room_id, held || npc)
         end
       end
       rooms = data['rooms'].is_a?(Hash) ? data['rooms'] : {}
-      rooms.each { |room_id, room| add.call(room, room_id) }
-      data.each { |k, v| add.call(v, nil) unless k == 'rooms' }
+      rooms.each { |room_id, room| add.call(room, room_id, false) }
+      add_values.call(data.reject { |k, _| k == 'rooms' }, nil, false)
       out
     end
 
-    # npc-needs.js _homeRoom: needsHome { room }, else the needsHome object's room, else the
-    # NPC's own room
-    def home_room(data, owner, home_id)
-      h = owner['needsHome']
-      return h['room'] if h.is_a?(Hash) && h['room'].is_a?(String)
-
-      if home_id
-        entry = AccessWork.object_index(data)[home_id]
-        return entry[:room_id] if entry
-      end
-      AccessIdentities.room_npcs(data).find { |e| e[:npc].equal?(owner) || e[:npc]['id'] == owner['id'] }&.dig(:room)
-    end
-
-    # _permitted(s, o, use = true): the room leash, then a private affordance's owners
-    def permitted?(data, owner, obj, room_id, home_room)
-      return false if room_forbidden?(data, owner, room_id, home_room)
-
+    # _permitted(s, o, true) without the room leash (see the module comment): a private
+    # affordance serves only its owners
+    def permitted?(data, owner, obj)
       aff = AccessWork.affordance(data, obj)
       return true unless aff.is_a?(Hash) && aff['private'] == true
 
       owners_of(data, obj, aff).include?(owner['id'])
-    end
-
-    # _roomForbidden: needsRooms (allow), needsAvoidRooms (deny) and the room's needsPrivateTo;
-    # the home room never is. An object outside any room is never forbidden here.
-    def room_forbidden?(data, owner, room_id, home_room)
-      return false if room_id.nil? || room_id == home_room
-
-      allow = room_list(owner['needsRooms'])
-      deny = room_list(owner['needsAvoidRooms'])
-      out = (!allow.nil? || deny&.any?) && ((allow && !allow.include?(room_id)) || Array(deny).include?(room_id))
-      unless out
-        priv = data.dig('rooms', room_id, 'needsPrivateTo') if data['rooms'].is_a?(Hash) && data['rooms'][room_id].is_a?(Hash)
-        out = priv.is_a?(Array) && !priv.include?(owner['id'])
-      end
-      out
-    end
-
-    def room_list(value)
-      value.is_a?(Array) ? value.select { |r| r.is_a?(String) && !r.empty? } : nil
     end
 
     # _owners: affordance.owners, else screenOwner, else the NPCs whose needsHome is the object

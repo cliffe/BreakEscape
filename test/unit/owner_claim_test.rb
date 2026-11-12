@@ -165,23 +165,25 @@ class OwnerClaimTest < ActiveSupport::TestCase
     assert_nil route(dana), 'another NPC\'s hook never sends this owner anywhere'
   end
 
-  test 'an interest needs an item and a place the leash allows' do
-    base = lambda do |room|
+  test 'an interest needs an item and a place, in any room' do
+    base = lambda do |room, item: true, place: true|
       data do |x|
         jake(x)['needs'] = {}
         jake(x)['interests'] = { 'mail' => 2 }
         jake(x)['needsRooms'] = ['office']
-        add(x, 'lobby', { 'id' => 'letter', 'needsTag' => 'mail', 'takeable' => true })
-        add(x, room, { 'id' => 'tray', 'affordance' => { 'accepts' => 'mail' } })
+        add(x, 'lobby', { 'id' => 'letter', 'needsTag' => 'mail', 'takeable' => true }) if item
+        add(x, room, { 'id' => 'tray', 'affordance' => { 'accepts' => 'mail' } }) if place
       end
     end
     assert_equal 'interest:mail', route(base.call('office'))
-    assert_nil route(base.call('lobby')), 'the accepting place is outside needsRooms'
+    assert_equal 'interest:mail', route(base.call('lobby')), 'R3: an accepting place outside needsRooms counts'
+    assert_nil route(base.call('office', item: false)), 'no item with the tag'
+    assert_nil route(base.call('office', place: false)), 'nowhere accepts the tag'
   end
 
-  # R2 B1: a droppable source or accepting place goes wherever the player puts it, so the room it
-  # was authored in is no leash test
-  test 'a droppable source or accepting place is never leashed to its authored room' do
+  # R2 B1 and R3 B1: objects change room in play (the player's drop, a knock-out drop, a carry
+  # put down, a reveal slot), so no room or leash test refuses a source or an accepting place
+  test 'no room or leash test refuses a source or accepting place' do
     leashed = lambda do |&blk|
       data do |x|
         jake(x)['needsRooms'] = ['office']
@@ -189,7 +191,19 @@ class OwnerClaimTest < ActiveSupport::TestCase
       end
     end
     plain = leashed.call { |x| add(x, 'lobby', { 'id' => 'cup', 'affordance' => { 'satisfies' => ['caffeine'] } }) }
-    assert_nil route(plain), 'a fixed source outside needsRooms is leashed'
+    assert_equal 'need:caffeine:cup', route(plain), 'a fixed source outside needsRooms'
+    avoid = data do |x|
+      jake(x)['needsAvoidRooms'] = ['lobby']
+      add(x, 'lobby', { 'id' => 'cup', 'affordance' => { 'satisfies' => ['caffeine'] } })
+    end
+    assert_equal 'need:caffeine:cup', route(avoid), 'a source in a room the owner avoids'
+    priv = data do |x|
+      x['rooms']['lobby']['needsPrivateTo'] = ['dana']
+      add(x, 'lobby', { 'id' => 'cup', 'affordance' => { 'satisfies' => ['caffeine'] } })
+    end
+    assert_equal 'need:caffeine:cup', route(priv), 'a source in a room private to somebody else'
+    owned = leashed.call { |x| add(x, 'office', { 'id' => 'cup', 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } }) }
+    assert_nil route(owned), 'a private affordance still serves only its owners'
     source = leashed.call { |x| add(x, 'lobby', { 'id' => 'cup', 'droppable' => true, 'affordance' => { 'satisfies' => ['caffeine'] } }) }
     assert_equal 'need:caffeine:cup', route(source)
     magnet = leashed.call do |x|
@@ -208,6 +222,58 @@ class OwnerClaimTest < ActiveSupport::TestCase
       add(x, 'lobby', { 'id' => 'tray', 'droppable' => true, 'affordance' => { 'accepts' => 'mail' } })
     end
     assert_equal 'interest:mail', route(tray)
+  end
+
+  # R3 B1: the engine paths that put a source in a room other than its authored one, none of
+  # which needs droppable. Jake is leashed to the office; the source starts in the lobby.
+  test 'a held, carried or revealed source in another room allows the claim' do
+    coffee = { 'id' => 'b_coffee', 'type' => 'coffee_cup', 'affordance' => { 'satisfies' => ['caffeine'], 'restores' => 40 } }
+    held = lambda do |owner_extra, item|
+      data(attacks: true) do |x|
+        jake(x).merge!('needsRooms' => ['office']).merge!(owner_extra)
+        x['rooms']['lobby']['npcs'] = [{ 'id' => 'bo', 'npcType' => 'person', 'itemsHeld' => [item] }]
+      end
+    end
+    # npc-hostile.js dropNPCItems: the colleague is knocked out in the office and drops it there.
+    # The owner's habit means a knock-out of the owner always locks, so this is the only route.
+    habit = held.call({ 'screenHabit' => { 'lockIfAwayOverSeconds' => 120 } }, coffee)
+    assert_equal 'need:caffeine:b_coffee', route(habit), 'knock-out drop, the owner\'s knock-out always locks'
+    assert OC.scenario_objects(habit).find { |e| e[:obj]['id'] == 'b_coffee' }[:held], 'an itemsHeld entry is held'
+    ko_immune = held.call({ 'koImmune' => true }, coffee)
+    assert_equal 'need:caffeine:b_coffee', route(ko_immune), 'knock-out drop, the owner koImmune'
+    # npc-needs.js dropHeld: a tagged source a colleague carries is put down where they stand
+    tagged = data do |x|
+      jake(x)['needsRooms'] = ['office']
+      add(x, 'lobby', coffee.merge('id' => 'k_coffee', 'needsTag' => 'mug', 'takeable' => true))
+    end
+    assert_equal 'need:caffeine:k_coffee', route(tagged), 'carry drop'
+    # npc-needs.js placeHeld: a reveal slot is set down at an accepting place
+    slot = data do |x|
+      jake(x)['needsRooms'] = ['office']
+      add(x, 'lobby', coffee.merge('id' => 'slot_1', 'outputOf' => 'copier'))
+    end
+    assert_equal 'need:caffeine:slot_1', route(slot), 'slot placement'
+    # Every one of them allows through POST /login's own entry point too
+    [habit, ko_immune, tagged, slot].each { |d| refute OC.never_leaves?(d, jake(d), jake_pc(d), story: NO_STORY) }
+    # The NPC record itself is not held; what it carries is
+    refute OC.scenario_objects(habit).find { |e| e[:obj]['id'] == 'bo' }[:held]
+    refute OC.scenario_objects(habit).find { |e| e[:obj]['id'] == 'jake_pc' }[:held]
+  end
+
+  # R3 n4: normaliseNeed and normaliseInterest read their numbers with Number()
+  test 'need and interest numbers are read as Number() reads them' do
+    assert OC.valid_need?({ 'decayPerMin' => true, 'urgentAt' => [40] })
+    assert OC.valid_need?({ 'decayPerMin' => '2.5', 'urgentAt' => [[40]] })
+    refute OC.valid_need?({ 'decayPerMin' => [1, 2], 'urgentAt' => 40 }), 'Number([1, 2]) is NaN'
+    refute OC.valid_need?({ 'decayPerMin' => [true], 'urgentAt' => 40 }), 'Number([true]) is NaN'
+    refute OC.valid_need?({ 'decayPerMin' => [], 'urgentAt' => 40 }), 'Number([]) is 0'
+    refute OC.valid_need?({ 'decayPerMin' => false, 'urgentAt' => 40 })
+    assert OC.valid_interest?({ 'weight' => true })
+    refute OC.valid_interest?('2'), 'a string interest is not a number to normaliseInterest'
+    npc = { 'needs' => { 'coffee' => { 'decayPerMin' => true, 'urgentAt' => [40] } } }
+    assert BreakEscape::AccessIdentities.needs_tracked?(npc)
+    assert BreakEscape::Game.needs_tracked?(npc)
+    refute BreakEscape::Game.needs_tracked?({ 'interests' => { 'gossip' => '2' } })
   end
 
   # R2 B2: _socialCandidate adds social_media to the own station, and that use prints
@@ -254,12 +320,25 @@ class OwnerClaimTest < ActiveSupport::TestCase
         jake(x).delete('needsHome')
         jake(x)['eventMappings'] = [{ 'eventPattern' => 'go', 'needs' => { 'print' => 'copier' } }]
       },
-      'droppable' => lambda { |x|
-        jake(x)['needsRooms'] = ['office']
+      'movable (droppable)' => lambda { |x|
         add(x, 'lobby', { 'id' => 'cup', 'droppable' => true, 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } })
-      }
+      },
+      'movable (held by an NPC)' => lambda { |x|
+        x['rooms']['office']['npcs'][1]['itemsHeld'] = [{ 'id' => 'cup', 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } }]
+      },
+      'movable (needsTag)' => lambda { |x|
+        add(x, 'lobby', { 'id' => 'cup', 'needsTag' => 'mug', 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } })
+      },
+      'movable (outputOf)' => lambda { |x|
+        add(x, 'lobby', { 'id' => 'cup', 'outputOf' => 'copier', 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } })
+      },
+      'story_unread' => ->(x) { jake(x)['storyPath'] = 'scenarios/x/ink/missing.json' }
     }
-    story = ->(path) { path.end_with?('jake.json') ? '["#","^patrol_mode:on","/#"]' : '["^Hello."]' }
+    story = lambda do |path|
+      next nil if path.end_with?('missing.json')
+
+      path.end_with?('jake.json') ? '["#","^patrol_mode:on","/#"]' : '["^Hello."]'
+    end
     cases.each do |name, edit|
       d = data { |x| edit.call(x) }
       assert_nil route(d), "#{name}: no precise route in the fixture"
@@ -277,7 +356,10 @@ class OwnerClaimTest < ActiveSupport::TestCase
       add(x, 'lobby', { 'id' => 'cup', 'droppable' => true, 'affordance' => { 'satisfies' => ['work'] } })
     end
     assert_nil full(quiet, story: ->(_p) { '["^Hello."]' }), 'an ink story with no patrol tag, a set command, an unrelated droppable'
-    assert_nil full(quiet, story: ->(_p) { nil }), 'an unreadable story moves nobody'
+    # R3 m1: a story that is named but cannot be read might hold a patrol tag
+    assert_equal 'might:story_unread', full(quiet, story: ->(_p) { nil }), 'an unreadable story allows'
+    unnamed = data { |x| jake(x)['behavior'] = { 'facePlayer' => true } }
+    assert_nil full(unnamed, story: ->(_p) { nil }), 'no storyPath: nothing to read'
   end
 
   test 'the default story reader stays inside scenarios' do
@@ -286,5 +368,19 @@ class OwnerClaimTest < ActiveSupport::TestCase
     assert_nil OC.default_story_text('scenarios/no_such/ink/none.json')
     text = OC.default_story_text('scenarios/test_access_habits/ink/owner.json')
     assert text.is_a?(String) && !text.include?('patrol_mode'), 'Noor\'s story is read and has no patrol tag'
+  end
+
+  # R3 n2: the validator's reader tries every spelling InkStoryFile.compiled_json tries
+  test 'the default story reader finds a story under the other JSON spelling' do
+    dir = File.join(OC::STORY_ROOT, 'scenarios', "owner_claim_spelling_#{Process.pid}")
+    FileUtils.mkdir_p(dir)
+    File.write(File.join(dir, 'a.ink.json'), '["#","^patrol_mode:on","/#"]')
+    File.write(File.join(dir, 'b.json'), '["#","^patrol_mode:off","/#"]')
+    rel = "scenarios/#{File.basename(dir)}"
+    assert_includes OC.default_story_text("#{rel}/a.json").to_s, 'patrol_mode:on', 'a.json names a.ink.json'
+    assert_includes OC.default_story_text("#{rel}/b.ink.json").to_s, 'patrol_mode:off', 'b.ink.json names b.json'
+    assert_nil OC.default_story_text("#{rel}/c.json")
+  ensure
+    FileUtils.rm_rf(dir) if dir
   end
 end

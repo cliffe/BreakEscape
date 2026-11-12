@@ -78,13 +78,39 @@ module BreakEscape
       return false unless npc.is_a?(Hash)
 
       needs = npc['needs']
-      if needs.is_a?(Hash) && needs.values.any? { |n| n.is_a?(Hash) && positive_number?(n['decayPerMin']) && positive_number?(n['urgentAt']) }
+      if needs.is_a?(Hash) && needs.values.any? { |n| n.is_a?(Hash) && js_positive?(n['decayPerMin']) && js_positive?(n['urgentAt']) }
         return true
       end
 
       interests = npc['interests']
       interests.is_a?(Hash) && interests.values.any? do |interest|
-        interest.is_a?(Hash) ? positive_number?(interest['weight']) : (interest.is_a?(Numeric) && interest.positive?)
+        interest.is_a?(Hash) ? js_positive?(interest['weight']) : (interest.is_a?(Numeric) && interest.positive?)
+      end
+    end
+
+    # Number(value) > 0, as normaliseNeed and normaliseInterest read decayPerMin, urgentAt and
+    # weight. positive_number? or a JavaScript reading of true (1) and of a one-element array
+    # (Number([5]) is 5), so it is never narrower than positive_number?.
+    def js_positive?(value)
+      return true if positive_number?(value)
+
+      n = value.is_a?(Array) ? js_array_number(value) : js_number(value)
+      n.finite? && n.positive?
+    end
+
+    # Number(array): Number(String(array)). An empty array is 0; one element reads as that
+    # element's string (null is empty, so 0; true is "true", so NaN); more than one has a comma,
+    # so NaN.
+    def js_array_number(array)
+      return 0.0 if array.empty?
+      return Float::NAN unless array.size == 1
+
+      el = array.first
+      case el
+      when nil then 0.0
+      when Numeric, String then js_number(el.to_s)
+      when Array then js_array_number(el)
+      else Float::NAN
       end
     end
 
@@ -163,7 +189,8 @@ module BreakEscape
     # JavaScript's Number(x) for a JSON value: nil, "" and false are 0, true is 1, a numeric
     # string its number; anything else NaN. Known gaps, which no scenario authors: an array is NaN
     # here where Number([]) is 0 and Number([n]) is n, and Float() reads "1_000" as 1000 where
-    # Number() gives NaN. positive_number? (needs_tracked?) also rejects true, which Number() reads as 1.
+    # Number() gives NaN. js_positive? (needs_tracked?, OwnerClaim) reads arrays and true as
+    # Number() does.
     def js_number(value)
       case value
       when Numeric then value.to_f

@@ -6508,9 +6508,10 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
         elsif owner_never_leaves.call(pc, owner_id)
           # Owner claim q78: the server refuses a claim here too
           warn.call("#{where} is owned by '#{owner_id}', whom nothing sends away from the post in a way that " \
-                    'can leave the screen open: no need is met anywhere else they may go, no print errand or failure ' \
-                    'route, no patrol, scripted move, patrol_mode ink tag, social media need, station hook, interest, ' \
-                    'phone answering, print habit or droppable source, and a knock-out is either ' \
+                    'can leave the screen open: no need is met by any object other than their own post (in any room), no ' \
+                    'print errand or failure route, no patrol, scripted move, patrol_mode ink tag or unreadable story, ' \
+                    'social media need, station hook, interest, phone answering, print habit or movable source, and a ' \
+                    'knock-out is either ' \
                     'impossible (disableAttacks or koImmune) or always locks this screen. No unlocked session is ' \
                     'possible there and the server refuses a claim. If the screen is meant to be found open, give ' \
                     'the owner a need met somewhere else, or allow attacks and give the PC a lockChance below 1.')

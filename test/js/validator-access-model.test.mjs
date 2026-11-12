@@ -460,9 +460,9 @@ test('each leave route keeps the never-leaves warning silent', { skip }, () => {
     }
     // and the near misses still warn
     const misses = {
-        'a fixed source outside needsRooms': sc => {
-            npc(sc, 'jake').needsRooms = ['lobby'];
-            sc.rooms.finance_office.objects = [{ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst' } }];
+        'the only source is the own PC': sc => { obj(sc, 'jake_pc').affordance = { satisfies: 'thirst' }; },
+        'the only source is private to somebody else': sc => {
+            lobby(sc).objects.push({ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst', private: true, owners: ['dana'] } });
         },
         'a needs set command and a droppable item for another need': sc => {
             npc(sc, 'jake').eventMappings = [{ eventPattern: 'go', needs: { set: { thirst: 90 } } }];
@@ -498,6 +498,41 @@ test('droppable sources, social media prints and every cautious movement source 
         'an interest': sc => { npc(sc, 'jake').interests = { mail: 2 }; },
         'answersPhones with no colleague phone': sc => { npc(sc, 'jake').answersPhones = true; },
         'a printHabit': sc => { npc(sc, 'jake').printHabit = { fetchAfterSeconds: [10, 20] }; }
+    };
+    for (const [label, edit] of Object.entries(routes)) {
+        const sc = clean();
+        sc.disableAttacks = true;
+        edit(sc);
+        assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), label);
+    }
+});
+
+// Review R3: no room or leash test refuses, a held, carried or revealed source counts, and an
+// unreadable story allows
+test('sources in any room, movable sources and an unreadable story keep the warning silent', { skip }, () => {
+    const water = (extra = {}) => ({ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst' }, ...extra });
+    const routes = {
+        'a fixed source outside needsRooms': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            sc.rooms.finance_office.objects = [water()];
+        },
+        'a source in a room the owner avoids': sc => {
+            npc(sc, 'jake').needsAvoidRooms = ['finance_office'];
+            sc.rooms.finance_office.objects = [water()];
+        },
+        'a source held by a colleague (knock-out drop)': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            npc(sc, 'dana').itemsHeld = [water()];
+        },
+        'a tagged source (carry drop)': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            sc.rooms.finance_office.objects = [water({ needsTag: 'bottle', takeable: true })];
+        },
+        'a reveal slot (outputOf)': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            sc.rooms.finance_office.objects = [water({ outputOf: 'copier' })];
+        },
+        'a storyPath that cannot be read': sc => { npc(sc, 'jake').storyPath = 'scenarios/no_such_scenario/ink/none.json'; }
     };
     for (const [label, edit] of Object.entries(routes)) {
         const sc = clean();
