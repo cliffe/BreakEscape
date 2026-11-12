@@ -366,3 +366,69 @@ test('A2b R2 m4: the Call ended bar is upper case like ON CALL and the call-ende
     const css = readFileSync(join(here, '../../public/break_escape/css/phone-chat-minigame.css'), 'utf8');
     assert.match(css, /\.call-status-bar\.call-ended \{/);
 });
+
+// ---- A2b R3 M1: the "Call ended" beat on a story end and #exit_conversation -----------------
+
+test('A2b R3 M1: story end on a ringer call shows the beat, then completes once; terminal look at once; no ringerCall, no beat', async () => {
+    const t = timers();
+    try {
+        const { inst, log } = make({ ended: true });
+        let ended = 0;
+        inst.ui.showCallEnded = () => { ended++; return true; };
+        inst._releaseForcedCall();
+        await Promise.resolve(); await Promise.resolve();
+        t.run();                                   // the 2 s timer
+        assert.equal(ended, 1, 'the beat is shown');
+        assert.equal(inst._callEndedPending, true);
+        assert.equal(inst._endedByCall, true);
+        assert.deepEqual(log.completed, [], 'not yet');
+        t.run();                                   // the beat timer
+        assert.deepEqual(log.completed, [true], 'once');
+        const term = make({ ended: true });
+        term.inst.ui.showCallEnded = () => false;
+        term.inst._releaseForcedCall();
+        await Promise.resolve(); await Promise.resolve();
+        t.run();
+        assert.deepEqual(term.log.completed, [true], 'terminal look: at once');
+        const legacy = make({ ringer: false, forced: true, ended: true });
+        let l = 0;
+        legacy.inst.ui.showCallEnded = () => { l++; return true; };
+        legacy.inst._releaseForcedCall();
+        await Promise.resolve(); await Promise.resolve();
+        t.run();
+        assert.equal(l, 0, 'no beat without ringerCall');
+        assert.deepEqual(legacy.log.completed, [true]);
+    } finally { t.restore(); }
+});
+
+test('A2b R3 M1: #exit_conversation (_exitRingerCall) shows the beat then completes once; both callers; terminal look at once', async () => {
+    const t = timers();
+    try {
+        const a = make();
+        let ended = 0;
+        a.inst.saveStoryState = () => {};
+        a.inst.ui.showCallEnded = () => { ended++; return true; };
+        a.inst._exitRingerCall();
+        assert.equal(ended, 1);
+        assert.deepEqual(a.log.completed, []);
+        assert.equal(a.inst._endedByCall, true);
+        t.run();
+        assert.deepEqual(a.log.completed, [true]);
+        // the continue path
+        const b = make();
+        let e2 = 0;
+        b.inst.saveStoryState = () => {};
+        b.inst._pendingNpcMessages = [];
+        b.inst.ui.showCallEnded = () => { e2++; return true; };
+        await b.inst._presentOutput([], ['exit_conversation'], { choices: [], canContinue: false, hasEnded: false });
+        assert.equal(e2, 1);
+        assert.deepEqual(b.log.completed, []);
+        t.run();
+        assert.deepEqual(b.log.completed, [true]);
+        const c = make();
+        c.inst.saveStoryState = () => {};
+        c.inst.ui.showCallEnded = () => false;
+        c.inst._exitRingerCall();
+        assert.deepEqual(c.log.completed, [true]);
+    } finally { t.restore(); }
+});

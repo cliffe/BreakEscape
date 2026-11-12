@@ -25,15 +25,28 @@ r2m1)
   a2b_text | tee "$OUT/${LABEL}_thread.json" | cut -c1-500; a2b_shot thread
   echo "knot with thread open:"; node_npc caller_decline | tee "$OUT/${LABEL}_node_thread.json"; a2b_quit ;;
 m2)
+  # R3 m3: a timed opening ring rings out inside bootstrap, so the watcher goes into the page BEFORE bootstrap.
+  # It clicks Decline 1.5 s into timed_caller's ring (HOW=decline) or leaves it to ring out, and logs the ring.
   for how in decline ringout; do
-    for try in 1 2 3 4 5; do
-      rm -f $OUT/m2_${how}_ringseq.txt
-      AUTOBRIEF=true a2b_open m2_$how --set skip_timed=false
-      if ring_timed; then break; fi; echo "[$how] attempt $try: timed_caller did not ring first, new game"; a2b_quit
-    done
-    echo "[$how] timed_caller ringing after ${i}s"; a2b_shot ringing; echo "knot while ringing:"; node_npc timed_caller | tee "$OUT/m2_${how}_node_ringing.json"
-    if [ $how = decline ]; then a2b_decline; else sleep 24; fi
-    sleep 3; echo "[$how] ringer:"; a2b_status | cut -c1-200; echo "knot after:"; node_npc timed_caller | tee "$OUT/m2_${how}_node_after.json"
+    W=/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/m2_watch_$how.js
+    cat > $W <<JS
+window.__tc = { ringAt: null, goneAt: null, declinedAt: null };
+setInterval(() => {
+  const c = window.phoneRinger && window.phoneRinger.current && window.phoneRinger.current();
+  const t = Math.round(performance.now());
+  const ringing = !!c && c.npcId === 'timed_caller' && c.state === 'ringing';
+  if (ringing && window.__tc.ringAt === null) window.__tc.ringAt = t;
+  if (ringing && '$how' === 'decline' && window.__tc.declinedAt === null && t - window.__tc.ringAt > 1500) {
+    const b = document.querySelector('.incoming-call-decline'); if (b) { b.click(); window.__tc.declinedAt = t; }
+  }
+  if (!ringing && window.__tc.ringAt !== null && window.__tc.goneAt === null) window.__tc.goneAt = t;
+}, 100);
+return true;
+JS
+    PRE_EV=$W AUTOBRIEF=true a2b_open m2_$how --set skip_timed=false
+    sleep $([ $how = decline ] && echo 6 || echo 30)
+    echo "[$how] watcher:"; a2b_ev "return window.__tc;" | tee "$OUT/m2_${how}_watch.json"
+    echo "[$how] ringer:"; a2b_status | cut -c1-200; echo "knot after:"; node_npc timed_caller | tee "$OUT/m2_${how}_node_after.json"
     # open the thread by hand the way a player does: the phone item in the inventory, then the contact
     $S $GID '{"cmd":"openInventoryItem","item":"phone"}' >/dev/null; sleep 2; a2b_shot contacts
     a2b_click "Timed Caller" ; sleep 2
@@ -59,6 +72,18 @@ ended)
   a2b_shot end_beat_hangup
   a2b_ev 'return document.body.innerText.match(/Call ended[^\n]*/g);'
   sleep 3; a2b_ev 'return window.phoneRinger.callActive();'; a2b_quit ;;
+ended_story|ended_exit)
+  # R3 M1: the "Call ended" beat after a story end (choice 2) and after #exit_conversation (choice 3)
+  CH=$([ $1 = ended_story ] && echo 2 || echo 3)
+  AUTOBRIEF=true a2b_open r3_$1${HOLD:+_held}; a2b_lever lever_basic_again caller_basic; wait_ring caller_basic 20; a2b_answer; sleep 3
+  a2b_ev 'window.__ce=[]; setInterval(()=>{ const m=window.MinigameFramework.currentMinigame; window.__ce.push({t:Math.round(performance.now()), mg:m?m._sceneType:null, ended:/CALL ENDED/i.test(document.body.innerText)}); }, 100); return true;' >/dev/null
+  # HOLD=1: screenshot-only run; complete() is delayed 4 s in the page so the 0.9 s beat can be captured (timeline runs leave it unpatched)
+  [ -n "$HOLD" ] && a2b_ev 'const m=window.MinigameFramework.currentMinigame; const c=m.complete.bind(m); m.complete=(...a)=>setTimeout(()=>c(...a),4000); return true;' >/dev/null
+  a2b_choose $CH >/dev/null
+  for i in $(seq 1 40); do a2b_ev 'return /CALL ENDED/i.test(document.body.innerText);' | grep -qx true && { [ -n "$HOLD" ] && sleep 1; a2b_ev 'const b=document.getElementById("call-status-bar"); return b && b.innerText;' | tee "$OUT/r3_${1}${HOLD:+_held}_statusbar.txt"; a2b_shot call_ended_beat; break; }; done
+  sleep 4
+  a2b_ev 'const o=[]; let p=""; for (const e of window.__ce) { const k=e.mg+" callEnded="+e.ended; if (k!==p) { o.push((e.t/1000).toFixed(1)+"s "+k); p=k; } } return o;' | tee "$OUT/r3_${1}_timeline.json"
+  a2b_ev 'return window.phoneRinger.callActive();'; a2b_quit ;;
 ended2)
   AUTOBRIEF=true a2b_open ended2; a2b_lever lever_basic_again caller_basic; wait_ring caller_basic 20; a2b_answer; sleep 3
   a2b_ev 'window.__ce=[]; setInterval(()=>{ const m=window.MinigameFramework.currentMinigame; window.__ce.push({t:Math.round(performance.now()), mg:m?m._sceneType:null, ended:/Call ended/.test(document.body.innerText)}); }, 100); return true;' >/dev/null

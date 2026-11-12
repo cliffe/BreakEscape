@@ -271,6 +271,20 @@ test('A2b R2 M1: a ring queued behind a call does not move currentKnot either', 
     } finally { w.restore(); }
 });
 
+test('A2b R3 m1: a refused or throwing open puts the previous currentKnot back', async () => {
+    for (const how of ['null', 'throw']) {
+        const w = makeWorld({ npcs: [npc] });
+        try {
+            w.fw.startMinigame = () => { if (how === 'throw') throw new Error('boom'); return null; };
+            w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+            await w.advance(300);
+            w.click('.incoming-call-answer');
+            await w.advance(700);
+            assert.equal(w.nm.getNPC('caller').currentKnot, 'start', `${how}: the call knot is not left behind`);
+        } finally { w.restore(); }
+    }
+});
+
 // A8: the ringtone loops through the sound manager and stops on every outcome.
 function fakeSoundManager(win, { withRingtone = true } = {}) {
     const log = [];

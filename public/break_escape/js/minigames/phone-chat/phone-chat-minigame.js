@@ -1331,6 +1331,8 @@ export class PhoneChatMinigame extends MinigameScene {
                 // reset's save comes last
                 this._endedByCall = true;
                 this._resetAfterRingerCall();
+                this._completeRingerCallWithBeat();
+                return;
             }
             this.complete(true);
         }, FORCED_CALL_END_CLOSE_MS));
@@ -1374,7 +1376,23 @@ export class PhoneChatMinigame extends MinigameScene {
         this.saveStoryState();
         this._endedByCall = true;
         this._resetAfterRingerCall();
-        this.complete(true);
+        this._completeRingerCallWithBeat();
+    }
+
+    /**
+     * Finish a ringer call the way a handset does, whichever side hung up: "Call ended m:ss" for
+     * a beat, then complete(true). No beat in the terminal look (no call screen). Shared by End /
+     * the back arrow, the story's end and #exit_conversation. `_endedByCall` and `_callFinished`
+     * are set before the beat, so a hit during it is still read as a call that ended.
+     */
+    _completeRingerCallWithBeat() {
+        this._callVoice?.stop();
+        if (this.ui.showCallEnded?.()) {
+            this._callEndedPending = true;
+            setTimeout(() => { if (this.gameState?.isActive) this.complete(true); }, CALL_ENDED_BEAT_MS);
+        } else {
+            this.complete(true);
+        }
     }
 
     /**
@@ -1609,14 +1627,8 @@ export class PhoneChatMinigame extends MinigameScene {
             // End call / the back arrow: the player hung up (row 25). The call is over, so the
             // minigame completes; the thread comes back through the ringer's reopen, not here.
             this._endedByCall = true;
-            // "Call ended m:ss" for a beat before the screen goes (plan 2.5); no beat
-            // without a call screen (terminal look)
-            if (this.ui.showCallEnded?.()) {
-                this._callEndedPending = true;
-                setTimeout(() => { if (this.gameState?.isActive) this.complete(true); }, CALL_ENDED_BEAT_MS);
-            } else {
-                this.complete(true);
-            }
+            // "Call ended m:ss" for a beat before the screen goes (plan 2.5)
+            this._completeRingerCallWithBeat();
             return;
         }
         

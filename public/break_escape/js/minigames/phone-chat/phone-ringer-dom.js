@@ -187,6 +187,8 @@ export function installPhoneRinger(win = window) {
             let started = null;
             // The call knot is the contact's position only while the call is open; the thread
             // reads currentKnot, so a ring that is declined or missed never moved it (R2 M1)
+            // (put back if the open is refused or throws, so a refusal leaves no moved knot)
+            const previousKnot = npc.currentKnot;
             if (offer.knot) npc.currentKnot = offer.knot;
             try {
                 started = fw().startMinigame('phone-chat', null, {
@@ -210,9 +212,10 @@ export function installPhoneRinger(win = window) {
                     try { fw().endMinigame(false, null); } catch (e) { /* nothing more to do */ }
                 }
                 ownedCallId = null;
+                npc.currentKnot = previousKnot;
                 return false;
             }
-            if (!started) ownedCallId = null;
+            if (!started) { ownedCallId = null; npc.currentKnot = previousKnot; }
             return !!started;
         },
         putAside: () => null,                    // A2c
