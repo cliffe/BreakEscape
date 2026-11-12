@@ -215,3 +215,179 @@ test('the call panel blocks number keys and has a UI show/hide pair', () => {
     assert.match(uiSrc, /hideIncomingCall\(\) \{/);
     assert.match(uiSrc, /cleanup\(\) \{\s*this\.hideIncomingCall\(\);/);
 });
+
+// ---- A3 review round 1, M1: a phone closed for a call and never reopened still owes its thread's
+// conversation_closed (the closed-for-call phone emitted nothing, row 10).
+const closedEvents = (w, id) => w.dispatcher.emitted.filter(([n]) => n === `conversation_closed:${id}`);
+const startedPhones = (w) => w.calls.started.filter((s) => s.type === 'phone-chat' && !s.params.ringerCall);
+
+/** Ring, answer from the panel, open the call. Returns { phone, call }. */
+async function answerOver(w, phone, { forced = false } = {}) {
+    w.nm._handleEventMapping('caller', 'room_entered', { ...ringConfig(), ...(forced ? { disableClose: true } : {}) }, {});
+    await w.advance(300);
+    if (forced) await w.advance(6200); else phone.panel.onAnswer();
+    await w.advance(700);
+    return w.fw.currentMinigame;
+}
+
+test('M1: a normal End reopens the phone and the ringer emits nothing for the thread (the real close will)', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await answerOver(w, phone);
+        w.fw.currentMinigame._endedByCall = true;
+        w.fw.endMinigame(true);
+        await w.advance(300);
+        assert.equal(startedPhones(w).length, 1, 'reopened');
+        assert.equal(closedEvents(w, 'other').length, 0);
+    } finally { w.restore(); }
+});
+
+test('M1: a hit within HIT_QUIET_MS before End leaves the phone closed and emits conversation_closed for its thread once', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await answerOver(w, phone);
+        const hitAt = w.win.performance.now();
+        w.win.lastPlayerHitAt = () => hitAt;
+        w.fw.currentMinigame._endedByCall = true;
+        w.fw.endMinigame(true);
+        await w.advance(300);
+        assert.equal(startedPhones(w).length, 0, 'not reopened');
+        assert.equal(closedEvents(w, 'other').length, 1);
+        await w.advance(8000);
+        assert.equal(closedEvents(w, 'other').length, 1, 'once');
+    } finally { w.restore(); }
+});
+
+test('M1: a phone on its contact list (no thread) owes no event when it is not reopened', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        const phone = openPhone(w, { thread: null, params: { npcId: undefined } });
+        await answerOver(w, phone);
+        const hitAt = w.win.performance.now();
+        w.win.lastPlayerHitAt = () => hitAt;
+        w.fw.currentMinigame._endedByCall = true;
+        w.fw.endMinigame(true);
+        await w.advance(300);
+        assert.equal(w.dispatcher.emitted.filter(([n]) => n.startsWith('conversation_closed:')).length, 0);
+    } finally { w.restore(); }
+});
+
+test('M1 (row 32): another minigame closing the call leaves the phone closed and emits its thread event once', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await answerOver(w, phone);
+        w.fw.startMinigame('lockpicking', null, {});      // the call ends without its own flags
+        await w.advance(300);
+        assert.equal(startedPhones(w).length, 0);
+        assert.equal(closedEvents(w, 'other').length, 1);
+    } finally { w.restore(); }
+});
+
+test('M1 (row 25 drop): a scripted beat queued at the call\'s end drops the reopen and emits the thread event once', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await answerOver(w, phone);
+        w.nm._scriptedCallQueue = [{ npcId: 'other' }];
+        w.fw.currentMinigame._endedByCall = true;
+        w.fw.endMinigame(true);
+        await w.advance(300);
+        assert.equal(startedPhones(w).length, 0);
+        assert.equal(closedEvents(w, 'other').length, 1);
+    } finally { w.restore(); }
+});
+
+test('M1 (row 28): the ringer closed while the call is connected: the call ends, the reopen is dropped, the thread event fires once', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await answerOver(w, phone);
+        w.ringer.close();
+        w.fw.currentMinigame._endedByCall = true;
+        w.fw.endMinigame(true);
+        await w.advance(300);
+        assert.equal(startedPhones(w).length, 0);
+        assert.equal(closedEvents(w, 'other').length, 1);
+    } finally { w.restore(); }
+});
+
+test('M1 (row 28): the ringer closing while an offer is held with the phone already put aside emits the thread event once', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        const realStart = w.fw.startMinigame.bind(w.fw);
+        w.fw.startMinigame = (type, c, params) => (params?.ringerCall ? null : realStart(type, c, params));   // the call keeps refusing to open
+        w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+        await w.advance(300);
+        phone.panel.onAnswer();
+        await w.advance(900);
+        assert.ok(w.calls.ended.includes(phone), 'the phone was put aside');
+        assert.ok(['held', 'connected'].includes(w.ringer.stateOf('caller')));
+        assert.equal(closedEvents(w, 'other').length, 0);
+        w.ringer.close();
+        await w.advance(300);
+        assert.equal(closedEvents(w, 'other').length, 1);
+        await w.advance(8000);
+        assert.equal(closedEvents(w, 'other').length, 1, 'once');
+    } finally { w.restore(); }
+});
+
+test('M1 (giveUp): an open refused until the ringer gives up, with a beat queued, drops the reopen and emits once', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        const realStart = w.fw.startMinigame.bind(w.fw);
+        w.fw.startMinigame = (type, c, params) => (params?.ringerCall ? null : realStart(type, c, params));
+        w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+        await w.advance(300);
+        phone.panel.onAnswer();
+        // refuse four times; with the fifth open waiting on its 500 ms timer, queue a beat: the second
+        // check ignores it, the reopen after giving up does not
+        for (let i = 0; i < 200; i++) {
+            await w.advance(100);
+            const cur = w.ringer.current();
+            if (cur && cur.refusals === 4 && cur.state === 'connected') break;
+        }
+        assert.equal(w.ringer.current().refusals, 4);
+        w.nm._scriptedCallQueue = [{ npcId: 'other' }];
+        await w.advance(1500);
+        assert.equal(w.ringer.stateOf('caller'), null, 'gave up');
+        assert.equal(startedPhones(w).length, 0, 'not reopened');
+        assert.equal(closedEvents(w, 'other').length, 1);
+    } finally { w.restore(); }
+});
+
+test('M1 (row 26): a second phone opened during a forced re-ring replaces the first descriptor; the first thread owes its event, the call ends back on the newer screen', async () => {
+    const w = makeWorld({ npcs: [npc, other, { id: 'third', displayName: 'Third' }] });
+    try {
+        const first = openPhone(w, { thread: 'other' });
+        await answerOver(w, first, { forced: true });
+        assert.ok(w.fw.currentMinigame.params.ringerCall, 'the forced call is open');
+        // a hit closes the call (not its own path): it rings again after HIT_QUIET_MS
+        const hitAt = w.win.performance.now();
+        w.win.lastPlayerHitAt = () => hitAt;
+        w.fw.endMinigame(false);
+        await w.advance(300);
+        assert.equal(w.ringer.stateOf('caller'), 'queued');
+        // the player opens the phone again, on another thread, before the re-ring
+        const second = openPhone(w, { thread: 'third' });
+        w.win.phoneRinger.onMinigameStarted('phone-chat', second.params);
+        await w.advance(4500);
+        assert.equal(w.ringer.stateOf('caller'), 'ringing');
+        assert.ok(second.panel, 'rings inside the second phone');
+        await w.advance(6500);                            // forced: it answers itself
+        await w.advance(700);
+        assert.equal(closedEvents(w, 'other').length, 1, 'the older descriptor was dropped through the helper');
+        w.win.lastPlayerHitAt = () => null;
+        w.fw.currentMinigame._endedByCall = true;
+        w.fw.endMinigame(true);
+        await w.advance(300);
+        const reopened = startedPhones(w).pop();
+        assert.equal(reopened.params.npcId, 'third', 'back on the newer screen');
+        assert.equal(closedEvents(w, 'third').length, 0);
+        assert.equal(closedEvents(w, 'other').length, 1);
+    } finally { w.restore(); }
+});

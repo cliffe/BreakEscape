@@ -41,6 +41,9 @@
  *     putAside(npcId)    close an open workstation popup (row 11) or the player's phone (row 10),
  *                        returning a descriptor, else null
  *     reopen(descriptor) reopen what the call displaced (row 25)
+ *     dropDisplaced(descriptor)  a descriptor that will not come back (a hit before End, row 32, a
+ *                        queued beat, the ending, giveUp, a second descriptor): the adapter owes the
+ *                        thread's skipped conversation_closed for a phone (A3 R1 M1)
  *     showBanner(view) / hideBanner()   the ringing banner (also called to refresh it)
  *     showPill(view) / hidePill()       the hold pill
  *     ringtone(on)       start or stop the looped ringtone
@@ -340,9 +343,20 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         syncSave(o.npcId);
     }
 
+    /**
+     * A displaced descriptor that will not come back (A3 R1 M1). A phone closed for a call skipped
+     * its thread's conversation_closed (row 10: the reopen would fire it at the real close), so the
+     * adapter owes that event now. Every place that gives a descriptor up goes through here.
+     */
+    function dropDisplaced(d) {
+        if (d) call('dropDisplaced', d);
+    }
+
     /** The call it displaced comes back, if the world allows it now (row 25; never once the ending has started, choice 2). */
     function reopenDisplaced(d) {
-        if (d && !closed && !call('openBlocked') && !hitWithin(HIT_QUIET_MS)) call('reopen', d);
+        if (!d) return;
+        if (!closed && !call('openBlocked') && !hitWithin(HIT_QUIET_MS)) call('reopen', d);
+        else dropDisplaced(d);
     }
 
     /** A popup the offer put aside comes back when the offer ends without the call (hang-up, rang off; R2 m2). */
@@ -457,13 +471,13 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     function giveUp(o) {
         finishOffer(o);
         connecting = null;
+        const d = o.displaced;
+        o.displaced = null;
         if (!closed) {
             call('emit', `phone_call_missed:${o.npcId}`, eventData(o));
             call('onOutcome', 'dropped', o);
-            const d = o.displaced;
-            o.displaced = null;
-            reopenDisplaced(d);
         }
+        reopenDisplaced(d);         // drops it (and owes the thread's event) when the ending has started
         run();
     }
 
@@ -480,7 +494,12 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             return;
         }
         const d = call('putAside', o.npcId);
-        if (d && !o.displaced) o.displaced = d;
+        if (d) {
+            // A second descriptor (a forced call re-ringing into a phone the player opened again, row 26):
+            // keep the newer, the screen the player was last on; the older one is given up (A3 R1 M1)
+            if (o.displaced) dropDisplaced(o.displaced);
+            o.displaced = d;
+        }
         const id = `call-${++callSeq}`;
         connecting = { id, npcId: o.npcId, answerSeconds: o.answerSeconds || 0, isCallback: false };
         const opened = call('openCall', o, {
@@ -532,6 +551,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         connecting = null;
         o.goneSince = 0;
         let reopenWhat = null;
+        let dropWhat = null;
         if (own) {
             // Row 25: the story position was reset inside the call already.
             reopenWhat = o.displaced;
@@ -547,11 +567,13 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             requeueHead(o, 'connected');
         } else if (o.disableClose) {
             // A forced call hit after the ending began: it never rings again (row 28).
+            dropWhat = o.displaced;
             o.displaced = null;
             finishOffer(o);
             call('onOutcome', 'dropped', o);
         } else {
             // Row 32: closed by something else. Missed, no toast; A6 adds the callback.
+            dropWhat = o.displaced;
             o.displaced = null;
             finishOffer(o);
             call('emit', `phone_call_missed:${o.npcId}`, eventData(o));
@@ -562,6 +584,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         // reopen decision, wait until that swap is done (M5).
         afterSwap(() => {
             reopenDisplaced(reopenWhat);
+            dropDisplaced(dropWhat);
             advance();
             run();
         });
@@ -763,6 +786,10 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         for (const o of gone) {
             if (active === o) active = null;
             if (o.openTimer) { c.clearTimeout(o.openTimer); o.openTimer = null; }
+            // A held offer's phone was put aside already and will not come back (A3 R1 M1)
+            const d = o.displaced;
+            o.displaced = null;
+            dropDisplaced(d);
         }
         for (const o of gone) syncSave(o.npcId);
         if (!active) connecting = null;

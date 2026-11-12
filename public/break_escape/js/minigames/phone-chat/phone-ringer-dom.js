@@ -322,9 +322,16 @@ export function installPhoneRinger(win = window) {
             } finally { settingAside = false; }
             return d;
         },
+        // A3 R1 M1: a descriptor that will not come back. A phone closed for a call skipped its thread's
+        // conversation_closed; it is emitted here, once, for the thread it was on (not for the list).
+        dropDisplaced(d) {
+            if (d?.kind !== 'phone' || !d.thread) return;
+            win.eventDispatcher?.emit?.(`conversation_closed:${d.thread}`, { npcId: d.thread, timestamp: Date.now() });
+        },
         // Rows 11, 25: the popup comes back as it was, unless something else is open by then
         reopen(d) {
-            if (!d || openMinigame() || popupOpen()) return;
+            if (!d) return;
+            if (openMinigame() || popupOpen()) { adapter.dropDisplaced(d); return; }
             if (d.kind === 'laptop') win.openCryptoWorkstation?.();
             else if (d.kind === 'lab') win.openLabWorkstation?.(d.src);
             else if (d.kind === 'phone') {
@@ -334,7 +341,9 @@ export function installPhoneRinger(win = window) {
                 delete params.startKnot;
                 delete params._closingForCall;
                 if (d.thread) params.npcId = d.thread; else delete params.npcId;
-                try { fw()?.startMinigame('phone-chat', null, params); } catch (err) { console.error('phone ringer: reopening the phone failed', err); }
+                let started = null;
+                try { started = fw()?.startMinigame('phone-chat', null, params); } catch (err) { console.error('phone ringer: reopening the phone failed', err); }
+                if (!started) adapter.dropDisplaced(d);
             }
         },
         showBanner,
