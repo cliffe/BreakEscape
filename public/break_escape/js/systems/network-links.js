@@ -432,9 +432,7 @@ export class NetworkLinks {
         const foothold = cleanFoothold(body?.foothold);
         if (!body?.success || !foothold) return { action: 'error' };
 
-        const ids = [foothold.itemId];
-        if (deviceId) ids.push(deviceId);
-        win().syncInventoryFromServer?.(body.inventory, ids);
+        win().applyInventoryDelta?.(body);
         this.footholds.set(foothold.id, foothold);
         this.gained.add(jackId);
         if (deviceName) this.deviceNames.set(foothold.id, deviceName);
@@ -499,13 +497,10 @@ export class NetworkLinks {
         const foothold = cleanFoothold(body?.foothold);
         if (!body?.success || !foothold) return { action: 'error' };
 
-        // Reconcile only the ids the server says changed, as plant() does (review R1 client M1):
-        // the link item added, and the one device the session shape consumed (consumedId). The
-        // dropped shape consumes nothing. Never pass the whole tray: an item whose own pickup
-        // persist is still in flight would be absent from the server snapshot and wrongly removed.
-        const ids = [foothold.itemId];
-        if (body.consumedId) ids.push(body.consumedId);
-        win().syncInventoryFromServer?.(body.inventory, ids);
+        // Reconcile only the ids the server named (sync deltas P2): the link item added, and
+        // the one device the session shape consumed (consumedId), carried in the server's
+        // `added`/`removed` delta. The dropped shape consumes nothing.
+        win().applyInventoryDelta?.(body);
         // Whether this browser already held the foothold, and had ever gained one here, before
         // this answer (review I R3 m1): an `already` answer to a retry whose first response was
         // lost is still news to this browser, so it fires the event and opens the view once, as
@@ -555,11 +550,9 @@ export class NetworkLinks {
         }
         if (!body?.success) return { action: 'error' };
         const id = foothold?.id || footholdId;
-        const inventory = Array.isArray(body.inventory) ? body.inventory : [];
-        // The link item leaves; the device that came back (a rogue device the tray lacks) arrives
-        const ids = [foothold?.itemId || linkItemId(id),
-            ...inventory.filter(it => it?.rogueDevice === true && it.id).map(it => it.id)];
-        win().syncInventoryFromServer?.(inventory, ids);
+        // The link item leaves and the device that was plugged in comes back, both named in the
+        // server's `added`/`removed` delta (sync deltas P2); no inventory scan is needed.
+        win().applyInventoryDelta?.(body);
         this.footholds.delete(id);
         this.views.delete(id);
         this.deviceNames.delete(id);
@@ -613,7 +606,7 @@ export class NetworkLinks {
         }
         const foothold = cleanFoothold(body?.foothold);
         if (!body?.success || !foothold) return { action: 'error' };
-        win().syncInventoryFromServer?.(body.inventory, [foothold.itemId]);
+        win().applyInventoryDelta?.(body);
         this.footholds.set(foothold.id, foothold);
         this.gained.add(apId);
         const networkId = foothold.network?.id ?? null;

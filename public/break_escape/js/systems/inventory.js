@@ -1321,6 +1321,39 @@ export function syncInventoryFromServer(inventory, ids = []) {
     return result;
 }
 
+/**
+ * Apply the `added`/`removed` inventory delta a network route answers (sync deltas P2).
+ * In one deferTray batch: each added item the tray lacks is shown through addServerItem (by
+ * id, or by createItemIdentifier for an id-less item); each removed id the tray holds is
+ * removed. `removed` carries ids only, so removeFromInventory is never asked for an id-less
+ * item. Applying the same delta twice changes nothing. Returns { added: [ids], removed: [ids] }.
+ */
+export function applyInventoryDelta({ added = [], removed = [] } = {}) {
+    const addList = Array.isArray(added) ? added : [];
+    const removeList = Array.isArray(removed) ? removed : [];
+    const result = { added: [], removed: [] };
+    deferTray(() => {
+        for (const itemData of addList) {
+            if (!itemData || typeof itemData !== 'object') continue;
+            if (itemData.id) {
+                if (trayItemWithId(itemData.id)) continue;
+            } else {
+                // No id: add only when no tray item already matches it by identifier.
+                const identifier = createItemIdentifier(itemData);
+                const already = (window.inventory?.items || []).some(it => trayKey(it) === identifier);
+                if (already) continue;
+            }
+            if (addServerItem(itemData)) result.added.push(itemData.id || createItemIdentifier(itemData));
+        }
+        for (const id of removeList) {
+            if (typeof id !== 'string' || !id) continue;
+            const trayItem = trayItemWithId(id);
+            if (trayItem && removeFromInventory(trayItem)) result.removed.push(id);
+        }
+    });
+    return result;
+}
+
 // Update phone badge with unread count
 export function updatePhoneBadge(phoneId) {
     if (!window.npcManager) return;
@@ -1370,3 +1403,4 @@ window.updatePhoneBadge = updatePhoneBadge; window.refreshInventoryTray = refres
 window.registerTrayRule = registerTrayRule;
 window.showServerItem = showServerItem;
 window.syncInventoryFromServer = syncInventoryFromServer;
+window.applyInventoryDelta = applyInventoryDelta;

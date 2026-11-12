@@ -36,7 +36,7 @@ Standing constraints for this build:
 | 1. Groundwork: live-proof tools (item 8) + baseline (item 9) | NOT started (see Open) |
 | Controller test for savedCurrentRoom (task 3) | Done, committed, tested (`853b69a59`) |
 | 2. R1 seeding | Done, committed, tested (`c12d9d1e7`) |
-| 3. P2 inventory/network answers | Not started |
+| 3. P2 inventory/network answers | Done, committed, tested |
 | 4. P1 cloner one-card deltas | Not started |
 | 5. R3 capture-log seen keys | Not started |
 | 6a. R2 server-owned capture record (ships first) | Not started |
@@ -46,6 +46,18 @@ Standing constraints for this build:
 
 ## Commits (newest first)
 
+- Step 3 (P2): inventory and network answers carry deltas. `/inventory` add/remove answer
+  `{ success: true }` (already-held: `{ success: true, already: true }`), no inventory echo.
+  Each `/network/*` route answers `added`/`removed` (through `item_for_answer`, so no saved_cards
+  rides an echo) only to a request that opts in with `delta: true` (`inventory_delta_opt_in?`);
+  an old tab that omits it still gets the whole-inventory echo for one release (4.4).
+  `NetworkAccess#network_inventory_delta`/`inventory_answer_fields`; `delta:` kwarg on
+  plant/unplug/join/implant. Client: `applyInventoryDelta` in inventory.js (window-exported);
+  the four network-links.js call sites apply it; api-client sends `delta: true`; the unplug tray
+  scan is gone. Tests: item_for_answer_test (model), network_inventory_delta_test (integration),
+  inventory-tray applyInventoryDelta cases, network-links.test mocks moved to the delta shape, the
+  games_controller add-answer test updated. `syncInventoryFromServer` and
+  `inventory-server-items.test.mjs` kept for the one-release transition (removed in step 8).
 - `853b69a59` savedCurrentRoom controller test (task 3): present for a string saved
   room, absent when the save holds no string currentRoom (strips it via update_column
   past the create callback that seeds it from startRoom).

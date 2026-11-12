@@ -1061,7 +1061,7 @@ module BreakEscape
           # gift record for that NPC is kept.
           if source_npc_id.blank? && source_pc_id.blank? && source_resource_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
             Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
-            return render json: { success: true, inventory: @game.player_state['inventory'] }
+            return render json: { success: true, already: true }
           end
           validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
                                                                           source_resource_id: source_resource_id)
@@ -1087,7 +1087,9 @@ module BreakEscape
           # Copy: the file stays on the PC and in its profile (access model 5.1)
           @game.record_copied_item!(@collectible_item['id']) if (source_pc_id || source_resource_id) && @collectible_transfer == 'copy'
           Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
-          render json: { success: true, inventory: @game.player_state['inventory'] }
+          # No client reads the inventory echo from this answer (sync deltas P2); the
+          # tray is reconciled by PUT /sync_state and the network delta answers.
+          render json: { success: true }
 
         when 'remove'
           # A plant (engine plan section 6): the client names the object the device was used
@@ -1095,7 +1097,7 @@ module BreakEscape
           used_on = params[:used_on] || params[:usedOn]
           @game.record_planted_item!(item['id'], used_on) if used_on.present?
           @game.remove_inventory_item!(item['id'])
-          render json: { success: true, inventory: @game.player_state['inventory'] }
+          render json: { success: true }
 
         when 'update_saved_cards'
           # The RFID cloner's saved cards, so a reload doesn't empty it
@@ -1307,7 +1309,7 @@ module BreakEscape
       jack_id = params[:jack_id].to_s
       return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
 
-      result = @game.plant_device!(jack_id, params[:device_id].presence&.to_s)
+      result = @game.plant_device!(jack_id, params[:device_id].presence&.to_s, delta: inventory_delta_opt_in?)
       render json: result[:body], status: result[:status]
     end
 
@@ -1337,7 +1339,7 @@ module BreakEscape
       ap_id = params[:ap_id].to_s
       return render json: { success: false, error: 'Missing ap_id' }, status: :bad_request if ap_id.empty?
 
-      result = @game.join_network!(ap_id, params[:key].presence&.to_s)
+      result = @game.join_network!(ap_id, params[:key].presence&.to_s, delta: inventory_delta_opt_in?)
       render json: result[:body], status: result[:status]
     end
 
@@ -1348,7 +1350,7 @@ module BreakEscape
       jack_id = params[:jack_id].to_s
       return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
 
-      result = @game.unplug_device!(jack_id)
+      result = @game.unplug_device!(jack_id, delta: inventory_delta_opt_in?)
       render json: result[:body], status: result[:status]
     end
 
@@ -1364,7 +1366,7 @@ module BreakEscape
       shape = params[:shape].presence&.to_s
       return render json: { success: false, error: 'Missing shape' }, status: :bad_request unless %w[dropped session].include?(shape)
 
-      result = @game.implant_foothold!(pc_id, shape, params[:path].presence&.to_s)
+      result = @game.implant_foothold!(pc_id, shape, params[:path].presence&.to_s, delta: inventory_delta_opt_in?)
       render json: result[:body], status: result[:status]
     end
 
@@ -1745,6 +1747,13 @@ module BreakEscape
     end
 
     private
+
+    # A network route answers the `added`/`removed` inventory delta (sync deltas P2) only when
+    # the request opts in with `delta: true`; an old open tab that still reads the whole-inventory
+    # echo gets the old shape until the next release removes it (4.4).
+    def inventory_delta_opt_in?
+      ActiveModel::Type::Boolean.new.cast(params[:delta]) == true
+    end
 
     # Pre-parse body caps per action, read from Content-Length alone so an oversized
     # body is refused before it is parsed (SYNC_DELTAS_PLAN 2.5). npc_frustration
