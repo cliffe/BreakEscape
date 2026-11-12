@@ -15,3 +15,4 @@ Brief: `docs/agents/PHONE_CALLS_BRIEF.md`.
 - User, 2026-11-12, C6: the Architect's calls ring as "No caller ID" and open in his terminal look, voiced. The "without ringing" narration is rewritten.
 - Orchestrator: the other 12 questions (C1, C3–C5, C7–C14) take the plan's recommended defaults unless a review shows otherwise.
 - Audio done: m02 308 + m03 187 HaX clips. 0 errors, `wasted` 0 unrequested and full coverage in both, 5 transcripts match. Committed on main 94b88373d. Listening: `tmp/tts_comparison/m02_ransomed_trust_hax_restyle/`, `m03_ghost_in_the_machine_hax_restyle/`.
+- Review R1 (Opus, 93a99d3ea): revise, 2 blocker / 14 major / 11 minor. Blockers: ringing over an open minigame cannot work as written; the state machine misses 9 cases. The lab SE is confirmed safe. The C2 restyle as first planned would re-key m10 Ghost call lines (speaker resolution picks the first match). Draft 2 by a fresh planner is running.
