@@ -69,6 +69,31 @@ export function withoutChairsIfOthers(candidates) {
     return others.length ? others : candidates;
 }
 
+/**
+ * The far-tap counterpart of withoutChairsIfOthers (USB habit review R3 m1). A tap out of
+ * reach acts on the first interactable sprite under it, in depth order, and a chair drawn
+ * above an item lying on the floor under or beside it took the tap: the player walked to
+ * the chair, the sit could not finish, and "Can't reach that seat from here." showed. A
+ * takeable item under the same tap now comes before any chair (a seat or a swivel prop),
+ * so the walk goes to the item, as an in-reach tap already does. The order is otherwise
+ * kept, and a tap with no takeable item, or no chair, is unchanged.
+ *
+ * @param {Array} sprites - sprites under the tap, in the order they would be tried
+ * @param {(sprite:any) => boolean} isChair
+ * @returns {Array} the same sprites, takeable items moved ahead of the chairs
+ */
+export function takeablesBeforeChairs(sprites, isChair) {
+    if (!Array.isArray(sprites)) return [];
+    const usable = (s) => !!s && s.interactable;
+    const takeable = (s) => usable(s) && s.scenarioData?.takeable === true && !isChair(s);
+    const firstChair = sprites.findIndex(s => usable(s) && isChair(s));
+    if (firstChair < 0 || !sprites.some(takeable)) return sprites;
+    const lifted = sprites.filter((s, i) => i > firstChair && takeable(s));
+    if (!lifted.length) return sprites;
+    const rest = sprites.filter(s => !lifted.includes(s));
+    return [...rest.slice(0, firstChair), ...lifted, ...rest.slice(firstChair)];
+}
+
 // "Walking away" (q55 d): an owner who has just left the PC is still beside it for a
 // moment, and a tap on the PC used to open a conversation with them instead (access
 // model step 9 playtests). A velocity at the moment of the tap was not enough: seen

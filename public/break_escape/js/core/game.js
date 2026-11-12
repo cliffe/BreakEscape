@@ -6,7 +6,7 @@ import { resumeSpawnFor } from './resume-spawn.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
-import { aimX, withoutChairsIfOthers, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
+import { aimX, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
@@ -2325,7 +2325,10 @@ export async function create() {
                 if (objectsAtPosition.some(o => isObjectInInteractionRange(o))) {
                     objectsAtPosition.sort((a, b) => (sameRoomFrom(feet, b) ? 1 : 0) - (sameRoomFrom(feet, a) ? 1 : 0));
                 }
-                for (const obj of objectsAtPosition) {
+                // A takeable item under the tap comes before a chair drawn above it, so a far
+                // tap on a stick under a chair walks to the stick, not the seat (USB R3 m1)
+                const tapOrder = takeablesBeforeChairs(objectsAtPosition, o => !!o.isSwivelChair || !!window.seating?.isSeat(o));
+                for (const obj of tapOrder) {
                     if (obj.interactable && window.handleObjectInteraction) {
                         if (isObjectInInteractionRange(obj)) {
                             // Object is in range - face toward it then interact directly.
