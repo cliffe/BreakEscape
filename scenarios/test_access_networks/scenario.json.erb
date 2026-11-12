@@ -727,7 +727,7 @@
           "triggerOnInteract": [
             {
               "type": "confirm_action",
-              "text": "Plug the keystroke injector into Sam's PC? It is used up once it runs.",
+              "text": "Plug the keystroke injector into Sam's PC? It only types into a PC you are signed in at, and it is used up once it runs.",
               "onConfirm": [
                 { "type": "grant_foothold", "pc": "sam_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: Sam's desk" }
               ]
@@ -806,7 +806,13 @@
           "requiresItem": "kit_badusb",
           "requiresItemHint": "You would need a device to plug in here.",
           "triggerOnInteract": [
-            { "type": "grant_foothold", "pc": "kiosk_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: kiosk" }
+            {
+              "type": "confirm_action",
+              "text": "Plug the keystroke injector into the kiosk? It only types into a PC you are signed in at, and it is used up once it runs.",
+              "onConfirm": [
+                { "type": "grant_foothold", "pc": "kiosk_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: kiosk" }
+              ]
+            }
           ]
         },
         {
