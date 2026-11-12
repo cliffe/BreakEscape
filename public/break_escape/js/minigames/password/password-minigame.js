@@ -5,9 +5,7 @@ import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
-
-// How long a lockout's message stays on the sign-in screen before it closes.
-export const LOCKOUT_CLOSE_MS = 2500;
+import { isComputerType } from '../../utils/computer-keywords.js';
 
 /**
  * The keypad's line after a wrong password. A near miss (right apart from letter
@@ -35,11 +33,12 @@ export function passwordFieldLabel(title) {
  * zip archive's password are not a computer signing in, and on the wallpaper they read
  * as one (UX access R2).
  */
-const SCREEN_TYPE = /(^|[_-])(pc\d*|laptop|workstation|terminal|tablet|kiosk|desktop|computer|smartscreen|server)(\d*|[_-].*)$/;
 export function passwordScreenKind({ join = null, lockable = null } = {}) {
     if (join) return 'prompt';
-    const t = String(lockable?.scenarioData?.type || lockable?.type || '').toLowerCase();
-    return SCREEN_TYPE.test(t) ? 'screen' : 'prompt';
+    // The type, then the sprite's own name (its texture key), on the keyword list the
+    // container's desktop mode uses (utils/computer-keywords.js, code review R1 m3)
+    const names = [lockable?.scenarioData?.type, lockable?.type, lockable?.texture?.key];
+    return names.some((n) => isComputerType(n)) ? 'screen' : 'prompt';
 }
 
 // ── Sign-in mode (access model 5.3, step 8) ──────────────────────────────────
@@ -311,7 +310,7 @@ export class PasswordMinigame extends MinigameScene {
         // Name the lock over the field, as the PIN keypad does ("Enter PIN: Cable
         // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
         const fieldLabel = this.join ? 'Network key' : passwordFieldLabel(this.params.title);
-        const kind = passwordScreenKind({ join: this.join, lockable: this.params.lockable });
+        const kind = passwordScreenKind({ join: this.join, lockable: this.params.lockable || this.params.sprite });
         // The framework hides the header, so a Wi-Fi prompt names its network on the panel
         const promptTitle = this.join ? `Join Wi-Fi: ${this.join.apName || 'network'}` : '';
         
@@ -1196,7 +1195,9 @@ export class PasswordMinigame extends MinigameScene {
     /**
      * A lockout: the server's message once, on the screen's own message line (no toast and
      * no failure box over it, which showed the same words three times and covered the PC
-     * title), the form disabled, then the screen closes as before.
+     * title) and the form disabled. The screen stays open until the player closes it, so the
+     * reason (and any wait it names) can be read at any pace; it closed itself after 2.5 s
+     * (code review R1 m2). The Cancel button becomes Close.
      */
     signInLockedOut(result) {
         this.cleanup();
@@ -1205,6 +1206,20 @@ export class PasswordMinigame extends MinigameScene {
         this.setSignInMessage(message, 'error');
         this.gameResult = { success: false, reason: 'locked_out' };
         this.gameContainer?.querySelectorAll('.signin-mode input, .signin-mode button').forEach(el => { el.disabled = true; });
-        setTimeout(() => this.complete(false), LOCKOUT_CLOSE_MS);
+        // cleanup() took every listener, the closes too: put the player's closes back
+        const closeByPlayer = (e) => { e?.preventDefault?.(); e?.stopPropagation?.(); this.closeByPlayer(); };
+        const cancel = document.getElementById('minigame-cancel');
+        if (cancel) {
+            cancel.textContent = 'Close';
+            cancel.disabled = false;
+            this.addEventListener(cancel, 'click', closeByPlayer);
+            cancel.focus?.();
+        }
+        const cross = document.getElementById('minigame-close');
+        if (cross && this.params.disableClose !== true) this.addEventListener(cross, 'click', closeByPlayer);
+        if (this.params.disableClose !== true) {
+            this._fallbackCloseHandler = (e) => { if (e.key === 'Escape') this.closeByPlayer(); };
+            document.addEventListener('keydown', this._fallbackCloseHandler);
+        }
     }
 }

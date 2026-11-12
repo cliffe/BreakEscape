@@ -26,6 +26,7 @@ put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
 copy('utils/lock-scope-refusal.js');
+copy('utils/computer-keywords.js');
 copy('utils/author-html.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/password/password-minigame.js');
@@ -137,6 +138,17 @@ test('it stops only on a lockout, with the server\'s message', async () => {
     assert.equal(alerts.length, 0, 'no toast');
     assert.equal(document.querySelectorAll('.minigame-failure-message').length, 0, 'no failure box');
     assert.ok(q('#password-field').disabled && q('#submit-password').disabled, 'the form is disabled');
+    // Code review R1 m2: the screen stays open until the player closes it
+    await new Promise((r) => setTimeout(r, 3000));
+    assert.equal(ended.length, 0, 'not closed by itself');
+    assert.equal(mg.gameState.isActive, true);
+    assert.equal(messageText(), 'This account is locked on this PC.', 'the reason is still on screen');
+    const close = q('#minigame-cancel');
+    assert.equal(close.textContent, 'Close');
+    assert.equal(close.disabled, false);
+    close.click();
+    assert.equal(ended.length, 1, 'Close ends it');
+    assert.equal(ended[0][0], false);
 });
 
 test('not permitted keeps the screen open with the server\'s message, and no letter-case hint ever shows', async () => {
@@ -351,4 +363,14 @@ test('UX access R2: a Wi-Fi key and a non-computer lock get the plain prompt; a 
     for (const type of ['pc', 'pc3', 'laptop', 'workstation', 'lab-workstation', 'osint-workstation', 'kiosk', 'tablet', 'mail_terminal', 'smartscreen']) {
         assert.equal(passwordScreenKind({ lockable: { scenarioData: { type } } }), 'screen', type);
     }
+    // Code review R1 m3: the container's desktop keywords, as whole segments of the type
+    for (const type of ['security_console', 'mainframe', 'ipad', 'monitor', 'smartboard', 'display2']) {
+        assert.equal(passwordScreenKind({ lockable: { scenarioData: { type } } }), 'screen', type);
+    }
+    // a door or a room named for a server room, a room type, a word with pc inside: the plain panel
+    for (const type of ['door', 'room_servers', 'npc', 'spcial_case', 'monitoring']) {
+        assert.equal(passwordScreenKind({ lockable: { scenarioData: { type, name: 'Server Room' } } }), 'prompt', type);
+    }
+    // a launch that passes only the sprite: its texture key counts
+    assert.equal(passwordScreenKind({ lockable: { texture: { key: 'laptop2' } } }), 'screen');
 });

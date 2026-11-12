@@ -7,6 +7,7 @@ import { displayDashes } from '../../utils/display-dashes.js';
 import { resolveObjectField } from '../../utils/conditional-text.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
+import { mentionsComputer } from '../../utils/computer-keywords.js';
 
 
 
@@ -349,16 +350,9 @@ export class ContainerMinigame extends MinigameScene {
         const containerType = this.containerItem?.scenarioData?.type?.toLowerCase() || '';
         const containerImage = this.containerItem?.name?.toLowerCase() || '';
 
-        // Keywords that indicate desktop/computer devices
-        const desktopKeywords = [
-            'computer', 'pc', 'laptop', 'desktop', 'terminal', 'workstation',
-            'tablet', 'ipad', 'surface', 'monitor', 'screen', 'display',
-            'server', 'mainframe', 'console', 'kiosk', 'smartboard'
-        ];
-
-        // Check if any keyword matches
-        const allText = `${containerName} ${containerType} ${containerImage}`.toLowerCase();
-        return desktopKeywords.some(keyword => allText.includes(keyword));
+        // A keyword anywhere in the name, type or sprite name (the list is shared with the
+        // password screen: utils/computer-keywords.js)
+        return mentionsComputer(`${containerName} ${containerType} ${containerImage}`);
     }
 
     async loadContainerContents() {
