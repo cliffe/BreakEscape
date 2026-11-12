@@ -69,3 +69,23 @@ The existing "wall-aware" refusal (NPC already in a wall: no push) is unchanged.
 - The lab's "about every 15 seconds" (task description, `hint_tailgate_now`, `ruth_phone.ink`) is now about 17 s. Left alone: the ink line is voiced.
 - The rule in (g) covers patrol NPCs only. A needs NPC walking an errand can still be shoved. Extending it is a one-line change in `keepsRouteAgainstPlayer`, but it overlaps the needs builds running in parallel.
 - In test-npc-patrol the narrow-horizontal patroller stands at y 51, inside the top wall band. That is a scenario quirk, unrelated to this change.
+
+## Round 1 review fixes (2026-11-12)
+
+Fixes for `LAB_UX_NPC_CODE_REVIEW_R1.md`, commit 8782fe028.
+
+- **E1, the PIN window reopening with no keying.** The review's first fix. A new global `len_keying` is true from `npc_used_object:badge_reader` to `npc_used_object_done`, and false on `door_gate_closed` and `game_loaded`. The look counts on `len_at_door && len_keying`, so a gate opening as Len comes back out arms nothing. `door_gate_opened` now sets only `len_at_door`. `len_keyed` (true on done; false on keying start, the close and load) picks the "too late" toast. A fifth shelves toast covers the door open with no keying (just before he keys, or as he comes back out).
+- **E2.** The task description, `hint_tailgate_now` and an ERB comment now say about every 17 seconds. The only voiced line is `ruth_phone.ink` ("every fifteen seconds or so"), left unchanged as the review advised.
+- **G1.** The task text no longer says he has to squeeze past; it says the player can slip past him in the doorway. `README_scenario_design.md` now says a patrolling NPC cannot body-block, or be body-blocked, near walls.
+- **G2.** The player slide now also counts static bodies (desks, tables, collision objects) within 12 px, through the arcade `overlapRect` static query (`staticRectsNear`). Two new tests; the collider test fails with the change removed.
+- **F1.** `validate_npc_needs.rb` warns when `noticeRadius`, or the default 24, is less than a notice room's diagonal. `test_npc_needs` gets one warning, which is intended: the finder's radius of 4 is deliberate.
+- **R1.** The Rails test refuses "before it shuts", "while it/the door is open" and "until it shuts" in the shoulder-surf texts and the shelves' observations, pins the new mappings and checks every combination of five globals for exactly one toast.
+- **Nits.** F2 (comment back on `AVOID_RADIUS_TILES`), F3 (schema notes on string and 0 input), E3 (the validator's single-room warning now matches the engine: `multiRoom` true with a non-empty route, plus a test) and G5 (the code comment now says the pin lasts until the end of the physics step). Not done: a `TILE_SIZE` import in `npc-needs.js`, which has no imports and uses a bare 32 throughout.
+
+**Tests.** 98 JS files that import a changed module or run a changed validator: all pass. Rails: `lab_physical_pentest_secrets_test.rb` 36 runs, 0 failures, plus the five other lab test files, 52 runs, 0 failures. The validator shows no ❌ on the lab.
+
+**Live check** (keyless server on :3041, headless, setFPS(20) with fixed steps on, `[20, true]`):
+- Game 1525. After Len had keyed, the records gate was shut and reopened through the real `window.doorGates.close/open`, which send the real events into the real mappings. The state then is `len_at_door` true, `len_keying` false. A real `E` at the shelves gave no credit (`kp_pin_surfed` false) and showed the new "not keying" toast.
+- The same game, next round: door open at 43481 ms, keying 44187 ms (+0.7 s), `E` 0.86 s into the keying: credited, `opt_pin` ticked. The window is now the 2.5 s of keying, starting about 0.7 s after the door opens.
+- Game 1513, standing at the reviewer's mid-floor spot for three rounds, did not reproduce a natural exit reopening: the gate stayed open, or Len keyed with it shut. That is why the reopening was forced. In that run Len also went about 130 s without keying after a held-shut round, which may be G4; it was not chased.
+- Probe scripts: `exit_reopen_probe.js` and `exit_reopen_probe2.js` in the session scratchpad.
