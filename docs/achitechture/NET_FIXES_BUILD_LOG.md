@@ -50,7 +50,7 @@ same globals the NPC frustration path reads (`frustration_globals`).
 - New `test/controllers/break_escape/network_host_service_off_test.rb` (4 tests).
 - Added to `network_outages_test.rb`, `network_pivot_test.rb`, `test/js/network-links.test.mjs`,
   `test/js/network-view.test.mjs`, `test/js/validator-network-model.test.mjs`.
-- Full suites: see the report (filled in below).
+- Full suites under the shared lock: Rails 1804 runs, 0 failures, 0 errors, 1 skip; JS 507 of 507 files.
 
 ## Live proof (keyless server on :3037, game 1370)
 
