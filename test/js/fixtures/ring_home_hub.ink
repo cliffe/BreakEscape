@@ -59,3 +59,10 @@ Synced hub line.
 Narrator: A carrier tone hums on the line.
 + [Listen]
     -> narrated_home
+
+=== printing_home ===
+Thread here, printing.
+Narrator: A carrier tone hums on the line.
++ [Anything?]
+    Nothing.
+    -> printing_home
