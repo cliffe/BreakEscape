@@ -103,3 +103,21 @@ test('a swap back returns to the texture the sprite was created with, not the ty
     fire('bench_pc_off', true);
     assert.equal(s.texture.key, 'aw_pc_off1');
 });
+
+// Review R4 nit 2: the faint blue proximity outline is a copy made once, so a swap must reach it
+test('a variant swap also swaps the proximity ghost, both ways', () => {
+    const { registerSpriteVariantListeners, rooms, fire } = build();
+    const s = sprite('bench_pc', 'aw_pc_off1');
+    s.variantBaseKey = 'pc6';
+    s.proximityGhost = { texture: { key: 'aw_pc_off1' }, setTexture(k) { this.texture.key = k; } };
+    rooms.ward.objects.bench_pc = s;
+    const obj = { id: 'bench_pc', type: 'pc', spriteVariants: [{ condition: 'globalVars.bench_pc_off', value: 'aw_pc_off1' }] };
+    quiet(() => registerSpriteVariantListeners(s, obj, 'ward'));
+    quiet(() => fire('bench_pc_off', false));
+    assert.equal(s.proximityGhost.texture.key, 'pc6');
+    quiet(() => fire('bench_pc_off', true));
+    assert.equal(s.proximityGhost.texture.key, 'aw_pc_off1');
+    delete s.proximityGhost;
+    quiet(() => fire('bench_pc_off', false));
+    assert.equal(s.texture.key, 'pc6', 'no ghost (player away) is fine');
+});

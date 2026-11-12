@@ -719,12 +719,18 @@ function registerSpriteVariantListeners(sprite, scenarioObj, roomId) {
             const newKey = resolveObjectField(scenarioObj, 'sprite', baseKey);
             console.log('[spriteVariant] event fired for', objectId, 'new texture:', newKey);
             if (!obj || obj.texture?.key === newKey) return;
+            // The proximity ghost copied the key once when it was made, so it follows the swap
+            // (review R4 nit 2), as the locked screen and the jack look do
+            const swap = () => {
+                obj.setTexture(newKey);
+                if (typeof obj.proximityGhost?.setTexture === 'function') obj.proximityGhost.setTexture(newKey);
+            };
             if (!gameRef.textures.exists(newKey)) {
                 gameRef.load.image(newKey, `objects/${newKey}.png`);
-                gameRef.load.once('complete', () => obj.setTexture(newKey));
+                gameRef.load.once('complete', swap);
                 gameRef.load.start();
             } else {
-                obj.setTexture(newKey);
+                swap();
             }
         });
     }
