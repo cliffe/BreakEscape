@@ -134,7 +134,7 @@ module BreakEscape
       build(ivy_first: '<b>Ivy</b> & co')
       ask('ivy')
       assert_equal 'Same here <b>Ivy</b> & co, I lost my whole morning to it.', ask('tomasz').dig('post', 'text')
-      build(ivy_first: "I\u0000vy\u0007#{'z' * 60}")
+      build(ivy_first: "I\u0001vy\u0007#{'z' * 60}")
       ask('ivy')
       text = ask('tomasz').dig('post', 'text')
       name = text.sub('Same here ', '').sub(', I lost my whole morning to it.', '')
@@ -224,8 +224,11 @@ module BreakEscape
     # ── The Friendface phone slice (q63) ──
 
     test 'the thread poster phone holds the served replies to its posts; the replier phone its reply; nothing unserved' do
-      build(player_state: { 'inventory' => [IVY_PHONE.dup, TOM_PHONE.dup, OWN_PHONE.dup] })
+      build
       full_thread
+      # A held phone makes its NPC phoneless, so the phones reach the inventory after the thread
+      @game.reload.player_state['inventory'] = [IVY_PHONE.dup, TOM_PHONE.dup, OWN_PHONE.dup]
+      @game.save!
       ivy = open_phone('ivy')['feedPosts']
       assert_equal %w[ivy tomasz], ivy.keys.sort
       assert_equal %w[ivy_vent ivy_answer], ivy['ivy']['posts'].map { |p| p.dig('post', 'id') }
