@@ -152,3 +152,53 @@ test files pass (workarounds 3, habits 8, story gates 1, identities 5, grants 1)
 Sweep: all 176 scenarios generated with `main`'s script and this one, no failures. Only
 `test_access_networks` differs, and its regenerated graph is byte for byte the committed one,
 so nothing there changed.
+
+## Review R4
+
+`DUNGEON_GRAPH_9_3B_CODE_REVIEW_R4.md`, fixed in commit aa8b088b6.
+
+- **m1**: each key has two more label forms: the id form with `_` turned into spaces, and the key
+  with every run of spaces, `_` and `-` squeezed to one space. A fallback label built from an id
+  (`sea_breeze_2025_annex` drawn as `Sea Breeze 2025 Annex`) is now scrubbed, and the final
+  check counts these forms too.
+- **m2**: `DUNGEON_GRAPH_TEST_NO_SCRUB=1` prints a warning on every run. A stop while it is set
+  names the switch instead of blaming the generator. The validator runs the generator with the
+  switch removed from its environment.
+- **m3**: a stop deletes the `dungeon_graph.html`, `.md` and `.json` an earlier run left and says
+  so, and exits with status 3. The validator prints a ❌ error for status 3 and exits 1; any other
+  failure is still "non-fatal".
+- **m4**: a headless host admits a share only when a foothold reaches its network and its policy
+  (the host's `policy`, else `defaultPolicy`, as `Game#effective_policy` finds it) does not say
+  `remote: 'blocked'`. When every admitting host for an account is headless, the share hangs from
+  each host's sign-in lock (`lock_<pc>`, fed by the network and the account), so the foothold is
+  on the path into it.
+- **m5**: a hidden node carries `"hidden": true` in the JSON, and the HTML and Markdown legends get
+  one line explaining the stand-in text and `hidden_<n>` ids, only when something was hidden or
+  scrubbed (every other graph keeps its legend). The number is a salted SHA-256 of the id with
+  every key form cut out, modulo 10000, so it never depends on the key and does not move when an
+  unrelated node is added.
+- **n1, n3**: a hidden id is skipped when it holds a key form, matches any string in the scenario
+  (as written or as a node id), or is already handed out. A one-character key that every
+  candidate holds tries other separators, then stops with a message.
+- **n2**: skeleton ids use the same prefix and skip numbers that hold a key form, and the
+  skeleton's start room has a blank label, so the skeleton holds no text the page lacks.
+- **n4**: the squeezed forms (id form and spaced form) are used for labels and ids only while
+  they keep at least half the key; the key as written is always used. Psk `!!a!!` no longer
+  scrubs every `a`. The validator warning for a psk under eight characters was already in
+  `scripts/validate_network.rb` with a test.
+- **n5**: the `Written:` lines print the scrubbed path. The validator's `Dungeon graph:` line
+  still prints the path the author typed, as its `Validating scenario:` line does.
+
+Tests: 52 in `dungeon-graph-networks.test.mjs`, all passing (9 new: underscore and hyphen keys in
+ids; the switch warning and its stop message; stale files deleted; the validator stripping the
+switch and counting a status 3 stop, with a stand-in generator; a headless host with remote
+sign-in blocked by its own or the default policy; hidden ids marked, explained and stable when a
+room is added; no clash with authored `hidden_<n>` ids and no false stop for psk `den_1`; short
+keys `n1`, `!!a!!` and `_`; the `Written:` lines). The headless share test now expects the edge
+from `lock_door_box`. All 9 new tests and the changed one fail on the R3 script. Other dungeon
+graph files pass (grants 1, habits 8, identities 5, story gates 1, workarounds 3), and
+`validator-network-model.test.mjs` 61 of 61. The other test files that run `validate_scenario.rb` pass (the last 30 checked by count, every one 0 failures).
+
+Sweep: all 176 scenarios generated with `main`'s script and this one, no failures. Only
+`test_access_networks` differs, and its regenerated graph is byte for byte the committed one.
+The reviewer's fixtures (`r4/f1.mjs` to `f5.mjs`) all behave as the findings ask.
