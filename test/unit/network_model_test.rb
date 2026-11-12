@@ -131,6 +131,24 @@ class NetworkModelTest < ActiveSupport::TestCase
     assert_equal [[]], NM.reach_conditions(d, 'a', { 'kind' => 'printer' }), 'no network'
   end
 
+  # ---- Outages (sub-slice O, 5.2) ----
+
+  test 'truthy? is false for each globals-relevant falsy value and true for everything else' do
+    [nil, false, 0, 0.0, ''].each { |falsy| refute NM.truthy?(falsy), "#{falsy.inspect} should be falsy" }
+    ['false', 'x', '0', true, 1, -1, 0.1, [], {}, ' '].each { |truthy| assert NM.truthy?(truthy), "#{truthy.inspect} should be truthy" }
+  end
+
+  test 'reach_conditions over a link carries each network downIf global on the route' do
+    d = linked_scenario([%w[a b]])
+    d['networks']['a']['downIf'] = 'a_down'
+    d['networks']['b']['downIf'] = 'b_down'
+    res_on_b = { 'network' => 'b' }
+    assert_equal [%w[a_down b_down]], NM.reach_conditions(d, 'a', res_on_b), 'both networks on the route are conditions'
+    assert_equal [['b_down']], NM.reach_conditions(d, 'b', res_on_b), 'same network: its own downIf only'
+    # The station network's own outage is a condition even for a same-network resource.
+    assert_equal [['a_down']], NM.reach_conditions(d, 'a', { 'network' => 'a' })
+  end
+
   test 'a scenario with no networks answers empty everywhere' do
     bare = { 'startRoom' => 'lobby', 'rooms' => { 'lobby' => { 'objects' => [{ 'id' => 'pc', 'lockType' => 'login' }] } } }
     assert_empty NM.networks(bare)

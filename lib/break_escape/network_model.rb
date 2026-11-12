@@ -298,6 +298,17 @@ module BreakEscape
       paths.map { |path| path.map { |net_id| down_of.call(net_id) }.compact.uniq }
     end
 
+    # Outages (slice 9.3b sub-slice O, docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.2).
+    # True unless the value is one of the globals-relevant falsy forms: false, nil, 0, 0.0,
+    # "" and a missing key (read as nil) are falsy; everything else, the string "false"
+    # included, is truthy. This matches slice 9.2's npc-work.js `truthy` and the server's own
+    # truthy_global? (npc_frustration.rb), so the server, the browser and the validator decide
+    # an outage the same way. It is the globals-relevant subset of JavaScript's rule: a
+    # scenario global is never NaN or undefined.
+    def truthy?(value)
+      !(value.nil? || value == false || value == 0 || value == '')
+    end
+
     # Wi-Fi (slice 9.3b sub-slice W, docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.3).
     # The { ssid, psk } block of a network, or nil. It lives on the network and never ships
     # to the browser; psk absent means an open network.
