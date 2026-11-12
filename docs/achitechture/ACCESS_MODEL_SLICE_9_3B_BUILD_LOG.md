@@ -79,7 +79,59 @@ Under the shared lock: `bin/rails test` 1619 runs, 23653 assertions, 0 failures,
   regenerated to match the new objects.
 - No-exposure controller test (`network_no_exposure_test.rb`) was not extended with an implant case;
   the implant's "a foothold and nothing else" and the no-leak of preconditions are covered by
-  `network_implants_test.rb` and the live leak scan. Worth adding when K/O land.
+  `network_implants_test.rb` and the live leak scan. Worth adding when K/O land. (Closed in R1,
+  server minor 2.)
+
+### Review R1 outcomes (server `..._R1_SERVER.md`, client `..._R1_CLIENT.md`)
+
+Both reviews: no blockers, one client Major. Fixes applied:
+
+- **Client M1 (tray reconcile)** `network-links.js` `implant()` no longer passes the whole tray to
+  `syncInventoryFromServer`, which could remove a tray item whose own pickup persist was still in
+  flight. `implant_foothold!` now returns `consumedId` (the one device the session shape removes;
+  the dropped shape consumes nothing), and the client reconciles only `[foothold.itemId,
+  consumedId]`, as 9.3a's `plant()` does. New JS test: an unrelated, not-yet-synced tray item is
+  kept; plus server assertions that `consumedId` names the device (session) or is nil (dropped).
+- **Client m1 (plain-text toasts)** adopted P's `toast()` wrapper passing `{ plainText: true }`, so
+  server/author strings (USB refusal, network names) render as text; matches main for a clean merge.
+- **Client m2 (test gaps)** added JS tests: the dropped shape (N11), a one-retry-then-success path
+  (mock call counter), the M1 kept-item case, and a new `grant-foothold-action.test.mjs` for
+  apply-actions `grant_foothold` (shape mapping, `pc`/`path` forwarding, no-networkLinks warning).
+- **Client n1** `_publishPlanted` now runs before the `already` return, as `plant()` does (asserted).
+- **Client n2** a foothold lost after both retries shows a plain-text toast rather than failing
+  silently (asserted).
+- **Server minor 1** one grant_foothold per `[pc, shape]` is the single rule: the validator already
+  enforced it; the spec (5.5) and the `grant_foothold_action_for` comment now say so, and document
+  that `path` is forwarded but not load-bearing (no two actions can reach the same pair).
+- **Server minor 2** `network_no_exposure_test.rb` gains a `POST /network/implant` not_ready case
+  under `refute_exposed`.
+- **Server minor 3** the dropped shape stays graded weak (client-reported trigger, a bounded host
+  list, every host still password-checked); this matches the plan 5.5 grading and is unchanged.
+- **Server nits** the dropped branch now wraps the inventory in `Array(...)` before `<<`; a comment
+  on `inventory_item_matching` notes `needsHeld` should name a device by id when types collide.
+
+### Live check R1 (port 3026, keyless server, game 1263)
+
+18/18 checks: N13 refused (no foothold, BadUSB kept), N12 BadUSB consumed with the foothold on
+`office_lan` and an unrelated held `kit_stick` kept through the implant (M1), N11 dropped-stick
+foothold with no session, the implant view listing only office hosts, three tampered requests
+refused, and a `?skip_resume=1` reload keeping both implant footholds with their `via` and network.
+
+### Merge of main (sub-slices W then P) into build/9-3b-i
+
+Merged main twice (W at `708b154e8`, then P at `32b767faf`). Conflicts were the shared symbol
+lists (controller before/around_action), the new route, the policy method, `api-client`'s new
+method, `link_item_for`'s via branch, the network-links event doc, and the network test files,
+scenario, PLAYTEST and this log; all additive, both sides kept. The "needs slice 9.3b" guard test
+now asserts only K's `networkLinks` and O's `downIf`, since grant_foothold (I), wifiAp (W) and
+portSecurity (P) have all landed. Used main/P's `toast()` wrapper and `toastCalls` mock.
+
+### R1 suites (after both merges, both under the shared lock)
+
+- `bin/rails test`: 1662 runs, 24397 assertions, 0 failures, 0 errors, 1 skip.
+- `bin/test-js -j 3`: 496 files passed, 0 failed.
+- Changed JS files alone: `network-links.test.mjs` 55 pass, `validator-network-model.test.mjs`
+  49 pass, new `grant-foothold-action.test.mjs` 4 pass.
 
 ## Sub-slice W: Wi-Fi (branch `build/9-3b-w`, from `main` 1ba8c5cd7)
 
