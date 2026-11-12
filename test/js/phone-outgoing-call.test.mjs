@@ -255,6 +255,25 @@ test('the reset runs once and only for a ringer call', () => {
     assert.deepEqual(log.went, ['start']);
 });
 
+test('A3 R1 m1: after the move to the home knot the reset reads it ahead against the thread\'s history, before it saves', () => {
+    const { inst, log } = make();
+    const history = [{ type: 'npc', text: 'Hub line.' }];
+    inst.npcManager.getConversationHistory = (id) => { log.historyFor = id; return history; };
+    inst.conversation.settleOnSeenLines = (h) => { log.order.push('settle'); log.settledWith = h; return true; };
+    inst.closeConversation();
+    assert.equal(log.historyFor, 'caller');
+    assert.equal(log.settledWith, history);
+    assert.ok(log.order.indexOf('goToKnot') < log.order.indexOf('settle'), 'after the move home');
+    assert.deepEqual(log.saved, ['start'], 'saved once, after the settle');
+});
+
+test('A3 R1 m1: a call that diverted out of its knots is not settled either', () => {
+    const { inst, log } = make({ knot: 'elsewhere' });
+    inst.conversation.settleOnSeenLines = () => { log.settled = true; };
+    inst.closeConversation();
+    assert.equal(log.settled, undefined);
+});
+
 // ---- buttons ------------------------------------------------------------------------------
 
 test('wiring: a ringer call has no Cancel and no Add to Notepad; the x is End call', () => {

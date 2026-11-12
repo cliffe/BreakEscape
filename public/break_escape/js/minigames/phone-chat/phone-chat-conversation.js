@@ -7,7 +7,7 @@
  * @module phone-chat-conversation
  */
 
-import { phoneStepLines, callStartKnots } from './phone-chat-speaker.js';
+import { phoneStepLines, callStartKnots, classifyPhoneLine } from './phone-chat-speaker.js';
 
 // A preload in progress, per NPC entry. The inventory (on pickup) and the phone-chat
 // minigame (on open) both preload; a second caller waits for the first instead of
@@ -1025,6 +1025,51 @@ export default class PhoneChatConversation {
     /** True for a `#delivery:` tag (tts-delivery.js reads the note from it). */
     static isDeliveryTag(tag) {
         return typeof tag === 'string' && /^\s*delivery\s*:/i.test(tag);
+    }
+
+    /**
+     * Run the story, silently, from where it is to its next choices, when the thread already shows
+     * everything that run prints (A3 R1 m1). A ringer call's reset moves the story to the contact's
+     * home knot without continuing; the thread's next open would then continue the knot and print its
+     * first line a second time (the player has it in the thread already, preloaded or read). This
+     * reads the knot out now instead, so the next open finds the story resting on its choices and
+     * shows them, with no new line.
+     *
+     * Nothing is written: the global observer is off, no tag runs, nothing goes to the thread. The
+     * run is undone, leaving the story where it was, when
+     *   - a printed line is not already in the thread (the knot has never been shown, or prints
+     *     something new now), so a first open still shows it;
+     *   - a step came from one of the call's own knots (a home router that diverts into a call knot
+     *     would leave that call's choices on the thread as texts);
+     *   - it does not end on choices, or throws.
+     * @param {Array<{type?: string, text?: string}>} history - the thread's messages
+     * @returns {boolean} true when the story was settled on the home knot's choices
+     */
+    settleOnSeenLines(history) {
+        const story = this.engine?.story;
+        if (!this.storyLoaded || !story || !story.canContinue) return false;
+        const seen = new Set();
+        for (const m of Array.isArray(history) ? history : []) {
+            if (m && typeof m.text === 'string' && m.text.trim()) seen.add(m.text.trim());
+        }
+        const before = story.state.ToJson();
+        const observer = story.variablesState.variableChangedEvent;
+        story.variablesState.variableChangedEvent = null;
+        let ok = false;
+        try {
+            const steps = PhoneChatConversation.collectSteps(story);
+            const lines = steps.flatMap(step => phoneStepLines(step.text, step.tags));
+            const inCall = steps.some(step => step.knot && this.callKnots?.has(step.knot));
+            const shown = line => seen.has(line) || seen.has(classifyPhoneLine('npc', line).text);
+            ok = !inCall && (story.currentChoices?.length || 0) > 0 && lines.every(shown);
+        } catch (e) {
+            console.warn('⚠️ Could not read the home knot ahead; leaving the story on it:', e.message);
+        }
+        if (!ok) {
+            try { story.state.LoadJson(before); } catch (e) { console.warn('⚠️ Could not restore the story after a read-ahead:', e.message); }
+        }
+        story.variablesState.variableChangedEvent = observer;
+        return ok;
     }
 
     /**

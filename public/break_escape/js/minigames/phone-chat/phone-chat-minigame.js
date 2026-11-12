@@ -1388,6 +1388,9 @@ export class PhoneChatMinigame extends MinigameScene {
         const ended = !story?.canContinue && !(story?.currentChoices?.length);
         if (!ended && !(knot && this.conversation.callKnots?.has(knot))) return;
         this.conversation.goToKnot(home);                     // moves without continuing
+        // The thread already shows the home knot's lines (A3 R1 m1): leave the story resting on its
+        // choices, so the next open adds no second copy of the hub line
+        this.conversation.settleOnSeenLines?.(this.npcManager?.getConversationHistory?.(this.currentNPCId));
         this._saveStoryStateFor(this.currentNPCId, this.conversation);
     }
 
