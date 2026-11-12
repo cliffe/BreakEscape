@@ -949,7 +949,7 @@ module BreakEscape
       [first, prof && prof['name'], npc['displayName'], npc['id']].each do |c|
         next unless c.is_a?(String)
 
-        clean = c.gsub(/[[:cntrl:]]/, '')
+        clean = c.gsub(/[[:cntrl:]\p{Cf}]/, '')   # Cf: no bidi override or zero-width character (C3 R1 n1)
         return clean[0, FRIENDFACE_NAME_MAX] unless clean.strip.empty?
       end
       ''

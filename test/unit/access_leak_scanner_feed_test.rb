@@ -565,4 +565,11 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     b = { 'social' => { 'intelFacts' => { 'reply_fact' => reply_data['social']['intelFacts']['reply_fact'] } } }
     assert_empty summary(scanner.scan(rows(['GET', SCENARIO, b])))
   end
+
+  # Review C3 R1 m5: a reply with two pieces of 12 or more is one post and two texts
+  test 'C3: feed_posts counts distinct posts and feed_texts counts the registered pieces' do
+    c = AccessLeakScanner.new(reply_data).counts
+    assert_equal 4, c[:feed_posts], 'ivy_vent, ivy_re_tom, tom_vent, tom_re_ivy'
+    assert_equal 5, c[:feed_texts], 'two vents, two pieces of ivy_re_tom, one of tom_re_ivy'
+  end
 end

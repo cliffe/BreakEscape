@@ -184,16 +184,110 @@ test('text rules: pieces around {name}, a piece inside shipped text, {name} in a
     assertHas(list, 'holds {name} but is not a reply');
 });
 
+// Review C3 R1 m6: a piece of a reply inside a chatter line is a unique-text hit
+test('text rules: a reply piece inside a chatter line raises the unique-text warning', { skip }, () => {
+    const s = pair();
+    s.chatter = { office: ['Overheard: Tomasz, did IT ever ring you back about it? No idea.'] };
+    assertHas(issues(s), 'piece "did IT ever ring you back about it" occurs inside another string that ships from the start');
+    assertNot(issues(pair()), 'occurs inside another string');
+});
+
+// Review C3 R1 m1: {name} is filled as plain text, so a backslash in a name is not an escape
+test('a name with backslash sequences is filled as typed in the validator', { skip }, () => {
+    const s = pair();
+    s.social.people[0].forms.first = "Bo\\'b\\0";
+    s.chatter = { office: ["Heard: Same here Bo\\'b\\0, I lost my whole morning to it. Shame."] };
+    assertHas(issues(s), `piece "Same here Bo\\'b\\0, I lost my whole morning to it." occurs inside another string`);
+});
+
+// Review C3 R1 m2: an empty thread field beside a valid one is refused by the server, so it is an error
+test('an empty replyTo beside a valid replyToComplaint is an error', { skip }, () => {
+    const asha = npc('asha', [own('asha_vent', 'Asha vents about the drive.', { complaint: 'c1' }),
+        { ...reC('asha_re', '{name}, mine is down as well here.', 'c1', 'asha_vent'), replyTo: '' }]);
+    const kofi = npc('kofi', [own('kofi_vent', 'Kofi vents about the drive.', { complaint: 'c1' }),
+        { ...reC('kofi_re', '{name}, mine is down as well today.', 'c1', 'kofi_vent'), replyTo: null }]);
+    const list = issues(scenario([asha, kofi]));
+    assertHas(list, 'asha.feed.posts[1].replyTo is present but not a non-empty string');
+    assertNot(list, 'kofi.feed.posts[1].replyTo is present');
+    assertNot(list, 'needs exactly one of replyTo and replyToComplaint');
+});
+
+// Review C3 R1 m3: ink named by any storyPath ships, not only a room NPC's
+test('a reply piece inside the ink of a mail-reply record or an object raises the unique-text warning', { skip }, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'c3-ink-'));
+    try {
+        writeFileSync(join(dir, 'contact.ink'), '=== start ===\nIvy, did IT ever ring you back about it?\n-> END\n');
+        const s = pair();
+        s.social.mailClient = { contacts: [{ npc: 'helpdesk', emailRecord: { storyPath: join(dir, 'contact.ink') } }] };
+        assertHas(issues(s), 'piece "did IT ever ring you back about it" occurs inside another string that ships from the start');
+        const t = pair();
+        t.rooms.office.objects.push({ type: 'notes', name: 'Note', storyPath: join(dir, 'contact.ink') });
+        assertHas(issues(t), 'piece "did IT ever ring you back about it" occurs inside another string that ships from the start');
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+// Review C3 R1 m6: plan section 10's thread-never-opens warning
+test('a reply whose every thread post can never fire warns that its thread can never open', { skip }, () => {
+    const s = pair();
+    s.rooms.office.npcs[1].feed.posts[0].when = { global: 'undeclared' };
+    assertHas(issues(s), "tomasz.feed.posts[1]'s thread can never open");
+    assertNot(issues(pair()), 'thread can never open');
+});
+
 test('report lines: reply, answer, second reply and per-complaint members, names from forms.first', { skip }, () => {
     const lines = report(pair());
     assertHas(lines, "Reply Tomasz replies to Ivy's 'ivy_vent', in place of 'tom_vent'");
-    assertHas(lines, "Reply Ivy answers in 'ivy_vent''s thread, in place of 'ivy_still'");
-    assertHas(lines, "Reply Tomasz may reply again in 'ivy_vent''s thread, in place of 'tom_still', only if Ivy has answered there");
+    assertHas(lines, "Reply Ivy answers in the thread of 'ivy_vent', in place of 'ivy_still'");
+    assertHas(lines, "Reply Tomasz may reply again in the thread of 'ivy_vent', in place of 'tom_still', only if Ivy has answered there");
     const asha = npc('asha', [own('asha_vent', 'Asha vents about the drive.', { complaint: 'c1' }),
         reC('asha_re', '{name}, mine is down as well here.', 'c1', 'asha_vent')]);
     const kofi = npc('kofi', [own('kofi_vent', 'Kofi vents about the drive.', { complaint: 'c1' }),
         reC('kofi_re', '{name}, mine is down as well today.', 'c1', 'kofi_vent')]);
-    assertHas(report(scenario([asha, kofi])), "Complaint 'c1': Asha Fullname, Kofi Fullname, each replying in place of their vent");
+    assertHas(report(scenario([asha, kofi])), "Complaint 'c1': Asha Fullname, Kofi Fullname can reply in place of their vent. Possible members: Asha Fullname, Kofi Fullname.");
+    // A vent-only member is a possible member but is not listed as replying (review C3 R1 n2)
+    const mo = npc('mo', [own('mo_vent', 'Mo vents about the drive as well.', { complaint: 'c1' })]);
+    assertHas(report(scenario([asha, kofi, mo])), "Complaint 'c1': Asha Fullname, Kofi Fullname can reply in place of their vent. Possible members: Asha Fullname, Kofi Fullname, Mo Fullname.");
+});
+
+// Review C3 R1 m6: the second-answer and complaint second-reply report lines
+test('report lines: a second answer and a complaint second reply', { skip }, () => {
+    const lines = report(pair([own('ivy_third', 'Day three and still no shared drive at all.'),
+        reTo('ivy_answer2', '{name}, IT says it is a failed disk now.', 'ivy_vent', 'ivy_third')]));
+    assertHas(lines, "Reply Ivy may answer again in the thread of 'ivy_vent', in place of 'ivy_third', only if another NPC has replied since Ivy's last answer");
+    const asha = npc('asha', [own('asha_vent', 'Asha vents about the drive.', { complaint: 'c1' }),
+        reC('asha_re', '{name}, mine is down as well here.', 'c1', 'asha_vent'),
+        own('asha_later', 'Asha posts again about the drive.'),
+        reC('asha_re2', '{name}, still down here as well, sadly.', 'c1', 'asha_later')]);
+    const kofi = npc('kofi', [own('kofi_vent', 'Kofi vents about the drive.', { complaint: 'c1' }),
+        reC('kofi_re', '{name}, mine is down as well today.', 'c1', 'kofi_vent')]);
+    assertHas(report(scenario([asha, kofi])), "Reply Asha Fullname may reply again in a 'c1' vent's thread, in place of 'asha_later', only if the vent's poster has answered since Asha Fullname's last reply");
+});
+
+// Review C3 R1 m6: the "share no cause or need" note, and its absence when they share one
+test('report lines: a reply and its thread post with no shared cause or need get a note', { skip }, () => {
+    const note = 'share no cause or need';
+    const tomLine = l => l.find(x => x.includes("Reply Tomasz replies to Ivy's 'ivy_vent'")) || '';
+    const apart = pair();
+    apart.rooms.office.npcs[1].feed.posts[0].when = { cause: 'down', need: 'work' };
+    apart.rooms.office.npcs[0].feed.posts[1].when = { cause: 'unreachable', need: 'social_media' };
+    assert.ok(tomLine(report(apart)).includes(note), tomLine(report(apart)));
+    const shared = pair();
+    shared.rooms.office.npcs[1].feed.posts[0].when = { cause: 'down', need: 'work' };
+    shared.rooms.office.npcs[0].feed.posts[1].when = { cause: 'down', need: 'work' };
+    assert.ok(!tomLine(report(shared)).includes(note), tomLine(report(shared)));
+});
+
+// Review C3 R1 m4: the Feed and Reactive feed lines count replies apart from posts
+test('report lines: Feed and Reactive feed count replies apart and time own posts only', { skip }, () => {
+    const lines = report(pair());
+    assertHas(lines, 'Feed ivy (friendface, ivy): 2 posts (plus 2 replies, each in place of an own post); first urgent');
+    const feed = lines.find(l => l.includes('Feed ivy (friendface'));
+    assert.match(feed, /posts expected at about \d+:\d\d, \d+:\d\d \(/, feed);
+    assertHas(lines, 'Reactive feed ivy: order reactive_first, 2 reactive post(s), 2 replies.');
+    assertHas(lines, "ivy_answer: a reply, stands in for 'ivy_still'");
+    assertNot(lines, 'ivy_answer: fires when');
 });
 
 test('a reply piece inside an ink line raises the unique-text warning; the filled text does not', { skip }, () => {

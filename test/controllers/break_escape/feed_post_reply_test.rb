@@ -142,6 +142,20 @@ module BreakEscape
       refute_match(/[[:cntrl:]]/, text)
     end
 
+    # Review C3 R1 m1: the name is plain text, so Ruby's replacement escapes are not read
+    test 'a name with backslash sequences ships as typed' do
+      build(ivy_first: "Bo\\'b \\0 \\& \\\\ \\`")
+      ask('ivy')
+      assert_equal "Same here Bo\\'b \\0 \\& \\\\ \\`, I lost my whole morning to it.", ask('tomasz').dig('post', 'text')
+    end
+
+    # Review C3 R1 n1: Unicode format characters (bidi overrides, zero-width) are stripped too
+    test 'a name with a right-to-left override or zero-width space ships without them' do
+      build(ivy_first: "I‮vy​")
+      ask('ivy')
+      assert_equal 'Same here Ivy, I lost my whole morning to it.', ask('tomasz').dig('post', 'text')
+    end
+
     test 'a reply authored with a fact ships without it, and the fact stays in the bootstrap' do
       build(tom_extra: { 'fact' => 'tom_secret' })
       get scenario_game_url(@game), as: :json

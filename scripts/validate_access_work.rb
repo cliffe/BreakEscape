@@ -1483,13 +1483,22 @@ module ValidateAccessWork
     out
   end
 
-  # C3 (plan 7): the text of every room NPC's story, compiled or .ink source with its INCLUDEs,
-  # read as plain text. A reply piece inside an ink line ships from the start.
+  # C3 (plan 7): the text of every story the scenario ships (any `storyPath` anywhere: room NPCs,
+  # phone contacts, timed conversations, mail-reply records, objects), compiled or .ink source with
+  # its INCLUDEs, read as plain text. A reply piece inside an ink line ships from the start.
+  # Bounded: each file is read once, however many records name it (review C3 R1 m3).
   def story_texts(json_data)
-    files = room_npcs(json_data).filter_map do |e|
-      sp = e[:npc]['storyPath']
-      AW.present_string?(sp) ? [story_file(sp), ink_file(sp)] : nil
-    end.flatten.compact.uniq
+    paths = []
+    walk = lambda do |v|
+      case v
+      when Hash
+        paths << v['storyPath'] if AW.present_string?(v['storyPath'])
+        v.each_value { |x| walk.call(x) }
+      when Array then v.each { |x| walk.call(x) }
+      end
+    end
+    walk.call(json_data)
+    files = paths.uniq.flat_map { |sp| [story_file(sp), ink_file(sp)] }.compact.uniq
     files.flat_map do |f|
       [File.read(f, encoding: 'UTF-8')] + (f.end_with?('.ink') ? ink_included_texts(f) : [])
     rescue SystemCallError
@@ -1788,12 +1797,19 @@ module ValidateAccessWork
       feed = npc['feed']
       next unless feed.is_a?(Hash) && feed['posts'].is_a?(Array)
 
-      reactive = feed['posts'].select { |p| p.is_a?(Hash) && AW.reactive_post?(p) }
-      next if reactive.empty?
+      # Replies stand in for an own post's slot and never fire at their own position, so they
+      # are counted apart and their detail left to the Reply lines (review C3 R1 m4)
+      reactive = AW.own_feed_posts(npc).select { |p| AW.reactive_post?(p) }
+      replies = AW.feed_replies(npc)
+      next if reactive.empty? && replies.empty?
 
-      lines << "ℹ️ Reactive feed #{npc['id']}: order #{AW.feed_order(npc)}, #{reactive.size} reactive post(s)."
+      extra = replies.empty? ? '' : ", #{replies.size} repl#{replies.size == 1 ? 'y' : 'ies'}"
+      lines << "ℹ️ Reactive feed #{npc['id']}: order #{AW.feed_order(npc)}, #{reactive.size} reactive post(s)#{extra}."
       reactive.each do |post|
         lines << "ℹ️   #{post['id']}: #{reactive_condition_words(json_data, npc, post['when'])}"
+      end
+      replies.each do |r|
+        lines << "ℹ️   #{r['id']}: a reply, stands in for '#{r['insteadOf']}' (see the Reply lines)"
       end
     end
   end
@@ -1833,9 +1849,13 @@ module ValidateAccessWork
       n = npc['needs']['social_media']
       decay = n['decayPerMin'].is_a?(Numeric) && n['decayPerMin'].positive? ? n['decayPerMin'].to_f : nil
       urgent = n['urgentAt'].is_a?(Numeric) ? n['urgentAt'].to_f : nil
-      posts = AW.feed_posts(npc)
+      # One post per alternative set: a reply only takes its own post's slot (review C3 R1 m4)
+      posts = AW.own_feed_posts(npc)
+      nrep = AW.feed_replies(npc).size
+      counted = "#{posts.size} post#{posts.size == 1 ? '' : 's'}"
+      counted += " (plus #{nrep} repl#{nrep == 1 ? 'y' : 'ies'}, each in place of an own post)" if nrep.positive?
       unless decay && urgent
-        lines << "ℹ️ Feed #{npc['id']}: #{posts.size} posts, but its social_media need has no valid decayPerMin and urgentAt: it never posts."
+        lines << "ℹ️ Feed #{npc['id']}: #{counted}, but its social_media need has no valid decayPerMin and urgentAt: it never posts."
         next
       end
       initial = n['initial'].is_a?(Numeric) ? n['initial'].to_f.clamp(0, 100) : 100.0
@@ -1844,7 +1864,7 @@ module ValidateAccessWork
       use = AW.shortest_use_seconds(json_data, npc, 'social_media')
       times = posts.each_index.map { |i| first + use + (i * (period + use)) }
       at = times.map { |t| secs = t.round; format('%d:%02d', secs / 60, secs % 60) }.join(', ')
-      lines << "ℹ️ Feed #{npc['id']} (#{npc['feed']['site']}, #{npc['feed']['person']}): #{posts.size} posts; first urgent at " \
+      lines << "ℹ️ Feed #{npc['id']} (#{npc['feed']['site']}, #{npc['feed']['person']}): #{counted}; first urgent at " \
                "#{first.round} s, then about every #{(period + use).round} s; posts expected at about #{at} (needs clock, " \
                "after the room loads). Server floor #{AW.post_floor(json_data, npc).round} s between posts."
     end
@@ -1915,7 +1935,7 @@ module ValidateAccessWork
 
     pieces = AW.reply_text_pieces(text)
     names = reply_names(json_data, npc, post)
-    filled = names.empty? ? [text.gsub('{name}', '')] : names.map { |n| text.gsub('{name}', n) }
+    filled = names.empty? ? [text.gsub('{name}', '')] : names.map { |n| text.gsub('{name}') { n } }
     filled.each do |f|
       pws.each do |owner, pw|
         err(issues, "#{tag}.text contains #{owner}'s password: feed text ships once its post is out.") if f.include?(pw)
@@ -1979,6 +1999,14 @@ module ValidateAccessWork
     err(issues, "#{tag} is a reply with no insteadOf: every reply stands in for one of its NPC's own reactive posts.") unless AW.present_string?(post['insteadOf'])
     named = [AW.present_string?(post['replyTo']), AW.present_string?(post['replyToComplaint'])].count(true)
     err(issues, "#{tag} needs exactly one of replyTo and replyToComplaint (it has #{named}).") unless named == 1
+    # The server counts any non-null thread field (AccessWork.well_formed_reply?), so an empty or
+    # non-string one beside a valid one stops the reply ever serving (review C3 R1 m2)
+    %w[replyTo replyToComplaint].each do |k|
+      next if post[k].nil? || AW.present_string?(post[k])
+
+      err(issues, "#{tag}.#{k} is present but not a non-empty string: the server then counts two thread fields " \
+                  'and never serves the reply. Remove the field or give it a post id or complaint tag.')
+    end
     err(issues, "#{tag} is a reply and carries `complaint`: only an own post (a vent) can be tagged.") unless post['complaint'].nil?
     err(issues, "#{tag} is a reply and carries a fact: replies are about the needs only (q60).") unless post['fact'].nil?
 
@@ -2066,6 +2094,7 @@ module ValidateAccessWork
     index = feed_post_index(json_data)
     name = ->(n) { AW.friendface_name(json_data, n) }
     complaints = {}
+    repliers = Hash.new { |h, k| h[k] = [] }
     room_npcs(json_data).each do |e|
       npc = e[:npc]
       AW.own_feed_posts(npc).each { |p| (complaints[p['complaint']] ||= []) << npc if AW.present_string?(p['complaint']) }
@@ -2075,6 +2104,7 @@ module ValidateAccessWork
         nth = (seen[key] += 1)
         if AW.present_string?(r['replyToComplaint'])
           (complaints[r['replyToComplaint']] ||= []) << npc
+          repliers[r['replyToComplaint']] << npc
           next if nth == 1
 
           lines << "ℹ️ Reply #{name.call(npc)} may reply again in a '#{r['replyToComplaint']}' vent's thread, in place of " \
@@ -2086,10 +2116,10 @@ module ValidateAccessWork
 
         if owner['id'] == npc['id']
           lines << if nth == 1
-                     "ℹ️ Reply #{name.call(npc)} answers in '#{r['replyTo']}''s thread, in place of '#{r['insteadOf']}', only if a reply " \
+                     "ℹ️ Reply #{name.call(npc)} answers in the thread of '#{r['replyTo']}', in place of '#{r['insteadOf']}', only if a reply " \
                        'is out by the time that post is due.'
                    else
-                     "ℹ️ Reply #{name.call(npc)} may answer again in '#{r['replyTo']}''s thread, in place of '#{r['insteadOf']}', only " \
+                     "ℹ️ Reply #{name.call(npc)} may answer again in the thread of '#{r['replyTo']}', in place of '#{r['insteadOf']}', only " \
                        "if another NPC has replied since #{name.call(npc)}'s last answer by the time that post is due."
                    end
           next
@@ -2097,7 +2127,7 @@ module ValidateAccessWork
         line = if nth == 1
                  "ℹ️ Reply #{name.call(npc)} replies to #{name.call(owner)}'s '#{r['replyTo']}', in place of '#{r['insteadOf']}'"
                else
-                 "ℹ️ Reply #{name.call(npc)} may reply again in '#{r['replyTo']}''s thread, in place of '#{r['insteadOf']}', only if " \
+                 "ℹ️ Reply #{name.call(npc)} may reply again in the thread of '#{r['replyTo']}', in place of '#{r['insteadOf']}', only if " \
                    "#{name.call(owner)} has answered there since #{name.call(npc)}'s last reply by the time that post is due"
                end
         line += ". When: #{reactive_condition_words(json_data, npc, r['when'])}" if r['when'].is_a?(Hash)
@@ -2110,7 +2140,9 @@ module ValidateAccessWork
     end
     complaints.each do |c, members|
       who = members.uniq.map { |n| name.call(n) }
-      lines << "ℹ️ Complaint '#{c}': #{who.join(', ')}, each replying in place of their vent. Possible members: #{who.join(', ')}."
+      rep = repliers[c].uniq.map { |n| name.call(n) }
+      lines << "ℹ️ Complaint '#{c}': #{rep.empty? ? 'no member' : rep.join(', ')} can reply in place of their vent. " \
+               "Possible members: #{who.join(', ')}."
     end
   end
 end

@@ -346,7 +346,11 @@ module BreakEscape
         return nil unless poster && named
 
         post['replyTo'] = to['post']
-        post['text'] = post['text'].gsub('{name}', AccessWork.friendface_name(scenario_data, named)) if post['text']
+        if post['text']
+          # Block form: the name goes in as plain text, never read as \0 or \& (review C3 R1 m1)
+          name = AccessWork.friendface_name(scenario_data, named)
+          post['text'] = post['text'].gsub('{name}') { name }
+        end
         extra = { 'replyToNpc' => poster['id'], 'replyToPerson' => poster.dig('feed', 'person'),
                   'namedNpc' => named['id'], 'namedPerson' => named.dig('feed', 'person') }
       end

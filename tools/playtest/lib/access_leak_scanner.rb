@@ -218,7 +218,10 @@ class AccessLeakScanner
       wifi_secrets: @wifi_secrets.length,
       share_items: @share_items.length,
       workarounds: @workarounds.length,
-      feed_posts: @feed_texts.values.count { |f| f[:kind] == :post },
+      # Distinct posts with a registered text; a reply with two pieces is one post, its pieces
+      # counted apart in feed_texts (review C3 R1 m5)
+      feed_posts: @feed_texts.values.select { |f| f[:kind] == :post }.flat_map { |f| f[:served] }.uniq.length,
+      feed_texts: @feed_texts.values.count { |f| f[:kind] == :post },
       feed_facts: @feed_fact_ids.length,
       lockout_records: lockout_records.values.sum(&:length)
     }
