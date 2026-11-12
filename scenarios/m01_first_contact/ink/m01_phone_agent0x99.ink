@@ -15,6 +15,10 @@ VAR lockpicking_guide_hint_given = false
 VAR first_contact = true
 VAR operation_shatter_reported = false
 
+// Engine-written call variables (phone calls plan 2.11); only first_ring reads them
+VAR call_answer_seconds = 0
+VAR call_is_callback = false
+
 // External variables
 VAR player_name = "Agent 0x00"
 VAR current_task = ""
@@ -95,6 +99,34 @@ VAR lockpicking_guide_offered = false
 -> support_hub
 
 // ================================================
+// FIRST RING (incoming call, first entry to the main office)
+// Teaches Answer / Decline with nothing at stake, and gives the
+// texts a reason. Reached only by the ring mapping on agent_0x99.
+// ================================================
+
+=== first_ring ===
+// lint: call-knot
+#speaker:agent_0x99
+
+{
+    - call_is_callback: You rang back. Good habit.
+    - call_answer_seconds > 10: Took your time. Fine, nothing's on fire yet.
+    - else: You're in. I wanted the line tested before you go dark.
+}
+
+A voice carries down those corridors. Someone hears one where there shouldn't be, and the cover's gone.
+
+So from here it's texts. Quiet, deniable. Message me the moment you're stuck and I'll walk you through it.
+
++ [Understood. Texts it is.]
+    #exit_conversation
+    -> DONE
++ [What if I need you fast?]
+    Then you message me fast. I'm on the thread the whole way. Go.
+    #exit_conversation
+    -> DONE
+
+// ================================================
 // SUPPORT HUB (General Help)
 // ================================================
 
@@ -108,7 +140,8 @@ VAR lockpicking_guide_offered = false
 + {priv_esc_guide_offered and not priv_esc_guide_hint_given} [I need the privilege escalation guide]
     -> request_priv_esc_guide
 + {entropy_reveal_read and (player_aborted_attack or player_launched_attack)} [Operation Shatter resolved — I'm ready for debrief]
-    -> closing_debrief
+    #place_call:closing_debrief
+    -> DONE
 + {(entropy_reveal_read or (talked_to_maya and discussed_operation)) and not operation_shatter_reported} [I discovered what ENTROPY is planning - Operation Shatter]
     -> report_operation_shatter
 + {framing_evidence_seen and kevin_choice == ""} [Those files on Kevin's PC — what should I do with this?]
@@ -414,7 +447,7 @@ Good work discovering this. Now we know what we're dealing with.
 
 Continue investigating. Find the Operation Shatter files, identify all operatives, and prepare to shut this down.
 
-Call me if you need support. This just became a race against the clock.
+Message me if you need support. This just became a race against the clock.
 
 + [Understood. I'll stop it.]
     #exit_conversation
@@ -940,18 +973,20 @@ Whatever you choose to do with Derek — choose carefully. The way this ends set
 // ================================================
 
 === closing_debrief ===
+// lint: call-knot
 #speaker:agent_0x99
 
 {
     - player_launched_attack:
-        Operation Shatter went through — the attack hit. Let's review what happened.
+        It went through. Not on an open line. Come back to HQ.
     - else:
-        Operation Shatter is neutralized. Let's review what happened.
+        Shatter's dead in the water. Pack up and come in. We'll do it properly at HQ.
 }
 
 + [On my way]
     #ending_check
     #set_global:start_debrief_cutscene:true
+    Walk out the way you came in. As far as Viral Dynamics knows, you were never here.
     #exit_conversation
     -> END
 
