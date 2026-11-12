@@ -107,3 +107,90 @@ Games created: 1788 (probably; made in the same second as another agent's game),
 - ec5645538 A tap goes to the thing under the pointer (objects); walk code moved to tap-pick.js
 - 6f3190a3f An out-of-reach NPC under the tap counts too (m01 finding)
 - this log
+
+## R1 fixes
+
+From TAP_PICK_CODE_REVIEW_R1.md (0 blockers, 2 majors, 6 minors, 3 nits). Main (33c003230)
+merged first, no conflicts.
+
+### What changed
+
+- M1, tap-pick.js `opaqueAt(sprite, x, y, alphaAt)`: the tap is on an opaque pixel of the
+  sprite's current frame (origin, scale, flipX and trimmed frames allowed for), read with
+  `scene.textures.getPixelAlpha`; bounds when there is no pixel test. An NPC counts as under the
+  tap only on her figure: the in-reach NPC candidate's `underTap`, and a far NPC in `farUnderTap`.
+  `tapPickList` now: an in-reach hostile in the gathered list returns the list as gathered (the
+  jab, or the old in-reach menu), and an in-reach NPC on her figure under the tap wins with no far
+  entries (no menu with a far object). Far objects still join a menu with in-reach objects under
+  the same tap (coffees over a far workstation).
+- M2, unlock-system.js: step 1 of `interactLoginPc` is now `pcUserAt(pcId)`,
+  `pcInUseBy(lockable)` (null for a headless host or a switched-off PC, which say something
+  else first) and `showPcInUse(lockable)`, the only place "X is using this PC." is written (with
+  the toast and `inUseShown`). `walkToObjectThenUse` asks `window.pcInUseBy` before walking and
+  shows the message instead. The PC stays in the menu, so picking it explains why.
+- m1: `walkToObjectThenUse` arms the use only for an object of the player's own room; one of
+  another room is walked to only, as on main.
+- m2: `farUnderTap` (tap-pick.js) takes the far NPC only when she is in the player's room, on
+  her figure, and not walking away.
+- m3: `npcYieldsToObject` (tap-pick.js): in the NPC branch, an interactable object of the
+  player's room under the tap (not a seat) takes the tap when it is drawn above her and the tap
+  is on its pixels, or when the tap is off her figure. A hostile never yields.
+- m4: `createPendingTapUse` takes `busy` (minigame, pick-one menu or a `.game-confirm-overlay`
+  dialog), and the E key (player.js) calls `window.__clearPendingTapUse()` before interacting.
+- m5: the pending use records the feet at each update; the 10 s limit and the stopped-short
+  400 ms count from the last progress (2 px), and a walk that is on a path but has not moved for
+  1 s is dropped (walking into a seated owner, then used 8 s later when he leaves).
+- m6: test/js/tap-pick-handler.test.mjs cuts game.js's own pointerdown handler and the helpers it
+  calls out of the source text (a small brace scanner) and runs them with the real tap-pick.js
+  and interaction-reach.js, stubbing only reach, rooms, movement and the menu. The old rebuilt
+  pipeline in tap-pick.test.mjs is gone; its cases (U3, finding 6) run through the real handler.
+- n1: see "Unchanged" below. n2: `findObjectsAtPosition` uses `getBounds()` (old maths as the
+  fallback). n3: a far menu entry's detail starts "Walk over and use it."
+
+Unchanged, on purpose: far doors stay walk-only (a far door under the tap is not used on
+arrival; an open door's own zone fires when the player gets there). Do not "fix" doors to match
+far objects.
+
+### The Sarah case
+
+The review's tap at (166, 64) from (126, 71) in m01 lies on an opaque pixel of the Building
+Directory (reception_area_notes_1, depth 91, drawn above Sarah at 81) and on an empty part of
+Sarah's 80 px frame: her figure ends near x 143, and no pixel of her figure lies inside the
+directory's bounds. So under the M1 rule that tap now walks to the directory and reads it (no
+menu, NotesMinigame), as a tap on the PC showing through Omar's frame goes to the PC. A tap on her
+head (128, 15) from the same spot talks to her with no menu. A tap on her head at (128, 30) gives
+the in-reach menu "Visitor Sign-In Log" / "Sarah O'Brien", as on main (the log is in reach and
+within the slop; no far object is under that tap).
+
+### Tests
+
+tap-pick.test.mjs 26 pass; tap-pick-handler.test.mjs 15 pass. Every test file that imports or
+reads a changed module (game.js, player.js, tap-pick.js, unlock-system.js, interaction-menu.js,
+or the "is using this PC" text): 50 files, 0 failures, run without the lock.
+
+### Live proof
+
+Keyless headless server on :3170 from this worktree, setTimeout loop, setFPS(20), fixed steps
+on. Taps are `window.__test.clickAt` on the canvas; the player was placed with `body.reset` before
+some taps.
+
+| Check | Game | Result |
+|---|---|---|
+| Sarah, far directory | 1836 (m01) | From (126, 71): tap (166, 64) walks and opens the directory (NotesMinigame), no menu; tap (128, 15) on her head talks (PersonChatMinigame), no menu |
+| Far object | 1836 | From (160, 160): tap on the reception phone walks, arms the use, opens PhoneChatMinigame on arrival |
+| In-reach menu | 1836 | From (126, 71): tap (128, 30) gives "Visitor Sign-In Log" / "Sarah O'Brien" |
+| Object in another room | 1845 (test_access_habits, start omar_room, noor_room unlocked) | From omar_room, tap on noor_pc: walks into noor_room, no use armed, nothing opened |
+| Seated owner's PC, plain tap | 1845 | Omar seated, PC out of reach: tap (190, 110) on the PC through his frame shows "Omar Haddad is using this PC." with the observations, no walk; tap (160, 125) on his figure talks |
+| Seated owner's PC, menu | 1845 | omar_coffee moved over the PC's corner for this check (client only): tap gives "Omar coffee" / "Omar's PC" (detail "Walk over and use it. ..."); picking the PC shows the in-use toast, no walk |
+| U3, Kim's stick | 1849 (test_access_social, start u1_room) | Kim KO'd (debugKO), stick at (168, 129) out of reach, phone in reach: tap on the stick walks and picks it up ("Picked up Kim's USB stick"), phone stays on the floor, `u1_kim_gave_usb` true |
+| Hostile over a far object | 1845 | Omar made hostile, in reach; tap on the far PC through his frame: `playerCombat.attack` at Omar, no menu, no use armed |
+| E key on the way | 1845 | Far tap on sign_h3, then E while walking: the pending use dropped, the sign not opened. Same tap without E: walks and opens the sign on arrival |
+
+Games created: 1836 (m01), 1837 (test_access_habits, unused), 1838 (test_access_social, unused),
+1845, 1849. Server and sessions stopped.
+
+### Open
+
+- The menu entry for an in-use PC says "Walk over and use it." although picking it only shows
+  the in-use message; the detail could check `pcInUseBy` too.
+- `objectStandPoint` still does not route round NPC bodies (review M2, later).
