@@ -1505,3 +1505,52 @@ served). Rails:
 - `capture_secret_test`, `capture_payload_secret_test` (part of an earlier 44-run green batch).
 
 Each new test was confirmed to fail with its fix reverted, then pass with it restored.
+
+## Batch 14 failures (2026-11-12)
+
+Three failures the merge batch found on this branch alone (main already merged in). All three
+were the branch's own test or scenario left out of step with a deliberate change; the server and
+engine behaviour was already correct.
+
+### 1. Rails `UsbHabitTest` "the stick ships with hasContents and no files ..." (stale test)
+
+The inventory add answer stopped echoing the inventory at the P2 delta (step 3, P2): it now
+renders `{ success: true }` only, and the tray reconciles through `PUT /sync_state` and the
+network delta answers. The test still read `response.parsed_body['inventory']`, which is now nil
+(`undefined method find for nil`). Updated the test to read the saved copy from server state
+(`state['inventory']`) while keeping its secret-leak purpose: the add reply carries none of the
+stick's files, and the saved copy keeps `hasContents` with no `contents`. The branch sends the
+right thing; the assertion was stale.
+
+### 2. JS `action-menu` test 4 "Clone records the copy's source" (stale test)
+
+The branch's own 6990989ac/28eb80f58 authored the action-menu world-card clone to pass
+`cloneSource: { object_id: data.id }`, and the test asserts that. The merge of main (ccc1ec435)
+then aligned the action-menu clone to the established P1 `cloneFrom` convention used everywhere
+else (interactions.js world/inventory clone, rfid-minigame `recordCloneOnServer`), but did not
+update the test. End to end the `cloneFrom: 'world'` path is a real source, not a missing one:
+`recordCloneOnServer` keys the copy on the card's stamped id (`{ object_id: cardData.id }`), so
+the clone is recorded on the server and listed. Fixed the stale side: the test now asserts
+`cloneFrom === 'world'`. Source code unchanged.
+
+### 3. Validator `test_capture_log` "capture for targetId \"lord\" ... names no address" (real scenario bug, plus duplicate line)
+
+The 6a-server M2 rule is right. The account-address default (`default_account_address!`) is scoped
+to self captures keyed by NPC id (`owner_id == targetId`). Sofia's account label is `lord`
+(username `s.lord`), so her addCapture's `targetId: "lord"` is not a self capture by NPC id, the
+default stores no address, and `capture_secrets_for_client`'s `by_username` lookup cannot key her
+password to the target: the password would not be served for the dropped-QR beat the scenario
+expects to reveal it. Authored the explicit `"address": "s.lord"` on Sofia's addCapture (matching
+the address every other capture in the scenario carries).
+
+The two identical lines came from one authored mapping yielding two candidates in
+`all_capture_candidates`: the plain mapping and its usePayload overlay (Sofia has a `usePayload`).
+Deduplicated the rule to report each `(owner, targetId)` pair once.
+
+### Tests run
+
+- `test/controllers/break_escape/usb_habit_test.rb`: 19 runs, 103 assertions, 0 failures.
+- `node --test test/js/action-menu.test.mjs`: 11 pass, 0 fail.
+- Validator on `scenarios/test_capture_log/scenario.json.erb`: 0 errors.
+- Full Rails suite, `MERGE_BATCH=1 bin/test-js -j 3`, and the validator on every scenario run under
+  the shared lock (results in the report for the batch commit).

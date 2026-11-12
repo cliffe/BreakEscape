@@ -89,6 +89,9 @@ def check_capture_log(json_data)
   # captures, so without an address the server stores none and would key the holder's
   # password on the wrong target. Error at authoring time.
   account_holder_ids = holders.map { |npc| npc['id'].to_s }.to_set
+  # One authored capture yields several candidates (the plain mapping and its usePayload
+  # overlay), so report each (owner, targetId) pair once, not once per candidate.
+  reported_missing_address = Set.new
   cm.all_capture_candidates(json_data).each do |cand|
     source = cand[:source] || {}
     owner_id = source[:owner].to_s
@@ -100,6 +103,7 @@ def check_capture_log(json_data)
     next unless fields['kind'] == 'credential'
     next if owner_id == fields['targetId'].to_s
     next if fields['address'].is_a?(String) && !fields['address'].strip.empty?
+    next unless reported_missing_address.add?([owner_id, fields['targetId'].to_s])
 
     err.call("capture for targetId \"#{fields['targetId']}\" is written on account holder " \
              "\"#{owner_id}\" but names no address: a cross-account capture must author an explicit " \
