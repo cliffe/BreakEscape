@@ -239,7 +239,7 @@ export default class PhoneChatUI {
 
     /**
      * The call bar's state (plan 2.5): 'oncall' (the running time), 'calling' (an outgoing call
-     * dialling: no timer, caption "Calling..."), 'noanswer' (it rang out). A no-op without a call screen.
+     * dialling: no timer, the bar reads CALLING and the caption keeps the callLabel), 'noanswer' (it rang out). A no-op without a call screen.
      */
     setCallStatus(mode) {
         if (!this.isCallMode) return;
@@ -257,7 +257,7 @@ export default class PhoneChatUI {
         this.stopCallTimer();
         timer.textContent = '';
         if (label) label.textContent = mode === 'calling' ? 'CALLING' : 'NO ANSWER';
-        if (caption && mode === 'calling') caption.textContent = 'Calling\u2026';
+        // 'calling': the caption stays who is being rung (showConversation set it: the entry's or contact's callLabel, else "Voice call"); the bar says CALLING (A5 R1 m3)
         if (caption && mode === 'noanswer') caption.textContent = 'No answer';
     }
 

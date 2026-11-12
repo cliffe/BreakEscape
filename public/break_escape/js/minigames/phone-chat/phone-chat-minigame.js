@@ -1360,13 +1360,30 @@ export class PhoneChatMinigame extends MinigameScene {
         if (!this.ui?.setCallButton) return;
         const state = this.params?.ringerCall ? null : window.phoneRinger?.callButtonFor?.(npcId, this) || null;
         this.ui.setCallButton(state, () => this._pressCall(npcId));
+        this._watchCallButton();
+    }
+
+    /**
+     * The button follows the contact's `call` entries while the thread is open (A5 R1 m2): any global
+     * variable change re-asks the ringer, so an entry that turns on (or off) mid-thread draws (or
+     * removes) the button. One listener per phone, removed at cleanup.
+     */
+    _watchCallButton() {
+        if (this._callWatch || !window.eventDispatcher?.on) return;
+        this._callWatch = () => {
+            const id = this.currentNPCId;
+            if (!id || this._ending || !this.gameState?.isActive || !this.conversation) return;
+            this._refreshCallButton(id);
+        };
+        window.eventDispatcher.on('global_variable_changed:*', this._callWatch);
     }
 
     _pressCall(npcId) {
         if (!this.gameState?.isActive || this.currentNPCId !== npcId || this._ending) return;
         this._flushPendingMessages();
         this.saveStoryState();
-        window.phoneRinger?.placeCall?.(npcId, {});
+        // Nothing to dial (the entry went away since the button was drawn): the button goes too
+        if (!window.phoneRinger?.placeCall?.(npcId, {})) this._refreshCallButton(npcId);
     }
 
     /**
@@ -1774,8 +1791,8 @@ export class PhoneChatMinigame extends MinigameScene {
 
         this._flushPendingMessages();
         this._callVoice?.stop();   // a voiced call's line stops with the thread
-        if (this._callEndedPending) return;
-        this._stopDial?.();        // End while dialling hangs up before anyone answers   // a second End or Esc during the "Call ended" beat
+        if (this._callEndedPending) return;   // a second End or Esc during the "Call ended" beat
+        this._stopDial?.();        // End while dialling hangs up before anyone answers
         const ringer = !!this.params?.ringerCall;
         if (ringer) this._resetAfterRingerCall();   // while the story is loaded, before it is cleared
         this._endSocialRun();      // one run per open conversation (00 §8)
@@ -1983,6 +2000,7 @@ export class PhoneChatMinigame extends MinigameScene {
         this._callVoice = null;
         window.phoneRinger?.unregisterPhone?.(this);
         this._stopDial?.();          // a dial still running (the call closed while ringing)
+        if (this._callWatch) { window.eventDispatcher?.off?.('global_variable_changed:*', this._callWatch); this._callWatch = null; }
         this._endSocialRun();      // end any live influence run (00 §8)
 
         if (this.ui) {

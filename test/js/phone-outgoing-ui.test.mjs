@@ -19,7 +19,7 @@ const noop = () => {};
 const portraitFor = () => ({}), npcDmFields = () => ({}), onAccentColour = noop;
 class TTSManager {} class MusicController {} class ChatInfluence {} class PhoneChatConversation {} class InkEngine {}
 const hasHiddenChoicesBelow = noop, numberedChoiceText = noop, createBottomPin = () => ({}),
-  isPhoneCallMode = (p) => !!p && p.voiced === true && p.theme !== 'terminal', callLabelFor = () => 'Voice call',
+  isPhoneCallMode = (p) => !!p && p.voiced === true && p.theme !== 'terminal', callLabelFor = (params, c) => (params && typeof params.callLabel === 'string' && params.callLabel.trim()) || (c && c.callLabel) || 'Voice call',
   formatCallDuration = (ms) => '0:00', callSubtitle = noop,
   CALL_STATUS_HTML = '<div class="call-status-bar" id="call-status-bar"><span class="call-status-label"><span class="call-status-dot"></span>ON CALL</span><span class="call-timer" id="call-timer">0:00</span></div>',
   CALL_SPEAKING_HTML = '<div class="call-caption" id="call-caption">Voice call</div>', CALL_CONTROLS_HTML = '';
@@ -84,13 +84,14 @@ test('setCallButton: the press does not reach the header\'s own handlers (the pr
     assert.equal(reached, 0);
 });
 
-test('setCallStatus: calling shows CALLING with no timer and the caption "Calling…"; noanswer says NO ANSWER; oncall restores the bar', () => {
+test('setCallStatus: calling shows CALLING with no timer and keeps the caption (who is being rung, A5 R1 m3); noanswer says NO ANSWER; oncall restores the bar', () => {
     const ui = makeCallUi();
     const bar = document.getElementById('call-status-bar');
+    document.getElementById('call-caption').textContent = 'Albion ops desk';
     ui.setCallStatus('calling');
     assert.equal(bar.querySelector('.call-status-label').textContent, 'CALLING');
     assert.equal(document.getElementById('call-timer').textContent, '');
-    assert.equal(document.getElementById('call-caption').textContent, 'Calling…');
+    assert.equal(document.getElementById('call-caption').textContent, 'Albion ops desk');
     assert.ok(bar.classList.contains('call-dialling'));
     ui.setCallStatus('noanswer');
     assert.equal(bar.querySelector('.call-status-label').textContent, 'NO ANSWER');
@@ -119,4 +120,25 @@ test('css: the call button and the dialling bar have rules, and the dialling pul
     assert.match(css, /\.conversation-header \.call-button \{/);
     assert.match(css, /\.call-status-bar\.call-dialling/);
     assert.match(css, /prefers-reduced-motion: reduce\) \{\s*\.phone-call-mode \.call-status-bar\.call-dialling/);
+});
+
+test('m3: the dial screen is captioned with the call\'s callLabel, else the contact\'s, else "Voice call"; the dial keeps it', () => {
+    const dial = (params, npc) => {
+        const ui = makeCallUi();
+        ui.container.querySelector('#conversation-header #call-caption').remove();
+        ui.container.querySelector('#conversation-view').insertAdjacentHTML('beforeend', '<div class="call-caption" id="call-caption">Voice call</div>');
+        ui.params = params;
+        ui.npcManager = { getNPC: () => npc };
+        ui.elements = { ...ui.elements, contactListView: { style: {} }, conversationView: document.getElementById('conversation-view'),
+            messagesContainer: document.createElement('div'), choicesContainer: document.createElement('div') };
+        ui.updateHeader = () => {};
+        ui.startCallTimer = () => {};
+        ui.showConversation('vance');
+        ui.setCallStatus('calling');
+        return document.getElementById('call-caption').textContent;
+    };
+    assert.equal(dial({ voiced: true, callLabel: 'Albion ops desk' }, { id: 'vance' }), 'Albion ops desk');
+    assert.equal(dial({ voiced: true }, { id: 'vance', callLabel: 'Desk line' }), 'Desk line');
+    assert.equal(dial({ voiced: true }, { id: 'vance' }), 'Voice call');
+    assert.equal(document.getElementById('call-status-bar').querySelector('.call-status-label').textContent, 'CALLING');
 });
