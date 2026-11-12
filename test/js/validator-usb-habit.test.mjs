@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const ruby = spawnSync('ruby', ['--version']);
@@ -158,8 +160,8 @@ test('USB habit: badly formed files are errors', { skip }, () => {
     assertHas(list, "contents[1] needs an id");
     assertHas(list, "contents[1] needs a name");
     assertHas(list, "contents[1] needs a text");
-    assertHas(list, "contents[2] is locked or holds contents");
-    assertHas(list, "lists the file id(s) a more than once");
+    assertHas(list, "contents[2] is locked");
+    assertHas(list, "lists the id(s) a more than once");
 });
 
 test('USB habit: a locked stick is an error, one not takeable a warning', { skip }, () => {
@@ -168,4 +170,89 @@ test('USB habit: a locked stick is an error, one not takeable a warning', { skip
     const list = issues(s);
     assertHas(list, "kim's USB stick 'kim_usb' is locked");
     assertHas(list, "kim's USB stick 'kim_usb' is not takeable");
+});
+
+// Review R2 m1: folders and archives nest, each checked like the stick itself
+test('USB habit: an unlocked folder or archive with its own files is accepted, to any sane depth', { skip }, () => {
+    const s = clean();
+    kim(s).itemsHeld[0].contents = [
+        { type: 'text_file', id: 'kim_a', name: 'a.txt', text: 'A', takeable: false },
+        { type: 'zip_archive', id: 'kim_zip', name: 'old.zip', contents: [
+            { type: 'text_file', id: 'kim_b', name: 'b.txt', text: 'B' },
+            { type: 'folder', id: 'kim_dir', name: 'drafts', contents: [{ type: 'text_file', id: 'kim_c', name: 'c.txt', text: 'C' }] }
+        ] }
+    ];
+    assert.deepEqual(issues(s), []);
+});
+
+test('USB habit: nested entries are checked, ids are unique across the tree, and a locked or empty folder is an error', { skip }, () => {
+    const s = clean();
+    kim(s).itemsHeld[0].contents = [
+        { type: 'text_file', id: 'kim_a', name: 'a.txt', text: 'A' },
+        { type: 'zip_archive', id: 'kim_zip', name: 'old.zip', locked: true, contents: [
+            { type: 'text_file', id: 'kim_a', name: 'again.txt', text: '' },
+            { type: 'folder', id: 'kim_empty', name: 'empty', contents: [] }
+        ] }
+    ];
+    const list = issues(s);
+    assertHas(list, "contents[1] is locked");
+    assertHas(list, "contents[1].contents[0] needs a text");
+    assertHas(list, "contents[1].contents[1] must be a file");
+    assertHas(list, "lists the id(s) kim_a more than once");
+});
+
+// Review R2 n2
+test('USB habit: a takeable file on a stick is warned, and two NPCs sharing a stick id is an error', { skip }, () => {
+    const s = clean();
+    kim(s).itemsHeld[0].contents = [{ type: 'text_file', id: 'kim_a', name: 'a.txt', text: 'A', takeable: true }];
+    assertHas(issues(s), "contents[0] is takeable, but nothing can be taken off a stick");
+    const t = clean();
+    const amy = JSON.parse(JSON.stringify(kim(t)));
+    amy.id = 'amy';
+    t.rooms.office.npcs.push(amy);
+    assertHas(issues(t), "the USB stick id 'kim_usb' is held by kim and amy");
+});
+
+// Review R2 n1
+test('USB habit: the not-takeable warning says a knock-out still drops it', { skip }, () => {
+    const s = clean();
+    kim(s).itemsHeld[0].takeable = false;
+    assertHas(issues(s), 'cannot be handed over or picked up unless kim is knocked out');
+});
+
+// Review R2 m4: a HID device is never the habit's stick
+test('USB habit: a HID device is not the stick; a storage stick after it is', { skip }, () => {
+    const s = clean();
+    kim(s).itemsHeld = [{ type: 'usb', id: 'kim_hid', name: 'Keylogger', usbClass: 'hid', takeable: true }];
+    assertHas(issues(s), "('kim_hid' has usbClass 'hid'; a habit stick is a storage stick)");
+    const t = clean();
+    kim(t).itemsHeld.unshift({ type: 'usb', id: 'kim_hid', name: 'Keylogger', usbClass: 'hid', takeable: true });
+    assert.deepEqual(issues(t), []);
+    const r = run(t, 'report_lines').join('\n');
+    assert.ok(!r.includes('kim_hid'), r);
+});
+
+// Review R2 M1: a give that can come before the first refusal strands the habit's beats
+function withInk(s, ink) {
+    const dir = mkdtempSync(join(tmpdir(), 'usb-give-'));
+    const path = join(dir, 'kim.ink');
+    writeFileSync(path, ink);
+    kim(s).storyPath = path.replace(/\.ink$/, '.json');
+    kim(s).eventMappings = [{ eventPattern: 'npc_usb_refused:kim', onceOnly: true, completeTask: 'refused' }];
+    return s;
+}
+const hub = (choice) => `=== start ===\nHi.\n-> hub\n=== hub ===\n${choice}\n    #give_item:usb\n    Take it.\n    -> hub\n+ [Bye] #exit_conversation\n    Bye.\n    -> hub\n`;
+
+test('USB habit: an ungated ink give of the stick is warned when something waits on the refusal', { skip }, () => {
+    const list = issues(withInk(clean(), hub('* [Could I have your stick?]')));
+    assertHas(list, "kim's ink gives the USB stick 'kim_usb' (line 6)");
+    assertHas(list, 'Offer the give from a choice gated on {kim_emailed}');
+    assertHas(issues(withInk(clean(), hub('+ {not kim_emailed} [Stick?]'))), "kim's ink gives the USB stick");
+});
+
+test('USB habit: a give gated on the habit global, or nothing keyed on the refusal, raises nothing', { skip }, () => {
+    assert.deepEqual(issues(withInk(clean(), hub('+ {kim_emailed and not kim_gave} [Stick?]'))), []);
+    const s = withInk(clean(), hub('* [Stick?]'));
+    delete kim(s).eventMappings;
+    assert.deepEqual(issues(s), []);
 });

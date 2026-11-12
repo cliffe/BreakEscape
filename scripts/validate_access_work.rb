@@ -32,6 +32,7 @@ module ValidateAccessWork
     return issues unless json_data.is_a?(Hash)
 
     check_usb(json_data, issues)
+    check_usb_stick_ids(json_data, issues)
     check_work(json_data, issues)
     check_workarounds(json_data, issues)
     check_social(json_data, issues)
@@ -437,7 +438,7 @@ module ValidateAccessWork
     if h.key?('setGlobal') && !(h['setGlobal'].is_a?(String) && declared_globals(json_data).key?(h['setGlobal']))
       err(issues, "#{nid}.usbHabit.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
     end
-    check_usb_stick(npc, issues)
+    check_usb_stick(json_data, npc, issues)
     unless plan
       warn(issues, "#{nid} has a usbHabit but no work plan (a work need and a non-empty workNeeds list): only judged work " \
                    'uses are checked, so the habit never acts. Give it a work plan, or remove the habit.')
@@ -457,12 +458,14 @@ module ValidateAccessWork
                  'or its usb field.')
   end
 
-  # The habit's stick (2026-11-12): a `usb` item with an id in itemsHeld, its files well formed
-  def check_usb_stick(npc, issues)
+  # The habit's stick (2026-11-12): a storage `usb` item with an id in itemsHeld, its files well formed
+  def check_usb_stick(json_data, npc, issues)
     nid = npc['id']
     stick = AW.usb_stick(npc)
     unless stick
-      err(issues, "#{nid} has a usbHabit but holds no USB stick: add a { \"type\": \"usb\", \"id\": ..., \"sprite\": " \
+      other = Array(npc['itemsHeld']).find { |i| i.is_a?(Hash) && i['type'] == 'usb' && AW.present_string?(i['id']) }
+      extra = other ? " ('#{other['id']}' has usbClass '#{other['usbClass']}'; a habit stick is a storage stick)" : ''
+      err(issues, "#{nid} has a usbHabit but holds no USB stick#{extra}: add a { \"type\": \"usb\", \"id\": ..., \"sprite\": " \
                   "\"usb_bowl1\", \"usbClass\": \"storage\", \"takeable\": true } item to its itemsHeld. Its files default to " \
                   "#{AW::USB_STICK_DEFAULT_FILE}; list others in its contents.")
       return
@@ -470,8 +473,10 @@ module ValidateAccessWork
     sid = stick['id']
     err(issues, "#{nid}'s USB stick '#{sid}' is locked: a habit stick opens for whoever holds it, so drop the lock.") if stick['locked']
     unless stick['takeable']
-      warn(issues, "#{nid}'s USB stick '#{sid}' is not takeable, so the player can never get it to read its files.")
+      warn(issues, "#{nid}'s USB stick '#{sid}' is not takeable, so it cannot be handed over or picked up unless " \
+                   "#{nid} is knocked out. Set takeable: true for a give.")
     end
+    check_usb_give_order(json_data, npc, stick, issues)
     return unless stick.key?('contents')
 
     files = stick['contents']
@@ -481,20 +486,128 @@ module ValidateAccessWork
       return
     end
     ids = []
-    files.each_with_index do |f, i|
-      where = "#{nid}'s USB stick '#{sid}'.contents[#{i}]"
-      unless f.is_a?(Hash) && f['type'] == 'text_file'
-        err(issues, "#{where} must be a file: { \"type\": \"text_file\", \"id\", \"name\", \"text\" }.")
+    check_usb_stick_entries(files, "#{nid}'s USB stick '#{sid}'.contents", ids, issues)
+    dup = ids.group_by(&:itself).select { |_id, v| v.size > 1 }.keys
+    err(issues, "#{nid}'s USB stick '#{sid}' lists the id(s) #{dup.join(', ')} more than once.") unless dup.empty?
+  end
+
+  # Review R2 m1: a stick holds text files and unlocked folders or archives (any item with its own
+  # contents), nested to any depth; the server serves each nested one to the holder by its id.
+  def check_usb_stick_entries(entries, path, ids, issues, depth = 0)
+    entries.each_with_index do |f, i|
+      where = "#{path}[#{i}]"
+      unless f.is_a?(Hash)
+        err(issues, "#{where} must be a file or a folder.")
         next
       end
-      err(issues, "#{where} needs an id (a string), so the file can be told apart.") unless AW.present_string?(f['id'])
-      err(issues, "#{where} needs a name (the file name the player sees).") unless AW.present_string?(f['name'])
-      err(issues, "#{where} needs a text (what the file says).") unless AW.present_string?(f['text'])
-      err(issues, "#{where} is locked or holds contents: a file on a stick is a plain readable file.") if f['locked'] || f.key?('contents')
       ids << f['id'] if AW.present_string?(f['id'])
+      err(issues, "#{where} needs an id (a string), so it can be told apart.") unless AW.present_string?(f['id'])
+      err(issues, "#{where} needs a name (the name the player sees).") unless AW.present_string?(f['name'])
+      err(issues, "#{where} is locked: everything on a stick opens for whoever holds it.") if f['locked']
+      # Review R2 n2: the take control would be refused, since a held stick is not searched for items
+      warn(issues, "#{where} is takeable, but nothing can be taken off a stick: set takeable: false.") if f['takeable'] == true
+      if f['type'] == 'text_file'
+        err(issues, "#{where} needs a text (what the file says).") unless AW.present_string?(f['text'])
+        err(issues, "#{where} is a text file with contents: a file holds no other files.") if f.key?('contents')
+      elsif f['contents'].is_a?(Array) && !f['contents'].empty?
+        if depth >= 4
+          err(issues, "#{where} is nested more than five levels deep on the stick.")
+        else
+          check_usb_stick_entries(f['contents'], "#{where}.contents", ids, issues, depth + 1)
+        end
+      else
+        err(issues, "#{where} must be a file { \"type\": \"text_file\", \"id\", \"name\", \"text\" } or a folder or " \
+                    'archive with a non-empty contents list.')
+      end
     end
-    dup = ids.group_by(&:itself).select { |_id, v| v.size > 1 }.keys
-    err(issues, "#{nid}'s USB stick '#{sid}' lists the file id(s) #{dup.join(', ')} more than once.") unless dup.empty?
+  end
+
+  # Review R2 M1: a give of the stick before the habit's first refusal stops the habit for good,
+  # so a task, mapping, condition or post keyed on the refusal can then never happen. Warn unless
+  # every ink give of the stick sits under a choice gated on the habit's setGlobal.
+  def check_usb_give_order(json_data, npc, stick, issues)
+    nid = npc['id']
+    glob = npc.dig('usbHabit', 'setGlobal')
+    return unless usb_refusal_beats?(json_data, nid, glob)
+
+    ungated = usb_stick_gives(npc, stick).reject { |line, choice| choice && gated_on?(choice, glob) }
+    return if ungated.empty?
+
+    want = glob.is_a?(String) ? "a choice gated on {#{glob}}" : 'a choice offered only after the refusal (set usbHabit.setGlobal and gate on it)'
+    warn(issues, "#{nid}'s ink gives the USB stick '#{stick['id']}' (line #{ungated.map(&:first).join(', ')}) where the player " \
+                 "can take it before #{nid}'s first refusal; the habit then stops and anything keyed on the refusal " \
+                 "(npc_usb_refused:#{nid}#{glob ? ", #{glob}" : ''}, a usb_refused post) never happens. Offer the give from #{want}.")
+  end
+
+  # Whether anything in the scenario waits on the habit's first refusal
+  def usb_refusal_beats?(json_data, nid, glob)
+    pattern = glob.is_a?(String) && !glob.empty? ? /npc_usb_refused:#{Regexp.escape(nid)}\b|\b#{Regexp.escape(glob)}\b/ : /npc_usb_refused:#{Regexp.escape(nid)}\b/
+    found = false
+    walk = lambda do |v, key|
+      return if found
+      case v
+      when Hash
+        v.each do |k, x|
+          next if %w[globalVariables usbHabit].include?(k)
+          found = true if k == 'cause' && x == 'usb_refused'
+          walk.call(x, k)
+        end
+      when Array then v.each { |x| walk.call(x, key) }
+      when String then found = true if key != 'setGlobal' && v =~ pattern
+      end
+    end
+    walk.call(json_data, nil)
+    found
+  end
+
+  REPO_ROOT = File.expand_path('..', __dir__)
+
+  # [[line number, governing choice line or nil]] for each #give_item of the stick in the NPC's ink
+  def usb_stick_gives(npc, stick)
+    sp = npc['storyPath']
+    return [] unless sp.is_a?(String) && !sp.empty?
+
+    ink = sp.sub(/\.json\z/, '.ink')
+    ink = File.join(REPO_ROOT, ink) unless ink.start_with?('/')
+    return [] unless File.exist?(ink)
+
+    tag = /#\s*give_item:\s*(?:usb|#{Regexp.escape(stick['id'].to_s)})\b/
+    lines = File.readlines(ink, encoding: 'UTF-8')
+    out = []
+    lines.each_with_index do |l, i|
+      next if l.strip.start_with?('//') || l !~ tag
+
+      choice = nil
+      i.downto(0) do |j|
+        t = lines[j].strip
+        break if t.start_with?('===') || (t.start_with?('=') && j < i)
+        if t =~ /\A[*+]/
+          choice = t
+          break
+        end
+      end
+      out << [i + 1, choice]
+    end
+    out
+  end
+
+  # The choice's condition names the global, not negated
+  def gated_on?(choice, glob)
+    return false unless glob.is_a?(String) && !glob.empty?
+
+    g = Regexp.escape(glob)
+    choice.scan(/\{([^{}]*)\}/).flatten.any? { |c| c.scan(/(\bnot\s+|!\s*)?\b#{g}\b/).any? { |m| m.first.nil? } }
+  end
+
+  # Review R2 n2: the filter, held_usb_sticks and the browser's habit all key on the stick's id
+  def check_usb_stick_ids(json_data, issues)
+    seen = Hash.new { |h, k| h[k] = [] }
+    AW.usb_habit_sticks(json_data).each { |npc, stick| seen[stick['id']] << npc['id'] }
+    seen.each do |sid, nids|
+      next if nids.size < 2
+
+      err(issues, "the USB stick id '#{sid}' is held by #{nids.join(' and ')}: each habit NPC needs its own stick id.")
+    end
   end
 
   # For each cause the NPC can meet, the cause's own pool or work_fail needs a line (plan 5.5)

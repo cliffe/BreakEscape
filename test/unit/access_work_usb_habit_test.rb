@@ -99,6 +99,14 @@ class AccessWorkUsbHabitTest < ActiveSupport::TestCase
     assert_nil AW.usb_stick(kim('itemsHeld' => [STICK], 'usbHabit' => nil)), 'no habit, no habit stick'
   end
 
+  # Review R2 m4: a HID device is never the habit's stick
+  test 'the stick is a storage usb item (usbClass storage or none), never a HID device' do
+    hid = { 'type' => 'usb', 'id' => 'kim_hid', 'name' => 'Keylogger', 'usbClass' => 'hid' }
+    assert_nil AW.usb_stick(kim('itemsHeld' => [hid]))
+    assert_equal 'kim_usb', AW.usb_stick(kim('itemsHeld' => [hid, STICK]))['id']
+    assert_equal 'kim_x', AW.usb_stick(kim('itemsHeld' => [hid, { 'type' => 'usb', 'id' => 'kim_x' }]))['id']
+  end
+
   test 'the plan names the stick' do
     assert_equal({ 'every' => 2, 'setGlobal' => 'kim_emailed', 'stick' => 'kim_usb' },
                  AW.plan(scenario, kim('itemsHeld' => [STICK]))['usb'])

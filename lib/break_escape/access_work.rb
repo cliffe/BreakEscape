@@ -773,7 +773,10 @@ module BreakEscape
     def usb_stick(npc)
       return nil unless usb_habit(npc) && npc['itemsHeld'].is_a?(Array)
 
-      npc['itemsHeld'].find { |i| i.is_a?(Hash) && i['type'] == 'usb' && present_string?(i['id']) }
+      # Review R2 m4: a storage stick (usbClass storage, or none); a HID device is never the habit's stick
+      npc['itemsHeld'].find do |i|
+        i.is_a?(Hash) && i['type'] == 'usb' && present_string?(i['id']) && [nil, 'storage'].include?(i['usbClass'])
+      end
     end
 
     USB_STICK_DEFAULT_FILE = 'work_file.txt'
