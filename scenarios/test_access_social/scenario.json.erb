@@ -163,6 +163,18 @@
           "title": "F13: Ruth posts once the kiosk gets her back online",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "taskId": "f14_locked_out",
+          "title": "F14: Sade finds out she is locked out at the hot desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f14_borrow_failed",
+          "title": "F14: Sade's borrowed use at the hot desk fails",
+          "type": "custom",
+          "status": "active"
         }
       ]
     }
@@ -282,6 +294,17 @@
                 {
                   "id": "ruth_authored",
                   "text": "Three meetings before the kettle even boiled this morning."
+                }
+              ]
+            },
+            {
+              "person": "sade",
+              "name": "Sade Okafor",
+              "bio": "Facilities. Never at the same desk twice.",
+              "posts": [
+                {
+                  "id": "sade_authored",
+                  "text": "New badge photo. Somehow worse than the old one."
                 }
               ]
             }
@@ -1438,7 +1461,8 @@
       "type": "room_office",
       "door_sign": "F13 Ruth",
       "connections": {
-        "west": "f12_room"
+        "west": "f12_room",
+        "east": "f14_room"
       },
       "objects": [
         {
@@ -1576,6 +1600,142 @@
               "onceOnly": true,
               "completeTask": "f13_recovered",
               "condition": "data.postId === 'f13_fixed'"
+            }
+          ]
+        }
+      ]
+    },
+    "f14_room": {
+      "type": "room_office",
+      "door_sign": "F14 Sade",
+      "connections": {
+        "west": "f13_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f14",
+          "name": "Sign: F14 Locked out at the hot desk",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F14. Sade's PC blocks social media and she has no phone, so she borrows the hot desk. Before she gets there, lock out her username, sokafor, at the hot desk: three wrong passwords. When she sits down she finds out, and her use there fails: no post and no session left open.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "sade_pc",
+          "name": "Sade's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Sade's PC, under a policy that blocks social media."
+        },
+        {
+          "type": "pc3",
+          "id": "f14_hot_desk",
+          "name": "Hot desk",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "locking",
+          "access": {
+            "people": [
+              "sade"
+            ]
+          },
+          "affordance": {
+            "satisfies": [
+              "social_media"
+            ],
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A hot desk under the locking policy: three wrong passwords lock an account here."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "sade",
+          "displayName": "Sade Okafor",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "sade_pc",
+          "needsDeferMin": 0.5,
+          "phone": false,
+          "creds": {
+            "username": "sokafor",
+            "password": "Plover-Sade-47"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "f14_hot_desk"
+            }
+          ],
+          "feed": {
+            "site": "friendface",
+            "person": "sade",
+            "posts": [
+              {
+                "id": "f14_post",
+                "text": "Finally found a desk that lets me catch up with everyone."
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_locked_out:sade",
+              "onceOnly": true,
+              "completeTask": "f14_locked_out",
+              "condition": "data.objectId === 'f14_hot_desk'"
+            },
+            {
+              "eventPattern": "npc_borrow_done:sade",
+              "onceOnly": true,
+              "completeTask": "f14_borrow_failed",
+              "condition": "data.met === false && data.objectId === 'f14_hot_desk'"
             }
           ]
         }
