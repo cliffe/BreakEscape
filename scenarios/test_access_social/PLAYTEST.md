@@ -39,9 +39,9 @@ nothing. The `/feed_post` count must stay within the beat's budget below.
 
 **Two things the first run taught.** Stand clear of a doorway while an NPC walks between rooms:
 the player blocks the door, the walk times out after 20 s and a borrow is dropped after 60 s
-(Omar then fails again and is handed it again). And an NPC's event mappings are registered when
-its room loads, so after a reload enter `jake_room` once before F5, or `f5_signed_in` is not
-ticked (the sign-in and the server's record are unaffected).
+(Omar then fails again and is handed it again). An NPC's event mappings are registered only when
+its room loads, so `f5_signed_in` is an `unlock_object` task on the hot desk (only Jake's account
+works there) and ticks after a reload wherever the player has been.
 
 Useful reads: `window.__test.access.feed()` (revealed post ids by NPC),
 `window.__test.needs.state('jake')` (its `job`, and `distracted` while on the phone),
@@ -71,7 +71,7 @@ facts, with the pattern on `it_poster`.
 | F3 | Enter `lena_room` and wait | Lena uses her PC (`npc_used:lena_pc`, need `social_media`, `met: true`), task `f3_pc`; her post appears on her profile | `feedRevealed.lena.n` 1, done | 2 or 3 (Jake may post again) |
 | F4 | Enter `omar_room`, step away from the door, and wait about two minutes | Omar's first try fails: "Blocked. Of course." Second failure: "I'll use the spare PC.", he walks to the lobby kiosk, uses it (met), task `f4_borrowed`, his post appears, and he walks back leaving the kiosk signed in. A click on the kiosk while nobody sits there opens his desktop | `npcFrustration.omar` level at least 50, workaround done; `guestSessions.kiosk` `omar`; `feedRevealed.omar.n` 1 | Omar 1 (his failed uses ask nothing) |
 | F7 | Reload (set `location.href` to the game URL with `?skip_resume=1`) | The terminal shows every revealed post at once; a revealed fact noted before the reload still reads the same in the notebook; nothing unrevealed in any response after the reload | Unchanged | No new request from the reload itself |
-| F5 | After a reload, enter `jake_room` once first. Read Jake's first two posts (note both facts) and the IT poster; sign in at the hot desk as `jbrooks` with the password built from them | Signs in as Jake (`pc_signed_in:hot_desk`, `via: "password"`), task `f5_signed_in`; his desktop holds `F5.txt` | `sessions.hot_desk` Jake by password | Jake 2 or 3 |
+| F5 | Read Jake's first two posts (note both facts) and the IT poster; sign in at the hot desk as `jbrooks` with the password built from them | Signs in as Jake (`pc_signed_in:hot_desk`, `via: "password"`), task `f5_signed_in` (an `unlock_object` task on `hot_desk`); his desktop holds `F5.txt` | `sessions.hot_desk` Jake by password | Jake 2 or 3 |
 | F6 | Wait for Jake's third post (about 3 minutes after his room first loaded) | The post appears; the answer says `done: true`; task `f6_last_post`; no further `/feed_post` for Jake | `feedRevealed.jake.n` 3 | Jake 3, flat from then on |
 | F8 | Enter `gate_room`. While the guard is on his phone (`distracted` true), walk through his view; then wait until it is false and walk through again | No `player_in_view_near:guard` while distracted; task `f8_distracted` on `npc_used_phone:guard`. Once he puts the phone away the event fires, task `f8_challenged` | None (he has no feed) | Guard 0 |
 

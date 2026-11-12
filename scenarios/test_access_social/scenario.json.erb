@@ -85,7 +85,8 @@
         {
           "taskId": "f5_signed_in",
           "title": "F5: sign in as Jake at the hot desk",
-          "type": "custom",
+          "type": "unlock_object",
+          "targetObject": "hot_desk",
           "status": "active"
         },
         {
@@ -416,12 +417,6 @@
               "onceOnly": true,
               "completeTask": "f6_last_post",
               "condition": "data.index === 2"
-            },
-            {
-              "eventPattern": "pc_signed_in:hot_desk",
-              "onceOnly": true,
-              "completeTask": "f5_signed_in",
-              "condition": "data.via === 'password'"
             }
           ]
         }
