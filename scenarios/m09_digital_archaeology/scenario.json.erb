@@ -984,10 +984,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
   # mapping's timer. Ring on entering any room once the read-out has been heard (flag1_read_heard).
   # Same latch, and the pending offers re-check !nightshade_rang at fire time, so still one ring.
   call_map("room_entered", "globalVars.flag1_read_heard && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
-  # M1 R3 n3: the Victoria maintenance code opens the cage with no gate try, so a player who never
-  # opens the read-out would never get him. Ring once the cage is open (his "You're past her gate" arm).
-  # 10 s so it clears HaX's cage_opened texts; same latch and read-out guard as the gate fallback.
-  call_map("global_variable_changed:cage_opened", "value === true && globalVars.flag1_submitted && !globalVars.flag1_read_heard && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 10000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
+  # (M1 R4 n1: a cage_opened ring was tried here and removed. HaX's hub always plays the flag-1
+  # read-out before Victoria's topic, so flag1_read_heard is already set and it could never fire.)
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin === 'nightshade_copy'",
            "You found what I cleared, too. Then you know I kept his notes. I'd have burned anything else.", delay: 4000),
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin !== 'nightshade_copy'",
