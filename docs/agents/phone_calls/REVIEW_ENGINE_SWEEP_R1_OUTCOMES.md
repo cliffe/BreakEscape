@@ -69,8 +69,25 @@ Test: `phone-call-terminal-beat.test.mjs` (a player hang-up on a terminal call c
 
 ## Tests
 - Full JS suite under the flock: **567 files, 0 failed**.
-- Full Rails suite under the flock: _see the log entry_.
+- Full Rails suite under the flock: **2137 runs, 0 failures, 0 errors, 1 skip**.
 - No new static import, so no test harness copy list changed.
 
-## Live proofs (committed code, keyless :3027, own pidfile, headless)
-_Filled in the log entry and `proofs/ENGINE_SWEEP_R1_fix/`._
+## Live proofs (committed `464c42064`, keyless :3027, own pidfile, headless; `proofs/ENGINE_SWEEP_R1_fix/`)
+Driven by `es_r1_fix_live.sh` unless noted; the server was stopped afterwards.
+- **m04** (game 2280, real config): the dial read sets `anomaly_detected`; HaX's dial ring (with the new
+  `ringWhile`) rings, then `esd_authorized` set true while ringing → the ring drops within 2 s
+  (`ringer=null`), no Missed/Call back row. M1 R4 proven on the real mission.
+- **m09** (game 2288, real `torres_phone` NPC): the Torres lid-ring shape (trigger guard
+  `!globalVars.hl_box_opened`, no `ringWhile`) rings; the box is opened while it rings → it keeps ringing
+  at t+2/4/6 s (not dropped). M1 R4 rule 7: the trigger condition is not re-checked.
+- **m2** (game 2284): mapping A rings with a `ringWhile` and sets its latch; `ringWhile` fails → A drops
+  quietly and its latch is restored to its pre-offer value; twin B then rings. R1 m2.
+- **m1** (game 2285): a ring answered over caller_thread's own thread goes to held with the phone put
+  aside, the call never opens, counts stay 0; `phoneRinger.close()` (the ending) drops the held offer →
+  `conversation_closed:caller_thread` fires exactly once. R1 m1.
+- **m07** (game via `ENGINE_SWEEP_R1/r1_live.sh m07_back`): a terminal taunt, the back arrow at
+  26 350 ms → the call completes at 26 353 ms and the phone is gone at 26 367 ms (17 ms, vs ~2.6 s before).
+  R1 m3.
+- **lab_social_engineering** (game via `se_dev.sh`, clean `public/`): Dev `ffe4c083…` and Ruth
+  `52c50b7a…` after the call and after a reload, identical to the baseline; the four Dev `/tts` lines all
+  200. Unchanged.

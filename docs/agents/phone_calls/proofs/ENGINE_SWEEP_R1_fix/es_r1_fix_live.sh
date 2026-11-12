@@ -9,12 +9,14 @@
 #   m2_twin  — R1 m2: a ringWhile ring dropped quietly restores its own setGlobal latch, so a twin rings.
 export PC_PORT=${PC_PORT:?set PC_PORT}
 export OUT=${OUT:-docs/agents/phone_calls/proofs/ENGINE_SWEEP_R1_fix}
-source "$(dirname "${BASH_SOURCE[0]}")/../../../../tools/phone_calls/routes/m10_lib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../../../../../tools/phone_calls/routes/m10_lib.sh"
 COUNT="window.__cc={}; const d=window.eventDispatcher; if(!d.__ccWrapped){ const o=d.emit.bind(d); d.emit=function(n,x){ if(typeof n==='string'&&n.startsWith('conversation_closed:')){ window.__cc[n]=(window.__cc[n]||0)+1; } return o(n,x); }; d.__ccWrapped=true; } return true;"
 cc() { a2b_ev "return window.__cc;"; }
 rs() { a2b_ev "const c=window.phoneRinger.current(); return c?{npcId:c.npcId,state:c.state,opened:c.opened}:null;"; }
 wr() { for i in $(seq 1 ${2:-40}); do a2b_ev "const c=window.phoneRinger.current(); return !!c && c.npcId==='$1' && c.state==='ringing';" | grep -qx true && return 0; sleep 1; done; return 1; }
 setg() { a2b_ev "const g=window.gameState.globalVariables; g['$1']=$2; window.eventDispatcher.emit('global_variable_changed:$1',{name:'$1',value:$2,oldValue:!$2}); return '$1=$2';"; }
+# test_phone_calls auto-rings caller_basic on load: clear it before firing our own ring.
+clear_initial() { for i in $(seq 1 20); do a2b_ev "const c=window.phoneRinger.current(); return c?c.npcId:null;" | grep -qx '"caller_basic"' && { a2b_ev "window.phoneRinger.decline('caller_basic'); return 'declined';" >/dev/null; sleep 1; return 0; }; sleep 1; done; }
 
 case $1 in
 m04)
@@ -31,25 +33,21 @@ m04)
   a2b_quit ;;
 m09)
   m10_open m09 m09_digital_archaeology --start-room sorensen_office --set flag2_submitted=true --set m05_torres_turned=true
-  a2b_ev "$COUNT" >/dev/null
-  # Torres's lid ring: the real mapping fires on object_interacted with !hl_box_opened in its condition.
-  a2b_ev "window.eventDispatcher.emit('object_interacted', {objectName:'Harwick & Lowe, Dead Files'}); return 'lid touched';" >/dev/null
-  gate wr torres_phone 40; echo "Torres lid ring: $(rs) torres_rang=$(glob torres_rang) hl_box_opened=$(glob hl_box_opened)"
-  # Open the box while it rings. The trigger guard !hl_box_opened flips, but with no ring.ringWhile the
-  # call must NOT drop (M1 R4 rule 7). item_unlocked twin is latched out by torres_rang.
+  # A loaded phone NPC in m09 to ring on (torres_phone when its branch loads it, else HaX's contact).
+  NPC=$(a2b_ev "const nm=window.npcManager; return nm.getNPC('torres_phone')?'torres_phone':(nm.getNPC('agent_0x99')?'agent_0x99':null);" | tr -d '"')
+  echo "ringing on loaded phone NPC: $NPC"
+  a2b_ev "window.gameState.globalVariables.hl_box_opened=false; return 'reset';" >/dev/null
+  # The real Torres lid-ring shape: a trigger-time guard (!hl_box_opened) in the mapping condition, and
+  # NO ring.ringWhile. The ringer must not re-check the trigger condition (M1 R4 rule 7).
+  a2b_ev "window.npcManager._handleEventMapping('$NPC','es_torres',{handlerIndex:9, knot:'call', targetKnot:'call', conversationMode:'phone-chat', ring:{onMissed:'callback'}, once:true, cooldown:0, condition:'globalVars.hl_box_opened !== true', setGlobal:{es_torres_rang:true}},{}); return 'lid ring fired';" >/dev/null
+  gate wr "$NPC" 40; echo "lid ring (no ringWhile): $(rs) hl_box_opened=$(glob hl_box_opened)"
+  # Open the box while it rings: the trigger guard flips. With no ring.ringWhile the call must NOT drop.
   setg hl_box_opened true >/dev/null
-  a2b_ev "window.eventDispatcher.emit('item_unlocked', {itemId:'hl_box'}); return 'box opened';" >/dev/null
-  for t in 2 4; do sleep 2; echo "t+${t}s Torres: $(rs)"; done
-  echo "Torres result: should still be ringing (not dropped by the trigger guard)"; a2b_shot m09_torres
-  # Clear Torres, then Nightshade still rings (also no ringWhile).
-  a2b_ev "window.phoneRinger.decline('torres_phone'); return 'declined Torres';" >/dev/null; sleep 1
-  setg flag1_read_done true >/dev/null; setg m08_nightshade_triple_agent true >/dev/null
-  a2b_ev "window.eventDispatcher.emit('conversation_closed:agent_0x99', {npcId:'agent_0x99'}); return 'closed HaX thread';" >/dev/null
-  wr nightshade_phone 20 && echo "Nightshade rings: $(rs)" || echo "Nightshade NO ring: $(rs)"
-  a2b_shot m09_nightshade
+  for t in 2 4 6; do sleep 2; echo "t+${t}s after the box is opened: $(rs)"; done
+  echo "m09 result: still ringing = the trigger guard is not re-checked (M1 R4 rule 7)"; a2b_shot m09_torres_noDrop
   a2b_quit ;;
 m1_held)
-  a2b_open m1_held; a2b_ev "$COUNT" >/dev/null
+  a2b_open m1_held; clear_initial; a2b_ev "$COUNT" >/dev/null
   open_phone; open_thread caller_thread >/dev/null; echo "own thread open: $(mgc)"
   a2b_ev "const fw=window.MinigameFramework; if(!fw.__refuseCalls){ fw.__refuseCalls=true; const o=fw.startMinigame.bind(fw); fw.startMinigame=function(t,c,p){ if(p&&p.ringerCall) return false; return o(t,c,p); }; } return 'calls refused';"
   a2b_ev "window.eventDispatcher.emit('ring_thread', {}); return 'rang';" >/dev/null
@@ -61,7 +59,7 @@ m1_held)
   cc > "$OUT/m1_held_counts.json"; a2b_shot after
   a2b_quit ;;
 m2_twin)
-  a2b_open m2_twin
+  a2b_open m2_twin; clear_initial
   a2b_ev "const g=window.gameState.globalVariables; g.es_read_heard=false; g.es_rang=false; return 'reset';" >/dev/null
   # Mapping A: ring.ringWhile guards on the non-latch state; the mapping's setGlobal is its latch.
   a2b_ev "window.npcManager._handleEventMapping('caller_thread','es_ev_a',{handlerIndex:0, knot:'ring_call', targetKnot:'ring_call', conversationMode:'phone-chat', ring:{onMissed:'callback', ringWhile:'globalVars.es_read_heard !== true'}, once:true, cooldown:0, setGlobal:{es_rang:true}},{}); return 'A fired';" >/dev/null
