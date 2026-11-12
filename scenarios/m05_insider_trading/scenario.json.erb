@@ -1267,7 +1267,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 <% end %>
 <% end %>
             {
-              "_comment": "PASS 4 fix 4: the Recruiter's text lands while the player is being sent to the vault, so HaX flags it. Single-term condition (&&-only rule). Skipped if the player has already rung her back.",
+              "_comment": "PASS 4 fix 4 (M5: now her call): recruiter_texted goes true when her ring is offered, while the player is being sent to the vault, so HaX flags the number. Single-term condition (&&-only rule). Skipped if the player has already rung her back.",
               "eventPattern": "global_variable_changed:recruiter_texted",
               "condition": "value === true",
               "onceOnly": true,
@@ -1543,7 +1543,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 <% %w[patricia_morgan patricia_phone agent_0x99_handler].each_with_index do |src, i| %>
             <%= i > 0 ? ',' : '' %>{
               "eventPattern": "conversation_closed:<%= src %>",
-              "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true && globalVars.recruiter_texted !== true",
+              "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true && globalVars.recruiter_texted !== true && globalVars.mission_complete !== true",
               "onceOnly": true,
               "delayMs": 7500,
               "conversationMode": "phone-chat",
@@ -1553,6 +1553,18 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "setGlobal": { "recruiter_texted": true }
             }
 <% end %>
+            ,{
+              "_comment": "M5 R1 M1: game_loaded twin of the three conversation_closed rings. A reload in the 7.5 s window re-arms her at once instead of waiting for the next thread close. torres_identified is false on a fresh start, so it can't fire early; mission_complete !== true keeps her out of the debrief; recruiter_texted (set at the offer) stops this twin and the three closes from ringing her twice.",
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.torres_identified === true && globalVars.recruiter_contacted_player !== true && globalVars.recruiter_texted !== true && globalVars.mission_complete !== true",
+              "onceOnly": true,
+              "delayMs": 7500,
+              "conversationMode": "phone-chat",
+              "targetKnot": "first_call",
+              "ring": { "onMissed": "callback" },
+              "callLabel": "TalentStack Executive Recruiting",
+              "setGlobal": { "recruiter_texted": true }
+            }
             ,{
               "_comment": "M5: her first call declined -> her old text lands as a follow-up (the callback row is already there from onMissed: callback).",
               "eventPattern": "phone_call_declined:recruiter",

@@ -97,4 +97,57 @@ patricia)
   echo "header=$(hdr_btn)"; press_call >/dev/null; sleep 1; echo "dialling: $(screen | jq -c '{bar}')"; a2b_shot calling
   call_up 40; echo "call: $(screen | jq -c '{bar,subs,choices}')"; a2b_shot call
   tts_log | cut -c1-500; evs; a2b_quit ;;
+
+twin_reload)
+  # M5 R1 M1 proof A: Torres named (torres_identified set at runtime, so the initial-load twin does not fire
+  # first), her first ring armed, then the page reloaded inside the 7.5 s window before the ring is offered
+  # (recruiter_texted still false). The new game_loaded twin re-arms her on load and she rings once.
+  m10_open $1 m05_insider_trading; a2b_ev "$LOGEV" >/dev/null
+  a2b_ev "window.gameState.globalVariables.torres_identified=true; return window.gameState.globalVariables.torres_identified;" >/dev/null
+  emit 'conversation_closed:agent_0x99_handler' '{"npcId":"agent_0x99_handler"}'
+  sleep 2; echo "armed in window (pending, not yet offered): ringer=$(ringer_now) recruiter_texted=$(glob recruiter_texted)"; a2b_shot armed
+  reload; a2b_ev "$LOGEV" >/dev/null
+  sleep 3; echo "after reload: torres=$(glob torres_identified) recruiter_texted=$(glob recruiter_texted) ringer=$(ringer_now) mg=$(mgc)"; a2b_shot after_reload
+  wait_ring 20; echo "twin ring banner: $(banner)"; a2b_shot twin_ring
+  echo "at offer: ringer=$(ringer_now) recruiter_texted=$(glob recruiter_texted) queue=$(a2b_ev 'return window.phoneRinger.queueLength();')"
+  a2b_decline >/dev/null; sleep 2; echo "after decline: ringer=$(ringer_now) rows=$(rows recruiter)"; a2b_shot after_decline
+  sleep 12; echo "12 s later (no second ring expected): ringer=$(ringer_now) banner=$(banner) recruiter_texted=$(glob recruiter_texted)"; a2b_shot settled
+  evs; a2b_quit ;;
+
+bring_guard)
+  # M5 R1 M1 proof B (real bring-in): reload-miss aftermath. The twin rings her at load; decline it; then the
+  # real bring-in sets mission_complete and she does NOT ring into the debrief.
+  m10_open $1 m05_insider_trading --set torres_identified=true --set final_choice=arrest $ALLF; a2b_ev "$LOGEV" >/dev/null
+  wait_ring 20; echo "twin ring at load: $(banner)"; a2b_shot twin_ring
+  a2b_decline >/dev/null; sleep 2; echo "after decline: recruiter_texted=$(glob recruiter_texted) rows=$(rows recruiter)"
+  open_phone; open_thread agent_0x99_handler; echo "hub: $(screen | jq -c '{choices}' | head -c 300)"; a2b_shot hub
+  choose_text "Bring me in" >/dev/null; sleep 1; call_up 40
+  press_when "Bring me in"; echo "after Bring me in: $(screen | jq -c '{subs,choices}')"; a2b_shot confirm
+  choose_text "On my way" >/dev/null; sleep 2
+  gate wait_screen "!document.getElementById('call-end-button')" 40; sleep 4
+  echo "after bring-in: mission_complete=$(glob mission_complete) mg=$(mgc) ringer=$(ringer_now) queue=$(a2b_ev 'return window.phoneRinger.queueLength();')"; a2b_shot debrief
+  sleep 8; echo "debrief later (expect no recruiter ring): ringer=$(ringer_now) banner=$(banner) queue=$(a2b_ev 'return window.phoneRinger.queueLength();')"; a2b_shot debrief_later
+  evs; a2b_quit ;;
+
+guard_only)
+  # M5 R1 M1 proof B (guard in isolation): Torres named, recruiter still un-rung (recruiter_texted false), but
+  # mission_complete already set. The HaX-thread close does NOT ring her — the new guard term rejects it.
+  m10_open $1 m05_insider_trading --set torres_identified=true --set mission_complete=true; a2b_ev "$LOGEV" >/dev/null
+  echo "before: ringer=$(ringer_now) recruiter_texted=$(glob recruiter_texted) mission_complete=$(glob mission_complete)"
+  emit 'conversation_closed:agent_0x99_handler' '{"npcId":"agent_0x99_handler"}'
+  sleep 10; echo "after close (expect no ring): ringer=$(ringer_now) banner=$(banner) recruiter_texted=$(glob recruiter_texted) queue=$(a2b_ev 'return window.phoneRinger.queueLength();')"; a2b_shot no_ring
+  evs; a2b_quit ;;
+
+tts_reword)
+  # M5 R1 M2 proof C: the reworded HaX bring-in line (extract_call :987) is accepted by TtsLineResolver and
+  # requested from /tts (503 keyless = recognised, no cache). The old wording is no longer in HaX's ink.
+  m10_open $1 m05_insider_trading
+  NEW="That TalentStack number's still open. She's lost him. Ring her if you want to hear her lose."
+  OLD="That TalentStack text never got an answer. She's lost him. Ring her if you want to hear her lose."
+  for tag in NEW OLD; do
+    txt=${!tag}
+    st=$(a2b_ev "const c=document.querySelector('meta[name=csrf-token]'); const r=await fetch('/break_escape/games/$GID/tts',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':c?c.content:'','Accept':'application/json'},credentials:'same-origin',body:JSON.stringify({npc_id:'agent_0x99_handler',text:$(printf '%s' "$txt" | jq -Rs .)})}); let b=''; try{b=(await r.text()).slice(0,120);}catch(e){} return r.status+' | '+b.replace(/\n+/g,' ');")
+    echo "$tag /tts: $st"
+  done
+  a2b_quit ;;
 esac
