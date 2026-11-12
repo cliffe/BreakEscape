@@ -53,3 +53,15 @@ Fix (text-file): build the header as `'<h3><img src="/break_escape/assets/icons/
 
 **n3. `keypad-title.test.mjs:60` asserts the source text with a regex.**
 It will break on any reformatting of the label line and proves nothing the new jsdom test does not. Consider dropping the source match now that `minigame-title-escape` renders the label.
+
+## Outcomes (builder)
+
+- M1 fixed: the password device panel escapes the image file, `alt`, name and observations (name and observations keep `displayDashes`). Tests cover the `deviceImage` path and the textured-lockable path.
+- M2 fixed: the text-file header appends the file name as a text node after the icon; the text-file window title, file name, file type and observations are escaped too. The container header and both container info panels (`<h4>` name, `<p>` observations) are escaped. Tests render both.
+- m1 fixed: container NPC avatar `alt`, phone contact avatar `alt` and contact name, and the lockpicking item panel (`src`, `alt`, name, observations). Tests render each.
+- m2 logged: new backlog entry for the scenario-data title and body sinks, with the sis03 `&mdash;` caveat.
+- m3 done: see M1 and M2; every new test fails with this round's source changes reverted (7 of 7).
+- m4 resolved by M2 and the new m2 entry.
+- n1 not done: person-chat and phone-chat do not import `display-dashes.js`, and several test harnesses load them from data URLs or partial temp copies, where a new relative import would not resolve. The escaped text is correct; the dash difference predates this branch.
+- n2 kept as is, for the reason given.
+- n3 done: the source regex in `keypad-title.test.mjs` is gone; the rendered label is tested in `minigame-title-escape.test.mjs`.

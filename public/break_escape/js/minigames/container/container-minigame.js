@@ -502,8 +502,8 @@ export class ContainerMinigame extends MinigameScene {
         // Update header with container name
         if (this.headerElement) {
             this.headerElement.innerHTML = `
-                <h3>${displayDashes(this.containerItem.scenarioData.name)}</h3>
-                <p>${displayDashes(this.headerObservations())}</p>
+                <h3>${escapeHtml(displayDashes(this.containerItem.scenarioData.name))}</h3>
+                <p>${escapeHtml(displayDashes(this.headerObservations()))}</p>
             `;
         }
 
@@ -563,7 +563,7 @@ export class ContainerMinigame extends MinigameScene {
         // NPC mode - show NPC avatar and offer items
         let avatarHtml = '';
         if (this.npcAvatar) {
-            avatarHtml = `<img src="${this.npcAvatar}" alt="${this.npcDisplayName}" class="npc-avatar" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;">`;
+            avatarHtml = `<img src="${this.npcAvatar}" alt="${escapeHtml(this.npcDisplayName)}" class="npc-avatar" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;">`;
         }
         
         this.gameContainer.innerHTML = `
@@ -586,8 +586,8 @@ export class ContainerMinigame extends MinigameScene {
                 <div class="container-image-section">
                     ${this.containerImageHtml()}
                     <div class="container-info">
-                        <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>
-                        <p>${displayDashes(this.headerObservations())}</p>
+                        <h4>${escapeHtml(displayDashes(this.containerItem.scenarioData.name))}</h4>
+                        <p>${escapeHtml(displayDashes(this.headerObservations()))}</p>
                     </div>
                 </div>
 
@@ -629,8 +629,8 @@ export class ContainerMinigame extends MinigameScene {
             <div class="container-image-section">
                 ${this.containerImageHtml()}
                 <div class="container-info">
-                    <h4>${displayDashes(this.containerItem.scenarioData.name)}</h4>${this.accountBarHtml()}
-                    <p>${displayDashes(this.headerObservations())}</p>
+                    <h4>${escapeHtml(displayDashes(this.containerItem.scenarioData.name))}</h4>${this.accountBarHtml()}
+                    <p>${escapeHtml(displayDashes(this.headerObservations()))}</p>
                 </div>
             </div>
             <div class="container-minigame desktop-mode">

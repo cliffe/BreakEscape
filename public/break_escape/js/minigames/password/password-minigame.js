@@ -286,12 +286,12 @@ export class PasswordMinigame extends MinigameScene {
             <div class="password-minigame-area">
                 ${imageData ? `
                     <div class="password-image-section">
-                        <img src="/break_escape/assets/objects/${imageData.imageFile}.png" 
-                             alt="${imageData.deviceName}" 
+                        <img src="/break_escape/assets/objects/${escapeHtml(imageData.imageFile)}.png" 
+                             alt="${escapeHtml(imageData.deviceName)}" 
                              class="password-image">
                         <div class="password-info">
-                            <h4>${imageData.deviceName}</h4>
-                            <p>${imageData.observations}</p>
+                            <h4>${escapeHtml(displayDashes(imageData.deviceName))}</h4>
+                            <p>${escapeHtml(displayDashes(imageData.observations))}</p>
                         </div>
                     </div>
                 ` : ''}

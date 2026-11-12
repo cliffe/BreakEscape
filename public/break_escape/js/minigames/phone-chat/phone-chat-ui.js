@@ -630,10 +630,10 @@ export default class PhoneChatUI {
 
         contactItem.innerHTML = `
             <div class="contact-avatar">
-                ${avatar ? `<img src="${avatarSrc}" alt="${npc.displayName}">` : '👤'}
+                ${avatar ? `<img src="${avatarSrc}" alt="${escHtml(npc.displayName)}">` : '👤'}
             </div>
             <div class="contact-info">
-                <div class="contact-name">${npc.displayName || npc.id}</div>
+                <div class="contact-name">${escHtml(npc.displayName || npc.id)}</div>
                 ${npcDmFields(npc).handle ? `<div class="contact-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
                 <div class="contact-last-message">${displayDashes(lastMessagePreview)}</div>
             </div>

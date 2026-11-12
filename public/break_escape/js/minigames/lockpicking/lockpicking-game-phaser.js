@@ -17,6 +17,10 @@ import { GameUtilities } from './game-utilities.js';
 import MusicController from '../../music/music-controller.js';
 import { wirePhaserGameSoundToBreakEscape } from '../../music/phaser-audio-bus.js';
 
+// Item names and observations are scenario text: escaped before they reach HTML
+const escapeItemText = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
 // Phaser Lockpicking Minigame Scene implementation
 export class LockpickingMinigamePhaser extends MinigameScene {
     constructor(container, params) {
@@ -380,12 +384,12 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         const itemDisplayDiv = document.createElement('div');
         itemDisplayDiv.className = 'lockpicking-item-section';
         itemDisplayDiv.innerHTML = `
-            <img src="${itemImage}" 
-                 alt="${itemName}" 
+            <img src="${escapeItemText(itemImage)}" 
+                 alt="${escapeItemText(itemName)}" 
                  class="lockpicking-item-image">
             <div class="lockpicking-item-info">
-                <h4>${itemName}</h4>
-                <p>${itemObservations}</p>
+                <h4>${escapeItemText(itemName)}</h4>
+                <p>${escapeItemText(itemObservations)}</p>
             </div>
         `;
         
