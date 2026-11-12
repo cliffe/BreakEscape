@@ -88,6 +88,11 @@ module BreakEscape
       assert_equal 'missed', saved_live('state' => 'missed', 'onMissed' => 'voicemail', 'voicemailKnot' => 'vm')['state']
     end
 
+    test 'a voicemail still waiting to run (A6 R1 M1) is kept whole, so a reload can deliver it' do
+      held = { 'knot' => 'ring_vm', 'state' => 'missed', 'onMissed' => 'voicemail', 'voicemailKnot' => 'ring_vm', 'withheld' => true }
+      assert_equal held, saved_slot({ 'forced' => [], 'live' => held })['live']
+    end
+
     # ---- hostile input ----
 
     test 'an unknown callEvent is dropped from the row' do

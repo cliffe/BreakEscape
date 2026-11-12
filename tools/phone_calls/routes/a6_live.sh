@@ -1,6 +1,6 @@
 #!/bin/bash
 # A6 live proofs on test_phone_calls: callback and voicemail (plan 2.6), and a reload mid-call (A5 R1 M1).
-#   PC_PORT=3024 tools/phone_calls/routes/a6_live.sh patient|decline|debrief_ko|voicemail|terminal|midcall_out|midcall_in
+#   PC_PORT=3024 tools/phone_calls/routes/a6_live.sh patient|decline|debrief_ko|voicemail|terminal|midcall_out|midcall_in|voicemail_open|voicemail_held_reload
 # Each route fires the ring event, uses the real banner buttons, the real header and row buttons, and logs the rows, the
 # thread, the callback and the /tts requests (the keyless server answers 503; the request list is the evidence).
 export OUT=${OUT:-docs/agents/phone_calls/proofs/A6} NODE_PATH=$PWD/node_modules BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle
@@ -33,6 +33,8 @@ press() { a2b_ev "const b=document.querySelector('$1'); if(!b) return 'no $1'; b
 end_call() { press '#call-end-button' >/dev/null; sleep 4; }
 tts_log() { echo "/tts requests ($OUT/${LABEL}_tts.jsonl): $(jq -c '[.npc_id // .npcId, .text] ' "$OUT/${LABEL}_tts.jsonl" 2>/dev/null | tr '\n' ' ')"; }
 start() { AUTOBRIEF=true a2b_open "$@"; gate clear_basic; a2b_ev "$LOGEV" >/dev/null; }
+# A6 R1 M1: a voicemail while the caller's own thread is open is held until the thread closes
+vm_vars() { a2b_ev "const o=window.npcManager.getNPC('caller_voicemail'); const ss=typeof o.storyState==='string'?o.storyState:''; const m=/\"heard_vm\":(true|false)/.exec(ss); const st=window.npcConversationStateManager.conversationStates.get('caller_voicemail'); const h=window.npcManager.getConversationHistory('caller_voicemail')||[]; return {storyState_heard_vm: m?m[1]:null, savedInkVars_heard_vm: st&&st.variables?st.variables.heard_vm:null, rows:h.filter(x=>x.type==='call').map(x=>x.text), lines:h.filter(x=>x.type!=='call').map(x=>x.text), slot:o.pendingCall?JSON.parse(JSON.stringify(o.pendingCall)):null, toasts:window.__toasts};"; }
 case $1 in
 patient)
   start patient
@@ -89,6 +91,33 @@ voicemail|terminal)
     a2b_ev "const c=[...document.querySelectorAll('.voice-message-display .audio-controls')]; const p=window.MinigameFramework.currentMinigame && window.MinigameFramework.currentMinigame.ui; if (p && p.isPlaying) { p.stopVoiceMessage(p.currentPlayButton); } return true;" >/dev/null; sleep 1
   done
   echo "the VAR the voicemail knot set, read by the thread's home knot: $(thread | jq -c '.text')"
+  tts_log; a2b_quit ;;
+voicemail_open)
+  start voicemail_open
+  open_phone; open_thread caller_voicemail; echo "thread open: $(thread | jq -c '{text,choices}')"
+  echo "before the ring: $(vm_vars)"
+  fire ring_voicemail; gate wait_ring caller_voicemail 25; a2b_shot ringing_in_phone
+  press 'button[aria-label="Decline call"]' >/dev/null; sleep 5
+  echo "after the in-phone Decline, thread still open (voicemail must be held): $(vm_vars)"; echo "open: $(state | jq -c '._open')"; a2b_shot held_thread
+  a2b_ev "const b=[...document.querySelectorAll('.choice-button')].find(x=>/Anything new/.test(x.innerText)); if(!b) return 'no choice'; b.click(); return 'chose';" >/dev/null; sleep 3
+  echo "after choosing in the open thread (its own save): $(vm_vars)"; echo "thread: $(thread | jq -c '.text')"
+  close_phone; sleep 5
+  echo "after the thread closed (voicemail runs now): $(vm_vars)"
+  open_phone; open_thread caller_voicemail; echo "reopened thread: $(thread | jq -c '{text,choices}')"; a2b_shot thread_after_close
+  echo "voice bubbles: $(a2b_ev "return document.querySelectorAll('.voice-message-display').length;")"
+  a2b_ev "const b=[...document.querySelectorAll('.choice-button')].find(x=>/Anything new/.test(x.innerText)); if(b) b.click(); return true;" >/dev/null; sleep 2
+  echo "home line after a choice: $(thread | jq -c '.text')"; a2b_shot home_line
+  tts_log; a2b_quit ;;
+voicemail_held_reload)
+  start voicemail_held_reload
+  open_phone; open_thread caller_voicemail
+  fire ring_voicemail; gate wait_ring caller_voicemail 25
+  press 'button[aria-label="Decline call"]' >/dev/null; sleep 4
+  echo "held, thread open: $(vm_vars)"
+  reload; sleep 6
+  echo "after the reload (delivered, quiet): $(vm_vars)"
+  open_phone; open_thread caller_voicemail; echo "thread: $(thread | jq -c '{text,choices}')"; a2b_shot thread_after_reload
+  echo "server: $(BUNDLE_PATH=$BUNDLE_PATH bin/rails runner "g = BreakEscape::Game.find($GID); e = g.player_state['phoneState']['caller_voicemail']; puts JSON.generate({pendingCall: e['pendingCall']})" 2>/dev/null)"
   tts_log; a2b_quit ;;
 midcall_out)
   start midcall_out
