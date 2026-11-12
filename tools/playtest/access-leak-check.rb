@@ -74,10 +74,19 @@ unless scanner.feed_fallback.empty?
   puts "note             feed posts for #{scanner.feed_fallback.join(', ')} judged partly by the game's saved feedRevealed: " \
        'fewer /feed_post answers in the log than the game revealed (a resumed game or a lost response body)'
 end
+unless scanner.feed_ruled_out.empty?
+  puts "note             feed posts for #{scanner.feed_ruled_out.join(', ')}: no lost /feed_post answer in the log could be theirs " \
+       '(at least one was tagged for another NPC), so their missing reveals count from the first line: a resumed game or a ' \
+       'response the capture missed. Check that the log began after their reveals'
+end
+if scanner.feed_tags_ignored
+  puts 'note             a readable /feed_post answer named another NPC than its npcId tag, so every npcId tag in the log ' \
+       'was ignored and lost answers were judged by the old rule'
+end
 unless scanner.feed_unknown.empty?
   puts "note             feed posts for #{scanner.feed_unknown.join(', ')} allowed one more reveal at each /feed_post " \
        'answer whose body the log lost, from that answer on only, and none at an answer captured after the ' \
-       "NPC's last saved reveal"
+       "NPC's last saved reveal or tagged with another NPC's npcId"
 end
 if lines.any? { |_label, _no, row| row.is_a?(Hash) && (row.key?('dom') || row['path'].to_s.split('?').first.to_s.end_with?('/capture_secrets')) }
   puts 'note             capture answers judged against the proofs held now: run this after every beat to see order'
