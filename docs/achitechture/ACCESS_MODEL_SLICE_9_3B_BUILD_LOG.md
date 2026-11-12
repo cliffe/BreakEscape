@@ -77,10 +77,9 @@ Under the shared lock: `bin/rails test` 1619 runs, 23653 assertions, 0 failures,
 - The dungeon graph's implant node (plan 9.3, stream T) is not added here; the generator does not
   error on `grant_foothold` and no shipping scenario uses it. The scenario's `dungeon_graph.*` were
   regenerated to match the new objects.
-- No-exposure controller test (`network_no_exposure_test.rb`) was not extended with an implant case;
-  the implant's "a foothold and nothing else" and the no-leak of preconditions are covered by
-  `network_implants_test.rb` and the live leak scan. Worth adding when K/O land. (Closed in R1,
-  server minor 2.)
+- (Done in R1, server minor 2) `network_no_exposure_test.rb` carries a `POST /network/implant`
+  not_ready case under `refute_exposed`, so the implant's "a foothold and nothing else" is asserted
+  there as well as in `network_implants_test.rb` and the live leak scan.
 
 ### Review R1 outcomes (server `..._R1_SERVER.md`, client `..._R1_CLIENT.md`)
 
@@ -132,6 +131,46 @@ portSecurity (P) have all landed. Used main/P's `toast()` wrapper and `toastCall
 - `bin/test-js -j 3`: 496 files passed, 0 failed.
 - Changed JS files alone: `network-links.test.mjs` 55 pass, `validator-network-model.test.mjs`
   49 pass, new `grant-foothold-action.test.mjs` 4 pass.
+
+### Review R2 outcomes (`..._SLICE_9_3B_I_CODE_REVIEW_R2.md`)
+
+No blockers, one Major, two minors, two nits. Fixes applied (see the review file for detail):
+
+- **M1 (lost-response retry)** the already-held branch of `implant_foothold!` now returns
+  `consumedId` from the stored foothold record's device id, so a retry after a lost response
+  reconciles the consumed device off the tray exactly as the first success would. No client change
+  (it already forwards `body.consumedId`). New JS test for throw-after-server-success-then-retry and
+  server tests for the repeat session (names the device) and dropped (names none) cases.
+- **m1** the validator errors when a `needsHeld` device object has no `id` (it can never be
+  reconciled off the tray). New JS test.
+- **m2** the validator adds `onConfirm` to the host keys and carries each timer element as the host
+  of its own actions, so the two session-shape guards cover a grant_foothold on a timer or onConfirm.
+  New JS test.
+- **n1** kept as documented (`path` is forwarded but not load-bearing).
+- **n2** this log's stale "Open / not done" line corrected.
+
+### Merge of main (9.2 C, social media) into build/9-3b-i
+
+Merged main at `fea96124c`. One conflict, `games_controller.rb`: both sides add to the
+before/around_action symbol lists (`:network_implant` here, `:feed_post` on main); kept both, as the
+merge rule says. Everything else auto-merged (routes, policy, api-client, schema, the social feed
+files are additive).
+
+### Live check R2 (port 3026, keyless server, game 1277, real client)
+
+Re-ran the implant steps through the real `window.__test` client after the fix and the merge. All
+six checks pass: N13 kiosk USB refused (no foothold, BadUSB kept); N12 BadUSB at Sam's desk
+(`implant_sam_pc` on `office_lan`, device consumed, link item present, no extra session); N11
+dropped stick at the door controller (`implant_door_box` on `office_lan`, no session); a
+`?skip_resume=1` reload keeps both implant footholds with their `via` and network; a forged implant
+on a PC with no `grant_foothold` action answers 404 `no_action`; a view of a never-granted foothold
+answers 404. `verify-run.rb --access` on game 1277 confirms both footholds on `office_lan` and no
+kiosk foothold.
+
+### R2 suites (after the fix and the merge, under the shared lock)
+
+- `bin/rails test`: 1708 runs, 25044 assertions, 0 failures, 0 errors, 1 skip (the known skip).
+- `bin/test-js -j 3`: 499 files passed, 0 failed.
 
 ## Sub-slice W: Wi-Fi (branch `build/9-3b-w`, from `main` 1ba8c5cd7)
 

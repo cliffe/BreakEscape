@@ -145,3 +145,43 @@ contradiction. Tidy the wording. No code impact.
 
 - `bin/test-js test/js/network-links.test.mjs test/js/grant-foothold-action.test.mjs test/js/validator-network-model.test.mjs`: 3 files passed, 0 failed.
 - Rails `test/controllers/break_escape/network_implants_test.rb test/controllers/break_escape/network_no_exposure_test.rb test/unit/network_model_test.rb` under the shared lock: 37 runs, 1731 assertions, 0 failures, 0 errors, 0 skips.
+
+## Review R2 outcomes (fixes applied)
+
+- **M1 (lost-response retry leaves the consumed device in the tray)** fixed. The already-held
+  branch of `implant_foothold!` now returns `consumedId`, read from the stored foothold record's
+  `device['id']` (nil for the dropped shape, which stores no device). The client already pushes
+  `body.consumedId` into the reconcile ids, so no client change was needed. New JS test in
+  `network-links.test.mjs`: a first `networkImplant` throws after the server would have granted, the
+  retry answers `already: true` with `consumedId`, and the consumed device is removed from the tray.
+  Server tests in `network_implants_test.rb`: the repeat session implant names the consumed device in
+  `consumedId`; the repeat dropped implant names none.
+- **m1 (consumedId depends on the device carrying an id)** fixed. The validator's session branch now
+  errors when the resolved `needsHeld` device object has no `id` (it can never be reconciled off the
+  tray). New JS test covers a type-named, id-less device.
+- **m2 (host tracking skips timers and onConfirm)** fixed. `onConfirm` joins the host-action keys,
+  and the walk now carries each `timers[i]` element as the host of its own actions, so the two
+  session-shape guards (action on the sign-in PC it targets; host sets `consumesItem`) are evaluated
+  for a grant_foothold placed in a timer or onConfirm rather than silently skipped. New JS test
+  places a session grant_foothold in a timer with `consumesItem` and asserts the guard fires.
+- **n1 (author-set path tie-break)** kept as documented. The existing comment already records that
+  `path` is forwarded but not load-bearing, because the validator never lets two actions reach the
+  same `[pc, shape]`. No change.
+- **n2 (stale build-log open item)** fixed. The "Open / not done" line now reads as done, matching
+  the implant `not_ready` case that `network_no_exposure_test.rb` already carries.
+
+### Live check R2 (port 3026, keyless server, game 1277, real client)
+
+Re-ran the implant steps through the real `window.__test` client path after the fix and the merge
+of main (9.2 C, social media). All six checks pass: N13 kiosk USB refused (no foothold, BadUSB
+kept); N12 BadUSB at Sam's desk (`implant_sam_pc` on `office_lan`, device consumed, link item
+present, no extra session); N11 dropped stick at the door controller (`implant_door_box` on
+`office_lan`, no session); a `?skip_resume=1` reload keeps both implant footholds with their `via`
+and network; a forged implant on a PC with no `grant_foothold` action answers 404 `no_action`; a
+view of a never-granted foothold answers 404. `verify-run.rb --access` confirms the two footholds on
+`office_lan` and no kiosk foothold.
+
+### Suites (R2 fixes, under the shared lock)
+
+- `bin/rails test`: 1708 runs, 25044 assertions, 0 failures, 0 errors, 1 skip (the known skip).
+- `bin/test-js -j 3`: 499 files passed, 0 failed.
