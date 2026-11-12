@@ -65,6 +65,30 @@ module BreakEscape
       refute_exposed('/scenario with office foothold', NS::SERVER_STRINGS)
     end
 
+    # Slice 9.3b sub-slice O (5.2, beat N5): a down-by-default network the player has never
+    # reached appears in no GET /network answer, not even greyed, and its host is refused
+    # exactly as an invented id is. Even with a pivot session on the adjacent office network,
+    # the down route is never crossed, so nothing on the server network is named.
+    test 'a down-by-default network nobody has reached is absent from every read route' do
+      build_network_game({ 'unlockedRooms' => ALL_ROOMS.dup }, NS.with_outage(down: true))
+      take_drop_box
+      plant('comms_port')
+      assert_response :success
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: 'jack_comms_port')
+      assert_response :success
+
+      network_view('jack_comms_port')
+      refute_exposed('/network down-by-default', NS::SERVER_STRINGS)
+
+      sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: 'jack_comms_port')
+      assert_response :forbidden
+      refute_exposed('/login down server host', NS::SERVER_STRINGS)
+
+      get game_path('scenario'), as: :json
+      assert_response :success
+      refute_exposed('/scenario with down server_net', NS::SERVER_STRINGS)
+    end
+
     # se_captures as any browser can write it through PUT /sync_state: a credential
     # capture of Lena's username and one of the landing page's address, with no phish.
     def forge_captures

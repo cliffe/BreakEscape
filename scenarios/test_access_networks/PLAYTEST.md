@@ -299,6 +299,27 @@ Server, after the refusal: no `footholds.jack_secure_port`, the drop box still i
 only the authored message: no network name, host or share reaches the browser (the leak check
 covers it).
 
+## Slice 9.3b sub-slice O: Outages (N5 to N7)
+
+Added by sub-slice O (`ACCESS_MODEL_SLICE_9_3B_PLAN.md`, section 5.2). `server_net` now carries
+`downIf: "servers_offline"` and the global starts `false` (up), so the pivot beats N1 to N4 are
+unchanged. In the server room (north of the comms room) a rack breaker (`server_breaker`) takes
+the network down, a power switch (`server_power`) restores it. All outage state is read on the
+server from its own globals, so a tampered client cannot reach a downed network, clear the global
+it cannot set, or keep using a no-route session.
+
+| Beat | Steps | What should happen | Server afterwards |
+|---|---|---|---|
+| **N5 Outage** | With the box planted and a pivot session at `lena_pc`, `interact` `server_breaker` (sets `servers_offline` true). Open the box's view. | The Server network block is gone (no name, no greyed row): the player holds no session on it. A sign-in on `sv_fs02` through the box is 403 `unreachable`. `n5_outage` ticks. | `player_reach(jack_comms_port)` is `office_lan` only; no `server_net` string in any read route |
+| **N6 Repair** | `interact` `server_power` (sets `servers_offline` false). Open the box's view; sign in to `sv_fs02` through the box. | The Server network block fills back in (route `up`, through `lena_pc`); `sv_fs02` signs in. `n6_repair` ticks. | `player_reach` includes `server_net` again |
+| **N7 Held route down** | Sign in to `sv_fs02` through the box first, then `interact` `server_breaker`. The desktop closes to a greyed "No route to SV-FS02" row; a desktop fetch is refused. Then `interact` `server_power` and reopen `sv_fs02`. | The session is kept throughout; while down the view shows a greyed `server_net` block with the "no route" row; on repair the desktop opens again with no password. `n7_held_route` ticks (on `pc_desktop_opened` for `sv_fs02` while armed and repaired). | `sessions.sv_fs02` present the whole time; `endedPcIds` never names it for an outage |
+
+The scoped-request route test: a folder, inventory add or unlock scoped under the remote
+`sv_fs02` session is allowed only while the route is up, read from the server's own
+`sessions[sv_fs02].foothold`, never a client parameter. A local (keyboard or claim) session is
+never affected. A resource whose own `downIf` is truthy is withheld from the view and not served
+in the same way, returning when its global clears.
+
 ## Earned secrets
 
 | Secret | In-game source | Used in |
@@ -325,6 +346,11 @@ finance share, which maps for Lena on both of those. The open shares are not on 
 `lena_pc` (behind a PIN door) or `door_box` (headless): the chain's payoff, "Door codes", is on the
 headless host, so it still needs the box. Plus the generic suggestions every small test scenario
 gets.
+
+Slice 9.3b sub-slice O adds one information line and no error or warning: "Outage: network
+'server_net' is down while 'servers_offline' is truthy; it starts up." `servers_offline` is
+declared in `globalVariables`, so no undeclared-global warning; `backup_vault` is an access-listed
+share (not an open share), so the start-down open-share warning does not apply.
 
 Slice 9.3b sub-slice I adds one expected warning: the `grant_foothold` at the kiosk socket targets
 `kiosk_pc`, whose `kiosk_locked` policy refuses the keystroke injector's USB class (this is beat
