@@ -4,7 +4,7 @@
  */
 
 import { CombatEvents } from '../events/combat-events.js';
-import { isAppWindow, appHomeUrl } from '../utils/desktop-app.js';
+import { isAppWindow, appHomeUrl, safeShellUrl } from '../utils/desktop-app.js';
 
 export class GameOverScreen {
   constructor() {
@@ -200,7 +200,7 @@ export class GameOverScreen {
     // Navigate to scenario select or main menu. A host game shell names its own menu (the game
     // runs in the shell's tab). The Hacktivity desktop app has no missions page for players: the
     // host's root sends it back to its game's event page.
-    const shellMenu = window.breakEscapeConfig?.shellMenuUrl;
+    const shellMenu = safeShellUrl(window.breakEscapeConfig?.shellMenuUrl);
     if (shellMenu) {
         window.location.href = shellMenu;
         return;

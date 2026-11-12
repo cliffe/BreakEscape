@@ -17,7 +17,7 @@ const js = join(root, 'public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'social-mail-ink-shell-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of ['minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
-    'utils/display-dashes.js', 'ui/modal-stack.js', 'systems/phish-rules.js', 'systems/mail-ink.js',
+    'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js', 'systems/phish-rules.js', 'systems/mail-ink.js',
     'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js', 'systems/captures.js',

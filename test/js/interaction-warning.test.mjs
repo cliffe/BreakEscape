@@ -51,6 +51,8 @@ const stubs = {
   './pc-policy.js': readFileSync(join(js, 'systems/pc-policy.js'), 'utf8'),
   './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;}',
   './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
+  '../utils/display-dashes.js': 'export function displayDashes(s){ return s; }',
+  '../utils/escape-html.js': 'export function escapeHtml(s){ return String(s ?? ""); }',
   './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}',
 };
 let interactionsSrc = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
@@ -79,18 +81,18 @@ const tick = () => new Promise(r => setTimeout(r, 0));
 
 const box = (iw, extra = {}) => ({ objectId: 'box', scenarioData: { id: 'box', type: 'generic', interactionWarning: iw, ...extra } });
 
-test('an unanswered warning shows: returns true and calls gameConfirm with the labels and plainText', () => {
+test('an unanswered warning shows: returns true and calls gameConfirm with the labels (plain text by default)', () => {
   const { confirmCalls } = setupWindow({ answer: false });
   const r = maybeInteractionWarning(box({ text: 'Are you sure?', proceedLabel: 'Open', declineLabel: 'Leave', onDecline: [{ type: 'set_global', key: 'd' }] }));
   assert.equal(r, true, 'intercepts the interaction');
   assert.equal(confirmCalls.length, 1);
-  assert.deepEqual(confirmCalls[0], ['Are you sure?', 'Open', 'Leave', { plainText: true }]);
+  assert.deepEqual(confirmCalls[0], ['Are you sure?', 'Open', 'Leave']);
 });
 
 test('labels default to Proceed / Cancel when omitted', () => {
   const { confirmCalls } = setupWindow({ answer: false });
   maybeInteractionWarning(box({ text: 'T' }));
-  assert.deepEqual(confirmCalls[0], ['T', 'Proceed', 'Cancel', { plainText: true }]);
+  assert.deepEqual(confirmCalls[0], ['T', 'Proceed', 'Cancel']);
 });
 
 test('Decline runs onDecline and, with once truthy (default), records answered', async () => {

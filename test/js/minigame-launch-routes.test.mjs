@@ -59,7 +59,9 @@ const stubs = {
     './interaction-walls.js': dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8')),
     './interaction-reach.js': dataUrl(readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8')),
     './minigame-registry.js': pathToFileURL(join(dir, 'minigame-registry.mjs')).href,
-    './inventory-menu.js': inventoryMenuUrl
+    './inventory-menu.js': inventoryMenuUrl,
+    '../utils/display-dashes.js': dataUrl(readFileSync(join(js, 'utils/display-dashes.js'), 'utf8')),
+    '../utils/escape-html.js': dataUrl(readFileSync(join(js, 'utils/escape-html.js'), 'utf8'))
 };
 let src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, url] of Object.entries(stubs)) src = src.split(`'${spec}'`).join(`'${url}'`);

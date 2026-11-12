@@ -153,7 +153,7 @@ module BreakEscape
     end
 
     def hand_over_borrow!
-      ps = @game.player_state
+      ps = @game.reload.player_state
       ps['npcFrustration'] = { 'tara' => { 'handed' => { '0' => { 'hand' => 1, 'time' => 0, 'need' => 'social_media' } } } }
       @game.update!(player_state: ps)
     end
@@ -194,6 +194,102 @@ module BreakEscape
       lock_out!('lena_pc', 'lfox')
       report(check('lena', 'lena_pc'))
       assert report(locked_fail('lena', 'lena_pc')).first['refused'], 'with a phone the need never fails'
+    end
+
+    # ── q33 code review R2 (m1 to m4) and user decision q36 ──────────────────────────────
+
+    test 'q36: a check at a handed-over hot desk is answered and recorded; before the hand-over it is refused' do
+      build(data: borrow_and_annex_scenario)
+      lock_out!('hot_desk', 'tnair')
+      assert report(check('tara', 'hot_desk')).first['refused'], 'not handed over: no place of hers'
+      hand_over_borrow!
+      a = report(check('tara', 'hot_desk')).first
+      assert_equal true, a['lockedOut']
+      assert_includes state.dig('npcFrustration', 'tara', 'lockedOut'), 'hot_desk'
+      get scenario_game_url(@game), as: :json
+      assert_includes response.parsed_body.dig('npcFrustration', 'tara', 'lockedOut'), 'hot_desk', 'restored after a reload'
+      assert report(check('tara', 'jake_pc')).first['refused'], 'another NPC\'s station is still refused'
+    end
+
+    test 'q36: a check at a hot desk the borrower is not locked out at answers false and records nothing' do
+      build(data: borrow_and_annex_scenario)
+      hand_over_borrow!
+      lock_out!('hot_desk', 'someone_else')
+      assert_equal false, report(check('tara', 'hot_desk')).first['lockedOut']
+      assert_empty Array(state.dig('npcFrustration', 'tara', 'lockedOut'))
+    end
+
+    test 'q36: a check at a hot desk under a policy with no maxAttempts is refused' do
+      data = borrow_and_annex_scenario
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'hot_desk' }['policy'] = 'lax'
+      data['policies']['lax'] ||= { 'social' => 'allowed' }
+      build(data: data)
+      hand_over_borrow!
+      assert report(check('tara', 'hot_desk')).first['refused']
+    end
+
+    test 'R2 m1: an ease at a locked-out hot desk is refused, as the post there is' do
+      build(data: borrow_and_annex_scenario)
+      hand_over_borrow!
+      ps = @game.player_state
+      ps['npcFrustration']['tara']['level'] = 40
+      @game.update!(player_state: ps)
+      ease = { npc_id: 'tara', event: 'ease', need: 'social_media', object_id: 'hot_desk' }
+      lock_out!('hot_desk', 'tnair')
+      assert report(ease).first['refused'], 'her username is locked out at the borrowed PC'
+      assert_equal 40, state.dig('npcFrustration', 'tara', 'level')
+
+      build(data: borrow_and_annex_scenario)
+      hand_over_borrow!
+      ps = @game.player_state
+      ps['npcFrustration']['tara']['level'] = 40
+      @game.update!(player_state: ps)
+      refute report(ease).first['refused'], 'not locked out: the ease is accepted'
+    end
+
+    def two_post_scenario(data = scenario)
+      npc_in(data, 'tara')['feed']['posts'] << { 'id' => 'tara_post_2', 'text' => 'Tara posts again from somewhere.' }
+      data
+    end
+
+    test 'R2 m2: a refused source inside the pace floor answers tooSoon, outside it refused' do
+      build(data: two_post_scenario)
+      assert_equal 'tara_post_1', ask('tara', object_id: 'tablet').dig('post', 'id')
+      lock_out!('tara_pc', 'tnair')
+      a = ask('tara', object_id: 'tara_pc')
+      assert a['tooSoon'], 'inside the floor the lockout is not judged yet'
+      refute a.key?('refused')
+      travel(AccessWork.post_floor(@game.scenario_data, npc_in(@game.scenario_data, 'tara')) + 2) do
+        assert ask('tara', object_id: 'tara_pc')['refused']
+        assert_equal %w[tara_post_1], state.dig('feedRevealed', 'tara', 'shown')
+      end
+    end
+
+    test 'R2 m3: the own station is refused as a source while its policy blocks social media or it is off' do
+      data = scenario
+      data['policies']['no_social_q'] = { 'social' => 'blocked' }
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'tara_pc' }['policy'] = 'no_social_q'
+      build(data: data)
+      assert ask('tara', object_id: 'tara_pc')['refused'], 'blocked: no honest client posts from there'
+      assert_nil state.dig('feedRevealed', 'tara')
+
+      data = scenario
+      data['globalVariables'] = (data['globalVariables'] || {}).merge('tara_pc_off' => false)
+      pc = data['rooms']['office']['objects'].find { |o| o['id'] == 'tara_pc' }
+      pc['affordance'] = (pc['affordance'] || {}).merge('offWhen' => 'tara_pc_off')
+      build(data: data, player_state: { 'globalVariables' => { 'tara_pc_off' => true } })
+      assert ask('tara', object_id: 'tara_pc')['refused'], 'off: the PC is unusable'
+      build(data: data, player_state: { 'globalVariables' => { 'tara_pc_off' => false } })
+      assert_equal 'tara_post_1', ask('tara', object_id: 'tara_pc').dig('post', 'id'), 'on again: a source'
+    end
+
+    test 'R2 m4: a lockout at a station someone else owns does not stall the feed (no check can learn it)' do
+      data = scenario
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'tara_pc' }['screenOwner'] = 'lena'
+      build(data: data)
+      lock_out!('tara_pc', 'tnair')
+      assert report(check('tara', 'tara_pc')).first['refused'], 'no check is answered there'
+      assert_equal 'tara_post_1', ask('tara', object_id: 'tara_pc').dig('post', 'id')
     end
 
     test 'an ease at the locked-out PC is refused; an ease by phone is not' do

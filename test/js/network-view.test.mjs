@@ -24,6 +24,8 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 const put = (rel, text) => { mkdirSync(dirname(join(dir, rel)), { recursive: true }); writeFileSync(join(dir, rel), text); };
 const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
+copy('utils/escape-html.js');
+copy('utils/author-html.js');
 copy('utils/conditional-text.js');
 copy('systems/global-writer.js');
 copy('systems/network-links.js');

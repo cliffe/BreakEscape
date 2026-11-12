@@ -27,6 +27,8 @@ const put = (rel, text) => { mkdirSync(dirname(join(dir, rel)), { recursive: tru
 const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
+copy('utils/escape-html.js');
+copy('utils/author-html.js');
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js',
     'export const adds = [];\n' +

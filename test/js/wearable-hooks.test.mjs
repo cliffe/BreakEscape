@@ -110,7 +110,9 @@ const stubs = {
     './pc-policy.js': readFileSync(join(js, 'systems/pc-policy.js'), 'utf8'),
     './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;}',
     './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
-    './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}'
+    './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}',
+    '../utils/display-dashes.js': 'export function displayDashes(s){ return s; }',
+    '../utils/escape-html.js': 'export function escapeHtml(s){ return String(s == null ? "" : s); }',
 };
 let interactionsSrc = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, body] of Object.entries(stubs)) {

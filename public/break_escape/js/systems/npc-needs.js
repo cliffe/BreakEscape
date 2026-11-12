@@ -144,6 +144,8 @@ export const BORROW_START_MS = 60000;
 // Access 9.2 L (6.6): how long a use at its own station waits for a lockout check in flight (the
 // queue sends at most one request every two seconds; a lost one is sent again once)
 export const LOCK_CHECK_WAIT_MS = 30000;
+// Review R1 m1 (q36): the longest a borrowed use waits at a hot desk for its check's answer
+export const BORROW_CHECK_WAIT_MS = 5000;
 /** Slice 18b-i (OFFICE_LIFE_PLAN 12.4): temptation's default band above urgentAt, in points. */
 export const MAGNET_TEMPT = 30;
 /** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
@@ -154,6 +156,9 @@ export const NEWS_WAIT_MS = 30000;
 // the least time a mutter's bubble stays up, so a start line is on screen long enough to notice
 export const MUTTER_WAIT_MS = 20000;
 export const MUTTER_BUBBLE_MS = 6000;
+// q42 review R1 m2: a share's line goes ahead of every other waiting mutter, so a queue of
+// start lines at one outage cannot turn it into a picture while the player stands by to hear it
+export const PRIORITY_MUTTERS = Object.freeze(new Set(['login_aloud']));
 /**
  * Slice 19 (OFFICE_LIFE_PLAN 12.5): desk phones. A ring every RING_MS of the needs clock, `rings`
  * times (default RINGS); a call's listening gaps between lines are seeded in CALL_GAP_MS; a pool
@@ -488,7 +493,9 @@ export class NPCNeedsSystem {
             kickSeen: {}, kickPending: new Set(),
             // Access slice 9.2 L (6.6): stations where the server's check found this owner locked
             // out (its uses there fail with locked_out), and checks sent and not yet answered
-            // (pcId -> needs clock ms sent; the first use there waits for the answer)
+            // (pcId -> needs clock ms sent; the first use there waits for the answer). User
+            // decision q36: a borrowed hot desk is a second kind of key here, checked when the
+            // borrower sits down, and a borrowed use there fails the same way
             lockedOut: new Set(), lockCheck: {},
             urgentFlag: {},
             mode: 'idle',
@@ -1301,7 +1308,9 @@ export class NPCNeedsSystem {
         // Coming back from a real leave: is the player at the desk? (once per return)
         if (s.mode === 'returning' && !s.atPost && !s.caughtEmitted) this._checkCaught(s, pos);
         // The same on a walk back that is also a job for the own post (a need for it, or a
-        // delivery to it): that walk is the return, so the player is checked on every tick of it
+        // delivery to it): that walk is the return, so the player is checked on every tick of
+        // it, the arrival tick included (it runs before _advanceJob). Only goto_target: on the
+        // goto_item leg of a delivery the owner is leaving the desk to fetch the item, not back.
         if (s.mode === 'job' && s.job?.phase === 'goto_target' && !s.atPost && !s.caughtEmitted && this._targetsOwnPost(s)) this._checkCaught(s, pos);
 
         if (s.mode === 'returning' && arrived) {
@@ -1659,6 +1668,23 @@ export class NPCNeedsSystem {
         return !!(this.world.playerHears(npcId, radius) || {}).overheard;
     }
 
+    /**
+     * User decision q42: a running visit's dwell ends `ms` from now (0 ends it at the next tick).
+     * The runner holds a share beside its colleague while its line waits for the speech lock,
+     * then gives it the share's dwell from the moment the line is said. False when the NPC is not
+     * standing out a visit.
+     */
+    holdVisit(npcId, ms) {
+        const job = this.states.get(npcId)?.job;
+        if (!job || job.kind !== 'visit' || job.phase !== 'using') return false;
+        const v = Number(ms);
+        const left = Number.isFinite(v) ? clamp(v, 0, 600000) : 0;
+        job.useUntil = this.clockMs + left;
+        // Review R1 n1: a frozen visit (a conversation) takes its end from useRemaining when it unfreezes
+        if (this.states.get(npcId)?.mode === 'frozen') job.useRemaining = left;
+        return true;
+    }
+
     /** A borrow that has not started by its startBy is dropped and reported (6.4). */
     _tickBorrow(s) {
         const b = s.borrow;
@@ -1954,9 +1980,20 @@ export class NPCNeedsSystem {
         // Review 9.2 B R2 m1: an NPC in conversation with the player, not placed or not available
         // says nothing now (nor is voiced over the conversation): the mutter waits, held, under
         // the same rule as one waiting for the lock
+        // A priority topic (PRIORITY_MUTTERS) waits only for the lock and for other priority
+        // lines, and is queued ahead of every other mutter
         const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
-        if (this._mutterHeld(npcId) || (lines && (!this._speechFree() || this._mutterWaits.length))) {
-            this._mutterWaits.push({ npcId, topic, since: this.clockMs, lines });
+        const priority = PRIORITY_MUTTERS.has(topic);
+        const ahead = priority ? this._mutterWaits.some(w => w.priority) : this._mutterWaits.length > 0;
+        if (this._mutterHeld(npcId) || (lines && (!this._speechFree() || ahead))) {
+            const wait = { npcId, topic, since: this.clockMs, lines };
+            if (priority) {
+                wait.priority = true;
+                const at = this._mutterWaits.findIndex(w => !w.priority);
+                if (at < 0) this._mutterWaits.push(wait); else this._mutterWaits.splice(at, 0, wait);
+            } else {
+                this._mutterWaits.push(wait);
+            }
             return true;
         }
         this._sayMutter(s, topic);
@@ -1990,6 +2027,15 @@ export class NPCNeedsSystem {
             else keep.push(w);
         }
         this._mutterWaits = keep;
+    }
+
+    /** Review R1 n3: drop an NPC's waiting mutter of `topic` (a share whose visit was dropped). How many went. */
+    cancelMutter(npcId, topic) {
+        const before = this._mutterWaits.length;
+        this._mutterWaits = this._mutterWaits.filter(w => !(w.npcId === npcId && w.topic === topic));
+        const n = before - this._mutterWaits.length;
+        if (n) this._log(npcId, 'mutter_cancelled', { topic });
+        return n;
     }
 
     /** Mutters waiting for the speech lock (a test and debug read). */
@@ -2083,9 +2129,9 @@ export class NPCNeedsSystem {
      * socialUse's time and restores), as AccessWork.social_station? says on the server.
      * User decision q33: a station the NPC is flagged locked out at (sub-slice L) is unusable for
      * social media as for work, so it is passed over like a blocked one (to the next source and
-     * the phone) and, with no phone, is the attempt that fails. The client knows a lockout only
-     * at the own station (lockedOut holds stations alone), so a lockout at a borrowed PC is not
-     * seen here: the use shows as met while the server refuses the post (see IDEAS_BACKLOG).
+     * the phone) and, with no phone, is the attempt that fails. A lockout at a borrowed PC (user
+     * decision q36) is learnt by the check sent when the borrower sits down there, and the
+     * borrowed use then fails (see the use verdict).
      */
     _socialCandidate(s, objects, pos, excludeId) {
         if (s.borrow && s.borrow.need === 'social_media') {
@@ -2390,7 +2436,9 @@ export class NPCNeedsSystem {
      */
     lockCheckSent(npcId, pcId) {
         const s = this.states.get(npcId);
-        if (!s || typeof pcId !== 'string' || pcId !== this._stationId(s)) return false;
+        // User decision q36: the PC of a borrow in use too (the check goes when the borrower sits)
+        const borrowPc = s?.job?.borrowed ? s.job.borrow?.pcId : null;
+        if (!s || typeof pcId !== 'string' || (pcId !== this._stationId(s) && pcId !== borrowPc)) return false;
         s.lockCheck[pcId] = this.clockMs;
         this._log(npcId, 'lock_check', { target: pcId });
         return true;
@@ -2404,8 +2452,10 @@ export class NPCNeedsSystem {
     _applyLockCheck(s, a) {
         const pc = typeof a.forObject === 'string' ? a.forObject : null;
         if (!pc) return;
+        // q36: a borrowed PC's answer counts only for a check this owner sent there
+        const asked = Object.prototype.hasOwnProperty.call(s.lockCheck, pc);
         delete s.lockCheck[pc];
-        if (a.lockedOut !== true || pc !== this._stationId(s) || s.lockedOut.has(pc)) return;
+        if (a.lockedOut !== true || (pc !== this._stationId(s) && !asked) || s.lockedOut.has(pc)) return;
         s.lockedOut.add(pc);
         this._log(s.npcId, 'locked_out', { target: pc });
         this._emit(`npc_locked_out:${s.npcId}`, { npcId: s.npcId, objectId: pc });
@@ -2520,10 +2570,10 @@ export class NPCNeedsSystem {
             this._restoreFrustration(s, e);
             this._seedFailCause(s, e.failWhy);
             // Access 9.2 L (6.6, 9.4): the stations a check found this owner locked out at, so it
-            // does not sit back down and work until its next locked return
-            const station = this._stationId(s);
+            // does not sit back down and work until its next locked return; q36 adds the hot
+            // desks it borrowed (the server sends only its station and its handed-over PCs)
             for (const pc of Array.isArray(e.lockedOut) ? e.lockedOut : []) {
-                if (pc === station && !s.lockedOut.has(pc)) { s.lockedOut.add(pc); this._log(s.npcId, 'locked_out', { target: pc, restored: true }); }
+                if (typeof pc === 'string' && pc && !s.lockedOut.has(pc)) { s.lockedOut.add(pc); this._log(s.npcId, 'locked_out', { target: pc, restored: true }); }
             }
         }
         const pending = this._pendingLevels?.get(s.npcId);
@@ -2701,8 +2751,9 @@ export class NPCNeedsSystem {
         };
         if (pick.offWhen !== undefined) s.job.offWhen = pick.offWhen;   // slice 18a: checked on the way
         if (pick.visit) s.job.visit = pick.visit;   // access 9.2 A: a visit (5.3)
-        // Access 9.2 H (6.4): a borrowed use carries its borrow (cleared on completion, dropped if never done)
-        if (pick.borrowed && s.borrow) { s.job.borrowed = true; s.job.borrow = s.borrow; s.borrow.started = true; }
+        // Access 9.2 H (6.4): a borrowed use carries its borrow (cleared on completion, dropped if never done).
+        // `started` is set when the borrower sits down (q43), not here
+        if (pick.borrowed && s.borrow) { s.job.borrowed = true; s.job.borrow = s.borrow; }
         // Access 9.2 C (8.1): social media at the own PC takes socialUse's time and restores
         if (pick.need === 'social_media' && pick.kind === 'use' && pick.targetId === this._stationId(s) && !pick.borrowed) s.job.socialDesk = true;
         if (pick.tempted) s.job.tempted = true;   // slice 18b-i: recorded now, the level may decay on the way
@@ -3040,9 +3091,9 @@ export class NPCNeedsSystem {
             // through the whole session before anything hears that it is back (a workstation
             // stayed locked, with its owner at it, for the length of the session). The test is
             // the target, not the job's kind; _atOwnPost stays `use` only for the wind-up and
-            // stayPut decisions.
+            // stayPut decisions. The player at the desk was already checked this tick, by the
+            // per-tick check on a goto_target walk to the own post in tick().
             if (!s.atPost && this._targetsOwnPost(s)) {
-                if (!s.caughtEmitted) this._checkCaught(s, this.world.npcPos(id));
                 s.atPost = true;
                 this._log(id, 'returned_post');
                 this._emit(`npc_returned_post:${id}`, { npcId: id, ...this._playerProximity(id) });
@@ -3071,8 +3122,12 @@ export class NPCNeedsSystem {
             this._log(id, 'using', { need: job.need, target: job.targetId });
             // Slice 20: room tone's startSound. world.emit, not _emit: the per-tick object cache stays
             this.world.emit(`npc_use_started:${job.targetId}`, { npcId: id, objectId: job.targetId, need: job.need });
-            // Access 9.2 H (6.4): the borrower signs in there; the workstation layer displaces a held session
-            if (job.borrowed) this._emit(`npc_sat_at:${job.targetId}`, { npcId: id, objectId: job.targetId });
+            // Access 9.2 H (6.4): the borrower signs in there; the workstation layer displaces a held session.
+            // From here the borrow has started (q43): cut short, it still counts as done (_abortJob)
+            if (job.borrowed) {
+                if (job.borrow) job.borrow.started = true;
+                this._emit(`npc_sat_at:${job.targetId}`, { npcId: id, objectId: job.targetId });
+            }
             if (obj) this._maybePair(s, obj);
             return;
         }
@@ -3095,6 +3150,24 @@ export class NPCNeedsSystem {
         const judged = job.kind === 'use' && job.need && this._judged(s, job.need);
         // Access 9.2 L (6.6): at its own station, a use waits at the desk for a check in flight
         const atStation = judged && !job.borrowed && job.targetId === this._stationId(s);
+        // User decision q36: at a borrowed PC too, for the check sent as the borrower sat down.
+        // Review R1 m1: the report queue can stall before it sends (a sync PUT that never
+        // settles), so the hold there lasts at most BORROW_CHECK_WAIT_MS (needs clock) from when it
+        // began. Review R2 m1: a lapse there fails closed, as at the station. The use is skipped
+        // unjudged (nothing restored, no npc_used, no ease or feed request) and the borrow ends
+        // not met, with `lapsed: true` on both borrow events (review R3 m1); the check stays in
+        // flight, so a late answer still flags the PC and the next borrow there waits again
+        const atBorrow = judged && !!job.borrowed && (job.need === 'work' || job.need === 'social_media');
+        if (atBorrow && s.lockCheck[job.targetId] !== undefined) {
+            if (!job.lockHeld) { job.lockHeld = true; job.lockHeldAt = this.clockMs; this._log(id, 'use_held', { target: job.targetId }); }
+            if (this.clockMs - job.lockHeldAt < BORROW_CHECK_WAIT_MS) return;
+            this._log(id, 'lock_check_lapsed', { target: job.targetId, borrowed: true });
+            this._borrowDone(s, job, false, null, { lapsed: true });
+            s.job = null;
+            this._clearBackoffs();
+            this._goHome(s, { stayPut: false });
+            return;
+        }
         if (atStation && s.lockCheck[job.targetId] !== undefined) {
             if (this.clockMs - s.lockCheck[job.targetId] < LOCK_CHECK_WAIT_MS) {
                 if (!job.lockHeld) { job.lockHeld = true; this._log(id, 'use_held', { target: job.targetId }); }
@@ -3133,6 +3206,12 @@ export class NPCNeedsSystem {
         if (atStation && (job.need === 'work' || job.need === 'social_media') && s.lockedOut.has(job.targetId)) {
             const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
             v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest], station: true };
+        }
+        // User decision q36: the borrower's username is locked out at the hot desk, so its sign-in
+        // there fails and the use is not met (a failed borrowed use is still not reported, 6.4)
+        if (atBorrow && s.lockedOut.has(job.targetId)) {
+            const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
+            v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest] };
         }
         // Access 9.2 H (6.4): the borrower signed in before finding out, so a session is left either
         // way; said before anything else (before a failed verdict's turn-back)
@@ -3241,14 +3320,24 @@ export class NPCNeedsSystem {
         this._goHome(s, { stayPut });
     }
 
-    _borrowDone(s, job, met) {
+    /**
+     * Ends a borrow: emits `npc_borrowed_session:<pcId>` (when the borrow leaves a session open)
+     * and `npc_borrow_done:<npcId>`. `met: false` alone means the borrowed use was judged and
+     * failed. Review R3 m1: `met: false` with `lapsed: true` means the use was skipped unjudged
+     * (a lock check hold that ran past BORROW_CHECK_WAIT_MS), not refused, so a mapping for
+     * "failed there" should require `!data.lapsed`. `lapsed` is only present on a lapse.
+      * `cut` names the abort that ended the use early (q43); a lapse passes `cut` null.
+     */
+    _borrowDone(s, job, met, cut = null, { lapsed = false } = {}) {
         const id = s.npcId;
         const b = job.borrow;
-        if (!b) return;
+        if (!b || b.done) return;
+        b.done = true;   // a failed use is done before its turn-back aborts the job
         if (s.borrow === b) s.borrow = null;
-        this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen });
-        if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met });
-        this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand });
+        const extra = { ...(cut ? { cut } : {}), ...(lapsed ? { lapsed: true } : {}) };
+        this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen, ...extra });
+        if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met, ...extra });
+        this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand, ...extra });
         // Review R1 m1: as a workaround visit, the start line can hide a short borrowed use's icon
         this._showWorkaround(s);
     }
@@ -3490,6 +3579,12 @@ export class NPCNeedsSystem {
         if (job.carrying && job.slot && typeof this.world.stowHeld === 'function') { this.world.stowHeld(s.npcId, job.itemId); this._worldChanged(); }
         else if (job.carrying) { this.world.dropHeld(s.npcId, job.itemId); this._worldChanged(); }
         this._log(s.npcId, failed ? 'job_failed' : 'job_aborted', { need: job.need || undefined, tag: job.tag || undefined, target: job.targetId, reason });
+        // User decision q43: a borrow cut short after the borrower sat down (a script move, a
+        // suspend, a knock-out or hide, a turn-back; a conversation only freezes it) counts as
+        // done with the session left: the borrower signed in there, so the runner reports it
+        // done and the player can find the guest session. Unmet, since the use never finished.
+        // A reset reports it dropped instead (reset())
+        if (job.borrowed && job.borrow?.started && reason !== 'reset') this._borrowDone(s, job, false, reason);
         // Slice 17: a print errand that never picked its slot up may try again; one that did, or found
         // it gone, is over (the slot was filed, or the player has it)
         if (job.errand) {

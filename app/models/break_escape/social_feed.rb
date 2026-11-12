@@ -25,15 +25,19 @@ module BreakEscape
     end
 
     # POST /feed_post. Returns { status:, body: }. Checks in order (plan 9.1): the NPC is known;
-    # it has a feed with posts and a social_media need; a post is left; the use's source (user
-    # decision q33); for a second or later post, the pace floor.
+    # it has a feed with posts and a social_media need; a post is left; for a second or later
+    # post, the pace floor; the use's source (user decision q33).
     #
     # `source` is the object the use was at (`object_id`), or nil for the NPC's phone. A post is
     # refused (`refused: true`, nothing written) for the phone of an NPC with `"phone": false`,
     # for an object that is not one of the NPC's social media places in a room the player has
-    # unlocked, and for a sign-in PC where loginLockouts holds the NPC's username: a lockout stops
-    # every use of that PC, social media included, so a tampered client cannot post from a
-    # locked-out PC. The refusal says no more than a `check` answer would (6.6).
+    # unlocked, for its own station while the station's policy blocks social media or its offWhen
+    # holds (q33 R2 m3), and for a sign-in PC where loginLockouts holds the NPC's username: a
+    # lockout stops every use of that PC, social media included, so a tampered client cannot post
+    # from a locked-out PC. That PC is the station or a handed-over hot desk, each only where a
+    # `check` would answer (AccessWork.lockout_pc?, R2 m4), so the refusal says no more than a
+    # `check` answer would (6.6, q36). The source is judged after the pace floor (R2 m2): a probe
+    # inside the floor gets tooSoon, and one outside it spends a post when the PC is not locked.
     def reveal_feed_post!(npc_id, source = nil)
       id = npc_id.is_a?(String) ? npc_id : nil
       npc = id && scenario_room_npc(id)
@@ -45,16 +49,15 @@ module BreakEscape
       entry = store[id].is_a?(Hash) ? store[id] : {}
       shown = AccessWork.feed_shown_ids(npc, entry)
 
-      # q33: a refused use (a locked-out PC, an object not one of the NPC's places, the phone for a
-      # "phone": false NPC) never reaches the selection, so a tampered client cannot pick a post
-      return { status: :ok, body: { npcId: id, post: nil, done: false, refused: true } } unless feed_source_ok?(npc, source)
-
       # C2: the server picks one eligible post by the feed's order from state it records. The raw
       # npcFrustration entry is read read-only (never frustration_entry(id), which would write a
       # defaulted record); the lockout keys are pre-gated by the per-NPC check record.
       raw_frustration = player_state['npcFrustration'].is_a?(Hash) ? player_state['npcFrustration'][id] : nil
       keys = lockout_recorded?(npc) ? lockout_keys : []
-      selected = AccessWork.select_feed_post(scenario_data, npc, entry, raw_frustration, frustration_globals, keys)
+      now = Time.current.to_f
+      # q38: the request is for a met social media use, which counts for needMet (need_met_now?)
+      met_use = { 'need' => 'social_media', 'at' => now }
+      selected = AccessWork.select_feed_post(scenario_data, npc, entry, raw_frustration, frustration_globals, keys, met_use)
       post_id = selected['post']
       done = selected['done'] == true
 
@@ -62,13 +65,17 @@ module BreakEscape
       # whose condition is not yet true): no write, the client asks again on the next met use
       return { status: :ok, body: { npcId: id, post: nil, done: done } } if post_id.nil?
 
-      now = Time.current.to_f
       unless shown.empty?
         wait = AccessWork.post_floor(scenario_data, npc) - (now - entry['at'].to_f)
         # `revealed` (posts out so far) lets a client whose last answer was lost see that the
         # lost request revealed a post, so it stops asking for this use (review C R3 nit)
         return { status: :ok, body: { npcId: id, post: nil, done: false, tooSoon: true, retryAfter: wait.ceil, revealed: shown.length } } if wait.positive?
       end
+
+      # q33: a refused use (a locked-out PC, a blocked or off station, an object not one of the
+      # NPC's places, the phone for a "phone": false NPC) is never served, so a tampered client
+      # cannot pick a post; nothing is written
+      return { status: :ok, body: { npcId: id, post: nil, done: false, refused: true } } unless feed_source_ok?(npc, source)
 
       store[id] = { 'shown' => shown + [post_id], 'at' => now }
       save!
@@ -93,6 +100,7 @@ module BreakEscape
 
         feed = npc['feed']
         out[id] = { 'site' => feed['site'], 'person' => feed['person'],
+                    # C2 R2 nit: feed_shown_ids drops a saved id the scenario no longer has
                     'posts' => shown.each_with_index.map { |pid, i| feed_answer(npc, pid, i).slice('index', 'post', 'fact') },
                     'done' => AccessWork.feed_done?(scenario_data, npc, shown) }
       end
@@ -119,13 +127,20 @@ module BreakEscape
 
     # q33: the phone (nil) when the NPC has one; else a social media place of the NPC (its own
     # station, a non-desk source, a borrowed PC handed over) in a room the player can know of,
-    # where the NPC's username is not locked out
+    # where the NPC's username is not locked out. The station is refused too while its policy
+    # blocks social media or its offWhen holds (R2 m3). A lockout counts only at a PC where a
+    # `check` answers (AccessWork.lockout_pc?: not a station someone else owns, R2 m4), so the
+    # server never stalls a feed in a way the honest client cannot learn.
     def feed_source_ok?(npc, source)
       return AccessWork.phone?(npc) if source.nil?
       return false unless source.is_a?(String) && frustration_places(npc, 'social_media').include?(source)
 
       pc = AccessWork.object(scenario_data, source)
-      !(pc && AccessIdentities.login_pc?(pc) && AccessWork.locked_out_at?(npc, pc, lockout_keys))
+      if AccessWork.station(scenario_data, npc)&.dig('id') == source
+        return false if AccessWork.social_blocked?(scenario_data, npc)
+        return false if frustration_cause_holds?(npc, 'social_media', { 'id' => source, 'why' => 'off' })
+      end
+      !(AccessWork.lockout_pc?(scenario_data, npc, pc) && AccessWork.locked_out_at?(npc, pc, lockout_keys))
     end
 
     # { index, post, fact, site, person } for the NPC's post named by `post_id`, with `index` the

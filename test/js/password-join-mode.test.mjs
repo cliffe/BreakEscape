@@ -21,6 +21,7 @@ const put = (rel, text) => { mkdirSync(dirname(join(dir, rel)), { recursive: tru
 const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('config.js', 'export const ASSETS_PATH = "/break_escape/assets";\n');
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
+copy('utils/escape-html.js');
 copy('utils/display-dashes.js'); // the real module, so the header's escapeHtml(displayDashes(...)) is exercised as it ships
 copy('minigames/framework/base-minigame.js');
 copy('minigames/password/password-minigame.js');

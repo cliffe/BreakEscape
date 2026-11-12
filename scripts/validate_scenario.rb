@@ -5939,18 +5939,21 @@ end
 # (utils/global-condition.js parseActionCondition): anything outside the grammar below
 # does not hold, so the action is silently never run. This is the same grammar, term
 # by term, so what passes here is what the engine evaluates.
-ACTION_CONDITION_NAME = /\A(!\s*)*globalVars\.\w+\z/
-ACTION_CONDITION_COMPARE = /\AglobalVars\.\w+\s*(===|!==|>=|<=|>|<)\s*(true|false|null|-?\d+(?:\.\d+)?|'[^'"]*'|"[^'"]*")\z/
+# Whitespace is the ASCII set only, as in the engine: Ruby's strip also drops NUL, and
+# JavaScript's \s and trim() also take Unicode spaces, so neither side uses them.
+ACTION_CONDITION_NAME = /\A(![ \t\n\r\f\v]*)*globalVars\.\w+\z/
+ACTION_CONDITION_COMPARE = /\AglobalVars\.\w+[ \t\n\r\f\v]*(===|!==|>=|<=|>|<)[ \t\n\r\f\v]*(true|false|null|-?\d+(?:\.\d+)?|'[^'"]*'|"[^'"]*")\z/
+ACTION_CONDITION_TRIM = /\A[ \t\n\r\f\v]+|[ \t\n\r\f\v]+\z/
 ACTION_LIST_KEYS = %w[actions triggerOnInteract onConfirm completionActions flagRewards].freeze
 
 # nil when the condition is in the grammar, else what is wrong with it.
 def action_condition_problem(condition)
   return "is not a string (#{condition.inspect})" unless condition.is_a?(String)
-  return 'is empty' if condition.strip.empty?
+  return 'is empty' if condition.gsub(ACTION_CONDITION_TRIM, '').empty?
   condition.split('||', -1).each do |alt|
-    return "has an empty term (a stray '&&' or '||')" if alt.strip.empty?
+    return "has an empty term (a stray '&&' or '||')" if alt.gsub(ACTION_CONDITION_TRIM, '').empty?
     alt.split('&&', -1).each do |term|
-      t = term.strip
+      t = term.gsub(ACTION_CONDITION_TRIM, '')
       return "has an empty term (a stray '&&' or '||')" if t.empty?
       next if t.match?(ACTION_CONDITION_NAME) || t.match?(ACTION_CONDITION_COMPARE)
       return "has a term the engine cannot read: \"#{t}\""
@@ -6029,10 +6032,19 @@ def check_or_in_global_conditions(json_data)
   walk = lambda do |node, path, ctx|
     case node
     when Array
-      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", ctx) }
+      # The entries of an action list are actions (see :action below)
+      entry_ctx = ctx == :action_list ? :action : ctx
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", entry_ctx) }
     when Hash
+      # An action's own condition supports '||' (check_action_conditions reads its syntax),
+      # so it is exempt here. Only that one: what is nested inside the action (a give_item's
+      # item with a lighting block, say) is read by its own evaluator and checked as usual.
+      # A hash with no type is not an action (check_action_conditions skips it too), so
+      # its condition is checked here like any other.
+      is_action = ctx == :action && node.key?('type')
+      ctx = nil if ctx == :action || ctx == :action_list
       cond = node['condition']
-      if cond.is_a?(String) && !path.match?(checked_elsewhere)
+      if !is_action && cond.is_a?(String) && !path.match?(checked_elsewhere)
         case ctx
         when :lighting, :torch, :chat_background, :clock
           if (bad = unsupported_condition_syntax(cond, allow_includes: false))
@@ -6063,8 +6075,8 @@ def check_or_in_global_conditions(json_data)
         child_ctx = :torch if k == 'torch' && ctx.nil?
         child_ctx = :chat_background if k == 'chatBackground' && ctx.nil?
         child_ctx = :or_ok if %w[timeline statusRows portraitVariants].include?(k) && ctx.nil?
-        # An action's condition: '||' is supported, and check_action_conditions reads the syntax
-        child_ctx = :js if ACTION_LIST_KEYS.include?(k)
+        # An action list: its entries' own conditions are exempt (see :action above)
+        child_ctx = :action_list if ACTION_LIST_KEYS.include?(k) && ctx.nil?
         walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}", child_ctx)
       end
     end
@@ -6109,6 +6121,12 @@ end
 # server's. repo_root (for storyPath) and scenario_dir (for ink/*.json) enable the ink
 # checks; without them those are skipped. Messages never quote a password.
 # ─────────────────────────────────────────────────────────────
+
+# Lock fields doors.js would take from a door entry before the room's (lockProps), and
+# never does in play, since the bootstrap scenario has no doors. requires is checked on
+# its own (a copy of the room's is harmless); access and acceptsUIDOnly are errors.
+DOOR_ENTRY_LOCK_FIELDS = %w[locked lockType keyPins key_pins difficulty lockedHint biometricMatchThreshold
+                            maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength].freeze
 def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   issues = []
   return issues unless json_data.is_a?(Hash)
@@ -6314,22 +6332,41 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
 
     room['doors'].each_with_index do |door, i|
-      # doors.js reads connectedRoom on every entry, so anything else throws and the room's
-      # doors are never built
+      # The schema types each entry as an object, so from the command line validation stops
+      # before this; these cover a scenario checked without the schema. doors.js reads
+      # connectedRoom on every entry: null throws and the room's doors are never built, and
+      # any other non-object has no connectedRoom, so it matches no doorway and is skipped.
+      if door.nil?
+        err.call("'rooms/#{room_id}/doors[#{i}]' is null; doors.js throws reading its connectedRoom, so the " \
+                 "doors of '#{room_id}' are never built.")
+        next
+      end
       unless door.is_a?(Hash)
-        err.call("'rooms/#{room_id}/doors[#{i}]' is not an object; the engine fails building the doors " \
-                 "of '#{room_id}'.")
+        warn.call("'rooms/#{room_id}/doors[#{i}]' is not an object, so the engine skips it.")
         next
       end
 
-      # A lock on a door entry is never read in play: the bootstrap scenario has no doors, and
-      # the door and the server take the lock from the room it leads into. requires is left
-      # alone: on a gate entry it names the gate's card.
-      %w[locked lockType].each do |field|
+      # A lock on a door entry is never read: the bootstrap scenario has no doors, so doors.js
+      # finds no entry to read lock fields from, and the door and the server take the lock
+      # from the room it leads into. That includes requires: a gate's card is the room's
+      # requires. A requires that repeats the room's is harmless and draws nothing.
+      target_room = rooms[door['connectedRoom']]
+      if door.key?('requires')
+        door_cards = Array(door['requires']).map(&:to_s).sort
+        room_cards = Array(target_room.is_a?(Hash) ? target_room['requires'] : nil).map(&:to_s).sort
+        if door_cards != room_cards
+          # Either value may be a PIN or password (on the room, or meant for the entry), so
+          # neither is shown
+          warn.call("'rooms/#{room_id}/doors[#{i}]' has a 'requires' that differs from the requires on room " \
+                    "'#{door['connectedRoom']}' (values not shown); the gate and the door use the room's, and " \
+                    'the game never reads requires on a door entry.')
+        end
+      end
+      DOOR_ENTRY_LOCK_FIELDS.each do |field|
         next unless door.key?(field)
 
-        warn.call("'rooms/#{room_id}/doors[#{i}]' has '#{field}', which play never reads on a door entry; " \
-                  "put the lock on room '#{door['connectedRoom']}'.")
+        warn.call("'rooms/#{room_id}/doors[#{i}]' has '#{field}', which the game never reads on a door entry " \
+                  "(the bootstrap scenario has no doors); put it on room '#{door['connectedRoom']}'.")
       end
 
       # An access list belongs on the room the door leads into: the server reads the room
@@ -6933,10 +6970,18 @@ def main
       graph_script = File.join(__dir__, 'generate_dungeon_graph.rb')
       if File.exist?(graph_script)
         puts "Generating dungeon graph..."
-        result = system('ruby', graph_script, erb_path)
+        # The generator's test switch (it turns the Wi-Fi key scrub off) never reaches a real run.
+        result = system({ 'DUNGEON_GRAPH_TEST_NO_SCRUB' => nil }, 'ruby', graph_script, erb_path)
         graph_out = File.join(File.dirname(erb_path), 'dungeon_graph.html')
         if result
+          # The path the author typed, as the "Validating scenario:" line prints it.
           puts "✓ Dungeon graph: #{graph_out}"
+        elsif $?.exitstatus == 3
+          # The generator's key check stopped the run (KEY_STOP_STATUS) and deleted the old graph files.
+          puts "❌ ERROR: Dungeon graph stopped: an output still held a Wi-Fi key (see the message above); " \
+               'the old dungeon_graph files were deleted.'
+          puts
+          exit 1
         else
           puts "⚠️ Dungeon graph generation failed (non-fatal)"
         end

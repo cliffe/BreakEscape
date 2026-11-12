@@ -34,9 +34,8 @@
  */
 
 import { MinigameScene } from '../framework/base-minigame.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 export const REMOTE_OFF_TEXT = 'remote sign-in off';
 export const NOT_RESPONDING_TEXT = 'not responding';

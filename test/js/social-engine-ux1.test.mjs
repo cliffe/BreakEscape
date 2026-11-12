@@ -30,7 +30,7 @@ for (const rel of [
     'minigames/concern-form/concern-form-minigame.js', 'minigames/concern-form/concern-form-model.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
-    'utils/display-dashes.js', 'ui/modal-stack.js', 'systems/phish-rules.js',
+    'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js', 'systems/phish-rules.js',
     'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });

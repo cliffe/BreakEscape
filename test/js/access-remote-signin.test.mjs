@@ -36,6 +36,8 @@ put('minigames/biometrics/fingerprint-reader-minigame.js', 'export function star
 put('systems/lockpick-catch.js', 'export function catchLockpickInView() { return false; }\n');
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
+copy('utils/escape-html.js');
+copy('utils/author-html.js');
 put('systems/inventory.js',
     'export async function addToInventory() { return { ok: true }; }\n' +
     'export function removeFromInventory() {}\n' +

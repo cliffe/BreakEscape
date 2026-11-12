@@ -40,6 +40,7 @@ After each beat:
 | 4c | From the device, open the remote session, then "readme.txt", and close it | It closes to the device |
 | 4d | From the device, open a finding and close it | It closes to the device; the finding is not added to the Notepad |
 | 5 | Interact with Ned's desk note | Task 5 ticks; Ned's password shows at once (it opens no PC, so it needs no proof) |
+| 6 | Fail the next inventory POST at the network (Playwright `route.abort`), then set `pair_grant` true and emit `global_variable_changed:pair_grant` | The timer's first give is skipped by its condition; the second is lost, retried after 1 s and accepted: "Finding: pair B" arrives, "pair A" never does, and the timer is marked fired only then |
 | R | Reload | The tray still files the three items, the badge is clear, and the device shows the same rows with the secrets after a fresh `/capture_secrets` |
 
 Mel's capture is mapped on `pc_signed_in:mel_pc`, so a refused claim (Mel back at her desk) records
