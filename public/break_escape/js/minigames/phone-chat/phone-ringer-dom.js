@@ -22,8 +22,12 @@ import { createPhoneRinger } from './phone-ringer.js';
 import { normaliseRing, normaliseCall, pickButtonCall, pickPlacedCall } from './phone-ring-config.js';
 
 const POPUP_IDS = ['laptop-popup', 'lab-popup'];
+const SLOT_SYNC_DEBOUNCE_MS = 500;
 
 export function installPhoneRinger(win = window) {
+    // The slot last handed to savePendingCall per contact, and the pending debounced sync (m1)
+    const slotSent = new Map();
+    let syncTimer = null;
     const doc = win.document;
 
     // ---- the layer ---------------------------------------------------------------
@@ -388,6 +392,17 @@ export function installPhoneRinger(win = window) {
         savePendingCall(npcId, slot) {
             const npc = nm()?.getNPC?.(npcId);
             if (npc) npc.pendingCall = slot || null;
+            // A changed slot goes to the server at once (debounced). The unload flush can drop
+            // phoneState when it is over its size limit while the trigger or timed mark that
+            // belongs to the call still goes, which would strand the call (A4 R1 m1)
+            const key = JSON.stringify(slot || null);
+            if (slotSent.get(npcId) === key) return;
+            slotSent.set(npcId, key);
+            if (syncTimer) win.clearTimeout(syncTimer);
+            syncTimer = win.setTimeout(() => {
+                syncTimer = null;
+                try { Promise.resolve(win.stateSync?.sync?.()).catch(() => {}); } catch (e) { /* ignore */ }
+            }, SLOT_SYNC_DEBOUNCE_MS);
         },
         // The thread rows (A4, plan 2.6); A6 adds callbacks here
         onOutcome(kind, offer, extra) {

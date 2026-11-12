@@ -4,7 +4,7 @@
 // Also the delivered mark of a ring timedConversation, and `callEvent` on a thread row.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeWorld } from './phone-ring-harness.mjs';
+import { makeWorld, endCall } from './phone-ring-harness.mjs';
 
 const npc = { id: 'caller', displayName: 'Caller One' };
 const ringConfig = (extra = {}) => ({ handlerIndex: 0, knot: 'ring_call', conversationMode: 'phone-chat', ring: true, once: true, cooldown: 0, ...extra });
@@ -295,4 +295,90 @@ test('two timed rings to the same knot get their own ids', async () => {
         w.nm.scheduleTimedConversation({ ...timedOpts, delay: 9000 });
         assert.deepEqual(w.nm.timedConversations.map((c) => c.id), ['conv:caller:ring_call:0', 'conv:caller:ring_call:1']);
     } finally { w.restore(); }
+});
+
+// ---- A4 review round 1: m1 (a changed slot reaches the server at once), m2 (a cleared slot is sent) ----
+
+const fakeSync = (w) => { const s = { n: 0, sync() { s.n += 1; return Promise.resolve(); } }; w.win.stateSync = s; return s; };
+
+test('m1: a ring that saves a slot schedules one state sync (the size fallback must not strand the call)', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        const s = fakeSync(w);
+        await ring(w);
+        await w.advance(1000);
+        assert.equal(s.n, 1, 'one sync for the new slot');
+    } finally { w.restore(); delete w.win.stateSync; }
+});
+
+test('m1: each slot change syncs (ringing, connected, cleared), and changes within the debounce share one sync', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        const s = fakeSync(w);
+        await ring(w);
+        await w.advance(1000);
+        w.click('.incoming-call-answer');
+        await w.advance(1000);
+        assert.equal(s.n, 2, 'ringing then connected');
+        endCall(w);
+        await w.advance(1000);
+        assert.equal(s.n, 3, 'cleared');
+        // a burst: the same slot saved again does not sync, two changes inside 500 ms sync once
+        const before = s.n;
+        w.nm._handleEventMapping('caller', 'room_entered', { ...ringConfig(), knot: 'again', handlerIndex: 1 }, {});
+        await w.advance(100);
+        w.click('.incoming-call-decline');
+        await w.advance(1000);
+        assert.equal(s.n - before, 1, 'offer and decline inside the debounce: one sync');
+    } finally { w.restore(); delete w.win.stateSync; }
+});
+
+test('m1: no stateSync on the page is harmless', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        delete w.win.stateSync;
+        await ring(w);
+        await w.advance(1000);
+        assert.equal(w.ringer.stateOf('caller'), 'ringing');
+    } finally { w.restore(); }
+});
+
+test('m2: a slot that was sent and is now cleared, with no thread, is sent as { history: [], pendingCall: null }', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        await ring(w);
+        const sent = w.nm.exportPhoneState({ onlyChanged: true });
+        assert.ok(sent.caller.pendingCall);
+        w.nm.markPhoneStateSynced(sent);
+        w.ringer.close();   // row 28: the ending clears the slot and leaves no row
+        assert.equal(w.nm.getConversationHistory('caller').length, 0);
+        const next = w.nm.exportPhoneState({ onlyChanged: true });
+        assert.deepEqual(next.caller, { history: [], pendingCall: null });
+        assert.deepEqual(w.nm.exportPhoneState().caller, { history: [], pendingCall: null });
+        w.nm.markPhoneStateSynced(next);
+        assert.equal(w.nm.exportPhoneState({ onlyChanged: true }).caller, undefined, 'sent once only');
+    } finally { w.restore(); }
+});
+
+test('m2: a contact that never had a slot sends nothing', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        assert.equal(w.nm.exportPhoneState().caller, undefined);
+        assert.equal(w.nm.exportPhoneState({ onlyChanged: true }).caller, undefined);
+    } finally { w.restore(); }
+});
+
+test('m2: a slot restored from the server and cleared by the reload resume is sent as cleared', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    let w2;
+    try {
+        await ring(w);
+        const saved = saveOf(w);
+        w2 = await reload(saved);
+        await loaded(w2);
+        assert.equal(rows(w2).length, 1);
+        assert.equal(w2.nm.getConversationHistory('caller').length, 1);
+        const entry = w2.nm.exportPhoneState({ onlyChanged: true }).caller;
+        assert.equal(entry.pendingCall, undefined);
+    } finally { w.restore(); w2?.restore(); }
 });

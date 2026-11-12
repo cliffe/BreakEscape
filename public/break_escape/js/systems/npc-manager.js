@@ -2374,7 +2374,15 @@ export default class NPCManager {
     for (const npc of this.npcs.values()) {
       if (npc.npcType !== 'phone') continue;
       const entry = this._phoneStateEntry(npc);
-      if (!entry) continue;
+      if (!entry) {
+        // The server still holds a call slot for a contact that has nothing else to save: tell it
+        // the slot is gone (A4 R1 m2). Sent once; the sync records the marker as what it holds.
+        const sent = this._phoneStateSent.get(npc.id);
+        let hadSlot = false;
+        try { hadSlot = !!(sent && JSON.parse(sent).pendingCall); } catch (e) { /* ignore */ }
+        if (hadSlot) out[npc.id] = { history: [], pendingCall: null };
+        continue;
+      }
       if (onlyChanged && this._phoneStateSent.get(npc.id) === JSON.stringify(entry)) continue;
       out[npc.id] = entry;
     }
