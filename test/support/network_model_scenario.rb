@@ -360,6 +360,18 @@ module NetworkRequests
     response.parsed_body
   end
 
+  # A hostile client sync: PUT /sync_state carrying globalVariables straight from the request,
+  # the real route a tampered client would use to try to clear an outage global.
+  def sync_globals(globals)
+    put game_path('sync_state'), params: { globalVariables: globals }, as: :json
+    response.parsed_body
+  end
+
+  def bootstrap_scenario
+    get game_path('scenario'), as: :json
+    response.parsed_body
+  end
+
   def unlock_object(id, method, attempt = nil)
     post game_path('unlock'), params: { targetType: 'object', targetId: id, method: method, attempt: attempt }, as: :json
     response.parsed_body

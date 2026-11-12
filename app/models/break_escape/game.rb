@@ -306,6 +306,20 @@ module BreakEscape
       end
     end
 
+    # The current value of a scenario global for a server-side gate: the player's own value if
+    # the key is set, else the scenario's declared default in globalVariables, else nil. Read
+    # from server state alone, never a request parameter, so the server decides. This is the one
+    # shared globals reader: NetworkAccess#outage_global (outages, 5.2) and
+    # NpcFrustration#frustration_global (NPC frustration, 9.2) both delegate here so they read
+    # a global the same way and cannot drift apart.
+    def global_variable_value(name)
+      globals = player_state['globalVariables']
+      return globals[name] if globals.is_a?(Hash) && globals.key?(name)
+
+      defaults = scenario_data['globalVariables']
+      defaults.is_a?(Hash) ? defaults[name] : nil
+    end
+
     # Minigame state
     BIOMETRIC_SAMPLE_KEYS = %w[
       id type owner ownerId ownerName quality rating pattern identified

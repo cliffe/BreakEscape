@@ -6,9 +6,11 @@ module BreakEscape
   # outages. A network (or a resource) can be down while a global is truthy. While down its
   # hosts and shares leave the view and are not served; a held session over a downed route is
   # kept but shown "no route" and reopens when the route returns; a pivot is ended only by
-  # sign-out, never by an outage. The server reads the outage global from its own state, so a
-  # tampered client cannot reach a downed network, clear the global, or keep a no-route
-  # session. Beats N5 to N7, plus the scoped-request route test and the resource-side outage.
+  # sign-out, never by an outage. The server reads the outage global from its own state. The
+  # global is client-syncable (plan 5.2), so an outage is only a soft gate: a tampered client
+  # can clear it, but reach still needs a server-held foothold or session and a host still
+  # demands its password, so nothing unreached is served or named. Beats N5 to N7, plus the
+  # scoped-request route test and the resource-side outage.
   class NetworkOutagesTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
     include NetworkRequests
@@ -56,12 +58,61 @@ module BreakEscape
       refute_exposed('N5 down by default', NS::SERVER_STRINGS)
     end
 
-    test 'N5: a tampered client cannot clear the outage global the server reads' do
+    test 'N5: the server reads the outage global from its own state (down by default)' do
       with_outage_foothold(down: true)
       @game.reload
       refute @game.network_up?('server_net'), 'the server reads its own global, down by default'
       # The down network is withheld from mapped_shares and resource_admits_player? too.
       refute @game.resource_admits_player?(@game.scenario_data['resources']['backup_vault'])
+    end
+
+    # The outage global is an ordinary, client-syncable global (plan 5.2): a tampered client CAN
+    # clear it. That is not a hole, because an outage is only a soft gate. The real guarantee is
+    # that clearing it reaches nothing a boundary would stop: nothing is reached without a
+    # server-held foothold, and a host brought back into reach still demands its password.
+
+    test 'N5: a hostile sync clearing the outage reaches nothing and names nothing without a foothold' do
+      build_network_game({}, NS.with_outage(down: true))
+      take_drop_box
+      # No plant: the player holds no foothold anywhere.
+      assert_empty @game.reload.network_footholds, 'no foothold is held'
+
+      # The hostile client clears the outage global over the real sync route. The server stores
+      # it (the global is client-writable by design), so network_up? now reads "up"...
+      sync_globals(NS::OUTAGE_GLOBAL => false)
+      @game.reload
+      assert @game.network_up?('server_net'), 'the outage global is client-writable, so it clears'
+
+      # ...but with no foothold the server network is never reached, so its hosts and shares are
+      # not served and nothing on it is named.
+      refute @game.resource_admits_player?(@game.scenario_data['resources']['backup_vault']),
+             'a down-network host is still not served without a foothold'
+      network_view
+      refute_exposed('hostile sync, no foothold (network view)', NS::SERVER_STRINGS)
+      bootstrap_scenario
+      refute_exposed('hostile sync, no foothold (bootstrap scenario)', NS::SERVER_STRINGS)
+    end
+
+    test 'N5: a hostile sync clearing the outage with a foothold lifts the soft gate but the host still demands its password' do
+      with_outage_foothold(down: true)
+      # An office pivot session, the route onto server_net once it is up.
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+
+      sync_globals(NS::OUTAGE_GLOBAL => false)
+      @game.reload
+      assert @game.network_up?('server_net'), 'the global cleared'
+      assert_includes @game.player_reach(OFFICE), 'server_net', 'the server network is now in reach'
+
+      # The host is reachable now, but the outage was only a soft gate: a wrong password is a
+      # password failure, not the 403 "PC not reachable", and opens no session.
+      body = sign_in('sv_fs02', 'ishaw', 'wrong-password', foothold: OFFICE)
+      refute_equal 'PC not reachable', body['message'], 'the host is reachable, so this is a password gate'
+      refute @game.reload.player_state['sessions'].key?('sv_fs02'), 'a wrong password opens no session'
+
+      # The real password still signs in.
+      body = sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: OFFICE)
+      assert_response :success, body.inspect
+      assert @game.reload.player_state['sessions'].key?('sv_fs02')
     end
 
     # ---- N6: a repair fills the block in ------------------------------------------------
@@ -126,6 +177,20 @@ module BreakEscape
       refute @game.session_admits?({ type: 'login_pc', id: 'sv_fs02' }), 'the scoped request is refused while down'
       refute @game.scope_admitted_by_session?({ type: 'login_pc', id: 'sv_fs02' }, 'sv_fs02')
       assert @game.player_state['sessions'].key?('sv_fs02'), 'the session record survives'
+    end
+
+    # MIN-2 regression guard: session_route_up? denies conservatively when the PC cannot be
+    # resolved (find_login_pc nil) or has no network. This proves the happy path, so a regression
+    # that made a present, reachable host unresolvable would surface as a failure here.
+    test 'session_route_up? passes a remote session whose PC is present and reachable' do
+      with_outage_foothold(down: false)
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: OFFICE)
+      @game.reload
+      info = @game.find_login_pc('sv_fs02')
+      assert_equal 'sv_fs02', info && info[:object]['id'], 'the PC resolves (find_login_pc)'
+      assert_equal 'server_net', @game.object_network(info[:object]), 'and to its network (object_network)'
+      assert @game.session_route_up?('sv_fs02'), 'a present, reachable remote PC passes the route test'
     end
 
     test 'a local session (blank foothold) is never refused by the route test' do

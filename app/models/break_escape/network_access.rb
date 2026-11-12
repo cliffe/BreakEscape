@@ -726,9 +726,19 @@ module BreakEscape
     # ==========================================
 
     # Is a network's route up now (5.1, 5.2)? A network with no downIf is always up.
-    # Otherwise the network is down while its downIf global is truthy (NetworkModel.truthy?),
-    # read from player_state (falling back to the scenario's declared default) server-side, so
-    # a tampered client cannot clear an outage it did not set or reach a downed network.
+    # Otherwise the network is down while its downIf global is truthy (NetworkModel.truthy?).
+    # The global is read from server state (player_state, falling back to the scenario's
+    # declared default), never from a parameter in this access call, so the server decides the
+    # route from its own view rather than from a value the request carries.
+    #
+    # The outage global is itself client-published: plan 5.2 has the browser sync it, so a
+    # tampered client CAN clear it (merge_global_variables! does not protect it, by design).
+    # An outage alone is therefore not a security boundary, only a soft gate. Clearing it buys
+    # nothing a boundary would stop: a down-by-default network nobody has reached stays absent
+    # and unnamed because reach still needs a server-held foothold or session, and a host
+    # brought back into reach still demands its own password or ACL. validate_network.rb warns
+    # that a secret which must not be read early needs an account-gated share or a session, not
+    # an outage. network_outages_test's N5 cases drive the hostile sync and prove this.
     def network_up?(network_id)
       return true unless NetworkModel.present_string?(network_id)
 
@@ -750,16 +760,12 @@ module BreakEscape
       NetworkModel.truthy?(outage_global(down_if))
     end
 
-    # A global's current value for an outage test (5.2): the player's own value, else the
-    # scenario's declared default in globalVariables, else nil. Read from server state alone,
-    # never a request parameter, so the server decides whether a route is up. Mirrors
-    # npc_frustration.rb#frustration_global, which 9.2 reads the same globals through.
+    # A global's current value for an outage test (5.2). Delegates to Game#global_variable_value,
+    # the single shared globals reader that npc_frustration.rb#frustration_global also reads
+    # through, so an outage and NPC frustration are decided from the same server state and the
+    # two readers cannot drift apart.
     def outage_global(name)
-      globals = player_state['globalVariables']
-      return globals[name] if globals.is_a?(Hash) && globals.key?(name)
-
-      defaults = scenario_data['globalVariables']
-      defaults.is_a?(Hash) ? defaults[name] : nil
+      global_variable_value(name)
     end
 
     # The scoped-request route test (5.2), judged from the server's own session record, never
@@ -779,6 +785,11 @@ module BreakEscape
 
       info = find_login_pc(pc_id)
       net = info ? object_network(info[:object]) : nil
+      # A deliberate deny when the PC cannot be resolved (info nil) or has no network (net nil):
+      # a session whose host the server can no longer place is treated as off-route rather than
+      # trusted. This is the safe default; a future change that makes a legitimately reachable
+      # remote PC momentarily unresolvable would silently deny a held session here, so the
+      # happy path (a present, reachable PC passing) is covered by a test in network_outages_test.
       !net.nil? && player_reach(fid.to_s).include?(net)
     end
 

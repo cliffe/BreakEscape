@@ -412,12 +412,12 @@ module BreakEscape
     # a resend gets the same body
     def workaround_body(npc, w, heard: false)
       body = case w['do']
-             when 'writes_down' then { 'pcId' => npc['needsHome'], 'hasPostit' => true }
-             when 'prop_door' then { 'roomId' => w['door'] }
-             when 'borrow_session' then borrow_body(npc, w)
-             when 'share_login' then heard ? shared_login_body(npc, w) : {}
-             else {}
-             end
+      when 'writes_down' then { 'pcId' => npc['needsHome'], 'hasPostit' => true }
+      when 'prop_door' then { 'roomId' => w['door'] }
+      when 'borrow_session' then borrow_body(npc, w)
+      when 'share_login' then heard ? shared_login_body(npc, w) : {}
+      else {}
+      end
       body['setGlobal'] = w['setGlobal'] if declared_global?(w['setGlobal'])
       { status: :ok, body: body, open_room: w['do'] == 'prop_door' ? w['door'] : nil }
     end
@@ -716,12 +716,11 @@ module BreakEscape
       gap < floor
     end
 
+    # Delegates to Game#global_variable_value, the single shared globals reader that
+    # NetworkAccess#outage_global also reads through, so frustration and outages are decided
+    # from the same server state.
     def frustration_global(name)
-      globals = player_state['globalVariables']
-      return globals[name] if globals.is_a?(Hash) && globals.key?(name)
-
-      defaults = scenario_data['globalVariables']
-      defaults.is_a?(Hash) ? defaults[name] : nil
+      global_variable_value(name)
     end
 
     # npc-needs.js requiredGlobalsHold: a name is truthy; { name: value } matches every value
@@ -733,8 +732,11 @@ module BreakEscape
       end
     end
 
+    # Delegates to NetworkModel.truthy?, the single Ruby truthy source (mirrored by npc-work.js
+    # on the client), so the server reads a global's truthiness one way for frustration and
+    # outages alike.
     def truthy_global?(value)
-      !(value.nil? || value == false || value == 0 || value == '')
+      NetworkModel.truthy?(value)
     end
 
     def frustration_cause_holds?(npc, need, cause)

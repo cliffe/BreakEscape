@@ -108,3 +108,35 @@ The unit test does cover `0.0`, so this is purely a readability note; no change 
 - Touched Rails tests (`network_outages_test`, `network_no_exposure_test`, `network_model_test`),
   under the shared lock: 42 runs, 1835 assertions, 0 failures, 0 errors, 0 skips.
 - Full `bin/test-js -j 3` under the shared lock: 500 files passed, 0 failed (exit 0).
+
+## Outcomes (fixes applied)
+
+All findings addressed bar NIT-1, rejected with a reason. Commit(s) on `build/9-3b-o`.
+
+- **MAJ-1** fixed. `app/models/break_escape/network_access.rb` `network_up?` docstring reworded to
+  the real property: the global is read from server state (not a request parameter), but it is
+  client-syncable (plan 5.2), so an outage is a soft gate, not a boundary. The guarantee is that
+  clearing it reaches nothing a boundary would stop. Renamed the N5 test
+  ("the server reads the outage global from its own state (down by default)") and the test-class
+  header. Added two tests in `test/controllers/break_escape/network_outages_test.rb`: a hostile
+  `PUT /sync_state` clearing the global **with no foothold** (the server stores the cleared global,
+  but the network is still unreached and no `SERVER_STRINGS` appear in the view or the bootstrap
+  scenario, and `resource_admits_player?` is false), and one clearing it **with** a foothold (the
+  host is reachable but a wrong password opens no session; the real password signs in). Added a
+  `sync_globals` and `bootstrap_scenario` helper to `test/support/network_model_scenario.rb`.
+- **MIN-1** fixed. One shared reader `Game#global_variable_value` (`app/models/break_escape/game.rb`);
+  `outage_global` and `npc_frustration#frustration_global` delegate to it; `truthy_global?` delegates
+  to `NetworkModel.truthy?`. `NetworkModel.truthy?`'s comment now names the delegators.
+- **MIN-2** fixed. Comment added at `session_route_up?` marking the nil-PC deny deliberate; a
+  happy-path test proves a present, reachable remote PC passes, so a `find_login_pc` /
+  `object_network` regression surfaces here.
+- **MIN-3** fixed. Dated entry in `docs/IDEAS_BACKLOG.md` and a pointer in the build log's
+  "Not done / for later".
+- **NIT-2** addressed in the `NetworkModel.truthy?` comment (0.0 falsy through `0.0 == 0`).
+- **NIT-1** not done, by design. Folding the resource-outage info line into the existing
+  `resources.keys.sort` reachable-share loop would drop outage lines for a down share that fails
+  that loop's `file_share` + `access` filter (e.g. an open down share), so the dedicated pass is
+  kept.
+
+Re-run after the fixes (under the shared lock): validator `test_access_networks` 0 `❌` lines;
+`bin/rails test` and `bin/test-js -j 3` — see the build log O "Suites".

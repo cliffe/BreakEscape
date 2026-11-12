@@ -708,5 +708,31 @@ reopens with no password on repair). `verify-run --access` on the game confirms 
   "not responding") is not built here: it depends on 9.2's office-life `offWhen` field and is not in
   the N5-N7 beats or the brief's key points. The network-level and resource-level `downIf` outages,
   which the brief names, are complete. Flagged for a follow-up if the host-level outage display is
-  wanted.
+  wanted, and now tracked as a dated entry in `docs/IDEAS_BACKLOG.md` (review R1 MIN-3).
+
+### Review R1 outcomes (`ACCESS_MODEL_SLICE_9_3B_O_CODE_REVIEW_R1.md`)
+
+0 blocker, 1 major, 3 minor, 2 nit. All fixed bar one nit rejected with a reason.
+
+- **MAJ-1** (overstated tamper-resistance): reworded `network_up?`'s docstring and the
+  `network_outages_test` header to the real property. The outage global is client-syncable (plan
+  5.2), so an outage is a soft gate, not a boundary; the guarantee is that clearing it reaches
+  nothing without a server-held foothold and a host still demands its password. Renamed the N5 test
+  and added two: a hostile `PUT /sync_state` clearing the global with no foothold (the network is
+  still unreached and no `SERVER_STRINGS` are named, in the view or the bootstrap scenario), and one
+  clearing it with a foothold (the host is reachable but a wrong password opens no session, the real
+  one signs in).
+- **MIN-1** (duplicated globals reader / truthy set): added one shared reader
+  `Game#global_variable_value`; `outage_global` and `npc_frustration#frustration_global` now
+  delegate to it, and `truthy_global?` delegates to `NetworkModel.truthy?`. Cross-reference comments
+  on `NetworkModel.truthy?` made current.
+- **MIN-2** (`session_route_up?` conservative nil-PC deny): added a comment stating the deny is
+  deliberate and a happy-path test (a present, reachable remote PC passes, so a `find_login_pc` /
+  `object_network` regression surfaces).
+- **MIN-3** (deferred `offWhen` "not responding" host display): added a dated `docs/IDEAS_BACKLOG.md`
+  entry and the pointer above.
+- **NIT-2** (`0.0` falsy by `0.0 == 0`): noted in the `NetworkModel.truthy?` comment.
+- **NIT-1** (two `resources.keys.sort` passes in `validate_network.rb`): not folded. Folding the
+  resource-outage line into the reachable-share loop would drop outage lines for shares that fail
+  that loop's `file_share` + `access` filter, so the separate pass is kept deliberately.
 - Review rounds (AGENTS.md: Opus reviewer rounds) not yet done.
