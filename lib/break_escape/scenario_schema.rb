@@ -61,6 +61,11 @@ module BreakEscape
       def free_branch?
         @free_branch
       end
+
+      # Every property name declared across the object-capable branches.
+      def declared_property_keys
+        @object_branches.flat_map { |b| (b['properties'] || {}).keys }.uniq
+      end
     end
 
     # Compiled table for one schema document. Holds the parsed schema and interns Nodes.
@@ -131,6 +136,70 @@ module BreakEscape
 
         key = branches.map(&:object_id).sort
         @node_cache[key] ||= Node.new(self, branches)
+      end
+
+      # Eager enumeration (orchestrator ruling): yield [node, path] for every distinct Node first
+      # reached from the root and from each start pointer, following child for every declared
+      # property name and for the probe keys, and item. FREE and an already-seen Node are not
+      # explored again. Uses the very same classify code as the lazy resolver, so the schema-walk
+      # test's Explore and Reach run against the real resolution. path is the data path that first
+      # reached the Node (String keys, "[]" for an array item).
+      def explore(starts: STARTS, probes: %w[probe _probe])
+        return enum_for(:explore, starts: starts, probes: probes) unless block_given?
+
+        seen = {}
+        stack = []
+        push = lambda do |node, path|
+          return unless node.is_a?(Node)
+          return if seen.key?(node.object_id)
+
+          seen[node.object_id] = true
+          stack << [node, path]
+        end
+        push.call(root, [])
+        starts.each do |ptr|
+          next if ptr == '#'
+          next unless pointer_exists?(ptr)
+
+          push.call(node_at(ptr), [ptr])
+        end
+        until stack.empty?
+          node, path = stack.pop
+          yield node, path
+          node.declared_property_keys.each { |k| push.call(ScenarioSchema.child(node, k), path + [k]) }
+          probes.each { |p| push.call(ScenarioSchema.child(node, p), path + [p]) }
+          push.call(ScenarioSchema.item(node), path + ['[]'])
+        end
+      end
+
+      # Raw-schema structural walk: yield [schema_hash, pointer] for every subschema location in the
+      # document, recursing through the schema-structural keywords only. A $ref node is a reference,
+      # not a location (draft-04 ignores its siblings), so it is not yielded and not descended into;
+      # its target is yielded where it is defined under definitions. A "^_" patternProperties entry
+      # is a note schema and is not descended into.
+      def each_raw_location(node = @root_schema, pointer = '#', &blk)
+        return unless node.is_a?(Hash)
+        return if node.key?('$ref')
+
+        blk.call(node, pointer)
+        (node['properties'] || {}).each { |k, v| each_raw_location(v, "#{pointer}/properties/#{k}", &blk) }
+        (node['patternProperties'] || {}).each do |k, v|
+          next if k == '^_'
+
+          each_raw_location(v, "#{pointer}/patternProperties/#{k}", &blk)
+        end
+        ap = node['additionalProperties']
+        each_raw_location(ap, "#{pointer}/additionalProperties", &blk) if ap.is_a?(Hash)
+        items = node['items']
+        if items.is_a?(Hash)
+          each_raw_location(items, "#{pointer}/items", &blk)
+        elsif items.is_a?(Array)
+          items.each_with_index { |b, i| each_raw_location(b, "#{pointer}/items/#{i}", &blk) }
+        end
+        %w[allOf anyOf oneOf].each do |comb|
+          Array(node[comb]).each_with_index { |b, i| each_raw_location(b, "#{pointer}/#{comb}/#{i}", &blk) }
+        end
+        (node['definitions'] || {}).each { |k, v| each_raw_location(v, "#{pointer}/definitions/#{k}", &blk) }
       end
 
       private
@@ -271,6 +340,60 @@ module BreakEscape
       # A branch is a map when its additionalProperties is a schema or it carries "x-id-map": true.
       def map_branch?(branch)
         branch['additionalProperties'].is_a?(Hash) || branch['x-id-map'] == true
+      end
+
+      # Eager enumeration over the process schema (see Table#explore).
+      def explore(**opts, &blk)
+        @root_mutex ||= Mutex.new
+        @root_mutex.synchronize { @root_table ||= load(DEFAULT_PATH) }
+        @root_table.explore(**opts, &blk)
+      end
+
+      # Raw-schema location walk over the process schema (see Table#each_raw_location).
+      def each_raw_location(&blk)
+        @root_mutex ||= Mutex.new
+        @root_mutex.synchronize { @root_table ||= load(DEFAULT_PATH) }
+        @root_table.each_raw_location(&blk)
+      end
+
+      # The ways a raw schema location is open, as the schema-walk test's Marks part reads them:
+      #   "obj"  - type explicitly allows object, with no properties and no additionalProperties schema
+      #   "arr"  - type explicitly allows array, with no items schema
+      #   "bare" - no type and constrains nothing at all (only description / x-marks)
+      # additionalProperties:true is not a schema, so an empty "additionalProperties": true object is
+      # open, while one that also declares properties is not (it has properties).
+      def open_kinds(raw)
+        return [] unless raw.is_a?(Hash)
+
+        kinds = []
+        t = raw['type']
+        type_is_object = t == 'object' || (t.is_a?(Array) && t.include?('object'))
+        type_is_array = t == 'array' || (t.is_a?(Array) && t.include?('array'))
+        ap_schema = raw['additionalProperties'].is_a?(Hash)
+        kinds << 'obj' if type_is_object && !raw.key?('properties') && !ap_schema
+        kinds << 'arr' if type_is_array && !raw.key?('items')
+        constrains = %w[$ref allOf anyOf oneOf enum const properties items].any? { |k| raw.key?(k) } ||
+                     ap_schema || raw['additionalProperties'] == true
+        kinds << 'bare' if !raw.key?('type') && !constrains
+        kinds
+      end
+
+      # The x- marks a raw location carries, as "x-id-map:true" / "x-free-data:true" strings.
+      def marks_on(raw)
+        out = []
+        out << "x-id-map:#{raw['x-id-map']}" if raw.is_a?(Hash) && raw.key?('x-id-map')
+        out << "x-free-data:#{raw['x-free-data']}" if raw.is_a?(Hash) && raw.key?('x-free-data')
+        out
+      end
+
+      # A combinator branch that holds only "required" describes no location (exempt from Marks).
+      def only_required?(raw)
+        raw.is_a?(Hash) && raw.key?('required') && (raw.keys - %w[required]).empty?
+      end
+
+      # A raw location that is a map: additionalProperties is a schema, or it carries x-id-map:true.
+      def map_location?(raw)
+        raw.is_a?(Hash) && (raw['additionalProperties'].is_a?(Hash) || raw['x-id-map'] == true)
       end
 
       # true when a schema branch's type allows the given JSON type (absent type allows anything).
