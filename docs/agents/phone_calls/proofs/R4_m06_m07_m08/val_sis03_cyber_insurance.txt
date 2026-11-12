@@ -1,0 +1,85 @@
+Validating scenario: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-phone-calls/scenarios/sis03_cyber_insurance/scenario.json.erb
+Using schema: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-phone-calls/scripts/scenario-schema.json
+
+Checking scenario directory structure...
+✓ Directory structure is valid
+
+Loaded 1166 valid item types from assets/objects/
+
+Rendering ERB template...
+✓ ERB rendered successfully
+
+Checking JSON structure...
+✓ JSON structure is valid
+
+Checking for unknown fields...
+⚠️ Found 4 unknown field(s):
+
+1. ❌ ERROR: 'rooms/meridian_claims_suite/objects[0](claims_management_system)' minigameData has undeclared field 'title' — not in schema for 'pc'. Add it to minigame-data-schemas.json or remove it.
+2. ❌ ERROR: 'rooms/meridian_claims_suite/objects[0](claims_management_system)' minigameData has undeclared field 'printEnabled' — not in schema for 'pc'. Add it to minigame-data-schemas.json or remove it.
+3. ❌ ERROR: 'rooms/meridian_claims_suite/objects[0](claims_management_system)' minigameData has undeclared field 'stateWrites' — not in schema for 'pc'. Add it to minigame-data-schemas.json or remove it.
+4. ❌ ERROR: 'rooms/meridian_claims_suite/objects[0](claims_management_system)' minigameData has undeclared field 'sections' — not in schema for 'pc'. Add it to minigame-data-schemas.json or remove it.
+
+⏭️ Skipping ink file validation (--skip-ink)
+
+Checking objective task wiring...
+⚠️ Found 5 objective wiring warning(s):
+
+1. ⚠️ WARNING: NPC 'eleanor_vance' (room 'meridian_claims_suite') has 2 eventMappings for 'global_variable_changed:policy_reviewed' (indices 1, 2), of which onceOnly handler(s) at index 1, 2 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+2. ⚠️ WARNING: NPC 'eleanor_vance' (room 'meridian_claims_suite') has 2 eventMappings for 'global_variable_changed:forensic_chain_verified' (indices 4, 5), of which onceOnly handler(s) at index 4, 5 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+3. ⚠️ WARNING: NPC 'eleanor_vance' (room 'meridian_claims_suite') has 3 eventMappings for 'global_variable_changed:warranty_evidence_reviewed' (indices 8, 10, 13), of which onceOnly handler(s) at index 8, 10, 13 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+4. ⚠️ WARNING: NPC 'eleanor_vance' (room 'meridian_claims_suite') has 2 eventMappings for 'global_variable_changed:attribution_brief_reviewed' (indices 11, 15), of which onceOnly handler(s) at index 11, 15 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+5. ⚠️ WARNING: NPC 'eleanor_vance' (room 'meridian_claims_suite') has 2 eventMappings for 'global_variable_changed:underwriting_file_reviewed' (indices 12, 14), of which onceOnly handler(s) at index 12, 14 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+
+Checking room layout geometry...
+Checking door alignment...
+[DEPRECATION NOTICE] json-schema support for MultiJSON is deprecated and will be removed in a future version. To stop using MultiJSON, add `JSON::Validator.use_multi_json = false` to your application's initialization code.
+✓ Room layout geometry OK — no world-space overlaps
+
+✓ Door alignment OK
+
+Validating against schema...
+Checking for common issues...
+Checking recommended fields...
+✓ Schema validation passed!
+⚠️ Found 28 issue(s) and suggestion(s):
+
+1. ⚠️ WARNING: objectives/closing_debrief has missionConclusion:true but no conclusionScreen — the player will see no end-of-mission overlay. Choose one per scenario: { "type": "bond_visualiser" } for a story mission (the credits, rolled from a music event), or { "type": "success", "title": "..." } for a short training episode (see the ending convention in README_scenario_design.md).
+2. ⚠️ WARNING: 2 items all point to the same unlock target 'meridian_evidence_archive' — multiple solution paths exist. Sources: [rooms/meridian_claims_suite/objects[1], rooms/meridian_claims_suite/objects[5]]. If one path is intentionally optional, add puzzle_graph_optional: true to that item. Otherwise this may allow players to bypass a challenge.
+3. ✅ GOOD PRACTICE: Scenario uses timedConversation.skipIfGlobal — the opening briefing will not replay when the player resumes the scenario.
+4. ✅ GOOD PRACTICE: Scenario uses the music system — dynamic music changes based on in-game events significantly enhance immersion.
+5. 💡 SUGGESTION: Consider adding VM launcher terminals (type: 'vm-launcher') for hacking challenges. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+6. 💡 SUGGESTION: Consider adding flag station terminals (type: 'flag-station') for VM flag submission. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+7. 💡 SUGGESTION: Consider adding at least one PC container (type: 'pc') with files (type: 'text_file') in 'contents' array. Use collection_group on files and a matching targetGroup task to track reading progress. See scenarios/m01_first_contact/scenario.json.erb (it_room/kevin_office) for example
+8. 💡 SUGGESTION: Consider adding event-driven closing debrief cutscene using this architecture:
+9.    1. Add global variable to scenario.globalVariables (e.g., 'start_debrief_cutscene': false)
+10.    2. In phone NPC's Ink story, add tags: #set_global:start_debrief_cutscene:true and #exit_conversation
+11.    3. Create person NPC with eventMappings: [{eventPattern: 'global_variable_changed:start_debrief_cutscene', condition: 'value === true', conversationMode: 'person-chat', targetKnot: 'start', background: 'assets/backgrounds/hq1.png', onceOnly: true}]
+12.    4. Add behavior: {initiallyHidden: true} to person NPC so it doesn't appear in-world
+13.    See scenarios/m01_first_contact/scenario.json.erb (closing_debrief_person) for complete reference implementation
+14. 💡 SUGGESTION: Consider adding patrol waypoints to at least one person NPC for dynamic movement. Add behavior.patrol.waypoints array with {x, y} coordinates, or behavior.patrol.route for multi-room patrols. See scenarios/m01_first_contact/scenario.json.erb for NPCs with hostile behavior and movement.
+15. 💡 SUGGESTION: Consider adding variety in lock types — scenarios typically use 3+ different mechanisms (key, pin, rfid, password, flag). Currently using: pin. m01 uses all five lock types: key (doors/briefcases), pin (safes/cabinets), rfid (server room), password (computers), flag (encrypted archive). See scenarios/m01_first_contact/scenario.json.erb for examples
+16. 💡 SUGGESTION: Consider adding RFID locks (lockType: 'rfid') for high-security areas. Requires an rfid_cloner tool and an NPC or item with a card_id. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+17. 💡 SUGGESTION: Consider adding password locks (lockType: 'password') for computers and workstations — passwords are discovered through investigation. See scenarios/m01_first_contact/scenario.json.erb (derek_computer, kevin workstation) for examples
+18. 💡 SUGGESTION: Consider adding security tools (lockpick, fingerprint_kit, pin-cracker, bluetooth_scanner, rfid_cloner) for interactive gameplay. In m01, a lockpick is held by kevin_park and obtained by defeating him, enabling key-locked doors. See scenarios/m01_first_contact/scenario.json.erb for examples
+19. 💡 SUGGESTION: Consider adding at least one hostile NPC (behavior: { hostile: true }) to create physical danger and tension. In m01, sarah_martinez, derek_lawson, and kevin_park are all hostile. See scenarios/m01_first_contact/scenario.json.erb for examples
+20. ✅ GOOD PRACTICE: Scenario uses puzzle_graph_* metadata — run 'ruby scripts/generate_dungeon_graph.rb scenarios/my_scenario/scenario.json.erb' to generate an interactive puzzle dependency graph.
+21. ⚠️ WARNING: event 'global_variable_changed:policy_reviewed' can send timed texts less than 4 s apart that fire together: eleanor_vance @5000 ms "Good — you've confirmed the insuring" + eleanor_vance @4000 ms "Policy and forensic checks complete.". Their toasts stack and the first is gone before it can be read. Space them 4-6 s apart, or fold them into one message.
+22. ⚠️ WARNING: event 'global_variable_changed:forensic_chain_verified' can send timed texts less than 4 s apart that fire together: eleanor_vance @5000 ms "Causal chain confirmed — cyber event" + eleanor_vance @4000 ms "Policy and forensic checks complete.". Their toasts stack and the first is gone before it can be read. Space them 4-6 s apart, or fold them into one message.
+23. ⚠️ WARNING: event 'global_variable_changed:warranty_evidence_reviewed' can send timed texts less than 4 s apart that fire together: eleanor_vance @5000 ms "You've reviewed all three evidence p" + james_whitworth @8000 ms "James Whitworth: I wanted to follow ". Their toasts stack and the first is gone before it can be read. Space them 4-6 s apart, or fold them into one message.
+24. 💡 SUGGESTION: credits section "CLAIM REVIEW" (/music/events[3]/credits) has 3 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+25. 💡 SUGGESTION: credits section "WARRANTY POSITIONS" (/music/events[3]/credits) has 4 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+26. 💡 SUGGESTION: credits section "SIS CLAIM SYNTHESIS" (/music/events[3]/credits) has 4 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+27. 💡 SUGGESTION: credits section "COVERAGE DECISION" (/music/events[3]/credits) has 5 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+28. 💡 SUGGESTION: credits section "TRENT WATER" (/music/events[3]/credits) has 3 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+
+✓ No missing recommended fields.
+
+ℹ Desk boxes: legacy in 2 map(s) (room_archive_1x2gu, room_office); footprint in 0
+
+✓ Validation complete!

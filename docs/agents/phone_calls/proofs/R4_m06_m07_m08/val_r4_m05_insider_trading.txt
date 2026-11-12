@@ -1,0 +1,150 @@
+Validating scenario: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/hax_r4_9mAL/scenarios/m05_insider_trading/scenario.json.erb
+Using schema: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/hax_r4_9mAL/scripts/scenario-schema.json
+
+Checking scenario directory structure...
+✓ Directory structure is valid
+
+Loaded 1166 valid item types from assets/objects/
+
+Rendering ERB template...
+✓ ERB rendered successfully
+
+Checking JSON structure...
+✓ JSON structure is valid
+
+Checking for unknown fields...
+✓ No unknown fields
+
+Checking ink files...
+✓ All ink files valid
+
+DIALOGUE LINT (scripts/ink_runtime_check/dialoguelint.mjs; advisory, does not affect the result)
+⚠️ WARNING: 4 dialogue lint finding(s)
+  Totals by rule: line-len=2 you-after-choice=1 not-x-but-y=1
+  line-len (2):
+    ERROR scenarios/m05_insider_trading/ink/m05_closing_debrief.ink:353  31 words (cap 30)  | Owen was, when he wasn't fixing everything else. The portal ...
+    ERROR scenarios/m05_insider_trading/ink/m05_phone_agent_0x99.ink:1083  27 words (cap 25)  | The note says the portal login's in the on-call lockbox in t...
+  you-after-choice (1):
+    CHECK scenarios/m05_insider_trading/ink/m05_phone_recruiter.ink:102  choice looks non-verbal; allowed  | ...
+  not-x-but-y (1):
+    WARN  scenarios/m05_insider_trading/ink/m05_phone_recruiter.ink:388  "That's not a defence. It"  | That's not a defence. It's the part nobody wants to hear: th...
+
+Checking objective task wiring...
+⚠️ Found 14 objective wiring warning(s):
+
+1. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 3 eventMappings for 'room_entered:reception_lobby' (indices 1, 76, 94), of which onceOnly handler(s) at index 1, 76, 94 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+2. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 3 eventMappings for 'global_variable_changed:flag1_submitted' (indices 13, 18, 19), of which onceOnly handler(s) at index 13, 18 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+3. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 3 eventMappings for 'global_variable_changed:flag2_submitted' (indices 14, 20, 21), of which onceOnly handler(s) at index 14, 20 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+4. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 4 eventMappings for 'global_variable_changed:flag3_submitted' (indices 15, 22, 23, 36), of which onceOnly handler(s) at index 15, 22, 36 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+5. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 4 eventMappings for 'global_variable_changed:flag4_submitted' (indices 16, 17, 24, 25), of which onceOnly handler(s) at index 17, 24 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+6. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 2 eventMappings for 'global_variable_changed:torres_identified' (indices 26, 27), of which onceOnly handler(s) at index 26, 27 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+7. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 3 eventMappings for 'room_entered:server_room' (indices 28, 81, 99), of which onceOnly handler(s) at index 28, 81, 99 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+8. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 4 eventMappings for 'room_entered:data_center' (indices 29, 85, 93, 103), of which onceOnly handler(s) at index 29, 85, 103 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+9. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 2 eventMappings for 'global_variable_changed:door_log_reasoned' (indices 37, 39), of which onceOnly handler(s) at index 37, 39 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+10. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 3 eventMappings for 'global_variable_changed:torres_suspected' (indices 40, 41, 43), of which onceOnly handler(s) at index 40, 41, 43 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+11. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 3 eventMappings for 'global_variable_changed:case_motive' (indices 42, 45, 46), of which onceOnly handler(s) at index 42, 45, 46 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+12. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 2 eventMappings for 'fingerprint_collected:david_torres' (indices 59, 60), of which onceOnly handler(s) at index 59, 60 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+13. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 3 eventMappings for 'object_interacted' (indices 61, 62, 63), of which onceOnly handler(s) at index 61, 62, 63 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+14. ⚠️ WARNING: NPC 'agent_0x99_handler' (room 'reception_lobby') has 11 eventMappings for 'conversation_closed:david_torres' (indices 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74), of which onceOnly handler(s) at index 64, 66, 68, 70, 72, 74 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+
+Checking room layout geometry...
+Checking door alignment...
+[DEPRECATION NOTICE] json-schema support for MultiJSON is deprecated and will be removed in a future version. To stop using MultiJSON, add `JSON::Validator.use_multi_json = false` to your application's initialization code.
+✓ Room layout geometry OK — no world-space overlaps
+
+✓ Door alignment OK
+
+Validating against schema...
+Checking for common issues...
+Checking recommended fields...
+✓ Schema validation passed!
+⚠️ Found 44 issue(s) and suggestion(s):
+
+1. ✅ GOOD PRACTICE: Scenario uses event-driven cutscene architecture with 2 person-chat cutscene(s). Ensure corresponding phone NPCs use #set_global tags to trigger these cutscenes
+2. ✅ GOOD PRACTICE: Scenario uses globalVarOnKO on NPCs — global variables are set when NPCs are knocked out, enabling event-driven story progression. Ensure all referenced variables are in globalVariables.
+3. ✅ GOOD PRACTICE: Scenario uses timedConversation.skipIfGlobal — the opening briefing will not replay when the player resumes the scenario.
+4. ✅ GOOD PRACTICE: Scenario uses the music system — dynamic music changes based on in-game events significantly enhance immersion.
+5. ✅ GOOD PRACTICE: Scenario uses hostile NPCs — this adds physical challenge and urgency. Ensure hostile NPCs have behavior.chaseSpeed, attackDamage, and pauseToAttack configured.
+6. 💡 SUGGESTION: Consider adding patrol waypoints to at least one person NPC for dynamic movement. Add behavior.patrol.waypoints array with {x, y} coordinates, or behavior.patrol.route for multi-room patrols. See scenarios/m01_first_contact/scenario.json.erb for NPCs with hostile behavior and movement.
+7. 💡 SUGGESTION: Consider adding timedMessages to phone contacts for narrative delivery — timed messages drive the story forward at key moments. Phone NPCs without timed messages: rooms/reception_lobby/npcs[3] (Agent HaX), rooms/reception_lobby/npcs[4] (The Recruiter), rooms/reception_lobby/npcs[5] (Patricia Morgan). See scenarios/m01_first_contact/scenario.json.erb (agent_0x99) for example
+8. ✅ GOOD PRACTICE: Scenario uses puzzle_graph_* metadata — run 'ruby scripts/generate_dungeon_graph.rb scenarios/my_scenario/scenario.json.erb' to generate an interactive puzzle dependency graph.
+9. 💡 SUGGESTION: 'rooms/patricia_office/npcs[0]/itemsHeld[1]' (Vetting Aftercare File: D. Torres) sets 'found_vetting_file' in onRead, and 'found_vetting_file' drives a mapping, condition or objective. An NPC's note fires onRead the moment it is handed over or picked up after a KO (npc-game-bridge.js), so 'found_vetting_file' means "received", not "read" (m05 vetting files). Fine if that's the intent; otherwise gate on a later step.
+10. 💡 SUGGESTION: 'rooms/patricia_office/npcs[0]/itemsHeld[3]' (Patricia's Copy of the CEO's Email) sets 'found_stand_down_email' in onRead, and 'found_stand_down_email' drives a mapping, condition or objective. An NPC's note fires onRead the moment it is handed over or picked up after a KO (npc-game-bridge.js), so 'found_stand_down_email' means "received", not "read" (m05 vetting files). Fine if that's the intent; otherwise gate on a later step.
+11. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:25: VAR call_answer_seconds is declared, but the contact has no ring and no call entry, so it is always 0
+12. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:26: VAR call_is_callback is declared, but the contact has no ring and no call entry, so it is always false
+13. ❌ ERROR: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:186: #place_call:extract_call is not one of the contact's call entries
+14. ❌ ERROR: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:220: #place_call:topic_architect is not one of the contact's call entries
+15. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]/eventMappings[16].sendTimedMessage' (agent_0x99_handler) says "Root flag in. The Architect's authorisation, casualty projection and all. Call m", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+16. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]/eventMappings[18].sendTimedMessage' (agent_0x99_handler) says "That's the last flag. Sweep the vault if you haven't, then call me and I'll brin", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3) (and 3 more with the same text: eventMappings[20].sendTimedMessage, eventMappings[22].sendTimedMessage, eventMappings[24].sendTimedMessage)
+17. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]/eventMappings[19].sendTimedMessage' (agent_0x99_handler) says "That's the last flag. Call me.", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3) (and 3 more with the same text: eventMappings[21].sendTimedMessage, eventMappings[23].sendTimedMessage, eventMappings[25].sendTimedMessage)
+18. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]/eventMappings[46].sendTimedMessage' (agent_0x99_handler) says "That's both halves: why he'd do it, and proof it's leaving the building. Patrici", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3) (and 1 more with the same text: eventMappings[48].sendTimedMessage)
+19. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]/eventMappings[64].sendTimedMessage' (agent_0x99_handler) says "The upload's dead. Good. Finish that research server before I pull you out: all ", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3) (and 3 more with the same text: eventMappings[66].sendTimedMessage, eventMappings[68].sendTimedMessage, eventMappings[70].sendTimedMessage)
+20. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]/eventMappings[65].sendTimedMessage' (agent_0x99_handler) says "The upload's dead. He's still on that floor. The research server isn't finished:", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3) (and 3 more with the same text: eventMappings[67].sendTimedMessage, eventMappings[69].sendTimedMessage, eventMappings[71].sendTimedMessage)
+21. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]/eventMappings[72].sendTimedMessage' (agent_0x99_handler) says "Upload's dead. Sweep the vault before you go: whatever's on that desk is ours if", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+22. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]/eventMappings[73].sendTimedMessage' (agent_0x99_handler) says "Upload's dead. If you're leaving him there, take what's on that desk and go. Cal", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+23. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:798 says "He's still on that floor, and the upload's dead. Finish the research server: all", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+24. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:800 says "The upload's dead. Finish the research server: all four flags in the drop-site. ", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+25. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:802 says "If you're leaving him there, take what's on that desk and go. Call me.", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+26. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:804 says "Sweep the vault before you go. Then call me and I'll bring you in.", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+27. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:1036 says "The upload's dead and he's still on that floor. The research server isn't. All f", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+28. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:1038 says "The upload's dead. The research server isn't. All four flags in the drop-site, t", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+29. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[3]' (agent_0x99_handler) m05_phone_agent_0x99.ink:1040 says "The upload's dead and the flags are in. He's still on that floor. Take what you ", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+30. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[4]' (recruiter) m05_phone_recruiter.ink:28: VAR call_answer_seconds is declared, but the contact has no ring and no call entry, so it is always 0
+31. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[4]' (recruiter) m05_phone_recruiter.ink:29: VAR call_is_callback is declared, but the contact has no ring and no call entry, so it is always false
+32. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[5]/eventMappings[0].sendTimedMessage' (patricia_phone) says "Patricia. This is my mobile. Ring me if anything changes; don't walk it back thr", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+33. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[5]' (patricia_phone) m05_phone_patricia.ink:150 says "Still here. Ring me when you've got something.", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+34. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[5]' (patricia_phone) m05_phone_patricia.ink:182 says "Don't throw names at me. Ring back when you're sure.", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+35. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[5]' (patricia_phone) m05_phone_patricia.ink:188 says "So have I. Ring me back with evidence.", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+36. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[5]' (patricia_phone) m05_phone_patricia.ink:201 says "Don't throw names at me. Ring back when you're sure.", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+37. ⚠️ WARNING: phone calls: 'rooms/reception_lobby/npcs[5]' (patricia_phone) m05_phone_patricia.ink:385 says "Whatever you decide in front of him, ring me when it's done.", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+38. ⚠️ WARNING: event 'object_interacted' can send timed texts less than 4 s apart that fire together: agent_0x99_handler @1500 ms "Pin tumbler. Your picks will do it. " + agent_0x99_handler @1500 ms "QDC's research portal runs Bludit. I"; agent_0x99_handler @1500 ms "Pin tumbler. Your picks will do it. " + agent_0x99_handler @1500 ms "QDC's research portal runs Bludit. I". Their toasts stack and the first is gone before it can be read. Space them 4-6 s apart, or fold them into one message.
+39. 💡 SUGGESTION: credits section "THE CASE" (/music/events[11]/credits) has 7 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+40. 💡 SUGGESTION: credits section "DAVID TORRES" (/music/events[11]/credits) has 8 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+41. 💡 SUGGESTION: credits section "ELENA TORRES" (/music/events[11]/credits) has 3 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+42. 💡 SUGGESTION: credits section "SOFIA (11) AND MIGUEL (8) TORRES" (/music/events[11]/credits) has 5 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+43. 💡 SUGGESTION: credits section "THE RECRUITER" (/music/events[11]/credits) has 7 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+44. 💡 SUGGESTION: credits section "QUANTUM DYNAMICS" (/music/events[11]/credits) has 3 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+
+⚠️ Found 11 missing recommended field(s):
+
+1. Missing recommended: 'rooms/reception_lobby/npcs[1]' has no behavior - NPCs should have storyPath, timedMessages, timedConversation, or eventMappings
+2. Missing recommended: 'rooms/reception_lobby/npcs[2]' has no behavior - NPCs should have storyPath, timedMessages, timedConversation, or eventMappings
+3. Missing recommended field: 'objectives[0]/tasks[2]/showProgress' - shows progress for collect_items tasks
+4. Missing recommended field: 'objectives[1]/tasks[4]/showProgress' - shows progress for collect_items tasks
+5. Missing recommended field: 'objectives[1]/tasks[5]/showProgress' - shows progress for collect_items tasks
+6. Missing recommended field: 'objectives[1]/tasks[6]/showProgress' - shows progress for collect_items tasks
+7. Missing recommended field: 'objectives[1]/tasks[7]/showProgress' - shows progress for collect_items tasks
+8. Missing recommended field: 'objectives[2]/tasks[0]/showProgress' - shows progress for collect_items tasks
+9. Missing recommended field: 'objectives[2]/tasks[3]/showProgress' - shows progress for collect_items tasks
+10. Missing recommended field: 'objectives[2]/tasks[4]/showProgress' - shows progress for collect_items tasks
+11. Missing recommended field: 'objectives[3]/tasks[7]/showProgress' - shows progress for collect_items tasks
+
+Generating dungeon graph...
+Written: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/hax_r4_9mAL/scenarios/m05_insider_trading/dungeon_graph.html
+Written: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/hax_r4_9mAL/scenarios/m05_insider_trading/dungeon_graph.json
+Written: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/hax_r4_9mAL/scenarios/m05_insider_trading/dungeon_graph.md
+Puzzle     — Nodes: 43  Edges: 47
+Story      — Nodes: 19  Edges: 18
+Integrated — Nodes: 62  Edges: 74
+Rooms      — Nodes: 10  Edges: 9
+Contents   — Nodes: 62  Edges: 61
+Critical path (4 hops): Get Inside Quantum Dynamics → Work Out Who Has Been in the Servers → Prove the Exfiltration on the Server → + → Decide the Insider's Fate
+✓ Dungeon graph: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/hax_r4_9mAL/scenarios/m05_insider_trading/dungeon_graph.html
+
+ℹ Desk boxes: legacy in 10 map(s) (room_qdc_break, room_qdc_hall, room_qdc_lab, room_qdc_lobby, room_qdc_open, room_qdc_security, room_qdc_server_hall, room_qdc_servers, room_qdc_torres, room_qdc_vault); footprint in 0
+
+✓ Validation complete!

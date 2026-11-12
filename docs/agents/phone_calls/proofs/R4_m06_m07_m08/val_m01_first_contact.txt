@@ -1,0 +1,150 @@
+Validating scenario: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/r2repo/scenarios/m01_first_contact/scenario.json.erb
+Using schema: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/r2repo/scripts/scenario-schema.json
+
+Checking scenario directory structure...
+✓ Directory structure is valid
+
+Loaded 1166 valid item types from assets/objects/
+
+Rendering ERB template...
+✓ ERB rendered successfully
+
+Checking JSON structure...
+✓ JSON structure is valid
+
+Checking for unknown fields...
+⚠️ Found 1 unknown field(s):
+
+1. ⚠️ WARNING: Top-level field 'validSprites' is not recognized in the schema — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct.
+
+Checking ink files...
+⚠️ Found 1 ink file warning(s):
+
+1. 💡 SUGGESTION: 'scenarios/m01_first_contact/ink/m01_phone_agent0x99.ink' line 247: 'Command:' looks like a speaker prefix but matches no NPC. If it is a label (e.g. 'Command: nmap ...') this is fine and renders as written; if it is meant to be dialogue, use the NPC's exact displayName.
+
+
+DIALOGUE LINT (scripts/ink_runtime_check/dialoguelint.mjs; advisory, does not affect the result)
+⚠️ WARNING: 25 dialogue lint finding(s)
+  Totals by rule: us-spelling=9 banned-word=3 not-x-but-y=3 blank-reentry=3 choice-len=2 you-after-choice=2 inflated=2 transition=1
+  us-spelling (9):
+    WARN  scenarios/m01_first_contact/ink/m01_closing_debrief.ink:205  "prioritize"  | Next time, prioritize document recovery. Physical evidence i...
+    WARN  scenarios/m01_first_contact/ink/m01_closing_debrief.ink:478  "neighbors"  | He's cleared now. But he's traumatized. His neighbors saw hi...
+    WARN  scenarios/m01_first_contact/ink/m01_closing_debrief.ink:513  "neighbors"  | Kevin will be cleared in days, maybe a week. The damage is t...
+    WARN  scenarios/m01_first_contact/ink/m01_closing_debrief.ink:651  "defense"  | His defense team is spinning the excessive force angle, but ...
+    ...and 5 more
+  banned-word (3):
+    WARN  scenarios/m01_first_contact/ink/m01_closing_debrief.ink:260  "valuable"  | Kevin's cooperation was valuable. The IT contractor cover wo...
+    WARN  scenarios/m01_first_contact/ink/m01_derek_confrontation.ink:190  "leverage"  | The cohorts we're profiling? Vulnerable demographics—statist...
+    WARN  scenarios/m01_first_contact/ink/m01_npc_kevin.ink:306  "enhanced"  | At first he seemed normal. Then he started requesting "enhan...
+  not-x-but-y (3):
+    WARN  scenarios/m01_first_contact/ink/m01_closing_debrief.ink:593  "it wasn't required for the mission. But"  | That's fine—it wasn't required for the mission. But it could...
+    WARN  scenarios/m01_first_contact/ink/m01_derek_confrontation.ink:222  "That's not murder. That"  | Sixty deaths to save tens of thousands per year. That's not ...
+    WARN  scenarios/m01_first_contact/ink/m01_npc_kevin.ink:592  "That's not me questioning it — that"  | The report has a "HEADER MISMATCH DETECTED" flag. That's not...
+  blank-reentry (3):
+    CHECK scenarios/m01_first_contact/ink/m01_npc_kevin.ink:200  the chat parks at "hub" and a re-talk re-enters it, but it prints nothing before its choices. Add a re-entry line for better context, skipped once aft...  | -> hub
+    CHECK scenarios/m01_first_contact/ink/m01_npc_maya.ink:153  the chat parks at "hub" and a re-talk re-enters it, but it prints nothing before its choices. Add a re-entry line for better context, skipped once aft...  | -> hub
+    CHECK scenarios/m01_first_contact/ink/m01_npc_sarah.ink:80  the chat parks at "hub" and a re-talk re-enters it, but it prints nothing before its choices. Add a re-entry line for better context, skipped once aft...  | -> hub
+  choice-len (2):
+    WARN  scenarios/m01_first_contact/ink/m01_derek_confrontation.ink:57  21 words (cap 15)  | I have everything. The archive. The network map. The Archite...
+    WARN  scenarios/m01_first_contact/ink/m01_phone_agent0x99.ink:412  21 words (cap 15)  | They've calculated acceptable casualties. Vulnerable demogra...
+  you-after-choice (2):
+    CHECK scenarios/m01_first_contact/ink/m01_derek_confrontation.ink:298  choice is verbal; fold the words into the choice  | No lawyers. No trials. No platform for your twisted philosop...
+    CHECK scenarios/m01_first_contact/ink/m01_derek_confrontation.ink:418  choice is verbal; fold the words into the choice  | Maybe. But they'll also see that SAFETYNET stopped you. That...
+  inflated (2):
+    WARN  scenarios/m01_first_contact/ink/m01_npc_kevin.ink:177  "Let me know if you need anything"  | Sure. Let me know if you need anything else.
+    WARN  scenarios/m01_first_contact/ink/m01_npc_sarah.ink:81  "Let me know if you need anything"  | Good luck with the audit! Let me know if you need anything.
+  transition (1):
+    WARN  scenarios/m01_first_contact/ink/m01_npc_kevin.ink:499  "overall"  | You've identified some key issues. A few things we see diffe...
+
+Checking objective task wiring...
+⚠️ Found 5 objective wiring warning(s):
+
+1. 💡 SUGGESTION: Side-objective task 'meet_kevin' completes only through conversation with person NPC(s) [kevin_park] (a '#complete_task:meet_kevin' ink tag) with no knockout-safe fallback, so knocking out that NPC strands it. This is acceptable if intended — the task is not on the critical path, so it does not block mission completion (a KO may legitimately close off a side/lore objective). If you want the side aim to survive a KO anyway: Add 'taskOnKO': 'meet_kevin' to the NPC; if the NPC's taskOnKO is already used for another task (it can name only one), add an eventMapping with 'completeTask': 'meet_kevin' on a phone/handler NPC keyed to the NPC's KO global instead. Reference: m01_first_contact wires a taskOnKO for conversation-gated tasks.
+
+2. ⚠️ WARNING: NPC 'agent_0x99' (room 'reception_area') has 4 eventMappings for 'global_variable_changed:ssh_flag_submitted' (indices 14, 30, 39, 42), of which onceOnly handler(s) at index 14, 30, 39, 42 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+3. ⚠️ WARNING: NPC 'agent_0x99' (room 'reception_area') has 3 eventMappings for 'global_variable_changed:whiteboard_cipher_seen' (indices 18, 19, 24), of which onceOnly handler(s) at index 18, 19, 24 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+4. ⚠️ WARNING: NPC 'agent_0x99' (room 'reception_area') has 3 eventMappings for 'global_variable_changed:linux_flag_submitted' (indices 31, 40, 43), of which onceOnly handler(s) at index 31, 40, 43 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+5. ⚠️ WARNING: NPC 'agent_0x99' (room 'reception_area') has 6 eventMappings for 'global_variable_changed:sudo_flag_submitted' (indices 32, 33, 34, 35, 41, 44), of which onceOnly handler(s) at index 33, 35, 41, 44 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+
+Checking room layout geometry...
+Checking door alignment...
+💡 SUGGESTION: Room geometry overlap check skipped — could not read tilemap dimensions for room type(s): room_reception, room_office, small_room_storage_1x1gu, room_break, room_meeting, room_it, hall_1x2gu, small_office_room2_1x1gu, small_office_room1_1x1gu, small_office_room3_1x1gu, room_servers.
+
+⚠️ Door alignment: 1 note(s):
+
+1. 💡 SUGGESTION: Door alignment check skipped — [Errno 2] No such file or directory: '/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/r2repo/public/break_escape/assets/rooms/room_reception.json'
+
+Validating against schema...
+Checking for common issues...
+Checking recommended fields...
+✓ Schema validation passed!
+⚠️ Found 48 issue(s) and suggestion(s):
+
+1. ⚠️ WARNING: objectives[4] (capture_technical_evidence) contains submit_flags task(s) but non-flag tasks [access_server_room] also have onComplete actions — players may advance the scenario without submitting VM flags. If VM completion is mandatory for this aim, ensure non-flag tasks do not independently unlock subsequent aims or tasks.
+2. ✅ GOOD PRACTICE: Scenario uses event-driven cutscene architecture with 2 person-chat cutscene(s). Ensure corresponding phone NPCs use #set_global tags to trigger these cutscenes
+3. ✅ GOOD PRACTICE: Scenario uses globalVarOnKO on NPCs — global variables are set when NPCs are knocked out, enabling event-driven story progression. Ensure all referenced variables are in globalVariables.
+4. ✅ GOOD PRACTICE: Scenario uses timedConversation.skipIfGlobal — the opening briefing will not replay when the player resumes the scenario.
+5. ✅ GOOD PRACTICE: Scenario uses collection_group on items with matching task targetGroup — item collection progress is tracked correctly.
+6. ✅ GOOD PRACTICE: Scenario uses the music system — dynamic music changes based on in-game events significantly enhance immersion.
+7. ✅ GOOD PRACTICE: Scenario uses a launch-device — this is a high-stakes interactive prop used for the mission climax. See scenarios/m01_first_contact/scenario.json.erb (derek_office) for a complete reference implementation.
+8. ✅ GOOD PRACTICE: Scenario uses hostile NPCs — this adds physical challenge and urgency. Ensure hostile NPCs have behavior.chaseSpeed, attackDamage, and pauseToAttack configured.
+9. 💡 SUGGESTION: Consider adding patrol waypoints to at least one person NPC for dynamic movement. Add behavior.patrol.waypoints array with {x, y} coordinates, or behavior.patrol.route for multi-room patrols. See scenarios/m01_first_contact/scenario.json.erb for NPCs with hostile behavior and movement.
+10. ✅ GOOD PRACTICE: Scenario uses puzzle_graph_* metadata — run 'ruby scripts/generate_dungeon_graph.rb scenarios/my_scenario/scenario.json.erb' to generate an interactive puzzle dependency graph.
+11. ⚠️ WARNING: 'rooms/reception_area' chatBackground[0] image 'assets/backgrounds/rooms/m01_reception_area_left_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+12. ⚠️ WARNING: 'rooms/reception_area' chatBackground[1] image 'assets/backgrounds/rooms/m01_reception_area_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+13. ⚠️ WARNING: 'rooms/main_office_area' chatBackground 'assets/backgrounds/rooms/m01_main_office_area_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+14. ⚠️ WARNING: 'rooms/storage_closet' chatBackground 'assets/backgrounds/rooms/m01_storage_closet_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+15. ⚠️ WARNING: 'rooms/break_room' chatBackground[0] image 'assets/backgrounds/rooms/m01_break_room_left_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+16. ⚠️ WARNING: 'rooms/break_room' chatBackground[1] image 'assets/backgrounds/rooms/m01_break_room_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+17. ⚠️ WARNING: 'rooms/conference_room' chatBackground 'assets/backgrounds/rooms/m01_conference_room_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+18. ⚠️ WARNING: 'rooms/it_room' chatBackground[0] image 'assets/backgrounds/rooms/m01_it_room_left_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+19. ⚠️ WARNING: 'rooms/it_room' chatBackground[1] image 'assets/backgrounds/rooms/m01_it_room_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+20. ⚠️ WARNING: 'rooms/hallway_west' chatBackground 'assets/backgrounds/rooms/m01_hallway_west_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+21. ⚠️ WARNING: 'rooms/hallway_east' chatBackground 'assets/backgrounds/rooms/m01_hallway_east_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+22. ⚠️ WARNING: 'rooms/manager_office' chatBackground 'assets/backgrounds/rooms/m01_manager_office_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+23. ⚠️ WARNING: 'rooms/kevin_office' chatBackground 'assets/backgrounds/rooms/m01_kevin_office_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+24. ⚠️ WARNING: 'rooms/maya_office' chatBackground[0] image 'assets/backgrounds/rooms/m01_maya_office_left_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+25. ⚠️ WARNING: 'rooms/maya_office' chatBackground[1] image 'assets/backgrounds/rooms/m01_maya_office_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+26. ⚠️ WARNING: 'rooms/derek_office' chatBackground 'assets/backgrounds/rooms/m01_derek_office_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+27. ⚠️ WARNING: 'rooms/server_room' chatBackground 'assets/backgrounds/rooms/m01_server_room_blended.png' does not exist under public/break_escape/. Conversations in this room show the plain frame.
+28. ⚠️ WARNING: phone calls: 'rooms/reception_area/npcs[2]' (agent_0x99) m01_phone_agent0x99.ink:19: VAR call_answer_seconds is declared, but the contact has no ring and no call entry, so it is always 0
+29. ⚠️ WARNING: phone calls: 'rooms/reception_area/npcs[2]' (agent_0x99) m01_phone_agent0x99.ink:20: VAR call_is_callback is declared, but the contact has no ring and no call entry, so it is always false
+30. ❌ ERROR: phone calls: 'rooms/reception_area/npcs[2]' (agent_0x99) m01_phone_agent0x99.ink:146: #place_call:closing_debrief is not one of the contact's call entries
+31. ⚠️ WARNING: phone calls: 'rooms/reception_area/npcs[2]/eventMappings[27].sendTimedMessage' (agent_0x99) says "That's the full picture — and Derek's already contained. 🦎 Use the launch device", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+32. ⚠️ WARNING: phone calls: 'rooms/reception_area/npcs[2]/eventMappings[37].sendTimedMessage' (agent_0x99) says "Abort confirmed. Operation Shatter is dead. 🦎 Both codes secured. Call me when y", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+33. ⚠️ WARNING: phone calls: 'rooms/reception_area/npcs[2]/eventMappings[38].sendTimedMessage' (agent_0x99) says "...I'm seeing reports. 🦎 Hospital switchboards. Emergency lines flooded. The att", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+34. ⚠️ WARNING: phone calls: 'rooms/reception_area/npcs[2]/eventMappings[42].sendTimedMessage' (agent_0x99) says "All technical evidence secured. Derek is already contained. 🦎 Call me when you'r", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3) (and 2 more with the same text: eventMappings[43].sendTimedMessage, eventMappings[44].sendTimedMessage)
+35. ⚠️ WARNING: phone calls: 'rooms/reception_area/npcs[2]/eventMappings[45].sendTimedMessage' (agent_0x99) says "Derek is contained and ENTROPY's full picture is in your hands. 🦎 Use the launch", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+36. ⚠️ WARNING: phone calls: 'rooms/reception_area/npcs[2]/eventMappings[46].sendTimedMessage' (agent_0x99) says "Derek is contained. You still need to access the ENTROPY encrypted archive in th", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)
+37. ⚠️ WARNING: event 'global_variable_changed:ssh_flag_submitted' can send timed texts less than 4 s apart that fire together: agent_0x99 @2000 ms "You have SSH access. 🦎 I’ve pushed t" + agent_0x99 @3000 ms "ENTROPY archive decryption key confi"; agent_0x99 @2000 ms "You have SSH access. 🦎 I’ve pushed t" + agent_0x99 @3000 ms "All technical flags secured. 🦎 The E" (and 3 more pairs). Their toasts stack and the first is gone before it can be read. Space them 4-6 s apart, or fold them into one message.
+38. ⚠️ WARNING: event 'global_variable_changed:whiteboard_cipher_seen' can send timed texts less than 4 s apart that fire together: agent_0x99 @1500 ms "Those notes are encoded, and now you" + agent_0x99 @1500 ms "That text is encoded. Ends in `=` or". Their toasts stack and the first is gone before it can be read. Space them 4-6 s apart, or fold them into one message.
+39. ⚠️ WARNING: event 'global_variable_changed:linux_flag_submitted' can send timed texts less than 4 s apart that fire together: agent_0x99 @1500 ms "Directory traversal evidence secured" + agent_0x99 @3000 ms "All technical flags secured. 🦎 The E"; agent_0x99 @1500 ms "Directory traversal evidence secured" + agent_0x99 @3000 ms "All technical evidence secured. Dere". Their toasts stack and the first is gone before it can be read. Space them 4-6 s apart, or fold them into one message.
+40. ⚠️ WARNING: event 'global_variable_changed:sudo_flag_submitted' can send timed texts less than 4 s apart that fire together: agent_0x99 @2000 ms "Encoded deployment intel secured — t" + agent_0x99 @3000 ms "All technical flags secured. 🦎 The E"; agent_0x99 @2000 ms "Encoded deployment intel secured — t" + agent_0x99 @3000 ms "All technical evidence secured. Dere" (and 2 more pairs). Their toasts stack and the first is gone before it can be read. Space them 4-6 s apart, or fold them into one message.
+41. 💡 SUGGESTION: global 'ready_for_debrief' is set (/rooms/break_room/npcs[0]/itemsHeld[0]/onAbort/setGlobal) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).
+42. 💡 SUGGESTION: global 'lockpicking_guide_requested' is set (scenarios/m01_first_contact/ink/m01_phone_agent0x99.ink:282) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).
+43. 💡 SUGGESTION: global 'field_guide_requested' is set (scenarios/m01_first_contact/ink/m01_phone_agent0x99.ink:302) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).
+44. 💡 SUGGESTION: global 'priv_esc_guide_requested' is set (scenarios/m01_first_contact/ink/m01_phone_agent0x99.ink:324) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).
+45. 💡 SUGGESTION: global 'cyberchef_guide_requested' is set (scenarios/m01_first_contact/ink/m01_phone_agent0x99.ink:342) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).
+46. 💡 SUGGESTION: global 'confrontation_approach' is set (scenarios/m01_first_contact/ink/m01_derek_confrontation.ink:46) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).
+47. 💡 SUGGESTION: global 'derek_knows_safetynet' is set (scenarios/m01_first_contact/ink/m01_derek_confrontation.ink:47) but nothing reads it: no condition, skipIfGlobal, global_variable_changed mapping, credit or music condition, objective field or ink VAR read mentions it. Either use it (gate a line, a credit or a hub choice on it) or drop the setter so it doesn't look like it matters (m05 mission_priority, m08 witness_heard).
+48. 💡 SUGGESTION: credits section "EVIDENCE" (/music/events[6]/credits) has 4 entries and every one is conditional, with no unconditional fallback line. If no condition holds the heading prints over nothing (m05 Recruiter). Add an unconditional line, or make sure the conditions cover every path.
+
+✓ No missing recommended fields.
+
+Generating dungeon graph...
+Written: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/r2repo/scenarios/m01_first_contact/dungeon_graph.html
+Written: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/r2repo/scenarios/m01_first_contact/dungeon_graph.json
+Written: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/r2repo/scenarios/m01_first_contact/dungeon_graph.md
+Puzzle     — Nodes: 52  Edges: 63
+Story      — Nodes: 11  Edges: 10
+Integrated — Nodes: 63  Edges: 92
+Rooms      — Nodes: 13  Edges: 13
+Contents   — Nodes: 95  Edges: 95
+Critical path (9 hops): Establish Access → Survey the Scene → Build the Case → Search Derek's Office → Capture Technical Evidence → Decrypt ENTROPY Intelligence → Disrupt the Cell → Deactivate the Launch → + → Close the Case
+✓ Dungeon graph: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2dd9046d-5103-4a95-9363-70f3aa5c1f4a/scratchpad/r2repo/scenarios/m01_first_contact/dungeon_graph.html
+
+✓ Validation complete!
