@@ -179,7 +179,9 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         };
     }
     /** Higher is more live. A connected call (or a forced one waiting to re-ring) outranks the rest. */
-    const rank = (o) => ((o.state === 'connected' || o.saveAs === 'connected') ? 3
+    // A forced call that has been connected (o.keep, R3 M1) outranks everything, a connected
+    // non-forced call included, so a restored one keeps the save slot (R3 m1).
+    const rank = (o) => (o.keep ? 4 : (o.state === 'connected' || o.saveAs === 'connected') ? 3
         : (o.state === 'ringing' || o.state === 'held') ? 2 : 1);
 
     /**
@@ -512,6 +514,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             // Row 26: rings again once there has been no hit for HIT_QUIET_MS. The popup it put
             // aside stays in o.displaced, so it comes back when the call finally ends (R2 m2).
             o.rering = true;
+            o.keep = true;
             o.opened = false;
             requeueHead(o, 'connected');
         } else if (o.disableClose) {
@@ -645,6 +648,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             notBefore: 0,
             goneSince: 0,
             saveAs: null,
+            keep: false,        // R3 M1: set once a forced call has connected; lasts until it ends
         };
     }
 
@@ -662,10 +666,13 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         // A forced call waiting to ring again counts as a connected call (rows 5, 26): it is
         // never replaced and a new offer queues behind it (R2 M1). Row 4 replaces only the
         // contact's ringing, held or queued non-forced offer.
-        const waiting = queue.find((x) => x.npcId === raw.npcId && x.saveAs === 'connected');
+        // R3 M1: the protection is the `keep` flag, which lasts from the first connect until the
+        // call ends, whatever state it is in (queued, ringing again, held, requeued by rows 23/24).
+        const waiting = (active && active.npcId === raw.npcId && active.keep ? active : null)
+            || queue.find((x) => x.npcId === raw.npcId && x.keep);
         if (waiting && waiting.knot === raw.knot) return 'dropped';
-        const existing = queue.find((x) => x.npcId === raw.npcId && x.saveAs !== 'connected')
-            || (active && active.npcId === raw.npcId && active.state !== 'connected' ? active : null);
+        const existing = queue.find((x) => x.npcId === raw.npcId && !x.keep)
+            || (active && active.npcId === raw.npcId && !active.keep && active.state !== 'connected' ? active : null);
         if (existing) {
             if (existing.knot === raw.knot) return 'dropped';           // row 3
             replace(existing, makeOffer(raw));                           // row 4
@@ -741,7 +748,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (closed || typeof npcId !== 'string' || !npcId || !rec || typeof rec.knot !== 'string' || !rec.knot) return 'refused';
         // A contact's connected call, or a forced one already waiting, is the one a reload brings
         // back: a second restore is dropped (R2 m1).
-        if (queue.some((x) => x.npcId === npcId && (x.knot === rec.knot || x.saveAs === 'connected'))
+        if (queue.some((x) => x.npcId === npcId && (x.knot === rec.knot || x.keep))
             || (active && active.npcId === npcId && (active.knot === rec.knot || active.state === 'connected'))) return 'dropped';
         advance();
         const o = makeOffer({ ...rec, npcId, ringMs: 0 });
@@ -749,6 +756,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         o.answeredEmitted = o.answerSeconds != null;
         o.rering = true;
         o.saveAs = 'connected';
+        o.keep = true;
         o.notBefore = now() + RERING_AFTER_LOAD_MS;
         // It is a connected call (row 5): it goes ahead of any other offer queued for the contact,
         // which then waits behind it. The saved slot is its record (rank 3).

@@ -54,3 +54,18 @@ Module: `public/break_escape/js/minigames/phone-chat/phone-ringer.js` (adapter a
 - **m2.** A popup the call put aside returns on hang-up, on a hold-limit rang-off and on give-up, if the ending has not started and nothing blocks it. At row 26 the descriptor is kept, so it returns when the re-rung call finally ends. After `close()` it stays closed.
 - **m3, single-clock rule for A2b.** `lastHitAt()` must be on the same clock as `clock.now()`. Pass `performance.now` and convert `player-damage-interrupt.js`'s `Date.now` stamp (`lastDamageCloseAt`) in the adapter (`performance.now() - (Date.now() - stamp)`). The ringer now also ignores a stamp ahead of the clock.
 - **m4.** Tests for the give-up floor, the refusal count and the reset after a successful open.
+
+## R3 changes (for the orchestrator and A2b)
+
+- **M1, protection for the life of the call.** A forced call gets `keep` (a flag separate from `saveAs`) when it is first sent back to ring again (row 26) and when `restore()` brings it back. It lasts until the call ends. `offer()` never replaces a `keep` offer in any state (queued, ringing again, held, requeued by rows 23/24): the same knot is dropped, another knot queues behind it with its own timing. `rank()` puts a `keep` offer above a connected non-forced call.
+- **m1.** A restored forced call keeps the save slot when the contact's other offer connects (rank 4 against 3).
+
+## Adapter notes for A2b: the ringer's phone-chat (M2, orchestrator decision)
+
+Applies only when the phone-chat has `params.ringerCall`. lab_social_engineering's pretext calls and every existing text thread stay exactly as they are.
+
+- The × is labelled "End call". It runs the End path (`closeConversation()`), which sets `_endedByCall`, so the adapter reports `callEnded(npcId, { id, endedByCall: true })`: row 25, the player hanging up. It is never row 32 (missed) and emits no `minigame_failed`.
+- No Cancel button: pass `showCancel: false` in `openCall` for a ringer call.
+- "Add to Notepad" is hidden while the call is connected. Without it, `startNotesMinigame` would replace the call (row 32) and `returnToPhoneAfterNotes` would reopen a plain phone-chat carrying a stale `ringerCall`.
+- The ringer needs no new flag for this: `endedByCall` already separates row 25 from row 32 (test `R3 M2`). The adapter must use the `npcId` it put in the call's params at `openCall`, since `ringerCall` carries only `id`.
+- Add these cases to `phone-outgoing-call.test.mjs`, including that a phone-chat without `ringerCall` still shows Cancel and Add to Notepad.

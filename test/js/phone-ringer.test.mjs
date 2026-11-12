@@ -1550,3 +1550,84 @@ test('R2 m4: two refusals a long time apart are not given up on (the count is ne
     assert.equal(s.count('openCall'), 2);
     assert.equal(s.ringer.stateOf('ceo'), 'held');
 }));
+
+// ---- Round 3 ------------------------------------------------------------------------
+
+test('R3 M1: a forced call ringing again is never replaced; no ringing time or answerSeconds carries over', () => {
+    const s = forcedHit();
+    s.clock.advance(HIT_QUIET_MS + TICK_MS);
+    assert.equal(s.ringer.stateOf('ceo'), 'ringing');
+    s.clock.advance(1500);
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.current().knot, 'call_a');
+    assert.equal(s.ringer.offer(offer({ knot: 'call_a' })), 'dropped');
+    assert.equal(saves(s).pop().knot, 'call_a');
+    s.clock.advance(AUTO_ANSWER_MS + SCRIPTED_CALL_START_MS);
+    assert.equal(s.last('openCall')[2], 'call_a');
+    assert.equal(s.last('openCall')[3].answerSeconds, 6);
+    s.w.lastHitAt = null; s.w.callOpen = false;
+    endCall(s, { endedByCall: true });
+    s.clock.advance(TICK_MS);
+    assert.equal(s.ringer.current().knot, 'call_b');
+    s.clock.advance(1000);
+    s.ringer.answer('ceo');
+    assert.equal(s.ringer.current().answerSeconds, 1, 'call_b counts only its own ringing');
+});
+
+test('R3 M1: a re-rung forced call sent back by a conversation (row 23) is still never replaced', () => {
+    const s = forcedHit();
+    s.clock.advance(HIT_QUIET_MS + TICK_MS);
+    s.w.ringBlocked = true; s.ringer.tick();
+    assert.equal(s.ringer.stateOf('ceo'), 'queued');
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.queueLength(), 2);
+    assert.equal(s.ringer.offer(offer({ knot: 'call_a' })), 'dropped');
+    assert.equal(saves(s).pop().knot, 'call_a');
+    s.w.ringBlocked = false;
+    s.clock.advance(TICK_MS * 2);
+    assert.equal(s.ringer.current().knot, 'call_a', 'the forced call rings first');
+});
+
+test('R3 M1: a re-rung forced call answered into hold is never replaced and keeps its answerSeconds', () => {
+    const s = forcedHit();
+    s.clock.advance(HIT_QUIET_MS + TICK_MS);
+    s.w.openBlocked = true;
+    s.clock.advance(AUTO_ANSWER_MS + TICK_MS);
+    assert.equal(s.ringer.stateOf('ceo'), 'held');
+    const answered = () => s.events().filter((e) => e.startsWith('phone_call_answered')).length;
+    const before = answered();
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.current().knot, 'call_a');
+    s.w.openBlocked = false;
+    s.clock.advance(TICK_MS * 2 + SCRIPTED_CALL_START_MS);
+    assert.equal(s.last('openCall')[2], 'call_a');
+    assert.equal(s.last('openCall')[3].answerSeconds, 6);
+    assert.equal(answered(), before);
+});
+
+test('R3 M1: a restored forced call that is ringing is never replaced', () => {
+    const s = setup();
+    s.ringer.restore('ceo', { knot: 'call_a', disableClose: true, answerSeconds: 3 });
+    s.clock.advance(RERING_AFTER_LOAD_MS + TICK_MS);
+    assert.equal(s.ringer.stateOf('ceo'), 'ringing');
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.current().knot, 'call_a');
+});
+
+test('R3 m1: a restored forced call keeps the save slot when the contact\'s other offer connects', () => {
+    const s = setup();
+    s.ringer.offer(offer({ knot: 'call_b' }));
+    s.ringer.restore('ceo', { knot: 'call_a', disableClose: true, answerSeconds: 3 });
+    s.ringer.answer('ceo'); connect(s);
+    assert.equal(s.last('openCall')[2], 'call_b');
+    const rec = saves(s).pop();
+    assert.equal(rec.knot, 'call_a');
+    assert.equal(rec.state, 'connected');
+});
+
+test('R3 M2: an end report with endedByCall on a non-forced call is row 25 (hang-up), never a miss', () => {
+    const s = connectedCall();
+    endCall(s, { endedByCall: true });
+    assert.equal(s.events().some((e) => e.startsWith('phone_call_missed')), false);
+    assert.equal(s.last('outcome')[1], 'ended');
+});
