@@ -21,7 +21,34 @@ build-log/handover doc commit.
 - `test/unit/access_work_feed_select_test.rb` (15 cases) is the core proof of the selection logic.
 - Baseline validator on `scenarios/test_access_social/scenario.json.erb` is 0 ❌.
 
-## Open work, in order
+## Session 2 update (2026-11-12)
+
+Done and committed this session (see the C2 build-log "Session 2" block for detail and commit
+hashes):
+
+- Merged `main` (`f9a661a14`) into `build/9-2-c2`: clean, no conflicts.
+- Helper-equality unit test (`test/controllers/break_escape/access_helper_equality_test.rb`),
+  including the `locked_out` pre-gating case.
+- Route + tampered-client tests (+8 in `feed_post_test.rb`).
+- Scanner no-exposure fixture for a reactive post + fact (+3 in `access_leak_scanner_feed_test.rb`).
+- Validator reactive-check tests (new `test/js/validator-access-reactive.test.mjs`, 10 cases).
+- Full suites under the lock: `bin/rails test` 1777 runs, 0 failures, 1 skip; `bin/test-js -j 3`
+  (see build log for the count).
+
+**Still open (both blocked on one decision):**
+
+1. **Scenario beats F9 to F12 + PLAYTEST (plan 10) — NUMBERING COLLISION.** F9 is already in use:
+   q33 (`460f46329`) added an F9 Priya-lockout beat to `test_access_social` before this branch
+   split. The plan's four reactive beats (F9 reactive_first `cause:down`, F10 mixed
+   `borrow_session`, F11 facts_first, F12 `social_blocked`) therefore cannot be authored as F9 to
+   F12 without clobbering Priya. Renumber to F10 to F13 (recommended) or decide otherwise, then
+   author one room/sign/task per beat, reactive post text in the scenario only (plain, voiceable,
+   >=12 chars, not a substring of another shipped string), keep F1 to F8 (and the existing F9)
+   undisturbed, validator 0 ❌.
+2. **Live proof** (plan 9, port 3030, headless, `--capture-responses`) — depends on the beats, so
+   also not started.
+
+## Original open-work list (for reference; items 1-4 and 7-suites are done)
 
 1. **Re-merge `main`** (coordinator note: `main` moved to `f9a661a14`, 9.3b I/K, network code +
    validator + `games_controller.rb` route lists). Keep both sides on any conflict. Do this before

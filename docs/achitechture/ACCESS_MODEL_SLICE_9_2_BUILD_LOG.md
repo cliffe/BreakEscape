@@ -2099,10 +2099,56 @@ kinds; every reactive post is served at most once.
 - `2710c25fc` validator checks and report lines
 - `5617fc7c2` pure select_feed_post unit tests
 
+### Session 2 (2026-11-12): merge and the remaining test tiers
+
+- **Merge `main`** (`f9a661a14`, 9.3b network slices) into `build/9-2-c2`: clean, no conflicts (the
+  branch already carried q33, so `social_feed.rb` was untouched by the merge).
+- **Helper-equality test** (`test/controllers/break_escape/access_helper_equality_test.rb`, 3 cases):
+  `AccessWork.cause_holds?`/`globals_hold?` give the same answer as the `NpcFrustration` wrappers
+  over the same game for `down`/`off`/`no_access` and string/hash globals, and the `locked_out`
+  pre-gating case (a `loginLockouts` key with no check record reads false from both; true once
+  `npcFrustration.<npc>.lockedOut` records the station).
+- **Route + tampered-client tests** (`feed_post_test.rb`, +8 cases): a reactive vent served only once
+  its `cause: down` condition holds (reactive_first); an un-triggered reachable reactive post keeps
+  `done:false` and the null serve writes no `feedRevealed`; the pace floor bites a reactive serve and
+  `tooSoon` carries no reactive text; `feed_posts_for_client` lists an out-of-order reactive post in
+  reveal order; the C-shape `{ n, at }` migration through both route paths; tampered clients cannot
+  force a reactive post with extra request fields, and the reactive text/fact are absent everywhere
+  until served.
+- **Scanner no-exposure fixture** (`access_leak_scanner_feed_test.rb`, +3 cases): a reactive post
+  with its own feed fact is counted; the post or its fact in a bootstrap before its serve is reported
+  (`feed_text`/`feed_fact_key`); the serving `/feed_post` answer and a later bootstrap are clean.
+- **Validator reactive-check tests** (new `test/js/validator-access-reactive.test.mjs`, 10 cases): a
+  clean reactive feed; unknown `feed.order`; empty/unknown predicate; bad cause why, need and
+  frustration bounds; a workaround kind the NPC lacks; a dead `when` warning; order-vs-mix warnings;
+  the leak-cannot-protect too-short/embedded warning reaching a reactive post and its fact; the
+  report lines.
+
+### Session 2 commits
+
+- merge commit of `f9a661a14` into `build/9-2-c2`
+- `<helper-equality>` helper-equality unit test
+- `<route-tampered>` route and tampered-client tests
+- `<scanner-validator>` scanner no-exposure fixture and validator reactive-check tests
+
+### Suites (session 2, under the lock, after the merge)
+
+- `bin/rails test`: 1777 runs, 25413 assertions, 0 failures, 0 errors, 1 skip.
+- `bin/test-js -j 3`: 501 files passed, 0 failed.
+
 ### Open (handover `docs/agents/HANDOVER_9_2_C2.md`)
 
-Scenario beats F9 to F12 + PLAYTEST steps; the helper-equality unit test (AccessWork vs the
-NpcFrustration wrappers, incl. the locked_out pre-gating case); route + tampered-client test
-additions; the leak-scanner no-exposure fixture gaining a reactive post and fact; the live proof on
-port 3030 with a tampered client and a reload; re-merge `main` (f9a661a14); full `bin/rails test`
-and `bin/test-js -j 3` under the lock.
+Two items remain, both blocked on one decision:
+
+- **Scenario beats + PLAYTEST.** The C2 plan (section 10) numbers its four reactive beats F9 to F12,
+  but F9 is already taken: q33 (`460f46329`) added an F9 Priya-lockout beat to `test_access_social`
+  before this branch split, so the plan's F9 to F12 collide with it. These beats need renumbering
+  (F10 to F13 is the obvious fix) before authoring, which is an orchestrator call. Not started.
+- **Live proof** on the keyless server (port 3030, headless, `--capture-responses`): depends on the
+  beats above, so also not started. Still to do: cause/clear outages and read the vents, a workaround
+  post, one reload proving `feedPosts` restores reactive posts in reveal order, a tampered client,
+  `access-leak-check.rb` over the captured responses, `verify-run.rb --access`, the per-beat
+  `/feed_post` request budget.
+
+Everything else from the handover is done and committed (merge, helper-equality, route/tampered,
+scanner fixture, validator tests, both suites green).
