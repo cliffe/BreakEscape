@@ -328,6 +328,92 @@ Open, for the orchestrator:
   plain NPC drop into reception before any KO. That is the R2 design, not the KO route, and the
   give route has the same reach, but it hands a keycard over before the story does.
 
+## R5 fixes (FRIENDFACE_PHONE_ITEM_CODE_REVIEW_R5.md)
+
+Main merged in first (2b1b08607, main at de866cd20). One conflict, in `docs/IDEAS_BACKLOG.md`:
+this branch's "Server-checked knock-outs" entry is kept; main had removed the "owner walking
+away" entry as done (cd4556087), so it stays removed.
+
+- M1 (0661b7bcf): nothing in the engine, the scenarios, the ink or the tools called
+  `update_room` `move_npc`. `RoomStateSync.moveNpcToRoom` was exported and never called, and the
+  batch helper's `move_npc` case had no caller either. The action is gone from the route (an
+  unknown action answers 400), and the client function and batch case are gone too.
+  `Game#move_npc_to_room!` stays for server and test use (two model tests and the leak tests
+  use it) and now replaces an NPC already in the target room's `npcs_added` instead of appending
+  another copy. Other client-writable routes that could mark an NPC met, checked: `encounteredNPCs`
+  is written only by `track_npc_encounters` (GET /room and a door or workaround unlock, for a room
+  the player may enter) and by the inventory NPC branch for a headless email record, which is never
+  a room NPC and so never KO-claimable. No sync_state key writes it. `npcs_added` was the only
+  client-written list that adds an NPC to a served room. Nothing else to close.
+- m1 (0661b7bcf): `track_npc_encounters` now re-lists `koDropPending` for the NPCs that load
+  has just recorded as met (`Game#with_ko_drop_pending(npcs, only:)`), so an old save with a KO
+  and no met record re-drops on the first load. It costs nothing when no NPC is newly met.
+- M2 (f2cc857e3): a collect_items `targetItemIds` entry now matches an item by its id, its lock
+  ref (`opens_lock`, or the older `key_id`) or its name, on the client (`targetIdMatches` in
+  `objectives-manager.js`, for pickups and the load reconcile) and in the server's
+  `validate_collection` (top level and `scenarioData`). The pickup events also carry `lockRef`.
+  The server matches against its own stored copy of each item, so a client cannot forge a name.
+  Scan of every scenario's `targetItemIds` (six scenarios, 32 entries): every entry matches an
+  authored id, lock ref or name, so no scenario needed a change. m01's three entries now match
+  Kevin's lockpick by name and Derek's Office Key by lock ref.
+- n2 (e9b330031): the inventory NPC branch gives a Friendface phone the story does not offer when
+  the server holds the NPC as KO'd (`npc_defeated?`, the claim rule), so a KO drop that was refused
+  can still be picked up from its local sprite once the KO has reached the server.
+- n1, noted, not changed: `npc_offers_item?` reads give tags as text and by type. In m01 to m10 it
+  opens nothing today (the review checked every held key-type item and every knot holding its
+  give). A future scenario could give a key from a knot that never runs; a validator check (a
+  held key-type item whose only give sits in an unreached knot) would keep this true. Left for
+  the validator backlog.
+
+Sync size: nothing new grows. `npcs_added` was unbounded (a full NPC copy per client call); it now
+has no client writer, and a server move keeps one copy per NPC per room. `koDropPending` stays one
+list per KO'd NPC in the room payload, bounded by its `itemsHeld`. The pickup event's `lockRef` is
+client-only.
+
+Tests (affected files only, no lock): Rails `forged_ko_drop_test.rb` (three new: the probe 1650
+replay, the one-copy move and the first-load re-drop), `friendface_phone_test.rb` (n2),
+`game_test.rb` (the matcher), plus `access_model_no_password_test.rb` (now moves Fay server-side and
+uses an object update for its `update_room` body), `access_model_withholding_test.rb`,
+`access_work_plan_test.rb`, `game_state_locking_test.rb`, `score_breakdown_test.rb`,
+`reload_persistence_test.rb`: 267 runs, 1765 assertions, 0 failures. The probe and first-load tests
+fail on the pre-fix controller (move answered 200; no `koDropPending`), and the n2 test fails before
+its fix (422). JS: new `objectives-target-ids` 6/6; every test file importing
+`objectives-manager.js`, `inventory.js` or `npc-game-bridge.js` (37 files) passes;
+`npc-ko-drop-retry` 9/9 and `engine-fixes-round4` 4/4 (they import `room-state-sync.js`).
+
+Live proof (keyless server on :3057, headless, physics at setFPS(20) with fixed steps on,
+stopped afterwards). Games created: 1690, 1691, 1693 (all m01).
+- Game 1690 (start reception): the review's probe. `move_npc` for Kevin from `main_office_area`
+  into reception 400 ("Unknown action"); GET /room/reception_area lists no Kevin; forged
+  `sync_state` 200 but stored `ko: false`; keycard drop 422; `/inventory add` of his keycard and
+  lockpick 422 ("NPC not encountered"). Stored: no `room_states`, Kevin not met, inventory phone
+  and notepad only, unlocked rooms reception only.
+- Game 1691 (start `it_room`, the four earlier tasks completed by the head start so
+  `build_the_case` is open): Kevin KO'd through the hostile system (`debugKO`, combat not played),
+  his three items dropped; the Lock Pick Kit picked up from the floor. The pickup event carries
+  `itemId: kevin_park_held_0`; `find_derek_access` completed at once and the server logged "Task
+  completed: find_derek_access".
+- Game 1693 (start `manager_office`, Kevin's lockpick given by the head start): Patricia's briefcase
+  opened by the lockpick (the dexterity part skipped by `completeLockpick`, the server unlock
+  real); Derek's Office Key taken from it. Its pickup event is `itemId:
+  patricia_briefcase_content_0`, `keyId: derek_office_key`: the old rule (`itemId || itemName`)
+  rejects it, the new one matches. The task had already completed on load from the given lockpick
+  (see below), so the key's match was checked in the page and on the server: `validate_collection`
+  with only the stored key (and, in 1691 and 1693, with only the stored lockpick), and no client
+  count, answers true.
+
+Open, for the orchestrator:
+- `validate_collection` returns true whenever the client sends `currentCount` at or above the
+  target, before it reads the inventory (the comment says notes-type items reach the inventory
+  late). So a collect_items task can be completed with no item at all; the matcher fix only
+  helps when the client sends no count. This predates the branch. Closing it means proving the
+  notes and read-only file cases from server state, which is a wider change than this round.
+- The load reconcile counts a held item toward a collect task even while its aim is locked
+  (game 1693: `find_derek_access` completed on load with `build_the_case` locked, and the server
+  took it). Games made before the held-item stamp did the same, since the id-less lockpick
+  matched by name; the stamp had hidden it. In m01 a player can hold the lockpick before
+  `build_the_case` opens and complete the task early on a reload.
+
 ## Handover
 
 Not needed: the build finished in one session.
