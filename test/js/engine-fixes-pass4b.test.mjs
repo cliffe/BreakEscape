@@ -17,7 +17,7 @@ const load = async (src, out) => {
 };
 const { npcReachDistSq, staticNpcBodyDistSq, pointToRectDistSq } = await load('systems/npc-reach.js', 'npc-reach.mjs');
 const { isRepeatInteraction } = await load('systems/interaction-repeat.js', 'interaction-repeat.mjs');
-const { displayDashes } = await load('utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'display-dashes.mjs');
+const { displayDashes } = await load('utils/display-dashes.js', 'display-dashes.mjs');
 
 const RANGE_SQ = 32 * 32;
 
@@ -92,7 +92,11 @@ test('" -- " shows as a spaced en dash; hyphens, flags and "---" are left alone'
 
 test('the dash change is display-only: TTS and history keep the typed text', () => {
     const minigame = readFileSync(join(js, 'minigames/person-chat/person-chat-minigame.js'), 'utf8');
-    assert.ok(!minigame.includes('displayDashes'), 'person-chat TTS input is untouched');
+    // The only dash display in person-chat is the header (text set on the title and the
+    // "Speaking with" line); TTS input never goes through it
+    const uses = minigame.split('\n').filter(l => l.includes('displayDashes(') );
+    assert.equal(uses.length, 2, 'person-chat uses the dash display only for its two header lines');
+    for (const l of uses) assert.match(l, /headerElement\.querySelector\('(h3|p)'\)\.textContent = displayDashes\(/, 'person-chat TTS input is untouched');
     const ui = readFileSync(join(js, 'minigames/person-chat/person-chat-ui.js'), 'utf8');
     assert.match(ui, /dialogueText\.textContent = displayDashes\(text\)/);
     const phone = readFileSync(join(js, 'minigames/phone-chat/phone-chat-ui.js'), 'utf8');
@@ -137,7 +141,8 @@ test('bespoke minigames show scenario text through displayDashes; ids and data k
         'shredded-document/shredded-document-minigame.js', 'siem/siem-dashboard-minigame.js',
         'sis-config-threshold/sis-config-threshold-minigame.js', 'warranty-checklist/warranty-checklist-minigame.js'
     ]) {
-        assert.match(src('minigames/' + p), /import \{ displayDashes \} from '\.\.\/\.\.\/utils\/display-dashes\.js'/, p);
+        // the NCSC brief and the coverage form get the dash display through utils/author-html.js
+        assert.match(src('minigames/' + p), /import \{ (displayDashes \} from '\.\.\/\.\.\/utils\/display-dashes|authorHtml \} from '\.\.\/\.\.\/utils\/author-html)\.js'/, p);
     }
     const backup = src('minigames/backup-recovery/backup-recovery-minigame.js');
     assert.match(backup, /bannerEl\.textContent = displayDashes\(panel\.banner\)/);
