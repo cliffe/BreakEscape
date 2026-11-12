@@ -137,8 +137,8 @@ Tonight's about money. Where it comes in, where it lands, who it pays.
 // Playtest round: a phone first opened late lands here; send it to the recap.
 + {guard_resolved} [I've been busy. Where are we up to?]
     -> recap
-+ [I'll call if I need you.]
-    I'm on the line. Call anytime.
++ [I'll message if I need you.]
+    I'm here. Any time.
     #exit_conversation
     -> hub
 
@@ -159,7 +159,8 @@ Everything after that is joining up the cells' money.
 // Pass 5 A1: the call-in (m04 extract_offer). Offered once both decisions and
 // all four flags are in, so the debrief can never open with the backend unfinished.
 + {ready_to_extract and not start_debrief_cutscene} [I'm done here. Bring me in.]
-    -> extract_offer
+    #place_call:extract_call
+    -> DONE
 
 // Urgent: the decision Satoshi's KO left open (review B2/M4 safety net).
 + {satoshi_ko and not assets_decided} [About the fund. I'm ready to decide.]
@@ -170,8 +171,8 @@ Everything after that is joining up the cells' money.
     ~ reacted_network = true
     -> on_network_complete
 + {fund_debrief_available and not reacted_fund} [I've found The Architect's Fund.]
-    ~ reacted_fund = true
-    -> on_architects_fund_discovered
+    #place_call:on_architects_fund_discovered
+    -> DONE
 + {(irina_ko or irina_taken) and found_architects_fund and not irina_exec_badge_given and not relay_exec_badge_sent} [I need the executive badge she signed out.]
     -> relay_exec_badge
 
@@ -215,7 +216,7 @@ Everything after that is joining up the cells' money.
 + [Remind me where we are.]
     -> recap
 + [I'm good for now.]
-    Copy that. Call anytime.
+    Copy that. I'm on the thread.
     #exit_conversation
     -> hub
 
@@ -421,6 +422,7 @@ She loses it in the middle. Their own records close the gap.
     -> hub
 
 === on_architects_fund_discovered ===
+// lint: call-knot
 #speaker:agent_0x99
 I've got it in front of me.
 $12.8 million still in the wallet, pending for six cells. The advances have already gone.
@@ -429,43 +431,51 @@ Not Ghost Protocol, the other name on that page. They're one of the cells being 
 -> on_fund_choices
 
 === on_fund_choices ===
+// lint: call-knot
 + [The advances already went out.]
     -> coordinated_attack
 + [Look at the projection line.]
     -> casualty_numbers
 
 === coordinated_attack ===
+// lint: call-knot
 Advances first, balances in seventy-two hours. The first stage is already paid for.
 Whatever we do with the wallet only touches what hasn't left.
 -> critical_choice_preview
 
 === casualty_numbers ===
+// lint: call-knot
 Their own estimate, across every operation on that page.
 And they've called it "The Architect's Masterpiece".
 -> critical_choice_preview
 
 === critical_choice_preview ===
+// lint: call-knot
 Which leaves you a choice.
 Freeze it, and the balances stop tonight. They'll know we were here the moment we do.
 Or watch it. We map every cell that draws on it, and the money reaches them.
 -> critical_choice_choices
 
 === critical_choice_choices ===
+// lint: call-knot
 + [What do you recommend?]
     -> handler_recommendation
 + [Let me think about it.]
     Take your time. Not too much.
+    ~ reacted_fund = true
     #exit_conversation
-    -> hub
+    -> DONE
 
 === handler_recommendation ===
+// lint: call-knot
 I'll give you the cost of each. The call's yours.
 If you freeze it, the balances never reach the cells, and ENTROPY knows its bank is burned.
 If you watch it, the balances pay for what's on that page, and we get the map.
 Watching still works with him detained. The payout's pre-signed; we keep it quiet until it's gone.
 The advances are gone either way.
+~ reacted_fund = true
 #exit_conversation
--> hub
+-> DONE
 
 === on_network_complete ===
 #speaker:agent_0x99
@@ -576,12 +586,12 @@ For the file, that's Satoshi's Ghost, the Crypto Anarchists' leader. Not Ghost P
     -> hub
 + {not found_architects_fund} [Not yet. I need to know which slot it is.]
     #set_variable:asset_decision_deferred=true
-    The custody console in the data centre. Call me when you've opened it.
+    The custody console in the data centre. Message me when you've opened it.
     #exit_conversation
     -> hub
 + {found_architects_fund and not found_wallet_keys} [Not yet. I'll get the recovery keys first.]
     #set_variable:asset_decision_deferred=true
-    They're on the vault account on the backend. Last flag. Call me when you have them.
+    They're on the vault account on the backend. Last flag. Message me when you have them.
     #exit_conversation
     -> hub
 
@@ -592,33 +602,43 @@ For the file, that's Satoshi's Ghost, the Crypto Anarchists' leader. Not Ghost P
 // mapping); the call-in task completes in the same batch.
 // ================================================
 
-=== extract_offer ===
+=== extract_call ===
+// lint: call-knot
 #speaker:agent_0x99
-Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+{ extract_choices > 0:
+    Police are close now. Ready?
+- else:
+    Police are twenty minutes out. Whatever you leave in there is their evidence.
+}
 {not architect_identity_found:
     His safe's still shut, for one.
 }
 -> extract_choices
 
 === extract_choices ===
+// lint: call-knot
 + [Bring me in.]
-    Car's round the back of the building. Two minutes.
+    Round the back. They'll flash the headlights twice.
+    #complete_task:call_in_after_sweep
     -> extract_confirm
 + [Not yet. I'm still looking.]
-    Take your time. The police can wait a few minutes.
-    -> hub
+    Then be quick. They won't wait for you.
+    #exit_conversation
+    -> DONE
 
 === extract_confirm ===
-+ [On my way.]
+// lint: call-knot
++ [On my way. #ending_check]
     -> extract_go
 
 === extract_go ===
+// lint: call-knot
 #speaker:agent_0x99
-#complete_task:call_in_after_sweep
 #set_variable:start_debrief_cutscene=true
 ~ start_debrief_cutscene = true
-See you at HQ.
--> hub
+We'll talk about the money at HQ, not on a phone.
+#exit_conversation
+-> DONE
 
 // ================================================
 // FIELD GUIDES
