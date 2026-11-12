@@ -146,7 +146,7 @@ EXTERNAL player_name()
     #place_call:extract_call
     -> DONE
 
-+ {anomaly_detected and not anomaly_call_heard and not attack_prevented} [You wanted to talk about the dial reading.]
++ {anomaly_detected and not anomaly_call_heard and not attack_prevented} [About the dial reading.]
     #place_call:on_anomaly_confirmed
     -> DONE
 
@@ -447,7 +447,11 @@ Not from here. The site's evacuation alarm is on Vance's desk.
 === extract_offer_text ===
 // lint: call-knot
 #speaker:agent_0x99
-Past the gate it's forensics' site, not ours. Anything you want, take it now.
+{ extract_choices > 0:
+    Forensics are almost on-site. Time to go.
+- else:
+    Past the gate it's forensics' site, not ours. Anything you want, take it now.
+}
 {not lore_architect_directive_found:
     Voltage's operation log is still on the plant-room bench, for one.
 }
@@ -509,15 +513,14 @@ Relay's down. I've pulled her Level 2 number off the reader logs and pushed you 
 === on_anomaly_confirmed ===
 // lint: call-knot
 #speaker:agent_0x99
-~ anomaly_call_heard = true
 {
-    - call_is_callback: You rang. Good. Nightshade's read it.
-    - call_answer_seconds > 10: There you are. That dial won't wait.
+    - call_is_callback: You rang. Good. Straight to it.
+    - call_answer_seconds > 10: There you are. No time for hello.
     - else: Sixty-one. You were right not to trust their screens.
 }
-Nightshade's got your reading. Sixty-one degrees on the Hall 1 battery thermometer, against twenty-eight on the screens.
+Nightshade's had a look at your reading. Thirty-three degrees over what the screens show.
 His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger.
-The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network.
+ENTROPY feed those screens. That dial isn't on their network.
 -> on_anomaly_confirmed_choices
 
 === on_anomaly_confirmed_choices ===
@@ -525,12 +528,14 @@ The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network.
 + {not server_room_reached} [Then where do I start?]
     #exit_conversation
     With how they're driving it. The workshop, off Hall 1.
+    ~ anomaly_call_heard = true
     -> DONE
 // Puzzle chains R2-3: "the last piece" only when it was (the attack mapped and
 // Voltage dealt with); otherwise say what's still missing.
 + {server_room_reached and attack_mechanism_known and voltage_neutralised} [Then the dial was the last piece.]
     #exit_conversation
     It was. Grid control can see the difference now.
+    ~ anomaly_call_heard = true
     -> DONE
 + {server_room_reached and not (attack_mechanism_known and voltage_neutralised)} [Then what's still missing?]
     #exit_conversation
@@ -539,6 +544,7 @@ The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network.
     - else:
         Grid control has the hazard now. Get them the cause, off the workshop terminal.
     }
+    ~ anomaly_call_heard = true
     -> DONE
 
 // ===========================================
