@@ -112,9 +112,9 @@ module BreakEscape
 
         holder = if present_string?(capture['address'])
                    by_username[normalise_username(capture['address'])]
-                 elsif owner && holders.any? { |npc| npc.equal?(owner) }
+        elsif owner && holders.any? { |npc| npc.equal?(owner) }
                    owner
-                 end
+        end
         { proof: capture['proof'], holder: holder, path: "#{path}/proof" }
       end
     end
@@ -204,6 +204,12 @@ module BreakEscape
     # consumes it (consumesItem, or a remove_item naming it in that list).
     def object_takes_item?(obj, item)
       return false unless obj.is_a?(Hash) && item.is_a?(Hash)
+      # An object added to a room with no server-known source is a bare client hash
+      # stamped clientAdded (ItemIdentity::CLIENT_ADDED_MARKER, via Game#add_item_to_room!);
+      # its type/name are client-chosen, so it must never satisfy a plant target's
+      # requiresItem (code review R2, B1). Literal to keep this file ActiveSupport-free
+      # for the validator (validate_capture_log.rb requires it alone).
+      return false if item['clientAdded'] == true
 
       names = %w[id type name].filter_map { |k| item[k].to_s if present_string?(item[k].to_s) }
       return false if names.empty?

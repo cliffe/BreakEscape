@@ -2167,20 +2167,24 @@ module BreakEscape
       office-misc-cup5 coffee_cups1 mugs_tray1
     ].freeze
 
-    # Fields that make a stored item open something: the key check reads the
-    # first three and scenarioData, the lockpick and PIN-cracker checks read type
-    # and scenarioData.type, the flag-station lookup reads flags. A client-built
-    # item (notepad, decor cup) has no scenario copy, so these are removed.
-    # The last five are authored behaviour a client must not invent: a forged
-    # droppable would pass the player_drop check (Game#add_item_to_room!), a
-    # forged needsTag would feed an NPC need, a forged wearable would let POST wear
-    # put on a costume the scenario never offered (Wearables), and holds and storeIn
-    # are the holder fields (feedback plan, section 6).
-    CLIENT_ITEM_FORBIDDEN_FIELDS = %w[
-      opens_lock key_id keyId scenarioData requires lockType locked
-      contents itemsHeld flags flagRewards keyPins saved_cards
-      droppable needsTag wearable holds storeIn
-    ].freeze
+    # Fields a client-built inventory item (notepad, decor cup) must not carry:
+    # lock references the key check reads, the lockType/PIN-cracker fields, the
+    # flag-station list, the card fields, and the authored-behaviour fields a
+    # client must not invent (a forged droppable would pass the player_drop check
+    # in Game#add_item_to_room!, a forged needsTag would feed an NPC need, a forged
+    # wearable would let POST wear put on a costume the scenario never offered).
+    # Single source with the model's FORGEABLE_LOCK_FIELDS, via
+    # ItemIdentity::FORGEABLE_ITEM_FIELDS, plus the whole scenarioData, which a
+    # client-built item has no business carrying (code review R1, m1).
+    # The clientAdded marker (ItemIdentity::CLIENT_ADDED_MARKER) is server-only: only
+    # Game#add_item_to_room! stamps it. A client must not set it on an item it builds
+    # (an always-allowed item reaches the non-Hash branch below with just this filter),
+    # so a security marker is never client-writable (code review R2, m2).
+    CLIENT_ITEM_FORBIDDEN_FIELDS = (
+      BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS +
+      %w[scenarioData] +
+      [BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER]
+    ).freeze
 
     # What the inventory stores for an add that validate_item_collectible passed.
     # A scenario item is stored as the server's own copy, filtered exactly as the
@@ -2702,14 +2706,19 @@ module BreakEscape
     end
 
     # Strong parameters for room state sync (SECURITY)
+    #
+    # Only identity and placement come from the client. The lock-relevant fields
+    # (opens_lock, key_id, keyPins and the like) are NOT permitted: a legitimate
+    # drop (NPC or player_drop) rebuilds the item from the server's own scenario
+    # copy in Game#add_item_to_room!, and an unsourced add has its lock fields
+    # stripped there (Game#strip_forgeable_lock_fields). Permitting them here would
+    # let a tampered client forge a key for any key lock.
     def item_add_params
-      # Allow common item properties, including nested scenarioData
       params.require(:data).permit(
         :id, :type, :name, :texture, :x, :y, :takeable, :interactable,
         position: [:x, :y],
         scenarioData: [
-          :type, :name, :takeable, :id, :opens_lock, :key_id, :observations, :active, :visible, :interactable,
-          keyPins: []
+          :type, :name, :takeable, :id, :observations, :active, :visible, :interactable
         ]
       ).to_h
     end
@@ -2939,8 +2948,12 @@ module BreakEscape
         end
       end
 
-      # Also search player inventory (takeable flag-stations/launch-devices end up here)
+      # Also search player inventory (takeable flag-stations/launch-devices end up here).
+      # A forged clientAdded item typed flag-station/launch-device must never stand in for
+      # a real station, even on a name match (code review R2, B1 sweep).
       @game.player_state['inventory']&.each do |item|
+        next if BreakEscape::ItemIdentity.client_forged?(item)
+
         return item if (item['id'] || item['name']) == flag_station_id && flag_station_types.include?(item['type'])
       end
 
