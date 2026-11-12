@@ -1235,7 +1235,8 @@ NPC's options (`socialUse`, default 60, for the phone and its PC, and each objec
 so the floor never refuses an honest post; the floor is 0.9 of this period (section 9.1). An honest use can still come inside the floor: after a reload
 (needs restart at `initial` while `feedRevealed.at` persists) or from a tempt band (slice 18b-i
 takes a need above `urgentAt`). The answer is then `tooSoon` with `retryAfter`, and the client
-asks once more after that wait, so the use still yields its post (C review R1 m2).
+asks again after that whole wait (no cap), up to four requests for the use, so the use still
+yields its post at any pace (C review R1 m2, R2 m1).
 
 ## 9. Server
 
