@@ -11,7 +11,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
 | Metric | Value |
 |---|---|
 | Story aims | 1 |
-| Total tasks | 12 (0 optional) |
+| Total tasks | 15 (0 optional) |
 | VM flag challenges | 0 |
 | Physical locks | 8 |
 | AND-gate convergences | 0 |
@@ -345,30 +345,35 @@ flowchart TD
   kiosk_room("Kiosk")
   store("Store")
   rc_kit_dropbox_1{"Network drop box"}
-  rc_lobby_vault_2[["Lobby vault"]]
-  rc_vault_prize_3{"Vault receipt"}
-  rc_sign_lobby_4{"Sign: Start here"}
-  rc_sign_p8_5{"Sign: P8 The vault"}
-  rc_sign_p12_6{"Sign: P12 Reload"}
-  rc_npc_sam_okafor_7("Sam Okafor")
-  rc_npc_lena_fox_8("Lena Fox")
-  rc_npc_ian_shaw_9("Ian Shaw")
-  rc_comms_port_10{"Spare wall port"}
-  rc_sign_p2_11{"Sign: P2 Plant"}
-  rc_sign_p3_12{"Sign: P3 See"}
-  rc_sign_p10_13{"Sign: P10 Unplug"}
-  rc_bench_port_14{"Bench switch"}
-  rc_sign_p11_15{"Sign: P11 The other network"}
-  rc_sam_pc_16{"Sam's PC"}
-  rc_sign_p1_17{"Sign: P1 An open share at the keyboard"}
-  rc_sign_p9_18{"Sign: P9 Sit down at it"}
-  rc_lena_pc_19{"Lena's PC"}
-  rc_sign_p5_20{"Sign: P5 and P6 Remote sign-in"}
-  rc_kiosk_pc_21{"Reception kiosk"}
-  rc_sign_p7_22{"Sign: P7 Remote sign-in off"}
-  rc_door_box_23[["Door controller"]]
-  rc_door_codes_24{"Door codes"}
-  rc_sign_p8_store_25{"Sign: P8 A host with no screen"}
+  rc_kit_badusb_2{"Keystroke injector"}
+  rc_kit_stick_3{"Spare USB stick"}
+  rc_lobby_vault_4[["Lobby vault"]]
+  rc_vault_prize_5{"Vault receipt"}
+  rc_sign_lobby_6{"Sign: Start here"}
+  rc_sign_p8_7{"Sign: P8 The vault"}
+  rc_sign_p12_8{"Sign: P12 Reload"}
+  rc_npc_sam_okafor_9("Sam Okafor")
+  rc_npc_lena_fox_10("Lena Fox")
+  rc_npc_ian_shaw_11("Ian Shaw")
+  rc_comms_port_12{"Spare wall port"}
+  rc_sign_p2_13{"Sign: P2 Plant"}
+  rc_sign_p3_14{"Sign: P3 See"}
+  rc_sign_p10_15{"Sign: P10 Unplug"}
+  rc_bench_port_16{"Bench switch"}
+  rc_sign_p11_17{"Sign: P11 The other network"}
+  rc_sam_pc_18{"Sam's PC"}
+  rc_sign_p1_19{"Sign: P1 An open share at the keyboard"}
+  rc_sign_p9_20{"Sign: P9 Sit down at it"}
+  rc_sam_dock_21{"USB socket by Sam's PC"}
+  rc_lena_pc_22{"Lena's PC"}
+  rc_sign_p5_23{"Sign: P5 and P6 Remote sign-in"}
+  rc_kiosk_pc_24{"Reception kiosk"}
+  rc_kiosk_dock_25{"Kiosk USB socket"}
+  rc_sign_p7_26{"Sign: P7 Remote sign-in off"}
+  rc_door_box_27[["Door controller"]]
+  rc_door_codes_28{"Door codes"}
+  rc_sign_p8_store_29{"Sign: P8 A host with no screen"}
+  rc_door_dock_30{"Door controller USB port"}
 
   lobby --> comms_room
   lobby --> desk_room
@@ -377,35 +382,40 @@ flowchart TD
   desk_room --> kiosk_room
   desk_room --> store
   lobby --> rc_kit_dropbox_1
-  lobby --> rc_lobby_vault_2
-  rc_lobby_vault_2 --> rc_vault_prize_3
-  lobby --> rc_sign_lobby_4
-  lobby --> rc_sign_p8_5
-  lobby --> rc_sign_p12_6
-  lobby --> rc_npc_sam_okafor_7
-  lobby --> rc_npc_lena_fox_8
-  lobby --> rc_npc_ian_shaw_9
-  comms_room --> rc_comms_port_10
-  comms_room --> rc_sign_p2_11
-  comms_room --> rc_sign_p3_12
-  comms_room --> rc_sign_p10_13
-  workshop --> rc_bench_port_14
-  workshop --> rc_sign_p11_15
-  desk_room --> rc_sam_pc_16
-  desk_room --> rc_sign_p1_17
-  desk_room --> rc_sign_p9_18
-  finance_office --> rc_lena_pc_19
-  finance_office --> rc_sign_p5_20
-  kiosk_room --> rc_kiosk_pc_21
-  kiosk_room --> rc_sign_p7_22
-  store --> rc_door_box_23
-  rc_door_box_23 --> rc_door_codes_24
-  store --> rc_sign_p8_store_25
+  lobby --> rc_kit_badusb_2
+  lobby --> rc_kit_stick_3
+  lobby --> rc_lobby_vault_4
+  rc_lobby_vault_4 --> rc_vault_prize_5
+  lobby --> rc_sign_lobby_6
+  lobby --> rc_sign_p8_7
+  lobby --> rc_sign_p12_8
+  lobby --> rc_npc_sam_okafor_9
+  lobby --> rc_npc_lena_fox_10
+  lobby --> rc_npc_ian_shaw_11
+  comms_room --> rc_comms_port_12
+  comms_room --> rc_sign_p2_13
+  comms_room --> rc_sign_p3_14
+  comms_room --> rc_sign_p10_15
+  workshop --> rc_bench_port_16
+  workshop --> rc_sign_p11_17
+  desk_room --> rc_sam_pc_18
+  desk_room --> rc_sign_p1_19
+  desk_room --> rc_sign_p9_20
+  desk_room --> rc_sam_dock_21
+  finance_office --> rc_lena_pc_22
+  finance_office --> rc_sign_p5_23
+  kiosk_room --> rc_kiosk_pc_24
+  kiosk_room --> rc_kiosk_dock_25
+  kiosk_room --> rc_sign_p7_26
+  store --> rc_door_box_27
+  rc_door_box_27 --> rc_door_codes_28
+  store --> rc_sign_p8_store_29
+  store --> rc_door_dock_30
 
   class lobby,comms_room,workshop,desk_room,kiosk_room,store room
   class finance_office lock
-  class rc_kit_dropbox_1,rc_vault_prize_3,rc_sign_lobby_4,rc_sign_p8_5,rc_sign_p12_6,rc_comms_port_10,rc_sign_p2_11,rc_sign_p3_12,rc_sign_p10_13,rc_bench_port_14,rc_sign_p11_15,rc_sam_pc_16,rc_sign_p1_17,rc_sign_p9_18,rc_lena_pc_19,rc_sign_p5_20,rc_kiosk_pc_21,rc_sign_p7_22,rc_door_codes_24,rc_sign_p8_store_25 item
-  class rc_lobby_vault_2,rc_door_box_23 container
-  class rc_npc_sam_okafor_7,rc_npc_lena_fox_8,rc_npc_ian_shaw_9 npc
+  class rc_kit_dropbox_1,rc_kit_badusb_2,rc_kit_stick_3,rc_vault_prize_5,rc_sign_lobby_6,rc_sign_p8_7,rc_sign_p12_8,rc_comms_port_12,rc_sign_p2_13,rc_sign_p3_14,rc_sign_p10_15,rc_bench_port_16,rc_sign_p11_17,rc_sam_pc_18,rc_sign_p1_19,rc_sign_p9_20,rc_sam_dock_21,rc_lena_pc_22,rc_sign_p5_23,rc_kiosk_pc_24,rc_kiosk_dock_25,rc_sign_p7_26,rc_door_codes_28,rc_sign_p8_store_29,rc_door_dock_30 item
+  class rc_lobby_vault_4,rc_door_box_27 container
+  class rc_npc_sam_okafor_9,rc_npc_lena_fox_10,rc_npc_ian_shaw_11 npc
   class node_start start
 ```
