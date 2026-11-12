@@ -92,6 +92,7 @@ VAR archive_code_guide_hint_given = false
 
 // ---- Ink-local (CONTRACT §5.4; nothing outside this file reads them) ----
 VAR dock_heard = false
+VAR flag1_read_heard = false   // Phone calls M3: set on the first line of flag1_read, so the start guard stops
 VAR catalogue_topic_given = false
 VAR series_topic_given = false
 VAR tran_topic_given = false
@@ -133,6 +134,19 @@ VAR hand_answered_here = false
     + [Right.]
         #exit_conversation
     -> DONE
+// Phone calls M3: the four read-outs are texts with toasts, and progress never
+// depends on tapping a toast. A hand-opened thread plays whichever read-out is
+// still pending, under the same conditions as the mappings. Each knot sets its
+// own flag (flag1_read_heard, ledger_read_heard, afterwards_heard,
+// hour_read_started) on its first or last line, which stops the guard.
+- flag1_submitted and not flag1_read_heard:
+    -> flag1_read
+- flag2_submitted and not ledger_read_heard:
+    -> ledger_read
+- deck_choice_made and not afterwards_heard:
+    -> afterwards
+- flag4_submitted and identity_scene_done and not hour_read_started:
+    -> hour_read
 // Stage 8 m-14: a first open after flag 1 (a late first open, or a seeded
 // playtest segment) skips the Act 1 dock lines and goes to the hub.
 - not dock_heard and not flag1_submitted:
@@ -205,6 +219,7 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
 // FLAG 1 READ (Beat 1.4; unvoiced)
 // ================================================
 === flag1_read ===
+~ flag1_read_heard = true
 // The stacks door opens on its own mapping (S4 §4 row 1), which can retry,
 // so nothing here says the door is open.
 // Walkthrough R1 m-01: the salvage line is given on the first line, so a
