@@ -1,0 +1,178 @@
+[
+  {
+    "scenario": "scenarios/lab_exploitation/scenario.json.erb",
+    "stage": "ink",
+    "match": "is a standalone emote starting with '*'",
+    "count": 13,
+    "owner": "labs track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: lab_exploitation ink headings",
+    "note": "**Heading:** lines in instructor.ink parse as standalone emotes; attach each to a spoken line."
+  },
+  {
+    "scenario": "scenarios/lab_post_exploitation/scenario.json.erb",
+    "stage": "ink",
+    "match": "is a standalone emote starting with '*'",
+    "count": 12,
+    "owner": "labs track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: lab_post_exploitation ink headings",
+    "note": "As lab_exploitation."
+  },
+  {
+    "scenario": "scenarios/lab_vulnerability_analysis/scenario.json.erb",
+    "stage": "ink",
+    "match": "is a standalone emote starting with '*'",
+    "count": 7,
+    "owner": "labs track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: lab_vulnerability_analysis ink headings",
+    "note": "As lab_exploitation."
+  },
+  {
+    "scenario": "scenarios/lab_vulnerability_analysis/scenario.json.erb",
+    "stage": "ink",
+    "match": "contains '//', which ink treats as a comment",
+    "count": 2,
+    "owner": "labs track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: lab_vulnerability_analysis ink slashes",
+    "note": "Reword each // (ink cuts the rest of the line)."
+  },
+  {
+    "scenario": "scenarios/lab_feeling_blu/scenario.json.erb",
+    "stage": "ink",
+    "match": "contains '//', which ink treats as a comment",
+    "count": 10,
+    "owner": "labs track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: lab_feeling_blu ink slashes",
+    "note": "Reword each // (ink cuts the rest of the line)."
+  },
+  {
+    "scenario": "scenarios/lab_vulnerabilities/scenario.json.erb",
+    "stage": "ink",
+    "match": "contains '//', which ink treats as a comment",
+    "count": 3,
+    "owner": "labs track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: lab_vulnerabilities ink slashes",
+    "note": "Reword each // (ink cuts the rest of the line)."
+  },
+  {
+    "scenario": "scenarios/lab_malware_metasploit/scenario.json.erb",
+    "stage": "ink",
+    "match": "contains '//', which ink treats as a comment",
+    "count": 1,
+    "owner": "labs track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: lab_malware_metasploit ink slashes",
+    "note": "Reword the // in instructor.ink."
+  },
+  {
+    "scenario": "scenarios/lab_malware_metasploit/scenario.json.erb",
+    "stage": "common",
+    "match": "'#complete_task:complete_instruction_task' was not found",
+    "count": 1,
+    "owner": "labs track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: lab_malware_metasploit instruction task tag",
+    "note": "objectives[0].tasks[0] waits for a tag the instructor ink never emits; add the tag or change the task type."
+  },
+  {
+    "scenario": "scenarios/biometric_breach/scenario.json.erb",
+    "stage": "common",
+    "match": "missing required 'keyPins' array",
+    "count": 5,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: biometric_breach keyPins",
+    "note": "Add the same keyPins array to each key lock and its key."
+  },
+  {
+    "scenario": "scenarios/crypto1_captain_meow/scenario.json.erb",
+    "stage": "common",
+    "match": "missing required 'keyPins' array",
+    "count": 1,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: crypto1_captain_meow keyPins",
+    "note": "Add the same keyPins array to the key lock and its key."
+  },
+  {
+    "scenario": "scenarios/crypto2_rsa_asymmetric/scenario.json.erb",
+    "stage": "common",
+    "match": "missing required 'keyPins' array",
+    "count": 2,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: crypto2_rsa_asymmetric keyPins",
+    "note": "Add the same keyPins array to each key lock and its key."
+  },
+  {
+    "scenario": "scenarios/crypto3_aes_symmetric/scenario.json.erb",
+    "stage": "common",
+    "match": "missing required 'keyPins' array",
+    "count": 2,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: crypto3_aes_symmetric keyPins",
+    "note": "Add the same keyPins array to each key lock and its key."
+  },
+  {
+    "scenario": "scenarios/ceo_exfil/scenario.json.erb",
+    "stage": "ink",
+    "match": "in itemsHeld. Add {",
+    "count": 4,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: ceo_exfil helper-npc give_item",
+    "note": "The shared helper-npc.ink gives keycard, lockpick, phone and workstation; the reception NPC holds none of them. Fix its itemsHeld or pick another ink file; do not edit the shared ink for one scenario."
+  },
+  {
+    "scenario": "scenarios/ceo_exfil/scenario.json.erb",
+    "stage": "common",
+    "match": "is a phone NPC event mapping with 'targetKnot'",
+    "count": 10,
+    "owner": "escape-room track",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: ceo_exfil phone targetKnot",
+    "note": "Design edit: each mapping sets a global and the ink hub gets a conditional option for it."
+  },
+  {
+    "scenario": "scenarios/basic_mission/scenario.json.erb",
+    "stage": "schema",
+    "match": "ERROR: schema: #/",
+    "count": 4,
+    "owner": "the user (q86)",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: basic_mission schema",
+    "note": "Fix as an example or delete (q86): no scenario_brief, flags as an array, start room without type and connections."
+  },
+  {
+    "scenario": "scenarios/vm_free_mission/scenario.json.erb",
+    "stage": "schema",
+    "match": "ERROR: schema: #/",
+    "count": 4,
+    "owner": "the user (q86)",
+    "added": "2026-11-12",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-12: vm_free_mission schema",
+    "note": "As basic_mission (q86)."
+  }
+]

@@ -18,6 +18,8 @@
         {
           "type": "key",
           "name": "Hall Key",
+          "opens_lock": "hall_key",
+          "keyPins": [45, 25, 55, 35],
           "takeable": true,
           "observations": "Key to the hallway"
         }
@@ -28,6 +30,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "hall_key",
+      "keyPins": [45, 25, 55, 35],
       "connections": {
         "south": "reception",
         "north": ["closet", "ceo"]
@@ -43,12 +46,16 @@
         {
           "type": "key",
           "name": "Closet Key",
+          "opens_lock": "closet_key",
+          "keyPins": [40, 60, 30, 50],
           "takeable": true,
           "observations": "Key to storage closet"
         },
         {
           "type": "key",
           "name": "CEO Key",
+          "opens_lock": "ceo_key",
+          "keyPins": [30, 50, 40, 60],
           "takeable": true,
           "observations": "Golden CEO office key"
         }
@@ -59,6 +66,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "closet_key",
+      "keyPins": [40, 60, 30, 50],
       "connections": {
         "south": "hall"
       },
@@ -77,6 +85,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "ceo_key",
+      "keyPins": [30, 50, 40, 60],
       "connections": {
         "south": "hall"
       },

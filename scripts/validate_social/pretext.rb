@@ -74,7 +74,7 @@ module ValidateSocial
     end
 
     def self.err(msg)
-      "❌ SOCIAL: #{msg}"
+      "❌ ERROR: SOCIAL: #{msg}"
     end
 
     def self.warn_(msg)
