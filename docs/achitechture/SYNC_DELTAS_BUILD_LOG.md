@@ -33,7 +33,7 @@ Standing constraints for this build:
 | 1. Groundwork: constants test + literal scan (item 5, part) | Done, committed, tested (`3c7d13c96`) |
 | 1. Groundwork: shared sanitiser fixture behaviour test (item 5, rest) | Done, committed, tested (`efe00765a`) |
 | 1. Groundwork: registerPart/track, item_for_answer, prepare_bootstrap_state!, refuse_oversized_body (item 6) | Done, committed, tested (`0136faad5`) |
-| 1. Groundwork: live-proof tools (item 8) + baseline (item 9) | NOT started (see Open) |
+| 1. Groundwork: live-proof tools (item 8) + baseline (item 9) | Tool + `--seed-full-cloner` built and tested; baseline bootstrap/case-A numbers recorded (see Baseline) |
 | Controller test for savedCurrentRoom (task 3) | Done, committed, tested (`853b69a59`) |
 | 2. R1 seeding | Done, committed, tested (`c12d9d1e7`) |
 | 3. P2 inventory/network answers | Not started |
@@ -115,6 +115,80 @@ This session (newest work):
   Confirms the phone `keyOf` call-site changes and the `ApiClient` deletions break nothing.
 
 No live browser proof yet: the live cases A to F (plan 10.3) run after step 6.
+
+## Live-proof tools and baseline (step 1 items 8 and 9, builder: proof tools)
+
+### The tools (item 8)
+
+`tools/playtest/sync-delta-proof.mjs` (Playwright, headless, ESM). It drives only the
+page through `window.__test` and records every request to `/break_escape/games/:id/*`:
+method, route (the path after the game id), request body bytes from
+`request.postDataBuffer()`, response body bytes from `response.body()` where the page can
+still read them (a keepalive pagehide flush is usually unreadable after the navigation,
+so its field is left null and read from `player_state`/the server log instead), and
+whether a `saved_cards` list rides either body. It writes a JSON record and prints a
+Markdown summary table (one row per phase, method and route, with totals and maxima).
+Because it only drives the page, it runs unchanged against the base server and the branch
+server, which is what the before/after needs. It sets `setFPS(20)` with fixed steps ON
+(never `fixedStep=false`) after the bridge is ready.
+
+Cases: `bootstrap` (open, record `GET /scenario` only), `A` (first sync after load: play,
+reload, force a sync, record each first `PUT /sync_state`), `B` (seed a full cloner, record
+the bootstrap and network answers). The pure parts (`routeLabel`, `gameIdOf`, `summarise`,
+`renderTable`, `hasSavedCards`, `parseArgs`) are exported and unit-tested in
+`test/js/sync-delta-proof.test.mjs` (8 cases, all pass with plain `node --test`). The full
+plant/unplug/join/implant drive (case B) and cases C to F (cloner, captures, Len's PIN,
+old save, old tab) run with the rest of the live proof after step 6 (plan s9 item 7); the
+tool's recorder and the baseline anchors below are what step 1 needs.
+
+`tools/playtest/new-game.rb --seed-full-cloner` (no value): for test_access_networks only,
+in development or test, with no cloner already held, it writes an `rfid_cloner` inventory
+item carrying 50 made-up EM4100 cards (12,903 bytes, under the 64 KB cap; the plan's "about
+9.5 KB" estimate omits the per-card `rfid_data`, which real cards carry) in the top-level
+`saved_cards` shape an old save written by `update_saved_cards` has. The write runs inside
+`g.with_lock` (reloads the row, rechecks the inventory, appends, saves once) and acts only
+on the game this run created. It prints `SEEDED_FULL_CLONER=...`. Proven live: the happy
+path seeded game 1777; `--seed-full-cloner` on test-rfid aborts with "only
+test_access_networks".
+
+### Baseline (item 9, base commit 6a834437c, keyless server on :3112 from the p-sync-base worktree)
+
+Games created with this branch's `new-game.rb` against the shared dev database (step 1
+changes nothing about game creation), served by the base-commit server. Game ids: 1773
+test_access_networks, 1774 test-rfid, 1775 lab_social_engineering, 1776 lab_physical_pentest,
+1777 test_access_networks + `--seed-full-cloner`.
+
+**`GET /scenario` bootstrap response bytes (base commit).** This is the anchor for plan
+10.2's "no larger than the base commit's measure plus 1 KB"; step 7 writes the relevant
+figure into `test/integration/sync_payload_size_test.rb` as a constant (not created here;
+that test is step 7, owned by another builder).
+
+| Scenario | `GET /scenario` resp bytes | `POST /inventory` boot echo bytes |
+|---|---:|---:|
+| test_access_networks | 5,833 | 250 |
+| test-rfid | 1,103 | 400 |
+| lab_social_engineering | 69,125 | 442 |
+| lab_physical_pentest | 23,762 | 1,088 |
+| test_access_networks + full cloner | 18,906 | 13,303 |
+
+The full-cloner row is the P1/P2 "before": the 12,903-byte `saved_cards` list rides both
+`GET /scenario`'s `playerInventory` (18,906 vs 5,833, +13,073) and every `POST /inventory`
+echo (13,303 vs 250). The tool's `saved_cards` detector flags it on `GET /scenario` and
+`POST /inventory` for game 1777, and flags the empty `saved_cards: []` on test-rfid's and
+lab_physical_pentest's starting cloners (present-but-empty is still the key the delta work
+removes from echoes).
+
+**Case A, first `PUT /sync_state` after load (lab_social_engineering, game 1775, base
+commit).** Every first sync after a load carried the whole client state at a near-constant
+size regardless of what changed: 5,438 bytes (first load), 5,470 bytes (after reload 1),
+5,470 bytes (after reload 2). Answer 16 bytes each. This is R1's "before": after R1 the
+first sync should send nothing, or only `currentRoom` with its riders (a few hundred bytes).
+
+Case B's per-network-action answer sizes (each `POST /network/*` echoing the ~13 KB list)
+and cases C to F are left for the post-step-6 live proof (plan s9 item 7), run against a
+base-commit server the same way. The baseline recorder and the anchors above are in place
+for that comparison. JSON records are in the session scratchpad (not committed): the
+committed evidence is these numbers and the tool.
 
 ## What was built, in detail
 
@@ -291,15 +365,17 @@ browser proof yet (cases A to F run after step 6).
    registered by steps 3, 4 and 6a. NOTE for later steps: item_for_answer and the clone_card 8 KB
    cap have no dedicated test yet (exercised by steps 3/4); add those with P2/P1.
 7. DONE (`6c3a2e918`). Deleted unused `ApiClient.syncState` and `ApiClient.updateInventory`.
-8. The two live-proof tools: `tools/playtest/sync-delta-proof.mjs` and the `--seed-full-cloner`
-   head-start option of `tools/playtest/new-game.rb` (plan 10.3 and R5 n3: parse the flag with no
-   value, add a --help line, run it after the other head-start blocks' last save!, guard on
-   test_access_networks + dev/test + no cloner + `with_lock`).
-9. BASELINE: straight after step 1 is committed, run `sync-delta-proof.mjs` from this branch against
-   a second worktree server checked out at the base commit (6a834437c) on this builder's port, to
-   record the base commit's requests/answers and bootstrap size (plan 9, 10.2, 10.3). Write the base
-   bootstrap size into `test/integration/sync_payload_size_test.rb` as a constant with the commit in a
-   comment.
+8. DONE. `tools/playtest/sync-delta-proof.mjs` (recorder + cases bootstrap/A/B, pure parts
+   unit-tested) and `tools/playtest/new-game.rb --seed-full-cloner` (no value, --help line, runs
+   after the head-start blocks' save!, guarded on test_access_networks + dev/test + no cloner +
+   `with_lock`). See "Live-proof tools and baseline" above. REMAINING for step 7: the full
+   plant/unplug/join/implant drive in case B and cases C to F are scaffolded/noted but run with the
+   post-step-6 live proof.
+9. DONE (anchors). Baseline bootstrap sizes and case-A first-sync sizes recorded against base
+   6a834437c on :3112 (see Baseline table). For step 7: write the matching `GET /scenario` figure
+   into `test/integration/sync_payload_size_test.rb` as a constant from the Baseline table (that test
+   file is step 7, another builder's; not created here). Case B per-network-action answers and cases
+   C to F run in the post-step-6 proof.
 
 ### R5 open items to fold in (brief) -- all land in step 6a (R2), per plan s9 and R5 "Readiness"
 - m1: add the authored `targetId` of every writer, every `usePayload.targetId` and every phish
@@ -348,6 +424,9 @@ browser proof yet (cases A to F run after step 6).
 - `test/js/cp-helpers.test.mjs` (new; the shared cp-helper test)
 - `test/js/phone-reopen-and-persistence.test.mjs` (new keyOf cases)
 - `test/js/phone-player-lines.test.mjs` (MAX_PHONE_TYPE_CHARS assertion fix)
+- `tools/playtest/sync-delta-proof.mjs` (new; item 8 live-proof recorder)
+- `tools/playtest/new-game.rb` (item 8 `--seed-full-cloner` option)
+- `test/js/sync-delta-proof.test.mjs` (new; item 8 pure-part tests)
 - `docs/achitechture/SYNC_DELTAS_BUILD_LOG.md` (this file)
 
 ### Step 2 (R1), in detail
