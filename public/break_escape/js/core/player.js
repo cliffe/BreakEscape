@@ -320,6 +320,8 @@ function setupKeyboardInput() {
 
         // E key for interaction: always interacts (a hostile NPC is punched)
         if (key === 'e') {
+            // E acts on what is near now, so a far tap's use on arrival is dropped (tap-pick.js)
+            window.__clearPendingTapUse?.();
             if (window.tryInteractWithNearest) {
                 window.tryInteractWithNearest();
             }

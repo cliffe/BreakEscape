@@ -5,134 +5,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tapPickList, objectStandPoint, createPendingTapUse, PENDING_TAP_USE_MS } from '../../public/break_escape/js/systems/tap-pick.js';
+import { tapPickList, farUnderTap, npcYieldsToObject, opaqueAt, objectStandPoint, createPendingTapUse, PENDING_TAP_USE_MS } from '../../public/break_escape/js/systems/tap-pick.js';
 import { withoutChairsIfOthers, withoutLeavingNpcsIfObjects } from '../../public/break_escape/js/systems/interaction-reach.js';
 
 const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
 
 const RANGE = 32;      // INTERACTION_RANGE
-const SLOP = 32;       // TILE_SIZE, the tap slop in gatherInteractablesNearClick
-
-// A sprite with Phaser-like bounds (origin 0,0 for scenario objects, 0.5 for NPCs)
-function sprite(id, x, y, w, h, extra = {}) {
-    const ox = extra.originX ?? 0, oy = extra.originY ?? 0;
-    return {
-        id, x, y, width: w, height: h, originX: ox, originY: oy, interactable: true,
-        getBounds() {
-            const left = x - ox * w, top = y - oy * h;
-            return { left, top, right: left + w, bottom: top + h };
-        },
-        ...extra
-    };
-}
-const inside = (s, tx, ty) => { const b = s.getBounds(); return tx >= b.left && tx <= b.right && ty >= b.top && ty <= b.bottom; };
-const reach = (player, s) => Math.hypot(s.x - player.x, s.y - player.y) <= RANGE;
-
-// The pointerdown pipeline in game.js, over plain sprites: gather in-reach things in bounds or
-// slop (underTap when in bounds), far objects under the tap, then the pick list and the filters
-function tap(player, sprites, tx, ty) {
-    const gathered = sprites
-        .filter(s => reach(player, s))
-        .filter(s => inside(s, tx, ty) || Math.hypot(s.x - tx, s.y - ty) <= SLOP)
-        .map(s => ({ label: s.id, sprite: s, isObject: !s.npc, isChair: !!s.chair, leavingNpc: !!s.leaving, underTap: inside(s, tx, ty) }));
-    const farUnderTap = sprites.filter(s => !s.npc && !s.chair && !reach(player, s) && inside(s, tx, ty));
-    const farNpc = sprites.filter(s => s.npc && !s.ko && !s.leaving && !reach(player, s) && inside(s, tx, ty)).slice(0, 1);
-    const list = tapPickList(gathered, farUnderTap, (o) => ({ label: o.id, sprite: o, isObject: true, underTap: true, far: true }), farNpc);
-    let out = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(list));
-    if (out.length && out.every(c => c.leavingNpc) && farUnderTap.length) out = [];
-    if (out.length > 1) return { menu: out.map(c => (c.far ? `walk:${c.label}` : c.label)) };
-    if (out.length === 1) return { act: out[0].far ? `walk:${out[0].label}` : out[0].label };
-    // Empty: the NPC branch, then the object branch (walk to the top object under the tap)
-    const top = sprites.find(s => inside(s, tx, ty) && !s.ko);
-    return { fallThrough: top ? top.id : null };
-}
-
-// ── C3 U3: Kim knocked out drops her stick and her phone ──
-test('U3: a tap on the stick from out of reach walks to the stick, not the in-reach phone', () => {
-    const stick = sprite('kim_usb', 168, 129, 13, 8);
-    const phone = sprite('kim_phone', 152, 129, 12, 21);
-    const player = { x: 150, y: 100 };          // phone 29 px away (in reach), stick 34 px (out)
-    assert.ok(reach(player, phone) && !reach(player, stick));
-    const tx = 174.5, ty = 133;                 // the stick's centre
-    assert.ok(!inside(phone, tx, ty), 'the two do not overlap');
-    assert.ok(Math.hypot(phone.x - tx, phone.y - ty) <= SLOP, 'the phone is within tap slop, as in the replay');
-    assert.deepEqual(tap(player, [stick, phone], tx, ty), { fallThrough: 'kim_usb' });
-});
-
-test('U3: a tap on the phone still picks up the phone', () => {
-    const stick = sprite('kim_usb', 168, 129, 13, 8);
-    const phone = sprite('kim_phone', 152, 129, 12, 21);
-    assert.deepEqual(tap({ x: 150, y: 100 }, [stick, phone], 158, 140), { act: 'kim_phone' });
-});
-
-test('U3: with both in reach a tap on the stick between them still gives the menu', () => {
-    const stick = sprite('kim_usb', 168, 129, 13, 8);
-    const phone = sprite('kim_phone', 152, 129, 12, 21);
-    assert.deepEqual(tap({ x: 160, y: 110 }, [stick, phone], 174.5, 133), { menu: ['kim_usb', 'kim_phone'] });
-});
-
-// ── UX access finding 6: Omar seated over his PC ──
-const omarAt = () => sprite('omar', 120, 92, 40, 48, { npc: true, originX: 0.5, originY: 0.5 });
-const pcAt = () => sprite('omar_pc', 104, 96, 32, 24);
-
-test('finding 6: seated owner, PC out of reach, tap on the PC under him: menu with the PC as walk then use', () => {
-    const omar = omarAt(), pc = pcAt();
-    const player = { x: 128, y: 118 };          // Omar 27 px away (in reach), the PC 33 px (out)
-    assert.ok(reach(player, omar) && !reach(player, pc));
-    const tx = 110, ty = 100;                   // the PC's top-left area, inside Omar's frame too
-    assert.ok(inside(pc, tx, ty) && inside(omar, tx, ty));
-    assert.deepEqual(tap(player, [omar, pc], tx, ty), { menu: ['omar', 'walk:omar_pc'] });
-});
-
-test('finding 6: seated owner, PC out of reach, tap on the PC clear of him: walk to the PC', () => {
-    const omar = omarAt(), pc = pcAt();
-    const player = { x: 128, y: 118 };
-    const tx = 134, ty = 118;                   // the PC's lower-right corner, outside Omar's frame
-    assert.ok(inside(pc, tx, ty) && !inside(omar, tx, ty));
-    assert.ok(Math.hypot(omar.x - tx, omar.y - ty) <= SLOP, 'Omar is within tap slop');
-    assert.deepEqual(tap(player, [omar, pc], tx, ty), { fallThrough: 'omar_pc' });
-});
-
-test('finding 6: seated owner with both in reach: the pick-one menu stays', () => {
-    const omar = omarAt(), pc = pcAt();
-    const player = { x: 116, y: 110 };
-    assert.ok(reach(player, omar) && reach(player, pc));
-    assert.deepEqual(tap(player, [omar, pc], 110, 100), { menu: ['omar', 'omar_pc'] });
-});
-
-test('finding 6: a memo next to an NPC, both in reach: the menu stays', () => {
-    const npc = sprite('clerk', 200, 200, 32, 48, { npc: true, originX: 0.5, originY: 0.5 });
-    const memo = sprite('memo', 214, 214, 10, 8);
-    assert.deepEqual(tap({ x: 205, y: 225 }, [npc, memo], 218, 218), { menu: ['clerk', 'memo'] });
-});
-
-test('finding 6: a plain tap on a seated NPC\'s head talks to them', () => {
-    const omar = omarAt(), pc = pcAt();
-    const player = { x: 128, y: 118 };
-    const tx = 120, ty = 74;                    // his head, above the PC
-    assert.ok(inside(omar, tx, ty) && !inside(pc, tx, ty));
-    assert.deepEqual(tap(player, [omar, pc], tx, ty), { act: 'omar' });
-    // ...and with the PC in reach too
-    assert.deepEqual(tap({ x: 116, y: 110 }, [omar, pc], tx, ty), { menu: ['omar', 'omar_pc'] });
-});
-
-// ── m01 live finding: Sarah behind the reception desk, a note within slop of her head ──
-test('a tap on an out-of-reach NPC walks to her, not the in-reach note near the tap', () => {
-    const sarah = sprite('sarah_martinez', 128, 41, 80, 80, { npc: true, originX: 0.5, originY: 0.5 });
-    const note = sprite('reception_area_notes_2', 135, 54, 16, 16);
-    const player = { x: 154, y: 69 };
-    assert.ok(!reach(player, sarah) && reach(player, note));
-    assert.ok(!inside(note, 128, 30) && Math.hypot(note.x - 128, note.y - 30) <= SLOP);
-    assert.deepEqual(tap(player, [sarah, note], 128, 30), { fallThrough: 'sarah_martinez' });
-    // A tap on the note itself, inside her frame, still takes the note
-    assert.deepEqual(tap(player, [sarah, note], 142, 62), { act: 'reception_area_notes_2' });
-});
-
-test('a far NPC walking away does not take the tap from the in-reach item near it', () => {
-    const npc = sprite('leaver', 128, 41, 80, 80, { npc: true, leaving: true, originX: 0.5, originY: 0.5 });
-    const note = sprite('note', 135, 54, 16, 16);
-    assert.deepEqual(tap({ x: 154, y: 69 }, [npc, note], 128, 30), { act: 'note' });
-});
+// The pointerdown pipeline itself (gathering, the far lists, the NPC and object branches) is
+// tested through game.js's own handler code in tap-pick-handler.test.mjs.
 
 // ── tapPickList on its own ──
 test('tapPickList: nothing far under the tap leaves the list as it was', () => {
@@ -263,23 +143,137 @@ test('pending use: clear() drops it (any new tap)', () => {
     assert.deepEqual(state.used, []);
 });
 
-// ── game.js wiring ──
-test('game.js: pointerdown builds the pick list with tapPickList before the chair and leaving filters', () => {
+// ── R1 fixes: tapPickList's NPC and hostile rules ──
+test('tapPickList: an in-reach NPC on her figure under the tap wins, far objects join no menu (M1)', () => {
+    const sarah = { label: 'sarah', underTap: true, isNpc: true };
+    const note = { label: 'note' };
+    assert.deepEqual(tapPickList([sarah, note], [{ id: 'directory' }], (o) => ({ label: o.id, far: true })).map(c => c.label), ['sarah']);
+    // ...and with an in-reach object under the tap too, the in-reach menu stays, no far entry
+    const pc = { label: 'pc', underTap: true, isObject: true };
+    assert.deepEqual(tapPickList([sarah, pc], [{ id: 'directory' }], (o) => ({ label: o.id })).map(c => c.label), ['sarah', 'pc']);
+});
+
+test('tapPickList: an in-reach hostile near the tap leaves the list as gathered (M1)', () => {
+    const thug = { label: 'thug', isNpc: true, hostile: true };   // not even on his figure
+    const list = [thug];
+    assert.equal(tapPickList(list, [{ id: 'pc' }], (o) => ({ label: o.id })), list);
+    assert.equal(tapPickList(list, [], () => ({}), [{ id: 'far_npc' }]), list);
+});
+
+// ── opaqueAt: on the figure, not just the frame ──
+const npcSprite = (over = {}) => ({
+    x: 100, y: 100, originX: 0.5, originY: 0.5, scaleX: 1, scaleY: 1, flipX: false,
+    texture: { key: 'sarah' }, frame: { name: 3, realWidth: 80, realHeight: 80, cutWidth: 80, cutHeight: 80 },
+    ...over
+});
+const leftHalf = (x) => (x < 40 ? 255 : 0);
+
+test('opaqueAt: reads the frame pixel under the tap, with origin', () => {
+    const calls = [];
+    const alphaAt = (x, y, key, frame) => { calls.push([x, y, key, frame]); return leftHalf(x); };
+    assert.equal(opaqueAt(npcSprite(), 70, 90, alphaAt), true);    // local 10,30
+    assert.deepEqual(calls[0], [10, 30, 'sarah', 3]);
+    assert.equal(opaqueAt(npcSprite(), 130, 90, alphaAt), false);  // local 70,30
+});
+
+test('opaqueAt: flipX mirrors the lookup, scale divides it', () => {
+    assert.equal(opaqueAt(npcSprite({ flipX: true }), 70, 90, (x) => leftHalf(x)), false);
+    assert.equal(opaqueAt(npcSprite({ flipX: true }), 130, 90, (x) => leftHalf(x)), true);
+    // scale 2: the frame covers 20..180; world 50 is local 15
+    const seen = [];
+    opaqueAt(npcSprite({ scaleX: 2, scaleY: 2 }), 50, 100, (x, y) => { seen.push([x, y]); return 255; });
+    assert.deepEqual(seen[0], [15, 40]);
+});
+
+test('opaqueAt: outside the frame is false; no pixel test, or an unreadable frame, falls back to the bounds', () => {
+    assert.equal(opaqueAt(npcSprite(), 200, 100, () => 255), false);
+    assert.equal(opaqueAt(npcSprite(), 130, 90, null), true);
+    assert.equal(opaqueAt(npcSprite(), 130, 90, () => null), true);
+    assert.equal(opaqueAt(null, 0, 0, () => 255), false);
+});
+
+// ── farUnderTap: what takes the tap from in-reach things near it ──
+test('farUnderTap: far objects not seats and of the player\'s room; far NPCs on their figure, of the room, not leaving', () => {
+    const near = { id: 'near' }, far = { id: 'far' }, seat = { id: 'seat' }, other = { id: 'other_room' };
+    const deps = {
+        inReach: (o) => o.id === 'near' || o.id === 'npc_near',
+        isSeat: (o) => o.id === 'seat',
+        sameRoom: (o) => o.id !== 'other_room' && o.id !== 'npc_other',
+        npcOnFigure: (n) => n.id !== 'npc_frame',
+        givesWay: (n) => n.id === 'npc_leaving'
+    };
+    assert.deepEqual(farUnderTap({ objectsUnderTap: [near, far, seat, other] }, deps).farObjects.map(o => o.id), ['far']);
+    const npcs = (id) => farUnderTap({ objectsUnderTap: [], npcUnderTap: { id } }, deps).farNpcs.map(n => n.id);
+    assert.deepEqual(npcs('npc_far'), ['npc_far']);
+    for (const id of ['npc_near', 'npc_other', 'npc_frame', 'npc_leaving']) assert.deepEqual(npcs(id), [], id);
+});
+
+// ── npcYieldsToObject: an object over an NPC (m3) ──
+test('npcYieldsToObject: an object drawn above her where the tap is, or a tap off her figure, wins', () => {
+    const sarah = { id: 'sarah', depth: 81 };
+    const logBook = { id: 'log', depth: 90 }, board = { id: 'board', depth: 10 };
+    const on = (ids) => ({ onPixels: (s) => ids.includes(s.id) });
+    assert.equal(npcYieldsToObject(sarah, [logBook], on(['sarah', 'log'])), true);
+    assert.equal(npcYieldsToObject(sarah, [board], on(['sarah', 'board'])), false);
+    assert.equal(npcYieldsToObject(sarah, [board], on(['board'])), true, 'off her figure');
+    assert.equal(npcYieldsToObject(sarah, [logBook], on(['sarah'])), false, 'off the log\'s pixels');
+    assert.equal(npcYieldsToObject(sarah, [], on([])), false);
+    assert.equal(npcYieldsToObject(sarah, [logBook], { ...on(['log']), hostile: () => true }), false, 'a hostile never gives way');
+    assert.equal(npcYieldsToObject(sarah, [board], { ...on(['board']), isSeat: () => true }), false, 'her own chair');
+    assert.equal(npcYieldsToObject(sarah, [board], { ...on(['board']), sameRoom: () => false }), false, 'another room');
+});
+
+// ── the pending use: progress, blocked walks, busy (R1 m4, m5) ──
+function walkRig() {
+    const state = { moving: true, inReach: false, used: [], busy: false, feet: { x: 0, y: 0 } };
+    const p = createPendingTapUse({
+        inReach: () => state.inReach, isMoving: () => state.moving, use: (o) => state.used.push(o.id),
+        busy: () => state.busy, feet: () => ({ ...state.feet })
+    });
+    return { p, state };
+}
+
+test('pending use: a long walk that keeps moving outlasts the 10 s limit, which counts from the last progress', () => {
+    const { p, state } = walkRig();
+    p.arm(stickObj(), 0);
+    for (let t = 500; t <= 15000; t += 500) { state.feet.x += 20; p.update(t); }
+    assert.ok(p.get(), 'still armed after 15 s of walking');
+    state.moving = false; state.inReach = true; p.update(15100);
+    assert.deepEqual(state.used, ['kim_usb']);
+});
+
+test('pending use: a blocked walk (on a path, feet still for a second) drops it', () => {
+    const { p, state } = walkRig();
+    p.arm(stickObj(), 0);
+    state.feet.x = 10; p.update(300);
+    p.update(1000);
+    assert.ok(p.get(), 'under a second without progress');
+    p.update(1400);
+    assert.equal(p.get(), null);
+    state.moving = false; state.inReach = true; p.update(9000);   // the owner steps away later
+    assert.deepEqual(state.used, []);
+});
+
+test('pending use: a menu or confirm opening on the way drops it (busy)', () => {
+    const { p, state } = walkRig();
+    p.arm(stickObj(), 0);
+    state.busy = true; p.update(100);
+    assert.equal(p.get(), null);
+});
+
+// ── game.js and player.js wiring ──
+test('game.js: pointerdown builds the far lists with farUnderTap and the pick list with tapPickList', () => {
     const src = readFileSync(join(js, 'core/game.js'), 'utf8');
-    assert.match(src, /import \{ tapPickList, objectStandPoint, createPendingTapUse \} from '\.\.\/systems\/tap-pick\.js'/);
-    assert.match(src, /tapPickList\(gatherInteractablesNearClick\(worldX, worldY, tapObjectIds\), farUnderTap, farObjectCandidate, farNpcUnderTap\)/);
-    assert.match(src, /!isObjectInInteractionRange\(npcUnderTap\)\s*&& !npcGivesWay\(window\.player, npcUnderTap, tapObjectIds\)/);
+    assert.match(src, /import \{ tapPickList, farUnderTap, npcYieldsToObject, opaqueAt, objectStandPoint, createPendingTapUse \} from '\.\.\/systems\/tap-pick\.js'/);
+    assert.match(src, /tapPickList\(gatherInteractablesNearClick\(worldX, worldY, tapObjectIds, onPixels\), farObjects, farObjectCandidate, farNpcs\)/);
     assert.match(src, /withoutLeavingNpcsIfObjects\(withoutChairsIfOthers\(gathered\)\)/);
     assert.match(src, /pendingTapUse\.clear\(\)/);
     assert.match(src, /pendingTapUse\.update\(Date\.now\(\)\)/);
+    assert.match(src, /window\.__clearPendingTapUse = \(\) => pendingTapUse\.clear\(\)/);
 });
 
-test('game.js: the far object branch walks then uses, and seats still queue a sit', () => {
-    const src = readFileSync(join(js, 'core/game.js'), 'utf8');
-    assert.match(src, /walkToObjectThenUse\(obj\);/);
-    const fn = src.slice(src.indexOf('function walkToObjectThenUse('), src.indexOf('function farObjectCandidate('));
-    assert.match(fn, /objectStandPoint\(obj, player/);
-    assert.match(fn, /window\.seating\?\.isSeat\(obj\)\) window\.seating\.queueSit\(obj\);\s*else pendingTapUse\.arm\(obj/);
-    // candidates carry underTap from the sprite's own bounds
-    assert.equal((src.match(/underTap: hitsBounds\(/g) || []).length, 3);
+test('player.js: the E key drops a far tap\'s pending use before interacting (R1 m4)', () => {
+    const src = readFileSync(join(js, 'core/player.js'), 'utf8');
+    const e = src.slice(src.indexOf("if (key === 'e')"), src.indexOf("if (key === 'e')") + 400);
+    assert.match(e, /window\.__clearPendingTapUse\?\.\(\);\s*if \(window\.tryInteractWithNearest\)/);
 });

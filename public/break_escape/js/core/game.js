@@ -45,7 +45,7 @@ import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  /
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // Opt-in los.challengeOnSight guards
 import { createPendingGateWalk } from '../systems/pending-gate-walk.js';  // A far click on an open gate, re-checked in reach
-import { tapPickList, objectStandPoint, createPendingTapUse } from '../systems/tap-pick.js';  // A tap goes to the thing under the pointer; far objects walked to, then used
+import { tapPickList, farUnderTap, npcYieldsToObject, opaqueAt, objectStandPoint, createPendingTapUse } from '../systems/tap-pick.js';  // A tap goes to the thing under the pointer; far objects walked to, then used
 import { doorGates } from '../systems/door-gates.js';  // Gate doors: open for listed NPCs, hold, relock (sets window.doorGates)
 import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props block NPC sight (sets window.npcSightOcclusion)
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
@@ -2262,15 +2262,22 @@ export async function create() {
         // bounds hold the tap drops the in-reach things that are only near the tap (Kim's phone
         // beside her stick, C3 U3); one also under the tap (an owner seated over her PC) stays
         // and the far object joins it in the menu as walk-then-use (UX access finding 6).
-        // Seats and objects of another room never do this. An out-of-reach NPC under the tap
-        // drops them too (one walking away gives way), and is then walked to by the NPC branch.
+        // Seats and objects of another room never do this. An out-of-reach NPC of the player's
+        // room drops them too when the tap is on her figure, not just her frame (one walking away
+        // gives way), and is then walked to by the NPC branch. An in-reach NPC counts as under
+        // the tap only on her figure, and then wins (no far entries); an in-reach hostile wins
+        // outright (code review R1 M1).
         const feetAtTap = window.player ? playerFeet(window.player) : null;
-        const farUnderTap = objectsUnderTap.filter(o => !isObjectInInteractionRange(o)
-            && !window.seating?.isSeat(o) && sameRoomFrom(feetAtTap, o));
-        const npcUnderTap = findNPCAtPosition(worldX, worldY);
-        const farNpcUnderTap = npcUnderTap && !isObjectInInteractionRange(npcUnderTap)
-            && !npcGivesWay(window.player, npcUnderTap, tapObjectIds) ? [npcUnderTap] : [];
-        const gathered = tapPickList(gatherInteractablesNearClick(worldX, worldY, tapObjectIds), farUnderTap, farObjectCandidate, farNpcUnderTap);
+        const onPixels = (sprite) => opaqueAt(sprite, worldX, worldY, tapAlphaAt(this));
+        const sameRoomAsPlayer = (o) => sameRoomFrom(feetAtTap, o);
+        const { farObjects, farNpcs } = farUnderTap({ objectsUnderTap, npcUnderTap: findNPCAtPosition(worldX, worldY) }, {
+            inReach: (o) => isObjectInInteractionRange(o),
+            isSeat: (o) => !!window.seating?.isSeat(o),
+            sameRoom: sameRoomAsPlayer,
+            npcOnFigure: onPixels,
+            givesWay: (npc) => npcGivesWay(window.player, npc, tapObjectIds)
+        });
+        const gathered = tapPickList(gatherInteractablesNearClick(worldX, worldY, tapObjectIds, onPixels), farObjects, farObjectCandidate, farNpcs);
         let nearbyInteractables = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(gathered));
         if (nearbyInteractables.length && nearbyInteractables.every(c => c.leavingNpc) && objectUnderTap()) {
             nearbyInteractables = [];
@@ -2292,6 +2299,16 @@ export async function create() {
         // player gives way to an interactable object under the same tap (q55 d).
         let npcAtPosition = findNPCAtPosition(worldX, worldY);
         if (npcAtPosition && objectUnderTap() && npcGivesWay(window.player, npcAtPosition, tapObjectIds)) {
+            npcAtPosition = null;
+        }
+        // An object drawn over her where the tap is, or a tap on the empty part of her frame
+        // over an object, is for the object (code review R1 m3; tap-pick.js)
+        if (npcAtPosition && npcYieldsToObject(npcAtPosition, objectsUnderTap, {
+            onPixels,
+            hostile: (npc) => !!(npc.npcId && window.npcHostileSystem?.isNPCHostile?.(npc.npcId)),
+            isSeat: (o) => !!window.seating?.isSeat(o),
+            sameRoom: sameRoomAsPlayer
+        })) {
             npcAtPosition = null;
         }
         if (npcAtPosition) {
@@ -2652,14 +2669,16 @@ function findObjectsAtPosition(worldX, worldY) {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (obj && obj.active && obj.visible) {
-                    // Check if the click is within the object's bounds
-                    const objLeft = obj.x - obj.width * obj.originX;
-                    const objRight = obj.x + obj.width * (1 - obj.originX);
-                    const objTop = obj.y - obj.height * obj.originY;
-                    const objBottom = obj.y + obj.height * (1 - obj.originY);
-                    
-                    if (worldX >= objLeft && worldX <= objRight && 
-                        worldY >= objTop && worldY <= objBottom) {
+                    // Check if the click is within the object's bounds (getBounds, as the
+                    // tap's pick list measures them, so scale counts in both)
+                    let b = null;
+                    try { b = obj.getBounds(); } catch (e) { b = null; }
+                    if (!b) {
+                        b = { left: obj.x - obj.width * obj.originX, right: obj.x + obj.width * (1 - obj.originX),
+                              top: obj.y - obj.height * obj.originY, bottom: obj.y + obj.height * (1 - obj.originY) };
+                    }
+                    if (worldX >= b.left && worldX <= b.right &&
+                        worldY >= b.top && worldY <= b.bottom) {
                         objectsAtPosition.push(obj);
                     }
                 }
@@ -2692,9 +2711,11 @@ function talkIcon()      { return { src: `${interactionIconsBase()}/talk.png` };
  * @param {number} worldX - World X coordinate of the tap
  * @param {number} worldY - World Y coordinate of the tap
  * @param {string[]} [tapObjectIds] - ids of the objects under the tap (an NPC leaving one of them gives way)
+ * @param {?function(object): boolean} [onPixels] - the tap is on the sprite's opaque pixels (an NPC is
+ *   under the tap only on her figure, tap-pick.js opaqueAt); bounds when not given
  * @returns {Array<{label:string, detail:?string, onSelect:Function}>}
  */
-function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = []) {
+function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], onPixels = null) {
     const player = window.player;
     if (!player || !window.rooms) return [];
 
@@ -2772,7 +2793,9 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = []) {
                     detail: npc?.observations || null,
                     icon: hostile ? jabHandIcon() : talkIcon(),
                     leavingNpc: npcGivesWay(player, sprite, tapObjectIds),
-                    underTap: hitsBounds(sprite),
+                    isNpc: true,
+                    hostile: !!hostile,
+                    underTap: onPixels ? hitsBounds(sprite) && onPixels(sprite) : hitsBounds(sprite),
                     onSelect: () => {
                         facePlayerToward(sprite.x, sprite.y);
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
@@ -2853,9 +2876,21 @@ const pendingTapUse = createPendingTapUse({
     inReach: (obj) => isObjectInInteractionRange(obj),
     isMoving: () => playerIsMoving,
     use: (obj) => useObjectInReach(obj),
-    minigameOpen: () => !!window.MinigameFramework?.currentMinigame
+    feet: () => (window.player ? playerFeet(window.player) : null),
+    // Something else took over on the way: a minigame, the pick-one menu or a confirm dialog
+    busy: () => !!window.MinigameFramework?.currentMinigame || isInteractionMenuOpen()
+        || (typeof document !== 'undefined' && !!document.querySelector?.('.game-confirm-overlay'))
 });
-if (typeof window !== 'undefined') window.__pendingTapUse = () => pendingTapUse.get();
+if (typeof window !== 'undefined') {
+    window.__pendingTapUse = () => pendingTapUse.get();
+    window.__clearPendingTapUse = () => pendingTapUse.clear();   // the E key (player.js)
+}
+
+// The scene's pixel test for opaqueAt (tap-pick.js), or null without one
+function tapAlphaAt(scene) {
+    const tm = scene?.textures;
+    return tm?.getPixelAlpha ? (x, y, key, frame) => tm.getPixelAlpha(x, y, key, frame) : null;
+}
 
 // Walk until an out-of-reach object is in reach, then use it; a chair is sat on instead
 // (seating.js). The stand point is tap-pick.js objectStandPoint.
@@ -2869,17 +2904,27 @@ function walkToObjectThenUse(obj) {
         wallClear: (p, o) => wallClearFrom(p, o)
     });
     if (!target) return;
+    // A far object of another room (a wall row two rooms share, a doorway) is only walked
+    // to, as before: it is not used on arrival (code review R1 m1)
+    const ownRoom = sameRoomFrom(playerFeet(player), obj);
+    // A sign-in PC someone is using says so now instead of walking into them (R1 M2)
+    if (ownRoom && !window.seating?.isSeat(obj) && window.pcInUseBy?.(obj)) {
+        window.showPcInUse?.(obj);
+        return;
+    }
     movePlayerToPoint(target.x, target.y);
     if (window.seating?.isSeat(obj)) window.seating.queueSit(obj);
-    else pendingTapUse.arm(obj, Date.now());
+    else if (ownRoom) pendingTapUse.arm(obj, Date.now());
 }
 
 // A far object in the tap's pick list (beside something in reach under the same tap)
 function farObjectCandidate(obj) {
     const data = obj.scenarioData || {};
+    const obs = resolveObjectField(data, 'observations', obj.observations || null);
     return {
         label: data.name || obj.name || 'Item',
-        detail: resolveObjectField(data, 'observations', obj.observations || null),
+        // Says why choosing it walks (code review R1 n3)
+        detail: obs ? `Walk over and use it. ${obs}` : 'Walk over and use it.',
         icon: openHandIcon(),
         isObject: true,
         isChair: false,

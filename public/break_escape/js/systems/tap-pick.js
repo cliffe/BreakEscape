@@ -23,26 +23,119 @@
  */
 
 /**
- * An out-of-reach NPC under the tap (her sprite's bounds hold it) counts too, through
- * `farOthers`: the in-reach things only near the tap drop out, and with nothing in reach
- * under the tap the list is empty, so the NPC branch walks to her (Sarah behind the m01
- * reception desk, whose note lay within the slop of a tap on her head). She does not join
- * a menu: a far NPC is walked to, never picked from a list.
+ * Whether the tap lands on an opaque pixel of the sprite's current frame, not only inside its
+ * bounds. NPC frames are 80 px boxes with the figure in the middle, so "under the tap" for an
+ * NPC means on the figure (code review R1 M1). The world point is turned into frame pixels
+ * allowing for origin, scale and flipX (rotation is not used on these sprites). Without a
+ * texture test (alphaAt missing, or it answers null: a frame it cannot read) the bounds decide.
  *
- * @param {Array<{underTap?:boolean}>} candidates - the in-reach pick list near the tap
- * @param {Array<object>} farUnderTap - out-of-reach interactable objects whose bounds hold the tap
+ * @param {object} sprite - a Phaser sprite or image (x, y, originX/Y, scaleX/Y, flipX, frame, texture)
+ * @param {number} worldX
+ * @param {number} worldY
+ * @param {function(number, number, string, (string|number)): ?number} [alphaAt] - scene.textures.getPixelAlpha
+ * @returns {boolean}
+ */
+export function opaqueAt(sprite, worldX, worldY, alphaAt) {
+    if (!sprite) return false;
+    const frame = sprite.frame || {};
+    const w = frame.realWidth ?? sprite.width ?? 0;
+    const h = frame.realHeight ?? sprite.height ?? 0;
+    const sx = Math.abs(sprite.scaleX ?? 1) || 1;
+    const sy = Math.abs(sprite.scaleY ?? 1) || 1;
+    let lx = (worldX - sprite.x) / sx + (sprite.originX ?? 0.5) * w;
+    const ly = (worldY - sprite.y) / sy + (sprite.originY ?? 0.5) * h;
+    if (!(lx >= 0 && lx < w && ly >= 0 && ly < h)) return false;
+    if (typeof alphaAt !== 'function' || !sprite.texture?.key) return true;
+    if (sprite.flipX) lx = w - 1 - lx;
+    // A trimmed atlas frame draws its pixels offset by frame.x / frame.y inside realWidth
+    const fx = Math.floor(lx - (frame.x || 0));
+    const fy = Math.floor(ly - (frame.y || 0));
+    if (frame.cutWidth !== undefined && (fx < 0 || fy < 0 || fx >= frame.cutWidth || fy >= frame.cutHeight)) return false;
+    let a = null;
+    try { a = alphaAt(fx, fy, sprite.texture.key, frame.name); } catch (e) { a = null; }
+    if (a === null || a === undefined) return true;
+    return a > 0;
+}
+
+/**
+ * The out-of-reach things under the tap that take it from in-reach things only near it.
+ *
+ * @param {object} args
+ * @param {Array<object>} args.objectsUnderTap - interactable objects whose bounds hold the tap
+ * @param {?object} args.npcUnderTap - the NPC sprite under the tap (findNPCAtPosition), or null
+ * @param {object} deps
+ * @param {function(object): boolean} deps.inReach
+ * @param {function(object): boolean} [deps.isSeat]
+ * @param {function(object): boolean} [deps.sameRoom] - in the player's own room (sameRoomFrom the feet)
+ * @param {function(object): boolean} [deps.npcOnFigure] - the tap is on the NPC's opaque pixels (opaqueAt)
+ * @param {function(object): boolean} [deps.givesWay] - the NPC is walking away (npcGivesWay)
+ * @returns {{farObjects: Array<object>, farNpcs: Array<object>}}
+ */
+export function farUnderTap({ objectsUnderTap = [], npcUnderTap = null } = {}, deps) {
+    const sameRoom = deps.sameRoom || (() => true);
+    const isSeat = deps.isSeat || (() => false);
+    const onFigure = deps.npcOnFigure || (() => true);
+    const givesWay = deps.givesWay || (() => false);
+    const farObjects = (objectsUnderTap || []).filter(o => o && !deps.inReach(o) && !isSeat(o) && sameRoom(o));
+    const farNpcs = npcUnderTap && !deps.inReach(npcUnderTap) && sameRoom(npcUnderTap)
+        && onFigure(npcUnderTap) && !givesWay(npcUnderTap) ? [npcUnderTap] : [];
+    return { farObjects, farNpcs };
+}
+
+/**
+ * The pick list for a tap. When an out-of-reach object or NPC is under the tap (farUnderTap),
+ * in-reach candidates that are only near the tap drop out; those under it stay. Far objects
+ * join them as "walk there, then use" entries, unless an in-reach NPC is under the tap (on
+ * her figure, candidate.isNpc): she wins and is talked to, with no menu (Sarah over the far
+ * m01 Building Directory, code review R1 M1). An in-reach hostile NPC near the tap wins
+ * outright: the list is returned as gathered, so combat is as before (a jab, or the same
+ * menu as before when two things in reach share the tap). A far NPC joins no menu: it is
+ * walked to, never picked from a list. With nothing in reach under the tap the list is
+ * empty and the NPC or object branch walks to the thing under the pointer.
+ *
+ * @param {Array<{underTap?:boolean,isNpc?:boolean,hostile?:boolean}>} candidates - the in-reach pick list near the tap
+ * @param {Array<object>} farObjects - out-of-reach interactable objects whose bounds hold the tap
  * @param {function(object): object} toCandidate - a pick-list entry for a far object (walk, then use)
  * @param {Array<object>} [farOthers] - other out-of-reach things under the tap (an NPC)
  * @returns {Array} the pick list
  */
-export function tapPickList(candidates, farUnderTap, toCandidate, farOthers = []) {
+export function tapPickList(candidates, farObjects, toCandidate, farOthers = []) {
     const list = Array.isArray(candidates) ? candidates : [];
-    const farObjects = Array.isArray(farUnderTap) ? farUnderTap : [];
+    const far = Array.isArray(farObjects) ? farObjects : [];
     const others = Array.isArray(farOthers) ? farOthers.filter(Boolean) : [];
-    if (!farObjects.length && !others.length) return list;
+    if (!far.length && !others.length) return list;
+    if (list.some(c => c && c.hostile)) return list;
     const under = list.filter(c => c && c.underTap);
     if (!under.length) return [];
-    return [...under, ...farObjects.map(toCandidate)];
+    if (under.some(c => c.isNpc)) return under;
+    return [...under, ...far.map(toCandidate)];
+}
+
+/**
+ * Whether an NPC under the tap gives it to an interactable object under the same tap (code
+ * review R1 m3): the object is drawn above her and the tap is on its pixels, or the tap is on
+ * the empty part of her frame. A hostile NPC never gives way (she is struck). Seats are left
+ * out (a seated NPC's own chair), and so are objects of another room.
+ *
+ * @param {object} npc
+ * @param {Array<object>} objectsUnderTap
+ * @param {object} deps
+ * @param {function(object): boolean} deps.onPixels - the tap is on the sprite's opaque pixels (opaqueAt)
+ * @param {function(object): boolean} [deps.hostile]
+ * @param {function(object): boolean} [deps.isSeat]
+ * @param {function(object): boolean} [deps.sameRoom]
+ * @returns {boolean}
+ */
+export function npcYieldsToObject(npc, objectsUnderTap, deps) {
+    if (!npc || !Array.isArray(objectsUnderTap) || !objectsUnderTap.length) return false;
+    if (deps.hostile?.(npc)) return false;
+    const isSeat = deps.isSeat || (() => false);
+    const sameRoom = deps.sameRoom || (() => true);
+    const objects = objectsUnderTap.filter(o => o && !isSeat(o) && sameRoom(o));
+    if (!objects.length) return false;
+    if (!deps.onPixels(npc)) return true;
+    const npcDepth = npc.depth || 0;
+    return objects.some(o => (o.depth || 0) > npcDepth && deps.onPixels(o));
 }
 
 /**
@@ -101,24 +194,36 @@ export function objectStandPoint(obj, player, deps) {
 }
 
 export const PENDING_TAP_USE_MS = 10000;
-const STOPPED_SHORT_MS = 400;   // not moving this long after the tap, and out of reach: he stopped short
+const STOPPED_SHORT_MS = 400;   // not moving this long, and out of reach: he stopped short
+const BLOCKED_MS = 1000;        // on a path but the feet have not moved this long: blocked
+const PROGRESS_PX = 2;          // feet movement that counts as progress
 
 /**
  * An object tapped from out of reach: use it once the walk there ends in reach. Dropped
- * by any new tap (pointerdown clears it), when the walk stops short, after
- * PENDING_TAP_USE_MS, when the object goes (taken, hidden, destroyed, no longer
- * interactable), or when a minigame opens on the way.
+ * by any new tap (pointerdown clears it), the E key (player.js), when the walk stops short
+ * (not moving and out of reach STOPPED_SHORT_MS after the last progress), when the walk is
+ * blocked (on a path but no progress for BLOCKED_MS: walking into a seated owner), when
+ * PENDING_TAP_USE_MS pass with no progress, when the object goes (taken, hidden, destroyed,
+ * no longer interactable), or when something else takes over (deps.busy: a minigame, the
+ * pick-one menu, a confirm dialog). The time limits count from the last progress, so a long
+ * walk that keeps moving is never cut short (code review R1 m5).
  *
  * @param {object} deps
  * @param {function(object): boolean} deps.inReach - isObjectInInteractionRange
  * @param {function(): boolean} deps.isMoving - the player is on a click-to-move path
  * @param {function(object): void} deps.use - face the object and interact with it
- * @param {function(): boolean} [deps.minigameOpen]
+ * @param {function(): boolean} [deps.busy] - a minigame, menu or dialog is open
+ * @param {function(): boolean} [deps.minigameOpen] - older name for busy
+ * @param {function(): ?{x:number,y:number}} [deps.feet] - the player's feet, for progress
  */
 export function createPendingTapUse(deps) {
     let pending = null;
+    const busy = deps.busy || deps.minigameOpen || (() => false);
+    const feetNow = () => { try { return deps.feet?.() || null; } catch (e) { return null; } };
     return {
-        arm(obj, at = Date.now()) { pending = obj ? { obj, at } : null; },
+        arm(obj, at = Date.now()) {
+            pending = obj ? { obj, at, progressAt: at, feet: feetNow() } : null;
+        },
         clear() { pending = null; },
         get() { return pending; },
         /** Run from the scene's update(). */
@@ -126,12 +231,20 @@ export function createPendingTapUse(deps) {
             const p = pending;
             if (!p) return;
             const o = p.obj;
-            if (now - p.at > PENDING_TAP_USE_MS || !o || o.destroyed || o.active === false
+            const f = feetNow();
+            if (f && (!p.feet || Math.hypot(f.x - p.feet.x, f.y - p.feet.y) >= PROGRESS_PX)) {
+                p.feet = f; p.progressAt = now;
+            }
+            const still = now - p.progressAt;
+            if (still > PENDING_TAP_USE_MS || !o || o.destroyed || o.active === false
                 || o.visible === false || !o.interactable) { pending = null; return; }
-            if (deps.minigameOpen?.()) { pending = null; return; }
-            if (deps.isMoving()) return;
+            if (busy()) { pending = null; return; }
+            if (deps.isMoving()) {
+                if (deps.feet && still > BLOCKED_MS) pending = null;
+                return;
+            }
             if (deps.inReach(o)) { pending = null; deps.use(o); return; }
-            if (now - p.at > STOPPED_SHORT_MS) pending = null;
+            if (still > STOPPED_SHORT_MS) pending = null;
         }
     };
 }
