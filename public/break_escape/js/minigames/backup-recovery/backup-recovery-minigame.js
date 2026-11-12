@@ -402,7 +402,7 @@ export class BackupRecoveryMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="backup-recovery-shell backup-recovery-shell--outcome">
                 <div class="backup-recovery-header">${escapeText(headerText)}</div>
-                <div class="backup-recovery-outcome-panel backup-recovery-outcome-panel--${panelTone}">
+                <div class="backup-recovery-outcome-panel backup-recovery-outcome-panel--${escapeHtml(panelTone)}">
                     <div class="backup-recovery-outcome-status">${escapeText(statusText)}</div>
                     <ul class="backup-recovery-panel-bullets">
                         ${bullets.map((b) => `<li>${escapeText(b)}</li>`).join('')}

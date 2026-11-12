@@ -1,6 +1,10 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+// Device names, MACs and UUIDs are scenario text: escaped once on the way into HTML.
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
 export class BleScannerMinigame extends MinigameScene {
     constructor(container, params) {
         params = params || {};
@@ -360,10 +364,10 @@ export class BleScannerMinigame extends MinigameScene {
 
         el.innerHTML = `
             <div class="ble-device-name">
-                <span>${displayDashes(device.name)}</span>
+                <span>${escapeHtml(displayDashes(device.name))}</span>
                 <div class="ble-device-icons">${signalBars}${statusIcons}</div>
             </div>
-            <div class="ble-device-mac">MAC: ${device.mac}</div>
+            <div class="ble-device-mac">MAC: ${escapeHtml(device.mac)}</div>
             ${device.uuids.length > 0 ? `<div class="ble-uuid-chips">${this.renderUuidChips(device.uuids)}</div>` : ''}
             <div class="ble-device-timestamp">Last seen: ${tsStr}</div>
         `;
@@ -393,7 +397,7 @@ export class BleScannerMinigame extends MinigameScene {
     renderUuidChips(uuids) {
         return uuids.map(uuid => {
             const display = uuid.length > 8 ? uuid.substring(0, 8) + '…' : uuid;
-            return `<span class="ble-uuid-chip" title="${uuid}">${display}</span>`;
+            return `<span class="ble-uuid-chip" title="${escapeHtml(uuid)}">${escapeHtml(display)}</span>`;
         }).join('');
     }
 
@@ -430,7 +434,7 @@ export class BleScannerMinigame extends MinigameScene {
         const infoEl = this.gameContainer.querySelector('#ble-action-info');
         if (infoEl) {
             infoEl.innerHTML = `
-                <div class="ble-action-mac">MAC: ${device.mac}</div>
+                <div class="ble-action-mac">MAC: ${escapeHtml(device.mac)}</div>
                 ${device.uuids.length > 0 ? `<div class="ble-uuid-chips">${this.renderUuidChips(device.uuids)}</div>` : ''}
             `;
         }

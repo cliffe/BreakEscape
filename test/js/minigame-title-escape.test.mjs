@@ -40,6 +40,9 @@ const { TextFileMinigame } = await imp('minigames/text-file/text-file-minigame.j
 const { ContainerMinigame } = await imp('minigames/container/container-minigame.js');
 const { LockpickingMinigamePhaser } = await imp('minigames/lockpicking/lockpicking-game-phaser.js');
 const { default: PhoneChatUI } = await imp('minigames/phone-chat/phone-chat-ui.js');
+const { default: PhoneChatConversation } = await imp('minigames/phone-chat/phone-chat-conversation.js');
+const { NotesMinigame } = await imp('minigames/notes/notes-minigame.js');
+const { containerImageHtml } = await imp('minigames/container/container-item-image.js');
 
 const HOSTILE = 'Vault <b>bold</b> <img src=x onerror="window.__pwned=1"> **md** [link](javascript:x) \u0007\u001b[31m & "q" \'s\' -- end';
 
@@ -177,10 +180,10 @@ test('the text file window shows a hostile file name, type and observations as t
     assert.equal(document.querySelector('#mg img[onerror]'), null, 'text file: no img with onerror');
 });
 
-test('the container header shows a hostile name and observations as text', () => {
+test('the container header shows a hostile name and observations as text', async () => {
     const containerItem = { scenarioData: { name: HOSTILE, observations: HOSTILE }, name: 'box' };
     const mg = new ContainerMinigame(fresh(), { containerItem, contents: [], title: HOSTILE });
-    initQuietly(mg);
+    await initQuietlyAsync(mg);
     assertText(document.querySelector('.minigame-header h3'), 'container header');
     assertText(document.querySelector('.minigame-header p'), 'container observations');
 });
@@ -242,3 +245,111 @@ test('the phone contact list shows a hostile NPC name as text', () => {
     assert.equal(preview.children.length, 0, 'phone contact preview: no element injected');
     assert.equal(preview.textContent, PREVIEW, 'phone contact preview: reads back as typed');
 });
+
+// Review round 3 and the full sink sweep: the text these sinks show is plain text too
+
+test('the notes page shows a hostile observation as text: on open, after Save, after Cancel and on a page change', () => {
+    const mg = new NotesMinigame(fresh(), { title: 'Notes', noteContent: 'x', observationText: HOSTILE, autoAddToNotes: false });
+    initQuietly(mg);
+    let div = document.querySelector('.notes-minigame-observation');
+    assertText(div, 'notes observation on open');
+
+    // Save writes back what the player typed (or a line another minigame added)
+    mg.editObservations(div);
+    document.querySelector('.notes-minigame-edit-textarea').value = HOSTILE;
+    document.querySelector('.notes-minigame-save-btn').click();
+    div = document.querySelector('.notes-minigame-observation');
+    assertText(div, 'notes observation after Save');
+
+    // Cancel restores the text that was there
+    mg.editObservations(div);
+    document.querySelector('.notes-minigame-cancel-btn').click();
+    assertText(document.querySelector('.notes-minigame-observation'), 'notes observation after Cancel');
+
+    // Moving between notes redraws the page from this.observationText
+    mg.observationText = HOSTILE;
+    try { mg.updateDisplayedNote(); } catch { /* past the observation */ }
+    assertText(document.querySelector('.notes-minigame-observation'), 'notes observation after a page change');
+});
+
+test('the notes page keeps its placeholder when an observation is cleared', () => {
+    const mg = new NotesMinigame(fresh(), { title: 'Notes', noteContent: 'x', observationText: 'old', autoAddToNotes: false });
+    initQuietly(mg);
+    mg.editObservations(document.querySelector('.notes-minigame-observation'));
+    document.querySelector('.notes-minigame-edit-textarea').value = '';
+    document.querySelector('.notes-minigame-save-btn').click();
+    const em = document.querySelector('.notes-minigame-observation em');
+    assert.ok(em, 'the placeholder is an em element');
+    assert.equal(em.textContent, 'Click edit to add your observations...');
+});
+
+test('a live contact preview shows hostile ink text as text', async () => {
+    const root = fresh();
+    root.innerHTML = '<div class="contact-item"><div class="contact-last-message">old</div></div>';
+    const item = root.querySelector('.contact-item');
+    const ui = Object.create(PhoneChatUI.prototype);
+    Object.assign(ui, { container: root, params: {}, npcManager: { getConversationHistory: () => [] } });
+    const real = PhoneChatConversation.previewReopen;
+    PhoneChatConversation.previewReopen = async () => PREVIEW;
+    try {
+        const shown = await ui.refreshLivePreview({ id: 'n1', displayName: 'Sam' }, item);
+        assert.equal(shown, PREVIEW, 'the dry run preview was used');
+    } finally {
+        PhoneChatConversation.previewReopen = real;
+    }
+    const preview = item.querySelector('.contact-last-message');
+    assert.equal(preview.children.length, 0, 'live preview: no element injected');
+    assert.equal(preview.textContent, PREVIEW, 'live preview: reads back as typed');
+});
+
+test('a voice message transcript shows hostile ink text as text', async () => {
+    const root = fresh();
+    root.innerHTML = '<div class="msgs"></div>';
+    const ui = Object.create(PhoneChatUI.prototype);
+    Object.assign(ui, {
+        container: root, params: {}, npcManager: { getNPC: () => null },
+        elements: { messagesContainer: root.querySelector('.msgs') },
+        scrollToBottom: () => {}, formatTimestamp: () => ''
+    });
+    try { await ui.addMessage('npc', `voice: ${HOSTILE}`); } catch { /* past the transcript */ }
+    const t = document.querySelector('.transcript');
+    assert.ok(t, 'the transcript renders');
+    assert.equal(t.querySelector('strong').textContent, 'Transcript:', 'the label is kept');
+    const copy = t.cloneNode(true);
+    copy.querySelectorAll('strong, br').forEach(n => n.remove());
+    assertText(copy, 'voice transcript');
+});
+
+test('the password hint and post-it show hostile scenario text as text', () => {
+    const mg = new PasswordMinigame(fresh(), {
+        title: 'Enter password', lockable: null, requiresKeyboardInput: true,
+        showHint: true, passwordHint: HOSTILE, showPostit: true, postitNote: HOSTILE
+    });
+    initQuietly(mg);
+    const hint = document.querySelector('#password-hint').cloneNode(true);
+    hint.querySelector('strong').remove();
+    assertText(hint, 'password hint');
+    assertText(document.querySelector('.postit-note'), 'password post-it');
+});
+
+test('the container header image escapes its src and alt', () => {
+    const root = fresh();
+    root.innerHTML = containerImageHtml(HOSTILE, HOSTILE);
+    const img = root.querySelector('img.container-image');
+    assertAttr(img, 'src', 'container image src');
+    assertAttr(img, 'alt', 'container image alt');
+    assert.equal(root.children.length, 1, 'container image: one element only');
+});
+
+test('the person chat error line shows a hostile message as text', () => {
+    const root = fresh();
+    root.innerHTML = '<div class="dt"></div>';
+    const fake = { ui: { elements: { dialogueText: root.querySelector('.dt') } } };
+    PersonChatMinigame.prototype.showError.call(fake, `NPC not found: ${HOSTILE}`);
+    const dt = root.querySelector('.dt');
+    assert.equal(dt.querySelector('span').textContent, '⚠️ Error', 'the label is kept');
+    const copy = dt.cloneNode(true);
+    copy.querySelectorAll('span, br').forEach(n => n.remove());
+    assertText(copy, 'person chat error', { dashes: false });
+});
+

@@ -867,14 +867,14 @@ export class FlagStationMinigame extends MinigameScene {
                     return `
                         <div class="reward-item">
                             <span class="reward-icon">📦</span>
-                            <span>Received: ${reward.item?.name || 'Item'}</span>
+                            <span>Received: ${this.escapeHtml(displayDashes(reward.item?.name || 'Item'))}</span>
                         </div>
                     `;
                 case 'unlock_door':
                     return `
                         <div class="reward-item">
                             <span class="reward-icon">🔓</span>
-                            <span>Door unlocked: ${reward.room_id}</span>
+                            <span>Door unlocked: ${this.escapeHtml(reward.room_id)}</span>
                         </div>
                     `;
                 case 'emit_event':
@@ -917,10 +917,11 @@ export class FlagStationMinigame extends MinigameScene {
         return meta ? meta.getAttribute('content') : '';
     }
     
+    // Server and scenario text (flags, VM labels, reward names) is plain text:
+    // escaped once, quotes included, so it is safe in text and in attributes.
     escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+        return String(str ?? '').replace(/[&<>"']/g, ch => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     }
     
     start() {

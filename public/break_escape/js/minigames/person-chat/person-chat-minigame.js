@@ -2064,10 +2064,11 @@ export class PersonChatMinigame extends MinigameScene {
         console.error(`❌ ${message}`);
         
         if (this.ui.elements.dialogueText) {
-            this.ui.elements.dialogueText.innerHTML = `
-                <span style="color: #ff6b6b;">⚠️ Error</span><br/>
-                ${message}
-            `;
+            // The message can name an NPC id or carry error text: plain text after the label
+            const label = document.createElement('span');
+            label.style.color = '#ff6b6b';
+            label.textContent = '⚠️ Error';
+            this.ui.elements.dialogueText.replaceChildren(label, document.createElement('br'), String(message ?? ''));
         }
     }
 }

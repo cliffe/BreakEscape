@@ -47,8 +47,10 @@ export function containerImageUrl(containerItem, imageKey) {
 /** The header's <img>, or nothing when there is no picture to show. */
 export function containerImageHtml(url, alt) {
     if (!url) return '';
-    const safeAlt = String(alt ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-    return `<img src="${url}" alt="${safeAlt}" class="container-image">`;
+    // The URL comes from a texture key, the scenario type or a tray src: both values are
+    // escaped for an attribute, with the same five characters as the other minigame helpers
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    return `<img src="${esc(url)}" alt="${esc(alt)}" class="container-image">`;
 }
 
 /**

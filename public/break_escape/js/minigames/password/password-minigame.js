@@ -320,7 +320,7 @@ export class PasswordMinigame extends MinigameScene {
                         ${this.gameData.showHint ? `
                             <div class="password-hint-container">
                                 <div class="password-hint" id="password-hint" style="display: none;">
-                                    <strong>Hint:</strong> ${this.gameData.passwordHint}
+                                    <strong>Hint:</strong> ${escapeHtml(displayDashes(this.gameData.passwordHint))}
                                 </div>
                             </div>
                         ` : ''}
@@ -329,7 +329,7 @@ export class PasswordMinigame extends MinigameScene {
                 
                 ${this.gameData.showPostit && this.gameData.postitNote ? `
                     <div class="postit-note">
-                        ${this.gameData.postitNote}
+                        ${escapeHtml(displayDashes(this.gameData.postitNote))}
                     </div>
                 ` : ''}
                 
@@ -399,7 +399,7 @@ export class PasswordMinigame extends MinigameScene {
                 
                 ${this.join ? '' : `
                 <div class="attempts-counter">
-                    Attempts: <span id="attempts-display">${this.gameData.attempts}</span>/${this.gameData.maxAttempts}
+                    Attempts: <span id="attempts-display">${escapeHtml(this.gameData.attempts)}</span>/${escapeHtml(this.gameData.maxAttempts)}
                 </div>
                 `}
             </div>
