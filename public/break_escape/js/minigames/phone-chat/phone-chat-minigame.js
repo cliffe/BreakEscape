@@ -1608,6 +1608,8 @@ export class PhoneChatMinigame extends MinigameScene {
      */
     _emitConversationClosed(npcId) {
         if (!npcId || !this.conversation || !window.eventDispatcher) return;
+        // Row 10: a phone closed for a call reopens on this thread; the event fires when the player really closes it
+        if (this.params?._closingForCall) return;
         window.eventDispatcher.emit(`conversation_closed:${npcId}`, {
             npcId,
             timestamp: Date.now()
@@ -1847,14 +1849,12 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // A conversation still open at teardown counts as closed (closeConversation()
         // clears currentNPCId/conversation, so this can't double-emit)
-        window.phoneRinger?.unregisterPhone?.(this);
         this._flushPendingMessages();
         this._resetRingerCallOnTeardown();   // row 32
-        // Row 10: closed for a call it will reopen on this thread after: the event fires when the
-        // player really closes it (the reopened phone emits it then)
-        if (!this.params?._closingForCall) this._emitConversationClosed(this.currentNPCId);
+        this._emitConversationClosed(this.currentNPCId);
         this._callVoice?.destroy();
         this._callVoice = null;
+        window.phoneRinger?.unregisterPhone?.(this);
         this._endSocialRun();      // end any live influence run (00 §8)
 
         if (this.ui) {

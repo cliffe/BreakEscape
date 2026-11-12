@@ -202,11 +202,11 @@ const uiSrc = readFileSync(join(chat, 'phone-chat-ui.js'), 'utf8');
 test('phone-chat registers a text phone in init and unregisters in cleanup', () => {
     assert.match(minigameSrc, /this\._registerWithRinger\(\);/);
     assert.match(minigameSrc, /if \(p\.ringerCall \|\| p\.voiced === true \|\| p\.disableClose === true \|\| p\.pretextCallId \|\| p\.cutscene === true\) return;\s*window\.phoneRinger\?\.registerPhone\?\.\(this\);/);
-    assert.match(minigameSrc, /cleanup\(\) \{[\s\S]*?window\.phoneRinger\?\.unregisterPhone\?\.\(this\);/);
+    assert.match(minigameSrc, /cleanup\(\) \{[\s\S]*?this\._callVoice = null;\s*window\.phoneRinger\?\.unregisterPhone\?\.\(this\);/);
 });
 
 test('cleanup skips conversation_closed for a phone closed for a call (row 10)', () => {
-    assert.match(minigameSrc, /if \(!this\.params\?\._closingForCall\) this\._emitConversationClosed\(this\.currentNPCId\);/);
+    assert.match(minigameSrc, /_emitConversationClosed\(npcId\) \{[\s\S]*?if \(this\.params\?\._closingForCall\) return;[\s\S]*?emit\(`conversation_closed:/);
 });
 
 test('the call panel blocks number keys and has a UI show/hide pair', () => {
