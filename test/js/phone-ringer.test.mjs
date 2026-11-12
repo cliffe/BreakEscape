@@ -87,7 +87,12 @@ function setup(over = {}, patch = null) {
         emit(name, data) { log.push(['emit', name, data]); },
         setGlobal(m) { log.push(['setGlobal', m]); },
         persistTrigger(o) { log.push(['persistTrigger', o.npcId, o.knot]); },
-        savePendingCall(id, rec) { log.push(['save', id, rec]); },
+        // The slot is { forced: [...], live } (R5 M2). ['save'] logs the primary record (the first
+        // forced one, else the live one), as the old single-record tests expect; ['saveSlot'] logs the slot.
+        savePendingCall(id, slot) {
+            log.push(['save', id, slot ? (slot.forced[0] || slot.live) : null]);
+            log.push(['saveSlot', id, slot]);
+        },
         onOutcome(kind, o, extra) { log.push(['outcome', kind, o.npcId, extra]); },
     };
     const ctx = { w, log, clock, ringer: null };
@@ -1668,4 +1673,81 @@ test('R4 m1: a forced call queued behind a connected non-forced call keeps the s
     s.ringer.answer('ceo'); connect(s);
     assert.equal(s.ringer.offer(offer({ disableClose: true })), 'queued');
     assert.equal(saves(s).pop().knot, 'call_a');
+});
+
+// ---- R5 -------------------------------------------------------------------------
+
+const slots = (s, id = 'ceo') => s.log.filter((e) => e[0] === 'saveSlot' && e[1] === id).map((e) => e[2]);
+const opened = (s) => s.log.filter((e) => e[0] === 'openCall').map((e) => e[2]);
+/** Let each call ring, auto-answer, open and end by the player, until nothing more opens. */
+const playOut = (s) => {
+    for (let i = 0; i < 8; i++) {
+        s.clock.advance(AUTO_ANSWER_MS + 1000);
+        if (s.ringer.stateOf('ceo') === 'connected' && s.w.callOpen) {
+            s.w.callOpen = false; s.w.ringerCallId = null;
+            endCall(s, { endedByCall: true });
+        }
+    }
+};
+
+test('R5 M1: a forced knot offered again behind an earlier forced offer is dropped, forced or not', () => {
+    const s = setup();
+    assert.equal(s.ringer.offer(offer({ disableClose: true })), 'ringing');
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b', disableClose: true })), 'queued');
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b', disableClose: true })), 'dropped');
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'dropped');
+    assert.equal(s.ringer.queueLength(), 1);
+    playOut(s);
+    assert.deepEqual(opened(s), ['call_a', 'call_b']);
+});
+
+test('R5 M2: the slot holds every forced offer in play order plus the live non-forced one; a reload with two forced calls queued brings both back in order', () => {
+    const s = setup();
+    s.ringer.offer(offer({ disableClose: true, answerSeconds: 5 }));
+    s.ringer.offer(offer({ knot: 'call_b', disableClose: true, setGlobalOnStart: { b_started: true } }));
+    s.ringer.offer({ npcId: 'ceo', knot: 'chat' });                      // a non-forced one queues too
+    const slot = slots(s).pop();
+    assert.deepEqual(slot.forced.map((r) => r.knot), ['call_a', 'call_b']);
+    assert.equal(slot.live.knot, 'chat');
+    assert.equal(slot.forced[0].state, 'ringing');
+    assert.equal(slot.forced[1].state, 'queued');
+    const json = JSON.parse(JSON.stringify(slot));                       // plain JSON survives
+
+    const r = setup();
+    assert.equal(r.ringer.restore('ceo', json), 'queued');
+    assert.equal(r.ringer.queueLength(), 2, 'both forced calls are back; the live record is A4\'s');
+    assert.deepEqual(slots(r).pop().forced.map((x) => x.knot), ['call_a', 'call_b']);
+    playOut(r);
+    assert.deepEqual(opened(r), ['call_a', 'call_b']);
+    assert.equal(opened(r).length, 2);
+    assert.equal(r.count('setGlobal'), 1, 'b never rang before, so its setGlobalOnStart applies once');
+    assert.deepEqual(r.last('setGlobal')[1], { b_started: true });
+});
+
+test('R5 M2: restore() still takes the old single-record shape; an empty slot is refused', () => {
+    const s = setup({ ringBlocked: true });
+    assert.equal(s.ringer.restore('ceo', { knot: 'call_a', disableClose: true, state: 'connected' }), 'queued');
+    assert.deepEqual(slots(s).pop().forced.map((x) => x.knot), ['call_a']);
+    assert.equal(s.ringer.restore('ceo', { forced: [], live: { knot: 'x' } }), 'refused');
+    assert.equal(s.ringer.restore('ceo', { forced: [{ knot: 'call_c', disableClose: true }] }), 'dropped', 'a second restore is dropped');
+});
+
+test('R5 m1: restore() is accepted when a fresh forced offer on another knot is already queued, and goes ahead of it', () => {
+    const s = setup({ ringBlocked: true });
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b', disableClose: true })), 'queued');
+    assert.equal(s.ringer.restore('ceo', { forced: [{ knot: 'call_a', disableClose: true, state: 'connected', answerSeconds: 3 }] }), 'queued');
+    assert.equal(s.ringer.queueLength(), 2);
+    s.w.ringBlocked = false;
+    playOut(s);
+    assert.deepEqual(opened(s), ['call_a', 'call_b']);
+});
+
+test('R5 m2: a non-forced offer for the connected knot is dropped; another knot queues behind it', () => {
+    const s = setup();
+    s.ringer.offer(offer());
+    s.ringer.answer('ceo'); connect(s);
+    assert.equal(s.ringer.offer(offer()), 'dropped');
+    assert.equal(s.ringer.queueLength(), 0);
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.queueLength(), 1);
 });

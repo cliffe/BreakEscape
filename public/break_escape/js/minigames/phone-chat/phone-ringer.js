@@ -43,9 +43,10 @@
  *     displayName(npcId) the contact's display name, for the toast
  *     emit(name, data)   an engine event, name complete ("phone_call_missed:ceo")
  *     setGlobal(map)     apply a `setGlobalOnStart`
- *     savePendingCall(npcId, record|null)   the contact's saved pendingCall (A4 persists it): one
- *                        slot per contact, always the record of the contact's most live offer
- *                        (a connected call outranks a queued one), or null when it has none
+ *     savePendingCall(npcId, slot|null)   the contact's saved pendingCall (A4 persists it): one
+ *                        slot per contact, { forced: [record, ...], live: record }: every forced
+ *                        offer in play order plus the most live non-forced one (see syncSave),
+ *                        or null when the contact has no offer
  *     onOutcome(kind, offer, extra)   a call's outcome, for the thread rows (A4) and callbacks
  *                                     (A6). kind: declined, missed, rang_off, ended, dropped.
  *
@@ -176,6 +177,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             callLabel: o.callLabel,
             opening: o.opening,
             answerSeconds: o.answerSeconds,
+            // A call that never rang has not applied this yet; a restored one must (R5 M2).
+            setGlobalOnStart: o.started ? undefined : o.setGlobalOnStart || undefined,
         };
     }
     /** Higher is more live. A connected call (or a forced one waiting to re-ring) outranks the rest. */
@@ -185,16 +188,28 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         : (o.state === 'ringing' || o.state === 'held') ? 2 : 1);
 
     /**
-     * One saved slot per contact (2.7), though a contact can have two live offers (a connected
-     * call and a queued one, rows 5 and 11). Write the record of the most live one, or null.
+     * One saved slot per contact (2.7). R5 M2: the slot is
+     *   { forced: [record, ...], live: record }
+     * `forced` holds every forced (`keep`) offer of the contact in play order (the active one,
+     * then the queue), so nothing is lost across a reload with two forced calls queued. `live` is
+     * the contact's single most live non-forced offer (connected, then ringing or held, then
+     * queued) and is left out when there is none. The whole slot is null when the contact has
+     * no offer. Plain JSON. restore() re-queues the forced entries; A4 turns `live` into a
+     * missed call.
      */
     function syncSave(npcId) {
-        const live = [];
-        if (active && active.npcId === npcId) live.push(active);
-        for (const q of queue) if (q.npcId === npcId) live.push(q);
+        const mine = [];
+        if (active && active.npcId === npcId) mine.push(active);
+        for (const q of queue) if (q.npcId === npcId) mine.push(q);
+        const forced = mine.filter((o) => o.keep);
         let best = null;
-        for (const o of live) if (!best || rank(o) > rank(best)) best = o;
-        call('savePendingCall', npcId, best ? record(best) : null);
+        for (const o of mine) if (!o.keep && (!best || rank(o) > rank(best))) best = o;
+        let slot = null;
+        if (forced.length || best) {
+            slot = { forced: forced.map(record) };
+            if (best) slot.live = record(best);
+        }
+        call('savePendingCall', npcId, slot);
     }
     const save = (o) => syncSave(o.npcId);
 
@@ -648,6 +663,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             notBefore: 0,
             goneSince: 0,
             saveAs: null,
+            restored: false,
             keep: forced,       // R4 M1: a forced offer is protected from the moment it is offered, until it ends
         };
     }
@@ -668,9 +684,12 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         // (row 3). Row 4 replaces only the contact's ringing, held or queued non-forced offer.
         // The protection is the `keep` flag, set in makeOffer for a forced offer and in restore(),
         // whatever state the call is in (queued, ringing, held, connected, requeued by rows 23/24).
-        const waiting = (active && active.npcId === raw.npcId && active.keep ? active : null)
-            || queue.find((x) => x.npcId === raw.npcId && x.keep);
-        if (waiting && waiting.knot === raw.knot) return 'dropped';
+        // R5 M1: a knot already forced for this contact (any of its live offers, first or not) is
+        // dropped. R5 m2: so is a non-forced offer for the knot that is connected right now.
+        const mine = [active, ...queue].filter((x) => x && x.npcId === raw.npcId);
+        if (mine.some((x) => x.keep && x.knot === raw.knot)) return 'dropped';
+        if (!raw.disableClose && active && active.npcId === raw.npcId && active.state === 'connected'
+            && active.knot === raw.knot) return 'dropped';
         const existing = queue.find((x) => x.npcId === raw.npcId && !x.keep)
             || (active && active.npcId === raw.npcId && !active.keep && active.state !== 'connected' ? active : null);
         if (existing) {
@@ -745,26 +764,43 @@ export function createPhoneRinger({ adapter, clock } = {}) {
      * phone_call_answered a second time once answerSeconds is set, and never persists a trigger.
      */
     function restore(npcId, rec) {
-        if (closed || typeof npcId !== 'string' || !npcId || !rec || typeof rec.knot !== 'string' || !rec.knot) return 'refused';
-        // A contact's connected call, or a forced one already waiting, is the one a reload brings
-        // back: a second restore is dropped (R2 m1).
-        if (queue.some((x) => x.npcId === npcId && (x.knot === rec.knot || x.keep))
-            || (active && active.npcId === npcId && (active.knot === rec.knot || active.state === 'connected'))) return 'dropped';
+        if (closed || typeof npcId !== 'string' || !npcId || !rec || typeof rec !== 'object') return 'refused';
+        // R5 M2: the saved slot is { forced: [...], live }. The old single-record shape (a record
+        // with a knot) is one forced entry.
+        const entries = (Array.isArray(rec.forced) ? rec.forced : [rec])
+            .filter((e) => e && typeof e.knot === 'string' && e.knot);
+        if (!entries.length) return 'refused';
+        // A contact's connected call, or an earlier restore, is the one a reload brings back: a
+        // second restore is dropped (R2 m1). A fresh forced offer on another knot does not block it
+        // (R5 m1); it just waits behind the restored calls.
+        const mine = () => [active, ...queue].filter((x) => x && x.npcId === npcId);
+        if (mine().some((x) => x.restored || (x.state === 'connected' && x.npcId === npcId))) return 'dropped';
         advance();
-        const o = makeOffer({ ...rec, npcId, ringMs: 0 });
-        o.started = true;
-        o.answeredEmitted = o.answerSeconds != null;
-        o.rering = true;
-        o.saveAs = 'connected';
-        o.keep = true;
-        o.notBefore = now() + RERING_AFTER_LOAD_MS;
-        // It is a connected call (row 5): it goes ahead of any other offer queued for the contact,
-        // which then waits behind it. The saved slot is its record (rank 3).
-        const other = queue.findIndex((x) => x.npcId === npcId);
-        if (other >= 0) queue.splice(other, 0, o); else queue.push(o);
-        save(o);
+        // Restored calls go ahead of any other offer queued for the contact, in saved order.
+        let at = queue.findIndex((x) => x.npcId === npcId);
+        let first = null;
+        for (const e of entries) {
+            if (mine().some((x) => x.knot === e.knot)) continue;
+            const o = makeOffer({ ...e, disableClose: true, npcId, ringMs: 0 });
+            o.keep = true;
+            o.restored = true;
+            o.notBefore = now() + RERING_AFTER_LOAD_MS;
+            if (e.state !== 'queued') {
+                // It was on the line (or ringing or held): it rings again with resume, no second
+                // answered event, no setGlobalOnStart. A call that never rang is a fresh offer.
+                o.started = true;
+                o.answeredEmitted = o.answerSeconds != null;
+                o.rering = true;
+                o.saveAs = 'connected';
+                o.setGlobalOnStart = null;
+            }
+            if (at >= 0) queue.splice(at++, 0, o); else queue.push(o);
+            first = first || o;
+        }
+        if (!first) return 'dropped';
+        save(first);
         run();
-        return o.state;
+        return first.state;
     }
 
     // ---- hooks ---------------------------------------------------------------------
