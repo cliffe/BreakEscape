@@ -67,15 +67,24 @@ function plainJson(v, depth) {
     return out;
 }
 
-/** A fact entry as authored (plain JSON data, copied), or null when it is not an object. */
+/**
+ * A fact entry as authored (plain JSON data, copied), or null when it is not an object or its
+ * text is not a string (review C R2 nit: grantFact would hand that value to addNote).
+ */
 export function cleanFact(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    if ('text' in raw && typeof raw.text !== 'string') return null;
     return plainJson(raw, 6);
 }
 
-/** Review C R1 server m2: a too-soon answer is asked again once, after its retryAfter (capped). */
-const RETRY_CAP_S = 300;
-/** A request that failed without an HTTP status (the network) is asked again once, after this. */
+/**
+ * Review C R1 server m2 and R2 m1: a too-soon answer is asked again after the server's own
+ * retryAfter, with no cap on the wait, so a use at a mission's pace (a floor of minutes) still
+ * yields its post. A use asks at most this many times in all, so a server that always says
+ * tooSoon (or a network that stays down) cannot keep it asking.
+ */
+export const MAX_TRIES = 4;
+/** A request that failed without an HTTP status (the network) is asked again after this. */
 const NETWORK_RETRY_S = 5;
 
 export class SocialFeed {
@@ -96,16 +105,18 @@ export class SocialFeed {
     /**
      * A met social media use by `npcId`: ask for its next post, once at a time, never after done.
      * A too-soon answer (the server's pace floor: a use that came early, after a reload or from
-     * a tempt band) or a network failure is asked again once, after the wait, so the use still
-     * yields its post. A use while that retry waits asks nothing more.
+     * a tempt band) or a network failure is asked again after the wait (retryAfter + 1 s), up to
+     * MAX_TRIES requests for the use, so the use still yields its post. A use while a retry
+     * waits asks nothing more.
      */
     onUse(npcId) {
         if (!isStr(npcId) || this.done.has(npcId) || this.inFlight.has(npcId) || this.retrying.has(npcId)) return null;
         if (!this.deps.hasFeed?.(npcId)) return null;
-        return this._ask(npcId, true);
+        return this._ask(npcId, MAX_TRIES - 1);
     }
 
-    _ask(npcId, mayRetry) {
+    /** One request; `retriesLeft` more may follow for the same use. */
+    _ask(npcId, retriesLeft) {
         this.inFlight.add(npcId);
         this.requests++;
         let retryIn = null;
@@ -114,7 +125,7 @@ export class SocialFeed {
             .then((body) => {
                 this.apply(npcId, body);
                 const wait = Number(body?.retryAfter);
-                if (body?.tooSoon === true && Number.isFinite(wait)) retryIn = Math.min(Math.max(wait, 0), RETRY_CAP_S) + 1;
+                if (body?.tooSoon === true && Number.isFinite(wait)) retryIn = Math.max(wait, 0) + 1;
             }, (err) => {
                 // 403: the server does not know the NPC (yet); a later use asks again
                 if (err?.status === 403) return;
@@ -123,12 +134,12 @@ export class SocialFeed {
             })
             .finally(() => {
                 this.inFlight.delete(npcId);
-                if (mayRetry && retryIn !== null && !this.done.has(npcId)) {
+                if (retriesLeft > 0 && retryIn !== null && !this.done.has(npcId)) {
                     this.retrying.add(npcId);
                     const later = this.deps.later || ((fn, ms) => setTimeout(fn, ms));
                     later(() => {
                         this.retrying.delete(npcId);
-                        if (!this.done.has(npcId)) this._ask(npcId, false);
+                        if (!this.done.has(npcId)) this._ask(npcId, retriesLeft - 1);
                     }, retryIn * 1000);
                 }
             });

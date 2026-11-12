@@ -3,7 +3,7 @@
 // toast rule, restore on load, and the install's listeners against a stub window.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SocialFeed, cleanPost, cleanFact, installSocialFeed, liveDeps, escapeNoteText } from '../../public/break_escape/js/systems/social-feed.js';
+import { SocialFeed, cleanPost, cleanFact, installSocialFeed, liveDeps, escapeNoteText, MAX_TRIES } from '../../public/break_escape/js/systems/social-feed.js';
 import { renderNoteMarkdown, noteMatches } from '../../public/break_escape/js/utils/note-markdown.js';
 import { displayDashes } from '../../public/break_escape/js/utils/display-dashes.js';
 
@@ -121,6 +121,10 @@ test('cleanPost keeps strings only and needs an id; cleanFact keeps the entry as
     assert.notEqual(clean.provides, provides, 'a copy');
     assert.equal(Object.getPrototypeOf(cleanFact(JSON.parse('{"__proto__": {"polluted": 1}, "text": "t"}'))), Object.prototype);
     assert.equal(cleanFact(['x']), null);
+    // Review C R2 nit: a fact text that is not a string is refused (grantFact would hand it to addNote)
+    assert.equal(cleanFact({ label: 'Pet', text: { html: '<b>x</b>' } }), null);
+    assert.equal(cleanFact({ label: 'Pet', text: 5 }), null);
+    assert.deepEqual(cleanFact({ label: 'Pet' }), { label: 'Pet' });
 });
 
 test('review C R1 M1: a merged feed fact with provides is read by the mail composer, the intel board and the pretext card', async () => {
@@ -140,7 +144,7 @@ test('review C R1 M1: a merged feed fact with provides is read by the mail compo
     assert.deepEqual(blankSlot('jake_pet', { knows: { jake_pet: { value: 'biscuit' } } }, facts), { type: 'pet', about: 'jake_pet' });
 });
 
-test('review C R1 server m2: a too-soon answer is asked again once after retryAfter, so the use yields its post', async () => {
+test('review C R1 server m2: a too-soon answer is asked again after retryAfter, so the use yields its post', async () => {
     const timers = [];
     const { feed, log } = harness({ answers: [{ npcId: 'jake', post: null, done: false, tooSoon: true, retryAfter: 12 }, answer(0, 'p1')] });
     feed.deps.later = (fn, ms) => timers.push([fn, ms]);
@@ -151,7 +155,41 @@ test('review C R1 server m2: a too-soon answer is asked again once after retryAf
     await new Promise((r) => setImmediate(r));
     assert.deepEqual(feed.revealed(), { jake: ['p1'] });
     assert.equal(log.filter((e) => e[0] === 'send').length, 2);
-    assert.equal(timers.length, 1, 'the retry itself is not retried');
+    assert.equal(timers.length, 1, 'a post ends the retries');
+});
+
+// Review C R2 m1, at a mission pace: urgentAt 40, restores 60, decayPerMin 2 gives a 20 min
+// period and a floor of about 27 min, so a tempted use at 20 min is told retryAfter 420. The
+// retry waits the whole 420 s (no 300 s cap), and the post is revealed by that use.
+test('review C R2 m1: a mission-pace retryAfter of 420 s is waited in full and the post is revealed', async () => {
+    const timers = [];
+    const { feed, log } = harness({ answers: [{ npcId: 'jake', post: null, done: false, tooSoon: true, retryAfter: 420 }, answer(0, 'p1')] });
+    feed.deps.later = (fn, ms) => timers.push([fn, ms]);
+    await feed.onUse('jake');
+    assert.deepEqual(timers.map((t) => t[1]), [421000], 'the retry waits past the floor');
+    await timers[0][0]();
+    await new Promise((r) => setImmediate(r));
+    assert.deepEqual(feed.revealed(), { jake: ['p1'] });
+    assert.equal(log.filter((e) => e[0] === 'send').length, 2);
+});
+
+test('review C R2 m1: a server that always says tooSoon is asked MAX_TRIES times for one use, then the use stops', async () => {
+    const timers = [];
+    const soon = { npcId: 'jake', post: null, done: false, tooSoon: true, retryAfter: 1 };
+    const { feed, log } = harness({ answers: Array.from({ length: 10 }, () => ({ ...soon })) });
+    feed.deps.later = (fn, ms) => timers.push([fn, ms]);
+    await feed.onUse('jake');
+    for (let i = 0; i < timers.length; i++) {
+        await timers[i][0]();
+        await new Promise((r) => setImmediate(r));
+    }
+    assert.equal(MAX_TRIES, 4);
+    assert.equal(log.filter((e) => e[0] === 'send').length, MAX_TRIES);
+    assert.equal(timers.length, MAX_TRIES - 1);
+    assert.equal(feed.retrying.has('jake'), false, 'nothing left waiting');
+    feed.onUse('jake');
+    await new Promise((r) => setImmediate(r));
+    assert.equal(log.filter((e) => e[0] === 'send').length, MAX_TRIES + 1, 'a later honest use asks again');
 });
 
 test('review C R1 nit: a network failure is asked again once; a 403 is not', async () => {
