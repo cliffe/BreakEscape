@@ -176,7 +176,9 @@ test('the view lists each row with its action and the row attributes, from GET /
     await settle();
     assert.deepEqual(requests, [['network', 'jack_comms_port']]);
     const text = document.querySelector('.network-view-title').textContent;
-    assert.equal(text, 'Drop box: comms room, on Harbour office LAN');
+    assert.equal(text, 'Drop box: comms room');
+    // UX access R2: the own network is the first block's heading
+    assert.equal(document.querySelector('.network-block-own .network-block-title').textContent, 'Harbour office LAN');
     // The view is open: the item's "Open it to see what it reaches." is dropped (UX access R1 finding 10)
     assert.equal(document.querySelector('.network-view-observations').textContent, 'Your Network drop box on Spare wall port.');
     // Display order: computers by host name, then shares, then printers, under group headings
@@ -281,7 +283,9 @@ test('with the own network up, its own block is not drawn twice', async () => {
     withBlocks([]);
     links.open('jack_comms_port');
     await settle();
-    assert.equal(document.querySelectorAll('.network-block').length, 0, 'the own up block is folded into the flat rows');
+    // UX access R2: the own rows sit in one own block with the network's heading, never a second
+    assert.equal(document.querySelectorAll('.network-block').length, 1, 'the own up block is folded into the flat rows');
+    assert.equal(document.querySelectorAll('.network-block-own').length, 1);
 });
 
 test('Sign in hands over to the remote sign-in screen: network_host_opened, no network_view_closed', async () => {

@@ -7,7 +7,7 @@
  * never by an object type, an ink tag or an openMinigame mapping, so it has no entry in
  * the minigame registry.
  *
- *   header        the link's name and its network ("Drop box: comms room, on Harbour office
+ *   header        the link's name (its own network is the first block's heading; was "Drop box: comms room, on Harbour office
  *                 LAN"), the link item's observations, and an optional one-line message
  *   a host row    host label, name and one action, decided in this order:
  *                   1. "remote sign-in off" when the PC's policy blocks it (no control);
@@ -275,8 +275,10 @@ export class NetworkViewMinigame extends MinigameScene {
             } else {
                 control = '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
             }
+            // A PC that is off or not answering is greyed like a no-route row (UX access R2)
+            const down = action === 'not_responding' || action === 'off' ? ' network-row-down' : '';
             return `
-                <li class="network-row network-row-host" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
+                <li class="network-row network-row-host${down}" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
                     <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
                     <span class="network-row-label"><strong>${escapeHtml(row.host || row.id)}</strong>
                         <span class="network-row-name">${escapeHtml(row.name || '')}</span></span>
@@ -308,7 +310,11 @@ export class NetworkViewMinigame extends MinigameScene {
 
     render() {
         const v = this.view || {};
-        const title = v.network?.name ? `${v.name || 'Your link'}, on ${v.network.name}` : (v.name || 'Your link');
+        // UX access R2: the link's name alone as the title; its own network is a block heading
+        // like any further network's, so "Wi-Fi: Guest Wi-Fi, on Guest Wi-Fi" no longer repeats
+        // and the office network is named beside the networks reached through it.
+        const title = v.name || 'Your link';
+        const ownName = v.network?.name || '';
         const obs = viewObservations(this.linkObservations());
         const rows = this.rows();
         this.gameContainer.innerHTML = `
@@ -319,11 +325,14 @@ export class NetworkViewMinigame extends MinigameScene {
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
                     ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}
                 </div>
-                ${(v.responding !== false && !rows.length && this.ownDownBlock()) ? '' : `<ul class="network-view-rows">
+                ${(v.responding !== false && !rows.length && this.ownDownBlock()) ? '' : `<div class="network-block network-block-own">
+                    ${ownName ? `<h5 class="network-block-title">${escapeHtml(ownName)}</h5>` : ''}
+                    <ul class="network-view-rows">
                     ${v.responding === false
                         ? `<li class="network-row-empty network-row-off">${escapeHtml(linkOffText(v.sourceHost))}</li>`
                         : (rows.length ? this.rowsHtml(rows) : '<li class="network-row-empty">Nothing answers on this network.</li>')}
-                </ul>`}
+                    </ul>
+                </div>`}
                 ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
                 <div class="network-view-notice" aria-live="polite"></div>
             </div>`;

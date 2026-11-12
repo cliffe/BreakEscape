@@ -517,9 +517,23 @@
           "takeable": false,
           "observations": "A breaker switch on the server rack. Flipping it takes the whole server network down.",
           "triggerOnInteract": [
-            { "type": "set_global", "key": "servers_offline", "value": true },
-            { "type": "set_global", "key": "n7_armed", "value": true },
-            { "type": "complete_task", "taskId": "n5_outage" }
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.servers_offline",
+              "text": "Flip the breaker? The whole server network goes down.",
+              "onConfirm": [
+                { "type": "set_global", "key": "servers_offline", "value": true },
+                { "type": "set_global", "key": "n7_armed", "value": true },
+                { "type": "complete_task", "taskId": "n5_outage" },
+                { "type": "hint", "title": "Server rack breaker", "message": "The breaker trips and the rack goes quiet. The server network is down." }
+              ]
+            },
+            {
+              "type": "hint",
+              "condition": "globalVars.servers_offline",
+              "title": "Server rack breaker",
+              "message": "The breaker is already off. The rack's power switch brings the server network back."
+            }
           ]
         },
         {
@@ -711,7 +725,13 @@
           "requiresItem": "kit_badusb",
           "requiresItemHint": "You would need a device to plug in here.",
           "triggerOnInteract": [
-            { "type": "grant_foothold", "pc": "sam_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: Sam's desk" }
+            {
+              "type": "confirm_action",
+              "text": "Plug the keystroke injector into Sam's PC? It is used up once it runs.",
+              "onConfirm": [
+                { "type": "grant_foothold", "pc": "sam_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: Sam's desk" }
+              ]
+            }
           ]
         }
       ]
