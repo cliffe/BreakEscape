@@ -24,14 +24,22 @@ arch_tts() { jq -c 'select((.npc_id // .npcId)=="the_architect") | .text' "$OUT/
 hax_tts() { jq -c 'select((.npc_id // .npcId)=="agent_0x99") | .text' "$OUT/${LABEL}_tts.jsonl" 2>/dev/null | tr '\n' ' '; }
 
 case $1 in
-replay)  # T-30..T-1 in order, answering each; /tts per taunt
+replay)  # T-30..T-1 in order, answering each; each ends on the back arrow (own-path "Call" row), which
+         # frees the ringer for the next taunt. Driving the reply choices parks the phone open and holds the
+         # ringer (no next ring); the back arrow is the player action that both ends the call and closes the phone.
   m10_open replay $SC $COUNTDOWN; sleep 1
-  echo "T-30: enter ops"; enter_ops; wait_banner 20 && echo "banner: $(ringer)"; a2b_shot t30_banner
-  a2b_answer >/dev/null; wait_call 15; echo "T-30 call: $(screen|jq -c '{bar,subs,choices}')"; a2b_shot t30_call; drive_taunt; sleep 2
-  echo "T-30 rows: $(rows $AID)"
-  for t in architect_t20_played architect_t10_played architect_t5_played architect_t1_played; do
-    echo "fire $t"; fire $t; wait_banner 20 && echo "banner: $(ringer)"; a2b_answer >/dev/null; wait_call 15; echo "$t: $(screen|jq -c '{bar,subs,choices}')"; a2b_shot ${t}_call; drive_taunt; sleep 2
-  done
+  rep_step() { # $1 label
+    wait_banner 20 && echo "$1 banner: $(ringer)" || { echo "$1 NO BANNER: $(ringer)"; return 1; }
+    [ "$1" = T-30 ] && a2b_shot t30_banner
+    a2b_answer >/dev/null; wait_call 15; sleep 2
+    echo "$1 call: $(screen|jq -c '{bar,subs,choices}')"; a2b_shot ${1}_call
+    back_arrow >/dev/null; sleep 2; echo "$1 rows: $(rows $AID)"
+  }
+  echo "T-30: enter ops"; enter_ops; rep_step T-30
+  echo "fire architect_t20_played"; fire architect_t20_played; rep_step T-20
+  echo "fire architect_t10_played"; fire architect_t10_played; rep_step T-10
+  echo "fire architect_t5_played"; fire architect_t5_played; rep_step T-5
+  echo "fire architect_t1_played"; fire architect_t1_played; rep_step T-1
   echo "rows after T-1: $(rows $AID)"; echo "architect /tts: $(arch_tts)"; a2b_quit ;;
 
 replace)  # T-5 then T-1 queued behind an open person-chat; only T-1 rings
@@ -85,17 +93,33 @@ signoff)  # debrief waits for architect_signoff_done; sign-off is forced (auto-a
   echo "ringer (should be sign_off forced, NOT debrief): $(ringer)"; echo "debrief open? mg=$(mgc) start_debrief=$(glob start_debrief_cutscene)"; a2b_shot after_console
   wait_call 15; echo "sign_off call: $(screen|jq -c '{subs,choices}')"; a2b_shot signoff_call; drive_taunt; sleep 2
   echo "architect_signoff_done=$(glob architect_signoff_done)"
-  echo "now console close again -> debrief should open"; a2b_ev "window.eventDispatcher.emit('minigame_completed',{}); return true;" >/dev/null; sleep 3
-  echo "debrief: mg=$(mgc) start_debrief=$(glob start_debrief_cutscene)"; a2b_shot debrief
+  # The sign_off call parks the phone open; close it so the person-chat debrief can take the screen.
+  a2b_ev "const m=window.MinigameFramework.currentMinigame; if(m) window.MinigameFramework.endMinigame(false); return 'c';" >/dev/null; sleep 2; echo "phone closed: mg=$(mgc)"
+  # The closing_debrief endingCheck trigger fired during setup and, with optional objectives open, held the
+  # ending (window.endingCheck). It opens when the player settles the last optional objective or clicks the
+  # objectives-panel "End the mission" button; endHeld() is that button. So the debrief waited for the sign-off
+  # (and for the player), then opens as Netherton.
+  echo "held ending: $(a2b_ev "return window.endingCheck.heldRecord();")"
+  echo "run objectives-panel End the mission: $(a2b_ev "return window.endingCheck.endHeld();")"; sleep 4
+  echo "debrief: start_debrief=$(glob start_debrief_cutscene) scene=$(a2b_ev "const m=window.MinigameFramework.currentMinigame; return m?{scene:m._sceneType,npc:(m.params||{}).npcId}:null;")"; a2b_shot debrief
   echo "architect /tts: $(arch_tts)"; a2b_quit ;;
 
-bring)  # HaX bring-in placed from the hub choice -> one-shot hand-off, debrief_requested, phone does not reopen
-  m10_open bring $SC $FLAGS --set architect_signoff_done=true; open_phone; sleep 1
+bring|bring_notyet)  # HaX bring-in placed from the hub choice -> one-shot hand-off, debrief_requested.
+  # architect_signoff_started too, or the forced sign_off re-rings on load (grid_saved && !started) and blocks the HaX thread.
+  # bring       : all four flags in  -> "Putting you through. He's waiting." (flags-in branch)
+  # bring_notyet: a flag still out   -> "Not yet. Put the rest of the flags through the relay..." (not-yet branch)
+  if [ "$1" = bring ]; then BRINGFLAGS="$FLAGS"; else BRINGFLAGS="--set briefing_played=true --set grid_saved=true --set flag1_submitted=true --set flag2_submitted=true --set flag3_submitted=true"; fi
+  m10_open $1 $SC $BRINGFLAGS --set architect_signoff_started=true --set architect_signoff_done=true; open_phone; sleep 1
   open_thread agent_0x99; sleep 1; echo "hub: $(screen|jq -c '{choices,header}')"; a2b_shot hub
   choose_text "Bring me in" >/dev/null; sleep 1; echo "dialling: $(screen|jq -c '{bar}')"; a2b_shot calling
-  wait_call 20; echo "call: $(screen|jq -c '{bar,subs,choices}')"; a2b_shot call; drive_taunt
-  gate wait_screen "!document.getElementById('call-end-button')" 40; sleep 3
+  wait_call 20; sleep 2; echo "call: $(screen|jq -c '{bar,subs,choices,thread}')"; a2b_shot call
+  gate wait_screen "!document.getElementById('call-end-button')" 40; sleep 2
   echo "after call: debrief_requested=$(glob debrief_requested) start_debrief=$(glob start_debrief_cutscene) mg=$(mgc)"; a2b_shot after
-  echo "phone reopened? $(a2b_ev "return !!window.MinigameFramework.currentMinigame && window.MinigameFramework.currentMinigame._sceneType==='phone-chat';")"
-  echo "HaX /tts: $(hax_tts)"; a2b_quit ;;
+  echo "HaX rows: $(rows agent_0x99)"
+  echo "HaX /tts: $(hax_tts)"
+  # The hand-off set debrief_requested. The closing_debrief (Netherton) endingCheck trigger is now the armed
+  # ending: heldRecord names it, so Netherton's secure link takes over once the player ends the mission. The
+  # signoff case proves endHeld() then opens that person-chat; here we show Netherton is the ending now armed.
+  echo "armed ending: $(a2b_ev "return window.endingCheck.heldRecord();")"
+  a2b_quit ;;
 esac

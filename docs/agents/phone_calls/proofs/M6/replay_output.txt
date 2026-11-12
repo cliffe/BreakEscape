@@ -1,25 +1,29 @@
-2:# tools/phone_calls/newgame.sh <scenario> [new-game.rb options]  -> prints the game id on :${PC_PORT:-3023}
-5:PLAYTEST_PORT=${PC_PORT:-3023} BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb "$@" 2>&1 | grep -E "^(GAME_ID|HEAD_START|ERROR|ABORT)|abort|rror" | head -5
-=== run replay ===
-game 1982 (replay)
+game 2052 (replay)
 T-30: enter ops
+T-30 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t30","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
 shot replay_t30_banner
-T-30 call: {"bar":null,"subs":[],"choices":[]}
-shot replay_t30_call
-T-30 rows: ["Missed call: No caller ID","Voicemail"]
+T-30 call: {"bar":null,"subs":[],"choices":["1. Who am I speaking to?","2. I don't take calls from ENTROPY."]}
+shot replay_T-30_call
+T-30 rows: ["Call: No caller ID"]
 fire architect_t20_played
-architect_t20_played: {"bar":null,"subs":[],"choices":[]}
-shot replay_architect_t20_played_call
+T-20 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t20","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+T-20 call: {"bar":null,"subs":[],"choices":[]}
+shot replay_T-20_call
+T-20 rows: ["Call: No caller ID","Call: No caller ID"]
 fire architect_t10_played
-architect_t10_played: {"bar":null,"subs":[],"choices":[]}
-shot replay_architect_t10_played_call
+T-10 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t10","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+T-10 call: {"bar":null,"subs":[],"choices":[]}
+shot replay_T-10_call
+T-10 rows: ["Call: No caller ID","Call: No caller ID","Call: No caller ID"]
 fire architect_t5_played
-architect_t5_played: {"bar":null,"subs":[],"choices":[]}
-shot replay_architect_t5_played_call
+T-5 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t5","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+T-5 call: {"bar":null,"subs":[],"choices":["1. I made a call. I'll carry it.","2. I'm not doing this with you."]}
+shot replay_T-5_call
+T-5 rows: ["Call: No caller ID","Call: No caller ID","Call: No caller ID","Call: No caller ID"]
 fire architect_t1_played
-architect_t1_played: {"bar":null,"subs":[],"choices":[]}
-shot replay_architect_t1_played_call
-rows after T-1: ["Missed call: No caller ID","Voicemail","Missed call: No caller ID","Voicemail","Missed call: No caller ID","Voicemail","Missed call: No caller ID","Voicemail","Missed call: No caller ID","Voicemail"]
-architect /tts: 
-
-[exited with code 0]
+T-1 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t1","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+T-1 call: {"bar":null,"subs":[],"choices":["1. Eight point four million people say otherwise.","2. Then what is it about?"]}
+shot replay_T-1_call
+T-1 rows: ["Call: No caller ID","Call: No caller ID","Call: No caller ID","Call: No caller ID","Call: No caller ID"]
+rows after T-1: ["Call: No caller ID","Call: No caller ID","Call: No caller ID","Call: No caller ID","Call: No caller ID"]
+architect /tts: "Don't look for the trace. It isn't there." "I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch." "Don't look for the trace. It isn't there." "I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch." "You've sent your team." "Washington. A hundred and eighty-seven million records, and a great deal of shouting afterwards about legitimacy." "Ten minutes before your team is too committed to move." "The beauty of entropy is that it doesn't require me to win. It only requires you to wait." "Stop this, and something else fails. Someone else dies. You simply won't be in the room for it." "The man in your control room would give you his figure and defend it to your face. I respect that, even when it's monstrous." "You covered the records. Say the other two out loud. Trojan Horse. Meltdown." "Closer than the file suggested. Not close enough to be comfortable." "But the grid was never the point." 

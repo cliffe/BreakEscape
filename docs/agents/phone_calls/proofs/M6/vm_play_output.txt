@@ -1,0 +1,9 @@
+game 2019 (vm_play)
+fire T-30 via enter, decline -> voicemail
+"opened the_architect"
+theme: "phone-screen"
+shot vm_play_thread
+voice bubbles: ["Transcript:\nYou let it ring. Sensible. Don't look for the trace.","Transcript:\nThere is a decision in front of you tonight. Make it however you like. I only want to see it made.","Transcript:\nLet it hurt afterwards, not during. I expect you've been told that."]
+play first vm: "played"
+shot vm_play_playing
+architect /tts after play: "You let it ring. Sensible. Don't look for the trace." 
