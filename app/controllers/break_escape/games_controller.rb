@@ -660,7 +660,7 @@ module BreakEscape
       # every player hears. An NPC voices only its own lines (TtsLineResolver).
       resolved = TtsLineResolver.new(
         scenario_name: @game.mission&.name,
-        scenario_data: @game.scenario_data,
+        scenario_data: tts_scenario_data,
         story_file: method(:resolve_and_compile_ink),
         player_name: tts_player_name
       ).resolve(npc_id, npc, text)
@@ -2608,6 +2608,12 @@ module BreakEscape
       nil
     end
 
+    # The game's scenario for the /tts line checks: rooms in the template's order,
+    # which the jsonb column does not keep (TtsLineResolver.in_template_order).
+    def tts_scenario_data
+      @tts_scenario_data ||= TtsLineResolver.in_template_order(@game.scenario_data, @game.mission&.template_room_order)
+    end
+
     # The player name the server holds for this game: the only value a
     # player_name() line is voiced with (TtsService::PLAYER_NAME_DEFAULT says
     # why it is the client's fallback today).
@@ -2630,7 +2636,7 @@ module BreakEscape
       scenario_name = @game.mission&.name
       return nil unless wanted && scenario_name
 
-      note = TtsLineExtractor.cached(scenario_name, @game.scenario_data).delivery_for(npc_id, text, wanted)
+      note = TtsLineExtractor.cached(scenario_name, tts_scenario_data).delivery_for(npc_id, text, wanted)
       Rails.logger.warn "[TTS] Delivery note not in the ink for #{npc_id}, voicing untagged: #{text.truncate(60)}" unless note
       note
     rescue StandardError => e

@@ -236,6 +236,32 @@ module BreakEscape
       {}
     end
 
+    # The room ids in the order the scenario template lists them. A game's
+    # scenario_data is a jsonb column, and jsonb does not keep object key order
+    # (it sorts keys by length, then bytes), so the stored `rooms` come back in a
+    # different order from the template's. Anything that reads "the first record
+    # in scenario order" (TtsLineExtractor#speaker_id_for, where two records share
+    # a display name) must put the rooms back first: TtsLineResolver.in_template_order.
+    # Cached per template mtime; room order doesn't depend on vm_context.
+    def template_room_order
+      template_path = scenario_path.join('scenario.json.erb')
+      mtime = File.mtime(template_path)
+      cached = self.class.room_order_cache[name]
+      return cached[:order] if cached && cached[:mtime] == mtime
+
+      order = (generate_scenario_data({})['rooms'] || {}).keys.freeze
+      self.class.room_order_cache[name] = { mtime: mtime, order: order }
+      order
+    rescue => e
+      Rails.logger.warn "[BreakEscape] Could not read room order for #{name}: #{e.message}"
+      self.class.room_order_cache[name] = { mtime: mtime, order: [].freeze } if mtime
+      []
+    end
+
+    def self.room_order_cache
+      @room_order_cache ||= Concurrent::Map.new
+    end
+
     # NPCs in this mission whose sprites can be unlocked as player avatars
     # ([{ 'sprite', 'name' }], see AvatarUnlocks.candidates). Feeds the avatar
     # menu's catalogue of locked characters. Cached per template mtime like
