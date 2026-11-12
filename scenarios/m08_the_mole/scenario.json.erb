@@ -2208,7 +2208,7 @@ CREDITS
       ],
       "objects": [
         {
-          "_comment": "Lighting L1 (orchestrator, blind run A fixes): the RECORDING lamp is a scenario object so its face can light with the confrontation (only scenario objects take spriteVariants). It claims the map's hq_recording1 decor slot; base sprite as on the screens below, else rooms.js falls back to the type when a watched global changes. Same condition as the room's red emitters.",
+          "_comment": "Lighting L1 (orchestrator, blind run A fixes): the RECORDING lamp is a scenario object so its face can light with the confrontation (only scenario objects take spriteVariants). It claims the map's hq_recording1 decor slot; base sprite as on the screens below; without one, when a watched global changes, rooms.js returns to the map item's picture for an object matched to one and to the type for an object placed without one. Same condition as the room's red emitters.",
           "type": "smartscreen",
           "id": "recording_lamp",
           "name": "RECORDING Lamp",
@@ -2230,8 +2230,9 @@ CREDITS
           "name": "Evidence Display",
           "position": "as-type:hq_evidence_wall",
           <%# Lighting stage: the wall's face follows the case (make_hq_props.py), loaded on demand.
-              "sprite" names the base face: rooms.js falls back to it (else to the type,
-              smartscreen) when a watched global changes and no variant matches. %>
+              "sprite" names the base face: rooms.js returns to it when a watched global changes
+              and no variant matches (without it, to the map item's picture for an object matched to
+              one, else to the type, smartscreen). %>
           "sprite": "hq_evidence_wall1",
           "spriteVariants": [
             { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "hq_evidence_wall_closed1" },
