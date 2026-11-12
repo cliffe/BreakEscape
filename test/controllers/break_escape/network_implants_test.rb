@@ -259,7 +259,7 @@ module BreakEscape
       set_global(LENA_OFF, true)
       body = sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD, foothold: IMPLANT)
       assert_response :forbidden
-      assert_equal 'unreachable', body['reason']
+      assert_equal 'PC not reachable', body['message'], 'refused as a host the link cannot reach'
       refute state['sessions'].key?('sam_pc'), 'no session is written'
       assert_empty state['loginFailures'].to_h, 'no failed attempt is counted'
 

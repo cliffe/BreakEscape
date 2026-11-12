@@ -34,7 +34,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT } =
+const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText } =
     await imp('minigames/network-view/network-view-minigame.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 
@@ -225,6 +225,21 @@ test('a pivot-reached network renders an up block through its host, actionable a
     // Clicking the server host signs in through the same foothold
     row('data-host-id', 'sv_fs02').querySelector('[data-action]').click();
     assert.deepEqual(signIns, [['sv_fs02', 'jack_comms_port']]);
+});
+
+// Review R3 M1: an implant whose own PC is off is listed, says so, and offers nothing
+test('a link whose PC is off says "This link is not responding" and offers no control', async () => {
+    setup({ hosts: [] });
+    answer.footholds[0].responding = false;
+    answer.footholds[0].sourceHost = '<i>HB-FIN-02</i>';
+    links.open('jack_comms_port');
+    await settle();
+    const text = document.querySelector('.network-view').textContent;
+    assert.ok(text.includes(linkOffText('<i>HB-FIN-02</i>')), 'the line names the PC as text');
+    assert.equal(document.querySelector('.network-view i'), null, 'never as markup');
+    assert.doesNotMatch(text, /Nothing answers on this network/);
+    assert.equal(document.querySelector('[data-action]'), null, 'nothing to click');
+    assert.equal(view().getTestState().responding, false);
 });
 
 test('a down block is greyed with "No route" and offers no control', async () => {

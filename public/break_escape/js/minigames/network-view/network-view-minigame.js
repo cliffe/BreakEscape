@@ -42,6 +42,8 @@ export const REMOTE_OFF_TEXT = 'remote sign-in off';
 export const NOT_RESPONDING_TEXT = 'not responding';
 // Shown when the view was fetched before the latest globals reached the server (review R2 m3)
 export const STALE_TEXT = 'Still updating, so this may be out of date.';
+// An implant whose own PC is off (review R3 M1): the link is listed and reaches nothing
+export const linkOffText = (host) => `This link is not responding: ${host || 'its PC'} is off.`;
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
 const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
 const KIND_ICONS = {
@@ -272,7 +274,9 @@ export class NetworkViewMinigame extends MinigameScene {
                     ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}
                 </div>
                 <ul class="network-view-rows">
-                    ${rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>'}
+                    ${v.responding === false
+                        ? `<li class="network-row-empty network-row-off">${escapeHtml(linkOffText(v.sourceHost))}</li>`
+                        : (rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>')}
                 </ul>
                 ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
                 <div class="network-view-notice" aria-live="polite"></div>
@@ -345,6 +349,7 @@ export class NetworkViewMinigame extends MinigameScene {
             footholdId: this.footholdId,
             status: this.status,
             network: this.view?.network ? { id: this.view.network.id, name: this.view.network.name } : null,
+            responding: this.view?.responding !== false,
             message: this.message,
             notice: this.notice,
             rows: this.rows().map(r => (r.kind === 'pc'
