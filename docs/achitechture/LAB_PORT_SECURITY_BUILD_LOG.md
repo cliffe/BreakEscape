@@ -52,8 +52,13 @@ the existing examine / confirm / toast paths.
 
 - **Validator:** `LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb
   scenarios/lab_physical_pentest/scenario.json.erb --no-graph` -> 0 lines with the cross mark
-  (validation complete). A new info line prints the secured_port jack's structural reach. Ran with
-  `--no-graph`, so `dungeon_graph.*` is untouched (the beat changes no lock/key chain).
+  (validation complete). A new info line prints the secured_port jack's *structural* reach, in the
+  same form as a live jack ("lists hosts ... resources ..."). That is the reach a foothold would
+  have; the secured port never grants a foothold, so nothing is actually reachable through it (review
+  R1 NIT-3). The line is left as-is: the reach-line format is shared validator tooling asserted by
+  `test/js/validator-network-model.test.mjs`, so a port-security suffix belongs with that stream, not
+  this scenario change. Ran with `--no-graph`, so `dungeon_graph.*` is untouched (no lock/key chain
+  change).
 - **JS suite:** `bin/test-js -j 3` under the shared lock -> 507 passed, 0 failed.
 - **Rails suite:** `bin/rails test` under the shared lock -> 1796 runs, 25577 assertions, 0
   failures, 0 errors, 1 skip.
@@ -62,7 +67,8 @@ the existing examine / confirm / toast paths.
   real client `networkLinks.interactJack` path in a headless browser,
   - secured port -> `{ action: 'refused', reason: 'port_security' }`, the drop box stays in the
     inventory (`["kit_dropbox"]` before and after), and the exact `portSecurityMessage` is shown via
-    `gameAlert`;
+    a toast (`toast(b.error ...)` in `network-links.js`; the proof hooks its `gameAlert` sink to read
+    the text back);
   - live port -> `{ action: 'planted', footholdId: 'jack_network_port', first: true }`, the drop box
     is consumed, and a foothold on `office_lan` is written.
   - Screenshot of the cupboard with both ports and the refusal message:
