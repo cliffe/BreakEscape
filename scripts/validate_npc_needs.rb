@@ -1313,11 +1313,12 @@ module ValidateNpcNeeds
         dims = room.is_a?(Hash) ? room_tiles(room['type']) : nil
         next unless dims
 
+        # The tilemap size, walls included, so it errs towards warning (code review R2, n4)
         diag = Math.hypot(dims[0], dims[1])
         next unless radius < diag
 
         what = given ? "noticeRadius #{radius}" : "the default noticeRadius (#{NOTICE_RADIUS_TILES})"
-        issues << "⚠️ WARNING: #{where} interest '#{tag}': #{what} tiles is less than notice room '#{r}' (#{dims[0]} x #{dims[1]} tiles, #{diag.round(1)} across), so from one end of it the NPC does not see an item at the other. Set noticeRadius to #{diag.ceil} or more if the whole room should count."
+        issues << "⚠️ WARNING: #{where} interest '#{tag}': #{what} tiles is less than notice room '#{r}' (#{dims[0]} x #{dims[1]} tiles, #{diag.round(1)} across), so from one end of it the NPC does not see an item at the other. #{diag.ceil <= 100 ? "Set noticeRadius to #{diag.ceil} or more if the whole room should count." : 'Even the largest noticeRadius (100) does not span it; list a smaller noticeRooms set or accept the cut.'}"
       end
       if leashed && raw.is_a?(Hash) && raw['noticeRooms'].is_a?(Array)
         raw['noticeRooms'].each do |r|
