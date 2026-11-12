@@ -206,11 +206,12 @@ test('an emulation that throws shows "Emulation failed", not a stuck "Emulating.
 
 test('no saved cards: the menu and the Saved list both say there is nothing to emulate', () => {
     window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [] } }];
-    const g = makeGame({ mode: 'unlock', requiredCardIds: ['x'], availableCards: [] });
+    // Opened from the inventory (no reader): the menu and its Saved list
+    const g = makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
     g.ui.showMainMenu('unlock');
     assert.match(texts(), /No saved cards to emulate yet/);
     g.ui.showSavedCards();
-    assert.match(texts(), /Read a keycard with the cloner/);
+    assert.match(texts(), /Read a keycard with the card copier/);
     window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [em()] } }];
     g.ui.showMainMenu('unlock');
     assert.doesNotMatch(texts(), /No saved cards/);

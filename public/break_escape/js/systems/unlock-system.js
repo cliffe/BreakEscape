@@ -172,6 +172,53 @@ export async function requestRfidAccessUnlock(lockable, type, cardIds) {
     }
 }
 
+/**
+ * The success toast after an RFID unlock: which card opened it, and whether it was the
+ * card itself or the copier playing back a copy. result: { cardName, emulated }.
+ */
+export function rfidOpenedLine(result) {
+    const name = result && typeof result.cardName === 'string' && result.cardName.trim();
+    if (!name) return 'Card accepted.';
+    return result.emulated ? `Opened with your copy of ${name}.` : `Opened with ${name}.`;
+}
+
+/**
+ * The card behind an access-list unlock: the server answers with the id of the held card
+ * that passed (cardId). A keycard in the inventory is the card itself; a card saved on the
+ * copier is a copy. null when the id is not one the player holds.
+ */
+export function rfidCardForId(cardId) {
+    if (cardId == null || cardId === '') return null;
+    const id = String(cardId);
+    const items = (window.inventory && window.inventory.items) || [];
+    const getCardId = (d) => d && (d.card_id || window.lockRef?.(d));
+    const keycard = items.find(it => it?.scenarioData?.type === 'keycard' && String(getCardId(it.scenarioData)) === id);
+    if (keycard) return { cardName: keycard.scenarioData.name || null, emulated: false };
+    for (const it of items) {
+        if (it?.scenarioData?.type !== 'rfid_cloner') continue;
+        const saved = (it.scenarioData.saved_cards || []).find(c => String(getCardId(c)) === id);
+        if (saved) return { cardName: saved.name || null, emulated: true };
+    }
+    return null;
+}
+
+/** The reader the copier is held to: a door's sign, else the object's name. */
+export function rfidReaderName(target) {
+    return doorRefusalTitle(target, '') || target?.scenarioData?.name || '';
+}
+
+/**
+ * Why an access-list reader refused every card held, in the world's terms: no role or
+ * person is named, only that the door keeps a list (by role, or by named people).
+ */
+export function rfidAccessDeniedLine(access, type = 'door') {
+    const what = type === 'door' ? 'door' : 'lock';
+    const roles = access && Array.isArray(access.roles) && access.roles.length > 0;
+    const people = access && Array.isArray(access.people) && access.people.length > 0;
+    if (people && !roles) return `None of your cards is on this ${what}'s list. It opens for named people only.`;
+    return `None of your cards is cleared for this ${what}. It opens only for staff with the right access.`;
+}
+
 // ── Sign-in PCs (access model 5.3, step 8) ─────────────────────────────────
 // A `lockType: "login"` PC is opened by a session, never by unlockTarget: the PC stays
 // locked in every room response, so the next click comes back here. pc-sessions.js
@@ -1021,17 +1068,19 @@ export function handleUnlock(lockable, type) {
                     acceptsUIDOnly: acceptsUIDOnly,
                     availableCards: keycards,  // Cards they can read in the minigame
                     hasCloner: hasCloner,
+                    // The copier opens on this reader, named by the door's sign or the object
+                    readerName: rfidReaderName(lockable),
                     // A refused card or clone at the reader: door_unlock_failed (reason
                     // wrong_card or uid_only), same as a refused key or fingerprint
                     onRefused: refusedWithHint,
-                    onComplete: async (success) => {
+                    onComplete: async (success, result) => {
                         if (success) {
                             // Notify server and get room/container data
                             const serverResponse = await notifyServerUnlock(lockable, type, 'rfid');
                             setTimeout(() => {
                                 playRfidUnlockSound();
                                 unlockTarget(lockable, type, lockable.layer, serverResponse);
-                                window.gameAlert('RFID lock unlocked!', 'success', 'Access Granted', 3000);
+                                window.gameAlert(rfidOpenedLine(result), 'success', 'Access Granted', 3000);
                             }, 100);
                         }
                     }
@@ -1074,14 +1123,16 @@ export function handleUnlock(lockable, type) {
                         }
                         playRfidUnlockSound();
                         unlockTarget(lockable, type, lockable.layer, response);
-                        window.gameAlert('Card accepted', 'success', 'Access Granted', 3000);
+                        // The server names the held card that passed: the card, or the copier's copy of it
+                        window.gameAlert(rfidOpenedLine(rfidCardForId(response && response.cardId)), 'success', 'Access Granted', 3000);
                     } else if (outcome === 'uid_only') {
                         playUISound('reject');
                         window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
                         emitDoorUnlockFailed('uid_only');
                     } else if (outcome === 'denied') {
                         playUISound('reject');
-                        window.gameAlert(appendLockedHint('Access denied', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Access denied'));
+                        const deniedLine = rfidAccessDeniedLine(lockRequirements.access, type);
+                        window.gameAlert(appendLockedHint(deniedLine, lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, deniedLine));
                         emitDoorUnlockFailed('wrong_card');
                     } else {
                         window.gameAlert('Failed to verify access', 'error', 'Error', 3000);

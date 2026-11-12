@@ -66,13 +66,13 @@ export class MIFAREAttackManager {
      */
     getDictionaryMessage(found, protocol) {
         if (found === 16) {
-            return '🔓 All sectors use factory defaults!';
+            return 'All sectors use factory defaults';
         } else if (found > 0) {
-            return `🔓 Found ${found} sectors with default keys`;
+            return `Found ${found} sectors with default keys`;
         } else if (protocol === 'MIFARE_Classic_Weak_Defaults') {
-            return '⚠️ Some sectors have custom keys - try Nested attack';
+            return 'Some sectors have custom keys: try a Nested attack';
         } else {
-            return '⚠️ No default keys - use Darkside attack';
+            return 'No default keys: use a Darkside attack';
         }
     }
 
@@ -150,7 +150,7 @@ export class MIFAREAttackManager {
                     resolve({
                         success: true,
                         foundKeys: attack.foundKeys,
-                        message: '🔓 All 16 sectors cracked!'
+                        message: 'All 16 sectors cracked'
                     });
                 }
             }, updateInterval);
@@ -240,7 +240,7 @@ export class MIFAREAttackManager {
                     resolve({
                         success: true,
                         foundKeys: attack.foundKeys,
-                        message: `🔓 Cracked ${sectorsToFind} remaining sectors!`
+                        message: `Cracked the ${sectorsToFind} remaining sectors`
                     });
                 }
             }, updateInterval);

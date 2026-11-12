@@ -1,5 +1,5 @@
 // action-menu.js objectActions / maybeShowObjectActionMenu: a world keycard offers
-// "Clone it with the flipper" and "Take it" only while the player holds a cloner; an
+// "Copy it with the card copier" and "Take it" only while the player holds a cloner; an
 // author-declared `actions` list becomes menu entries; the menu is busy-guarded and
 // reuses window.showInteractionMenu. No static imports — stub window and import directly.
 // Run with: bin/test-js test/js/action-menu.test.mjs
@@ -40,7 +40,7 @@ test('a world keycard with a cloner held offers Clone and Take', () => {
     resetWindow({ inventory: { items: [cloner] } });
     const acts = objectActions(worldKeycard());
     assert.equal(acts.length, 2);
-    assert.match(acts[0].label, /Clone it with the flipper/);
+    assert.match(acts[0].label, /Copy it with the card copier/);
     assert.match(acts[1].label, /Take it/);
 });
 
@@ -54,6 +54,16 @@ test('Clone opens the RFID minigame in clone mode with the card, leaving it in p
     assert.equal(params.mode, 'clone');
     assert.equal(params.cardToClone.card_id, 'clerk_card');
     assert.equal(globalThis.window._handled, undefined, 'clone does not pick the card up');
+});
+
+test('the menu uses the cloner\'s own name and Clone records the copy\'s source', () => {
+    resetWindow({ inventory: { items: [{ scenarioData: { type: 'rfid_cloner', name: 'RFID cloner' } }] } });
+    const card = worldKeycard();
+    card.scenarioData.id = 'clerk_card_item';
+    const acts = objectActions(card);
+    assert.equal(acts[0].label, 'Copy it with the RFID cloner');
+    acts[0].onSelect();
+    assert.deepEqual(globalThis.window._rfid[2].cloneSource, { object_id: 'clerk_card_item' });
 });
 
 test('Take runs the normal interaction with the action-menu bypass set', () => {

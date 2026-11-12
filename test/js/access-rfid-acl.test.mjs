@@ -39,7 +39,7 @@ for (const [spec, url] of Object.entries(stubs)) {
 globalThis.window = {};
 const {
     handleUnlock, getLockRequirementsForDoor, getLockRequirementsForItem,
-    heldRfidCardIds, hasRfidAccessList
+    heldRfidCardIds, hasRfidAccessList, rfidOpenedLine, rfidCardForId, rfidAccessDeniedLine
 } = await import(dataUrl(src));
 
 // ── a stubbed browser ────────────────────────────────────────────────────────
@@ -173,12 +173,13 @@ test('reason uid_only shows "Reader requires full authentication" and stays lock
     assert.ok(events.some(([n]) => n === 'door_unlock_failed:evidence_store'));
 });
 
-test('any other refusal shows "Access denied"', async () => {
+test('any other refusal says no card held is cleared, naming no role', async () => {
     reset({ items: [keycard({ card_id: 'VISITOR-07' })], answer: refusal({ success: false, message: 'Invalid attempt' }) });
     handleUnlock(door({ access: FINANCE }), 'door');
     await settle();
     assert.equal(globalThis.__unlockedDoors.length, 0);
-    assert.equal(alerts.at(-1)[0], 'Access denied');
+    assert.equal(alerts.at(-1)[0], 'None of your cards is cleared for this door. It opens only for staff with the right access.');
+    assert.doesNotMatch(alerts.at(-1)[0], /finance/i, 'the role is not named');
     assert.equal(events.find(([n]) => n === 'door_unlock_failed')[1].reason, 'wrong_card');
     // a refusal answered in the body rather than as an HTTP error reads the same way
     reset({ items: [keycard({ card_id: 'VISITOR-07' })], answer: { success: false, reason: 'uid_only' } });
@@ -191,7 +192,7 @@ test('a refusal carries the door\'s lockedHint', async () => {
     reset({ items: [keycard({ card_id: 'VISITOR-07' })], answer: refusal({ success: false }) });
     handleUnlock(door({ access: FINANCE, lockedHint: 'Dana has a finance badge.' }), 'door');
     await settle();
-    assert.equal(alerts.at(-1)[0], 'Access denied. Dana has a finance badge.');
+    assert.equal(alerts.at(-1)[0], 'None of your cards is cleared for this door. It opens only for staff with the right access. Dana has a finance badge.');
 });
 
 test('an unreachable server is not shown as a refusal', async () => {
@@ -276,4 +277,46 @@ test('a failed card copy record does not block the access-list request', async (
     await settle();
     assert.equal(unlockCalls.length, 1);
     window.pendingCardCloneRecord = null;
+});
+
+// ── naming the card at the reader (UX devices R1) ────────────────────────────
+test('rfidOpenedLine names the card, and says when the copier played back a copy', () => {
+    assert.equal(rfidOpenedLine({ cardName: 'Visitor card 07', emulated: true }), 'Opened with your copy of Visitor card 07.');
+    assert.equal(rfidOpenedLine({ cardName: 'Visitor card 07', emulated: false }), 'Opened with Visitor card 07.');
+    assert.equal(rfidOpenedLine(null), 'Card accepted.');
+    assert.equal(rfidOpenedLine({ cardName: '  ' }), 'Card accepted.');
+});
+
+test('rfidCardForId: a held keycard is the card, a saved card is a copy, anything else null', () => {
+    reset({ items: [keycard({ card_id: 'VISITOR-07', name: 'Visitor card 07' }), cloner([{ card_id: 'DANA-1', name: "Dana's badge" }])] });
+    assert.deepEqual(rfidCardForId('VISITOR-07'), { cardName: 'Visitor card 07', emulated: false });
+    assert.deepEqual(rfidCardForId('DANA-1'), { cardName: "Dana's badge", emulated: true });
+    assert.equal(rfidCardForId('NOPE'), null);
+    assert.equal(rfidCardForId(undefined), null);
+});
+
+test('an access-list unlock names the card the server says passed', async () => {
+    reset({ items: [cloner([{ card_id: 'DANA-1', name: "Dana's badge" }])],
+        answer: { success: true, type: 'door', roomData: { id: 'r' }, cardId: 'DANA-1' } });
+    handleUnlock(door({ access: FINANCE }), 'door');
+    await settle();
+    assert.equal(alerts.at(-1)[0], "Opened with your copy of Dana's badge.");
+});
+
+test('rfidAccessDeniedLine: a people list says so; roles and mixed lists say staff; an object says lock', () => {
+    assert.match(rfidAccessDeniedLine({ people: ['imran'] }), /named people only/);
+    assert.match(rfidAccessDeniedLine({ roles: ['it'] }), /staff with the right access/);
+    assert.match(rfidAccessDeniedLine({ roles: ['it'], people: ['imran'] }), /staff with the right access/);
+    assert.match(rfidAccessDeniedLine({ roles: ['it'] }, 'object'), /this lock/);
+    for (const line of [rfidAccessDeniedLine({ people: ['imran'] }), rfidAccessDeniedLine({ roles: ['it'] })]) {
+        assert.doesNotMatch(line, /imran|finance|security/i, 'no role or person named');
+    }
+});
+
+test('the copier at a reader is told which reader it is', async () => {
+    reset({ items: [cloner([{ card_id: 'VISITOR-07', name: 'Visitor card 07' }])] });
+    handleUnlock(door({ requires: ['VISITOR-07'], door_sign: 'Visitor room' }), 'door');
+    await settle();
+    assert.equal(rfidStarts.length, 1);
+    assert.equal(rfidStarts[0][2].readerName, 'Visitor room');
 });

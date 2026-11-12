@@ -950,16 +950,21 @@ module BreakEscape
         return render json: body, status: :unprocessable_entity
       end
 
+      # An access-list rfid unlock names the held card that passed (UX devices R1)
+      rfid_card_id = method == 'rfid' && card_ids ? @game.rfid_unlock_card_id(target_type, target_id, card_ids) : nil
+
       # Use transaction to ensure atomic update
       ActiveRecord::Base.transaction do
         if target_type == 'door'
           room_data = serve_opened_room(target_id)
 
-          render json: {
+          door_answer = {
             success: true,
             type: 'door',
             roomData: room_data
           }
+          door_answer[:cardId] = rfid_card_id if rfid_card_id
+          render json: door_answer
         else
           # Object/container unlock
           @game.unlock_object!(target_id)
@@ -970,6 +975,7 @@ module BreakEscape
             success: true,
             type: 'object'
           }
+          response[:cardId] = rfid_card_id if rfid_card_id
 
           # If object has contents, include them in response, filtered as
           # GET /container filters them (M7): a nested lock's requires and a

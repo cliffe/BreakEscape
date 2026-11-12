@@ -192,6 +192,22 @@ module BreakEscape
       assert_response :success
     end
 
+    test 'an access-list unlock names the held card that passed' do
+      build('inventory' => [CLONER.dup])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      body = door('records', card_ids: ['VISITOR-07', JAKE_CARD_ID])
+      assert_response :success
+      assert_equal JAKE_CARD_ID, body['cardId']
+    end
+
+    test 'an object unlock names the card too, and a refusal names none' do
+      build('inventory' => [keycard_item('jake_spare')])
+      refused = object('finance_cabinet', card_ids: ['VISITOR-07'])
+      refute refused.key?('cardId')
+      body = object('finance_cabinet', card_ids: [JAKE_CARD_ID])
+      assert_equal JAKE_CARD_ID, body['cardId']
+    end
+
     test 'the first passing card of several opens the door' do
       build('inventory' => [keycard_item('visitor_badge'), keycard_item('jake_spare')])
       door('records', card_ids: ['VISITOR-07', JAKE_CARD_ID])
