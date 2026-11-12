@@ -63,6 +63,18 @@ test('a drop avoids furniture that would hide it', () => {
     assert.equal(overlaps, false, JSON.stringify(spot));
 });
 
+test('R2 live: with desks over the rings, drops go to clear floor further out before under a desk', () => {
+    // As in test_unlock_gaps: the body by the east wall, desks drawn over walkable floor
+    // round it, open floor about 100 px to the west
+    const g = makeGrid(60, 60, (cx) => cx >= 37);
+    const feet = { x: 284, y: 112 };
+    const desks = [{ x: 210, y: 100, w: 86, h: 110 }];
+    const spots = koDropSpots(feet, 4, { reachable: koReachableCells(feet, g), obstacles: desks });
+    const hidden = (s) => s.x + 16 > 210 && s.x - 16 < 296 && s.y + 16 > 100 && s.y - 16 < 210;
+    for (const s of spots) assert.equal(hidden(s), false, `under the desk: ${JSON.stringify(s)}`);
+    for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) assert.ok(dist(spots[i], spots[j]) >= KO_DROP_MIN_GAP);
+});
+
 test('R2 M1: no drop lands behind a wall or in the next room', () => {
     // Two rooms side by side: room A is x < 296, a 32 px wall band at x 296 to 327, room B beyond.
     // The NPC falls 12 px west of the wall, as in the review's node case.

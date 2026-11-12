@@ -539,7 +539,9 @@ export function dropTextureFor(item, exists) {
  *    room or in a walled-off pocket (code review R2 M1);
  *  - is at least MIN_GAP from the body and from every other drop, when there is room;
  *  - draws clear of the shown room objects (obstacles: {x, y, w, h} rects), so a desk
- *    top or a chair does not hide it, when such a spot exists within reach.
+ *    top or a chair does not hide it, when such a spot exists within reach: clear ring
+ *    spots first, then any clear reached cell, and only then a hidden one (a desk top is
+ *    often drawn over walkable floor).
  * With too few reached cells for the gap (a narrow corridor, many items), the rest
  * stack on the nearest reached cells. With no grid at all (`reachable` null or empty)
  * every item lands on the body, a few px apart, since nothing else is known to be safe.
@@ -591,6 +593,7 @@ export function koDropSpots(feet, count, { reachable = null, obstacles = [], siz
     }
   };
   pick(candidates, true, gap);
+  pick(byDistance, true, gap);        // clear floor off the rings, before any hidden spot
   pick(candidates, false, gap);
   pick(byDistance, false, gap);       // off the rings, e.g. along a corridor
   pick(byDistance, false, gap / 2);   // tighter
