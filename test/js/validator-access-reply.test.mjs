@@ -138,7 +138,9 @@ test('warnings: unreachable when, dead insteadOf, one-way link, missing complain
     assertHas(list, "insteadOf 'tom_dead' can never fire");
     assertHas(list, 'tomasz replies to ivy but ivy has no reply to tomasz');
     assertHas(list, "kim vents in complaint 'c1' but has no replyToComplaint reply");
-    assertHas(list, 'is a second reply that no answer can open');
+    const noAnswer = pair();
+    noAnswer.rooms.office.npcs[1].feed.posts.pop();
+    assertHas(issues(noAnswer), 'is a second reply that no answer can open');
     const lone = npc('ivy', [own('ivy_vent', 'Shared drive down again, nothing will save.'),
         own('ivy_still', 'Two hours on and the shared drive is still down.'),
         reTo('ivy_answer', '{name}, did IT ever ring you back about it?', 'ivy_vent', 'ivy_still')]);
@@ -176,7 +178,7 @@ test('text rules: pieces around {name}, a piece inside shipped text, {name} in a
         [reTo('short', '{name}: same here.', 'ivy_vent', 'tom_still')]);
     s.chatter = { lines: [{ text: 'Overheard: Ivy, did IT ever ring you back about it? No idea.' }] };
     const list = issues(s);
-    assertHas(list, 'short].text has no piece of 12 characters');
+    assertHas(list, 'has no piece of 12 characters or more around {name}');
     assertHas(list, 'holds {name} but is not a reply');
 });
 
