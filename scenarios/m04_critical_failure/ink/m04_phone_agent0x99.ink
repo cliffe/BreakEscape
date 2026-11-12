@@ -520,7 +520,7 @@ Relay's down. I've pulled her Level 2 number off the reader logs and pushed you 
 }
 Nightshade's had a look at your reading. Thirty-three degrees over what the screens show.
 His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger.
-ENTROPY feed the control room. That dial isn't on their network.
+ENTROPY are feeding the control room. That dial isn't on their network.
 -> on_anomaly_confirmed_choices
 
 === on_anomaly_confirmed_choices ===
