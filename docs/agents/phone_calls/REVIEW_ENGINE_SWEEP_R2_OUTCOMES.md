@@ -7,8 +7,10 @@ Fixer: Opus 4.8, 2026-11-12. Every finding has a test that fails before the fix 
 (`npc-manager.js` `ringConditionHolds`). `ring.ringWhile` and `ring.callbackWhen` are now errors when
 they contain `||` or any non-`globalVars.` term (a bare function, a dotted path, an `includes()` the
 ringer's slicing drops). `!globalVars.x` and comparisons to a literal or another `globalVars.` value
-stay clean. Applied to both fields: `callbackWhen` has the same gap (`callConditionHolds` →
-`safeEvaluateCondition` does not evaluate `||` either, so the callback would silently never be offered).
+stay clean. Applied to both fields. For `callbackWhen` only the `||` gap is real (`callConditionHolds` →
+`safeEvaluateCondition` reads the whole string as one unsupported term, evaluates it false, and the
+callback is cleared at the next button build). That evaluator does read dotted paths and `includes()`,
+so rejecting them in `callbackWhen` is a deliberate one-grammar choice, not a gap (engine R3 n2).
 Messages: "ring.ringWhile contains `||`, but only `&&` chains of globalVars. terms are evaluated" and
 "… has the non-globalVars. term `<term>`; only globalVars. terms … are evaluated".
 Tests: `test/js/validator-phone-calls.test.mjs` (the callbackWhen and ringWhile blocks gain the `||`,
