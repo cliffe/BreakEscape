@@ -25,6 +25,7 @@ require_relative 'validate_npc_needs'
 require_relative 'validate_network'
 require_relative 'validate_capture_log'
 require_relative 'validate_wearable'
+require_relative 'validate_phone_calls'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/npc_habits'
@@ -436,7 +437,7 @@ def check_unknown_fields(json_data)
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
     captureProof
     maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance screenHabit printHabit
-    answersPhones phoneCalls
+    answersPhones phoneCalls call
     role creds staff cloneable
     awareness habits
     workNeeds frustration workarounds phone socialUse feed
@@ -461,7 +462,7 @@ def check_unknown_fields(json_data)
   known_event_mapping_fields = %w[
     eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded delayMs
     bark message barkDelay
-    targetKnot conversationMode background disableClose resume voiced callLabel videoLabel participantTag
+    targetKnot conversationMode background disableClose resume voiced callLabel videoLabel participantTag ring
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
     sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor closeDoor
     openMinigame endingCheck needs addCapture emitEvent emitEventData
@@ -3958,6 +3959,7 @@ RECURRING_SYNCED_INK_VARS = %w[
   has_keycard has_rfid_cloner card_protocol card_name card_card_id card_instant_clone
   card_needs_attack card_uid_only player_name current_mission_id npc_location mission_phase
   operational_stress_level equipment_status
+  call_answer_seconds call_is_callback
 ].freeze
 
 def recurring_norm_words(text)
@@ -6786,6 +6788,7 @@ def main
     common_issues += check_network_model(json_data)
     common_issues += check_capture_log(json_data)
     common_issues += check_wearables(json_data, File.dirname(erb_path))
+    common_issues += check_phone_calls(json_data, repo_root)
     common_issues += ValidateAccessWork.check(json_data)
     common_issues += ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report,
                                                         scenario_dir: File.dirname(erb_path))

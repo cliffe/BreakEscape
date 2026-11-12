@@ -510,3 +510,58 @@ test('delivery-note: warns for a tag inside {cond: text #tag}, quiet for the for
     assert.deepEqual(f.map(x => x.line), [4, 9], JSON.stringify(opts));
   }
 });
+
+// ---- call-in-text-thread (phone-calls plan 4.4) ----
+const callHits = (ink, channel = 'phone') => lintInk(ink, { channel }).findings.filter(f => f.rule === 'call-in-text-thread');
+
+test('call-in-text-thread: call phrasing in a phone text knot warns, per phrase', () => {
+  const phrases = ['She picked up on the second ring.', 'I am on the line with her.', 'Get off my line.',
+    'He hangs up.', 'The line goes dead.', 'Your handset rings.', 'It rings out.', 'The caller ID reads unknown.'];
+  for (const p of phrases) {
+    const hits = callHits(`=== idle ===\nNarrator: ${p}\n`);
+    assert.equal(hits.length >= 1, true, p);
+    assert.equal(hits[0].level, 'warn');
+    assert.equal(hits[0].line, 2);
+  }
+  // an unprefixed contact line is checked too
+  assert.equal(callHits(`=== idle ===\nHe hangs up.\n`).length, 1);
+});
+
+test('call-in-text-thread: clean text, "call me", "ring <Name> back", choice brackets and player lines do not fire', () => {
+  const ink = [
+    '=== idle ===',
+    'Ring Dev back when you can.',
+    "I'll ring you tonight.",
+    'Call me if it gets worse.',
+    '+ [Hang up on her.]',
+    '    Fine.',
+    '    -> DONE',
+    'You: Why did she hang up?',
+    '',
+  ].join('\n');
+  assert.deepEqual(callHits(ink), []);
+});
+
+test('call-in-text-thread: only on the phone channel, and `// lint: call-knot` under the heading suppresses it', () => {
+  assert.deepEqual(callHits(`=== idle ===\nHe hangs up.\n`, 'person'), []);
+  const marked = `=== ring_call ===\n// lint: call-knot\nShe hangs up on the line.\n=== idle ===\nShe hangs up.\n`;
+  const hits = callHits(marked);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].line, 5);
+  // a marker lower down in the knot is not "directly under" the heading
+  assert.equal(callHits(`=== k ===\nHello there.\n// lint: call-knot\nHe hangs up.\n`).length, 1);
+});
+
+test('delivery target checks run on phone call knots only (`// lint: call-knot`)', () => {
+  // a note on its own line with no spoken line after it in the knot
+  const body = (mark) => `=== k ===\n${mark ? '// lint: call-knot\n' : ''}#delivery: quiet\n+ [Ok.]\n    -> DONE\n`;
+  const unmarked = lintInk(body(false), { channel: 'phone' }).findings.filter(f => f.rule === 'delivery-unread');
+  const marked = lintInk(body(true), { channel: 'phone' }).findings.filter(f => f.rule === 'delivery-unread');
+  assert.equal(unmarked.length, 0);
+  assert.equal(marked.length, 1);
+});
+
+test('inline {cond: text #delivery} is already a delivery-note warning (A1 rule)', () => {
+  const r = lintInk(`=== k ===\n{met: Good to see you. #delivery: warm}\nNext.\n`, { channel: 'person' });
+  assert.equal(r.findings.some(f => f.rule === 'delivery-note' && /inline conditional/.test(f.note)), true);
+});

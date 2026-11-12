@@ -118,12 +118,61 @@ export function cleanInkText(raw) {
 
 const NONVERBAL = /^\[?\s*(?:say nothing|stay silent|silence|nod|shrug|wait|stand|walk|leave|stare|look|hold|keep|let|don'?t|do nothing|hand|give|take|put|step|turn|smile|sigh|pause|say nowt)/i;
 
+
+// ---------- call writing in a text knot (call-in-text-thread) ----------
+// Plan 4.4. Phrases that only make sense when the player is on a call. "ring <Name> back", "call me",
+// "I'll ring" and choice text (the brackets) are not matched.
+const CALL_IN_TEXT = [
+  /\b(?:you|she|he)\s+picked up\b/i,
+  /\bon (?:this|the|my|her|his) line\b/i,
+  /\bget off (?:her|my|his) line\b/i,
+  /\bhang(?:s|ing)? up\b/i,
+  /\bthe line (?:drops|goes dead|is dead)\b/i,
+  /\byour handset (?:rings|lights)\b/i,
+  /\brings out\b/i,
+  /\bcaller id\b/i,
+];
+
+export function callInTextHits(body) {
+  const out = [];
+  for (const re of CALL_IN_TEXT) {
+    const m = body.match(re);
+    if (m) out.push(m[0]);
+  }
+  return out;
+}
+
+// Knots marked `// lint: call-knot` directly under their heading (comment and blank lines may sit
+// between the heading and the marker). `lines` is parseInkLines output.
+export function callKnotSet(lines) {
+  const set = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].kind !== 'knot') continue;
+    for (let j = i + 1; j < lines.length; j++) {
+      const L = lines[j];
+      if (L.kind === 'blank') continue;
+      if (L.kind !== 'comment') break;
+      if (/^\/\/\s*lint:\s*call-knot\b/i.test(L.t)) { set.add(lines[i].name); break; }
+    }
+  }
+  return set;
+}
+
 // ---------- ink parser ----------
 export function lintInk(text, { channel = 'person', names = [], file = '' } = {}) {
   const cap = channel === 'phone' ? CAPS.phone : CAPS.person;
   const lines = text.split(/\r?\n/);
   const findings = [];
   const lengths = [];
+  const parsed = channel === 'phone' ? parseInkLines(text) : null;
+  const callKnots = parsed ? callKnotSet(parsed) : null;
+  const callInText = (i, body, speaker) => {
+    if (!parsed || callKnots.has(parsed[i].knot) || PLAYER_LINE.test(speaker || '')) return;
+    for (const hit of callInTextHits(body)) {
+      findings.push({ level: 'warn', rule: 'call-in-text-thread', line: i + 1, match: hit, speaker, text: body,
+        note: `"${hit}" reads as a call in a text thread: rewrite it as a text, or move it to a call knot and mark the knot \`// lint: call-knot\`` });
+    }
+  };
   let afterChoice = null; // { line, text }
   const SPEAKER = /^((?:Narrator|[A-Z][\w.'’()-]*(?: [\w.'’()-]+){0,3})):\s+(\S.*)$/;
   for (let i = 0; i < lines.length; i++) {
@@ -173,6 +222,7 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
         if (w > cap) findings.push({ level: 'error', rule: 'line-len', line: n, words: w, cap, speaker, text: body });
       }
       for (const h of tellHits(body)) findings.push({ level: 'warn', rule: h.rule, line: n, match: h.match, speaker, text: body });
+      callInText(i, body, speaker);
       continue;
     }
     // other prose (narration without prefix etc.): check tells only, no spoken-line pending reset for logic
@@ -187,6 +237,7 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
         if (w > cap) findings.push({ level: 'error', rule: 'line-len', line: n, words: w, cap, speaker: 'contact', text: body });
       }
       for (const h of tellHits(body)) findings.push({ level: 'warn', rule: h.rule, line: n, match: h.match, text: body });
+      callInText(i, body, null);
     }
   }
   findings.push(...structureFindings(text, { channel, names }));
@@ -223,7 +274,7 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
 //                       spoken words (user, 2026-11-10): a performance note goes in the line's
 //                       #delivery: tag, which the voice reads and the player never sees. Skips the
 //                       player's lines, narration, choices, and emphasis between two words ("I *never*
-//                       said"). Voiced phone calls don't send #delivery: yet, so phone inks are not checked.
+//                       said"). Phone inks are checked only in knots marked `// lint: call-knot`.
 //   delivery-unread     (warn, person-chat) a #delivery: note the server cannot read for its line, so the
 //                       line plays untagged: a note on (or directly above) a glued line (<>) or a line
 //                       that prints a variable or expression, or a note on its own line with no spoken
@@ -236,6 +287,10 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
 //                       printed (`#{t}`): it may be a #delivery: tag, so the server drops every
 //                       note before it on the line. Also a tag inside an inline conditional or sequence
 //                       (`{cond: text #delivery: note}`): the server's walker skips that line.
+//   call-in-text-thread (warn, phone) a text knot written as a call: "she picked up", "on the line",
+//                       "hangs up", "the line goes dead", "rings out", "caller ID" (phone-calls plan 4.4).
+//                       A call knot carries `// lint: call-knot` directly under its `=== knot ===` line;
+//                       that suppresses this rule there and turns the #delivery: target checks on for it.
 //   crowded-hub         (check) a knot whose choice block offers more than 10 choices at once (sticky,
 //                       once-only and conditional all count). Passes when every conditional choice is
 //                       retired by a "not ..." guard and the unconditional ones sit last, which is how
@@ -782,6 +837,7 @@ function noteTarget(lines, idx, i, met = [], depth = 0) {
 
 function deliveryFindings(lines, idx, channel) {
   const F = [];
+  const callKnots = callKnotSet(lines);
   for (let i = 0; i < lines.length; i++) {
     const L = lines[i];
     if (!['text', 'tag', 'open', 'close', 'gather', 'branch', 'choice'].includes(L.kind)) continue;
@@ -805,9 +861,9 @@ function deliveryFindings(lines, idx, channel) {
       if (why) F.push({ level: 'warn', rule: 'delivery-note', line: L.n, text: cleanInkText(L.t) || L.t,
         note: `the #delivery: note ${why}, so the voice does not get it as written; use a short note in plain words` });
     }
-    // Voiced phone calls send notes since A1, but the linter cannot tell a call knot from a text
-    // knot yet: A7 reads `// lint: call-knot` (plan 4.4) and runs the target checks below for those.
-    if (channel === 'phone') continue;
+    // Voiced phone calls send notes since A1. The linter tells a call knot from a text knot by the
+    // `// lint: call-knot` marker (plan 4.4): the target checks below run for call knots only.
+    if (channel === 'phone' && !callKnots.has(L.knot)) continue;
     let target = null, reason = null;
     if (L.kind === 'text' && L.printable) {
       target = i;
