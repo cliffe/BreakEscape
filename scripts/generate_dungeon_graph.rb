@@ -12,6 +12,7 @@ require 'json'
 require 'base64'
 require 'securerandom'
 require 'set'
+require 'cgi'
 
 # Scenario and ink files are UTF-8: read them so whatever the shell's locale (LANG=C).
 Encoding.default_external = Encoding::UTF_8
@@ -519,6 +520,17 @@ NETWORKS = BreakEscape::NetworkModel.networks(scenario)
 # Every Wi-Fi key (slice 9.3b): no label in any tab may print one.
 WIFI_KEYS = NETWORKS.keys.filter_map { |id| (BreakEscape::NetworkModel.wifi_of(scenario, id) || {})['psk'] }
                     .select { |k| BreakEscape::NetworkModel.present_string?(k) }.freeze
+# The last line of defence: every output file is scrubbed of each key at write time, whatever
+# authored field (an NPC name, a container, a task title) carried it in. Each key is replaced
+# as written and in the forms the outputs encode it (HTML, JSON, JS template, node id), by a
+# token that is valid in a Mermaid id and in a label.
+WIFI_KEY_TOKEN = 'WIFI_KEY_HIDDEN'
+WIFI_KEY_FORMS = WIFI_KEYS.flat_map do |k|
+  [k, CGI.escapeHTML(k), JSON.generate(k)[1..-2], k.gsub('`') { '\\`' }.gsub('${') { '\\${' }, nid(k)]
+end.uniq.reject { |f| f.length < 4 }.sort_by { |f| -f.length }.freeze
+def scrub_wifi_keys(text)
+  WIFI_KEY_FORMS.reduce(text) { |out, form| out.gsub(form, WIFI_KEY_TOKEN) }
+end
 if NETWORKS.any?
   nm = BreakEscape::NetworkModel
   ai = BreakEscape::AccessIdentities
@@ -581,6 +593,18 @@ if NETWORKS.any?
   end
 
   accounts = ai.room_npcs(scenario).select { |e| ai.account?(e[:npc]) }
+  # The networks joined to a network by links, itself included, transitively. A signed-in
+  # desktop maps an access-listed file share on any of them (NetworkAccess#mapped_shares walks
+  # networks_reachable_from, no pivot or foothold needed). Outages are ignored, as on every
+  # other edge.
+  link_component = lambda do |net_id|
+    seen = Set[net_id]
+    frontier = [net_id]
+    until frontier.empty?
+      nm.linked_networks(scenario, frontier.shift).each { |other| frontier << other if seen.add?(other) }
+    end
+    seen
+  end
   NETWORKS.each_key do |net_id|
     hosts = nm.sign_in_objects_on(net_id, scenario)
     shares = nm.resources_on(net_id, scenario)
@@ -597,9 +621,13 @@ if NETWORKS.any?
       kind = res['kind'].to_s.empty? ? 'resource' : res['kind'].tr('_', ' ')
       node = add_node("resource_#{nid(res_id)}", "#{res['name'] || res_id}<br/>(#{kind})", 'container')
       if res['access'].is_a?(Hash)
+        # A file share a desktop maps is reached from a host on any linked network; any
+        # other access-listed resource only from a host on its own network.
+        mapped = res['kind'] == 'file_share' && !nm.listed_only_share?(res)
+        signin_hosts = mapped ? link_component.call(net_id).flat_map { |n| nm.sign_in_objects_on(n, scenario) } : hosts
         accounts.each do |a|
           next unless ai.acl_admits?(res['access'], a[:npc])
-          next unless hosts.any? { |h| ai.account_admitted?(h[:object], a[:npc]) }
+          next unless signin_hosts.any? { |h| ai.account_admitted?(h[:object], a[:npc]) }
 
           signin = "signin_#{nid(a[:npc]['id'])}"
           add_edge(signin, node) if $nodes.key?(signin)
@@ -618,8 +646,9 @@ if NETWORKS.any?
     add_edge(from, to, **opts) unless $edges.any? { |e| e[:from] == from && e[:to] == to }
   end
   foothold_nets = Set.new # networks a foothold lands on: open jacks, access points, implants
+  # A jack gives a foothold only when there is a rogue device to plant in it.
   nm.jacks(scenario).each do |e|
-    foothold_nets << e[:network] if NETWORKS.key?(e[:network]) && !e[:object]['portSecurity']
+    foothold_nets << e[:network] if device_nodes.any? && NETWORKS.key?(e[:network]) && !e[:object]['portSecurity']
   end
 
   # Links: structure, not reach. One dashed, undirected line per link (soft in the JSON),
@@ -642,16 +671,34 @@ if NETWORKS.any?
     npc = rooms[m[1]]['npcs'][m[2].to_i]
     npc.is_a?(Hash) ? npc_node_for.call(m[1], npc) : nil
   end
-  npc_holder = {} # item id => [room id, npc] for items an NPC holds
+  # item id => [room id, npc] for items an NPC holds, at any depth (a note in a folder the
+  # NPC holds is the NPC's too).
+  npc_holder = {}
+  index_held = lambda do |items, room_id, npc|
+    Array(items).each do |item|
+      next unless item.is_a?(Hash)
+
+      npc_holder[item['id']] ||= [room_id, npc] if nm.present_string?(item['id'])
+      index_held.call(item['contents'], room_id, npc)
+    end
+  end
   rooms.each do |room_id, room|
     next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
 
     room['npcs'].each do |npc|
-      next unless npc.is_a?(Hash) && npc['itemsHeld'].is_a?(Array)
-
-      npc['itemsHeld'].each do |item|
-        npc_holder[item['id']] ||= [room_id, npc] if item.is_a?(Hash) && nm.present_string?(item['id'])
-      end
+      index_held.call(npc['itemsHeld'], room_id, npc) if npc.is_a?(Hash) && npc['itemsHeld'].is_a?(Array)
+    end
+  end
+  # Where an object is found: behind its own lock, its container's lock, or in its room.
+  object_from = lambda do |entry|
+    obj = entry[:object]
+    cont = entry[:container]
+    if obj['locked'] && $nodes.key?("lock_#{obj['id']}")
+      "lock_#{obj['id']}"
+    elsif cont && cont['locked'] && $nodes.key?("lock_#{cont['id']}")
+      "lock_#{cont['id']}"
+    else
+      room_node.call(entry[:room_id])
     end
   end
   start_ids = Array(scenario['startItemsInInventory']).filter_map { |i| i['id'] if i.is_a?(Hash) }
@@ -668,7 +715,7 @@ if NETWORKS.any?
     ap = entry[:object]
     ap_key = nm.present_string?(ap['id']) ? ap['id'] : entry[:path]
     node = add_node("wifiap_#{nid(ap_key)}", "#{safe_text.call(ap['name'], ap_key)}<br/>Wi-Fi access point", 'lock')
-    from = room_node.call(entry[:room_id])
+    from = object_from.call(entry)
     edge_once.call(from, node) if from
     edge_once.call(node, net_node.call(entry[:network]))
     foothold_nets << entry[:network]
@@ -680,22 +727,39 @@ if NETWORKS.any?
     unless $nodes.key?(key)
       net_name = safe_text.call(NETWORKS[entry[:network]]['name'], entry[:network])
       add_node(key, "Wi-Fi key<br/>(#{safe_text.call(wifi['ssid'], net_name)})", 'key')
-      wifi_texts ||= BreakEscape::NpcHabits::Clues.readable_texts(scenario, File.dirname(SCENARIO_FILE))
+      unless wifi_texts
+        wifi_texts = BreakEscape::NpcHabits::Clues.readable_texts(scenario, File.dirname(SCENARIO_FILE))
+        # A text file on a share is served to whoever reaches the share, so it is a source too
+        # (readable_texts does not walk resources).
+        nm.resources(scenario).each do |res_id, res|
+          next unless nm.resource_contents?(res)
+
+          BreakEscape::NpcHabits::Clues.walk_objects(res['contents'], "resources/#{res_id}/contents", [],
+                                                     { resource: res_id.to_s }, wifi_texts)
+        end
+      end
       wifi_texts.select { |t| t[:text].include?(psk) }.uniq { |t| t[:path] }.each do |t|
         label = safe_text.call(t[:name], nm.present_string?(t[:object_id]) ? t[:object_id] : 'note')
         holder = t[:object_id] && npc_holder[t[:object_id]]
-        pc_id = t[:scope].is_a?(Hash) ? t[:scope][:pc] : nil
-        clue = if pc_id && $nodes.key?("lock_#{pc_id}")
-                 add_node("clue_#{nid(t[:path])}", label, 'item').tap { |c| edge_once.call("lock_#{pc_id}", c) }
-               elsif holder
-                 add_node("clue_#{nid(t[:path])}", label, 'item').tap { |c| edge_once.call(npc_node_for.call(*holder), c) }
-               elsif t[:room]
-                 clue_node_for.call(t, label)
-               elsif (start_ids.include?(t[:object_id]) || t[:path].to_s.start_with?('startItemsInInventory')) && start_from.call
-                 add_node("clue_#{nid(t[:path])}", label, 'item').tap { |c| edge_once.call(start_from.call, c) }
-               elsif (npc = npc_at_path.call(t[:path]))
-                 add_node("clue_#{nid(t[:path])}", label, 'item').tap { |c| edge_once.call(npc, c) }
-               end
+        scope = t[:scope].is_a?(Hash) ? t[:scope] : {}
+        pc_id = scope[:pc]
+        share = scope[:resource] && "resource_#{nid(scope[:resource])}"
+        hang = ->(from) { add_node("clue_#{nid(t[:path])}", label, 'item').tap { |c| edge_once.call(from, c) } }
+        npc = nil
+        clue = nil
+        if pc_id && $nodes.key?("lock_#{pc_id}")
+          clue = hang.call("lock_#{pc_id}")
+        elsif share && $nodes.key?(share)
+          clue = hang.call(share)
+        elsif holder
+          clue = hang.call(npc_node_for.call(*holder))
+        elsif (npc = npc_at_path.call(t[:path]))
+          clue = hang.call(npc)
+        elsif t[:room]
+          clue = clue_node_for.call(t, label)
+        elsif (start_ids.include?(t[:object_id]) || t[:path].to_s.start_with?('startItemsInInventory')) && start_from.call
+          clue = hang.call(start_from.call)
+        end
         if clue
           edge_once.call(clue, key)
         elsif start_from.call
@@ -714,17 +778,6 @@ if NETWORKS.any?
   if implants.any?
     room_entries = nm.room_objects(scenario)
     objects_by_id = room_entries.each_with_object({}) { |e, h| h[e[:object]['id']] ||= e if nm.present_string?(e[:object]['id']) }
-    object_from = lambda do |entry|
-      obj = entry[:object]
-      cont = entry[:container]
-      if obj['locked'] && $nodes.key?("lock_#{obj['id']}")
-        "lock_#{obj['id']}"
-      elsif cont && cont['locked'] && $nodes.key?("lock_#{cont['id']}")
-        "lock_#{cont['id']}"
-      else
-        room_node.call(entry[:room_id])
-      end
-    end
     homes = nil
     build_homes = lambda do
       list = room_entries.map { |e| { item: e[:object], from: -> { object_from.call(e) } } }
@@ -1702,7 +1755,7 @@ path_labels = critical_path.map { |id|
 # other graph keeps its legend byte for byte.
 net_labels = $edges.map { |e| e[:label] }.to_set
 net_notes = []
-net_notes << '<code>-.-</code> link: two networks joined; crossed only by a pivot' if $edges.any? { |e| e[:undirected] }
+net_notes << '<code>-.-</code> link: two networks joined; crossed by a pivot, or by a signed-in desktop mapping an access-listed share' if $edges.any? { |e| e[:undirected] }
 net_notes << '<b>+</b> then <code>pivot</code>: the network reached and a session at that host open the linked network' if net_labels.include?('pivot')
 if (net_labels & Set['held', 'dropped', 'session at PC']).any?
   net_notes << '<code>held</code> / <code>dropped</code> / <code>session at PC</code>: what an implant needs'
@@ -1926,7 +1979,7 @@ html  = <<~HTML
   </html>
 HTML
 
-File.write(OUT_FILE, html)
+File.write(OUT_FILE, scrub_wifi_keys(html))
 puts "Written: #{OUT_FILE}"
 
 # ---------------------------------------------------------------------------
@@ -2022,17 +2075,17 @@ md = <<~MD
   ```
 MD
 
-File.write(MD_FILE, md)
+File.write(MD_FILE, scrub_wifi_keys(md))
 
 # Machine-readable puzzle graph, for tooling that needs the dependency order
 # rather than a picture of it — notably the playtest harness, which uses it to
 # check that a flag or lock is only reached after its prerequisites are held.
-File.write(JSON_FILE, JSON.pretty_generate(
+File.write(JSON_FILE, scrub_wifi_keys(JSON.pretty_generate(
   'scenario' => File.basename(File.dirname(SCENARIO_FILE)),
   'start_room' => scenario['startRoom'],
   'nodes' => $nodes.map { |id, n| { 'id' => id, 'label' => n[:label], 'kind' => n[:klass], 'optional' => n[:optional] } },
   'edges' => $edges.map { |e| { 'from' => e[:from], 'to' => e[:to], 'soft' => e[:dashed], 'label' => e[:label], 'undirected' => e[:undirected] }.compact }
-))
+)))
 puts "Written: #{JSON_FILE}"
 puts "Written: #{MD_FILE}"
 puts "Puzzle     — Nodes: #{$nodes.size}  Edges: #{$edges.size}"

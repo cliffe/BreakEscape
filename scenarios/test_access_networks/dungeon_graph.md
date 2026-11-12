@@ -43,7 +43,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
 | Rounded rectangle | Amber | NPC in room (Rooms & Contents only) |
 
 Edges: `-->` solid = hard dependency; `-.->` dashed = soft / narrative dependency or optional path.
-  Network edges: `-.-` link: two networks joined; crossed only by a pivot.
+  Network edges: `-.-` link: two networks joined; crossed by a pivot, or by a signed-in desktop mapping an access-listed share.
   Network edges: + then `pivot`: the network reached and a session at that host open the linked network.
   Network edges: `held` / `dropped` / `session at PC`: what an implant needs.
 

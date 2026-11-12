@@ -174,6 +174,43 @@ test('without links, or without a foothold on the host network, there are no piv
     assert.ok(!g.edges.some(e => e.label === 'pivot'), 'a walk-up session reaches no network');
 });
 
+test('a foothold on the far network pivots back across the link, as the server walks it', { skip }, () => {
+    const sc = linked();
+    sc.rooms.comms_room.objects[0].network = 'server_net';
+    const g = graph(sc);
+    assert.ok(edge(g, 'jack_comms_port', 'net_server_net'), 'positive control: the jack lands on server_net');
+    assert.deepEqual(into(g, 'pivot_file_server'), ['lock_file_server', 'net_server_net']);
+    assert.equal(edgeOf(g, 'pivot_file_server', 'net_office_lan')?.label, 'pivot', 'the reverse pivot');
+});
+
+test('a jack with no rogue device to plant seeds no pivot', { skip }, () => {
+    const sc = linked();
+    let g = graph(sc);
+    assert.ok(edgeOf(g, 'pivot_hot_desk', 'net_server_net'), 'positive control');
+    sc.rooms.lobby.objects = sc.rooms.lobby.objects.filter(o => o.id !== 'kit_dropbox');
+    g = graph(sc);
+    assert.ok(!g.edges.some(e => e.label === 'pivot'));
+});
+
+test('an access-listed share across a link is mapped from an admitted sign-in, with no pivot', { skip }, () => {
+    const sc = linked();
+    sc.rooms.store.objects = sc.rooms.store.objects.filter(o => o.id !== 'file_server');
+    sc.rooms.comms_room.objects = [];
+    sc.resources.vault = { kind: 'file_share', name: 'Vault', host: 'SV-FS02', network: 'server_net',
+                           access: { roles: ['finance'] }, contents: [{ id: 'vault_doc', type: 'text_file', name: 'Doc', readable: true, text: 'x' }] };
+    sc.resources.open_drop = { kind: 'file_share', name: 'Open drop', host: 'SV-FS02', network: 'server_net',
+                               contents: [{ id: 'drop_doc', type: 'text_file', name: 'Drop', readable: true, text: 'y' }] };
+    let g = graph(sc);
+    assert.deepEqual(into(g, 'resource_vault'), ['signin_lena'], 'a walk-up sign-in on office_lan maps it');
+    assert.deepEqual(into(g, 'resource_open_drop'), ['net_server_net'], 'an open share maps only on its own network');
+    assert.ok(!g.edges.some(e => e.label === 'pivot'), 'no pivot is involved');
+    assert.match(g.html, /crossed by a pivot, or by a signed-in desktop mapping an access-listed share/);
+    delete sc.networkLinks;
+    g = graph(sc);
+    assert.ok(g.nodes.resource_vault, 'positive control');
+    assert.deepEqual(into(g, 'resource_vault'), [], 'no link: no host admits Lena on the vault network');
+});
+
 function wifi() {
     const sc = scenario();
     sc.networks.guest_wifi = { name: 'Guest Wi-Fi', wifi: { ssid: 'Harbour-Guest', psk: PSK } };
@@ -229,6 +266,61 @@ test('a key note an NPC holds hangs from the NPC, one in the start items from th
     g = graph(sc);
     assert.ok(g.edges.some(e => e.from === 'lobby' && e.to.startsWith('clue_')), 'from the start room');
     assert.ok(g.edges.some(e => e.from.startsWith('clue_') && e.to === 'wifikey_guest_wifi'));
+});
+
+test('a key note nested in an item an NPC holds hangs from that NPC', { skip }, () => {
+    const sc = wifi();
+    const card = sc.rooms.lobby.objects.pop();
+    sc.rooms.comms_room.npcs = [{ id: 'kim', displayName: 'Kim Lo',
+                                  itemsHeld: [{ id: 'kim_folder', type: 'notes1', name: 'Folder', contents: [card] }] }];
+    const g = graph(sc);
+    assert.deepEqual(into(g, 'clue_wifi_card'), ['npc_kim_lo']);
+    assert.ok(edge(g, 'clue_wifi_card', 'wifikey_guest_wifi'));
+});
+
+test('a key kept in a file share hangs from the share', { skip }, () => {
+    const sc = wifi();
+    sc.rooms.lobby.objects.pop();
+    sc.resources.scanned_inbox.contents = [{ id: 'inbox_note', type: 'text_file', name: 'Wi-Fi.txt', readable: true,
+                                             text: `Guest key: ${PSK}` }];
+    const g = graph(sc);
+    assert.deepEqual(into(g, 'clue_inbox_note'), ['resource_scanned_inbox']);
+    assert.ok(edge(g, 'clue_inbox_note', 'wifikey_guest_wifi'));
+    assert.ok(!g.edges.some(e => e.to === 'wifikey_guest_wifi' && e.label === 'heard or read elsewhere'));
+    for (const out of [g.raw, g.md, g.html]) assert.ok(!out.includes(PSK));
+});
+
+test('an access point inside a locked container hangs from its lock', { skip }, () => {
+    const sc = wifi();
+    const ap = sc.rooms.lobby.objects.find(o => o.id === 'guest_ap');
+    sc.rooms.lobby.objects = sc.rooms.lobby.objects.filter(o => o !== ap);
+    sc.rooms.lobby.objects.push({ id: 'ap_cabinet', type: 'safe', name: 'Cabinet', locked: true, lockType: 'pin',
+                                  requires: '4321', contents: [ap] });
+    const g = graph(sc);
+    assert.ok(edge(g, 'lock_ap_cabinet', 'wifiap_guest_ap'));
+    assert.ok(!edge(g, 'lobby', 'wifiap_guest_ap'));
+});
+
+test('the key is scrubbed from every output whatever name carries it', { skip }, () => {
+    const holders = {
+        'an NPC name': sc => { sc.rooms.lobby.npcs[0].displayName = `Lena ${PSK}`; },
+        'a container name': sc => {
+            sc.rooms.store.objects.push({ id: 'key_box', type: 'safe', name: `Box ${PSK}`, locked: true, lockType: 'pin',
+                                          requires: '1111', contents: [{ id: 'pen', type: 'notes1', name: 'Pen' }] });
+        },
+        'an objective and a task title': sc => {
+            sc.objectives = [{ aimId: 'aim_one', title: `Aim ${PSK}`, status: 'active', order: 0,
+                               tasks: [{ taskId: 'task_one', title: `Task ${PSK}`, type: 'custom', status: 'active' }] }];
+        }
+    };
+    for (const [what, put] of Object.entries(holders)) {
+        const sc = wifi();
+        put(sc);
+        const g = graph(sc);
+        assert.ok(g.nodes.wifikey_guest_wifi, `${what}: positive control`);
+        assert.ok([g.raw, g.md, g.html].some(out => out.includes('WIFI_KEY_HIDDEN')), `${what}: the name was drawn, scrubbed`);
+        for (const out of [g.raw, g.md, g.html]) assert.ok(!out.includes(PSK), `${what}: the key is in no output`);
+    }
 });
 
 test('an open Wi-Fi network needs no key', { skip }, () => {
