@@ -185,3 +185,27 @@ After shots c01 to c05 appended to the session scratchpad's `ux-shots/after_acce
 
 ### Tests (single files, no lock)
 toast-queue 10, toast-duplicate, toast-hold-over-panels, toast-hold-verbatim, toast-once-across-panel-handover, toast-once-before-container, toast-verbatim, toast-click-through, error-toast-floor, lockpick-close-toast, social-ready-toast, f18-toast-flag-rfid; password-signin-mode 19, draggable-bottom-anchored 1, canvas-fonts 4, network-view 27; every test file that copies or imports the password, container or network-view minigames, helpers.js, main.js, npc-action-icons or npc-needs-debug (about 30 files): 0 failures. Validator on test_access_networks: 0 lines with ❌. Full suites not run (orchestrator's merge batch).
+
+## Merge with main and M1
+
+Main f2d53bb40 (with build/unlock-gaps-r1 and build/ux-devices) merged in 5dd1ea698.
+
+- password-minigame.js: the two conflict hunks resolved as planned. Both helpers kept (`passwordScreenKind` closed before `isCaseLockTarget`), and the panel takes both classes: `password-minigame-area${kind === 'prompt' ? ' prompt-mode' : ''}${caseLock ? ' case-lock' : ''}`.
+- inventory.js and the notepad merged with no conflict; inventory.js is now the same as main's, with one `notepadItemData()`.
+- M1: `.container-minigame.desktop-mode` keeps `height: auto` (unlock-gaps' `calc(100% - 40px)` line removed). minigame-controls-layout.test.mjs test 4 expects `auto`, with a comment that the desktop sizes itself to its 16:10 screen.
+- The `100vh - 440px` budget holds with the Cancel row in the flow, so it is unchanged. Measured: the desktop block is the screen plus 128 px, starts 144 to 193 px down, and the game area ends 101 px above the window's foot. At 720 px tall the screen caps at 280 px and the desktop ends 18 px (sign-in PC) or 67 px (m01) above the game area's foot; at 1000 px tall the screen is 515 px (its 16:10 height) and there is 63 to 112 px spare. Close was on screen in all four.
+- Disabled Sign in (d40485916): `.submit-btn:disabled` is a flat grey fill with a 2px inset frame, muted text, a not-allowed cursor and no hover change; disabled account tiles keep their look on hover, and the chosen one keeps its frame. Test added to minigame-controls-layout.test.mjs.
+
+### Live proof
+Keyless headless server on :3195 from this worktree, setFPS(20) with fixed steps on and the setTimeout loop. Games 1865 (test_access_networks, start desk_room, finance office unlocked), 1867 (m01_first_contact, start it_room) and 1868 (test_unlock_gaps swapped onto test_seating). Server and sessions stopped afterwards. Shots d01 to d07 appended to the session scratchpad's `ux-shots/after_access/manifest.json`.
+- Sam's PC signed in, at 1400x1000 and 1280x720 (d01, d02); m01 IT Monitoring Station at both sizes (d05, d06): Close on screen each time.
+- Lena's PC after five wrong passwords for lfox (d03): Sign in computed grey with the 2px frame and a not-allowed cursor; Close focused.
+- Guest Wi-Fi access point (d04): `prompt-mode` only, one "Join Wi-Fi" title line.
+- Courier Bag after a KO (d07): classes `prompt-mode case-lock`, brass bezel and border, gold label on no backing; no prompt title line. Satchel42 opens it.
+
+### Noticed, not changed
+- At 720 px tall the capped screen is wider than 16:10 (824x280): the wallpaper is cropped, not stretched, and the icons fit. Keeping 16:10 would need the monitor's width capped from the same budget, which makes it about 500 px wide; left as is.
+- The bag's name shows twice, in the heading beside its picture and in the field label ("Enter password: Courier Bag"). Main draws it the same way, and the label wording comes from m07 #5, so it is left for a design call.
+
+### Tests (single files, no lock)
+Every test file that imports or copies password-minigame.js, container-minigame.css or password-minigame.css, plus minigame-controls-layout: 19 files, 215 tests, 0 failures. Full suites not run (orchestrator's merge batch).
