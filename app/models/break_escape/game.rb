@@ -789,6 +789,7 @@ module BreakEscape
 
       npc_ko_claimable?(npc_id)
     end
+    public :npc_defeated?
 
     # Either KO record exists for the NPC, before any check: cheap (no scenario walk), so the
     # room payload asks it first (review R4 n3)

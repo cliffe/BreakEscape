@@ -2377,7 +2377,11 @@ module BreakEscape
         # q35 review R1 M1: an NPC's Friendface phone changes what the server decides for that
         # NPC, so it is handed over only when the scenario offers that give (a KO drop is a room
         # location and stays allowed). Specific to this item; other held items keep the old rule.
-        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && !@game.friendface_phone_offered?(npc_id)
+        # Code review R5 n2: an NPC the server holds as KO'd (npc_defeated?, the claim rule) gives
+        # its phone too, so a KO drop the server refused (its KO sync had not landed) can still be
+        # picked up from the local sprite once the KO has reached the server.
+        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && !@game.friendface_phone_offered?(npc_id) &&
+           !@game.npc_defeated?(npc_id)
           error_msg = "NPC does not give this item: #{npc_id}"
           Rails.logger.warn "[BreakEscape] #{error_msg}"
           return error_msg

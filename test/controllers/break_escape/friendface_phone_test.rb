@@ -292,6 +292,29 @@ module BreakEscape
       assert_response :success
     end
 
+    # Code review R5 n2: the drop was refused (the KO sync had not landed), so nothing lies in the
+    # room; the local sprite's pickup goes to Lena's itemsHeld. Once the KO is on the server the
+    # pickup works; before it, and for an NPC never met, it does not.
+    test 'review R5 n2: a KO drop the server refused can still be picked up once the KO is on the server' do
+      build('encounteredNPCs' => %w[jake omar nia])
+      add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, source_npc_id: 'lena')
+      assert_response :unprocessable_entity, 'no KO and not met'
+
+      @game.reload.player_state['encounteredNPCs'] << 'lena'
+      @game.save!
+      add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, source_npc_id: 'lena')
+      assert_response :unprocessable_entity, 'met, but no KO'
+
+      put sync_state_game_url(@game), params: { npcHostility: { 'lena' => { hostile: true, ko: true } } }, as: :json
+      assert_response :success
+      assert_nil @game.reload.player_state.dig('room_states', 'office', 'objects_added')
+      add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, source_npc_id: 'lena')
+      assert_response :success
+      assert @game.reload.friendface_phone_taken?('lena')
+      open_phone('lena')
+      assert_response :success
+    end
+
     test 'review R2 M1: an NPC that offers its phone may drop it without a KO, once met' do
       build('encounteredNPCs' => %w[lena omar nia])
       room_add('jake', { 'type' => 'phone_friendface', 'id' => 'jake_phone', 'name' => "Jake's phone" })
