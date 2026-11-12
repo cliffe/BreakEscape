@@ -234,7 +234,7 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 
 + [Nothing right now.]
     #exit_conversation
-    Line's open. Call when you have something.
+    Line's open. Message me when you have something.
     -> support_hub
 
 // Choices-only: the guides on offer and not yet sent (m04 field_guides).
