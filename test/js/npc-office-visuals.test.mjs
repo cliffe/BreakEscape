@@ -567,7 +567,7 @@ test('validator (slice 16): screenHabit bounds, nothing to lock, shadowed habit;
     assert.ok(!has("NPC 'ian'") && !has("NPC 'roamer'"), 'a borrower\'s habit applies at the hot desk');
     assert.ok(has("ERROR: NPC 'loner' screenHabit.lockChance"));
     assert.ok(has("ERROR: NPC 'loner' screenHabit.lockIfAwayOverSeconds"));
-    assert.ok(has("WARNING: NPC 'loner' screenHabit has unknown field 'colour'"));
+    assert.ok(!has("'colour'"), 'an unknown screenHabit key is the schema\'s one line, not a second warning here');
     assert.ok(has("WARNING: NPC 'loner' screenHabit but the NPC owns no workstation"));
     assert.ok(!has("'pc_san' autoLockSeconds"), 'the habit leaves it open');
     assert.ok(has("WARNING: object 'pc_def' autoLockSeconds never applies"), 'no habit: always locks');
