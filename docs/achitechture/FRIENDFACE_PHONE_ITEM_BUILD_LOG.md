@@ -58,22 +58,50 @@ Screenshots: the scratchpad `ffp/` folder of the session (not committed).
 
 ## Notes and open points
 
-- The browser's title bar still reads "Browser" (the osint block's title): the phone passes its
-  name as `title`, which the osint browser does not read. Cosmetic; left.
+- The browser's title bar reads the osint block's title, as at any terminal (the phone passes no
+  title since R1 n3).
 - A post that arrives while the phone itself is open still counts as unread until the next open.
-- KO: a knocked-out NPC drops its items; picking its phone up from the floor makes the phone held,
-  so the NPC is phone-less while the player holds it, but there is no gift record, so a drop gives
-  the server no record. A KO'd NPC does not post, so this is not reachable in practice.
+- KO: fixed in R1 (m2): a phone picked up from a KO drop is recorded in `phonesTaken`.
 - The validator error for a missing phone item only bites `test_access_social` today (the only
   scenario with social needs).
 
 ## Suite results
 
-- Rails `bin/rails test` (under the lock): 1804 runs, 25613 assertions, 0 failures, 0 errors, 1 skip.
-- JS `bin/test-js -j 3` (under the lock): 507 of 508 files. The one failure,
-  `minigame-launch-routes.test.mjs`, listed the registry's types and lacked the new
-  `phone_friendface` entry; added to its starter map, the file now passes alone (31 of 31). No
-  other change, so the full JS suite was not rerun.
+- Build (1004655bd): Rails 1804 runs, 0 failures, 1 skip. JS 508 of 508 files, run in full under
+  the lock by review R1 after the registry test fix.
+- After the R1 fixes (db4be19e9), both under the lock: Rails 1808 runs, 25632 assertions,
+  0 failures, 0 errors, 1 skip; JS 508 passed, 0 failed, 508 total.
+
+## Review R1 fixes (FRIENDFACE_PHONE_ITEM_CODE_REVIEW_R1.md)
+
+- M1: an NPC's phone is handed over only when the scenario offers that give. That means a
+  `give_item:phone_friendface` tag, or a `give_npc_inventory_items` tag that does not filter the
+  phone out, in the compiled story or in the NPC's JSON record (`friendface_phone_offered?`,
+  checked in the `npc` branch of `validate_item_collectible`). It applies to this item only, and a
+  KO drop stays allowed. Rails: Lena's phone add is 422 and she keeps her phone.
+- M2: the open no longer merges the route's `feedPosts`, so a `/feed_post` in flight still fires
+  `npc_posted`, the blip and its task mappings. A JS race test covers it.
+- m1: `add_item_to_room!` refuses an unsourced Friendface phone, and a held phone counts only when
+  its id matches one the scenario declares.
+- m2: `phonesTaken` is recorded in `add_inventory_item!` the first time an NPC's phone arrives by any
+  route, and `friendface_phone_taken?` reads it, so a KO pickup followed by a remove keeps the
+  phone taken on the server, as on the client.
+- m3, m4, n1 (validator): an NPC phone must be takeable and every phone needs an id. A phone in a
+  scenario with no social site is an error, and `phoneOf` on another item type warns.
+- m5: suite line above. n2: Jake's ink sets `lent_phone` after the give. n3: the open passes no
+  title. n4: the plan says no phone in the test scenario is droppable.
+- Not touched: the reviewer's out-of-branch `add_object` opens_lock/key_id finding (handled in
+  another build).
+- Live proof on :3032 (game 1402, server stopped afterwards):
+  - picking up my own phone opened the feed;
+  - Jake's post blipped and set the badge to 1;
+  - Jake's phone opened his profile with his revealed post;
+  - a forged Lena give was 422 ("NPC does not give this item"), and Lena posted from her phone later;
+  - a minted phone through `update_room` was refused (422, and the inventory add 422);
+  - opening Lena's phone was 403;
+  - Jake's phone post was refused;
+  - a post that arrived while the browser was open played its sound once, on close;
+  - task `f14_jake_phone` completed.
 
 ## Handover
 
