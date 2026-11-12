@@ -1,0 +1,13 @@
+{
+  "key": "f9805ba2eb7049cdc78732de3c3656b3",
+  "npc": "narrator",
+  "text": "The screen cuts to black. One line of text holds: Ghost protocol, closed.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:43:31Z"
+}

@@ -23,6 +23,10 @@ export const NEEDS_TICK_MS = 250;
 const MAX_FRAME_MS = 1000;
 const LOG_CAP = 2000;
 const FAIL_COOLDOWN_MS = 60000;
+// Access 9.2 H review R3 m2: a failed walk to a borrowed PC. FAIL_COOLDOWN_MS equals the borrow's
+// start window, so it would always drop the borrow; a short wait lets the borrower try again
+// inside the window, and startBy stays the only bound
+const BORROW_FAIL_COOLDOWN_MS = 5000;
 const HOME_EPS = 12;
 const HOME_RETRY_TICKS = 4;   // provisional needsHome re-lookup: once a second
 const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found nothing retries after 1 s
@@ -84,21 +88,24 @@ export const PICTURE_CHATTER = Object.freeze({
     // Slice 19: a desk-phone call nobody hears (or with no lines left) shows the phone
     phone: Object.freeze(['phone']),
     phone_message: Object.freeze(['phone']),
-    // Access slice 9.2 U (ACCESS_MODEL_SLICE_9_2_PLAN 7): a device the PC's USB policy refused
-    usb_refused: Object.freeze(['blocked']),
+    // Access slice 9.2 U (ACCESS_MODEL_SLICE_9_2_PLAN 7): a device the PC's USB policy refused.
+    // User decision q27: a refused or failed use shows the barrier (was blocked, which keeps its
+    // office-life meaning: nothing permitted reachable)
+    usb_refused: Object.freeze(['barrier']),
     // Access slice 9.2 A (plan 5.5): the failure mutters and the workaround start lines
-    station_fail: Object.freeze(['blocked']),
-    work_fail_no_access: Object.freeze(['blocked']),
-    work_fail_fed_up: Object.freeze(['blocked']),
-    social_blocked: Object.freeze(['blocked']),
+    station_fail: Object.freeze(['barrier']),
+    work_fail_no_access: Object.freeze(['barrier']),
+    work_fail_fed_up: Object.freeze(['barrier']),
+    social_blocked: Object.freeze(['barrier']),
     work_fail_file_share: Object.freeze(['file']),
     work_fail_printer: Object.freeze(['print']),
     work_fail_email: Object.freeze(['work']),
     work_fail: Object.freeze(['work']),
-    wk_writes_down: Object.freeze(['work']),
-    wk_prop_door: Object.freeze(['work']),
-    wk_borrow: Object.freeze(['work']),
-    wk_share_login: Object.freeze(['work']),
+    // User decision q21: a workaround's start line shows the workaround icon (was work)
+    wk_writes_down: Object.freeze(['workaround']),
+    wk_prop_door: Object.freeze(['workaround']),
+    wk_borrow: Object.freeze(['workaround']),
+    wk_share_login: Object.freeze(['workaround']),
     login_aloud: Object.freeze(['social'])
 });
 const PICTURE_DEFAULT = Object.freeze(['social']);
@@ -127,10 +134,16 @@ export const TURN_BACK = Object.freeze({
  * whose place cannot be reached is kept (check visit, workaround visit).
  */
 export const JUDGED_NEEDS = Object.freeze(['work', 'social_media']);
-export const FAIL_SHOW_MS = 4000;
+export const FAIL_SHOW_MS = 4000;          // after the failure's grumble, if one is showing
+export const WORKAROUND_SHOW_MS = 4000;    // an emit workaround's icon (it has no visit to show it)
 export const FAILURE_PARKS = Object.freeze(['off', 'failed', 'held']);
 export const VISIT_DWELL_S = 8;
 export const VISIT_DROP_MS = Object.freeze({ check: 60000, workaround: 120000 });
+// Access 9.2 H (plan 6.4): a borrow not started this long (needs clock) after the hand-over is dropped
+export const BORROW_START_MS = 60000;
+// Access 9.2 L (6.6): how long a use at its own station waits for a lockout check in flight (the
+// queue sends at most one request every two seconds; a lost one is sent again once)
+export const LOCK_CHECK_WAIT_MS = 30000;
 /** Slice 18b-i (OFFICE_LIFE_PLAN 12.4): temptation's default band above urgentAt, in points. */
 export const MAGNET_TEMPT = 30;
 /** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
@@ -471,8 +484,12 @@ export class NPCNeedsSystem {
             // re-arm mark per need, resources already checked this outage, queued visits, the
             // shown failure, and the outage kick's last-seen conditions and pending needs
             frustration: 0, tell: 0, settled: false,
-            rearm: {}, failSent: {}, checked: new Set(), visits: [], failedShow: null, failCause: {},
+            rearm: {}, failSent: {}, checked: new Set(), visits: [], borrow: null, failedShow: null, workaroundShow: null, failCause: {},
             kickSeen: {}, kickPending: new Set(),
+            // Access slice 9.2 L (6.6): stations where the server's check found this owner locked
+            // out (its uses there fail with locked_out), and checks sent and not yet answered
+            // (pcId -> needs clock ms sent; the first use there waits for the answer)
+            lockedOut: new Set(), lockCheck: {},
             urgentFlag: {},
             mode: 'idle',
             prevMode: null,
@@ -521,13 +538,15 @@ export class NPCNeedsSystem {
             for (const v of Array.isArray(s.visits) ? s.visits : []) if (v?.kind === 'workaround') wk.push(v);
             if (s.job) this._abortJob(s, 'reset', { cancel: true });
             for (const v of wk) this._emit(`npc_visit_dropped:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data, reason: 'reset' });
+            // A held borrow too (review R1 m2)
+            if (s.borrow) this._dropBorrow(s, 'reset');
         }
         // The server still holds each NPC's frustration: the mirror survives a reset (R1 m3).
         // failSent marks and a reload's held parks do not (review R2 n2): reset() is a debug and
         // test path, and a missed owed ease or hold costs one report at most
         const mirror = new Map(ids.map(id => {
             const s = this.states.get(id);
-            return [id, { frustration: s.frustration, tell: s.tell, settled: s.settled }];
+            return [id, { frustration: s.frustration, tell: s.tell, settled: s.settled, lockedOut: [...s.lockedOut] }];
         }));
         this.states.clear();
         this._chats.clear();
@@ -551,7 +570,7 @@ export class NPCNeedsSystem {
             this.register(id);
             const m = mirror.get(id);
             const s = this.states.get(id);
-            if (m && s) { s.frustration = m.frustration; s.tell = m.tell; s.settled = m.settled; }
+            if (m && s) { s.frustration = m.frustration; s.tell = m.tell; s.settled = m.settled; m.lockedOut.forEach(pc => s.lockedOut.add(pc)); }
         }
     }
 
@@ -1219,6 +1238,12 @@ export class NPCNeedsSystem {
     _tickNpc(s) {
         const id = s.npcId;
         this._decay(s);
+        if (s.borrow) this._tickBorrow(s);
+        // Review R2 m1: an outage fixed while the barrier shows ends it, as q17 fades the frustration icon
+        if (s.failedShow && s.failedShow.missing.length && this._causesPass(s, s.failedShow.missing)) {
+            s.failedShow = null;
+            this._log(id, 'failed_cleared');
+        }
 
         const pos = this.world.npcPos(id);
         if (!pos) return; // sprite not loaded: decay only
@@ -1515,6 +1540,9 @@ export class NPCNeedsSystem {
     }
 
     _useCandidate(s, name, objects, pos, excludeId = null, quiet = false) {
+        // Access 9.2 H (plan 6.4): a borrowed PC is this need's candidate ahead of the home object.
+        // One in use, unreachable, off, hidden or not loaded is waited for: no other source, no park
+        if (!quiet && s.borrow && s.borrow.need === name) return this._borrowCandidate(s, excludeId);
         // A switched-off source (affordance.offWhen, slice 18a) is no candidate at all; nor (18b-i) a
         // hidden object (revealOnGlobal not true), nor a magnet this NPC does not know of or that is
         // gone or empty. quiet: a magnet look that found nothing notes nothing and parks nothing.
@@ -1578,6 +1606,80 @@ export class NPCNeedsSystem {
         if (skipped && !quiet) pick.leashed = skipped;
         if (priv && !quiet) pick.privateSkipped = priv;
         return withAnyway(pick);
+    }
+
+    /** The borrowed PC as a use pick when it can be sat at now, else null (waited for, 6.4). */
+    _borrowCandidate(s, excludeId) {
+        const b = s.borrow;
+        if (b.pcId === excludeId) return null;
+        const o = this.world.getObject(b.pcId);
+        if (!o || this._isOff(o) || this._hidden(o) || !this._free(s, o) || !this._reachable(s, o)) return null;
+        const pick = { kind: 'use', targetId: o.id, borrowed: true };
+        if (o.affordance?.offWhen !== undefined) pick.offWhen = o.affordance.offWhen;
+        return pick;
+    }
+
+    /**
+     * Access 9.2 H (plan 6.4): the runner hands a borrow_session over. The borrowed PC becomes the
+     * failing need's first candidate and the need is unparked, so the NPC gets up at once. A run
+     * already set (same index and hand) is a copy and changes nothing.
+     */
+    setBorrow(npcId, run) {
+        const s = this.states.get(npcId);
+        if (!s || !run || typeof run.pc !== 'string' || !run.pc) return false;
+        if (!Number.isInteger(run.index) || !Number.isInteger(run.hand)) return false;
+        if (s.borrow && s.borrow.index === run.index && s.borrow.hand === run.hand) return true;
+        // Review R1 m2: a borrow already being used is not replaced (the new one is refused, so
+        // the runner gives it back as dropped); one not started yet is reported dropped first,
+        // so its hand-over is freed instead of waiting for an event that never comes
+        if (s.borrow && s.job && s.job.borrow === s.borrow) return false;
+        const need = typeof run.need === 'string' && s.needs[run.need] ? run.need : 'work';
+        if (!s.needs[need]) return false;
+        if (s.borrow) this._dropBorrow(s, 'replaced');
+        const routes = run.routes && typeof run.routes === 'object' && !Array.isArray(run.routes) ? run.routes : null;
+        s.borrow = { index: run.index, hand: run.hand, pcId: run.pc, need, routes, leavesOpen: run.leavesOpen !== false,
+            startBy: this.clockMs + BORROW_START_MS, started: false };
+        this._log(npcId, 'borrow_set', { need, target: run.pc });
+        if (s.parked[need]) this._unpark(s, need, 'borrow');
+        else if (s.levels[need] > s.needs[need].urgentAt) s.levels[need] = s.needs[need].urgentAt;
+        s.selectRetryAt = 0;
+        return true;
+    }
+
+    /**
+     * Access 9.2 H (6.5): whether the player hears this NPC now: in the same room, within the chat
+     * overhear radius, with a clear line (the world's playerHears, as chatter uses it).
+     */
+    playerHears(npcId, radius = OVERHEAR_RADIUS) {
+        if (typeof this.world.playerHears !== 'function') return false;
+        return !!(this.world.playerHears(npcId, radius) || {}).overheard;
+    }
+
+    /** A borrow that has not started by its startBy is dropped and reported (6.4). */
+    _tickBorrow(s) {
+        const b = s.borrow;
+        if (!b || this.clockMs < b.startBy || (s.job && s.job.borrow === b)) return;
+        this._dropBorrow(s);
+    }
+
+    _dropBorrow(s, reason = null) {
+        const b = s.borrow;
+        if (!b) return;
+        s.borrow = null;
+        this._log(s.npcId, 'borrow_dropped', reason ? { target: b.pcId, reason } : { target: b.pcId });
+        this._emit(`npc_borrow_dropped:${s.npcId}`, { npcId: s.npcId, index: b.index, hand: b.hand, pcId: b.pcId });
+    }
+
+    /**
+     * Access 9.2 H (plan 6.4): the NPC using an object now (the workstation's `userOf`): a job in
+     * its `using` phase at that object that is not a visit. Null when nobody is.
+     */
+    userOf(objectId) {
+        for (const id of [...this.states.keys()].sort()) {
+            const j = this.states.get(id).job;
+            if (j && j.kind !== 'visit' && j.phase === 'using' && j.targetId === objectId) return id;
+        }
+        return null;
     }
 
     // ── avoidance at a distance, balking, parked needs (slice 14: OFFICE_LIFE_PLAN 10) ──
@@ -1807,6 +1909,30 @@ export class NPCNeedsSystem {
     }
 
     /**
+     * Access slice 9.2 (user decision q21): the workaround icon with no job (getState().workaround)
+     * for WORKAROUND_SHOW_MS after any line showing now. The runner calls it for an `emit`, which
+     * has no visit; a workaround visit calls it when done, since the start line (shown from the
+     * hand-over) can hide the action icon for a short visit's whole length. False for an NPC the
+     * system does not run. Review R2 m2: an emit landing while the NPC has a job shows nothing,
+     * since the job shows its own icon and a new job clears this one; it is not saved for later.
+     */
+    showWorkaround(npcId) {
+        const s = this.states.get(npcId);
+        if (!s) return false;
+        if (s.job) { this._log(npcId, 'workaround_skipped', { job: s.job.kind }); return true; }
+        this._showWorkaround(s);
+        return true;
+    }
+
+    /** The workaround icon for WORKAROUND_SHOW_MS after any line (also as a visit or borrow ends). */
+    _showWorkaround(s) {
+        const npcId = s.npcId;
+        const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+        s.workaroundShow = { until: this.clockMs + said + WORKAROUND_SHOW_MS };
+        this._log(npcId, 'workaround_shown');
+    }
+
+    /**
      * Access slice 9.2 (plan 5.5): one line from `topic` (a mutter) over one NPC, through the grumble
      * path with the chatter cooldown ignored; the topic's own picture with no line. False for an
      * NPC the system does not run.
@@ -1986,7 +2112,10 @@ export class NPCNeedsSystem {
      */
     _countFailure(s, need, missing, objectId) {
         const id = s.npcId;
-        s.failedShow = { need, missing: (missing || []).map(c => ({ ...c })), until: this.clockMs + FAIL_SHOW_MS };
+        // User decision q27: counted from the end of the failure's grumble, which hides the action
+        // icon while it shows, so the barrier icon is seen after the line (as avoidShow is)
+        const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+        s.failedShow = { need, missing: (missing || []).map(c => ({ ...c })), until: this.clockMs + said + FAIL_SHOW_MS };
         // q17 (2026-11-11): the causes of the last counted failure of each need, for causeCleared
         s.failCause[need] = (missing || []).map(c => ({ ...c }));
         const drain = Number(this._plan(s)?.breakDrain);
@@ -2024,16 +2153,18 @@ export class NPCNeedsSystem {
     _causeCleared(s) {
         const needs = Object.keys(s.failCause || {});
         if (!needs.length) return false;
+        if (!this.world.workRules?.causesClear) return false;
+        return needs.every(n => this._causesPass(s, s.failCause[n] || []));
+    }
+
+    /** Whether every cause in `list` would pass now (causesClear, plus a switched-off station). */
+    _causesPass(s, list) {
         const rules = this.world.workRules;
         if (!rules?.causesClear) return false;
-        const plan = this._plan(s);
         // A switched-off station (`off`) has cleared once its offWhen no longer holds
         const offClear = c => { const rec = this._offSeen.get(c.id); return !!rec && !this._globalHolds(rec.cond); };
-        return needs.every(n => {
-            const list = s.failCause[n] || [];
-            const off = list.filter(c => c.why === 'off');
-            return off.every(offClear) && rules.causesClear(plan, list.filter(c => c.why !== 'off'), g => this._globalValue(g));
-        });
+        const off = list.filter(c => c.why === 'off');
+        return off.every(offClear) && rules.causesClear(this._plan(s), list.filter(c => c.why !== 'off'), g => this._globalValue(g));
     }
 
     /** A failed park whose wakeOn names `name` and whose causes would all pass now retries soon (5.2). */
@@ -2140,19 +2271,29 @@ export class NPCNeedsSystem {
         }
         const p = this.world.npcPos(v.at.npcId);
         if (!p || this._roomForbidden(s, p.roomId)) return null;
-        const cell = typeof this.world.cellBeside === 'function' ? this.world.cellBeside(v.at.npcId) : { x: p.x + 32, y: p.y };
+        const cell = typeof this.world.cellBeside === 'function' ? this.world.cellBeside(v.at.npcId, s.npcId, { avoidRooms: this._avoidRooms(s) }) : { x: p.x + 32, y: p.y };
         return cell ? { targetId: v.at.npcId, cell } : null;
     }
 
     _startVisit(s) {
         const v = s.visits[0];
         const limit = VISIT_DROP_MS[v.kind === 'check' ? 'check' : 'workaround'];
-        if (this.clockMs - v.queuedAt >= limit) {
+        // Review R2 m1: nobody walks off to check a resource that works again; the resource is
+        // freed, so a later failure on it queues a check afresh
+        const cleared = v.kind === 'check' && v.data?.resourceId && this._causesPass(s, [{ id: v.data.resourceId, why: 'down' }]);
+        if (cleared || this.clockMs - v.queuedAt >= limit) {
             s.visits.shift();
-            this._log(s.npcId, 'visit_dropped', { kind: v.kind, target: v.at.objectId || v.at.npcId });
-            this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data });
+            if (cleared) s.checked.delete(v.data.resourceId);
+            this._log(s.npcId, 'visit_dropped', { kind: v.kind, target: v.at.objectId || v.at.npcId, reason: cleared ? 'cleared' : undefined });
+            this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data, ...(cleared ? { reason: 'cleared' } : {}) });
             return false;
         }
+        // Review R1 M1: a check visit waits out the barrier or workaround icon (a job's icon would
+        // hide it), and nothing else starts meanwhile: the line, the icon, then off to check.
+        // Not guarded by _judged (review R2 n2): only _countFailure queues a check, from a judged
+        // use, and the hold lasts only while an icon shows, so a check some future caller queues
+        // for an office-life NPC would wait at most WORKAROUND_SHOW_MS, which is harmless
+        if (v.kind === 'check' && this._iconShowing(s)) return true;
         if (this.clockMs - v.triedAt < 1000) return false;
         v.triedAt = this.clockMs;
         const place = this._visitPlace(s, v);
@@ -2162,12 +2303,19 @@ export class NPCNeedsSystem {
         return true;
     }
 
+    /** The barrier (failedShow) or workaround (workaroundShow) icon is still in its time. */
+    _iconShowing(s) {
+        return !!((s.failedShow && this.clockMs < s.failedShow.until) || (s.workaroundShow && this.clockMs < s.workaroundShow.until));
+    }
+
     _completeVisit(s) {
         const id = s.npcId;
         const v = s.job.visit;
         this._log(id, 'visit_done', { kind: v.kind, target: v.at.objectId || v.at.npcId });
         this._emit(`npc_visit_done:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data });
         if (v.kind === 'check' && v.at.objectId) this._emit(`npc_checked:${v.at.objectId}`, { npcId: id, objectId: v.at.objectId, data: v.data });
+        // q21: the start line can cover a short visit's whole icon, so it stays a moment after
+        if (v.kind === 'workaround') this._showWorkaround(s);
         const stayPut = s.atPost && this._targetsOwnPost(s);
         s.job = null;
         this._goHome(s, { stayPut });
@@ -2181,10 +2329,43 @@ export class NPCNeedsSystem {
         (this._answers || (this._answers = [])).push(...answers.filter(a => a && typeof a.npcId === 'string'));
     }
 
+    /**
+     * Access 9.2 L (6.6): the report queue sent a `check` for this owner at its own station (on a
+     * locked return). Until the answer is applied the first use there holds its verdict, so a
+     * slow answer never lets one use through as met. False for any PC but the NPC's station.
+     */
+    lockCheckSent(npcId, pcId) {
+        const s = this.states.get(npcId);
+        if (!s || typeof pcId !== 'string' || pcId !== this._stationId(s)) return false;
+        s.lockCheck[pcId] = this.clockMs;
+        this._log(npcId, 'lock_check', { target: pcId });
+        return true;
+    }
+
+    /** Access 9.2 L (6.6): whether the server's check found this owner locked out at this PC. */
+    isLockedOut(npcId, pcId) {
+        return !!this.states.get(npcId)?.lockedOut.has(pcId);
+    }
+
+    _applyLockCheck(s, a) {
+        const pc = typeof a.forObject === 'string' ? a.forObject : null;
+        if (!pc) return;
+        delete s.lockCheck[pc];
+        if (a.lockedOut !== true || pc !== this._stationId(s) || s.lockedOut.has(pc)) return;
+        s.lockedOut.add(pc);
+        this._log(s.npcId, 'locked_out', { target: pc });
+        this._emit(`npc_locked_out:${s.npcId}`, { npcId: s.npcId, objectId: pc });
+    }
+
     _applyAnswers() {
         const list = this._answers;
         this._answers = [];
         for (const a of list) {
+            // Access 9.2 L (6.6): a check's answer (the report queue sends one for every check,
+            // refused or lost as lockedOut false) only sets or clears the station flag
+            // (Review R1 n4: with no state the answer is dropped, unlike a level; the return that
+            // sent the check needed a live state, and a reload restores the server's record)
+            if (a.forEvent === 'check') { const cs = this.states.get(a.npcId); if (cs) this._applyLockCheck(cs, a); continue; }
             if (a.refused || a.stale) continue;
             const s = this.states.get(a.npcId);
             if (!s) { (this._pendingLevels || (this._pendingLevels = new Map())).set(a.npcId, a); continue; }
@@ -2284,6 +2465,12 @@ export class NPCNeedsSystem {
             delete this._restored[s.npcId];
             this._restoreFrustration(s, e);
             this._seedFailCause(s, e.failWhy);
+            // Access 9.2 L (6.6, 9.4): the stations a check found this owner locked out at, so it
+            // does not sit back down and work until its next locked return
+            const station = this._stationId(s);
+            for (const pc of Array.isArray(e.lockedOut) ? e.lockedOut : []) {
+                if (pc === station && !s.lockedOut.has(pc)) { s.lockedOut.add(pc); this._log(s.npcId, 'locked_out', { target: pc, restored: true }); }
+            }
         }
         const pending = this._pendingLevels?.get(s.npcId);
         if (pending) {
@@ -2447,6 +2634,10 @@ export class NPCNeedsSystem {
 
     _startJob(s, pick) {
         const id = s.npcId;
+        // Review R1 m4, R2 m2: a job shows its own icon, so neither an emit's workaround icon nor
+        // the barrier comes back after it (failCause stays: q17's fade needs it)
+        s.workaroundShow = null;
+        s.failedShow = null;
         s.job = {
             need: pick.need, kind: pick.kind, targetId: pick.targetId,
             itemId: pick.itemId || null, tag: pick.tag || null,
@@ -2455,6 +2646,8 @@ export class NPCNeedsSystem {
         };
         if (pick.offWhen !== undefined) s.job.offWhen = pick.offWhen;   // slice 18a: checked on the way
         if (pick.visit) s.job.visit = pick.visit;   // access 9.2 A: a visit (5.3)
+        // Access 9.2 H (6.4): a borrowed use carries its borrow (cleared on completion, dropped if never done)
+        if (pick.borrowed && s.borrow) { s.job.borrowed = true; s.job.borrow = s.borrow; s.borrow.started = true; }
         if (pick.tempted) s.job.tempted = true;   // slice 18b-i: recorded now, the level may decay on the way
         // Slice 19: a colleague answering a desk phone; the call (and its length) is chosen at the claim
         if (pick.phoneCall) { s.job.phone = true; s.job.call = pick.phoneCall; s.job.callMs = pick.phoneCall.total; }
@@ -2761,6 +2954,11 @@ export class NPCNeedsSystem {
                 const vs = Number(job.visit?.useSeconds);
                 job.useUntil = this.clockMs + (Number.isFinite(vs) ? clamp(vs, 0, 600) : VISIT_DWELL_S) * 1000;
                 this._log(id, 'visiting', { kind: job.visit?.kind, target: job.targetId });
+                // Access 9.2 H (6.5): the runner says a share's line on arrival and listens from then
+                const v = job.visit || {};
+                // world.emit, not _emit: an arrival changes no world state, so it clears no NPC's
+                // select back-off (review R1 n1)
+                this.world.emit(`npc_visit_arrived:${id}`, { npcId: id, kind: v.kind, at: { ...(v.at || {}) }, data: v.data ?? null });
                 return;
             }
             const secs = Number(obj?.affordance?.useSeconds);
@@ -2768,6 +2966,8 @@ export class NPCNeedsSystem {
             this._log(id, 'using', { need: job.need, target: job.targetId });
             // Slice 20: room tone's startSound. world.emit, not _emit: the per-tick object cache stays
             this.world.emit(`npc_use_started:${job.targetId}`, { npcId: id, objectId: job.targetId, need: job.need });
+            // Access 9.2 H (6.4): the borrower signs in there; the workstation layer displaces a held session
+            if (job.borrowed) this._emit(`npc_sat_at:${job.targetId}`, { npcId: id, objectId: job.targetId });
             if (obj) this._maybePair(s, obj);
             return;
         }
@@ -2787,10 +2987,40 @@ export class NPCNeedsSystem {
         if (job.kind === 'visit') { this._completeVisit(s); return; }
         // Access slice 9.2 A (plan 5.2): a judged use is checked before anything is restored
         const judged = job.kind === 'use' && job.need && this._judged(s, job.need);
-        if (judged && typeof this.world.useVerdict === 'function') {
-            const v = this.world.useVerdict(id, job.need, obj) || { met: true };
-            if (!v.met) { this._failUse(s, v); return; }
+        // Access 9.2 L (6.6): at its own station, a use waits at the desk for a check in flight
+        const atStation = judged && !job.borrowed && job.targetId === this._stationId(s);
+        if (atStation && s.lockCheck[job.targetId] !== undefined) {
+            if (this.clockMs - s.lockCheck[job.targetId] < LOCK_CHECK_WAIT_MS) {
+                if (!job.lockHeld) { job.lockHeld = true; this._log(id, 'use_held', { target: job.targetId }); }
+                return;
+            }
+            // Review R1 n1 (6.6: a slow answer never lets one use through as met): a lapse is not
+            // judged. The use is skipped (nothing restored, no npc_used, no report) and the check
+            // stays in flight with its wait started again, so the next use there waits for the
+            // answer too; the NPC never freezes, and only an answer ends the wait
+            s.lockCheck[job.targetId] = this.clockMs;
+            this._log(id, 'lock_check_lapsed', { target: job.targetId });
+            const stayPut = s.atPost && this._atOwnPost(s);
+            s.job = null;
+            this._clearBackoffs();
+            this._goHome(s, { stayPut });
+            return;
         }
+        let v = { met: true };
+        if (judged && typeof this.world.useVerdict === 'function') {
+            // Access 9.2 H (6.4): at a borrowed PC the verdict runs with that PC's routes
+            v = (job.borrowed ? this.world.useVerdict(id, job.need, obj, job.borrow?.routes || null) : this.world.useVerdict(id, job.need, obj)) || { met: true };
+        }
+        // Access 9.2 L (6.6): a station failure, first in the list (5.2); work only (a lockout at a
+        // social_media station is left to sub-slice C), and never at a borrowed PC (per PC)
+        if (atStation && job.need === 'work' && s.lockedOut.has(job.targetId)) {
+            const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
+            v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest], station: true };
+        }
+        // Access 9.2 H (6.4): the borrower signed in before finding out, so a session is left either
+        // way; said before anything else (before a failed verdict's turn-back)
+        if (job.borrowed) this._borrowDone(s, job, !!v.met);
+        if (!v.met) { this._failUse(s, v); return; }
         if (n && s.temptBack[job.need]) delete s.temptBack[job.need];
         if (n) {
             let restores = asList(aff.satisfies).includes(job.need) ? Number(aff.restores) || 0 : 0;
@@ -2894,6 +3124,18 @@ export class NPCNeedsSystem {
         this._goHome(s, { stayPut });
     }
 
+    _borrowDone(s, job, met) {
+        const id = s.npcId;
+        const b = job.borrow;
+        if (!b) return;
+        if (s.borrow === b) s.borrow = null;
+        this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen });
+        if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met });
+        this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand });
+        // Review R1 m1: as a workaround visit, the start line can hide a short borrowed use's icon
+        this._showWorkaround(s);
+    }
+
     /**
      * Access slice 9.2 A (plan 5.2): a judged use whose verdict failed. Nothing is restored, no
      * npc_used fires and no onUse hook applies; npc_use_failed fires and the job ends as a
@@ -2907,7 +3149,7 @@ export class NPCNeedsSystem {
         const wakeOn = rules?.wakeOnFor ? rules.wakeOnFor(this._plan(s), missing, n => this._globalValue(n)) : [];
         this._log(id, 'use_failed', { need: job.need, target: job.targetId, causes: missing.map(c => `${c.id}:${c.why}`).join(',') });
         this._emit(`npc_use_failed:${id}`, { npcId: id, objectId: job.targetId, need: job.need, missing, station: !!v.station });
-        const borrowed = !!(s.borrow && s.borrow.pcId === job.targetId);   // 6.4: not reported (sub-slice H)
+        const borrowed = !!job.borrowed;   // 6.4: a failed borrowed use is not reported (sub-slice H)
         this._turnBack(s, 'failed', null, { missing, wakeOn, borrowed });
     }
 
@@ -2919,7 +3161,7 @@ export class NPCNeedsSystem {
 
     _failJob(s, reason) {
         const job = s.job;
-        if (job) s.cooldowns[job.phase === 'goto_item' ? job.itemId : job.targetId] = this.clockMs + FAIL_COOLDOWN_MS;
+        if (job) s.cooldowns[job.phase === 'goto_item' ? job.itemId : job.targetId] = this.clockMs + (job.borrowed ? BORROW_FAIL_COOLDOWN_MS : FAIL_COOLDOWN_MS);
         this._emit(`npc_job_failed:${s.npcId}`, { npcId: s.npcId, need: job?.need, targetId: job?.targetId, reason });
         this._abortJob(s, reason, { cancel: true, failed: true });
         this._goHome(s);
@@ -3948,7 +4190,8 @@ export class NPCNeedsSystem {
         for (const k of Object.keys(s.levels)) levels[k] = round2(s.levels[k]);
         return {
             npcId, mode: s.mode, levels, atPost: s.atPost, scriptSuspended: s.scriptSuspended,
-            job: s.job ? { windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, errand: !!s.job.errand, files: !!(s.job.stowAt && s.job.slot), phone: !!s.job.phone, queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
+            // workaround (q21): a workaround visit, or the use of a PC borrowed by a workaround
+            job: s.job ? { workaround: !!(s.job.borrowed || (s.job.kind === 'visit' && s.job.visit?.kind === 'workaround')), windingUp: !!s.job.windupUntil, need: s.job.need, kind: s.job.kind, phase: s.job.phase, targetId: s.job.targetId, itemId: s.job.itemId, carrying: s.job.carrying, tag: s.job.tag || null, leashed: !!s.job.leashed, privateSkipped: !!s.job.privateSkipped, prints: !!s.job.prints, errand: !!s.job.errand, files: !!(s.job.stowAt && s.job.slot), phone: !!s.job.phone, queuePlace: s.job.phase === 'queued' ? this._queuers(s.job.targetId).indexOf(s) + 1 : null } : null,
             pressing: this._pressing(s),
             talking: this._talking(npcId),
             chatPartner: this._chatPartner(npcId),
@@ -3965,16 +4208,31 @@ export class NPCNeedsSystem {
             // counted (for FAIL_SHOW_MS), queued visits, and whether a visit is running
             frustration: s.frustration, tell: s.tell, settled: s.settled,
             failed: s.failedShow && this.clockMs < s.failedShow.until ? { need: s.failedShow.need, missing: s.failedShow.missing.map(c => ({ ...c })) } : null,
+            // q21: an emit workaround just done (showWorkaround), for WORKAROUND_SHOW_MS
+            workaround: !!(s.workaroundShow && this.clockMs < s.workaroundShow.until),
             visits: s.visits.map(v => ({ kind: v.kind, at: { ...v.at } })),
             visiting: s.job?.kind === 'visit' ? { kind: s.job.visit?.kind || null, at: { ...(s.job.visit?.at || {}) } } : null,
             judged: { work: this._judged(s, 'work'), social_media: this._judged(s, 'social_media') },
             causeCleared: this._causeCleared(s),
+            // Access 9.2 H (6.4): a borrow handed over and not yet done
+            borrow: s.borrow ? { index: s.borrow.index, hand: s.borrow.hand, pcId: s.borrow.pcId, need: s.borrow.need, leavesOpen: s.borrow.leavesOpen, started: s.borrow.started } : null,
+            // Access 9.2 L (6.6): stations the owner is locked out at, and checks in flight
+            lockedOut: [...s.lockedOut].sort(), lockCheck: Object.keys(s.lockCheck).sort(),
             clockMs: this.clockMs, tick: this.tickCount
         };
     }
 }
 
 // ── live engine adapter ───────────────────────────────────────────────────
+
+/**
+ * Access 9.2 H (6.4): a work plan judged from a borrowed PC. `routes` maps a resource id to the
+ * routes from that PC (the server's `run.routes`); each listed resource's routes are replaced.
+ */
+export function planWithRoutes(plan, routes) {
+    if (!plan || !routes || typeof routes !== 'object' || !Array.isArray(plan.needs)) return plan;
+    return { ...plan, needs: plan.needs.map(r => (r && Object.prototype.hasOwnProperty.call(routes, r.id) ? { ...r, routes: routes[r.id] } : r)) };
+}
 
 /**
  * The world as the needs system sees it, read from the running engine through
@@ -4338,26 +4596,35 @@ export function createEngineWorld() {
         // (systems/npc-work.js, set on window when loaded), the use verdict and the report queue
         globalValue: name => W().gameState?.globalVariables?.[name],
         get workRules() { return W().npcWork || null; },
-        useVerdict(npcId, need, obj) {
+        useVerdict(npcId, need, obj, routes = null) {
             const rules = W().npcWork;
             const rec = W().npcManager?.getNPC?.(npcId) || W().npcManager?.npcs?.get?.(npcId) || null;
             if (!rules || !rec) return { met: true, missing: [] };
             const stationId = typeof rec.needsHome === 'string' ? rec.needsHome : null;
+            // lockedOut stays false here: the needs core adds a lockout from its own flag (9.2 L, 6.6)
             const station = obj && obj.id === stationId ? { id: obj.id, lockedOut: false, socialBlocked: false } : null;
-            return rules.useVerdict(rec.work, need, station, W().gameState?.globalVariables || {});
+            return rules.useVerdict(planWithRoutes(rec.work, routes), need, station, W().gameState?.globalVariables || {});
         },
         reportUse(npcId, report) { W().npcReports?.queue?.(npcId, report); },
         // A free cell beside where an NPC stands now (a visit to an NPC, 5.3)
-        cellBeside(npcId) {
+        cellBeside(npcId, visitorId, opts) {
             const sp = W().npcManager?.npcs?.get?.(npcId)?._sprite || W().npcManager?.getNPC?.(npcId)?._sprite;
             const pm = W().pathfindingManager;
             if (!sp || !pm?.findNearestWalkableWorldCell) return null;
             const c = centreOf(sp);
+            // The first side the visitor can walk to (routeLength, the moveTo pathfinder and
+            // leash). A walkable cell can still be cut off, such as the gap behind a colleague's
+            // desk: a share_login visit to Ruth stood still there until it timed out (browser
+            // run H, game 1222). With no visitor, or no side reachable, the first walkable cell.
+            const from = visitorId ? this.npcPos(visitorId) : null;
+            let first = null;
             for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
                 const cell = pm.findNearestWalkableWorldCell(c.x + dx * TILE, c.y + dy * TILE, 0);
-                if (cell) return cell;
+                if (!cell) continue;
+                if (!from || this.routeLength(from, cell, opts) !== null) return cell;
+                if (!first) first = cell;
             }
-            return null;
+            return first;
         },
         // A second user of a shared object stands one tile beside the first: right, left, below, above
         besideCell(cell, taken) {

@@ -286,6 +286,20 @@ module BreakEscape
       NetworkModel.reach_conditions(data, net, resource)
     end
 
+    # Routes from a borrowed PC (sub-slice H, 6.4): { resourceId => routes } for each resource in
+    # the NPC's work list, or nil in a scenario with no networks. Sent in a borrow's `run`, so the
+    # verdict at the hot desk uses that PC's reach.
+    def routes_from(data, npc, pc_id)
+      return nil if NetworkModel.networks(data).empty?
+
+      entry = pc_id.is_a?(String) ? object_index(data)[pc_id] : nil
+      net = entry ? NetworkModel.network_of(entry[:obj], entry[:room]) : nil
+      res = resources(data)
+      work_list(data, npc).each_with_object({}) do |id, out|
+        out[id] = NetworkModel.reach_conditions(data, net, res[id]) if res[id]
+      end
+    end
+
     # The work plan the server attaches to a room NPC as `work` (plan 5.2): ids, kinds and
     # global names, never a display name or a network. nil for an NPC with no plan.
     def plan(data, npc)
@@ -366,6 +380,9 @@ module BreakEscape
         return true if list.any? { |r| !admitted?(r, npc) || present_string?(r['downIf']) }
         return true if list.any? { |r| (rt = routes(data, npc, r)) && (rt.empty? || rt.any? { |route| !route.empty? }) }
 
+        # Sub-slice L (6.6): its own sign-in PC under a policy with maxAttempts can lock it out
+        return true if lockout_station?(data, npc)
+
         # The station only: a borrow PC counts once handed over (sub-slice H; review R1 M2)
         off_when?(data, station(data, npc))
       when 'social_media'
@@ -388,7 +405,8 @@ module BreakEscape
         need == 'work' && work_list(data, npc).include?(id) && resources(data).key?(id)
       when 'no_access'
         need == 'work' && work_list(data, npc).include?(id) && !admitted?(resources(data)[id], npc)
-      else # off, locked_out, social_blocked: the station only until H hands a borrow PC over
+      else # off, locked_out, social_blocked: the station only (a lockout is per PC, and a failed
+        # borrowed use is never reported, 6.4)
         st = station(data, npc)
         !st.nil? && st['id'] == id
       end
@@ -411,8 +429,25 @@ module BreakEscape
       end
       st = station(data, npc)
       out << { 'id' => st['id'], 'why' => 'social_blocked' } if need == 'social_media' && st && social_blocked?(data, npc)
-      out << { 'id' => st['id'], 'why' => 'locked_out' } if st && locked_out_at?(npc, st, lockouts)
+      # Sub-slice L review R1 m2: work only, as on the client (a lockout at a social_media
+      # station is left to sub-slice C), so a social ease at the station is not refused
+      out << { 'id' => st['id'], 'why' => 'locked_out' } if need == 'work' && st && locked_out_at?(npc, st, lockouts)
       out
+    end
+
+    # Sub-slice L (6.6): the NPC's own station is a sign-in PC it owns (no screenOwner, or its
+    # own id there), the NPC has an account, and the PC's policy (its own, else defaultPolicy)
+    # sets a positive maxAttempts. Only then can a lockout stop its work, and only then does the
+    # server answer a `check` for it.
+    def lockout_station?(data, npc)
+      st = station(data, npc)
+      return false unless st && AccessIdentities.login_pc?(st) && AccessIdentities.account?(npc)
+
+      owner = st['screenOwner']
+      return false if present_string?(owner) && owner != npc['id']
+
+      max = policy_of(data, st)&.dig('maxAttempts')
+      max.is_a?(Numeric) && max.positive?
     end
 
     # Sub-slice L: whether loginLockouts (a list of "pcId|username" keys) holds the NPC's
@@ -428,6 +463,9 @@ module BreakEscape
     def park_floor(npc)
       (0.9 * defer_min(npc) * 60) - 3
     end
+    # `u` is the shortest use over AccessWork.places, which leaves out a handed-over hot desk
+    # (sub-slice H) on purpose: the floor is then stricter, not looser, and honest eases are
+    # spaced by the need's period, so nothing honest is refused (review R1 n3)
     def use_floor(data, npc, need)
       [(0.9 * shortest_use_seconds(data, npc, need)) - 3, 0].max
     end

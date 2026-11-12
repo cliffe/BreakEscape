@@ -715,3 +715,132 @@ test('merged: a knock-out at the desk changes the screen with how ko; the return
     assert.equal(r.emitted.at(-1)[1].wasLocked, true);
     assert.deepEqual(r.changes.map(c => c[1].how), ['ko', 'return']);
 });
+
+// ── Access 9.2 H-4 (ACCESS_MODEL_SLICE_9_2_PLAN.md 6.4): users and guests at a hot desk ──
+
+function hotRig({ autoLockMin = 5, userOf } = {}) {
+    const globals = {}; const emitted = []; const handlers = {};
+    let clock = 0;
+    const objects = [{ id: 'hot_desk', lockType: 'login' }, { id: 'pc_a', lockType: 'login' }];
+    const env = {
+        objects: () => objects,
+        npcs: () => [{ id: 'ann', needsHome: 'pc_a' }, { id: 'ian', needsHome: 'ian_pc' }],
+        on: (p, cb) => { handlers[p] = cb; },
+        emit: (n, d) => emitted.push([n, d]),
+        setGlobal: (k, v) => { globals[k] = v; },
+        roll: () => 0.5,
+        ownerPresent: () => false,
+        policyFor: () => (autoLockMin === null ? null : { autoLockMin }),
+        clockMs: () => clock
+    };
+    if (userOf) env.userOf = userOf;
+    const ws = new WorkstationState(env).install();
+    return { ws, globals, emitted, handlers, tick: (ms) => { clock += ms; ws.checkAutoLocks(); } };
+}
+
+test('H-4: a PC in use by a non-owner answers attended, and presence names the user', () => {
+    let user = 'ian';
+    const { ws } = hotRig({ userOf: id => (id === 'hot_desk' ? user : null) });
+    assert.equal(ws.onInteract('hot_desk'), 'attended');
+    assert.equal(ws.presence('hot_desk').userId, 'ian');
+    user = null;
+    assert.equal(ws.onInteract('hot_desk'), 'signin');
+});
+
+test('H-4: a guest is recorded when the answer arrives; the leave publishes the globals and emits owner_left reason guest; a click is accessed', () => {
+    const { ws, globals, emitted, handlers } = hotRig();
+    assert.equal(ws.onInteract('hot_desk'), 'signin');
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    assert.equal(ws.guestOf('hot_desk'), 'ian');
+    assert.equal(globals.hot_desk_owner_away, true);
+    assert.equal(globals.hot_desk_screen_locked, false);
+    const left = emitted.find(([n]) => n === 'workstation_owner_left:hot_desk')[1];
+    assert.deepEqual(left, { objectId: 'hot_desk', ownerId: 'ian', screenLocked: false, reason: 'guest' });
+    assert.equal(ws.onInteract('hot_desk'), 'accessed');
+    assert.deepEqual(emitted.at(-1), ['workstation_accessed:hot_desk', { objectId: 'hot_desk', ownerId: 'ian', guest: true }]);
+    assert.equal(ws.presence('hot_desk').guestId, 'ian');
+});
+
+test('H-4: autoLockMin ends the guest session at lockAt with workstation_auto_locked; the next click is the sign-in screen', () => {
+    const { ws, globals, emitted, handlers, tick } = hotRig({ autoLockMin: 5 });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    tick(299000);
+    assert.equal(ws.guestOf('hot_desk'), 'ian');
+    tick(2000);
+    assert.deepEqual(emitted.find(([n]) => n === 'workstation_auto_locked:hot_desk')[1], { objectId: 'hot_desk', ownerId: 'ian', guest: true });
+    assert.equal(globals.hot_desk_screen_locked, true);
+    assert.equal(ws.guestOf('hot_desk'), null);
+    assert.equal(ws.onInteract('hot_desk'), 'signin');
+});
+
+test('R2 server m1: a refused guest claim locks the guest session before lockAt (the server timed it out on wall time)', () => {
+    const { ws, globals, emitted, handlers, tick } = hotRig({ autoLockMin: 5 });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    tick(120000); // the needs clock stopped during VM time: only 2 minutes here
+    assert.equal(ws.onInteract('hot_desk'), 'accessed');
+    assert.equal(ws.guestClaimRefused('hot_desk'), true);
+    assert.equal(ws.guestOf('hot_desk'), null);
+    assert.equal(globals.hot_desk_screen_locked, true);
+    assert.deepEqual(emitted.find(([n]) => n === 'workstation_auto_locked:hot_desk')[1], { objectId: 'hot_desk', ownerId: 'ian', guest: true });
+    assert.equal(ws.onInteract('hot_desk'), 'signin', 'the next click sends no claim');
+    assert.equal(ws.guestClaimRefused('hot_desk'), false, 'no guest: nothing to lock');
+});
+
+test('R3 n1: a refused claim for Ian keeps Rosa, recorded while the claim was answered', () => {
+    const { ws, globals, emitted, handlers } = hotRig({ autoLockMin: 5 });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    handlers['npc_guest_left:*']({ npcId: 'rosa', objectId: 'hot_desk' });
+    assert.equal(ws.guestOf('hot_desk'), 'rosa');
+    assert.equal(ws.guestClaimRefused('hot_desk', 'ian'), false);
+    assert.equal(ws.guestOf('hot_desk'), 'rosa');
+    assert.notEqual(globals.hot_desk_screen_locked, true);
+    assert.equal(emitted.filter(([n]) => n === 'workstation_auto_locked:hot_desk').length, 0);
+    assert.equal(ws.guestClaimRefused('hot_desk', 'rosa'), true);
+    assert.equal(ws.guestOf('hot_desk'), null);
+});
+
+test('H-4: the next NPC to sit down ends a guest session, with no workstation_owner_returned', () => {
+    const { ws, globals, emitted, handlers } = hotRig({ autoLockMin: null });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    handlers['npc_sat_at:*']({ npcId: 'rosa', objectId: 'hot_desk' });
+    assert.equal(ws.guestOf('hot_desk'), null);
+    assert.equal(globals.hot_desk_owner_away, false);
+    assert.equal(emitted.filter(([n]) => n.startsWith('workstation_owner_returned:')).length, 0);
+    assert.equal(ws.onInteract('hot_desk'), 'signin');
+});
+
+test('H-4: a guest is never recorded at an owned PC; an env without userOf keeps today\'s answers', () => {
+    const { ws, handlers } = hotRig();
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'pc_a' });
+    assert.equal(ws.guestOf('pc_a'), null);
+    const old = rig([{ id: 'pc_a', lockChance: 0 }]);
+    assert.equal(old.ws.onInteract('pc_a'), 'attended');
+    assert.equal(old.ws.presence('pc_a').userId, null);
+});
+
+test('R1 M1: the player\'s sign-out at the hot desk ends the guest session; the next click is the sign-in screen', () => {
+    const { ws, globals, handlers } = hotRig({ autoLockMin: null });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    handlers['pc_signed_in']({ pcId: 'hot_desk', npcId: 'ian', via: 'claim' });
+    assert.equal(ws.guestOf('hot_desk'), 'ian', 'claiming the guest session keeps the record');
+    handlers['pc_signed_out']({ pcId: 'pc_a', reason: 'sign_out' });
+    assert.equal(ws.guestOf('hot_desk'), 'ian', 'another PC');
+    handlers['pc_signed_out']({ pcId: 'hot_desk', npcId: 'ian', reason: 'sign_out' });
+    assert.equal(ws.guestOf('hot_desk'), null);
+    assert.equal(globals.hot_desk_owner_away, false);
+    assert.equal(ws.onInteract('hot_desk'), 'signin');
+});
+
+test('R1 M1: a password sign-in at the hot desk ends the guest session there', () => {
+    const { ws, handlers } = hotRig({ autoLockMin: null });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    handlers['pc_signed_in']({ pcId: 'hot_desk', npcId: 'temp_user', via: 'password' });
+    assert.equal(ws.guestOf('hot_desk'), null);
+});
+
+test('R1 M1: a displacement before the new guest is recorded keeps that guest', () => {
+    const { ws, handlers } = hotRig({ autoLockMin: null });
+    handlers['pc_signed_out']({ pcId: 'hot_desk', npcId: 'temp_user', reason: 'displaced' });
+    handlers['npc_guest_left:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    assert.equal(ws.guestOf('hot_desk'), 'ian');
+});

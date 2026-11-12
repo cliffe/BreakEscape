@@ -111,11 +111,11 @@ export function holdRecentNotifications(now = Date.now()) {
         .filter((el) => el._toast && !el._toast.pulled)
         .map((el) => ({ el, ...el._toast }));
     const pulled = pickRecentHoldable(shown, now);
-    pulled.forEach(({ el, message, type, title, duration, plainText }) => {
+    pulled.forEach(({ el, message, type, title, duration, plainText, verbatim }) => {
         el._toast.pulled = true;
         if (el.parentNode) el.parentNode.removeChild(el);
         // seen = true: already on screen once, so it is replayed once and never pulled again
-        heldNotifications.push([message, type, title, duration, true, { plainText: plainText === true }]);
+        heldNotifications.push([message, type, title, duration, true, { plainText: plainText === true, verbatim: verbatim === true }]);
     });
     if (pulled.length && !holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
     pickStaleHoldable(shown, now).forEach(({ el }) => {
@@ -140,6 +140,8 @@ export function toastDuration(type, duration) {
 // Show a notification instead of using alert()
 // options.plainText: render the title and message as plain text (textContent), never markup.
 // Use it for any message that carries author or organisation text (a host label, a name).
+// options.verbatim (with plainText): the message exactly as given, with no " -- " dash display,
+// for text the player must copy character for character (an overheard password).
 export function showNotification(message, type = 'info', title = '', duration = 5000, options = {}) {
     duration = toastDuration(type, duration);
     if (shouldHoldNotification(type, fullScreenPanelOpen() || panelExpected())) {
@@ -187,6 +189,7 @@ function setPlainLines(el, text) {
 
 function renderNotification(message, type, title, duration, seen = false, options = {}) {
     const plainText = options?.plainText === true;
+    const verbatim = plainText && options?.verbatim === true;
     const notificationContainer = document.getElementById('notification-container');
 
     // The same toast raised again while it is still on screen (a refusal hint clicked
@@ -224,9 +227,11 @@ function renderNotification(message, type, title, duration, seen = false, option
     if (plainText) {
         // Author text in, plain text out: textContent, never innerHTML.
         if (title) notification.querySelector('.notification-title').textContent = displayDashes(title);
-        setPlainLines(notification.querySelector('.notification-message'), displayDashes(message));
+        setPlainLines(notification.querySelector('.notification-message'), verbatim ? message : displayDashes(message));
+        // review R2 n1: a password's doubled, leading or trailing spaces are kept on screen
+        if (verbatim) notification.querySelector('.notification-message').style.whiteSpace = 'pre-wrap';
     }
-    notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, plainText };
+    notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, plainText, verbatim };
     
     // Add to container
     notificationContainer.appendChild(notification);

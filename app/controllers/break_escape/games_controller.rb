@@ -395,7 +395,12 @@ module BreakEscape
         filtered['gainedFootholds'] = @game.gained_footholds
         # Frustration per NPC (slice 9.2, 5.4): level, tell, settled and each need's hold
         filtered['npcFrustration'] = @game.npc_frustration_for_client
+        # Sub-slice L review R1 M1: the sign-in PCs where the player caused a lockout (ids only),
+        # so a reload keeps the client's "lockout seen" mark (6.6)
+        filtered['lockoutPcs'] = @game.lockout_pcs_for_client
         @game.end_claimed_sessions!
+        # Sub-slice H (9.4): a reload ends every guest session too
+        @game.end_guest_sessions!
 
         if @game.player_state['inventory'].present? && @game.player_state['inventory'].is_a?(Array)
           filtered['playerInventory'] = @game.player_state['inventory']
@@ -1124,6 +1129,9 @@ module BreakEscape
           # physical), so it is passed on rather than checked here: one place of truth.
           if params[:claim].to_s == 'owner'
             @game.claim_login_session!(pc_id, claim_globals, foothold: foothold)
+          elsif params[:claim].to_s == 'guest'
+            # Slice 9.2 sub-slice H: a session an NPC left open at a borrowed PC
+            @game.claim_guest_session!(pc_id, foothold: foothold)
           else
             { status: :unprocessable_entity, body: { success: false, message: BreakEscape::Game::LOGIN_CLAIM_REFUSED } }
           end
@@ -1205,7 +1213,11 @@ module BreakEscape
       # Review R2 N3: only true (or "true") is a drop; {} or [1] is not
       dropped = [true, 'true'].include?(params[:dropped])
       ActiveRecord::Base.transaction do
-        result = @game.complete_npc_workaround!(npc_id: params[:npc_id], index: params[:index], hand: params[:hand], dropped: dropped)
+        # Sub-slice H: a share_login reports `heard` (true or "true" only) and the room it was heard in
+        heard = [true, 'true'].include?(params[:heard])
+        room_id = params[:room_id].is_a?(String) ? params[:room_id] : nil
+        result = @game.complete_npc_workaround!(npc_id: params[:npc_id], index: params[:index], hand: params[:hand],
+                                                dropped: dropped, heard: heard, room_id: room_id)
         body = result[:body]
         body = body.merge('roomData' => serve_opened_room(result[:open_room])) if result[:status] == :ok && result[:open_room]
         render json: body, status: result[:status]

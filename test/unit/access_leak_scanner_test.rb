@@ -505,4 +505,185 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal [[1, 'workaround', 'authored writes_down']], summary(leaked), 'no exemption for an authored entry'
     assert_empty scan({ 'do' => 'writes_down', 'index' => 0, 'hand' => 1 }), 'a run has no at'
   end
+
+
+  # ---- Slice 9.2 sub-slice H (plan 6.5): the heard share
+
+  SAM_PASSWORD = 'Sam-Share-PW-4417'.freeze
+  SHARE = '/break_escape/games/1/npc_workaround'.freeze
+
+  def share_scenario
+    {
+      'startRoom' => 'open_office',
+      'rooms' => { 'open_office' => {
+        'type' => 'room_office', 'connections' => {},
+        'npcs' => [
+          { 'id' => 'sam', 'npcType' => 'person', 'creds' => { 'username' => 'sokafor', 'password' => SAM_PASSWORD },
+            'workarounds' => [{ 'at' => 50, 'do' => 'share_login', 'with' => 'ruth' }] },
+          { 'id' => 'ruth', 'npcType' => 'person' },
+          { 'id' => 'kim', 'npcType' => 'person', 'creds' => { 'username' => 'kim', 'password' => SAM_PASSWORD } }
+        ]
+      } }
+    }
+  end
+
+  def share_game(shared, reveal: true)
+    data = share_scenario
+    data['social'] = { 'captures' => { 'revealSecret' => true } } if reveal
+    create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                       scenario: data, player_state: { 'unlockedRooms' => ['open_office'], 'sharedLogins' => shared })
+  end
+
+  def heard_answer(extra = {})
+    { 'capture' => { 'targetId' => 'sam', 'kind' => 'credential', 'address' => 'sokafor',
+                     'note' => "Sam told Ruth his login out loud: sokafor / #{SAM_PASSWORD}" },
+      'line' => "It's sokafor. Password's #{SAM_PASSWORD}.",
+      'note' => "Sam told Ruth his login out loud: sokafor / #{SAM_PASSWORD}", 'displayName' => 'Sam' }.merge(extra)
+  end
+
+  def post_rows(*bodies)
+    bodies.each_with_index.map do |(method, path, body), i|
+      ['r.jsonl', i + 1, { 'method' => method, 'path' => path, 'status' => 200, 'cmdSeq' => i, 'body' => body }]
+    end
+  end
+
+  test 'a heard share_login answer may hold the sharer\'s password at line, note and capture.note, then in savedNotes and se_captures' do
+    game = share_game(['sam'])
+    saved = ['GET', '/break_escape/games/1/scenario',
+             { 'savedNotes' => [{ 'id' => 'n1', 'text' => heard_answer['note'] }],
+               'globalVariables' => { 'se_captures' => [heard_answer['capture']] } }]
+    assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', SHARE, heard_answer], saved))
+  end
+
+  test 'R1 m3: without revealSecret the capture note and se_captures may not hold the shared password' do
+    game = share_game(['sam'], reveal: false)
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', SHARE, heard_answer]))
+    assert_equal ['$.capture.note'], findings.map(&:json_path).uniq
+    plain = heard_answer
+    plain['capture'] = plain['capture'].merge('note' => 'Sam told Ruth his login out loud: sokafor')
+    synced = ['PUT', '/break_escape/games/1/sync_state', { 'globalVariables' => { 'se_captures' => [heard_answer['capture']] } }]
+    saved = ['GET', '/break_escape/games/1/scenario', { 'savedNotes' => [{ 'id' => 'n1', 'text' => heard_answer['note'] }] }]
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', SHARE, plain], saved, synced))
+    assert_equal [3], findings.map(&:line).uniq, 'the notes keep it; a synced se_captures copy is reported'
+  end
+
+  test 'the share exception needs the game, sharedLogins, the POST route and the allowed paths' do
+    findings = AccessLeakScanner.new(share_game([]).scenario_data, game: share_game([])).scan(post_rows(['POST', SHARE, heard_answer]))
+    assert_equal %w[npc:sam npc:kim], findings.map(&:owner).uniq, 'not in sharedLogins'
+
+    game = share_game(['sam'])
+    assert_equal 2, AccessLeakScanner.new(game.scenario_data).scan(post_rows(['POST', SHARE, heard_answer])).map(&:owner).uniq.length, 'no game'
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', SHARE, heard_answer('extra' => SAM_PASSWORD)]))
+    assert_equal ['$.extra'], findings.map(&:json_path).uniq
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['POST', '/break_escape/games/1/npc_frustration', heard_answer]))
+    refute_empty findings, 'another route'
+    saved = ['GET', '/break_escape/games/1/scenario', { 'savedNotes' => [{ 'id' => 'n1', 'text' => heard_answer['note'] }] }]
+    refute_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(saved)), 'savedNotes before any heard answer'
+  end
+
+  # ── slice 9.2 sub-slice L: lockouts (plan 6.6, 9.2) ─────────────────
+
+  LOCKOUT_FRUSTRATION = '/break_escape/games/1/npc_frustration'.freeze
+  LOCKOUT_SCENARIO = '/break_escape/games/1/scenario'.freeze
+
+  def lockout_game(recorded)
+    create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                       scenario: share_scenario,
+                       player_state: { 'unlockedRooms' => ['open_office'], 'loginLockouts' => ['sam_pc|sokafor'],
+                                       'npcFrustration' => recorded ? { 'sam' => { 'level' => 0, 'lockedOut' => ['sam_pc'] } } : {} })
+  end
+
+  test 'L: a recorded lockout may reach the browser in a check answer and GET /scenario npcFrustration' do
+    game = lockout_game(true)
+    scanner = AccessLeakScanner.new(game.scenario_data, game: game)
+    assert_equal 1, scanner.counts[:lockout_records]
+    assert_empty scanner.scan(post_rows(['POST', LOCKOUT_FRUSTRATION, { 'answers' => [{ 'npcId' => 'sam', 'lockedOut' => true }] }],
+                                        ['GET', LOCKOUT_SCENARIO, { 'npcFrustration' => { 'sam' => { 'level' => 0, 'lockedOut' => ['sam_pc'] } } }]))
+  end
+
+  test 'L: an unrecorded lockout, a lockout list or a lockedOut list elsewhere is reported' do
+    game = lockout_game(false)
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(
+      post_rows(['POST', LOCKOUT_FRUSTRATION, { 'answers' => [{ 'npcId' => 'sam', 'lockedOut' => true }, { 'npcId' => 'ruth', 'lockedOut' => false }] }],
+                ['GET', LOCKOUT_SCENARIO, { 'npcFrustration' => { 'sam' => { 'lockedOut' => ['sam_pc'] } }, 'loginLockouts' => ['sam_pc|sokafor'] }],
+                ['GET', '/break_escape/games/1/room/open_office', { 'npcs' => [{ 'id' => 'sam', 'lockedOut' => ['sam_pc'] }], 'state' => { 'loginFailures' => {} } }])
+    )
+    got = findings.map { |f| [f.rule, f.owner, f.line] }.sort
+    # (the list's own value is also a lockout key string, review R1 m4)
+    assert_equal [['lockout_list', 'lockedOut', 3], ['lockout_list', 'lockout_key', 2], ['lockout_list', 'loginFailures', 3],
+                  ['lockout_list', 'loginLockouts', 2], ['lockout_unrecorded', 'npc:sam', 1], ['lockout_unrecorded', 'npc:sam/sam_pc', 2]], got
+    refute(AccessLeakScanner.new(game.scenario_data, game: game).report_lines(findings).any? { |l| l.include?('sokafor') })
+  end
+
+  test 'L: a sign-in answer saying lockedOut true is not a lockout record' do
+    game = lockout_game(false)
+    assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(
+      post_rows(['POST', '/break_escape/games/1/login', { 'success' => false, 'lockedOut' => true, 'attemptsLeft' => 0 }])
+    )
+  end
+
+  # ── sub-slice L review round 1 (M1, m4) ─────────────────────────────
+
+  test 'L R1 m4: a lockedOut flag outside a check or sign-in answer is reported' do
+    game = lockout_game(true)
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(
+      post_rows(['GET', '/break_escape/games/1/room/open_office', { 'npcs' => [{ 'id' => 'sam', 'lockedOut' => true }] }],
+                ['GET', LOCKOUT_SCENARIO, { 'npcFrustration' => { 'sam' => { 'lockedOut' => ['sam_pc'] } }, 'npcs' => [{ 'id' => 'ruth', 'lockedOut' => false }] }],
+                ['POST', LOCKOUT_FRUSTRATION, { 'answers' => [{ 'npcId' => 'sam', 'lockedOut' => true }] }],
+                ['POST', '/break_escape/games/1/login', { 'success' => false, 'lockedOut' => true }])
+    )
+    assert_equal [['lockout_list', 'lockedOut', 1], ['lockout_list', 'lockedOut', 2]], findings.map { |f| [f.rule, f.owner, f.line] }.sort
+  end
+
+  test 'L R1 m4: a lockout or failure key string is reported under any key, with no username in the report' do
+    game = lockout_game(true)
+    game.player_state['loginFailures'] = { 'ruth_pc|guessed' => { 'n' => 1, 'seq' => 1 } }
+    scanner = AccessLeakScanner.new(game.scenario_data, game: game)
+    findings = scanner.scan(
+      post_rows(['PUT', '/break_escape/games/1/sync_state', { 'globals' => { 'last_try' => 'sam_pc|sokafor' } }],
+                ['GET', LOCKOUT_SCENARIO, { 'log' => ['tried ruth_pc|guessed at 10:02'] }],
+                ['GET', LOCKOUT_SCENARIO, { 'note' => 'sam_pc and sokafor, apart, are not a key' }])
+    )
+    assert_equal [['lockout_list', 'lockout_key', 1], ['lockout_list', 'lockout_key', 2]], findings.map { |f| [f.rule, f.owner, f.line] }.sort
+    refute(scanner.report_lines(findings).any? { |l| l.include?('sokafor') || l.include?('guessed') })
+  end
+
+  test 'L R1 M1: GET /scenario may list the locked-out PCs at $.lockoutPcs, by id only' do
+    game = lockout_game(false)
+    ok = AccessLeakScanner.new(game.scenario_data, game: game).scan(post_rows(['GET', LOCKOUT_SCENARIO, { 'lockoutPcs' => ['sam_pc'] }]))
+    assert_empty ok
+    findings = AccessLeakScanner.new(game.scenario_data, game: game).scan(
+      post_rows(['GET', LOCKOUT_SCENARIO, { 'lockoutPcs' => ['sam_pc', 'sokafor', 'ruth_pc'] }],
+                ['GET', '/break_escape/games/1/room/open_office', { 'lockoutPcs' => ['sam_pc'] }],
+                ['GET', LOCKOUT_SCENARIO, { 'state' => { 'lockoutPcs' => ['sam_pc'] } }])
+    )
+    # one finding per rule and owner on a line (the first bad entry, the guessed username)
+    assert_equal [['lockout_list', 'lockoutPcs', 1, '$.lockoutPcs[1]'], ['lockout_list', 'lockoutPcs', 2, '$.lockoutPcs'], ['lockout_list', 'lockoutPcs', 3, '$.state.lockoutPcs']],
+                 findings.map { |f| [f.rule, f.owner, f.line, f.json_path] }.sort
+    # without the game, a key-shaped entry is still reported
+    bare = AccessLeakScanner.new(game.scenario_data).scan(post_rows(['GET', LOCKOUT_SCENARIO, { 'lockoutPcs' => ['sam_pc', 'sam_pc|sokafor'] }]))
+    assert_equal ['$.lockoutPcs[1]'], bare.map(&:json_path)
+  end
+
+  # ── sub-slice L review round 2 (n3, n4) ─────────────────────────────
+
+  test 'L R2 n3: a lockout key used as a hash key is reported at its parent, with no username in the report' do
+    game = lockout_game(true)
+    scanner = AccessLeakScanner.new(game.scenario_data, game: game)
+    findings = scanner.scan(
+      post_rows(['PUT', '/break_escape/games/1/sync_state', { 'globals' => { 'attempts' => { 'sam_pc|sokafor' => 2 } } }],
+                ['GET', LOCKOUT_SCENARIO, { 'attempts' => { 'sam_pc' => 2 } }])
+    )
+    assert_equal [['lockout_list', 'lockout_key', 1, '$.globals.attempts.[lockout key]']], findings.map { |f| [f.rule, f.owner, f.line, f.json_path] }
+    refute(scanner.report_lines(findings).any? { |l| l.include?('sokafor') })
+  end
+
+  test 'L R2 n4: a failure key with a blank username is not a lockout key' do
+    game = lockout_game(true)
+    game.player_state['loginLockouts'] = []
+    game.player_state['loginFailures'] = { 'sam_pc|' => { 'n' => 1, 'seq' => 1 } }
+    assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(
+      post_rows(['GET', LOCKOUT_SCENARIO, { 'note' => 'try sam_pc|anything' }])
+    )
+  end
 end

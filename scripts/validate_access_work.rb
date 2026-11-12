@@ -430,6 +430,8 @@ module ValidateAccessWork
     if pcs.compact.any? { |pc| AW.off_when?(json_data, pc) }
       causes << ['its station going off', STATION_POOL]
     end
+    # Sub-slice L (6.6): locked out at its own sign-in PC, a station failure (5.5)
+    causes << ['its account being locked out at its station', STATION_POOL] if AW.lockout_station?(json_data, npc)
     list.each do |rid|
       r = resources[rid]
       next unless r
@@ -535,13 +537,15 @@ module ValidateAccessWork
       end
     end
 
-    # Per room NPC, its resolved list: the kind's own rules
+    # Per room NPC, its resolved list: the kind's own rules. A guest's screen habit is read on
+    # the copy with slice 9.1's habits expanded (locksScreen fills screenHabit), as the server reads it.
+    expanded = expanded_room_npcs(json_data)
     room_npcs(json_data).each do |e|
       npc = e[:npc]
       list = AW.workarounds(json_data, npc)
       next if list.empty?
 
-      check_npc_workarounds(json_data, npc, e[:room], list, issues)
+      check_npc_workarounds(json_data, npc, e[:room], list, issues, expanded[npc['id']] || npc)
     end
     check_workaround_globals_read_by_server(json_data, issues)
   end
@@ -611,7 +615,88 @@ module ValidateAccessWork
     reads
   end
 
-  def check_npc_workarounds(json_data, npc, home_room, list, issues)
+  # { npcId => the room NPC record with slice 9.1's habits expanded }, or {} where 9.1 is not loaded
+  def expanded_room_npcs(json_data)
+    return {} unless defined?(BreakEscape::NpcHabits) && BreakEscape::NpcHabits.respond_to?(:expanded_copy)
+
+    copy = BreakEscape::NpcHabits.expanded_copy(json_data).first
+    room_npcs(copy).each_with_object({}) { |e, h| h[e[:npc]['id']] = e[:npc] if e[:npc]['id'].is_a?(String) }
+  rescue StandardError
+    {}
+  end
+
+  # A PC marked private (office life: in its affordance, or on the object)
+  def private_pc?(json_data, pc)
+    pc['private'] == true || AW.affordance(json_data, pc)&.dig('private') == true
+  end
+
+  # Sub-slice H (plan 6.4 and section 10): the hot desk's rules
+  def check_borrow(json_data, npc, w, tag, issues, guest)
+    nid = npc['id']
+    err(issues, "#{tag}: #{nid} has no account (creds.username), so there is no session to leave.") unless BreakEscape::AccessIdentities.account?(npc)
+    pc = AW.present_string?(w['pc']) ? AW.object(json_data, w['pc']) : nil
+    return if pc.nil? # "names no room object" is reported above
+
+    pid = pc['id']
+    unless BreakEscape::AccessIdentities.login_pc?(pc)
+      err(issues, "#{tag}: '#{pid}' is not a sign-in PC (lockType \"login\"), so there is no session to borrow.")
+      return
+    end
+    owner = BreakEscape::AccessIdentities.owner_id(pc, json_data)
+    err(issues, "#{tag}: '#{pid}' has an owner (#{owner}); a hot desk is a PC nobody owns.") if owner
+    err(issues, "#{tag}: '#{pid}' is private; nobody else may use it.") if private_pc?(json_data, pc)
+    if defined?(BreakEscape::NetworkModel) && BreakEscape::NetworkModel.headless?(pc)
+      err(issues, "#{tag}: '#{pid}' is headless (no screen), so nobody can sit at it.")
+    end
+    if BreakEscape::AccessIdentities.account?(npc) && !BreakEscape::AccessIdentities.account_admitted?(pc, npc)
+      err(issues, "#{tag}: '#{pid}'s access list does not admit #{nid}.")
+    end
+    auto = AW.policy_of(json_data, pc)&.dig('autoLockMin')
+    err(issues, "#{tag}: '#{pid}' is under a policy with autoLockMin: 0, so no session is ever left open.") if auto.is_a?(Numeric) && auto.zero?
+    needs = AW::JUDGED_NEEDS.select { |need| AW.can_fail?(json_data, npc, need) }
+    needs = AW::JUDGED_NEEDS.select { |need| AW.need?(npc, need) } if needs.empty?
+    unless needs.any? { |need| AW.satisfies?(json_data, pc, need) }
+      err(issues, "#{tag}: '#{pid}' has no authored affordance that satisfies #{needs.join(' or ')} (a sign-in PC takes no " \
+                  'office preset), so the use there would restore nothing.')
+    end
+    if BreakEscape::AccessIdentities.screen_always_locks?({}, guest)
+      warn(issues, "#{tag}: #{nid} is a careful guest (no screenHabit, or one that always locks), so it signs out of " \
+                   "'#{pid}' and the workaround opens nothing. Author \"screenHabit\": { \"lockChance\": 0 } or " \
+                   'locksScreen: "never" on a borrower meant to leave the session open.')
+    end
+    if pc.key?('lockChance') || pc.key?('locksScreenOnLeave')
+      warn(issues, "#{tag}: '#{pid}' sets lockChance or locksScreenOnLeave, which a guest ignores (its own screenHabit decides).")
+    end
+    if holds_forbidden?(pc)
+      warn(issues, "#{tag} opens a session at '#{pid}', which is a flag station or VM launcher: a modified browser can reach " \
+                   'it this way; put it behind something the server checks.')
+    end
+  end
+
+  # Sub-slice H (plan 6.5 and section 10): the shared login's rules
+  def check_share(json_data, npc, w, tag, issues)
+    nid = npc['id']
+    err(issues, "#{tag}: #{nid} has no account (creds.username), so there is no login to say.") unless BreakEscape::AccessIdentities.account?(npc)
+    err(issues, "#{tag}: with names #{nid} itself; a login is shared with a colleague.") if w['with'] == nid
+    colleague = room_npcs(json_data).find { |e| e[:npc]['id'] == w['with'] }&.dig(:npc)
+    if colleague && colleague['needsRooms'].is_a?(Array) && !colleague['needsRooms'].empty?
+      warn(issues, "#{tag}: #{w['with']} has a needsRooms leash (#{colleague['needsRooms'].join(', ')}): the share can happen " \
+                   'in any of those rooms, and is heard only in one the player has opened.')
+    end
+    if BreakEscape::AccessIdentities.account?(npc)
+      bad = BreakEscape::AccessIdentities.sign_in_pcs(json_data).map { |x| x[:object] }.select do |pc|
+        pc.is_a?(Hash) && BreakEscape::AccessIdentities.account_admitted?(pc, npc) && holds_forbidden?(pc)
+      end.map { |pc| pc['id'] }
+      warn(issues, "#{tag} opens #{nid}'s account, which signs in at #{bad.join(', ')}, holding a flag station or VM launcher: " \
+                   'a modified browser can reach it this way; put it behind something the server checks.') if bad.any?
+    end
+    return if chatter_off?(json_data) || pool_has_line?(json_data, npc, 'login_aloud')
+
+    warn(issues, "#{tag} has no login_aloud line in the scenario's chatter or the NPC's own: the student would see only a " \
+                 'picture beside the colleague. Copy the pool from test_access_work.')
+  end
+
+  def check_npc_workarounds(json_data, npc, home_room, list, issues, guest = npc)
     nid = npc['id']
     rooms = rooms_of(json_data)
     index = AW.object_index(json_data)
@@ -689,6 +774,10 @@ module ValidateAccessWork
             warn(issues, "#{tag}: prop '#{w['prop']}' is in '#{prop_room}', a room #{nid}'s leash forbids, so the visit never starts.")
           end
         end
+      when 'borrow_session'
+        check_borrow(json_data, npc, w, tag, issues, guest)
+      when 'share_login'
+        check_share(json_data, npc, w, tag, issues)
       end
       pool = START_POOLS[w['do']]
       next if pool.nil? || chatter_off?(json_data) || pool_has_line?(json_data, npc, pool)
@@ -724,6 +813,10 @@ module ValidateAccessWork
       end
       st = AW.station(json_data, npc)
       station_off = st && AW.off_when?(json_data, st) ? "; station '#{st['id']}' off while #{AW.affordance(json_data, st)['offWhen']}" : ''
+      if AW.lockout_station?(json_data, npc)
+        max = AW.policy_of(json_data, st)['maxAttempts']
+        station_off += "; locked out at '#{st['id']}' after #{max.to_i} wrong passwords for its username there (a denial of service)"
+      end
       lines << "ℹ️ Work #{npc['id']}: #{parts.join('; ')}#{station_off}."
       AW.workarounds(json_data, npc).each_with_index do |w, i|
         lines << workaround_line(json_data, npc, w, i, resources)
@@ -768,14 +861,35 @@ module ValidateAccessWork
   #   halved when the station has an offWhen (R5 n1: an off fail and an owned-cause fail
   #   alternate, each held only to the use floor after the other).
   # - otherwise every cause can clear in play: the use floor.
+  # - sub-slice L: an NPC whose only failure is a lockout at its station has an owned cause once
+  #   the player has locked it out: `rearmed` is ignored and its station eases are refused, so a
+  #   fail comes a use floor after the last only when an ease at another place (a non-desk source
+  #   or a borrowed PC) lies between: "only by alternating eases and fails"; with no other place,
+  #   the park floor.
   def earliest_pace(json_data, npc, st)
     use = [(0.9 * AW.shortest_use_seconds(json_data, npc, 'work')) - 3, 0].max
     owned = AW.owned_causes(json_data, npc, 'work', [])
+    park = (0.9 * AW.defer_min(npc) * 60) - 3
+    if owned.empty? && lockout_only?(json_data, npc, st)
+      other = AW.places(json_data, npc, 'work').any? { |id| id != st['id'] } || AW.borrow_pcs(json_data, npc).any?
+      return other ? { seconds: use, note: 'only by alternating eases and fails, once the player has locked it out' } : { seconds: park, note: nil }
+    end
     return { seconds: use, note: nil } if owned.empty?
 
-    park = (0.9 * AW.defer_min(npc) * 60) - 3
     park /= 2.0 if AW.off_when?(json_data, st)
     { seconds: park, note: nil }
+  end
+
+  # Sub-slice L: the lockout is the NPC's one way to fail at work (no resource can drop, its
+  # station has no offWhen)
+  def lockout_only?(json_data, npc, st)
+    return false unless st && AW.lockout_station?(json_data, npc) && !AW.off_when?(json_data, st)
+
+    res = AW.resources(json_data)
+    AW.work_list(json_data, npc).filter_map { |id| res[id] }.none? do |r|
+      rt = AW.routes(json_data, npc, r)
+      !AW.admitted?(r, npc) || AW.present_string?(r['downIf']) || (rt && (rt.empty? || rt.any? { |route| !route.empty? }))
+    end
   end
 
   def workaround_line(json_data, npc, w, idx, resources)
@@ -784,7 +898,6 @@ module ValidateAccessWork
     earliest = t[:n] == 1 ? 'at once' : "#{t[:earliest].round} s#{t[:note] ? " (#{t[:note]})" : ''}"
     "ℹ️ Workaround #{npc['id']}[#{idx}] #{w['do']} at #{t[:at]}: opens #{workaround_opens(npc, w)}; " \
       "#{t[:n]} failed use(s) at perFail #{t[:per].round}; #{warning}; about #{t[:honest].round} s of outage; " \
-      "earliest by a modified browser #{earliest} after the first counted fail." \
-      "#{%w[borrow_session share_login].include?(w['do']) ? ' Not performed until sub-slice H.' : ''}"
+      "earliest by a modified browser #{earliest} after the first counted fail."
   end
 end

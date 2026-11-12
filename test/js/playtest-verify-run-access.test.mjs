@@ -46,7 +46,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
   const lines = r.out.trim().split('\n');
   assert.match(lines[0], /^game\s+1\s+\(mission stub\)/);
   assert.equal(lines[1], 'access model');
-  assert.equal(lines.length, 11, r.out);   // npcFrustration: slice 9.2
+  assert.equal(lines.length, 13, r.out);   // npcFrustration: slice 9.2; guestSessions, sharedLogins: 9.2 H
   assert.match(r.out, /sessions\s+2: jake_pc = jake \(password\); it_pc = dana \(claim\)/);
   assert.match(r.out, /signedInPcs\s+2: jake_pc; it_pc/);
   assert.match(r.out, /serverClones\s+2: 4F00A1C2 from npc jake; EXEC-DF-01 from object exec_badge \(UID-only\)/);
@@ -57,6 +57,14 @@ test('--access prints only the access section, one line per key, and exits 0', (
   assert.match(r.out, /footholds\s+0\n/);
   assert.match(r.out, /gainedFootholds\s+0\n/);
   assert.match(r.out, /npcFrustration\s+0/);
+  assert.match(r.out, /guestSessions\s+0\n/);
+  assert.match(r.out, /sharedLogins\s+0\n/);
+});
+
+test('--access prints the PCs a check recorded an NPC locked out at (slice 9.2 L)', () => {
+  const r = verify(['1', '--access'], { ...ACCESS_STATE, npcFrustration: { jake: { level: 60, handed: { 0: {} }, done: [], lockedOut: ['jake_pc'] }, dana: { level: 20 } } });
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.out, /npcFrustration\s+2: dana level 20, handed 0, done \[\]; jake level 60, handed 1, done \[\], locked out at jake_pc/);
 });
 
 test('--access prints footholds, gainedFootholds, and remote and foothold beside a session', () => {

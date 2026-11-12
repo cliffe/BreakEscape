@@ -549,7 +549,10 @@ test('validator (slice 16): screenHabit bounds, nothing to lock, shadowed habit;
         { id: 'tom', needsHome: 'pc_tom', screenHabit: { lockChance: 0 } },
         { id: 'san', needsHome: 'pc_san', screenHabit: { lockChance: 0 } },
         { id: 'def', needsHome: 'pc_def' },
-        { id: 'loner', screenHabit: { lockChance: 2, lockIfAwayOverSeconds: 'x', colour: 1 } }
+        { id: 'loner', screenHabit: { lockChance: 2, lockIfAwayOverSeconds: 'x', colour: 1 } },
+        // 9.2 H: a borrower's habit is read at the hot desk, so neither shadow warning applies
+        { id: 'ian', needsHome: 'pc_tom', screenHabit: { lockChance: 0 }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot' }] },
+        { id: 'roamer', screenHabit: { lockChance: 0 }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot' }] }
     ] } } };
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}
       puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
@@ -561,6 +564,7 @@ test('validator (slice 16): screenHabit bounds, nothing to lock, shadowed habit;
     assert.ok(!has("NPC 'amara'"), 'a habit on a plain workstation is fine');
     assert.ok(has("WARNING: NPC 'tom' screenHabit never applies"));
     assert.ok(!has("NPC 'san'"));
+    assert.ok(!has("NPC 'ian'") && !has("NPC 'roamer'"), 'a borrower\'s habit applies at the hot desk');
     assert.ok(has("ERROR: NPC 'loner' screenHabit.lockChance"));
     assert.ok(has("ERROR: NPC 'loner' screenHabit.lockIfAwayOverSeconds"));
     assert.ok(has("WARNING: NPC 'loner' screenHabit has unknown field 'colour'"));
