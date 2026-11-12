@@ -34,6 +34,41 @@ def check_capture_log(json_data)
     end
   end
 
+  # ---- Authored capture strings are bounded (sync deltas R2, 6a) ----
+  # A note is at most MAX_CAPTURE_NOTE_CHARS code points; roleLabel, address and host at most
+  # MAX_CAPTURE_FIELD_CHARS; a target id at most MAX_CAPTURE_TARGET_CHARS. The server stores each
+  # whole, so an over-long authored string is an error, not a cut.
+  # A hard-access value (a lock-opening password/PIN, a Wi-Fi PSK, a flag) in a capture's own
+  # note/roleLabel/address/host (review 6a-server M1): the secret field is withheld four ways on
+  # the serving path, but these string fields ride the bootstrap mirror and the sync answer
+  # verbatim, so an author who put a lock code into a note would leak it on a forged pre-beat
+  # claim. Keep the note channel as safe as the secret channel.
+  hard_values = cm.hard_access_values(json_data).to_a.select { |v| v.is_a?(String) && v.length >= 3 }
+  cm.all_capture_candidates(json_data).each do |cand|
+    fields = cand[:fields]
+    tid = fields['targetId'].to_s
+    err.call("capture targetId \"#{tid[0, 40]}...\" is over #{cm::MAX_CAPTURE_TARGET_CHARS} characters") if tid.length > cm::MAX_CAPTURE_TARGET_CHARS
+    if fields['note'].is_a?(String) && fields['note'].length > cm::MAX_CAPTURE_NOTE_CHARS
+      err.call("capture note for \"#{tid}\" is over #{cm::MAX_CAPTURE_NOTE_CHARS} characters")
+    end
+    %w[roleLabel address host].each do |field|
+      value = fields[field]
+      next unless value.is_a?(String) && value.length > cm::MAX_CAPTURE_FIELD_CHARS
+
+      err.call("capture #{field} for \"#{tid}\" is over #{cm::MAX_CAPTURE_FIELD_CHARS} characters")
+    end
+    %w[note roleLabel address host].each do |field|
+      value = fields[field]
+      next unless value.is_a?(String)
+      leaked = hard_values.find { |hv| value.include?(hv) }
+      next unless leaked
+
+      err.call("capture #{field} for \"#{tid}\" contains a hard-access value (a lock code, PSK or flag): " \
+               'these fields ride the bootstrap and sync answer, so a secret here leaks on a forged claim. ' \
+               'Keep lock-opening values out of capture note/roleLabel/address/host')
+    end
+  end
+
   # ---- Where a proof may live ----
   cm.action_proofs(json_data).each do |entry|
     err.call("#{entry[:path]}: a proof on an add_capture action is not read: put it on the account holder as captureProof")
@@ -48,6 +83,33 @@ def check_capture_log(json_data)
 
   room_npcs = ai.room_npcs(json_data)
   holders = room_npcs.map { |e| e[:npc] }.select { |npc| ai.account?(npc) }
+
+  # A capture writer on an account holder whose targetId is a different NPC must author an
+  # explicit address (review 6a-server M2). The account-address default is scoped to self
+  # captures, so without an address the server stores none and would key the holder's
+  # password on the wrong target. Error at authoring time.
+  account_holder_ids = holders.map { |npc| npc['id'].to_s }.to_set
+  # One authored capture yields several candidates (the plain mapping and its usePayload
+  # overlay), so report each (owner, targetId) pair once, not once per candidate.
+  reported_missing_address = Set.new
+  cm.all_capture_candidates(json_data).each do |cand|
+    source = cand[:source] || {}
+    owner_id = source[:owner].to_s
+    next unless source.key?(:owner) && !owner_id.empty? && account_holder_ids.include?(owner_id)
+
+    fields = cand[:fields]
+    # Only a credential capture binds an account's secret by address (capture_secrets_for_client's
+    # by_username); a foothold capture keys on host, so a missing address is fine there.
+    next unless fields['kind'] == 'credential'
+    next if owner_id == fields['targetId'].to_s
+    next if fields['address'].is_a?(String) && !fields['address'].strip.empty?
+    next unless reported_missing_address.add?([owner_id, fields['targetId'].to_s])
+
+    err.call("capture for targetId \"#{fields['targetId']}\" is written on account holder " \
+             "\"#{owner_id}\" but names no address: a cross-account capture must author an explicit " \
+             'address, or the holder\'s password would be served for the wrong target')
+  end
+
   objects = ai.room_objects(json_data)
   object_ids = objects.map { |e| e[:object]['id'] }.compact.map(&:to_s).to_set
   login_pcs = objects.map { |e| e[:object] }.select { |obj| ai.login_pc?(obj) }

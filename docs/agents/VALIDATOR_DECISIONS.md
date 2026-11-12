@@ -11,6 +11,8 @@ Rules (`docs/achitechture/SCENARIO_FORMAT_HARDENING_PLAN.md`, step 1):
 
 The entries below come from the step 1 corpus run on main f2d53bb40 (ink on, `--no-graph`), 2026-11-12. Each was signed off by the orchestrator at merge batch 13 (2026-11-12). The `reviewBy` date (2026-12-10) stands until the owning track agrees another.
 
+The eight basic_mission and vm_free_mission entries were removed on 2026-11-12 with the two scenarios, which the user chose to delete (q86).
+
 ## 2026-11-12: lab_exploitation ink headings
 
 ```json
@@ -193,106 +195,3 @@ Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (me
 
 Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). Design edit: each mapping sets a global and the ink hub gets a conditional option for it.
 
-## 2026-11-12: basic_mission schema scenario_brief
-
-```json
-{
-  "scenario": "scenarios/basic_mission/scenario.json.erb",
-  "stage": "schema",
-  "match": "schema: #/: did not contain a required property of 'scenario_brief'",
-  "count": 1
-}
-```
-
-Owner: the user (q86). Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). Fix as an example or delete (q86): no scenario_brief. One entry per schema line (review R1, m4), so a new schema break in the same scenario still fails.
-
-## 2026-11-12: basic_mission schema flags
-
-```json
-{
-  "scenario": "scenarios/basic_mission/scenario.json.erb",
-  "stage": "schema",
-  "match": "schema: #/flags: of type array did not match the following type: object",
-  "count": 1
-}
-```
-
-Owner: the user (q86). Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). Fix as an example or delete (q86): flags as an array. One entry per schema line (review R1, m4), so a new schema break in the same scenario still fails.
-
-## 2026-11-12: basic_mission schema start room type
-
-```json
-{
-  "scenario": "scenarios/basic_mission/scenario.json.erb",
-  "stage": "schema",
-  "match": "schema: #/rooms/start (room 'start'): did not contain a required property of 'type'",
-  "count": 1
-}
-```
-
-Owner: the user (q86). Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). Fix as an example or delete (q86): start room without a type. One entry per schema line (review R1, m4), so a new schema break in the same scenario still fails.
-
-## 2026-11-12: basic_mission schema start room connections
-
-```json
-{
-  "scenario": "scenarios/basic_mission/scenario.json.erb",
-  "stage": "schema",
-  "match": "schema: #/rooms/start (room 'start'): did not contain a required property of 'connections'",
-  "count": 1
-}
-```
-
-Owner: the user (q86). Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). Fix as an example or delete (q86): start room without connections. One entry per schema line (review R1, m4), so a new schema break in the same scenario still fails.
-
-## 2026-11-12: vm_free_mission schema scenario_brief
-
-```json
-{
-  "scenario": "scenarios/vm_free_mission/scenario.json.erb",
-  "stage": "schema",
-  "match": "schema: #/: did not contain a required property of 'scenario_brief'",
-  "count": 1
-}
-```
-
-Owner: the user (q86). Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). Fix as an example or delete (q86): no scenario_brief. One entry per schema line (review R1, m4), so a new schema break in the same scenario still fails.
-
-## 2026-11-12: vm_free_mission schema flags
-
-```json
-{
-  "scenario": "scenarios/vm_free_mission/scenario.json.erb",
-  "stage": "schema",
-  "match": "schema: #/flags: of type array did not match the following type: object",
-  "count": 1
-}
-```
-
-Owner: the user (q86). Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). Fix as an example or delete (q86): flags as an array. One entry per schema line (review R1, m4), so a new schema break in the same scenario still fails.
-
-## 2026-11-12: vm_free_mission schema start room type
-
-```json
-{
-  "scenario": "scenarios/vm_free_mission/scenario.json.erb",
-  "stage": "schema",
-  "match": "schema: #/rooms/start (room 'start'): did not contain a required property of 'type'",
-  "count": 1
-}
-```
-
-Owner: the user (q86). Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). Fix as an example or delete (q86): start room without a type. One entry per schema line (review R1, m4), so a new schema break in the same scenario still fails.
-
-## 2026-11-12: vm_free_mission schema start room connections
-
-```json
-{
-  "scenario": "scenarios/vm_free_mission/scenario.json.erb",
-  "stage": "schema",
-  "match": "schema: #/rooms/start (room 'start'): did not contain a required property of 'connections'",
-  "count": 1
-}
-```
-
-Owner: the user (q86). Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). Fix as an example or delete (q86): start room without connections. One entry per schema line (review R1, m4), so a new schema break in the same scenario still fails.

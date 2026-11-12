@@ -53,7 +53,7 @@ import { initLighting } from '../systems/lighting.js';
 import { installSeating } from '../systems/seating.js';  // Sitting on chairs (sets window.seating)
 import { installBehindWallFade } from '../systems/behind-wall-fade.js';  // Fades a south room's back wall while the player is behind it
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
-import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
+import { mailScheduler, flattenSavedMailState } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
 import { installTimedEmails } from '../systems/mail-ink.js';  // Ink-driven plain email: contacts' timedEmails
 import { writeGlobal as writeMailGlobal } from '../systems/global-writer.js';
 import '../systems/mail-runner.js';  // Registers the ink-job runner on the mail scheduler (P1-J); self-installs on import after mailScheduler
@@ -1702,12 +1702,30 @@ export async function create() {
     const importedNames = Object.keys(gameScenario.importedGlobals || {});
     window.npcConversationStateManager?.setReadOnlyGlobals?.(importedNames);
 
+    // Seed the sync's `confirmed` from the saved blocks before anything is restored,
+    // so the first sync after a load sends only what changed since the server saved
+    // it, not every section whole (R1, SYNC_DELTAS_PLAN 3.2). Seeding first matters:
+    // some restores keep references to the saved objects, so the seed must read their
+    // values before any in-place change touches them. The flattened mail is passed in
+    // so state-sync.js needs no import of mail-scheduler.js.
+    window.stateSync?.seedFromBootstrap?.(gameScenario, { mailKeys: flattenSavedMailState(gameScenario.savedMailState) });
+
     // Merge in server-saved global variables (from a resumed session).
     // Saved values take precedence over scenario defaults so that persistent
     // flags (e.g. briefing_played) survive page reloads.
     if (gameScenario.savedGlobalVariables && typeof gameScenario.savedGlobalVariables === 'object') {
         Object.assign(window.gameState.globalVariables, gameScenario.savedGlobalVariables);
         console.log('🌐 Merged saved global variables from server:', gameScenario.savedGlobalVariables);
+    }
+    // The server-owned capture record (sync deltas R2, 6a): se_captures no longer rides the sync,
+    // so the bootstrap ships it as `captures`. Mirror it into the global the readers watch (capture
+    // log, captures view, password minigame), only for a mission that has captures or declares
+    // se_captures, so a mission with none gets no mirror.
+    if (gameScenario.captures && typeof gameScenario.captures === 'object') {
+        window.gameState.globalVariables.se_captures = gameScenario.captures;
+    } else if (window.gameState.globalVariables.se_captures === undefined
+        && gameScenario.globalVariables && 'se_captures' in gameScenario.globalVariables) {
+        window.gameState.globalVariables.se_captures = {};
     }
     // The worn item (wearables.js): the server's record, so the tray frame comes back
     window.gameState.wornItem = gameScenario.wornItem && typeof gameScenario.wornItem.itemId === 'string'
@@ -1798,7 +1816,7 @@ export async function create() {
     // Phone threads (texts, read state, story position). Applied to each contact as
     // it registers, which for phone NPCs is the starting room's NPC load below (E9).
     if (gameScenario.savedPhoneState) {
-        window.npcManager?.restorePhoneState?.(gameScenario.savedPhoneState);
+        window.npcManager?.restorePhoneState?.(gameScenario.savedPhoneState, { keyOf: window.stateSync?.constructor?.stableJson });
     }
 
     // Mail (social missions): the saved mailState, or the scenario's seeded mail on a

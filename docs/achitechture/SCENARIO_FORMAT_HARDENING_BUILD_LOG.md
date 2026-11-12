@@ -169,6 +169,108 @@ Checks after the fixes:
 - CI social job replay (`RBENV_VERSION=2.7.8`, `bundle exec`): the lister finds sf_broken, sf_clean, sf_edges and sf_sprite and 84 corpus scenarios; all 84 exit 0 with `--strict-social --no-graph --skip-ink`; sf_clean exits 0, sf_broken exits 1 with `✗ --strict-social: 25 social lint error(s)`.
 - Node tests, no lock: the same 70 files as the review: 1028 pass, 0 fail, including `validator-exit-code` (30) and `validator-known-failures` (15). `MERGE_BATCH=1` on the list test: fails on the 22 awaiting sections, as ruled.
 
+## Step 2. Strict keys for the access, network and office-life blocks
+
+Date: 2026-11-12. Branch `build/harden-step2`, made from main b7d500ccf (step 1 merged). The plan's line 224 for `strict: false` is still `validate_json` (`scripts/validate_scenario.rb:225`); `check_unknown_fields` moved from 402 to 554 with the new helpers above it.
+
+### The closed set
+
+Every block below has `additionalProperties: false` and `patternProperties: { "^_": {} }`.
+
+| Block | Schema path | Before |
+|---|---|---|
+| a resource | `#/properties/resources/additionalProperties` | open |
+| a network | `#/properties/networks/additionalProperties` | open |
+| its Wi-Fi | `#/properties/networks/additionalProperties/properties/wifi` | open |
+| a policy | `#/properties/policies/additionalProperties` | open |
+| an account profile | `#/properties/accountProfiles/additionalProperties` | open |
+| a role | `#/properties/roles/additionalProperties` | `additionalProperties: true` |
+| a role's workaround | `#/properties/roles/additionalProperties/properties/workarounds/items` | open |
+| a role's frustration | `#/properties/roles/additionalProperties/properties/frustration` | closed |
+| the access list (`access` on rooms, objects and resources; a profile's `for`) | `#/definitions/accessList` | closed |
+| an NPC workaround | `#/definitions/npc/properties/workarounds/items` | open |
+| NPC `feed` | `#/definitions/npc/properties/feed` | open |
+| a feed post | `#/definitions/npc/properties/feed/properties/posts/items` | open |
+| NPC `creds`, `habits`, `screenHabit`, `printHabit`, `usbHabit`, `frustration` | `#/definitions/npc/properties/<name>` | closed |
+| an NPC `needs` entry | `#/definitions/npc/properties/needs/additionalProperties` | closed |
+| object `affordance` | `#/definitions/affordance`, through `$ref` from `#/definitions/item/properties/affordance` | **open in practice** (below) |
+| a `grant_foothold` action | `#/definitions/grantFootholdAction` (new) | open |
+
+Choices the plan left to the builder, or that the code forced:
+
+- **The closed blocks got `^_` too.** The plan says they get the pattern "where they lack a `_comment` property"; all of them have one. Adding the pattern anyway makes the rule the same in every block (any `_` key passes), which is what the README now says.
+- **Roles' own `workarounds` and `frustration`.** The plan names "each NPC `workarounds` entry"; a role's entries have the same shape and are closed too. No corpus scenario has a role workaround.
+- **`affordance` was not closed.** Its `type` is `["object", "boolean"]`, and json-schema skips `additionalProperties` on a node whose type is a list (`additionalproperties.rb`: it runs only when `type` is absent or `"object"`). So `"owner"` for `"owners"` passed the schema, as the access review found. Its keys now sit in `#/definitions/affordance`, which has no type of its own (so `false` still passes), referenced with `$ref` beside the type list.
+- **`grant_foothold`.** Actions share one open object schema, several action lists (`onConfirm`, `timers`, and the lists the schema does not describe) are untyped, and the gem has no `if`/`then`. A closed `grantFootholdAction` definition (type, pc, needsDropped, needsSession, needsHeld, name, condition) is the one key list, and `validate_grant_foothold_actions` validates every action whose `type` is `grant_foothold`, wherever it sits, against that definition with json-schema itself, prefixing each message with the action's pointer. So the schema still defines the keys and the gem still checks them.
+- **Hints on the core kinds.** Rooms, objects and NPCs stay open (item 4). Their hand-list warnings now carry the same `did you mean` hint, so the access review's `lockchance` (object) and `needHome` (NPC) slips each print one warning naming the key and its suggestion.
+
+### The message
+
+`format_schema_errors` (in `validate_scenario.rb`, called in place of the per-line `format_schema_error` map) turns each json-schema `contains additional properties [...] outside of the schema` message into one line per key: `❌ ERROR: schema: <pointer> (<room, object or NPC>): unknown key '<k>', did you mean '<known>'?`. The known keys come from the schema node at that pointer (`schema_resolve`, following `$ref`, `properties`, `patternProperties`, `additionalProperties`, `items` and combinator branches; a `grant_foothold` action uses its own definition). The hint is a case-insensitive match, else the single closest key within edit distance 2 (1 for keys under five characters); a tie gives no hint. A misspelt required key (`SSID` for `ssid`) would also raise "did not contain a required property of 'ssid'"; that line is dropped when an unknown key at the same pointer suggests `ssid`, so one slip prints one line. Social schema errors are split off before this and keep their old text.
+
+### Corpus
+
+Key walk before closing (scratch script, all 177 rendered scenarios, every block in the set compared with the schema's declared keys): 0 unknown keys. Instances seen: accessList 41, accountProfiles 12, affordance 85, creds 57, feed 15, feed posts 34, NPC frustration 4, grant_foothold 3, habits 4, needs entries 91, networks 5, NPC workarounds 12, policies 15, printHabit 1, resources 22, role frustration 1, roles 3, screenHabit 10, usbHabit 1, wifi 1. Role workarounds: none in the corpus (the fixture covers them).
+
+Validator after the change, all 177 `scenarios/*/scenario.json.erb`, ink on, `--no-graph`, default list: every scenario exits 0; 81 errors, 81 known; the same 13 scenarios print a `❌`; no `unknown key`, `could not run` or stale line; m01 to m10 print 0 `❌`. The same corpus with `--skip-ink` against main's schema (`-s`) and against the new one gives identical `Result:` lines (errors and warnings) for all 177. `git status` clean after every run. No known-failures entry added.
+
+### Tests
+
+- New: `test/js/validator-strict-keys.test.mjs` (8 tests): the base fixture with `_comment` and another `_` key in every block passes (and `affordance: false` still passes); 27 slips, one per block and placement (the plan's `PSK`, `downif`, `autoLockMins`, `lockchance` on `screenHabit`, affordance `owner`, a misspelt required `ssid`, `grant_foothold` in `triggerOnInteract`, `onConfirm` and a timer), each exactly one line with the right pointer, key and hint; two unknown keys print two lines; a tie gives no hint; every block in the set is closed in the schema; the full validator prints the `PSK` slip once and exits 1; `needHome` on an NPC and `lockchance` on an object are one warning each with a hint and no schema error; the corpus has no unknown key in any block (renders and validates all 177, about 13 s).
+- Run without the lock under `RBENV_VERSION=2.7.8`: every test file that runs the validator or reads the schema (68 files): 68 pass, 993 tests, 0 fail.
+- Not run: the full suites (the orchestrator runs them at the merge batch).
+
+### Open
+
+- `validate_network.rb:19-20` still calls `grant_foothold` reserved (access review m1); untouched.
+- Plan section 7 (q84) closes the core kinds; until then a room, object or NPC slip is a warning.
+
+### R1 fixes
+
+Review: `docs/achitechture/SCENARIO_FORMAT_HARDENING_STEP2_REVIEW_R1.md` (0 blockers, 3 majors, 6 minors), all fixed. Code in 35c7c20fa, tests in df825084c. Each test below fails on the scripts at ff052383b and passes now (checked by putting the three old scripts back, running the test files, and restoring them from HEAD).
+
+| Finding | Fix | Commit | Test |
+|---|---|---|---|
+| M1. A habits, screenHabit or printHabit slip printed the schema line and a second hand-kept line | Dropped the unknown-habit error in `validate_npc_habits.rb` (it now checks values only, for the names it knows), the `printHabit has unknown key` and `screenHabit has unknown field` warnings and `PRINT_HABIT_KEYS` in `validate_npc_needs.rb`; the schema lists the same keys | 35c7c20fa | strict-keys "full validator: each slip prints exactly one line naming the key" (all 27 slips through the real validator, one line each, exit 1); validator-npc-habits and npc-office-visuals now assert the module prints nothing for an unknown name |
+| M2. `_` keys failed or warned in habits, screenHabit and printHabit | Same removal; habits values skip every `_` name, not only `_comment` | 35c7c20fa | strict-keys "full validator: `_` keys ... print nothing" (base fixture, no line names `_why` or `_comment`) |
+| M3. A grant_foothold type slip in triggerOnInteract printed twice | `format_schema_errors` returns `out.uniq`: the main schema and the walker give the same formatted line | 35c7c20fa | strict-keys "a type slip in a grant_foothold in triggerOnInteract prints once" (formatter and full run) |
+| m1. Swapped letters got no hint, and a swapped required key also printed "required" | `key_edit_distance` is now the optimal string alignment distance (a neighbour swap is one edit); with the hint in place the existing rule drops the "required" line, so nothing else was needed | 35c7c20fa | strict-keys "a swap of two neighbouring letters is one edit" (`ssdi`, `od`) |
+| m2. The grant_foothold walker checked actions under `_` keys | The walker skips `_` keys; README says the schema does not check a `_` key's value | 35c7c20fa | strict-keys "a grant_foothold under a `_` key is not checked" (top level and on an object, formatter and full run) |
+| m3. README promised one line per slip overall | README: one slip prints one schema line; a later check may report what the missing key breaks (`At` for `at`) | 35c7c20fa | wording only |
+| m4. A map-level `_comment` (under `roles`, `networks` and the rest) fails | Decision: it keeps failing. Those maps hold only ids, and only some readers skip non-object entries (the server's `NetworkModel` does, the clue and capture walks do, others were not audited), so allowing a string entry there needs a reader audit first. README says to put the note inside an entry | 35c7c20fa | strict-keys "... a map-level `_comment` under roles still fails" pins the decision |
+| m5. `comment` got no hint | `suggest_key` takes the block's declared `_` keys: with no closer key, `<k>` gets `_<k>` when the block declares it, and `comment` always gets `_comment`. The open-kind warnings get the same hint | 35c7c20fa | strict-keys "`comment` gets a hint towards `_comment`" |
+| m6. Tests ran the formatter only; the corpus test skipped render failures | The tests above run the full validator (in parallel, about 1 s each); the corpus test collects render failures and asserts the list is empty | df825084c | the corpus test itself (not proven failing: no scenario fails to render) |
+
+Left as is: `validate_network.rb`'s own grant_foothold walk still visits `_` keys. The server's `NetworkModel.grant_foothold_actions` also walks them, and `DeclaredGrants.executed?` looks only at the last path segments, so a grant inside, say, `_draft.triggerOnInteract` would be honoured at run time; keeping the network check there is the safer side.
+
+Checks after the fixes:
+
+- Corpus: all 177 `scenarios/*/scenario.json.erb`, ink on, `--no-graph`, the default list, 6 in parallel: every one exits 0; 81 errors, 81 known (unchanged); the same 13 scenarios print a `❌`; no `unknown key`, `could not run` or stale line; m01 to m10 each 0 `❌`; `git status` clean.
+
+- Node tests, no lock, `RBENV_VERSION=2.7.8`, plain `node`: every test file that loads `validate_scenario.rb`, `validate_npc_habits` or `validate_npc_needs` (66 files, including `validator-strict-keys` with 14 tests): 1084 pass, 0 fail. No Ruby test file was touched. Not run: the full suites (the orchestrator runs them at the merge batch).
+
+### R2 fixes
+
+Review: `docs/achitechture/SCENARIO_FORMAT_HARDENING_STEP2_REVIEW_R2.md` (0 blockers, 0 majors, 1 minor, 3 nits). m1, n1 and n2 fixed in 47f808d16 (code, tests, README); n3 left for a later step, as ruled. Each new test fails on a mutant with its fix removed and passes now.
+
+| Finding | Fix | Test |
+|---|---|---|
+| m1. The grant_foothold walker skipped a room (or any id-map entry) whose id starts with `_` | Ruling: ids are not notes. The walker now carries the schema node for each value. Where that node is an id map (its `additionalProperties` is a schema, directly or in a combinator branch: `rooms`, `networks`, `resources`, `roles`, an NPC's `needs` and the rest) and the key is not a declared property, the key is an id and is walked, `_` or not. A `_` key anywhere else is a property name, a note, and is still skipped. Where the schema does not describe a value (open action lists), its `_` keys are skipped as before | strict-keys "ids are not notes": room `_annex`, connected from `r1`, with a `pcc` slip in an onConfirm grant_foothold prints one `unknown key 'pcc', did you mean 'pc'?` line at `#/rooms/_annex/...` (formatter and full run, exit 1), while a `_note` grant_foothold inside that room is still skipped. Fails with the id-map branch removed |
+| n1. `comments` drew `did you mean 'contents'?` | `suggest_key` checks note-like keys (`comment`, `comments`, `note`, `notes`, any case) after the case-insensitive match and before the distance step: `_<k>` when the block declares it, else `_comment` | strict-keys "`comment` gets a hint towards `_comment`": `comments` in accountProfiles and `notes` in resources each hint `_comment`. Fails with the note-like branch removed |
+| n2. The `comment` branch was untested | Folded into the note-like check above | the same test: `Comment` in policies hints `_comment` (the `_<k>` branch cannot answer it). Fails with the branch removed |
+| n3. A value slip in habits, screenHabit or printHabit prints two lines | Left, as ruled: it predates step 2 (see Handover) | none |
+
+README: the schema-validation paragraph now lists the note-like keys and says an id is never a note.
+
+Checks after the fixes:
+
+- Corpus: all 177 `scenarios/*/scenario.json.erb`, ink on, `--no-graph`, the default list, 6 in parallel, under the test lock: every one exits 0; 81 errors, 81 known (unchanged); the same 13 scenarios print a `❌`; no `unknown key`, `could not run` or stale line; m01 to m10 each 0 `❌`; `git status` clean.
+- Node tests, under the test lock, `RBENV_VERSION=2.7.8`, plain `node`, 3 at a time: the 82 `test/js` files that load `validate_scenario.rb`, `validate_npc_habits`, `validate_npc_needs` or another `scripts/validate` path: 1257 pass, 0 fail, every file exit 0 (`validator-strict-keys` has 15 tests). No Ruby test file was touched.
+
 ## Handover
 
 Step 1 is done; nothing in progress. Commits on `build/harden-step1`: 22e29b9db (validator, list, decisions, fixtures), 42795f922 (tests), and the commit holding this log and the README edits.
+
+Step 2 is done; nothing in progress. Commits on `build/harden-step2`: 3f80b61cb (schema, validator, tests), 2a49c4341 (this log and the README note), and for review round 1: 35c7c20fa (fixes), df825084c (tests) and the commit holding the R1 section of this log. Review round 2: 47f808d16 (fixes) and the commit holding the R2 section of this log.
+
+R2 n3 (a value slip in habits, screenHabit or printHabit prints the schema line and the hand check's line) predates step 2 and belongs to a later step.

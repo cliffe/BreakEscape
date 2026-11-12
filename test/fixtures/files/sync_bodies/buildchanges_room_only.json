@@ -1,0 +1,16 @@
+{
+  "currentRoom": "lobby",
+  "scenarioClock": {
+    "elapsedMs": 600000,
+    "timers": {
+      "elapsedMs": 600000,
+      "fired": [],
+      "cancelled": [],
+      "started": {}
+    }
+  },
+  "timedMessages": {
+    "pending": [],
+    "delivered": []
+  }
+}

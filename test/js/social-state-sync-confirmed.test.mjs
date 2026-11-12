@@ -148,3 +148,48 @@ test('sync() callers queued together still share one promise', async () => {
     assert.deepEqual(await Promise.all([first, second, third]), [true, true, true]);
   } finally { globalThis.console = realConsole; }
 });
+
+// --- registered parts and tracked requests (SYNC_DELTAS_PLAN 2.2, 3.7) ---------
+
+test('syncConfirmed waits for tracked requests before its first run', async () => {
+  globalThis.console = quiet;
+  try {
+    const s = setup(ok);
+    let release;
+    s.track(new Promise(r => { release = r; }));
+    const done = s.syncConfirmed();
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(requests.length, 0, 'no sync while the tracked request is in flight');
+    release();
+    assert.equal(await done, true);
+    assert.equal(requests.length, 1, 'the sync runs once the tracked request settles');
+  } finally { globalThis.console = realConsole; }
+});
+
+test('syncConfirmed is false while a part has pending entries, true once recorded', async () => {
+  globalThis.console = quiet; fastTimers();
+  try {
+    const s = setup(ok);
+    let pending = 1;
+    let answers = 0;
+    s.registerPart('captures', {
+      build: () => undefined,
+      onAnswer: () => { answers += 1; if (answers >= 2) pending = 0; },
+      pendingCount: () => pending
+    });
+    assert.equal(await s.syncConfirmed(), true, 'true once the part has no pending entries');
+    assert.equal(requests.length, 2, 'the first 2xx left the part pending, so it ran again');
+    assert.equal(answers, 2, 'onAnswer saw every 2xx answer');
+  } finally { globalThis.console = realConsole; realTimers(); }
+});
+
+test('syncConfirmed stays false while a part never clears its pending entries', async () => {
+  globalThis.console = quiet; fastTimers();
+  try {
+    const s = setup(ok);
+    s.registerPart('captures', { build: () => undefined, onAnswer: () => {}, pendingCount: () => 1 });
+    assert.equal(await s.syncConfirmed({ attempts: 3 }), false);
+    assert.equal(requests.length, 3);
+  } finally { globalThis.console = realConsole; realTimers(); }
+});

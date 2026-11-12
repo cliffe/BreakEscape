@@ -113,13 +113,15 @@ export class ApiClient {
 
   // Record a card the card copier saved (access model 4.2). `source` is
   // { npc_id } (copied in a conversation), { object_id } (a held keycard) or
-  // { held_card: true } (a held keycard with no id, named by cardId).
-  // Answers { success, recorded }; recorded is false when the card is not the
-  // source's own card.
-  static async cloneCard(source, cardId) {
+  // { held_card: true } (a held keycard with no id, named by cardId). `card` is the
+  // one display card the server stores for the list (SYNC_DELTAS_PLAN P1), sent only when
+  // given. Answers { success, recorded, saved }; recorded is false when the card is not the
+  // source's own card, saved false when the display card was not stored.
+  static async cloneCard(source, cardId, card = null) {
     return this.post('/clone_card', {
       ...source,
-      card_id: cardId
+      card_id: cardId,
+      ...(card ? { card } : {})
     });
   }
 
@@ -157,36 +159,39 @@ export class ApiClient {
   // Networks (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md section 5). Only
   // systems/network-links.js calls these three.
   //
-  // Plant a rogue device in a jack. Answers { success, foothold, inventory, first }
+  // Plant a rogue device in a jack. Answers { success, foothold, first, added, removed }
   // (or { success, already: true, ... } when a device is in that jack already); a
   // refusal throws with err.status (404 no jack, 403 reason "unreachable", 422 reason
-  // "no_device") and err.body.
+  // "no_device") and err.body. `delta: true` opts into the added/removed inventory delta
+  // (sync deltas P2); an old tab that omits it still gets the whole-inventory echo.
   static async networkPlant(jackId, deviceId = null) {
-    return this.post('/network/plant', { jack_id: jackId, ...(deviceId ? { device_id: deviceId } : {}) });
+    return this.post('/network/plant', { jack_id: jackId, delta: true, ...(deviceId ? { device_id: deviceId } : {}) });
   }
 
-  // Take the device back out of a jack. Answers { success, inventory, endedPcIds }; a
+  // Take the device back out of a jack. Answers { success, endedPcIds, added, removed }; a
   // refusal throws (422 reason "not_planted", 403 reason "unreachable", 404).
   static async networkUnplug(jackId) {
-    return this.post('/network/unplug', { jack_id: jackId });
+    return this.post('/network/unplug', { jack_id: jackId, delta: true });
   }
 
   // A device in a PC (not a jack) grants a foothold (slice 9.3b sub-slice I). `shape` is
   // 'dropped' (an NPC uses a dropped device) or 'session' (a BadUSB the player plugs into a
   // PC they hold a session on); `path` names the declared action when a PC has several.
-  // Answers { success, foothold, inventory, first } (or { success, already: true, ... }); a
-  // refusal throws (404 reason "no_action", 422 reason "not_ready" or "usb_refused").
+  // Answers { success, foothold, first, consumedId, added, removed } (or
+  // { success, already: true, ... }); a refusal throws (404 reason "no_action", 422 reason
+  // "not_ready" or "usb_refused"). `delta: true` opts into the added/removed delta (P2).
   static async networkImplant(pcId, shape, path = null) {
-    return this.post('/network/implant', { pc_id: pcId, shape, ...(path ? { path } : {}) });
+    return this.post('/network/implant', { pc_id: pcId, shape, delta: true, ...(path ? { path } : {}) });
   }
 
   // Join an in-game Wi-Fi network through an access point (slice 9.3b sub-slice W, 5.3).
   // The key is compared on the server; an open network sends no key. Answers
-  // { success, foothold, inventory, first } (or { success, already: true, ... } when the
+  // { success, foothold, first, added, removed } (or { success, already: true, ... } when the
   // network is already joined); a refusal throws with err.status (404 no access point,
   // 403 reason "unreachable", 422 reason "wrong_key") and err.body. The key is never echoed.
+  // `delta: true` opts into the added/removed delta (P2).
   static async networkJoin(apId, key = null) {
-    return this.post('/network/join', { ap_id: apId, ...(key != null ? { key } : {}) });
+    return this.post('/network/join', { ap_id: apId, delta: true, ...(key != null ? { key } : {}) });
   }
 
   // What a foothold reaches: { footholds: [{ id, via, name, network, hosts }] }, every
@@ -206,23 +211,6 @@ export class ApiClient {
   // (slice 9.1, 5.3). Sent no-store; never asked for a PC the player is not at.
   static async loginAccounts(pcId) {
     return this.get(`/login_accounts?pc_id=${encodeURIComponent(pcId)}`);
-  }
-
-  // Update inventory
-  static async updateInventory(action, item) {
-    return this.post('/inventory', {
-      action,
-      item
-    });
-  }
-
-  // Sync player state
-  static async syncState(currentRoom, globalVariables, notes) {
-    return this.put('/sync_state', {
-      currentRoom,
-      globalVariables,
-      notes
-    });
   }
 
   /**

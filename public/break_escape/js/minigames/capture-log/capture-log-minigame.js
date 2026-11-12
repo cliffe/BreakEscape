@@ -24,7 +24,7 @@ import { registerMinigameStarter } from '../../systems/minigame-registry.js';
 import { registerTrayRule, refreshInventoryTray } from '../../systems/inventory.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import {
-    SEEN_GLOBAL, HOLDER_TYPE, buildSections, filedIn, isHolder, newKeys, readSeen, rowKeys
+    SEEN_PREFIX, HOLDER_TYPE, buildSections, filedIn, isHolder, newKeys, readSeen, rowKeys
 } from './capture-log-model.js';
 import { buildCaptureRow, captureBannerText, capturesReveal, applyCaptureSecrets, loadCaptureSecrets } from './capture-rows.js';
 
@@ -247,7 +247,8 @@ export class CaptureLogMinigame extends MinigameScene {
         this.lastKeys = keys;
         const grown = keys.filter((k) => !seen.includes(k));
         if (grown.length) {
-            writeGlobal(SEEN_GLOBAL, [...seen, ...grown], { openChat: false });
+            // One key per new row (R3): the legacy whole-list is never written again.
+            for (const k of grown) writeGlobal(SEEN_PREFIX + k, true, { openChat: false });
             refreshInventoryTray();
         }
     }

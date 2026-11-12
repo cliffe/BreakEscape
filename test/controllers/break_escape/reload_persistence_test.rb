@@ -345,8 +345,13 @@ module BreakEscape
       'rfid_data' => { 'uid' => '0A1B2C3D4E' }, 'timestamp' => 1_700_000_000_000
     }.freeze
 
-    test 'cloned cards are stored on the cloner and come back on load' do
+    # update_saved_cards is now a filtered merge (SYNC_DELTAS_PLAN 5.4): only a card whose
+    # card_id names a serverClones key (a recorded copy) is added, the rfid_data is kept, and
+    # it comes back on load.
+    test 'update_saved_cards adds a recorded card and it comes back on load' do
       game = create_game(inventory: [{ 'type' => 'rfid_cloner', 'name' => 'RFID Cloner', 'id' => 'cloner' }])
+      game.player_state['serverClones'] = { 'victoria_keycard' => { 'source' => { 'npc' => 'v' }, 'uidOnly' => false } }
+      game.save!
 
       post inventory_game_url(game), params: { action_type: 'update_saved_cards', saved_cards: [CARD] }, as: :json
 
@@ -356,12 +361,17 @@ module BreakEscape
       assert_equal '0A1B2C3D4E', cloner['saved_cards'].first.dig('rfid_data', 'uid')
     end
 
-    test 'saved cards replace the previous list' do
+    # The merge keeps stored cards, adds a recorded incoming one and drops an unrecorded one.
+    test 'update_saved_cards keeps stored cards, adds a recorded one and drops an unrecorded one' do
       game = create_game(inventory: [{ 'type' => 'rfid_cloner', 'name' => 'RFID Cloner',
                                        'saved_cards' => [CARD] }])
-      second = CARD.merge('card_id' => 'guard_badge', 'name' => 'Guard Badge')
+      game.player_state['serverClones'] = { 'guard_badge' => { 'source' => { 'npc' => 'g' }, 'uidOnly' => false } }
+      game.save!
+      guard = CARD.merge('card_id' => 'guard_badge', 'name' => 'Guard Badge')
+      stranger = CARD.merge('card_id' => 'unrecorded_x', 'name' => 'Stranger')
 
-      post inventory_game_url(game), params: { action_type: 'update_saved_cards', saved_cards: [CARD, second] }, as: :json
+      post inventory_game_url(game),
+           params: { action_type: 'update_saved_cards', saved_cards: [CARD, guard, stranger] }, as: :json
 
       assert_response :success
       assert_equal %w[victoria_keycard guard_badge],

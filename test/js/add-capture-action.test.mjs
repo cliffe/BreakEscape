@@ -1,9 +1,9 @@
-// apply-actions.js add_capture / window.recordSECapture: records a credential or
-// foothold into se_captures, reusing captures.js (makeCaptureEntry + mergeCapture),
-// first-capture-wins. The physical-pentest lab writes captures this way from an
-// npc_used mapping (NPC_NEEDS_SYSTEM.md §13). captures.js is pulled in through a lazy
-// dynamic import in apply-actions.js, so it is copied into the temp dir under its real
-// name; the static imports are stubbed to data: URLs.
+// apply-actions.js add_capture / window.recordSECapture: now delegates to the capture client
+// (window.submitSECapture, set by capture-client.js), which mirrors a credential or foothold into
+// se_captures through captures.js (makeCaptureEntry + mergeCapture), first-capture-wins. The
+// physical-pentest lab writes captures this way from an npc_used mapping (NPC_NEEDS_SYSTEM.md §13).
+// This harness installs the real capture client on a stub stateSync so recordSECapture has a
+// window.submitSECapture to call; apply-actions.js adds no capture import of its own.
 // Run with: bin/test-js test/js/add-capture-action.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,8 +18,15 @@ const dir = mkdtempSync(join(tmpdir(), 'add-capture-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 mkdirSync(join(dir, 'systems'), { recursive: true });
 
-// Real captures.js (pure, no deps): the dynamic import inside apply-actions.js resolves it.
+// Real captures.js (pure, no deps).
 writeFileSync(join(dir, 'systems', 'captures.js'), readFileSync(join(js, 'systems/captures.js'), 'utf8'));
+
+// A global-writer.js that writes straight to gameState, for capture-client.js to import.
+writeFileSync(join(dir, 'systems', 'global-writer.js'),
+    'export function writeGlobal(name, value) { if (globalThis.window?.gameState?.globalVariables) globalThis.window.gameState.globalVariables[name] = value; }\n');
+
+// Real capture-client.js (imports the two files above).
+writeFileSync(join(dir, 'systems', 'capture-client.js'), readFileSync(join(js, 'systems/capture-client.js'), 'utf8'));
 
 // apply-actions.js with its STATIC imports stubbed (writeGlobal writes straight to gameState).
 const actionsSrc = readFileSync(join(js, 'systems/apply-actions.js'), 'utf8')
@@ -34,6 +41,8 @@ function dataUrl(src) { return 'data:text/javascript,' + encodeURIComponent(src)
 
 globalThis.window = { gameState: { globalVariables: { se_captures: {} } } };
 globalThis.document = { querySelector: () => null };
+const { installCaptureClient } = await import(pathToFileURL(join(dir, 'systems', 'capture-client.js')).href);
+installCaptureClient({ registerPart: () => {}, sync: () => {} });
 const { applyActions, recordSECapture } = await import(pathToFileURL(join(dir, 'systems', 'apply-actions.mjs')).href);
 
 const caps = () => globalThis.window.gameState.globalVariables.se_captures;

@@ -206,6 +206,9 @@ module BreakEscape
           shared = shared_logins
           shared << npc_id unless shared.include?(npc_id)
           entry['lastSpent'][key]['heard'] = true
+          # Server-owned capture record (sync deltas R2, 6a): record the heard login from the
+          # server's own composition, with the workaround that was heard, before save!.
+          record_shared_login!(npc_id, scenario: scenario_data, workaround: w)
         end
       end
       save!

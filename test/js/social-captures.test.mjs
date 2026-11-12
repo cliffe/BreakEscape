@@ -3,8 +3,7 @@
 //  - makeCaptureEntry keeps only the closed keys and constrains the kind;
 //  - mergeCapture is first-capture-wins (idempotent, reference-equal on a repeat);
 //  - the reveal switch is OFF by default, so a secret is masked unless the scenario opts in;
-//  - state-sync.js sanitises se_captures to the same closed key set on the sync boundary, and
-//    that set stays in step with captures.js CAPTURE_ENTRY_KEYS;
+//  - state-sync.js leaves se_captures out of the outgoing globals (server-owned, 6a);
 //  - a mission with no capture state is left unchanged.
 // Run with: node --test test/js/social-captures.test.mjs
 
@@ -30,7 +29,7 @@ globalThis.document = { querySelector: () => null };
 const { StateSync } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).href);
 const cap = await import(pathToFileURL(join(dir, 'captures.mjs')).href);
 const {
-  CAPTURE_ENTRY_KEYS, readCaptures, capturesReveal, maskSecret, makeCaptureEntry,
+  readCaptures, capturesReveal, maskSecret, makeCaptureEntry,
   mergeCapture, captureList, displaySecret
 } = cap;
 
@@ -122,26 +121,16 @@ test('captureList is oldest-first by at, then target id', () => {
   assert.deepEqual(captureList({}), []);
 });
 
-// ---- sync boundary: closed key set, in step with captures.js --------------------------
+// ---- sync boundary: se_captures is server-owned, never in the outgoing globals ----------
 
-test('state-sync sanitises se_captures to the closed key set and drops unknown keys', () => {
+test('state-sync leaves se_captures out of the outgoing globals (server-owned, 6a)', () => {
+  // The capture record rides the `captures` sync part, not the globals; the client keeps the
+  // se_captures mirror for its readers but buildSharedSections drops it from what is sent.
   const g = synced(gameWith({ se_captures: {
-    lord: { targetId: 'lord', kind: 'credential', secret: 'x', address: 'a', at: 1, junk: 'drop', leak: 1 },
-    bad: 'nope'
-  } }));
-  assert.deepEqual(Object.keys(g.se_captures.lord).sort(), ['address', 'at', 'kind', 'secret', 'targetId']);
-  assert.deepEqual(g.se_captures.bad, {}, 'a non-object entry collapses to {}');
-});
-
-test('the sync guard key set stays in step with captures.js CAPTURE_ENTRY_KEYS', () => {
-  // Every closed key round-trips through the guard; a key outside the set is dropped. This
-  // fails if the two lists drift (the state-sync copy must mirror captures.js).
-  const full = {};
-  for (const k of CAPTURE_ENTRY_KEYS) full[k] = (k === 'at') ? 1 : `v_${k}`;
-  full.targetId = 'lord';
-  full.kind = 'credential';
-  const g = synced(gameWith({ se_captures: { lord: { ...full, surprise: 1 } } }));
-  assert.deepEqual(Object.keys(g.se_captures.lord).sort(), [...CAPTURE_ENTRY_KEYS].sort());
+    lord: { targetId: 'lord', kind: 'credential', secret: 'x', address: 'a', at: 1 }
+  }, someOther: true }));
+  assert.ok(!('se_captures' in g), 'se_captures is not sent as a global');
+  assert.equal(g.someOther, true, 'other globals are still sent');
 });
 
 test('a mission with no capture state is left unchanged', () => {

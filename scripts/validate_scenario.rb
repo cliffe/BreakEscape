@@ -224,9 +224,235 @@ def validate_json(json_data, schema_path)
   schema = JSON.parse(File.read(schema_path))
   errors = JSON::Validator.fully_validate(schema, json_data, strict: false)
 
-  errors
+  errors + validate_grant_foothold_actions(schema, json_data)
 rescue JSON::ParserError => e
   raise "Invalid JSON schema: #{e.message}"
+end
+
+# A grant_foothold action may sit in any action list (timers, triggerOnInteract, onConfirm and
+# others), several of which the schema leaves open. The schema's grantFootholdAction definition is
+# the one list of its keys; this applies it to every such action, wherever it is, and returns
+# json-schema's own messages with the action's pointer in front.
+def validate_grant_foothold_actions(schema, json_data)
+  definition = schema.dig('definitions', 'grantFootholdAction')
+  return [] unless definition
+
+  sub = { 'definitions' => schema['definitions'], '$ref' => '#/definitions/grantFootholdAction' }
+  out = []
+  # The walk carries the schema node for each value (nil where the schema does not describe it), so
+  # it can tell a note from an id: a key of an id map (rooms, networks, resources, roles, an NPC's
+  # needs, any node whose additionalProperties is a schema) is an id and is walked even when it
+  # starts with "_"; a "_" key anywhere else is a property name, a note, and is skipped.
+  walk = lambda do |node, pointer, snode|
+    case node
+    when Hash
+      if node['type'] == 'grant_foothold'
+        JSON::Validator.fully_validate(sub, node, strict: false).each do |msg|
+          out << msg.sub(/\AThe property '#\/?([^']*)'/) do
+            rest = Regexp.last_match(1)
+            "The property '#{rest.empty? ? pointer : "#{pointer}/#{rest}"}'"
+          end
+        end
+      end
+      map_value = schema_map_value(schema, snode)
+      declared = snode ? schema_node_keys(schema, snode, underscore: true) : []
+      node.each do |k, v|
+        key = k.to_s
+        child_pointer = "#{pointer}/#{key.gsub('~', '~0').gsub('/', '~1')}"
+        if map_value && !declared.include?(key)
+          walk.call(v, child_pointer, map_value)
+        elsif key.start_with?('_')
+          # a "_" property is a note: its value is never checked, whatever it holds
+          next
+        else
+          walk.call(v, child_pointer, snode && schema_resolve(schema, snode, [key]))
+        end
+      end
+    when Array
+      items = snode && schema_resolve(schema, snode, ['0'])
+      node.each_with_index { |v, i| walk.call(v, "#{pointer}/#{i}", items) }
+    end
+  end
+  walk.call(json_data, '#', schema)
+  out
+end
+
+# The schema for the values of an id map (an object node whose additionalProperties is a schema,
+# directly or in a combinator branch), or nil when the node is not an id map.
+def schema_map_value(root, node, depth = 0)
+  node = schema_deref(root, node)
+  return nil unless node.is_a?(Hash) && depth < 8
+  return node['additionalProperties'] if node['additionalProperties'].is_a?(Hash)
+
+  %w[allOf anyOf oneOf].each do |comb|
+    Array(node[comb]).each do |branch|
+      found = schema_map_value(root, branch, depth + 1)
+      return found if found
+    end
+  end
+  nil
+end
+
+# Step 2 of the format hardening: json-schema reports every unknown key of a closed block in one
+# message ("contains additional properties [...] outside of the schema"). This rewrites it as one
+# line per key, "unknown key '<k>'", with "did you mean '<known>'?" when one known key is close,
+# and drops the "required property" error a misspelt required key would also raise, so one slip
+# prints one line. The schema stays the definition of the keys; this only words the message.
+ADDITIONAL_PROPERTIES_RE = /\AThe property '(#[^']*)' contains additional properties (\[.*\]) outside of the schema when none are allowed/m.freeze
+
+def format_schema_errors(json_data, messages, schema = nil)
+  schema ||= JSON.parse(File.read(File.join(__dir__, 'scenario-schema.json')))
+  texts = messages.map { |m| m.to_s.sub(/ in schema [0-9a-f-]+#?\s*\z/, '') }
+  unknown = []   # [index, pointer, key, suggestion]
+  texts.each_with_index do |text, i|
+    m = text.match(ADDITIONAL_PROPERTIES_RE)
+    next unless m
+
+    keys = begin
+      JSON.parse(m[2])
+    rescue JSON::ParserError
+      next
+    end
+    known = schema_known_keys(schema, json_data, m[1], underscore: true)
+    plain = known.reject { |k| k.start_with?('_') }
+    keys.each { |k| unknown << [i, m[1], k.to_s, suggest_key(k.to_s, plain, known - plain)] }
+  end
+  suggested = unknown.map { |_, ptr, _, s| [ptr, s] if s }.compact.to_set
+  replaced = unknown.map(&:first).to_set
+  out = []
+  texts.each_with_index do |text, i|
+    if replaced.include?(i)
+      unknown.select { |idx, *| idx == i }.each do |_, ptr, key, sugg|
+        hint = sugg ? ", did you mean '#{sugg}'?" : ''
+        out << "❌ ERROR: schema: #{ptr}#{describe_schema_pointer(json_data, ptr)}: unknown key '#{key}'#{hint}"
+      end
+      next
+    end
+    req = text.match(/\AThe property '(#[^']*)' did not contain a required property of '([^']*)'\z/)
+    next if req && suggested.include?([req[1], req[2]])
+
+    out << format_schema_error(json_data, text)
+  end
+  # One slip can reach json-schema twice (a grant_foothold in triggerOnInteract is checked by the
+  # main schema and again by validate_grant_foothold_actions); the raw messages differ only in
+  # their "in schema" suffix, so the formatted lines are the same and one is kept.
+  out.uniq
+end
+
+# The keys the schema declares for the object at a data pointer (properties of the node and of its
+# allOf/anyOf/oneOf branches), without "_" keys unless underscore is true. A grant_foothold action
+# uses its own definition.
+def schema_known_keys(schema, data, pointer, underscore: false)
+  segs = pointer.sub(%r{\A#/?}, '').split('/').map { |s| s.gsub('~1', '/').gsub('~0', '~') }
+  node = data
+  segs.each do |seg|
+    node = node.is_a?(Hash) ? node[seg] : (node.is_a?(Array) && seg.match?(/\A\d+\z/) ? node[seg.to_i] : nil)
+  end
+  if node.is_a?(Hash) && node['type'] == 'grant_foothold' && schema.dig('definitions', 'grantFootholdAction')
+    return schema_node_keys(schema, schema['definitions']['grantFootholdAction'], underscore: underscore)
+  end
+
+  sch = schema_resolve(schema, schema, segs)
+  sch ? schema_node_keys(schema, sch, underscore: underscore) : []
+rescue StandardError
+  []
+end
+
+def schema_deref(root, node, depth = 0)
+  while node.is_a?(Hash) && node['$ref'].is_a?(String) && node['$ref'].start_with?('#/') && depth < 20
+    node = node['$ref'].sub('#/', '').split('/').reduce(root) { |n, s| n.is_a?(Hash) ? n[s] : nil }
+    depth += 1
+  end
+  node
+end
+
+def schema_resolve(root, node, segs)
+  node = schema_deref(root, node)
+  return nil unless node.is_a?(Hash)
+  return node if segs.empty?
+
+  seg, rest = segs.first, segs.drop(1)
+  nexts = []
+  nexts << node['properties'][seg] if node['properties'].is_a?(Hash) && node['properties'].key?(seg)
+  (node['patternProperties'] || {}).each { |pat, sub| nexts << sub if Regexp.new(pat).match?(seg) }
+  nexts << node['additionalProperties'] if node['additionalProperties'].is_a?(Hash)
+  nexts << node['items'] if node['items'].is_a?(Hash) && seg.match?(/\A\d+\z/)
+  nexts.each do |n|
+    found = schema_resolve(root, n, rest)
+    return found if found
+  end
+  %w[allOf anyOf oneOf].each do |comb|
+    Array(node[comb]).each do |branch|
+      found = schema_resolve(root, branch, segs)
+      return found if found
+    end
+  end
+  nil
+end
+
+def schema_node_keys(root, node, underscore: false)
+  node = schema_deref(root, node)
+  return [] unless node.is_a?(Hash)
+
+  keys = (node['properties'] || {}).keys
+  %w[allOf anyOf oneOf].each { |comb| Array(node[comb]).each { |b| keys.concat(schema_node_keys(root, b, underscore: true)) } }
+  keys = keys.uniq
+  underscore ? keys : keys.reject { |k| k.start_with?('_') }
+end
+
+# ", did you mean '<k>'?" for an unknown field, or '' when no known key is close.
+def unknown_key_hint(key, known)
+  s = suggest_key(key.to_s, known.reject { |k| k.start_with?('_') }, known.select { |k| k.start_with?('_') })
+  s ? ", did you mean '#{s}'?" : ''
+end
+
+NOTE_LIKE_KEYS = %w[comment comments note notes].freeze
+
+# The one known key a slip most likely meant: a case-insensitive match; else, for a note key
+# written without its "_" (comment, comments, note, notes, any case), "_<k>" when the block
+# declares it and "_comment" otherwise; else the single closest key within edit distance 2 (1 for
+# keys under 5 characters; a swap of two neighbouring letters is one edit), and with none close,
+# "_<k>" when the block declares it. nil when none or more than one is closest.
+def suggest_key(key, known, underscore_known = [])
+  low = key.downcase
+  same = known.select { |k| k.downcase == low }
+  return same.first if same.length == 1
+  return nil if same.length > 1
+
+  # a note key written without its "_" ("comments" is two edits from "contents") points at the note
+  if NOTE_LIKE_KEYS.include?(low)
+    return "_#{key}" if underscore_known.include?("_#{key}")
+
+    return '_comment'
+  end
+
+  limit = key.length < 5 ? 1 : 2
+  scored = known.map { |k| [k, key_edit_distance(low, k.downcase)] }.select { |_, d| d <= limit }
+  if scored.empty?
+    return nil if key.start_with?('_')
+    return "_#{key}" if underscore_known.include?("_#{key}")
+
+    return nil
+  end
+
+  best = scored.map(&:last).min
+  top = scored.select { |_, d| d == best }
+  top.length == 1 ? top.first.first : nil
+end
+
+# Optimal string alignment distance: Levenshtein plus a swap of two neighbouring letters as one edit.
+def key_edit_distance(a, b)
+  d = Array.new(a.length + 1) { |i| Array.new(b.length + 1) { |j| i.zero? ? j : (j.zero? ? i : 0) } }
+  (1..a.length).each do |i|
+    (1..b.length).each do |j|
+      cost = a[i - 1] == b[j - 1] ? 0 : 1
+      d[i][j] = [d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost].min
+      if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1]
+        d[i][j] = [d[i][j], d[i - 2][j - 2] + 1].min
+      end
+    end
+  end
+  d[a.length][b.length]
 end
 
 # Validate that scenario follows proper directory structure
@@ -559,7 +785,7 @@ def check_unknown_fields(json_data)
     warnings << "⚠️ WARNING: '#{path}' sets fingerprintQuality, which is ignored: lift quality now comes from the dusting minigame." if item.key?('fingerprintQuality')
     item.each_key do |key|
       unless known_item_fields.include?(key)
-        warnings << "⚠️ WARNING: '#{path}' has unknown field '#{key}' — if this is minigame-specific configuration data, nest it under 'minigameData' instead."
+        warnings << "⚠️ WARNING: '#{path}' has unknown field '#{key}'#{unknown_key_hint(key, known_item_fields)} — if this is minigame-specific configuration data, nest it under 'minigameData' instead."
       end
     end
     item['contents']&.each_with_index { |c, i| check_item_fields.call(c, "#{path}/contents[#{i}](#{c['id'] || c['type'] || '?'})") }
@@ -602,7 +828,7 @@ def check_unknown_fields(json_data)
       next unless room.is_a?(Hash)
       room.each_key do |key|
         unless known_room_fields.include?(key)
-          warnings << "⚠️ WARNING: Room '#{room_id}' has unknown field '#{key}' — this field will be ignored by the game engine."
+          warnings << "⚠️ WARNING: Room '#{room_id}' has unknown field '#{key}'#{unknown_key_hint(key, known_room_fields)} — this field will be ignored by the game engine."
         end
       end
 
@@ -620,7 +846,7 @@ def check_unknown_fields(json_data)
         npc_path = "rooms/#{room_id}/npcs[#{idx}](#{npc['id'] || '?'})"
         npc.each_key do |key|
           unless known_npc_fields.include?(key)
-            warnings << "⚠️ WARNING: '#{npc_path}' has unknown field '#{key}' — this field will be ignored by the game engine."
+            warnings << "⚠️ WARNING: '#{npc_path}' has unknown field '#{key}'#{unknown_key_hint(key, known_npc_fields)} — this field will be ignored by the game engine."
           end
         end
 
@@ -5400,6 +5626,13 @@ def check_carry_over(json_data, repo_root, mission_name, scenarios_dir, imports,
       issues << "❌ ERROR: #{at}: \"as\" is required when \"from\" (#{from}) doesn't start with an mNN_ or sisNN_ prefix."
       next
     end
+    # Server-owned globals (sync deltas R2, 6a) are never written by an import. This literal must
+    # track Game::SERVER_OWNED_GLOBAL_NAMES (app/models/break_escape/game.rb); the validator cannot
+    # load the Rails constant, so carry_over_server_owned_globals_test guards that the two agree.
+    if %w[se_captures].include?(name)
+      issues << "❌ ERROR: #{at}: '#{name}' is a server-owned global and cannot be imported."
+      next
+    end
     if (name !~ CARRY_OVER_NAME_RE && !carry_over_triage_result_name?(json_data, name)) || name.start_with?('global_')
       issues << "❌ ERROR: #{at}: imported name '#{name}' must be lower_snake_case with a prefix (e.g. m06_assets_seized), " \
                 "and must not start with global_."
@@ -7162,7 +7395,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   schema_plain = raw_schema_errors.reject { |e| e.start_with?('❌') }
   begin
     social_schema, schema_errors = ValidateSocial.split_schema_errors(schema_plain)
-    schema_errors = schema_errors.map { |e| format_schema_error(json_data, e) } + schema_marked
+    schema_errors = format_schema_errors(json_data, schema_errors, JSON.parse(File.read(schema_path))) + schema_marked
   rescue StandardError, ScriptError => e
     report.not_full!('schema', 'schema report raised')
     social_schema = []

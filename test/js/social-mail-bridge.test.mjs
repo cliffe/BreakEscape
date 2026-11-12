@@ -21,7 +21,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
     'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js',
-    'systems/phish-rules.js', 'systems/global-writer.js', 'systems/captures.js', 'systems/social-influence.js', 'ui/influence-bar.js', 'systems/mail-scheduler.js',
+    'systems/phish-rules.js', 'systems/global-writer.js', 'systems/captures.js', 'systems/capture-client.js', 'systems/social-influence.js', 'ui/influence-bar.js', 'systems/mail-scheduler.js',
     'systems/mail-ink.js', 'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js', 'minigames/landing-page-builder/landing-page-model.js'
@@ -39,6 +39,10 @@ console.warn = () => {};
 const bridge = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-bridge.js')));
 const { MailClientMinigame } = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-client-minigame.js')));
 const { MailScheduler } = await import(pathToFileURL(join(dir, 'systems/mail-scheduler.js')));
+// The capture client sets window.submitSECapture, which mail-bridge's recordCapture now calls.
+// A stub stateSync is enough for the mirror write; the same-tick sync-body test uses a fuller one.
+const { installCaptureClient } = await import(pathToFileURL(join(dir, 'systems/capture-client.js')));
+installCaptureClient({ registerPart: () => {}, sync: () => {} });
 
 // A slice-shaped social block: Hampshire, a data-only open inbox (trusts "*").
 function social() {
