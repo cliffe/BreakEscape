@@ -714,7 +714,7 @@ test('a stop deletes the graph files an earlier run left, and says so', { skip }
     }
 });
 
-test('the validator strips the test switch, and counts a key stop as an error', { skip }, () => {
+test('the validator strips the test switch, and counts a key stop or a graph abort as an error', { skip }, () => {
     const dir = mkdtempSync(join(tmpdir(), 'graph-validator-'));
     try {
         const src = join(root, 'scenarios/test_access_networks');
@@ -726,9 +726,10 @@ test('the validator strips the test switch, and counts a key stop as an error', 
         assert.equal(r.status, 0, r.stdout + r.stderr);
         assert.doesNotMatch(r.stdout + r.stderr, /DUNGEON_GRAPH_TEST_NO_SCRUB/, 'the switch never reaches the generator');
         assert.match(r.stdout, /✓ Dungeon graph:/);
-        // A stand-in generator that stops as the key check does (exit 3), and one that fails otherwise.
+        // A stand-in generator that stops as the key check does (exit 3), and one that fails otherwise
+        // (an abort): both fail the run (hardening step 1 review R1, m2).
         for (const [code, expected, status] of [[3, /❌ ERROR: Dungeon graph stopped: an output still held a Wi-Fi key/, 1],
-                                                [1, /⚠️ Dungeon graph generation failed \(non-fatal\)/, 0]]) {
+                                                [1, /❌ ERROR: dungeon graph could not run \(exit 1\)/, 1]]) {
             const stub = join(dir, `stub_${code}.rb`);
             writeFileSync(stub, `module Kernel
   alias_method :real_system_for_test, :system

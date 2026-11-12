@@ -141,10 +141,33 @@ The plan's known cases, all updated in the same branch:
 
 ### Open
 
-- Sign-off of the 16 entries and their `reviewBy` dates (orchestrator, with the labs and escape-room owners and the user for q86).
+- Sign-off of the 22 entries (16 before R1 m4 split two of them into four each) and their `reviewBy` dates (orchestrator, with the labs and escape-room owners and the user for q86).
 - The `acknowledgedClues` and payload-exception lists do not exist yet; the list test reads the exceptions file once 6a-1 adds it, and step 3 adds the markers to the shared-heading check.
-- test-blockchain-explorer's two tasks are `custom` and still never complete in play.
+- test-blockchain-explorer's two tasks are `custom` and still never complete in play (now in `docs/IDEAS_BACKLOG.md`).
 - build/phone-calls and build/phone-calls-writing (plan section 5): whoever merges second redoes the label rename on their validator lines.
+
+### Code review round 1 fixes
+
+Review: `docs/achitechture/SCENARIO_FORMAT_HARDENING_STEP1_REVIEW_R1.md` (0 blockers, 0 majors, 7 minors, 5 nits), all fixed.
+
+- **m1.** `ValidatorReport` counts a line as an error only when its text, after indentation and an optional list number, starts with `❌` (`ERROR_RE`); `print_issue_list` counts the same way (`report.error_line?`). The `-o` and `-v` JSON dumps go through `report.raw` (the uncounted header writer). The dialogue lint's quoted text sits after `ERROR ` and a path, so it never starts a line. Before the change every `❌` in the corpus and test output already began its line, so no count moved. The reviewer's `-o` case (a note with text `❌ door left open`): plain, `-o` and `-v` all exit 0 with `Result: 0 errors`.
+- **m2.** Any non-zero graph exit other than the key stop (3) prints `❌ ERROR: dungeon graph could not run (exit <n>); see the message above.` and exits 1. `dungeon-graph-networks` expected the old non-fatal line for exit 1; it now expects the new one and status 1.
+- **m3 (the stricter option).** A line matching `INK_COMPILE_FAILURE_RE` (now defined once, in `ValidatorReport`) is never matched by a list entry, and the list test rejects a `match` that names a compile failure. So a compile failure always fails the run, whatever else the list holds.
+- **m4.** basic_mission and vm_free_mission each have four entries, one per exact schema line, count 1, with their own headings (22 sections now). The list test rejects a `match` with under eight characters left once `❌ ERROR: `, `ERROR: `, `schema: #/` and `SOCIAL: ` are removed.
+- **m5 (orchestrator ruling).** `readDecisions` keeps each section's prose; `signOffProblems(..., { mergeBatch })` fails a section whose prose holds "awaiting orchestrator sign-off". The known-failures test passes `MERGE_BATCH=1` through, and the clue and payload-exception lists get the same rule when they call the shared reader. The 22 sections stay awaiting, so `MERGE_BATCH=1 node test/js/validator-known-failures.test.mjs` fails until the orchestrator signs them at the merge.
+- **m6.** AGENTS.md's merge-batch line says to run `bin/test-js` with `MERGE_BATCH=1` and to sign each new section in the merge commit.
+- **m7.** The schema split and formatting run under their own rescue (fallback: the raw messages as schema errors plus `❌ ERROR: schema report could not run: ...`); `print_issue_list` runs its body under `run_check`; the `--strict-social` count line runs under `run_check('social', 'strict-social count')`. Each crash shows its `could not run` line and the later sections still print.
+- **n1.** The directory check no longer calls `check_mission_scoring` and `check_mission_result`; the wiring check makes both calls with the rendered data, so a bad `scoring` prints and counts once.
+- **n2.** Each ink compile writes to `<file>.json.tmp-<pid>-<random>`, is parsed there, and is renamed into place only when it is valid JSON; the temp file is always removed. Parallel runs never read a half-written file, and a failed compile leaves the old JSON alone. The corpus run below used 8 parallel workers.
+- **n3.** Shared-heading labels use the entry's index in the list, taken before the filter.
+- **n4.** `docs/IDEAS_BACKLOG.md` has the test-blockchain-explorer item.
+- **n5.** A `reviewBy` earlier than `added` is a problem. The existing passed-`reviewBy` test now uses an earlier `added` date.
+
+Checks after the fixes:
+
+- Corpus: all 177 `scenarios/*/scenario.json.erb`, ink on, `--no-graph`, the default list, 8 in parallel: every one exits 0; 81 errors, 81 known; 13 scenarios print a `❌`, all known; no `could not run` or stale line; m01 to m10 each 0 `❌`; `git status` clean.
+- CI social job replay (`RBENV_VERSION=2.7.8`, `bundle exec`): the lister finds sf_broken, sf_clean, sf_edges and sf_sprite and 84 corpus scenarios; all 84 exit 0 with `--strict-social --no-graph --skip-ink`; sf_clean exits 0, sf_broken exits 1 with `✗ --strict-social: 25 social lint error(s)`.
+- Node tests, no lock: the same 70 files as the review: 1028 pass, 0 fail, including `validator-exit-code` (30) and `validator-known-failures` (15). `MERGE_BATCH=1` on the list test: fails on the 22 awaiting sections, as ruled.
 
 ## Handover
 
