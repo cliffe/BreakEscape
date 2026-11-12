@@ -122,6 +122,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     let closed = false;
     /** A3 R1 m5: an ending's conclude is pending. Nothing starts ringing or opens; offers stay as they are and the tick runs. */
     let suspended = false;
+    /** Descriptors whose call ended during a suspension (A3 R2 n1), waiting for the server's answer. */
+    let keptDisplaced = [];
     /** The one offer that is ringing, held or connected, or null. */
     let active = null;
     /** Offers in `queued` state, first in first out. */
@@ -371,6 +373,9 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     /** The call it displaced comes back, if the world allows it now (row 25; never once the ending has started, choice 2). */
     function reopenDisplaced(d) {
         if (!d) return;
+        // An ending's conclude is pending: keep it until the server answers, so the phone does
+        // not come back over the credits. suspend(false) reopens it, close() drops it (A3 R2 n1)
+        if (suspended && !closed) { keptDisplaced.push(d); return; }
         if (!closed && !call('openBlocked') && !hitWithin(HIT_QUIET_MS)) call('reopen', d);
         else dropDisplaced(d);
     }
@@ -887,6 +892,10 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     function close() {
         advance();
         closed = true;
+        // What a call that ended during the suspension displaced will not come back (A3 R2 n1)
+        const kept = keptDisplaced;
+        keptDisplaced = [];
+        for (const d of kept) dropDisplaced(d);
         // A call that is connected, opening included (2.2), finishes normally (choice 3).
         const gone = queue.slice();
         queue = [];
@@ -963,7 +972,12 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         const next = !!on;
         if (next === suspended) return;
         suspended = next;
-        if (!suspended) run();
+        if (!suspended) {
+            const kept = keptDisplaced;
+            keptDisplaced = [];
+            for (const d of kept) reopenDisplaced(d);
+            run();
+        }
     }
 
     function nudge() {

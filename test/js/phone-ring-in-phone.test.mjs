@@ -323,11 +323,14 @@ test('M1 (row 28): the ringer closing while an offer is held with the phone alre
         w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
         await w.advance(300);
         phone.panel.onAnswer();
-        await w.advance(900);
+        // Step until the phone is put aside and the refused open has sent the offer back to held;
+        // a fixed wait lands in the retry's "connected" and the close then goes through finishOpen (A3 R2 m1)
+        for (let i = 0; i < 60 && !(w.calls.ended.includes(phone) && w.ringer.stateOf('caller') === 'held'); i++) await w.advance(50);
         assert.ok(w.calls.ended.includes(phone), 'the phone was put aside');
-        assert.ok(['held', 'connected'].includes(w.ringer.stateOf('caller')));
+        assert.equal(w.ringer.stateOf('caller'), 'held', 'held at the moment of the close, so only close() can emit');
         assert.equal(closedEvents(w, 'other').length, 0);
         w.ringer.close();
+        assert.equal(closedEvents(w, 'other').length, 1, 'close() itself drops the descriptor, no timer needed');
         await w.advance(300);
         assert.equal(closedEvents(w, 'other').length, 1);
         await w.advance(8000);
@@ -462,5 +465,87 @@ test('n2: if closing the phone for a call throws and the phone stays open, it do
             await w.advance(600);
         } finally { console.error = errors; }
         assert.notEqual(phone.params._closingForCall, true, 'a later real close of this phone still emits its thread event');
+    } finally { w.restore(); }
+});
+
+// ---- A3 R2 m2: the adapter's own drops in reopen ----
+
+const showPopup = (w) => {
+    const el = w.win.document.createElement('div');
+    el.id = 'laptop-popup';
+    el.style.display = 'block';
+    w.win.document.body.appendChild(el);
+    return el;
+};
+
+test('A3 R2 m2: something else (a popup) opened between End and the reopen: the phone does not come back, one thread event', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await answerOver(w, phone);
+        w.fw.currentMinigame._endedByCall = true;
+        w.fw.endMinigame(true);
+        showPopup(w);                      // before the deferred reopen runs
+        await w.advance(300);
+        assert.equal(startedPhones(w).length, 0, 'the phone is not reopened over the popup');
+        assert.equal(closedEvents(w, 'other').length, 1);
+        await w.advance(8000);
+        assert.equal(closedEvents(w, 'other').length, 1, 'once');
+    } finally { w.restore(); w.win.document.getElementById('laptop-popup')?.remove(); }
+});
+
+test('A3 R2 m2: startMinigame refuses the reopen (knocked out, say): one thread event, no phone', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await answerOver(w, phone);
+        const realStart = w.fw.startMinigame.bind(w.fw);
+        w.fw.startMinigame = (type, c, params) => (type === 'phone-chat' && !params?.ringerCall ? null : realStart(type, c, params));
+        w.fw.currentMinigame._endedByCall = true;
+        w.fw.endMinigame(true);
+        await w.advance(300);
+        assert.equal(w.fw.currentMinigame, null, 'no phone came back');
+        assert.equal(closedEvents(w, 'other').length, 1);
+        await w.advance(8000);
+        assert.equal(closedEvents(w, 'other').length, 1, 'once');
+    } finally { w.restore(); }
+});
+
+// ---- A3 R2 n1: reopenDisplaced honours suspended ----
+
+test('A3 R2 n1: a call ended while the ringer is suspended does not reopen the phone until the suspension lifts', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await answerOver(w, phone);
+        w.ringer.suspend(true);
+        w.fw.currentMinigame._endedByCall = true;
+        w.fw.endMinigame(true);
+        await w.advance(500);
+        assert.equal(startedPhones(w).length, 0, 'not reopened over the pending ending');
+        assert.equal(closedEvents(w, 'other').length, 0, 'the descriptor is kept, not dropped');
+        w.ringer.suspend(false);
+        await w.advance(300);
+        assert.equal(startedPhones(w).length, 1, 'reopened once the server refused the ending');
+        assert.equal(startedPhones(w)[0].params.npcId, 'other');
+    } finally { w.restore(); }
+});
+
+test('A3 R2 n1: a descriptor kept during a suspension is dropped, with the thread event once, when the ringer closes', async () => {
+    const w = makeWorld({ npcs: [npc, other] });
+    try {
+        const phone = openPhone(w, { thread: 'other' });
+        await answerOver(w, phone);
+        w.ringer.suspend(true);
+        w.fw.currentMinigame._endedByCall = true;
+        w.fw.endMinigame(true);
+        await w.advance(500);
+        assert.equal(closedEvents(w, 'other').length, 0);
+        w.ringer.close();
+        assert.equal(closedEvents(w, 'other').length, 1);
+        w.ringer.suspend(false);
+        await w.advance(500);
+        assert.equal(startedPhones(w).length, 0);
+        assert.equal(closedEvents(w, 'other').length, 1, 'once');
     } finally { w.restore(); }
 });
