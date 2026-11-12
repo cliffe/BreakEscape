@@ -38,14 +38,66 @@ Standing constraints for this build:
 | 2. R1 seeding | Done, committed, tested (`c12d9d1e7`) |
 | 3. P2 inventory/network answers | Done, committed, tested |
 | 4. P1 cloner one-card deltas | Done, committed, tested |
-| 5. R3 capture-log seen keys | Not started |
-| 6a. R2 server-owned capture record (ships first) | Not started |
+| Merge main (batch 9, 33c003230) into the branch | Done (`f03396201`); capture tests reran green |
+| 5. R3 capture-log seen keys | Done, committed, tested (`cb269170c`) |
+| 6a. R2 server-owned capture record (ships first) | BLOCKED pending reconciliation with main's usePayload-secret fix (see handover) |
 | 6b. R2 reveal/proof gating | Not started |
 | 7. Node + Rails size tests, then live proof A to F | Not started |
 | 8. One release later: remove transition code | Not started (separate release) |
 
+## This session (2026-11-12, builder 6: merge, step 5, 6a assessment)
+
+Did the required merge, step 5 (R3), and stopped at the 6a boundary on a cheat-critical finding.
+
+- Merged `main` (batch 9, 33c003230) into `build/sync-deltas` (`git merge main`, merge commit
+  `f03396201`). No manual conflict resolution was needed (clean auto-merge of game.rb,
+  network_access.rb, network-links.js and their tests). Reran the four capture tests the brief
+  named: `capture_payload_secret_test`, `capture_payload_secret_routes_test`,
+  `capture_secret_endpoint_test`, `lab_physical_pentest_secrets_test` -> 55 runs, 1198 assertions,
+  0 failures.
+- Step 5 (R3), commit `cb269170c`: `capture-log-model.js` gains `SEEN_PREFIX`; `readSeen` now
+  returns the union of the legacy whole-list (read only) and every `__capture_log_seen:<key>`
+  global whose value is `true`. `capture-log-minigame.js` writes one key per newly seen row
+  (`writeGlobal(SEEN_PREFIX + k, true, { openChat: false })`) instead of rewriting the whole list.
+  `test/js/capture-log.test.mjs`: the two existing seen-write tests moved to the per-row shape, plus
+  a `readSeen` merge unit case and an old-save-list-only case (plan 7.5). 18 tests pass. Only
+  `capture-log-minigame.js` imports the model, and no other code reads `SEEN_GLOBAL`, so no harness
+  copy list changed.
+
+### 6a (R2) is blocked on a merge conflict of design, not of text
+
+Main's batch-9 `usePayload-secret` fix (commits `91849ba67`, merge `a5dd28d6e`) already added, in
+`app/models/break_escape/game.rb`, a parallel secret-serving path that overlaps plan 6.3's proposed
+R2 writer pass and `candidate_secret`:
+
+- `authored_capture_secret(entry)`, `authored_capture_secrets`, `build_authored_capture_secrets`,
+  `usepayload_captures`, `hard_access_capture_value?`, and `CaptureModel.hard_access_values`
+  (lib/break_escape/capture_model.rb). `capture_secrets_for_client` (game.rb:1250) now serves a
+  writer/`usePayload` secret by **target id** against the **authored `scenario_data`**, after the
+  page pass and the account pass, with: the account-holder guard (skip an owner that holds an
+  account, and skip an address that is an account username), AND a hard-access-value guard the
+  plan's `candidate_secret` does not have (a secret equal to any password/PIN lock code, Wi-Fi PSK,
+  RFID/biometric `requires` or flag is never served on the capture record alone).
+
+Plan 6.3 (written against base 6a834437c) instead proposes a server-owned `seCaptures` record, a
+writer pass keyed on the stored `writer` **path**, and a `candidate_secret` with only the
+account-holder/payload-owner guard (no hard-access guard). The merge note itself says "Your step 6a
+captures fix must build on it." Applying plan 6.3 mechanically would (a) duplicate the secret-serving
+logic main just added, (b) drop main's hard-access-value withholding, and (c) key secrets by a
+different path than main. Because this path serves passwords and PINs, getting the reconciliation
+wrong is a cheat-policy regression, and it cannot be live-proven within one session (step 7 live
+cases run after step 6).
+
+This is an orchestrator/user decision, not a mechanical build. Recommended before 6a resumes:
+decide whether 6a's server-owned record replaces or wraps main's `authored_capture_secret` path, and
+whether the writer pass should stay keyed by target id (main's shape, simpler, already tested) or by
+the stored `writer` path (plan 6.3). Whatever is chosen, the hard-access-value guard main added must
+be preserved. Steps 6b/7/8 all sit behind 6a and are untouched.
+
 ## Commits (newest first)
 
+- `cb269170c` Step 5 (R3): capture-log seen rows as one key each (see this session, above).
+- `f03396201` Merge `main` (batch 9) into `build/sync-deltas`; capture tests reran green.
 - Step 4 (P1): cloner saved cards as one-card deltas. Server: `add_saved_card!` (identity and
   name from the scenario definition, rfid_data from the client picked to `SAVED_CARD_DATA_KEYS`,
   per-card 4 KB and list 64 KB/50 caps, replace-in-place), `remove_saved_card!` (listed:false mark),
@@ -402,9 +454,12 @@ test rerun green). Tests run (affected files only, no lock):
   prepare_bootstrap_state! locked shell + scenario wiring, refuse_oversized_body cap table. Inert
   until steps 3/4/6a register a part or a bootstrap predicate.
 - savedCurrentRoom controller test (`853b69a59`, task 3).
+- Merge of main batch 9 (`f03396201`); step 5 / R3 (`cb269170c`). See the top session section.
 
 ### In progress
-- None. Each commit is a clean, self-contained, tested boundary.
+- None. Each commit is a clean, self-contained, tested boundary. 6a (R2) is deliberately NOT
+  started: it is blocked on reconciling plan 6.3 with main's merged usePayload-secret fix (top
+  session section). Steps 6b, 7 and 8 all sit behind 6a.
 
 ### Open (rest of step 1, then steps 3 to 8)
 
