@@ -251,9 +251,16 @@ Engine trial for incoming calls that ring. One office, levers that ring each cal
 | `caller_replace` | two ring mappings, only the newer knot rings |
 | `timed_caller` | `timedConversation` with `ring` |
 | `legacy_voiced` | a voiced mapping call with no `ring`: opens at once, as before |
+| `legacy_voiced` (second mapping) | set `globalVars.legacy_on`, hold a call over the keypad, complete the keypad: a `minigame_completed` mapping opens this call first while the held call waits (row 15) |
 | `texter` | plain texts |
+| `caller_hold` | `ring_hold` (lever, 8 s delay): rings over a keypad, lockpick, container, PC desktop or popup; Answer puts it on hold, closing the minigame opens it (rows 12 to 18) |
+| `caller_forced` | `disableClose`: no Decline, auto-answers after 6 s, a hit closes it and it rings back after 4 s without a hit (rows 22, 26) |
+| `caller_popup` | `ring_popup` (lever, 8 s delay): rings over the CyberChef or lab-sheet popup, which goes aside while the call runs and comes back after it (row 11) |
+| `guard`, `brute` | a patrolling guard whose `player_in_view` challenge is dropped during a call (set `guard_off` to switch it off); a hostile NPC (`npcHostileSystem.setNPCHostile('brute', true)`) for a real hit |
 
-Later slices add the lockpick and keypad, the popups, the hostile NPC, the guard and the `call` contacts (A2c to A6).
+Objects: `keypad_safe` (PIN 1234), `pick_case` (lockpick), `open_case` (container with a note), `terminal_pc` (PC desktop with a file), `cyberchef_ws` and `lab_ws` (popups; the lab sheet is a real long page so its scroll position can be checked). Live routes: `tools/phone_calls/routes/a2c_live.sh` (`PC_PORT=<your port>`; hold, banners, popup, forced, v14 to v18, guard, brief).
+
+Later slices add the `call` contacts (A3 to A6).
 
 ---
 

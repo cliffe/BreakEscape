@@ -1,0 +1,27 @@
+game 1706 (v18)
+pill: "Caller Hold · on hold · close this to talk | Hang up"
+1: ringer={"t":33.6,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+2: ringer={"t":38.1,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+3: ringer={"t":42.6,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+4: ringer={"t":47.1,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+5: ringer={"t":51.4,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+6: ringer={"t":56.1,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+7: ringer={"t":60.8,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+8: ringer={"t":65.3,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+9: ringer={"t":69.9,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+10: ringer={"t":74.3,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+11: ringer={"t":78.9,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+12: ringer={"t":83.2,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+13: ringer={"t":87.7,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+14: ringer={"t":91.8,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+15: ringer={"t":96.2,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang  pill="Caller Hold · on hold · close this to talk | Hang up"
+16: ringer={"t":100.7,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang pill="Caller Hold · on hold · close this to talk | Hang up"
+17: ringer={"t":105.2,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang pill="Caller Hold · on hold · close this to talk | Hang up"
+18: ringer={"t":109.6,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang pill="Caller Hold · on hold · close this to talk | Hang up"
+19: ringer={"t":114.1,"ringer":"caller_hold:held","mg":"pin","layer":"Caller Hold · on hold · close this to talk | Hang pill="Caller Hold · on hold · close this to talk | Hang up"
+20: ringer={"t":118.6,"ringer":null,"mg":"pin","layer":"","laptop":"none","lab":null} pill=""
+events: ["phone_call_missed:caller_hold@118.2"]
+shot v18_rang_off
+""
+tools/phone_calls/routes/a2c_live.sh: line 122: syntax error near unexpected token `)'
+tools/phone_calls/routes/a2c_live.sh: line 122: `); return 'calm';"'
