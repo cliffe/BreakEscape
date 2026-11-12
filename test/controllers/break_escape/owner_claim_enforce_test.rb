@@ -89,16 +89,6 @@ module BreakEscape
           scenario { |d| d['rooms']['lobby']['needsPrivateTo'] = ['len']; add_object(d, 'lobby', coffee) },
         'the only source is private to another owner' =>
           scenario { |d| add_object(d, 'finance', coffee('private' => true, 'owners' => ['dana'])) },
-        'an interest whose item has nowhere to go' =>
-          scenario(needs: {}) do |d|
-            jake(d)['interests'] = { 'mail' => 2 }
-            add_object(d, 'finance', { 'id' => 'letter', 'type' => 'notes', 'name' => 'Letter', 'needsTag' => 'mail', 'takeable' => true })
-          end,
-        'an interest with a place but no item' =>
-          scenario(needs: {}) do |d|
-            jake(d)['interests'] = { 'mail' => 2 }
-            add_object(d, 'finance', { 'id' => 'tray', 'type' => 'notes', 'name' => 'Tray', 'affordance' => { 'accepts' => 'mail' } })
-          end,
         'a judged need that cannot fail, met only at another desk' =>
           scenario do |d|
             judged_work(d)
@@ -121,15 +111,16 @@ module BreakEscape
             jake_pc(d).delete('lockChance')
             jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => '20' }
           end,
-        'the owner answers phones, but nobody else has one' =>
-          scenario { |d| jake(d)['answersPhones'] = true },
-        'a print hook with no printHabit (the print is never fetched)' =>
-          scenario do |d|
-            jake_pc(d)['affordance'] = { 'satisfies' => 'caffeine' }
-            jake(d)['onUse'] = { 'jake_pc' => { 'revealOutput' => ['copier'] } }
-          end,
         'revealOutput on a printer object is no print hook' =>
-          scenario { |d| add_object(d, 'finance', { 'id' => 'printer', 'type' => 'notes', 'name' => 'Printer', 'revealOutput' => ['slot_1'] }) }
+          scenario { |d| add_object(d, 'finance', { 'id' => 'printer', 'type' => 'notes', 'name' => 'Printer', 'revealOutput' => ['slot_1'] }) },
+        # Review R2: the cautious layer refuses only an owner with no movement source at all
+        'an ink story with no patrol tag, a needs set command and an unrelated droppable item' =>
+          scenario do |d|
+            jake(d)['storyPath'] = 'scenarios/test_access_habits/ink/owner.json'
+            jake(d)['eventMappings'] << { 'eventPattern' => 'go', 'needs' => { 'set' => { 'caffeine' => 90 } } }
+            add_object(d, 'lobby', { 'id' => 'stapler', 'type' => 'notes', 'name' => 'Stapler', 'droppable' => true,
+                                     'affordance' => { 'satisfies' => 'work' } })
+          end
       }
       cases.each do |label, data|
         build(data)
@@ -200,7 +191,52 @@ module BreakEscape
             jake_pc(d).delete('lockChance')
             jake(d)['screenHabit'] = { 'lockIfAwayOverSeconds' => '20' }
             add_object(d, 'finance', coffee)
-          end
+          end,
+        # Review R2 B1: a droppable source goes wherever the player puts it
+        'a droppable source authored in a room outside needsRooms' =>
+          scenario do |d|
+            jake(d)['needsRooms'] = ['finance']
+            add_object(d, 'lobby', coffee.merge('droppable' => true, 'takeable' => true))
+          end,
+        'a droppable accepting place authored outside needsRooms' =>
+          scenario(needs: {}) do |d|
+            jake(d)['interests'] = { 'mail' => 2 }
+            jake(d)['needsRooms'] = ['finance']
+            add_object(d, 'finance', { 'id' => 'letter', 'type' => 'notes', 'name' => 'Letter', 'needsTag' => 'mail', 'takeable' => true })
+            add_object(d, 'lobby', { 'id' => 'tray', 'type' => 'notes', 'name' => 'Tray', 'droppable' => true, 'takeable' => true,
+                                     'affordance' => { 'accepts' => 'mail' } })
+          end,
+        # Review R2 B2: social media at the own station is a need use there, and it prints
+        'a print hook on the own station used for social media' =>
+          scenario(needs: { 'social_media' => { 'decayPerMin' => 30, 'urgentAt' => 40 } }) do |d|
+            jake(d)['onUse'] = { 'jake_pc' => { 'revealOutput' => ['copier'] } }
+            jake(d)['printHabit'] = {}
+          end,
+        # Review R2: the cautious layer (a movement source the mirror does not model exactly)
+        'cautious: a patrol on the owner' =>
+          scenario { |d| jake(d)['behavior'] = { 'patrol' => { 'waypoints' => [{ 'x' => 2, 'y' => 2 }] } } },
+        'cautious: a scripted move in the owner\'s event mappings' =>
+          scenario { |d| jake(d)['eventMappings'] << { 'eventPattern' => 'alarm', 'patrolOverride' => { 'targetTile' => { 'x' => 1, 'y' => 1 } } } },
+        'cautious: #patrol_mode in the owner\'s ink' =>
+          scenario { |d| jake(d)['storyPath'] = 'scenarios/ink/test-patrol-toggle.json' },
+        'cautious: a social media need' =>
+          scenario(needs: { 'social_media' => { 'decayPerMin' => 30, 'urgentAt' => 40 } }),
+        'cautious: a station hook with no printHabit' =>
+          scenario do |d|
+            jake_pc(d)['affordance'] = { 'satisfies' => 'caffeine' }
+            jake(d)['onUse'] = { 'jake_pc' => { 'revealOutput' => ['copier'] } }
+          end,
+        'cautious: an interest whose item has nowhere to go' =>
+          scenario(needs: {}) do |d|
+            jake(d)['interests'] = { 'mail' => 2 }
+            add_object(d, 'finance', { 'id' => 'letter', 'type' => 'notes', 'name' => 'Letter', 'needsTag' => 'mail', 'takeable' => true })
+          end,
+        'cautious: the owner answers phones, but nobody else has one' =>
+          scenario { |d| jake(d)['answersPhones'] = true },
+        'cautious: a printHabit' =>
+          scenario { |d| jake(d)['printHabit'] = { 'fetchAfterSeconds' => [30, 60] } },
+        'cautious: a droppable source private to somebody else' =>
+          scenario { |d| add_object(d, 'lobby', coffee('private' => true, 'owners' => ['dana']).merge('droppable' => true)) }
       }
       cases.each do |label, data|
         build(data)

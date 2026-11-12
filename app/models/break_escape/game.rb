@@ -1650,6 +1650,19 @@ module BreakEscape
       record_login_failure!(pc, key, account: !npc.nil?)
     end
 
+    # A storyPath's text for OwnerClaim: the compiled story GamesController#ink serves (not
+    # compiled here) and its .ink source, so an edit not yet compiled still counts. nil when
+    # neither can be read.
+    def owner_claim_story_text(story_path)
+      base = InkStoryFile.confined(story_path, InkStoryFile.allowed_roots)
+      return nil unless base
+
+      json = InkStoryFile.find(story_path, compile: false)
+      ink = InkStoryFile.ink_source(base)
+      texts = [json && InkStoryFile.read(json), ink && InkStoryFile.read(ink)].compact
+      texts.empty? ? nil : texts.join("\n")
+    end
+
     # 403 for a sign-in or claim at the keyboard of a PC whose own service is off (q72)
     def pc_off_answer
       { status: :forbidden, body: { success: false, message: NetworkAccess::PC_OFF_MESSAGE, reason: 'off' } }
@@ -1694,8 +1707,11 @@ module BreakEscape
       # Owner claim q78: honest play never leaves this session open when nothing ever sends the
       # owner away from the post in a way that can leave it open (no need source, interest, print
       # errand, colleague's phone or failure route, and no knock-out that can find this PC open).
-      # Decided from scenario data alone (OwnerClaim.leave_route).
-      return refusal.call('the owner never leaves the post') if BreakEscape::OwnerClaim.never_leaves?(scenario_data, owner, pc)
+      # Decided from scenario data alone (OwnerClaim.leave_route), and from the owner's ink story
+      # (a #patrol_mode tag), read as GamesController#ink finds it.
+      if BreakEscape::OwnerClaim.never_leaves?(scenario_data, owner, pc, story: method(:owner_claim_story_text))
+        return refusal.call('the owner never leaves the post')
+      end
 
       Rails.logger.info "[BreakEscape] login claim at #{pc['id']} for #{owner['id']}; client globals: #{globals.inspect}"
       start_login_session!(pc['id'], owner, 'claim')

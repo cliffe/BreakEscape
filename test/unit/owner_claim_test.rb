@@ -44,13 +44,23 @@ class OwnerClaimTest < ActiveSupport::TestCase
     want.nil? ? assert_nil(got, label) : assert_equal(want, got, label)
   end
 
+  # The precise layer alone, so a near miss there can be checked although the cautious layer
+  # (might_leave) allows the same owner for another reason
   def route(d, pc: :jake_pc)
-    OC.leave_route(d, jake(d), pc == :jake_pc ? jake_pc(d) : pc)
+    OC.precise_route(d, jake(d), pc == :jake_pc ? jake_pc(d) : pc)
+  end
+
+  NO_STORY = ->(_path) { nil }
+
+  # Both layers, as the server and the validator call it
+  def full(d, story: NO_STORY)
+    OC.leave_route(d, jake(d), jake_pc(d), story: story)
   end
 
   test 'nothing sends the owner away' do
     assert_nil route(data)
-    assert OC.never_leaves?(data, jake(data), jake_pc(data))
+    assert_nil full(data)
+    assert OC.never_leaves?(data, jake(data), jake_pc(data), story: NO_STORY)
   end
 
   test 'a need source elsewhere' do
@@ -167,5 +177,114 @@ class OwnerClaimTest < ActiveSupport::TestCase
     end
     assert_equal 'interest:mail', route(base.call('office'))
     assert_nil route(base.call('lobby')), 'the accepting place is outside needsRooms'
+  end
+
+  # R2 B1: a droppable source or accepting place goes wherever the player puts it, so the room it
+  # was authored in is no leash test
+  test 'a droppable source or accepting place is never leashed to its authored room' do
+    leashed = lambda do |&blk|
+      data do |x|
+        jake(x)['needsRooms'] = ['office']
+        blk.call(x)
+      end
+    end
+    plain = leashed.call { |x| add(x, 'lobby', { 'id' => 'cup', 'affordance' => { 'satisfies' => ['caffeine'] } }) }
+    assert_nil route(plain), 'a fixed source outside needsRooms is leashed'
+    source = leashed.call { |x| add(x, 'lobby', { 'id' => 'cup', 'droppable' => true, 'affordance' => { 'satisfies' => ['caffeine'] } }) }
+    assert_equal 'need:caffeine:cup', route(source)
+    magnet = leashed.call do |x|
+      add(x, 'lobby', { 'id' => 'donuts', 'droppable' => true, 'affordance' => { 'satisfies' => ['caffeine'], 'magnet' => { 'servings' => 4 } } })
+    end
+    assert_equal 'need:caffeine:donuts', route(magnet)
+    nested = leashed.call do |x|
+      add(x, 'lobby', { 'id' => 'cupboard', 'type' => 'cabinet',
+                        'contents' => [{ 'id' => 'cup2', 'droppable' => true, 'affordance' => { 'satisfies' => ['caffeine'] } }] })
+    end
+    assert_equal 'need:caffeine:cup2', route(nested)
+    tray = leashed.call do |x|
+      jake(x)['needs'] = {}
+      jake(x)['interests'] = { 'mail' => 2 }
+      add(x, 'office', { 'id' => 'letter', 'needsTag' => 'mail' })
+      add(x, 'lobby', { 'id' => 'tray', 'droppable' => true, 'affordance' => { 'accepts' => 'mail' } })
+    end
+    assert_equal 'interest:mail', route(tray)
+  end
+
+  # R2 B2: _socialCandidate adds social_media to the own station, and that use prints
+  test 'a print hook on the own station used for social media prints' do
+    social = lambda do |habit: {}|
+      data do |x|
+        jake(x)['needs'] = { 'social_media' => { 'decayPerMin' => 2, 'urgentAt' => 40 } }
+        jake(x)['onUse'] = { 'jake_pc' => { 'revealOutput' => 'printer' } }
+        jake(x)['printHabit'] = habit unless habit.nil?
+        add(x, 'office', { 'id' => 'printer', 'type' => 'printer' })
+      end
+    end
+    assert_equal 'prints', route(social.call)
+    assert_nil route(social.call(habit: nil)), 'no printHabit: the print is never fetched'
+    other = data do |x|
+      jake(x)['needs'] = { 'social_media' => { 'decayPerMin' => 2, 'urgentAt' => 40 } }
+      jake(x)['onUse'] = { 'lamp' => { 'revealOutput' => 'printer' } }
+      jake(x)['printHabit'] = {}
+      add(x, 'office', { 'id' => 'lamp' })
+    end
+    assert_nil route(other), 'social media is added to the own station only'
+  end
+
+  # R2 design: the cautious layer allows the claim wherever the owner has any movement source
+  # the precise layer does not model exactly. Each fixture has no precise route.
+  test 'every movement source the mirror does not model exactly allows the claim' do
+    cases = {
+      'patrol' => ->(x) { jake(x)['behavior'] = { 'patrol' => { 'waypoints' => [{ 'x' => 3, 'y' => 3 }] } } },
+      'patrol (bounds)' => ->(x) { jake(x)['behavior'] = { 'patrol' => { 'bounds' => { 'x' => 1, 'y' => 1, 'width' => 4, 'height' => 4 } } } },
+      'scripted_move' => ->(x) { jake(x)['eventMappings'] = [{ 'eventPattern' => 'alarm', 'patrolOverride' => { 'targetTile' => { 'x' => 2, 'y' => 2 } } }] },
+      'scripted_move (map)' => ->(x) { jake(x)['eventMappings'] = { 'alarm' => { 'patrolOverride' => { 'targetTile' => { 'x' => 2, 'y' => 2 } } } } },
+      'scripted_move (navigateToPlayer)' => ->(x) { jake(x)['eventMapping'] = [{ 'eventPattern' => 'seen', 'navigateToPlayer' => true, 'knot' => 'hi' }] },
+      'ink_patrol' => ->(x) { jake(x)['storyPath'] = 'scenarios/x/ink/jake.json' },
+      'ink_patrol (changeStoryPath)' => lambda { |x|
+        jake(x)['storyPath'] = 'scenarios/x/ink/quiet.json'
+        jake(x)['eventMappings'] = [{ 'eventPattern' => 'go', 'changeStoryPath' => 'scenarios/x/ink/jake.json' }]
+      },
+      'social_media' => ->(x) { jake(x)['needs'] = { 'social_media' => { 'decayPerMin' => 2, 'urgentAt' => 40 } } },
+      'station_hook' => ->(x) { jake(x)['onUse'] = { 'jake_pc' => { 'revealOutput' => 'printer' } } },
+      'interest' => ->(x) { jake(x)['interests'] = { 'mail' => 2 } },
+      'phones' => ->(x) { jake(x)['answersPhones'] = true },
+      'prints' => ->(x) { jake(x)['printHabit'] = { 'fetchAfterSeconds' => [10, 20] } },
+      'prints (command, no needsHome)' => lambda { |x|
+        jake(x).delete('needsHome')
+        jake(x)['eventMappings'] = [{ 'eventPattern' => 'go', 'needs' => { 'print' => 'copier' } }]
+      },
+      'droppable' => lambda { |x|
+        jake(x)['needsRooms'] = ['office']
+        add(x, 'lobby', { 'id' => 'cup', 'droppable' => true, 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } })
+      }
+    }
+    story = ->(path) { path.end_with?('jake.json') ? '["#","^patrol_mode:on","/#"]' : '["^Hello."]' }
+    cases.each do |name, edit|
+      d = data { |x| edit.call(x) }
+      assert_nil route(d), "#{name}: no precise route in the fixture"
+      want = "might:#{name.split(' ').first}"
+      assert_equal want, full(d, story: story), name
+      refute OC.never_leaves?(d, jake(d), jake_pc(d), story: story), name
+    end
+  end
+
+  test 'the cautious layer still refuses an owner with no movement source' do
+    quiet = data do |x|
+      jake(x)['storyPath'] = 'scenarios/x/ink/quiet.json'
+      jake(x)['behavior'] = { 'facePlayer' => true }
+      jake(x)['eventMappings'] = [{ 'eventPattern' => 'go', 'knot' => 'hello', 'needs' => { 'set' => { 'caffeine' => 90 } } }]
+      add(x, 'lobby', { 'id' => 'cup', 'droppable' => true, 'affordance' => { 'satisfies' => ['work'] } })
+    end
+    assert_nil full(quiet, story: ->(_p) { '["^Hello."]' }), 'an ink story with no patrol tag, a set command, an unrelated droppable'
+    assert_nil full(quiet, story: ->(_p) { nil }), 'an unreadable story moves nobody'
+  end
+
+  test 'the default story reader stays inside scenarios' do
+    assert_nil OC.default_story_text('config/database.yml')
+    assert_nil OC.default_story_text('../../etc/passwd.json')
+    assert_nil OC.default_story_text('scenarios/no_such/ink/none.json')
+    text = OC.default_story_text('scenarios/test_access_habits/ink/owner.json')
+    assert text.is_a?(String) && !text.include?('patrol_mode'), 'Noor\'s story is read and has no patrol tag'
   end
 end

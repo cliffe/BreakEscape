@@ -15,6 +15,12 @@ module BreakEscape
   # owner). Every test leans towards "can leave": a route that might exist counts, so a claim is
   # never refused where honest play could produce an open screen.
   #
+  # Two layers. The precise routes (knock-out, phones, prints, need sources, failures, interests)
+  # follow the client closely. Behind them, might_leave allows the claim wherever the owner has
+  # any movement source the precise layer does not model exactly (a patrol, a scripted move, a
+  # station hook, social media, a droppable source, an interest, phones, prints): a refusal needs
+  # an owner with no movement source at all.
+  #
   # Plain Ruby with no Rails methods, as AccessIdentities and AccessWork are.
   module OwnerClaim
     module_function
@@ -26,10 +32,32 @@ module BreakEscape
     # necessarily the one play uses most (a need's source elsewhere counts even where the own
     # needsHome usually serves it).
     #
+    # "might:<feature>" comes from the cautious layer (might_leave).
+    #
     # pc: the PC the claim is for. A knock-out leave carries no time-away estimate, so it counts
     # only where decideLocked can leave this PC open without one (open_without_estimate?). With
     # no PC given the knock-out counts, the side that never refuses an honest claim.
-    def leave_route(data, owner, pc = nil)
+    #
+    # story: a callable taking a storyPath and returning the story's text, or nil (the server
+    # passes one that reads through InkStoryFile). Without one, default_story_text reads it.
+    def leave_route(data, owner, pc = nil, story: nil)
+      return nil unless data.is_a?(Hash) && owner.is_a?(Hash)
+
+      precise = precise_route(data, owner, pc)
+      return precise if precise
+
+      cautious = AccessWork.with_index(data) do
+        might_leave(data, owner, scenario_objects(data), story || method(:default_story_text))
+      end
+      cautious ? "might:#{cautious}" : nil
+    end
+
+    def never_leaves?(data, owner, pc = nil, story: nil)
+      leave_route(data, owner, pc, story: story).nil?
+    end
+
+    # The precise layer alone: the routes the client is mirrored for closely, or nil
+    def precise_route(data, owner, pc = nil)
       return nil unless data.is_a?(Hash) && owner.is_a?(Hash)
 
       # workstation-state.js onKnockedOut: a knock-out counts as a leave for a tracked owner.
@@ -65,7 +93,9 @@ module BreakEscape
             # workaround, which needs a failure, handled above)
             next false if judged && AccessWork.desk?(data, o)
 
-            permitted?(data, owner, o, e[:room], home_room)
+            # A droppable object goes wherever the player puts it, so its authored room is no
+            # leash test (item-drop.js copies its affordance to where it lands)
+            permitted?(data, owner, o, droppable?(o) ? nil : e[:room], home_room)
           end
           return "need:#{name}:#{found[:obj]['id']}" if found
         end
@@ -80,7 +110,7 @@ module BreakEscape
           item = objects.any? { |e| e[:obj]['needsTag'] == tag }
           target = objects.any? do |e|
             Array(AccessWork.affordance(data, e[:obj])&.dig('accepts')).include?(tag) &&
-              !room_forbidden?(data, owner, e[:room], home_room)
+              !room_forbidden?(data, owner, droppable?(e[:obj]) ? nil : e[:room], home_room)
           end
           return "interest:#{tag}" if item && target
         end
@@ -88,8 +118,82 @@ module BreakEscape
       nil
     end
 
-    def never_leaves?(data, owner, pc = nil)
-      leave_route(data, owner, pc).nil?
+    # The cautious layer: the first movement source on this owner that the precise routes do not
+    # model exactly, or nil. Each is allowed without asking whether it can really leave the
+    # screen open. OWNER_CLAIM_ENFORCE_BUILD_LOG.md ("R2 fixes") lists every client path that
+    # moves an NPC and how it is treated.
+    def might_leave(data, owner, objects, story)
+      behavior = owner['behavior']
+      # npc-behavior.js: a patrol (waypoints, bounds, a multi-room route, or enabled)
+      return 'patrol' if behavior.is_a?(Hash) && behavior['patrol'] && behavior['patrol'] != false
+
+      maps = mappings(owner)
+      # npc-manager.js: patrolOverride (goToAndStay) and navigateToPlayer move the NPC by script
+      return 'scripted_move' if maps.any? { |m| m['patrolOverride'] || m['navigateToPlayer'] }
+
+      # person-chat-conversation.js: #patrol_mode in the owner's story, or in a story a mapping
+      # switches to (changeStoryPath)
+      paths = ([owner['storyPath']] + maps.map { |m| m['changeStoryPath'] }).select { |p| p.is_a?(String) && !p.empty? }.uniq
+      return 'ink_patrol' if paths.any? { |p| story.call(p).to_s.include?('patrol_mode') }
+
+      needs = owner['needs'].is_a?(Hash) ? owner['needs'].select { |_, raw| valid_need?(raw) }.keys : []
+      interests = owner['interests'].is_a?(Hash) ? owner['interests'].select { |_, raw| valid_interest?(raw) }.keys : []
+      # _socialCandidate adds social_media to the own station, whose use can print
+      return 'social_media' if needs.include?('social_media')
+      return 'station_hook' if owner['onUse'].is_a?(Hash) && !owner['onUse'].empty?
+      return 'interest' unless interests.empty?
+      return 'phones' if owner['answersPhones'] == true
+      return 'prints' if owner['printHabit'] || print_command?(owner)
+
+      # item-drop.js: a droppable source or accepting place, wherever it is and whoever may use it
+      dropped = objects.any? do |e|
+        next false unless droppable?(e[:obj])
+
+        aff = AccessWork.affordance(data, e[:obj])
+        aff.is_a?(Hash) && (Array(aff['satisfies']) & needs).any?
+      end
+      dropped ? 'droppable' : nil
+    end
+
+    def droppable?(obj)
+      obj.is_a?(Hash) && obj['droppable'] == true
+    end
+
+    # Every hash inside the owner's event mappings (eventMappings, else the singular
+    # eventMapping, as npc-manager.js normalises them), at any depth: wider than the mapping
+    # entries themselves, so a field anywhere in them counts
+    def mappings(owner)
+      out = []
+      walk = lambda do |node|
+        case node
+        when Array then node.each { |n| walk.call(n) }
+        when Hash
+          out << node
+          node.each_value { |v| walk.call(v) }
+        end
+      end
+      walk.call(owner['eventMappings'] || owner['eventMapping'])
+      out
+    end
+
+    STORY_ROOT = File.expand_path('../..', __dir__)
+
+    # A storyPath's text, read as InkStoryFile confines it: a .json path inside scenarios/,
+    # symlinks resolved. Both the compiled JSON and the .ink source are read, so a story edited
+    # since its last compile still counts. nil when neither can be read.
+    def default_story_text(story_path)
+      return nil unless story_path.is_a?(String) && story_path.end_with?('.json') && !story_path.include?("\0")
+
+      root = File.join(STORY_ROOT, 'scenarios')
+      real_root = File.exist?(root) ? File.realpath(root) : root
+      full = File.expand_path(story_path, STORY_ROOT)
+      texts = [full, full.sub(/\.(ink\.)?json\z/, '.ink')].uniq.filter_map do |f|
+        real = File.realpath(f)
+        real.start_with?("#{real_root}/") && File.file?(real) ? File.read(real) : nil
+      rescue SystemCallError
+        nil
+      end
+      texts.empty? ? nil : texts.join("\n")
     end
 
     # decideLocked (workstation-state.js) with expectedAwayMs null, as for a knock-out: can this
@@ -138,7 +242,12 @@ module BreakEscape
           next false if c.finite? && c <= 0
         end
         target = objects.find { |e| e[:obj]['id'] == target_id }
-        target && needs.any? { |n| AccessWork.satisfies?(data, target[:obj], n) }
+        next false unless target
+        # _socialCandidate adds social_media to the own station's satisfies for that choice, so
+        # a social media use of the needsHome is a need use there and prints
+        next true if target_id == home_id && needs.include?('social_media')
+
+        needs.any? { |n| AccessWork.satisfies?(data, target[:obj], n) }
       end
     end
 

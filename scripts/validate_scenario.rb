@@ -6443,15 +6443,21 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   end
   find_rewards.call(json_data)
   # Owner claim q78, judged as the server judges it: on the data as prepared at game creation
-  # (habits expanded, so screenHabit is filled; object ids stamped), and only where the screen
-  # does not always lock anyway (that PC's claim is refused already, and says so elsewhere).
+  # (habits expanded, so screenHabit is filled; object ids stamped), and only where check 10 is
+  # the reason the claim is refused. An owner with no account or not on the PC's access list, a
+  # screen that always locks and a policy with autoLockMin 0 are refused by an earlier check.
   claim_data = nil
   owner_never_leaves = lambda do |raw_pc, owner_id|
     claim_data ||= BreakEscape::NpcHabits.expanded_copy(json_data).first
     c_pc = ai.sign_in_pcs(claim_data).map { |x| x[:object] }.find { |o| raw_pc['id'] && o['id'] == raw_pc['id'] } || raw_pc
     c_owner = ai.room_npcs(claim_data).map { |x| x[:npc] }.find { |n| n['id'].to_s == owner_id.to_s }
     next false unless c_owner
+    # Game#claim_login_session! checks 4 and 5 (account_holder?, pc_admits_account?)
+    next false unless ai.account?(c_owner) && (c_pc['access'].nil? || ai.acl_admits?(c_pc['access'], c_owner))
     next false if ai.screen_always_locks?(c_pc, c_owner)
+
+    c_policy = claim_data['policies'].is_a?(Hash) ? claim_data['policies'][(c_pc['policy'] || claim_data['defaultPolicy']).to_s] : nil
+    next false if c_policy.is_a?(Hash) && c_policy['autoLockMin'].is_a?(Numeric) && c_policy['autoLockMin'].zero?
 
     BreakEscape::OwnerClaim.never_leaves?(claim_data, c_owner, c_pc)
   end
@@ -6489,8 +6495,9 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
         elsif owner_never_leaves.call(pc, owner_id)
           # Owner claim q78: the server refuses a claim here too
           warn.call("#{where} is owned by '#{owner_id}', whom nothing sends away from the post in a way that " \
-                    'can leave the screen open: no need is met anywhere else they may go, no interest has an item and a ' \
-                    "place for it, no print errand, colleague's phone or failure route, and a knock-out is either " \
+                    'can leave the screen open: no need is met anywhere else they may go, no print errand or failure ' \
+                    'route, no patrol, scripted move, patrol_mode ink tag, social media need, station hook, interest, ' \
+                    'phone answering, print habit or droppable source, and a knock-out is either ' \
                     'impossible (disableAttacks or koImmune) or always locks this screen. No unlocked session is ' \
                     'possible there and the server refuses a claim. If the screen is meant to be found open, give ' \
                     'the owner a need met somewhere else, or allow attacks and give the PC a lockChance below 1.')

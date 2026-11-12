@@ -460,10 +460,13 @@ test('each leave route keeps the never-leaves warning silent', { skip }, () => {
     }
     // and the near misses still warn
     const misses = {
-        'answersPhones with no colleague phone': sc => { npc(sc, 'jake').answersPhones = true; },
-        'a print hook with no printHabit': sc => {
-            obj(sc, 'jake_pc').affordance = { satisfies: 'thirst' };
-            npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } };
+        'a fixed source outside needsRooms': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            sc.rooms.finance_office.objects = [{ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst' } }];
+        },
+        'a needs set command and a droppable item for another need': sc => {
+            npc(sc, 'jake').eventMappings = [{ eventPattern: 'go', needs: { set: { thirst: 90 } } }];
+            lobby(sc).objects.push({ id: 'stapler', type: 'notes', name: 'Stapler', droppable: true, affordance: { satisfies: 'work' } });
         }
     };
     for (const [label, edit] of Object.entries(misses)) {
@@ -471,6 +474,51 @@ test('each leave route keeps the never-leaves warning silent', { skip }, () => {
         sc.disableAttacks = true;
         edit(sc);
         assertHas(warnings(issues(sc)), NEVER_LEAVES);
+    }
+});
+
+// Review R2: B1, B2 and the cautious layer (a movement source the mirror does not model exactly)
+test('droppable sources, social media prints and every cautious movement source keep the warning silent', { skip }, () => {
+    const routes = {
+        'B1: a droppable source outside needsRooms': sc => {
+            npc(sc, 'jake').needsRooms = ['lobby'];
+            sc.rooms.finance_office.objects = [{ id: 'water', type: 'notes', name: 'Water', droppable: true, takeable: true, affordance: { satisfies: 'thirst' } }];
+        },
+        'B2: a print hook on the own station used for social media': sc => {
+            npc(sc, 'jake').needs = { social_media: { decayPerMin: 10, urgentAt: 40 } };
+            npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } };
+            npc(sc, 'jake').printHabit = {};
+        },
+        'a patrol': sc => { npc(sc, 'jake').behavior = { patrol: { waypoints: [{ x: 2, y: 2 }] } }; },
+        'a scripted move': sc => { npc(sc, 'jake').eventMappings = [{ eventPattern: 'alarm', patrolOverride: { targetTile: { x: 1, y: 1 } } }]; },
+        'navigateToPlayer': sc => { npc(sc, 'jake').eventMappings = { seen: { knot: 'hi', navigateToPlayer: true } }; },
+        'a patrol_mode ink tag': sc => { npc(sc, 'jake').storyPath = 'scenarios/ink/test-patrol-toggle.json'; },
+        'a social media need': sc => { npc(sc, 'jake').needs.social_media = { decayPerMin: 10, urgentAt: 40 }; },
+        'a station hook': sc => { npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } }; },
+        'an interest': sc => { npc(sc, 'jake').interests = { mail: 2 }; },
+        'answersPhones with no colleague phone': sc => { npc(sc, 'jake').answersPhones = true; },
+        'a printHabit': sc => { npc(sc, 'jake').printHabit = { fetchAfterSeconds: [10, 20] }; }
+    };
+    for (const [label, edit] of Object.entries(routes)) {
+        const sc = clean();
+        sc.disableAttacks = true;
+        edit(sc);
+        assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), label);
+    }
+});
+
+// Review R2 n4: the warning names check 10, so it fires only where check 10 is the reason
+test('the never-leaves warning is silent where an earlier claim check refuses', { skip }, () => {
+    const earlier = {
+        'no account': sc => { delete npc(sc, 'jake').creds.username; },
+        'the access list does not admit the owner': sc => { obj(sc, 'jake_pc').access = { roles: ['it'] }; },
+        'a policy with autoLockMin 0': sc => { sc.policies.lax.autoLockMin = 0; }
+    };
+    for (const [label, edit] of Object.entries(earlier)) {
+        const sc = clean();
+        sc.disableAttacks = true;
+        edit(sc);
+        assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), label);
     }
 });
 
