@@ -1461,6 +1461,31 @@ Tests in `access_model_rfid_test`: `case F: a legacy copy the server can confirm
 opens its door after a reload` and `case F: a legacy copy of a card the player never met is dropped
 and stays refused` (both confirmed red with the backfill writer disabled).
 
+### Review R2 fixes (n1 fixed, n2 accepted)
+
+Full-branch review R2 at `docs/achitechture/SYNC_DELTAS_BRANCH_REVIEW_R2.md` (0 blockers, 0 majors,
+0 minors, 2 nits).
+
+- **n2 (accepted, logged):** the R1 n2 gate means an unproven phish-gated capture entry recorded on
+  branch-era 6b code before `901dd8bc8` carries no `phishGated` flag, so a sync that lands its phish
+  evidence will not stamp it `proven` until the next page bootstrap. No earned proof is lost:
+  `GET /capture_secrets` re-checks the evidence live (`capture_revealable?`) and serves the secret
+  the instant it holds, and the bootstrap stamp still uses `unproven_captures?`, not the flag. The
+  withholding window is narrow and branch-only (evidence lands via a sync, the page is never
+  reloaded, then the evidence stops holding before any bootstrap). The branch is unreleased, so no
+  deployed save holds such a flagless entry; only branch test games (e.g. 1972 / 1977) could. No code
+  change made.
+- **n1 (`game.rb#backfill_legacy_cloned_cards!` / `confirmable_clone_source`): the case F backfill
+  recomputed `uidOnly` from a fresh `card_id` lookup that preferred a keycard object over the NPC
+  card, so an NPC-sourced copy whose id was also named by a same-id object with a different
+  `rfid_protocol` could be minted a full clone where the honest NPC clone is UID-only.** Fix:
+  `confirmable_clone_source` now returns `[source, definition]`, the card definition it actually
+  confirmed, and the backfill computes `uidOnly` from that same definition, so the record never
+  grants more than the honest clone route for that source. Test (`access_model_rfid_test`,
+  `case F: a legacy copy backfilled from an NPC takes the NPC card protocol, not a same-id keycard
+  object`) sets one `card_id` on both a DESFire NPC card and an out-of-reach EM4100 keycard object;
+  it asserts the backfilled record is `uidOnly: true`, and fails (`false`) before the fix.
+
 ### Step 4 note (accepted)
 
 Builder 12's observation that an old tab re-sends its whole `se_captures` map for one release

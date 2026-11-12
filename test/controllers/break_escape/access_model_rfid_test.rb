@@ -188,6 +188,35 @@ module BreakEscape
       assert_refused door('power_room', card_ids: [POWER_CARD_ID]) # access never honestly reached stays refused
     end
 
+    # Branch review R2 n1: uidOnly must come from the definition confirmable_clone_source actually
+    # confirmed, not a fresh card_id lookup that prefers a keycard object. The exec card id is carried
+    # by the exec NPC (DESFire, so the honest clone is UID-only) and, with a weaker protocol, by a
+    # same-id keycard object locked out of reach. The player met exec, so the NPC is the confirmed
+    # source and the backfill must record uidOnly true, as the honest NPC clone would; the old card_id
+    # lookup took the EM4100 object and minted a full clone, granting more than honest play reaches.
+    test 'case F: a legacy copy backfilled from an NPC takes the NPC card protocol, not a same-id keycard object' do
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['lobby']['objects'].find { |o| o['id'] == 'lobby_safe' }['contents'] <<
+        { 'id' => 'exec_decoy_badge', 'type' => 'keycard', 'name' => 'Decoy badge',
+          'card_id' => EXEC_CARD_ID, 'rfid_protocol' => 'EM4100', 'takeable' => true }
+      cloner = CLONER.merge('saved_cards' => [{ 'card_id' => EXEC_CARD_ID, 'name' => 'Executive card',
+                                                'rfid_protocol' => 'MIFARE_DESFire' }])
+      @game = create_access_game(
+        mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+        scenario: data,
+        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby finance],
+                        'encounteredNPCs' => %w[exec], 'inventory' => [cloner] }
+      )
+
+      get scenario_game_url(@game)
+      assert_response :success
+      record = @game.reload.player_state['serverClones'][EXEC_CARD_ID]
+      assert record, 'a serverClones record was backfilled'
+      assert record['source'].key?('npc'), 'the confirmed source is the met NPC, not the out-of-reach keycard object'
+      assert_equal true, record['uidOnly'],
+                   'the DESFire NPC card is UID-only; the EM4100 same-id object must not grant a full clone'
+    end
+
     test 'an access-only door without card_ids is refused' do
       build('inventory' => [keycard_item('jake_spare')])
       assert_refused door('records')

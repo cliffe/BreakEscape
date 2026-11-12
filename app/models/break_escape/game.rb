@@ -3964,10 +3964,12 @@ module BreakEscape
           next
         end
 
-        source = confirmable_clone_source(card_id)
+        source, definition = confirmable_clone_source(card_id)
         if source
-          definition = scenario_keycard_definitions.find { |k| k['card_id'].to_s == card_id } ||
-                       npc_card_definition_for(card_id)
+          # uidOnly must come from the definition confirmable_clone_source actually confirmed,
+          # not a fresh card_id lookup: a keycard object and an NPC card can share a card_id but
+          # differ in rfid_protocol, and the lookup preferred the object, so an NPC-sourced copy
+          # could have been minted a full clone where the honest NPC clone would be UID-only.
           player_state['serverClones'] = server_clones
           player_state['serverClones'][card_id] = {
             'source' => source,
@@ -3985,21 +3987,24 @@ module BreakEscape
 
     # A clone source the server can confirm now for a legacy copy's card_id (branch review R1 case
     # F): an encountered, cloneable NPC whose card carries it, or a cloneable keycard object still
-    # within reach (clone_source_keycard). nil when the server cannot confirm the player could have
-    # cloned it, so the copy is dropped rather than granted access honest play may never have reached.
+    # within reach (clone_source_keycard). Returns [source, definition], the source hash and the
+    # resolved card definition it confirmed (so the caller computes uidOnly from the same card the
+    # honest clone would, not a card_id lookup that may pick a different definition). nil when the
+    # server cannot confirm the player could have cloned it, so the copy is dropped rather than
+    # granted access honest play may never have reached.
     def confirmable_clone_source(card_id)
       card_id = card_id.to_s
       self.class.scenario_room_npcs(scenario_data).each do |npc|
         card = self.class.npc_card(npc)
         next unless card && card['card_id'].to_s == card_id && npc['cloneable'] != false
-        return { 'npc' => npc['id'] } if Array(player_state['encounteredNPCs']).include?(npc['id'])
+        return [{ 'npc' => npc['id'] }, card] if Array(player_state['encounteredNPCs']).include?(npc['id'])
       end
 
       scenario_keycard_definitions.each do |k|
         next unless k['card_id'].to_s == card_id && k['id'].present?
 
-        source = clone_source_keycard(k['id'])
-        return { 'object' => (source['id'] || k['id']).to_s } if source
+        definition = clone_source_keycard(k['id'])
+        return [{ 'object' => (definition['id'] || k['id']).to_s }, definition] if definition
       end
       nil
     end
