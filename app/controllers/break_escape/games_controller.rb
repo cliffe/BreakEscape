@@ -632,10 +632,13 @@ module BreakEscape
 
       Rails.logger.debug "[BreakEscape] Serving ink from: #{ink_json_path}"
 
-      # Serve compiled JSON
-      render json: JSON.parse(File.read(ink_json_path))
-    rescue JSON::ParserError => e
-      render_error("Invalid JSON in compiled ink: #{e.message}", :internal_server_error)
+      # Serve compiled JSON, read without following a symlink swapped in since the lookup
+      text = InkStoryFile.read(ink_json_path)
+      return render_error("Ink script not found for #{npc['storyPath']}", :not_found) unless text
+
+      render json: JSON.parse(text)
+    rescue JSON::ParserError
+      render_error('Invalid JSON in compiled ink', :internal_server_error)
     end
 
     # POST /games/:id/tts

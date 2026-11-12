@@ -6121,6 +6121,12 @@ end
 # server's. repo_root (for storyPath) and scenario_dir (for ink/*.json) enable the ink
 # checks; without them those are skipped. Messages never quote a password.
 # ─────────────────────────────────────────────────────────────
+
+# Lock fields doors.js would take from a door entry before the room's (lockProps), and
+# never does in play, since the bootstrap scenario has no doors. requires is checked on
+# its own (a copy of the room's is harmless); access and acceptsUIDOnly are errors.
+DOOR_ENTRY_LOCK_FIELDS = %w[locked lockType keyPins key_pins difficulty lockedHint biometricMatchThreshold
+                            maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength].freeze
 def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   issues = []
   return issues unless json_data.is_a?(Hash)
@@ -6326,22 +6332,41 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
 
     room['doors'].each_with_index do |door, i|
-      # doors.js reads connectedRoom on every entry, so anything else throws and the room's
-      # doors are never built
+      # The schema types each entry as an object, so from the command line validation stops
+      # before this; these cover a scenario checked without the schema. doors.js reads
+      # connectedRoom on every entry: null throws and the room's doors are never built, and
+      # any other non-object has no connectedRoom, so it matches no doorway and is skipped.
+      if door.nil?
+        err.call("'rooms/#{room_id}/doors[#{i}]' is null; doors.js throws reading its connectedRoom, so the " \
+                 "doors of '#{room_id}' are never built.")
+        next
+      end
       unless door.is_a?(Hash)
-        err.call("'rooms/#{room_id}/doors[#{i}]' is not an object; the engine fails building the doors " \
-                 "of '#{room_id}'.")
+        warn.call("'rooms/#{room_id}/doors[#{i}]' is not an object, so the engine skips it.")
         next
       end
 
-      # A lock on a door entry is never read in play: the bootstrap scenario has no doors, and
-      # the door and the server take the lock from the room it leads into. requires is left
-      # alone: on a gate entry it names the gate's card.
-      %w[locked lockType].each do |field|
+      # A lock on a door entry is never read: the bootstrap scenario has no doors, so doors.js
+      # finds no entry to read lock fields from, and the door and the server take the lock
+      # from the room it leads into. That includes requires: a gate's card is the room's
+      # requires. A requires that repeats the room's is harmless and draws nothing.
+      target_room = rooms[door['connectedRoom']]
+      if door.key?('requires')
+        door_cards = Array(door['requires']).map(&:to_s).sort
+        room_cards = Array(target_room.is_a?(Hash) ? target_room['requires'] : nil).map(&:to_s).sort
+        if door_cards != room_cards
+          # Either value may be a PIN or password (on the room, or meant for the entry), so
+          # neither is shown
+          warn.call("'rooms/#{room_id}/doors[#{i}]' has a 'requires' that differs from the requires on room " \
+                    "'#{door['connectedRoom']}' (values not shown); the gate and the door use the room's, and " \
+                    'the game never reads requires on a door entry.')
+        end
+      end
+      DOOR_ENTRY_LOCK_FIELDS.each do |field|
         next unless door.key?(field)
 
-        warn.call("'rooms/#{room_id}/doors[#{i}]' has '#{field}', which play never reads on a door entry; " \
-                  "put the lock on room '#{door['connectedRoom']}'.")
+        warn.call("'rooms/#{room_id}/doors[#{i}]' has '#{field}', which the game never reads on a door entry " \
+                  "(the bootstrap scenario has no doors); put it on room '#{door['connectedRoom']}'.")
       end
 
       # An access list belongs on the room the door leads into: the server reads the room
