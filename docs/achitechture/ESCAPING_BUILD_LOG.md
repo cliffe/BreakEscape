@@ -64,4 +64,4 @@ Games 1385 (sis02_energy), 1386 (sis03_cyber_insurance), 1388 (lab_tesseract_tri
 ## Suite results
 
 - JS, full `bin/test-js -j 3` under the shared lock: 506 of 508 files passed. The two failures (`f18-toast-flag-rfid`, `flag-station-launch-reopen`) were missing `escape-html.js` in their flag station fixtures; fixed in `4ecc342c2`, both pass alone. Before that, a run of the 123 affected files gave 120 of 123, and the three were fixed in `840738726`.
-- Rails: no Rails code changed; no Rails test reads `test_simple_success`. The full run was queued behind other builds on the shared lock (see the report for its result).
+- Rails, full `bin/rails test` under the shared lock: 1796 runs, 0 failures, 0 errors, 1 skip. No Rails code changed.
