@@ -563,6 +563,17 @@ test('an implant adds the foothold, syncs the link item and emits foothold_gaine
     assert.equal(views.length, 1, 'the first foothold opens the view');
 });
 
+test('an implant removes a consumed device the server left out of its inventory', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    // The server consumed the box: its answer inventory holds only the link item.
+    implantAnswer = { inventory: [implantLink] };
+    await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(held('kit_dropbox').length, 0, 'the consumed device is gone from the tray');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item is there');
+});
+
 test('an implant that answers already does not re-emit or reopen', async () => {
     await reset({ items: [box] });
     withStarters();

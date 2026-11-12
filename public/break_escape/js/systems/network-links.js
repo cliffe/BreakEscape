@@ -443,7 +443,12 @@ export class NetworkLinks {
         const foothold = cleanFoothold(body?.foothold);
         if (!body?.success || !foothold) return { action: 'error' };
 
-        win().syncInventoryFromServer?.(body.inventory, [foothold.itemId]);
+        // Reconcile the link item added and the consumed device removed: syncInventoryFromServer
+        // only touches the ids it is given, so pass every id in the tray or the server's list.
+        const serverIds = (Array.isArray(body.inventory) ? body.inventory : []).map(it => it && it.id).filter(Boolean);
+        const trayIds = (win().inventory?.items || []).map(it => it?.scenarioData?.id).filter(Boolean);
+        const ids = [...new Set([foothold.itemId, ...serverIds, ...trayIds])];
+        win().syncInventoryFromServer?.(body.inventory, ids);
         this.footholds.set(foothold.id, foothold);
         if (foothold.sourceId) this.gained.add(foothold.sourceId);
         if (body.already) return { action: 'already', footholdId: foothold.id };
