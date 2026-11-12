@@ -172,6 +172,65 @@ export async function requestRfidAccessUnlock(lockable, type, cardIds) {
     }
 }
 
+/**
+ * The success toast after an RFID unlock: which card opened it, and whether it was the
+ * card itself or the copier playing back a copy. result: { cardName, emulated }, or
+ * { viaCopy: true } when the server says only that a copy passed, not whose.
+ */
+export function rfidOpenedLine(result) {
+    if (result && result.viaCopy === true) return 'Opened with a copied card.';
+    const name = result && typeof result.cardName === 'string' && result.cardName.trim();
+    if (!name) return 'Card accepted.';
+    return result.emulated ? `Opened with your copy of ${name}.` : `Opened with ${name}.`;
+}
+
+/**
+ * What an access-list unlock answer says about the card that passed. The server names the
+ * player's own keycard (cardId) but, for a copy, answers only viaCopy: naming the copy
+ * would tell the player whose identity the list admits.
+ */
+export function rfidAccessUnlockResult(response) {
+    if (response && response.viaCopy === true) return { viaCopy: true };
+    return rfidCardForId(response && response.cardId);
+}
+
+/**
+ * The card behind an access-list unlock by the player's own keycard: the server answers
+ * with its id (cardId). A keycard in the inventory is the card itself; a card saved on the
+ * copier is a copy. null when the id is not one the player holds.
+ */
+export function rfidCardForId(cardId) {
+    if (cardId == null || cardId === '') return null;
+    const id = String(cardId);
+    const items = (window.inventory && window.inventory.items) || [];
+    const getCardId = (d) => d && (d.card_id || window.lockRef?.(d));
+    const keycard = items.find(it => it?.scenarioData?.type === 'keycard' && String(getCardId(it.scenarioData)) === id);
+    if (keycard) return { cardName: keycard.scenarioData.name || null, emulated: false };
+    for (const it of items) {
+        if (it?.scenarioData?.type !== 'rfid_cloner') continue;
+        const saved = (it.scenarioData.saved_cards || []).find(c => String(getCardId(c)) === id);
+        if (saved) return { cardName: saved.name || null, emulated: true };
+    }
+    return null;
+}
+
+/** The reader the copier is held to: a door's sign, else the object's name. */
+export function rfidReaderName(target) {
+    return doorRefusalTitle(target, '') || target?.scenarioData?.name || '';
+}
+
+/**
+ * Why an access-list reader refused every card held, in the world's terms: no role or
+ * person is named, only that the door keeps a list (by role, or by named people).
+ */
+export function rfidAccessDeniedLine(access, type = 'door') {
+    const what = type === 'door' ? 'door' : 'lock';
+    const roles = access && Array.isArray(access.roles) && access.roles.length > 0;
+    const people = access && Array.isArray(access.people) && access.people.length > 0;
+    if (people && !roles) return `None of your cards is on this ${what}'s list. It opens for named people only.`;
+    return `None of your cards is cleared for this ${what}. It opens only for staff with the right access.`;
+}
+
 // ── Sign-in PCs (access model 5.3, step 8) ─────────────────────────────────
 // A `lockType: "login"` PC is opened by a session, never by unlockTarget: the PC stays
 // locked in every room response, so the next click comes back here. pc-sessions.js
@@ -308,6 +367,52 @@ export function pcSwitchedOff(data, globals = (typeof window !== 'undefined' && 
 }
 
 /**
+ * The NPC using sign-in PC pcId now, or null: its owner when present, else anybody else at it
+ * (9.2 H, 6.4: a borrower at a hot desk). workstationState.presence; null without it.
+ */
+export function pcUserAt(pcId) {
+    const ws = typeof window !== 'undefined' ? window.workstationState : null;
+    if (!pcId || !ws?.presence) return null;
+    const { ownerId, present, userId = null } = ws.presence(pcId) || {};
+    return ownerId && present ? ownerId : (userId || null);
+}
+
+/**
+ * Who stops the player using this sign-in PC, or null: a PC that would say "<name> is using
+ * this PC." on a click (step 1 of interactLoginPc). A headless host and a switched-off PC say
+ * something else first, so they answer null. A far tap on the PC (game.js) asks this before
+ * walking, so the player is told at once instead of walking into the seated owner.
+ */
+export function pcInUseBy(lockable) {
+    const data = lockable?.scenarioData || {};
+    if (data.lockType !== 'login' || !data.id) return null;
+    if (isHeadlessHost(lockable) || pcSwitchedOff(data)) return null;
+    return pcUserAt(data.id);
+}
+
+/**
+ * "<name> is using this PC." with the PC's resolved observations, as a toast, and the
+ * pc_in_use record (pcSessions.inUseShown). The only place that text is written.
+ */
+export async function showPcInUse(lockable, userAt = pcInUseBy(lockable)) {
+    const data = lockable?.scenarioData || {};
+    if (!userAt) return false;
+    const owner = window.npcManager?.getNPC?.(userAt);
+    const name = owner?.displayName || userAt;
+    let obs = data.observations || '';
+    try {
+        const { resolveObjectField } = await import('../utils/conditional-text.js');
+        obs = resolveObjectField(data, 'observations', '') || '';
+    } catch (e) { /* unresolved base observations */ }
+    // The toast is plain text by default, so the name and observations go in unescaped
+    // (escaping here as well would show "&lt;" on screen)
+    const message = obs ? `${name} is using this PC.\n${obs}` : `${name} is using this PC.`;
+    window.gameAlert?.(message, 'info', data.name || 'PC', 4000);
+    window.pcSessions?.inUseShown?.(data.id, userAt);
+    return true;
+}
+
+/**
  * A click on a sign-in PC (access model 5.4, "The interaction at a sign-in PC"):
  *   0. a headless host (slice 9.3a): its observations, and stop;
  *   0b. switched off (affordance.offWhen holds, q72): "This PC is off.", and stop. A session
@@ -344,22 +449,9 @@ export async function interactLoginPc(lockable) {
     }
     const ws = window.workstationState;
     const sessions = window.pcSessions;
-    const { ownerId, present, userId = null } = ws?.presence ? ws.presence(pcId) : { ownerId: null, present: null };
-    // 9.2 H (6.4): anybody using the PC now (a borrower at a hot desk) is present too
-    const userAt = ownerId && present ? ownerId : userId;
+    const userAt = pcUserAt(pcId);
     if (userAt) {
-        const owner = window.npcManager?.getNPC?.(userAt);
-        const name = owner?.displayName || userAt;
-        let obs = data.observations || '';
-        try {
-            const { resolveObjectField } = await import('../utils/conditional-text.js');
-            obs = resolveObjectField(data, 'observations', '') || '';
-        } catch (e) { /* unresolved base observations */ }
-        // The toast is plain text by default, so the name and observations go in unescaped
-        // (escaping here as well would show "&lt;" on screen)
-        const message = obs ? `${name} is using this PC.\n${obs}` : `${name} is using this PC.`;
-        window.gameAlert?.(message, 'info', data.name || 'PC', 4000);
-        sessions?.inUseShown?.(pcId, userAt);
+        await showPcInUse(lockable, userAt);
         return 'in_use';
     }
     if (sessions?.has?.(pcId)) {
@@ -772,7 +864,7 @@ export function handleUnlock(lockable, type) {
         case 'cryptex':
             console.log('CRYPTEX PASSWORD REQUESTED');
             // Get cryptex config from lockable object
-            const cryptexConfig = lockable.cryptexConfig || lockable.scenarioData?.cryptexConfig || {};
+            const cryptexConfig = lockable.cryptexConfig || lockable.scenarioData?.cryptexConfig || lockable.doorProperties?.cryptexConfig || {};
 
             startCryptexMinigame(lockable, type, cryptexConfig, (success, result) => {
                 if (success) {
@@ -783,10 +875,9 @@ export function handleUnlock(lockable, type) {
         
         case 'combination':
             console.log('COMBINATION PADLOCK REQUESTED');
-            // Get combination from lockable.scenarioData.combination (array [L, R, L])
-            const combination = lockable.combination || lockable.scenarioData?.combination || [0, 0, 0];
-
-            startCombinationMinigame(lockable, type, combination, (success, result) => {
+            // The combination stays on the server (the lock's `requires`): the dials are
+            // checked there, so nothing about the answer is passed to the minigame
+            startCombinationMinigame(lockable, type, (success, result) => {
                 if (success) {
                     unlockTarget(lockable, type, lockable.layer, result?.serverResponse);
                 }
@@ -1021,17 +1112,19 @@ export function handleUnlock(lockable, type) {
                     acceptsUIDOnly: acceptsUIDOnly,
                     availableCards: keycards,  // Cards they can read in the minigame
                     hasCloner: hasCloner,
+                    // The copier opens on this reader, named by the door's sign or the object
+                    readerName: rfidReaderName(lockable),
                     // A refused card or clone at the reader: door_unlock_failed (reason
                     // wrong_card or uid_only), same as a refused key or fingerprint
                     onRefused: refusedWithHint,
-                    onComplete: async (success) => {
+                    onComplete: async (success, result) => {
                         if (success) {
                             // Notify server and get room/container data
                             const serverResponse = await notifyServerUnlock(lockable, type, 'rfid');
                             setTimeout(() => {
                                 playRfidUnlockSound();
                                 unlockTarget(lockable, type, lockable.layer, serverResponse);
-                                window.gameAlert('RFID lock unlocked!', 'success', 'Access Granted', 3000);
+                                window.gameAlert(rfidOpenedLine(result), 'success', 'Access Granted', 3000);
                             }, 100);
                         }
                     }
@@ -1074,14 +1167,16 @@ export function handleUnlock(lockable, type) {
                         }
                         playRfidUnlockSound();
                         unlockTarget(lockable, type, lockable.layer, response);
-                        window.gameAlert('Card accepted', 'success', 'Access Granted', 3000);
+                        // The server names the player's own card that passed; a copy only as "a copied card"
+                        window.gameAlert(rfidOpenedLine(rfidAccessUnlockResult(response)), 'success', 'Access Granted', 3000);
                     } else if (outcome === 'uid_only') {
                         playUISound('reject');
                         window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
                         emitDoorUnlockFailed('uid_only');
                     } else if (outcome === 'denied') {
                         playUISound('reject');
-                        window.gameAlert(appendLockedHint('Access denied', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Access denied'));
+                        const deniedLine = rfidAccessDeniedLine(lockRequirements.access, type);
+                        window.gameAlert(appendLockedHint(deniedLine, lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, deniedLine));
                         emitDoorUnlockFailed('wrong_card');
                     } else {
                         window.gameAlert('Failed to verify access', 'error', 'Error', 3000);
@@ -1319,6 +1414,8 @@ window.getLockRequirementsForItem = getLockRequirementsForItem;
 window.unlockTarget = unlockTarget;
 window.openLoginPc = openLoginPc;
 window.interactLoginPc = interactLoginPc;
+window.pcInUseBy = pcInUseBy;
+window.showPcInUse = showPcInUse;
 window.openLoginSignIn = openLoginSignIn;
 // The network screens (slice 9.3a): network-links.js looks openRemoteDesktop up on window
 window.openRemoteSignIn = openRemoteSignIn;

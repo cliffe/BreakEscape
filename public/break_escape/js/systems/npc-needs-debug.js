@@ -13,6 +13,15 @@
  * the world, so it changes no collisions, world depth sorting or clicks.
  */
 
+// Phaser 3.60 measures a Text's ascent and descent once, when its style is made, and
+// updateText() reuses them. A text made before VT323 arrived would keep the fallback
+// font's line height, so the redraw asks the style to measure again first (code review R2
+// m2). A text with no style (a test stub) is just redrawn.
+export function refreshCanvasText(text) {
+    if (text?.style && typeof text.style.update === 'function') return text.style.update(true);
+    return text?.updateText?.();
+}
+
 export const REDRAW_MS = 200;
 export const BAR = { w: 32, h: 4, gap: 3, letterW: 7, pad: 2 };
 export const DEPTH = 5001;   // just above the action icon (5000)
@@ -81,8 +90,26 @@ function jobBase(st, job) {
     return `${job.phase || 'job'} ${target}`.trim();
 }
 
+/**
+ * Pure: the job line broken at spaces into lines of at most `maxChars` (a longer word keeps
+ * its own line), so the label stays a narrow block centred over the NPC instead of one long
+ * line running from the NPC out of the room (UX access R1 finding 8).
+ */
+export const LABEL_MAX_CHARS = 16;
+export function wrapLabel(text, maxChars = LABEL_MAX_CHARS) {
+    const lines = [];
+    let line = '';
+    for (const word of String(text || '').split(/\s+/).filter(Boolean)) {
+        if (line && line.length + 1 + word.length > maxChars) { lines.push(line); line = word; }
+        else line = line ? `${line} ${word}` : word;
+    }
+    if (line) lines.push(line);
+    return lines.join('\n');
+}
+
 const win = () => (typeof window !== 'undefined' ? window : {});
-const FONT = { fontFamily: 'monospace', fontSize: '8px', color: '#ffffff', stroke: '#000000', strokeThickness: 2 };
+// VT323: a pixel font, like the rest of the game's text (UX access R2, finding 13)
+const FONT = { fontFamily: "'VT323', monospace", fontSize: '10px', color: '#ffffff', stroke: '#000000', strokeThickness: 2 };
 
 export class NpcNeedsDebug {
     constructor() {
@@ -120,9 +147,15 @@ export class NpcNeedsDebug {
         if (p) return p;
         const scene = sprite.scene;
         const res = Math.max(2, Math.ceil(scene.scale?.displayScale ? 1 / scene.scale.displayScale.x : 4));
-        const label = scene.add.text(0, 0, '', { ...FONT, resolution: res }).setOrigin(0, 1).setDepth(DEPTH);
+        const label = scene.add.text(0, 0, '', { ...FONT, align: 'center', resolution: res }).setOrigin(0.5, 1).setDepth(DEPTH);
         p = { gfx: scene.add.graphics().setDepth(DEPTH), letters: new Map(), label, sprite, res, h: 0 };
         this.panels.set(id, p);
+        // VT323 is fetched at boot (utils/canvas-fonts.js); text made before it arrived
+        // redraws once it has (review R1 m5)
+        const made = p;
+        win().canvasFontsReady?.then?.(() => {
+            try { refreshCanvasText(made.label); for (const t of made.letters.values()) refreshCanvasText(t); } catch (e) { /* gone */ }
+        });
         return p;
     }
 
@@ -143,7 +176,8 @@ export class NpcNeedsDebug {
             }
             t.setData('dy', r.y + r.h / 2);
         }
-        if (p.label.text !== text) p.label.setText(text);
+        const wrapped = wrapLabel(text);
+        if (p.label.text !== wrapped) p.label.setText(wrapped);
     }
 
     _place(p) {
@@ -152,7 +186,7 @@ export class NpcNeedsDebug {
         const x = Math.round(top.x - p.w / 2), y = Math.round(top.y - 14 - p.h);   // leave room for the action icon (frames have empty headroom)
         p.gfx.setPosition(x, y);
         for (const t of p.letters.values()) t.setPosition(x + BAR.pad, y + t.getData('dy'));
-        p.label.setPosition(x, y - 1);
+        p.label.setPosition(x + Math.round(p.w / 2), y - 1);
     }
 
     /** Per-frame. */

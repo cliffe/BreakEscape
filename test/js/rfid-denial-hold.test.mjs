@@ -22,7 +22,7 @@ function copy(p, rewrites = {}) {
 writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor() {} init() {} start() {} complete() {} cleanup() {} }');
 for (const n of ['rfid-ui', 'rfid-data', 'rfid-animations', 'rfid-attacks']) {
     const cls = { 'rfid-ui': 'RFIDUIRenderer', 'rfid-data': 'RFIDDataManager', 'rfid-animations': 'RFIDAnimations', 'rfid-attacks': 'MIFAREAttackManager' }[n];
-    writeFileSync(join(tmp, `${n}.mjs`), `export class ${cls} {}`);
+    writeFileSync(join(tmp, `${n}.mjs`), `export class ${cls} {}` + (n === 'rfid-ui' ? '\nexport const clonerNameInSentence = () => "card copier";' : ''));
 }
 writeFileSync(join(tmp, 'rfid-protocols.mjs'), 'export const detectProtocol = () => "EM4100";');
 const url = copy('minigames/rfid/rfid-minigame.js', {

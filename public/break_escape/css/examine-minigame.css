@@ -69,7 +69,8 @@
 
 /* The Close button sits under the panel, not over it */
 .examine-minigame .minigame-controls {
-    position: static;
+    /* relative, not static: keeps the framework's z-index above spilled content */
+    position: relative;
     transform: none;
     margin-top: 16px;
 }

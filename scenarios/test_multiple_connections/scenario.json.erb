@@ -18,6 +18,8 @@
         {
           "type": "key",
           "name": "Hub Key",
+          "opens_lock": "hub_key",
+          "keyPins": [45, 25, 55, 35],
           "takeable": true,
           "observations": "Access key to server hub"
         }
@@ -28,6 +30,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "hub_key",
+      "keyPins": [45, 25, 55, 35],
       "connections": {
         "south": "reception",
         "north": ["server1", "server2", "server3"]
@@ -43,18 +46,24 @@
         {
           "type": "key",
           "name": "Server 1 Key",
+          "opens_lock": "server1_key",
+          "keyPins": [40, 60, 30, 50],
           "takeable": true,
           "observations": "Access to Server 1"
         },
         {
           "type": "key",
           "name": "Server 2 Key",
+          "opens_lock": "server2_key",
+          "keyPins": [30, 50, 40, 60],
           "takeable": true,
           "observations": "Access to Server 2"
         },
         {
           "type": "key",
           "name": "Server 3 Key",
+          "opens_lock": "server3_key",
+          "keyPins": [55, 35, 45, 25],
           "takeable": true,
           "observations": "Access to Server 3"
         }
@@ -65,6 +74,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "server1_key",
+      "keyPins": [40, 60, 30, 50],
       "connections": {
         "south": "hub"
       },
@@ -83,6 +93,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "server2_key",
+      "keyPins": [30, 50, 40, 60],
       "connections": {
         "south": "hub"
       },
@@ -101,6 +112,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "server3_key",
+      "keyPins": [55, 35, 45, 25],
       "connections": {
         "south": "hub"
       },

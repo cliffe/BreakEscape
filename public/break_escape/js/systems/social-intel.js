@@ -170,6 +170,17 @@ export function subjectLabel(social, fact, grantedId, globals) {
 }
 
 /**
+ * The notebook title for a granted fact: the subject's name when the naming rule allows
+ * it, else the fact's own label (authored, already shown when the fact is noted), and only
+ * with neither the neutral "a colleague" (shot 04 showed "Evidence: a colleague").
+ */
+export function evidenceNoteTitle(subject, fact) {
+    if (subject && subject !== 'a colleague') return `Evidence: ${subject}`;
+    const label = typeof fact?.label === 'string' ? fact.label.trim() : '';
+    return `Evidence: ${label || subject || 'a colleague'}`;
+}
+
+/**
  * Grant one fact. Flip-only.
  *
  * @param {string} id   bare fact id (pierce_role), or the prefixed se_intel_ name
@@ -206,7 +217,7 @@ export function grantFact(id, { scenario = null, engine = null, npcId = null, so
 
     if (fact?.text && typeof window.addNote === 'function') {
         // A feed fact (sub-slice C) carries its text escaped for the notebook as noteText
-        window.addNote(`Evidence: ${subject}`, typeof fact.noteText === 'string' ? fact.noteText : fact.text, false);
+        window.addNote(evidenceNoteTitle(subject, fact), typeof fact.noteText === 'string' ? fact.noteText : fact.text, false);
     }
     try { window.stateSync?.sync?.(); } catch (e) { /* a failed save retries on the timer */ }
 

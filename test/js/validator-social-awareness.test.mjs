@@ -316,7 +316,7 @@ test('the real validator: schema passes on test_social_episode; the only social 
   const r = spawnSync('ruby', ['scripts/validate_scenario.rb', 'scenarios/test_social_episode/scenario.json.erb',
     '--no-graph', '--skip-ink', '--strict-social'], { cwd: root, encoding: 'utf8', env });
   assert.match(r.stdout, /Schema validation passed/);
-  const errors = r.stdout.split('\n').filter((l) => /❌ SOCIAL/.test(l));
+  const errors = r.stdout.split('\n').filter((l) => /❌ ERROR: SOCIAL/.test(l));
   const other = errors.filter((l) => !/assets\/objects\/kiosk\.png does not exist/.test(l));
   assert.deepEqual(other, []);
 });

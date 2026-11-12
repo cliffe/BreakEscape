@@ -221,6 +221,9 @@ export const MinigameFramework = {
         if (this.currentMinigame) {
             const ending = this.currentMinigame;
             ending._ending = true;
+            // Held toasts wait a moment: a panel reopened a tick after this one closes would
+            // otherwise pull them back and show them twice (notifications.js PANEL_SETTLE_MS)
+            window.settleAfterPanelClose?.();
             console.log('Cleaning up current minigame');
             ending.cleanup();
             
@@ -291,6 +294,9 @@ export const MinigameFramework = {
                 console.log(`Suspended minigame for a child (success: ${success})`);
                 return;
             }
+            // The settle window counts from now, after the close work (cleanup, onComplete),
+            // which can take longer than the window under load
+            if (!this.currentMinigame) window.settleAfterPanelClose?.();
             // Nothing is running now, so any auto-created container still in the
             // DOM is an orphan (it would sit over the canvas swallowing clicks).
             if (!this.currentMinigame) {

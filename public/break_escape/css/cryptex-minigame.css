@@ -9,8 +9,8 @@
     min-height: 500px;
     background: #0d1117;
     color: #c9d1d9;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
+    font-family: 'VT323', 'GNF', monospace;
+    font-size: 18px;
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -28,6 +28,7 @@
 }
 
 .cryptex-header h2 {
+    font-family: var(--ui-heading-font, 'Press Start 2P'), monospace;
     margin: 0 0 8px;
     font-size: 18px;
     font-weight: bold;
@@ -38,8 +39,8 @@
 
 .cryptex-header p {
     margin: 0;
-    font-size: 12px;
-    color: #8899bb;
+    font-size: 18px;
+    color: #c9d1d9;
     letter-spacing: 0.03em;
 }
 
@@ -63,8 +64,8 @@
 }
 
 .cryptex-wheel-label {
-    font-size: 10px;
-    color: #556688;
+    font-size: 18px;
+    color: #8899bb;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-weight: bold;
@@ -81,7 +82,7 @@
 
 .cryptex-wheel-arrow {
     background: #1a233a;
-    border: 1px solid #445566;
+    border: 2px solid #445566;
     color: #8899bb;
     font-family: inherit;
     font-size: 16px;
@@ -124,7 +125,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'VT323', 'GNF', monospace;
     letter-spacing: 0.1em;
     flex-shrink: 0;
     transition: border-color 0.2s, color 0.2s;
@@ -148,8 +149,8 @@
     gap: 8px;
     padding: 12px 20px;
     background: #0f1826;
-    border-top: 1px solid #334466;
-    border-bottom: 1px solid #334466;
+    border-top: 2px solid #334466;
+    border-bottom: 2px solid #334466;
     min-height: 32px;
     flex-shrink: 0;
 }
@@ -158,7 +159,7 @@
     font-size: 18px;
     font-weight: bold;
     color: #f5a623;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'VT323', 'GNF', monospace;
     letter-spacing: 0.05em;
 }
 
@@ -178,12 +179,12 @@
     justify-content: center;
     padding: 8px 20px;
     background: #0f1826;
-    border-top: 1px solid #334466;
-    border-bottom: 1px solid #334466;
+    border-top: 2px solid #334466;
+    border-bottom: 2px solid #334466;
 }
 
 .cryptex-status-message {
-    font-size: 13px;
+    font-size: 20px;
     color: #c9d1d9;
     text-align: center;
     letter-spacing: 0.03em;
@@ -214,13 +215,13 @@
 .cryptex-reset-btn,
 .cryptex-submit-btn {
     font-family: inherit;
-    font-size: 14px;
+    font-size: 18px;
     padding: 8px 16px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     transition: all 0.2s;
     cursor: pointer;
-    border: 1px solid #445566;
+    border: 2px solid #445566;
 }
 
 .cryptex-reset-btn {
@@ -261,4 +262,18 @@
     border-color: #664444;
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+/* Success shows on the wheels, not only in the status line (UX pass, 2026-11-12) */
+.cryptex-wrapper.opened .cryptex-wheel-display {
+    border-color: #44aa44;
+    color: #88ee88;
+    background: #12301a;
+    outline: 2px solid #44aa44;
+    outline-offset: 2px;
+}
+
+.cryptex-wrapper.opened .cryptex-header p {
+    color: #88ee88;
+    font-weight: bold;
 }

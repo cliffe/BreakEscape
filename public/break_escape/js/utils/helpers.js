@@ -182,7 +182,7 @@ export function debounce(func, wait) {
 
 // Make an element draggable by mouse and touch.
 // Switches to absolute positioning on first drag so the note can move freely
-// without disrupting surrounding layout.
+// without disrupting surrounding layout. Each press pins the element where it is drawn.
 export function makeDraggable(el) {
     el.style.cursor = 'grab';
     el.style.userSelect = 'none';
@@ -193,14 +193,17 @@ export function makeDraggable(el) {
         e.preventDefault();
         const point = e.touches ? e.touches[0] : e;
 
-        if (getComputedStyle(el).position !== 'absolute') {
-            const r = el.getBoundingClientRect();
-            const pr = (el.offsetParent || document.body).getBoundingClientRect();
-            el.style.position = 'absolute';
-            el.style.margin = '0';
-            el.style.left = (r.left - pr.left) + 'px';
-            el.style.top = (r.top - pr.top) + 'px';
-        }
+        // Pin the box where it is drawn now, as top/left, before bottom/right are cleared.
+        // An element already absolute but placed by bottom (the desktop post-it,
+        // bottom: 64px with top: auto) would otherwise snap to its static place, the top of
+        // the monitor, on the first press (code review R1 m1).
+        const r = el.getBoundingClientRect();
+        const parent = el.offsetParent || document.body;
+        const pr = parent.getBoundingClientRect();
+        el.style.position = 'absolute';
+        el.style.margin = '0';
+        el.style.left = (r.left - pr.left - (parent.clientLeft || 0)) + 'px';
+        el.style.top = (r.top - pr.top - (parent.clientTop || 0)) + 'px';
 
         // Anchor by top/left only — leaving bottom/right set alongside top/left
         // stretches the element (e.g. a post-it dragged into an "infinitely long" note)

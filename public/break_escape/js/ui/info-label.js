@@ -33,6 +33,17 @@ export function clearHudLabel() {
     _applyText(proximityText);
 }
 
+/**
+ * True while something the player must answer covers the world: a confirm dialog, the
+ * object or tray action menu, or a minigame. The world caption then says nothing, so it
+ * cannot describe the jacket on the floor under a dialog about the vest (UX devices R1).
+ */
+export function worldCaptionCovered(w = typeof window !== 'undefined' ? window : {}, doc = typeof document !== 'undefined' ? document : null) {
+    if (w.MinigameFramework && w.MinigameFramework.currentMinigame) return true;
+    if (typeof w.isInteractionMenuOpen === 'function' && w.isInteractionMenuOpen()) return true;
+    return !!(doc && typeof doc.querySelector === 'function' && doc.querySelector('.game-confirm-overlay'));
+}
+
 export function createInfoLabel() {
     if (document.getElementById('hud-info-label')) return;
 
@@ -51,7 +62,7 @@ export function updateInfoLabel() {
 
     const player = window.player;
     const rooms  = window.rooms;
-    if (!player || !rooms) {
+    if (!player || !rooms || worldCaptionCovered()) {
         proximityText = null;
         if (!hoverText) _applyText(null);
         return;

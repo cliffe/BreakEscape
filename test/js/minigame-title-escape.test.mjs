@@ -76,9 +76,11 @@ async function initQuietlyAsync(mg) {
     try { await mg.init(); } catch { /* past the panels */ }
 }
 
-function assertText(el, label, { dashes = true } = {}) {
+function assertText(el, label, { dashes = true, wordSpans = false } = {}) {
     assert.ok(el, `${label}: the element renders`);
-    assert.equal(el.children.length, 0, `${label}: no element was injected from the title`);
+    // A post-it wraps each word in a span.keep-whole (escapeHtmlKeepWords): those, holding text only, are allowed
+    const injected = [...el.children].filter(c => !(wordSpans && c.tagName === 'SPAN' && c.className === 'keep-whole' && c.children.length === 0));
+    assert.equal(injected.length, 0, `${label}: no element was injected from the title`);
     const bad = document.querySelector('#mg img[onerror]');
     if (bad && process.env.DEBUG_TITLE) process.stdout.write(`${label}: ${bad.parentElement.outerHTML.slice(0, 300)}\n`);
     assert.equal(bad, null, `${label}: no img with onerror`);
@@ -329,7 +331,7 @@ test('the password hint and post-it show hostile scenario text as text', () => {
     const hint = document.querySelector('#password-hint').cloneNode(true);
     hint.querySelector('strong').remove();
     assertText(hint, 'password hint');
-    assertText(document.querySelector('.postit-note'), 'password post-it');
+    assertText(document.querySelector('.postit-note'), 'password post-it', { wordSpans: true });
 });
 
 test('the container header image escapes its src and alt', () => {

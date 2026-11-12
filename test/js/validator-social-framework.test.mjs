@@ -148,19 +148,19 @@ test('a missing sprite for a social object type is an error, only with a social 
   assert.deepEqual(lint('sf_broken', null).filter(s => /assets\/objects/.test(s)), []);
 });
 
-test('--strict-social: exit 1 on a social lint error, 0 on a clean or social-free scenario', { skip }, () => {
+test('--strict-social: exit 1 on a social lint error, 0 on a clean scenario; any ❌ fails without it too', { skip }, () => {
   const broken = cli('sf_broken', '--strict-social');
   assert.equal(broken.status, 1, broken.stdout + broken.stderr);
   assert.match(broken.stdout, /--strict-social: \d+ social lint error/);
-  // the same scenario without the flag keeps the old behaviour: findings print, exit 0
+  // the same scenario without the flag: every ❌ line fails the run (hardening step 1)
   const plain = cli('sf_broken');
-  assert.equal(plain.status, 0, plain.stdout + plain.stderr);
+  assert.equal(plain.status, 1, plain.stdout + plain.stderr);
   assert.match(plain.stdout, /SOCIAL:/);
   const clean = cli('sf_clean', '--strict-social');
   assert.equal(clean.status, 0, clean.stdout + clean.stderr);
-  // no `social` key: lint errors print but the flag never fails the run
+  // no `social` key: the two lints that apply to every scenario still print, and like any ❌ they fail the run
   const nosocial = cli('sf_nosocial', '--strict-social');
-  assert.equal(nosocial.status, 0, nosocial.stdout + nosocial.stderr);
+  assert.equal(nosocial.status, 1, nosocial.stdout + nosocial.stderr);
   assert.match(nosocial.stdout, /SOCIAL: object id 'same'/);
 });
 
@@ -188,7 +188,7 @@ test('a missing social sprite on its own is the only error, and fails --strict-s
   assert.equal(strict.status, 1, strict.stdout + strict.stderr);
   assert.match(strict.stdout, /--strict-social: 1 social lint error/);
   const plain = cli('sf_sprite');
-  assert.equal(plain.status, 0, plain.stdout + plain.stderr);
+  assert.equal(plain.status, 1, plain.stdout + plain.stderr); // every ❌ fails the run (hardening step 1)
 });
 
 test('edge cases: until.global route, "above" order, underscore keys, equals alone, no-paren fallback, recoverTo default', { skip }, () => {

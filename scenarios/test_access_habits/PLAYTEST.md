@@ -298,6 +298,9 @@ knocked out either. The screen would never lock, but it is never left open.
 2. `interact` `noor_pc`: the toast "Noor Qureshi is using this PC." and `pc_in_use` for `noor_pc`.
    Task `h10_never_leaves` complete. Wait two minutes and click again: still in use;
    `workstation('noor_pc').present` stays true and `npc_left_post:noor` never fires.
+   A tap on `noor_pc` from across the room gives the same toast without walking (she is in plain
+   sight at it) and records `pc_in_use`, so the task can complete from the doorway. That is
+   intended: the task is about trying her PC, not standing at it. Do not report it.
 3. **The forged claim.** From the browser console (not the UI), send the claim a tampered client
    would send: `POST /break_escape/games/<id>/login` with
    `{ pc_id: "noor_pc", claim: "owner", globals: { noor_pc_screen_locked: false, noor_pc_owner_away: true } }`,

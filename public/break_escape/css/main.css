@@ -250,3 +250,8 @@ body {
 .laptop-close-btn:hover {
     background: #c0392b;
 } 
+/* A word that must not break across lines, such as a password on a sticky note
+   (escapeHtmlKeepWords in utils/escape-html.js). */
+.keep-whole {
+    white-space: nowrap;
+}

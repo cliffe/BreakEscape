@@ -410,12 +410,12 @@ test('sender-name provides personOfValue cannot resolve (itdesk_name): error onl
   assert.deepEqual(run(social(REQ, [{ type: 'address', rule: 'sender', value: 'x' }])), []);
 });
 
-test('--strict-social: exit 1 on the broken fixture, 0 on the clean one and on a social-free one', { skip }, () => {
+test('--strict-social: exit 1 on the broken fixture with or without the flag, 0 on the clean one and on a social-free one', { skip }, () => {
   const bad = cli('sm_broken', '--strict-social');
   assert.equal(bad.status, 1, bad.stdout + bad.stderr);
   assert.match(bad.stdout, /--strict-social: \d+ social lint error/);
   const plain = cli('sm_broken');
-  assert.equal(plain.status, 0, plain.stdout + plain.stderr);
+  assert.equal(plain.status, 1, plain.stdout + plain.stderr); // every ❌ fails the run (hardening step 1)
   const clean = cli('sm_clean', '--strict-social');
   assert.equal(clean.status, 0, clean.stdout + clean.stderr);
   const nosocial = cli('sm_nosocial', '--strict-social');

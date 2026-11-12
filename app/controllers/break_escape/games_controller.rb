@@ -405,7 +405,7 @@ module BreakEscape
         @game.end_guest_sessions!
 
         if @game.player_state['inventory'].present? && @game.player_state['inventory'].is_a?(Array)
-          filtered['playerInventory'] = @game.player_state['inventory']
+          filtered['playerInventory'] = client_inventory
 
           # Remove startItemsInInventory from scenario to prevent duplicates
           # Since we're sending the actual inventory, we don't need the starting items
@@ -950,16 +950,22 @@ module BreakEscape
         return render json: body, status: :unprocessable_entity
       end
 
+      # An access-list rfid unlock says which held card passed: the player's own keycard by
+      # id, a copy only as viaCopy (UX devices R1)
+      rfid_card_answer = method == 'rfid' && card_ids ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
+
       # Use transaction to ensure atomic update
       ActiveRecord::Base.transaction do
         if target_type == 'door'
           room_data = serve_opened_room(target_id)
 
-          render json: {
+          door_answer = {
             success: true,
             type: 'door',
             roomData: room_data
           }
+          door_answer.merge!(rfid_card_answer) if rfid_card_answer
+          render json: door_answer
         else
           # Object/container unlock
           @game.unlock_object!(target_id)
@@ -970,6 +976,7 @@ module BreakEscape
             success: true,
             type: 'object'
           }
+          response.merge!(rfid_card_answer) if rfid_card_answer
 
           # If object has contents, include them in response, filtered as
           # GET /container filters them (M7): a nested lock's requires and a
@@ -1049,7 +1056,7 @@ module BreakEscape
           # gift record for that NPC is kept.
           if source_npc_id.blank? && source_pc_id.blank? && source_resource_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
             Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
-            return render json: { success: true, inventory: @game.player_state['inventory'] }
+            return render json: { success: true, inventory: client_inventory }
           end
           validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
                                                                           source_resource_id: source_resource_id)
@@ -1075,7 +1082,7 @@ module BreakEscape
           # Copy: the file stays on the PC and in its profile (access model 5.1)
           @game.record_copied_item!(@collectible_item['id']) if (source_pc_id || source_resource_id) && @collectible_transfer == 'copy'
           Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
-          render json: { success: true, inventory: @game.player_state['inventory'] }
+          render json: { success: true, inventory: client_inventory }
 
         when 'remove'
           # A plant (engine plan section 6): the client names the object the device was used
@@ -1083,7 +1090,7 @@ module BreakEscape
           used_on = params[:used_on] || params[:usedOn]
           @game.record_planted_item!(item['id'], used_on) if used_on.present?
           @game.remove_inventory_item!(item['id'])
-          render json: { success: true, inventory: @game.player_state['inventory'] }
+          render json: { success: true, inventory: client_inventory }
 
         when 'update_saved_cards'
           # The RFID cloner's saved cards, so a reload doesn't empty it
@@ -1914,6 +1921,14 @@ module BreakEscape
       @game.with_lock { yield }
     end
 
+    # The inventory as the browser may see it: a filtered deep copy, so a held lock (a start
+    # item such as a padlocked case or a cryptex) never ships its answer (unlock gaps R1 m3).
+    # One filter for every inventory echo (code review R2 M2): Game#client_inventory, which
+    # the network routes use too.
+    def client_inventory
+      @game.client_inventory
+    end
+
     def filter_requires_recursive(obj)
       case obj
       when Hash
@@ -1924,6 +1939,7 @@ module BreakEscape
         # - rfid: requires card IDs (e.g., ["master_keycard"])
         lock_type = obj['lockType']
         BreakEscape::Game.set_pin_length!(obj) # PIN pad length, before the PIN goes
+        BreakEscape::Game.strip_lock_answers!(obj) # combination and cryptex answers
         BreakEscape::Game.strip_puzzle_graph_keys!(obj) # generator-only authoring fields
         # A declared grant's contents are served from the held item, never shipped
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
@@ -2026,7 +2042,9 @@ module BreakEscape
       find_container_recursive(@game.held_grant_items, container_id) ||
         # A habit NPC's USB stick the player holds (2026-11-12): taken from itemsHeld, so in no
         # room; its files come from the scenario (or the default), never from the browser
-        find_container_recursive(@game.held_usb_sticks, container_id)
+        find_container_recursive(@game.held_usb_sticks, container_id) ||
+        # A container an NPC carried, released by a give or KO record (unlock gaps build)
+        find_container_recursive(@game.released_npc_containers, container_id)
     end
 
     def find_container_recursive(objects, container_id)
@@ -2079,6 +2097,11 @@ module BreakEscape
       # Then a habit NPC's USB stick the player holds, as find_container_in_scenario.
       @game.held_usb_sticks.each do |stick|
         found = find_object_in_object(stick, object_id)
+        return found if found
+      end
+      # Then a container an NPC carried that a give or KO released, as Game#find_scenario_object.
+      @game.released_npc_containers.each do |container|
+        found = find_object_in_object(container, object_id)
         return found if found
       end
       nil
@@ -2603,6 +2626,15 @@ module BreakEscape
           npc['itemsHeld'].each do |held_item|
             return npc_location.call(npc, room_id, held_item) if matches.call(held_item)
           end
+        end
+      end
+
+      # An item inside a container an NPC carried, once a give or KO released the container
+      # (unlock gaps build): taken as from any container, so the container must be unlocked.
+      @game.released_npc_containers.each do |container|
+        Array(container['contents']).each do |content|
+          next unless content.is_a?(Hash)
+          return { item: content, location: { type: 'container', container_id: container['id'] } } if matches.call(content)
         end
       end
 

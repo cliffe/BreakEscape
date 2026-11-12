@@ -79,7 +79,10 @@
       "stateOverrides",
       "flagActions",
       "completionActions",
-      "progressActions"
+      "progressActions",
+      "nextTabPrompt",
+      "nextTabButton",
+      "completeBanner"
     ]
   },
   "siem_dashboard": {

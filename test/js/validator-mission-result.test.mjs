@@ -41,7 +41,7 @@ test('resultGlobal must be a plain *_percent name', { skip }, () => {
     for (const bad of ['triage pre percent', 'percent', 'triage_pre_done', 5, '', null]) {
         const out = issues({ resultGlobal: bad, stage: 'pre' });
         assert.equal(out.length, 1, JSON.stringify(bad));
-        assert.match(out[0], /INVALID: mission\.json 'resultGlobal'/);
+        assert.match(out[0], /ERROR: mission\.json 'resultGlobal'/);
     }
 });
 
@@ -58,7 +58,7 @@ test('resultGlobal must be declared in globalVariables, as a number', { skip }, 
 test('stage must be pre, post or episode, and is wanted beside resultGlobal', { skip }, () => {
     const bad = issues({ resultGlobal: 'triage_pre_percent', stage: 'during' }, declares);
     assert.equal(bad.length, 1);
-    assert.match(bad[0], /INVALID: mission\.json 'stage' is "during"/);
+    assert.match(bad[0], /ERROR: mission\.json 'stage' is "during"/);
 
     const none = issues({ resultGlobal: 'triage_pre_percent' }, declares);
     assert.equal(none.length, 1);
@@ -71,7 +71,7 @@ test('endingCheck must be a boolean', { skip }, () => {
     for (const bad of ['no', 0, null]) {
         const out = issues({ endingCheck: bad });
         assert.equal(out.length, 1, JSON.stringify(bad));
-        assert.match(out[0], /INVALID: mission\.json 'endingCheck'/);
+        assert.match(out[0], /ERROR: mission\.json 'endingCheck'/);
     }
 });
 

@@ -56,6 +56,9 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
 - **The jack's prompts are `gameConfirm` dialogs, not minigames.** Answer the plant confirm with
   `{"cmd":"dismiss","label":"Plug it in"}` (or `"Cancel"`), and the planted jack's prompt with
   `{"cmd":"dismiss","label":"Unplug it"}` or `"Leave it"`. `mg clickSelector` cannot see them.
+- **The breaker and the two USB sockets also ask first** (`gameConfirm`, buttons "Confirm" and
+  "Cancel"): `server_breaker` (N5, N7), `sam_dock` (N12) and `kiosk_dock` (N13). Answer with
+  `{"cmd":"dismiss","label":"Confirm"}`; a run that does not answer sees nothing change.
 - **The link item** is `netlink_jack_comms_port` (or `netlink_jack_bench_port`) in the inventory.
   Its click opens the view; it has no menu.
 - **The view's rows** (step 8) carry `data-host-id`, `data-resource-id` and `data-action`
@@ -231,7 +234,8 @@ access.
 ### N13 The kiosk's USB policy refuses the BadUSB
 
 Sign in at the kiosk itself (Sam's sticky-note password), then use the "Kiosk USB socket"
-(`kiosk_dock`) with the keystroke injector held. The kiosk's `kiosk_locked` policy blocks USB, so
+(`kiosk_dock`) with the keystroke injector held, and answer the confirm "Plug the keystroke
+injector into the kiosk?" with `{"cmd":"dismiss","label":"Confirm"}`. The kiosk's `kiosk_locked` policy blocks USB, so
 the server refuses: "USB devices are disabled on this PC." No foothold is granted and the injector
 stays in the inventory.
 
@@ -240,7 +244,8 @@ Server: no `implant_kiosk_pc` foothold; `kit_badusb` still held.
 ### N12 BadUSB at Sam's desk
 
 Sign in at `sam_pc` (keyboard, the sticky note), then use the "USB socket by Sam's PC"
-(`sam_dock`) with the keystroke injector held. The server grants `implant_sam_pc` on `office_lan`,
+(`sam_dock`) with the keystroke injector held, and answer the confirm "Plug the keystroke injector
+into Sam's PC?" with `{"cmd":"dismiss","label":"Confirm"}`. The server grants `implant_sam_pc` on `office_lan`,
 removes the injector, and the link item "BadUSB: Sam's desk" arrives. The implant's view lists the
 office network's hosts and shares; it opens no account on its own. Task `n12_badusb_implant`
 completes.
@@ -310,9 +315,9 @@ it cannot set, or keep using a no-route session.
 
 | Beat | Steps | What should happen | Server afterwards |
 |---|---|---|---|
-| **N5 Outage** | With the box planted and a pivot session at `lena_pc`, `interact` `server_breaker` (sets `servers_offline` true). Open the box's view. | The Server network block is gone (no name, no greyed row): the player holds no session on it. A sign-in on `sv_fs02` through the box is 403 `unreachable`. `n5_outage` ticks. | `player_reach(jack_comms_port)` is `office_lan` only; no `server_net` string in any read route |
+| **N5 Outage** | With the box planted and a pivot session at `lena_pc`, `interact` `server_breaker` and answer the confirm "Flip the breaker?" with `{"cmd":"dismiss","label":"Confirm"}` (sets `servers_offline` true; without the answer nothing changes). Open the box's view. | The Server network block is gone (no name, no greyed row): the player holds no session on it. A sign-in on `sv_fs02` through the box is 403 `unreachable`. `n5_outage` ticks. | `player_reach(jack_comms_port)` is `office_lan` only; no `server_net` string in any read route |
 | **N6 Repair** | `interact` `server_power` (sets `servers_offline` false). Open the box's view; sign in to `sv_fs02` through the box. | The Server network block fills back in (route `up`, through `lena_pc`); `sv_fs02` signs in. `n6_repair` ticks. | `player_reach` includes `server_net` again |
-| **N7 Held route down** | Sign in to `sv_fs02` through the box first, then `interact` `server_breaker`. The desktop closes to a greyed "No route to SV-FS02" row; a desktop fetch is refused. Then `interact` `server_power` and reopen `sv_fs02`. | The session is kept throughout; while down the view shows a greyed `server_net` block with the "no route" row; on repair the desktop opens again with no password. `n7_held_route` ticks (on `pc_desktop_opened` for `sv_fs02` while armed and repaired). | `sessions.sv_fs02` present the whole time; `endedPcIds` never names it for an outage |
+| **N7 Held route down** | Sign in to `sv_fs02` through the box first, then `interact` `server_breaker` and confirm it (`{"cmd":"dismiss","label":"Confirm"}`). The desktop closes to a greyed "No route to SV-FS02" row; a desktop fetch is refused. Then `interact` `server_power` and reopen `sv_fs02`. | The session is kept throughout; while down the view shows a greyed `server_net` block with the "no route" row; on repair the desktop opens again with no password. `n7_held_route` ticks (on `pc_desktop_opened` for `sv_fs02` while armed and repaired). | `sessions.sv_fs02` present the whole time; `endedPcIds` never names it for an outage |
 
 ### N14: a host whose own service is off (plan 5.2)
 

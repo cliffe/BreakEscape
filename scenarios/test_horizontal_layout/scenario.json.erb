@@ -18,6 +18,8 @@
         {
           "type": "key",
           "name": "Office Key",
+          "opens_lock": "office_key",
+          "keyPins": [45, 25, 55, 35],
           "takeable": true,
           "observations": "Key to the office"
         }
@@ -28,6 +30,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "office_key",
+      "keyPins": [45, 25, 55, 35],
       "connections": {
         "south": "reception",
         "west": "storage",
@@ -52,6 +55,8 @@
         {
           "type": "key",
           "name": "Server Room Key",
+          "opens_lock": "server_key",
+          "keyPins": [40, 60, 30, 50],
           "takeable": true,
           "observations": "Electronic key card for server room"
         },
@@ -69,6 +74,7 @@
       "locked": true,
       "lockType": "key",
       "requires": "server_key",
+      "keyPins": [40, 60, 30, 50],
       "connections": {
         "west": "office"
       },

@@ -38,7 +38,7 @@ test('an unknown scoring value is an error', { skip }, () => {
     for (const bad of ['complete', 'Tasks', '', 100, null]) {
         const out = issues({ scoring: bad });
         assert.equal(out.length, 1, JSON.stringify(bad));
-        assert.match(out[0], /INVALID: mission\.json 'scoring' is .* it must be one of tasks, partial_then_complete, completion/);
+        assert.match(out[0], /ERROR: mission\.json 'scoring' is .* it must be one of tasks, partial_then_complete, completion/);
     }
 });
 

@@ -38,7 +38,9 @@ LOCK_TYPE_LABELS = {
   'password'           => 'Password lock',
   'lockpick'           => 'Pick the lock',
   'ransomware_display' => 'Ransomware terminal',
-  'login'              => 'Sign-in'
+  'login'              => 'Sign-in',
+  'combination'        => 'Combination padlock',
+  'cryptex'            => 'Cryptex'
 }.freeze
 
 SCENARIO_FILE = ARGV[0] or abort "Usage: ruby scripts/generate_dungeon_graph.rb <scenario.json.erb>"

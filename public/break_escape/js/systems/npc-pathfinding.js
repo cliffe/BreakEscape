@@ -590,9 +590,32 @@ export class NPCPathfindingManager {
      * "prefer to route around" object (path-avoid.js). `via`: raw route points
      * between the two ends; an object the route goes through anyway is allowed.
      */
-    hasPlayerLineOfSight(x1, y1, x2, y2, via = null) {
+    hasPlayerLineOfSight(x1, y1, x2, y2, via = null, opts = null) {
         if (!this.hasWorldPhysicsLineOfSight(x1, y1, x2, y2)) return false;
-        return !crossesAvoidRect(x1, y1, x2, y2, this.getPreferAvoidRects(), { via });
+        const rects = opts?.avoidNpcs
+            ? [...this.getPreferAvoidRects(), ...this.getNpcBodyRects()]
+            : this.getPreferAvoidRects();
+        return !crossesAvoidRect(x1, y1, x2, y2, rects, { via });
+    }
+
+    /**
+     * Body rects of the NPCs standing in the loaded rooms (visible, enabled, not knocked out).
+     * A far tap's walk (core/game.js walkToObjectThenUse) passes { avoidNpcs: true } to
+     * hasPlayerLineOfSight, so its straight-line shortcuts do not run into someone the
+     * EasyStar route went round (tap pick code review R3 m1).
+     */
+    getNpcBodyRects() {
+        const ko = (typeof window !== 'undefined') ? window.npcHostileSystem : null;
+        const out = [];
+        for (const roomId in ((typeof window !== 'undefined' && window.rooms) || {})) {
+            for (const s of window.rooms[roomId]?.npcSprites || []) {
+                const b = s?.body;
+                if (!b || !b.enable || s.active === false || s.visible === false || s.destroyed) continue;
+                if (ko?.isNPCKO && s.npcId && ko.isNPCKO(s.npcId)) continue;
+                out.push({ left: b.left, top: b.top, right: b.right, bottom: b.bottom });
+            }
+        }
+        return out;
     }
 
     /**
@@ -893,8 +916,9 @@ export class NPCPathfindingManager {
      * Should be used for all player path smoothing.
      * avoidProps (player click-to-move): also keep shortcuts off "prefer to
      * route around" objects the raw route went round (path-avoid.js).
+     * losOpts: passed to hasPlayerLineOfSight ({ avoidNpcs } for a far tap's walk).
      */
-    smoothWorldPathForPlayer(startX, startY, path, avoidProps = false) {
+    smoothWorldPathForPlayer(startX, startY, path, avoidProps = false, losOpts = null) {
         if (!path || path.length <= 1) return path;
         const debug = isDebug();
         const smoothed = [];
@@ -908,7 +932,7 @@ export class NPCPathfindingManager {
             for (let k = i; k < path.length; k++) if (path[k].pinned) { limit = k; break; }
             for (let j = limit; j > i; j--) {
                 const clear = avoidProps
-                    ? this.hasPlayerLineOfSight(cx, cy, path[j].x, path[j].y, path.slice(i, j))
+                    ? this.hasPlayerLineOfSight(cx, cy, path[j].x, path[j].y, path.slice(i, j), losOpts)
                     : this.hasWorldPhysicsLineOfSight(cx, cy, path[j].x, path[j].y);
                 if (clear) {
                     farthest = j; break;

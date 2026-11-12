@@ -545,6 +545,8 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
             postitNote: lockProps.postitNote ?? connectedRoomData?.postitNote ?? null,
             showPostit: lockProps.showPostit ?? connectedRoomData?.showPostit ?? null,
             showKeyboard: lockProps.showKeyboard ?? connectedRoomData?.showKeyboard ?? null,
+            // A cryptex door's wheels (never its answer: the server strips that)
+            cryptexConfig: lockProps.cryptexConfig ?? connectedRoomData?.cryptexConfig ?? null,
             // Digits on the PIN pad: the server sends the PIN's length, never the PIN
             pinLength: lockProps.pinLength ?? connectedRoomData?.pinLength ?? null
         };

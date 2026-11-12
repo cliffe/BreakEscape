@@ -108,6 +108,8 @@ function publicSession(pcId, s) {
     const out = { pcId, npcId: s.npcId ?? null, username: s.username ?? null, displayName: s.displayName ?? null, via: s.via ?? null };
     // Only a remote session carries remote, footholdId and host, as on the server (4.4)
     if (s.remote === true) Object.assign(out, { remote: true, footholdId: s.footholdId ?? null, host: s.host ?? null });
+    // A guest claim says so, so its desktop can say how it ends (UX access R1 finding 5)
+    if (s.guest === true) out.guest = true;
     return out;
 }
 

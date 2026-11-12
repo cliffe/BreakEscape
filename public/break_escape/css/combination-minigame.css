@@ -9,8 +9,8 @@
     min-height: 500px;
     background: #0d1117;
     color: #c9d1d9;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
+    font-family: 'VT323', 'GNF', monospace;
+    font-size: 18px;
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -28,6 +28,7 @@
 }
 
 .combination-header h2 {
+    font-family: var(--ui-heading-font, 'Press Start 2P'), monospace;
     margin: 0 0 8px;
     font-size: 18px;
     font-weight: bold;
@@ -37,12 +38,21 @@
 }
 
 .combination-direction-indicator {
-    font-size: 14px;
+    font-size: 18px;
     color: #f5a623;
     font-weight: bold;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     min-height: 20px;
+}
+
+/* How the dials work, always on screen (UX pass, 2026-11-12) */
+.combination-help {
+    margin-top: 8px;
+    font-size: 18px;
+    color: #c9d1d9;
+    text-align: center;
+    max-width: 640px;
 }
 
 /* ── Main dial container ──────────────────────────────────────────────────── */
@@ -65,8 +75,8 @@
 }
 
 .combination-dial-label {
-    font-size: 12px;
-    color: #556688;
+    font-size: 18px;
+    color: #8899bb;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-weight: bold;
@@ -81,7 +91,7 @@
 
 .combination-dial-arrow {
     background: #1a233a;
-    border: 1px solid #445566;
+    border: 2px solid #445566;
     color: #8899bb;
     font-family: inherit;
     font-size: 16px;
@@ -124,7 +134,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'VT323', 'GNF', monospace;
     letter-spacing: 0.1em;
     flex-shrink: 0;
 }
@@ -132,6 +142,34 @@
 .combination-dial-display.set {
     border-color: #44aa44;
     color: #88ee88;
+}
+
+/* The dial the arrows turn now */
+.combination-dial-display.active {
+    border-color: #f5a623;
+    outline: 2px solid #f5a623;
+    outline-offset: 2px;
+}
+
+.combination-dial-group.active .combination-dial-label {
+    color: #f5a623;
+}
+
+.combination-dial-group.set .combination-dial-label {
+    color: #88ee88;
+}
+
+.combination-dial-group.active .combination-dial-arrow {
+    border-color: #f5a623;
+    color: #ffd27a;
+}
+
+.combination-wrapper.opened .combination-direction-indicator {
+    color: #88ee88;
+}
+
+.combination-wrapper.opened .combination-dial-display {
+    background: #12301a;
 }
 
 /* ── Status message area ──────────────────────────────────────────────────── */
@@ -142,12 +180,12 @@
     justify-content: center;
     padding: 8px 20px;
     background: #0f1826;
-    border-top: 1px solid #334466;
-    border-bottom: 1px solid #334466;
+    border-top: 2px solid #334466;
+    border-bottom: 2px solid #334466;
 }
 
 .combination-status-message {
-    font-size: 13px;
+    font-size: 20px;
     color: #c9d1d9;
     text-align: center;
     letter-spacing: 0.03em;
@@ -156,6 +194,10 @@
 .combination-status-message.wrong {
     color: #ff8888;
     font-weight: bold;
+}
+
+.combination-status-message.set {
+    color: #88ee88;
 }
 
 .combination-status-message.success {
@@ -178,13 +220,13 @@
 .combination-reset-btn,
 .combination-unlock-btn {
     font-family: inherit;
-    font-size: 14px;
+    font-size: 18px;
     padding: 8px 16px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     transition: all 0.2s;
     cursor: pointer;
-    border: 1px solid #445566;
+    border: 2px solid #445566;
 }
 
 .combination-reset-btn {

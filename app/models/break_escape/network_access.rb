@@ -206,7 +206,7 @@ module BreakEscape
       foothold_id = foothold_id_for(jack_id)
       if network_footholds.key?(foothold_id)
         return { status: :ok, body: { success: true, already: true, first: false, foothold: foothold_for_client(foothold_id),
-                                      inventory: player_state['inventory'] } }
+                                      inventory: client_inventory } }
       end
 
       device = held_rogue_device(device_id)
@@ -232,7 +232,7 @@ module BreakEscape
       release_worn_unless_held!
       save!
 
-      { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id), inventory: player_state['inventory'],
+      { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id), inventory: client_inventory,
                              first: first } }
     end
 
@@ -260,7 +260,7 @@ module BreakEscape
       ended = end_sessions_through!(foothold_id)
       save!
 
-      { status: :ok, body: { success: true, inventory: player_state['inventory'], endedPcIds: ended } }
+      { status: :ok, body: { success: true, inventory: client_inventory, endedPcIds: ended } }
     end
 
     # ==========================================
@@ -308,7 +308,7 @@ module BreakEscape
       if network_footholds.key?(foothold_id)
         record_gained_ap!(ap_object_id)
         return { status: :ok, body: { success: true, already: true, first: false,
-                                      foothold: foothold_for_client(foothold_id), inventory: player_state['inventory'] } }
+                                      foothold: foothold_for_client(foothold_id), inventory: client_inventory } }
       end
 
       psk = ap[:wifi]['psk']
@@ -332,7 +332,7 @@ module BreakEscape
       save!
 
       { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id),
-                             inventory: player_state['inventory'], first: first } }
+                             inventory: client_inventory, first: first } }
     end
 
     # Add an access point id to gainedFootholds if absent, and save (5.3, N9): a task or
@@ -420,7 +420,7 @@ module BreakEscape
         held = network_footholds[foothold_id]
         consumed = held.is_a?(Hash) && held['device'].is_a?(Hash) ? held['device']['id'] : nil
         return { status: :ok, body: { success: true, already: true, first: false, consumedId: consumed,
-                                      foothold: foothold_for_client(foothold_id), inventory: player_state['inventory'] } }
+                                      foothold: foothold_for_client(foothold_id), inventory: client_inventory } }
       end
 
       info = find_login_pc(pc_id)
@@ -472,7 +472,7 @@ module BreakEscape
       # only the ids that changed (review R1 client M1); the dropped shape consumes nothing.
       consumed_id = device_copy['id'] if device_copy.is_a?(Hash)
       { status: :ok, body: { success: true, consumedId: consumed_id, foothold: foothold_for_client(foothold_id),
-                             inventory: player_state['inventory'], first: first } }
+                             inventory: client_inventory, first: first } }
     end
 
     def implant_no_action

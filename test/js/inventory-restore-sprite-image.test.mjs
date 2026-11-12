@@ -8,7 +8,7 @@
 // Run with: node --test test/js/inventory-restore-sprite-image.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -60,7 +60,7 @@ globalThis.document = {
     getElementById: id => (id === 'inventory-container' ? tray : null),
     createElement: el, querySelector: () => null, querySelectorAll: () => [],
 };
-const { processInitialInventoryItems, inventoryImageKey, fallbackInventoryImage, trayImageKey, addToInventory } = await import(inventoryUrl);
+const { processInitialInventoryItems, inventoryImageKey, fallbackInventoryImage, trayImageKey, addToInventory, notepadItemData } = await import(inventoryUrl);
 
 function reset(playerInventory) {
     tray.children.length = 0;
@@ -189,4 +189,12 @@ test('a container header: world sprite by texture key, tray item by its tray pic
     assert.equal(containerImageHtml(null, 'x'), '');
     assert.equal(containerImageHtml('/a.png', 'Sofia\'s "PC" <1>'),
         '<img src="/a.png" alt="Sofia&#39;s &quot;PC&quot; &lt;1&gt;" class="container-image">');
+});
+
+test('the Notepad slot draws a picture that exists (UX access R1 finding 1: notepad.png does not)', () => {
+    const data = notepadItemData();
+    const key = trayImageKey({ name: 'notes5', scenarioData: data });
+    assert.equal(key, 'notes5');
+    const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
+    assert.ok(existsSync(join(repoRoot, 'public/break_escape/assets/objects', `${key}.png`)), `${key}.png exists`);
 });

@@ -239,3 +239,11 @@ test('applyActions grant_fact grants, toasts "Noted: <label>" once, and repeats 
     applyActions([{ type: 'grant_fact' }]);
     assert.equal(toasts.length, 2);
 });
+
+test('evidence note title: the name when known, else the fact\'s own label, never just "a colleague" (UX R1)', () => {
+    const { evidenceNoteTitle } = intel;
+    assert.equal(evidenceNoteTitle('Melanie Pierce', { label: 'Melanie works in Finance' }), 'Evidence: Melanie Pierce');
+    assert.equal(evidenceNoteTitle('a colleague', { label: "Jake's dog" }), "Evidence: Jake's dog");
+    assert.equal(evidenceNoteTitle('a colleague', {}), 'Evidence: a colleague');
+    assert.equal(evidenceNoteTitle('the company', { label: 'x' }), 'Evidence: the company');
+});

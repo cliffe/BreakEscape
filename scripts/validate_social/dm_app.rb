@@ -18,7 +18,7 @@ module ValidateSocial
     HEX = /\A#(?:\h{3}|\h{6})\z/.freeze
 
     def self.err(msg)
-      "❌ SOCIAL: #{msg}"
+      "❌ ERROR: SOCIAL: #{msg}"
     end
 
     def self.warn_(msg)

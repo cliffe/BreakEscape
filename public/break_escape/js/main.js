@@ -1,6 +1,7 @@
 import { GAME_CONFIG } from './utils/constants.js';
 import { preload, create, update } from './core/game.js';
 import { initializeNotifications } from './systems/notifications.js';
+import { loadCanvasFonts } from './utils/canvas-fonts.js';
 // Bluetooth scanner is now handled as a minigame
 // Biometrics is now handled as a minigame
 import { startLockpickingMinigame } from './systems/minigame-starters.js';
@@ -104,6 +105,9 @@ function initializeGame() {
             display: null
         }
     };
+
+    // Fetch the canvas web fonts now, before the first room draws its icons (review R1 m5)
+    loadCanvasFonts();
 
     // Create the Phaser game instance
     window.game = new Phaser.Game(config);

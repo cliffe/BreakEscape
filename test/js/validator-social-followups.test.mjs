@@ -71,14 +71,14 @@ test('influence.start differing from the declared global is an error (the lab ha
   const out = characters(characterScenario({ start: 0, declared: -10 }), storyWith('-10'));
   const hits = startHits(out);
   assert.equal(hits.length, 1, out.join('\n'));
-  assert.match(hits[0], /^❌ SOCIAL: social\.characters\.pat\.influence start \(0\) does not match globalVariables pat_influence \(-10\)/);
+  assert.match(hits[0], /^❌ ERROR: SOCIAL: social\.characters\.pat\.influence start \(0\) does not match globalVariables pat_influence \(-10\)/);
 });
 
 test('with no global declared, influence.start differing from the VAR default is an error', { skip }, () => {
   const out = characters(characterScenario({ start: 0 }), storyWith('-10'));
   const hits = startHits(out);
   assert.equal(hits.length, 1, out.join('\n'));
-  assert.match(hits[0], /^❌ SOCIAL: ink\/pat\.ink VAR pat_influence = -10 but social\.characters\.pat\.influence start is 0 \(channel 'person', pat_npc\)/);
+  assert.match(hits[0], /^❌ ERROR: SOCIAL: ink\/pat\.ink VAR pat_influence = -10 but social\.characters\.pat\.influence start is 0 \(channel 'person', pat_npc\)/);
   assert.deepEqual(startHits(characters(characterScenario({ start: -10 }), storyWith('-10'))), []);
 });
 
@@ -105,7 +105,7 @@ test('an OSINT showIf string naming a declared global passes; an array or a non-
   for (const bad of [[g], [g, g], 7]) {
     const hits = osint(withShowIf(bad)).filter((s) => /showIf/.test(s));
     assert.equal(hits.length, 1, `${JSON.stringify(bad)}: ${hits.join('\n')}`);
-    assert.match(hits[0], /^❌ SOCIAL: social\.osint\.sites\[0\]\.pages\[0\]\.blocks\[0\]\.showIf must be one global name \(a string\)/);
+    assert.match(hits[0], /^❌ ERROR: SOCIAL: social\.osint\.sites\[0\]\.pages\[0\]\.blocks\[0\]\.showIf must be one global name \(a string\)/);
   }
   const undeclared = osint(withShowIf('no_such_global')).filter((s) => /showIf/.test(s));
   assert.equal(undeclared.length, 1);

@@ -80,13 +80,13 @@ const scenario = () => ({
 test('a malformed condition, an undeclared global, and a conditioned reward or grant are each reported', { skip }, () => {
   const issues = ruby('check_action_conditions(input)', scenario());
   const has = (re) => assert.ok(issues.some(s => re.test(s)), `expected ${re} in:\n${issues.join('\n')}`);
-  has(/❌ INVALID: 'timers\[0\]\/actions\[1\]' \(hint\) condition has a term the engine cannot read: "!globalVars\.vest === true".*never runs/);
+  has(/❌ ERROR: 'timers\[0\]\/actions\[1\]' \(hint\) condition has a term the engine cannot read: "!globalVars\.vest === true".*never runs/);
   has(/⚠️ WARNING: 'timers\[0\]\/actions\[2\]' \(hint\) condition uses globalVars\.undeclared_one, which is not in globalVariables/);
-  has(/❌ INVALID: 'rooms\/lab\/objects\[0\]\/triggerOnInteract\[0\]' \(hint\) condition is not a string \(true\)/);
-  has(/❌ INVALID: 'rooms\/lab\/objects\[0\]\/triggerOnInteract\[1\]\/onConfirm\[0\]' \(set_global\) condition is empty/);
+  has(/❌ ERROR: 'rooms\/lab\/objects\[0\]\/triggerOnInteract\[0\]' \(hint\) condition is not a string \(true\)/);
+  has(/❌ ERROR: 'rooms\/lab\/objects\[0\]\/triggerOnInteract\[1\]\/onConfirm\[0\]' \(set_global\) condition is empty/);
   has(/⚠️ WARNING: 'rooms\/lab\/objects\[0\]\/triggerOnInteract\[2\]' \(give_item\) is a give_item with a 'condition'\. The server does not read/);
-  has(/❌ INVALID: 'rooms\/lab\/objects\[1\]\/flagRewards\[0\]' \(set_global\) is a flag reward with a 'condition'\. The server applies flag rewards and does not read/);
-  has(/❌ INVALID: 'rooms\/lab\/objects\[2\]\/minigameData\/conditionalActions\[0\]\/actions\[0\]' \(hint\) condition has an empty term/);
+  has(/❌ ERROR: 'rooms\/lab\/objects\[1\]\/flagRewards\[0\]' \(set_global\) is a flag reward with a 'condition'\. The server applies flag rewards and does not read/);
+  has(/❌ ERROR: 'rooms\/lab\/objects\[2\]\/minigameData\/conditionalActions\[0\]\/actions\[0\]' \(hint\) condition has an empty term/);
   assert.equal(issues.length, 7, issues.join('\n'));
   // The timer's own condition and the conditionalActions entry's are not action conditions
   assert.ok(!issues.some(s => /'timers\[0\]'|conditionalActions\[0\]'/.test(s)));
@@ -111,7 +111,7 @@ test("'||' in an action condition is not flagged by the '&&'-only checks, and th
   const issues = ruby('check_or_in_global_conditions(input)', j);
   assert.deepEqual(issues.filter(s => /objects\[3\]\/triggerOnInteract\[[01]\]'/.test(s) && !/lighting/.test(s)), [],
     `the actions' own '||' conditions are not flagged:\n${issues.join('\n')}`);
-  assert.ok(issues.some(s => /❌ INVALID: 'rooms\/lab\/objects\[3\]\/triggerOnInteract\[2\]\/item\/lighting' lighting condition .* uses '\|\|'/.test(s)),
+  assert.ok(issues.some(s => /❌ ERROR: 'rooms\/lab\/objects\[3\]\/triggerOnInteract\[2\]\/item\/lighting' lighting condition .* uses '\|\|'/.test(s)),
     `the lighting block nested in the give_item is reported:\n${issues.join('\n')}`);
   assert.ok(issues.some(s => /⚠️ WARNING: 'rooms\/lab\/objects\[2\]\/minigameData\/conditionalActions\[1\]' condition .* uses '\|\|'/.test(s)),
     `the conditionalActions entry gets the soft warning:\n${issues.join('\n')}`);

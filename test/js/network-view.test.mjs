@@ -36,7 +36,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { NetworkViewMinigame, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText } =
+const { NetworkViewMinigame, displayOrder, viewObservations, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText } =
     await imp('minigames/network-view/network-view-minigame.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 
@@ -176,11 +176,17 @@ test('the view lists each row with its action and the row attributes, from GET /
     await settle();
     assert.deepEqual(requests, [['network', 'jack_comms_port']]);
     const text = document.querySelector('.network-view-title').textContent;
-    assert.equal(text, 'Drop box: comms room, on Harbour office LAN');
-    assert.match(document.querySelector('.network-view-observations').textContent, /Open it to see what it reaches/);
-    // Server order is kept: hosts, then resources
+    assert.equal(text, 'Drop box: comms room');
+    // UX access R2: the own network is the first block's heading
+    assert.equal(document.querySelector('.network-block-own .network-block-title').textContent, 'Harbour office LAN');
+    // The view is open: the item's "Open it to see what it reaches." is dropped (UX access R1 finding 10)
+    assert.equal(document.querySelector('.network-view-observations').textContent, 'Your Network drop box on Spare wall port.');
+    // Display order: computers by host name, then shares, then printers, under group headings
     assert.deepEqual([...document.querySelectorAll('[data-host-id], [data-resource-id]')].map(el => el.dataset.hostId || el.dataset.resourceId),
-        ['door_box', 'kiosk_pc', 'lena_pc', 'sam_pc', 'ledger_archive', 'print_queue', 'scanned_inbox']);
+        ['sam_pc', 'door_box', 'lena_pc', 'kiosk_pc', 'ledger_archive', 'scanned_inbox', 'print_queue']);
+    assert.deepEqual([...document.querySelectorAll('.network-row-group')].map(el => el.textContent),
+        ['Computers', 'File shares', 'Printers and devices']);
+    assert.match(row('data-resource-id', 'ledger_archive').querySelector('.network-row-locked').textContent, /Locked/);
     assert.equal(row('data-host-id', 'door_box').querySelector('[data-action]').dataset.action, 'sign-in');
     assert.equal(row('data-host-id', 'kiosk_pc').querySelector('[data-action]'), null);
     assert.match(row('data-host-id', 'kiosk_pc').textContent, new RegExp(REMOTE_OFF_TEXT));
@@ -219,7 +225,7 @@ test('a pivot-reached network renders an up block through its host, actionable a
     await settle();
     const block = document.querySelector('.network-block-up');
     assert.ok(block, 'an up block is drawn');
-    assert.match(block.querySelector('.network-block-title').textContent, /Server network — through HB-FIN-02/);
+    assert.match(block.querySelector('.network-block-title').textContent, /Server network, through HB-FIN-02/);
     assert.equal(row('data-host-id', 'sv_fs02').querySelector('[data-action]').dataset.action, 'sign-in');
     // The pivot network emits its own network_viewed, so a task on it completes
     assert.deepEqual(named('network_viewed:server_net'), [{ footholdId: 'jack_comms_port', networkId: 'server_net',
@@ -255,6 +261,19 @@ test('a down block is greyed with "No route" and offers no control', async () =>
     assert.deepEqual(named('network_viewed:server_net'), [], 'a down block emits no network_viewed');
 });
 
+test('a down block draws each row as its own kind, under group headings (code review R1 n3)', async () => {
+    const share = { id: 'sv_archive', kind: 'file_share', name: 'Archive share', host: 'SV-FS02' };
+    withBlocks([{ id: 'server_net', name: 'Server network', via: { hostId: 'lena_pc', host: 'HB-FIN-02' }, route: 'down', hosts: [share, { ...SERVER_ROW }] }]);
+    links.open('jack_comms_port');
+    await settle();
+    const block = document.querySelector('.network-block-down');
+    const kinds = [...block.querySelectorAll('.network-row-down')].map(li => li.dataset.kind);
+    assert.deepEqual(kinds, ['pc', 'file_share'], 'computers first, the share drawn as a share');
+    assert.match(block.querySelector('[data-kind="file_share"] img').getAttribute('src'), /folder/);
+    assert.equal(block.querySelectorAll('.network-row-group').length, 2, 'a heading for each group');
+    assert.equal(block.querySelector('[data-action]'), null, 'still no control');
+});
+
 // Review R2 M1 (plan 5.2): the own network down, a session held there. The server sends no
 // own rows and one down block for the own network holding only the held-session row; the view
 // keeps that block, greyed, and does not also say nothing answers.
@@ -277,7 +296,9 @@ test('with the own network up, its own block is not drawn twice', async () => {
     withBlocks([]);
     links.open('jack_comms_port');
     await settle();
-    assert.equal(document.querySelectorAll('.network-block').length, 0, 'the own up block is folded into the flat rows');
+    // UX access R2: the own rows sit in one own block with the network's heading, never a second
+    assert.equal(document.querySelectorAll('.network-block').length, 1, 'the own up block is folded into the flat rows');
+    assert.equal(document.querySelectorAll('.network-block-own').length, 1);
 });
 
 test('Sign in hands over to the remote sign-in screen: network_host_opened, no network_view_closed', async () => {
@@ -465,4 +486,21 @@ test('a resume message shows in the header', async () => {
     links.landed('desktop', 'no_session', { pcId: 'lena_pc', host: 'HB-FIN-02' });
     await settle();
     assert.equal(document.querySelector('.network-view-message').textContent, 'Your session on HB-FIN-02 has ended.');
+});
+
+test('displayOrder: computers, shares, printers, other; each by name with numbers as numbers', () => {
+    const rows = [
+        { id: 'p', kind: 'printer', name: 'Queue' }, { id: 'x', kind: 'camera', name: 'Cam' },
+        { id: 'b', kind: 'file_share', name: 'beta' }, { id: 'h10', kind: 'pc', host: 'HB-PC-10' },
+        { id: 'a', kind: 'file_share', name: 'Alpha' }, { id: 'h2', kind: 'pc', host: 'HB-PC-2' }
+    ];
+    assert.deepEqual(displayOrder(rows).map(r => r.id), ['h2', 'h10', 'a', 'b', 'p', 'x']);
+    assert.deepEqual(rows.map(r => r.id)[0], 'p', 'the input is not reordered');
+    assert.deepEqual(displayOrder(null), []);
+});
+
+test('viewObservations drops only the trailing "Open it to see what it reaches."', () => {
+    assert.equal(viewObservations('Your implant on HB-FIN-02. Open it to see what it reaches.'), 'Your implant on HB-FIN-02.');
+    assert.equal(viewObservations('A custom note.'), 'A custom note.');
+    assert.equal(viewObservations(undefined), '');
 });

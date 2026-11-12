@@ -21,6 +21,7 @@ put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 put('utils/escape-html.js', read('utils/escape-html.js'));
 put('utils/lock-scope-refusal.js', read('utils/lock-scope-refusal.js'));
+put('utils/computer-keywords.js', read('utils/computer-keywords.js'));
 put('minigames/framework/base-minigame.js', 'export class MinigameScene { constructor() {} cleanup() {} }\n');
 for (const rel of ['minigames/password/password-minigame.js', 'minigames/combination/combination-minigame.js',
     'minigames/cryptex/cryptex-minigame.js']) put(rel, read(rel));
@@ -115,8 +116,8 @@ function fakeContainer() {
 }
 
 const screens = [
-    ['combination', CombinationMinigame, '#comb-status', (m) => { m.dials = [1, 2, 3]; }, '_handleUnlock', 'Incorrect combination'],
-    ['cryptex', CryptexMinigame, '#cryptex-status', (m) => { m.currentIndices = [0, 0]; m.alphabets = [['A'], ['B']]; }, '_handleSubmit', 'Incorrect']
+    ['combination', CombinationMinigame, '#comb-status', (m) => { m.dials = [1, 2, 3]; }, '_handleUnlock', 'did not open it'],
+    ['cryptex', CryptexMinigame, '#cryptex-status', (m) => { m.currentIndices = [0, 0]; m.alphabets = [['A'], ['B']]; }, '_handleSubmit', 'did not open it']
 ];
 
 function makeDial(Cls, setup) {

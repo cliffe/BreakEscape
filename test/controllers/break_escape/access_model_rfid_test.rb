@@ -192,6 +192,57 @@ module BreakEscape
       assert_response :success
     end
 
+    test 'an access-list unlock names the player\'s own keycard that passed' do
+      build('inventory' => [keycard_item('visitor_badge'), keycard_item('jake_spare')])
+      body = door('records', card_ids: ['VISITOR-07', JAKE_CARD_ID])
+      assert_response :success
+      assert_equal JAKE_CARD_ID, body['cardId']
+      refute body.key?('viaCopy')
+    end
+
+    # Naming a copy would tell the player whose identity the list admits (UX devices R1 m1).
+    test 'an access-list unlock by a copy says only viaCopy, with no card id' do
+      build('inventory' => [CLONER.dup, keycard_item('visitor_badge')])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      body = door('records', card_ids: ['VISITOR-07', EXEC_CARD_ID, JAKE_CARD_ID])
+      assert_response :success
+      assert_equal true, body['viaCopy']
+      refute body.key?('cardId')
+    end
+
+    test 'an object unlock names the card too, and a refusal names none' do
+      build('inventory' => [keycard_item('jake_spare')])
+      refused = object('finance_cabinet', card_ids: ['VISITOR-07'])
+      refute refused.key?('cardId')
+      refute refused.key?('viaCopy')
+      body = object('finance_cabinet', card_ids: [JAKE_CARD_ID])
+      assert_equal JAKE_CARD_ID, body['cardId']
+    end
+
+    test 'a requires-only rfid door answers without cardId or viaCopy' do
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['badge_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true,
+                                      'lockType' => 'rfid', 'requires' => ['VISITOR-07'] }
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'],
+                                                 'inventory' => [keycard_item('visitor_badge')] })
+      body = door('badge_door', card_ids: ['VISITOR-07'])
+      assert_response :success, body.inspect
+      refute body.key?('cardId')
+      refute body.key?('viaCopy')
+    end
+
+    test 'a UID-only copy at a lock without acceptsUIDOnly is refused with no card named' do
+      build('inventory' => [CLONER.dup])
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      body = door('exec_suite', card_ids: [EXEC_CARD_ID])
+      assert_refused body, reason: 'uid_only'
+      refute body.key?('cardId')
+      refute body.key?('viaCopy')
+    end
+
     test 'the first passing card of several opens the door' do
       build('inventory' => [keycard_item('visitor_badge'), keycard_item('jake_spare')])
       door('records', card_ids: ['VISITOR-07', JAKE_CARD_ID])

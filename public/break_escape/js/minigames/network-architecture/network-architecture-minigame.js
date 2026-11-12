@@ -29,6 +29,9 @@ const txt = (value) => escapeHtml(displayDashes(value));
  *                    nodes follow the same shape as main nodes but without zone
  */
 export class NetworkArchitectureMinigame extends MinigameScene {
+    // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
+    static controlsOverlay = true;
+
     constructor(container, params = {}) {
         super(container, {
             ...params,
