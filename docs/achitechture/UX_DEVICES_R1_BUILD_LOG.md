@@ -42,3 +42,27 @@ Full suites not run (orchestrator runs them per merge batch).
 
 Sync size: no synced state added. The notepad page memory is a module variable; the server's
 cardId is one string on an unlock answer.
+
+## R1 fixes (code review UX_DEVICES_CODE_REVIEW_R1.md)
+
+Main (33c003230) merged in first, clean.
+
+| # | Fix |
+|---|-----|
+| m1 | Orchestrator's ruling. The unlock answer names a card only when it is the player's own keycard (`cardId`). A passing copy answers `viaCopy: true` with no id, and the toast reads "Opened with a copied card." without saying whose: the client sends every held card id at once, so naming the copy would tell the player whose identity the list admits. `Game#rfid_unlock_card_answer` replaces `rfid_unlock_card_id`; its comment says why. The copier's own reader screen still says "Opened with your copy of X", because there the player picked the card. Finding 2d above is superseded on this point. |
+| m2 | The notepad's page memory is recorded against the full notes list (`notepadMemoryFor`), so a search no longer makes the next open jump to the newest note. |
+| m3 | Live proof on a keyless headless server on :3135 (setFPS(20), fixed steps on). Game 1816 (test_clone_left_card): the clerk left his card, the world card menu read "Copy it with the RFID cloner", Save posted /clone_card with `object_id: clerk_card_item` (200), and `serverClones` holds `clerk_card` with source `{ object: clerk_card_item }`. Game 1817 (test_access_doors): with the visitor card held and Dana's badge copied in conversation, the finance office opened on `card_ids` [VISITOR-07, FIN-DANA-01] with the toast "Opened with a copied card.". Shots 30 to 35 in ux-shots/after_devices. |
+| m4 | inventory.js takes build/ux-access's exported `notepadItemData()` and its test in inventory-restore-sprite-image.test.mjs, both verbatim. A trial merge with build/ux-access is now clean. |
+| n1 | Comment corrected (with m1). |
+| n2 | Back, tick and cross are pixel icons in PIXEL_ICONS (`back`, `tick`, `cross`); no text glyph is left in rfid-ui.js (tested). The crack hint is 14px, not 0.85em (tested: no em font sizes in rfid-minigame.css). |
+| n3 | The seven 8-space CSS indents fixed. |
+| n4 | One name rule: rfid-ui.js puts `clonerNameInSentence` on window and action-menu.js reads it there (the module keeps no static imports); before rfid-ui loads it says "card copier". |
+| n5 | test_clone_left_card brief, mission.json and dungeon_graph.md say "Copy it with the RFID cloner". Validator: 0 failures. |
+| n6 | Rails cases added: a requires-only rfid door answers with neither `cardId` nor `viaCopy`; a UID-only copy at a lock without acceptsUIDOnly is refused with no card named; a copy answers `viaCopy` only. |
+
+Tests (affected files only, no lock): access_model_rfid_test.rb 35 runs, 0 failures. Node:
+access-rfid-acl 26, notepad-start-page 5, every file importing inventory.js (22 files, 357
+tests), every file importing rfid-ui or action-menu, or reading rfid-minigame.css (127 tests),
+notes-minigame importers (47 tests): 0 failures.
+
+Sync size: unchanged. `viaCopy` is one boolean on an unlock answer, not stored.
