@@ -26,7 +26,8 @@ merges. Section 12 lists what depends on C3.
   (a delta: 43 bytes per item plus the encoded lengths of its four strings, one comma between items,
   and 15 bytes once for the `reactions` wrapper; section 5.4), and `GET /scenario`'s `feedPosts`
   lists every visible reaction once per page load.
-- **A fixed key set** (like, laugh, sad, angry), drawn as 16x16 pixel-art icons with counts, in UI
+- **A fixed key set** (like, laugh, sad, angry), drawn as 16x16 pixel-art icons shown at 2x (32px)
+  with counts, in UI
   that meets the pixel-art UI rule (section 4). No text, so nothing to voice, nothing for the
   password scan and nothing for the dungeon graph.
 - **Cosmetic in this slice.** A reaction carries no fact, reveals nothing that is not already out
@@ -182,8 +183,9 @@ chips in key order. Each chip is the key's icon and the count of NPCs who reacte
   in the label. The open state is a `data-open` attribute, used by tests and by the
   `.ob-reaction[data-open]` rule, which gives the open chip a 2px solid `--ui-accent` border (square,
   no shadow), so a mouse user can see which chip the line belongs to.
-- **It is big enough to touch:** `.ob-reaction` has a `min-width` and `min-height` of 32px (two
-  whole 16px steps), with the 16px icon centred.
+- **It is big enough to touch:** `.ob-reaction` has a `min-width` and `min-height` of 40px (the
+  32px icon, 2px padding and the 2px border on each side, with `box-sizing: border-box`), with the
+  icon centred.
 - **It keeps focus across re-renders.** Each chip has `data-focus="reaction:<postId>:<key>"`, so
   `_renderMain`'s `_focusKey` and `_restoreFocus` bring focus back to it after an `npc_posted` or
   `npc_reacted` re-render, as they do for the page's links and blocks. A post appears once on any
@@ -276,10 +278,12 @@ No reaction, no row. Every string is set as text or an attribute, never as marku
   as the page does, not a glow. The page's existing rings (`.ob-head button:focus-visible` and the
   others) are 3px with a 2px offset, which breaks the 2px rule; the chips' 2px ring is deliberate,
   and a builder does not copy the 3px to match the page.
-- Icons are drawn at a whole-number scale of their 16x16 pixels (16px or 32px, never in between),
-  with `image-rendering: pixelated`.
-- The chip's 32px minimum size is two whole 16px steps, so a 16px icon sits in it at its native
-  scale with no stretching.
+- Icons are shown at 2x: the 16x16 art draws at 32px, never at 16px and never in between, with
+  `image-rendering: pixelated` (user decision q80, 2026-11-12). The `<img>` carries `width="32"`
+  and `height="32"`, and the `.ob-reaction-icon` rule sets 32px with `flex: none`, so the chip's
+  flex layout cannot shrink it. The PNGs themselves stay 16x16 and are never resampled.
+- The chip's 40px minimum fits the 32px icon inside its 2px padding and 2px border, so the icon
+  is never squeezed. The count is in the pixel font at 16px, level with the icon.
 
 A CSS test (section 11) checks the `.ob-reaction*` rules for these, and the live proof's
 screenshots are looked at for them.
@@ -1048,11 +1052,15 @@ merge batch.
   and `none` are allowed, so `outline: none` on a non-focus state passes), and no `font-family`
   outside GNF, Press Start 2P, VT323 and the `--se-font-*` or `--ui-heading-font` variables with a
   `monospace` fallback; the chip's focus rule is on `:focus-visible` with a 2px outline; the icon
-  rule has `image-rendering: pixelated` and a width of 16px or 32px; `.ob-reaction[data-open]`
+  rule has `image-rendering: pixelated` and a width and height of 32px; `.ob-reaction[data-open]`
   exists and sets a 2px solid `--ui-accent` border with no `box-shadow`; `.ob-reaction` has a
-  `min-width` and `min-height` of 32px; `.ob-reaction-names` has a `min-height` (its one reserved
+  `min-width` and `min-height` of 40px; `.ob-reaction-names` has a `min-height` (its one reserved
   line) and no `height`, `max-height`, `overflow: hidden` or `white-space: nowrap`, so a long list
-  wraps and is not clipped.
+  wraps and is not clipped. A second test fails if any rule sizes a reaction icon below 32px or at
+  a size that is not a whole multiple of 16px, adds a transform or zoom, or lets flex shrink it;
+  it checks the chip's minimum fits the icon, padding and border, and that the four PNGs are still
+  16x16. The jsdom test checks each chip's `<img>` has `width="32"`, `height="32"` and no inline
+  style.
 - **Leak scanner** (`test/unit/access_leak_scanner_feed_test.rb`): `feed_reaction_target` for a
   reaction on an unserved post (resolved through `@feed_post_key`), none for a reaction on the
   post in the same answer; `feed_reaction_key` for an unknown key; `feed_reaction_reactor` for a
@@ -1083,7 +1091,7 @@ merge batch.
   line, the same chip's names line opened by a click with the pointer elsewhere, Kofi's reply with
   Mei's like, Mei's reply with Asha's like, Ivy's thread with Tomasz's sad on her answer, the same
   after F17's reload, and the player's phone view; each looked at for section 4's pixel-art rules
-  (square 2px borders, pixel font, crisp icons, chips at least 32px square). Pace is earned in real time; the needs clock is never stepped. Regression: F1 to
+  (square 2px borders, pixel font, crisp icons at 32px, chips at least 40px square). Pace is earned in real time; the needs clock is never stepped. Regression: F1 to
   F17's C3 expectations still pass.
 
 ## 12. Dependencies on C3
@@ -1195,7 +1203,7 @@ importers, not the full suites.
    `post_dead_reasons` finds the `insteadOf` post with `AW.feed_posts(npc)`, as `check_reply`
    does. Commit.
 5. Client: `social-feed.js` store, events (with `targetReplyToPerson`) and `reactionsFor` (people
-   sorted by NPC id); the osint browser row of 32px `button` chips with `data-focus` keys, `data-open`,
+   sorted by NPC id); the osint browser row of 40px `button` chips with 32px icons with `data-focus` keys, `data-open`,
    no `aria-expanded`, a decorative icon and a `data-open` border; the names line (open, then
    focused, then hovered, per row; mouse hover only, read from `e.pointerType`; keyboard focus only,
    with the pointer-focus mark cleared in the suppressed `focusin`, at the end of `click` and on

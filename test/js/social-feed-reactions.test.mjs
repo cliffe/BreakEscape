@@ -159,17 +159,47 @@ test('CSS: the .ob-reaction* rules follow the pixel-art UI rule', () => {
     assert.match(focus.decls.outline, /^2px solid var\(--ui-accent/);
     const icon = ruleFor(rules, '.ob-reaction-icon');
     assert.equal(icon.decls['image-rendering'], 'pixelated');
-    assert.match(icon.decls.width, /^(16|32)px$/);
+    assert.equal(icon.decls.width, '32px');
+    assert.equal(icon.decls.height, '32px');
     const open = ruleFor(rules, '.ob-reaction[data-open]');
     assert.ok(open, '.ob-reaction[data-open] exists');
     assert.match(open.decls.border, /^2px solid var\(--ui-accent/);
     assert.ok(!open.decls['box-shadow'] || open.decls['box-shadow'] === 'none');
     const chip = ruleFor(rules, '.ob-reaction');
-    assert.equal(chip.decls['min-width'], '32px');
-    assert.equal(chip.decls['min-height'], '32px');
+    assert.equal(chip.decls['min-width'], '40px');
+    assert.equal(chip.decls['min-height'], '40px');
     const line = ruleFor(rules, '.ob-reaction-names');
     assert.ok(line.decls['min-height'], 'one line reserved');
     for (const p of ['height', 'max-height']) assert.equal(line.decls[p], undefined, `no ${p} on the names line`);
     assert.notEqual(line.decls.overflow, 'hidden');
     assert.notEqual(line.decls['white-space'], 'nowrap');
+});
+
+// q80 (user, 2026-11-12): the 16x16 icons show at a whole 2x, so never below 32px
+test('CSS: no rule draws a reaction icon below 32px or at a scale that is not a whole multiple of 16px', () => {
+    const rules = reactionRules().filter((r) => r.sels.some((x) => /\.ob-reaction-icon|\.ob-reaction\b.*\bimg\b/.test(x)));
+    assert.ok(rules.length >= 1, 'an icon rule');
+    for (const { sels, decls } of rules) {
+        const where = sels.join(', ');
+        for (const prop of ['width', 'height', 'min-width', 'min-height', 'max-width', 'max-height']) {
+            if (decls[prop] === undefined || decls[prop] === 'none') continue;
+            const m = /^(\d+)px$/.exec(decls[prop]);
+            assert.ok(m, `${where} ${prop}: ${decls[prop]} must be whole px`);
+            assert.ok(Number(m[1]) >= 32, `${where} ${prop}: ${decls[prop]} is below 32px`);
+            assert.equal(Number(m[1]) % 16, 0, `${where} ${prop}: ${decls[prop]} is not a whole scale of 16px`);
+        }
+        for (const prop of ['transform', 'zoom', 'scale']) assert.equal(decls[prop], undefined, `${where} has ${prop}`);
+        if (decls.flex !== undefined) assert.equal(decls.flex, 'none', `${where} flex lets the icon shrink`);
+        if (decls['flex-shrink'] !== undefined) assert.equal(decls['flex-shrink'], '0', `${where} flex-shrink`);
+    }
+    // the chip fits the icon: 32px plus 2px padding and a 2px border on each side
+    const chip = ruleFor(reactionRules(), '.ob-reaction');
+    const pad = chip.decls.padding.split(/\s+/).map((v) => parseInt(v, 10));
+    assert.ok(parseInt(chip.decls['min-height'], 10) >= 32 + 2 * pad[0] + 2 * 2, 'chip min-height fits the icon');
+    assert.equal(chip.decls['box-sizing'], 'border-box');
+    // the PNGs stay 16x16 (never resampled): read the IHDR
+    for (const key of ['like', 'laugh', 'sad', 'angry']) {
+        const png = readFileSync(join(root, `public/break_escape/assets/icons/reaction-${key}.png`));
+        assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [16, 16], `reaction-${key}.png is 16x16`);
+    }
 });

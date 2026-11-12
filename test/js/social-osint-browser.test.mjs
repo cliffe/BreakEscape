@@ -729,6 +729,12 @@ test('reactions: each chip is a button outside the post block, named with the re
         assert.equal(c.getAttribute('type'), 'button');
         assert.equal(c.hasAttribute('aria-expanded'), false);
         assert.equal(c.querySelector('img').getAttribute('alt'), '');
+        // q80: the 16x16 art at a whole 2x, never below 32px
+        const img = c.querySelector('img');
+        assert.equal(img.className, 'ob-reaction-icon');
+        assert.equal(img.getAttribute('width'), '32');
+        assert.equal(img.getAttribute('height'), '32');
+        assert.equal(img.getAttribute('style'), null, 'no inline size that could override the CSS');
     }
     const sad = chip(s, 'feed_pierce_1', 'sad');
     assert.equal(sad.getAttribute('aria-label'), 'Sad, 2: Jed Baker, Chris Hampshire');

@@ -525,7 +525,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
             chip.appendChild(word);
         } else {
             const img = h('img', { class: 'ob-reaction-icon', src: `${ICON}reaction-${group.key}.png`, alt: '',
-                width: 16, height: 16 });
+                width: 32, height: 32 }); // the 16x16 art at a whole 2x (plan section 4)
             // Until the icon exists (or if it fails), the label stands in for it, in the pixel font
             img.addEventListener('error', () => { MISSING_ICONS.add(group.key); img.replaceWith(word); });
             chip.appendChild(img);
