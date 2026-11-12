@@ -1057,6 +1057,8 @@ export function updatePlayerMovement() {
 }
 
 function updatePlayerKeyboardMovement() {
+    // A far tap's use goes with the walk the keys replace (tap-pick.js, code review R2 M1)
+    window.__clearPendingTapUse?.();
     // Cancel click-to-move (and any hold-to-walk) when keyboard input is detected
     if (isMoving || targetPoint) {
         isMoving = false;

@@ -45,16 +45,44 @@ export function opaqueAt(sprite, worldX, worldY, alphaAt) {
     let lx = (worldX - sprite.x) / sx + (sprite.originX ?? 0.5) * w;
     const ly = (worldY - sprite.y) / sy + (sprite.originY ?? 0.5) * h;
     if (!(lx >= 0 && lx < w && ly >= 0 && ly < h)) return false;
-    if (typeof alphaAt !== 'function' || !sprite.texture?.key) return true;
-    if (sprite.flipX) lx = w - 1 - lx;
-    // A trimmed atlas frame draws its pixels offset by frame.x / frame.y inside realWidth
-    const fx = Math.floor(lx - (frame.x || 0));
-    const fy = Math.floor(ly - (frame.y || 0));
-    if (frame.cutWidth !== undefined && (fx < 0 || fy < 0 || fx >= frame.cutWidth || fy >= frame.cutHeight)) return false;
+    const key = sprite.texture?.key;
+    // No pixel test without one, or for Phaser's stand-in textures: __MISSING draws only a
+    // green outline, so its "figure" would be the outline (code review R2 n4)
+    if (typeof alphaAt !== 'function' || !key || key === '__MISSING' || key === '__DEFAULT') return true;
+    // Phaser mirrors a flipped frame about its centre: local lx shows texel w - lx (R2 n1)
+    if (sprite.flipX) lx = Math.min(w - lx, w - 1);
+    const fx = Math.floor(lx);
+    const fy = Math.floor(ly);
+    // A trimmed atlas frame keeps its pixels at frame.x / frame.y inside realWidth; the margin
+    // round them is empty. getPixelAlpha takes untrimmed coordinates and subtracts the trim
+    // itself, so only the margin test uses it here (code review R2 m2)
+    if (frame.cutWidth !== undefined) {
+        const cx = fx - (frame.x || 0), cy = fy - (frame.y || 0);
+        if (cx < 0 || cy < 0 || cx >= frame.cutWidth || cy >= frame.cutHeight) return false;
+    }
     let a = null;
-    try { a = alphaAt(fx, fy, sprite.texture.key, frame.name); } catch (e) { a = null; }
+    try { a = alphaAt(fx, fy, key, frame.name); } catch (e) { a = null; }
     if (a === null || a === undefined) return true;
     return a > 0;
+}
+
+export const NPC_FIGURE_SLOP_PX = 2;
+
+/**
+ * Whether the tap is on an NPC's figure: an opaque pixel at the tap or within
+ * NPC_FIGURE_SLOP_PX of it (a 5 x 5 square), so a touch that lands a pixel off her outline
+ * still counts as her (code review R2 m5). Objects keep the exact test (opaqueAt).
+ */
+export function opaqueNear(sprite, worldX, worldY, alphaAt, slop = NPC_FIGURE_SLOP_PX) {
+    if (opaqueAt(sprite, worldX, worldY, alphaAt)) return true;
+    const sx = Math.abs(sprite?.scaleX ?? 1) || 1;
+    const sy = Math.abs(sprite?.scaleY ?? 1) || 1;
+    for (let dy = -slop; dy <= slop; dy++) {
+        for (let dx = -slop; dx <= slop; dx++) {
+            if ((dx || dy) && opaqueAt(sprite, worldX + dx * sx, worldY + dy * sy, alphaAt)) return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -86,14 +114,17 @@ export function farUnderTap({ objectsUnderTap = [], npcUnderTap = null } = {}, d
  * The pick list for a tap. When an out-of-reach object or NPC is under the tap (farUnderTap),
  * in-reach candidates that are only near the tap drop out; those under it stay. Far objects
  * join them as "walk there, then use" entries, unless an in-reach NPC is under the tap (on
- * her figure, candidate.isNpc): she wins and is talked to, with no menu (Sarah over the far
- * m01 Building Directory, code review R1 M1). An in-reach hostile NPC near the tap wins
+ * her figure and not covered there by an object drawn above her, candidate.isNpc): she wins
+ * and is talked to, with no menu (Sarah over the far m01 Building Directory, code review R1
+ * M1, R2 M2). An in-reach object under the tap on its own pixels (candidate.onObjectPixels)
+ * drops in-reach NPCs that are not under the tap, far or not (R2 m1), so a tap on a memo
+ * drawn over her opens the memo. An in-reach hostile NPC near the tap wins
  * outright: the list is returned as gathered, so combat is as before (a jab, or the same
  * menu as before when two things in reach share the tap). A far NPC joins no menu: it is
  * walked to, never picked from a list. With nothing in reach under the tap the list is
  * empty and the NPC or object branch walks to the thing under the pointer.
  *
- * @param {Array<{underTap?:boolean,isNpc?:boolean,hostile?:boolean}>} candidates - the in-reach pick list near the tap
+ * @param {Array<{underTap?:boolean,isNpc?:boolean,hostile?:boolean,isObject?:boolean,isChair?:boolean,onObjectPixels?:boolean}>} candidates - the in-reach pick list near the tap
  * @param {Array<object>} farObjects - out-of-reach interactable objects whose bounds hold the tap
  * @param {function(object): object} toCandidate - a pick-list entry for a far object (walk, then use)
  * @param {Array<object>} [farOthers] - other out-of-reach things under the tap (an NPC)
@@ -103,9 +134,13 @@ export function tapPickList(candidates, farObjects, toCandidate, farOthers = [])
     const list = Array.isArray(candidates) ? candidates : [];
     const far = Array.isArray(farObjects) ? farObjects : [];
     const others = Array.isArray(farOthers) ? farOthers.filter(Boolean) : [];
-    if (!far.length && !others.length) return list;
     if (list.some(c => c && c.hostile)) return list;
-    const under = list.filter(c => c && c.underTap);
+    // An in-reach object under the tap on its own pixels is what the player points at: an
+    // NPC only near the tap, or covered by it there, leaves the list (code review R2 m1)
+    const pointedAt = list.some(c => c && c.isObject && !c.isChair && c.onObjectPixels);
+    const kept = pointedAt ? list.filter(c => !(c && c.isNpc && !c.underTap)) : list;
+    if (!far.length && !others.length) return kept;
+    const under = kept.filter(c => c && c.underTap);
     if (!under.length) return [];
     if (under.some(c => c.isNpc)) return under;
     return [...under, ...far.map(toCandidate)];
@@ -127,15 +162,28 @@ export function tapPickList(candidates, farObjects, toCandidate, farOthers = [])
  * @returns {boolean}
  */
 export function npcYieldsToObject(npc, objectsUnderTap, deps) {
-    if (!npc || !Array.isArray(objectsUnderTap) || !objectsUnderTap.length) return false;
-    if (deps.hostile?.(npc)) return false;
+    return !!npcYieldTarget(npc, objectsUnderTap, deps);
+}
+
+/**
+ * The object an NPC under the tap gives it to (npcYieldsToObject), or null. The object branch
+ * then uses or walks to this one, not merely the first under the tap (code review R2 n5).
+ * deps.npcOnPixels, when given, is the test for her figure (opaqueNear); deps.onPixels is
+ * used for the objects and, without npcOnPixels, for her too.
+ *
+ * @returns {?object}
+ */
+export function npcYieldTarget(npc, objectsUnderTap, deps) {
+    if (!npc || !Array.isArray(objectsUnderTap) || !objectsUnderTap.length) return null;
+    if (deps.hostile?.(npc)) return null;
     const isSeat = deps.isSeat || (() => false);
     const sameRoom = deps.sameRoom || (() => true);
     const objects = objectsUnderTap.filter(o => o && !isSeat(o) && sameRoom(o));
-    if (!objects.length) return false;
-    if (!deps.onPixels(npc)) return true;
+    if (!objects.length) return null;
+    const onFigure = deps.npcOnPixels || deps.onPixels;
+    if (!onFigure(npc)) return objects[0];
     const npcDepth = npc.depth || 0;
-    return objects.some(o => (o.depth || 0) > npcDepth && deps.onPixels(o));
+    return objects.find(o => (o.depth || 0) > npcDepth && deps.onPixels(o)) || null;
 }
 
 /**
@@ -205,8 +253,9 @@ const PROGRESS_PX = 2;          // feet movement that counts as progress
  * blocked (on a path but no progress for BLOCKED_MS: walking into a seated owner), when
  * PENDING_TAP_USE_MS pass with no progress, when the object goes (taken, hidden, destroyed,
  * no longer interactable), or when something else takes over (deps.busy: a minigame, the
- * pick-one menu, a confirm dialog). The time limits count from the last progress, so a long
- * walk that keeps moving is never cut short (code review R1 m5).
+ * pick-one menu, a confirm dialog). The time limits count from the last progress of the
+ * click-to-move walk, so a long walk that keeps moving is never cut short (code review R1
+ * m5); keyboard walking is not progress (R2 M1).
  *
  * @param {object} deps
  * @param {function(object): boolean} deps.inReach - isObjectInInteractionRange
@@ -215,6 +264,7 @@ const PROGRESS_PX = 2;          // feet movement that counts as progress
  * @param {function(): boolean} [deps.busy] - a minigame, menu or dialog is open
  * @param {function(): boolean} [deps.minigameOpen] - older name for busy
  * @param {function(): ?{x:number,y:number}} [deps.feet] - the player's feet, for progress
+ * @param {function(object): void} [deps.onBlocked] - the walk was blocked: say why (R2 m4)
  */
 export function createPendingTapUse(deps) {
     let pending = null;
@@ -232,7 +282,9 @@ export function createPendingTapUse(deps) {
             if (!p) return;
             const o = p.obj;
             const f = feetNow();
-            if (f && (!p.feet || Math.hypot(f.x - p.feet.x, f.y - p.feet.y) >= PROGRESS_PX)) {
+            // Only a click-to-move walk counts: keyboard walking cancels that walk, so it
+            // never keeps the use alive (code review R2 M1; player.js also clears it)
+            if (deps.isMoving() && f && (!p.feet || Math.hypot(f.x - p.feet.x, f.y - p.feet.y) >= PROGRESS_PX)) {
                 p.feet = f; p.progressAt = now;
             }
             const still = now - p.progressAt;
@@ -240,7 +292,10 @@ export function createPendingTapUse(deps) {
                 || o.visible === false || !o.interactable) { pending = null; return; }
             if (busy()) { pending = null; return; }
             if (deps.isMoving()) {
-                if (deps.feet && still > BLOCKED_MS) pending = null;
+                if (deps.feet && still > BLOCKED_MS) {
+                    pending = null;
+                    try { deps.onBlocked?.(o); } catch (e) { /* the message only */ }
+                }
                 return;
             }
             if (deps.inReach(o)) { pending = null; deps.use(o); return; }

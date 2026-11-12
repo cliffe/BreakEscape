@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tapPickList, farUnderTap, npcYieldsToObject, opaqueAt, objectStandPoint, createPendingTapUse, PENDING_TAP_USE_MS } from '../../public/break_escape/js/systems/tap-pick.js';
+import { tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, PENDING_TAP_USE_MS } from '../../public/break_escape/js/systems/tap-pick.js';
 import { withoutChairsIfOthers, withoutLeavingNpcsIfObjects } from '../../public/break_escape/js/systems/interaction-reach.js';
 
 const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
@@ -264,8 +264,8 @@ test('pending use: a menu or confirm opening on the way drops it (busy)', () => 
 // ── game.js and player.js wiring ──
 test('game.js: pointerdown builds the far lists with farUnderTap and the pick list with tapPickList', () => {
     const src = readFileSync(join(js, 'core/game.js'), 'utf8');
-    assert.match(src, /import \{ tapPickList, farUnderTap, npcYieldsToObject, opaqueAt, objectStandPoint, createPendingTapUse \} from '\.\.\/systems\/tap-pick\.js'/);
-    assert.match(src, /tapPickList\(gatherInteractablesNearClick\(worldX, worldY, tapObjectIds, onPixels\), farObjects, farObjectCandidate, farNpcs\)/);
+    assert.match(src, /import \{ tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse \} from '\.\.\/systems\/tap-pick\.js'/);
+    assert.match(src, /tapPickList\(gatherInteractablesNearClick\(worldX, worldY, tapObjectIds, tapTests\), farObjects, farObjectCandidate, farNpcs\)/);
     assert.match(src, /withoutLeavingNpcsIfObjects\(withoutChairsIfOthers\(gathered\)\)/);
     assert.match(src, /pendingTapUse\.clear\(\)/);
     assert.match(src, /pendingTapUse\.update\(Date\.now\(\)\)/);
@@ -276,4 +276,97 @@ test('player.js: the E key drops a far tap\'s pending use before interacting (R1
     const src = readFileSync(join(js, 'core/player.js'), 'utf8');
     const e = src.slice(src.indexOf("if (key === 'e')"), src.indexOf("if (key === 'e')") + 400);
     assert.match(e, /window\.__clearPendingTapUse\?\.\(\);\s*if \(window\.tryInteractWithNearest\)/);
+});
+
+test('player.js: keyboard walking drops a far tap\'s pending use (R2 M1)', () => {
+    const src = readFileSync(join(js, 'core/player.js'), 'utf8');
+    const k = src.slice(src.indexOf('function updatePlayerKeyboardMovement()'), src.indexOf('function updatePlayerKeyboardMovement()') + 300);
+    assert.match(k, /window\.__clearPendingTapUse\?\.\(\);/);
+});
+
+// ── code review R2 ──
+test('pending use: a keyboard walk (feet moving, no click-to-move) is not progress and never uses it (R2 M1)', () => {
+    const { p, state } = walkRig();
+    p.arm(stickObj(), 0);
+    state.moving = false;
+    for (let t = 100; t <= 3000; t += 100) { state.feet.y += 2; p.update(t); }
+    state.inReach = true; state.feet.y += 2; p.update(3100);
+    assert.deepEqual(state.used, []);
+    assert.equal(p.get(), null);
+    // even a keyboard step that lands in reach at once, before the stopped-short drop
+    const r = walkRig();
+    r.p.arm(stickObj(), 0);
+    r.state.moving = false;
+    for (let t = 100; t <= 1000; t += 100) { r.state.feet.x += 3; r.p.update(t); }
+    assert.equal(r.p.get(), null, 'dropped 400 ms after the walk ended');
+});
+
+test('pending use: a blocked walk calls onBlocked once; stopping short does not (R2 m4)', () => {
+    const blocked = [];
+    const state = { moving: true, feet: { x: 0, y: 0 } };
+    const p = createPendingTapUse({
+        inReach: () => false, isMoving: () => state.moving, use: () => {},
+        feet: () => ({ ...state.feet }), onBlocked: (o) => blocked.push(o.id)
+    });
+    p.arm(stickObj(), 0);
+    p.update(1200); p.update(1300);
+    assert.deepEqual(blocked, ['kim_usb']);
+    p.arm(stickObj(), 2000);
+    state.moving = false; p.update(2500);
+    assert.equal(p.get(), null);
+    assert.deepEqual(blocked, ['kim_usb']);
+});
+
+test('opaqueAt: a trimmed frame passes untrimmed coordinates, as Phaser subtracts the trim (R2 m2)', () => {
+    // An 80 px frame trimmed to the 40 px from x 20: Phaser getPixelAlpha subtracts frame.x itself
+    const frame = { name: 1, realWidth: 80, realHeight: 80, x: 20, y: 0, cutWidth: 40, cutHeight: 80 };
+    const texels = (x) => (x < 10 ? 255 : 0);          // the cut's own first 10 columns are opaque
+    const phaserAlpha = (x, y) => { const cx = x - frame.x, cy = y - frame.y; return cx < 0 || cy < 0 || cx >= 40 || cy >= 80 ? null : texels(cx); };
+    const s = npcSprite({ frame });
+    assert.equal(opaqueAt(s, 85, 100, phaserAlpha), true);    // local 25: cut 5
+    assert.equal(opaqueAt(s, 95, 100, phaserAlpha), false);   // local 35: cut 15
+    assert.equal(opaqueAt(s, 70, 100, phaserAlpha), false);   // local 10: in the trimmed margin
+});
+
+test('opaqueAt: a flipped frame reads texel w - lx, so its outer column is the last texel (R2 n1)', () => {
+    const seen = [];
+    opaqueAt(npcSprite({ flipX: true }), 60.5, 100, (x) => { seen.push(x); return 255; });   // local 0.5
+    opaqueAt(npcSprite({ flipX: true }), 60, 100, (x) => { seen.push(x); return 255; });     // local 0
+    opaqueAt(npcSprite({ flipX: true }), 139.5, 100, (x) => { seen.push(x); return 255; });  // local 79.5
+    assert.deepEqual(seen, [79, 79, 0]);
+});
+
+test('opaqueAt: Phaser\'s missing and default textures get no pixel test (R2 n4)', () => {
+    for (const key of ['__MISSING', '__DEFAULT']) {
+        assert.equal(opaqueAt(npcSprite({ texture: { key } }), 130, 90, () => 0), true, key);
+    }
+});
+
+test('opaqueNear: a tap within 2 px of an opaque pixel is on the figure (R2 m5)', () => {
+    const s = npcSprite();                               // left half opaque: local x < 40, world x < 100
+    assert.equal(opaqueNear(s, 101.5, 100, leftHalf), true);
+    assert.equal(opaqueNear(s, 102.5, 100, leftHalf), false);
+    assert.equal(opaqueNear(s, 200, 100, leftHalf), false);
+});
+
+test('tapPickList: an in-reach object on its own pixels drops in-reach NPCs not under the tap (R2 m1)', () => {
+    const memo = { label: 'memo', isObject: true, underTap: true, onObjectPixels: true };
+    const covered = { label: 'sarah', isNpc: true, underTap: false };
+    const onFigure = { label: 'sarah', isNpc: true, underTap: true };
+    const chair = { label: 'chair', isObject: true, isChair: true, underTap: true, onObjectPixels: true };
+    assert.deepEqual(tapPickList([memo, covered], [], null), [memo]);
+    assert.deepEqual(tapPickList([memo, onFigure], [], null), [memo, onFigure]);
+    assert.deepEqual(tapPickList([chair, covered], [], null), [chair, covered], 'a chair is not pointed at');
+    assert.deepEqual(tapPickList([{ ...memo, onObjectPixels: false }, covered], [], null).length, 2, 'only near the memo');
+    const thug = { label: 'thug', isNpc: true, hostile: true, underTap: false };
+    assert.deepEqual(tapPickList([memo, thug], [], null), [memo, thug], 'a hostile is left as gathered');
+});
+
+test('npcYieldTarget: names the object she gives way to (R2 n5)', () => {
+    const sarah = { id: 'sarah', depth: 81 };
+    const chair = { id: 'chair', depth: 95 }, board = { id: 'board', depth: 10 }, logBook = { id: 'log', depth: 90 };
+    const deps = { onPixels: (s) => ['sarah', 'log', 'chair'].includes(s.id), isSeat: (o) => o.id === 'chair' };
+    assert.equal(npcYieldTarget(sarah, [chair, board, logBook], deps), logBook);
+    assert.equal(npcYieldTarget(sarah, [chair, board], deps), null);
+    assert.equal(npcYieldTarget(sarah, [chair, board], { ...deps, npcOnPixels: () => false }), board, 'off her figure: the first non-seat');
 });

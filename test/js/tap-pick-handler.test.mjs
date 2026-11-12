@@ -75,14 +75,14 @@ function handlerSource() {
 
 const HELPERS = ['findObjectsAtPosition', 'interactionIconsBase', 'openHandIcon', 'jabHandIcon', 'talkIcon',
     'gatherInteractablesNearClick', 'useObjectInReach', 'tapAlphaAt', 'walkToObjectThenUse',
-    'farObjectCandidate', 'findNPCAtPosition', 'findDoorAtPosition'];
+    'farObjectCandidate', 'findNPCAtPosition', 'findDoorAtPosition', 'allNpcSprites', 'npcBesidePlayer'];
 const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pendingGateWalk', 'doorGates',
     'isObjectInInteractionRange', 'sameRoomFrom', 'playerFeet', 'wallClearFrom', 'findClearStandPoint',
     'movePlayerToPoint', 'facePlayerToward', 'startHoldWalk', 'showInteractionMenu', 'isInteractionMenuOpen',
     'closeInteractionMenu', 'resolveObjectField', 'TILE_SIZE', 'SPRITE_PADDING_BOTTOM_ATLAS',
     'SPRITE_PADDING_BOTTOM_LEGACY', 'DOOR_INTERACTION_RANGE', 'INTERACTION_RANGE'];
 const IMPORTS = { ...tapPick, ...reachMod };
-const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'opaqueAt', 'objectStandPoint',
+const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYieldTarget', 'opaqueAt', 'opaqueNear', 'objectStandPoint',
     'createPendingTapUse', 'aimX', 'withoutChairsIfOthers', 'takeablesBeforeChairs', 'npcGivesWay', 'objectIdOf',
     'withoutLeavingNpcsIfObjects'];
 const body = [
@@ -91,7 +91,11 @@ const body = [
     `const handler = ${handlerSource()};`,
     'return { handler, pendingTapUse };'
 ].join('\n\n');
-const factory = new Function('deps', `const { ${[...STUBS, ...IMPORT_NAMES].join(', ')} } = deps;\n${body}`);
+// playerIsMoving is a live binding in game.js (imported from player.js); a destructured stub
+// would freeze it at false, so the cut text reads it from deps each time
+const LIVE = ['playerIsMoving'];
+const liveBody = LIVE.reduce((t, n) => t.replace(new RegExp(`\\b${n}\\b`, 'g'), `deps.${n}`), body);
+const factory = new Function('deps', `const { ${[...STUBS.filter(n => !LIVE.includes(n)), ...IMPORT_NAMES].join(', ')} } = deps;\n${liveBody}`);
 
 // ── a world of plain sprites ──
 const RANGE = 32;
@@ -126,6 +130,7 @@ function world({ player, objects = [], npcs = [], hostile = [], roomOf = () => '
         seating: { isSeat: (o) => !!o.seat, queueSit: (o) => log.push(`sit:${o.id}`) },
         pcInUseBy: (o) => inUse[o.id] || null,
         showPcInUse: (o) => log.push(`inuse:${o.id}`),
+        gameAlert: (m) => log.push(`alert:${m}`),
         MinigameFramework: { currentMinigame: null },
         pathfindingManager: null
     };
@@ -331,4 +336,201 @@ test('handler: both in reach under the tap keeps the menu', () => {
     const w = world({ player, objects: [pc], npcs: [omar] });
     w.tap(120, 100);
     assert.deepEqual(w.log, ['menu:omar_pc|omar']);
+});
+
+// ── code review R2 ──
+test('handler R2 M2: a tap on a far memo drawn over an in-reach NPC\'s figure is the memo\'s', () => {
+    const player = { x: 126, y: 71 };
+    const sarah = npc('sarah', 150, 60, { depth: 80 });
+    const memo = sprite('memo', 159, 60, 12, 10, { depth: 95 });   // 34.8 px away: out of reach
+    const w = world({ player, objects: [memo], npcs: [sarah] });
+    w.tap(159.5, 65);                            // on the memo, with her figure behind it
+    assert.ok(!w.log.some(l => l.startsWith('talk') || l.startsWith('menu')), w.log.join());
+    assert.ok(walkedTo(w.log));
+    assert.equal(w.pendingTapUse.get()?.obj, memo, 'the memo is used on arrival');
+});
+
+test('handler R2 M2: a seated owner in reach, his far monitor drawn in front of him: the tap says he is using it', () => {
+    const player = { x: 128, y: 130 };
+    const omar = npc('omar', 120, 104, { depth: 60 });                   // figure x 110-130, y 86-126
+    const pc = sprite('omar_pc', 126, 96, 20, 16, { depth: 70, data: { lockType: 'login' } });   // 34 px: far
+    const w = world({ player, objects: [pc], npcs: [omar], inUse: { omar_pc: 'omar' } });
+    w.tap(128, 100);                             // on the monitor, over his figure
+    assert.deepEqual(w.log, ['inuse:omar_pc']);
+});
+
+test('handler R2 m1: both in reach, a tap on the log drawn over her opens the log, no menu', () => {
+    const player = { x: 140, y: 80 };
+    const sarah = npc('sarah', 150, 60, { depth: 80 });
+    const log_ = sprite('signin_log', 145, 62, 12, 8, { depth: 95 });    // in reach, over her figure
+    const w = world({ player, objects: [log_], npcs: [sarah] });
+    w.tap(150, 65);
+    assert.deepEqual(w.log, ['use:signin_log']);
+    const w2 = world({ player, objects: [log_], npcs: [sarah] });
+    w2.tap(150, 58);                             // her uncovered figure, within the log's slop
+    assert.deepEqual(w2.log, ['menu:signin_log|sarah']);
+});
+
+test('handler R2 m1: a tap on a memo\'s pixels beside an in-reach NPC opens the memo', () => {
+    const player = { x: 140, y: 80 };
+    const sarah = npc('sarah', 150, 60, { depth: 80 });
+    const memo = sprite('memo', 162, 70, 10, 8, { depth: 50 });          // beside her figure (x 140-160)
+    const w = world({ player, objects: [memo], npcs: [sarah] });
+    w.tap(165, 73);                              // on the memo, in her frame, off her figure
+    assert.deepEqual(w.log, ['use:memo']);
+});
+
+test('handler R2 m3: the menu entry for a far PC in use names who is using it', () => {
+    const player = { x: 100, y: 100 };
+    const coffee = sprite('coffee', 110, 110, 20, 20, { depth: 50 });
+    const desk_pc = sprite('desk_pc', 125, 125, 40, 40, { depth: 40, data: { lockType: 'login', observations: 'A desktop PC.' } });
+    const w = world({ player, objects: [coffee, desk_pc], inUse: { desk_pc: 'omar' } });
+    w.tap(128, 128);
+    const far = w.state.lastMenu.find(c => c.far);
+    assert.equal(far.detail, 'omar is using it. A desktop PC.');
+    far.onSelect();
+    assert.deepEqual(w.log.slice(1), ['inuse:desk_pc'], 'picking it explains and does not walk');
+});
+
+test('handler R2 m5: a tap a pixel off an in-reach NPC\'s outline, over a far object behind her, talks to her', () => {
+    const player = { x: 126, y: 71 };
+    const sarah = npc('sarah', 150, 60, { depth: 80 });                 // figure x 140-160, y 42-82
+    const board = sprite('board', 155, 20, 40, 40, { depth: 10 });      // far, drawn behind her
+    const w = world({ player, objects: [board], npcs: [sarah] });
+    w.tap(161, 50);
+    assert.deepEqual(w.log, ['talk:sarah']);
+    const w2 = world({ player, objects: [board], npcs: [sarah] });
+    w2.tap(165, 50);                             // 5 px off: the board's
+    assert.ok(walkedTo(w2.log) && !w2.log.some(l => l.startsWith('talk')), w2.log.join());
+    assert.equal(w2.pendingTapUse.get()?.obj, board);
+});
+
+test('handler R2 M1: a keyboard walk after a far tap never uses the object', () => {
+    const player = { x: 50, y: 50 };
+    const note = sprite('note', 120, 100, 10, 10);
+    const w = world({ player, objects: [note] });
+    w.tap(125, 105);
+    assert.equal(w.pendingTapUse.get()?.obj, note);
+    const t0 = Date.now();
+    w.state.moving = false;                      // the keys cancel click-to-move
+    for (let i = 1; i <= 10; i++) { player.y += 2; w.pendingTapUse.update(t0 + i * 100); }
+    player.x = 110; player.y = 95;               // walked into reach with the keys
+    w.pendingTapUse.update(t0 + 1100);
+    assert.ok(!w.log.includes('use:note'), w.log.join());
+    assert.equal(w.pendingTapUse.get(), null);
+});
+
+test('handler R2 m4: a blocked walk drops the use with a short message', () => {
+    const player = { x: 50, y: 50 };
+    const note = sprite('note', 120, 100, 10, 10);
+    const w = world({ player, objects: [note] });
+    w.tap(125, 105);
+    const t0 = Date.now();
+    w.pendingTapUse.update(t0 + 1500);           // on a path, feet still
+    assert.equal(w.pendingTapUse.get(), null);
+    assert.ok(w.log.includes("alert:Something's in the way."), w.log.join());
+    const guard = npc('guard', 60, 60);
+    const w2 = world({ player, objects: [note], npcs: [guard] });
+    w2.tap(125, 105);
+    w2.pendingTapUse.update(Date.now() + 1500);
+    assert.ok(w2.log.includes("alert:Someone's in the way."), w2.log.join());
+});
+
+// ── R2 n3: every free name in the cut source is a stub, an import or a known global ──
+// The cutter runs the handler as text, so a name it uses that the harness does not pass in
+// would only fail in a branch a test reaches. This lists the free names statically.
+function codeOnly(text) {
+    let out = '';
+    const tmpl = [];
+    let depth = 0;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i], n = text[i + 1];
+        if (c === '/' && n === '/') { const e = text.indexOf('\n', i); out += ' '.repeat(e - i); i = e - 1; continue; }
+        if (c === '/' && n === '*') { const e = text.indexOf('*/', i) + 2; out += ' '.repeat(e - i); i = e - 1; continue; }
+        if (c === '"' || c === "'") {
+            let j = i + 1; for (; text[j] !== c; j++) if (text[j] === '\\') j++;
+            out += ' '.repeat(j - i + 1); i = j; continue;
+        }
+        if (c === '`' || (c === '}' && tmpl.length && tmpl[tmpl.length - 1] === depth)) {
+            if (c === '}') tmpl.pop();
+            let j = i + 1;
+            for (; j < text.length; j++) {
+                if (text[j] === '\\') { j++; continue; }
+                if (text[j] === '`') break;
+                if (text[j] === '$' && text[j + 1] === '{') { tmpl.push(depth); j++; break; }
+            }
+            out += ' '.repeat(j - i + 1); i = j; continue;
+        }
+        if (c === '/') {
+            let j = out.length - 1;
+            while (j >= 0 && /\s/.test(out[j])) j--;
+            const before = out.slice(0, j + 1);
+            if ('(,=:[!&|?{};'.includes(out[j]) || /\b(return|typeof|case)$/.test(before)) {
+                let k = i + 1;
+                for (; text[k] !== '/'; k++) {
+                    if (text[k] === '\\') k++;
+                    else if (text[k] === '[') { while (text[++k] !== ']') if (text[k] === '\\') k++; }
+                }
+                while (/[a-z]/.test(text[k + 1])) k++;
+                out += ' '.repeat(k - i + 1); i = k; continue;
+            }
+        }
+        if (c === '{') depth++;
+        if (c === '}') depth--;
+        out += c;
+    }
+    return out;
+}
+const KEYWORDS = new Set(('if else return const let var function new typeof of in for while do true false null undefined this '
+    + 'try catch finally throw break continue instanceof void delete async await default switch case get set').split(' '));
+const GLOBALS = new Set(('Math Object Array Number String Boolean Date JSON Infinity NaN console Set Map WeakMap Error '
+    + 'isNaN isFinite parseInt parseFloat Promise setTimeout clearTimeout Symbol RegExp arguments').split(' '));
+function freeNames(code) {
+    const declared = new Set();
+    const ident = /[A-Za-z_$][\w$]*/g;
+    const namesIn = (str) => (str.match(ident) || []);
+    // const/let/var names (plain or destructured), function names and parameters, catch names
+    for (const m of code.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)) declared.add(m[1]);
+    for (const m of code.matchAll(/\b(?:const|let|var)\s+([\w$]+(?:\s*,\s*[\w$]+)+)\s*;/g)) namesIn(m[1]).forEach(n => declared.add(n));
+    for (const m of code.matchAll(/\b(?:const|let|var)\s*([{[])/g)) {
+        const open = m.index + m[0].length - 1;
+        const close = code.indexOf(m[1] === '{' ? '}' : ']', open);
+        namesIn(code.slice(open, close)).forEach(n => declared.add(n));
+    }
+    for (const m of code.matchAll(/\bfunction\s*([A-Za-z_$][\w$]*)?\s*\(([^)]*)\)/g)) {
+        if (m[1]) declared.add(m[1]);
+        namesIn(m[2]).forEach(n => declared.add(n));
+    }
+    for (const m of code.matchAll(/\bcatch\s*\(\s*([A-Za-z_$][\w$]*)/g)) declared.add(m[1]);
+    for (const m of code.matchAll(/([A-Za-z_$][\w$]*)\s*=>/g)) declared.add(m[1]);
+    for (const m of code.matchAll(/\)\s*=>/g)) {
+        let d = 0, k = m.index;
+        for (; k >= 0; k--) { if (code[k] === ')') d++; else if (code[k] === '(' && --d === 0) break; }
+        namesIn(code.slice(k, m.index)).forEach(n => declared.add(n));
+    }
+    const free = new Set();
+    for (const m of code.matchAll(ident)) {
+        const name = m[0];
+        if (/\d/.test(name[0])) continue;
+        let b = m.index - 1;
+        while (b >= 0 && /\s/.test(code[b])) b--;
+        if (code[b] === '.' && code.slice(b - 2, b + 1) !== '...') continue;   // a property
+        let a = m.index + name.length;
+        while (a < code.length && /\s/.test(code[a])) a++;
+        if (code[a] === ':' && (code[b] === '{' || code[b] === ',')) continue; // an object key
+        if (KEYWORDS.has(name) || GLOBALS.has(name) || declared.has(name)) continue;
+        free.add(name);
+    }
+    return free;
+}
+
+test('handler R2 n3: every free name in the cut source is passed in by the harness', () => {
+    const allowed = new Set([...STUBS, ...IMPORT_NAMES, 'deps']);
+    const missing = [...freeNames(codeOnly(body))].filter(n => !allowed.has(n));
+    assert.deepEqual(missing, [], `free names the harness does not stub: ${missing.join(', ')}`);
+});
+
+test('handler R2 n3: the free-name check finds a name no stub covers', () => {
+    const free = freeNames(codeOnly("function f(a) { const b = a.x; if (b) return /x/.test(c) ? notStubbed(b) : `${a}`; }"));
+    assert.deepEqual([...free], ['c', 'notStubbed']);
 });

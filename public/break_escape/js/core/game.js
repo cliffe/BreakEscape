@@ -45,7 +45,7 @@ import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  /
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // Opt-in los.challengeOnSight guards
 import { createPendingGateWalk } from '../systems/pending-gate-walk.js';  // A far click on an open gate, re-checked in reach
-import { tapPickList, farUnderTap, npcYieldsToObject, opaqueAt, objectStandPoint, createPendingTapUse } from '../systems/tap-pick.js';  // A tap goes to the thing under the pointer; far objects walked to, then used
+import { tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse } from '../systems/tap-pick.js';  // A tap goes to the thing under the pointer; far objects walked to, then used
 import { doorGates } from '../systems/door-gates.js';  // Gate doors: open for listed NPCs, hold, relock (sets window.doorGates)
 import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props block NPC sight (sets window.npcSightOcclusion)
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
@@ -2266,18 +2266,30 @@ export async function create() {
         // room drops them too when the tap is on her figure, not just her frame (one walking away
         // gives way), and is then walked to by the NPC branch. An in-reach NPC counts as under
         // the tap only on her figure, and then wins (no far entries); an in-reach hostile wins
-        // outright (code review R1 M1).
+        // outright (code review R1 M1). Her figure counts with a 2 px slop (R2 m5); an object
+        // of her room drawn above her and opaque at the tap covers her there, near or far, so
+        // the tap is the object's (R2 M2, npcYieldsToObject), and an in-reach object under
+        // the tap on its own pixels drops NPCs not under it (R2 m1, tapPickList).
         const feetAtTap = window.player ? playerFeet(window.player) : null;
         const onPixels = (sprite) => opaqueAt(sprite, worldX, worldY, tapAlphaAt(this));
+        const npcOnFigure = (sprite) => opaqueNear(sprite, worldX, worldY, tapAlphaAt(this));
         const sameRoomAsPlayer = (o) => sameRoomFrom(feetAtTap, o);
+        const yieldDeps = {
+            onPixels,
+            npcOnPixels: npcOnFigure,
+            hostile: (npc) => !!(npc.npcId && window.npcHostileSystem?.isNPCHostile?.(npc.npcId)),
+            isSeat: (o) => !!window.seating?.isSeat(o),
+            sameRoom: sameRoomAsPlayer
+        };
         const { farObjects, farNpcs } = farUnderTap({ objectsUnderTap, npcUnderTap: findNPCAtPosition(worldX, worldY) }, {
             inReach: (o) => isObjectInInteractionRange(o),
             isSeat: (o) => !!window.seating?.isSeat(o),
             sameRoom: sameRoomAsPlayer,
-            npcOnFigure: onPixels,
+            npcOnFigure,
             givesWay: (npc) => npcGivesWay(window.player, npc, tapObjectIds)
         });
-        const gathered = tapPickList(gatherInteractablesNearClick(worldX, worldY, tapObjectIds, onPixels), farObjects, farObjectCandidate, farNpcs);
+        const tapTests = { onPixels, npcOnFigure, npcCovered: (npc) => npcYieldsToObject(npc, objectsUnderTap, yieldDeps) };
+        const gathered = tapPickList(gatherInteractablesNearClick(worldX, worldY, tapObjectIds, tapTests), farObjects, farObjectCandidate, farNpcs);
         let nearbyInteractables = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(gathered));
         if (nearbyInteractables.length && nearbyInteractables.every(c => c.leavingNpc) && objectUnderTap()) {
             nearbyInteractables = [];
@@ -2302,15 +2314,10 @@ export async function create() {
             npcAtPosition = null;
         }
         // An object drawn over her where the tap is, or a tap on the empty part of her frame
-        // over an object, is for the object (code review R1 m3; tap-pick.js)
-        if (npcAtPosition && npcYieldsToObject(npcAtPosition, objectsUnderTap, {
-            onPixels,
-            hostile: (npc) => !!(npc.npcId && window.npcHostileSystem?.isNPCHostile?.(npc.npcId)),
-            isSeat: (o) => !!window.seating?.isSeat(o),
-            sameRoom: sameRoomAsPlayer
-        })) {
-            npcAtPosition = null;
-        }
+        // over an object, is for the object (code review R1 m3; tap-pick.js). The object she
+        // gives way to goes first in the object branch below (R2 n5).
+        const yieldTo = npcAtPosition ? npcYieldTarget(npcAtPosition, objectsUnderTap, yieldDeps) : null;
+        if (yieldTo) npcAtPosition = null;
         if (npcAtPosition) {
             if (isObjectInInteractionRange(npcAtPosition)) {
                 // NPC is in range - face toward them then interact.
@@ -2362,7 +2369,8 @@ export async function create() {
                 }
                 // A takeable item under the tap comes before a chair drawn above it, so a far
                 // tap on a stick under a chair walks to the stick, not the seat (USB R3 m1)
-                const tapOrder = takeablesBeforeChairs(objectsAtPosition, o => !!o.isSwivelChair || !!window.seating?.isSeat(o));
+                const ordered = takeablesBeforeChairs(objectsAtPosition, o => !!o.isSwivelChair || !!window.seating?.isSeat(o));
+                const tapOrder = yieldTo ? [yieldTo, ...ordered.filter(o => o !== yieldTo)] : ordered;
                 for (const obj of tapOrder) {
                     if (obj.interactable && window.handleObjectInteraction) {
                         if (isObjectInInteractionRange(obj)) {
@@ -2711,11 +2719,16 @@ function talkIcon()      { return { src: `${interactionIconsBase()}/talk.png` };
  * @param {number} worldX - World X coordinate of the tap
  * @param {number} worldY - World Y coordinate of the tap
  * @param {string[]} [tapObjectIds] - ids of the objects under the tap (an NPC leaving one of them gives way)
- * @param {?function(object): boolean} [onPixels] - the tap is on the sprite's opaque pixels (an NPC is
- *   under the tap only on her figure, tap-pick.js opaqueAt); bounds when not given
+ * @param {object} [tapTests] - pixel tests for the tap (tap-pick.js); bounds alone when not given
+ * @param {function(object): boolean} [tapTests.onPixels] - the tap is on the sprite's opaque pixels (opaqueAt)
+ * @param {function(object): boolean} [tapTests.npcOnFigure] - the tap is on the NPC's figure, with a
+ *   2 px slop (opaqueNear); an NPC is under the tap only there
+ * @param {function(object): boolean} [tapTests.npcCovered] - an object of her room drawn above her is
+ *   opaque at the tap (npcYieldsToObject): she is not under the tap (code review R2 M2)
  * @returns {Array<{label:string, detail:?string, onSelect:Function}>}
  */
-function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], onPixels = null) {
+function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTests = {}) {
+    const { onPixels = null, npcOnFigure = onPixels, npcCovered = null } = tapTests || {};
     const player = window.player;
     if (!player || !window.rooms) return [];
 
@@ -2771,6 +2784,8 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], onPixel
                     isObject: true,
                     isChair: !!obj.isSwivelChair || seat,
                     underTap: hitsBounds(obj),
+                    // On the object's own pixels: what the player points at (R2 m1)
+                    onObjectPixels: hitsBounds(obj) && (onPixels ? onPixels(obj) : true),
                     onSelect: () => useObjectInReach(obj)
                 });
             });
@@ -2795,7 +2810,8 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], onPixel
                     leavingNpc: npcGivesWay(player, sprite, tapObjectIds),
                     isNpc: true,
                     hostile: !!hostile,
-                    underTap: onPixels ? hitsBounds(sprite) && onPixels(sprite) : hitsBounds(sprite),
+                    underTap: hitsBounds(sprite) && (npcOnFigure ? npcOnFigure(sprite) : true)
+                        && !(npcCovered && npcCovered(sprite)),
                     onSelect: () => {
                         facePlayerToward(sprite.x, sprite.y);
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
@@ -2877,6 +2893,8 @@ const pendingTapUse = createPendingTapUse({
     isMoving: () => playerIsMoving,
     use: (obj) => useObjectInReach(obj),
     feet: () => (window.player ? playerFeet(window.player) : null),
+    // The walk was blocked: say so, not drop the use silently (code review R2 m4)
+    onBlocked: () => window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Something's in the way.", 'info', '', 2500),
     // Something else took over on the way: a minigame, the pick-one menu or a confirm dialog
     busy: () => !!window.MinigameFramework?.currentMinigame || isInteractionMenuOpen()
         || (typeof document !== 'undefined' && !!document.querySelector?.('.game-confirm-overlay'))
@@ -2884,6 +2902,15 @@ const pendingTapUse = createPendingTapUse({
 if (typeof window !== 'undefined') {
     window.__pendingTapUse = () => pendingTapUse.get();
     window.__clearPendingTapUse = () => pendingTapUse.clear();   // the E key (player.js)
+}
+
+// An NPC within about a tile of the player's feet (a blocked walk's message)
+function npcBesidePlayer() {
+    const p = window.player;
+    if (!p) return false;
+    const f = playerFeet(p);
+    return allNpcSprites().some(s => s.visible !== false && s.active !== false
+        && Math.hypot((s.body?.center?.x ?? s.x) - f.x, (s.body?.center?.y ?? s.y) - f.y) <= TILE_SIZE);
 }
 
 // The scene's pixel test for opaqueAt (tap-pick.js), or null without one
@@ -2921,10 +2948,14 @@ function walkToObjectThenUse(obj) {
 function farObjectCandidate(obj) {
     const data = obj.scenarioData || {};
     const obs = resolveObjectField(data, 'observations', obj.observations || null);
+    // A sign-in PC someone is using says so: picking it explains, and does not walk (R2 m3)
+    const userAt = !window.seating?.isSeat(obj) ? window.pcInUseBy?.(obj) : null;
+    const user = userAt ? (window.npcManager?.getNPC?.(userAt)?.displayName || userAt) : null;
+    // Says why choosing it walks (code review R1 n3)
+    const lead = user ? `${user} is using it.` : 'Walk over and use it.';
     return {
         label: data.name || obj.name || 'Item',
-        // Says why choosing it walks (code review R1 n3)
-        detail: obs ? `Walk over and use it. ${obs}` : 'Walk over and use it.',
+        detail: obs ? `${lead} ${obs}` : lead,
         icon: openHandIcon(),
         isObject: true,
         isChair: false,
