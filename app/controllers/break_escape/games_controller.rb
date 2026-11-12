@@ -1212,7 +1212,7 @@ module BreakEscape
     end
 
     # POST /games/:id/npc_workaround (slice 9.2, ACCESS_MODEL_SLICE_9_2_PLAN.md 6 and 9.1):
-    # { npc_id, index, hand, dropped } from the workaround runner. 403 for a hand-over the server
+    # { npc_id, index, hand, dropped, cut } from the workaround runner. 403 for a hand-over the server
     # never made (or already spent other than as done), 425 before the dwell.
     def npc_workaround
       authorize @game if defined?(Pundit)
@@ -1222,8 +1222,10 @@ module BreakEscape
         # Sub-slice H: a share_login reports `heard` (true or "true" only) and the room it was heard in
         heard = [true, 'true'].include?(params[:heard])
         room_id = params[:room_id].is_a?(String) ? params[:room_id] : nil
+        # q43 review R1 M1: a borrow cut short after the sit (true or "true" only)
+        cut = [true, 'true'].include?(params[:cut])
         result = @game.complete_npc_workaround!(npc_id: params[:npc_id], index: params[:index], hand: params[:hand],
-                                                dropped: dropped, heard: heard, room_id: room_id)
+                                                dropped: dropped, heard: heard, room_id: room_id, cut: cut)
         body = result[:body]
         body = body.merge('roomData' => serve_opened_room(result[:open_room])) if result[:status] == :ok && result[:open_room]
         render json: body, status: result[:status]
