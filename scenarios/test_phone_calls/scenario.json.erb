@@ -10,7 +10,9 @@
     "declined_seen": false,
     "missed_seen": false,
     "guard_off": false,
-    "legacy_on": false
+    "legacy_on": false,
+    "end_go": false,
+    "ending_ok": false
   },
   "objectives": [
     {
@@ -25,10 +27,49 @@
           "title": "Answer Basic",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "taskId": "hear_voicemail",
+          "title": "Hear the voicemail",
+          "type": "custom",
+          "status": "active",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "wrap_up",
+      "title": "Wrap Up",
+      "description": "End the test. The server concludes only once ending_ok is set (row 28).",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": { "globals": ["ending_ok"] },
+      "tasks": [
+        {
+          "taskId": "wrap_up_task",
+          "title": "Pull the end lever",
+          "type": "custom",
+          "status": "active"
         }
       ]
     }
   ],
+  "music": {
+    "events": [
+      {
+        "trigger": "global_variable_changed:end_go",
+        "condition": "value === true",
+        "playlist": "victory",
+        "autoStop": true,
+        "fade": true,
+        "credits": [
+          { "text": "MISSION COMPLETE", "style": "title" },
+          { "text": "PHONE CALLS TEST", "style": "subtitle" }
+        ]
+      }
+    ]
+  },
   "startItemsInInventory": [
     { "type": "lockpick", "name": "Lock Pick Kit", "takeable": true, "observations": "For the pick case." },
     {
@@ -89,6 +130,12 @@
             "setGlobalOnStart": "briefing_played"
           },
           "eventMappings": [
+            {
+              "eventPattern": "end_map",
+              "endingCheck": true,
+              "cooldown": 0,
+              "setGlobal": { "end_go": true }
+            },
             {
               "eventPattern": "global_variable_changed:debrief_go",
               "condition": "value === true",
@@ -518,8 +565,8 @@
           "type": "notes",
           "name": "Instructions",
           "position": {
-            "x": 10,
-            "y": 3
+            "x": 9,
+            "y": 1
           },
           "takeable": false,
           "readable": true,
@@ -699,6 +746,26 @@
           "interactable": true,
           "triggerOnInteract": [ { "type": "emit_event", "event_name": "ring_popup" } ],
           "observations": "Lever: Popup (rings in 8 s)"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_end",
+          "name": "Lever: End (credits; the server concludes only if ending_ok)",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [ { "type": "set_global", "key": "end_go", "value": true } ],
+          "observations": "Lever: End the mission (credits)"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_end_map",
+          "name": "Lever: End by mapping (endingCheck mapping, then credits)",
+          "position": { "x": 3, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [ { "type": "emit_event", "event_name": "end_map" } ],
+          "observations": "Lever: End the mission through an endingCheck mapping"
         },
         {
           "type": "safe",

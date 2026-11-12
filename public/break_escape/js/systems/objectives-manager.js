@@ -1161,6 +1161,10 @@ export class ObjectivesManager {
 
     console.log(`🏁 Mission concluded via aim: ${aim.aimId}`);
 
+    // Phone calls plan 2.3 row 28: the server has agreed (or this is a reload of a concluded game), so
+    // nothing rings over the credits. The ending check does not close the ringer: a conclude can be refused.
+    try { window.phoneRinger?.close?.(); } catch (e) { console.warn('[ObjectivesManager] phoneRinger.close failed:', e); }
+
     // Emit event for any listeners (music system, analytics, etc.)
     this.eventDispatcher.emit('mission_concluded', { aimId: aim.aimId, aim });
 

@@ -328,8 +328,8 @@ export function installPhoneRinger(win = window) {
         },
         /** The workstation popups' close hook; the ringer's own close for row 11 is not a player close. */
         onPopupClosed() {
-            // Defensive: nothing observable depends on it today (a nudge on a connecting call does
-            // nothing), so no test fails without it (A2c review R1 n1).
+            // Keeps a refused open's retry wait: without the guard the put-aside's deferred nudge zeroes
+            // retryAt and a second open follows at once (test/js/phone-ring-aside.test.mjs, A2c R2 m3).
             if (settingAside) return;
             ringer.onPopupClosed();
         },

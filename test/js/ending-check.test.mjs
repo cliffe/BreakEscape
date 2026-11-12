@@ -314,32 +314,24 @@ test('completeTask on an ordinary task never asks', async () => {
 
 // ---- A2c, phone calls plan 2.3 row 28: the ending closes the ringer ----------------------------
 
-test('A2c row 28 (R1 M1): "End the mission now" on an aim or mapping ending closes the phone ringer; "Keep going" does not; the credits ending leaves it to the conclude', async () => {
+test('A2c row 28 (R2 m1): "End the mission now" never closes the phone ringer, whatever the ending: only an agreed conclude does', async () => {
     let closed = 0;
     window.phoneRinger = { close: () => { closed++; } };
     try {
-        const keep = E.confirmEnding({ reason: 'aim' });
-        click('ending-check-keep');
-        assert.equal(await keep, false);
-        assert.equal(closed, 0, 'Keep going: calls carry on');
-        const end = E.confirmEnding({ reason: 'aim' });
-        click('ending-check-end');
-        assert.equal(await end, true);
-        assert.equal(closed, 1);
-        // the credits ending: the server may still refuse the conclude, so nothing closes here
-        E._resetEndingCheck();
-        const credits = E.confirmEnding({ reason: 'credits' });
-        click('ending-check-end');
-        assert.equal(await credits, true);
-        assert.equal(closed, 1, 'credits: scenario-music-events closes it once the server agrees');
-        E._resetEndingCheck();
-        E.holdEnding(() => {}, { reason: 'mapping' });
-        E.endHeldEnding();
-        assert.equal(closed, 2, 'the panel button runs a mapping ending');
-        E._resetEndingCheck();
-        E.holdEnding(() => {}, { reason: 'credits' });
-        E.endHeldEnding();
-        assert.equal(closed, 2, 'a held credits ending does not close it either');
+        for (const reason of ['aim', 'mapping', 'tag', 'credits']) {
+            E._resetEndingCheck();
+            const keep = E.confirmEnding({ reason });
+            click('ending-check-keep');
+            assert.equal(await keep, false);
+            E._resetEndingCheck();
+            const end = E.confirmEnding({ reason });
+            click('ending-check-end');
+            assert.equal(await end, true);
+            E._resetEndingCheck();
+            E.holdEnding(() => {}, { reason });
+            E.endHeldEnding();
+        }
+        assert.equal(closed, 0, 'the server can still refuse the conclude (an aim or a mapping debrief ends in the same /conclude), so only a concluded answer closes the ringer');
     } finally {
         delete window.phoneRinger;
     }
@@ -356,4 +348,19 @@ test('A2c row 28 (R1 M1): the credits path closes the phone ringer only in the c
     assert.equal((concluded.match(/closeRinger\(\);\s*\n\s*openCredits\(/g) || []).length, 2, 'both concluded branches (live and offline) close it just before the credits open');
     assert.doesNotMatch(afterConclude.slice(refusedAt), /closeRinger|phoneRinger/, 'a refused conclude leaves the ringer open');
     assert.doesNotMatch(src.slice(src.indexOf('function playEntry'), src.indexOf('const closeRinger')), /phoneRinger/);
+});
+
+test('A2c row 28 (R2 m2): the aim conclusion screen closes the phone ringer, live and on a reload replay', () => {
+    const m = manager(SCENARIO);
+    for (const replay of [false, true]) {
+        let closed = 0;
+        window.phoneRinger = { close: () => { closed++; } };
+        window.BondVisualiser = { open: () => {} };
+        try {
+            m.handleMissionConcluded({ aimId: 'x', conclusionScreen: { type: 'bond_visualiser' } }, { replay });
+            assert.equal(closed, 1, `replay=${replay}: credits are up, nothing rings over them`);
+        } finally {
+            delete window.phoneRinger; delete window.BondVisualiser;
+        }
+    }
 });

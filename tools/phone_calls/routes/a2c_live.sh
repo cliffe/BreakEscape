@@ -120,4 +120,25 @@ forced)
   # quiet time: it should ring again and, being forced, auto-answer and resume
   for i in $(seq 1 25); do sleep 1; echo "quiet $i: $(timeline | cut -c1-150)"; done
   a2b_shot after_quiet; a2b_text | cut -c1-300; a2b_quit ;;
+r28a|r28b|r28c|r28d|r28e|r28f)  # row 28: an ending while a call rings/is held. a: End the mission now confirmed, server agrees; b: no modal (optional settled), server agrees;
+  # c: End the mission now confirmed but the server refuses (ending_ok false); d: held call over a keypad, End now, server agrees
+  ENDOK=true; LEVER=lever_end; [ $1 = r28c ] && ENDOK=false
+  # e: mapping ending (endingCheck mapping, then credits), server agrees; f: mapping ending, server refuses
+  [ $1 = r28e ] && LEVER=lever_end_map; [ $1 = r28f ] && { LEVER=lever_end_map; ENDOK=false; }; REFUSED=false; [ $ENDOK = false ] && REFUSED=true
+  AUTOBRIEF=true a2b_open $1 --set ending_ok=$ENDOK; gate clear_basic
+  ring_state() { a2b_ev "const r=window.phoneRinger; const c=r.current(); return {ring: c?c.npcId+':'+c.state:null, closed:r.isClosed(), queue:r.queueLength(), banner: !!document.querySelector('.incoming-call'), mg:(window.MinigameFramework.currentMinigame||{}).constructor?.name||null, credits: !!document.querySelector('.bond-visualiser, #bond-visualiser, .credits-overlay'), alert: !!document.querySelector('.game-alert, .alert-overlay')};"; }
+  if [ $1 = r28d ]; then hold_over keypad_safe ""; echo "held: $(ring_state)"; a2b_shot held_before_end
+  else a2b_ev "window.eventDispatcher.emit('ring_hold', {}); return true;" >/dev/null; gate wait_ring caller_hold 20; echo "ringing: $(ring_state)"; a2b_shot ringing_before_end; fi
+  [ $1 = r28b ] && a2b_ev "window.objectivesManager.completeTask('hear_voicemail'); return 'settled';"
+  # d: the player stands inside a keypad, out of reach of the lever, so the trigger event is emitted (weaker than the lever, as in ROUTES.md)
+  if [ $1 = r28d ]; then a2b_ev "window.gameState.globalVariables.end_go = true; window.eventDispatcher.emit('global_variable_changed:end_go', {name:'end_go', value:true}); return true;" >/dev/null; else a2b_lever $LEVER; fi; sleep 2.5
+  if [ $1 != r28b ]; then echo "modal: $(a2b_ev "return !!document.getElementById('ending-check-end')")"; a2b_shot modal
+    a2b_ev "document.getElementById('ending-check-end').click(); return 'end now';"; else echo "no modal expected: $(a2b_ev "return !!document.getElementById('ending-check-end')")"; fi
+  for i in 1 2 3 4 5 6; do sleep 1; echo "after end $i: $(ring_state)"; done; a2b_shot after_end
+  echo "globals: $(a2b_ev "return {end_go:window.gameState.globalVariables.end_go, ending_ok:window.gameState.globalVariables.ending_ok};")"
+  # a later ring: closed -> nothing rings; refused -> rings and connects
+  a2b_ev "window.eventDispatcher.emit('ring_again', {}); return true;" >/dev/null; sleep 3
+  echo "later ring: $(ring_state)"; a2b_shot later_ring
+  if $REFUSED; then gate wait_ring caller_basic 5; a2b_answer >/dev/null; sleep 2; echo "answered: $(ring_state) $(timeline | cut -c1-120)"; a2b_shot later_connected; a2b_text | cut -c1-200; fi
+  a2b_quit ;;
 esac
