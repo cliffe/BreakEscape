@@ -67,3 +67,42 @@ Not done. No Mission row exists for `test_unlock_gaps`, and making one means see
 - The combination padlock's 40 positions and its L-R-L order are fixed in the minigame. A three-number `requires` is all the validator allows.
 - After a wrong combination the dials stay where they were and Unlock re-enables on the next turn of dial 3. This is unchanged: `_handleReset` returns early while a submit is in flight.
 - The dungeon graph generator was not taught the two lock types (the graph was not run, as `--no-graph` was used).
+
+## R1 fixes (2026-11-12, branch build/unlock-gaps-r1)
+
+From docs/achitechture/UNLOCK_GAPS_CODE_REVIEW_R1.md, plus the screenshot pass (shots 15 to 29) and the pixel-art UI rule.
+
+Review findings:
+
+- **M1, padlock.** The left/right/left rule is gone; it no longer played well without the auto-stop. Either arrow turns the current dial, so an overshoot is one click back. Turning the next dial sets the current one and also turns the new dial one number, so the first click shows. Holding an arrow spins (after 380 ms, then faster). Reset puts the dials at 00 and then says so. The current dial glows amber with "TURN" on its label; set dials are green with "SET".
+- **M2, cryptex doors.** Chosen: ship the config. `cryptexConfig` is in the bootstrap room fields (game.rb, answer stripped there and again by the controller filter), in `doorProperties` (doors.js), read by unlock-system.js for a door, in the room schema and in the validator's known room fields. test_unlock_gaps has a 4-wheel cryptex door (Archive, north of the Vault). README row updated.
+- **m1.** The `requires` array schema takes integers too, as the server does (`[12, 30, 5]`). README says both forms.
+- **m2.** New validator check `check_npc_held_containers`: an `itemsHeld` item with contents, `locked: true` or a container type and no `id` is a ❌.
+- **m3.** `GamesController#client_inventory` serves a filtered deep copy for `playerInventory` and the three inventory replies; player_state keeps the full copy. No sync size change (a copy per response, nothing stored).
+- **m4.** A wrong combination says what was tried, how many tries are left, and that the dials are back at 00 (set after the reset).
+- **n1** graph labels added. **n2** wheelCount read with `Integer(..., exception: false)`, nonsense is a ❌. **n4** the first click on the next dial plays the click and turns it. **n5** Submit starts enabled. **n3** (no server attempt limit) and **n6** (builder-rule line) left as logged.
+
+Screenshot pass:
+
+1. **Cancel covering footers.** Root cause: `.minigame-controls` in minigames-framework.css was absolutely placed at the bottom of the screen, over any footer a minigame draws (padlock, cryptex, container Take). It is now in the window's normal column under the game area, as examine, the forensic platform and the fingerprint reader had each already done. This changes every minigame that shows Cancel (about 30): their game area is about 70 px shorter. Not yet checked by screenshot on other minigames.
+2. **Padlock feedback.** A help line under the title says how the dials work; the header says which dial to set; wrong tries reset all dials (no green left); success marks every dial set, the header reads "Open" and the button "Open".
+3. **Cryptex feedback.** Down arrow now steps back (B to A), up forward. After a wrong word Submit waits for a turn and the message says "Turn a wheel to try another word". Success turns the wheels green and the subtitle reads "Open".
+4. **The bag.** KO drops land on walkable floor round the body, at least 32 px from it and from each other, clear of shown furniture where possible (`koDropSpots` in npc-hostile.js; closes the backlog "KO item drops land on top of each other" entry once proven live). A bag, briefcase or suitcase password lock gets a brass case-lock look, not the PC wallpaper (`isCaseLockTarget`). Container items have a name label under each slot.
+
+Pixel-art rule: in the padlock, cryptex, container standard view and case lock, Courier New became VT323/GNF, headings use `--ui-heading-font`, 1px borders became 2px, the glows became 2px outlines. Not touched: the container's desktop (monitor bezel) mode, which still has a gradient, radius and soft shadow.
+
+Tests (affected files only, no lock):
+- Rails: 441 runs, 2746 assertions, 0 failures (the build log's affected list plus filtered_scenario, network_implants, lab_physical_pentest_secrets); the inventory-reply files, 158 runs, 0 failures. The two new tests (cryptex door, start inventory) fail with the fixes reverted.
+- JS: 107 files that import a changed module, 1356 tests; 0 failures after the follow-up commit. event-mapping-unlock-door.test.mjs reports a runner "Unable to deserialize cloned data" error under `node --test`, but all 5 of its tests pass when run directly; its emoji console output breaks the runner protocol, not this change.
+- Validator on test_unlock_gaps: 0 ❌.
+
+### Handover (stopped at the call limit)
+
+Done: everything above, commits d043ab9a1 and 1d5a506d2, plus this log.
+
+Open:
+- **Live proof** (not started): swap test_unlock_gaps onto a test_seating game with `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/swap-scenario-game.rb test_seating test_unlock_gaps`, keyless server on a port of 3095 or higher started by hand as start-keyless-server.sh does, session-start.sh --headless, setFPS(20), fixed steps on. Prove: padlock opens through the UI with an overshoot recovered by a back-step; a wrong answer shows its message; the Archive cryptex door shows 4 wheels and opens with KEYS; KO drop visible and clear of the desk.
+- **Screenshots** before/after into scratchpad ux-shots/branch/after_unlock/ with manifest.json, and two or three other minigames with a Cancel row (PIN pad, notes, alarm panel) to check the framework change. Check each against the pixel-art rule.
+- Stop the server afterwards.
+
+Gotchas: the framework Cancel change affects every minigame; if one looks wrong, give it a local rule as examine does rather than reverting. notes.css has a narrow-screen rule that assumed the absolute Cancel.
