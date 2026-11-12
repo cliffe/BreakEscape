@@ -6442,6 +6442,19 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     end
   end
   find_rewards.call(json_data)
+  # Owner claim q78, judged as the server judges it: on the data as prepared at game creation
+  # (habits expanded, so screenHabit is filled; object ids stamped), and only where the screen
+  # does not always lock anyway (that PC's claim is refused already, and says so elsewhere).
+  claim_data = nil
+  owner_never_leaves = lambda do |raw_pc, owner_id|
+    claim_data ||= BreakEscape::NpcHabits.expanded_copy(json_data).first
+    c_pc = ai.sign_in_pcs(claim_data).map { |x| x[:object] }.find { |o| raw_pc['id'] && o['id'] == raw_pc['id'] } || raw_pc
+    c_owner = ai.room_npcs(claim_data).map { |x| x[:npc] }.find { |n| n['id'].to_s == owner_id.to_s }
+    next false unless c_owner
+    next false if ai.screen_always_locks?(c_pc, c_owner)
+
+    BreakEscape::OwnerClaim.never_leaves?(claim_data, c_owner, c_pc)
+  end
   pcs.each do |e|
     pc = e[:object]
     where = "sign-in PC '#{pc['id'] || e[:path]}'"
@@ -6473,7 +6486,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
         if !ai.needs_tracked?(owner[:npc])
           warn.call("#{where} is owned by '#{owner_id}', who has no valid needs or interests entry, so the owner " \
                     'never leaves and no unlocked session is possible there.')
-        elsif BreakEscape::OwnerClaim.never_leaves?(json_data, owner[:npc], pc)
+        elsif owner_never_leaves.call(pc, owner_id)
           # Owner claim q78: the server refuses a claim here too
           warn.call("#{where} is owned by '#{owner_id}', whom nothing sends away from the post in a way that " \
                     'can leave the screen open: no need is met anywhere else they may go, no interest has an item and a ' \

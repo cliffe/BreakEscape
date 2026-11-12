@@ -473,3 +473,16 @@ test('each leave route keeps the never-leaves warning silent', { skip }, () => {
         assertHas(warnings(issues(sc)), NEVER_LEAVES);
     }
 });
+
+test('the never-leaves warning judges the prepared data and skips a screen that always locks', { skip }, () => {
+    // No lock field and no habit: every leave locks, so the claim is refused already
+    let sc = clean();
+    delete obj(sc, 'jake_pc').lockChance;
+    assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), 'a screen that always locks');
+    // An id-less source gets a stamped id at game creation, so the server sees it; judged on the
+    // raw data it would be invisible and the owner would look as if they never left
+    sc = clean();
+    sc.disableAttacks = true;
+    lobby(sc).objects.push({ type: 'notes', name: 'Water', affordance: { satisfies: 'thirst' } });
+    assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), 'object ids stamped first');
+});
