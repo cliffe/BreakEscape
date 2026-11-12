@@ -365,12 +365,18 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
 - **A host whose own service is off (9.2 hand-off).** 9.3a's section 13.2 left to this slice the
   display of a sign-in host whose office-life `affordance.offWhen` is truthy: `host_row` marks it
   `responding: false`, the view shows "not responding" in place of its control, and a remote sign-in
-  and desktop request for it answer 403 `unreachable`. This is the host-level counterpart of a
+  and desktop request for it answer 403 `not_responding`. This is the host-level counterpart of a
   network outage and uses 9.2's field, no new field of this slice's. A switched-off PC is off for
   everything that goes through it: scoped requests under a remote session there are refused, it
   relays no pivot (`player_reach` skips it; `structural_reach` does not, so nothing is pruned and
   an onward session shows in a down block until the power returns), and no share is served
-  through a session there. A session held at it is kept; its row names it (`heldAs`). The client
+  through a session there. An implant on it (`implant_<pc>`, software running on that PC) is off
+  with it: `player_reach` of the implant foothold is empty while its source PC is off, so it serves
+  no network block, remote sign-in, session or share; the view still lists the foothold with
+  `responding: false` and the source's host label (`sourceHost`), and the client says "This link
+  is not responding: <host> is off." with no rows. `structural_reach` ignores the power, so nothing
+  is pruned and the same implant works again when the PC is back on. A session held at it is kept;
+  its row names it (`heldAs`). The client
   syncs the globals before `GET /network`, waiting at most about three seconds; a view fetched
   after that limit carries `stale: true`, shows "Still updating, so this may be out of date." and
   fetches once more when the late sync lands. A remote refusal there answers 403 `not_responding`,
@@ -392,10 +398,15 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
   route down while the session record survives. The server re-judges **from its own session record,
   never from a client-sent foothold**: a scoped request under a session whose `sessions[pc]` carries
   a `foothold` (a remote session, `start_login_session!` wrote it) is allowed only while that PC is
-  in the `player_reach` of that foothold; a local session (no `foothold`) is judged exactly as
-  today. The refusal is 403 `unreachable` for a host folder, the invented-id refusal for a share
-  path. The gate is "the session carries a foothold" (not "a network `downIf` exists"), so a lost
-  pivot is caught as well as an outage; a local session at a walk-up PC never gains a refusal, so no
+  in the `player_reach` of that foothold; a local session (no `foothold`) is judged as today except
+  at a PC whose own service is off, where every session is refused (q72, above). The refusal is 403
+  `unreachable` for a host folder, the invented-id refusal for a share path. An unlock (`POST
+  /unlock`) of an object under a session the player holds, refused because that session's PC is off
+  or its route is down, answers 403 with `reason` `off`, `not_responding` or `unreachable` and the
+  matching message, so a lock screen closes and counts no attempt; an object under no held session,
+  a share path and a wrong code still answer 422 "Invalid attempt", as an invented id does. The gate
+  is "the session carries a foothold" (not "a network `downIf` exists"), so a lost pivot is caught as
+  well as an outage; a local session at a walk-up PC gains a refusal only while that PC is off, so no
   9.3a scenario changes. Because the route is read server-side, **no client change is needed** to
   thread a foothold; the view handles the 403 through its existing `no_session`/`unreachable`
   landings (4.3 of 9.3a).
