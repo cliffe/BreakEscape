@@ -614,3 +614,99 @@ join minigame), not test helpers.
 Sub-slice P complete and merged with sub-slice W. Nothing in progress. The
 `portSecurity`/`wifiAp` combined validator error now has its own test (wifiAp is a real field after
 W), alongside the pre-existing combined case.
+
+## Sub-slice O: Outages (branch `build/9-3b-o`, from `main` f9a661a14)
+
+Built on `main`, which already carries K (links/pivot), W (Wi-Fi), P (port security) and I
+(implants). K had done most of the reach and view work (`network_up?`, `structural_reach`,
+`player_reach`, the up/down view blocks, `prune_unreachable_sessions!`) with `network_up?` stubbed
+to always true and the down-block path dormant. O makes the outage real: `network_up?` reads a
+network's `downIf` global, a resource's own `downIf` is honoured, and the scoped-request route test
+is added. Section 13 answer 4 is taken as recommended: an outage never deletes a session, it shows
+"no route" and the session reopens when the route returns; a pivot is ended only by sign-out.
+`reach_conditions` already carried each route's `downIf` globals (K built the shape), so 9.2's NPC
+side sees the outage with no further change here.
+
+### What it adds
+
+- **Model** (`lib/break_escape/network_model.rb`): `NetworkModel.truthy?` (the globals-relevant
+  falsy set, matching 9.2's `npc-work.js` and the server's `truthy_global?`): false for `false`,
+  `nil`, `0`, `0.0`, `""` and a missing key; true for everything else, the string `"false"` included.
+- **Server** (`app/models/break_escape/network_access.rb`): `network_up?` now reads the network's
+  `downIf` global (player state, falling back to the scenario default) and applies `truthy?`;
+  `resource_down?` does the same for a resource's own `downIf`; `outage_global` is the shared reader;
+  `session_route_up?` is the scoped-request route test, read from the server's own
+  `sessions[pc]['foothold']`, never a client parameter. A down resource is withheld from
+  `network_rows`, refused by `resource_admits_player?` and skipped by `mapped_shares`. A down network
+  drops out of `player_reach` already (K), so its hosts and shares leave the view and are refused.
+- **Hooks** (`game.rb`): `session_admits?` (login_pc and profile scopes) and
+  `scope_admitted_by_session?` now require `session_route_up?`, so a folder GET, an inventory add and
+  an unlock scoped under a remote session over a down route are refused with 9.3a's invented-id /
+  unreachable answers. A local (blank-foothold) session is judged exactly as 9.3a did, so no 9.3a
+  scenario changes. A down host's remote sign-in is already 403 through `host_reachable_through?`
+  (player_reach), so `attempt_login!` needs no new branch.
+- **Validator/schema** (`scripts/validate_network.rb`, `scenario-schema.json`): un-reserves network
+  `downIf`; errors on a non-string network `downIf`; warns on an undeclared network `downIf` global
+  (wording matched to 9.2's resource message) and on an open share with contents on a network that
+  starts down; two information lines (each network and resource `downIf` and its starting state).
+  9.2 keeps the resource `downIf` validator in `validate_access_work.rb`; O does not touch it.
+  Schema: network `downIf` rewritten from the reserved stub to a real definition.
+- **No client change.** Network-level outages flow entirely through `network_up?` -> `player_reach`,
+  which K's view already renders as an absent or greyed "no route" block; the scoped-request route
+  test is read server-side from the session record, so no foothold is threaded from the client.
+
+### Tests (all green)
+
+- Unit (`test/unit/network_model_test.rb`): `truthy?` over each falsy and several truthy values;
+  `reach_conditions` carrying each network's `downIf` on the route (station network's own outage a
+  condition even for a same-network resource).
+- Rails (`test/controllers/break_escape/network_outages_test.rb`, 7 tests): N5 (down by default
+  absent, sign-in refused, tampered client cannot clear the global, down resource withheld), N6
+  (repair fills the block in and the host signs in), N7 (held session kept, shown "no route", desktop
+  refused then reopened with no password), the scoped route test both ways (refused over a down
+  route, a blank-foothold local session never refused), and the resource-side outage. The 112
+  existing network controller tests still pass unchanged.
+- No-exposure (`network_no_exposure_test.rb`): a down-by-default network nobody has reached is absent
+  from every read route, even with a pivot session on the adjacent network; its host is refused like
+  an invented id.
+- Validator fixtures (`test/js/validator-network-model.test.mjs`): a clean network-`downIf`
+  scenario, the non-string error, the undeclared-global warning, the start-down open-share warning
+  (and the up case raising none), and the outage info line; the "needs slice 9.3b" guard now asserts
+  no 9.3b field is reserved any more.
+- Test support (`test/support/network_model_scenario.rb`): `with_outage` (server_net carrying a
+  `downIf`, down or up) and `with_resource_outage` (an open share whose own service switches off).
+
+### Feature scenario and browser proof
+
+`scenarios/test_access_networks`: `server_net` carries `downIf: "servers_offline"` (declared `false`,
+so K's N1-N4 are unchanged); a `server_breaker` object takes the network down and arms N7, a
+`server_power` object restores it, a sign explains the beats. Tasks `n5_outage`/`n6_repair`
+(completed on the breaker/power interact) and `n7_held_route` (an eventMapping on `pc_desktop_opened`
+for `sv_fs02` while armed and repaired). `PLAYTEST.md` gains the O section; the expected validator
+output notes the one new info line and no new warning. Validator on the scenario: 0 error lines.
+`lab_physical_pentest` is untouched and still validates with 0 errors (O is inert without `downIf`).
+
+Browser proof on a keyless server on :3031 (game 1304, headless Chromium, through the real
+`window.ApiClient` transport, 13/13 checks): plant and pivot; the baseline up block; N5 (down by
+default absent from the view, a sign-in on the down host 403, GET /scenario names no server string);
+N6 (repair fills the block in, the host signs in, the desktop opens); N7 (the held session shown as
+a down "no route" block, the desktop refused 403 while down, the foothold survives, the desktop
+reopens with no password on repair). `verify-run --access` on the game confirms both sessions kept
+(`sv_fs02 = ian ... foothold jack_comms_port`) after the full down/up cycle. The leak scanner
+(`access-leak-check.rb` over the captured responses): VERDICT no leaks found.
+
+### Suites (under the shared lock)
+
+- `bin/rails test`: 1758 runs, 25388 assertions, 0 failures, 0 errors, 1 skip (the known skip).
+- `bin/test-js -j 3`: (see the handover for the final count).
+
+### Not done / for later
+
+- Dungeon graph (`scripts/generate_dungeon_graph.rb`): the plan (9.3) draws an outage as a condition
+  on a network node; deferred across K/O/W/P/I as before, low risk, additive.
+- The 9.2 hand-off display of a sign-in host whose own `affordance.offWhen` is truthy (plan 5.2,
+  "not responding") is not built here: it depends on 9.2's office-life `offWhen` field and is not in
+  the N5-N7 beats or the brief's key points. The network-level and resource-level `downIf` outages,
+  which the brief names, are complete. Flagged for a follow-up if the host-level outage display is
+  wanted.
+- Review rounds (AGENTS.md: Opus reviewer rounds) not yet done.
