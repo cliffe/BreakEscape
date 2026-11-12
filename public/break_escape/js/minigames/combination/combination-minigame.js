@@ -396,10 +396,8 @@ export class CombinationMinigame extends MinigameScene {
             // The lock only says the whole combination is wrong, so no dial stays
             // green. The dials go back to 00 and the message says how to retry.
             this.isSubmitting = false;
-            this._handleReset(
-                `✗ ${tried} did not open it. ${remaining} attempt${remaining > 1 ? 's' : ''} left. Dials back at 00: set dial 1 again.`,
-                'wrong'
-            );
+            this._handleReset();
+            this._setStatus(`✗ ${tried} did not open it. ${remaining} attempt${remaining > 1 ? 's' : ''} left. Dials back at 00: set dial 1 again.`, 'wrong');
         }
     }
 }
