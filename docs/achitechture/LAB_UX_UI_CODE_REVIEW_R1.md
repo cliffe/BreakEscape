@@ -78,4 +78,4 @@ Fix: observe the list's first child (or a wrapper round the rendered HTML) as we
 
 ## Rails suite
 
-Queued under the shared lock behind several other suites when this file was first committed; the result is added below in a follow-up commit.
+Run under the shared lock on 2ad7bad74: 1796 runs, 25577 assertions, 0 failures, 0 errors, 1 skip. Green.
