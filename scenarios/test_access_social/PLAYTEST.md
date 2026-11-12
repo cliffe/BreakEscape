@@ -1,4 +1,4 @@
-# test_access_social: scripted playtest (slice 9.2, F1 to F13, L1, L2 and U1 to U3)
+# test_access_social: scripted playtest (slice 9.2, F1 to F17, L1, L2 and U1 to U3)
 
 The scripted runs for access model slice 9.2 sub-slice C (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
 sections 8 and 11.2), plus F9 for user decision q33 (a lockout stops social media at that PC too),
@@ -89,6 +89,13 @@ its policy refuses (cause usb_refused)". It adds one warning, expected: "kim can
 first USB refusal" for `u1_refused`, `u1_emailed` and `u1_posted`. Kim is not `koImmune` because U3 is the
 knock-out, and the U1 tasks are beat markers for a tester, not a mission's route.
 
+F15 and F16 (C3) add a `Work` line, a `Feed` line and a `Reactive feed` line (reactive_first) for
+each of Asha, Kofi, Mei, Tomasz and Ivy, two `Outage` lines (`f15_drive` and `f16_drive` start
+down), one `Complaint 'f15_drive'` line naming all three, and four `Reply` lines: Tomasz replies to
+Ivy's `f16_ivy_vent`, Tomasz may reply again in that thread, Ivy replies to Tomasz's `f16_tom_vent`,
+and Ivy answers in `f16_ivy_vent`'s thread. Each new phone draws an info line ("a KO drop is the only
+way to obtain it"). No new warning.
+
 ## Beats
 
 | Beat | Do | Expect | Server afterwards | `/feed_post` so far |
@@ -173,6 +180,28 @@ a phone (Jake, Lena, Priya, Nadia, Greg) holds its own `phone_friendface` item.
 | F14b | In `jake_room`, ask Jake "Could I borrow your phone for a bit?" | "Received: Jake's phone"; task `f14_jake_phone`. Opening it shows Jake's profile with only his revealed posts. Jake's live record has `phone: false`; his next social media use is at `jake_pc`, which blocks it, so it fails (parked `failed`, frustration up) and he no longer posts from the phone | `inventory` holds `jake_phone` with `phoneOf: "jake"`; `npc_given_items.jake` lists it; `POST /feed_post` for Jake with `object_id` null is `refused` |
 | F14c | Reload (`?skip_resume=1`) | No sound and no badge for posts already shown; the room bootstrap sends Jake with `phone: false` | unchanged |
 
+## Replies between NPCs (C3): F15 to F17
+
+Plan: `docs/achitechture/ACCESS_MODEL_SLICE_9_2_C3_PLAN.md`, section 8. Run after F14 (the player
+holds `player_phone` from F14a). Before F15, open the Friendface terminal once and check that
+`se_osint_state.visited` holds `friendface`, so the toasts show. t = 0 is the room's load. Times
+below are the validator's estimate (first post about 40 s after load, then every 80 s); confirm
+them in a dry run and keep a 5 s tolerance. The NPCs hold their phones: never take one in these
+beats (a taken phone stops that NPC posting from it).
+
+| Beat | Do | Expect | Server afterwards | `/feed_post` this beat |
+|---|---|---|---|---|
+| F15 | Enter `f15_room` (east of Kim's room) and stand back | Each NPC's `down` work failure reaches the server before its first `/feed_post`. Asha vents `f15_asha_vent` (about 0:40), Kofi replies `f15_kofi_re_drive` (about 0:55, task `f15_replied`), Mei replies `f15_mei_re_drive` (about 1:10, task `f15_thread`), each with `{name}` filled as "Asha". Toasts: "Kofi Mensah replied to Asha Rao on Friendface", then the same for Mei. Asha's profile shows the thread under her vent, Kofi then Mei; Kofi's and Mei's profiles each list their reply under "Replied to Asha Rao". `__test.access.feed().threads.f15_asha_vent` is `["f15_kofi_re_drive", "f15_mei_re_drive"]` | `feedRevealed` for asha, kofi, mei: one id each; `to` of each reply `{ post: f15_asha_vent, npc: asha }`; all three feeds `done` | 3 |
+| F16 | Enter `f16_room` and stand back about three minutes | Ivy vents `f16_ivy_vent` (about 0:40); Tomasz replies `f16_tom_re_ivy` (about 1:00, task `f16_replied`, "Ivy" filled); Ivy answers `f16_ivy_answer` (about 2:00, task `f16_answered`, "Tomasz" filled; toast "Ivy Clarke replied to Tomasz Nowak on Friendface"); Tomasz replies again `f16_tom_re_ivy_again` (about 2:20, task `f16_again`, "Ivy" filled; toast "Tomasz Nowak replied to Ivy Clarke on Friendface"). The thread reads Tomasz, Ivy, Tomasz; Tomasz's profile lists both replies with "Replied to Ivy Clarke". The player's phone badge counts each post once | `feedRevealed` ivy 2, tomasz 2; both feeds `done`; nothing more is posted | 4 |
+| F17 | Reload (`?skip_resume=1`) and open the Friendface terminal, then `player_phone` | Both threads in the same order with the same filled names; Kofi's and Tomasz's profiles still show "Replied to". No toast and no badge for posts already shown. The spent posts are in no response | unchanged | 0 |
+
+Expected `verify-run.rb --access` row (seq values depend on the earlier beats, so check the
+relations a < k < m and i < t < j < u):
+
+```
+  feedRevealed    N: ...; asha 1 [f15_asha_vent:a]; ...; ivy 2 [f16_ivy_vent:i f16_ivy_answer:j>f16_ivy_vent]; ...; kofi 1 [f15_kofi_re_drive:k>f15_asha_vent]; ...; mei 1 [f15_mei_re_drive:m>f15_asha_vent]; ...; tomasz 2 [f16_tom_re_ivy:t>f16_ivy_vent f16_tom_re_ivy_again:u>f16_ivy_vent]; ...
+```
+
 ## Earned secrets
 
 | Secret | Where it is first read in the game |
@@ -214,6 +243,14 @@ a phone (Jake, Lena, Priya, Nadia, Greg) holds its own `phone_friendface` item.
   nothing. `window.startFriendfacePhone` called with a made-up phone item shows "You do not have that
   phone." and opens nothing. `POST /inventory` adding a `phone_friendface` the scenario does not
   have is 422; `phoneOf` on a client-built item (a notepad) is dropped before it is stored.
+- F15 to F17 (C3, plan section 6): `POST /feed_post` for Tomasz before Ivy's vent is out serves
+  his own vent or `{ post: null }`, never the reply text. Extra request fields (`reply_to`, `post_id`,
+  `insteadOf`, `complaint`, `name`) are ignored: the answer matches the same call without them.
+  Repeated `/feed_post` for Ivy cannot open her answer early (pace floor, her `when`, and no reply
+  newer than her vent), nor repeated calls for Tomasz his second reply (no answer newer than his
+  first reply). A held phone's `/friendface_phone` answer holds only served posts and served
+  replies. A spent post (`f15_kofi_vent`, `f15_mei_vent`, `f16_tom_vent`, `f16_ivy_re_tom`,
+  `f16_ivy_still_down`, `f16_tom_still_down`, `f15_asha_re_drive`) never appears in any response.
 - L1 (q36, q33 R2 m1): after Sade's lockout at the hot desk, `POST /feed_post` for her with
   `object_id` `l1_hot_desk` is `{ post: null, done: false, refused: true }` and a social media
   `ease` for her there is refused.
