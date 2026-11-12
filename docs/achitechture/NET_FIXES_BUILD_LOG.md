@@ -154,6 +154,79 @@ Live check (keyless server on :3037, game 1501, `test_access_networks`):
   responding (still signed in as Sam Okafor)" and the line was gone.
 - Leak check over the captured responses: no leaks.
 
+## R3 fixes (NET_FIXES_CODE_REVIEW_R3.md)
+
+- M1, an implant on a switched-off PC: `implant_source_off?` is true for an `implant_<pc>` foothold
+  whose source PC's `offWhen` holds. `reach_walk_uncached` then returns no networks (the outage walk
+  only), and `reach_cache_key` carries the source's power. So the foothold serves no network block,
+  no remote sign-in (403 "PC not reachable", no failure counted), no session's desktop or folders
+  and no open share or add from one. `structural_reach` ignores it, so nothing is pruned: a session
+  through the implant is kept, and the same implant works again when the PC is back on. Display
+  (orchestrator decision): `GET /network` still lists the foothold, with `responding: false`,
+  `sourceHost` and no rows; any session held through it shows only in a greyed block. The view
+  says "This link is not responding: <host> is off." with nothing to click.
+- Capture and leak routes through an implant: `GET /capture_secrets` and the bootstrap name no
+  share text or password with the implant's PC off (test). A capture proof of the `planted` kind
+  reads `gainedFootholds`, a record that the device was once planted, so it is unaffected by
+  power by design. `network_no_exposure_test.rb` passes.
+- m1, a PIN pad under an off PC: `Game#unlock_session_refusal` gives a reason when an unlock is
+  refused for its scope under a session the player holds: `off` (keyboard session at an off PC),
+  `not_responding` (remote session there) or `unreachable` (its route is down). `POST /unlock`
+  answers that as 403 with the message. An object under no held session, a share path and a wrong
+  code still answer 422 "Invalid attempt", as an invented id does. The PIN pad treats a 403 with
+  one of these reasons as no attempt: it says "This PC is off." (or the matching line), closes as
+  cancelled, and records nothing in its history.
+- Nit 1: plan 5.2 now says a remote refusal at an off host is 403 `not_responding`, that a local
+  session gains a refusal only while its PC is off, and describes the implant rule and the unlock
+  reason.
+- Nit 2: a desktop, or a share or folder opened from one, closes when its PC's `offWhen` global
+  changes to off: "This PC is off." at the keyboard, back to the network view as not responding
+  for a remote desktop. A share that fails to load while the PC is off says "This PC is off."
+  rather than open empty with "Could not load container contents". A share closed this way does
+  not reopen its desktop.
+- Nit 3: `GET /login_accounts` refuses an off PC whatever `foothold` value the request carries.
+- Nit 4: `pcSessions.claim` passes `serverReason` as `signIn` does; `interactLoginPc` shows
+  "This PC is off." once for a claim refused as `off` and opens no sign-in screen.
+- `bench_pc` in `test_access_networks` now has `spriteVariants` to `aw_pc_off1` while off, and a
+  PIN folder `bench_logs` (3141) on its desktop for the m1 check. Live, the swap back to on showed
+  the type's `pc` texture rather than the map's `pc6`: `registerSpriteVariantListeners` fell back
+  to `scenarioObj.sprite || type`. A Tiled-matched sprite now records `variantBaseKey` and the
+  listener returns to it. The off picture sits on the desk's back edge (its bottom on the desk top
+  line, the map picture's monitor top at the same height), so no position change was needed.
+  PLAYTEST.md N14 describes the picture and a "left open" beat.
+
+Tests (no lock, per the test lock rule):
+
+- New Rails tests: `network_implants_test.rb` 5 (view, remote sign-in, remote session, open share
+  and add, capture and bootstrap), `network_host_service_off_test.rb` 3 (keyboard PIN 403 off,
+  remote PIN 403 not_responding, no session still 422) and a `login_accounts` foothold case.
+  Against the previous server code, 4 of the 5 implant tests and the 2 PIN reason tests fail; the
+  capture and bootstrap test and the "still 422" test are coverage.
+- Rails: every `network_*` controller and model test, `access_model_*`, `npc_workaround*`,
+  `npc_habits_postit_test.rb`, `game_test.rb`, `access_leak_scanner_test.rb` (446 runs, 5410
+  assertions), then every other controller and integration test that names unlock (32 files, 689
+  runs): 0 failures, 0 errors, 0 skips.
+- JS: new tests in `network-view` (1), `pin-cracker-feedback` (2), `container-shares` (3),
+  `access-signin-routing` (1), `pc-sessions` (1), `table-group-variant-listeners` (1). All 62 JS
+  test files importing a changed module: 826 tests, 0 failures.
+
+Live check (keyless server on :3063, headless, `setFPS(20)` with fixed steps on, games 1557 and
+1575, `test_access_networks`; session logs `session-1557.jsonl` and `session-1575.jsonl` and
+screenshots in the session scratchpad `net-r3fix/`):
+
+- `bench_pc` off at the start shows `aw_pc_off1`; the switch turns it to `pc6`, off again to
+  `aw_pc_off1` (`bench-off-on.png`). Game 1557 showed the `pc` fallback, fixed before game 1575.
+- m1: signed in at the keyboard as Sam, opened `bench_logs`' PIN pad, switched the PC off and
+  synced, entered the right PIN: the pad said "This PC is off." and closed, attemptCount 0, no
+  attempt recorded, no "PIN Rejected"; server: `bench_logs` not unlocked, session kept.
+- Nit 2: with the desktop open, switching off closed it with one "This PC is off." toast and the
+  session kept; the same with the Bench-Notes share open, which closed and did not reopen the
+  desktop.
+- M1 has no live check: no scenario puts an implant on a PC with an `offWhen` (the test scenario's
+  BadUSB targets `sam_pc`, which has none). The Rails tests drive the real routes.
+- One `loginFailures` entry on game 1575 (`bench_pc|`, an empty username) came from a harness call
+  of mine that read no sticky note, not from the off period.
+
 ## Open
 
 - Plan 5.2's five-second refetch of an open view, and a sync before a remote sign-in or a desktop
