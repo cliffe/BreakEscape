@@ -487,5 +487,48 @@ module BreakEscape
       capture_note = capture_note[0, MAX_CAPTURE_NOTE_CHARS] if capture_note.length > MAX_CAPTURE_NOTE_CHARS
       { 'targetId' => npc_id, 'kind' => 'credential', 'address' => username, 'note' => capture_note }
     end
+
+    # Landing page ids that carry a non-empty capture secret. The single-secret fallback (the
+    # reader's only_secret pass, and part 2's single-page evidence) counts these.
+    def pages_with_secret(data)
+      landing_pages(data).filter_map do |page|
+        next unless page.is_a?(Hash)
+
+        cap = page['capture']
+        next unless cap.is_a?(Hash) && present_string?(cap['secret']) && present_string?(page['id'])
+
+        page['id']
+      end
+    end
+
+    # Part 3's proofs for a target (sync deltas R2, 6b): for each credential candidate for that
+    # target, the proofs of the account it captures. When a candidate's address is an account
+    # holder's username, that holder's proofs (proofs_for, as the account pass keys them); else
+    # the captureProof of the candidate's owner or payload_owner NPC and the candidate's own
+    # `proof`. Keyed on the captured account, not the mapping owner, so a mapping that captures
+    # another NPC's account applies that account's proofs. Empty means the entry is revealable
+    # once part 2 (if any) holds.
+    def target_capture_proofs(data, target_id)
+      holders = room_npc_list(data).select { |npc| account_holder?(npc) }
+      by_username = holders.to_h { |npc| [normalise_username(npc['creds']['username']), npc] }
+      proofs = []
+      capture_candidates(data, target_id, 'credential').each do |cand|
+        fields = cand[:fields]
+        source = cand[:source] || {}
+        holder = present_string?(fields['address']) ? by_username[normalise_username(fields['address'])] : nil
+        if holder
+          proofs.concat(proofs_for(holder, data))
+        else
+          [source[:owner], source[:payload_owner]].compact.uniq.each do |npc_id|
+            npc = room_npc_list(data).find { |n| n['id'] == npc_id }
+            next unless npc.is_a?(Hash) && npc['captureProof'].is_a?(Array)
+
+            proofs.concat(npc['captureProof'].select { |p| p.is_a?(Hash) })
+          end
+          proofs << source[:proof] if source[:proof].is_a?(Hash)
+        end
+      end
+      proofs.uniq
+    end
   end
 end

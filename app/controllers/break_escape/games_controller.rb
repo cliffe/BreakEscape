@@ -811,7 +811,7 @@ module BreakEscape
         # capture is grow-only and safe to repeat): it intercepts the current client's
         # se_captures global and records params[:captures], taking every field from the
         # scenario, so the client never owns the record.
-        apply_capture_sync_step
+        apply_capture_sync_step(stale: stale)
         # validate: false because the validations here are player and mission
         # presence (twice each: belongs_to is required and validates :player /
         # :mission repeat it), which load both rows on every save, and the
@@ -844,12 +844,17 @@ module BreakEscape
     # never stored as a global). Each is recorded through record_capture!, which takes every
     # stored field from the scenario. Loads the scenario only when there is something to record
     # or a legacy global to migrate (the narrow sync_state load has no scenario_data).
-    def apply_capture_sync_step
+    def apply_capture_sync_step(stale: false)
       incoming = incoming_capture_entries
       @capture_answers = {}
       @capture_refused = {}
       @capture_incoming_any = incoming.any?
-      return if incoming.empty? && !@game.legacy_captures?
+      # 6b: a request that carries globalVariables or mailState can complete an unproven entry's
+      # part 2 evidence, so the step runs (and loads the scenario) to stamp it, even with no new
+      # capture. A stale request's mail is not merged and confirms nothing, so it never stamps.
+      carries_evidence = !stale && (params[:globalVariables].present? || params[:mailState].present?)
+      needs_stamp = carries_evidence && @game.unproven_captures?
+      return if incoming.empty? && !@game.legacy_captures? && !needs_stamp
 
       scenario = @game.stored_scenario_data
       @game.migrate_legacy_captures!(scenario: scenario) if @game.legacy_captures?
@@ -877,6 +882,16 @@ module BreakEscape
 
         @capture_refused[target_id] = 'invalid'
       end
+
+      # 6b: stamp proven: true on any unproven entry whose evidence now holds, counting the
+      # request's own sent messages (the capture and its landed phish mail ride one sync; a mail
+      # section refused over a cap still proves the capture). Non-stale only: a stale request's
+      # mail is not merged. The answers rebuild below from the stamped record.
+      return if stale
+
+      mail_incoming = params[:mailState].respond_to?(:to_unsafe_h) ? params[:mailState].to_unsafe_h : nil
+      extra_sent = @game.incoming_sent_messages(mail_incoming)
+      @game.stamp_proven_captures!(scenario: scenario, extra_sent: extra_sent)
     end
 
     # params[:captures] (an array) plus each value of the old tab's

@@ -162,7 +162,12 @@ module BreakEscape
       return { result: :refused, reason: 'invalid' } if candidates.empty?
 
       chosen = pick_capture_candidate(candidates, input)
-      entry = store_capture_entry(record, chosen[:fields], proven: true)
+      # 6a stored proven: true on every entry (everything was revealable, as today). 6b computes
+      # it: a credential whose phish evidence or capture proof does not yet hold is stored
+      # proven: false and stamped later (stamp_proven_captures!) once the evidence reaches the
+      # server. A foothold, and a credential with no evidence to wait on, is proven at once.
+      proven = capture_evidence_holds?(chosen[:fields], scenario: scenario)
+      entry = store_capture_entry(record, chosen[:fields], proven: proven)
       { result: :recorded, entry: entry }
     end
 
@@ -267,7 +272,149 @@ module BreakEscape
       out
     end
 
+    # --- 6b: reveal/proof gating ------------------------------------------------------------
+    #
+    # Under 6a every entry is stored proven: true, so everything is revealable as soon as it is
+    # recorded (as today). 6b closes that window: a capture recorded on a client claim alone is
+    # no longer served until its evidence holds. The readers (capture_secrets_for_client,
+    # NetworkAccess#account_capture_usernames) serve an entry only when capture_revealable? is
+    # true. None of these methods saves; the caller saves once.
+
+    # Whether a stored entry's evidence holds now. A foothold (and any non-credential) reveals
+    # nothing, so it always holds. For a credential:
+    #   part 2 (phish): when the entry's address is a landing page's capture address, or the
+    #     target is a phish target with exactly one page secret (the single-secret fallback), the
+    #     server must hold that page's record (built, meetsThreshold, victim.submitted all true)
+    #     and a sent message that landed to this target carrying one of the page's link kits,
+    #     either in the stored mailState or in extra_sent (the request's own sent messages);
+    #   part 3 (proofs): when the target's capture proofs are not empty, one of them must hold.
+    # Every other credential holds.
+    def capture_evidence_holds?(entry, scenario:, extra_sent: [])
+      return true unless entry.is_a?(Hash)
+
+      kind = entry['kind'] || 'credential'
+      return true unless kind == 'credential'
+
+      target_id = entry['targetId']
+      page_id = phish_evidence_page_for(entry, scenario)
+      if page_id
+        return false unless phish_page_evidence_holds?(page_id, target_id, scenario, extra_sent)
+      end
+
+      proofs = CaptureModel.target_capture_proofs(scenario, target_id)
+      if proofs.any?
+        return false unless proofs.any? { |pr| capture_proof_holds?(pr) }
+      end
+
+      true
+    end
+
+    # entry['proven'] once stamped, else whether the evidence holds now (an honest capture whose
+    # evidence arrived a moment after it is served the instant the evidence is there).
+    def capture_revealable?(entry, scenario:, extra_sent: [])
+      return false unless entry.is_a?(Hash)
+      return true if entry['proven'] == true
+
+      capture_evidence_holds?(entry, scenario: scenario, extra_sent: extra_sent)
+    end
+
+    # Stamp proven: true on each stored entry whose evidence now holds, counting extra_sent (the
+    # request's own sent messages). The proof records (plantedItems, droppedItems, signedInPcs,
+    # gainedFootholds) only grow, so a proof that held keeps holding; the stamp matters for the
+    # page evidence, which the client can change. No save; the caller saves. Returns whether
+    # anything changed.
+    def stamp_proven_captures!(scenario:, extra_sent: [])
+      record = player_state['seCaptures']
+      return false unless record.is_a?(Hash)
+
+      changed = false
+      record.each_value do |entry|
+        next unless entry.is_a?(Hash)
+        next if entry['proven'] == true
+        next unless capture_evidence_holds?(entry, scenario: scenario, extra_sent: extra_sent)
+
+        entry['proven'] = true
+        changed = true
+      end
+      changed
+    end
+
+    # Cheap-first predicate for the bootstrap lock (SYNC_DELTAS_PLAN 2.4): true only when some
+    # unproven entry's evidence holds now. Returns false at once when nothing is unproven.
+    def stampable_captures?(scenario: scenario_data)
+      return false unless unproven_captures?
+
+      record = player_state['seCaptures']
+      record.each_value.any? do |entry|
+        entry.is_a?(Hash) && entry['proven'] != true &&
+          capture_evidence_holds?(entry, scenario: scenario)
+      end
+    end
+
+    # Cheap: whether any stored entry is not yet proven (player_state alone).
+    def unproven_captures?
+      record = player_state['seCaptures']
+      record.is_a?(Hash) && record.each_value.any? { |entry| entry.is_a?(Hash) && entry['proven'] != true }
+    end
+
     private
+
+    # The landing page id whose part 2 evidence a credential entry needs, or nil. The entry's
+    # address matching a page's capture address names that page; otherwise a phish target with
+    # exactly one page secret takes that single secret's page (the reader's single-secret
+    # fallback).
+    def phish_evidence_page_for(entry, scenario)
+      address = entry['address']
+      if CaptureModel.present_string?(address)
+        kits = CaptureModel.page_evidence_kits(scenario)
+        match = kits.find { |_pid, info| info[:address] == address }
+        return match[0] if match
+      end
+
+      phish = CaptureModel.phish_target_ids(scenario).to_set
+      return nil unless phish.include?(entry['targetId'].to_s)
+
+      secret_pages = CaptureModel.pages_with_secret(scenario)
+      secret_pages.size == 1 ? secret_pages.first : nil
+    end
+
+    # Whether the server holds the page record and the landed sent mail part 2 needs.
+    def phish_page_evidence_holds?(page_id, target_id, scenario, extra_sent)
+      pages = player_state.dig('globalVariables', 'se_landing_pages')
+      rec = pages.is_a?(Hash) ? pages[page_id] : nil
+      return false unless rec.is_a?(Hash)
+      return false unless rec['built'] == true && rec['meetsThreshold'] == true
+
+      victim = rec['victim']
+      return false unless victim.is_a?(Hash) && victim['submitted'] == true
+
+      info = CaptureModel.page_evidence_kits(scenario)[page_id]
+      kit_ids = info ? Array(info[:kits]) : []
+      return false if kit_ids.empty?
+
+      matcher = lambda do |msg|
+        msg.is_a?(Hash) && msg['folder'] == 'sent' && msg['landed'] == true &&
+          msg['targetId'].to_s == target_id.to_s &&
+          msg['link'].is_a?(Hash) && kit_ids.include?(msg['link']['kitId'])
+      end
+      return true if each_stored_sent_message.any?(&matcher)
+
+      Array(extra_sent).any?(&matcher)
+    end
+
+    # Every stored sent (or any) mail message, as an Enumerator of hashes.
+    def each_stored_sent_message
+      mail = player_state['mailState']
+      boxes = mail.is_a?(Hash) ? mail['mailboxes'] : nil
+      return [].each unless boxes.is_a?(Hash)
+
+      Enumerator.new do |y|
+        boxes.each_value do |box|
+          msgs = box.is_a?(Hash) ? box['messages'] : nil
+          Array(msgs).each { |m| y << m }
+        end
+      end
+    end
 
     def capture_now_ms
       (Time.now.to_f * 1000).round

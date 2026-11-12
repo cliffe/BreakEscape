@@ -782,7 +782,31 @@ module BreakEscape
     # writers (run_bootstrap_writers!) both read it here, so the two paths cannot drift to
     # different scenario sources.
     def stored_scenario_data
+      # On a full load (GET /scenario, GET /capture_secrets) the scenario_data column is already
+      # in memory, so read it and save the extra query (review N1 follow-up). The sync_state row
+      # lock loads a narrow column set without it (SYNC_STATE_COLUMNS), so there the attribute is
+      # not present and it is fetched. with_lock reloads every column, so the bootstrap path also
+      # reads the freshly locked value: one source either way.
+      return read_attribute(:scenario_data) if has_attribute?('scenario_data')
+
       self.class.where(id: id).pick(:scenario_data)
+    end
+
+    # The request's own sent messages (sync deltas R2, 6b): each mailboxes.<box>.<msgId> update
+    # mail_state_updates keeps, sanitised, with folder 'sent', landed true, a targetId and a
+    # link.kitId. The capture stamp takes these as extra part 2 evidence, so a capture whose sent
+    # mail rides the same request, or whose mail section was refused over a cap, is still proven.
+    # Reads the parsed body; stores nothing.
+    def incoming_sent_messages(mail_incoming)
+      return [] unless mail_incoming.is_a?(Hash)
+
+      mail_state_updates(mail_incoming).filter_map do |path, value|
+        next unless path.is_a?(Array) && path[0] == 'mailboxes' && value.is_a?(Hash)
+        next unless value['folder'] == 'sent' && value['landed'] == true && value['targetId'].is_a?(String)
+
+        link = value['link']
+        value if link.is_a?(Hash) && link['kitId'].is_a?(String)
+      end
     end
 
     private
@@ -792,7 +816,7 @@ module BreakEscape
     # and 6a OR in cards_need_repair?, legacy_captures?, unrecorded_shared_logins?
     # and stampable_captures?; until then no bootstrap write is ever needed.
     def bootstrap_state_needs_write?
-      cards_need_repair? || legacy_captures? || unrecorded_shared_logins?
+      cards_need_repair? || legacy_captures? || unrecorded_shared_logins? || stampable_captures?
     end
 
     # Run the bootstrap writers inside the lock (none of which saves) and return
@@ -806,6 +830,9 @@ module BreakEscape
       changed = repair_saved_cards!
       changed = migrate_legacy_captures!(scenario: scenario) || changed
       changed = record_shared_logins!(scenario: scenario) || changed
+      # 6b: an unproven entry whose page evidence now holds is stamped proven: true on the
+      # bootstrap, so a secret earned across a reload is served without a fresh sync.
+      changed = stamp_proven_captures!(scenario: scenario) || changed
       changed
     end
 
@@ -1315,7 +1342,15 @@ module BreakEscape
       return record if record.is_a?(Hash)
 
       legacy = player_state.dig('globalVariables', 'se_captures')
-      legacy.is_a?(Hash) ? legacy : {}
+      return {} unless legacy.is_a?(Hash)
+
+      # A legacy globalVariables.se_captures is a pre-deploy save, earned under the old rules, so
+      # every kept entry is grandfathered revealable (the bootstrap migration stamps proven: true
+      # the same way). Marked in a copy so capture_revealable? serves it; nothing is written, and
+      # the migration replaces this fallback on the first bootstrap.
+      legacy.each_with_object({}) do |(target_id, entry), out|
+        out[target_id] = entry.is_a?(Hash) ? entry.merge('proven' => true) : entry
+      end
     end
 
     def capture_secrets_for_client
@@ -1359,6 +1394,9 @@ module BreakEscape
         next unless entry.is_a?(Hash)
         next if entry['kind'] && entry['kind'] != 'credential'
         next unless declared.include?(target_id.to_s)
+        # 6b: a capture recorded on a client claim alone is not served until its evidence holds.
+        # Entries recorded under 6a are stamped proven: true and stay revealable.
+        next unless capture_revealable?(entry, scenario: scenario_data)
 
         address = entry['address']
         secret = by_address[address]

@@ -1285,6 +1285,9 @@ module BreakEscape
         next unless entry.is_a?(Hash)
         next if entry['kind'] && entry['kind'] != 'credential'
         next unless declared.include?(target_id.to_s)
+        # 6b: skip an entry whose evidence does not yet hold (capture_revealable?), as
+        # capture_secrets_for_client does, so the two readers agree on what was earned.
+        next unless capture_revealable?(entry, scenario: scenario_data)
 
         address = entry['address']
         next unless address.is_a?(String) && !address.strip.empty?
