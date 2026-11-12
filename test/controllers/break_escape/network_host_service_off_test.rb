@@ -300,5 +300,65 @@ module BreakEscape
       body = container('sv_fs02', foothold: OFFICE)
       assert_response :success, body.inspect
     end
+
+    # ---- review R3 m1: a PIN folder under a session at an off PC ----
+
+    VAULT_PIN = '1357'.freeze
+
+    # lena_pc carries a PIN-locked folder; Lena's office is open so her PC can be walked up to
+    def with_lena_vault(lena_off: false)
+      data = scenario_with_service_off(lena_off: lena_off)
+      lena = data['rooms'].values.flat_map { |room| room['objects'] || [] }.find { |o| o['id'] == 'lena_pc' }
+      lena['contents'] << { 'id' => 'lena_vault', 'type' => 'safe', 'name' => 'Vault', 'locked' => true, 'lockType' => 'pin',
+                            'requires' => VAULT_PIN,
+                            'contents' => [{ 'id' => 'vault_note', 'type' => 'text_file', 'name' => 'note.txt', 'takeable' => true,
+                                             'text' => 'vault' }] }
+      build_network_game({ 'unlockedRooms' => OPEN_ROOMS + ['finance_office'] }, data)
+      take_drop_box
+      plant('comms_port')
+      assert_response :success, response.body
+    end
+
+    test 'a PIN under a keyboard session at an off PC answers 403 off, right or wrong, and works again' do
+      with_lena_vault
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD)
+      assert_response :success, response.body
+      unlock_object('lena_vault', 'pin', '0000')
+      assert_response :unprocessable_entity, 'on: a wrong PIN is a wrong PIN'
+
+      set_global(LENA_OFF, true)
+      [VAULT_PIN, '0000'].each do |attempt|
+        body = unlock_object('lena_vault', 'pin', attempt)
+        assert_response :forbidden
+        assert_equal 'off', body['reason']
+        assert_equal 'This PC is off.', body['message']
+        refute body.to_json.include?(VAULT_PIN), 'the PIN is never told'
+      end
+      refute_includes Array(state['unlockedObjects']), 'lena_vault'
+
+      set_global(LENA_OFF, false)
+      body = unlock_object('lena_vault', 'pin', VAULT_PIN)
+      assert_response :success, body.inspect
+    end
+
+    test 'a PIN under a remote session at an off host answers 403 not_responding' do
+      with_lena_vault
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      assert_response :success, response.body
+      set_global(LENA_OFF, true)
+      body = unlock_object('lena_vault', 'pin', VAULT_PIN)
+      assert_response :forbidden
+      assert_equal 'not_responding', body['reason']
+    end
+
+    test 'a PIN under a PC the player holds no session on still answers as a wrong code' do
+      with_lena_vault(lena_off: true)
+      body = unlock_object('lena_vault', 'pin', VAULT_PIN)
+      assert_response :unprocessable_entity
+      assert_equal 'Invalid attempt', body['message']
+      refute body.key?('reason'), 'nothing says the PC is off to a player who never saw the folder'
+      unlock_object('no_such_vault', 'pin', VAULT_PIN)
+      assert_equal 'Invalid attempt', response.parsed_body['message']
+    end
   end
 end

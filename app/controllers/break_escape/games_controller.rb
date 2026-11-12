@@ -929,6 +929,14 @@ module BreakEscape
       is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
 
       unless is_valid
+        # Under a session the player holds at a PC that is off, or over a route that is down
+        # (review R3 m1): say why, so the pad counts no attempt. Nil where that would tell the
+        # player something new; those answer as any wrong code.
+        refusal = @game.unlock_session_refusal(target_type, target_id)
+        if refusal
+          return render json: { success: false, reason: refusal[:reason], message: refusal[:message] }, status: :forbidden
+        end
+
         body = { success: false, message: 'Invalid attempt' }
         # A carried PIN cracker reads the keypad's response: send its pips,
         # worked out against the real PIN, which the client never holds.
