@@ -1784,3 +1784,99 @@ since `new-game.rb` needs it; the full seed was not run. Servers on 3020 and 302
 ### Suites (after the merge of `main`, at `a6631b5be`)
 
 Rails 1633 runs, 23769 assertions, 0 failures, 0 errors, 1 skip. JS 495 of 495 files.
+
+## C review round 1 outcomes (2026-11-12)
+
+Reviews: `ACCESS_MODEL_SLICE_9_2_C_CODE_REVIEW_R1_SERVER.md` (2 majors, 4 minors, 6 nits) and
+`..._R1_CLIENT.md` (2 majors, 5 minors, 7 nits). Each must-fix item has a test that fails with the
+fix reverted (checked by putting the old file back and rerunning).
+
+### Server review
+
+- **M1** (`8c7a046a9`): the leak scanner counts `/feed_post` answers in log order. A `feedPosts`
+  item is allowed only when its post id is among the NPC's first n authored posts revealed so far
+  (looked up in the catalogue, never by the response's `index`), and its fact only when it is that
+  post's fact. A `/feed_post` answer serves the next authored post whatever it says, so an answer
+  out of order is reported. The game's saved `feedRevealed` is used only for reveals the log does
+  not hold (a resumed game), and `access-leak-check.rb` prints a note naming those NPCs. Tests: the
+  review's case (one answer, then `GET /scenario` with posts 1 and 2, a final n of 3), a mislabelled
+  index, an out-of-order answer, the resumed fallback. n3 (duplicate texts share one entry) and n4
+  (a bootstrap whose `social.intelFacts` is not an object) in the same commit.
+- **M2** (`1493e7f9a`): the no-password test gains Fay, a lobby NPC with work needs, a frustration
+  block, a workaround and a feed with two feed facts. Fifteen routes (scenario, scenario_map, both
+  rooms, ink, objectives, capture_secrets, login_accounts, container, door unlock, update_room,
+  inventory, login, npc_frustration, npc_workaround) are checked before and after one `/feed_post`:
+  no post or feed fact text, no object keyed by a feed fact id with text, no `feed`, `workNeeds` or
+  `frustration` on her record. Fails with `feed` out of `WITHHELD_WORK_NPC_KEYS`, and with
+  `withhold_feed_facts!` off.
+- **m1** (`c65c52da7`): `clues.rb` and the OSINT lint take only posts the server serves
+  (`AccessWork.feeds?` and `feed_posts`). A feed with no `social_media` need is now an error when a
+  post names a fact (the fact can never be granted), a warning otherwise.
+- **m2** (`ce13a102b`, plan 8.3): the client asks again once after a `tooSoon` answer's
+  `retryAfter` (capped at 300 s, plus 1 s), so a use inside the floor still yields its post; a use
+  while that retry waits asks nothing. The server is unchanged.
+- **m3** (`9786c837d`): the comment is corrected and a feed alone no longer writes an
+  `npcFrustration` entry. The optional first-post floor was not adopted.
+- **m4**: not adopted (it needs the server to judge whether an honest source exists); named in
+  plan 9.3's residual list with the first-post-at-once case.
+- **n1, n2, n5** (`985968160`): `feeds?` needs a numeric `decayPerMin` above 0; `urgentAt` is
+  clamped to 1..99 and `socialUse.restores` to 0..100 as the client does. The schedule rounds
+  seconds before splitting minutes. Tests for a save with no `feedRevealed` key and for
+  `feed_post` in the lock list. **n6** checked at the merge: L's lockout stays work only
+  (`access_work.rb` `need == 'work'`; the needs core's lockout line is work only; the adapter's
+  station keeps `lockedOut: false`).
+
+### Client review
+
+- **M1** (`ce13a102b`): `cleanFact` copies the entry as plain JSON data (strings, finite numbers,
+  booleans, null, arrays, plain objects, six levels; `__proto__`, `constructor`, `prototype` keys
+  skipped), so `provides` and `stale` survive. The wrong-shape test is replaced; a new test merges a
+  feed fact with `provides` and reads it through `heldProvides`, `buildBoardModel` (Jake identified
+  by the name in `provides` alone) and `blankSlot`. A network failure (no HTTP status) is asked
+  again once after 5 s (nit).
+- **M2** (`29ac1e0c6`): the engine adapter lists the `needsHome` desk of an NPC with a
+  `social_media` need even with no affordance (it gets an empty one, in `listObjects` and
+  `getObject`). Tests through the real `createEngineWorld` over a stub window, and a needs run in
+  which an NPC with `"phone": false` uses that PC (`npc_used:jake_pc`, `met: true`). The validator
+  now warns when an NPC with `"phone": false` has only its own PC, that PC blocks social media,
+  and no `borrow_session` workaround: the need is never met.
+- **m1** (`db8d9fc80`): `needsStop` returns null for a `self` job away from the post.
+- **m2**: a test sets a barrier and a workaround icon, starts a phone use and finds both cleared;
+  it fails with the `self` line moved above the two resets.
+- **m3** (`29ac1e0c6`): an adapter test for `socialBlocked` from the policy and the verdict's
+  `social_blocked`; it fails with the `describe` line broken.
+- **m4** (`afca40b3f`): `f5_signed_in` is an `unlock_object` task on `hot_desk` (only Jake's
+  account works there), so it ticks with Jake's room unloaded; the mapping and the PLAYTEST note
+  are gone. Build log finding 2 stays an engine item.
+- **m5**: kept as it is; a sentence in `NPC_NEEDS_SYSTEM.md` 5.10 and a test.
+- **Nits**: README says the guard challenges again when the phone goes away; the osint browser
+  keeps its scroll on a post (`e02251431`); `mergeFact` skips a prototype id; the two
+  `escapeNoteText` copies point at each other (`658f92759`). Not changed: the `_noteLeash` log
+  noise for a phone NPC (log only, and changing the candidate order risks the 8.1 order), and
+  `_wakeStationFor` using the station's `useSeconds` (harmless, in A and H code).
+
+### Live check (game 1259, port 3020, headless)
+
+Game 1259's `scenario_data` gave `jake_pet_name` a `provides` (a name and a pet) and Lena
+`"phone": false` with no `affordance` on `lena_pc`. Jake posted from his phone; the merged entry
+in `intelFacts` kept both `provides` items; clicking his post in the Friendface terminal granted
+the fact, and the page's own `heldProvides` and `buildBoardModel` read it (Jake identified by the
+name alone). Lena used her PC for social media (`npc_used:lena_pc`, `met: true`), posted, and F3
+ticked. After a reload by `location.href` with `?skip_resume=1` the posts and `provides` were
+back with no request. `access-leak-check.rb` after the run and after the reload: no leaks
+(5 feed posts, 2 feed facts checked). Server on 3020 stopped by PID.
+
+### Merge
+
+`main` merged at `d418c4cc8` (it holds L, `ea19141bb`). Conflicts kept both sides:
+`feedPosts` and `lockoutPcs` in `GET /scenario`; the adapter's station takes L's
+`lockedOut: false` and C's `socialBlocked`; the scanner counts, rules and rule texts of both; the
+bridge and test-bridge docs; plan 9.3's residual list; this log (L's sections, then C's).
+
+### Leftover games
+
+1259 (live check, with the edits above in its `scenario_data`).
+
+### Suites after C review round 1 (after the merge of `main`, at `d418c4cc8`)
+
+Rails 1670 runs, 24768 assertions, 0 failures, 0 errors, 1 skip. JS 497 of 497 files.
