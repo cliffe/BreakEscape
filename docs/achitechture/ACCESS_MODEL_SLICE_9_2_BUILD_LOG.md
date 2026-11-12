@@ -2198,3 +2198,11 @@ scanner fixture, validator tests, both suites green).
 - `8101376f8` reactive beats F10 to F13 and PLAYTEST
 - `0efbace73` F10 second ordered post (reactive_first pre-emption unambiguous)
 - `940bdfd8e` rename F10/F12 resource names out of player text (leak scanner clean)
+- `a2abc2466` build log session 3
+- `1563394df` merge of `1c54bce6d` (minigame title/toast escaping) into `build/9-2-c2` (clean)
+- `92810748f` handover session 3
+
+### Suites (session 3, under the lock, after the main merge)
+
+- `bin/test-js -j 3`: 507 files passed, 0 failed (main added six JS files).
+- `bin/rails test`: 1777 runs, 25413 assertions, 0 failures, 0 errors, 1 skip.
