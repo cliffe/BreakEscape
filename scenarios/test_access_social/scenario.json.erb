@@ -54,7 +54,10 @@
     "se_osint_state": {},
     "se_intel_jake_office": false,
     "se_intel_jake_pet_name": false,
-    "se_intel_jake_wedding_year": false
+    "se_intel_jake_wedding_year": false,
+    "f10_share_down": false,
+    "f12_crm_down": false,
+    "f12_pc_unplugged": false
   },
   "objectives": [
     {
@@ -128,6 +131,36 @@
         {
           "taskId": "f9_posted",
           "title": "F9: Priya posts from her phone",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f10_posted",
+          "title": "F10: Nadia's outage vent jumps the queue (reactive_first)",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f11_posted",
+          "title": "F11: Theo's borrow post slots in at its place (mixed)",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f12_posted",
+          "title": "F12: Greg's vent comes after his fact post (facts_first)",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f13_blocked",
+          "title": "F13: Ruth vents that the site is blocked",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f13_recovered",
+          "title": "F13: Ruth posts once the kiosk gets her back online",
           "type": "custom",
           "status": "active"
         }
@@ -205,6 +238,50 @@
                 {
                   "id": "priya_authored",
                   "text": "Third week in the new team and I still get lost on the way to the kitchen."
+                }
+              ]
+            },
+            {
+              "person": "nadia",
+              "name": "Nadia Okonkwo",
+              "bio": "Accounts. Keeps a plant alive.",
+              "posts": [
+                {
+                  "id": "nadia_authored",
+                  "text": "Month end again. Send strong tea and quiet afternoons."
+                }
+              ]
+            },
+            {
+              "person": "theo",
+              "name": "Theo Marsh",
+              "bio": "Support desk. Headphones on.",
+              "posts": [
+                {
+                  "id": "theo_authored",
+                  "text": "Tickets cleared before lunch. A rare and beautiful thing."
+                }
+              ]
+            },
+            {
+              "person": "greg",
+              "name": "Greg Fenwick",
+              "bio": "Sales. Lives in the CRM.",
+              "posts": [
+                {
+                  "id": "greg_authored",
+                  "text": "Quarter is nearly done. Nearly. Ask me again on Friday."
+                }
+              ]
+            },
+            {
+              "person": "ruth",
+              "name": "Ruth Adeyemi",
+              "bio": "Operations. Runs a tight ship.",
+              "posts": [
+                {
+                  "id": "ruth_authored",
+                  "text": "Three meetings before the kettle even boiled this morning."
                 }
               ]
             }
@@ -742,7 +819,8 @@
       "type": "room_office",
       "door_sign": "F9 Priya",
       "connections": {
-        "west": "lena_room"
+        "west": "lena_room",
+        "east": "f10_room"
       },
       "objects": [
         {
@@ -863,6 +941,652 @@
           ]
         }
       ]
+    },
+    "f10_room": {
+      "type": "room_office",
+      "door_sign": "F10 Nadia",
+      "connections": {
+        "west": "priya_room",
+        "east": "f11_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f10",
+          "name": "Sign: F10 A vent that jumps the queue",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F10. Nadia's feed is set to reactive first. Throw the breaker: her work fails because the accounts share is down. On her next social media use the outage vent is served ahead of her ordered post. Reset the breaker when you are done.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "nadia_pc",
+          "name": "Nadia's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Nadia's PC, under the lax policy: social media is allowed and her work runs here."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "f10_breaker",
+          "name": "Accounts share breaker",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.f10_share_down",
+              "text": "Switch the accounts share off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f10_share_down",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.f10_share_down",
+              "text": "Switch the accounts share back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f10_share_down",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "The breaker for the accounts share. Click it to switch it off, and again to switch it back on."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "nadia",
+          "displayName": "Nadia Okonkwo",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "nadia_pc",
+          "needsDeferMin": 0.5,
+          "workNeeds": [
+            "f10_share"
+          ],
+          "frustration": {
+            "perFail": 34
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "nadia",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f10_ordered",
+                "text": "The office plant has flowered. Small wins on a grey Monday.",
+                "date": "Monday"
+              },
+              {
+                "id": "f10_vent",
+                "text": "Accounts share is down again and my whole morning has gone.",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:nadia",
+              "onceOnly": true,
+              "completeTask": "f10_posted",
+              "condition": "data.postId === 'f10_vent'"
+            }
+          ]
+        }
+      ]
+    },
+    "f11_room": {
+      "type": "room_office",
+      "door_sign": "F11 Theo",
+      "connections": {
+        "west": "f10_room",
+        "east": "f12_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f11",
+          "name": "Sign: F11 A post slotted in its place",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F11. Theo's feed is mixed order. His PC blocks social media and he has no phone, so he borrows the spare kiosk here. His ordered post comes out first; the borrow post slots in at its authored place, never ahead of the ordered one.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "theo_pc",
+          "name": "Theo's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Theo's PC, under a policy that blocks social media."
+        },
+        {
+          "type": "pc3",
+          "id": "f11_kiosk",
+          "name": "Spare kiosk",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "access": {
+            "people": [
+              "theo"
+            ]
+          },
+          "affordance": {
+            "satisfies": [
+              "social_media"
+            ],
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A spare kiosk under the lax policy: social media is allowed."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "theo",
+          "displayName": "Theo Marsh",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "theo_pc",
+          "needsDeferMin": 0.5,
+          "phone": false,
+          "creds": {
+            "username": "tmarsh",
+            "password": "Willow-Theo-52"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "f11_kiosk"
+            }
+          ],
+          "feed": {
+            "site": "friendface",
+            "person": "theo",
+            "order": "mixed",
+            "posts": [
+              {
+                "id": "f11_first",
+                "text": "New headphones at last. Quiet bliss at my desk.",
+                "date": "Monday"
+              },
+              {
+                "id": "f11_borrowed",
+                "text": "Had to borrow the spare kiosk just to get a word in.",
+                "when": {
+                  "workaround": "borrow_session"
+                }
+              },
+              {
+                "id": "f11_last",
+                "text": "Weekend plan: a long walk and absolutely no screens.",
+                "date": "Tuesday"
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:theo",
+              "onceOnly": true,
+              "completeTask": "f11_posted",
+              "condition": "data.postId === 'f11_borrowed'"
+            }
+          ]
+        }
+      ]
+    },
+    "f12_room": {
+      "type": "room_office",
+      "door_sign": "F12 Greg",
+      "connections": {
+        "west": "f11_room",
+        "east": "f13_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f12",
+          "name": "Sign: F12 Facts first, then the vent",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F12. Greg's feed is facts first. His ordered post comes out first. Throw the breaker so the sales system is down: his work fails, and on his next social media use the vent follows the ordered post. The socket by his desk can cut his PC off instead.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "greg_pc",
+          "name": "Greg's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10,
+            "offWhen": "f12_pc_unplugged"
+          },
+          "observations": "Greg's PC, under the lax policy. The socket can cut its power."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "f12_breaker",
+          "name": "Sales system breaker",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.f12_crm_down",
+              "text": "Switch the sales system off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f12_crm_down",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.f12_crm_down",
+              "text": "Switch the sales system back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f12_crm_down",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "The breaker for the sales system. Click it to switch it off, and again to switch it back on."
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "f12_socket",
+          "name": "Wall socket",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.f12_pc_unplugged",
+              "text": "Switch off the socket under Greg's desk?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f12_pc_unplugged",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.f12_pc_unplugged",
+              "text": "Switch the socket back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "f12_pc_unplugged",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "Wall socket. Click it to switch it off, and again to switch it back on."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "greg",
+          "displayName": "Greg Fenwick",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "greg_pc",
+          "needsDeferMin": 0.5,
+          "workNeeds": [
+            "f12_crm"
+          ],
+          "frustration": {
+            "perFail": 34
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "greg",
+            "order": "facts_first",
+            "posts": [
+              {
+                "id": "f12_ordered",
+                "text": "Coffee rota sorted for the whole week. Quiet teamwork.",
+                "date": "Monday"
+              },
+              {
+                "id": "f12_vent",
+                "text": "Cannot reach the sales system, nothing at all is loading.",
+                "when": {
+                  "cause": [
+                    "down",
+                    "off"
+                  ],
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:greg",
+              "onceOnly": true,
+              "completeTask": "f12_posted",
+              "condition": "data.postId === 'f12_vent'"
+            }
+          ]
+        }
+      ]
+    },
+    "f13_room": {
+      "type": "room_office",
+      "door_sign": "F13 Ruth",
+      "connections": {
+        "west": "f12_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f13",
+          "name": "Sign: F13 Blocked, then back online",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F13. Ruth's PC blocks social media and she has no phone. She vents that the site is blocked, then borrows the laxer kiosk here: once her use is met she posts that she is back online. Both posts are reactive; the vent reads the blocked policy, the second reads the recovery.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "ruth_pc",
+          "name": "Ruth's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Ruth's PC, under a policy that blocks social media."
+        },
+        {
+          "type": "pc3",
+          "id": "f13_kiosk",
+          "name": "Laxer kiosk",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "access": {
+            "people": [
+              "ruth"
+            ]
+          },
+          "affordance": {
+            "satisfies": [
+              "social_media"
+            ],
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A kiosk under the lax policy: social media is allowed."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ruth",
+          "displayName": "Ruth Adeyemi",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "ruth_pc",
+          "needsDeferMin": 0.5,
+          "phone": false,
+          "creds": {
+            "username": "radeyemi",
+            "password": "Heron-Ruth-38"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "f13_kiosk"
+            }
+          ],
+          "feed": {
+            "site": "friendface",
+            "person": "ruth",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f13_blocked",
+                "text": "Friendface is blocked at my desk and it is driving me up the wall.",
+                "when": {
+                  "cause": "social_blocked"
+                }
+              },
+              {
+                "id": "f13_fixed",
+                "text": "Back online from the kiosk and finally caught up with everyone.",
+                "when": {
+                  "needMet": "social_media"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:ruth",
+              "onceOnly": true,
+              "completeTask": "f13_blocked",
+              "condition": "data.postId === 'f13_blocked'"
+            },
+            {
+              "eventPattern": "npc_posted:ruth",
+              "onceOnly": true,
+              "completeTask": "f13_recovered",
+              "condition": "data.postId === 'f13_fixed'"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "resources": {
+    "f10_share": {
+      "name": "Accounts share",
+      "kind": "file_share",
+      "downIf": "f10_share_down"
+    },
+    "f12_crm": {
+      "name": "Sales system",
+      "kind": "crm",
+      "downIf": "f12_crm_down"
     }
   },
   "accountProfiles": {

@@ -1,7 +1,11 @@
-# test_access_social: scripted playtest (slice 9.2, F1 to F9)
+# test_access_social: scripted playtest (slice 9.2, F1 to F13)
 
 The scripted runs for access model slice 9.2 sub-slice C (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
-sections 8 and 11.2), plus F9 for user decision q33 (a lockout stops social media at that PC too).
+sections 8 and 11.2), plus F9 for user decision q33 (a lockout stops social media at that PC too),
+and F10 to F13 for sub-slice C2 reactive feed posts
+(`docs/achitechture/ACCESS_MODEL_SLICE_9_2_C2_PLAN.md`, section 10). F10 to F13 are the plan's four
+reactive beats renumbered up by one (the plan calls them F9 to F12; q33's F9 already holds that
+number).
 One room per beat, each with a sign; F5 and F6 are in the lobby. The scenario
 is for testing, not play. After every beat check what is on screen, what the server recorded and
 what reached the browser.
@@ -72,6 +76,12 @@ work report prints one `Feed` line each for Jake, Lena, Omar and Priya (first ur
 floor of 51 s) and the password clue check finds Jake's two pieces in his two feed posts and their
 facts, with the pattern on `it_poster`.
 
+F10 to F13 add their own `Feed` lines (Nadia, Theo, Greg, Ruth), four `Reactive feed` lines (orders
+reactive_first, mixed, facts_first, reactive_first) and a `Work` line each for Nadia and Greg. The
+work report also prints one `fires when ...` line per reactive post: `f10_vent`/`f12_vent` on a `down`
+(and `f12_vent` on `off`) cause, `f11_borrowed` after the borrow, `f13_blocked` on `social_blocked`,
+`f13_fixed` on recovery. No new warning: the only warnings stay the three above.
+
 ## Beats
 
 | Beat | Do | Expect | Server afterwards | `/feed_post` so far |
@@ -88,6 +98,33 @@ facts, with the pattern on `it_poster`.
 
 Scripted runs: F1 to F4 and F7 in one run; F5, F6 and F8 in a second (or continue the first); F9
 in either (lock Priya out on her first trip to the fridge, before her next social media use).
+
+## Reactive beats (C2): F10 to F13
+
+East from Priya's room runs a short corridor of four reactive rooms: F10 Nadia, F11 Theo, F12 Greg,
+F13 Ruth. Each adds a post with a `when` that the server serves only once the state it reads holds,
+so the player causes something first (an outage, a borrow, a blocked site) and the post follows. The
+pace floor still bites every reveal after the first (51 s), and the needs clock is never stepped
+while an outage holds. The reveal order on the osint terminal is the order the server served the
+posts, not authored order, so a reactive post that jumped the queue sits above an ordered one served
+earlier.
+
+Read each NPC with `window.__test.access.feed()` (revealed post ids by NPC) and
+`window.__test.needs.state('<id>')`. The `/feed_post` budget is counted **per beat** (requests
+between the beat's two assertions): a feed holding an un-triggered reactive post asks once on each met
+use and is usually answered `{ post: null, done: false }`, so a per-run total grows with play.
+
+| Beat | Do | Expect | Server afterwards | `/feed_post` this beat |
+|---|---|---|---|---|
+| F10 | Enter `f10_room` (east of Priya's room), order **reactive_first**. Throw the breaker at once. Wait for Nadia's work to fail (she names the accounts share going down), then for her next met social media use | The outage vent `f10_vent` is served ahead of her ordered post `f10_ordered`; the terminal lists it first; task `f10_posted`. Reset the breaker | `npcFrustration.nadia.failWhy.work` lists `down`; `feedRevealed.nadia.shown` starts `["f10_vent"]`. A later met use then serves `f10_ordered` | Nadia 1 to 2 (one met use; a `tooSoon` adds one) |
+| F11 | Enter `f11_room`, order **mixed**. Theo's PC blocks social media and he has no phone, so he borrows the kiosk here. Wait through his first met use, his borrow, and one more use | His ordered `f11_first` comes out first; the borrow post `f11_borrowed` slots in at its authored place on the next met use (never ahead of `f11_first`); then `f11_last`; task `f11_posted` on `f11_borrowed` | `feedRevealed.theo.shown` is `["f11_first", "f11_borrowed", ...]`; the `borrow_session` workaround is done; `guestSessions.f11_kiosk` `theo` | Theo up to 3 (one per met use) |
+| F12 | Enter `f12_room`, order **facts_first**. Wait for Greg's first met social media use, then throw the breaker (sales system down). Wait for his work to fail, then for his next met social media use. Reset the breaker | The ordered `f12_ordered` comes out first; the vent `f12_vent` follows only after the outage and a work failure; task `f12_posted` on `f12_vent`. After both the answer says `done: true` and the client stops asking | `feedRevealed.greg.shown` is `["f12_ordered", "f12_vent"]`, done; `failWhy.work` lists `down` | Greg 2 (one per post), plus any `tooSoon` |
+| F13 | Enter `f13_room`, order **reactive_first**. Ruth's PC blocks social media and she has no phone. Wait for her to fail, borrow the kiosk, and use it twice | On her first met use (the borrow) the blocked vent `f13_blocked` is served; on her next met use the recovery post `f13_fixed` (keyed on `needMet`) follows; tasks `f13_blocked` then `f13_recovered` | `failWhy.social_media` lists `social_blocked`; `easeAt.social_media` later than `failAt.social_media`; `feedRevealed.ruth.shown` is `["f13_blocked", "f13_fixed"]`, done | Ruth 2 |
+
+The leak check must still say `VERDICT: no leaks found` after each reactive beat, and its counts line
+must show the reactive post texts among the feed posts it checked. One reload during the run (as F7)
+must show every revealed reactive post at once, in reveal order, with no unrevealed reactive post in
+any response.
 
 ## Earned secrets
 
@@ -118,3 +155,10 @@ in either (lock Priya out on her first trip to the fridge, before her next socia
   `loginLockouts` changes nothing: the PC stays refused. A social media `ease` for her at
   `priya_pc` is refused; a social media `fail` naming `locked_out` is refused too, because she has
   a phone and so never fails the need.
+- F10 to F13 (C2): `POST /feed_post` for Nadia before the breaker is thrown (no live `down` cause and
+  no recorded work failure) never serves `f10_vent`: the answer is her ordered post or `{ post: null }`,
+  and the vent text is absent from every response until the server serves it. Extra request fields
+  (a forged `post_id`, `when`, `cause` or `index`) cannot force a reactive post or pick one: the route
+  reads only `npc_id` and the `object_id` location, and the server decides the condition. The same for
+  Greg's `f12_vent` before his outage, Theo's `f11_borrowed` before his borrow, and Ruth's
+  `f13_blocked`/`f13_fixed` before her failure and recovery.
