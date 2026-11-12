@@ -41,7 +41,7 @@ Standing constraints for this build:
 | Merge main (batch 9, 33c003230) into the branch | Done (`f03396201`); capture tests reran green |
 | 5. R3 capture-log seen keys | Done, committed, tested (`cb269170c`) |
 | 6a-server. R2 recording machinery + migration + sync interception + carry-over guard + validator | Done, committed, tested (`a4401fb83`, `eea02e21a`, `cf05062a4`). Live browser proof NOT run (budget); HTTP/route proof is in captures_sync_test. See "6a-server session" below |
-| 6a-client. capture-client.js + main.js wiring + SERVER_OWNED_GLOBALS flip + drop the mirror | Not started (spec below) |
+| 6a-client. capture-client.js + main.js wiring + SERVER_OWNED_GLOBALS flip + drop the mirror | Done, committed, tested + live-proven (`360232028`, `627caa0db`). See "6a-client session" below |
 | 6b. R2 reveal/proof gating | Not started |
 | 7. Node + Rails size tests, then live proof A to F | Not started |
 | 8. One release later: remove transition code | Not started (separate release) |
@@ -84,6 +84,66 @@ differ.
    (`capture_payload_secret_test`, `capture_payload_secret_routes_test`, `capture_secret_endpoint_test`,
    `lab_physical_pentest_secrets_test`, the `capture_proofs` tests), then Len's shoulder-surf beat
    played on the earned path in lab_physical_pentest.
+
+## This session (2026-11-12, 6a-client: the capture record leaves the client-synced state)
+
+Built the whole "Remaining 6a-client spec" as one unit and live-proved it. Commits:
+`360232028` (implementation + adapted tests), `627caa0db` (`capture-client.test.mjs`).
+
+### What shipped
+- New `public/break_escape/js/systems/capture-client.js`: `installCaptureClient(stateSync)` registers
+  the `captures` sync part (build/onAnswer/pendingCount/flushKeep) and sets `window.submitSECapture`
+  and `window.mirrorSECapture`. `submitCapture` mirrors the entry (`writeGlobal('se_captures', ...)`,
+  first-wins), queues `{ targetId, kind, address, host, roleLabel }` and runs the sync; `onAnswer`
+  replaces each answered mirror entry with the server's (secret-less) one and clears pending, drops a
+  refused one from pending and the mirror; `flushKeep` keeps a pending target's sent records through
+  the pagehide flush; `mirrorCapture` writes the mirror only (a heard share the server recorded).
+  Only static imports: captures.js and global-writer.js.
+- `main.js` (:41, :145): static import of capture-client.js and `installCaptureClient(window.stateSync)`
+  right after `new StateSync`, before `start()`.
+- `state-sync.js`: `SERVER_OWNED_GLOBALS = new Set(['se_captures'])`; `buildSharedSections` deletes
+  server-owned keys from the outgoing globals (the build-log claim that it "already skips" them was
+  wrong — it did not; the filter is new); the `CAPTURES_KEY`/`CAPTURE_ENTRY_KEYS`/`sanitizeCaptureEntry`
+  guard branch is gone (the key is never sent). seedFromSaved/seedFromBootstrap already skipped it.
+- Writers: mail-bridge.js `recordCapture` and apply-actions.js `recordSECapture` now call
+  `window.submitSECapture` (apply-actions keeps `window.recordSECapture` and its export, returning the
+  boolean straight away; its lazy captures.js import is gone; mail-bridge's unused captures.js import
+  removed). npc-workarounds.js's heard-share dep now calls `window.mirrorSECapture`.
+- core/game.js (:1716 area): mirrors the bootstrap `captures` into `window.gameState.globalVariables
+  .se_captures` for the readers, only when the bootstrap carries `captures` or the scenario declares
+  `se_captures`. The 6a-server bootstrap `savedGlobalVariables.se_captures` mirror is dropped from
+  `GamesController#scenario` in the same change.
+- Leak scanner (`tools/playtest/lib/access_leak_scanner.rb:683`): the revealSecret exemption moved
+  from `.se_captures` to the `.captures` path (the record now rides the bootstrap/answer `captures`,
+  not the global); `access_leak_scanner_test.rb` updated to the new bootstrap shape.
+
+### Tests (affected files only, no lock)
+- Rails: `access_leak_scanner_test` 43/258, `captures_sync_test` 8/28 (updated: the reload test now
+  asserts `captures` ships and `savedGlobalVariables.se_captures` is absent), `capture_record_test`
+  13/45, `capture_secret_test` 7/12, `lab_physical_pentest_secrets_test` 38/960, `capture_proofs_test`
+  27/165, `capture_payload_secret_test` 12/207, `capture_payload_secret_routes_test` 2/24,
+  `capture_secret_endpoint_test` 3/7, `reload_persistence_test` 69/254, `games_controller_test`
+  63/206 — all 0 failures.
+- JS: new `capture-client.test.mjs` 12/12; `state-sync` 23 (3 new: se_captures not sent, not seeded,
+  a registered part makes buildChanges non-null), `social-captures` 9 (the sync-boundary tests now
+  assert se_captures is left out of the outgoing globals), `add-capture-action` 4 and
+  `social-mail-bridge` 23 (both install capture-client on a stub stateSync). Every test/js harness
+  that copies apply-actions.js / mail-bridge.js / npc-workarounds.js / state-sync.js / captures.js
+  (75 files) reran green.
+
+### Live browser proof (keyless server :3185, headless, setFPS(20), fixed steps on)
+Against the real lab_physical_pentest scenario. Games created on the shared dev DB: 1869, 1873.
+- Bootstrap `GET /scenario` = 23,797 bytes (baseline 23,762, +35; still well under base+1 KB). The
+  `POST /inventory` boot echo is 16 bytes now (baseline 1,088 — the earlier P2 delta step).
+- Len's capture driven through the honest client path (`window.recordSECapture` with Len's authored
+  fields, the exact object the `player_watched_reader` eventMapping builds, which now routes through
+  `window.submitSECapture`): on a fresh game, one `PUT /sync_state` carried the `captures` part for
+  `len` (131 bytes, no note) and **no** PUT body carried `se_captures`; `GET /capture_secrets` served
+  `{ len: "4471" }` only after the capture (empty before); after a reload the bootstrap re-shipped it
+  under `captures.len`, `savedGlobalVariables.se_captures` was absent, and the mirror held `len`.
+  NB: the full diegetic drive of Len's routine (walking the beat, the 2.5 s listening window) was
+  substituted with a direct call to the same client entry point the beat invokes; the wire is
+  identical.
 
 ## This session (2026-11-12, 6a-server: recording machinery, migration, sync interception)
 
