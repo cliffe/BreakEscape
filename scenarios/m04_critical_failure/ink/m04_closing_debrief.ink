@@ -74,7 +74,7 @@ EXTERNAL player_name()
 
 // ===========================================
 // DEBRIEF START
-// Location: Control Room (phone/video call)
+// Location: HQ (in person); Vance on the line from the Albion ops desk
 // Task 3.3: Report Mission Outcome
 // ===========================================
 
@@ -89,7 +89,7 @@ EXTERNAL player_name()
 === debrief_start ===
 #speaker:agent_0x99
 
-// Agent HaX on screen
+// Agent HaX, in person at HQ
 // Pass 5 A4: the reload backstops key on this (scenario.json.erb).
 #set_global:debrief_started:true
 Agent, report.
@@ -447,7 +447,7 @@ He'll call when he's ready. Not tonight.
 === disclosure_decision ===
 #speaker:agent_0x99
 
-// Robert Vance present, listening
+// Robert Vance on the line, listening
 // Phase 4 dialogue C1 (D5-9): why he's in an HQ debrief.
 {(vance_spoken or vance_is_ally) and not robert_vance_ko:
     Narrator: Vance is on the line from the Albion ops desk.

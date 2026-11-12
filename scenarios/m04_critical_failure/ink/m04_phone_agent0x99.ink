@@ -6,6 +6,9 @@
 
 // Variables for tracking conversation state
 VAR handler_confidence = 50            // 0-100 handler's confidence in mission success
+// Engine-written call variables (phone calls plan 2.11); on_anomaly_confirmed reads them.
+VAR call_answer_seconds = 0
+VAR call_is_callback = false
 VAR server_room_reached = false
 VAR attack_mechanism_known = false
 VAR voltage_priority_discussed = false
@@ -140,10 +143,12 @@ EXTERNAL player_name()
 === support_hub ===
 // A4: the way out once the shutdown is in. First, because it ends the mission.
 + {attack_prevented and not mission_complete} [I'm done here. Bring me in.]
-    -> extract_offer
+    #place_call:extract_call
+    -> DONE
 
-+ {anomaly_detected and not anomaly_call_heard and not attack_prevented} [You wanted to talk about the dial reading.]
-    -> on_anomaly_confirmed
++ {anomaly_detected and not anomaly_call_heard and not attack_prevented} [About the dial reading.]
+    #place_call:on_anomaly_confirmed
+    -> DONE
 
 + {voltage_fight_started and not voltage_neutralised and not racks_vented and not hint_race_given} [He's going for the laptop!]
     -> hint_race
@@ -193,7 +198,7 @@ EXTERNAL player_name()
 
 + [Nothing right now.]
     #exit_conversation
-    Line's open. Call it in when you have something.
+    Line's open. Send me whatever you find.
     -> support_hub
 
 // Choices-only: the guides on offer and not yet sent (m02/m03 field_guides).
@@ -402,7 +407,8 @@ Not from here. The site's evacuation alarm is on Vance's desk.
 // call-in task completes in the same batch.
 // ===========================================
 
-=== extract_offer ===
+=== extract_call ===
+// lint: call-knot
 {hostile_standing(): -> extract_blocked}
 -> extract_offer_text
 
@@ -411,6 +417,7 @@ Not from here. The site's evacuation alarm is on Vance's desk.
 ~ return (relay_engaged and not operative_relay_defeated) or (cipher_engaged and not operative_cipher_defeated) or (static_engaged and not operative_static_defeated) or (guard_hostile and not security_guard_ko) or (voltage_fight_started and not voltage_neutralised)
 
 === extract_blocked ===
+// lint: call-knot
 #speaker:agent_0x99
 {
 - relay_engaged and not operative_relay_defeated:
@@ -430,14 +437,21 @@ Not from here. The site's evacuation alarm is on Vance's desk.
 // danger is being hit while the debrief plays, so a player who has got away (or
 // can't win the fight) still has a way to finish.
 === extract_blocked_choices ===
+// lint: call-knot
 + [I'm well clear of them. Bring me in.]
     -> extract_offer_text
 + [Understood.]
-    -> support_hub
+    #exit_conversation
+    -> DONE
 
 === extract_offer_text ===
+// lint: call-knot
 #speaker:agent_0x99
-Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+{ extract_choices > 0:
+    Forensics are almost on-site. Last chance.
+- else:
+    Past the gate it's forensics' site, not ours. Anything you want, take it now.
+}
 {not lore_architect_directive_found:
     Voltage's operation log is still on the plant-room bench, for one.
 }
@@ -447,24 +461,29 @@ Once you're out, you don't go back in. Whatever you haven't read stays for foren
 -> extract_choices
 
 === extract_choices ===
+// lint: call-knot
 + [Bring me in.]
-    Car's at the loading dock. Two minutes.
+    Loading dock. The van with no livery.
+    #complete_task:call_in_after_sweep
     -> extract_confirm
 + [Not yet. I'm still looking.]
-    Take your time. The banks aren't going anywhere.
-    -> support_hub
+    Fine. The banks will keep.
+    #exit_conversation
+    -> DONE
 
 === extract_confirm ===
-+ [On my way.]
+// lint: call-knot
++ [On my way. #ending_check]
     -> extract_go
 
 === extract_go ===
+// lint: call-knot
 #speaker:agent_0x99
-#complete_task:call_in_after_sweep
 #set_global:mission_complete:true
 ~ mission_complete = true
-See you at HQ.
--> support_hub
+Albion's grid is someone else's problem now.
+#exit_conversation
+-> DONE
 
 // ===========================================
 // KO KEYCARD FALLBACK (B1)
@@ -492,24 +511,32 @@ Relay's down. I've pulled her Level 2 number off the reader logs and pushed you 
 // ===========================================
 
 === on_anomaly_confirmed ===
+// lint: call-knot
 #speaker:agent_0x99
-~ anomaly_call_heard = true
-Nightshade's got your reading. Sixty-one degrees on the Hall 1 battery thermometer, against twenty-eight on the screens.
+{
+    - call_is_callback: You rang. Good. Straight to it.
+    - call_answer_seconds > 10: There you are. No time for hello.
+    - else: Sixty-one. You were right not to trust their screens.
+}
+Nightshade's had a look at your reading. Thirty-three degrees over what the screens show.
 His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger.
-The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network.
+ENTROPY feed the control room. That dial isn't on their network.
 -> on_anomaly_confirmed_choices
 
 === on_anomaly_confirmed_choices ===
+// lint: call-knot
 + {not server_room_reached} [Then where do I start?]
     #exit_conversation
     With how they're driving it. The workshop, off Hall 1.
-    -> support_hub
+    ~ anomaly_call_heard = true
+    -> DONE
 // Puzzle chains R2-3: "the last piece" only when it was (the attack mapped and
 // Voltage dealt with); otherwise say what's still missing.
 + {server_room_reached and attack_mechanism_known and voltage_neutralised} [Then the dial was the last piece.]
     #exit_conversation
     It was. Grid control can see the difference now.
-    -> support_hub
+    ~ anomaly_call_heard = true
+    -> DONE
 + {server_room_reached and not (attack_mechanism_known and voltage_neutralised)} [Then what's still missing?]
     #exit_conversation
     {attack_mechanism_known:
@@ -517,7 +544,8 @@ The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network.
     - else:
         Grid control has the hazard now. Get them the cause, off the workshop terminal.
     }
-    -> support_hub
+    ~ anomaly_call_heard = true
+    -> DONE
 
 // ===========================================
 // FIRST CALL (Initial Contact)
@@ -649,7 +677,7 @@ Then the engineering workshop, off the same hall. That's how they got onto the S
 === first_call_end ===
 #speaker:agent_0x99
 
-Call me when you've got a real reading.
+I'll ring once you've got a real reading.
 
 #exit_conversation
 -> support_hub
@@ -715,7 +743,7 @@ Three of them were in here for hours. They left something behind. Find it, and w
     They'll know someone's opened the workshop. Keep an eye on the door.
 }
 
-Call when you've got something.
+Message me when you've got something.
 
 #exit_conversation
 -> support_hub

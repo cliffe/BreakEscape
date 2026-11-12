@@ -772,6 +772,14 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "phoneId": "player_phone",
           <%# Pass 5 A5: start greets once (greeted) and then lands in the hub, m03's shape. %>
           "currentKnot": "start",
+          <%# Phone calls M4: both beats are voiced calls placed from a hub choice
+              (#place_call:<knot>), so neither entry gets a header button. The dial
+              reading also rings (the mapping below); its hub choice is the way back
+              if the player declines or misses it. %>
+          "call": [
+            { "knot": "on_anomaly_confirmed", "button": false },
+            { "knot": "extract_call", "button": false }
+          ],
           "itemsHeld": [
             {
               "type": "lab-workstation",
@@ -895,7 +903,24 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "eventPattern": "global_variable_changed:anomaly_detected",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "targetKnot": "on_anomaly_confirmed", "message": "Sixty-one on that dial? Call me when you're clear of it." }
+              "_comment": "Phone calls M4: HaX rings six seconds after the dial read (was a text 'Call me when you're clear of it.'). Default ring-out; a decline or miss leaves a Call back button and the text below. The hub choice [About the dial reading.] dials the same knot.",
+              "delayMs": 6000,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_anomaly_confirmed",
+              "ring": { "onMissed": "callback" },
+              "callLabel": "Agent HaX"
+            },
+            {
+              "eventPattern": "phone_call_declined:agent_0x99",
+              "condition": "data.knot === 'on_anomaly_confirmed'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Got your reading. Ring me back." }
+            },
+            {
+              "eventPattern": "phone_call_missed:agent_0x99",
+              "condition": "data.knot === 'on_anomaly_confirmed' && !data.reload",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Got your reading. Ring me back." }
             },
             <%# Struggling run A (F4): a fair, unprompted signal that the night crew is
                 in danger and that Vance can clear them, for every player, cover held
@@ -1498,6 +1523,11 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "avatar": "assets/characters/robert_vance_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
+          <%# Phone calls M4: the engineering support conversation is a voiced call the
+              player rings from this thread once Vance is an ally and still on his feet.
+              Before that (or after his KO) it rings out: "NO ANSWER". %>
+          "call": { "knot": "support_call", "when": "globalVars.vance_is_ally && !globalVars.robert_vance_ko", "unavailable": "no_answer" },
+          "callLabel": "Albion ops desk",
           "timedMessages": [
             {
               "delay": 20000,
