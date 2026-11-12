@@ -2049,3 +2049,60 @@ Rails 1702 runs, 24995 assertions, 0 failures, 0 errors, 1 skip. JS 499 of 499 f
 - N2: a tab left open across the deploy sends no `object_id`, so a `"phone": false` NPC's posts
   are refused until the page is reloaded. Accepted: the gem ships client and server together, and
   a fallback would undo the check.
+
+## Sub-slice C2: reactive feed posts (in progress)
+
+Plan: `ACCESS_MODEL_SLICE_9_2_C2_PLAN.md`. Built on `build/9-2-c2` after merging `main` (q33).
+A feed post with a `when` is served only when its condition holds, read from state the server
+already records; `feed.order` (facts_first default, reactive_first, mixed) interleaves the two
+kinds; every reactive post is served at most once.
+
+### Done and committed
+
+- **AccessWork helpers** (`lib/break_escape/access_work.rb`): `cause_holds?`, `globals_hold?`,
+  `truthy_global?`, `cause_candidates`, `cause_why_holds?`, `cause_why_reachable?`, `when_holds?`
+  (and its predicate helpers `workaround_performed?`, `need_met_now?`, `cause_predicate_holds?`),
+  `when_reachable?`, `declared_global?`, `workaround_present?`, `cause_reachable?`, `feed_done?`,
+  `select_feed_post`, `feed_shown_ids`, `reactive_post?`, `feed_order`. The condition rule has one
+  copy here; the route and the validator both call it. `done` in `select_feed_post` is computed
+  over the post-serve shown list (matching C's `n + 1 >= posts.size`).
+- **One-copy guarantee** (`app/models/break_escape/npc_frustration.rb`): `frustration_cause_holds?`
+  and `frustration_globals_hold?` are now thin wrappers that build the merged globals
+  (`frustration_globals`, player over scenario defaults by key presence) and the pre-gated lockout
+  keys and call the AccessWork helpers. `frustration_global` and the instance `truthy_global?` were
+  removed (dead after the lift).
+- **Route** (`app/models/break_escape/social_feed.rb`): `feedRevealed` is now `{ shown:[ids], at }`;
+  `reveal_feed_post!` runs the q33 source refusal, then `select_feed_post` (reading the raw
+  `npcFrustration[id]` read-only, never the writing `frustration_entry`), then the pace floor;
+  `feed_posts_for_client` lists `shown` in reveal order with `feed_done?`; `feed_answer` is split
+  to look a post up by id and emit the reveal sequence separately. `POST_KEYS` comment names `when`
+  and `order` as server-only.
+- **Leak scanner** (`tools/playtest/lib/access_leak_scanner.rb`): `note_feed_served` reads the
+  served id from the `/feed_post` answer body (not an authored prefix); the `feedPosts` branch's
+  `allowed` is the accumulated shown ids plus, for a resumed or lost-body reveal, the saved
+  `shown` set (migrated from a legacy `{ n, at }` count to the first n ordered ids). Dead
+  `feed_revealed_now`/`@feed_answers` removed.
+- **Validator** (`scripts/validate_access_work.rb`): `check_feed_order` (order value; mode vs mix;
+  dead feed) and `check_reactive_post` (empty/unknown predicate, cause whys, need, frustration
+  bounds, workaround, `when_reachable?` dead-post warning, unscoped cause on a two-need NPC,
+  frustrationBelow-only) plus `reactive_report_lines`.
+- **Tests, all green on this branch**: `test/unit/access_work_feed_select_test.rb` (15 cases, one
+  per order mode and every predicate, cause live/not-yet-failed, two-down-resource, done,
+  migration); the C feed-shape assertions updated in `feed_post_test.rb`; the scanner's out-of-order
+  and new-shape/legacy cases in `access_leak_scanner_feed_test.rb`. Baseline validator on
+  `test_access_social` is 0 ❌.
+
+### Commits
+
+- `9db901aaf` AccessWork helpers, feedRevealed shown shape, thin frustration wrappers
+- `d46e9140c` leak scanner body-id serve, saved-shown fallback
+- `2710c25fc` validator checks and report lines
+- `5617fc7c2` pure select_feed_post unit tests
+
+### Open (handover `docs/agents/HANDOVER_9_2_C2.md`)
+
+Scenario beats F9 to F12 + PLAYTEST steps; the helper-equality unit test (AccessWork vs the
+NpcFrustration wrappers, incl. the locked_out pre-gating case); route + tampered-client test
+additions; the leak-scanner no-exposure fixture gaining a reactive post and fact; the live proof on
+port 3030 with a tampered client and a reload; re-merge `main` (f9a661a14); full `bin/rails test`
+and `bin/test-js -j 3` under the lock.
