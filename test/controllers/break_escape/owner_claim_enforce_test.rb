@@ -67,10 +67,13 @@ module BreakEscape
     end
 
     # A work plan for Jake (work need, a resolved work list) with nothing that can fail: the
-    # resource is not defined and the policy has no maxAttempts, so no lockout.
+    # resource is open to all, never down, the scenario has no networks, and the policy has no
+    # maxAttempts, so no lockout. The resource is defined (R4 m1): with an undefined one the
+    # shipped plan is empty and the client does not judge work at all.
     def judged_work(data)
       jake(data)['needs'] = { 'work' => { 'decayPerMin' => 30, 'urgentAt' => 40 } }
       jake(data)['workNeeds'] = ['ledger']
+      data['resources'] = { 'ledger' => { 'kind' => 'service' } }
       data['policies']['corp_default']['maxAttempts'] = nil
     end
 
@@ -174,6 +177,13 @@ module BreakEscape
           scenario do |d|
             judged_work(d)
             add_object(d, 'finance', { 'id' => 'archive', 'type' => 'notes', 'name' => 'Archive', 'affordance' => { 'satisfies' => 'work' } })
+          end,
+        'a work need whose only workNeeds id names no resource, met at another desk (R4 m1)' =>
+          scenario do |d|
+            judged_work(d)
+            d.delete('resources')
+            add_object(d, 'finance', { 'id' => 'spare_pc', 'type' => 'pc', 'name' => 'Spare', 'workstation' => true,
+                                       'affordance' => { 'satisfies' => 'work' } })
           end,
         'a non-judged work need met at another desk' =>
           scenario(needs: { 'work' => { 'decayPerMin' => 30, 'urgentAt' => 40 } }) do |d|
