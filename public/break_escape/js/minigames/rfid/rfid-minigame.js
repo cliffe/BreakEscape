@@ -13,7 +13,7 @@
  */
 
 import { MinigameScene } from '../framework/base-minigame.js';
-import { RFIDUIRenderer } from './rfid-ui.js';
+import { RFIDUIRenderer, clonerNameInSentence } from './rfid-ui.js';
 import { RFIDDataManager } from './rfid-data.js';
 import { RFIDAnimations } from './rfid-animations.js';
 import { MIFAREAttackManager } from './rfid-attacks.js';
@@ -22,6 +22,12 @@ import { detectProtocol } from './rfid-protocols.js';
 // A refused card stays on screen this long, or until the player taps the screen (5 s, as
 // long as the shortest error toast: PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md 7).
 export const DENIAL_HOLD_MS = 5000;
+
+/** The toast after a copy is saved: what was copied, and where it is used. */
+export function savedCardConfirmation(cardData) {
+    const name = (cardData && cardData.name) || 'The card';
+    return `${name} is saved on your ${clonerNameInSentence()}. Hold it to the card's reader to play it back.`;
+}
 
 export class RFIDMinigame extends MinigameScene {
     constructor(container, params) {
@@ -124,6 +130,8 @@ export class RFIDMinigame extends MinigameScene {
             if (window.playUISound) window.playUISound('card_scan');
             this.animations.showTapSuccess();
             this.ui.showSuccess(this.isLockingAttempt ? 'Access Granted' : 'Card Read');
+            // The door's toast names the card that opened it (unlock-system.js rfidOpenedLine)
+            this.gameResult = { success: true, cardName: card.scenarioData?.name || null, emulated: false };
 
             setTimeout(() => {
                 this.complete(true);
@@ -255,6 +263,7 @@ export class RFIDMinigame extends MinigameScene {
             if (window.playUISound) window.playUISound('card_scan');
             this.animations.showEmulationSuccess();
             this.ui.showSuccess('Access Granted');
+            this.gameResult = { success: true, cardName: savedCard.name || null, emulated: true };
 
             // Emit event
             if (window.eventDispatcher) {
@@ -349,6 +358,8 @@ export class RFIDMinigame extends MinigameScene {
 
             setTimeout(() => {
                 this.complete(true);
+                // Back in the world (or the chat) nothing else shows the copy worked (shot 18)
+                window.gameAlert?.(savedCardConfirmation(cardData), 'success', 'Card copied', 4000);
             }, 1500);
         } else {
             this.ui.showError(result.message);

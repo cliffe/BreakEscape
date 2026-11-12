@@ -6,7 +6,7 @@ TEST: action menu + clone-in-place + left-card consequence.
 
 A clerk works at a desk with his access card beside the keyboard. When he gets a coffee he leaves the card on the desk (leftBehindChance 1). You start with an RFID cloner.
 
-  - Tap the card with the cloner in hand: an ACTION MENU offers 'Clone it with the flipper' and 'Take it'.
+  - Tap the card with the cloner in hand: an ACTION MENU offers 'Copy it with the RFID cloner' and 'Take it'.
   - CLONE IN PLACE: the card stays on the desk, so when the clerk comes back he collects it and notices nothing. Your clone opens the vault (north).
   - TAKE IT: the clerk comes back to a missing card, barks, and has it cancelled (revoke_card). The physical card AND any earlier clone of it stop opening the vault.
   - The guard's badge can be read in conversation (# clone_keycard) — the conversation clone still works.

@@ -2323,13 +2323,37 @@ module BreakEscape
       ids = self.class.normalise_card_ids(card_ids)
       return Array(lock['requires']).any? if ids.nil?
 
+      !rfid_passing_card_id(lock, ids).nil?
+    end
+
+    # The first of these held card ids that opens an access-list rfid lock, or nil.
+    def rfid_passing_card_id(lock, ids)
       held = held_rfid_cards
-      ids.any? do |card_id|
+      Array(ids).find do |card_id|
         next false unless held.key?(card_id)
         next false if held[card_id] && lock['acceptsUIDOnly'] != true
 
         rfid_identity_passes?(lock, card_id)
       end
+    end
+
+    # After an access-list rfid unlock: which held card opened it, for the client's toast.
+    # The client sends every held card id at once, so naming a copied card would tell the
+    # player whose identity the list admits (an NPC's withheld role, or that a person is
+    # on a people list). Only the player's own keycard is named: { cardId: id }. A copy
+    # answers { viaCopy: true } with no id. nil for a lock with no access list or no
+    # card_ids.
+    def rfid_unlock_card_answer(target_type, target_id, card_ids)
+      lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
+      return nil unless lock.is_a?(Hash) && lock['lockType'] == 'rfid' && self.class.acl_lock?(lock)
+
+      ids = self.class.normalise_card_ids(card_ids)
+      return nil if ids.blank?
+
+      card_id = rfid_passing_card_id(lock, ids)
+      return nil if card_id.nil?
+
+      held_keycard_ids.include?(card_id) ? { cardId: card_id } : { viaCopy: true }
     end
 
     # True when a refused rfid unlock with card_ids would have passed but for a UID-only

@@ -85,3 +85,29 @@ test('an object that is taken or hidden stops being described', () => {
     assert.equal(shown(), null);
     pc.active = true;
 });
+
+test('the world line goes quiet under a confirm dialog, an action menu or a minigame (UX R1)', async () => {
+    const { worldCaptionCovered } = await import(pathToFileURL(join(dir, 'info-label.js')));
+    tick(300, 330);
+    assert.equal(shown(), pcText);
+    let overlay = null;
+    document.querySelector = (sel) => (sel === '.game-confirm-overlay' ? overlay : null);
+    overlay = {};
+    tick(300, 330);
+    assert.equal(shown(), null, 'confirm open');
+    overlay = null;
+    tick(300, 330);
+    assert.equal(shown(), pcText, 'back once it closes');
+    window.isInteractionMenuOpen = () => true;
+    tick(300, 330);
+    assert.equal(shown(), null, 'menu open');
+    window.isInteractionMenuOpen = () => false;
+    window.MinigameFramework = { currentMinigame: {} };
+    assert.equal(worldCaptionCovered(), true);
+    tick(300, 330);
+    assert.equal(shown(), null, 'minigame open');
+    window.MinigameFramework = { currentMinigame: null };
+    delete document.querySelector;
+    tick(300, 330);
+    assert.equal(shown(), pcText);
+});
