@@ -57,6 +57,14 @@ reload_ringing)
   reload; sleep 3
   echo "after reload: $(st | jq -c '.caller_decline, ._current, ._missed_seen')"; a2b_shot after_reload
   a2b_quit ;;
+ringing_autosync)
+  # A4 R1 m1: the slot reaches the server about 0.5 s after the ring, with no sync_now and no reload
+  AUTOBRIEF=true a2b_open ringing_autosync; gate clear_basic
+  fire ring_decline; gate wait_ring caller_decline 25; sleep 2
+  echo "server slot, no manual sync: $(BUNDLE_PATH=$BUNDLE_PATH bin/rails runner "g = BreakEscape::Game.find($GID); puts JSON.generate(g.player_state['phoneState'].dig('caller_decline','pendingCall'))" 2>/dev/null)"
+  a2b_decline >/dev/null; sleep 2
+  echo "server slot after Decline: $(BUNDLE_PATH=$BUNDLE_PATH bin/rails runner "g = BreakEscape::Game.find($GID); puts JSON.generate(g.player_state['phoneState'].dig('caller_decline','pendingCall'))" 2>/dev/null)"
+  a2b_quit ;;
 reload_held)
   AUTOBRIEF=true a2b_open reload_held; gate clear_basic
   a2b_lever lever_hold; gate open_obj keypad_safe
