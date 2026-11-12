@@ -682,7 +682,8 @@ module BreakEscape
       true
     end
 
-    # Move NPC between rooms
+    # Move NPC between rooms. Server and test use only: no route takes it from a client
+    # (code review R5 M1), since the room an NPC is served in is what records it as met.
     def move_npc_to_room!(npc_id, from_room_id, to_room_id)
       player_state['room_states'] ||= {}
 
@@ -711,8 +712,10 @@ module BreakEscape
       # Store full NPC data in target room
       npc_data = find_npc_in_scenario(npc_id)
       if npc_data
-        npc_with_new_room = npc_data.merge('roomId' => to_room_id)
-        player_state['room_states'][to_room_id]['npcs_added'] << npc_with_new_room
+        # One copy per NPC per room, so repeated moves cannot grow player_state
+        added = player_state['room_states'][to_room_id]['npcs_added']
+        added.reject! { |npc| npc.is_a?(Hash) && npc['id'] == npc_id }
+        added << npc_data.merge('roomId' => to_room_id)
       end
 
       save!
@@ -893,6 +896,25 @@ module BreakEscape
         id if id.is_a?(String) && !id.empty? && !delivered.include?(id)
       end
     end
+
+    # The room NPC list with `koDropPending` on each KO'd NPC that still owes items (copies).
+    # `only` limits it to those ids: the room action and a door unlock call it again for the NPCs
+    # the same load has just recorded as met (code review R5 m1), so an old save whose KO'd NPC
+    # had no met record re-drops on the first load, not the second.
+    def with_ko_drop_pending(npcs, only: nil)
+      delivered = nil
+      npcs.map do |npc|
+        next npc if only && !(npc.is_a?(Hash) && only.include?(npc['id']))
+
+        # One delivered walk per room load, and only once a KO'd NPC needs it (review R4 n3)
+        if delivered.nil? && npc.is_a?(Hash) && npc['id'].is_a?(String) && npc_ko_record_present?(npc['id'])
+          delivered = delivered_item_ids
+        end
+        pending = npc_ko_drop_pending_ids(npc, delivered)
+        pending.empty? ? npc : npc.merge('koDropPending' => pending)
+      end
+    end
+    public :with_ko_drop_pending
 
     # Review R2 M1 (FRIENDFACE_PHONE_ITEM_CODE_REVIEW_R2.md): an NPC-sourced room add is a KO drop,
     # or an item the NPC offers, from an NPC the player has met. Also asked of a stored drop
@@ -1416,17 +1438,7 @@ module BreakEscape
       # Review R3 m2: a KO'd NPC whose drop never landed (every KO sync and drop request failed,
       # then a reload) lists the held items still owed, and the client drops them again
       # (npc-sprites.js, npc-hostile.js redropPending). Copy, as above.
-      if room['npcs'].is_a?(Array)
-        delivered = nil
-        room['npcs'] = room['npcs'].map do |npc|
-          # One delivered walk per room load, and only once a KO'd NPC needs it (review R4 n3)
-          if delivered.nil? && npc.is_a?(Hash) && npc['id'].is_a?(String) && npc_ko_record_present?(npc['id'])
-            delivered = delivered_item_ids
-          end
-          pending = npc_ko_drop_pending_ids(npc, delivered)
-          pending.empty? ? npc : npc.merge('koDropPending' => pending)
-        end
-      end
+      room['npcs'] = with_ko_drop_pending(room['npcs']) if room['npcs'].is_a?(Array)
 
       # Mark previously-unlocked objects as locked=false so the client skips the
       # lock minigame and opens them directly on interaction.

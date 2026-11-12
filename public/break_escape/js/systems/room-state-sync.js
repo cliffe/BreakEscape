@@ -261,71 +261,7 @@ export async function updateNpcState(roomId, npcId, stateChanges, options = {}) 
     }
 }
 
-/**
- * Move NPC between rooms
- * @param {string} npcId - NPC ID
- * @param {string} fromRoomId - Source room ID
- * @param {string} toRoomId - Target room ID
- * @returns {Promise<boolean>} Success status
- */
-export async function moveNpcToRoom(npcId, fromRoomId, toRoomId) {
-    const gameId = window.breakEscapeConfig?.gameId;
-    if (!gameId) {
-        console.error('Cannot sync room state: gameId not available');
-        return false;
-    }
-
-    try {
-        const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            },
-            body: JSON.stringify({
-                roomId: toRoomId, // Target room
-                actionType: 'move_npc',
-                data: {
-                    npcId: npcId,
-                    fromRoom: fromRoomId,
-                    toRoom: toRoomId
-                }
-            })
-        });
-
-        const result = await response.json();
-        
-        if (result.success) {
-            console.log(`✅ Synced NPC move: ${npcId} from ${fromRoomId} to ${toRoomId}`);
-            
-            // Update local room state if rooms are loaded
-            if (window.rooms) {
-                // Remove from source room
-                if (window.rooms[fromRoomId]) {
-                    window.rooms[fromRoomId].npcs = window.rooms[fromRoomId].npcs || [];
-                    window.rooms[fromRoomId].npcs = window.rooms[fromRoomId].npcs.filter(npc => npc.id !== npcId);
-                }
-                
-                // Add to target room (need to get NPC data)
-                if (window.rooms[toRoomId] && window.npcManager) {
-                    const npcData = window.npcManager.getNPC(npcId);
-                    if (npcData) {
-                        window.rooms[toRoomId].npcs = window.rooms[toRoomId].npcs || [];
-                        window.rooms[toRoomId].npcs.push({ ...npcData, roomId: toRoomId });
-                    }
-                }
-            }
-            
-            return true;
-        } else {
-            console.warn(`❌ Failed to sync NPC move: ${result.message}`);
-            return false;
-        }
-    } catch (error) {
-        console.error('Error syncing NPC move:', error);
-        return false;
-    }
-}
+// No moveNpcToRoom: the server no longer takes a client-named NPC move (code review R5 M1).
 
 /**
  * Remove NPC from a room permanently (arrested, surrendered, escorted away)
@@ -385,8 +321,6 @@ export async function batchUpdateRoomState(updates) {
                 return updateObjectState(update.roomId, update.objectId, update.stateChanges);
             case 'update_npc':
                 return updateNpcState(update.roomId, update.npcId, update.stateChanges);
-            case 'move_npc':
-                return moveNpcToRoom(update.npcId, update.fromRoomId, update.toRoomId);
             default:
                 console.warn(`Unknown update type: ${update.type}`);
                 return Promise.resolve(false);
@@ -416,7 +350,6 @@ if (typeof window !== 'undefined') window.RoomStateSync = {
     removeItemFromRoom,
     updateObjectState,
     updateNpcState,
-    moveNpcToRoom,
     removeNpcFromScene,
     batchUpdateRoomState
 };

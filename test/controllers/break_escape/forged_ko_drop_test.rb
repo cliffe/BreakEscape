@@ -189,5 +189,50 @@ module BreakEscape
       assert_equal 422, drop('handler', { 'type' => 'keycard', 'id' => 'relayed_keycard', 'name' => 'Relayed keycard' }).status
       assert_equal [], added
     end
+
+    # Code review R5 M1 (FRIENDFACE_PHONE_ITEM_CODE_REVIEW_R5.md, probe game 1650): update_room
+    # move_npc put unmet Kevin, from his locked room, into unlocked reception; GET /room then
+    # served him there and recorded him met, so a forged KO stood and his keycard and lockpick
+    # were taken with only reception unlocked. Nothing in the game called move_npc: it is gone.
+    test 'R5 M1 (probe 1650): move_npc cannot bring unmet Kevin out of his locked room to be met and robbed' do
+      build
+      post update_room_game_url(@game), params: {
+        roomId: 'reception_area', actionType: 'move_npc',
+        data: { npcId: 'kevin_park', fromRoom: 'it_room', toRoom: 'reception_area' }
+      }, as: :json
+      assert_response :bad_request
+      assert_nil @game.reload.player_state.dig('room_states', 'reception_area', 'npcs_added')
+
+      refute(get_room('reception_area')['npcs'].any? { |n| n['id'] == 'kevin_park' }, 'Kevin is not served in reception')
+      refute_includes Array(@game.reload.player_state['encounteredNPCs']), 'kevin_park'
+
+      forge_ko('kevin_park')
+      assert_equal false, @game.reload.player_state.dig('npcHostility', 'kevin_park', 'ko')
+      assert_equal 422, drop('kevin_park', KEYCARD.merge('id' => 'kevin_park_held_1')).status
+      assert_equal [], added
+      [KEYCARD.merge('id' => 'kevin_park_held_1'), LOCKPICK.merge('id' => 'kevin_park_held_0')].each do |item|
+        post inventory_game_url(@game), params: { action_type: 'add', item: item, source_npc_id: 'kevin_park' }, as: :json
+        refute_equal 200, response.status, "#{item['name']} was handed over"
+      end
+      inventory = Array(@game.reload.player_state['inventory'])
+      assert inventory.none? { |i| %w[keycard lockpick].include?(i['type']) }, inventory.inspect
+      assert_equal %w[reception_area], @game.player_state['unlockedRooms']
+    end
+
+    test 'R5 M1: a server-side NPC move stores one copy of the NPC however often it runs' do
+      build('unlockedRooms' => %w[reception_area it_room])
+      3.times { assert @game.move_npc_to_room!('kevin_park', 'it_room', 'reception_area') }
+      stored = @game.reload.player_state.dig('room_states', 'reception_area', 'npcs_added')
+      assert_equal ['kevin_park'], stored.map { |n| n['id'] }
+    end
+
+    test 'R5 m1: an old save with a KO and no met record lists the owed drop on the first load' do
+      build('unlockedRooms' => %w[reception_area it_room],
+            'npcHostility' => { 'kevin_park' => { 'hostile' => true, 'ko' => true } })
+      refute_includes Array(@game.player_state['encounteredNPCs']), 'kevin_park'
+      kevin = get_room('it_room')['npcs'].find { |n| n['id'] == 'kevin_park' }
+      assert_equal %w[kevin_park_held_0 kevin_park_held_1], kevin['koDropPending']
+      assert_includes @game.reload.player_state['encounteredNPCs'], 'kevin_park'
+    end
   end
 end

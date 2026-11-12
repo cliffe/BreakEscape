@@ -880,17 +880,9 @@ module BreakEscape
         # Use strong parameters instead of to_unsafe_h
         @game.update_npc_state!(room_id, npc_id, npc_state_params)
 
-      when 'move_npc'
-        npc_id = data[:npcId] || data['npcId']
-        from_room = data[:fromRoom] || data['fromRoom']
-        to_room = data[:toRoom] || data['toRoom']
-
-        unless npc_id.present? && from_room.present? && to_room.present?
-          return render json: { success: false, message: 'Invalid NPC move data' }, status: :bad_request
-        end
-
-        @game.move_npc_to_room!(npc_id, from_room, to_room)
-
+      # No 'move_npc' action: nothing in the game called it, and a client could name any NPC
+      # and any room next to an unlocked one, so the NPC was served there and recorded as met
+      # (friendface phone code review round 5, M1). An unknown action answers 400 below.
       when 'remove_npc_from_scene'
         npc_id = data[:npcId] || data['npcId']
 
@@ -2003,6 +1995,9 @@ module BreakEscape
           Rails.logger.error "[BreakEscape] note_npcs_met! failed: #{e.message}"
         end
         @game.save!
+        # Code review R5 m1: the payload was composed before these NPCs were met, so a KO'd one
+        # (an old save with a KO and no met record) is listed now, on this load
+        room_data['npcs'] = @game.with_ko_drop_pending(room_data['npcs'], only: new_npcs)
 
         total_encountered = @game.player_state['encounteredNPCs'].length
         Rails.logger.info "[BreakEscape] ✅ Tracked #{new_npcs.length} new NPC encounter(s) in room #{room_id}. Total NPCs encountered: #{total_encountered}"
