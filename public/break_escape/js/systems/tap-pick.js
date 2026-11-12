@@ -26,7 +26,7 @@
  * Whether the tap lands on an opaque pixel of the sprite's current frame, not only inside its
  * bounds. NPC frames are 80 px boxes with the figure in the middle, so "under the tap" for an
  * NPC means on the figure (code review R1 M1). The world point is turned into frame pixels
- * allowing for origin, scale and flipX (rotation is not used on these sprites). Without a
+ * allowing for origin, scale, rotation, flipX and flipY. Without a
  * texture test (alphaAt missing, or it answers null: a frame it cannot read) the bounds decide.
  *
  * @param {object} sprite - a Phaser sprite or image (x, y, originX/Y, scaleX/Y, flipX, frame, texture)
@@ -42,8 +42,16 @@ export function opaqueAt(sprite, worldX, worldY, alphaAt) {
     const h = frame.realHeight ?? sprite.height ?? 0;
     const sx = Math.abs(sprite.scaleX ?? 1) || 1;
     const sy = Math.abs(sprite.scaleY ?? 1) || 1;
-    let lx = (worldX - sprite.x) / sx + (sprite.originX ?? 0.5) * w;
-    const ly = (worldY - sprite.y) / sy + (sprite.originY ?? 0.5) * h;
+    // Phaser rotates about the origin after scaling, so undo the rotation first (R3 n3; rooms.js
+    // can rotate items from Tiled or a scenario's rotation, though no map or scenario does yet)
+    let ox = worldX - sprite.x, oy = worldY - sprite.y;
+    const rot = sprite.rotation || 0;
+    if (rot) {
+        const c = Math.cos(-rot), s = Math.sin(-rot);
+        [ox, oy] = [ox * c - oy * s, ox * s + oy * c];
+    }
+    let lx = ox / sx + (sprite.originX ?? 0.5) * w;
+    let ly = oy / sy + (sprite.originY ?? 0.5) * h;
     if (!(lx >= 0 && lx < w && ly >= 0 && ly < h)) return false;
     const key = sprite.texture?.key;
     // No pixel test without one, or for Phaser's stand-in textures: __MISSING draws only a
@@ -51,6 +59,7 @@ export function opaqueAt(sprite, worldX, worldY, alphaAt) {
     if (typeof alphaAt !== 'function' || !key || key === '__MISSING' || key === '__DEFAULT') return true;
     // Phaser mirrors a flipped frame about its centre: local lx shows texel w - lx (R2 n1)
     if (sprite.flipX) lx = Math.min(w - lx, w - 1);
+    if (sprite.flipY) ly = Math.min(h - ly, h - 1);       // the same about the other axis (R3 n3)
     const fx = Math.floor(lx);
     const fy = Math.floor(ly);
     // A trimmed atlas frame keeps its pixels at frame.x / frame.y inside realWidth; the margin
@@ -215,30 +224,30 @@ export function objectStandPoint(obj, player, deps) {
     const centreY = obj.y - (dy / distance) * stopShort;
     const footDx = player.body ? player.body.center.x - player.x : 0;
     const footDy = player.body ? player.body.center.y - player.y : 0;
-    let target = { x: centreX + footDx, y: centreY + footDy };
+    const target = { x: centreX + footDx, y: centreY + footDy };
     const findCell = deps.findCell;
     if (!findCell) return target;
     const reachAfter = (p) => Math.hypot(p.x - footDx - obj.x, p.y - footDy - obj.y);
     const walk = (p) => Math.hypot(p.x - (player.x + footDx), p.y - (player.y + footDy));
     const aimed = findCell(target.x, target.y);
-    if (!aimed || reachAfter(aimed) > range - 4 || !wallClear(aimed, obj)) {
-        let best = aimed, bestReach = aimed ? reachAfter(aimed) : Infinity, bestWalk = aimed ? walk(aimed) : Infinity;
-        for (let a = 0; a < 16; a++) {
-            const ang = (a / 16) * Math.PI * 2;
-            for (const r of [8, 16, 24]) {
-                const c = findCell(obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
-                if (!c) continue;
-                const ra = reachAfter(c), wk = walk(c);
-                const ok = ra <= range - 4 && wallClear(c, obj);
-                const bestOk = bestReach <= range - 4 && wallClear(best, obj);
-                if ((ok && (!bestOk || wk < bestWalk)) || (!ok && !bestOk && ra < bestReach)) {
-                    best = c; bestReach = ra; bestWalk = wk;
-                }
+    // Return the cell that was checked, not the raw aim: the raw aim can lie inside a desk,
+    // and the walk's last leg heads for it and stops short (code review R3 m1)
+    if (aimed && reachAfter(aimed) <= range - 4 && wallClear(aimed, obj)) return aimed;
+    let best = aimed, bestReach = aimed ? reachAfter(aimed) : Infinity, bestWalk = aimed ? walk(aimed) : Infinity;
+    for (let a = 0; a < 16; a++) {
+        const ang = (a / 16) * Math.PI * 2;
+        for (const r of [8, 16, 24]) {
+            const c = findCell(obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
+            if (!c) continue;
+            const ra = reachAfter(c), wk = walk(c);
+            const ok = ra <= range - 4 && wallClear(c, obj);
+            const bestOk = bestReach <= range - 4 && wallClear(best, obj);
+            if ((ok && (!bestOk || wk < bestWalk)) || (!ok && !bestOk && ra < bestReach)) {
+                best = c; bestReach = ra; bestWalk = wk;
             }
         }
-        if (best) target = best;
     }
-    return target;
+    return best || target;
 }
 
 export const PENDING_TAP_USE_MS = 10000;
@@ -265,6 +274,7 @@ const PROGRESS_PX = 2;          // feet movement that counts as progress
  * @param {function(): boolean} [deps.minigameOpen] - older name for busy
  * @param {function(): ?{x:number,y:number}} [deps.feet] - the player's feet, for progress
  * @param {function(object): void} [deps.onBlocked] - the walk was blocked: say why (R2 m4)
+ * @param {function(object): void} [deps.onStoppedShort] - the walk ended out of reach: say so (R3 m1)
  */
 export function createPendingTapUse(deps) {
     let pending = null;
@@ -299,7 +309,11 @@ export function createPendingTapUse(deps) {
                 return;
             }
             if (deps.inReach(o)) { pending = null; deps.use(o); return; }
-            if (still > STOPPED_SHORT_MS) pending = null;
+            if (still > STOPPED_SHORT_MS) {
+                pending = null;
+                // Say why, not drop it silently (code review R3 m1)
+                try { deps.onStoppedShort?.(o); } catch (e) { /* the message only */ }
+            }
         }
     };
 }

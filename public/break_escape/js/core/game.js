@@ -2895,9 +2895,13 @@ const pendingTapUse = createPendingTapUse({
     feet: () => (window.player ? playerFeet(window.player) : null),
     // The walk was blocked: say so, not drop the use silently (code review R2 m4)
     onBlocked: () => window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Something's in the way.", 'info', '', 2500),
-    // Something else took over on the way: a minigame, the pick-one menu or a confirm dialog
+    // The walk ended out of reach: say so, not drop the use silently (code review R3 m1)
+    onStoppedShort: () => window.gameAlert?.("Can't reach it from here.", 'info', '', 2500),
+    // Something else took over on the way: a minigame, the pick-one menu or a confirm dialog;
+    // or the player cannot move (knocked out, game over, frozen), so no toast (R3 m2)
     busy: () => !!window.MinigameFramework?.currentMinigame || isInteractionMenuOpen()
         || (typeof document !== 'undefined' && !!document.querySelector?.('.game-confirm-overlay'))
+        || !!window.playerHealth?.isKO?.() || !!window.player?.disableMovement
 });
 if (typeof window !== 'undefined') {
     window.__pendingTapUse = () => pendingTapUse.get();
@@ -2909,7 +2913,10 @@ function npcBesidePlayer() {
     const p = window.player;
     if (!p) return false;
     const f = playerFeet(p);
+    const ko = window.npcHostileSystem;
+    // A knocked-out body on the floor is not "someone" in the way (code review R3 n2)
     return allNpcSprites().some(s => s.visible !== false && s.active !== false
+        && !(ko?.isNPCKO && s.npcId && ko.isNPCKO(s.npcId))
         && Math.hypot((s.body?.center?.x ?? s.x) - f.x, (s.body?.center?.y ?? s.y) - f.y) <= TILE_SIZE);
 }
 

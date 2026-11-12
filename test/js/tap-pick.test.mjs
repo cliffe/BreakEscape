@@ -78,6 +78,24 @@ test('objectStandPoint: a stand point behind a wall is not kept when a clear one
     assert.ok(t.y >= 0 && Math.hypot(t.x - obj.x, t.y - obj.y) <= RANGE - 4);
 });
 
+test('objectStandPoint: a blocked aim whose snapped cell is in reach returns the cell, not the raw aim (R3 m1)', () => {
+    const player = { x: 0, y: 0 };
+    const obj = { x: 100, y: 0 };
+    // The raw aim (84, 0) is inside a desk; the pathfinder snaps it to the walkable cell (80, 8)
+    const findCell = (x, y) => (Math.round(x) === 84 && Math.round(y) === 0 ? { x: 80, y: 8 } : { x, y });
+    const t = objectStandPoint(obj, player, { range: RANGE, findCell });
+    assert.deepEqual(t, { x: 80, y: 8 });
+});
+
+test('objectStandPoint: the ring search also returns a checked cell (R3 m1)', () => {
+    const player = { x: 0, y: 0 };
+    const obj = { x: 100, y: 0 };
+    const cells = [];
+    const findCell = (x, y) => { const c = x > 100 ? { x: Math.round(x), y: Math.round(y) } : { x: x - 40, y }; cells.push(c); return c; };
+    const t = objectStandPoint(obj, player, { range: RANGE, findCell });
+    assert.ok(cells.includes(t), 'the stand point is one of the cells the pathfinder gave');
+});
+
 // ── createPendingTapUse: walk, then use ──
 function pendingRig(over = {}) {
     const state = { moving: true, inReach: false, used: [], minigame: false };
@@ -315,6 +333,42 @@ test('pending use: a blocked walk calls onBlocked once; stopping short does not 
     state.moving = false; p.update(2500);
     assert.equal(p.get(), null);
     assert.deepEqual(blocked, ['kim_usb']);
+});
+
+test('pending use: stopping short out of reach calls onStoppedShort once; a blocked walk does not (R3 m1)', () => {
+    const short = [], blocked = [];
+    const state = { moving: true, feet: { x: 0, y: 0 } };
+    const p = createPendingTapUse({
+        inReach: () => false, isMoving: () => state.moving, use: () => {},
+        feet: () => ({ ...state.feet }), onBlocked: (o) => blocked.push(o.id), onStoppedShort: (o) => short.push(o.id)
+    });
+    p.arm(stickObj(), 0);
+    state.moving = false; p.update(300);
+    assert.deepEqual(short, [], 'not before the walk can start');
+    p.update(500); p.update(600);
+    assert.deepEqual(short, ['kim_usb']);
+    state.moving = true; p.arm(stickObj(), 1000); p.update(2200);
+    assert.deepEqual(short, ['kim_usb']);
+    assert.deepEqual(blocked, ['kim_usb']);
+});
+
+test('game.js: busy covers a knocked-out or frozen player; a short stop says so (R3 m1, m2)', () => {
+    const src = readFileSync(join(js, 'core/game.js'), 'utf8');
+    const cut = src.slice(src.indexOf('const pendingTapUse = createPendingTapUse({'));
+    assert.match(cut, /busy: [^]*?window\.playerHealth\?\.isKO\?\.\(\)[^]*?window\.player\?\.disableMovement\n\}\);/);
+    assert.match(cut, /onStoppedShort: \(\) => window\.gameAlert\?\.\("Can't reach it from here\."/);
+});
+
+test('opaqueAt: flipY mirrors the row; rotation is undone about the origin (R3 n3)', () => {
+    const topHalf = (x, y) => (y < 40 ? 255 : 0);
+    assert.equal(opaqueAt(npcSprite({ flipY: true }), 100, 70, topHalf), false);   // local row 10 shows row 70
+    assert.equal(opaqueAt(npcSprite({ flipY: true }), 100, 130, topHalf), true);
+    // A quarter turn clockwise: the frame's left half is drawn above the origin
+    const turned = npcSprite({ rotation: Math.PI / 2 });
+    assert.equal(opaqueAt(turned, 100, 70, (x) => leftHalf(x)), true);             // local 10,40
+    assert.equal(opaqueAt(turned, 100, 130, (x) => leftHalf(x)), false);           // local 70,40
+    assert.equal(opaqueAt(npcSprite({ rotation: Math.PI / 2, width: 80, height: 20,
+        frame: { name: 0, realWidth: 80, realHeight: 20 } }), 100, 60, () => 255), true, 'a long thin frame turned upright');
 });
 
 test('opaqueAt: a trimmed frame passes untrimmed coordinates, as Phaser subtracts the trim (R2 m2)', () => {

@@ -436,6 +436,49 @@ test('handler R2 m4: a blocked walk drops the use with a short message', () => {
     assert.ok(w2.log.includes("alert:Someone's in the way."), w2.log.join());
 });
 
+test('handler R3 m1: a walk that ends out of reach says so once', () => {
+    const player = { x: 50, y: 50 };
+    const note = sprite('note', 120, 100, 10, 10);
+    const w = world({ player, objects: [note] });
+    w.tap(125, 105);
+    const t0 = Date.now();
+    w.state.moving = false;                      // the walk ended, still out of reach
+    w.pendingTapUse.update(t0 + 500);
+    w.pendingTapUse.update(t0 + 600);
+    assert.equal(w.pendingTapUse.get(), null);
+    assert.deepEqual(w.log.filter(l => l.startsWith('alert:')), ["alert:Can't reach it from here."]);
+});
+
+test('handler R3 m2: knocked out or frozen on the way, the use drops with no message', () => {
+    const note = sprite('note', 120, 100, 10, 10);
+    for (const stop of ['ko', 'frozen']) {
+        const player = { x: 50, y: 50 };
+        const guard = npc('guard', 60, 60);
+        const w = world({ player, objects: [note], npcs: [guard] });
+        w.tap(125, 105);
+        assert.equal(w.pendingTapUse.get()?.obj, note);
+        if (stop === 'ko') w.win.playerHealth = { isKO: () => true };
+        else player.disableMovement = true;
+        const t0 = Date.now();
+        w.pendingTapUse.update(t0 + 1500);       // on a path, feet still: would be "blocked"
+        w.state.moving = false;
+        w.pendingTapUse.update(t0 + 2000);       // or stopped short
+        assert.equal(w.pendingTapUse.get(), null, stop);
+        assert.ok(!w.log.some(l => l.startsWith('alert:')), `${stop}: ${w.log.join()}`);
+    }
+});
+
+test('handler R3 n2: a knocked-out body beside the player is not "someone" in the way', () => {
+    const player = { x: 50, y: 50 };
+    const note = sprite('note', 120, 100, 10, 10);
+    const guard = npc('guard', 60, 60);
+    const w = world({ player, objects: [note], npcs: [guard] });
+    w.win.npcHostileSystem.isNPCKO = (id) => id === 'guard';
+    w.tap(125, 105);
+    w.pendingTapUse.update(Date.now() + 1500);
+    assert.ok(w.log.includes("alert:Something's in the way."), w.log.join());
+});
+
 // ── R2 n3: every free name in the cut source is a stub, an import or a known global ──
 // The cutter runs the handler as text, so a name it uses that the harness does not pass in
 // would only fail in a branch a test reaches. This lists the free names statically.
@@ -485,29 +528,69 @@ const KEYWORDS = new Set(('if else return const let var function new typeof of i
     + 'try catch finally throw break continue instanceof void delete async await default switch case get set').split(' '));
 const GLOBALS = new Set(('Math Object Array Number String Boolean Date JSON Infinity NaN console Set Map WeakMap Error '
     + 'isNaN isFinite parseInt parseFloat Promise setTimeout clearTimeout Symbol RegExp arguments').split(' '));
+// Block ranges of the blanked code: [open, close] index pairs of matching braces
+function blocks(code) {
+    const pairs = [], stack = [];
+    for (let i = 0; i < code.length; i++) {
+        if (code[i] === '{') stack.push(i);
+        else if (code[i] === '}') pairs.push([stack.pop(), i]);
+    }
+    return pairs;
+}
+// Free names, scope-aware (code review R3 n1): each declaration counts only inside the range it
+// lives in, so `const player = ...` in one helper does not cover a use in another.
+// const/let/var and function names: the innermost block holding them. Parameters and catch
+// names: the function's or catch's block (an arrow with an expression body: from the arrow to
+// the end of its enclosing block, a slight over-reach). A for-head's const: the rest of the
+// enclosing block, also a slight over-reach. var is treated like let, which is stricter.
 function freeNames(code) {
-    const declared = new Set();
+    const pairs = blocks(code);
+    const enclosing = (pos) => {
+        let best = [0, code.length];
+        for (const [o, c] of pairs) if (o < pos && pos < c && o >= best[0]) best = [o, c];
+        return best;
+    };
+    const blockAt = (open) => pairs.find(([o]) => o === open);
+    const nextNonSpace = (i) => { while (i < code.length && /\s/.test(code[i])) i++; return i; };
+    const decls = [];                       // [name, from, to]
+    const declare = (name, [from, to]) => decls.push([name, from, to]);
     const ident = /[A-Za-z_$][\w$]*/g;
     const namesIn = (str) => (str.match(ident) || []);
-    // const/let/var names (plain or destructured), function names and parameters, catch names
-    for (const m of code.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)) declared.add(m[1]);
-    for (const m of code.matchAll(/\b(?:const|let|var)\s+([\w$]+(?:\s*,\s*[\w$]+)+)\s*;/g)) namesIn(m[1]).forEach(n => declared.add(n));
+    for (const m of code.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)) declare(m[1], enclosing(m.index));
+    for (const m of code.matchAll(/\b(?:const|let|var)\s+([\w$]+(?:\s*,\s*[\w$]+)+)\s*;/g)) {
+        namesIn(m[1]).forEach(n => declare(n, enclosing(m.index)));
+    }
     for (const m of code.matchAll(/\b(?:const|let|var)\s*([{[])/g)) {
         const open = m.index + m[0].length - 1;
         const close = code.indexOf(m[1] === '{' ? '}' : ']', open);
-        namesIn(code.slice(open, close)).forEach(n => declared.add(n));
+        namesIn(code.slice(open, close)).forEach(n => declare(n, enclosing(m.index)));
     }
+    // The block that follows a `)` or `=>` at index `paren` (a function or catch body), else the
+    // rest of the enclosing block
+    // (from `from`, so the parameter list itself counts as inside)
+    const bodyAfter = (paren, from) => {
+        const b = nextNonSpace(paren + 1);
+        const pair = code[b] === '{' ? blockAt(b) : null;
+        return [from, pair ? pair[1] : enclosing(from)[1]];
+    };
     for (const m of code.matchAll(/\bfunction\s*([A-Za-z_$][\w$]*)?\s*\(([^)]*)\)/g)) {
-        if (m[1]) declared.add(m[1]);
-        namesIn(m[2]).forEach(n => declared.add(n));
+        if (m[1]) declare(m[1], enclosing(m.index));
+        const scope = bodyAfter(m.index + m[0].length - 1, m.index);
+        namesIn(m[2]).forEach(n => declare(n, scope));
     }
-    for (const m of code.matchAll(/\bcatch\s*\(\s*([A-Za-z_$][\w$]*)/g)) declared.add(m[1]);
-    for (const m of code.matchAll(/([A-Za-z_$][\w$]*)\s*=>/g)) declared.add(m[1]);
+    for (const m of code.matchAll(/\bcatch\s*\(\s*([A-Za-z_$][\w$]*)\s*\)/g)) {
+        declare(m[1], bodyAfter(m.index + m[0].length - 1, m.index));
+    }
+    for (const m of code.matchAll(/([A-Za-z_$][\w$]*)\s*=>/g)) {
+        declare(m[1], bodyAfter(m.index + m[0].length - 1, m.index));
+    }
     for (const m of code.matchAll(/\)\s*=>/g)) {
         let d = 0, k = m.index;
         for (; k >= 0; k--) { if (code[k] === ')') d++; else if (code[k] === '(' && --d === 0) break; }
-        namesIn(code.slice(k, m.index)).forEach(n => declared.add(n));
+        const scope = bodyAfter(m.index + m[0].length - 1, k);
+        namesIn(code.slice(k, m.index)).forEach(n => declare(n, scope));
     }
+    const declaredAt = (name, pos) => decls.some(([n, from, to]) => n === name && from <= pos && pos <= to);
     const free = new Set();
     for (const m of code.matchAll(ident)) {
         const name = m[0];
@@ -518,7 +601,7 @@ function freeNames(code) {
         let a = m.index + name.length;
         while (a < code.length && /\s/.test(code[a])) a++;
         if (code[a] === ':' && (code[b] === '{' || code[b] === ',')) continue; // an object key
-        if (KEYWORDS.has(name) || GLOBALS.has(name) || declared.has(name)) continue;
+        if (KEYWORDS.has(name) || GLOBALS.has(name) || declaredAt(name, m.index)) continue;
         free.add(name);
     }
     return free;
@@ -533,4 +616,20 @@ test('handler R2 n3: every free name in the cut source is passed in by the harne
 test('handler R2 n3: the free-name check finds a name no stub covers', () => {
     const free = freeNames(codeOnly("function f(a) { const b = a.x; if (b) return /x/.test(c) ? notStubbed(b) : `${a}`; }"));
     assert.deepEqual([...free], ['c', 'notStubbed']);
+});
+
+test('handler R3 n1: the free-name check is scope-aware', () => {
+    // p is declared in f only; the use in g is free. The arrow's x and the catch's e stay local.
+    const free = freeNames(codeOnly('function f() { const p = 1; return [1].map(x => x + p); } '
+        + 'function g() { try { return p; } catch (e) { return e; } } const h = (y) => { return x + y; };'));
+    assert.deepEqual([...free].sort(), ['p', 'x']);
+});
+
+test('handler R3 n1: the cut source uses player free, so dropping its stub would be caught', () => {
+    // A name that is also a local in one helper (const player = window.player) must still show
+    // as free where it is used outside that helper (the far-NPC branch)
+    assert.ok(freeNames(codeOnly(body)).has('player'), 'player is a free name of the cut source');
+    const allowed = new Set([...STUBS.filter(n => n !== 'player'), ...IMPORT_NAMES, 'deps']);
+    const missing = [...freeNames(codeOnly(body))].filter(n => !allowed.has(n));
+    assert.deepEqual(missing, ['player']);
 });
