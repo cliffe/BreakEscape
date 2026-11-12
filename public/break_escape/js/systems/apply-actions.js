@@ -146,7 +146,9 @@ if (typeof window !== 'undefined') window.isCardRevoked = isCardRevoked;
 // triggerOnInteract, directly or through a confirm_action); remove_item sends it as used_on.
 export function applyActions(actions, { source = 'scenario', gameId = null, objectId = null } = {}) {
     // The addToInventory promises started for give_item actions, in order, so a caller
-    // (the timer dispatcher) can retry a give lost to the network. Other callers ignore it.
+    // (the timer dispatcher) can retry a give lost to the network. Each carries the action
+    // it ran as `.action`: a give skipped by its condition starts no promise, so the list
+    // does not line up with the list's give_item entries by position. Other callers ignore it.
     const gives = [];
     if (!Array.isArray(actions) || actions.length === 0) return gives;
 
@@ -270,7 +272,9 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                         setVisible: function() { return this; }
                     };
                     console.log('[applyActions] give_item:', action.item.name);
-                    gives.push(Promise.resolve(window.addToInventory(itemSprite)));
+                    const give = Promise.resolve(window.addToInventory(itemSprite));
+                    give.action = action;
+                    gives.push(give);
                 }
                 break;
 

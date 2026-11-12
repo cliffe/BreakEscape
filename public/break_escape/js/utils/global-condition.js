@@ -79,11 +79,16 @@ export function globalsInCondition(condition) {
  * parseActionCondition returns null for anything else: not a string, empty, a negated
  * comparison ("!globalVars.x === true"), a bare name, an unquoted word on the right.
  */
-const ACTION_NAME = /^(!\s*)*globalVars\.(\w+)$/;
-const ACTION_COMPARE = /^globalVars\.(\w+)\s*(===|!==|>=|<=|>|<)\s*(true|false|null|-?\d+(?:\.\d+)?|'[^'"]*'|"[^'"]*")$/;
+// Whitespace is the ASCII set only (space, tab, LF, CR, form feed, vertical tab), the same
+// set the validator uses. JavaScript's \s and trim() also take Unicode spaces (a no-break
+// space, a byte order mark) where Ruby's do not, and Ruby's strip also drops NUL, so neither
+// is used here: a condition with any other character in it is refused on both sides.
+const ACTION_NAME = /^(![ \t\n\r\f\v]*)*globalVars\.(\w+)$/;
+const ACTION_COMPARE = /^globalVars\.(\w+)[ \t\n\r\f\v]*(===|!==|>=|<=|>|<)[ \t\n\r\f\v]*(true|false|null|-?\d+(?:\.\d+)?|'[^'"]*'|"[^'"]*")$/;
+const asciiTrim = (s) => s.replace(/^[ \t\n\r\f\v]+|[ \t\n\r\f\v]+$/g, '');
 
 function parseActionTerm(term) {
-  const t = term.trim();
+  const t = asciiTrim(term);
   const name = t.match(ACTION_NAME);
   if (name) {
     const negations = (t.match(/!/g) || []).length;
@@ -104,7 +109,7 @@ function parseActionTerm(term) {
 
 /** A function of the globals, or null when the condition is not in the grammar. */
 export function parseActionCondition(condition) {
-  if (typeof condition !== 'string' || !condition.trim()) return null;
+  if (typeof condition !== 'string' || !asciiTrim(condition)) return null;
   const alternatives = [];
   for (const alt of condition.split('||')) {
     const terms = alt.split('&&').map(parseActionTerm);

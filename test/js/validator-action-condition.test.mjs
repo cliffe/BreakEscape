@@ -13,6 +13,8 @@ import { parseActionCondition } from '../../public/break_escape/js/utils/global-
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const env = { ...process.env, LANG: 'C.UTF-8' };
 const skip = spawnSync('ruby', ['--version']).status !== 0 && 'ruby not found';
+// Say so in the run log: a skipped file otherwise reads as green in a count of files
+if (skip) console.error(`validator-action-condition: skipped, ${skip}`);
 
 const ruby = (expr, input) => {
   const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
@@ -29,7 +31,13 @@ const GOOD = ['globalVars.a', '!globalVars.a', '! globalVars.a', '!!globalVars.a
   'globalVars.a === null', '  globalVars.a  &&  globalVars.b  '];
 const BAD = ['', '   ', '!globalVars.a === true', 'globalVars.a == true', 'globalVars.a === maybe', 'a', 'vars.a',
   '(globalVars.a)', 'globalVars.a &&', '|| globalVars.a', 'globalVars.a & globalVars.b', 'globalVars.a === true === true',
-  'data.a === true', 'globalVars.', 'not globalVars.a', 'globalVars.a.includes("x")', "globalVars.s === 'it's'"];
+  'data.a === true', 'globalVars.', 'not globalVars.a', 'globalVars.a.includes("x")', "globalVars.s === 'it's'",
+  // Whitespace is ASCII only on both sides: Unicode spaces (no-break space, byte order mark,
+  // line separator) and NUL are refused by the validator and the engine alike
+  'globalVars.a\u00a0', '\u00a0globalVars.a', 'globalVars.a\ufeff', 'globalVars.a\u0000', '!\u00a0globalVars.a',
+  'globalVars.a\u00a0&& globalVars.b', 'globalVars.n\u2003=== 3', '\u2028globalVars.a', '\u0000'];
+// ASCII whitespace of every kind is accepted around terms and operators
+GOOD.push('\tglobalVars.a\n', 'globalVars.a\r\n&&\fglobalVars.b\v', '!\t!globalVars.a', 'globalVars.n\t>=\t3');
 
 test('the validator and the engine agree on which action conditions are well formed', { skip }, () => {
   const problems = ruby('input.map { |c| action_condition_problem(c) }', [...GOOD, ...BAD, false, true, null, 3, {}, ['globalVars.a']]);
@@ -86,8 +94,30 @@ test('a malformed condition, an undeclared global, and a conditioned reward or g
 
 test("'||' in an action condition is not flagged by the '&&'-only checks, and the engine-limit pass runs the new check", { skip }, () => {
   const j = scenario();
-  assert.deepEqual(ruby('check_or_in_global_conditions(input)', j).filter(s => /actions\[0\]/.test(s)), []);
   assert.ok(ruby('check_engine_limits(input)', j).some(s => /flag reward with a 'condition'/.test(s)));
+  // Outside timers (whose paths that check skips anyway): an action in triggerOnInteract and
+  // one in a confirm_action's onConfirm, each with '||'
+  const objects = j.rooms.lab.objects;
+  objects.push({ id: 'desk', type: 'notes', name: 'Desk', triggerOnInteract: [
+    { type: 'hint', condition: 'globalVars.seen || globalVars.vest', message: 'or ok' },
+    { type: 'confirm_action', text: 'Sure?', onConfirm: [{ type: 'hint', condition: 'globalVars.vest || globalVars.seen', message: 'nested ok' }] },
+    // Nested inside an action: a lighting block read by the '&&'-only evaluator is still checked
+    { type: 'give_item', item: { type: 'torch', id: 't1', name: 'Torch', lighting: { condition: 'globalVars.seen || globalVars.vest' } } }
+  ] });
+  // An entry of a conditionalActions list is not an action: its own condition gets the soft warning
+  objects[2].minigameData.conditionalActions.push({ condition: 'globalVars.seen || globalVars.vest', actions: [] });
+  // Nor is a hash with no type under an action-list key
+  objects[3].triggerOnInteract.push({ condition: 'globalVars.vest || globalVars.seen', note: 'no type' });
+  const issues = ruby('check_or_in_global_conditions(input)', j);
+  assert.deepEqual(issues.filter(s => /objects\[3\]\/triggerOnInteract\[[01]\]'/.test(s) && !/lighting/.test(s)), [],
+    `the actions' own '||' conditions are not flagged:\n${issues.join('\n')}`);
+  assert.ok(issues.some(s => /❌ INVALID: 'rooms\/lab\/objects\[3\]\/triggerOnInteract\[2\]\/item\/lighting' lighting condition .* uses '\|\|'/.test(s)),
+    `the lighting block nested in the give_item is reported:\n${issues.join('\n')}`);
+  assert.ok(issues.some(s => /⚠️ WARNING: 'rooms\/lab\/objects\[2\]\/minigameData\/conditionalActions\[1\]' condition .* uses '\|\|'/.test(s)),
+    `the conditionalActions entry gets the soft warning:\n${issues.join('\n')}`);
+  assert.ok(issues.some(s => /⚠️ WARNING: 'rooms\/lab\/objects\[3\]\/triggerOnInteract\[3\]' condition .* uses '\|\|'/.test(s)),
+    `the entry with no type gets the soft warning:\n${issues.join('\n')}`);
+  assert.equal(issues.length, 3, issues.join('\n'));
 });
 
 test('the schema knows an action condition and wants a non-empty string', { skip }, () => {
