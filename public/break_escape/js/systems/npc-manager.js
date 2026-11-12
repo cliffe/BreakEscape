@@ -2712,6 +2712,32 @@ export default class NPCManager {
   }
 
   /**
+   * Item 7 follow-up: the `ring.callbackWhen` of the ring mapping whose call opens on `knot`, or null.
+   * The save writes only { knot, state, onMissed, callLabel } (the format is unchanged), so a callback
+   * restored after a reload lost its stale-clear condition. We recover it from the live scenario config
+   * by knot, so a stale callback still clears after a reload.
+   * @param {Object} npc
+   * @param {string} knot
+   * @returns {string|null}
+   */
+  _ringCallbackWhenFor(npc, knot) {
+    if (!npc || typeof knot !== 'string' || !knot) return null;
+    const knotOf = (p) => String(p || '').split('.')[0];
+    const want = knotOf(knot);
+    const fromRing = (ring, target) => (ring && typeof ring === 'object'
+      && knotOf(target) === want && typeof ring.callbackWhen === 'string' && ring.callbackWhen)
+      ? ring.callbackWhen : null;
+    for (const m of this._normalizeEventMappings(npc.eventMappings)) {
+      if (!m) continue;
+      const w = fromRing(m.ring, m.targetKnot || m.knot);
+      if (w) return w;
+    }
+    const t = npc.timedConversation;
+    if (t) { const w = fromRing(t.ring, t.targetKnot); if (w) return w; }
+    return null;
+  }
+
+  /**
    * A call that was dialling, connected or held when the game was saved (incoming or outgoing) leaves the
    * thread on the call's knot and its choices, which would show as silent text. The call is gone after a
    * reload, so the thread goes back to its home knot, as at End (`_resetAfterRingerCall`); the thread's own
@@ -2767,11 +2793,17 @@ export default class NPCManager {
     for (const vm of voicemails) {
       Promise.resolve(this.runVoicemail(npc.id, vm.knot, { withheld: vm.withheld, quiet: true })).catch(() => {});
     }
-    if (callback) ringer.restoreCallback?.(npc.id, callback);
+    // Item 7 follow-up: recover each restored callback's callbackWhen from the ring config by knot
+    // (the save never carried it), so a stale callback still clears after a reload.
+    if (callback) {
+      callback.callbackWhen = callback.callbackWhen || this._ringCallbackWhenFor(npc, callback.knot) || undefined;
+      ringer.restoreCallback?.(npc.id, callback);
+    }
     if (heldVoicemail) {
       // handled above
     } else if (keepCallback) {
       // A callback saved before the reload (state "missed"): the ringer holds it again
+      live.callbackWhen = live.callbackWhen || this._ringCallbackWhenFor(npc, live.knot) || undefined;
       ringer.restoreCallback?.(npc.id, live);
     } else if (live) {
       this.addCallRow(npc.id, 'missed', { withheld: live.withheld === true });

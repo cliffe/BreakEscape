@@ -54,12 +54,22 @@ export function installPhoneRinger(win = window) {
     const sceneActive = () => !!nm()?.scriptedConversationActive?.();
     const queuedBeats = () => (nm()?._scriptedCallQueue?.length || 0) > 0;
     const knockedOut = () => !!win.playerIsKnockedOut?.();
-    /** The tutorial prompt or an active tutorial step: its panel (SKIP TUTORIAL, step counter) must stay visible, so nothing rings (M8 R1 M2). */
-    const tutorialShowing = () => {
-        try {
-            const t = win.getTutorialManager?.();
-            return !!t && (t.active === true || t.promptOpen === true);
-        } catch (e) { return false; }
+    /** The tutorial manager, or null if it is missing or throws. */
+    const tutorialManager = () => {
+        try { return win.getTutorialManager?.() || null; } catch (e) { return null; }
+    };
+    /** The opening accept/skip modal is up: hold the ring fully until it is answered (sweep item 9). */
+    const tutorialPromptOpen = () => tutorialManager()?.promptOpen === true;
+    /**
+     * A token for the active tutorial step panel, or null when none shows (sweep item 9). The token
+     * changes when the step completes (TutorialManager.nextStep bumps currentStep), so the ring can be
+     * held for at most 20 s of unpaused time from the offer, or until the step completes / the tutorial
+     * ends, whichever first. Null while the opening modal is up (that is a full hold, not a timed one).
+     */
+    const tutorialStep = () => {
+        const t = tutorialManager();
+        if (!t || t.active !== true || t.promptOpen === true) return null;
+        return typeof t.currentStep === 'number' ? t.currentStep : 0;
     };
     /** A conversation minigame: a person-chat (a video call is one: conversationMode "video-call"), or a phone-chat showing a call (2.2). */
     const isConversation = (m) => !!m && (m._sceneType === 'person-chat'
@@ -133,6 +143,9 @@ export function installPhoneRinger(win = window) {
         }
         hidePhonePanel();
         clearLayer();
+        // Sweep item 9: when the banner rings while a tutorial step panel is up, drop it clear of
+        // SKIP TUTORIAL and the step counter (CSS moves the top-centre layer to the bottom).
+        layer.classList.toggle('under-tutorial', tutorialStep() !== null);
         const name = view.withheld ? 'No caller ID' : (npc?.displayName || view.npcId);
         const box = el('div', 'incoming-call');
         box.dataset.npcId = view.npcId;
@@ -216,11 +229,14 @@ export function installPhoneRinger(win = window) {
     // ---- the adapter -------------------------------------------------------------
     const adapter = {
         // A non-conversation minigame or a popup does not block: the call rings over it
-        // An active tutorial (or its prompt) does block: the ring waits until it ends or is skipped
         // The player's own phone does not block either: the call rings inside it (row 10)
+        // The tutorial hold is timed, so it is not here: the ringer consults tutorialPromptOpen /
+        // tutorialStep and holds per offer (sweep item 9).
         ringBlocked() {
-            return isConversation(openMinigame()) || sceneActive() || queuedBeats() || knockedOut() || tutorialShowing();
+            return isConversation(openMinigame()) || sceneActive() || queuedBeats() || knockedOut();
         },
+        tutorialPromptOpen,
+        tutorialStep,
         // A popup does not block opening either: row 11 puts it aside; the caller's own phone is
         // closed for the call (row 10)
         openBlocked(info) {
@@ -381,7 +397,7 @@ export function installPhoneRinger(win = window) {
             }
         },
         showBanner,
-        hideBanner() { hidePhonePanel(); clearLayer(); },
+        hideBanner() { hidePhonePanel(); clearLayer(); layer.classList.remove('under-tutorial'); },
         showPill,
         hidePill: clearLayer,
         ringtone(on) {

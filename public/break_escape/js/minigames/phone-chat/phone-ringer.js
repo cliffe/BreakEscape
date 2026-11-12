@@ -92,6 +92,8 @@ export const AUTO_ANSWER_MS = 6000;
 export const RERING_AFTER_LOAD_MS = 3000;
 export const HIT_QUIET_MS = 4000;
 export const HOLD_MAX_MS = 90000;
+/** Sweep item 9: the longest a queued or ringing offer is held by an active tutorial step, in unpaused time. */
+export const TUTORIAL_HOLD_MS = 20000;
 export const DIAL_MS = 2500;
 export const RING_OUT_MS = 6000;
 export const SCRIPTED_CALL_START_MS = 500;
@@ -190,6 +192,25 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         return !!call('ringBlocked', queue[0] && queue[0].npcId);
     }
 
+    /**
+     * Sweep item 9: should this offer still be held by the tutorial? Full hold while the opening
+     * accept/skip modal is up (no timer runs). While a step panel shows, hold for at most
+     * TUTORIAL_HOLD_MS of unpaused time from when the offer first met the step, or until the step
+     * completes (its token changes) or the tutorial ends (no step), whichever first. advance() accrues
+     * the unpaused time while `tutHolding` is set. Forced calls follow the same rule.
+     */
+    function tutorialHold(o) {
+        if (call('tutorialPromptOpen') === true) { o.tutHolding = false; return true; }
+        const step = call('tutorialStep');
+        const hasStep = step !== null && step !== undefined && step !== false;
+        if (!hasStep) { o.tutStep = undefined; o.tutHoldMs = 0; o.tutHolding = false; return false; }
+        if (o.tutStep === undefined) o.tutStep = step;          // anchor on the first active step met
+        if (step !== o.tutStep) { o.tutHolding = false; return false; }   // the step completed: ring
+        if (o.tutHoldMs >= TUTORIAL_HOLD_MS) { o.tutHolding = false; return false; }   // 20 s up: ring
+        o.tutHolding = true;
+        return true;
+    }
+
     function pillShowing(o) {
         return !!o && o.state === 'held' && !!call('minigameOpen', o.npcId)
             && !call('conversationOpen') && !call('knockedOut');
@@ -283,9 +304,15 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         const t = now();
         const dt = t - lastAdvance;
         lastAdvance = t;
-        if (dt <= 0 || dt > MAX_ADVANCE_MS || isPaused() || !active) return;
-        if (active.state === 'ringing') active.ringMs += dt;
-        else if (active.state === 'held' && (pillShowing(active) || connectingInPhone(active))) active.holdMs += dt;
+        if (dt <= 0 || dt > MAX_ADVANCE_MS || isPaused()) return;
+        if (active) {
+            if (active.state === 'ringing') active.ringMs += dt;
+            else if (active.state === 'held' && (pillShowing(active) || connectingInPhone(active))) active.holdMs += dt;
+        }
+        // Sweep item 9: a queued head (or a ringing offer requeued behind the tutorial step) accrues its
+        // tutorial-hold time while runOnce says it is holding. Only one offer holds at a time.
+        const held = (!active ? queue[0] : (active.state === 'ringing' ? active : null));
+        if (held && held.tutHolding) held.tutHoldMs += dt;
     }
 
     function ensureTick() {
@@ -783,8 +810,9 @@ export function createPhoneRinger({ adapter, clock } = {}) {
                 // Item 8: the mapping's condition stopped holding while it rang. Drop it quietly.
                 dropQuietly(o);
                 again = true;
-            } else if (call('ringBlocked', o.npcId)) {
-                // Rows 23 and 24: a conversation opened, or the player was knocked out.
+            } else if (call('ringBlocked', o.npcId) || tutorialHold(o)) {
+                // Rows 23 and 24: a conversation opened, or the player was knocked out. Sweep item 9:
+                // a tutorial step that came up while it rang holds it too (it rings again within 20 s).
                 requeueHead(o);
             } else if (o.disableClose) {
                 // Row 22: a forced call answers itself.
@@ -816,6 +844,9 @@ export function createPhoneRinger({ adapter, clock } = {}) {
                 // Item 8: its condition went stale while it waited in the queue; drop it, don't ring.
                 dropQuietly(head);
                 again = true;
+            } else if (tutorialHold(head)) {
+                // Sweep item 9: the tutorial's opening modal (full hold) or an active step (up to 20 s of
+                // unpaused time, or until the step completes / the tutorial ends) is holding the ring.
             } else if (!ringBlocked() && !(head.rering && hitWithin(HIT_QUIET_MS)) && now() >= head.notBefore) {
                 queue.shift();
                 startRinging(head);
@@ -847,6 +878,11 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             answerSeconds: Number.isFinite(raw.answerSeconds) ? raw.answerSeconds : null,
             state: 'queued',
             holdMs: 0,
+            // Sweep item 9: unpaused time this offer has been held by an active tutorial step, the step
+            // token it was anchored to, and whether advance() should keep accruing that time.
+            tutHoldMs: 0,
+            tutStep: undefined,
+            tutHolding: false,
             started: false,
             rering: false,
             resumeCall: false,
@@ -1171,11 +1207,17 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         return true;
     }
 
-    /** A saved callback comes back after a reload (state "missed", 2.7). A newer live offer outranks it. */
+    /**
+     * A saved callback comes back after a reload (state "missed", 2.7). A newer live offer outranks it.
+     * Item 7 follow-up: the save never carried `callbackWhen` (the format is unchanged), so a restored
+     * callback would lose its stale-clear condition. The caller (npc-manager) looks the ring config up
+     * by knot and hands it back on `rec.callbackWhen`, so a stale callback still clears after a reload.
+     */
     function restoreCallback(npcId, rec) {
         if (closed || typeof npcId !== 'string' || !npcId || !rec || typeof rec.knot !== 'string' || !rec.knot) return 'refused';
         if (contactLive(npcId) || queue.some((q) => q.npcId === npcId)) return 'dropped';
-        setCallback(npcId, rec.knot, rec.callLabel);
+        setCallback(npcId, rec.knot, rec.callLabel,
+            typeof rec.callbackWhen === 'string' && rec.callbackWhen ? rec.callbackWhen : undefined);
         return 'kept';
     }
 

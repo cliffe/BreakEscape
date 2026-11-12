@@ -20,7 +20,7 @@ globalThis.document = { addEventListener() {}, removeEventListener() {} };
 globalThis.__stubs = { lock };
 const header = `
 const S = globalThis.__stubs;
-const { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } = S.lock;
+const { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS, TERMINAL_CALL_END_READ_MS } = S.lock;
 class MinigameScene { constructor(c, p) { this.container = c; this.params = p; } addEventListener() {} cleanup() {} }
 class PhoneChatUI {} class PhoneChatHistory {} class InkEngine {} class PhoneCallVoice {} class TTSManager {}
 class PhoneChatConversation { static stepKnot() { return null; } static async waitForPreload() {} static isPreloadedOpening() { return false; } }

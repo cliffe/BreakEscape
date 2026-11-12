@@ -10,6 +10,14 @@
 /** Milliseconds a forced call stays up after its story ends without #exit_conversation. */
 export const FORCED_CALL_END_CLOSE_MS = 2000;
 
+/**
+ * Sweep item 10: milliseconds a terminal-look call (no call screen, no "Call ended" beat) holds its
+ * last line on screen before it closes, so the closing narration of an Architect call stays readable
+ * instead of flashing for under a frame. A playing clip finishes first; this beat covers the
+ * unvoiced narration after it.
+ */
+export const TERMINAL_CALL_END_READ_MS = 2600;
+
 /** True when the player may not close or leave this phone conversation. */
 export function phoneCloseLocked(params) {
     return params?.disableClose === true;

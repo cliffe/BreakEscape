@@ -13,6 +13,13 @@
   font-family: 'GNF', monospace;
 }
 
+/* Sweep item 9: a ring that comes up while a tutorial step panel is open sits at the bottom, clear
+   of the panel's SKIP TUTORIAL button and its step counter (both near the top centre). */
+#phone-ring-layer.under-tutorial {
+  top: auto;
+  bottom: 16px;
+}
+
 #phone-ring-layer .incoming-call {
   pointer-events: auto;
   display: flex;

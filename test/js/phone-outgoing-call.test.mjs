@@ -30,7 +30,7 @@ globalThis.__stubs = {
 const noop = () => {};
 const header = `
 const S = globalThis.__stubs;
-const { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } = S.lock;
+const { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS, TERMINAL_CALL_END_READ_MS } = S.lock;
 const callHomeKnot = S.callHomeKnot;
 const { placeCallFromTags } = S.ringConfig;
 const { DIAL_MS, RING_OUT_MS, NO_ANSWER_BEAT_MS } = S.dialMod;

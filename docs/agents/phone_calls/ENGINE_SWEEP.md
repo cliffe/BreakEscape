@@ -97,19 +97,72 @@ change under a pending ring); a condition that reads event data is left ringing,
 event is gone (`NPCManager.ringConditionHolds`, the safe-false rule). This needs no new author field:
 it uses the mapping's existing `condition`. Tests: `phone-callback-ringer.test.mjs`.
 
-### 9. Tutorial hold has no limit — NOT DONE, open work
-See `HANDOVER_ENGINE_SWEEP.md`. The tutorial-panel ring hold (`ringBlocked()` in `phone-ringer-dom.js`,
-commit 916104732) holds every ring for as long as the player leaves the step panel idle. The decided
-rule (hold fully for the opening prompt modal; while the step panel shows, hold at most 20 s of
-unpaused time from the offer, or until the step completes / the tutorial ends; forced calls follow the
-same rule; banner clear of SKIP TUTORIAL and the step counter) is designed but not implemented here.
+### 8b. The item-8 re-check dropped self-latching rings (M5 R2 blocker) — DONE (commit `88862563c`)
+A ring mapping's own `setGlobal` runs at offer time (`_handleEventMapping`) and flips a term in its own
+`condition` — a latch like `recruiter_texted`, `revelation_ring_offered`, `nightshade_rang`,
+`torres_rang` — so item 8's re-check dropped the ring on its first tick: the Recruiter's first call never
+rang and left no Missed row (m05 games 2166, 2161). Fix: `NPCManager._ringRecheckCondition(condition,
+setGlobal)` drops any `&&` term reading a variable the same mapping writes and carries only the rest as
+`ringCondition`; a non-self term going false still drops the ring (item 8 preserved). Test:
+`phone-ring-self-latch.test.mjs` (the m05, m03 twin and m09 shapes, plus the still-drops case).
+
+### 9. Tutorial hold has a 20 s limit — DONE
+From M8 R2 M1. The tutorial-panel ring hold (`ringBlocked()` in `phone-ringer-dom.js`, commit 916104732)
+held every ring for as long as the step panel was left idle. Now:
+- The opening accept/skip modal (`promptOpen`) holds the ring fully, no timer.
+- While a step panel shows (`active`, not `promptOpen`), the ring is held for at most `TUTORIAL_HOLD_MS`
+  (20 000 ms) of unpaused time from the offer, or until the current step completes (TutorialManager's
+  `currentStep` changes) or the tutorial ends, whichever first. Forced calls follow the same rule.
+- When it rings while a step still shows, the banner drops to the bottom (`#phone-ring-layer.under-tutorial`,
+  `phone-ring.css`), clear of SKIP TUTORIAL and the step counter.
+
+Implementation: `tutorialShowing()` is gone from `adapter.ringBlocked`; the adapter exposes
+`tutorialPromptOpen()` and `tutorialStep()`. The ringer's `tutorialHold(o)` decides the hold per offer,
+`advance()` accrues unpaused `tutHoldMs` while `tutHolding`, and `runOnce` consults it on the queued head
+and on a ringing offer a step came up behind. Const `TUTORIAL_HOLD_MS` in `phone-ringer.js`. Tests:
+`phone-ring-tutorial.test.mjs` (modal full hold; 20 s then rings; step-complete and tutorial-end release;
+forced; a step starting mid-ring; no manager).
+
+### 10. Terminal-look calls close too fast — DONE
+From M6 R1 M2. In the terminal look there is no call screen and no "Call ended" beat, so `#exit_conversation`
+closed the phone at once and the last line of every Architect call showed for under 50 ms.
+`_completeRingerCallWithBeat` (`phone-chat-minigame.js`) now, when `showCallEnded()` is false, holds a read
+beat (`TERMINAL_CALL_END_READ_MS` = 2600 ms, in `phone-call-lock.js`) before `complete(true)`, and where
+the last clip is still playing it waits for it to finish first (`_waitForCallClipThen`, polling `isPlaying`).
+The handset "Call ended" beat is unchanged. Test: `phone-call-terminal-beat.test.mjs`.
+
+### 11. A withheld terminal caller's thread look — VERIFIED (config + docs), engine unchanged
+From M6 R1 m2. The look is decided once per phone session in `init()` via `resolvePhoneApp`
+(`theme = app?.theme || params.theme || npc.phoneTheme`). A contact with `phoneTheme: "terminal"` resolves
+terminal for its own call (the ringer passes `theme: npc.phoneTheme`) and for a phone opened on that
+contact's thread; a phone opened on the contact list resolves from the device `app` or the first contact,
+so setting one withheld caller's `phoneTheme` does not change the device/contact-list look ("the look
+belongs to the device"). The m07 fixer sets the field; README "Voiced phone calls" now documents the call
+look / `phoneTheme`. Test: `phone-theme-withheld.test.mjs`. **Note for the orchestrator:** the theme is
+per-session, so a thread opened *within an already-open device-look session* (tapping the contact in the
+list) stays in the device look — matching the review's "the look belongs to the device". A true per-thread
+re-theme (device list normal, his thread terminal in one session) would be a larger, render-verified change;
+not done here. His calls and a phone opened directly on his thread are terminal.
+
+### 7b. A reload lost a restored callback's `callbackWhen` — DONE
+Item 7 kept `callbackWhen` in memory only (the save format is unchanged), so a callback restored after a
+reload lost its stale-clear condition and a stale "Call back" never cleared. `NPCManager._ringCallbackWhenFor
+(npc, knot)` recovers it from the live ring config by knot, and `_resumePendingCall` attaches it to the
+restored callback/live rec before `restoreCallback`, which now passes it to `setCallback`. Save format
+unchanged. Tests: `phone-callback-restore-when.test.mjs` (array and object eventMappings, and no-config).
 
 ## Author-visible docs
-`README_scenario_design.md` "Voiced phone calls" documents `ring.callbackWhen` (item 7) and the
-condition re-check (item 8). Item 9's "Nothing rings yet" table note is open with item 9.
+`README_scenario_design.md` "Voiced phone calls" documents `ring.callbackWhen` (item 7, now with the
+reload recovery, 7b), the condition re-check (item 8), the tutorial-hold row in the "what the player
+sees" table (item 9, 20 s rule), and the call look / `phoneTheme` with the terminal read beat (items 10,
+11). The `callbackWhen` line now states the condition is recovered from the config after a reload.
 
 ## New exposed engine surface
 - `phoneRinger.clearStaleCallback(npcId)` (pure ringer): drop a callback whose `callbackWhen` failed and save the empty slot.
 - `phoneRinger.dropDisplaced` (adapter): exposed on the returned object for the item-1 test.
 - `NPCManager.ringConditionHolds(cond)`: the safe-false re-check of a ring mapping condition.
-No new static import was added, so no test harness copy list changed.
+- `NPCManager._ringRecheckCondition(cond, setGlobal)`: the condition slice item 8 re-checks, minus the mapping's own latch (8b).
+- `NPCManager._ringCallbackWhenFor(npc, knot)`: the ring config's `callbackWhen` for a knot, for the reload recovery (7b).
+- Ringer adapter `tutorialPromptOpen()` / `tutorialStep()`; ringer `TUTORIAL_HOLD_MS` and per-offer `tutHold*` (item 9).
+- `TERMINAL_CALL_END_READ_MS` (`phone-call-lock.js`) and `PhoneChatMinigame._waitForCallClipThen` (item 10).
+No new static import was added (item 10 adds a named export to `phone-call-lock.js`, already imported), so no test harness copy list changed.

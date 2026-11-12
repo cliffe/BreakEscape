@@ -20,7 +20,7 @@ import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
-import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } from './phone-call-lock.js';
+import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS, TERMINAL_CALL_END_READ_MS } from './phone-call-lock.js';
 import { isVoicedCall, phoneLineVoice, outcomeLineVoice, PhoneCallVoice, stepDeliveries, voicedCallKnots, callStartKnots, callHomeKnot } from './phone-call-voice.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { deliveryFromTags } from '../../systems/tts-delivery.js';
@@ -30,6 +30,9 @@ import { startRingback, DIAL_MS, RING_OUT_MS, NO_ANSWER_BEAT_MS } from './phone-
 
 /** How long a ringer call's screen holds on "Call ended m:ss" before it closes (plan 2.5). */
 const CALL_ENDED_BEAT_MS = 900;
+/** Sweep item 10: while a terminal-look call's last clip is still playing, poll this often, up to the cap. */
+const TERMINAL_CLIP_POLL_MS = 200;
+const TERMINAL_CLIP_WAIT_CAP_MS = 8000;
 
 export class PhoneChatMinigame extends MinigameScene {
     /**
@@ -1576,13 +1579,43 @@ export class PhoneChatMinigame extends MinigameScene {
      */
     _completeRingerCallWithBeat() {
         if (this._callEndedPending) return;   // idempotent: one beat, one complete timer
-        this._callVoice?.stop();
+        this._callEndedPending = true;
         if (this.ui.showCallEnded?.()) {
-            this._callEndedPending = true;
+            // Call screen (handset look): the "Call ended m:ss" beat, then close.
+            this._callVoice?.stop();
             setTimeout(() => { if (this.gameState?.isActive) this.complete(true); }, CALL_ENDED_BEAT_MS);
-        } else {
-            this.complete(true);
+            return;
         }
+        if (this.params?.theme === 'terminal') {
+            // Terminal look (no call screen, sweep item 10): without a beat the phone closed the instant
+            // #exit_conversation ran, so the last line of every Architect call showed for under 50 ms
+            // (M6 R1 M2). Hold a read beat before closing; where the last clip is still playing, let it
+            // finish first (the read beat then covers the unvoiced narration after it).
+            const closeAfterBeat = () => {
+                this._callVoice?.stop();
+                this._terminalReadTimer = setTimeout(() => {
+                    if (this.gameState?.isActive) this.complete(true);
+                }, TERMINAL_CALL_END_READ_MS);
+            };
+            if (this._callVoice?.tts?.isPlaying?.()) this._waitForCallClipThen(closeAfterBeat);
+            else closeAfterBeat();
+            return;
+        }
+        // No call screen and no terminal look: close at once, as before.
+        this._callVoice?.stop();
+        this.complete(true);
+    }
+
+    /** Sweep item 10: run `fn` once the call's last clip has finished (or the wait cap is hit). */
+    _waitForCallClipThen(fn) {
+        let waited = 0;
+        const poll = () => {
+            if (!this.gameState?.isActive) return;
+            if (!this._callVoice?.tts?.isPlaying?.() || waited >= TERMINAL_CLIP_WAIT_CAP_MS) { fn(); return; }
+            waited += TERMINAL_CLIP_POLL_MS;
+            this._terminalClipTimer = setTimeout(poll, TERMINAL_CLIP_POLL_MS);
+        };
+        poll();
     }
 
     /**
