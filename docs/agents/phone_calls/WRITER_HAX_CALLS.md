@@ -316,6 +316,32 @@ Voiced new/re-keyed: **2** (bring_me_in lines gain a voice).
 
 ---
 
+## R3 fixes (round 3) — DONE, committed `29dae9f30`
+
+Review `REVIEW_WRITER_HAX_R3.md`, outcomes `REVIEW_WRITER_HAX_R3_OUTCOMES.md`. All text, no
+audio: no voiced line, tag, divert or config touched. Every changed line is under its cap; the
+five changed inks compile; the A7a validator is "Validation complete" on all six missions with
+no new error.
+
+- **M1** `m08_the_mole/scenario.json.erb:874` (netherton-hostile door-audit text): "…won't hear
+  it from you, so read it to me:…" → "…won't hear it from you. Read it to me:…" — 31→30 words,
+  clears the R2/N1 length regression. Sibling `:867` ("Call me when you've got both.") kept.
+- **M2** two more HaX texts promising a call with no free call entry:
+  `m04_phone_agent0x99.ink:201` "Line's open. Call it in when you have something." → "Line's open.
+  Send me whatever you find."; `m05_phone_agent_0x99.ink:461` and `:476` "Don't guess at me. Call
+  back when you're sure." → "…Come back when you're sure."
+- **m1** m02/m03 sign-offs made distinct: `m03_phone_agent0x99.ink:158` "Copy. I'm here,
+  {player_name()}." → "Copy. Go carefully, {player_name()}."; `:449` "Message me if you need me."
+  → "Good. Back to it." (m02 unchanged).
+- **m2** m01's thread no longer says "Message me if…" four times:
+  `m01_phone_agent0x99.ink:290` dropped "Message me if you get stuck." → "Good. Work the pins one
+  at a time."
+- **m3** `m07_phone_agent_0x99.ink:802` "Slowly. I want to be sure I've read this right." →
+  "Wait. …" (a text thread has no spoken pace).
+- **m4** m10 `hax_post` `:49`/`:53`: left unchanged. Both are pre-existing and voiced; the only
+  candidate reword re-keys a voiced line (costs a clip), so per the task it stays. Logged for
+  m10's next dialogue pass.
+
 ## Totals (this writer)
 
 Pre-R1 figures left for reference; R1 column is the new/re-key delta from fix round 1; R2
