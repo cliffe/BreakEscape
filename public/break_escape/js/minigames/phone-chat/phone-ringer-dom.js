@@ -67,7 +67,9 @@ export function installPhoneRinger(win = window) {
         if (!view.withheld && npc?.avatar) {
             const img = doc.createElement('img');
             img.alt = '';
-            img.src = npc.avatar;
+            // A relative asset path is served under /break_escape/ (as npc-barks.js resolves it)
+            const a = String(npc.avatar);
+            img.src = (a.startsWith('/') || a.startsWith('http')) ? a : `/break_escape/${a.replace(/^\/+/, '')}`;
             avatar.appendChild(img);
         } else {
             avatar.textContent = '☎';   // a plain handset glyph
