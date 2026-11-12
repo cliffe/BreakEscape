@@ -1,6 +1,6 @@
 #!/bin/bash
 # M7 live proofs: m03 revelation call, two-minute fallback ring, bring-in (plan 8, M7). Real hub choices, real call screen.
-#   PC_PORT=3029 tools/phone_calls/routes/m07_live.sh call_button|hub_topic|fallback_ring|reload_ring|bring_clear|bring_optional
+#   PC_PORT=3029 tools/phone_calls/routes/m07_live.sh call_button|hub_topic|fallback_ring|reload_ring|decline_reload|bring_clear|bring_optional
 # The distcc flag is raised by emitting objective_task_completed:submit_distcc_flag (the real mapping chain runs from there:
 # the text, flag_distcc_submitted, the ring mapping); the VM flag submission itself needs a VM.
 export OUT=${OUT:-docs/agents/phone_calls/proofs/M7}
@@ -77,6 +77,19 @@ reload_ring)
   echo "ring appeared $(( $(date +%s) - T0 )) s after the reload: $(ringer)"; a2b_shot banner
   a2b_ev "const b=document.querySelector('.incoming-call-answer'); if(b) b.click(); return 'answered';" >/dev/null; call_up; echo "answered: $(screen | jq -c '{bar,subs,choices}')"; a2b_shot answered
   echo "handler /tts: $(jq -c 'select((.npc_id // .npcId)=="agent_0x99") | .text' $OUT/${LABEL}_tts.jsonl | tr '\n' ' ')"; evs; a2b_quit ;;
+decline_reload)
+  # M7 R1 M1: decline the ring, reload: no second ring, one Missed call row, Call back still works
+  m10_open decline_reload $SC; close_brief; a2b_ev "$LOGEV" >/dev/null
+  T0=$(date +%s); echo "distcc raised: $(distcc)"
+  for i in $(seq 1 80); do a2b_ev "return !!document.querySelector('.incoming-call');" | grep -qx true && break; sleep 2; done
+  echo "ring appeared at t=$(( $(date +%s) - T0 )) s: $(ringer) offered=$(glob revelation_ring_offered)"; a2b_shot banner
+  a2b_decline >/dev/null; sleep 3; echo "after decline: $(ringer) missed-rows=$(rows agent_0x99)"
+  reload; sleep 3; close_brief; a2b_ev "$LOGEV" >/dev/null
+  echo "after reload: offered=$(glob revelation_ring_offered) heard=$(glob revelation_heard) ringer=$(ringer)"
+  sleep 150; echo "150 s after reload: ringer=$(ringer) banner=$(a2b_ev "return !!document.querySelector('.incoming-call');") rows=$(rows agent_0x99)"
+  open_hax; echo "thread: $(screen | jq -c '{header,thread}')"; a2b_shot thread
+  echo "header call: $(header_call)"; call_up; echo "callback call: $(screen | jq -c '{bar,subs,choices}')"; a2b_shot callback_call
+  echo "handler /tts: $(jq -c 'select((.npc_id // .npcId)=="agent_0x99") | .text' $OUT/${LABEL}_tts.jsonl | tr '\n' ' ')"; evs; a2b_quit ;;
 bring_clear|bring_optional)
   DONE_OPT="--complete-task copy_staff_badge --complete-task danny_choice_made --complete-task decode_directive --complete-task zero_detection"
   EXTRA="$DONE_OPT"; [ $1 = bring_optional ] && EXTRA="--complete-task copy_staff_badge"  # leaves danny_choice_made and decode_directive open
@@ -86,11 +99,11 @@ bring_clear|bring_optional)
   choose_text "Bring me in" >/dev/null; sleep 1; echo "dialling: $(screen | jq -c '{bar}')"; a2b_shot calling
   call_up; echo "call: $(screen | jq -c '{bar,subs,choices}')"; a2b_shot call
   press_when "Not yet"; sleep 3
-  echo "after Not yet: mg=$(mgc) call-open=$(a2b_ev "return $IN_CALL;") debrief=$(glob start_debrief_cutscene) task=$(tasks | jq -c '.[0]')"; a2b_shot not_yet
+  echo "after Not yet: mg=$(mgc) call-open=$(a2b_ev "return $IN_CALL;") debrief=$(glob start_debrief_cutscene) task=$(tasks | jq -c 'map(select(startswith("call_in_after_sweep")))')"; a2b_shot not_yet
   open_hax; echo "hub again: $(screen | jq -c '{choices}')"
   choose_text "Bring me in" >/dev/null; call_up; echo "redial: $(screen | jq -c '{subs,choices}')"; a2b_shot redial
   press_when "Bring me in"; echo "confirm: $(screen | jq -c '{subs,choices}')"; a2b_shot confirm
-  echo "task now: $(tasks | jq -c '.[0]')"
+  echo "task now: $(tasks | jq -c 'map(select(startswith("call_in_after_sweep")))')"
   choose_text "On my way" >/dev/null; sleep 2
   echo "overlay: $(ending_overlay)"; a2b_shot after_on_my_way
   if [ $1 = bring_optional ]; then

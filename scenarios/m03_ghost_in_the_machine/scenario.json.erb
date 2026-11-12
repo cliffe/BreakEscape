@@ -1022,23 +1022,25 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true
             },
             {
-              "_comment": "Phone calls M7: if the player has not rung her within two minutes of the distcc flag, she rings (voiced, not forced). If the player rings first, the ring is dropped (plan row 31); the hold rule means it never cuts into the drop-site. A pending delayMs is lost on reload, so the game_loaded twin below re-arms it.",
+              "_comment": "Phone calls M7: if the player has not rung her within two minutes of the distcc flag, she rings (voiced, not forced). If the player rings first, the ring is dropped (plan row 31); the hold rule means it never cuts into the drop-site. A pending delayMs is lost on reload, so the game_loaded twin below re-arms it. revelation_ring_offered is set at offer time, so a decline followed by a reload does not ring again (the Call back stays), while a reload before the offer still re-arms.",
               "eventPattern": "global_variable_changed:flag_distcc_submitted",
-              "condition": "value === true && !globalVars.revelation_heard",
+              "condition": "value === true && !globalVars.revelation_heard && !globalVars.revelation_ring_offered",
               "conversationMode": "phone-chat",
               "targetKnot": "m2_revelation_call",
               "voiced": true,
               "ring": { "onMissed": "callback" },
+              "setGlobal": { "revelation_ring_offered": true },
               "delayMs": 120000
             },
             {
               "_comment": "Phone calls M7: game_loaded twin of the ring above (a reload loses the pending delay).",
               "eventPattern": "game_loaded",
-              "condition": "globalVars.flag_distcc_submitted && !globalVars.revelation_heard",
+              "condition": "globalVars.flag_distcc_submitted && !globalVars.revelation_heard && !globalVars.revelation_ring_offered",
               "conversationMode": "phone-chat",
               "targetKnot": "m2_revelation_call",
               "voiced": true,
               "ring": { "onMissed": "callback" },
+              "setGlobal": { "revelation_ring_offered": true },
               "delayMs": 120000,
               "cooldown": 0
             },
@@ -2029,6 +2031,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "called_it_murder": false,
     "directive_decoded": false,
     "revelation_heard": false,
+    "revelation_ring_offered": false,
     "exec_wing_entered": false,
     "cyberchef_guide_offered": false,
     "transaction_log_read": false,
