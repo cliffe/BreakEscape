@@ -32,7 +32,7 @@ module BreakEscape
     before_action :require_game_in_host_event, only: [:show]
     # Review R2 n1: runs before set_game, whose params[:id] parses the whole JSON body, so the
     # cap limits parse cost as well as report cost. Reads only the Content-Length header.
-    prepend_before_action :refuse_oversized_npc_frustration, only: [:npc_frustration]
+    prepend_before_action :refuse_oversized_body, only: [:npc_frustration, :clone_card]
 
 
     # Actions that read-modify-write @game.player_state and then save! need a
@@ -277,6 +277,11 @@ module BreakEscape
     # Uses filtered_scenario_for_bootstrap for lazy-loading support
     def scenario
       authorize @game if defined?(Pundit)
+
+      # One locked, read-only-when-idle bootstrap step before any saved* block is
+      # read, so the client sees the repaired inventory and migrated record
+      # (SYNC_DELTAS_PLAN 2.4). It takes no lock unless a repair is actually due.
+      @game.prepare_bootstrap_state!
 
       begin
         # Use filtered bootstrap scenario and remove 'requires' fields for security
@@ -1741,8 +1746,19 @@ module BreakEscape
 
     private
 
-    def refuse_oversized_npc_frustration
-      return unless request.content_length.to_i > NPC_FRUSTRATION_MAX_BYTES
+    # Pre-parse body caps per action, read from Content-Length alone so an oversized
+    # body is refused before it is parsed (SYNC_DELTAS_PLAN 2.5). npc_frustration
+    # keeps its limit; clone_card gets 8 KB (a saved card is at most 4 KB,
+    # Game::MAX_SAVED_CARD_BYTES). PUT /sync_state keeps its own after-parse caps.
+    CLONE_CARD_MAX_BODY_BYTES = 8 * 1024
+    OVERSIZED_BODY_LIMITS = {
+      'npc_frustration' => NPC_FRUSTRATION_MAX_BYTES,
+      'clone_card' => CLONE_CARD_MAX_BODY_BYTES
+    }.freeze
+
+    def refuse_oversized_body
+      limit = OVERSIZED_BODY_LIMITS[action_name]
+      return unless limit && request.content_length.to_i > limit
 
       render json: { error: 'request too large' }, status: :payload_too_large
     end

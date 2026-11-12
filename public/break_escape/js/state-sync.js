@@ -237,6 +237,73 @@ export class StateSync {
     // held here, so a key the server holds that the client never showed this page is
     // left alone, as the first sync leaves it today (SYNC_DELTAS_PLAN 3.2, 3.3).
     this._held = {};
+    // Named extra parts of the sync body (SYNC_DELTAS_PLAN 2.2). A capture (R2)
+    // rides inside the sync body as a part; a part with a value counts as a change
+    // and keeps syncConfirmed() false until the server has acknowledged it. Empty
+    // until step 6a registers one.
+    this._parts = new Map();
+    // Requests that must settle before syncConfirmed()'s first run (a card clone,
+    // P1). Each promise removes itself when it settles.
+    this._tracked = new Set();
+  }
+
+  /**
+   * Register a named extra part of the sync body (SYNC_DELTAS_PLAN 2.2). Two kinds
+   * of write now leave the keyed globals: a capture (R2), which travels inside the
+   * sync body as a part, and a card (P1), which travels in its own tracked request.
+   * @param {string} name - the body key the part sends under
+   * @param {Object} part
+   * @param {function():*} [part.build] - the value to send, or undefined for none.
+   *   A non-undefined value counts as a change, so buildChanges() does not return
+   *   null while the part has one.
+   * @param {function(Object):void} [part.onAnswer] - called after every 2xx answer,
+   *   stale or not, before the stale check returns; never on a refused (403) or
+   *   failed sync, so a part's entries stay pending until a 2xx records them.
+   * @param {function():number} [part.pendingCount] - entries the server has not yet
+   *   acknowledged. syncConfirmed() stays false while any part has pending entries.
+   * @param {function(Object):Object} [part.flushKeep] - extra keyed changes the
+   *   pagehide flush must keep in its reduced fallback lists.
+   */
+  registerPart(name, part = {}) {
+    this._parts.set(name, part);
+  }
+
+  /**
+   * Keep a request (a card clone, P1) in flight until it settles, so
+   * syncConfirmed() can wait for it before its first run. Returns the promise.
+   */
+  track(promise) {
+    this._tracked.add(promise);
+    Promise.resolve(promise).finally(() => this._tracked.delete(promise));
+    return promise;
+  }
+
+  /** Part build values present now, as { name: value }. */
+  _partBodies() {
+    const out = {};
+    for (const [name, part] of this._parts) {
+      const value = part.build?.();
+      if (value !== undefined) out[name] = value;
+    }
+    return out;
+  }
+
+  /** Extra keyed changes every part asks the pagehide flush to keep (flushKeep). */
+  _flushKeep(changes) {
+    let keep = {};
+    for (const part of this._parts.values()) {
+      const extra = part.flushKeep?.(changes);
+      if (extra && typeof extra === 'object') keep = { ...keep, ...extra };
+    }
+    return keep;
+  }
+
+  /** True while any registered part has entries the server has not acknowledged. */
+  _partsPending() {
+    for (const part of this._parts.values()) {
+      if ((part.pendingCount?.() || 0) > 0) return true;
+    }
+    return false;
   }
 
   /**
@@ -450,13 +517,19 @@ export class StateSync {
       const t = full.scenarioClock.timers || {};
       clockKey = stableJson({ fired: t.fired || [], cancelled: t.cancelled || [], started: Object.keys(t.started || {}).sort() });
     }
+    // Extra sync-body parts (a capture, R2). A part with a value counts as a
+    // change, so a part alone keeps buildChanges() from returning null. Parts are
+    // not confirmed by ack; they use onAnswer/pendingCount (SYNC_DELTAS_PLAN 2.2).
+    const partBodies = this._partBodies();
+    const hasParts = Object.keys(partBodies).length > 0;
+
     const clockStateChanged = clockKey !== null && clockKey !== this.confirmed.clockKey;
     const somethingElse = Object.keys(body).length > 0 || ack.timedMessagesKey !== undefined;
     const clockDue = full.scenarioClock &&
       full.scenarioClock.elapsedMs !== this.confirmed.clockElapsedMs &&
       now - this.clockConfirmedAt >= CLOCK_ONLY_INTERVAL_MS;
 
-    if (!somethingElse && !clockStateChanged && !clockDue && !forceClock) return null;
+    if (!somethingElse && !clockStateChanged && !clockDue && !forceClock && !hasParts) return null;
 
     if (full.scenarioClock) {
       body.scenarioClock = full.scenarioClock;
@@ -473,6 +546,7 @@ export class StateSync {
       body.mailState = { ...(body.mailState || {}), jobs: mailJobs };
       ack.mailState = { ...(ack.mailState || {}), jobs: mailJobsChangeKey(mailJobs) };
     }
+    for (const [name, value] of Object.entries(partBodies)) body[name] = value;
     if (Object.keys(body).length === 0) return null;
     return { body, ack };
   }
@@ -567,6 +641,10 @@ export class StateSync {
       if (!changes) return { ok: true, error: null };
       const body = { ...changes.body, clientTs: this.nextClientTs() };
       const response = await ApiClient.put('/sync_state', body);
+      // Every part sees every 2xx answer, stale or not, before the stale check
+      // returns; a 403 or a failure throws and skips this, so the part's entries
+      // stay pending (SYNC_DELTAS_PLAN 2.2).
+      for (const part of this._parts.values()) part.onAnswer?.(response);
       if (response?.stale) {
         console.warn('State sync answered stale; resending with the next sync');
         this.lastError = null;
@@ -588,8 +666,9 @@ export class StateSync {
       console.log('✓ State synced to server');
       // A run that left a capped section refused is not fully confirmed (N-4): the
       // saved sections are confirmed above, but syncConfirmed must not report success
-      // while a section stays unsaved and is resent on every sync.
-      return { ok: notSaved.length === 0, error: null };
+      // while a section stays unsaved and is resent on every sync. Nor while a part
+      // still has pending entries the server has not acknowledged (2.2).
+      return { ok: notSaved.length === 0 && !this._partsPending(), error: null };
     } catch (error) {
       // Nothing is marked confirmed, so the next sync sends it again
       this.lastError = error;
@@ -605,6 +684,9 @@ export class StateSync {
    * blip, so it stops at once. Resolves true when confirmed, false otherwise.
    */
   async syncConfirmed({ attempts = 6, onRetry } = {}) {
+    // Wait for every tracked request (a card clone, P1) to settle first, so the
+    // server holds everything before the first run reads pendingCount (2.2).
+    if (this._tracked.size) await Promise.allSettled([...this._tracked]);
     for (let i = 0; i < attempts; i++) {
       const { ok, error } = await this._syncRun();
       if (ok) return true;
@@ -635,9 +717,13 @@ export class StateSync {
         // since the last sync. mailState is dropped whole, never cut, in the
         // second list (00 §10a "The pagehide flush has a size budget").
         const { globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs } = payload;
-        body = JSON.stringify({ globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs });
+        // Parts (a capture, R2) ride in each reduced list after clientTs; a part
+        // also names extra keyed changes to keep through flushKeep (2.2).
+        const parts = this._partBodies();
+        const keep = this._flushKeep(changes);
+        body = JSON.stringify({ globalVariables, mailState, triggeredEvents, timedMessages, phoneState, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, ...keep, ...parts, clientTs });
         if (body.length > KEEPALIVE_BODY_LIMIT) {
-          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, clientTs });
+          body = JSON.stringify({ globalVariables, triggeredEvents, timedMessages, scenarioClock, npcVisibility, npcHostility, commandBoardLog, playerHealth, ...keep, ...parts, clientTs });
           if (body.length > KEEPALIVE_BODY_LIMIT) return;
         }
       }

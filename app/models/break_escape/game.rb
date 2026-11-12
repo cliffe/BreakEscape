@@ -183,6 +183,38 @@ module BreakEscape
       end
     end
 
+    # A deep copy of a stored inventory item without saved_cards, for any item an
+    # answer carries (SYNC_DELTAS_PLAN 2.3). The cloner's saved_cards list can be up
+    # to 64 KB, so it must never ride an inventory echo, even when the cloner is
+    # itself a touched item. Every item an answer returns goes through this.
+    def item_for_answer(item)
+      return item unless item.is_a?(Hash)
+
+      copy = item.deep_dup
+      copy.delete('saved_cards')
+      copy
+    end
+
+    # Read-only bootstrap guard (SYNC_DELTAS_PLAN 2.4). GET /scenario is not under a
+    # row lock, so any save! from the loaded copy would overwrite a PUT /sync_state
+    # that committed after the load. This decides from the loaded copy whether any
+    # bootstrap repair is needed; each predicate reads only the loaded copy and
+    # writes nothing. When none holds, it returns without a lock. Otherwise it takes
+    # the row lock (reloading the row), repeats each check, runs the writers (none of
+    # which saves) and saves once. Steps 4 (P1 repair_saved_cards!) and 6a (R2
+    # migrate_legacy_captures!, record_shared_logins!, stamp_proven_captures!) add
+    # their predicates and writers here; until then nothing needs a write.
+    def prepare_bootstrap_state!
+      return unless bootstrap_state_needs_write?
+
+      with_lock do
+        next unless bootstrap_state_needs_write?
+
+        changed = run_bootstrap_writers!
+        save! if changed
+      end
+    end
+
     # Remember that an NPC has handed an item to the player. The scenario's
     # itemsHeld is restored on every room load, so without this record a reload
     # gives the item back to the NPC and a later KO drops a duplicate.
@@ -724,6 +756,21 @@ module BreakEscape
     end
 
     private
+
+    # True when prepare_bootstrap_state! must take the lock and write. Each check
+    # reads only the loaded copy and writes nothing (SYNC_DELTAS_PLAN 2.4). Steps 4
+    # and 6a OR in cards_need_repair?, legacy_captures?, unrecorded_shared_logins?
+    # and stampable_captures?; until then no bootstrap write is ever needed.
+    def bootstrap_state_needs_write?
+      false
+    end
+
+    # Run the bootstrap writers inside the lock (none of which saves) and return
+    # whether anything changed. Steps 4 and 6a add repair_saved_cards!,
+    # migrate_legacy_captures!, record_shared_logins! and stamp_proven_captures!.
+    def run_bootstrap_writers!
+      false
+    end
 
     def sync_vm_set_id_column
       state = player_state.is_a?(String) ? JSON.parse(player_state) : player_state
