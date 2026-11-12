@@ -172,7 +172,8 @@
         { "taskId": "n9_second_ap", "title": "N9: join again through the second guest access point", "type": "custom", "status": "active" },
         { "taskId": "n2_pivot", "title": "N2: after signing in to an office PC through the box, the server network appears", "type": "custom", "status": "active" },
         { "taskId": "n3_signin_across", "title": "N3: sign in to the server host across the link", "type": "custom", "status": "active" },
-        { "taskId": "n4_signout", "title": "N4: sign out of the office pivot and the server session ends", "type": "custom", "status": "active" }
+        { "taskId": "n4_signout", "title": "N4: sign out of the office pivot and the server session ends", "type": "custom", "status": "active" },
+        { "taskId": "n10_port_security", "title": "N10: a secured port refuses the box and keeps it", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -316,7 +317,8 @@
             { "eventPattern": "network_joined", "condition": "data.apId === 'guest_ap2' && data.already === true", "onceOnly": true, "completeTask": "n9_second_ap" },
             { "eventPattern": "network_viewed", "condition": "data.networkId === 'server_net' && data.footholdId === 'jack_comms_port'", "onceOnly": true, "completeTask": "n2_pivot" },
             { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'sv_fs02' && data.remote === true", "onceOnly": true, "completeTask": "n3_signin_across" },
-            { "eventPattern": "pc_signed_out", "condition": "data.pcId === 'sv_fs02' && data.reason === 'link_dropped'", "onceOnly": true, "completeTask": "n4_signout" }
+            { "eventPattern": "pc_signed_out", "condition": "data.pcId === 'sv_fs02' && data.reason === 'link_dropped'", "onceOnly": true, "completeTask": "n4_signout" },
+            { "eventPattern": "network_device_refused", "condition": "data.jackId === 'secure_port' && data.reason === 'port_security'", "onceOnly": true, "completeTask": "n10_port_security" }
           ]
         },
         {
@@ -408,6 +410,33 @@
           "addToNotes": false,
           "text": "P10. Click the port again: it says the box is plugged in here, with Unplug it and Leave it. Leave it does nothing.\nUnplug it gives the box back and ends the door controller's session. Lena's PC still opens at her desk. Plant again: the door controller asks for a password again.",
           "observations": "A sign by the wall port."
+        },
+        {
+          "type": "pc",
+          "id": "secure_port",
+          "name": "Locked switch port",
+          "sprite": "network_rack1",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "networkJack": true,
+          "network": "office_lan",
+          "portSecurity": true,
+          "portSecurityMessage": "The switch logs the device address and shuts the port. It only takes known machines; unused ports like this should be disabled.",
+          "jackConfirm": "Plug the drop box into this locked port?",
+          "requiresItemHint": "A second wall port. It looks locked down.",
+          "observations": "A second network port, with a switch label warning that the port is access controlled."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_n10",
+          "name": "Sign: N10 Port security",
+          "position": { "x": 6, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "N10. Take the drop box and plug it into the locked switch port.\nThe box goes in, the switch refuses it and shuts the port: no link item, no view, and the box stays in your bag. The switch's message names the fix: disable unused ports.",
+          "observations": "A sign by the locked port."
         }
       ]
     },

@@ -205,7 +205,8 @@ export function grantFact(id, { scenario = null, engine = null, npcId = null, so
     window.eventDispatcher?.emit('intel_collected', { id: bare, fact: bare, label, subject, source });
 
     if (fact?.text && typeof window.addNote === 'function') {
-        window.addNote(`Evidence: ${subject}`, fact.text, false);
+        // A feed fact (sub-slice C) carries its text escaped for the notebook as noteText
+        window.addNote(`Evidence: ${subject}`, typeof fact.noteText === 'string' ? fact.noteText : fact.text, false);
     }
     try { window.stateSync?.sync?.(); } catch (e) { /* a failed save retries on the timer */ }
 

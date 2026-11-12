@@ -239,7 +239,7 @@ module BreakEscape
       with_index(data) do
         out = []
         st = station(data, npc)
-        out << st['id'] if st && satisfies?(data, st, need)
+        out << st['id'] if st && (satisfies?(data, st, need) || social_station?(data, npc, need))
         object_index(data).each_value do |e|
           o = e[:obj]
           out << o['id'] if satisfies?(data, o, need) && !desk?(data, o)
@@ -253,15 +253,89 @@ module BreakEscape
     def shortest_use_seconds(data, npc, need)
       with_index(data) do
         here = places(data, npc, need)
-        times = here.map { |id| use_seconds(data, object(data, id)) }
+        st = station(data, npc)
+        # Sub-slice C (8.1): a social_media use at the own PC takes socialUse's time, not the PC's
+        own = need == 'social_media' && st ? st['id'] : nil
+        times = here.reject { |id| id == own }.map { |id| use_seconds(data, object(data, id)) }
         if need == 'social_media'
           su = npc.is_a?(Hash) && npc['socialUse'].is_a?(Hash) ? npc['socialUse']['useSeconds'] : nil
           social = su.is_a?(Numeric) ? su.to_f.clamp(0, 600) : SOCIAL_USE_SECONDS
-          st = station(data, npc)
           times << social if phone?(npc) || (st && here.include?(st['id']))
         end
         times.min || NEEDS_DEFAULT_USE_SECONDS
       end
+    end
+
+    # Sub-slice C (plan 8.1): for social_media the NPC's own workstation is a source whatever its
+    # affordance says (a use there takes socialUse's time and restores). Mirrors npc-needs.js
+    # _socialStation.
+    def social_station?(data, npc, need)
+      return false unless need == 'social_media' && need?(npc, 'social_media')
+
+      st = station(data, npc)
+      !st.nil? && desk?(data, st)
+    end
+
+    # ── social media feeds (sub-slice C, plan 8.3) ──────────────────────
+
+    # The feed's posts (hashes with a non-empty string id), or [] for an NPC with no feed
+    def feed_posts(npc)
+      f = npc.is_a?(Hash) ? npc['feed'] : nil
+      posts = f.is_a?(Hash) && f['posts'].is_a?(Array) ? f['posts'] : []
+      posts.select { |p| p.is_a?(Hash) && present_string?(p['id']) }
+    end
+
+    # Whether the NPC posts at all: a feed with posts and a usable social_media need, one with a
+    # numeric decayPerMin above 0 (route check 2). Review C R1 n1: a need the server cannot pace
+    # (a string or missing decayPerMin) is no feed, rather than a feed with no floor.
+    def feeds?(npc)
+      return false unless need?(npc, 'social_media') && !feed_posts(npc).empty?
+
+      decay = npc['needs']['social_media']['decayPerMin']
+      decay.is_a?(Numeric) && decay.positive?
+    end
+
+    # Every fact id a room NPC's feed post names, sorted: withheld from the bootstrap's
+    # social.intelFacts until its post is out
+    def feed_facts(data)
+      AccessIdentities.room_npcs(data).flat_map { |e| feed_posts(e[:npc]).map { |p| p['fact'] } }
+                      .select { |f| present_string?(f) }.uniq.sort
+    end
+
+    SOCIAL_RESTORES = 60 # plan 8.1: socialUse.restores default
+
+    # The post period of plan 8.3, in seconds of game time: min(restores, 100 - urgentAt) /
+    # decayPerMin minutes, with the smallest restores among the NPC's options (socialUse for the
+    # phone and its own PC; each non-desk place's affordance) taken at the low end of the need's
+    # jitter. nil for an NPC with no valid social_media need.
+    def post_period_seconds(data, npc)
+      n = need?(npc, 'social_media') ? npc['needs']['social_media'] : nil
+      return nil unless n
+
+      decay = n['decayPerMin'].is_a?(Numeric) ? n['decayPerMin'].to_f : 0
+      return nil unless decay.positive?
+
+      # Clamped as the client's normaliseNeed clamps them (review C R1 n1)
+      urgent = n['urgentAt'].is_a?(Numeric) ? n['urgentAt'].to_f.clamp(1, 99) : 0
+      jitter = n['jitterPct'].is_a?(Numeric) ? n['jitterPct'].to_f.clamp(0, 50) : 0
+      su = npc['socialUse'].is_a?(Hash) ? npc['socialUse']['restores'] : nil
+      options = [su.is_a?(Numeric) ? su.to_f.clamp(0, 100) : SOCIAL_RESTORES]
+      st = station(data, npc)
+      places(data, npc, 'social_media').each do |id|
+        next if st && st['id'] == id
+
+        r = affordance(data, object(data, id))&.dig('restores')
+        options << (r.is_a?(Numeric) ? r.to_f : 0)
+      end
+      restores = options.min * (1 - (jitter / 100))
+      ([restores, 100 - urgent].min / decay) * 60
+    end
+
+    # The server's post floor (plan 9.1): 0.9 of the period less the 3 second allowance the other
+    # floors give, not below 0
+    def post_floor(data, npc)
+      period = post_period_seconds(data, npc)
+      period ? [(0.9 * period) - 3, 0].max : 0
     end
 
     # ── resources, admission, reach ─────────────────────────────────────

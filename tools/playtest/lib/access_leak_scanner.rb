@@ -127,6 +127,10 @@ class AccessLeakScanner
 
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
   WITHHELD_KEYS = %w[creds role awareness habits workarounds].freeze
+  # Slice 9.2 (9.2): the NPC keys the server withholds beside them (Game::WITHHELD_WORK_NPC_KEYS)
+  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed].freeze
+  # Feed texts shorter than this are not searched for (the validator warns about them, 9.2)
+  MIN_FEED_TEXT = 12
 
   attr_reader :passwords, :items
 
@@ -152,11 +156,28 @@ class AccessLeakScanner
     # password on purpose, exempt only where that item's content may be (scan_passwords)
     @share_clues = Hash.new { |h, k| h[k] = [] }
     @workarounds = [] # { npc:, index:, do:, target: [key, value] }
+    # Sub-slice C: feed posts and feed facts, by text; served once a /feed_post answer has
+    # carried them, or a GET /scenario feedPosts block lists them within the reveals so far
+    @feed_texts = {}          # text => { owner:, post: npc|post_id, fact: id or nil }
+    @feed_fact_ids = Set.new
+    @feed_served = Set.new    # "npc|post_id" and "fact:<id>"
+    @feed_order = Hash.new { |h, k| h[k] = [] } # npc id => [[post_id, fact id or nil], ...] as authored
+    @feed_answers = Hash.new(0) # npc id => /feed_post answers with a post seen so far in the log
+    @feed_base = {}             # npc id => reveals made before the log starts (a resumed game)
+    @feed_fallback = []         # npc ids whose base came from the game's feedRevealed
+    # Review C R2 m2: /feed_post answers (200) whose body the capture could not read. Each
+    # stands for at most one reveal, at its own place in the log, for an NPC the game shows
+    # more reveals for than the log holds
+    @feed_unknown_share = {}    # npc id => unreadable answers that may have been its reveals
+    @feed_unknown_seen = Hash.new(0) # npc id => unreadable answers passed so far that may be its reveals
+    @feed_at = {}               # npc id => the game's saved time of its last reveal (server seconds)
+    @feed_unknown = []          # npc ids that took a reveal from an unreadable answer
     collect_passwords
     collect_items
     collect_network_secrets
     collect_wifi_secrets
     collect_workarounds
+    collect_feeds
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
     @items.delete_if { |_, info| info[:strings].empty? }
   end
@@ -170,9 +191,21 @@ class AccessLeakScanner
       wifi_secrets: @wifi_secrets.length,
       share_items: @share_items.length,
       workarounds: @workarounds.length,
+      feed_posts: @feed_texts.values.count { |f| f[:kind] == :post },
+      feed_facts: @feed_fact_ids.length,
       lockout_records: lockout_records.values.sum(&:length)
     }
   end
+
+  # NPCs whose GET /scenario feedPosts were judged partly against the game's saved feedRevealed
+  # count from the log's first line, because the log holds fewer /feed_post answers than the
+  # game has revealed and the unreadable answers do not account for them all (a resumed game).
+  # Filled by scan.
+  attr_reader :feed_fallback
+
+  # NPCs allowed one more reveal at an unreadable /feed_post answer (review C R2 m2: a lost
+  # response body), from that answer on and never before it. Filled by scan.
+  attr_reader :feed_unknown
 
   # lines: [[source, line_no, hash]]. Returns findings, deduplicated per response line, rule
   # and owner (the first JSON path is kept).
@@ -180,9 +213,11 @@ class AccessLeakScanner
     findings = []
     seen = Set.new
     legit = Set.new # items already served by their own allowed route earlier in the run
+    prepare_feed_base(lines)
     lines.each do |source, line_no, row|
       next unless row.is_a?(Hash)
 
+      note_feed_unreadable(row) if feed_unreadable?(row)
       body = if row.key?('dom') then row['dom']
       elsif row.key?('body') then row['body']
       else row['bodyText']
@@ -207,6 +242,8 @@ class AccessLeakScanner
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
       scan_lockouts(body, ctx, add)
+      note_feed_served(body, ctx)
+      scan_feed(body, ctx, add)
     end
     findings
   end
@@ -234,8 +271,10 @@ class AccessLeakScanner
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
     'wifi_secret' => 'a Wi-Fi SSID or pre-shared key in any response (the key is compared on the server, never served)',
-    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds) on an NPC record',
+    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds, workNeeds, frustration, feed) on an NPC record',
     'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
+    'feed_text' => "a feed post's or feed fact's whole text before the server served it",
+    'feed_fact_key' => 'an object keyed by a feed fact id with a text key before its post was served, or a bootstrap social.intelFacts that is not an object',
     'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
                       'npcFrustration, a lockedOut flag outside a check or sign-in answer, or a lockoutPcs entry that is not a locked-out PC',
     'lockout_unrecorded' => 'a lockout the server\'s check did not record'
@@ -245,7 +284,7 @@ class AccessLeakScanner
 
   def secret_values
     @secret_values ||= (@passwords.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
-                        @wifi_secrets.keys + @share_items.values.flat_map { |i| i[:strings] }).uniq.sort_by { |v| -v.length }
+                        @wifi_secrets.keys + @share_items.values.flat_map { |i| i[:strings] } + @feed_texts.keys).uniq.sort_by { |v| -v.length }
   end
 
   # ---- catalogue ---------------------------------------------------------------------------
@@ -655,6 +694,188 @@ class AccessLeakScanner
     end
   end
 
+  # ---- sub-slice C: feeds (plan 9.2 and 11) ---------------------------------------------
+
+  def collect_feeds
+    facts = @data.dig('social', 'intelFacts')
+    facts = {} unless facts.is_a?(Hash)
+    each_room_npc do |npc|
+      feed = npc['feed']
+      next unless feed.is_a?(Hash) && feed['posts'].is_a?(Array)
+
+      feed['posts'].each do |post|
+        # Review C R2 nit: the server's own test (AccessWork.present_string? in feed_posts), so a
+        # blank id is skipped here too
+        next unless post.is_a?(Hash) && post['id'].is_a?(String) && !post['id'].strip.empty?
+
+        key = "#{npc['id']}|#{post['id']}"
+        fid = post['fact'].is_a?(String) && facts[post['fact']].is_a?(Hash) ? post['fact'] : nil
+        @feed_order[npc['id'].to_s] << [post['id'], fid]
+        text = post['text']
+        (@feed_texts[text] ||= { kind: :post, owner: "feed:#{key}", served: [] })[:served] << key if text.is_a?(String) && text.length >= MIN_FEED_TEXT
+        next unless fid
+
+        @feed_fact_ids << fid
+        ftext = facts[fid]['text']
+        next unless ftext.is_a?(String) && ftext.length >= MIN_FEED_TEXT
+
+        (@feed_texts[ftext] ||= { kind: :fact, owner: "fact:#{fid}", served: [] })[:served] << "fact:#{fid}"
+      end
+    end
+  end
+
+  # A /feed_post answer the server gave (200) whose body the log does not hold as JSON: the
+  # capture's bodyError (the browser dropped the body, as on a reload) or an unparsed bodyText
+  def feed_unreadable?(row)
+    row['path'].to_s.split('?').first.to_s.end_with?('/feed_post') && row['status'].to_i == 200 &&
+      !row['body'].is_a?(Hash)
+  end
+
+  # Review C R3 m1: the capture's time on an unreadable answer and the game's saved time of an
+  # NPC's last reveal (`feedRevealed[npc].at`) are both wall-clock times, so a lost answer
+  # captured more than this after that NPC's last reveal cannot have been one of its reveals
+  # (it was another NPC's answer, or a tooSoon or done answer).
+  LOST_ANSWER_SLACK_S = 5
+
+  # Whether an unreadable answer may have been one of `npc_id`'s reveals. Without a capture time
+  # or a saved time it may (the log cannot settle it, so the note says so).
+  def lost_answer_may_be?(npc_id, row)
+    at = @feed_at[npc_id]
+    t = capture_time(row)
+    at.nil? || t.nil? || t <= at + LOST_ANSWER_SLACK_S
+  end
+
+  def capture_time(row)
+    row['t'].is_a?(String) ? Time.iso8601(row['t']).to_f : nil
+  rescue ArgumentError
+    nil
+  end
+
+  def note_feed_unreadable(row)
+    @feed_unknown_share.each_key { |npc_id| @feed_unknown_seen[npc_id] += 1 if lost_answer_may_be?(npc_id, row) }
+  end
+
+  # Reveals the log does not show: the game's saved count less the /feed_post answers the log
+  # holds. An unreadable answer (review C R2 m2) may be one of them, but only from its own place
+  # in the log, so up to one reveal per unreadable answer is granted there, and only what is
+  # still missing after that counts from the first line (a resumed game). An unreadable answer
+  # captured after the NPC's last saved reveal is not counted for it (review C R3 m1). A complete
+  # log gives 0, so every reveal is judged in log order.
+  def prepare_feed_base(lines)
+    @feed_answers.clear
+    @feed_base = {}
+    @feed_fallback = []
+    @feed_unknown_share = {}
+    @feed_unknown_seen = Hash.new(0)
+    @feed_unknown = []
+    @feed_at = {}
+    return if @feed_order.empty?
+
+    in_log = Hash.new(0)
+    unreadable = []
+    lines.each do |_source, _no, row|
+      next unless row.is_a?(Hash)
+
+      unreadable << row if feed_unreadable?(row)
+      next unless row['body'].is_a?(Hash)
+      next unless row['path'].to_s.split('?').first.to_s.end_with?('/feed_post') && row['body']['post'].is_a?(Hash)
+
+      in_log[row['body']['npcId'].to_s] += 1
+    end
+    revealed = @game&.player_state.is_a?(Hash) ? @game.player_state['feedRevealed'] : nil
+    return unless revealed.is_a?(Hash)
+
+    @feed_order.each_key do |npc_id|
+      entry = revealed[npc_id].is_a?(Hash) ? revealed[npc_id] : {}
+      n = entry['n'].to_i
+      @feed_at[npc_id] = entry['at'].to_f if entry['at'].is_a?(Numeric)
+      missing = n - in_log[npc_id]
+      next unless missing.positive?
+
+      share = [missing, unreadable.count { |row| lost_answer_may_be?(npc_id, row) }].min
+      if share.positive?
+        @feed_unknown_share[npc_id] = share
+        @feed_unknown << npc_id
+      end
+      base = missing - share
+      next unless base.positive?
+
+      @feed_base[npc_id] = base
+      @feed_fallback << npc_id
+    end
+  end
+
+  # How many of an NPC's posts the server had revealed at this point of the log
+  def feed_revealed_now(npc_id)
+    unknown = [@feed_unknown_seen[npc_id], @feed_unknown_share[npc_id] || 0].min
+    (@feed_base[npc_id] || 0) + unknown + @feed_answers[npc_id]
+  end
+
+  # A /feed_post answer with a post serves the NPC's next authored post and its fact, whatever
+  # the answer says, so an answer out of order is reported by scan_feed. A GET /scenario
+  # feedPosts entry is allowed only for a post among the ones revealed so far (looked up by its
+  # own id in the catalogue, never by the response's index) and only with that post's fact.
+  def note_feed_served(body, ctx)
+    return if @feed_texts.empty? && @feed_fact_ids.empty?
+    return unless body.is_a?(Hash)
+
+    if ctx[:route].end_with?('/feed_post') && body['post'].is_a?(Hash)
+      npc_id = body['npcId'].to_s
+      @feed_answers[npc_id] += 1
+      post_id, fid = @feed_order[npc_id][feed_revealed_now(npc_id) - 1]
+      serve_feed(npc_id, post_id, fid) if post_id
+    elsif ctx[:scenario] && body['feedPosts'].is_a?(Hash)
+      body['feedPosts'].each do |npc_id, f|
+        allowed = @feed_order[npc_id.to_s].first(feed_revealed_now(npc_id.to_s))
+        Array(f.is_a?(Hash) ? f['posts'] : nil).each do |item|
+          next unless item.is_a?(Hash) && item['post'].is_a?(Hash)
+
+          post_id, fid = allowed.find { |id, _| id == item['post']['id'] }
+          next unless post_id
+
+          fact = item['fact']
+          serve_feed(npc_id, post_id, fact.is_a?(Hash) && fact['id'] == fid ? fid : nil)
+        end
+      end
+    end
+  end
+
+  def serve_feed(npc_id, post_id, fid)
+    @feed_served << "#{npc_id}|#{post_id}"
+    @feed_served << "fact:#{fid}" if fid
+  end
+
+  def feed_served?(entry)
+    entry[:served].any? { |k| @feed_served.include?(k) }
+  end
+
+  def scan_feed(body, ctx, add)
+    return if @feed_texts.empty? && @feed_fact_ids.empty?
+
+    each_string(body) do |str, json_path, _owner|
+      @feed_texts.each do |text, entry|
+        next unless str.include?(text)
+        next if feed_served?(entry)
+
+        add.call('feed_text', entry[:owner], safe_path(json_path))
+      end
+    end
+    return if @feed_fact_ids.empty?
+
+    # Plan 9.2: the bootstrap's social.intelFacts stays an object, or grantFact grants any id
+    if ctx[:scenario] && body.is_a?(Hash) && body['social'].is_a?(Hash) && !body['social']['intelFacts'].is_a?(Hash)
+      add.call('feed_fact_key', 'social.intelFacts', '$.social.intelFacts')
+    end
+    walk_hashes(body, '$') do |hash, json_path|
+      hash.each do |k, v|
+        next unless @feed_fact_ids.include?(k) && v.is_a?(Hash) && v.key?('text')
+        next if @feed_served.include?("fact:#{k}")
+
+        add.call('feed_fact_key', "fact:#{k}", safe_path("#{json_path}.#{k}"))
+      end
+    end
+  end
+
   def walk_hashes(node, path, &block)
     case node
     when Array then node.each_with_index { |v, i| walk_hashes(v, "#{path}[#{i}]", &block) }
@@ -759,7 +980,7 @@ class AccessLeakScanner
   # NPC records holding a key the server withholds: by key and NPC id, never the value.
   def scan_withheld_keys(body, add)
     walk_records(body, '$', false) do |record, json_path|
-      WITHHELD_KEYS.each do |key|
+      (WITHHELD_KEYS + WITHHELD_WORK_KEYS).each do |key|
         next unless record.key?(key)
 
         add.call('withheld_key', "npc:#{record['id']}/#{key}", safe_path("#{json_path}.#{key}"))

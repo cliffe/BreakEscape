@@ -14,9 +14,10 @@ require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/npc_habits/clues'
 
 # Fields still reserved for later 9.3b sub-slices. Sub-slice W un-reserved 'wifi' and
-# 'wifiAp' (it added their real checks below); 'downIf' (O), 'portSecurity' and
-# 'portSecurityMessage' (P) stay refused until their code lands.
-NETWORK_RESERVED_OBJECT_FIELDS = %w[portSecurity portSecurityMessage].freeze
+# 'wifiAp' and sub-slice P un-reserved 'portSecurity' and 'portSecurityMessage' (both added
+# their real checks below); 'downIf' (sub-slice O) stays refused until its code lands. The
+# implant work keeps the 'grant_foothold' action reserved (checked below).
+NETWORK_RESERVED_OBJECT_FIELDS = %w[].freeze
 NETWORK_RESERVED_NETWORK_FIELDS = %w[downIf].freeze
 
 # Items that are physical things: taken down the wire from a remote desktop, they would
@@ -72,6 +73,25 @@ def check_network_model(json_data, scenario_dir = nil)
     end
   end
   find_grant_foothold.call(json_data, '')
+
+  # ---- Port security (sub-slice P, section 5.4 / 9.2) ----
+  # portSecurity is only valid on a networkJack; portSecurityMessage needs portSecurity;
+  # a jack cannot be a secured port and a Wi-Fi access point at once (4.4).
+  all_objects.each do |e|
+    obj = e[:object]
+    if obj['portSecurity'] && !nm.jack?(obj)
+      err.call("'#{e[:path]}' has 'portSecurity' but is not a networkJack; port security is only valid on a jack.")
+    end
+    if obj.key?('portSecurityMessage') && !obj['portSecurity']
+      err.call("'#{e[:path]}' has 'portSecurityMessage' without 'portSecurity': true.")
+    elsif obj.key?('portSecurityMessage') && obj['portSecurityMessage'].to_s.strip.empty?
+      warn.call("'#{e[:path]}' has a blank 'portSecurityMessage'; the default refusal line is shown instead. " \
+                'Remove the field, or write the line the switch should show.')
+    end
+    if obj['portSecurity'] && obj['wifiAp']
+      err.call("'#{e[:path]}' is both 'portSecurity' and 'wifiAp'; a jack cannot be a secured port and an access point.")
+    end
+  end
 
   # ---- Network references ----
   net_ref = lambda do |value, where|

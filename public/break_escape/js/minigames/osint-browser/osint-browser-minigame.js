@@ -156,6 +156,11 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         this._visit(place);
         this._renderStrip();
         this._renderMain();
+        const ed = typeof window !== 'undefined' ? window.eventDispatcher : null;
+        if (ed?.on) {
+            this._postedHandler = (data) => this._onPosted(data);
+            ed.on('npc_posted:*', this._postedHandler);
+        }
     }
 
     start() {
@@ -391,10 +396,28 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         wrap.appendChild(h('p', { class: 'ob-back' }, this._link('All profiles', site.id)));
         wrap.appendChild(this._profileHeader(profile));
         const body = h('div', { class: 'ob-blocks' });
+        // Access 9.2 C (plan 8.3): the feed posts revealed so far, newest first, then the authored ones
+        for (const post of this._feedPosts(site.id, profile.person)) this._addBlock(body, { kind: 'post', ...post }, site);
         for (const post of profile.posts || []) this._addBlock(body, { kind: 'post', ...post }, site);
         for (const b of profile.blocks || []) this._addBlock(body, b, site);
         wrap.appendChild(body);
         return wrap;
+    }
+
+    /** Revealed feed posts for a profile (systems/social-feed.js), newest first; none: []. */
+    _feedPosts(siteId, personId) {
+        const feed = this.params.feed || (typeof window !== 'undefined' ? window.socialFeed : null);
+        return typeof feed?.postsFor === 'function' ? feed.postsFor(siteId, personId) : [];
+    }
+
+    /** Access 9.2 C: a post made while this profile is open appears without closing the browser. */
+    _onPosted(data) {
+        const p = this.place;
+        if (!this.main || !p || p.view !== 'social' || p.site?.id !== data?.site || p.pageId !== data?.person) return;
+        // Review C R1 nit: a post arriving while the player reads keeps the scroll position
+        const top = this.main.scrollTop;
+        this._renderMain();
+        if (typeof top === 'number') this.main.scrollTop = top;
     }
 
     _profileName(profile) {
@@ -774,6 +797,10 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
     }
 
     cleanup() {
+        if (this._postedHandler) {
+            (typeof window !== 'undefined' ? window.eventDispatcher : null)?.off?.('npc_posted:*', this._postedHandler);
+            this._postedHandler = null;
+        }
         this._dropProps = null;
         this.root = null;
         this.main = null;
