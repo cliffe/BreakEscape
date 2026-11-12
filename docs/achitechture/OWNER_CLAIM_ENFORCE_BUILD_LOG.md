@@ -460,3 +460,76 @@ The reviewer's three B1 probes (`r3_owner_sweep/probe.rb`) now all return
 
 - `6f71a1a64` R3 fixes (code, tests, plan check 10)
 - this log
+
+## R4 fixes
+
+Review: `OWNER_CLAIM_ENFORCE_CODE_REVIEW_R4.md` (commit `9f83f50de`): 0 blockers, 0 majors,
+1 minor, 4 nits.
+
+### Fixes
+
+- **m1, judged work.** `OwnerClaim.precise_route` now judges `work` as the client's `_judged`
+  does: only when the shipped plan (`AccessWork.plan`) lists at least one need
+  (`client_judged_work?`). A `workNeeds` id that names no resource leaves `work_plan?` true and
+  the plan empty, and there the client lets work use another desk, so the mirror now does too.
+  The failure route still reads `AccessWork.judged?`, so it can still return `fails:work`, and
+  `AccessWork.judged?` itself is unchanged (it also drives `NpcFrustration`). The change only adds
+  routes. New unit case: the reviewer's probe (Jo, `koImmune`, attacks off, `workNeeds` naming no
+  resource, own `jo_pc` and a `spare_pc` workstation) returns `need:work:spare_pc`; with a
+  defined resource the other desk stays out. The `POST /login` fixture for "a judged need that
+  cannot fail, met only at another desk" relied on this gap (its `ledger` resource was undefined),
+  so it now defines `ledger`, and a new allow case covers the undefined id.
+- **n2, Number() spellings.** `AccessIdentities.js_positive?` drops its finite test (so
+  `"Infinity"` and a JSON `1e400` count, as `normaliseNeed` clamps them) and reads strings through
+  a new `js_number_full`: `0b` and `0o` literals and a signed `Infinity`, then `js_number`. Only
+  `js_positive?` (and its one-element array reading) uses it, so `screen_always_locks?` and the
+  print hook chance read exactly what they read before. It can only allow more. Unit case added.
+- **n3, the check 10 comment.** `game.rb` now uses the review's wording.
+- **n4, the `staff_pc_2` label.** See the note below the sweep.
+- **n1, accepted as a known window.** While an owner's `needsHome` object is not yet registered,
+  `_resolveHome` gives a provisional home with `objectId: null` and retries every
+  `HOME_RETRY_TICKS` (one second). If a need the own PC meets is already urgent then, a use of the
+  own PC emits `npc_left_post` for the short walk to the desk. The mirror treats a use of the own
+  `needsHome` as no leave, so it could refuse where this window opens. Accepted: it needs a need
+  whose `initial` (with jitter) is at or below `urgentAt` and whose only source is the own PC, no
+  scenario has one, and the leave lasts only the walk back (`_targetsOwnPost` ends it as a
+  return). Add a route for "a need that starts urgent" if a scenario ever needs it.
+
+### Rows added to the movement-path table
+
+| Path (file) | What moves | Mirror |
+|---|---|---|
+| Provisional home (`npc-needs.js _resolveHome`, `HOME_RETRY_TICKS`) | for up to a second after registering, a use of the own PC counts as a leave | Not mirrored: known window (n1 above) |
+
+### Sweep after the fixes
+
+The reviewer's R4 sweep (`r4_owner_sweep/sweep.rb`, session scratchpad), run on this branch:
+176 of 176 rendered, none failed. The same 16 PCs pass claim checks 3 to 7, and only
+`test_access_habits noor_pc` returns nil. No NPC has `work_plan?` true with an empty plan. The
+validator's never-leaves warning fires for `noor_pc` only, beside the untracked-owner warning for
+`test_access_work pat_pc`. No shipped scenario changes behaviour.
+
+`lab_physical_pentest staff_pc_2` reports `need:work:staff_pc`, the first route found. Play
+rarely takes it: `_useCandidate` prefers Pierce's own `staff_pc_2`, so he uses `staff_pc` only
+while his own PC is busy. The leave play actually uses is caffeine at `coffee_station`, which the
+mirror also has. The R3 sweep note above that lists `staff_pc_2` under "needs" means this
+fallback route.
+
+### Tests (without the lock, affected files only)
+
+- The 13 Rails files the reviewer ran (`owner_claim_test`, `owner_claim_enforce_test`,
+  `access_identities_screen_test`, `npc_habits_loader_test`, `access_model_login_test`,
+  `capture_proofs_test`, `npc_lockout_l_test`, `game_state_locking_test`,
+  `network_remote_signin_test`, `lab_physical_pentest_secrets_test`, `usb_habit_test`,
+  `access_work_usb_habit_test`, `access_model_rules_test`): 208 runs, 2376 assertions,
+  0 failures, 0 errors.
+- Node `validator-access-model.test.mjs` and `validator-usb-habit.test.mjs`: 61 of 61.
+- Validator (`--no-graph`) on `test_access_habits` and `test_access_work`: 0 lines with ❌.
+- `bin/rubocop` on `owner_claim.rb`, `access_identities.rb`, `game.rb` and both Ruby test files:
+  no offences.
+
+### Commits
+
+- `31e5efad8` R4 fixes (code, unit tests, check 10 comment)
+- `9c0f8402c` the judged-work `POST /login` fixture and the new allow case
+- this log
