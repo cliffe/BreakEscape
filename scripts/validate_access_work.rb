@@ -89,12 +89,25 @@ module ValidateAccessWork
       err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no phoneOf) takes one.") if item.key?('site')
       # Review R1 m3: an NPC phone that is not takeable can never be given or picked up
       err(issues, "Friendface phone '#{name}' (#{owner}'s) is not \"takeable\": true, so it can never be given or picked up.") unless item['takeable'] == true
-      # Review R2 m2: the server hands an NPC's phone over only when its story or record offers it
-      # (the same patterns, AccessWork.offers_item_text?); otherwise only a KO drop does
+      # Review R2 m2, R3 m1: the server hands an NPC's phone over only when its story or record
+      # offers it (the same patterns, AccessWork.offers_item_text?); otherwise a KO drop does,
+      # which is a valid route (q35), unless the NPC is koImmune and cannot be knocked out
       if npcs.key?(owner) && !npc_offers_phone?(npcs[owner])
-        warn(issues, "Friendface phone '#{name}' (#{owner}'s): no give_item:#{FRIENDFACE_PHONE} and no give_npc_inventory_items that " \
-                     "includes it in #{owner}'s story or record, so only a KO drop hands this phone over.")
+        if npcs[owner]['koImmune'] == true
+          err(issues, "Friendface phone '#{name}' (#{owner}'s): no give_item:#{FRIENDFACE_PHONE} and no give_npc_inventory_items that " \
+                      "includes it in #{owner}'s story or record, and #{owner} is koImmune, so the player can never obtain it.")
+        else
+          issues << "ℹ️ work: Friendface phone '#{name}' (#{owner}'s): no give offers it, so a KO drop is the only way to obtain it."
+        end
       end
+    end
+    # Review R3 n2: a JSON give_item action carries an inline item with no NPC source, which the
+    # server never matches to a declared phone; phones are given by ink tags only
+    json_actions(json_data).each do |a|
+      next unless a['type'] == 'give_item' && a['item'].is_a?(Hash) && a['item']['type'] == FRIENDFACE_PHONE
+
+      err(issues, "A JSON give_item action gives a #{FRIENDFACE_PHONE} ('#{a['item']['name'] || a['item']['id'] || FRIENDFACE_PHONE}'): " \
+                  "the server refuses it. Give a phone with an ink tag (#give_item:#{FRIENDFACE_PHONE}) from its owner's story.")
     end
     # Review R2 n4: the server resolves an add to the first item with a matching id, so two phones
     # sharing an id would hand over the wrong one
@@ -116,9 +129,50 @@ module ValidateAccessWork
 
   # An NPC's offers, read as the server reads them (SocialFeed#npc_offers_item?): its record, then
   # its compiled story, or the .ink source when there is no compiled file
+  # Review R3 n4: an .ink source (a story never compiled) brings in its INCLUDEd files too.
   def npc_offers_phone?(npc)
     texts = AW.offer_texts(npc) { |story_path| story_file(story_path) }
+    sp = npc['storyPath']
+    path = sp.is_a?(String) && !sp.empty? ? story_file(sp) : nil
+    texts += ink_included_texts(path) if path&.end_with?('.ink')
     texts.any? { |t| AW.offers_item_text?(t, FRIENDFACE_PHONE) }
+  end
+
+  # The text of every file an .ink file INCLUDEs, followed recursively, each read once
+  def ink_included_texts(path)
+    seen = Set[path]
+    queue = [path]
+    out = []
+    until queue.empty?
+      f = queue.shift
+      File.readlines(f, encoding: 'UTF-8').each do |l|
+        next unless l =~ /^\s*INCLUDE\s+(\S+)/
+
+        inc = File.expand_path(Regexp.last_match(1), File.dirname(f))
+        next if seen.include?(inc) || !File.file?(inc)
+
+        seen << inc
+        queue << inc
+        out << File.read(inc, encoding: 'UTF-8')
+      end
+    end
+    out
+  end
+
+  # Every hash in the scenario with a String `type` and an `item` (the shape of a JSON give_item
+  # action, wherever it sits: eventMappings, timers, flag stations), found by walking the document
+  def json_actions(json_data)
+    out = []
+    walk = lambda do |v|
+      case v
+      when Hash
+        out << v if v['type'].is_a?(String) && v.key?('item')
+        v.each_value { |x| walk.call(x) }
+      when Array then v.each { |x| walk.call(x) }
+      end
+    end
+    walk.call(json_data)
+    out
   end
 
   def story_file(story_path)

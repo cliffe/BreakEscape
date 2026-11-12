@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const ruby = spawnSync('ruby', ['--version']);
@@ -306,22 +308,54 @@ test('phone (review R1 m3, m4, n1): an NPC phone must be takeable and have an id
     assert.deepEqual(issues(clean()), []);
 });
 
-test('phone (review R2 m2): an NPC phone no give offers warns that only a KO drop hands it over', { skip }, () => {
-    const msg = 'only a KO drop hands this phone over';
+test('phone (review R2 m2, R3 m1): an NPC phone no give offers is an info line, or an error when the NPC is koImmune', { skip }, () => {
+    const msg = 'a KO drop is the only way to obtain it';
+    const never = 'is koImmune, so the player can never obtain it';
+    const infos = list => list.filter(x => x.startsWith('ℹ️'));
     let s = clean(); delete jake(s).eventMappings;
-    assertHas(warnings(issues(s)), msg);
+    assertHas(infos(issues(s)), msg);
+    assert.deepEqual(warnings(issues(s)), []);
+    assert.deepEqual(errors(issues(s)), []);
+    s = clean(); delete jake(s).eventMappings; jake(s).koImmune = true;
+    assertHas(errors(issues(s)), never);
+    assertLacks(issues(s), msg);
+    s = clean(); jake(s).koImmune = true;
+    assertLacks(issues(s), never);
     // A give_npc_inventory_items that filters the phone out is no offer; one that names it, or no filter, is
     s = clean(); jake(s).eventMappings[0].action = 'give_npc_inventory_items:keycard';
-    assertHas(warnings(issues(s)), msg);
+    assertHas(infos(issues(s)), msg);
     s = clean(); jake(s).eventMappings[0].action = 'give_npc_inventory_items:keycard,phone_friendface';
     assertLacks(issues(s), msg);
     s = clean(); jake(s).eventMappings[0].action = 'give_npc_inventory_items';
+    assertLacks(issues(s), msg);
+    // Review R3 n1: the engine trims around the colon, so a spaced tag gives too
+    s = clean(); jake(s).eventMappings[0].action = 'give_item : phone_friendface';
     assertLacks(issues(s), msg);
     // The story is read too: the test scenario's Jake gives his phone in his ink
     s = clean(); delete jake(s).eventMappings; jake(s).storyPath = 'scenarios/test_access_social/ink/jake.json';
     assertLacks(issues(s), msg);
     s = clean(); delete jake(s).eventMappings; jake(s).storyPath = 'scenarios/test_access_social/ink/staff.json';
-    assertHas(warnings(issues(s)), msg);
+    assertHas(infos(issues(s)), msg);
+});
+
+test('phone (review R3 n4): an uncompiled .ink story is read with its INCLUDEs', { skip }, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ff-include-'));
+    writeFileSync(join(dir, 'main.ink'), 'INCLUDE parts/give.ink\n=== start ===\nHello.\n-> END\n');
+    mkdirSync(join(dir, 'parts'));
+    writeFileSync(join(dir, 'parts/give.ink'), '=== lend ===\nHere. #give_item:phone_friendface\n-> END\n');
+    try {
+        const s = clean(); delete jake(s).eventMappings; jake(s).storyPath = join(dir, 'main.ink');
+        assertLacks(issues(s), 'a KO drop is the only way to obtain it');
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('phone (review R3 n2): a JSON give_item action that carries a Friendface phone is an error', { skip }, () => {
+    const s = clean();
+    s.timers = [{ id: 't1', atSeconds: 5, actions: [{ type: 'give_item', item: { type: 'phone_friendface', name: 'Phone' } }] }];
+    assertHas(errors(issues(s)), 'Give a phone with an ink tag');
+    assertLacks(issues(clean()), 'Give a phone with an ink tag');
 });
 
 test('phone (review R2 n4): two Friendface phones sharing an id are an error', { skip }, () => {

@@ -158,10 +158,12 @@ module BreakEscape
     # server (SocialFeed#npc_offers_item?) and by the validator, so the two cannot drift. `text`
     # is a compiled story, an .ink source or a JSON record; a tag ends at a quote, a backslash
     # (an escape in JSON), a newline or the next `#` (another ink tag on the same line).
-    GIVE_INVENTORY_RE = /give_npc_inventory_items(?::([^"\\\n#]*))?/.freeze
+    GIVE_INVENTORY_RE = /give_npc_inventory_items(?:\s*:([^"\\\n#]*))?/.freeze
 
+    # The engine trims around the first colon (chat-helpers.js), so `give_item : type` gives too
+    # (review R3 n1). The type must be literal: a tag built from an ink variable never matches.
     def give_item_re(type)
-      /give_item:\s*#{Regexp.escape(type.to_s)}(?![\w-])/
+      /give_item\s*:\s*#{Regexp.escape(type.to_s)}(?![\w-])/
     end
 
     def offers_item_text?(text, type)
