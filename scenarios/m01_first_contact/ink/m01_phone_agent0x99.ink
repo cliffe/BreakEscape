@@ -987,8 +987,7 @@ Whatever you choose to do with Derek — choose carefully. The way this ends set
         Shatter's dead in the water. Pack up and come in. We'll do it properly at HQ.
 }
 
-+ [On my way]
-    #ending_check
++ [On my way. #ending_check]
     #set_global:start_debrief_cutscene:true
     Walk out the way you came in. As far as Viral Dynamics knows, you were never here.
     #exit_conversation

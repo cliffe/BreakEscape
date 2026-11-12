@@ -625,6 +625,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "phoneId": "player_phone",
           "currentKnot": "first_call",
           "call": [{ "knot": "closing_debrief", "button": false }],
+          "callLabel": "SAFETYNET secure line",
           "voice": {
             "name": "Aoede",
             "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
@@ -750,7 +751,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               }
             },
             {
-              "_comment": "M8: HaX's one short first call, six seconds after the first office entry (after the 1.5 s text above). Teaches Answer and Decline where nothing is at stake. Declined or missed leaves a callback and a one-line text (next two mappings). first_ring is the ink in m01_phone_agent0x99.ink.",
+              "_comment": "M8: HaX's one short first call, six seconds after the first office entry. Teaches Answer and Decline where nothing is at stake. Declined or missed leaves a callback and one text that also carries the room tour (next two mappings; m01_tour_sent stops a second copy). first_ring is the ink in m01_phone_agent0x99.ink.",
               "eventPattern": "room_entered:main_office_area",
               "onceOnly": true,
               "delayMs": 6000,
@@ -762,47 +763,29 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             {
               "eventPattern": "phone_call_declined:agent_0x99",
               "onceOnly": true,
+              "setGlobal": { "m01_tour_sent": true },
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "Texting from here, then."
+                "message": "Texting from here, then. Now get a feel for the place. 🦎 Check the desks, filing cabinets, notice boards. The IT room is east, break room is west. Start broad."
               }
             },
             {
               "eventPattern": "phone_call_missed:agent_0x99",
               "onceOnly": true,
+              "setGlobal": { "m01_tour_sent": true },
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "Texting from here, then."
+                "message": "Texting from here, then. Now get a feel for the place. 🦎 Check the desks, filing cabinets, notice boards. The IT room is east, break room is west. Start broad."
               }
             },
             {
-              "_comment": "M8 R1 M1: the room-tour text moved after the first call so it does not repeat the call's opener. Answered (or opened and closed): the tour follows the call. Declined or missed: it follows the one-line text. m01_tour_sent stops a second copy (callback after a decline). m01_first_ring_done is set by first_ring's ink.",
+              "_comment": "M8 R1 M1: the room-tour text moved after the first call so it does not repeat the call's opener. Answered (or opened and closed): the tour follows the call. Declined or missed: the tour is folded into the 1.5 s follow-up text so it cannot land mid-callback. m01_tour_sent stops a second copy (callback after a decline). m01_first_ring_done is set by first_ring's ink.",
               "eventPattern": "conversation_closed:agent_0x99",
               "condition": "globalVars.m01_first_ring_done === true && globalVars.m01_tour_sent !== true",
               "onceOnly": true,
               "setGlobal": { "m01_tour_sent": true },
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "Now get a feel for the place. 🦎 Check the desks, filing cabinets, notice boards. The IT room is east, break room is west. Start broad before you go deep."
-              }
-            },
-            {
-              "eventPattern": "phone_call_declined:agent_0x99",
-              "condition": "globalVars.m01_tour_sent !== true",
-              "onceOnly": true,
-              "setGlobal": { "m01_tour_sent": true },
-              "sendTimedMessage": {
-                "delay": 5000,
-                "message": "Now get a feel for the place. 🦎 Check the desks, filing cabinets, notice boards. The IT room is east, break room is west. Start broad before you go deep."
-              }
-            },
-            {
-              "eventPattern": "phone_call_missed:agent_0x99",
-              "condition": "globalVars.m01_tour_sent !== true",
-              "onceOnly": true,
-              "setGlobal": { "m01_tour_sent": true },
-              "sendTimedMessage": {
-                "delay": 5000,
                 "message": "Now get a feel for the place. 🦎 Check the desks, filing cabinets, notice boards. The IT room is east, break room is west. Start broad before you go deep."
               }
             },

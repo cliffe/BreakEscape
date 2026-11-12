@@ -1,0 +1,54 @@
+{"seq":1,"t":"2026-11-12T19:51:05.414Z","dir":"out","ok":true,"event":"session-open","ready":{"ok":true,"label":"ready","value":true,"elapsedMs":6343},"speed":"fast","url":"http://127.0.0.1:3026/break_escape/games/2168","flagsConfigured":0,"logPath":"docs/agents/phone_calls/proofs/M8_r2/order_miss_session.jsonl","capturePath":null,"pid":1112989}
+{"seq":2,"t":"2026-11-12T19:51:05.478Z","dir":"in","cmd":{"cmd":"bootstrap","tutorial":"skip","resume":"new","autoBrief":true}}
+{"seq":3,"t":"2026-11-12T19:51:23.690Z","dir":"out","ok":true,"cmd":"bootstrap","result":{"trace":["cutscene choice 1 of 3","cutscene choice 1 of 3","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 3","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 2","close notes","dismiss \"Welcome to Hacktivity Games!\" → \"NO, I'LL FIGURE IT OUT\""],"settled":true,"state":{"room":"reception_area","player":{"x":160,"y":144,"hp":100},"activeMinigame":null,"blockingUi":null,"dialogue":null,"nearby":[{"id":"reception_area_chair-waiting-left-1_18","kind":"object","name":"chair","d":37,"inRange":true},{"id":"reception_area_chair-waiting-right-1_16","kind":"object","name":"chair","d":58.1,"inRange":false},{"id":"reception_area_chair-waiting-left-1_19","kind":"object","name":"chair","d":69,"inRange":false},{"id":"reception_area_chair-waiting-right-1_17","kind":"object","name":"chair","d":80.2,"inRange":false},{"id":"reception_area_notes_1","kind":"object","name":"Building Directory","d":89,"inRange":false},{"id":"reception_area_notes_2","kind":"object","name":"Visitor Sign-In Log","d":90.4,"inRange":false},{"id":"reception_desk_phone","kind":"object","name":"Reception Desk Phone","d":98.7,"inRange":false},{"id":"sarah_martinez","kind":"npc","name":"Sarah O'Brien","d":107.9,"inRange":false},{"id":"door:reception_area->main_office_area","kind":"door","name":"Main Office","d":158.4,"inRange":false,"locked":false}],"inventory":["Your Phone","Notepad"],"openTasks":["check_in_reception","access_main_office"],"recentGlobals":["briefing_played","maya_identity_protected","engine_tutorial_declined"]}}}
+{"seq":4,"t":"2026-11-12T19:51:23.853Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nwindow.__ev=[]; for (const n of ['conversation_closed:agent_0x99','phone_call_answered:agent_0x99','phone_call_declined:agent_0x99','phone_call_missed:agent_0x99']) window.eventDispatcher.on(n, ()=>window.__ev.push(n+'@'+Math.round(performance.now()/100)/10)); window.confirm=()=>true; return true;\n\n}"}}
+{"seq":5,"t":"2026-11-12T19:51:23.855Z","dir":"out","ok":true,"cmd":"eval","result":true}
+{"seq":6,"t":"2026-11-12T19:51:27.068Z","dir":"in","cmd":{"cmd":"enter","room":"main_office_area"}}
+{"seq":7,"t":"2026-11-12T19:51:29.324Z","dir":"out","ok":true,"cmd":"enter","result":{"ok":true,"from":"reception_area","to":"main_office_area","wanted":"main_office_area","doorway":{"id":"door:reception_area->main_office_area","direction":"north","x":48,"y":32,"gap":{"axis":"x","min":32,"max":64,"feetMin":41,"feetMax":55}},"opened":{"ok":true,"via":"direct"},"attempts":1,"trace":[{"startFeet":{"x":53,"y":84},"alignedFeet":{"x":53,"y":84},"alignedInGap":true,"alignVia":"pointer","feetAfter":{"x":48,"y":-10},"crossVia":"pointer","room":"main_office_area","crossed":true}],"arrivedAt":{"x":48,"y":-41},"feetAt":{"x":48,"y":-10}}}
+{"seq":8,"t":"2026-11-12T19:51:29.533Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.querySelector('.incoming-call');\n\n}"}}
+{"seq":9,"t":"2026-11-12T19:51:29.537Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":10,"t":"2026-11-12T19:51:30.766Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.querySelector('.incoming-call');\n\n}"}}
+{"seq":11,"t":"2026-11-12T19:51:30.782Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":12,"t":"2026-11-12T19:51:32.014Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.querySelector('.incoming-call');\n\n}"}}
+{"seq":13,"t":"2026-11-12T19:51:32.034Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":14,"t":"2026-11-12T19:51:33.246Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.querySelector('.incoming-call');\n\n}"}}
+{"seq":15,"t":"2026-11-12T19:51:33.252Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":16,"t":"2026-11-12T19:51:34.481Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.querySelector('.incoming-call');\n\n}"}}
+{"seq":17,"t":"2026-11-12T19:51:34.485Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":18,"t":"2026-11-12T19:51:35.708Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.querySelector('.incoming-call');\n\n}"}}
+{"seq":19,"t":"2026-11-12T19:51:35.719Z","dir":"out","ok":true,"cmd":"eval","result":true}
+{"seq":20,"t":"2026-11-12T19:51:35.942Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst b=document.querySelector('.incoming-call'); const c=window.phoneRinger.current(); return {banner: b?b.innerText.replace(/\\n+/g,' | '):null, ringer: c?c.state:null, queued: window.phoneRinger.queueLength()};\n\n}"}}
+{"seq":21,"t":"2026-11-12T19:51:35.951Z","dir":"out","ok":true,"cmd":"eval","result":{"banner":"Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline","ringer":"ringing","queued":0}}
+{"seq":22,"t":"2026-11-12T19:51:36.169Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !document.querySelector('.incoming-call');\n\n}"}}
+{"seq":23,"t":"2026-11-12T19:51:36.172Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":24,"t":"2026-11-12T19:51:38.402Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !document.querySelector('.incoming-call');\n\n}"}}
+{"seq":25,"t":"2026-11-12T19:51:38.404Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":26,"t":"2026-11-12T19:51:40.635Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !document.querySelector('.incoming-call');\n\n}"}}
+{"seq":27,"t":"2026-11-12T19:51:40.637Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":28,"t":"2026-11-12T19:51:42.865Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !document.querySelector('.incoming-call');\n\n}"}}
+{"seq":29,"t":"2026-11-12T19:51:42.870Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":30,"t":"2026-11-12T19:51:45.096Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !document.querySelector('.incoming-call');\n\n}"}}
+{"seq":31,"t":"2026-11-12T19:51:45.104Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":32,"t":"2026-11-12T19:51:47.337Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !document.querySelector('.incoming-call');\n\n}"}}
+{"seq":33,"t":"2026-11-12T19:51:47.351Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":34,"t":"2026-11-12T19:51:49.604Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !document.querySelector('.incoming-call');\n\n}"}}
+{"seq":35,"t":"2026-11-12T19:51:49.622Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":36,"t":"2026-11-12T19:51:51.847Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !document.querySelector('.incoming-call');\n\n}"}}
+{"seq":37,"t":"2026-11-12T19:51:51.862Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":38,"t":"2026-11-12T19:51:54.094Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !document.querySelector('.incoming-call');\n\n}"}}
+{"seq":39,"t":"2026-11-12T19:51:54.103Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":40,"t":"2026-11-12T19:51:56.327Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !document.querySelector('.incoming-call');\n\n}"}}
+{"seq":41,"t":"2026-11-12T19:51:56.337Z","dir":"out","ok":true,"cmd":"eval","result":true}
+{"seq":42,"t":"2026-11-12T19:51:56.575Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst b=document.querySelector('.incoming-call'); const c=window.phoneRinger.current(); return {banner: b?b.innerText.replace(/\\n+/g,' | '):null, ringer: c?c.state:null, queued: window.phoneRinger.queueLength()};\n\n}"}}
+{"seq":43,"t":"2026-11-12T19:51:56.584Z","dir":"out","ok":true,"cmd":"eval","result":{"banner":null,"ringer":null,"queued":0}}
+{"seq":44,"t":"2026-11-12T19:52:01.822Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn (window.npcManager.getConversationHistory('agent_0x99')||[]).map(m=>(m.type||'')+': '+String(m.text).slice(0,70));\n\n}"}}
+{"seq":45,"t":"2026-11-12T19:52:01.857Z","dir":"out","ok":true,"cmd":"eval","result":["npc: Agent, I'm your handler for this op. Message me if you need any guidan","call: Missed call","npc: Texting from here, then. Now get a feel for the place. 🦎 Check the de"]}
+{"seq":46,"t":"2026-11-12T19:52:02.066Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn (window.npcManager.getConversationHistory('agent_0x99')||[]).filter(m=>/get a feel for the place/.test(m.text)).length;\n\n}"}}
+{"seq":47,"t":"2026-11-12T19:52:02.078Z","dir":"out","ok":true,"cmd":"eval","result":1}
+{"seq":48,"t":"2026-11-12T19:52:02.313Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn window.__ev;\n\n}"}}
+{"seq":49,"t":"2026-11-12T19:52:02.362Z","dir":"out","ok":true,"cmd":"eval","result":["phone_call_missed:agent_0x99@59.2"]}
+{"seq":50,"t":"2026-11-12T19:52:02.570Z","dir":"in","cmd":{"cmd":"screenshot","path":"docs/agents/phone_calls/proofs/M8_r2/order_miss_end.png"}}
+{"seq":51,"t":"2026-11-12T19:52:02.790Z","dir":"out","ok":true,"cmd":"screenshot","result":{"ok":true,"path":"docs/agents/phone_calls/proofs/M8_r2/order_miss_end.png"}}
+{"seq":52,"t":"2026-11-12T19:52:02.986Z","dir":"in","cmd":{"cmd":"quit"}}
+{"seq":53,"t":"2026-11-12T19:52:02.986Z","dir":"out","event":"quit","commands":52,"flagsUsed":0}
+{"seq":54,"t":"2026-11-12T19:52:03.038Z","dir":"out","ok":true,"event":"session-closed","commands":53,"flagsUsed":0,"logPath":"docs/agents/phone_calls/proofs/M8_r2/order_miss_session.jsonl"}
