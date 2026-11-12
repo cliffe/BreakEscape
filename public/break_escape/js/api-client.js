@@ -208,23 +208,6 @@ export class ApiClient {
     return this.get(`/login_accounts?pc_id=${encodeURIComponent(pcId)}`);
   }
 
-  // Update inventory
-  static async updateInventory(action, item) {
-    return this.post('/inventory', {
-      action,
-      item
-    });
-  }
-
-  // Sync player state
-  static async syncState(currentRoom, globalVariables, notes) {
-    return this.put('/sync_state', {
-      currentRoom,
-      globalVariables,
-      notes
-    });
-  }
-
   /**
    * Request TTS audio for NPC dialogue
    * @param {string} npcId - NPC identifier
