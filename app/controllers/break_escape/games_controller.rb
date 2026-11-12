@@ -851,7 +851,7 @@ module BreakEscape
       @capture_incoming_any = incoming.any?
       return if incoming.empty? && !@game.legacy_captures?
 
-      scenario = Game.where(id: @game.id).pick(:scenario_data)
+      scenario = @game.stored_scenario_data
       @game.migrate_legacy_captures!(scenario: scenario) if @game.legacy_captures?
 
       incoming.first(BreakEscape::CaptureProofs::MAX_CAPTURES_PER_SYNC).each do |entry|
@@ -866,10 +866,16 @@ module BreakEscape
           @capture_refused[target_id] = result[:reason] if target_id
         end
       end
-      # Entries beyond the per-sync cap are refused.
+      # Entries beyond the per-sync cap are refused, unless the same target id was already
+      # recorded or answered within the cap (review 6a-server N2): a duplicate id is stored
+      # first-wins, so answering and refusing the one id would send both a captures entry and a
+      # capturesRefused entry for it. Skip the refusal when the id already has an answer.
       incoming.drop(BreakEscape::CaptureProofs::MAX_CAPTURES_PER_SYNC).each do |entry|
         target_id = entry.is_a?(Hash) ? entry['targetId'] : nil
-        @capture_refused[target_id] = 'invalid' if target_id
+        next unless target_id
+        next if @capture_answers.key?(target_id)
+
+        @capture_refused[target_id] = 'invalid'
       end
     end
 
@@ -2034,7 +2040,7 @@ module BreakEscape
       end
 
       if params[:biometricSamples].is_a?(Array)
-        scenario = Game.where(id: @game.id).pick(:scenario_data)
+        scenario = @game.stored_scenario_data
         @game.merge_biometric_samples!(params[:biometricSamples], scenario: scenario)
       end
     end

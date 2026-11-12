@@ -5392,7 +5392,9 @@ def check_carry_over(json_data, repo_root, mission_name, scenarios_dir, imports,
       issues << "❌ ERROR: #{at}: \"as\" is required when \"from\" (#{from}) doesn't start with an mNN_ or sisNN_ prefix."
       next
     end
-    # Server-owned globals (sync deltas R2, 6a) are never written by an import.
+    # Server-owned globals (sync deltas R2, 6a) are never written by an import. This literal must
+    # track Game::SERVER_OWNED_GLOBAL_NAMES (app/models/break_escape/game.rb); the validator cannot
+    # load the Rails constant, so carry_over_server_owned_globals_test guards that the two agree.
     if %w[se_captures].include?(name)
       issues << "❌ ERROR: #{at}: '#{name}' is a server-owned global and cannot be imported."
       next

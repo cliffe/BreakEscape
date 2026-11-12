@@ -52,6 +52,20 @@ module BreakEscape
       assert_equal 1, @game.player_state['seCaptures'].length
     end
 
+    test 'the composed heard-share note is bounded by MAX_CAPTURE_NOTE_CHARS (N3)' do
+      long_name = 'A' * 3000
+      scenario = { 'rooms' => { 'office' => { 'npcs' => [
+        { 'id' => 'holder', 'displayName' => long_name, 'creds' => { 'username' => 'h.user', 'password' => 'Pw-123' },
+          'workarounds' => [{ 'do' => 'share_login', 'with' => 'colleague' }] },
+        { 'id' => 'colleague', 'displayName' => 'Col' }
+      ] } } }
+      capture = CaptureModel.shared_login_capture(scenario, 'holder')
+      assert capture, 'the heard-share capture composes'
+      assert_operator capture['note'].length, :<=, CaptureModel::MAX_CAPTURE_NOTE_CHARS,
+                      'a long displayName does not ship an unbounded note'
+      assert_equal CaptureModel::MAX_CAPTURE_NOTE_CHARS, capture['note'].length, 'the over-long note is clipped to the cap'
+    end
+
     test 'a writer with no kind counts as credential' do
       result = record('targetId' => 'len')
       assert_equal :recorded, result[:result]

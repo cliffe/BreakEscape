@@ -89,6 +89,21 @@ module BreakEscape
       refused = JSON.parse(response.body)['capturesRefused'] || {}
       assert refused.key?('t70'), 'an entry past the per-sync cap is refused'
     end
+
+    test 'a duplicate target id past the cap is not refused when it was already answered (N2)' do
+      build_game
+      # 'mel' is declared and answered within the first 64; 63 undeclared fillers; then 'mel' again
+      # as the 65th entry, which is dropped past the cap. First-wins already recorded it, so the
+      # refused map must not also carry 'mel'.
+      caps = [{ 'targetId' => 'mel', 'kind' => 'credential' }]
+      caps += (1..63).map { |i| { 'targetId' => "t#{i}", 'kind' => 'credential' } }
+      caps << { 'targetId' => 'mel', 'kind' => 'credential' }
+      sync(captures: caps)
+      assert_response :success
+      body = JSON.parse(response.body)
+      assert body.dig('captures', 'mel').is_a?(Hash), 'mel is answered'
+      refute (body['capturesRefused'] || {}).key?('mel'), 'the already-answered id is not also refused'
+    end
   end
 
   # Against the real lab_physical_pentest scenario: Len's PIN through the writer's authored path,

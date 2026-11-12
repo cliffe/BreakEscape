@@ -362,9 +362,15 @@ module BreakEscape
     # username as its address: the server owns the record, and both readers key an account
     # holder's secret on entry['address'] (capture_secrets_for_client's by_username and
     # NetworkAccess#account_capture_usernames), so the username is the address the server stores.
+    # Only a self-capture (the writer's targetId is the owner's own id) takes the owner's
+    # username (review 6a-server M2). A writer on account holder A that captures a different
+    # target B must author an explicit address, or the server would bind A's username to B
+    # and serve A's password for B. The validator errors when that address is missing, so a
+    # scoped-out default here fails loudly at authoring time, not silently at serve time.
     def default_account_address!(fields, owner)
       return if present_string?(fields['address'])
       return unless account_holder?(owner)
+      return unless owner_id_of(owner).to_s == fields['targetId'].to_s
 
       username = owner['creds']['username']
       fields['address'] = username if present_string?(username)
@@ -475,6 +481,10 @@ module BreakEscape
       other = colleague && (colleague['displayName'] || colleague['id'])
       note = "#{name} told #{other} their login out loud: #{username} / #{password}"
       capture_note = reveal_secret?(data) ? note : "#{name} told #{other} their login out loud: #{username}"
+      # The composed note is the one capture string with no authored bound (review 6a-server N3):
+      # a very long displayName would otherwise ship unbounded. Clip to the same limit the
+      # validator enforces on authored notes.
+      capture_note = capture_note[0, MAX_CAPTURE_NOTE_CHARS] if capture_note.length > MAX_CAPTURE_NOTE_CHARS
       { 'targetId' => npc_id, 'kind' => 'credential', 'address' => username, 'note' => capture_note }
     end
   end

@@ -776,6 +776,15 @@ module BreakEscape
       inventory.deep_dup.tap { |items| filter_inventory_for_client!(items) }
     end
 
+    # The stored scenario column, read one way for every capture-recording path (review
+    # 6a-server N1): the sync step (apply_capture_sync_step and the biometric merge both run
+    # under the narrow sync_state load that has no scenario_data accessor) and the bootstrap
+    # writers (run_bootstrap_writers!) both read it here, so the two paths cannot drift to
+    # different scenario sources.
+    def stored_scenario_data
+      self.class.where(id: id).pick(:scenario_data)
+    end
+
     private
 
     # True when prepare_bootstrap_state! must take the lock and write. Each check
@@ -793,9 +802,10 @@ module BreakEscape
       # Each writer reports whether it changed anything, so a lock taken for one does not force a
       # needless save when another was the reason. migrate first, so a legacy heard-share entry
       # exists before the backfill looks for a gap.
+      scenario = stored_scenario_data
       changed = repair_saved_cards!
-      changed = migrate_legacy_captures!(scenario: scenario_data) || changed
-      changed = record_shared_logins!(scenario: scenario_data) || changed
+      changed = migrate_legacy_captures!(scenario: scenario) || changed
+      changed = record_shared_logins!(scenario: scenario) || changed
       changed
     end
 
@@ -1680,7 +1690,9 @@ module BreakEscape
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
     # is intercepted out of every PUT /sync_state and recorded through record_capture!, migrated
     # out of an old save on the bootstrap, and refused as a carry-over import. The server's copy
-    # of the client's SERVER_OWNED_GLOBALS.
+    # of the client's SERVER_OWNED_GLOBALS. scripts/validate_scenario.rb hardcodes the same list
+    # for the carry-over import guard (it cannot load this constant); carry_over_server_owned_globals_test
+    # asserts the two stay in sync, so add a second server-owned global in both places.
     SERVER_OWNED_GLOBAL_NAMES = %w[se_captures].freeze
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that
