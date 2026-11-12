@@ -316,6 +316,17 @@ module BreakEscape
       assert_equal false, fp['done']
     end
 
+    test 'C2 R2 nit: a saved shown id the scenario no longer has is skipped, not sent as an empty post' do
+      build(scenario: reactive_scenario(order: 'facts_first'))
+      @game.reload
+      @game.player_state['feedRevealed'] = { 'jake' => { 'shown' => %w[jake_post_1 gone_post jake_post_2], 'at' => Time.current.to_f } }
+      @game.save!
+      fp = JSON.parse(scenario_body)['feedPosts']['jake']
+      assert_equal %w[jake_post_1 jake_post_2], fp['posts'].map { |p| p.dig('post', 'id') }
+      assert_equal [0, 2], fp['posts'].map { |p| p['index'] }, 'each kept post keeps its reveal index'
+      refute(fp['posts'].any? { |p| p['post'].nil? || p['post'].empty? })
+    end
+
     test 'C2: a C-shape { n, at } entry migrates through reveal_feed_post! and feed_posts_for_client with no nil error' do
       build(scenario: reactive_scenario(order: 'facts_first'))
       at = Time.current.to_f - 1000

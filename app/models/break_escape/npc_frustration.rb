@@ -114,8 +114,9 @@ module BreakEscape
           end
           block = { 'level' => e['level'], 'tell' => frustration_tell(npc, e), 'settled' => frustration_settled?(npc, e),
                     'pending' => pending_runs(npc, e), 'done' => done_list(npc, e),
-                    # Review R1 n4: the station only, as the client reads it
-                    'lockedOut' => e['lockedOut'] & [AccessWork.station(scenario_data, npc)&.dig('id')].compact }
+                    # Review R1 n4: the station only, as the client reads it; q36 adds the
+                    # handed-over hot desks a check found it locked out at
+                    'lockedOut' => e['lockedOut'] & ([AccessWork.station(scenario_data, npc)&.dig('id')].compact | handed_borrow_pcs(npc)) }
           block['hold'] = hold unless hold.empty?
           # Review R3 m1: the whys of each need's last counted failure (what the client reported),
           # so the frustration icon can fade after a reload once the cause has cleared (q17)
@@ -615,6 +616,9 @@ module BreakEscape
       # R5 n5: no use at the NPC's own station can be met while a cause the server owns holds there
       station = AccessWork.station(scenario_data, npc)
       return refused if station && object_id == station['id'] && owned_causes(npc, need).any?
+      # q33 R2 m1, q36: a lockout stops every use of a PC, a handed-over hot desk as well, so an
+      # ease there is refused while the NPC's username is locked out (the feed post is too)
+      return refused if borrow_locked_out?(npc, need, object_id, station)
 
       # Review R1 n5: an ease at level 0 changes nothing, so it writes nothing (an honest client
       # sends one only above 0; an NPC that never failed keeps no entry)
@@ -635,6 +639,16 @@ module BreakEscape
       answer(npc_id, npc, entry, previous)
     end
 
+    # q36: the use is at a handed-over hot desk (not the station) where a check would answer and
+    # loginLockouts holds the NPC's username
+    def borrow_locked_out?(npc, need, object_id, station)
+      return false unless AccessWork::LOCKOUT_NEEDS.include?(need) && object_id && object_id != station&.dig('id')
+      return false unless handed_borrow_pcs(npc).include?(object_id)
+
+      pc = AccessWork.object(scenario_data, object_id)
+      AccessWork.lockout_pc?(scenario_data, npc, pc) && AccessWork.locked_out_at?(npc, pc, lockout_keys)
+    end
+
     # Sub-slice L: a lockout is an owned cause only once a `check` has recorded it (6.6)
     def owned_causes(npc, need)
       AccessWork.owned_causes(scenario_data, npc, need, lockout_recorded?(npc) ? lockout_keys : nil)
@@ -645,13 +659,22 @@ module BreakEscape
     # in a room the player can know of (review R2 m5). Answers { npcId, lockedOut }; a true answer
     # records the station in the NPC's lockedOut list, and nothing else is ever written. No list
     # of locked-out accounts is sent: the answer is about this owner at this PC only.
+    # User decision q36: a hot desk handed over to the NPC by a borrow_session is asked about too,
+    # under the same policy test (AccessWork.lockout_pc?), and a true answer records it the same way.
     def check_report!(npc_id, npc, object_id)
       refused = { 'npcId' => npc_id, 'refused' => true }
       st = AccessWork.station(scenario_data, npc)
-      return refused unless st && object_id == st['id'] && AccessWork.lockout_station?(scenario_data, npc)
-      # Review R1 m3: only an owner with a work plan, as the honest client asks (shouldCheckLockout);
-      # user decision q33 adds an owner with a social_media need, whose PC a lockout also stops
-      return refused unless AccessWork.work_plan?(scenario_data, npc) || AccessWork.need?(npc, 'social_media')
+      if st && object_id == st['id']
+        return refused unless AccessWork.lockout_station?(scenario_data, npc)
+        # Review R1 m3: only an owner with a work plan, as the honest client asks (shouldCheckLockout);
+        # user decision q33 adds an owner with a social_media need, whose PC a lockout also stops
+        return refused unless AccessWork.work_plan?(scenario_data, npc) || AccessWork.need?(npc, 'social_media')
+      else
+        return refused unless object_id && handed_borrow_pcs(npc).include?(object_id)
+
+        st = AccessWork.object(scenario_data, object_id)
+        return refused unless AccessWork.lockout_pc?(scenario_data, npc, st)
+      end
 
       room = AccessWork.object_index(scenario_data)[st['id']]&.dig(:room_id)
       return refused unless room && room_unlocked?(room)
@@ -724,12 +747,6 @@ module BreakEscape
       base = defaults.is_a?(Hash) ? defaults.dup : {}
       live = player_state['globalVariables']
       live.is_a?(Hash) ? base.merge(live) : base
-    end
-
-    # Thin wrappers (sub-slice C2): the one copy of the rule lives in AccessWork, so the
-    # frustration path and the feed route cannot drift. npc-needs.js requiredGlobalsHold.
-    def frustration_globals_hold?(cond)
-      AccessWork.globals_hold?(cond, frustration_globals)
     end
 
     # Sub-slice L: the loginLockouts keys are pre-gated by the per-NPC check record, so a
