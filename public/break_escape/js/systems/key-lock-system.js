@@ -168,7 +168,7 @@ function assignKeysToLocks() {
 // Function to generate consistent pin heights for a lock based on room and key
 function generatePinHeightsForLock(roomId, keyId) {
     // Use a deterministic seed based on room and key IDs
-    const seed = (roomId + keyId).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    let seed = (roomId + keyId).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const random = (min, max) => {
         const x = Math.sin(seed++) * 10000;
         return Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;

@@ -96,14 +96,11 @@ module BreakEscape
             walk_objects(npc['itemsHeld'], "rooms/#{room_id}/npcs[#{i}]/itemsHeld", room_locks, nil, out, room_id.to_s)
             # Slice 9.2 C (plan 10): each feed post's text is a clue source (its fact's text is read
             # with intelFacts). Only posts the server can serve count (review C R1 m1): an NPC that
-            # feeds (a social_media need) and a post with an id.
-            next unless BreakEscape::AccessWork.feeds?(npc)
-
-            served = BreakEscape::AccessWork.feed_posts(npc)
-            npc['feed']['posts'].each_with_index do |post, j|
-              next unless served.any? { |p| p.equal?(post) } && post['text'].is_a?(String) && !post['text'].empty?
-
-              out << { text: post['text'], path: "rooms/#{room_id}/npcs[#{i}]/feed/posts[#{j}]", object_id: nil, scope: nil, locks: [] }
+            # feeds (a social_media need) and a post with an id. C3 (plan 9): a set member (a reply,
+            # or an own post a reply stands in for) may never ship, so it is left out here and read
+            # only by set_member_texts.
+            each_feed_text(npc, room_id, i) do |entry, member|
+              out << entry unless member
             end
           end
         end
@@ -117,6 +114,52 @@ module BreakEscape
         social_texts(scenario['social'], out)
         ink_texts(scenario_dir, out, ink_failures)
         out
+      end
+
+      # C3 (plan 9): the feed texts readable_texts leaves out, each tagged with its alternative
+      # set id (the own post's id, or a reply's own id when its insteadOf names no own post of
+      # its NPC). Reads no ink.
+      def set_member_texts(scenario)
+        out = []
+        return out unless scenario.is_a?(Hash) && scenario['rooms'].is_a?(Hash)
+
+        scenario['rooms'].each do |room_id, room|
+          next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+          room['npcs'].each_with_index do |npc, i|
+            next unless npc.is_a?(Hash)
+
+            each_feed_text(npc, room_id, i) do |entry, member|
+              out << entry if member
+            end
+          end
+        end
+        out
+      end
+
+      # Yields { text:, path:, ... } for each servable feed post of a feeding NPC, with the set
+      # id for a set member (nil otherwise).
+      def each_feed_text(npc, room_id, index)
+        aw = BreakEscape::AccessWork
+        return unless aw.feeds?(npc)
+
+        served = aw.feed_posts(npc)
+        members = aw.set_member_ids(npc)
+        own_ids = served.reject { |p| aw.reply_post?(p) }.map { |p| p['id'] }
+        npc['feed']['posts'].each_with_index do |post, j|
+          next unless served.any? { |p| p.equal?(post) } && post['text'].is_a?(String) && !post['text'].empty?
+
+          entry = { text: post['text'], path: "rooms/#{room_id}/npcs[#{index}]/feed/posts[#{j}]", object_id: nil, scope: nil, locks: [] }
+          if members.include?(post['id'])
+            set = if !aw.reply_post?(post) then post['id']
+                  elsif own_ids.include?(post['insteadOf']) then post['insteadOf']
+                  else post['id']
+                  end
+            yield entry.merge(set: set), set
+          else
+            yield entry, nil
+          end
+        end
       end
 
       def walk_objects(list, path, locks, scope, out, room = nil)

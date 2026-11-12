@@ -70,7 +70,9 @@
     "l2_pc_off": true,
     "l2_ledger_down": false,
     "u1_kim_emailed_file": false,
-    "u1_kim_gave_usb": false
+    "u1_kim_gave_usb": false,
+    "f15_drive_down": true,
+    "f16_drive_down": true
   },
   "objectives": [
     {
@@ -224,6 +226,36 @@
           "title": "U1: Kim posts that IT blocked her USB",
           "type": "custom",
           "status": "active"
+        },
+        {
+          "taskId": "f15_replied",
+          "title": "F15: Kofi replies in Asha's thread instead of venting",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f15_thread",
+          "title": "F15: Mei replies in the same thread",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f16_replied",
+          "title": "F16: Tomasz replies to Ivy's vent",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f16_answered",
+          "title": "F16: Ivy answers in her own thread",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f16_again",
+          "title": "F16: Tomasz replies again after Ivy's answer",
+          "type": "custom",
+          "status": "active"
         }
       ]
     }
@@ -249,6 +281,43 @@
         "text": "Jake Brooks married his wife in 1998."
       }
     },
+    "people": [
+      {
+        "id": "asha",
+        "forms": {
+          "first": "Asha",
+          "full": "Asha Rao"
+        }
+      },
+      {
+        "id": "kofi",
+        "forms": {
+          "first": "Kofi",
+          "full": "Kofi Mensah"
+        }
+      },
+      {
+        "id": "mei",
+        "forms": {
+          "first": "Mei",
+          "full": "Mei Tanaka"
+        }
+      },
+      {
+        "id": "ivy",
+        "forms": {
+          "first": "Ivy",
+          "full": "Ivy Clarke"
+        }
+      },
+      {
+        "id": "tomasz",
+        "forms": {
+          "first": "Tomasz",
+          "full": "Tomasz Nowak"
+        }
+      }
+    ],
     "osint": {
       "sites": [
         {
@@ -367,6 +436,31 @@
                   "text": "Quarterly report due Friday. Wish me luck."
                 }
               ]
+            },
+            {
+              "person": "asha",
+              "name": "Asha Rao",
+              "bio": "Projects. Keeps the plan on one page."
+            },
+            {
+              "person": "kofi",
+              "name": "Kofi Mensah",
+              "bio": "Projects. Always has a spare charger."
+            },
+            {
+              "person": "mei",
+              "name": "Mei Tanaka",
+              "bio": "Projects. Calendar always full."
+            },
+            {
+              "person": "ivy",
+              "name": "Ivy Clarke",
+              "bio": "Design. Too many browser tabs."
+            },
+            {
+              "person": "tomasz",
+              "name": "Tomasz Nowak",
+              "bio": "Design. Bikes in, rain or shine."
             }
           ]
         }
@@ -1758,7 +1852,7 @@
       "objects": [
         {
           "type": "notes1",
-          "id": "sign_f14",
+          "id": "sign_l1",
           "name": "Sign: L1 Locked out at the hot desk",
           "position": {
             "x": 2,
@@ -1895,7 +1989,7 @@
       "objects": [
         {
           "type": "notes1",
-          "id": "sign_f15",
+          "id": "sign_l2",
           "name": "Sign: L2 Locked out at the hot desk, for work",
           "position": {
             "x": 2,
@@ -2056,7 +2150,8 @@
       "type": "room_office",
       "door_sign": "U1 Kim",
       "connections": {
-        "west": "l2_room"
+        "west": "l2_room",
+        "east": "f15_room"
       },
       "objects": [
         {
@@ -2126,6 +2221,14 @@
                   "u1_kim_gave_usb": true
                 }
               }
+            },
+            {
+              "type": "phone_friendface",
+              "id": "kim_phone",
+              "name": "Kim's phone",
+              "takeable": true,
+              "phoneOf": "kim",
+              "observations": "Kim's mobile, open on Friendface."
             }
           ],
           "needsHome": "kim_pc",
@@ -2191,6 +2294,587 @@
           ]
         }
       ]
+    },
+    "f15_room": {
+      "type": "room_office",
+      "door_sign": "F15 Asha, Kofi, Mei",
+      "connections": {
+        "west": "u1_room",
+        "east": "f16_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f15",
+          "name": "Sign: F15 Three colleagues, one complaint",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F15. The project drive is down from the start. Asha, Kofi and Mei each try to work, fail, then pick up their phones. Whoever posts first vents; the other two reply in that thread instead of venting too. Stand back and watch the Friendface feed.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "asha_pc",
+          "name": "Asha's PC",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Asha's PC, on the project drive."
+        },
+        {
+          "type": "pc",
+          "id": "kofi_pc",
+          "name": "Kofi's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Kofi's PC, on the project drive."
+        },
+        {
+          "type": "pc",
+          "id": "mei_pc",
+          "name": "Mei's PC",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Mei's PC, on the project drive."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "asha",
+          "displayName": "Asha Rao",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "asha_pc",
+          "needsDeferMin": 5,
+          "workNeeds": [
+            "f15_drive"
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 6,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "jitterPct": 0,
+              "initial": 60
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "asha",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f15_asha_vent",
+                "text": "Project drive down again. Nothing will save today.",
+                "complaint": "f15_drive",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f15_asha_re_drive",
+                "text": "{name}, mine too. Has anyone rung IT about it?",
+                "replyToComplaint": "f15_drive",
+                "insteadOf": "f15_asha_vent",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "asha_phone",
+              "name": "Asha's phone",
+              "takeable": true,
+              "phoneOf": "asha",
+              "observations": "Asha's mobile, open on Friendface."
+            }
+          ]
+        },
+        {
+          "id": "kofi",
+          "displayName": "Kofi Mensah",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "kofi_pc",
+          "needsDeferMin": 5,
+          "workNeeds": [
+            "f15_drive"
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 6,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "jitterPct": 0,
+              "initial": 75
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "kofi",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f15_kofi_vent",
+                "text": "Project drive is down and my files will not open.",
+                "complaint": "f15_drive",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f15_kofi_re_drive",
+                "text": "{name}, same on my desk. Not one file will open.",
+                "replyToComplaint": "f15_drive",
+                "insteadOf": "f15_kofi_vent",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:kofi",
+              "onceOnly": true,
+              "completeTask": "f15_replied",
+              "condition": "data.postId === 'f15_kofi_re_drive'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "kofi_phone",
+              "name": "Kofi's phone",
+              "takeable": true,
+              "phoneOf": "kofi",
+              "observations": "Kofi's mobile, open on Friendface."
+            }
+          ]
+        },
+        {
+          "id": "mei",
+          "displayName": "Mei Tanaka",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "mei_pc",
+          "needsDeferMin": 5,
+          "workNeeds": [
+            "f15_drive"
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 6,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "jitterPct": 0,
+              "initial": 90
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "mei",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f15_mei_vent",
+                "text": "No project drive this morning, so no work either.",
+                "complaint": "f15_drive",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f15_mei_re_drive",
+                "text": "{name}, mine is down as well. I have rung IT twice.",
+                "replyToComplaint": "f15_drive",
+                "insteadOf": "f15_mei_vent",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:mei",
+              "onceOnly": true,
+              "completeTask": "f15_thread",
+              "condition": "data.postId === 'f15_mei_re_drive'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "mei_phone",
+              "name": "Mei's phone",
+              "takeable": true,
+              "phoneOf": "mei",
+              "observations": "Mei's mobile, open on Friendface."
+            }
+          ]
+        }
+      ]
+    },
+    "f16_room": {
+      "type": "room_office",
+      "door_sign": "F16 Ivy, Tomasz",
+      "connections": {
+        "west": "f15_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f16",
+          "name": "Sign: F16 A pair, an answer and a second reply",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F16. The shared drive is down from the start. Ivy posts first and Tomasz replies in her thread. Later Ivy answers him there, and after that Tomasz replies once more. Stand back and watch for about two minutes.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "tomasz_pc",
+          "name": "Tomasz's PC",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Tomasz's PC, on the shared drive."
+        },
+        {
+          "type": "pc",
+          "id": "ivy_pc",
+          "name": "Ivy's PC",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10
+          },
+          "observations": "Ivy's PC, on the shared drive."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "tomasz",
+          "displayName": "Tomasz Nowak",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "tomasz_pc",
+          "needsDeferMin": 5,
+          "workNeeds": [
+            "f16_drive"
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 6,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "jitterPct": 0,
+              "initial": 80
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "tomasz",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f16_tom_vent",
+                "text": "Shared drive has gone. Lovely start to the week.",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_tom_re_ivy",
+                "text": "Same here {name}, I lost my whole morning.",
+                "replyTo": "f16_ivy_vent",
+                "insteadOf": "f16_tom_vent",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_tom_still_down",
+                "text": "Still no shared drive. I have given up for today.",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_tom_re_ivy_again",
+                "text": "{name}, they told me tomorrow at the earliest.",
+                "replyTo": "f16_ivy_vent",
+                "insteadOf": "f16_tom_still_down",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:tomasz",
+              "onceOnly": true,
+              "completeTask": "f16_replied",
+              "condition": "data.postId === 'f16_tom_re_ivy'"
+            },
+            {
+              "eventPattern": "npc_posted:tomasz",
+              "onceOnly": true,
+              "completeTask": "f16_again",
+              "condition": "data.postId === 'f16_tom_re_ivy_again'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "tomasz_phone",
+              "name": "Tomasz's phone",
+              "takeable": true,
+              "phoneOf": "tomasz",
+              "observations": "Tomasz's mobile, open on Friendface."
+            }
+          ]
+        },
+        {
+          "id": "ivy",
+          "displayName": "Ivy Clarke",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "ivy_pc",
+          "needsDeferMin": 5,
+          "workNeeds": [
+            "f16_drive"
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 6,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "jitterPct": 0,
+              "initial": 60
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "ivy",
+            "order": "reactive_first",
+            "posts": [
+              {
+                "id": "f16_ivy_vent",
+                "text": "Shared drive down. Again. Nothing saves at all.",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_ivy_re_tom",
+                "text": "Not just you then, {name}. Mine has gone as well.",
+                "replyTo": "f16_tom_vent",
+                "insteadOf": "f16_ivy_vent",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_ivy_still_down",
+                "text": "Two hours on and the drive is still down.",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              },
+              {
+                "id": "f16_ivy_answer",
+                "text": "{name}, did IT ever ring you back about it?",
+                "replyTo": "f16_ivy_vent",
+                "insteadOf": "f16_ivy_still_down",
+                "when": {
+                  "cause": "down",
+                  "need": "work"
+                }
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_posted:ivy",
+              "onceOnly": true,
+              "completeTask": "f16_answered",
+              "condition": "data.postId === 'f16_ivy_answer'"
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "ivy_phone",
+              "name": "Ivy's phone",
+              "takeable": true,
+              "phoneOf": "ivy",
+              "observations": "Ivy's mobile, open on Friendface."
+            }
+          ]
+        }
+      ]
     }
   },
   "resources": {
@@ -2212,6 +2896,16 @@
     "u1_reports": {
       "name": "Team reports",
       "kind": "file_share"
+    },
+    "f15_drive": {
+      "name": "Project file share",
+      "kind": "file_share",
+      "downIf": "f15_drive_down"
+    },
+    "f16_drive": {
+      "name": "Team file share",
+      "kind": "file_share",
+      "downIf": "f16_drive_down"
     }
   },
   "accountProfiles": {
