@@ -146,3 +146,22 @@ test('review R4 n1: room-state-sync answers SYNC_REFUSED for a 4xx only when ask
         globalThis.fetch = saved.fetch;
     }
 });
+
+test('a dropped item is drawn with its own sprite, then its type, and key only as a last resort', () => {
+    const loaded = new Set(['usb_stick_red', 'usb', 'keycard', 'key']);
+    const exists = (k) => loaded.has(k);
+    assert.equal(hostile.dropTextureFor({ type: 'usb', sprite: 'usb_stick_red' }, exists), 'usb_stick_red');
+    assert.equal(hostile.dropTextureFor({ type: 'usb', sprite: 'not_loaded' }, exists), 'usb');
+    assert.equal(hostile.dropTextureFor({ type: 'keycard' }, exists), 'keycard');
+    assert.equal(hostile.dropTextureFor({ type: 'mystery' }, exists), 'key');
+    assert.equal(hostile.dropTextureFor({}, exists), 'key');
+});
+
+test('the KO drop creates the sprite from the held item\'s own sprite', async () => {
+    setup('tess', [{ id: 'tess_usb', type: 'usb', sprite: 'usb_stick_red', name: 'USB stick' }]);
+    const made = [];
+    const add = window.game.add.sprite;
+    window.game.add.sprite = (x, y, tex) => { made.push(tex); return add(x, y, tex); };
+    await quiet(async () => { sys.setNPCHostile('tess', true); sys.damageNPC('tess', 10_000); await settle(); });
+    assert.deepEqual(made, ['usb_stick_red']);
+});

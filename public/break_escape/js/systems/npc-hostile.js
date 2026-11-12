@@ -514,6 +514,20 @@ function redropPending(npcId) {
   return dropNPCItems(npcId, null, pending);
 }
 
+/**
+ * The texture a dropped held item is drawn with. The same order as a reload (rooms.js draws a
+ * stored object from `sprite || type`), so the drop looks the same before and after: the item's
+ * own sprite, then its texture field, then its type's default picture. 'key' only when none of
+ * them is a loaded texture (a USB stick used to show the key picture until a reload).
+ */
+export function dropTextureFor(item, exists) {
+  const candidates = [item?.sprite, item?.texture, item?.type];
+  for (const key of candidates) {
+    if (typeof key === 'string' && key && exists(key)) return key;
+  }
+  return 'key';
+}
+
 function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
   const npc = window.npcManager?.getNPC(npcId);
   let sprite = npc?._sprite || npc?.sprite;
@@ -559,19 +573,10 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
     const spawnX = Math.round(sprite.x + Math.cos(angle) * SCATTER_RADIUS);
     const spawnY = Math.round(sprite.y + Math.sin(angle) * SCATTER_RADIUS);
 
-    // Create actual Phaser sprite for the dropped item
-    // Try item.texture, then item.type, with fallback to 'key' if texture doesn't exist
-    let texture = item.texture || item.type || 'key';
-    
-    console.log(`💧 Attempting to drop item: type="${item.type}", name="${item.name}", texture="${texture}"`);
-    
-    // Safety check: verify texture exists, fallback to 'key' if not
-    if (!gameRef.textures.exists(texture)) {
-      console.warn(`⚠️ Texture '${texture}' not found for dropped item '${item.name}', using fallback 'key'`);
-      texture = 'key';
-    } else {
-      console.log(`✅ Texture '${texture}' exists for dropped item '${item.name}'`);
-    }
+    // Create actual Phaser sprite for the dropped item, drawn as a reload draws it
+    // (dropTextureFor: its own sprite, then its type's picture, 'key' only as a last resort)
+    const texture = dropTextureFor(item, (key) => gameRef.textures.exists(key));
+    console.log(`💧 Dropping item: type="${item.type}", name="${item.name}", texture="${texture}"`);
     
     const spriteObj = gameRef.add.sprite(spawnX, spawnY, texture);
     
