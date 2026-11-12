@@ -893,6 +893,9 @@ export default class PhoneChatUI {
         // Only the NPC's lines are voice messages: a player line is never voiced in their voice
         const isVoiceMessage = type === 'npc' && trimmedText.toLowerCase().startsWith('voice:');
 
+        // A thread row is not something the caller said: a call screen that replays the
+        // thread (a legacy voiced call) leaves rows out (A4 R1 m3)
+        if (this.isCallMode && type === 'call') return Promise.resolve();
         if (this.isCallMode) return this._addCallSubtitle(type, trimmedText, contact, scrollToBottom);
 
         if (type === 'call') return this._addCallRow(message, trimmedText, scrollToBottom);

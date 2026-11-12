@@ -230,3 +230,22 @@ test('rows are not a conversation: preload, first open and history checks skip t
     assert.match(minigame, /!msg\.isBark && !msg\.timed && msg\.type !== 'call'/);
     assert.equal((conversation.match(/\.filter\(\(?m\)? => m\.type !== 'call'\)\.length > 0/g) || []).length, 2);
 });
+
+test('m3: a legacy voiced call screen skips a call row, and still draws the contact\'s lines as subtitles', async () => {
+    const UI = await loadUi();
+    const ui = Object.create(UI.prototype);
+    const box = dom.window.document.createElement('div');
+    ui.elements = { messagesContainer: box };
+    ui.isTerminalTheme = false;
+    ui.isCallMode = true;
+    ui.currentNPCId = 'caller';
+    ui.npcManager = { getNPC: () => ({ id: 'caller', displayName: 'Caller One' }) };
+    ui.scrollToBottom = () => {};
+    let subtitles = [];
+    ui._addCallSubtitle = (type, text) => { subtitles.push([type, text]); return Promise.resolve(); };
+    await ui.addMessage('call', 'Missed call', false, { type: 'call', callEvent: 'missed', text: 'Missed call' });
+    ui.addMessages([{ type: 'call', callEvent: 'missed', text: 'Missed call' }, { type: 'npc', text: 'Hello there' }]);
+    await Promise.resolve();
+    assert.deepEqual(subtitles, [['npc', 'Hello there']]);
+    assert.equal(box.querySelector('.message-call-row'), null);
+});
