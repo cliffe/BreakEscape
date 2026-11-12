@@ -194,5 +194,58 @@ module BreakEscape
       assert_equal false, @game.send(:merge_phone_state!, incoming)
       assert_nil @game.player_state.dig('phoneState', 'npc_1')
     end
+
+    # ---- A4 review round 1: m2, m6 ----
+
+    test 'm2: an entry that is only { history: [], pendingCall: null } deletes the saved entry' do
+      save({ 'history' => [], 'pendingCall' => { 'live' => record } })
+      assert @game.player_state.dig('phoneState', 'dev')['pendingCall']
+      result, entry = save({ 'history' => [], 'pendingCall' => nil })
+      assert_equal true, result
+      assert_nil entry
+      refute @game.player_state['phoneState'].key?('dev')
+    end
+
+    test 'm2: a null pendingCall on an entry that still has a thread keeps the thread and drops the slot' do
+      save({ 'history' => [], 'pendingCall' => { 'live' => record } })
+      _, entry = save({ 'history' => [{ 'type' => 'npc', 'text' => 'Hello', 'timestamp' => 1 }], 'pendingCall' => nil })
+      assert_equal 1, entry['history'].length
+      refute entry.key?('pendingCall')
+    end
+
+    test 'm2: an empty entry without the pendingCall key does not delete anything' do
+      save({ 'history' => [], 'pendingCall' => { 'live' => record } })
+      save({ 'history' => [] })
+      assert @game.player_state.dig('phoneState', 'dev')['pendingCall']
+    end
+
+    test 'm6: a knot with a newline after a valid line is refused (anchors are \\A and \\z)' do
+      ["ring_call\n<x>", "ring_call\n", "a\nb_c"].each do |bad|
+        assert_nil saved_slot({ 'live' => record('knot' => bad) }), "kept #{bad.inspect}"
+      end
+      refute saved_live('voicemailKnot' => "vm_knot\n<x>").key?('voicemailKnot')
+    end
+
+    test 'm6: a call row text with a newline after a valid line is refused' do
+      _, entry = save({ 'history' => [{ 'type' => 'call', 'text' => "Missed call\nforged", 'callEvent' => 'missed' }] })
+      assert_nil entry
+    end
+
+    test 'm6: answerSeconds Infinity and NaN (JSON 1e400) drop the key and raise nothing' do
+      assert_nothing_raised do
+        refute saved_live('answerSeconds' => Float::INFINITY).key?('answerSeconds')
+        refute saved_live('answerSeconds' => -Float::INFINITY).key?('answerSeconds')
+        refute saved_live('answerSeconds' => Float::NAN).key?('answerSeconds')
+      end
+      parsed = JSON.parse('{"knot":"ring_call","answerSeconds":1e400}')
+      assert_nothing_raised { refute saved_live(parsed).key?('answerSeconds') }
+    end
+
+    test 'm6: setGlobalOnStart drops a string value with angle brackets, and keeps at most ten entries' do
+      live = saved_live('setGlobalOnStart' => { 'a' => '<b>', 'b' => 'x>y', 'c' => 'fine' })
+      assert_equal({ 'c' => 'fine' }, live['setGlobalOnStart'])
+      many = saved_live('setGlobalOnStart' => (1..25).to_h { |i| ["g#{i}", i] })
+      assert_equal Game::MAX_PHONE_CALL_GLOBALS, many['setGlobalOnStart'].length
+    end
   end
 end

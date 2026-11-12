@@ -3332,7 +3332,13 @@ module BreakEscape
         next unless npc_id.is_a?(String) && npc_id.length <= 100 && entry.is_a?(Hash)
 
         clean = sanitize_phone_state_entry(entry)
-        merged[npc_id] = clean if clean
+        if clean
+          merged[npc_id] = clean
+        elsif entry.key?('pendingCall') && entry['pendingCall'].nil?
+          # A contact with no thread or story whose call slot was cleared: the client has
+          # no entry left to send, so it sends this marker and the saved slot goes (A4 R1 m2)
+          merged.delete(npc_id)
+        end
       end
 
       if merged.to_json.bytesize > MAX_PHONE_STATE_BYTES
@@ -3368,7 +3374,7 @@ module BreakEscape
         kept = msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
           case key
           when 'deliveryTags' then false # cleaned below
-          when 'type' then value.length <= 20
+          when 'type' then true # length checked above (`next`)
           when 'callEvent' then value.is_a?(String) && PHONE_CALL_EVENTS.include?(value)
           when 'text' then true
           # gameTime: elapsed game ms when the text arrived (the time its bubble shows)
