@@ -421,8 +421,11 @@
     .notes-minigame-title { font-size: 13px; margin: 0 0 2% 4%; }
     .notes-minigame-observation-container { margin: 2% 0 4% 4%; }
     .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px; }
+    /* Continue stays beside the notepad here, out of the flow (the framework
+       otherwise puts the Cancel row under the game area, which would shorten the
+       notepad and cover its foot; minigame sweep, 2026-11-12) */
     .minigame-container:has(.notes-minigame-notepad) .minigame-controls {
-        left: auto; right: 24px; bottom: 16px; transform: none; margin-top: 0;
+        position: absolute; left: auto; right: 24px; bottom: 16px; transform: none; margin: 0;
     }
     .notes-minigame-nav-container { left: 24px; bottom: 16px; transform: none; flex-wrap: wrap; max-width: 28%; }
 }

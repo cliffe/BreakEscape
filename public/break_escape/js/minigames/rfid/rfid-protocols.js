@@ -18,7 +18,7 @@ export const RFID_PROTOCOLS = {
     },
     hexLength: 10,
     color: '#FF6B6B',
-    icon: '⚠️',
+    icon: 'warning',  // a pixel icon name (rfid-ui.js pixelIcon)
     description: 'Legacy read-only card with no encryption'
   },
 
@@ -35,7 +35,7 @@ export const RFID_PROTOCOLS = {
     sectors: 16,
     hexLength: 8,
     color: '#FF6B6B',  // Red like EM4100 - equally weak
-    icon: '⚠️',
+    icon: 'warning',  // a pixel icon name (rfid-ui.js pixelIcon)
     description: 'Encrypted card using factory default keys (FFFFFFFFFFFF)'
   },
 
@@ -52,7 +52,7 @@ export const RFID_PROTOCOLS = {
     sectors: 16,
     hexLength: 8,
     color: '#4ECDC4',  // Teal for medium security
-    icon: '🔐',
+    icon: 'lock',  // a pixel icon name (rfid-ui.js pixelIcon)
     description: 'Encrypted card with custom keys - requires attack to crack'
   },
 
@@ -67,7 +67,7 @@ export const RFID_PROTOCOLS = {
     },
     hexLength: 14,
     color: '#95E1D3',
-    icon: '🔒',
+    icon: 'lock',  // a pixel icon name (rfid-ui.js pixelIcon)
     description: 'High security with 3DES/AES encryption - UID only'
   }
 };
@@ -198,9 +198,9 @@ export function getReadProfile(protocol) {
  */
 export function getSecurityDisplay(security) {
   const displays = {
-    'low': '⚠️ LOW',
-    'medium': '🔐 MEDIUM',
-    'high': '🔒 HIGH'
+    'low': 'LOW',
+    'medium': 'MEDIUM',
+    'high': 'HIGH'
   };
   return displays[security] || security.toUpperCase();
 }

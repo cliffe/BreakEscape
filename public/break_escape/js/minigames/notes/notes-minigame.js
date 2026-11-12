@@ -358,6 +358,11 @@ export class NotesMinigame extends MinigameScene {
     updateDisplayedNote() {
         const currentNote = this.collectedNotes[this.currentNoteIndex];
         if (!currentNote) return;
+        // The notepad remembers what it showed, so it reopens on a note added since (UX R1)
+        // Recorded against the full list: a search narrows collectedNotes (R1 m2)
+        if (this.item?.scenarioData?.type === 'notepad') {
+            Object.assign(notepadMemory, notepadMemoryFor(window.gameState?.notes, currentNote, this.currentNoteIndex));
+        }
         
         // Parse the note text to extract observations
         const noteParts = this.parseNoteText(currentNote.text);
@@ -762,6 +767,42 @@ export function showMissionBrief() {
     };
     
     startNotesMinigame(missionBriefItem, window.gameScenario.scenario_brief, '', null, true);
+}
+
+// What the notepad last showed (client-only, never synced: it lasts until a reload).
+const notepadMemory = { seenCount: 0, lastIndex: 0 };
+
+/**
+ * The page the notepad opens on: the newest note when one was added since it was last
+ * looked at (a fact just noted, shot 04 opened on page 1), else the page last shown.
+ * Pure: notes is the notes list, memory { seenCount, lastIndex }.
+ */
+export function notepadStartIndex(notes, memory = notepadMemory) {
+    const count = Array.isArray(notes) ? notes.length : 0;
+    if (count === 0) return 0;
+    const seen = Number(memory?.seenCount) || 0;
+    if (count > seen) return count - 1;
+    const last = Number(memory?.lastIndex) || 0;
+    return last >= 0 && last < count ? last : 0;
+}
+
+/**
+ * What the notepad remembers after showing a note: the full notes list's length, and the
+ * shown note's place in that list. A search shows a filtered list, so the note is found
+ * in the full list by identity, then by id; the shown index is the fallback.
+ * Pure: allNotes is the full notes list.
+ */
+export function notepadMemoryFor(allNotes, shownNote, shownIndex = 0) {
+    const notes = Array.isArray(allNotes) ? allNotes : [];
+    let lastIndex = notes.indexOf(shownNote);
+    if (lastIndex < 0 && shownNote && shownNote.id != null) {
+        lastIndex = notes.findIndex(n => n && n.id === shownNote.id);
+    }
+    if (lastIndex < 0) lastIndex = Number(shownIndex) || 0;
+    return { seenCount: notes.length, lastIndex };
+}
+if (typeof window !== 'undefined') {
+    window.notepadStartIndex = () => notepadStartIndex(window.gameState?.notes);
 }
 
 // Function to start the notes minigame

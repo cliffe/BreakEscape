@@ -77,6 +77,9 @@ function escapeText(value) {
 }
 
 export class BackupRecoveryMinigame extends MinigameScene {
+    // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
+    static controlsOverlay = true;
+
     constructor(container, params) {
         params = params || {};
         params.title = params.title || 'Backup Recovery Console';

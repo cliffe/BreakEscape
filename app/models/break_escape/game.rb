@@ -723,7 +723,36 @@ module BreakEscape
       true
     end
 
+    # The player's inventory as any response may send it (code review R2 M2): a filtered
+    # copy, never the stored array. Start items and picked-up items are stored filtered
+    # already; this also covers games created before that, and an item stored any other
+    # way. Strips lock answers (requires on answer locks, combination, cryptexConfig.answer),
+    # the PIN, generator-only keys, declared grant contents and capture secrets. Keeps
+    # contents and everything else the client reads, as the bootstrap always did.
+    def client_inventory
+      inventory = player_state.is_a?(Hash) ? player_state['inventory'] : nil
+      return inventory unless inventory.is_a?(Array)
+
+      inventory.deep_dup.tap { |items| filter_inventory_for_client!(items) }
+    end
+
     private
+
+    def filter_inventory_for_client!(obj)
+      case obj
+      when Hash
+        lock_type = obj['lockType']
+        self.class.set_pin_length!(obj)
+        self.class.strip_lock_answers!(obj)
+        self.class.strip_puzzle_graph_keys!(obj)
+        BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
+        strip_capture_secrets!(obj)
+        obj.delete('requires') if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
+        obj.each_value { |value| filter_inventory_for_client!(value) }
+      when Array
+        obj.each { |item| filter_inventory_for_client!(item) }
+      end
+    end
 
     def sync_vm_set_id_column
       state = player_state.is_a?(String) ? JSON.parse(player_state) : player_state
@@ -1119,11 +1148,15 @@ module BreakEscape
           # `requires` when it strips the PIN, so a 5-digit door gets a 5-digit pad.
           # access, acceptsUIDOnly: an rfid door's role list and whether a UID-only copy opens it
           # (access model 4.1). They name roles and NPC ids, nothing secret.
+          # cryptexConfig: a cryptex door's wheels (wheelCount, alphabets, hintStrip, wornRings,
+          # maxAttempts), so its pad shows the right wheels before the room loads (unlock gaps
+          # R1 M2). Its old `answer` field is stripped here and again by the controller filter.
           %w[type connections locked lockType requires difficulty door_sign keyPins lockedHint ambientSound ambientVolume
              maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting
-             access acceptsUIDOnly].each do |field|
+             access acceptsUIDOnly cryptexConfig].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
+          self.class.strip_lock_answers!(kept_fields)
 
           # A motion-sensor room is lit only when someone's actually in it. NPCs are stripped
           # from the lazy payload, so expose just whether a present (non-phone, non-hidden) NPC
@@ -2290,13 +2323,37 @@ module BreakEscape
       ids = self.class.normalise_card_ids(card_ids)
       return Array(lock['requires']).any? if ids.nil?
 
+      !rfid_passing_card_id(lock, ids).nil?
+    end
+
+    # The first of these held card ids that opens an access-list rfid lock, or nil.
+    def rfid_passing_card_id(lock, ids)
       held = held_rfid_cards
-      ids.any? do |card_id|
+      Array(ids).find do |card_id|
         next false unless held.key?(card_id)
         next false if held[card_id] && lock['acceptsUIDOnly'] != true
 
         rfid_identity_passes?(lock, card_id)
       end
+    end
+
+    # After an access-list rfid unlock: which held card opened it, for the client's toast.
+    # The client sends every held card id at once, so naming a copied card would tell the
+    # player whose identity the list admits (an NPC's withheld role, or that a person is
+    # on a people list). Only the player's own keycard is named: { cardId: id }. A copy
+    # answers { viaCopy: true } with no id. nil for a lock with no access list or no
+    # card_ids.
+    def rfid_unlock_card_answer(target_type, target_id, card_ids)
+      lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
+      return nil unless lock.is_a?(Hash) && lock['lockType'] == 'rfid' && self.class.acl_lock?(lock)
+
+      ids = self.class.normalise_card_ids(card_ids)
+      return nil if ids.blank?
+
+      card_id = rfid_passing_card_id(lock, ids)
+      return nil if card_id.nil?
+
+      held_keycard_ids.include?(card_id) ? { cardId: card_id } : { viaCopy: true }
     end
 
     # True when a refused rfid unlock with card_ids would have passed but for a UID-only
@@ -2632,12 +2689,50 @@ module BreakEscape
       'biometric' => %w[biometric],
       'bluetooth' => %w[bluetooth],
       'ble' => %w[ble],
-      'rfid' => %w[rfid]
+      'rfid' => %w[rfid],
+      'combination' => %w[combination],
+      'cryptex' => %w[cryptex]
     }.freeze
 
     def unlock_method_matches_lock?(lock_type, method)
       allowed = UNLOCK_METHODS_BY_LOCK_TYPE[lock_type.presence || 'key']
       allowed.present? && allowed.include?(method.to_s)
+    end
+
+    # Whether an answer opens a combination padlock or a cryptex (unlock gaps build,
+    # 2026-11-12). The secret is the lock's `requires`, which never reaches the client.
+    # A combination is compared as its numbers in order, so "12-30-5" from the dials
+    # matches `requires` written "12-30-05", "12 30 5" or [12, 30, 5]. A cryptex word
+    # is compared ignoring case and outer spaces: its wheels show fixed letters, so case
+    # can only differ by an authoring slip. A blank secret or answer never opens.
+    def self.lock_answer_matches?(lock_type, secret, attempt)
+      case lock_type
+      when 'combination'
+        numbers = lambda do |value|
+          parts = value.is_a?(Array) ? value.map(&:to_s) : value.to_s.split(/[^0-9]+/)
+          parts = parts.map(&:strip).reject(&:empty?)
+          parts.all? { |p| p.match?(/\A\d+\z/) } ? parts.map(&:to_i) : nil
+        end
+        want = numbers.call(secret)
+        got = numbers.call(attempt)
+        want.present? && got.present? && want == got
+      when 'cryptex'
+        want = secret.is_a?(String) ? secret.strip : ''
+        got = attempt.is_a?(String) ? attempt.strip : ''
+        !want.empty? && want.casecmp?(got)
+      else
+        false
+      end
+    end
+
+    # The authored answers the combination and cryptex minigames once read on the client.
+    # `requires` is the server's secret; these copies leave every payload so an author who
+    # also wrote the answer there does not ship it (unlock gaps build).
+    def self.strip_lock_answers!(obj)
+      return unless obj.is_a?(Hash)
+
+      obj.delete('combination') if obj['lockType'] == 'combination'
+      obj['cryptexConfig'].delete('answer') if obj['cryptexConfig'].is_a?(Hash)
     end
 
     # A flag-station reward of type unlock_object opens its object on the client,
@@ -2764,6 +2859,10 @@ module BreakEscape
             is_valid = room['requires'].to_s == attempt.to_s
             Rails.logger.info "[BreakEscape] #{method} validation result: #{is_valid}"
             is_valid
+          when 'combination', 'cryptex'
+            is_valid = self.class.lock_answer_matches?(method, room['requires'], attempt)
+            Rails.logger.info "[BreakEscape] #{method} validation result: #{is_valid}"
+            is_valid
           else
             Rails.logger.warn "[BreakEscape] SECURITY VIOLATION: No valid unlock method for LOCKED door: #{target_id}, method=#{method}"
             false
@@ -2867,6 +2966,12 @@ module BreakEscape
           when 'pin', 'password'
             result = object['requires'].to_s == attempt.to_s
             Rails.logger.info "[BreakEscape] Password validation: required='#{object['requires']}', attempt='#{attempt}', result=#{result}"
+            return result
+          when 'combination', 'cryptex'
+            # An unlocked one opens as the other methods do; a locked one needs its answer
+            return true unless lock_in_force
+            result = self.class.lock_answer_matches?(method, object['requires'], attempt)
+            Rails.logger.info "[BreakEscape] #{method} validation result: #{result}"
             return result
           end
         end
@@ -2984,7 +3089,56 @@ module BreakEscape
         found = find_object_in_contents(stick, target_id)
         return found if found
       end
+      # A container an NPC carried (a bag, a folder, a laptop) that a give or a knock-out
+      # has released (unlock gaps build, 2026-11-12)
+      released_npc_containers.each do |container|
+        found = find_object_in_contents(container, target_id)
+        return found if found
+      end
       nil
+    end
+
+    # ── a container an NPC carries (unlock gaps build, 2026-11-12) ──────
+
+    # Item types the client opens as a container (interactions.js), besides any item with
+    # contents. A locked held item is counted too, since opening it calls /unlock.
+    NPC_CONTAINER_TYPES = %w[suitcase briefcase bag1 bin1].freeze
+
+    def self.npc_container_item?(item)
+      item.is_a?(Hash) && item['id'].is_a?(String) && !item['id'].empty? &&
+        (item['contents'].is_a?(Array) || item['locked'] == true || NPC_CONTAINER_TYPES.include?(item['type']))
+    end
+
+    # Whether a held container has left its NPC, by the server's own records: the give record
+    # (record_npc_gift!, written only after the give was validated) addresses it, or the NPC's
+    # knock-out is recorded (a KO drops everything it holds). Never from the browser's word.
+    def npc_container_released?(npc, item)
+      return false unless npc.is_a?(Hash) && npc['id'].is_a?(String)
+
+      given = player_state.is_a?(Hash) ? player_state.dig('npc_given_items', npc['id']) : nil
+      Array(given).any? { |g| g.is_a?(Hash) && BreakEscape::ItemIdentity.addressed_by?(item, g['type'], g['id'], g['name']) } ||
+        npc_defeated?(npc['id'])
+    end
+
+    # The scenario copy of every NPC-held container the player can have got: the NPC holds it
+    # in the scenario and a give or KO record releases it. A dropped copy in objects_added or
+    # the inventory copy is never read, so an id the browser invents, or a container still in
+    # its NPC's hands, resolves to nothing. Habit sticks have their own path (held_usb_sticks).
+    # Bounded by the scenario's NPC-held items; not memoised, as the records change per request.
+    def released_npc_containers
+      return [] unless scenario_data.is_a?(Hash) && player_state.is_a?(Hash)
+
+      npcs = []
+      scenario_data['rooms']&.each_value do |room|
+        npcs.concat(room['npcs'].select { |n| n.is_a?(Hash) }) if room.is_a?(Hash) && room['npcs'].is_a?(Array)
+      end
+      npcs.concat(self.class.headless_npc_records(scenario_data))
+      stick_ids = usb_habit_stick_ids
+      npcs.flat_map do |npc|
+        Array(npc['itemsHeld']).select do |item|
+          self.class.npc_container_item?(item) && !stick_ids.include?(item['id']) && npc_container_released?(npc, item)
+        end
+      end
     end
 
     # The scenario's declared grants (DeclaredGrants.for), walked once per instance:
@@ -4695,6 +4849,7 @@ module BreakEscape
         end
 
         self.class.set_pin_length!(obj)
+        self.class.strip_lock_answers!(obj)
         if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
           obj.delete('requires')
         end
@@ -4966,9 +5121,19 @@ module BreakEscape
       if scenario_data && scenario_data['startItemsInInventory'] && self.player_state['inventory'].empty?
         start_items = scenario_data['startItemsInInventory']
         if start_items.is_a?(Array)
-          # Use dup instead of deep_dup to avoid issues with ActiveSupport extensions
+          # Stored already filtered, as a picked-up item is (canonical_inventory_item): a
+          # locked start item's answer (requires, combination, cryptexConfig.answer) never
+          # enters player_state, so no inventory echo can ship it (code review R2 M2). No
+          # server check reads a lock answer or locked contents from this copy (keys match
+          # on key_id and opens_lock, which the filter keeps).
           start_items.each do |item|
-            self.player_state['inventory'] << (item.is_a?(Hash) ? item.dup : item)
+            if item.is_a?(Hash)
+              copy = item.deep_dup
+              filter_requires_and_contents_recursive(copy)
+              self.player_state['inventory'] << copy
+            else
+              self.player_state['inventory'] << item
+            end
           end
         else
           Rails.logger.warn "[BreakEscape] startItemsInInventory is not an Array: #{start_items.class}"
