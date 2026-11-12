@@ -291,3 +291,15 @@ test('phone: the player\'s own phone may be anywhere; its site must be a social 
     s.startItemsInInventory[0].site = 'friendface';
     assert.deepEqual(errors(issues(s)), []);
 });
+
+test('phone (review R1 m3, m4, n1): an NPC phone must be takeable and have an id; a phone needs a social site; phoneOf on another type warns', { skip }, () => {
+    let s = clean(); delete jake(s).itemsHeld[0].takeable;
+    assertHas(errors(issues(s)), 'is not "takeable": true');
+    s = clean(); delete jake(s).itemsHeld[0].id;
+    assertHas(errors(issues(s)), 'needs an id');
+    s = clean(); s.social.osint.sites = s.social.osint.sites.filter((x) => x.type !== 'social');
+    assertHas(errors(issues(s)), 'has no social osint site');
+    s = clean(); s.rooms.lobby.objects.push({ type: 'phone', id: 'desk_phone', name: 'Desk phone', phoneOf: 'jake' });
+    assertHas(warnings(issues(s)), "has phoneOf, which only a phone_friendface reads");
+    assert.deepEqual(issues(clean()), []);
+});

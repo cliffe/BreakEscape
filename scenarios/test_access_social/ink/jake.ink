@@ -18,10 +18,10 @@ Sorry, busy. What is it?
     Ask me again when the systems are working.
     -> hub
 + {not lent_phone} [Could I borrow your phone for a bit?]
-    ~ lent_phone = true
     #give_item:phone_friendface
     # speaker:npc
     Go on then. I'll have to use my PC instead.
+    ~ lent_phone = true
     -> hub
 + [I'll let you get on.] #exit_conversation
     ~ hub_quiet = true

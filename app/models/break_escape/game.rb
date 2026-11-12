@@ -175,6 +175,8 @@ module BreakEscape
 
       unless item_exists
         player_state['inventory'] << item
+        # q35: an NPC's Friendface phone reaching the inventory is taken for good (review R1 m2)
+        note_friendface_phone_taken!(item)
         save!
       else
         Rails.logger.info "[BreakEscape] Item already in inventory, skipping: #{item['type']} / #{item['name']}"
@@ -474,6 +476,13 @@ module BreakEscape
         # The dropped proof (section 6) and slice 9.3b's implant check read this list.
         player_state['droppedItems'] ||= []
         player_state['droppedItems'] << item['id'] unless player_state['droppedItems'].include?(item['id'])
+      end
+
+      # q35 review R1 m1: a Friendface phone enters a room only as an NPC's drop or a player's
+      # drop, never from client fields, so no client can mint one
+      if item['type'] == SocialFeed::FRIENDFACE_PHONE && source_data['npc_id'].blank? && source_data['source_type'] != 'player_drop'
+        Rails.logger.warn "[BreakEscape] add_object of a Friendface phone with no source rejected"
+        return false
       end
 
       # Generate unique ID if not provided

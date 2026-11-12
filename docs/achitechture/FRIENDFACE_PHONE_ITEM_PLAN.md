@@ -36,10 +36,11 @@ carry it. Every `phone_friendface` in the server's inventory is therefore the sc
   shows anywhere: the authored profile and the feed posts already revealed to this player.
 - The player's own phone: the same browser limited to the site, at the site's home, where every
   profile lists its revealed posts.
-- Posts stay server-gated. The open route answers with the server's own `feedPosts` for that
-  phone (one NPC's, or all), which the client restores without a toast or blip. Opening a phone
-  never reveals a post and never moves the feed on. No post text is in the bootstrap or scenario
-  block that ships.
+- Posts stay server-gated. The open route's answer carries the server's own `feedPosts` for that
+  phone (one NPC's, or all), for tests and the bridge; the client does not merge them, since it
+  already holds every revealed post and a merge racing a live `/feed_post` would swallow that
+  post's `npc_posted` (review R1 M2). Opening a phone never reveals a post and never moves the feed
+  on. No post text is in the bootstrap or scenario block that ships.
 
 ## 3. The `phone` flag
 
@@ -47,7 +48,16 @@ A phone is the NPC's while it has it. Once the phone has left the NPC (the playe
 server has a gift record from that NPC for it: given, taken from its items, or dropped by the
 player after that), the NPC is treated as `"phone": false` for the rest of the run: its social time
 goes to a PC or kiosk, `/feed_post` with `object_id` null is refused, the frustration rules apply
-to it as to any `"phone": false` NPC. It does not get the phone back if the player drops it.
+to it as to any `"phone": false` NPC. It does not get the phone back. (A phone is droppable only
+when its author sets `droppable: true`; none in `test_access_social` is, so there the player
+cannot drop one.)
+
+Review R1 changes: the server records `phonesTaken` the first time an NPC's phone reaches the
+inventory by any route, and reads that, so a KO pickup followed by a remove keeps the NPC
+phone-less on both sides. An NPC hands its phone over only when the scenario offers that give (a
+`give_item:phone_friendface` or an unfiltered `give_npc_inventory_items` tag in its story or JSON);
+a KO drop picked up from the floor stays allowed. A held phone counts only when its id matches a
+phone the scenario declares, and `update_room add_object` refuses an unsourced Friendface phone.
 
 Server: `Game#scenario_room_npc` returns the NPC with `phone: false` merged in when its phone is
 taken. Every phone check (`feed_source_ok?`, `ease_report!`, `AccessWork.can_fail?`,

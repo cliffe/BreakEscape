@@ -86,7 +86,7 @@ test('syncOwners makes each held NPC phone\'s owner phone-less', () => {
     assert.deepEqual(log, [['noPhone', 'jake']]);
 });
 
-test('open: asks the server with the owner, restores its posts, clears, launches at the profile', async () => {
+test('open: asks the server with the owner, clears, launches at the profile; merges no posts', async () => {
     const calls = [];
     const body = await openFriendfacePhone(JAKE, {
         request: async (npcId) => { calls.push(['request', npcId]); return { npcId, site: 'friendface', person: 'jake', feedPosts: { jake: {} } }; },
@@ -98,9 +98,8 @@ test('open: asks the server with the owner, restores its posts, clears, launches
     assert.equal(body.site, 'friendface');
     assert.deepEqual(calls, [
         ['request', 'jake'],
-        ['restore', { jake: {} }],
         ['clear', 'jake_phone'],
-        ['launch', { title: "Jake's phone", siteIds: ['friendface'], start: 'friendface.jake' }]
+        ['launch', { siteIds: ['friendface'], start: 'friendface.jake' }]
     ]);
     calls.length = 0;
     await openFriendfacePhone(OWN, {
@@ -108,6 +107,33 @@ test('open: asks the server with the owner, restores its posts, clears, launches
         launch: (p) => calls.push(['launch', p.start])
     });
     assert.deepEqual(calls, [['request', null], ['launch', 'friendface']]);
+});
+
+test('review R1 M2: an open answered while a /feed_post is in flight leaves the live post its npc_posted, blip and task', async () => {
+    const { phones, log } = harness([OWN]);
+    const emitted = [];
+    let answer;
+    const inFlight = new Promise((resolve) => { answer = resolve; });
+    const feed = new SocialFeed({
+        send: () => inFlight,
+        hasFeed: () => true,
+        emit: (name, data) => { emitted.push(name); if (name.startsWith('npc_posted:')) phones.onPosted(data); },
+        siteVisited: () => false
+    });
+    const live = { npcId: 'jake', index: 0, site: 'friendface', person: 'jake', done: false, post: { id: 'p1', text: 'one' }, fact: null };
+    const use = feed.onUse('jake');
+    // The open's answer lands first and carries the same post (the server revealed it already)
+    await openFriendfacePhone(OWN, {
+        request: async () => ({ site: 'friendface', person: null, feedPosts: { jake: { site: 'friendface', person: 'jake', posts: [{ index: 0, post: live.post }] } } }),
+        clear: (d) => phones.clear(d),
+        launch: () => {}
+    });
+    assert.deepEqual(feed.revealed(), {}, 'the open merges nothing');
+    answer(live);
+    await use;
+    assert.deepEqual(emitted, ['npc_posted:jake']);
+    assert.equal(phones.badgeFor(OWN), 1);
+    assert.equal(log.filter((e) => e === 'play').length, 1);
 });
 
 test('open refused by the server: nothing restored, nothing launched, the count stays', async () => {

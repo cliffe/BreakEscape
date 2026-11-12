@@ -2337,6 +2337,14 @@ module BreakEscape
             return error_msg
           end
         end
+        # q35 review R1 M1: an NPC's Friendface phone changes what the server decides for that
+        # NPC, so it is handed over only when the scenario offers that give (a KO drop is a room
+        # location and stays allowed). Specific to this item; other held items keep the old rule.
+        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && !@game.friendface_phone_offered?(npc_id)
+          error_msg = "NPC does not give this item: #{npc_id}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
+        end
       elsif location[:type] == 'flag_station'
         # A flag station's item is its reward for a flag: collectible only once
         # one of the flags whose give_item reward hands over this item has been

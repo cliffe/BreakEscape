@@ -53,12 +53,26 @@ module ValidateAccessWork
     room_npcs(json_data).each do |e|
       Array(e[:npc]['itemsHeld']).each { |i| held_by[e[:npc]['id']] << i if i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE }
     end
+    social_site = sites.values.any? { |site| site['type'] == 'social' }
+    no_site_said = false
     all_objects(json_data).each do |o|
       item = o[:obj]
-      next unless item['type'] == FRIENDFACE_PHONE
+      if item['type'] != FRIENDFACE_PHONE
+        if item.key?('phoneOf')
+          warn(issues, "'#{item['name'] || item['id'] || item['type']}' (type '#{item['type']}') has phoneOf, which only a " \
+                       "#{FRIENDFACE_PHONE} reads: it is ignored here.")
+        end
+        next
+      end
 
       owner = item['phoneOf']
       name = item['name'] || item['id'] || FRIENDFACE_PHONE
+      # Review R1 m4: the phone opens a social site (its owner's feed site, else the first one)
+      if !social_site && !no_site_said
+        err(issues, "Friendface phone '#{name}': the scenario has no social osint site, so the phone has nowhere to open.")
+        no_site_said = true
+      end
+      err(issues, "Friendface phone '#{name}' needs an id: the server matches a held phone to the scenario's by id.") unless item['id'].is_a?(String) && !item['id'].empty?
       if owner.nil?
         if item.key?('site') && !(sites[item['site']] && sites[item['site']]['type'] == 'social')
           err(issues, "Friendface phone '#{name}' site '#{item['site']}' names no social osint site.")
@@ -73,6 +87,8 @@ module ValidateAccessWork
         err(issues, "Friendface phone '#{name}' belongs to #{owner}, who is \"phone\": false: that NPC has no personal phone.")
       end
       err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no phoneOf) takes one.") if item.key?('site')
+      # Review R1 m3: an NPC phone that is not takeable can never be given or picked up
+      err(issues, "Friendface phone '#{name}' (#{owner}'s) is not \"takeable\": true, so it can never be given or picked up.") unless item['takeable'] == true
     end
     npcs.each do |nid, npc|
       own = held_by[nid].select { |i| i['phoneOf'] == nid }

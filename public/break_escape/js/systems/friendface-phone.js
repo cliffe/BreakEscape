@@ -4,9 +4,12 @@
  * An item of type `phone_friendface` opens the osint browser on its social site:
  * - `phoneOf: <npcId>` is that NPC's phone: it opens at the NPC's profile;
  * - no `phoneOf` is the player's own phone: it opens the site's home.
+ * The browser keeps its own title (the osint block's), as at any terminal.
  * Opening asks the server first (POST /friendface_phone). The server refuses a phone the player
- * does not hold, and answers with its own feedPosts for that phone, restored here without a toast
- * or blip: an open never reveals a post.
+ * does not hold. Its answer also carries the server's feedPosts for that phone, which the client
+ * does not merge: the feed already holds every revealed post (bootstrap plus each live answer), and
+ * a restore racing a /feed_post in flight would list that post silently, so its npc_posted, blip
+ * and task mappings would never fire (review R1 M2). An open never reveals a post.
  *
  * Holding a phone whose NPC owner is known also makes that NPC "phone": false on the client (its
  * live record), as the server already treats it (plan section 3).
@@ -120,9 +123,8 @@ export function startKey(body) {
 }
 
 /**
- * Open a phone: ask the server, restore its posts, clear the count, open the browser.
- * deps: { request(npcId|null) -> Promise<body>, restore(feedPosts), clear(data), launch(params),
- *         refused(message) }
+ * Open a phone: ask the server, clear the count, open the browser at the server's site and profile.
+ * deps: { request(npcId|null) -> Promise<body>, clear(data), launch(params), refused(message) }
  * Returns the server's body, or null when refused.
  */
 export async function openFriendfacePhone(data, deps) {
@@ -136,9 +138,8 @@ export async function openFriendfacePhone(data, deps) {
         return null;
     }
     if (!body || !isStr(body.site)) { deps.refused?.('The phone will not open.'); return null; }
-    deps.restore?.(body.feedPosts);
     deps.clear?.(data);
-    deps.launch?.({ title: data.name || 'Friendface', siteIds: [body.site], start: startKey(body) });
+    deps.launch?.({ siteIds: [body.site], start: startKey(body) });
     return body;
 }
 
@@ -176,7 +177,6 @@ export function installFriendfacePhones(api, { registerTrayRule, refreshTray, so
     }
     w.startFriendfacePhone = (obj) => openFriendfacePhone(obj?.scenarioData || obj, {
         request: (npcId) => api.post('/friendface_phone', { npc_id: npcId }),
-        restore: (feedPosts) => w.socialFeed?.restore?.(feedPosts),
         clear: (data) => phones.clear(data),
         launch(params) {
             const mf = w.MinigameFramework;

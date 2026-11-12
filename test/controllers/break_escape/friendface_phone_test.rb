@@ -11,12 +11,18 @@ module BreakEscape
 
     JAKE_PHONE = { 'type' => 'phone_friendface', 'id' => 'jake_phone', 'name' => "Jake's phone",
                    'takeable' => true, 'phoneOf' => 'jake' }.freeze
+    LENA_PHONE = { 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone",
+                   'takeable' => true, 'phoneOf' => 'lena' }.freeze
     OWN_PHONE = { 'type' => 'phone_friendface', 'id' => 'my_phone', 'name' => 'Your phone', 'takeable' => true }.freeze
 
     def scenario
       s = AccessSocialScenario.scenario
       jake = s['rooms']['office']['npcs'].find { |n| n['id'] == 'jake' }
       jake['itemsHeld'] = [JAKE_PHONE.dup]
+      # The fixture has no story file: the offer is a give tag in Jake's JSON record (review R1 M1)
+      jake['eventMappings'] = [{ 'eventPattern' => 'global_variable_changed:lend_phone', 'action' => 'give_item:phone_friendface' }]
+      lena = s['rooms']['office']['npcs'].find { |n| n['id'] == 'lena' }
+      lena['itemsHeld'] = [LENA_PHONE.dup]
       s['rooms']['lobby']['objects'] << OWN_PHONE.dup
       s
     end
@@ -143,6 +149,53 @@ module BreakEscape
       npcs = response.parsed_body.dig('room', 'npcs')
       assert_equal false, npcs.find { |n| n['id'] == 'jake' }['phone']
       refute_equal false, npcs.find { |n| n['id'] == 'lena' }['phone']
+    end
+  
+    test 'review R1 M1: an NPC phone the scenario never offers cannot be taken; Lena keeps her phone' do
+      build
+      add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, source_npc_id: 'lena')
+      assert_response :unprocessable_entity
+      refute @game.reload.friendface_phone_taken?('lena')
+      assert_nil @game.scenario_room_npc('lena')['phone']
+      assert_equal 'lena_post_1', feed_post('lena').dig('post', 'id')
+    end
+
+    test 'review R1 M1: the offer is read from the compiled story too' do
+      build
+      refute @game.friendface_phone_offered?('lena')
+      assert @game.friendface_phone_offered?('jake')
+      assert @game.send(:offers_phone_text?, '{"#":"give_item:phone_friendface"}')
+      assert @game.send(:offers_phone_text?, '"#give_npc_inventory_items"')
+      assert @game.send(:offers_phone_text?, '"#give_npc_inventory_items:keycard, phone_friendface"')
+      refute @game.send(:offers_phone_text?, '"#give_npc_inventory_items:keycard"')
+      refute @game.send(:offers_phone_text?, '"#give_item:phone"')
+    end
+
+    test 'review R1 m1: update_room cannot mint a Friendface phone, and a held phone the scenario does not declare opens nothing' do
+      build
+      post update_room_game_url(@game), params: { roomId: 'office', actionType: 'add_object',
+                                                  data: { type: 'phone_friendface', id: 'minted', name: 'Minted', takeable: true } }, as: :json
+      added = Array(@game.reload.player_state.dig('room_states', 'office', 'objects_added'))
+      assert(added.none? { |o| o['id'] == 'minted' })
+      add_item({ 'type' => 'phone_friendface', 'id' => 'minted', 'name' => 'Minted' })
+      assert_response :unprocessable_entity
+
+      build('inventory' => [{ 'type' => 'phone_friendface', 'id' => 'minted', 'name' => 'Minted' }])
+      open_phone(nil)
+      assert_response :forbidden
+    end
+
+    test 'review R1 m2: an NPC phone taken by any route stays taken after a remove' do
+      build
+      add_item({ 'type' => 'phone_friendface', 'id' => 'jake_phone', 'name' => "Jake's phone" }, source_npc_id: 'jake')
+      assert_response :success
+      assert_equal ['jake'], @game.reload.player_state['phonesTaken']
+      @game.player_state.delete('npc_given_items') # as a KO pickup: no gift record
+      @game.save!
+      post inventory_game_url(@game), params: { action_type: 'remove', item: { id: 'jake_phone' } }, as: :json
+      assert_response :success
+      assert @game.reload.friendface_phone_taken?('jake')
+      assert_equal true, feed_post('jake')['refused']
     end
   end
 end

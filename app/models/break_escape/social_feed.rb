@@ -103,26 +103,89 @@ module BreakEscape
     FRIENDFACE_PHONE = 'phone_friendface'.freeze
 
     # The Friendface phone the player holds for `npc_id` (nil: the player's own phone, one with no
-    # phoneOf), or nil. Reads the server's inventory, whose phone items are always the scenario's
-    # own copies: phoneOf is a field a client-built item can never carry.
+    # phoneOf), or nil. Reads the server's inventory, and counts only a phone the scenario declares
+    # (review R1 m1: an unsourced room add cannot mint one); phoneOf is a field a client-built item
+    # can never carry.
     def held_friendface_phone(npc_id)
+      declared = declared_friendface_phones
       Array(player_state['inventory']).find do |item|
         next false unless item.is_a?(Hash) && item['type'] == FRIENDFACE_PHONE
 
-        owner = item['phoneOf'].is_a?(String) && !item['phoneOf'].empty? ? item['phoneOf'] : nil
-        owner == npc_id
+        owner = friendface_owner(item)
+        owner == npc_id && declared.any? { |d| d['id'] == item['id'] && friendface_owner(d) == owner }
       end
     end
 
-    # True once an NPC's Friendface phone has left it: the player holds it, or the server holds a
-    # gift record of it from that NPC (given, taken from its items; still true after the player
-    # drops it). Such an NPC is "phone": false for the rest of the run (plan section 3).
+    # Every phone_friendface the scenario declares (room objects and their contents, NPC itemsHeld,
+    # start items), as authored
+    def declared_friendface_phones
+      out = []
+      walk = lambda do |list|
+        Array(list).each do |o|
+          next unless o.is_a?(Hash)
+
+          out << o if o['type'] == FRIENDFACE_PHONE && o['id'].is_a?(String)
+          walk.call(o['contents'])
+          walk.call(o['itemsHeld'])
+        end
+      end
+      (scenario_data['rooms'] || {}).each_value do |room|
+        next unless room.is_a?(Hash)
+
+        walk.call(room['objects'])
+        walk.call(room['npcs'])
+      end
+      walk.call(scenario_data['startItemsInInventory'])
+      out
+    end
+
+    # True once an NPC's Friendface phone has left it (plan section 3): recorded in phonesTaken the
+    # first time it reaches the inventory by any route (a give, the NPC's items, a KO drop picked
+    # up), so dropping or removing it later changes nothing (review R1 m2). A gift record or a held
+    # phone from a save made before the record existed counts too.
     def friendface_phone_taken?(npc_id)
       return false unless npc_id.is_a?(String) && !npc_id.empty?
+      return true if Array(player_state['phonesTaken']).include?(npc_id)
 
       given = player_state['npc_given_items']
       gifted = given.is_a?(Hash) && Array(given[npc_id]).any? { |g| g.is_a?(Hash) && g['type'] == FRIENDFACE_PHONE }
       gifted || !held_friendface_phone(npc_id).nil?
+    end
+
+    # Called by add_inventory_item!: an NPC's phone entering the inventory is taken for good
+    def note_friendface_phone_taken!(item)
+      owner = item.is_a?(Hash) && item['type'] == FRIENDFACE_PHONE ? friendface_owner(item) : nil
+      return unless owner
+
+      player_state['phonesTaken'] = [] unless player_state['phonesTaken'].is_a?(Array)
+      player_state['phonesTaken'] << owner unless player_state['phonesTaken'].include?(owner)
+    end
+
+    # Review R1 M1: an NPC hands its Friendface phone over only when the scenario offers that give:
+    # a give_item tag for the phone type, or a give_npc_inventory_items tag that does not filter it
+    # out, in the NPC's compiled story or anywhere in its JSON record (itemsHeld aside).
+    GIVE_PHONE_RE = /give_item:\s*#{FRIENDFACE_PHONE}\b/.freeze
+    GIVE_INVENTORY_RE = /give_npc_inventory_items(?::([^"\\]*))?/.freeze
+
+    def friendface_phone_offered?(npc_id)
+      npc = npc_id.is_a?(String) ? self.class.scenario_room_npcs(scenario_data).find { |n| n['id'] == npc_id } : nil
+      return false unless npc
+
+      texts = [JSON.generate(npc.except('itemsHeld'))]
+      if npc['storyPath'].is_a?(String) && !npc['storyPath'].empty?
+        path = InkStoryFile.find(npc['storyPath'], compile: false)
+        texts << File.read(path) if path && File.exist?(path)
+      end
+      texts.any? { |t| offers_phone_text?(t) }
+    end
+
+    def offers_phone_text?(text)
+      return true if text.match?(GIVE_PHONE_RE)
+
+      text.scan(GIVE_INVENTORY_RE).any? do |(param)|
+        types = param.to_s.split(',').map(&:strip).reject(&:empty?)
+        types.empty? || types.include?(FRIENDFACE_PHONE)
+      end
     end
 
     # POST /friendface_phone. Returns { status:, body: }. Read only. `npc_id` a String opens that
@@ -167,6 +230,10 @@ module BreakEscape
     end
 
     private
+
+    def friendface_owner(item)
+      item['phoneOf'].is_a?(String) && !item['phoneOf'].empty? ? item['phoneOf'] : nil
+    end
 
     # The first social site in the scenario's osint block, or nil
     def default_friendface_site
