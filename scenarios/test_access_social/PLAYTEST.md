@@ -43,8 +43,8 @@ grep -c '/feed_post' $S/<run>-responses.jsonl
 ```
 
 The leak check must say `VERDICT: no leaks found`, and its counts line must show the feed posts and
-feed facts it checked (seven feed posts, two feed facts): a run that checked none proves
-nothing. The `/feed_post` count must stay within the beat's budget below. The budgets count
+feed facts it checked (35 feed posts, reply pieces included, and two feed facts, measured in
+game 1731 after F16): a run that checked none proves nothing. The `/feed_post` count must stay within the beat's budget below. The budgets count
 answers with a post; add one request for each `tooSoon` answer (Jake's first use after the F7
 reload often is one). If the leak check notes a reveal allowed at an answer whose body the log
 lost, or one judged by the saved count from the first line, that beat's order was not fully
@@ -183,16 +183,19 @@ a phone (Jake, Lena, Priya, Nadia, Greg) holds its own `phone_friendface` item.
 ## Replies between NPCs (C3): F15 to F17
 
 Plan: `docs/achitechture/ACCESS_MODEL_SLICE_9_2_C3_PLAN.md`, section 8. Run after F14 (the player
-holds `player_phone` from F14a). Before F15, open the Friendface terminal once and check that
-`se_osint_state.visited` holds `friendface`, so the toasts show. t = 0 is the room's load. Times
-below are the validator's estimate (first post about 40 s after load, then every 80 s); confirm
-them in a dry run and keep a 5 s tolerance. The NPCs hold their phones: never take one in these
+holds `player_phone` from F14a). Before F15, check that `se_osint_state.visited` holds
+`friendface`, so the toasts show: F14a already leaves it there (picking up the phone opens it on
+Friendface), so this is a check, and the terminal visit is needed only when F14 was skipped. t = 0
+is the room's load (the `/unlock` answer that carries the room). Times below were measured in the
+dry run (games 1723 and 1731): each NPC's `down` work failure reached the server 5.5 s after load,
+the first post came about 30 s after load, then each NPC posted every 80 s. The validator's
+estimate is about 10 s later throughout (40 s for the first post). Keep a 5 s tolerance. The NPCs hold their phones: never take one in these
 beats (a taken phone stops that NPC posting from it).
 
 | Beat | Do | Expect | Server afterwards | `/feed_post` this beat |
 |---|---|---|---|---|
-| F15 | Enter `f15_room` (east of Kim's room) and stand back | Each NPC's `down` work failure reaches the server before its first `/feed_post`. Asha vents `f15_asha_vent` (about 0:40), Kofi replies `f15_kofi_re_drive` (about 0:55, task `f15_replied`), Mei replies `f15_mei_re_drive` (about 1:10, task `f15_thread`), each with `{name}` filled as "Asha". Toasts: "Kofi Mensah replied to Asha Rao on Friendface", then the same for Mei. Asha's profile shows the thread under her vent, Kofi then Mei; Kofi's and Mei's profiles each list their reply under "Replied to Asha Rao". `__test.access.feed().threads.f15_asha_vent` is `["f15_kofi_re_drive", "f15_mei_re_drive"]` | `feedRevealed` for asha, kofi, mei: one id each; `to` of each reply `{ post: f15_asha_vent, npc: asha }`; all three feeds `done` | 3 |
-| F16 | Enter `f16_room` and stand back about three minutes | Ivy vents `f16_ivy_vent` (about 0:40); Tomasz replies `f16_tom_re_ivy` (about 1:00, task `f16_replied`, "Ivy" filled); Ivy answers `f16_ivy_answer` (about 2:00, task `f16_answered`, "Tomasz" filled; toast "Ivy Clarke replied to Tomasz Nowak on Friendface"); Tomasz replies again `f16_tom_re_ivy_again` (about 2:20, task `f16_again`, "Ivy" filled; toast "Tomasz Nowak replied to Ivy Clarke on Friendface"). The thread reads Tomasz, Ivy, Tomasz; Tomasz's profile lists both replies with "Replied to Ivy Clarke". The player's phone badge counts each post once | `feedRevealed` ivy 2, tomasz 2; both feeds `done`; nothing more is posted | 4 |
+| F15 | Enter `f15_room` (east of Kim's room) and stand back | Each NPC's `down` work failure reaches the server before its first `/feed_post`. Asha vents `f15_asha_vent` (about 0:30), Kofi replies `f15_kofi_re_drive` (about 0:45, task `f15_replied`), Mei replies `f15_mei_re_drive` (about 1:00, task `f15_thread`), each with `{name}` filled as "Asha". Toasts: "Kofi Mensah replied to Asha Rao on Friendface", then the same for Mei. Asha's profile shows the thread under her vent, Kofi then Mei; Kofi's and Mei's profiles each list their reply under "Replied to Asha Rao". `__test.access.feed().threads.f15_asha_vent` is `["f15_kofi_re_drive", "f15_mei_re_drive"]` | `feedRevealed` for asha, kofi, mei: one id each; `to` of each reply `{ post: f15_asha_vent, npc: asha }`; all three feeds `done` | 3 |
+| F16 | Enter `f16_room` and stand back about two and a half minutes | Ivy vents `f16_ivy_vent` (about 0:30); Tomasz replies `f16_tom_re_ivy` (about 0:50, task `f16_replied`, "Ivy" filled); Ivy answers `f16_ivy_answer` (about 1:50, task `f16_answered`, "Tomasz" filled; toast "Ivy Clarke replied to Tomasz Nowak on Friendface"); Tomasz replies again `f16_tom_re_ivy_again` (about 2:10, 20 s after Ivy's answer, task `f16_again`, "Ivy" filled; toast "Tomasz Nowak replied to Ivy Clarke on Friendface"). The thread reads Tomasz, Ivy, Tomasz; Tomasz's profile lists both replies with "Replied to Ivy Clarke". The player's phone badge counts each post once | `feedRevealed` ivy 2, tomasz 2; both feeds `done`; nothing more is posted | 4 |
 | F17 | Reload (`?skip_resume=1`) and open the Friendface terminal, then `player_phone` | Both threads in the same order with the same filled names; Kofi's and Tomasz's profiles still show "Replied to". No toast and no badge for posts already shown. The spent posts are in no response | unchanged | 0 |
 
 Expected `verify-run.rb --access` row (seq values depend on the earlier beats, so check the

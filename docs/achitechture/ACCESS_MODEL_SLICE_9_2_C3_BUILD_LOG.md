@@ -14,8 +14,8 @@ Plan: `docs/achitechture/ACCESS_MODEL_SLICE_9_2_C3_PLAN.md` (Final). Branch `bui
 | 4 Validator, schema, OSINT, habit clues | done | validator, fixtures, OSINT skip, schema; af4e082b2, a1b8a9fe0 |
 | 5 Client | done | 0cb5a1ee8 |
 | 6 Leak scanner, verify-run.rb | done | 94bee74e0, the helper rename after it, 505c29e72 |
-| 7 Scenario F15 to F17, PLAYTEST.md | done except the timing dry run | b14edfe4a, 0a2c17dba |
-| 8 Live proof | not started | |
+| 7 Scenario F15 to F17, PLAYTEST.md | done, timing dry run included | b14edfe4a, 0a2c17dba, step 8 commits |
+| 8 Live proof | done (F1 to F14 regression partial, see below) | bd938dbaa, the step 8 log commit |
 
 ## Step 2: AccessWork (`lib/break_escape/access_work.rb`)
 
@@ -111,6 +111,96 @@ Plan: `docs/achitechture/ACCESS_MODEL_SLICE_9_2_C3_PLAN.md` (Final). Branch `bui
   Tomasz 1:00, 2:20 (Ivy's answer 20 s before Tomasz's second use). PLAYTEST.md uses these, marked
   to confirm in a dry run.
 
+## Step 8: timing dry run, live proof, measurements
+
+Keyless server on :3052 started by hand from the worktree, headless shell, `--capture-responses`,
+the loop recipe (setTimeout RAF, `setFPS(20)`, fixed steps on) after every bootstrap. Pace earned in
+real time; the needs clock was never stepped. Games: **1723** (dry run and first proof, created
+before the fix below) and **1731** (the clean proof after it). Route in both: bootstrap, F14a (pick
+up `player_phone`), F14b (borrow Jake's phone), walk east through every room to `f15_room`, stand
+back, enter `f16_room`, stand back, then F17.
+
+**Fix found by the proof (bd938dbaa).** The leak check reported `network_string` for
+`resource:f15_drive` and `resource:f16_drive`: the resource names "Project drive" and "Shared
+drive" are the openings of Asha's and Ivy's vent texts, so the served post, the reloaded
+`feedPosts` and the `/friendface_phone` slice each counted as a resource name outside the network
+routes. The resources are now "Project file share" and "Team file share"; no post text changed.
+Validator after it: 0 failure lines. Game 1723 keeps its old snapshot and so its eight findings
+(all this one cause); game 1731 is clean.
+
+**Timing (both games agree to 0.3 s).** t = 0 is the `/unlock` answer carrying the room. Every
+NPC's `down` work failure report went out at 5.3 to 5.5 s, before its first `/feed_post`.
+
+| Post | Measured | Plan / validator estimate |
+|---|---|---|
+| `f15_asha_vent` (seq a) | 30.1 s | 0:40 |
+| `f15_kofi_re_drive` (k) | 45.1 s | 0:55 |
+| `f15_mei_re_drive` (m) | 60.1 s | 1:10 |
+| `f16_ivy_vent` (i) | 30.2 s | 0:40 |
+| `f16_tom_re_ivy` (t) | 50.2 s | 1:00 |
+| `f16_ivy_answer` (j) | 110.3 s | 2:00 |
+| `f16_tom_re_ivy_again` (u) | 130.3 s | 2:20 |
+
+Every post is about 10 s before the validator's estimate, with the spacing as planned, so no
+`initial` moved. Ivy's answer lands 20 s before Tomasz's second use (the plan asks at least 5).
+PLAYTEST.md now gives the measured times. F14a already leaves `friendface` in
+`se_osint_state.visited` (picking up the phone opens it on Friendface), so the terminal visit before
+F15 is a check only; PLAYTEST.md says so.
+
+**Proof results (game 1731; 1723 the same apart from the leak findings above).**
+- F15: `{name}` filled as "Asha" in both replies; toasts "Kofi Mensah replied to Asha Rao on
+  Friendface" and "Mei Tanaka replied to Asha Rao on Friendface"; tasks `f15_replied`,
+  `f15_thread`; `feed().threads.f15_asha_vent` = Kofi, Mei; all three `done`; no further
+  `/feed_post` for them. Leak check: no leaks, counts line 35 feed posts and 2 feed facts.
+- F16: thread Tomasz, Ivy, Tomasz; names filled Ivy, Tomasz, Ivy; toasts "Tomasz Nowak replied to
+  Ivy Clarke", "Ivy Clarke replied to Tomasz Nowak", "Tomasz Nowak replied to Ivy Clarke" (on
+  Friendface); tasks `f16_replied`, `f16_answered`, `f16_again`; both `done`. Player's phone unread
+  equals the posts revealed since it was opened (21 in 1723, 20 in 1731 at that moment), each once;
+  Jake's held phone 0 (no post of his or into his thread). Leak check: no leaks.
+- `verify-run.rb --access` (1731): `asha 1 [f15_asha_vent:6]`, `kofi 1 [f15_kofi_re_drive:7>f15_asha_vent]`,
+  `mei 1 [f15_mei_re_drive:8>f15_asha_vent]`, `ivy 2 [f16_ivy_vent:15 f16_ivy_answer:19>f16_ivy_vent]`,
+  `tomasz 2 [f16_tom_re_ivy:16>f16_ivy_vent f16_tom_re_ivy_again:20>f16_ivy_vent]`: a < k < m and
+  i < t < j < u hold (1723: 6, 7, 8 and 17, 18, 20, 21).
+- `/feed_post` per beat: three answers in F15 and four in F16 for the beat's NPCs, no `tooSoon`.
+- F17 (`?skip_resume=1`): `feed().threads` the same in the same order, unread empty, no toast, no
+  organic `/feed_post`; the Friendface terminal (real click path, profile links) shows Asha's thread
+  (Kofi, Mei) and Ivy's (Tomasz, Ivy, Tomasz) with the same filled names; Kofi's profile shows
+  "Replied to Asha Rao", Tomasz's both replies with "Replied to Ivy Clarke" (newest first, as every
+  profile lists posts); `player_phone` shows the same. Full-capture leak check on 1731: 158
+  responses, no leaks. No spent post id appears in any response of either game.
+- Tamper rows (1723, after F16): `/feed_post` for Ivy plain and with forged `reply_to`, `post_id`,
+  `insteadOf`, `complaint`, `name`: the same `{ post: null, done: true }`; Tomasz with forged
+  `post_id`/`reply_to`: the same; `/friendface_phone` for Kofi (phone not held) 403 `no such phone`;
+  the player's own phone with `posts: 1` lists Tomasz's two replies with `seq`, `replyTo` and the
+  four ids, and Jake's held phone an empty slice. The "Tomasz before Ivy's vent" row was left to the
+  route tests: forging it live would spend Tomasz's pace floor and break the beat.
+- Screenshots (scratchpad `c3b/`, not committed): `f17-terminal-asha.png`, `-ivy.png`,
+  `-kofi.png`, `-tomasz.png` (game 1723), `b-f17-terminal-tomasz.png` (1731). The reply toasts are
+  proven from the toast log, not a screenshot.
+
+**F1 to F14 regression: partial.** The live runs covered F14a and F14b in full and, passively along
+the walk, F3 (Lena's post and task), F9 (`f9_posted`), F10 to F13 (Nadia's, Theo's, Greg's and
+Ruth's posts, `f13_blocked`), L1 (Sade's post) and U1 (all three tasks), with the leak check clean
+over all of it. F1, F2, F4 to F8 and the L2 and U2/U3 interactions were not replayed live; they rest
+on the orchestrator's merge-batch suites.
+
+**Section 5.1 measurements (game 1731 after F16).**
+- `feedRevealed` entries: an own-post NPC 74 to 135 B; a replier 147 to 150 B (one reply), Ivy
+  176 B (vent and answer), Tomasz 248 B (two replies). A `to` pair costs 55 to 57 B per served reply
+  and a `seq` pair about 17 to 25 B per served post. Whole `feedRevealed` 1736 B of a 10.1 kB
+  `player_state` (1723). Each NPC's entry is bounded by its authored posts.
+- `/feed_post` answers: an own post 180 to 184 B; a reply 283 to 292 B, of which 103 to 109 B are
+  the reply fields (`post.replyTo` and the four ids). Sent once per served post.
+- `GET /scenario` after reload: 20.1 kB in all against 10.0 kB fresh; `feedPosts` 4219 B for 21
+  posts, the 5 replies 1131 B of it. Sent once per page load.
+- `/friendface_phone`: the own phone's slice is the same 4219 B block; an NPC's held phone with no
+  thread 48 B.
+- `PUT /sync_state`: 10 PUTs in 1731 (18 in 1723), 190 to 684 B, mean 374 B. None carries
+  `feedRevealed`, `seq`, `to` or any post text: replies add nothing to the sync body beyond the
+  usual one-off `triggeredEvents` key per fired `npc_posted` mapping (for example
+  `kofi:npc_posted:kofi:0`, about 30 B, sent once), the same as any task-carrying post. Nothing
+  C3 adds grows with play time or is re-sent (rule q77).
+
 ## Interpretations
 
 - **Literal pieces.** The plan says `"{name}: same here."` raises the 12-character warning with an
@@ -141,6 +231,15 @@ ff-phone owns them).
   `access_leak_scanner_feed_test.rb`: 89 runs, 0 failures.
 - `node --test` on `validator-access-reply`, `-reactive`, `-social` and the osint and schema files: all
   pass (8, 43 with the neighbours, 142).
+
+## Handover (2026-11-12, step 8 agent)
+
+**Done:** step 8 (dry run, live proof, 5.1 measurements); the resource rename the proof needed;
+PLAYTEST.md times, the Friendface check note and the counts line (35 feed posts, 2 feed facts).
+
+**Open:** the F1 to F14 live regression beyond what the walk covers (see step 8); the validator's
+post-time estimate runs about 10 s late for these beats (not changed: it is an estimate, and
+PLAYTEST.md now quotes measured times); the code review rounds.
 
 ## Handover (2026-11-12, second agent, context limit)
 
