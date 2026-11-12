@@ -242,6 +242,21 @@ module BreakEscape
       knots.uniq
     end
 
+    # The voicemail knots of a phone contact (plan 2.6, 4.2): each `ring.voicemailKnot` on a phone-chat
+    # mapping or on a timedConversation. The client runs them silently into the thread and plays the
+    # `voice:` lines on tap, so only those lines are voiced. They do not widen the call walk.
+    def self.voicemail_knots(npc)
+      knots = []
+      timed = npc['timedConversation']
+      knots << timed.dig('ring', 'voicemailKnot') if timed.is_a?(Hash) && timed['ring'].is_a?(Hash) && !video_call_timed?(timed)
+      Array(npc['eventMappings']).each do |m|
+        next unless m.is_a?(Hash) && m['conversationMode'] == 'phone-chat' && m['ring'].is_a?(Hash)
+
+        knots << m['ring']['voicemailKnot']
+      end
+      knots.select { |k| k.is_a?(String) && !k.strip.empty? }.map { |k| knot_name(k.strip) }.uniq
+    end
+
     # npc-manager.js: a video call opens on the mapping's targetKnot (or knot),
     # else the NPC's currentKnot; a timed one on its targetKnot.
     def self.video_call_start_knots(npc)
@@ -542,6 +557,7 @@ module BreakEscape
           ink = JSON.parse(File.read(ink_path))
           call = self.class.call_knots(npc, ink)
           video = self.class.video_call_knots(npc, ink)
+          voicemail = self.class.voicemail_knots(npc)
           if call.empty? && video.empty?
             @notes << Note.new(source: host_id, path: npc['storyPath'], reason: 'voiced call has no targetKnot in its story; nothing voiced')
           end
@@ -552,6 +568,22 @@ module BreakEscape
           next unless in_call.call(u.path)
 
           @notes << Note.new(source: host_id, path: "#{File.basename(ink_path)}:#{u.path}", text: u.text, reason: u.reason)
+        end
+
+        # Voicemail (plan 2.6): the `voice:` lines of the voicemail knots, prefix stripped, in the
+        # contact's own voice. The client plays them from a voice bubble with no delivery note.
+        if phone && !voicemail.empty?
+          walker.lines.each do |line|
+            next unless voicemail.include?(self.class.line_knot(line.path))
+            next unless (m = line.raw.to_s.strip.match(/\Avoice:\s*(.+)\z/im))
+
+            text = m[1].strip
+            next if self.class.normalize(text).empty?
+
+            bare = line.dup
+            bare.tags = []
+            yield host_id, ink_path, bare, host_id, text
+          end
         end
 
         lines.each do |line|

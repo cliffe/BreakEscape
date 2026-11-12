@@ -404,7 +404,21 @@ export function installPhoneRinger(win = window) {
                 try { Promise.resolve(win.stateSync?.sync?.()).catch(() => {}); } catch (e) { /* ignore */ }
             }, SLOT_SYNC_DEBOUNCE_MS);
         },
-        // The thread rows (A4, plan 2.6); A6 adds callbacks here
+        // A6: run the offer's voicemail knot into the contact's thread
+        voicemail(offer, { quiet } = {}) {
+            try {
+                Promise.resolve(nm()?.runVoicemail?.(offer.npcId, offer.voicemailKnot,
+                    { withheld: offer.withheld === true, quiet: !!quiet })).catch(() => {});
+            } catch (e) { console.error('phone ringer: voicemail failed', e); }
+        },
+        // A6: a callback was set or cleared: the open thread's call button and the missed row's button follow
+        callbackChanged(npcId) {
+            const m = fw()?.currentMinigame;
+            if (m && m._sceneType === 'phone-chat' && m.currentNPCId === npcId && !m._ending) {
+                try { m._refreshCallButton?.(npcId); } catch (e) { /* the thread is going */ }
+            }
+        },
+        // The thread rows (A4, plan 2.6)
         onOutcome(kind, offer, extra) {
             const mgr = nm();
             if (!mgr?.addCallRow || !offer) return;
@@ -447,7 +461,7 @@ export function installPhoneRinger(win = window) {
          * The header button's state for `npcId` in this phone (A5, plan 2.5): `{ label, ariaLabel }`
          * or null when the button is hidden. Only the caller's own phone shows it, never a pretext
          * contact (`callId`) or a phone opened with `disableClose`; the contact needs a `call` entry
-         * that applies now. "Call back" with a callback pending is A6's.
+         * that applies now, or a pending callback ("Call back", A6).
          */
         callButtonFor(npcId, phone) {
             if (ringer.isClosed()) return null;
@@ -455,10 +469,13 @@ export function installPhoneRinger(win = window) {
             if (!npc || npc.callId || !phone || phone.params?.disableClose || phone.params?.ringerCall) return null;
             if (hostPhone(npcId) !== phone) return null;
             const entries = normaliseCall(npc.call);
-            if (!entries.length) return null;
-            const pick = pickButtonCall(entries, (w) => !!nm()?.callConditionHolds?.(w), null);
+            const callback = ringer.callbackFor(npcId);
+            // A pending callback shows the button even when the contact has no `call` block (A6, 2.6)
+            if (!entries.length && !callback) return null;
+            const pick = pickButtonCall(entries, (w) => !!nm()?.callConditionHolds?.(w), callback);
             if (!pick) return null;
             const name = npc.displayName || npc.id;
+            if (pick.kind === 'callback') return { label: 'Call back', ariaLabel: `Call ${name} back`, kind: 'callback' };
             return { label: 'Call', ariaLabel: `Call ${name}`, kind: pick.kind };
         },
         /**
@@ -473,10 +490,12 @@ export function installPhoneRinger(win = window) {
             if (!open || open.params?.disableClose || open.params?.ringerCall) return false;
             const entries = normaliseCall(npc.call);
             const holds = (w) => !!nm()?.callConditionHolds?.(w);
-            const pick = knot ? pickPlacedCall(entries, holds, knot, null) : pickButtonCall(entries, holds, null);
+            const callback = ringer.callbackFor(npcId);
+            const pick = knot ? pickPlacedCall(entries, holds, knot, callback) : pickButtonCall(entries, holds, callback);
             if (!pick) return false;
             const result = ringer.dial(npcId,
-                { knot: pick.entry.knot, callLabel: typeof npc.callLabel === 'string' ? npc.callLabel : null },
+                { knot: pick.entry.knot,
+                    callLabel: (pick.kind === 'callback' && callback?.callLabel) || (typeof npc.callLabel === 'string' ? npc.callLabel : null) },
                 { callback: pick.kind === 'callback', dial: { when: pick.kind === 'callback' ? null : pick.entry.when } });
             return result === 'dialling';
         },

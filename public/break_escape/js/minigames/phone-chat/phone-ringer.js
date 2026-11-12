@@ -56,8 +56,12 @@
  *                        slot per contact, { forced: [record, ...], live: record }: every forced
  *                        offer in play order plus the most live non-forced one (see syncSave),
  *                        or null when the contact has no offer
- *     onOutcome(kind, offer, extra)   a call's outcome, for the thread rows (A4) and callbacks
- *                                     (A6). kind: declined, missed, rang_off, ended, dropped.
+ *     onOutcome(kind, offer, extra)   a call's outcome, for the thread rows (A4). kind: declined,
+ *                                     missed, rang_off, ended, dropped, no_answer.
+ *     voicemail(offer, { quiet })   (A6) run the offer's voicemail knot into the contact's thread;
+ *                        `quiet` (a reload) shows no toast
+ *     callbackChanged(npcId)   (A6) the contact's callback was set or cleared: refresh the call
+ *                        button and the missed row's button
  *
  * The trigger (the mapping's onceOnly flag, plan 2.7) is NOT persisted here. The owner is
  * npc-manager's _handleEventMapping (A2b), which sets triggered.persist before it calls
@@ -130,6 +134,12 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     let queue = [];
     /** { id, npcId, answerSeconds, isCallback } from just before startMinigame to the call's end (2.11). */
     let connecting = null;
+    /**
+     * Pending callbacks, one per contact (A6, plan 2.6): { knot, callLabel }. What a missed call
+     * leaves when onMissed is "callback". The ringer owns them so every slot it saves carries them
+     * (A4 R2 n5) and a reload hands them back through restoreCallback.
+     */
+    const callbacks = new Map();
     let callSeq = 0;
     let lastAdvance = c.now ? c.now() : 0;
     let tickId = null;
@@ -234,9 +244,13 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         let best = null;
         for (const o of mine) if (!o.keep && (!best || rank(o) > rank(best))) best = o;
         let slot = null;
-        if (forced.length || best) {
+        const cb = callbacks.get(npcId);
+        if (forced.length || best || cb) {
             slot = { forced: forced.map(record) };
             if (best) slot.live = record(best);
+            // A pending callback is saved as a live record with state "missed" (2.7). A contact's
+            // offer outranks it: a reload turns that offer into its own outcome (row 7 and 27).
+            else if (cb) slot.live = { knot: cb.knot, state: 'missed', onMissed: 'callback', callLabel: cb.callLabel || undefined };
         }
         call('savePendingCall', npcId, slot);
     }
@@ -341,6 +355,9 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             o.started = true;
             if (o.setGlobalOnStart) call('setGlobal', o.setGlobalOnStart);
         }
+        // Rows 1 and 7: a new offer ringing clears the contact's callback, so the call button never
+        // dials a stale knot and a contact never has two callbacks
+        dropCallback(o.npcId);
         save(o);
     }
 
@@ -368,6 +385,45 @@ export function createPhoneRinger({ adapter, clock } = {}) {
      */
     function dropDisplaced(d) {
         if (d) call('dropDisplaced', d);
+    }
+
+    // ---- callbacks and voicemail (A6, plan 2.6) ----------------------------------------
+
+    /** Forget a contact's callback without saving (the caller saves). Tells the adapter when one was there. */
+    function dropCallback(npcId) {
+        if (!callbacks.delete(npcId)) return false;
+        call('callbackChanged', npcId);
+        return true;
+    }
+
+    function setCallback(npcId, knot, callLabel) {
+        callbacks.set(npcId, { knot, callLabel: typeof callLabel === 'string' && callLabel ? callLabel : null });
+        syncSave(npcId);
+        call('callbackChanged', npcId);
+    }
+
+    /** True while an offer of this contact is ringing, held or connected: a callback would be stale beside it. */
+    function contactLive(npcId) {
+        return !!active && active.npcId === npcId;
+    }
+
+    /**
+     * What a missed call leaves (plan 2.6): a voicemail (onMissed "voicemail", with a knot, for a call
+     * that was never answered) or a callback on the call's own knot. `answered` is a call that was on
+     * the line when it dropped (row 32, a call given up on after Answer): a voicemail makes no sense
+     * there, so it is always a callback. A withheld caller can't be rung back, so a withheld call that
+     * leaves no voicemail leaves nothing. A forced call is never missed. `quiet` (a reload) shows no toast.
+     */
+    function leaveMissed(o, { answered = false, quiet = false } = {}) {
+        if (!o || !o.npcId || !o.knot || o.disableClose) return;
+        if (!answered && o.onMissed === 'voicemail' && o.voicemailKnot) {
+            dropCallback(o.npcId);
+            syncSave(o.npcId);
+            call('voicemail', o, { quiet });
+            return;
+        }
+        if (o.withheld || contactLive(o.npcId)) return;
+        setCallback(o.npcId, o.knot, o.callLabel);
     }
 
     /** The call it displaced comes back, if the world allows it now (row 25; never once the ending has started, choice 2). */
@@ -413,6 +469,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         finishOffer(o);
         call('emit', `phone_call_declined:${o.npcId}`, eventData(o));
         call('onOutcome', 'declined', o);
+        leaveMissed(o);
         takeDisplacedBack(o);
         run();
     }
@@ -433,6 +490,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         } else {
             call('onOutcome', 'missed', o);
         }
+        leaveMissed(o);
         takeDisplacedBack(o);
         run();
     }
@@ -497,6 +555,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (!closed) {
             call('emit', `phone_call_missed:${o.npcId}`, eventData(o));
             call('onOutcome', 'dropped', o, { missed: true });
+            leaveMissed(o, { answered: true });
         }
         reopenDisplaced(d);         // drops it (and owes the thread's event) when the ending has started
         run();
@@ -581,6 +640,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             if (own) { reopenWhat = o.displaced; } else { dropWhat = o.displaced; }
             o.displaced = null;
             finishOffer(o);
+            // A callback that connected and was then cut off by something else is left again (A6)
+            if (!own && o.callbackDial && o.connectedAt && !o.noAnswer && !contactLive(o.npcId)) setCallback(o.npcId, o.knot, o.callLabel);
             if (o.noAnswer) call('onOutcome', 'no_answer', o);
             else if (o.connectedAt) call('onOutcome', 'ended', o, { displaced: !!reopenWhat, seconds: connectedFor });
         } else if (own) {
@@ -607,12 +668,14 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             finishOffer(o);
             call('onOutcome', 'dropped', o);
         } else {
-            // Row 32: closed by something else. Missed, no toast; A6 adds the callback.
+            // Row 32: closed by something else. Missed, no toast; a callback on its own knot (it was
+            // answered, so never a voicemail; a withheld caller can't be rung back and leaves nothing).
             dropWhat = o.displaced;
             o.displaced = null;
             finishOffer(o);
             call('emit', `phone_call_missed:${o.npcId}`, eventData(o));
             call('onOutcome', 'dropped', o, { missed: true });
+            leaveMissed(o, { answered: true });
         }
         render();
         // The end hook runs inside another minigame's start (row 32): the re-check, and the
@@ -834,6 +897,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (ringing) requeueHead(ringing);
         const o = makeOffer({ npcId, knot: entry.knot, callLabel: entry.callLabel });
         o.direction = 'outgoing';
+        o.callbackDial = !!o_.callback;
         o.state = 'connected';
         o.opened = true;
         o.started = true;
@@ -876,6 +940,11 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (!o || o.direction !== 'outgoing' || o.npcId !== npcId || !connecting || connecting.id !== id) return false;
         o.connectedAt = now();
         o.openedAt = o.connectedAt;
+        // A callback connecting clears it (2.6) and counts as answered (3.4)
+        if (o.callbackDial) {
+            dropCallback(npcId);
+            call('emit', `phone_call_answered:${npcId}`, eventData(o, { answerSeconds: 0, callback: true }));
+        }
         for (const q of queue.slice()) {
             if (q.npcId === npcId && q.knot === o.knot && !q.keep) {
                 queue = queue.filter((x) => x !== q);
@@ -1020,6 +1089,40 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         return all.some((o) => o.opening);
     }
 
+    /** The contact's pending callback `{ knot, callLabel }`, or null (A6, plan 2.6). */
+    function callbackFor(npcId) {
+        const cb = callbacks.get(npcId);
+        return cb ? { ...cb } : null;
+    }
+
+    /** A saved callback comes back after a reload (state "missed", 2.7). A newer live offer outranks it. */
+    function restoreCallback(npcId, rec) {
+        if (closed || typeof npcId !== 'string' || !npcId || !rec || typeof rec.knot !== 'string' || !rec.knot) return 'refused';
+        if (contactLive(npcId) || queue.some((q) => q.npcId === npcId)) return 'dropped';
+        setCallback(npcId, rec.knot, rec.callLabel);
+        return 'kept';
+    }
+
+    /**
+     * A call that was live when the game was saved is missed on load (row 27): the adapter has
+     * written the row; this runs `onMissed` for it. `rec` is the saved record
+     * ({ knot, state, onMissed, voicemailKnot, withheld, callLabel }). A call that was on the line
+     * (state "connected") leaves a callback, as row 32 does. No toast.
+     */
+    function missedOffline(npcId, rec) {
+        if (closed || typeof npcId !== 'string' || !npcId || !rec || typeof rec.knot !== 'string' || !rec.knot) return false;
+        leaveMissed({
+            npcId, knot: rec.knot, onMissed: rec.onMissed === 'voicemail' ? 'voicemail' : 'callback',
+            voicemailKnot: typeof rec.voicemailKnot === 'string' ? rec.voicemailKnot : null,
+            withheld: !!rec.withheld, callLabel: typeof rec.callLabel === 'string' ? rec.callLabel : null,
+            disableClose: false,
+        }, { answered: rec.state === 'connected', quiet: true });
+        return true;
+    }
+
+    /** Write the contact's slot out again (the reload resume changed what it holds, A4 R2 m1). */
+    function refreshSave(npcId) { syncSave(npcId); }
+
     function stateOf(npcId) {
         if (active && active.npcId === npcId) return active.state;
         const q = queue.find((o) => o.npcId === npcId);
@@ -1047,6 +1150,10 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         openBlocked,
         callVariablesFor,
         hasOpeningOffer,
+        callbackFor,
+        restoreCallback,
+        missedOffline,
+        refreshSave,
         stateOf,
         isClosed: () => closed,
         queueLength: () => queue.length,

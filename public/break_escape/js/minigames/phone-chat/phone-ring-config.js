@@ -177,8 +177,11 @@ export function pickButtonCall(entries, holds, callback) {
 export function pickPlacedCall(entries, holds, knot, callback) {
     if (!knot) return pickButtonCall(entries, holds, callback);
     const entry = (Array.isArray(entries) ? entries : []).find((e) => e && e.knot === knot);
+    // The callback's own knot dials even when the contact has no `call` entry for it (A6)
+    if (callback && callback.knot === knot) {
+        return { kind: 'callback', entry: entry || { knot, when: null, unavailable: 'no_answer', button: true } };
+    }
     if (!entry) return null;
-    if (callback && callback.knot === knot) return { kind: 'callback', entry };
     return { kind: !entry.when || safeHolds(holds, entry.when) ? 'connect' : 'no_answer', entry };
 }
 

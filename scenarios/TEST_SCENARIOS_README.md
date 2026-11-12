@@ -244,8 +244,9 @@ Engine trial for incoming calls that ring. One office, levers that ring each cal
 | Contact | Shows |
 |---|---|
 | `caller_basic` | `ring` written without `voiced`; ink reads `call_answer_seconds` (fast and slow answer through the "rings again" lever), End, story end |
-| `caller_patient` | `ring: { untilAnswered: true }`: no timeout, a nudge every 10 s |
-| `caller_decline` | Decline and timeout events set `declined_seen` and `missed_seen` |
+| `caller_patient` | `ring: { untilAnswered: true }`: no timeout, a nudge every 10 s; declined, it leaves a callback (A6) |
+| `caller_decline` | Decline and timeout events set `declined_seen` and `missed_seen`; the missed call leaves a callback: the header "Call back" and the missed row's button connect to the same knot, whose `call_is_callback` line plays (A6) |
+| `caller_voicemail`, `caller_terminal` | `ring` with `onMissed: "voicemail"` (the first withheld, the second in the terminal look): a declined or missed call runs `ring_vm` silently into the thread, its `voice:` lines play on tap, and the VAR it sets is read by the home knot on the next open (A6). Fire `ring_voicemail` and `ring_terminal` |
 | `caller_debrief` | the call's choice sets `debrief_go`, a hand-off line, `#exit_conversation`; the person-chat debrief opens straight after |
 | `caller_queue`, `caller_queue_b` | two callers on one lever: the second rings after the first ends |
 | `caller_replace` | two ring mappings, only the newer knot rings |

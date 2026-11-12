@@ -82,6 +82,8 @@
         "caller_basic",
         "caller_patient",
         "caller_decline",
+        "caller_voicemail",
+        "caller_terminal",
         "caller_debrief",
         "caller_queue",
         "caller_queue_b",
@@ -247,6 +249,62 @@
                 "missed_seen": true
               },
               "cooldown": 0
+            }
+          ]
+        },
+        {
+          "id": "caller_voicemail",
+          "displayName": "Caller Voicemail",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_voicemail.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_voicemail",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": {
+                "withheld": true,
+                "onMissed": "voicemail",
+                "voicemailKnot": "ring_vm"
+              },
+              "cooldown": 0,
+              "callLabel": "Voicemail"
+            }
+          ]
+        },
+        {
+          "id": "caller_terminal",
+          "displayName": "Caller Terminal",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "phoneTheme": "terminal",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_terminal.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_terminal",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": {
+                "onMissed": "voicemail",
+                "voicemailKnot": "ring_vm"
+              },
+              "cooldown": 0,
+              "callLabel": "Terminal"
             }
           ]
         },

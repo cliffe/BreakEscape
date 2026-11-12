@@ -594,6 +594,62 @@ export default class NPCManager {
     return row;
   }
 
+  /**
+   * A voicemail (plan 2.6): run the contact's voicemail knot silently into its thread (the Voicemail
+   * row, then its lines, unread; the thread then rests on its home knot). Runs one at a time per
+   * contact. Toast "New voicemail from <name>" unless `quiet` (a reload) or `withheld`
+   * ("New voicemail"). Resolves to whether the knot ran.
+   * @param {string} npcId
+   * @param {string} knot
+   * @param {{ withheld?: boolean, quiet?: boolean }} [opts]
+   * @returns {Promise<boolean>}
+   */
+  runVoicemail(npcId, knot, opts = {}) {
+    const npc = this.npcs.get(npcId);
+    if (!npc || typeof knot !== 'string' || !knot) return Promise.resolve(false);
+    if (!this._voicemailRuns) this._voicemailRuns = new Map();
+    const run = async () => {
+      try {
+        const [conversationModule, inkModule, helpers] = await Promise.all([
+          import('../minigames/phone-chat/phone-chat-conversation.js'),
+          import('./ink/ink-engine.js'),
+          import('../minigames/helpers/chat-helpers.js'),
+        ]);
+        const result = await conversationModule.default.runVoicemail(npc, this, new inkModule.default(npcId), knot, {
+          withheld: opts.withheld === true,
+          applyTags: (tags, conversation) => helpers.processGameActionTags(tags, null,
+            { npcId, engine: conversation?.engine || null }),
+        });
+        if (!result.ran) return false;
+        this._drawVoicemailLive?.(npcId, result.lines);
+        if (!opts.quiet && typeof window !== 'undefined' && window.showNotification) {
+          const name = opts.withheld ? null : npc.displayName;
+          window.showNotification(name ? `New voicemail from ${name}` : 'New voicemail', 'info', 'Phone');
+        }
+        return true;
+      } catch (e) {
+        console.error('[NPCManager] voicemail failed', e);
+        return false;
+      }
+    };
+    const previous = this._voicemailRuns.get(npcId) || Promise.resolve();
+    const next = previous.then(run, run);
+    this._voicemailRuns.set(npcId, next);
+    next.finally(() => { if (this._voicemailRuns.get(npcId) === next) this._voicemailRuns.delete(npcId); });
+    return next;
+  }
+
+  /** The thread is open on screen: draw a voicemail's lines now (the row was drawn by addCallRow). */
+  _drawVoicemailLive(npcId, lines) {
+    const open = typeof window !== 'undefined' ? window.MinigameFramework?.currentMinigame : null;
+    if (!open || open._sceneType !== 'phone-chat' || open.currentNPCId !== npcId || typeof open.ui?.addMessage !== 'function') return;
+    const history = this.conversationHistory.get(npcId) || [];
+    const added = history.slice(-(lines || []).filter((l) => l && l.trim()).length);
+    for (const msg of added) {
+      try { open.ui.addMessage('npc', msg.text, true, msg); msg.read = true; } catch (e) { /* stays in the thread */ }
+    }
+  }
+
   /** { gameTime } for a wall-clock time, or {} when there's no game clock yet. */
   _gameTimeAt(timestamp) {
     const clock = typeof window !== 'undefined' ? window.gameClock : null;
@@ -2539,7 +2595,8 @@ export default class NPCManager {
    * that registers later. A saved pendingCall is the slot `{ forced: [...], live }` (A2a notes).
    * Forced calls ring again through phoneRinger.restore(). A non-forced call that was queued,
    * ringing, held or connected is missed: a row, no toast, phone_call_missed after game_loaded.
-   * A callback already saved (state "missed", A6) is kept as it is.
+   * A callback already saved (state "missed") is handed back to the ringer; a missed live call runs its
+   * `onMissed` (callback or voicemail) with no toast (A6).
    */
   resumePendingCalls() {
     this._pendingCallsResumed = true;
@@ -2558,19 +2615,27 @@ export default class NPCManager {
     const forced = (Array.isArray(slot.forced) ? slot.forced : []).filter(e => e && typeof e.knot === 'string');
     const live = slot.live && typeof slot.live === 'object' && typeof slot.live.knot === 'string' ? slot.live : null;
     const keepCallback = live && live.state === 'missed';
-    npc.pendingCall = keepCallback ? { live } : null;
-    if (live && !keepCallback) {
+    npc.pendingCall = null;
+    if (keepCallback) {
+      // A callback saved before the reload (state "missed"): the ringer holds it again
+      ringer.restoreCallback?.(npc.id, live);
+    } else if (live) {
       this.addCallRow(npc.id, 'missed', { withheld: live.withheld === true });
       // After game_loaded: mappings on phone_call_missed are all registered by then
       setTimeout(() => {
         this.eventDispatcher?.emit?.(`phone_call_missed:${npc.id}`, { npcId: npc.id, knot: live.knot, reload: true });
       }, 0);
-      // onMissed (callback or voicemail) is A6's: it hangs off this point
+      // onMissed (callback or voicemail) as for any missed call, without a toast (A6)
+      ringer.missedOffline?.(npc.id, live);
     }
     if (forced.length) {
       const outcome = ringer.restore(npc.id, { forced });
       console.log(`[NPCManager] Restored ${forced.length} forced call(s) for ${npc.id}: ${outcome}`);
     }
+    // The resume changed what the slot holds: save it now so the server's copy is cleared too.
+    // Without this a second reload inside the 30 s tick, with an oversized unload flush, would
+    // find the old slot and miss the call again (A4 R2 m1)
+    ringer.refreshSave?.(npc.id);
   }
 
   // Load timed messages from scenario data

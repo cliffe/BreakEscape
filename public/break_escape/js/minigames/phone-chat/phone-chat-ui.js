@@ -269,6 +269,10 @@ export default class PhoneChatUI {
         const header = this.elements?.conversationHeader;
         if (!header) return;
         header.querySelector('.call-button')?.remove();
+        // Kept for the missed row's own "Call back" button (A6)
+        this._callState = state || null;
+        this._callPress = onClick || null;
+        this.refreshRowCallBack();
         if (!state) return;
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -286,6 +290,28 @@ export default class PhoneChatUI {
         btn.appendChild(text);
         btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); onClick?.(); });
         header.appendChild(btn);
+    }
+
+    /**
+     * The latest "Missed call" row carries a small "Call back" button while the contact has a pending
+     * callback (plan 2.6): the same call as the header button. Older missed rows have none.
+     */
+    refreshRowCallBack() {
+        const box = this.elements?.messagesContainer;
+        if (!box) return;
+        box.querySelectorAll('.call-row-callback').forEach((b) => b.remove());
+        const state = this._callState;
+        if (!state || state.kind !== 'callback') return;
+        const rows = box.querySelectorAll('.message-call-row.missed');
+        const last = rows[rows.length - 1];
+        if (!last) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'call-row-callback';
+        btn.setAttribute('aria-label', state.ariaLabel || state.label);
+        btn.textContent = 'Call back';
+        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); this._callPress?.(); });
+        last.appendChild(btn);
     }
 
     /** The speaking indicator under the portrait: on while a call line plays. */
@@ -1090,6 +1116,7 @@ export default class PhoneChatUI {
         label.textContent = displayDashes(text);
         row.append(glyph, label);
         this.elements.messagesContainer.appendChild(row);
+        if (event === 'missed') this.refreshRowCallBack();
         if (scrollToBottom) this.scrollToBottom();
         return Promise.resolve();
     }

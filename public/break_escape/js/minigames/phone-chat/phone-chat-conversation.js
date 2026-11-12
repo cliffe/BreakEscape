@@ -962,6 +962,88 @@ export default class PhoneChatConversation {
     }
 
     /**
+     * A voicemail (phone calls plan 2.6): the contact's `voicemailKnot` run silently into its thread,
+     * like a preload. Restores the contact's saved story (so ink-local VARs and visit counts carry
+     * over), goes to the voicemail knot, continues to its end, collects its lines and tags, adds the
+     * lines to the thread, then, on the same loaded story, moves the position to the home knot with
+     * goToKnot and saves it once. Until that single save `npc.storyState` still holds the position
+     * from before the call, so a thread opened while this loads shows the old state, never a
+     * half-run voicemail knot. The global observer is on: a voicemail is a real event, so what it
+     * sets (`~ x = true` on a synced global, `#set_global`) is applied now.
+     *
+     * @param {Object} npc - the NPC entry
+     * @param {Object} npcManager
+     * @param {Object} inkEngine - an InkEngine to run it in (its story is replaced)
+     * @param {string} knot - the voicemail knot
+     * @param {Object} [opts]
+     * @param {(tags: string[], conversation: PhoneChatConversation) => void} [opts.applyTags] - runs the
+     *   knot's game-action tags (`#set_global:` and the like); the caller owns that module
+     * @param {boolean} [opts.withheld] - the caller's number was withheld (the row text)
+     * @returns {Promise<{ran: boolean, lines: string[], tags: string[]}>}
+     */
+    static async runVoicemail(npc, npcManager, inkEngine, knot, opts = {}) {
+        const none = { ran: false, lines: [], tags: [] };
+        if (!npc || !npcManager || !knot || (!npc.storyPath && !npc.storyJSON)) return none;
+        const conversation = new PhoneChatConversation(npc.id, npcManager, inkEngine);
+        try {
+            let storySource = npc.storyJSON;
+            if (!storySource && npc.storyPath) {
+                const gameId = window.breakEscapeConfig?.gameId;
+                if (gameId) storySource = `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npc.id)}`;
+            }
+            if (!storySource || !(await conversation.loadStory(storySource))) return none;
+            const story = conversation.engine?.story;
+            const manager = window.npcConversationStateManager;
+            manager?.applySavedInkVariables?.(npc.id, story);
+            // The saved story, if there is one: its ink-local VARs and visit counts carry over
+            if (npc.storyState && conversation.restoreState(npc.storyState)) {
+                manager?.syncGlobalVariablesToStory?.(story);
+            }
+            // The knot reads call_is_callback, call_answer_seconds: the defaults, as for any preload
+            manager?.applyEngineVariables?.(npc.id, story, { channel: 'phone-preload' });
+
+            // goToKnot moves the contact's currentKnot; it goes back below
+            const home = String(npc.homeKnot || npc.currentKnot || 'start').split('.')[0];
+            const previousKnot = npc.currentKnot;
+            const previousEntered = npc.lastEnteredKnot;
+            if (!conversation.goToKnot(knot)) return none;
+
+            const lines = [];
+            const tags = [];
+            for (let guard = 0; guard < 500; guard++) {
+                const result = conversation.continue();
+                lines.push(...phoneStepLines(result.text, result.tags));
+                if (result.tags && result.tags.length > 0) {
+                    tags.push(...result.tags);
+                    PhoneChatConversation.mirrorSetGlobalTags(story, result.tags);
+                }
+                if (result.hasEnded || !result.canContinue) break;
+            }
+            if (typeof opts.applyTags === 'function' && tags.length > 0) {
+                try { opts.applyTags(tags, conversation); } catch (e) { console.error('voicemail: applying tags failed', e); }
+            }
+            // The row that introduces the message, then its lines, unread
+            npcManager.addCallRow?.(npc.id, 'voicemail', { withheld: opts.withheld === true });
+            lines.forEach((line) => {
+                if (line && line.trim()) npcManager.addMessage(npc.id, 'npc', line.trim());
+            });
+
+            // The thread opens on the home knot; ink-local VARs the knot set persist in this one save
+            conversation.goToKnot(home);
+            npc.currentKnot = previousKnot;
+            npc.lastEnteredKnot = previousEntered;
+            npc.storyState = conversation.saveState();
+            manager?.recordInkVariables?.(npc.id, story);
+            if (typeof window !== 'undefined' && window.updatePhoneBadge && npc.phoneId) {
+                try { window.updatePhoneBadge(npc.phoneId); } catch (e) { /* inventory not ready yet */ }
+            }
+            return { ran: true, lines, tags };
+        } finally {
+            try { conversation.cleanup(); } catch (e) { /* nothing to clean */ }
+        }
+    }
+
+    /**
      * Apply a preload's deferred globals when the thread is first opened (the
      * phone-chat minigame). Each is written only if the global still holds the value
      * it had at preload (npc.deferredGlobalsBase): a global something else has set
