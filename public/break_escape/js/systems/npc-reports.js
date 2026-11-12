@@ -229,14 +229,18 @@ export class NpcReports {
 /**
  * Sub-slice L (6.6): whether an owner's locked return calls for a check. All must hold: the screen
  * was locked; this browser saw a lockout answer at that PC; the PC's policy sets a positive
- * maxAttempts; the owner has a work plan and that PC is its station (needsHome); and it is not
+ * maxAttempts; the owner has a work plan or (user decision q33) a social_media need, and that PC
+ * is its station (needsHome); and it is not
  * already flagged there (a restored or earlier true answer stands for the mission).
  */
 export function shouldCheckLockout({ wasLocked, seen, pcId, policy, owner, flagged }) {
     if (!wasLocked || !seen || flagged || typeof pcId !== 'string' || !pcId) return false;
     const max = policy && typeof policy === 'object' ? policy.maxAttempts : null;
     if (!(typeof max === 'number' && Number.isFinite(max) && max > 0)) return false;
-    return !!owner && !!owner.work && Array.isArray(owner.work.needs) && owner.work.needs.length > 0 && owner.needsHome === pcId;
+    if (!owner || owner.needsHome !== pcId) return false;
+    // User decision q33: a lockout stops social media at the PC too, so an owner with that need is asked about
+    const social = !!owner.needs && typeof owner.needs === 'object' && !!owner.needs.social_media && typeof owner.needs.social_media === 'object';
+    return social || (!!owner.work && Array.isArray(owner.work.needs) && owner.work.needs.length > 0);
 }
 
 /** The globals a loaded NPC's work plan or home station's offWhen names. */

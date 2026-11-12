@@ -25,6 +25,9 @@ module BreakEscape
     WORKAROUND_KINDS = %w[writes_down prop_door emit borrow_session share_login].freeze
     PRESETS_FILE = File.expand_path('../../public/break_escape/js/data/office-presets.json', __dir__)
     FAIL_CAUSES = %w[down unreachable no_access off locked_out social_blocked].freeze
+    # The needs a lockout at the NPC's own station stops (sub-slice L; user decision q33: every
+    # use of that PC, social media included)
+    LOCKOUT_NEEDS = %w[work social_media].freeze
 
     # ── scenario reads ──────────────────────────────────────────────────
 
@@ -463,7 +466,9 @@ module BreakEscape
         return false unless need?(npc, 'social_media') && !phone?(npc)
 
         st = station(data, npc)
-        !st.nil? && (social_blocked?(data, npc) || off_when?(data, st))
+        # q33 (2026-11-12): a lockout stops every use of the PC, social media too; with no phone
+        # the NPC's attempt there fails, as for work
+        !st.nil? && (social_blocked?(data, npc) || off_when?(data, st) || lockout_station?(data, npc))
       else
         false
       end
@@ -503,9 +508,10 @@ module BreakEscape
       end
       st = station(data, npc)
       out << { 'id' => st['id'], 'why' => 'social_blocked' } if need == 'social_media' && st && social_blocked?(data, npc)
-      # Sub-slice L review R1 m2: work only, as on the client (a lockout at a social_media
-      # station is left to sub-slice C), so a social ease at the station is not refused
-      out << { 'id' => st['id'], 'why' => 'locked_out' } if need == 'work' && st && locked_out_at?(npc, st, lockouts)
+      # Sub-slice L, widened by user decision q33 (2026-11-12): a lockout stops every use of the
+      # PC, so it is an owned cause for social_media as well as work, and an ease at the station
+      # for either need is refused
+      out << { 'id' => st['id'], 'why' => 'locked_out' } if LOCKOUT_NEEDS.include?(need) && st && locked_out_at?(npc, st, lockouts)
       out
     end
 

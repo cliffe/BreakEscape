@@ -580,7 +580,7 @@ module BreakEscape
       # 2. can fail, and every cause and object_id belong to the NPC
       return refused unless AccessWork.can_fail?(scenario_data, npc, need)
       return refused if missing.empty? || missing.any? { |c| !AccessWork.cause_belongs?(scenario_data, npc, need, c) }
-      return refused if missing.any? { |c| RECORDED_WHYS.include?(c['why']) && (need != 'work' || !lockout_recorded?(npc)) }
+      return refused if missing.any? { |c| RECORDED_WHYS.include?(c['why']) && (!AccessWork::LOCKOUT_NEEDS.include?(need) || !lockout_recorded?(npc)) }
       return refused unless object_id && frustration_places(npc, need).include?(object_id)
 
       # 3. a cause holds on the server
@@ -649,8 +649,9 @@ module BreakEscape
       refused = { 'npcId' => npc_id, 'refused' => true }
       st = AccessWork.station(scenario_data, npc)
       return refused unless st && object_id == st['id'] && AccessWork.lockout_station?(scenario_data, npc)
-      # Review R1 m3: only an owner with a work plan, as the honest client asks (shouldCheckLockout)
-      return refused unless AccessWork.work_plan?(scenario_data, npc)
+      # Review R1 m3: only an owner with a work plan, as the honest client asks (shouldCheckLockout);
+      # user decision q33 adds an owner with a social_media need, whose PC a lockout also stops
+      return refused unless AccessWork.work_plan?(scenario_data, npc) || AccessWork.need?(npc, 'social_media')
 
       room = AccessWork.object_index(scenario_data)[st['id']]&.dig(:room_id)
       return refused unless room && room_unlocked?(room)

@@ -69,7 +69,14 @@ const viewEntry = { ...foothold, hosts: [
     { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, remoteSignIn: true }
 ] };
 
-let calls, requests, toasts, toastCalls, events, confirms, confirmAnswer, views, desktops, links;
+// An implant foothold (slice 9.3b I): its source is a PC, not a jack.
+const implantFoothold = { id: 'implant_lena_pc', via: 'implant', name: 'BadUSB: Lena desk',
+    itemId: 'netlink_implant_lena_pc', sourceId: 'lena_pc', network: officeNet };
+const implantLink = { id: 'netlink_implant_lena_pc', type: 'network_link', name: 'BadUSB: Lena desk', sprite: 'drop_box1',
+    takeable: false, footholdId: 'implant_lena_pc', sourceId: 'lena_pc',
+    observations: 'Your implant on HB-FIN-02. Open it to see what it reaches.' };
+
+let calls, requests, toasts, toastCalls, events, confirms, confirmAnswer, views, desktops, links, implantAnswer, implantThrowsLeft;
 let joinAnswer = null; // override the networkJoin mock per test
 
 // Wi-Fi fixtures (slice 9.3b sub-slice W)
@@ -103,6 +110,8 @@ async function reset({ items = [], planted = false } = {}) {
     views = [];
     desktops = [];
     confirmAnswer = true;
+    implantAnswer = {};
+    implantThrowsLeft = 0;
     joinAnswer = null;
     globalThis.fetch = async (url, opts) => {
         const body = JSON.parse(opts?.body || '{}');
@@ -141,6 +150,13 @@ async function reset({ items = [], planted = false } = {}) {
         async network(footholdId) {
             calls.push(['network', footholdId]);
             return { footholds: [viewEntry] };
+        },
+        async networkImplant(pcId, shape, path) {
+            calls.push(['implant', pcId, shape, path]);
+            if (implantThrowsLeft > 0) { implantThrowsLeft--; const e = new Error('network down'); e.status = 500; throw e; }
+            if (implantAnswer instanceof Error) throw implantAnswer;
+            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+            return { success: true, foothold: implantFoothold, inventory: [...inv, implantLink], first: true, ...implantAnswer };
         },
         async networkJoin(apId, key) {
             calls.push(['join', apId, key]);
@@ -595,6 +611,141 @@ test('a new trip replaces the one running', async () => {
     await settle();
     assert.deepEqual(back, []);
     assert.deepEqual(other, [{ reason: 'closed' }]);
+});
+
+// ---------------------------------------------------------------- implants (slice 9.3b I)
+
+test('an implant adds the foothold, syncs the link item and emits foothold_gained', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.deepEqual(calls.at(-1), ['implant', 'lena_pc', 'session', null]);
+    assert.ok(links.get('implant_lena_pc'), 'the foothold is held');
+    assert.equal(links.get('implant_lena_pc').via, 'implant');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item arrived');
+    const gained = named('network_foothold_gained').map(e => e.data);
+    assert.deepEqual(gained, [{ footholdId: 'implant_lena_pc', via: 'implant', networkId: 'office_lan', sourceId: 'lena_pc' }]);
+    assert.equal(views.length, 1, 'the first foothold opens the view');
+});
+
+test('an implant removes the consumed device the server names in consumedId', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    // The server consumed the box: its answer names it in consumedId and omits it from inventory.
+    implantAnswer = { inventory: [implantLink], consumedId: 'kit_dropbox' };
+    await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(held('kit_dropbox').length, 0, 'the consumed device is gone from the tray');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item is there');
+});
+
+test('an implant keeps an unrelated tray item the server has not synced yet (M1)', async () => {
+    await reset({ items: [box, lockpick] });
+    withStarters();
+    // The server consumed the box; the lockpick was picked up a tick earlier and its own
+    // POST /inventory persist is still in flight, so the server snapshot omits it. The
+    // reconcile must touch only the link item and the consumed device, never the lockpick.
+    implantAnswer = { inventory: [implantLink], consumedId: 'kit_dropbox' };
+    await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(held('lockpick').length, 1, 'the unrelated, not-yet-synced item survives');
+    assert.equal(held('kit_dropbox').length, 0, 'the consumed device is gone');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item arrived');
+});
+
+test('a dropped-shape implant (N11) consumes nothing from the tray', async () => {
+    await reset({ items: [lockpick] });
+    withStarters();
+    // The dropped shape: an NPC used a dropped device, so nothing leaves the player's tray.
+    // The server names no consumedId; the reconcile adds only the link item.
+    implantAnswer = { inventory: [implantLink] };
+    const out = await links.implant('door_box', 'dropped', null);
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.deepEqual(calls.at(-1), ['implant', 'door_box', 'dropped', null]);
+    assert.equal(held('lockpick').length, 1, 'the unrelated item is kept');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item arrived');
+});
+
+test('an implant retries once after a network error and then succeeds', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantThrowsLeft = 1; // first call throws a 500, the retry succeeds
+    implantAnswer = { inventory: [implantLink], consumedId: 'kit_dropbox' };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 2, 'it retried exactly once');
+    assert.deepEqual(toasts, [], 'a recovered retry shows nothing');
+    assert.equal(held('netlink_implant_lena_pc').length, 1);
+});
+
+test('first POST succeeds on the server, its response is lost, the retry reconciles the consumed device (R2 M1)', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    // The first POST reached the server: it granted the foothold and consumed the box, but the
+    // response was lost (thrown). The retry takes the server's already-held branch, which now
+    // names the consumed device in consumedId, so the tray is reconciled just as a first success
+    // would have reconciled it.
+    implantThrowsLeft = 1; // first call throws a 500, the retry answers already-held
+    implantAnswer = { already: true, first: false, consumedId: 'kit_dropbox', inventory: [implantLink] };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'already');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 2, 'it retried exactly once');
+    assert.equal(held('kit_dropbox').length, 0, 'the device the lost first call consumed is removed on the retry');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item is present');
+});
+
+test('an implant lost to both retries shows a message and grants nothing (n2)', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    const err = new Error('still down'); err.status = 500;
+    implantAnswer = err; // every call throws
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'error');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 2, 'it retried once then gave up');
+    assert.equal(toasts.length, 1, 'a plain-text message is shown');
+    assert.equal(links.get('implant_lena_pc'), null, 'no foothold');
+});
+
+test('an implant that answers already does not re-emit or reopen', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantAnswer = { already: true, first: false };
+    const out = await links.implant('lena_pc', 'session', null);
+    assert.equal(out.action, 'already');
+    assert.equal(named('network_foothold_gained').length, 0);
+    assert.equal(views.length, 0);
+    // n1: the planted global is published before the already return, as plant() does
+    assert.equal(window.gameState.globalVariables.lena_pc_planted, true);
+});
+
+test('a usb_refused answer toasts the authored line and emits the refusal, no foothold', async () => {
+    await reset({ items: [box] });
+    implantAnswer = new Error('refused');
+    implantAnswer.status = 422;
+    implantAnswer.body = { reason: 'usb_refused', error: 'USB devices are disabled on this PC.' };
+    const out = await links.implant('lena_pc', 'session', null);
+    assert.equal(out.action, 'refused');
+    assert.equal(out.reason, 'usb_refused');
+    assert.deepEqual(toasts, ['USB devices are disabled on this PC.']);
+    assert.equal(links.get('implant_lena_pc'), null);
+    assert.deepEqual(named('network_device_refused').map(e => e.data), [{ pcId: 'lena_pc', reason: 'usb_refused' }]);
+});
+
+test('a not_ready answer is quiet and grants nothing', async () => {
+    await reset({ items: [box] });
+    implantAnswer = new Error('not ready');
+    implantAnswer.status = 422;
+    implantAnswer.body = { reason: 'not_ready' };
+    const out = await links.implant('lena_pc', 'session', null);
+    assert.equal(out.action, 'not_ready');
+    assert.deepEqual(toasts, []);
+    assert.equal(links.get('implant_lena_pc'), null);
 });
 
 // ---------------------------------------------------------------- Wi-Fi (slice 9.3b W)

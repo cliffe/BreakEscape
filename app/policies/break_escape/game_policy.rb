@@ -127,6 +127,10 @@ module BreakEscape
       show?
     end
 
+    def network_implant?
+      show?
+    end
+
     def network_join?
       show?
     end

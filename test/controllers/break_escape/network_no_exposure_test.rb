@@ -44,6 +44,27 @@ module BreakEscape
       refute_exposed('/capture_secrets with captures')
     end
 
+    # Slice 9.3b sub-slice K (5.1, beat N1): a bare jack foothold with no pivot session
+    # names no linked network. The foothold reaches office_lan only; server_net is unnamed
+    # everywhere and its host is refused exactly as an invented id is.
+    test 'a bare foothold with no pivot session names no linked network' do
+      build_network_game({ 'unlockedRooms' => ALL_ROOMS.dup }, NS.with_pivot)
+      take_drop_box
+      plant('comms_port')
+      assert_response :success
+
+      network_view('jack_comms_port')
+      refute_exposed('/network bare foothold', NS::SERVER_STRINGS)
+
+      sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: 'jack_comms_port')
+      assert_response :forbidden
+      refute_exposed('/login server host', NS::SERVER_STRINGS)
+
+      get game_path('scenario'), as: :json
+      assert_response :success
+      refute_exposed('/scenario with office foothold', NS::SERVER_STRINGS)
+    end
+
     # se_captures as any browser can write it through PUT /sync_state: a credential
     # capture of Lena's username and one of the landing page's address, with no phish.
     def forge_captures
@@ -53,6 +74,25 @@ module BreakEscape
       }
       put game_path('sync_state'), params: { globalVariables: { 'se_captures' => captures } }, as: :json
       assert_response :success, response.body
+    end
+
+    # POST /network/implant is the one implant path a non-holder can reach: with no session
+    # and no drop it answers not_ready, whose body is generic. Guard against a future edit
+    # that starts echoing the pc or the network into the error (review R1 server minor 2).
+    test 'an implant with no session and no drop answers not_ready and names nothing' do
+      scenario = NS.scenario
+      scenario['rooms']['finance_office']['objects'] << {
+        'id' => 'lena_usb_socket', 'type' => 'pc', 'name' => 'Desk USB socket',
+        'triggerOnInteract' => [
+          { 'type' => 'grant_foothold', 'pc' => 'lena_pc', 'needsSession' => true,
+            'needsHeld' => 'kit_badusb', 'name' => 'BadUSB: Lena desk' }
+        ]
+      }
+      build_network_game({ 'unlockedRooms' => ALL_ROOMS.dup }, scenario)
+      post game_path('network/implant'), params: { pc_id: 'lena_pc', shape: 'session' }, as: :json
+      assert_response :unprocessable_entity
+      assert_equal 'not_ready', response.parsed_body['reason']
+      refute_exposed('/network/implant not_ready')
     end
 
     # The fixture with Lena's capture route declaring her target id, so an entry keyed

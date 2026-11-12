@@ -167,6 +167,42 @@ test('network_viewed carries the network, the host ids and hostList; it fires on
     assert.deepEqual(named('network_viewed:office_lan'), [expected]);
 });
 
+// Slice 9.3b sub-slice K (5.1): the further-network blocks under the own-network rows.
+const SERVER_ROW = { id: 'sv_fs02', kind: 'pc', name: 'Server host', host: 'SV-FS02', sprite: 'pc_desktop', headless: false, remoteSignIn: true };
+
+function withBlocks(blocks) {
+    setup();
+    answer = { footholds: [{ ...foothold, hosts: HOSTS.map(h => ({ ...h })),
+        networks: [{ id: 'office_lan', name: 'Harbour office LAN', via: null, route: 'up', hosts: HOSTS.map(h => ({ ...h })) }, ...blocks] }] };
+}
+
+test('a pivot-reached network renders an up block through its host, actionable and emitting its own network_viewed', async () => {
+    withBlocks([{ id: 'server_net', name: 'Server network', via: { hostId: 'lena_pc', host: 'HB-FIN-02' }, route: 'up', hosts: [{ ...SERVER_ROW }] }]);
+    links.open('jack_comms_port');
+    await settle();
+    const block = document.querySelector('.network-block-up');
+    assert.ok(block, 'an up block is drawn');
+    assert.match(block.querySelector('.network-block-title').textContent, /Server network — through HB-FIN-02/);
+    assert.equal(row('data-host-id', 'sv_fs02').querySelector('[data-action]').dataset.action, 'sign-in');
+    // The pivot network emits its own network_viewed, so a task on it completes
+    assert.deepEqual(named('network_viewed:server_net'), [{ footholdId: 'jack_comms_port', networkId: 'server_net',
+        hostIds: ['sv_fs02'], hostList: 'sv_fs02', via: 'lena_pc' }]);
+    // Clicking the server host signs in through the same foothold
+    row('data-host-id', 'sv_fs02').querySelector('[data-action]').click();
+    assert.deepEqual(signIns, [['sv_fs02', 'jack_comms_port']]);
+});
+
+test('a down block is greyed with "No route" and offers no control', async () => {
+    withBlocks([{ id: 'server_net', name: 'Server network', via: { hostId: 'lena_pc', host: 'HB-FIN-02' }, route: 'down', hosts: [{ ...SERVER_ROW }] }]);
+    links.open('jack_comms_port');
+    await settle();
+    const block = document.querySelector('.network-block-down');
+    assert.ok(block, 'a down block is drawn');
+    assert.match(block.textContent, /No route to SV-FS02/);
+    assert.equal(block.querySelector('[data-action]'), null, 'a down row has no control');
+    assert.deepEqual(named('network_viewed:server_net'), [], 'a down block emits no network_viewed');
+});
+
 test('Sign in hands over to the remote sign-in screen: network_host_opened, no network_view_closed', async () => {
     setup();
     links.open('jack_comms_port');

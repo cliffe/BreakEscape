@@ -127,6 +127,25 @@ test('review C R1 M2: "phone": false with only a blocked own PC and no borrow wa
     assertLacks(warnings(issues(s)), 'its only source is its own workstation');
 });
 
+test('q33 review R1 m3: "phone": false, social only, at a maxAttempts sign-in PC wants a station_fail or work_fail line', { skip }, () => {
+    const lockable = () => {
+        const s = clean(); jake(s).phone = false;
+        s.policies.locking = { social: 'allowed', maxAttempts: 3 };
+        s.rooms.lobby.objects[0].policy = 'locking';
+        return s;
+    };
+    let s = lockable();
+    assertHas(warnings(issues(s)), 'jake can fail social media with its account being locked out at its station, but no station_fail');
+    s = lockable(); s.chatter.station_fail = ['Locked out again.'];
+    assertLacks(warnings(issues(s)), 'can fail social media with');
+    s = lockable(); s.chatter.work_fail = ['Nothing works today.'];
+    assertLacks(warnings(issues(s)), 'can fail social media with');
+    s = lockable(); delete jake(s).phone;
+    assertLacks(warnings(issues(s)), 'can fail social media with');
+    s = clean(); jake(s).phone = false; s.rooms.lobby.objects[0].policy = 'lax';
+    assertLacks(warnings(issues(s)), 'can fail social media with');
+});
+
 test('social: needsDeferMin under 0.5 warns with "phone": false and not with a phone', { skip }, () => {
     const s = clean();
     jake(s).needsDeferMin = 0.2;

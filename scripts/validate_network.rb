@@ -10,6 +10,7 @@ require 'json'
 require 'set'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/access_identities'
+require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/npc_habits/clues'
 
@@ -54,7 +55,6 @@ def check_network_model(json_data, scenario_dir = nil)
   quote_list = ->(ids) { ids.map { |id| "'#{id}'" }.join(', ') }
 
   # ---- Reserved for 9.3b (3.1) ----
-  err.call("top-level 'networkLinks' needs slice 9.3b.") if json_data.key?('networkLinks')
   networks.each do |net_id, net|
     NETWORK_RESERVED_NETWORK_FIELDS.each do |field|
       err.call("'networks/#{net_id}' has '#{field}', which needs slice 9.3b.") if net.key?(field)
@@ -65,15 +65,6 @@ def check_network_model(json_data, scenario_dir = nil)
       err.call("'#{e[:path]}' has '#{field}', which needs slice 9.3b.") if e[:object].key?(field)
     end
   end
-  find_grant_foothold = lambda do |node, path|
-    case node
-    when Array then node.each_with_index { |n, i| find_grant_foothold.call(n, "#{path}[#{i}]") }
-    when Hash
-      err.call("'#{path}' is a 'grant_foothold' action, which needs slice 9.3b.") if node['type'] == 'grant_foothold'
-      node.each { |k, v| find_grant_foothold.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
-    end
-  end
-  find_grant_foothold.call(json_data, '')
 
   # ---- Port security (sub-slice P, section 5.4 / 9.2) ----
   # portSecurity is only valid on a networkJack; portSecurityMessage needs portSecurity;
@@ -242,6 +233,57 @@ def check_network_model(json_data, scenario_dir = nil)
     if obj['locked'] == true || obj.key?('lockType')
       err.call("#{where} has 'wifiAp' and a lock; an access point's click is the join flow, which runs before any lock.")
     end
+  end
+
+  # ---- Links and the pivot (slice 9.3b sub-slice K, 5.1 and 9.2) ----
+  links_raw = json_data['networkLinks']
+  if links_raw && !links_raw.is_a?(Array)
+    err.call("'networkLinks' must be a list of two-item [networkA, networkB] lists.")
+  elsif links_raw.is_a?(Array)
+    links_raw.each_with_index do |entry, i|
+      where = "networkLinks[#{i}]"
+      unless entry.is_a?(Array) && entry.length == 2 && entry.all? { |v| v.is_a?(String) }
+        err.call("'#{where}' must be a two-item list of network ids.")
+        next
+      end
+      a, b = entry
+      err.call("'#{where}' links a network to itself ('#{a}').") if a == b
+      [a, b].each do |net|
+        err.call("'#{where}' network '#{net}' names no entry in 'networks'.") unless networks.key?(net)
+      end
+    end
+  end
+
+  jacked_nets = jacks.map { |j| j[:network] }.compact.to_set
+  host_on = ->(net) { nm.sign_in_objects_on(net, json_data).any? }
+  carries = ->(net) { host_on.call(net) || nm.resources_on(net, json_data).any? }
+  # A network reachable only through a pivot but with no host to open the pivot session.
+  networks.each_key do |net_id|
+    next if jacked_nets.include?(net_id) || !carries.call(net_id)
+
+    paths = jacked_nets.flat_map { |src| nm.all_reach_paths(json_data, src, net_id) }
+    next if paths.empty? # unreachable by a pivot too: the no-jack info line covers it
+
+    intermediates = (paths.flatten.uniq - [net_id])
+    next if intermediates.any? { |net| host_on.call(net) }
+
+    warn.call("network '#{net_id}' is reachable only by pivoting over a link, but no network on the way to it has " \
+              'a sign-in host a foothold can use to open the pivot session; it can never be reached.')
+  end
+  # More than eight simple paths between two networks that both carry hosts or resources.
+  net_ids = networks.keys
+  net_ids.combination(2).each do |a, b|
+    next unless carries.call(a) && carries.call(b)
+
+    count = nm.all_reach_paths(json_data, a, b).length
+    next if count <= BreakEscape::NetworkModel::REACH_PATHS_CAP
+
+    # all_reach_paths stops at REACH_PATHS_CEILING, so a count at the ceiling may understate
+    # the true total; word it "at least" so a very dense graph is not reported as exact.
+    ceiling = BreakEscape::NetworkModel::REACH_PATHS_CEILING
+    shown = count >= ceiling ? "at least #{ceiling}" : count.to_s
+    warn.call("networks '#{a}' and '#{b}' are joined by #{shown} link paths; the pivot keeps only the first " \
+              "#{BreakEscape::NetworkModel::REACH_PATHS_CAP}. Simplify the link graph.")
   end
 
   # ---- Policies ----
@@ -455,6 +497,115 @@ def check_network_model(json_data, scenario_dir = nil)
               'first and would show before its own flow.')
   end
 
+  # ---- Implants: grant_foothold actions (sub-slice I, 5.5 and 9.2) ----
+  # Walk the scenario, carrying the nearest object that owns an action list as the action's
+  # host, and test each grant_foothold against the same DeclaredGrants.executed? rule the
+  # server's NetworkModel.grant_foothold_actions uses, so the two agree on "declared".
+  # onConfirm is a server-run action list on its confirm_action object (DeclaredGrants.executed?),
+  # so it hosts its actions like the object keys do. timers are handled below: each timer element
+  # is carried as the host of its own actions, so the two session-shape guards do not go dark for a
+  # grant_foothold placed in a timer or onConfirm (review R2 m2).
+  host_action_keys = %w[triggerOnInteract onInteract conditionalActions completionActions onConfirm].freeze
+  grant_entries = [] # { node:, keys:, path:, host: }
+  gf_walk = lambda do |node, keys, host|
+    case node
+    when Array
+      node.each_with_index { |n, i| gf_walk.call(n, keys + [i], host) }
+    when Hash
+      grant_entries << { node: node, keys: keys, path: BreakEscape::DeclaredGrants.path_string(keys), host: host } if node['type'] == 'grant_foothold'
+      node.each do |k, v|
+        if k.to_s == 'timers' && v.is_a?(Array)
+          v.each_with_index { |timer, i| gf_walk.call(timer, keys + ['timers', i], timer.is_a?(Hash) ? timer : host) }
+        else
+          gf_walk.call(v, keys + [k.to_s], host_action_keys.include?(k.to_s) ? node : host)
+        end
+      end
+    end
+  end
+  gf_walk.call(json_data, [], nil)
+
+  # Every item a needsHeld could name (room objects, NPC items, start items, declared
+  # grants and resource contents), with each id/type/name mapped to its object so the USB
+  # warning can read the named device's usbClass.
+  item_refs = Set.new
+  item_by_ref = {}
+  add_item_ref = lambda do |item|
+    next unless item.is_a?(Hash)
+
+    %w[id type name].each do |f|
+      next unless nm.present_string?(item[f])
+
+      item_refs << item[f].to_s
+      item_by_ref[item[f].to_s] ||= item
+    end
+  end
+  all_objects.each { |e| add_item_ref.call(e[:object]) }
+  Array(json_data['startItemsInInventory']).each { |item| add_item_ref.call(item) }
+  BreakEscape::DeclaredGrants.for(json_data).each { |grant| add_item_ref.call(grant['item']) }
+  resources.each_value { |res| walk_items.call(res['contents'], 'contents') { |item, _p| add_item_ref.call(item) } }
+
+  signin_on_network = ->(pc_id) { hosts.find { |h| h[:object]['id'].to_s == pc_id.to_s } }
+  seen_pc_shape = {}
+  grant_entries.each do |entry|
+    node = entry[:node]
+    path = entry[:path]
+    where = "grant_foothold at '#{path}'"
+    unless BreakEscape::DeclaredGrants.executed?(entry[:keys])
+      err.call("#{where} is on a path the engine does not run server-side (e.g. under flagRewards or eventMappings); " \
+               'a grant_foothold must sit on a timer, triggerOnInteract, onInteract, conditionalActions or onConfirm.')
+      next
+    end
+    dropped = node.key?('needsDropped')
+    session = node['needsSession'] == true
+    if dropped && session
+      err.call("#{where} sets both 'needsDropped' and 'needsSession'; it must be one shape or the other.")
+    elsif !dropped && !session
+      err.call("#{where} sets neither 'needsDropped' nor 'needsSession'; it must be one or the other.")
+    end
+    shape = session ? 'session' : 'dropped'
+    pc = node['pc']
+    if !nm.present_string?(pc) || !signin_on_network.call(pc)
+      err.call("#{where} names pc '#{pc}', which is not a sign-in object (lockType \"login\") on a network.")
+    end
+    key = [pc.to_s, shape]
+    if seen_pc_shape[key]
+      err.call("#{where} and '#{seen_pc_shape[key]}' are both grant_foothold for pc '#{pc}' with the same shape; the " \
+               'route cannot tell them apart. Give the PC one action per shape.')
+    else
+      seen_pc_shape[key] = path
+    end
+    if session
+      needs_held = node['needsHeld']
+      if !nm.present_string?(needs_held)
+        err.call("#{where} is a 'needsSession' action with no 'needsHeld'; name the device the player plugs in.")
+      elsif !item_refs.include?(needs_held.to_s)
+        err.call("#{where} 'needsHeld' names '#{needs_held}', which is no item in the scenario.")
+      end
+      host = entry[:host]
+      if host.is_a?(Hash) && host['id'].to_s == pc.to_s
+        err.call("#{where} is a 'needsSession' action on the sign-in PC it targets; a sign-in PC never runs its own " \
+                 'actions, so it must sit on a separate desk-side prop.')
+      end
+      if host.is_a?(Hash) && host['consumesItem'] == true
+        err.call("#{where} is a 'needsSession' action whose host object sets 'consumesItem'; the server removes " \
+                 "'needsHeld' itself, and a client consume would race it. Drop consumesItem.")
+      end
+      # consumedId is keyed on the device's id, and syncInventoryFromServer keys tray items on id,
+      # so an id-less device can never be reconciled off the tray (review R2 m1).
+      held_item = item_by_ref[needs_held.to_s]
+      if held_item.is_a?(Hash) && !nm.present_string?(held_item['id'])
+        err.call("#{where} 'needsHeld' names '#{needs_held}', whose device object has no 'id'; the implant is " \
+                 'reconciled by id, so an id-less device would stay in the tray. Give the device an id.')
+      end
+      # USB policy warning: the target PC would refuse its own device.
+      pc_obj = signin_on_network.call(pc)&.dig(:object)
+      if held_item && pc_obj && BreakEscape::AccessWork.plant_refused?(json_data, pc_obj, held_item)
+        warn.call("#{where} targets pc '#{pc}', whose USB policy refuses the usbClass of '#{needs_held}', so the " \
+                  'implant can never be used there.')
+      end
+    end
+  end
+
   # ---- Information lines ----
   names_on = lambda do |net_id|
     host_ids = nm.sign_in_objects_on(net_id, json_data).map { |h| h[:object]['id'] || h[:path] }
@@ -469,6 +620,19 @@ def check_network_model(json_data, scenario_dir = nil)
     res_txt = res_ids.empty? ? 'no resources' : "resources #{quote_list.call(res_ids)}"
     info << "ℹ️ Network reach: jack '#{label.call(j[:object], j[:path])}' on '#{j[:network]}' lists #{hosts_txt}; #{res_txt}"
   end
+  # Link reach: for each network with a link, the networks a pivot reaches from it, and a
+  # sign-in host on it that can bridge (the pivot session is opened at a host on the network).
+  networks.keys.sort.each do |net_id|
+    reached = nm.networks(json_data).keys.select do |other|
+      other != net_id && nm.all_reach_paths(json_data, net_id, other).any?
+    end
+    next if reached.empty?
+
+    host_ids = nm.sign_in_objects_on(net_id, json_data).map { |h| h[:object]['id'] || h[:path] }
+    via = host_ids.empty? ? 'no sign-in host to pivot through' : "pivot hosts #{quote_list.call(host_ids)}"
+    info << "ℹ️ Link reach: from '#{net_id}' a pivot reaches #{quote_list.call(reached)}; #{via}"
+  end
+
   resources.keys.sort.each do |res_id|
     res = resources[res_id]
     next unless res['kind'] == 'file_share' && res['access'].is_a?(Hash) && res['network'].is_a?(String)

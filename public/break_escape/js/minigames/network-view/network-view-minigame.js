@@ -135,11 +135,58 @@ export class NetworkViewMinigame extends MinigameScene {
         const hostIds = this.rows().filter(r => r.kind === 'pc').map(r => r.id);
         const networkId = this.view?.network?.id ?? null;
         this._emit('network_viewed', { footholdId: this.footholdId, networkId, hostIds, hostList: hostIds.join(',') }, networkId);
+        // A pivot-reached network (slice 9.3b K, 5.1) emits its own network_viewed, so a task
+        // on the further network completes when its block appears.
+        this.networkBlocks().forEach(block => {
+            if (block.route === 'down') return;
+            const ids = this.blockRows(block).filter(r => r.kind === 'pc').map(r => r.id);
+            this._emit('network_viewed',
+                { footholdId: this.footholdId, networkId: block.id, hostIds: ids, hostList: ids.join(','), via: block.via?.hostId ?? null },
+                block.id);
+        });
         return answer;
     }
 
+    ownNetworkId() { return this.view?.network?.id ?? null; }
+
     rows() {
         return (Array.isArray(this.view?.hosts) ? this.view.hosts : []).filter(r => r && typeof r === 'object' && r.id);
+    }
+
+    /** The further-network blocks (slice 9.3b K, 5.1), the own network's own entry dropped. */
+    networkBlocks() {
+        const own = this.ownNetworkId();
+        return (Array.isArray(this.view?.networks) ? this.view.networks : [])
+            .filter(b => b && typeof b === 'object' && b.id && b.id !== own);
+    }
+
+    blockRows(block) {
+        return (Array.isArray(block?.hosts) ? block.hosts : []).filter(r => r && typeof r === 'object' && r.id);
+    }
+
+    /** Every actionable row (own rows, then each up block's rows), for click lookup. */
+    allRows() {
+        const rows = [...this.rows()];
+        this.networkBlocks().forEach(b => { if (b.route !== 'down') rows.push(...this.blockRows(b)); });
+        return rows;
+    }
+
+    /** One further-network block (up: live controls; down: greyed "No route" rows). */
+    blockSectionHtml(block) {
+        const via = block.via ? ` — through ${escapeHtml(block.via.host || block.via.hostId || '')}` : '';
+        if (block.route === 'down') {
+            const rows = this.blockRows(block).map(r => `
+                <li class="network-row network-row-host network-row-down" data-kind="pc">
+                    <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
+                    <span class="network-row-label"><strong>${escapeHtml(r.host || r.id)}</strong>
+                        <span class="network-row-name">${escapeHtml(r.name || '')}</span></span>
+                    <span class="network-row-control"><span class="network-row-off">No route to ${escapeHtml(r.host || r.id)}</span></span>
+                </li>`).join('');
+            return `<div class="network-block network-block-down"><h5 class="network-block-title">${escapeHtml(block.name || block.id)} (no route)</h5><ul class="network-view-rows">${rows}</ul></div>`;
+        }
+        const rows = this.blockRows(block);
+        const body = rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>';
+        return `<div class="network-block network-block-up"><h5 class="network-block-title">${escapeHtml(block.name || block.id)}${via}</h5><ul class="network-view-rows">${body}</ul></div>`;
     }
 
     /** The link item's own observations, shown in the header (13.4: a link item has no menu). */
@@ -204,12 +251,14 @@ export class NetworkViewMinigame extends MinigameScene {
                 <ul class="network-view-rows">
                     ${rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>'}
                 </ul>
+                ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
                 <div class="network-view-notice" aria-live="polite"></div>
             </div>`;
+        const lookup = this.allRows();
         this.gameContainer.querySelectorAll('[data-action]').forEach(btn => {
             const li = btn.closest('[data-host-id], [data-resource-id]');
             const id = li?.dataset.hostId || li?.dataset.resourceId;
-            const row = rows.find(r => r.id === id);
+            const row = lookup.find(r => r.id === id);
             if (row) this.addEventListener(btn, 'click', (e) => { e.preventDefault?.(); this.act(row, btn.dataset.action); });
         });
     }
@@ -281,7 +330,17 @@ export class NetworkViewMinigame extends MinigameScene {
                     selector: `[data-host-id="${r.id}"] [data-action]` }
                 : { id: r.id, kind: r.kind || null, name: r.name || null, host: r.host || null,
                     action: resourceAction(r),
-                    selector: `[data-resource-id="${r.id}"] [data-action]` }))
+                    selector: `[data-resource-id="${r.id}"] [data-action]` })),
+            networks: this.networkBlocks().map(b => ({
+                id: b.id, name: b.name || null, route: b.route || 'up', via: b.via?.hostId ?? null,
+                rows: this.blockRows(b).map(r => (r.kind === 'pc'
+                    ? { id: r.id, kind: 'pc', host: r.host || null, name: r.name || null,
+                        action: b.route === 'down' ? 'off' : hostAction(r),
+                        session: r.session ? (r.session.displayName || r.session.username || null) : null,
+                        selector: `[data-host-id="${r.id}"] [data-action]` }
+                    : { id: r.id, kind: r.kind || null, name: r.name || null, host: r.host || null,
+                        action: resourceAction(r), selector: `[data-resource-id="${r.id}"] [data-action]` }))
+            }))
         };
     }
 }

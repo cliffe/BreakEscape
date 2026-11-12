@@ -135,8 +135,9 @@ export class ApiClient {
 
   // Slice 9.2 C (plan 8.3): an NPC's next social media post, after a met use. Answers
   // { index, post, fact: { id, entry } | null, site, person, done } or { post: null, done }.
-  static async feedPost(npcId) {
-    return this.post('/feed_post', { npc_id: npcId });
+  // `objectId`: where the use was, null for the NPC's phone (user decision q33)
+  static async feedPost(npcId, objectId = null) {
+    return this.post('/feed_post', { npc_id: npcId, object_id: typeof objectId === 'string' ? objectId : null });
   }
 
   // Sign in at a sign-in PC (access model 5.3, 6). `fields` is { username, password }
@@ -166,6 +167,15 @@ export class ApiClient {
   // refusal throws (422 reason "not_planted", 403 reason "unreachable", 404).
   static async networkUnplug(jackId) {
     return this.post('/network/unplug', { jack_id: jackId });
+  }
+
+  // A device in a PC (not a jack) grants a foothold (slice 9.3b sub-slice I). `shape` is
+  // 'dropped' (an NPC uses a dropped device) or 'session' (a BadUSB the player plugs into a
+  // PC they hold a session on); `path` names the declared action when a PC has several.
+  // Answers { success, foothold, inventory, first } (or { success, already: true, ... }); a
+  // refusal throws (404 reason "no_action", 422 reason "not_ready" or "usb_refused").
+  static async networkImplant(pcId, shape, path = null) {
+    return this.post('/network/implant', { pc_id: pcId, shape, ...(path ? { path } : {}) });
   }
 
   // Join an in-game Wi-Fi network through an access point (slice 9.3b sub-slice W, 5.3).

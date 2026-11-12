@@ -1483,7 +1483,11 @@ PC they are signed in to (the pitch's BadUSB, its device 3).
   engine runs actions from and the server's declared-grant walk covers. The validator errors on
   one under `flagRewards` (the flag station runs actions in the browser, while that path is off
   the server's list) or `eventMappings`, on one with neither `needsDropped` nor `needsSession`,
-  and on one with both.
+  and on one with both. The rule is **one grant_foothold per PC and shape**: the validator errors
+  on two that share a PC and shape, and the route keys `grant_foothold_action_for` on the same
+  pair. A `path` is forwarded from the client (`apply-actions` passes `action.path`) and used only
+  as a tie-break if present, but it is not load-bearing, because no two actions can reach the same
+  `[pc, shape]` for it to tell apart.
 - **It gives a foothold and nothing else.** No session, no desktop, no owner's access. The foothold
   is on the PC's own network and, like every foothold, reaches only that network. The owner's
   desktop still needs the owner's password through the ordinary remote sign-in. The rogue USB beat

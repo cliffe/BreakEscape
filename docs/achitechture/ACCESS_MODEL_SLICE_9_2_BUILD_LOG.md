@@ -1960,3 +1960,92 @@ secrets and feed texts both in the redaction list.
 ### Suites after C review round 3 (after the merge of `main`, at `c800f80f4`)
 
 Rails 1690 runs, 24930 assertions, 0 failures, 0 errors, 1 skip. JS 498 of 498 files.
+
+## q33: a lockout stops social media too (2026-11-12)
+
+Branch `build/q33-lockout`, from `main` at `fea96124c` (9.2 L and 9.2 C merged). Browser port 3028.
+User decision q33: a lockout stops every use of that PC, social media included. No per-lockout
+scope field (only if the user asks later).
+
+### Built
+
+- **Server** (`1f92e958e`). `AccessWork::LOCKOUT_NEEDS` (`work`, `social_media`): `owned_causes`
+  lists `locked_out` for both needs behind the check record, so a social media ease at the locked
+  station is refused and a `fail` naming `locked_out` for `social_media` is accepted once
+  recorded. `can_fail?` for `social_media` (an NPC with `"phone": false`) adds
+  `lockout_station?`. `check_report!` also answers an owner with a `social_media` need and no work
+  plan. `POST /feed_post` takes `object_id` (where the use was; null for the phone):
+  `feed_source_ok?` refuses the phone of an NPC with `"phone": false`, an object that is not one
+  of the NPC's social media places in a room the player can know of (`frustration_places`, which
+  includes a handed-over borrow PC), any non-string, and a sign-in PC where `loginLockouts` holds
+  the NPC's username. The refusal is `{ post: null, done: false, refused: true }` and writes
+  nothing. It reads `loginLockouts` directly, not the check record, so a client that never sends
+  the check still cannot post from the PC; the answer says no more than a `check` does (6.6). L's
+  test "R1 m2" now asserts the reverse. Tests: `social_lockout_q33_test.rb` (9 runs, including
+  the tampered-client cases: a PC that is not hers, an unknown id, an array, a hash, a sync that
+  clears `loginLockouts`).
+- **Client** (`c2590f9e2`). `npc-needs.js` `_socialCandidate`: a flagged station counts as
+  blocked (passed over for a non-desk source, then the phone; with no phone it is the attempt
+  that fails). (A first version also claimed to skip a borrow at a flagged PC; that guard could
+  never fire and was removed in review round 1, m1.) The station verdict adds `locked_out` for
+  `social_media` as for `work`. An NPC with a phone whose use reaches the locked station (flagged
+  on the way, or by the check it waited for) drops that use unjudged (`use_dropped_locked_out`,
+  nothing restored, no report) and takes the phone next, as 8.1 says a dead PC counts nothing for
+  it. `npc-reports.js` `shouldCheckLockout` accepts an owner with a `social_media` need.
+  `social-feed.js` passes the use's source (`npc_used` `objectId`, null for `npc_used_phone`)
+  through retries to `ApiClient.feedPost(npcId, objectId)`. Tests: `npc-social-lockout-q33.test.mjs`
+  (8; the four needs tests and the check test fail with the old files).
+- **Scenario** (`460f46329`). `test_access_social` F9: `priya_room` east of `lena_room`, Priya Shah
+  at `priya_pc` under `locking` (social allowed, `maxAttempts` 3, `lockChance` 1), a fridge, a feed
+  of two posts, tasks `f9_locked_out`, `f9_phone`, `f9_posted`. PLAYTEST.md: the F9 row, seven feed
+  posts in the leak check, a third expected warning (the `maxAttempts` route warning for
+  `priya_pc`) and the F9 tampered checks. Validator: 0 lines with ❌.
+- **Docs**: README "Lockout as a cause" (social media while locked out); plan 9.1 owned-cause
+  text and the `/feed_post` routes row.
+
+### Live proof (game 1272, then game 1274 for the tampered client; port 3028, headless)
+
+| Step | Result |
+|---|---|
+| Before | Priya used `priya_pc` for social media (`npc_used:priya_pc` `met: true`); `/feed_post` sent `object_id: "priya_pc"`; post 1 revealed |
+| Lockout | She left for the fridge (`priya_pc_screen_locked` true); three wrong passwords on her tile: "2 attempts left", "1 attempt left", then `pc_signin_failed` `locked_out`. As in L's run she came back between the second and third password, so no check was due |
+| Before she knew | Her next use at the PC was met on the client (she had not typed her password yet), and the server refused its post: `/feed_post` `object_id: "priya_pc"` answered `refused: true` |
+| Finding out | At her next locked return: one check, `npc_locked_out:priya`, task `f9_locked_out`; `lockedOut` `["priya_pc"]` |
+| Phone | Next social media use: `npc_used_phone:priya` (task `f9_phone`), post 2 from the phone (`npc_posted:priya` index 1, task `f9_posted`); a later use was the phone again; no `npc_used:priya_pc` after the flag, no `npc_use_failed:priya`, level 0 |
+| Server | `loginLockouts` `priya_pc\|pshah`; `npcFrustration.priya` "locked out at priya_pc"; `feedRevealed.priya` 2. Leak check: no leaks |
+| Tampered (1274) | From the page: three wrong passwords by `ApiClient.post('/login')`, then `/feed_post` with `object_id` `priya_pc`, `lena_pc`, an unknown id and an array: all `refused: true`; a `sync_state` with empty `loginLockouts` and `npcFrustration`: the PC still refused; `object_id: null` (her phone): post 1. On 1272 after the run, an `ease` and a `locked_out` `fail` for her at `priya_pc`: both refused. Leak check: no leaks |
+
+### Left as it is
+
+- A lockout at a borrowed PC (another username's lockout there, or the borrower's own at a hot
+  desk) is not known to the client: the flag is the station only (L). The server already refuses
+  the borrower's guest session there (L R1 m1) and now its feed post too.
+- `feed_source_ok?` checks that the named source is one of the NPC's places; it cannot tell
+  whether the use really happened there (plan 9.3's residual list: a tampered browser can still
+  name its phone or another real source).
+- The validator's mutter check for a lockout station looks only at work plans; a `social_media`
+  owner with `"phone": false` under a `maxAttempts` policy gets no `station_fail` warning. Added
+  in review round 1 (m3).
+
+### Leftover games
+
+1272 (live proof), 1274 (tampered client). Server on 3028 stopped by PID.
+
+### Suites (at `460f46329`, under the lock)
+
+Rails 1702 runs, 24995 assertions, 0 failures, 0 errors, 1 skip. JS 499 of 499 files.
+
+### Code review round 1 outcomes (`Q33_LOCKOUT_CODE_REVIEW_R1.md`)
+
+- m1: the unreachable borrow guard in `_socialCandidate` removed; the docblock says the client
+  knows a lockout only at the own station.
+- m2: deferred. One paragraph in plan 9.3 and an entry in `docs/IDEAS_BACKLOG.md`.
+- m3: the validator warns for a `"phone": false`, social-only owner at a lockout station with no
+  `station_fail` or `work_fail` line; test in `validator-access-social.test.mjs`.
+- m4: two feed tests in `social_lockout_q33_test.rb` (a handed-over borrow PC, a tablet in an
+  unopened room).
+- N1 README sentence; N3 validator warning for a hot desk that lacks one of the borrower's
+  can-fail needs, with a test; N4 comment; N5 the fallback send filters a non-string source.
+- N2: a tab left open across the deploy sends no `object_id`, so a `"phone": false` NPC's posts
+  are refused until the page is reloaded. Accepted: the gem ships client and server together, and
+  a fallback would undo the check.

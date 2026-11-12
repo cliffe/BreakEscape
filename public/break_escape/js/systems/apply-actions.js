@@ -435,6 +435,24 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                 break;
             }
 
+            // A device in a PC grants a foothold (slice 9.3b sub-slice I). Either shape runs
+            // through here: a dropped-device action fired by an NPC beat (needsDropped), or a
+            // BadUSB the player plugs into a PC they hold a session on (needsSession). The
+            // server reads the shape's preconditions from its own records; this only asks it
+            // to try. networkLinks.implant retries once (a timer is saved fired, 5.5).
+            case 'grant_foothold': {
+                const pc = action.pc;
+                const shape = action.needsSession ? 'session' : 'dropped';
+                const links = window.networkLinks;
+                if (pc && links?.implant) {
+                    Promise.resolve(links.implant(pc, shape, action.path || null))
+                        .catch(e => console.warn('[applyActions] grant_foothold failed:', e));
+                } else {
+                    console.warn('[applyActions] grant_foothold: no networkLinks or pc', action);
+                }
+                break;
+            }
+
             default:
                 console.warn('[applyActions] Unknown action type:', action.type, action);
         }

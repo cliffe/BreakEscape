@@ -346,15 +346,170 @@ module BreakEscape
       ended
     end
 
+    # ==========================================
+    # Implants (sub-slice I; sections 4.5 and 5.5)
+    # ==========================================
+
+    IMPLANT_NO_ACTION = 'No such implant here'.freeze
+    IMPLANT_NOT_READY = 'The device did not take.'.freeze
+    # The server's copy of the client's USB refusal lines (pc-policy.js), so a blocked
+    # implant shows the same authored line.
+    USB_REFUSAL_LINES = { 'storage_blocked' => 'USB storage is disabled on this PC.',
+                          'blocked' => 'USB devices are disabled on this PC.' }.freeze
+
+    def implant_foothold_id_for(pc_id)
+      "implant_#{pc_id}"
+    end
+
+    # The grow-only record of item ids the player has ever dropped (Game#add_item_to_room!),
+    # the durable proof the dropped shape reads (5.5). Empty before this slice.
+    def dropped_items
+      list = player_state.is_a?(Hash) ? player_state['droppedItems'] : nil
+      list.is_a?(Array) ? list : []
+    end
+
+    # The declared grant_foothold action for this PC and shape (5.5). The rule is one action
+    # per [pc, shape]: the validator (validate_network.rb) errors on two grant_footholds that
+    # share a PC and shape, so the spec, the validator and this selection all key on the pair.
+    # `path` is still forwarded from the client (apply-actions passes action.path) and used only
+    # as an extra tie-break if ever present; it is not load-bearing, because the validator never
+    # lets two actions reach the same [pc, shape] for it to tell apart (review R1 server minor 1).
+    def grant_foothold_action_for(pc_id, shape, path)
+      NetworkModel.grant_foothold_actions(scenario_data).find do |a|
+        a[:pc] == pc_id.to_s && a[:shape] == shape.to_s && (path.to_s.empty? || a[:path] == path.to_s)
+      end
+    end
+
+    # A held inventory item named by needsHeld (its id, type or name), or nil. needsHeld should
+    # name a device by its id when two held items share a type: id is matched first, so an
+    # id-named needsHeld is unambiguous where a type-named one could pick either (review R1 nit 2).
+    def inventory_item_matching(needs_held)
+      needs = needs_held.to_s
+      return nil if needs.empty?
+
+      Array(player_state['inventory']).find do |item|
+        item.is_a?(Hash) && [item['id'], item['type'], item['name']].compact.map(&:to_s).include?(needs)
+      end
+    end
+
+    # POST /network/implant (5.5, section 6). shape is 'dropped' or 'session'; path picks the
+    # action when a PC has several. Returns { status:, body: }. It gives a foothold on the PC's
+    # own network and nothing else: no session, no desktop, no owner's access.
+    def implant_foothold!(pc_id, shape, path)
+      pc_id = pc_id.to_s
+      shape = shape.to_s
+      action = grant_foothold_action_for(pc_id, shape, path)
+      return implant_no_action unless action
+
+      foothold_id = implant_foothold_id_for(pc_id)
+      # Already held (before the preconditions, m2): a repeat answers already, never not_ready.
+      # Name the device the first (successful) call consumed, from the stored foothold record, so
+      # a retry after a lost response reconciles the tray exactly as the first success would have
+      # (review R2 M1). The dropped shape stores no device, so consumedId is nil there.
+      if network_footholds.key?(foothold_id)
+        held = network_footholds[foothold_id]
+        consumed = held.is_a?(Hash) && held['device'].is_a?(Hash) ? held['device']['id'] : nil
+        return { status: :ok, body: { success: true, already: true, first: false, consumedId: consumed,
+                                      foothold: foothold_for_client(foothold_id), inventory: player_state['inventory'] } }
+      end
+
+      info = find_login_pc(pc_id)
+      return implant_no_action unless info
+
+      network = object_network(info[:object])
+      return implant_not_ready unless NetworkModel.present_string?(network)
+
+      device_copy = nil
+      if shape == 'session'
+        session = access_sessions[pc_id]
+        # A non-foothold session only: a claim or a keyboard sign-in, never a live
+        # remote-through-foothold session (testing via alone is wrong, 5.5).
+        return implant_not_ready unless session.is_a?(Hash) && session['foothold'].blank?
+
+        entry = inventory_item_matching(action[:needs_held])
+        return implant_not_ready unless entry
+
+        # The USB hook (5.5): the PC's policy must not refuse the device's usbClass. Reuses
+        # AccessWork.plant_refused?, the table pc-policy.js uses, never a parallel method.
+        if BreakEscape::AccessWork.plant_refused?(scenario_data, info[:object], entry)
+          usb = BreakEscape::AccessWork.usb_policy_for(scenario_data, info[:object])
+          message = USB_REFUSAL_LINES[usb] || USB_REFUSAL_LINES['blocked']
+          return { status: :unprocessable_entity, body: { success: false, reason: 'usb_refused', error: message } }
+        end
+
+        device_copy = entry.deep_dup
+        player_state['inventory'] = Array(player_state['inventory']).reject { |item| item.equal?(entry) }
+      else # dropped
+        return implant_not_ready unless dropped_items.include?(action[:needs_dropped].to_s)
+      end
+
+      first = !gained_footholds.include?(pc_id)
+      # The dropped branch never normalised the inventory (the session branch did at its reject);
+      # guard once here so the << below is safe on a nil/non-array inventory (review R1 nit 1).
+      player_state['inventory'] = Array(player_state['inventory'])
+      player_state['footholds'] = network_footholds
+      seq = network_footholds.values.map { |f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.max.to_i + 1
+      record = { 'via' => 'implant', 'network' => network, 'source' => pc_id, 'seq' => seq,
+                 'name' => action[:name], 'sprite' => implant_sprite(device_copy, info[:object]) }
+      record['device'] = device_copy if device_copy.is_a?(Hash)
+      player_state['footholds'][foothold_id] = record
+      player_state['gainedFootholds'] = gained_footholds
+      player_state['gainedFootholds'] << pc_id if first
+      player_state['inventory'] << link_item_for(foothold_id)
+      save!
+
+      # consumedId names the one tray device the session shape removed, so the client reconciles
+      # only the ids that changed (review R1 client M1); the dropped shape consumes nothing.
+      consumed_id = device_copy['id'] if device_copy.is_a?(Hash)
+      { status: :ok, body: { success: true, consumedId: consumed_id, foothold: foothold_for_client(foothold_id),
+                             inventory: player_state['inventory'], first: first } }
+    end
+
+    def implant_no_action
+      { status: :not_found, body: { success: false, reason: 'no_action', error: IMPLANT_NO_ACTION } }
+    end
+
+    def implant_not_ready
+      { status: :unprocessable_entity, body: { success: false, reason: 'not_ready', error: IMPLANT_NOT_READY } }
+    end
+
+    # The sprite stored on an implant foothold: the device's own, else the PC's (5.3).
+    def implant_sprite(device_copy, pc)
+      (device_copy.is_a?(Hash) && (device_copy['sprite'].presence || device_copy['type'].presence)) ||
+        (pc.is_a?(Hash) ? pc['sprite'] : nil)
+    end
+
+    # The link item for an implant foothold (5.3): its name and sprite from the foothold
+    # record stored at implant time, its observations naming the PC.
+    def implant_link_item(foothold_id, foothold)
+      device = foothold['device'].is_a?(Hash) ? foothold['device'] : {}
+      pc = find_login_pc(foothold['source'])&.dig(:object) || {}
+      host = pc['host'].presence || pc['name'].presence || foothold['source'].to_s
+      item = {
+        'id' => link_item_id(foothold_id),
+        'type' => 'network_link',
+        'name' => foothold['name'].presence || "Implant: #{host}",
+        'sprite' => foothold['sprite'].presence || device['sprite'].presence || device['type'],
+        'takeable' => false,
+        'footholdId' => foothold_id,
+        'sourceId' => foothold['source'],
+        'observations' => "Your implant on #{host}. Open it to see what it reaches."
+      }
+      item
+    end
+
     def link_item_id(foothold_id)
       "netlink_#{foothold_id}"
     end
 
-    # The link item for a held foothold, in exactly the shape of 4.1. For a Wi-Fi foothold
-    # (5.3) the name and sprite are read from the foothold record, written at join, so the
-    # handle survives a reload when the access point is no longer in hand.
+    # The link item for a held foothold, in exactly the shape of 4.1. An implant's source
+    # is a PC, not a jack, so it builds from the name and sprite stored on the foothold
+    # record at implant time (5.3). A Wi-Fi foothold (5.3) likewise reads its name and sprite
+    # from the record written at join, so each handle survives a reload when the device or the
+    # access point is no longer in hand, rather than re-deriving from a jack.
     def link_item_for(foothold_id)
       foothold = network_footholds[foothold_id] || {}
+      return implant_link_item(foothold_id, foothold) if foothold['via'] == 'implant'
       return wifi_link_item_for(foothold_id, foothold) if foothold['via'] == 'wifi'
 
       device = foothold['device'].is_a?(Hash) ? foothold['device'] : {}
@@ -432,9 +587,74 @@ module BreakEscape
           held_foothold_ids
         end
       footholds = ids.map do |id|
-        foothold_for_client(id).merge('hosts' => network_rows(network_footholds[id]['network']))
+        foothold_for_client(id).merge('hosts' => network_rows(network_footholds[id]['network']),
+                                      'networks' => network_blocks(id))
       end
       { status: :ok, body: { footholds: footholds } }
+    end
+
+    # The per-foothold network blocks (5.1): one `up` entry per network in player_reach (the
+    # own network with via null, a pivot-reached network naming the host and session it is
+    # reached through), and one greyed `down` entry per network the player holds a session on
+    # through this foothold but cannot reach now (its hosts limited to the held-session rows).
+    # A network the player neither reaches nor holds a session on is absent and unnamed. The
+    # own network's rows also stay in the flat `hosts` array (9.3a); the block is additive.
+    def network_blocks(foothold_id)
+      own = network_footholds[foothold_id]['network']
+      reach = player_reach(foothold_id)
+      session_hosts = view_session_hosts
+      blocks = reach.to_a.sort.map do |net|
+        { 'id' => net, 'name' => network_name(net), 'via' => (net == own ? nil : via_for(net, session_hosts, reach)),
+          'hosts' => network_rows(net), 'route' => 'up' }
+      end
+      blocks + down_blocks(foothold_id, reach, session_hosts)
+    end
+
+    # The greyed blocks (5.1): a network the player holds a session on, reached through this
+    # foothold, that player_reach no longer includes. Its name is safe to show (the player
+    # learned it by signing in there); its rows are only the held-session hosts. None appears
+    # in sub-slice K (no outages), but O reuses this.
+    def down_blocks(foothold_id, reach, session_hosts)
+      structural = structural_reach(foothold_id)
+      nets = session_hosts.map { |h| h[:net] }.uniq.reject { |net| reach.include?(net) }
+      nets.select { |net| structural.include?(net) }.sort.map do |net|
+        rows = session_hosts.select { |h| h[:net] == net }.map { |h| host_row(h[:pc]) }
+        { 'id' => net, 'name' => network_name(net), 'via' => via_for(net, session_hosts, structural),
+          'hosts' => rows, 'route' => 'down' }
+      end
+    end
+
+    # [{ pc_id:, pc:, host_id:, net:, seq: }] for every held session at a sign-in host, for
+    # the view blocks. The `via` of a pivot-reached network names the bridging session. `seq`
+    # is the session's position in insertion order (its creation order, kept across prunes
+    # and keyboard settles), the primary tie-break for `via` (5.1).
+    def view_session_hosts
+      access_sessions.each_with_index.filter_map do |(pc_id, session), seq|
+        next unless session.is_a?(Hash)
+
+        info = find_login_pc(pc_id)
+        next unless info
+
+        net = object_network(info[:object])
+        net ? { pc_id: pc_id.to_s, pc: info[:object], host_id: info[:object]['id'], net: net, seq: seq } : nil
+      end
+    end
+
+    # The bridging host a network is reached through (5.1): a held session at a host on a
+    # network linked to it and itself reached; when several bridge, the one with the lowest
+    # session seq, then by host id, so the label is deterministic (plan 5.1). nil when none
+    # (the own network, via null). `displayName` is the bridging session's account.
+    def via_for(network, session_hosts, reach)
+      linked = NetworkModel.linked_networks(scenario_data, network)
+      candidates = session_hosts.select { |h| linked.include?(h[:net]) && reach.include?(h[:net]) }
+      return nil if candidates.empty?
+
+      best = candidates.min_by { |h| [h[:seq].to_i, h[:host_id].to_s] }
+      via = { 'hostId' => best[:host_id], 'host' => host_label(best[:pc]) }
+      session = access_sessions[best[:host_id].to_s]
+      npc = session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
+      via['displayName'] = npc['displayName'] || npc['id'] if npc
+      via
     end
 
     # The rows of a network's view: each sign-in host, then each resource, each sorted by id.
@@ -498,14 +718,126 @@ module BreakEscape
       info ? NetworkModel.network_of(info[:object], info[:room]) : nil
     end
 
-    # "Host reachable through a foothold" (section 5): the foothold is held, the target
-    # is a sign-in object on a network, and that network is the foothold's.
+    # ==========================================
+    # Links and the pivot (slice 9.3b sub-slice K; sections 4.1 and 5.1)
+    # ==========================================
+
+    # Is a network's route up now (5.1)? In sub-slice K there are no outages, so every
+    # network is always up; sub-slice O reads the network's downIf global here.
+    def network_up?(_network_id)
+      true
+    end
+
+    # What a foothold could reach if nothing were down (5.1): start from the foothold's own
+    # network and, repeatedly, from every network already reached on which the player holds
+    # a session at a sign-in host, add that network's linked networks, to a fixpoint. A bare
+    # foothold with no session reaches only its own network. Outages are ignored.
+    def structural_reach(foothold_id)
+      reach_walk(foothold_id, ignore_outages: true)
+    end
+
+    # The same walk with outages applied (5.1): the own network only when up, and a link is
+    # crossed only into an up network, from a session on a network that is itself up. This is
+    # the access reach. In K it equals structural_reach (network_up? is always true).
+    def player_reach(foothold_id)
+      reach_walk(foothold_id, ignore_outages: false)
+    end
+
+    def reach_walk(foothold_id, ignore_outages:)
+      foothold = foothold_id.present? ? network_footholds[foothold_id.to_s] : nil
+      return Set.new unless foothold.is_a?(Hash)
+
+      own = foothold['network']
+      return Set.new unless NetworkModel.present_string?(own)
+
+      up = ->(net) { ignore_outages || network_up?(net) }
+      return Set.new unless up.call(own)
+
+      reached = Set.new([own])
+      session_hosts = reach_session_hosts
+      changed = true
+      while changed
+        changed = false
+        session_hosts.each do |host|
+          net = host[:net]
+          next unless reached.include?(net) && up.call(net)
+
+          NetworkModel.linked_networks(scenario_data, net).each do |linked|
+            next unless up.call(linked)
+
+            changed = true if reached.add?(linked)
+          end
+        end
+      end
+      reached
+    end
+
+    # [{ pc_id:, net: }] for every held session at a sign-in host on a network, used by the
+    # reach walk. Any session counts (a claim or a password sign-in, however opened), so
+    # sitting down at a pivot host (which clears the session's foothold in 9.3a) does not cut
+    # the pivot.
+    def reach_session_hosts
+      access_sessions.filter_map do |pc_id, session|
+        next unless session.is_a?(Hash)
+
+        info = find_login_pc(pc_id)
+        next unless info
+
+        net = object_network(info[:object])
+        net ? { pc_id: pc_id.to_s, net: net } : nil
+      end
+    end
+
+    # The networks reachable over up links from a network (5.1): the pivot walk from a host
+    # the player is signed in at. Used by the shares a signed-in desktop maps.
+    def networks_reachable_from(network)
+      return Set.new unless NetworkModel.present_string?(network) && network_up?(network)
+
+      reached = Set.new([network])
+      frontier = [network]
+      until frontier.empty?
+        net = frontier.shift
+        NetworkModel.linked_networks(scenario_data, net).each do |linked|
+          next unless network_up?(linked)
+
+          frontier << linked if reached.add?(linked)
+        end
+      end
+      reached
+    end
+
+    # Ends every session over a pivot that is gone (5.1): after any session ends, every
+    # session that carries a foothold whose PC network is in no held foothold's
+    # structural_reach is ended, and their ids returned. A session with a blank foothold is
+    # physical (a local sign-in, a claim, or a remote session settled at the keyboard) and is
+    # never pruned. The caller saves. An outage never prunes (structural_reach ignores them).
+    def prune_unreachable_sessions!
+      sessions = player_state['sessions']
+      return [] unless sessions.is_a?(Hash) && sessions.any?
+
+      reachable = Set.new
+      network_footholds.keys.each { |fid| reachable.merge(structural_reach(fid)) }
+
+      ended = sessions.select do |pc_id, session|
+        next false unless session.is_a?(Hash) && session['foothold'].present?
+
+        info = find_login_pc(pc_id)
+        net = info ? object_network(info[:object]) : nil
+        net.nil? || !reachable.include?(net)
+      end.keys
+      player_state['sessions'] = sessions.except(*ended)
+      ended
+    end
+
+    # "Host reachable through a foothold" (section 5.1): the foothold is held, the target is
+    # a sign-in object on a network, and that network is in the foothold's player_reach (its
+    # own network, or a linked network reached through a held, up pivot session).
     def host_reachable_through?(foothold_id, pc)
       foothold = foothold_id.present? ? network_footholds[foothold_id.to_s] : nil
       return false unless foothold.is_a?(Hash) && NetworkModel.sign_in_object?(pc)
 
       network = object_network(pc)
-      !network.nil? && network == foothold['network']
+      !network.nil? && player_reach(foothold_id.to_s).include?(network)
     end
 
     # The one place a desktop request is judged (4.4). With a foothold: it reaches the
@@ -553,14 +885,31 @@ module BreakEscape
 
       network = resource['network']
       return false unless NetworkModel.present_string?(network)
-      return true if resource['access'].nil? && network_footholds.values.any? { |f| f.is_a?(Hash) && f['network'] == network }
+      # An open share (no access list) is reached by any held foothold whose player_reach
+      # includes the resource's network (its own, or a linked network through a pivot).
+      if resource['access'].nil? && network_footholds.keys.any? { |fid| player_reach(fid).include?(network) }
+        return true
+      end
 
+      # A session the player holds at a host whose network reaches the resource's network,
+      # whose identity the list admits, opens it from that desktop. An access-listed share
+      # maps across the pivot walk over up links (the member-of-staff model); an open share
+      # is reached from a session only on its own network, never across a link (m3): a linked
+      # open share needs a foothold that pivots to it (the branch above), like every other
+      # resource on a linked network.
+      open_share = resource['access'].nil?
       access_sessions.any? do |pc_id, session|
         next false unless session.is_a?(Hash)
 
         info = find_login_pc(pc_id)
         npc = scenario_room_npc(session['id'])
-        info && npc && object_network(info[:object]) == network && resource_acl_admits?(resource, npc)
+        next false unless info && npc
+
+        host_net = object_network(info[:object])
+        next false unless host_net
+
+        reaches = open_share ? host_net == network : networks_reachable_from(host_net).include?(network)
+        reaches && resource_acl_admits?(resource, npc)
       end
     end
 
@@ -574,10 +923,21 @@ module BreakEscape
       network = object_network(pc)
       return [] unless network
 
-      NetworkModel.resources_on(network, scenario_data).select do |_id, resource|
-        resource['kind'] == 'file_share' && !NetworkModel.listed_only_share?(resource) &&
-          resource_acl_admits?(resource, npc)
+      # Every file_share on a network reachable from the PC's own network over up links (the
+      # pivot walk, 5.1), so a finance PC maps an access-listed share on a linked server
+      # network as it does for the member of staff. An open share maps only on its own
+      # network, never across a link (m3), so a linked open share is not named here without a
+      # foothold that pivots to it. Across networks the result is sorted by resource id.
+      shares = []
+      networks_reachable_from(network).each do |net|
+        NetworkModel.resources_on(net, scenario_data).each do |id, resource|
+          next unless resource['kind'] == 'file_share' && !NetworkModel.listed_only_share?(resource)
+
+          admit = resource['access'].nil? ? net == network : resource_acl_admits?(resource, npc)
+          shares << [id, resource] if admit
+        end
       end
+      shares.sort_by { |id, _resource| id.to_s }
     end
 
     # The folder stub for each mapped share, appended to a desktop after the profiles.
