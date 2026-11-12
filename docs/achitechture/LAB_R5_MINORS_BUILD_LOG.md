@@ -42,3 +42,28 @@ Mission row 248 (`test_capture_log`) was added to the dev database for the proof
 ## Open
 
 - The "Both routes" line was not driven through Len's real gate with real clicks (the credits were fired as the events the lab's mappings listen to). `PLAYTEST.md` lists it as not yet seen in a scripted run.
+
+## Code review R1 fixes
+
+Source: `LAB_R5_MINORS_CODE_REVIEW_R1.md` (1 minor, 5 nits). Commit `a9ff6cd9a`.
+
+| Item | Change |
+|---|---|
+| R1-m1 (user's call: option 1) | `hint_clone_opened` waits 1500 ms, the same as `hint_tailgated`. A clone then a tailgate within 1.5 s now gives the one "Both routes" line, not a clone line saying there is no need to follow. The scenario comment and the `PLAYTEST.md` entry say so (the game 77 record keeps its 0.6 s, with the new figure beside it). The Rails test pins the two delays equal and the "both" timer after both. |
+| R1-n1 | Route-lines test: `run(T, C, 1550)` expects "Tailgated" only; it fails with `hint_tailgated`'s `setGlobal` removed (checked). Also clone then tailgate at 750, 1000 and 1450 ms expect "Both routes", and at 1600 ms "Cloned badge". |
+| R1-n2 | Route-lines test: a failed ERB render throws, so the file fails in place of skipping. `validator-action-condition` prints its skip reason to stderr (it skips only when there is no `ruby`; a render failure there already fails its assertion). |
+| R1-n3 | Dispatcher retry comment: the decision holds within the page; a reload after the retries give up fires the timer again and reads the conditions afresh. The older `cancelOnGlobal` during retries gap is a line in `docs/IDEAS_BACKLOG.md`. |
+| R1-n4 | Validator test: a `conditionalActions` entry with `\|\|` asserts its soft warning; `desk\|` dropped from the filter. |
+| R1-n5 | `check_or_in_global_conditions`: under an action list, a hash is an action only when it has a `type`, as in `check_action_conditions`. A test case (a typeless entry with `\|\|` gets the soft warning) fails without the change. Over all 176 scenarios, the function's output is identical before and after. |
+
+Tests (single files, no lock): `lab-physical-pentest-route-lines` 5 pass, `validator-action-condition` 4, `timer-give-retry` 12, `apply-actions-hint-give` 7; `lab_physical_pentest_secrets_test.rb` 36 runs, 0 failures. Validator on the lab: no ❌ lines. Full suites not run (the orchestrator runs them per merge batch).
+
+Live proof (keyless server on :3039, headless, real clicks through the `playtest-scenario` harness; cloner, vest and Len's badge read with Save done in game; page-side recorder on `gameAlert` and the three globals):
+
+| Game | How | Credits | Lines shown |
+|---|---|---|---|
+| 1464 | Vest on, parked on tile (6, 2); when the gate opened for Len, a door click (walked to 62 px and clicked) then `enter` at once | clone, tailgate 0.82 s later | "Both routes" only, 1.6 s after the tailgate; on screen 2.5 s after the entry. Before this fix that gap gave "Cloned badge" alone. |
+| 1469 | No vest, gate shut; door click then `enter` (the student who only clones) | clone only | "Cloned badge" 1.51 s after the clone, on screen in the records office |
+| 1462 | Vest on, door click from 57 px south while open for Len; the click opened the reader's examine screen, so no entry | clone only | "Cloned badge" 1.51 s after the clone |
+
+Games 1462, 1464 and 1469 are new rows in the dev database; nothing else was changed. Standing 57 px south of the door in game 1462 held Len's gate open for over a minute (he could not come back out past the player); the parking-tile recipe of R7 avoids that.
