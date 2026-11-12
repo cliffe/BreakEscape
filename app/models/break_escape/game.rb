@@ -2658,7 +2658,7 @@ module BreakEscape
     # browser only claims opens nothing. Not memoised: the inventory changes per request.
     def held_usb_sticks
       inventory = player_state.is_a?(Hash) ? Array(player_state['inventory']) : []
-      inventory = inventory.reject { |i| i.is_a?(Hash) && i['clientAdded'] }
+      inventory = inventory.reject { |i| BreakEscape::ItemIdentity.client_forged?(i) }
       return [] if inventory.empty?
 
       BreakEscape::AccessWork.usb_habit_sticks(scenario_data).filter_map do |npc, stick|

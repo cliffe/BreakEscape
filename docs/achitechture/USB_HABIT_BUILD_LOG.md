@@ -212,3 +212,62 @@ Validator, `test_access_social`: 0 errors; the three expected warnings only.
 - The forged tray check used a client-built stub, which takes the client's lock path; the server
   refusals above are what make it safe.
 - No mission uses the habit or the stick yet.
+
+## R2 fixes (`docs/achitechture/USB_HABIT_CODE_REVIEW_R2.md`)
+
+Merge: `main` merged in (`855b5ac4f`). `npc-needs.js` keeps `_usbAttempt` and `_usbStickHeld` and
+takes `main`'s `_borrowDone(s, job, met, cut = null)`; `IDEAS_BACKLOG.md` keeps both sides (this
+branch's newer wording of the C2 line, plus `main`'s three new entries).
+
+| Id | Status | Where |
+|----|--------|-------|
+| B1 | fixed (`e62518379`) | `interactions.js`: a takeable, unlocked `usb` in the world marked `hasContents` with no files skips the container branch and is picked up; from the tray it opens as before. Kept to that one branch, so build/ff-phone's KO drop changes merge apart |
+| M1 | fixed (`378143287`) | Kim's give is offered only once `u1_kim_emailed_file` is true; README bullet "Give the stick only after the first refusal"; validator warns on an ink give of the stick not under a choice gated on the habit's `setGlobal` while anything waits on the refusal (`npc_usb_refused:<npc>`, the global, `cause: usb_refused`) |
+| m1 | fixed (`378143287`) | Validator accepts unlocked folders or archives (any item with non-empty `contents`) on a stick, nested up to five levels, ids unique across the tree; README and schema say so |
+| m2 | fixed (`fe15befd9`) | Leak scanner: a habit stick's files (authored, or the default `work_file.txt` name and text) are secrets with rule `stick_content` outside a `GET /container/<stick or nested id>` or an `/unlock` contents answer, and never public room strings; the CLI prints the count |
+| m3 | fixed (`378143287`) | The give is a `+` choice gated on `not u1_kim_gave_usb`, a declared global set in the choice (`~`), so it stays given after a reload |
+| m4 | fixed (`378143287`) | `AccessWork.usb_stick` takes only a `usbClass` `storage` (or absent) item; the validator names a HID-only item in its "no stick" error |
+| n1 | fixed | Not-takeable warning now says it cannot be handed over or picked up unless the NPC is knocked out |
+| n2 | fixed | Validator warns on a takeable file on a stick, and errors on two habit NPCs sharing a stick id |
+| n3 | fixed | Kim's give now follows her refusal and reads as giving up on the stick ("No. IT blocks it on every PC. Keep it, I'll stick to email."); "borrow" is gone |
+| n4 | fixed | Merge as above; `held_usb_sticks` uses `ItemIdentity.client_forged?` |
+| n5 | fixed (`e62518379`) | New controller test drives the real KO report, `add_object` drop (`npc_defeated`), room data, unsourced pickup, `/unlock` and `/container` |
+
+Spoken lines changed (test scenario, not voiced): Kim's choice "That USB stick isn't much use to
+you now, is it?" and her reply above, replacing the "borrow" pair.
+
+Sync size: one more declared boolean global (`u1_kim_gave_usb`), set once. Nothing else the client
+re-sends grows; the B1 fix changes only which click path a floor stick takes, and the pickup
+removes the dropped copy from `room_states.objects_added` (empty after the pickup in game 1604).
+
+Not covered: the M1 warning reads the NPC's own ink for `#give_item:usb` (or the stick id) and the
+nearest choice above it; a give through another NPC's ink, an `onDefeat` action or a timer is not
+checked, nor is a knock-out before the first refusal (combat is the author's choice).
+
+### Tests (run alone, no lock)
+
+- `test/js/usb-stick-pickup.test.mjs` (new, drives the real `handleObjectInteraction` with stubbed
+  imports): 5 pass; the floor-click test failed before the fix (it sent `/unlock`).
+- `test/js/validator-usb-habit.test.mjs`: 20 pass (8 new).
+- `test/js/validator-access-work.test.mjs` 38, `validator-access-social` 17,
+  `validator-access-reactive` 10, `npc-needs-usb-habit` 12, `interaction-warning` 13: all pass.
+- `test/controllers/break_escape/usb_habit_test.rb` 19 runs, `test/unit/access_work_usb_habit_test.rb`,
+  `test/unit/access_leak_scanner_test.rb` (2 new), `test/unit/access_leak_scanner_feed_test.rb`:
+  110 runs, 0 failures.
+- Validator, `test_access_social`: 0 errors, the three known warnings only.
+
+### Live proof (keyless :3050, headless, setFPS(20) with fixed steps on, `--start-room u1_room`)
+
+- Game 1604, KO route: `debugKO` on Kim dropped `kim_usb`; a click on it sent only
+  `POST /inventory` (200) and `update_room` (200), no `/unlock`, no "Access denied"; the tray held
+  `kim_usb`. From the tray: `POST /unlock` 200 and `GET /container/kim_usb` 200, the container
+  listed `work_file.txt`, and opening it showed the default text. The saved inventory copy has no
+  files; `objects_added` is empty. Leak check: 1 USB stick file checked, no leaks found.
+- Game 1602, give route: before the refusal Kim offered no stick choice. Her first refusal came at
+  about 35 s; tasks `u1_refused` and `u1_emailed` completed; then the choice appeared, she gave the
+  stick, and `u1_kim_gave_usb` was saved true. After a reload the choice did not come back. Leak
+  check: no leaks found.
+- Games 1600 (an earlier KO run, same result, before the file-open step was scripted) and 1603
+  (unused) were also created. Server stopped by PID afterwards.
+- Seen in passing, not from this branch: the bridge's approach walk once raised "Can't reach that
+  seat from here." while walking to the stick.
