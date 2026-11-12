@@ -1041,7 +1041,7 @@ An outage is a global: a resource's `downIf`, or a station's `affordance.offWhen
 | `work_fail_no_access` | a resource does not admit it | nobody gave it access ("Still no access. Nobody listens.") | `blocked` |
 | `work_fail_<kind>` | a resource of that `kind` is down or unreachable | names the thing: `work_fail_file_share` ("Share's down again."), `work_fail_email` ("Email's not sending."), `work_fail_printer` ("Printer's jammed again.") | `file`, `work`, `print`; any other kind falls back to `work_fail`'s |
 | `work_fail` | any failure with no line in the pools above | general ("Why is nothing working?") | `work` |
-| `usb_refused` | a device is refused (USB policy, above) | ("USB's disabled. Typical.") | `blocked` |
+| `usb_refused` | a device is refused (USB policy, above), or the USB habit's copy is refused | ("USB's disabled. Typical.") | `blocked` |
 | `wk_writes_down`, `wk_prop_door`, `wk_borrow`, `wk_share_login` | a workaround starts (sub-slices B and H) | what the person is about to do ("I'll never remember this one.", "I'm not badging in every time.", "I'll use the spare PC.", "I'll get someone to run it.") | `work` |
 | `login_aloud` | a `share_login` reaches the colleague (sub-slice H) | the spoken hand-over ("Just use mine, it's on the note.") | `social` |
 | `social_blocked` | a social media use is blocked by policy (sub-slice C) | ("Blocked. Of course.") | `blocked` |
@@ -1093,6 +1093,16 @@ A sign-in PC under a policy with `maxAttempts` locks a username out at that PC a
 - **What it teaches, and its limit.** A lockout policy is a denial of service anyone at the keyboard can cause. The game's lockout is per PC, so the owner can still sign in elsewhere; a real directory lockout usually follows the account to every PC. Say so in the debrief or lab sheet if students might take the scope as realistic: the lesson is the denial of service, not the scope.
 - **What it tells the player.** When the owner comes back to the locked screen, the player who locked out a guessed username learns whether it was the owner's. The sign-in screen's own answers never say which usernames are real, and no list of locked-out accounts reaches the browser.
 - The validator lists such an owner's lockout in the work report and wants a `station_fail` (or `work_fail`) line; it also warns that a `maxAttempts` lockout lasts the mission, so a mission that needs that PC needs another route.
+
+#### The USB habit as a cause
+
+An NPC with a work plan can carry a `usbHabit`: `{ "every": 2, "setGlobal": "kim_emailed_file" }`. Every `every`th judged work use at its own station (1 to 10, default 2) copies a file to a USB stick, to take home or hand to a colleague.
+
+- **Refused.** Where the station's policy has `usb: "storage_blocked"` or `"blocked"`, that use fails with the cause `usb_refused`: the `usb_refused` mutter (else `work_fail`; `work_fail_fed_up` at tell 2), the barrier icon, frustration as for any failure, and `npc_usb_refused:<npcId>`. The next use without a copy is met and eases, so the level rises and falls with the habit.
+- **The workaround.** `setGlobal`, a declared global, is set true when the server accepts the first refusal: the NPC emails the file to itself instead. Gate a mail, a note or an ink line on it.
+- **Allowed.** Where the policy allows USB storage the copy works: `npc_usb_copied:<npcId>` fires and the use goes on as normal, a hook for a mission where a lax PC is the lesson.
+- **The hint.** A reactive post with `"when": { "cause": "usb_refused", "need": "work" }` is served once a refusal is recorded, so the feed tells the player the PC is locked down. `scenarios/test_access_social` beat U1 shows it.
+- `usbHabit` is a room-NPC field and never reaches the browser; the plan carries `work.usb`. The validator errors on an `every` outside 1 to 10 or an undeclared `setGlobal`, warns on a habit with no work plan, and wants a `usb_refused` (or `work_fail`) line for an NPC whose PC refuses the copy. The work report names the habit on the NPC's `Work` line.
 
 #### The validator and the work report
 

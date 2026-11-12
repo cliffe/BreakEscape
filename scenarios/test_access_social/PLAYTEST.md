@@ -1,4 +1,4 @@
-# test_access_social: scripted playtest (slice 9.2, F1 to F13)
+# test_access_social: scripted playtest (slice 9.2, F1 to F13, and U1)
 
 The scripted runs for access model slice 9.2 sub-slice C (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
 sections 8 and 11.2), plus F9 for user decision q33 (a lockout stops social media at that PC too),
@@ -82,6 +82,10 @@ work report also prints one `fires when ...` line per reactive post: `f10_vent`/
 (and `f12_vent` on `off`) cause, `f11_borrowed` after the borrow, `f13_blocked` on `social_blocked`,
 `f13_fixed` on recovery. No new warning: the only warnings stay the three above.
 
+U1 adds a `Feed` and a `Reactive feed` line for Kim, a `fires when a cause with why usb_refused for
+work is live` line, and a `Work` line ending "every 2nd use at 'kim_pc' copies to a USB stick, which
+its policy refuses (cause usb_refused)". Still no new warning.
+
 ## Beats
 
 | Beat | Do | Expect | Server afterwards | `/feed_post` so far |
@@ -120,6 +124,22 @@ use and is usually answered `{ post: null, done: false }`, so a per-run total gr
 | F11 | Enter `f11_room`, order **mixed**. Theo's PC blocks social media and he has no phone, so he borrows the kiosk here. Wait through his first met use, his borrow, and one more use | His ordered `f11_first` comes out first; the borrow post `f11_borrowed` slots in at its authored place on the next met use (never ahead of `f11_first`); then `f11_last`; task `f11_posted` on `f11_borrowed` | `feedRevealed.theo.shown` is `["f11_first", "f11_borrowed", ...]`; the `borrow_session` workaround is done; `guestSessions.f11_kiosk` `theo` | Theo up to 3 (one per met use) |
 | F12 | Enter `f12_room`, order **facts_first**. Wait for Greg's first met social media use, then throw the breaker (sales system down). Wait for his work to fail, then for his next met social media use. Reset the breaker | The ordered `f12_ordered` comes out first; the vent `f12_vent` follows only after the outage and a work failure; task `f12_posted` on `f12_vent`. After both the answer says `done: true` and the client stops asking | `feedRevealed.greg.shown` is `["f12_ordered", "f12_vent"]`, done; `failWhy.work` lists `down` | Greg 2 (one per post), plus any `tooSoon` |
 | F13 | Enter `f13_room`, order **reactive_first**. Ruth's PC blocks social media and she has no phone. Wait for her to fail, borrow the kiosk, and use it twice | On her first met use (the borrow) the blocked vent `f13_blocked` is served; on her next met use the recovery post `f13_fixed` (keyed on `needMet`) follows; tasks `f13_blocked` then `f13_recovered` | `failWhy.social_media` lists `social_blocked`; `easeAt.social_media` later than `failAt.social_media`; `feedRevealed.ruth.shown` is `["f13_blocked", "f13_fixed"]`, done | Ruth 2 |
+
+## USB habit beat (q39): U1
+
+East of Ruth's room, `u1_room` holds Kim (`docs/achitechture/USB_HABIT_PLAN.md`). Her PC is under
+`usb_locked` (`usb: storage_blocked`) and her `usbHabit.every` is 2, so every second work use there
+copies a file to a USB stick and is refused. Her feed is `reactive_first` with one ordered post and a
+vent keyed on `cause: "usb_refused"`. Start the game with `new-game.rb test_access_social --start-room
+u1_room` to run the beat alone.
+
+| Beat | Do | Expect | Server afterwards | `/feed_post` this beat |
+|---|---|---|---|---|
+| U1 | Enter `u1_room`, stand clear of Kim and wait about two minutes | Her first work use is met; her second fails: `npc_use_failed:kim` with `missing` `[{ id: kim_pc, why: usb_refused }]`, the line "IT blocked my USB. Email it is, then.", `npc_usb_refused:kim`, tasks `u1_refused` and `u1_emailed`. Her next met social use serves the vent `u1_usb_vent` (task `u1_posted`); her next work use is met and eases | `npcFrustration.kim.failWhy.work` is `["usb_refused"]`; `globalVariables.u1_kim_emailed_file` true; `feedRevealed.kim.shown` is `["u1_ordered", "u1_usb_vent"]` (or the vent alone if her first social use comes after the refusal), done | Kim 2 |
+
+Tampered: a `fail` for Kim naming `usb_refused` for `social_media`, or naming another PC, is refused,
+and so is one for an NPC with no `usbHabit` (Nadia). Room data for Kim carries `work.usb` and no
+`usbHabit`.
 
 The leak check must still say `VERDICT: no leaks found` after each reactive beat, and its counts line
 must show the reactive post texts among the feed posts it checked. One reload during the run (as F7)
