@@ -10,13 +10,12 @@
 // ================================================
 
 === start ===
-// Home stub: not reached by the call; shows only if the player opens his thread after it.
-+ [Ring back.]
-    Narrator: The number rings out.
-    #exit_conversation
-    -> DONE
+// Home stub: not reached by the call. After a finished call the thread rests here and
+// shows the transcript; a missed call leaves the engine's Call back button (no fake ring-back).
+-> DONE
 
 === call ===
+// lint: call-knot
 Agent 0x00. I'd ask how the leave was, but HaX would tell me to get off her line.
 // Alignment R1 m3: help only he can give (HaX has said print and card).
 Sorensen's card is on custom keys. Crack the keys first, then read it. Don't guess.

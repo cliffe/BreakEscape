@@ -13,13 +13,12 @@ VAR gary_called = false
 VAR salvage_opened = false   // Synced scenario global (puzzle chains R1 P5)
 
 === start ===
-// Home stub: not reached by the call; shows only if the player opens his thread after it.
-+ [Ring back.]
-    Narrator: The number rings out.
-    #exit_conversation
-    -> DONE
+// Home stub: not reached by the call. After a finished call the thread rests here and
+// shows the transcript; a missed call leaves the engine's Call back button (no fake ring-back).
+-> DONE
 
 === call ===
+// lint: call-knot
 #set_global:gary_called:true
 // Puzzle chains R1 P5: a player who opened the door at the first try.
 {salvage_opened:
