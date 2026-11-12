@@ -113,3 +113,39 @@ Not fixed here, by budget. Constraints for the fix, for its own branch: the sing
 
 ### Tests (single files, no lock)
 network-view 26, container-transfer-dialog 14, password-signin-mode 18, inventory-restore-sprite-image 10, minigame-title-escape 23, npc-needs-debug 8; all 17 test files importing the container, password or network-view minigames: 0 failures.
+
+## Round 2, part 2 (findings 11 to 13, the networks queue, the missing after shots)
+
+Keyless server on :3067, headless, 1400x1000, setFPS(20) with fixed steps. Games 1801 (test_access_networks, given the drop box, keystroke injector and stick), 1802 (test_access_habits), 1804 (m01, not used: no door to the IT room), 1805 (test_needs_sims), 1812 (m01 with --start-room it_room). After shots b01 to b09 in the session scratchpad `ux-shots/after_access/`, appended to its manifest.
+
+### Findings from R1
+| # | Status | What changed |
+|---|--------|--------------|
+| 11 | Fixed | Action icons (`_make`, npc-action-icons.js) sit on the thought bubbles' light card with their dark outline, square. The dark chip is gone, so a "doing" icon and a "wanting" bubble read as one family (also the R2 queue's "two icon styles mixed"). Text stand-ins in VT323, dark on light. Shots b08, b09. |
+| 12 | Fixed | Toast queue: at most two toasts on screen (`MAX_SHOWN_TOASTS`, notifications.js). A further info or success toast waits and shows as one goes; a waiting duplicate waits once; one that comes up while a panel is open joins the held queue. Warnings and errors still show at once. The confirm dialog's Cancel has full-strength text and no dimming filter. Tests: new `toast-queue.test.mjs` (5), `toast-duplicate.test.mjs` updated for the cap. Shots b02, b05, b08. |
+| 13 | Fixed (toasts, dialogs, debug font) | Dialog buttons in GNF 20px like the dialog text (they were Press Start 2P 11px); no soft shadow on toasts and dialogs; toast progress bar 4px; display-dialog title rule 2px; themed success and failure messages keep the 2px outline and lose the 16px glow; the password field's focus glow is gone. Needs debug overlay text in VT323. Friendface and the phone are build/c3-replies's. |
+
+### Networks queue (ux_queue_access_r2.md)
+- Wi-Fi key and zip password on the PC sign-in skin: fixed. `passwordScreenKind` (password-minigame.js) gives a Wi-Fi join and any lock whose object type is not a computer (pc, laptop, workstation, terminal, tablet, kiosk, smartscreen, server and their numbered or hyphenated forms) a plain dark panel with a 2px frame, no wallpaper, and a light label. A Wi-Fi panel names the access point ("Join Wi-Fi: Guest access point"). The SSID itself is a withheld field until joined, so the access point's name is what the client can show. On the PC screen the green field label gets a dark backing. Test in `password-signin-mode.test.mjs`. Shot b01. The zip prompt in lab_social_engineering was not shot live.
+- Network view: fixed. The title is the link's name alone; the own network is a block with its name as a heading, so "Wi-Fi: Guest Wi-Fi, on Guest Wi-Fi" no longer repeats and the office network is named beside a pivot's network. Every block heading is a bar (fill and 2px rule), so "Server network, through HB-FIN-02" stands out. A PC that is off or not responding is greyed with a grey icon, like a no-route row. Tests in `network-view.test.mjs`. Shot b03.
+- Server breaker with no confirm or feedback: fixed in test_access_networks. It asks first, then a hint toast says the network is down; a second click says it is already off. Shots b04, b05.
+- Keystroke injector used with no confirm: fixed in test_access_networks (confirm_action around grant_foothold; the server honours a grant under onConfirm, DeclaredGrants.executed?). Not shot live (needs a sign-in at Sam's PC first). Validator: 0 failures.
+- Remote desktop share icon labels (full UNC path), a share opening as a full desktop, broken share header image: skipped. All three are in container-minigame.js, the container view that build/unlock-gaps-r1 owns. Suggested fix for that branch: label a `network_share` icon with the part before " (\\\\", keep the UNC path in the tooltip, give `openMappedShare` a folder mode without the wallpaper, and point the header at the share icon instead of `objects/network_share.png`.
+- Link item naming across kinds ("Drop box: ...", "BadUSB: ...", "USB foothold: ..."): option. Names come from scenario `linkName`/`name` and the server's defaults (`network_access.rb`), with Rails tests pinning them. A. One pattern "<device>: <place>" by default on the server, authored names left alone. B. Leave it to the scenarios. Recommendation A, on its own branch with Rails tests.
+- Observation panels staying for minutes: skipped (not reached).
+- X2 extinguisher placed tiles from its door: skipped (scenario and engine placement in test_access_work).
+- Padlock badge on food and sleep bubbles; Ruth's empty speech bubble in H4: skipped (not reached).
+- Host icons and desktop thumbnails shrunk: host icons were already at whole-number scale (R1); desktop thumbnails are in the container view (build/unlock-gaps-r1).
+- Duplicate toasts (build/dup-toast), inventory icon art (needs the user), the lab jack confirm text in lab_physical_pentest (scenario content, noted only): not touched.
+
+### Missing after shots from R1
+- Owner claim banner: b06 (game 1802). Guest claim: not shot. It needs a colleague's hot-desk borrow in test_access_work; the wording is covered by `container-transfer-dialog.test.mjs`.
+- Network view: b03.
+- Mission desktop: b07, m01 IT Monitoring Station. The desktop CSS holds on a mission PC: landscape monitor, footer on the backdrop, file label wrapped at its space.
+
+### Collision notes
+- notifications.js (the queue) is also build/dup-toast's file. The queue sits in `renderNotification` before the element is built and in `removeNotification`; merge by hand if that branch changes the same spots. `toast-duplicate.test.mjs` was updated for the cap.
+- minigames-framework.css (two glow lines) sits beside build/unlock-gaps-r1's footer rules.
+
+### Tests (single files, no lock)
+toast-queue 5, toast-duplicate 8, password-signin-mode 19, network-view 26, npc-action-icons 4, npc-needs-debug 8, minigame-title-escape 23, grant-foothold-action, pc-policy, dungeon-graph-networks; every test file importing notifications.js, npc-action-icons, npc-needs-debug, password-minigame or network-view-minigame: 0 failures. Validator on test_access_networks: 0 failures. No Rails files changed.
