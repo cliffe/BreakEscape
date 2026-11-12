@@ -499,7 +499,7 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
       'rooms' => { 'office' => { 'type' => 'room_office', 'npcs' => [tom, ivy] } } }
   end
 
-  def vent_answer
+  def ivy_vent_answer
     { 'npcId' => 'ivy', 'index' => 0, 'seq' => 1, 'post' => { 'id' => 'ivy_vent', 'text' => IVY_VENT },
       'site' => 'friendface', 'person' => 'ivy', 'done' => false }
   end
@@ -511,7 +511,7 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
   end
 
   def thread_posts
-    { 'ivy' => { 'site' => 'friendface', 'person' => 'ivy', 'done' => false, 'posts' => [vent_answer.slice('index', 'seq', 'post')] },
+    { 'ivy' => { 'site' => 'friendface', 'person' => 'ivy', 'done' => false, 'posts' => [ivy_vent_answer.slice('index', 'seq', 'post')] },
       'tomasz' => { 'site' => 'friendface', 'person' => 'tomasz', 'done' => true,
                     'posts' => [reply_answer.slice('index', 'seq', 'post', 'replyToNpc', 'replyToPerson', 'namedNpc', 'namedPerson')] } }
   end
@@ -520,14 +520,14 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     early = { 'notes' => [{ 'text' => TOM_RE.sub('{name}', 'Ivy') }] }
     assert_equal [[1, 'feed_text', 'feed:tomasz|tom_re_ivy']], summary(AccessLeakScanner.new(reply_data).scan(rows(['GET', SCENARIO, early])))
     # served by its own answer, then listed again: clean, with the name filled
-    clean = AccessLeakScanner.new(reply_data).scan(rows(['POST', FEED, vent_answer], ['POST', FEED, reply_answer],
+    clean = AccessLeakScanner.new(reply_data).scan(rows(['POST', FEED, ivy_vent_answer], ['POST', FEED, reply_answer],
                                                        ['GET', SCENARIO, { 'feedPosts' => thread_posts }]))
     assert_empty summary(clean)
   end
 
   test "C3: a spent post's text in any response is a feed_text leak" do
     spent = { 'x' => TOM_VENT }
-    found = summary(AccessLeakScanner.new(reply_data).scan(rows(['POST', FEED, vent_answer], ['POST', FEED, reply_answer], ['GET', SCENARIO, spent])))
+    found = summary(AccessLeakScanner.new(reply_data).scan(rows(['POST', FEED, ivy_vent_answer], ['POST', FEED, reply_answer], ['GET', SCENARIO, spent])))
     assert_equal [[3, 'feed_text', 'feed:tomasz|tom_vent']], found
   end
 
