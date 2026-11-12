@@ -168,6 +168,15 @@ export class ApiClient {
     return this.post('/network/unplug', { jack_id: jackId });
   }
 
+  // Join an in-game Wi-Fi network through an access point (slice 9.3b sub-slice W, 5.3).
+  // The key is compared on the server; an open network sends no key. Answers
+  // { success, foothold, inventory, first } (or { success, already: true, ... } when the
+  // network is already joined); a refusal throws with err.status (404 no access point,
+  // 403 reason "unreachable", 422 reason "wrong_key") and err.body. The key is never echoed.
+  static async networkJoin(apId, key = null) {
+    return this.post('/network/join', { ap_id: apId, ...(key != null ? { key } : {}) });
+  }
+
   // What a foothold reaches: { footholds: [{ id, via, name, network, hosts }] }, every
   // held foothold, or only `footholdId` when given (404 when it is not held).
   static async network(footholdId = null) {

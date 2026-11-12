@@ -406,6 +406,10 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
   does), so a task or mapping on either access point completes.
 - No device and no range. A wrong key is not counted (section 13 records the strength): the server
   just answers "wrong key".
+- A join still requires reach: it is click-to-interact, so the player must walk to the access point
+  and click it (the object must be reachable, its room and container path unlocked), exactly as a
+  jack plant does. "No range" means no signal model, not that a locked-away access point can be
+  joined from anywhere.
 - **A Wi-Fi foothold is permanent for this slice.** `unplug_device!` is jack-only (it resolves
   through `find_jack`, which requires `networkJack: true`), so there is no unplug for a Wi-Fi join
   and none is added here (open question 7). The foothold ends only on a reset.

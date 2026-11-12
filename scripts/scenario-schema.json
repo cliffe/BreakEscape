@@ -201,7 +201,7 @@
     "defaultPolicy": { "type": "string", "description": "Access model: the policy a PC with no policy of its own uses." },
     "networks": {
       "type": "object",
-      "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.1): network id to { name }. The name is what the player sees once they hold a foothold on it. Never sent in the bootstrap. downIf and wifi are reserved for slice 9.3b and refused by the validator.",
+      "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.1): network id to { name }. The name is what the player sees once they hold a foothold on it. Never sent in the bootstrap. downIf is reserved for slice 9.3b (outages) and refused by the validator.",
       "additionalProperties": {
         "type": "object",
         "properties": {
@@ -209,8 +209,9 @@
           "downIf": { "type": "string", "description": "Reserved for slice 9.3b (outages)." },
           "wifi": {
             "type": "object",
-            "description": "Reserved for slice 9.3b (Wi-Fi).",
-            "properties": { "ssid": { "type": "string" }, "psk": { "type": "string" }, "_comment": { "type": "string" } }
+            "description": "Slice 9.3b (Wi-Fi, 5.3): an in-game SSID and pre-shared key for this network. Never sent in the bootstrap. psk absent means an open network. An access point object (wifiAp) joins it in the key minigame.",
+            "properties": { "ssid": { "type": "string", "minLength": 1 }, "psk": { "type": "string" }, "_comment": { "type": "string" } },
+            "required": ["ssid"]
           },
           "_comment": { "type": "string" }
         },
@@ -5286,7 +5287,7 @@
         "linkName": { "type": "string", "description": "Networks 4.1: the name of the link item the plant puts in the inventory. Default: <device name>: <jack name>." },
         "linkStoreIn": { "type": "string", "description": "Networks 13.4: the holder the link item is filed in (storeIn)." },
         "rogueDevice": { "type": "boolean", "description": "Networks 3.3: a takeable item with an id that can be planted in a jack. Not droppable." },
-        "wifiAp": { "description": "Reserved for slice 9.3b (Wi-Fi). Refused by the 9.3a validator." },
+        "wifiAp": { "type": "boolean", "description": "Slice 9.3b (Wi-Fi, 5.3): true marks this object a Wi-Fi access point on its network (which must define a wifi block). Its click is the join flow; it is not a sign-in host, a jack or a lock." },
         "portSecurity": { "description": "Reserved for slice 9.3b (port security). Refused by the 9.3a validator." },
         "portSecurityMessage": { "type": "string", "description": "Reserved for slice 9.3b (port security). Refused by the 9.3a validator." },
         "transfer": { "type": "string", "enum": ["copy", "move", "both"], "description": "Access model 5.1: what a takeable file on a sign-in desktop allows. Default both." },

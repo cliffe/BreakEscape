@@ -22,7 +22,8 @@
  * the view opens by itself the first time a foothold is gained at that jack.
  *
  * Events, each also as `<name>:<id>`:
- *   network_foothold_gained   (jack id)     { footholdId, via, networkId, sourceId }
+ *   network_foothold_gained   (jack/ap id)  { footholdId, via, networkId, sourceId }
+ *   network_joined            (ap id)       { apId, footholdId, networkId }   (slice 9.3b W)
  *   network_device_planted    (jack id)     { jackId, footholdId, networkId, deviceId }
  *   network_device_refused    (jack id)     { jackId, reason }       reason: no_device
  *   network_device_unplugged  (jack id)     { jackId, footholdId, endedPcIds }
@@ -449,6 +450,83 @@ export class NetworkLinks {
         const endedPcIds = Array.isArray(body.endedPcIds) ? body.endedPcIds : [];
         this._emit('network_device_unplugged', { jackId, footholdId: id, endedPcIds }, jackId);
         return { action: 'unplugged', footholdId: id, endedPcIds };
+    }
+
+    // ------------------------------------------------------------------ Wi-Fi (slice 9.3b W, 5.3)
+
+    /**
+     * A click on a Wi-Fi access point (interactions.js). Tries an open join first (no key);
+     * a keyed network answers wrong_key, so the key minigame opens. Resolves to what
+     * happened, for tests.
+     */
+    async interactWifiAp(sprite) {
+        const data = sprite?.scenarioData;
+        const apId = data?.id;
+        if (!apId || data.wifiAp !== true) return { action: 'none' };
+        if (this._busy) return { action: 'busy' };
+        // A key minigame already open (e.g. a rapid second click) must not stack a second one
+        const mg = win().MinigameFramework;
+        if (mg?.currentMinigame && !mg.currentMinigame._ending) return { action: 'busy' };
+        const probe = await this.join(apId, null);
+        if (probe.action === 'wrong_key') return this._promptWifiKey(apId, data);
+        return probe;
+    }
+
+    /**
+     * POST /network/join, then the tray, the foothold and the events. `key` null is an open
+     * join (or the probe before the key prompt). A wrong key resolves { action: 'wrong_key' }
+     * with no toast, so the caller can open the key minigame.
+     */
+    async join(apId, key = null) {
+        const api = apiClient();
+        if (!api?.networkJoin) return { action: 'error' };
+        this._busy = true;
+        let body;
+        try {
+            body = await api.networkJoin(apId, key);
+        } catch (err) {
+            const b = err?.body || {};
+            if (err?.status === 422 && b.reason === 'wrong_key') return { action: 'wrong_key' };
+            toast(err?.status === 403 ? "You can't reach that access point from here." : 'The access point did not respond. Try again.', 'error');
+            return { action: 'error', status: err?.status ?? null };
+        } finally {
+            this._busy = false;
+        }
+        const foothold = cleanFoothold(body?.foothold);
+        if (!body?.success || !foothold) return { action: 'error' };
+        win().syncInventoryFromServer?.(body.inventory, [foothold.itemId]);
+        this.footholds.set(foothold.id, foothold);
+        this.gained.add(apId);
+        const networkId = foothold.network?.id ?? null;
+        // Events are client-emitted from the answer (as the plant does); network_joined fires
+        // for a second access point too, so a task or mapping on either one completes (5.3)
+        this._emit('network_joined', { apId, footholdId: foothold.id, networkId, already: !!body.already }, apId);
+        if (body.already) return { action: 'already', footholdId: foothold.id };
+        this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: apId }, apId);
+        // Seeing what is exposed is the point: the first join opens the view
+        if (body.first) this.open(foothold.id);
+        return { action: 'joined', footholdId: foothold.id, first: !!body.first };
+    }
+
+    /** Open the key minigame for a keyed access point (password minigame, join mode). */
+    _promptWifiKey(apId, data) {
+        const framework = win().MinigameFramework;
+        if (!framework?.startMinigame) {
+            toast('This network needs a key.', 'info');
+            return { action: 'needs_key' };
+        }
+        if (!framework.mainGameScene && win().game) framework.init(win().game);
+        framework.startMinigame('password', null, {
+            // The join branch builds and escapes its own visible header from join.apName
+            // (password-minigame.js). Feed the base template a constant title, never the
+            // author access-point name, so author text never reaches the unescaped
+            // params.title HTML sink in base-minigame.js.
+            title: 'Join Wi-Fi',
+            lockable: null,
+            requiresKeyboardInput: true,
+            join: { apId, apName: data?.name || 'this network' }
+        });
+        return { action: 'prompt' };
     }
 
     // ------------------------------------------------------------------ the trip (4.3)

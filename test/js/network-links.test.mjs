@@ -70,6 +70,18 @@ const viewEntry = { ...foothold, hosts: [
 ] };
 
 let calls, requests, toasts, events, confirms, confirmAnswer, views, desktops, links;
+let joinAnswer = null; // override the networkJoin mock per test
+
+// Wi-Fi fixtures (slice 9.3b sub-slice W)
+const guestNet = { id: 'guest_wifi', name: 'Guest Wi-Fi' };
+const wifiFoothold = { id: 'wifi_guest_wifi', via: 'wifi', name: 'Wi-Fi: Guest Wi-Fi', itemId: 'netlink_wifi_guest_wifi',
+    sourceId: 'guest_ap', network: guestNet, sprite: 'wifi_ap1' };
+const wifiLinkItem = { id: 'netlink_wifi_guest_wifi', type: 'network_link', name: 'Wi-Fi: Guest Wi-Fi', sprite: 'wifi_ap1',
+    takeable: false, footholdId: 'wifi_guest_wifi', sourceId: 'guest_ap',
+    observations: 'Your Wi-Fi link to Guest Wi-Fi. Open it to see what it reaches.' };
+const wifiApSprite = (id = 'guest_ap', name = 'Guest access point') => ({
+    scenarioData: { id, name, type: 'pc', sprite: 'wifi_ap1', wifiAp: true }
+});
 
 function jackSprite(extra = {}) {
     const sprite = {
@@ -90,6 +102,7 @@ async function reset({ items = [], planted = false } = {}) {
     views = [];
     desktops = [];
     confirmAnswer = true;
+    joinAnswer = null;
     globalThis.fetch = async (url, opts) => {
         const body = JSON.parse(opts?.body || '{}');
         if (body?.item?.type !== 'notepad') requests.push({ url, body });
@@ -127,6 +140,12 @@ async function reset({ items = [], planted = false } = {}) {
         async network(footholdId) {
             calls.push(['network', footholdId]);
             return { footholds: [viewEntry] };
+        },
+        async networkJoin(apId, key) {
+            calls.push(['join', apId, key]);
+            if (typeof joinAnswer === 'function') return joinAnswer(apId, key);
+            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+            return { success: true, foothold: wifiFoothold, inventory: [...inv, wifiLinkItem], first: false };
         }
     };
     inventory.initializeInventory();
@@ -530,4 +549,139 @@ test('a new trip replaces the one running', async () => {
     await settle();
     assert.deepEqual(back, []);
     assert.deepEqual(other, [{ reason: 'closed' }]);
+});
+
+// ---------------------------------------------------------------- Wi-Fi (slice 9.3b W)
+
+test('an access point click joins an open network (no prompt), adds the link item and emits events once', async () => {
+    await reset();
+    const r = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r.action, 'joined');
+    assert.equal(r.footholdId, 'wifi_guest_wifi');
+    // Only the keyless probe was sent (an open network joins at once)
+    assert.deepEqual(calls.filter(c => c[0] === 'join'), [['join', 'guest_ap', null]]);
+    assert.equal(held('netlink_wifi_guest_wifi').length, 1, 'the link item is in the tray');
+    assert.ok(links.get('wifi_guest_wifi'), 'the foothold is held');
+    assert.equal(named('network_joined').length, 1);
+    assert.equal(named('network_foothold_gained').length, 1);
+    assert.equal(named('network_joined')[0].data.apId, 'guest_ap');
+});
+
+test('the first join opens the view', async () => {
+    await reset();
+    withStarters();
+    joinAnswer = () => {
+        const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+        return { success: true, foothold: wifiFoothold, inventory: [...inv, wifiLinkItem], first: true };
+    };
+    await links.interactWifiAp(wifiApSprite());
+    await settle();
+    assert.equal(views.length, 1);
+    assert.equal(views[0].footholdId, 'wifi_guest_wifi');
+});
+
+test('a keyed network: the probe gets wrong_key, the key minigame opens, and a right key joins', async () => {
+    await reset();
+    // The server refuses the keyless probe, then accepts the real key
+    let joined = false;
+    joinAnswer = (apId, key) => {
+        if (joined || (key && key === 'seabreeze-2025')) {
+            joined = true;
+            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+            return { success: true, foothold: wifiFoothold, inventory: [...inv, wifiLinkItem], first: false };
+        }
+        const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e;
+    };
+    const started = [];
+    window.MinigameFramework = { currentMinigame: null, mainGameScene: {}, startMinigame: (name, _b, opts) => started.push({ name, opts }) };
+    const r = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r.action, 'prompt');
+    assert.equal(started.length, 1);
+    assert.equal(started[0].opts.join.apId, 'guest_ap');
+    assert.ok(!links.get('wifi_guest_wifi'), 'no foothold yet');
+    // The minigame submits the right key through links.join
+    const r2 = await links.join('guest_ap', 'seabreeze-2025');
+    assert.equal(r2.action, 'joined');
+    assert.ok(links.get('wifi_guest_wifi'));
+});
+
+test('an access-point name containing HTML never reaches the base minigame title', async () => {
+    await reset();
+    // The server refuses the keyless probe, so the first click opens the key minigame
+    joinAnswer = () => { const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e; };
+    const started = [];
+    window.MinigameFramework = { currentMinigame: null, mainGameScene: {}, startMinigame: (name, _b, opts) => started.push({ name, opts }) };
+    const hostileName = 'Guest <img src=x onerror=alert(1)>';
+    const r = await links.interactWifiAp(wifiApSprite('guest_ap', hostileName));
+    assert.equal(r.action, 'prompt');
+    assert.equal(started.length, 1);
+    // params.title feeds the unescaped base-minigame HTML header, so the author access-point
+    // name must never be passed as the title. The join branch builds its own escaped header
+    // from join.apName instead.
+    assert.equal(started[0].opts.title, 'Join Wi-Fi');
+    assert.ok(!started[0].opts.title.includes('<'), 'no author HTML reaches params.title');
+    assert.equal(started[0].opts.join.apName, hostileName, 'the join header still receives the real name to escape');
+});
+
+test('a rapid second click on a keyed access point does not stack a second key minigame', async () => {
+    await reset();
+    // The server refuses the keyless probe, so the first click opens the key minigame
+    joinAnswer = () => { const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e; };
+    const started = [];
+    const mg = { currentMinigame: null, mainGameScene: {},
+        startMinigame: (name, _b, opts) => { started.push({ name, opts }); mg.currentMinigame = { name, _ending: false }; } };
+    window.MinigameFramework = mg;
+    const r1 = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r1.action, 'prompt');
+    assert.equal(started.length, 1);
+    // A second click while the key minigame is open is refused before any probe, so no stack
+    const r2 = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r2.action, 'busy');
+    assert.equal(started.length, 1, 'no second key minigame is opened');
+    // Once the minigame has ended, a click probes again
+    mg.currentMinigame._ending = true;
+    const r3 = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r3.action, 'prompt');
+    assert.equal(started.length, 2);
+});
+
+test('a wrong key from join resolves wrong_key with no toast and no foothold', async () => {
+    await reset();
+    joinAnswer = () => { const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e; };
+    const r = await links.join('guest_ap', 'nope');
+    assert.equal(r.action, 'wrong_key');
+    assert.equal(toasts.length, 0);
+    assert.ok(!links.get('wifi_guest_wifi'));
+});
+
+test('a second access point of a joined network answers already, emits network_joined, does not reopen the view', async () => {
+    await reset();
+    withStarters();
+    await links.interactWifiAp(wifiApSprite());
+    await settle();
+    views.length = 0;
+    joinAnswer = (apId) => {
+        const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+        return { success: true, already: true, first: false, foothold: wifiFoothold, inventory: inv };
+    };
+    const r = await links.interactWifiAp(wifiApSprite('guest_ap2', 'Guest AP (lift)'));
+    await settle();
+    assert.equal(r.action, 'already');
+    assert.equal(named('network_joined').length, 2, 'network_joined fires for the second AP too');
+    // The N9 mapping gates on this payload field; a first join must carry a falsey already
+    // and the second-AP already-join must carry already === true (see scenario N8/N9 gate).
+    assert.ok(!named('network_joined')[0].data.already, 'first join carries a falsey already');
+    assert.equal(named('network_joined')[1].data.already, true, 'second-AP already-join carries already === true');
+    assert.equal(views.length, 0, 'an already-joined network does not reopen the view');
+});
+
+test('a Wi-Fi foothold and its handle come back on load; a missing handle is rebuilt', async () => {
+    await reset();
+    links.load([wifiFoothold], ['guest_ap']);
+    assert.ok(links.get('wifi_guest_wifi'));
+    const shown = links.restoreHandles();
+    assert.equal(shown, 1);
+    const item = held('netlink_wifi_guest_wifi')[0];
+    assert.ok(item, 'the link item is rebuilt');
+    assert.equal(item.scenarioData.sprite, 'wifi_ap1');
 });
