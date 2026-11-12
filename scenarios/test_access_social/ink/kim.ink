@@ -2,9 +2,9 @@ VAR hub_quiet = false
 // Scenario globals: the habit sets u1_kim_emailed_file at her first refusal (usbHabit.setGlobal);
 // u1_kim_gave_usb is set by the stick's own onPickup once it reaches the player's tray, so only
 // a give that worked (or a pick-up after a knock-out) closes the choice, and it stays closed
-// after a reload (review R3 n5). u1_kim_asked_usb hides the choice for the rest of this
-// conversation while the give is on its way; start clears it, so a refused give can be asked for
-// again next time.
+// after a reload (review R3 n5). u1_kim_asked_usb hides the choice from the hub listed straight
+// after the give, while it is on its way; any other choice (and start, after a reload) clears it,
+// so a give the server refused can be asked for again.
 VAR u1_kim_emailed_file = false
 VAR u1_kim_gave_usb = false
 VAR u1_kim_asked_usb = false
@@ -23,6 +23,7 @@ Sorry, busy. What is it?
     Anything else?
 }
 + [How's work today?]
+    ~ u1_kim_asked_usb = false
     # speaker:npc
     Ask me again when the systems are working.
     -> hub
@@ -36,6 +37,7 @@ Sorry, busy. What is it?
     -> hub
 + [I'll let you get on.] #exit_conversation
     ~ hub_quiet = true
+    ~ u1_kim_asked_usb = false
     # speaker:npc
     Cheers.
     -> hub
