@@ -54,6 +54,7 @@ test('full-window consoles opt in to the overlaid Cancel row; no class allowlist
     const r = rule(framework, '.minigame-controls-overlay .minigame-controls');
     assert.equal(r.position, 'absolute');
     assert.ok(r.bottom);
+    assert.equal(rule(framework, '.minigame-controls-overlay .minigame-game-container')['min-height'], 'auto', 'overlay consoles keep their full game area (R2 n1)');
     for (const box of ['.siem-minigame-container', '.ehr-terminal-minigame-container',
         '.nad-minigame-container', '.backup-recovery-minigame-container']) {
         assert.equal(rules(framework, `${box} .minigame-controls`).length, 0, `${box} is no longer listed by class`);

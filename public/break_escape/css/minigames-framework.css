@@ -127,6 +127,12 @@
     margin: 0;
 }
 
+/* An overlay console's Cancel takes no room in the flow, so its game area keeps its
+   full height (code review R2 n1: the SIEM alert list showed half a row less) */
+.minigame-controls-overlay .minigame-game-container {
+    min-height: auto;
+}
+
 .minigame-button {
     background: #3498db;
     color: white;
