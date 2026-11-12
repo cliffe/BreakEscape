@@ -528,7 +528,7 @@ Three to go, and you're on the phone to me.
 === seattle_call_choices ===
 // lint: call-knot
 + [How many?]
-    You'll have the figure by morning. Better you heard it from them than from me.
+    Seattle will tell you in the morning. Better you hear it from them than from me.
     -> seattle_close
 + [This isn't over.]
     No. That's rather why I rang.
@@ -571,13 +571,16 @@ voice: Let it hurt afterwards, not during. I expect you've been told that.
 // M6: an opener in his voice; the "which two are left" alternatives are whole-line branches now
 // (no inline alternatives in voiced lines, 3.6), and read as speech rather than notes.
 voice: Busy. Of course. You've sent your team.
-{team_assignment == "fracture":
-    voice: You covered Washington. San Francisco and the vendors are on your clock.
-- else:
-    {team_assignment == "trojan_horse":
-        voice: You covered the pipeline. Washington and San Francisco are unanswered.
+// M6 R2: T-10 already folded this naming line in when this voicemail was held past it; skip the echo.
+{not t20_folded:
+    {team_assignment == "fracture":
+        voice: You covered Washington. San Francisco and the vendors are on your clock.
     - else:
-        voice: You covered San Francisco. Washington and the vendors stand open.
+        {team_assignment == "trojan_horse":
+            voice: You covered the pipeline. Washington and San Francisco are unanswered.
+        - else:
+            voice: You covered San Francisco. Washington and the vendors stand open.
+        }
     }
 }
 voice: Did you decide with a number, or with your stomach?
