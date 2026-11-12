@@ -498,8 +498,13 @@ export class PhoneChatMinigame extends MinigameScene {
         // (its opening was preloaded, nothing answered yet) types its lines out like a live
         // terminal rather than dumping them at once; genuine returning-visit history, and
         // every non-terminal contact, still draws instantly (see addMessages).
+        // A ringer call's screen shows only what the caller says in the call: its subtitles
+        // take "the line before" from the thread, which would be the contact's preloaded
+        // opening ("Queue One here.") or an old text, never spoken on this call. The history
+        // stays in the thread; the terminal look draws a thread, so it keeps it (A2b proof).
+        const callScreenOnly = !!safeParams.ringerCall && safeParams.theme !== 'terminal';
         if (history.length > 0) {
-            this.ui.addMessages(history, { typeTerminalOpening: wasPreloadedFirstOpen });
+            if (!callScreenOnly) this.ui.addMessages(history, { typeTerminalOpening: wasPreloadedFirstOpen });
             // Mark messages as read, and update the HUD badge now rather than on close
             this.history.markAllRead();
             if (window.updatePhoneBadge && this.phoneId) window.updatePhoneBadge(this.phoneId);
@@ -700,7 +705,7 @@ export class PhoneChatMinigame extends MinigameScene {
         } else if (result.hasEnded) {
             console.log('🏁 Story has ended');
             if (this._finishPretextCall()) return;
-            this.ui.showNotification('Conversation ended', 'info');
+            this._notifyConversationEnded();
             this.isConversationActive = false;
             this._releaseForcedCall();
         } else {
@@ -824,7 +829,7 @@ export class PhoneChatMinigame extends MinigameScene {
         if (lastResult.hasEnded && accumulatedMessages.length === 0) {
             console.log('🏁 Conversation ended');
             if (this._finishPretextCall()) return;
-            this.ui.showNotification('Conversation ended', 'info');
+            this._notifyConversationEnded();
             this.isConversationActive = false;
             this._releaseForcedCall();
             return;
@@ -1260,7 +1265,7 @@ export class PhoneChatMinigame extends MinigameScene {
         if (lastResult.hasEnded) {
             console.log('🏁 Conversation ended');
             if (this._finishPretextCall()) return;
-            this.ui.showNotification('Conversation ended', 'info');
+            this._notifyConversationEnded();
             this.isConversationActive = false;
             this._releaseForcedCall();
             return;
@@ -1280,6 +1285,15 @@ export class PhoneChatMinigame extends MinigameScene {
         this.saveStoryState();
     }
     
+    /**
+     * "Conversation ended" toast at a story's end. A ringer call closes by itself a moment
+     * later, and the toast draws unstyled outside the call screen, so it is skipped there.
+     */
+    _notifyConversationEnded() {
+        if (this.params?.ringerCall) return;
+        this.ui.showNotification('Conversation ended', 'info');
+    }
+
     /**
      * A forced call (disableClose) whose story ended without #exit_conversation has no
      * way out: no x, no Close, no Esc, no back arrow. Close it for the player once the

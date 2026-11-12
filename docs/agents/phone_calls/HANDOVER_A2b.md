@@ -1,5 +1,7 @@
 # Handover: A2b (wiring and the banner, phone closed)
 
+**Implementer 2 (2026-11-12): live proof done, see `proofs/A2b/README.md`.** Suites: Rails TTS/ink 196 runs 0 failures; JS full suite re-run after the fixes. Lab SE Dev proof identical to A0/A1. Fixed: ringer call screen no longer draws thread history (preloaded opening showed as a subtitle), no "Conversation ended" toast on ringer calls, queue test stub. Not done live: guard dropped challenge (no guard NPC in `test_phone_calls`, unit-covered), m09/m10 breach regression routes, Ruth thread screenshot. The open list below is now items 5 to 7 only; items 1 to 4 are done. Tool: `tools/phone_calls/routes/a2b_lib.sh`.
+
 Branch `build/phone-calls`. Stopped at the call/context budget with the live proof partly done.
 
 ## Done (commits)

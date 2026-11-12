@@ -249,3 +249,23 @@ test('wiring: a ringer call has no Cancel and no Add to Notepad; the x is End ca
     assert.match(s, /closeBtn\.cloneNode\(true\);\s*\/\/ drops the base complete\(false\) listener/);
     assert.match(readFileSync(join(here, '../../public/break_escape/js/minigames/phone-chat/phone-ringer-dom.js'), 'utf8'), /showCancel: false/);
 });
+
+// ---- A2b live proof findings ----------------------------------------------------------------
+
+test('"Conversation ended" toast: skipped on a ringer call, shown on a plain thread', () => {
+    for (const [ringer, expected] of [[true, 0], [false, 1]]) {
+        const { inst } = make({ ringer });
+        const shown = [];
+        inst.ui.showNotification = (m) => shown.push(m);
+        inst._notifyConversationEnded();
+        assert.equal(shown.length, expected, `ringer=${ringer}`);
+    }
+    const s = readFileSync(join(chat, 'phone-chat-minigame.js'), 'utf8');
+    assert.equal((s.match(/showNotification\('Conversation ended'/g) || []).length, 1, 'only the helper raises it');
+});
+
+test('wiring: a ringer call screen does not draw the thread history (the preloaded opening showed as a spoken line)', () => {
+    const s = readFileSync(join(chat, 'phone-chat-minigame.js'), 'utf8');
+    assert.match(s, /const callScreenOnly = !!safeParams\.ringerCall && safeParams\.theme !== 'terminal';/);
+    assert.match(s, /if \(!callScreenOnly\) this\.ui\.addMessages\(history, \{ typeTerminalOpening: wasPreloadedFirstOpen \}\);/);
+});
