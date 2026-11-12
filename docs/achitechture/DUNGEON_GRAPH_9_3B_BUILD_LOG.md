@@ -71,3 +71,39 @@ server network now sits below the office LAN, and its pivots come down through t
 above. n3 (layout) is improved by the gates and the dashed link. One reverse pivot remains: the file
 server's gate back to the office LAN, which the server allows. n4: the sweep shows that nothing
 else changed, but it does not show the drawing is correct. The fixtures do that.
+
+## Review R2
+
+`DUNGEON_GRAPH_9_3B_CODE_REVIEW_R2.md`, fixed in commit d4c7abb9d.
+
+- **M1**: an access-listed file share (not listed only) is reached from an admitted account's
+  sign-in when a host on any network in the share's link component admits that account, as
+  `mapped_shares` walks `networks_reachable_from` with no pivot or foothold. Other access-listed
+  resources keep the own-network rule, and an open share still hangs only from its own network.
+  The legend line now reads "crossed by a pivot, or by a signed-in desktop mapping an
+  access-listed share".
+- **M2**: every output is scrubbed at write time (`scrub_wifi_keys`): each key, in its plain,
+  HTML-escaped, JSON-escaped, JS-template and node-id forms, becomes `WIFI_KEY_HIDDEN`, a token
+  valid both in a Mermaid id and in a label. `safe_text` still keeps readable labels.
+- **m1**: text files in a resource's contents are key sources, hung from `resource_<id>`.
+  `NpcHabits::Clues.readable_texts` itself does not walk resources, so the validator's "key
+  appears nowhere the player can read" warning can still fire falsely: that is for the
+  validator owner.
+- **m2**: items an NPC holds are indexed at any depth, and the NPC (by id, then by path) is
+  checked before the room branch.
+- **m3**: tests for the reverse pivot and for a share reached across a link.
+- **n1**: a jack seeds pivots only when a rogue device exists. **n2**: an access point hangs
+  from its own or its container's lock, as an implant's prop does.
+- **n3** left: one label pair (`session at PC` and `at Door controller USB port`) still overlaps
+  beside Store. Both edges enter the same implant node from nearby sources, and edge order does
+  not steer Mermaid's label placement. **n4** left, as the review advised.
+
+Suites: Rails 1796 runs, 0 failures, 0 errors (1 skip); JS 507 of 507 files pass.
+
+Tests: 35 in `dungeon-graph-networks.test.mjs`, all passing (7 new: reverse pivot, jack with no
+device, share across a link, nested NPC item, key in a share, access point in a locked
+container, the key scrubbed from an NPC name, a container name and an objective and task title).
+Sweep: all 176 scenarios generated with `main`'s script and this one. Only
+`test_access_networks` differs. Against its graph from the previous commit, only the legend
+line changed. Render: 47 nodes, no overlapping
+node boxes, no Mermaid error.
