@@ -154,11 +154,17 @@ module BreakEscape
     def self.voiced_phone_call?(npc)
       return true if npc['voiced'] == true
       timed = npc['timedConversation']
-      return true if timed.is_a?(Hash) && timed['voiced'] == true && !video_call_timed?(timed)
+      return true if timed.is_a?(Hash) && (timed['voiced'] == true || ring?(timed)) && !video_call_timed?(timed)
 
       Array(npc['eventMappings']).any? do |m|
-        m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat'
+        m.is_a?(Hash) && (m['voiced'] == true || ring?(m)) && m['conversationMode'] == 'phone-chat'
       end
+    end
+
+    # `ring` (an incoming call that rings, plan 3.1) implies voiced: true, whether it is
+    # written as true or as an object. Absent, null and false are not a ring.
+    def self.ring?(config)
+      config.is_a?(Hash) && !config['ring'].nil? && config['ring'] != false
     end
 
     # npc-manager.js: an event mapping with conversationMode "video-call" opens
@@ -214,11 +220,11 @@ module BreakEscape
       knots = []
       knots << knot_name(npc['currentKnot'] || 'start') if npc['voiced'] == true
       timed = npc['timedConversation']
-      if timed.is_a?(Hash) && timed['voiced'] == true && timed['targetKnot'] && !video_call_timed?(timed)
+      if timed.is_a?(Hash) && (timed['voiced'] == true || ring?(timed)) && timed['targetKnot'] && !video_call_timed?(timed)
         knots << knot_name(timed['targetKnot'])
       end
       Array(npc['eventMappings']).each do |m|
-        next unless m.is_a?(Hash) && m['voiced'] == true && m['conversationMode'] == 'phone-chat'
+        next unless m.is_a?(Hash) && (m['voiced'] == true || ring?(m)) && m['conversationMode'] == 'phone-chat'
 
         target = m['targetKnot'] || m['knot']
         knots << knot_name(target) if target

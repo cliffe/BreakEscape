@@ -202,7 +202,7 @@ class SoundManager {
         else if (soundName.includes('lockpick') || soundName.includes('chair') || soundName.includes('wilhelm') || soundName.includes('body_fall') || soundName.includes('hit_impact') || soundName.includes('punch_swipe') || soundName.includes('grunt_')) category = 'effects';
         else if (soundName.includes('keypad_beep') || soundName.includes('card_scan')) category = 'interactions';
         else if (soundName.includes('item_interact') || soundName.includes('lock_interact') || soundName.includes('door_knock')) category = 'interactions';
-        else if (soundName.includes('message_received') || soundName.includes('phone_vibrate') || soundName.includes('message_sent')) category = 'notifications';
+        else if (soundName.includes('message_received') || soundName.includes('phone_vibrate') || soundName.includes('phone_ringtone') || soundName.includes('message_sent')) category = 'notifications';
         else if (soundName.includes('page_turn')) category = 'interactions';
 
         return this.volumeSettings[category] * this.masterVolume;

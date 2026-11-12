@@ -22,6 +22,7 @@ import NPCEventDispatcher from './systems/npc-events.js';
 import NPCManager from './systems/npc-manager.js';
 import NPCBarkSystem from './systems/npc-barks.js';
 import NPCLazyLoader from './systems/npc-lazy-loader.js';
+import { installPhoneRinger } from './minigames/phone-chat/phone-ringer-dom.js';
 import './systems/npc-game-bridge.js'; // Bridge for NPCs to influence game state
 
 // Import Objectives System
@@ -135,6 +136,8 @@ function initializeGame() {
     }
     window.barkSystem = new NPCBarkSystem();
     window.npcManager = new NPCManager(window.eventDispatcher, window.barkSystem);
+    // Incoming phone calls: the ringer and its banner (phone calls plan 2.2)
+    installPhoneRinger(window);
     window.npcLazyLoader = new NPCLazyLoader(window.npcManager);
     console.log('✅ NPC lazy loader initialized');
     

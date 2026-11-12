@@ -363,6 +363,8 @@ export default class NPCManager {
         disableClose: entry.timedConversation.disableClose === true,
         voiced: entry.timedConversation.voiced === true,
         callLabel: entry.timedConversation.callLabel || null,
+        // An incoming call that rings (plan 3.1); not for a video call
+        ring: entry.timedConversation.ring || null,
         // A video call, as an event mapping's conversationMode "video-call" opens one
         videoCall: entry.timedConversation.videoCall === true || entry.timedConversation.conversationMode === 'video-call',
         videoLabel: entry.timedConversation.videoLabel || null,
@@ -643,7 +645,8 @@ export default class NPCManager {
     if (pending.has(check.eventKey)) return;
 
     const fire = () => {
-      if (window.MinigameFramework?.currentMinigame) {
+      // A ring mapping does not wait for the minigame to close: the ringer's table decides (2.9).
+      if (!config.ring && window.MinigameFramework?.currentMinigame) {
         pending.set(check.eventKey, setTimeout(fire, NPCManager.DELAYED_MAPPING_RETRY_MS));
         return;
       }
@@ -738,8 +741,13 @@ export default class NPCManager {
     });
   }
 
-  /** True while a scripted conversation is starting, or is the open minigame. */
-  _scriptedCallBusy() {
+  /**
+   * True while a scripted conversation is starting, or is the open minigame. Clears a stale
+   * record: `_scriptedCall` is left pointing at a closed minigame after every scripted scene.
+   * The ringer's ringBlocked() and openBlocked() ask this, never `_scriptedCall` and never
+   * _scriptedCallBusy() (phone calls plan 2.2).
+   */
+  scriptedConversationActive() {
     const current = this._scriptedCall;
     if (!current) return false;
     if (!current.minigame) return true;   // inside the start delay
@@ -747,6 +755,11 @@ export default class NPCManager {
     if (open === current.minigame && !open._ending) return true;
     this._scriptedCall = null;
     return false;
+  }
+
+  /** The busy rule: a ringer call that is connected or opening, or a scripted conversation (plan 2.9). */
+  _scriptedCallBusy() {
+    return !!window.phoneRinger?.callActive?.() || this.scriptedConversationActive();
   }
 
   _openScriptedConversation(conv) {
@@ -887,6 +900,7 @@ export default class NPCManager {
         resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
         voiced:        mapping.voiced === true,         // phone-chat: speak the NPC's lines through TTS (F17)
         callLabel:     mapping.callLabel     || null,   // phone-chat voiced call: caption under the caller's name
+        ring:          mapping.ring          || null,   // phone-chat: an incoming call that rings (plan 3.1)
         videoLabel:    mapping.videoLabel    || null,   // ENG-07 (video-call): meeting-tool label (default SECURE VIDEO LINK)
         participantTag: mapping.participantTag || null, // ENG-07 (video-call): participant tag (e.g. External)
         background:    mapping.background    || null,    // optional background image path
@@ -1058,9 +1072,13 @@ export default class NPCManager {
     // A handler that opens a minigame is saved once that minigame closes normally (below), the
     // same way a conversation is, so a reload mid-exercise lets it fire again.
     const opensMinigame = !!config.openMinigame && !opensConversation;
-    if ((config.once || config.maxTriggers) && !opensConversation && !opensMinigame) triggered.persist = true;
+    // A ring mapping's trigger is saved when the call is offered, not when it closes: from
+    // then the beat lives in the ringer (plan 2.7). This is the one place a trigger is persisted.
+    const isRing = !!config.ring && config.conversationMode === 'phone-chat' && npc.npcType === 'phone'
+      && typeof window.phoneRinger?.offer === 'function';
+    if ((config.once || config.maxTriggers) && ((!opensConversation && !opensMinigame) || isRing)) triggered.persist = true;
     this.triggeredEvents.set(eventKey, triggered);
-    const persistOnClose = (config.once || config.maxTriggers) && opensConversation
+    const persistOnClose = (config.once || config.maxTriggers) && opensConversation && !isRing
       ? () => this._persistTriggerOnClose(npcId, eventKey)
       : () => {};
     
@@ -1499,6 +1517,22 @@ export default class NPCManager {
       if (window.MinigameFramework) {
         const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
 
+        if (isRing) {
+          // A ringing call: the ringer's table decides when it rings, queues or replaces it.
+          // dropped / refused are handled (trigger already persisted); nothing falls through to
+          // _queueScriptedPhoneCall (A2a_NOTES, A2b contract).
+          const outcome = window.phoneRinger.offer({
+            npcId: npc.id,
+            knot: knotToUse,
+            ring: config.ring,
+            disableClose: config.disableClose || false,
+            resume: config.resume === true,
+            callLabel: config.callLabel || null
+          });
+          console.log(`[NPCManager] Event '${eventPattern}' for NPC '${npcId}' → ring offer: ${outcome}`);
+          return;
+        }
+
         // The params are built when the call opens: a call queued behind another reads
         // the NPC's saved story (resume) as it is by then
         this._queueScriptedPhoneCall({
@@ -1860,7 +1894,7 @@ export default class NPCManager {
   //     }
   //   }
   scheduleTimedConversation(opts) {
-    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose, voiced, callLabel, videoCall, videoLabel, participantTag } = opts;
+    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose, voiced, callLabel, ring, videoCall, videoLabel, participantTag } = opts;
 
     if (!npcId || !targetKnot) {
       console.error('[NPCManager] scheduleTimedConversation requires npcId and targetKnot');
@@ -1883,6 +1917,7 @@ export default class NPCManager {
       disableClose: disableClose === true, // no ×, no Esc (documented; was dropped before 2026-10-21)
       voiced: voiced === true, // phone-chat: speak the NPC's lines through TTS (F17)
       callLabel: callLabel || null, // phone-chat voiced call: caption under the caller's name
+      ring: videoCall === true ? null : (ring || null), // phone-chat: an incoming call that rings (plan 3.1)
       videoCall: videoCall === true,           // open as a person-chat video call (any npcType)
       videoLabel: videoLabel || null,          // label on the video-call bar
       participantTag: participantTag || null   // participant tag on the video-call bar
@@ -1941,6 +1976,8 @@ export default class NPCManager {
     const globals = window.gameState?.globalVariables || {};
     // A timedConversation delivered but queued behind another scene is still to come
     if (this._scriptedCallQueue.some(c => c.opening)) return true;
+    // A timed ring call still queued, ringing or held (row 30)
+    if (window.phoneRinger?.hasOpeningOffer?.()) return true;
     return this.timedConversations.some(c =>
       !c.delivered &&
       (c.delay || 0) <= withinMs &&
@@ -2086,6 +2123,22 @@ export default class NPCManager {
     // A video call is always a person-chat, whatever the NPC's type (as for an event mapping)
     const isVideo = conversation.videoCall === true;
     const isPhone = npc.npcType === 'phone' && !isVideo;
+    if (isPhone && conversation.ring && typeof window.phoneRinger?.offer === 'function') {
+      // An incoming call that rings. It is marked delivered by the caller, and its
+      // setGlobalOnStart is applied by the ringer at the first ring (plan 2.3).
+      npc.currentKnot = conversation.targetKnot;
+      const outcome = window.phoneRinger.offer({
+        npcId: conversation.npcId,
+        knot: conversation.targetKnot,
+        ring: conversation.ring,
+        disableClose: conversation.disableClose === true,
+        callLabel: conversation.callLabel || null,
+        opening: true,
+        setGlobalOnStart: conversation.setGlobalOnStart ? { [conversation.setGlobalOnStart]: true } : null
+      });
+      console.log(`[NPCManager] Timed conversation from ${conversation.npcId} → ring offer: ${outcome}`);
+      return;
+    }
     this._queueScriptedConversation({
       npcId: conversation.npcId,
       label: 'timedConversation',

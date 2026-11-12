@@ -181,6 +181,8 @@ export const MinigameFramework = {
         window.clearExpectedPanel?.();
         this.currentMinigame.init();
         this.currentMinigame.start();
+        // The ringer re-checks after this swap has finished (phone calls plan 2.9)
+        try { window.phoneRinger?.onMinigameStarted?.(sceneType, params); } catch (e) { console.error('phoneRinger start hook failed', e); }
         
         console.log(`Started minigame: ${sceneType}`);
         return this.currentMinigame;
@@ -222,6 +224,9 @@ export const MinigameFramework = {
             const ending = this.currentMinigame;
             ending._ending = true;
             console.log('Cleaning up current minigame');
+            // The end hook runs from the finally below, so a throwing cleanup or onComplete
+            // cannot skip it (phone calls plan 2.9, review R2 M2).
+            try {
             ending.cleanup();
             
             // Hide the popup overlay
@@ -302,6 +307,14 @@ export const MinigameFramework = {
                 window.barkSystem?.drainDeferredBarks?.();
             }
             console.log(`Ended minigame with success: ${success}`);
+            } finally {
+                // A parent handing over to a child does not end for the ringer's purposes (2.9).
+                // The hook gets the ending minigame: it reads params.ringerCall, _endedByCall and
+                // _callFinished off it.
+                if (ending._suspendedForChild !== true) {
+                    try { window.phoneRinger?.onMinigameEnded?.(ending); } catch (e) { console.error('phoneRinger end hook failed', e); }
+                }
+            }
         } else {
             console.log('No current minigame to end');
         }

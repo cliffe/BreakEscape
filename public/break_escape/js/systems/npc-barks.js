@@ -178,6 +178,9 @@ export default class NPCBarkSystem {
     // workstation's operations list (m04 F7). They drain the queue on close.
     if (workstationPopupOpen()) return true;
     if (window.MinigameFramework?.holdsBarks?.()) return true;
+    // A ringer call is on the line (or opening): hold every bark, so a click on another
+    // contact's toast cannot open a thread and end the call (phone calls plan 2.9).
+    if (window.phoneRinger?.callActive?.()) return true;
     // The phone keeps other contacts' barks on top, but a bark from the contact whose
     // thread is open waits until the phone closes (m04 confirmation N1). With no
     // payload (the drain's check), hold while any queued bark is from that contact.

@@ -206,7 +206,7 @@ export function otherSpeaker(text, contact, knownNames, knownIds) {
 
 /**
  * The start knots of a contact's voiced calls (F20): the targetKnot (or knot) of each
- * phone-chat eventMapping and of a timedConversation with `voiced: true` that is not a video call, as knot names, plus
+ * phone-chat eventMapping and of a timedConversation with `voiced: true` or `ring` that is not a video call, as knot names, plus
  * the contact's own knot when the contact itself has `voiced: true`.
  * Used by phone-call-voice.js (the call's knots) and the conversation's opening preload.
  * @param {Object} npc - the NPC entry
@@ -218,10 +218,12 @@ export function callStartKnots(npc) {
     // `voiced: true` on the contact: a call the player starts (a pretext call from a desk phone) opens on its home knot
     if (npc?.voiced === true) knots.add(knotOf(npc.homeKnot || npc.currentKnot || 'start'));
     const timed = npc?.timedConversation;
-    if (timed && timed.voiced === true && timed.targetKnot && timed.videoCall !== true && timed.conversationMode !== 'video-call') knots.add(knotOf(timed.targetKnot));
+    // `ring` implies voiced (plan 3.1): a ringing call's knot is a call knot with or without `voiced`
+    const rings = (v) => !!v && v.ring !== undefined && v.ring !== null && v.ring !== false;
+    if (timed && (timed.voiced === true || rings(timed)) && timed.targetKnot && timed.videoCall !== true && timed.conversationMode !== 'video-call') knots.add(knotOf(timed.targetKnot));
     for (const m of (Array.isArray(npc?.eventMappings) ? npc.eventMappings : [])) {
         const target = m && (m.targetKnot || m.knot);
-        if (m && m.voiced === true && m.conversationMode === 'phone-chat' && target) knots.add(knotOf(target));
+        if (m && (m.voiced === true || rings(m)) && m.conversationMode === 'phone-chat' && target) knots.add(knotOf(target));
     }
     return knots;
 }
