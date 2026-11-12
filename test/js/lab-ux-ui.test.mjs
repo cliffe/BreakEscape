@@ -147,7 +147,9 @@ const stubs = {
     './interaction-walls.js': dataUrl('export function interactionLineClear() { return true; }'),
     './interaction-reach.js': dataUrl(readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8')),
     './minigame-registry.js': dataUrl('export const hasMinigameStarter = () => false; export const startRegisteredMinigame = () => false;'),
-    './inventory-menu.js': inventoryMenuUrl
+    './inventory-menu.js': inventoryMenuUrl,
+    '../utils/display-dashes.js': dataUrl(readFileSync(join(js, 'utils/display-dashes.js'), 'utf8')),
+    '../utils/escape-html.js': dataUrl(readFileSync(join(js, 'utils/escape-html.js'), 'utf8'))
 };
 let src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, url] of Object.entries(stubs)) src = src.split(`'${spec}'`).join(`'${url}'`);
