@@ -147,6 +147,31 @@ Live proof, L2 (game 1468, port 3034, headless, started in `l2_room`):
 The answer came before the use ended, so this run did not hold; the hold limit (m1) is shown by
 the unit tests only. Game 1468 is left in the shared dev database.
 
+## Code review R2 fixes
+
+Review: `FEED_LOCKOUT_CODE_REVIEW_R2.md` (1 minor, 2 nits).
+
+- **m1, a lapsed borrowed hold showed a met use.** `npc-needs.js` `_completeJob`: past
+  `BORROW_CHECK_WAIT_MS` the borrowed use now fails closed, as at the station. It is skipped
+  unjudged: nothing restored, no `npc_used`, no `npc_use_failed`, no ease or feed request, and
+  `npc_borrow_done` says `met: false`; the NPC goes home. The check stays in `lockCheck`, so a late
+  answer still flags the PC and the next borrow there waits again. The `lockLapsed` job flag is gone.
+  As before for a failed borrow, `npc_borrowed_session` fires with `met: false` when the borrow
+  leaves a session open. The R1 m1 entry above ("goes ahead as if not locked out") is out of date.
+- **n1, the two clocks.** The header comment in `npc-reports.js` now says the wait is needs clock,
+  which stops while the game is paused, and that `SEND_TIMEOUT_MS` is wall time.
+- **n2, a station "no" cleared the mark for borrowers.** Fixed, small change: `noteLockout` also
+  adds the PC to a new `borrowLockoutSeen` set, and `borrowSeen` reads that set. A station "no"
+  still deletes the PC from `lockoutSeen` only, so an owner's "no" spares anyone borrowing that PC;
+  a borrower's "no" still goes into `borrowCleared`. `lockoutSeen` and the test bridge's view of it
+  are unchanged. The validators have no check on a PC that is both one NPC's sign-in `needsHome` and
+  another's `borrow_session` target, and with this fix none is needed.
+
+Tests, run alone: `npc-lockout.test.mjs` 32 pass. The changed lapse test (no `npc_used`, borrow not
+met, no failed use, no ease), the changed sync-stall test and the new n2 test fail on the old code
+(3 fail, 29 pass). The 34 JS test files that import `npc-needs.js` or `npc-reports.js`: 640 pass,
+0 fail. No Ruby code changed. No live server was started.
+
 ## Left open
 
 - q33 R2 m5 (a question for the user): one lockout counts twice for an NPC with work and a

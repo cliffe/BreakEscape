@@ -3105,15 +3105,21 @@ export class NPCNeedsSystem {
         const atStation = judged && !job.borrowed && job.targetId === this._stationId(s);
         // User decision q36: at a borrowed PC too, for the check sent as the borrower sat down.
         // Review R1 m1: the report queue can stall before it sends (a sync PUT that never
-        // settles), so the hold there lasts at most BORROW_CHECK_WAIT_MS from when it began. Past
-        // that the use goes ahead as if not locked out; the server still refuses the ease, the post
-        // and the guest record, and a late answer still flags the PC for the next use
+        // settles), so the hold there lasts at most BORROW_CHECK_WAIT_MS (needs clock) from when it
+        // began. Review R2 m1: a lapse there fails closed, as at the station. The use is skipped
+        // unjudged (nothing restored, no npc_used, no ease or feed request) and the borrow ends
+        // not met; the check stays in flight, so a late answer still flags the PC and the next
+        // borrow there waits again
         const atBorrow = judged && !!job.borrowed && (job.need === 'work' || job.need === 'social_media');
-        if (atBorrow && s.lockCheck[job.targetId] !== undefined && !job.lockLapsed) {
+        if (atBorrow && s.lockCheck[job.targetId] !== undefined) {
             if (!job.lockHeld) { job.lockHeld = true; job.lockHeldAt = this.clockMs; this._log(id, 'use_held', { target: job.targetId }); }
             if (this.clockMs - job.lockHeldAt < BORROW_CHECK_WAIT_MS) return;
-            job.lockLapsed = true;
             this._log(id, 'lock_check_lapsed', { target: job.targetId, borrowed: true });
+            this._borrowDone(s, job, false);
+            s.job = null;
+            this._clearBackoffs();
+            this._goHome(s, { stayPut: false });
+            return;
         }
         if (atStation && s.lockCheck[job.targetId] !== undefined) {
             if (this.clockMs - s.lockCheck[job.targetId] < LOCK_CHECK_WAIT_MS) {

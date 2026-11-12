@@ -254,23 +254,27 @@ test('q36: a false answer at the hot desk lets the borrowed use be met', () => {
     assert.equal(sys.isLockedOut('dana', 'hot_desk'), false);
 });
 
-test('R1 m1: a hold at the hot desk lasts BORROW_CHECK_WAIT_MS, then the use goes ahead as if not locked out', () => {
-    const { sys, evs, log } = borrowing();
+test('R1 m1, R2 m1: a hold at the hot desk lasts BORROW_CHECK_WAIT_MS, then the use is skipped unjudged', () => {
+    const { sys, evs, log, reports } = borrowing();
+    const before = reports.length;
+    const failedBefore = evs('npc_use_failed:dana').length;   // her own station's failure
     sys.lockCheckSent('dana', 'hot_desk');
     sys.step(5000 + BORROW_CHECK_WAIT_MS - 1000);   // the use ends at 5 s and is held since
     assert.equal(sys.getState('dana').job?.phase, 'using', 'held inside the limit');
     assert.equal(evs('npc_borrow_done:dana').length, 0);
     assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 3000), 'the hold ends with no answer');
-    assert.equal(evs('npc_borrow_done:dana')[0].data.met, true);
-    assert.equal(evs('npc_used:hot_desk')[0].data.met, true);
+    assert.equal(evs('npc_borrow_done:dana')[0].data.met, false, 'a lapse never shows a met use');
+    assert.equal(evs('npc_used:hot_desk').length, 0, 'no npc_used, nothing restored');
+    assert.equal(evs('npc_use_failed:dana').length, failedBefore, 'unjudged: not a failed use either');
+    assert.equal(reports.slice(before).filter(r => r.event === 'ease').length, 0, 'no ease is sent');
     assert.ok(log('lock_check_lapsed').some(e => e.target === 'hot_desk' && e.borrowed === true));
-    // a late answer still counts, for the next use there
+    // the check stays in flight, and a late answer still counts, for the next use there
     sys.applyFrustration(checkAnswer(true, 'hot_desk'));
     sys.step(250);
     assert.equal(sys.isLockedOut('dana', 'hot_desk'), true);
 });
 
-test('R1 m1: a sync PUT that never settles stalls the check, and the borrowed use goes ahead after the limit', async () => {
+test('R1 m1, R2 m1: a sync PUT that never settles stalls the check, and the borrowed use is skipped after the limit', async () => {
     const out = lockWorld({ objects: [...baseObjects(), HOT_DESK] });
     const { sys, evs, w } = out;
     let now = 0;
@@ -311,7 +315,8 @@ test('R1 m1: a sync PUT that never settles stalls the check, and the borrowed us
     assert.equal(syncs, 1, 'the flush is stuck in its sync');
     assert.equal(sends, 0, 'so the check is never sent or answered');
     assert.equal(evs('npc_borrow_done:dana').length, 1, 'the borrowed use did not hang');
-    assert.equal(evs('npc_borrow_done:dana')[0].data.met, true, 'it went ahead as if not locked out');
+    assert.equal(evs('npc_borrow_done:dana')[0].data.met, false, 'skipped unjudged, never shown as met');
+    assert.equal(evs('npc_used:hot_desk').length, 0);
     assert.equal(sys.isLockedOut('dana', 'hot_desk'), false);
 });
 
@@ -346,6 +351,18 @@ test('R1 m2: two borrowers at one hot desk: the first one\'s "no" does not clear
     // a new lockout answer there asks amy again
     r.noteLockout('hot_desk');
     assert.equal(r.borrowSeen('hot_desk', 'amy'), true);
+});
+
+test('R2 n2: an owner\'s station "no" at a PC does not clear the mark for a borrower of that PC', async () => {
+    const { r, sent, advance } = harness({ answerFor: x => ({ npcId: x.npc_id, lockedOut: x.npc_id === 'ben' }) });
+    r.noteLockout('dana_pc');   // the player locked out ben's username at dana's PC
+    assert.equal(r.onOwnerReturned(RETURN), true);
+    await advance(2500);
+    assert.equal(r.lockoutSeen.has('dana_pc'), false, 'dana is not asked again at her station');
+    assert.equal(r.borrowSeen('dana_pc', 'ben'), true, 'her no spares the borrower');
+    assert.equal(r.onBorrowSat({ npcId: 'ben', objectId: 'dana_pc' }), true, 'ben still checks');
+    await advance(2500);
+    assert.deepEqual(sent.flat().map(x => [x.npc_id, x.object_id]), [['dana', 'dana_pc'], ['ben', 'dana_pc']]);
 });
 
 test('q36: onBorrowSat queues a check at the hot desk once a lockout answer was seen there', async () => {

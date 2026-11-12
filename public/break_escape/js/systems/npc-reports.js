@@ -19,8 +19,9 @@
  *   adds a borrow path: on `npc_sat_at:<pcId>` (a borrower sitting down at a hot desk) a check is
  *   sent under the same policy and lockout-answer tests, with no locked return and no needsHome
  *   test; a borrower's "no" there clears the mark for that borrower only (R1 m2), and its use
- *   waits at most BORROW_CHECK_WAIT_MS for the answer (R1 m1, npc-needs.js), since the sync
- *   before a send has no time limit. So a mission with no lockout sends no check at all. Every
+ *   waits at most BORROW_CHECK_WAIT_MS of needs clock (which stops while the game is paused;
+ *   SEND_TIMEOUT_MS is wall time) for the answer, then is skipped unjudged (R1 m1, R2 m1,
+ *   npc-needs.js), since the sync before a send has no time limit. So a mission with no lockout sends no check at all. Every
  *   check gets an answer for the needs system (refused
  *   or lost: lockedOut false, after one resend of a lost request), which ends the hold on the
  *   owner's first use there. A send that has not settled after SEND_TIMEOUT_MS is aborted and
@@ -60,6 +61,9 @@ export class NpcReports {
         this.seq = 0;
         this.lastEase = new Map();   // npcId -> seq of the last queued ease (R1 m6)
         this.lockoutSeen = new Set(); // PCs where this browser had a lockout answer (9.2 L)
+        // Review R2 n2: the same PCs for the borrow path. A station "no" clears lockoutSeen only,
+        // so an owner's "no" at a PC that is also someone's borrow target spares the borrowers
+        this.borrowLockoutSeen = new Set();
         this.lockoutCount = new Map(); // pcId -> lockout answers noted there (R1 m1)
         // Review R1 m2 (q36): a hot desk is shared, so a borrower's "no" there clears the mark for
         // that borrower only: `${pcId}|${npcId}` -> the lockoutCount at that PC when it said no
@@ -71,6 +75,7 @@ export class NpcReports {
     noteLockout(pcId) {
         if (typeof pcId !== 'string' || !pcId) return;
         this.lockoutSeen.add(pcId);
+        this.borrowLockoutSeen.add(pcId);
         this.lockoutCount.set(pcId, (this.lockoutCount.get(pcId) || 0) + 1);
     }
 
@@ -121,7 +126,7 @@ export class NpcReports {
 
     /** R1 m2: a lockout answer was seen at this PC and this borrower's check has not said no since. */
     borrowSeen(pcId, npcId) {
-        if (!this.lockoutSeen.has(pcId)) return false;
+        if (!this.borrowLockoutSeen.has(pcId)) return false;
         const at = this.borrowCleared.get(`${pcId}|${npcId}`);
         return at === undefined || at !== (this.lockoutCount.get(pcId) || 0);
     }
@@ -245,7 +250,7 @@ export class NpcReports {
                 // Review R1 m1: the server said no, and no lockout answer came at that PC since
                 // the check was queued, so the mark goes (a refused or lost answer keeps it).
                 // At a station the "no" clears the mark per PC (q33 R2 n1: no two owners share a
-                // sign-in needsHome). A borrow check's "no" clears it for that borrower only (R1 m2),
+                // sign-in needsHome), for station checks only (R2 n2). A borrow check's "no" clears it for that borrower only (R1 m2),
                 // since a hot desk is shared and another borrower may be the one locked out there
                 const a = answers[i];
                 if (a && a.npcId === r.npc_id && a.lockedOut === false && !a.refused
