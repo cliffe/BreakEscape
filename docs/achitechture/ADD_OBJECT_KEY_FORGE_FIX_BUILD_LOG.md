@@ -94,8 +94,15 @@ token from the real game page):
 
 ## Results
 
-- Rails suite: PENDING (filled in on commit).
-- JS suite: PENDING.
+- Full `bin/rails test` (under the shared lock): 1801 runs, 25607 assertions,
+  0 failures, 0 errors, 1 skip.
+- Full `bin/test-js -j 3` (under the shared lock): 507 files passed, 0 failed.
+- New `add_object_key_forge_test.rb`: 5 runs, 0 failures.
+- Live proof on :3044: forged key refused (422 Invalid attempt), real key opens
+  the door (200).
+
+Commit `54f722db6` carries the fix, test and this log; the Results numbers above
+were added as a follow-up commit.
 
 ## Open / left undone
 
