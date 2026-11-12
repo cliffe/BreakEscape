@@ -150,10 +150,28 @@ module BreakEscape
 
       habit = owner.is_a?(Hash) ? owner['screenHabit'] : nil
       return true unless habit.is_a?(Hash)
-      return false if habit['lockIfAwayOverSeconds'].is_a?(Numeric)
+      # decideLocked: a trip expected to last at most lockIfAwayOverSeconds stays open, the value
+      # read with Number() (so "20" counts). Owner claim q78: a negative threshold can never be
+      # met (an expected absence is never below 0), so lockChance alone decides there.
+      over = js_number(habit['lockIfAwayOverSeconds']) if habit.key?('lockIfAwayOverSeconds')
+      return false if over&.finite? && over >= 0
       return habit['lockChance'] >= 1 if habit['lockChance'].is_a?(Numeric)
 
       true
+    end
+
+    # JavaScript's Number(x) for a JSON value: nil, "" and false are 0, true is 1, a numeric
+    # string its number; anything else NaN.
+    def js_number(value)
+      case value
+      when Numeric then value.to_f
+      when nil, false then 0.0
+      when true then 1.0
+      when String
+        s = value.strip
+        s.empty? ? 0.0 : Float(s, exception: false) || Float::NAN
+      else Float::NAN
+      end
     end
 
     def sign_in_pcs(scenario)

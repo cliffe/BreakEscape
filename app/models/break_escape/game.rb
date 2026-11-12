@@ -1643,7 +1643,7 @@ module BreakEscape
       record_login_failure!(pc, key, account: !npc.nil?)
     end
 
-    # POST /login with claim: "owner" (section 6, claim checks 1 to 7). Every refusal
+    # POST /login with claim: "owner" (section 6, claim checks 1 to 9). Every refusal
     # answers "Sign in required"; the client then shows the sign-in screen. The
     # workstation globals the client sends are logged, not trusted.
     def claim_login_session!(pc_id, globals = nil, foothold: nil)
@@ -1676,6 +1676,10 @@ module BreakEscape
 
       auto_lock = effective_policy(pc)['autoLockMin']
       return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
+      # Owner claim q78: honest play never leaves this session open when nothing ever sends the
+      # owner away from the post (no need source, interest, errand, phone or failure route, and
+      # no knock-out). Decided from scenario data alone (OwnerClaim.leave_route).
+      return refusal.call('the owner never leaves the post') if BreakEscape::OwnerClaim.never_leaves?(scenario_data, owner)
 
       Rails.logger.info "[BreakEscape] login claim at #{pc['id']} for #{owner['id']}; client globals: #{globals.inspect}"
       start_login_session!(pc['id'], owner, 'claim')

@@ -31,6 +31,7 @@ require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative 'validate_npc_habits'
 require_relative '../lib/break_escape/access_work'
+require_relative '../lib/break_escape/owner_claim'
 require_relative 'validate_access_work'
 
 # Try to load json-schema gem, provide helpful error if missing
@@ -6469,9 +6470,15 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
           warn.call("#{where} has lockChance #{lock_chance}: whether its owner's session is left open depends on a " \
                     'seeded roll. Fix the chance at 0 or 1, or make sure another route exists.')
         end
-        unless ai.needs_tracked?(owner[:npc])
+        if !ai.needs_tracked?(owner[:npc])
           warn.call("#{where} is owned by '#{owner_id}', who has no valid needs or interests entry, so the owner " \
                     'never leaves and no unlocked session is possible there.')
+        elsif BreakEscape::OwnerClaim.never_leaves?(json_data, owner[:npc])
+          # Owner claim q78: the server refuses a claim here too
+          warn.call("#{where} is owned by '#{owner_id}', whom nothing sends away from the post: no need is met " \
+                    'anywhere else they may go, no interest has an item and a place for it, no errand, phone or ' \
+                    'failure route, and nobody can knock them out (disableAttacks or koImmune). The screen is ' \
+                    'never left open, so no unlocked session is possible there and the server refuses a claim.')
         end
       end
     end
