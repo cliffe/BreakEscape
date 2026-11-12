@@ -148,6 +148,11 @@ module BreakEscape
       assert server, 'server_net is still named (the player learned it by signing in)'
       assert_equal 'down', server['route']
       assert_includes server['hosts'].map { |h| h['id'] }, 'sv_fs02'
+      # A down block advertises no action the server would refuse (review O R2 nit 1)
+      server['hosts'].each do |h|
+        refute h.key?('remoteSignIn'), "a down-block row offers no sign-in (#{h['id']})"
+        refute h.key?('session'), "a down-block row offers no session (#{h['id']})"
+      end
 
       # Its desktop is refused while down, with no state change.
       container('sv_fs02', foothold: OFFICE)
@@ -159,6 +164,58 @@ module BreakEscape
       body = container('sv_fs02', foothold: OFFICE)
       assert_response :success, body.inspect
       assert state['sessions'].key?('sv_fs02')
+    end
+
+    # ---- A reload during an outage keeps a remote session (review O R2 MIN-1, plan 8) ----
+
+    test 'a reload during an outage keeps a remote session over the downed route, and it reopens on repair' do
+      # A claimed session elsewhere, so the reload's end_claimed_sessions! really runs its prune
+      build_network_game({ 'sessions' => { 'kiosk_pc' => { 'id' => 'sam', 'via' => 'claim' } } }, NS.with_outage(down: false))
+      take_drop_box
+      plant('comms_port')
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: OFFICE)
+      assert state['sessions'].key?('sv_fs02')
+
+      set_global(NS::OUTAGE_GLOBAL, true)
+      bootstrap_scenario # the reload path (GET /scenario calls end_claimed_sessions!)
+      assert_response :success
+      sessions = state['sessions']
+      refute sessions.key?('kiosk_pc'), 'the reload ended the claim, so the prune ran'
+      assert sessions.key?('sv_fs02'), 'an outage never prunes: the remote session survives the reload'
+      assert sessions.key?('lena_pc'), 'and so does its pivot'
+      container('sv_fs02', foothold: OFFICE)
+      assert_response :forbidden, 'its desktop is refused while the route is down'
+
+      set_global(NS::OUTAGE_GLOBAL, false)
+      body = container('sv_fs02', foothold: OFFICE)
+      assert_response :success, body.inspect
+    end
+
+    # ---- The memoised reach walk (review O R2 nit 2) --------------------------------------
+
+    test 'the memoised reach walk follows a change of outage global, session or foothold in one game object' do
+      with_outage_foothold(down: false)
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      @game.reload
+      assert_includes @game.player_reach(OFFICE), 'server_net'
+      walks = 0
+      @game.define_singleton_method(:reach_walk_uncached) { |*a, **k| walks += 1; super(*a, **k) }
+      @game.instance_variable_set(:@reach_cache, nil)
+      3.times { @game.player_reach(OFFICE) }
+      assert_equal 1, walks, 'a repeat ask with the same inputs does not walk again'
+      @game.player_reach(OFFICE).add('ghost_net')
+      refute_includes @game.player_reach(OFFICE), 'ghost_net', 'a caller cannot alter the cached set'
+
+      @game.player_state['globalVariables'][NS::OUTAGE_GLOBAL] = true
+      refute_includes @game.player_reach(OFFICE), 'server_net', 'an outage global change misses the cache'
+      @game.player_state['globalVariables'][NS::OUTAGE_GLOBAL] = false
+      assert_includes @game.player_reach(OFFICE), 'server_net'
+
+      @game.player_state['sessions'] = @game.player_state['sessions'].except('lena_pc')
+      refute_includes @game.player_reach(OFFICE), 'server_net', 'a session change misses the cache'
+      @game.player_state['footholds'] = {}
+      assert_empty @game.player_reach(OFFICE), 'a foothold change misses the cache'
     end
 
     # ---- The scoped-request route test, judged from the server's own session record ------

@@ -4,8 +4,8 @@ require_relative '../../support/access_work_scenario'
 module BreakEscape
   # Access model slice 9.2 C2 (ACCESS_MODEL_SLICE_9_2_C2_PLAN.md sections 3 and 9): the one-copy
   # guarantee. AccessWork.cause_holds? and AccessWork.globals_hold? must give the same answer as
-  # the NpcFrustration instance wrappers (frustration_cause_holds?, frustration_globals_hold?)
-  # over the same player_state and scenario, so the frustration path and the feed route cannot
+  # the NpcFrustration instance wrapper (frustration_cause_holds?; the globals one was removed in
+  # the C2 R2 tidy, so globals_hold? is checked over the game's merged globals) over the same player_state and scenario, so the frustration path and the feed route cannot
   # drift. Includes the locked_out pre-gating case: a loginLockouts key with no check record
   # reads false from both, and true from both once the check record exists.
   class AccessHelperEqualityTest < ActiveSupport::TestCase
@@ -60,13 +60,13 @@ module BreakEscape
       assert_equal false, w
     end
 
-    test 'globals_hold? equals the wrapper for a string and a hash condition, truthy and falsey' do
+    # C2 R2 MIN-1: the instance wrapper had no production caller and is gone; the pure helper is
+    # read here over the game's own merged globals (the parity point the frustration path uses)
+    test 'globals_hold? over the merged globals for a string and a hash condition, truthy and falsey' do
       build(globals: { 'finance_share_down' => true })
-      ['finance_share_down', { 'finance_share_down' => true }, { 'printer_jammed' => false },
-       'printer_jammed', { 'finance_share_down' => false }].each do |cond|
-        wrapper = @game.send(:frustration_globals_hold?, cond)
-        pure = AW.globals_hold?(cond, @game.send(:frustration_globals))
-        assert_equal wrapper, pure, "globals cond #{cond.inspect}"
+      { 'finance_share_down' => true, { 'finance_share_down' => true } => true, { 'printer_jammed' => false } => true,
+        'printer_jammed' => false, { 'finance_share_down' => false } => false }.each do |cond, want|
+        assert_equal want, AW.globals_hold?(cond, @game.send(:frustration_globals)), "globals cond #{cond.inspect}"
       end
     end
 

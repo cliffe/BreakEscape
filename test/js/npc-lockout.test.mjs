@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { NpcReports, shouldCheckLockout, installNpcReports, SEND_TIMEOUT_MS } from '../../public/break_escape/js/systems/npc-reports.js';
-import { LOCK_CHECK_WAIT_MS } from '../../public/break_escape/js/systems/npc-needs.js';
+import { LOCK_CHECK_WAIT_MS, BORROW_CHECK_WAIT_MS } from '../../public/break_escape/js/systems/npc-needs.js';
 import { WorkstationState } from '../../public/break_escape/js/systems/workstation-state.js';
 import { workWorld, baseObjects, dana } from './fixtures/needs-work-world.mjs';
 
@@ -197,6 +197,190 @@ test('the flag fails uses of that PC and not of another: a borrowed hot desk is 
     assert.equal(sys.isLockedOut('dana', 'hot_desk'), false);
 });
 
+// ── user decision q36: a lockout at a borrowed hot desk ─────────────────
+
+const HOT_DESK = { id: 'hot_desk', x: 400, y: 68, desk: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 5 } };
+const BORROW = { index: 0, hand: 1, do: 'borrow_session', pc: 'hot_desk', need: 'work', dwell: 2 };
+
+/** Dana, locked out at her own PC, borrows the hot desk; returns once she sits down there. */
+function borrowing() {
+    const out = lockWorld({ objects: [...baseObjects(), HOT_DESK] });
+    const { sys, evs } = out;
+    sys.registerAll();
+    sys.lockCheckSent('dana', 'dana_pc');
+    sys.applyFrustration(checkAnswer(true));
+    assert.ok(stepUntil(sys, () => evs('npc_need_parked:dana').length > 0, 30000));
+    assert.equal(sys.setBorrow('dana', BORROW), true);
+    assert.ok(stepUntil(sys, () => evs('npc_sat_at:hot_desk').length > 0, 30000));
+    return out;
+}
+
+test('q36: lockCheckSent takes the PC of a borrow in use, and no other PC', () => {
+    const { sys } = borrowing();
+    assert.equal(sys.lockCheckSent('dana', 'pc_b'), false, 'not her station and not her borrow');
+    assert.equal(sys.lockCheckSent('dana', 'hot_desk'), true);
+});
+
+test('q36: a check sent as the borrower sits holds the borrowed use; true fails it with locked_out, unreported', () => {
+    const { sys, evs, reports, log } = borrowing();
+    const failsBefore = reports.filter(r => r.event === 'fail').length;
+    assert.equal(sys.lockCheckSent('dana', 'hot_desk'), true);
+    sys.step(7000);   // past the use time, inside the hold's limit
+    assert.equal(sys.getState('dana').job?.phase, 'using', 'held at the hot desk');
+    assert.equal(evs('npc_borrow_done:dana').length, 0, 'no verdict yet');
+    assert.ok(log('use_held').some(e => e.target === 'hot_desk'));
+    sys.applyFrustration(checkAnswer(true, 'hot_desk'));
+    sys.step(500);
+    assert.equal(sys.isLockedOut('dana', 'hot_desk'), true);
+    assert.deepEqual(evs('npc_locked_out:dana').at(-1).data, { npcId: 'dana', objectId: 'hot_desk' });
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 5000));
+    assert.equal(evs('npc_borrow_done:dana')[0].data.met, false, 'her sign-in there fails');
+    assert.equal('lapsed' in evs('npc_borrow_done:dana')[0].data, false, 'a judged failure is not marked lapsed');
+    assert.equal('lapsed' in evs('npc_borrowed_session:hot_desk')[0].data, false);
+    assert.equal(evs('npc_used:hot_desk').length, 0, 'no met use, nothing restored');
+    const failed = evs('npc_use_failed:dana').at(-1).data;
+    assert.equal(failed.objectId, 'hot_desk');
+    assert.deepEqual(failed.missing[0], { id: 'hot_desk', why: 'locked_out' });
+    assert.equal(reports.filter(r => r.event === 'fail').length, failsBefore, 'a failed borrowed use is not reported (6.4)');
+    assert.equal(reports.filter(r => r.event === 'ease').length, 0, 'and no ease is sent');
+});
+
+test('q36: a false answer at the hot desk lets the borrowed use be met', () => {
+    const { sys, evs } = borrowing();
+    sys.lockCheckSent('dana', 'hot_desk');
+    sys.step(6000);
+    sys.applyFrustration(checkAnswer(false, 'hot_desk'));
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 5000));
+    assert.equal(evs('npc_borrow_done:dana')[0].data.met, true);
+    assert.equal(evs('npc_used:hot_desk')[0].data.met, true);
+    assert.equal(sys.isLockedOut('dana', 'hot_desk'), false);
+});
+
+test('R1 m1, R2 m1: a hold at the hot desk lasts BORROW_CHECK_WAIT_MS, then the use is skipped unjudged', () => {
+    const { sys, evs, log, reports } = borrowing();
+    const before = reports.length;
+    const failedBefore = evs('npc_use_failed:dana').length;   // her own station's failure
+    sys.lockCheckSent('dana', 'hot_desk');
+    sys.step(5000 + BORROW_CHECK_WAIT_MS - 1000);   // the use ends at 5 s and is held since
+    assert.equal(sys.getState('dana').job?.phase, 'using', 'held inside the limit');
+    assert.equal(evs('npc_borrow_done:dana').length, 0);
+    assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 3000), 'the hold ends with no answer');
+    assert.equal(evs('npc_borrow_done:dana')[0].data.met, false, 'a lapse never shows a met use');
+    // Review R3 m1: a lapse is marked, so a "failed there" mapping can tell it from a refusal
+    assert.equal(evs('npc_borrow_done:dana')[0].data.lapsed, true, 'the done event says the use lapsed');
+    assert.equal(evs('npc_borrowed_session:hot_desk').length, 1);
+    assert.deepEqual(evs('npc_borrowed_session:hot_desk')[0].data, { npcId: 'dana', objectId: 'hot_desk', met: false, lapsed: true });
+    assert.equal(evs('npc_used:hot_desk').length, 0, 'no npc_used, nothing restored');
+    assert.equal(evs('npc_use_failed:dana').length, failedBefore, 'unjudged: not a failed use either');
+    assert.equal(reports.slice(before).filter(r => r.event === 'ease').length, 0, 'no ease is sent');
+    assert.ok(log('lock_check_lapsed').some(e => e.target === 'hot_desk' && e.borrowed === true));
+    // the check stays in flight, and a late answer still counts, for the next use there
+    sys.applyFrustration(checkAnswer(true, 'hot_desk'));
+    sys.step(250);
+    assert.equal(sys.isLockedOut('dana', 'hot_desk'), true);
+});
+
+test('R1 m1, R2 m1: a sync PUT that never settles stalls the check, and the borrowed use is skipped after the limit', async () => {
+    const out = lockWorld({ objects: [...baseObjects(), HOT_DESK] });
+    const { sys, evs, w } = out;
+    let now = 0;
+    const timers = [];
+    let sends = 0;
+    let syncs = 0;
+    const r = new NpcReports({
+        now: () => now,
+        setTimer: (fn, ms) => { timers.push({ fn, at: now + ms }); return timers.length; },
+        send: async batch => { sends++; return { answers: batch.map(x => ({ npcId: x.npc_id, lockedOut: true })) }; },
+        sync: () => { syncs++; return new Promise(() => {}); },   // the PUT /sync_state that never settles
+        apply: a => sys.applyFrustration(a),
+        policyFor: () => STRICT,
+        flagged: (id, pc) => sys.isLockedOut(id, pc),
+        markCheck: (id, pc) => sys.lockCheckSent(id, pc)
+    });
+    // the real event path: npc_sat_at reaches the queue's borrow listener
+    const emit = w.world.emit;
+    w.world.emit = (name, data) => { emit(name, data); if (name.startsWith('npc_sat_at:')) r.onBorrowSat(data); };
+    const fire = async () => {
+        for (const t of timers.filter(t => t.at <= now && !t.done)) { t.done = true; t.fn(); }
+        await new Promise(res => setImmediate(res));
+    };
+    r.noteLockout('hot_desk');
+    r.needSync = true;   // a watched global changed, so the next flush syncs first
+    sys.registerAll();
+    sys.lockCheckSent('dana', 'dana_pc');
+    sys.applyFrustration(checkAnswer(true));
+    assert.ok(stepUntil(sys, () => evs('npc_need_parked:dana').length > 0, 30000));
+    assert.equal(sys.setBorrow('dana', BORROW), true);
+    assert.ok(stepUntil(sys, () => evs('npc_sat_at:hot_desk').length > 0, 30000));
+    assert.equal(r.checks, 1, 'the check went into the queue as she sat');
+    for (let t = 0; t < 20000 && !evs('npc_borrow_done:dana').length; t += 250) {
+        now += 250;
+        await fire();
+        sys.step(250);
+    }
+    assert.equal(syncs, 1, 'the flush is stuck in its sync');
+    assert.equal(sends, 0, 'so the check is never sent or answered');
+    assert.equal(evs('npc_borrow_done:dana').length, 1, 'the borrowed use did not hang');
+    assert.equal(evs('npc_borrow_done:dana')[0].data.met, false, 'skipped unjudged, never shown as met');
+    assert.equal(evs('npc_used:hot_desk').length, 0);
+    assert.equal(sys.isLockedOut('dana', 'hot_desk'), false);
+});
+
+test('q36: a true answer for a PC this owner never asked about is ignored', () => {
+    const { sys } = lockWorld({ objects: [...baseObjects(), HOT_DESK] });
+    sys.registerAll();
+    sys.applyFrustration(checkAnswer(true, 'hot_desk'));
+    sys.step(250);
+    assert.equal(sys.isLockedOut('dana', 'hot_desk'), false);
+});
+
+test('q36: shouldCheckLockout\'s borrow path needs no locked return or owner, and keeps the other tests', () => {
+    const ok = { borrowed: true, seen: true, pcId: 'hot_desk', policy: STRICT, flagged: false };
+    assert.equal(shouldCheckLockout(ok), true);
+    assert.equal(shouldCheckLockout({ ...ok, seen: false }), false, 'no lockout answer seen at that PC');
+    assert.equal(shouldCheckLockout({ ...ok, flagged: true }), false);
+    assert.equal(shouldCheckLockout({ ...ok, policy: { autoLockMin: 5 } }), false, 'no maxAttempts');
+    assert.equal(shouldCheckLockout({ ...ok, borrowed: false }), false, 'not a borrow: a locked return is needed');
+});
+
+test('R1 m2: two borrowers at one hot desk: the first one\'s "no" does not clear the mark for the second', async () => {
+    const { r, sent, advance } = harness({ answerFor: x => ({ npcId: x.npc_id, lockedOut: x.npc_id === 'ben' }) });
+    r.noteLockout('hot_desk');   // the player locked out ben's username there
+    assert.equal(r.onBorrowSat({ npcId: 'amy', objectId: 'hot_desk' }), true);
+    await advance(2500);
+    assert.equal(r.lockoutSeen.has('hot_desk'), true, 'amy\'s no clears nothing at the PC');
+    assert.equal(r.borrowSeen('hot_desk', 'amy'), false, 'amy is not asked again');
+    assert.equal(r.onBorrowSat({ npcId: 'amy', objectId: 'hot_desk' }), false);
+    assert.equal(r.onBorrowSat({ npcId: 'ben', objectId: 'hot_desk' }), true, 'ben still checks');
+    await advance(2500);
+    assert.deepEqual(sent.flat().map(x => [x.npc_id, x.object_id]), [['amy', 'hot_desk'], ['ben', 'hot_desk']]);
+    // a new lockout answer there asks amy again
+    r.noteLockout('hot_desk');
+    assert.equal(r.borrowSeen('hot_desk', 'amy'), true);
+});
+
+test('R2 n2: an owner\'s station "no" at a PC does not clear the mark for a borrower of that PC', async () => {
+    const { r, sent, advance } = harness({ answerFor: x => ({ npcId: x.npc_id, lockedOut: x.npc_id === 'ben' }) });
+    r.noteLockout('dana_pc');   // the player locked out ben's username at dana's PC
+    assert.equal(r.onOwnerReturned(RETURN), true);
+    await advance(2500);
+    assert.equal(r.lockoutSeen.has('dana_pc'), false, 'dana is not asked again at her station');
+    assert.equal(r.borrowSeen('dana_pc', 'ben'), true, 'her no spares the borrower');
+    assert.equal(r.onBorrowSat({ npcId: 'ben', objectId: 'dana_pc' }), true, 'ben still checks');
+    await advance(2500);
+    assert.deepEqual(sent.flat().map(x => [x.npc_id, x.object_id]), [['dana', 'dana_pc'], ['ben', 'dana_pc']]);
+});
+
+test('q36: onBorrowSat queues a check at the hot desk once a lockout answer was seen there', async () => {
+    const { r, sent, marks, advance } = harness();
+    assert.equal(r.onBorrowSat({ npcId: 'dana', objectId: 'hot_desk' }), false, 'no lockout seen there');
+    r.noteLockout('hot_desk');
+    assert.equal(r.onBorrowSat({ npcId: 'dana', objectId: 'hot_desk' }), true);
+    assert.deepEqual(marks, [['dana', 'hot_desk']]);
+    await advance(2500);
+    assert.deepEqual(sent.flat().map(x => [x.npc_id, x.event, x.object_id]), [['dana', 'check', 'hot_desk']]);
+});
+
 test('the first use after a check waits at the desk for the answer: true fails it, false lets it be met', () => {
     for (const lockedOut of [true, false]) {
         const { sys, evs, log } = lockWorld();
@@ -251,17 +435,18 @@ test('a check is taken only for the NPC\'s own station; an answer for another PC
     assert.deepEqual(sys.getState('dana').lockedOut, []);
 });
 
-test('the flag is restored from npcFrustration when the room loads, kept through reset(), and only for the station', () => {
+test('the flag is restored from npcFrustration when the room loads and kept through reset(); q36: a borrowed hot desk too', () => {
     const { sys, evs, log } = lockWorld();
+    // the server sends the station and the handed-over hot desks a check found it locked out at
     sys.restoreFrustration({ dana: { level: 40, tell: 2, settled: false, lockedOut: ['dana_pc', 'hot_desk'] } });
     sys.registerAll();
-    assert.deepEqual(sys.getState('dana').lockedOut, ['dana_pc']);
+    assert.deepEqual(sys.getState('dana').lockedOut, ['dana_pc', 'hot_desk']);
     assert.equal(log('locked_out')[0].restored, true);
     assert.equal(evs('npc_locked_out:').length, 0, 'a restore emits nothing');
     assert.ok(stepUntil(sys, () => evs('npc_use_failed:dana').length > 0, 30000), 'the first use after the load fails');
     assert.equal(evs('npc_use_failed:dana')[0].data.missing[0].why, 'locked_out');
     sys.reset();
-    assert.deepEqual(sys.getState('dana').lockedOut, ['dana_pc']);
+    assert.deepEqual(sys.getState('dana').lockedOut, ['dana_pc', 'hot_desk']);
 });
 
 // ── the workstation layer ──────────────────────────────────────────────

@@ -43,6 +43,40 @@ export function isNetworkScreenContainer(item) {
 if (typeof window !== 'undefined') window.isNetworkScreenContainer = isNetworkScreenContainer;
 
 /**
+ * What the world looked like when a reader (text file, notes) closed and armed its
+ * return to the container: the time and the player's room.
+ */
+export function containerReturnArm() {
+    const w = typeof window !== 'undefined' ? window : {};
+    return { at: Date.now(), room: w.currentPlayerRoom || '' };
+}
+
+/**
+ * Why a reader's return to its container must not happen, or null when it may (lab UX
+ * review M1). The reader closed some way other than the player's own Close, Cancel or
+ * Esc (a hit, the knockout screen, a conversation starting: `ownClose` false); the player
+ * is knocked out or was hit since the reader closed; something else has opened; or the
+ * player is in another room now.
+ * @param {{at:number, room:string}} arm - containerReturnArm() at the close
+ * @param {boolean} ownClose - the player closed the reader, or it finished on its own
+ */
+export function containerReturnBlocked(arm, ownClose = true) {
+    const w = typeof window !== 'undefined' ? window : {};
+    if (!ownClose) return 'not_own_close';
+    try { if (w.playerIsKnockedOut?.()) return 'knocked_out'; } catch (e) { /* no health system */ }
+    if (w.minigameClosedByDamage?.()) return 'hit';
+    const hitAt = w.lastPlayerHitAt?.();
+    if (arm && Number.isFinite(hitAt) && hitAt >= arm.at) return 'hit';
+    if (w.MinigameFramework?.currentMinigame) return 'busy';
+    if (arm && (w.currentPlayerRoom || '') !== arm.room) return 'room_changed';
+    return null;
+}
+if (typeof window !== 'undefined') {
+    window.containerReturnArm = containerReturnArm;
+    window.containerReturnBlocked = containerReturnBlocked;
+}
+
+/**
  * Which network screen a container is, for networkLinks.landed (4.3): 'desktop' for a remote
  * desktop or anything opened below one, 'share' for a share opened from the view or anything
  * opened below it, null for any other container.
@@ -56,6 +90,31 @@ export function networkScreenKind(item) {
     if (item.sourceResourceId && !item.sourcePcId) return 'share';
     const pcId = item.sourcePcId;
     return pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true ? 'desktop' : null;
+}
+
+// The keyboard refusal at a switched-off PC (user decision q72), if the server sends no text
+export const PC_OFF_TEXT = 'This PC is off.';
+
+/**
+ * Does a sign-in PC's `affordance.offWhen` hold on these globals? The same reading as
+ * unlock-system.js pcSwitchedOff and the server's host_service_off? (a global name, or
+ * { name: value } all to match). Kept here so this module imports nothing more.
+ */
+export function offWhenHolds(pcData, globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {}) {
+    const cond = pcData?.affordance?.offWhen;
+    if (cond === undefined || cond === null || cond === false || cond === '') return false;
+    const g = globals || {};
+    if (typeof cond === 'string') return !!g[cond];
+    if (typeof cond === 'object') return Object.entries(cond).every(([name, value]) => g[name] === value);
+    return false;
+}
+
+/** The globals an offWhen reads, for the global_variable_changed listeners. */
+export function offWhenGlobals(pcData) {
+    const cond = pcData?.affordance?.offWhen;
+    if (typeof cond === 'string' && cond) return [cond];
+    if (cond && typeof cond === 'object') return Object.keys(cond);
+    return [];
 }
 
 /**
@@ -307,6 +366,12 @@ export class ContainerMinigame extends MinigameScene {
             this._loadStatus = response.status;
 
             if (!response.ok) {
+                // A folder or share from a desktop whose PC is now off (review R3 nit 2): say so,
+                // rather than open it empty with a generic error
+                if (offWhenHolds(this.powerPcData())) {
+                    this.closeForPowerOff({ evenIfNotCurrent: true });
+                    return [];
+                }
                 if (response.status === 403) {
                     if (window.gameAlert) {
                         window.gameAlert('Container is locked', 'error', 'Locked', 2000);
@@ -343,14 +408,34 @@ export class ContainerMinigame extends MinigameScene {
             const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
+            let refusal = null;
+            if (response.status === 403) {
+                try { refusal = await response.json(); } catch (e) { /* no body */ }
+            }
             if (response.status === 403 && this.remote) {
                 // Back to the network view, never the physical sign-in screen (4.3): with
-                // no_session the client drops its copy; with unreachable it keeps it
-                let reason = 'no_session';
-                try { reason = (await response.json())?.reason === 'unreachable' ? 'unreachable' : 'no_session'; } catch (e) { /* no body */ }
+                // no_session the client drops its copy; with unreachable or not_responding (the
+                // host's own service is off, 9.3b plan 5.2) it keeps it
+                const reason = ['unreachable', 'not_responding'].includes(refusal?.reason) ? refusal.reason : 'no_session';
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
                 this.exitReason = reason;
                 this.complete(false);
+                return null;
+            }
+            if (response.status === 403 && refusal?.reason === 'off') {
+                // At the keyboard of a switched-off PC (q72): the session is kept for when it
+                // comes back on, and no sign-in screen opens
+                this.complete(false);
+                window.gameAlert?.(refusal.error || PC_OFF_TEXT, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
+                return null;
+            }
+            if (response.status === 403 && this.params?.fromReturn) {
+                // Reopened after a reader: the session ended meanwhile. Back to the world
+                // with the reason, never the sign-in screen (lab UX review M2)
+                window.pcSessions?.dropLocal?.(pcId);
+                const ended = window.pcSessions?.takeEndedMessage?.(pcId);
+                this.complete(false);
+                window.gameAlert?.(ended?.message || 'Signed out', 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 return null;
             }
             if (response.status === 403) {
@@ -386,7 +471,58 @@ export class ContainerMinigame extends MinigameScene {
         if (message) window.gameAlert?.(message, 'info', name, 3000);
     }
 
+    /** The sign-in PC this screen shows or came from, as the scenario defines it, or null. */
+    powerPcData() {
+        const pcId = this.loginPcId || this.sourcePcId;
+        if (!pcId) return null;
+        if (this.loginPcId) return this.containerItem?.scenarioData || null;
+        const parent = this.parentLockable?.scenarioData;
+        if (parent?.id === pcId) return parent;
+        const rooms = window.gameScenario?.rooms || {};
+        for (const room of Object.values(rooms)) {
+            const found = (Array.isArray(room?.objects) ? room.objects : []).find(o => o?.id === pcId);
+            if (found) return found;
+        }
+        return null;
+    }
+
+    /**
+     * A desktop (or a folder or share opened from one) left open when its PC is switched
+     * off closes (review R3 nit 2): at the keyboard with "This PC is off.", remotely back to
+     * the network view as "not responding". The session itself is kept, as the server keeps it.
+     */
+    watchPcPower() {
+        if (this.mode === 'npc' || this._unwatchPower) return;
+        const pc = this.powerPcData();
+        const names = offWhenGlobals(pc);
+        const d = window.eventDispatcher;
+        if (!names.length || typeof d?.on !== 'function') return;
+        const handler = () => { if (offWhenHolds(pc)) this.closeForPowerOff(); };
+        names.forEach(n => d.on(`global_variable_changed:${n}`, handler));
+        this._unwatchPower = () => names.forEach(n => d.off?.(`global_variable_changed:${n}`, handler));
+    }
+
+    closeForPowerOff({ evenIfNotCurrent = false } = {}) {
+        if (this._unwatchPower) { this._unwatchPower(); this._unwatchPower = null; }
+        if (!evenIfNotCurrent && window.MinigameFramework?.currentMinigame !== this) return;
+        const pcId = this.loginPcId || this.sourcePcId;
+        const remote = !!this.remote || window.pcSessions?.get?.(pcId)?.remote === true;
+        if (remote) {
+            this.exitReason = 'not_responding';
+            this.complete(false);
+            return;
+        }
+        // 'off': a share or folder does not reopen the desktop it came from (reportNetworkExit)
+        this.exitReason = 'off';
+        this.complete(false);
+        window.gameAlert?.(PC_OFF_TEXT, 'info', this.powerPcData()?.name || 'PC', 3000);
+    }
+
     cleanup() {
+        if (this._unwatchPower) {
+            this._unwatchPower();
+            this._unwatchPower = null;
+        }
         if (this._unregisterDesktop) {
             this._unregisterDesktop();
             this._unregisterDesktop = null;
@@ -485,6 +621,9 @@ export class ContainerMinigame extends MinigameScene {
         if (!this.loginPcId && this.sourcePcId && this.mode !== 'npc' && window.pcSessions?.registerDesktop) {
             this._unregisterDesktop = window.pcSessions.registerDesktop(this.sourcePcId, (message, reason) => this.closeForSessionEnd(message, reason));
         }
+
+        // Switched off while open: close rather than serve an empty share (review R3 nit 2)
+        this.watchPcPower();
 
         // Play drawer/container opening sound (not for PC/desktop containers)
         if (this.mode !== 'pc' && !this.desktopMode) {
@@ -913,8 +1052,13 @@ export class ContainerMinigame extends MinigameScene {
             this.showMessage(displayDashes(obs), 'info');
             return;
         }
-        // A network screen comes back when the reader closes (4.3)
-        if (isNetworkScreenContainer(this.containerItem)) {
+        // The container comes back when the reader closes: a network screen (4.3) and, as
+        // for a file opened with a click, any other (lab UX review M4). Only for the types
+        // whose reader spends it (the text file viewer, a readable note): any other type with
+        // text opens no reader, and the armed return would reopen this desktop after a later
+        // note read in the world (review R2 n3)
+        const opensReader = item.type === 'text_file' || (/^notes\d*$/.test(item.type) && !!item.readable);
+        if (opensReader) {
             window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null };
         }
         this.exitReason = 'item';
@@ -1324,7 +1468,7 @@ export class ContainerMinigame extends MinigameScene {
 }
 
 // Function to start the container minigame
-export function startContainerMinigame(containerItem, contents, isTakeable = false, desktopMode = null, npcOptions = null) {
+export function startContainerMinigame(containerItem, contents, isTakeable = false, desktopMode = null, npcOptions = null, extra = null) {
     // Auto-detect desktop mode if not explicitly set
     if (desktopMode === null) {
         desktopMode = shouldUseDesktopModeForContainer(containerItem);
@@ -1351,6 +1495,9 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         desktopMode: desktopMode,
         cancelText: 'Close',
         showCancel: true,
+        // A reopen after a reader closed: a sign-in desktop never falls through to the
+        // sign-in screen (loadLoginDesktop)
+        fromReturn: !!extra?.fromReturn,
         ...(npcOptions && {
             mode: npcOptions.mode || 'container',
             npcId: npcOptions.npcId,
@@ -1383,7 +1530,7 @@ function shouldUseDesktopModeForContainer(containerItem) {
 }
 
 // Function to return to container after notes minigame
-export function returnToContainerAfterNotes() {
+export function returnToContainerAfterNotes({ reopen = true } = {}) {
     console.log('Returning to container after notes minigame');
     
     // Check if there's a pending container return
@@ -1433,6 +1580,25 @@ export function returnToContainerAfterNotes() {
             window.gameAlert(`${containerState.itemToTake.name} has been noted`, 'success', 'Added to Notes', 2000);
         }
         
+        // A hit, the knockout screen, a conversation or a room change closed the reader
+        // (containerReturnBlocked): the note above is still taken, the container stays shut
+        if (!reopen) return;
+
+        // A PC's sign-in desktop whose session ended while the file was open (the owner came
+        // back, the screen locked, someone signed in there): the desktop was not open to
+        // close, so its message is shown now and the player stays in the world. Never the
+        // PC's sign-in screen from here: that skips the check for an owner at the desk
+        // (lab UX review M2).
+        const lockable = containerState.containerItem;
+        const pcData = lockable?.scenarioData;
+        if (!containerState.npcOptions && pcData?.lockType === 'login' && pcData.id
+            && !isNetworkScreenContainer(lockable) && window.pcSessions
+            && typeof window.pcSessions.has === 'function' && !window.pcSessions.has(pcData.id)) {
+            const ended = window.pcSessions.takeEndedMessage?.(pcData.id);
+            window.gameAlert?.(ended?.message || 'Signed out', 'info', pcData.name || 'PC', 3000);
+            return;
+        }
+
         // Start the container minigame - don't pass contents, let it reload from server
         // This ensures items already in inventory are filtered out
         startContainerMinigame(
@@ -1442,7 +1608,8 @@ export function returnToContainerAfterNotes() {
             // A network screen keeps its desktop layout (a share from the view has no PC
             // sprite to auto-detect it from); others auto-detect or use npcOptions
             isNetworkScreenContainer(containerState.containerItem) ? true : null,
-            containerState.npcOptions // Restore NPC context if it was saved
+            containerState.npcOptions, // Restore NPC context if it was saved
+            { fromReturn: true }
         );
     } else {
         console.log('No pending container return found');

@@ -541,6 +541,10 @@ function createSpriteFromMatch(tiledItem, scenarioObj, position, roomId, index, 
         baseKey
     );
 
+    // The texture a spriteVariants swap returns to when no variant holds: the Tiled item's own
+    // picture when the scenario names no sprite (bench_pc's pc6, not its type's "pc")
+    sprite.variantBaseKey = baseKey;
+
     // Apply Tiled visual properties (rotation, flipping, etc.)
     applyTiledProperties(sprite, tiledItem);
 
@@ -701,7 +705,9 @@ function registerSpriteVariantListeners(sprite, scenarioObj, roomId) {
         }
     }
 
-    const baseKey = scenarioObj.sprite || scenarioObj.type;
+    // The texture the sprite was created with (a Tiled match keeps the map's picture), else
+    // the scenario's own sprite or type
+    const baseKey = sprite.variantBaseKey || scenarioObj.sprite || scenarioObj.type;
     const objectId = sprite.objectId;
 
     console.log('[spriteVariant] registering listener for', objectId, [...watchedVars]);
@@ -713,12 +719,18 @@ function registerSpriteVariantListeners(sprite, scenarioObj, roomId) {
             const newKey = resolveObjectField(scenarioObj, 'sprite', baseKey);
             console.log('[spriteVariant] event fired for', objectId, 'new texture:', newKey);
             if (!obj || obj.texture?.key === newKey) return;
+            // The proximity ghost copied the key once when it was made, so it follows the swap
+            // (review R4 nit 2), as the locked screen and the jack look do
+            const swap = () => {
+                obj.setTexture(newKey);
+                if (typeof obj.proximityGhost?.setTexture === 'function') obj.proximityGhost.setTexture(newKey);
+            };
             if (!gameRef.textures.exists(newKey)) {
                 gameRef.load.image(newKey, `objects/${newKey}.png`);
-                gameRef.load.once('complete', () => obj.setTexture(newKey));
+                gameRef.load.once('complete', swap);
                 gameRef.load.start();
             } else {
-                obj.setTexture(newKey);
+                swap();
             }
         });
     }

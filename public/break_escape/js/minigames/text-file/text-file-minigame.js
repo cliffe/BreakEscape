@@ -32,6 +32,8 @@ export class TextFileMinigame extends MinigameScene {
         // Initialize text file specific state
         this.textFileData = {
             fileName: safeParams.fileName || 'Unknown File',
+            // The scenario id of the file, when known (cameFrom matches on it first)
+            itemId: typeof safeParams.itemId === 'string' && safeParams.itemId ? safeParams.itemId : null,
             fileContent: safeParams.fileContent || '',
             fileType: safeParams.fileType || 'text',
             observations: safeParams.observations || '',
@@ -159,12 +161,12 @@ export class TextFileMinigame extends MinigameScene {
     setupEventListeners() {
         // Window controls
         this.addEventListener(this.closeBtn, 'click', () => {
-            this.complete(false);
+            this.closeByPlayer();
         });
         
         this.addEventListener(this.minimizeBtn, 'click', () => {
             // Minimize by closing the minigame (common behavior for modal windows)
-            this.complete(false);
+            this.closeByPlayer();
         });
         
         this.addEventListener(this.maximizeBtn, 'click', () => {
@@ -219,7 +221,7 @@ export class TextFileMinigame extends MinigameScene {
         // Handle Escape to close
         if (event.key === 'Escape') {
             event.preventDefault();
-            this.complete(false);
+            this.closeByPlayer();
         }
     }
     
@@ -364,6 +366,19 @@ export class TextFileMinigame extends MinigameScene {
         console.log("Content length:", this.textFileData.fileContent.length);
     }
     
+    /**
+     * Whether this file was opened from the container in `back` (window.pendingContainerReturn):
+     * the file is among that container's contents. A return left over from a container the
+     * player closed some other way never matches a file read from the world. With an itemId
+     * the file is matched by id, so a world file that only shares the name does not match
+     * (review R1 n2); without one (an older caller), by name.
+     */
+    static cameFrom(back, fileName, itemId = null) {
+        if (!back?.containerItem || !Array.isArray(back.contents)) return false;
+        if (itemId) return back.contents.some(item => item && item.id === itemId);
+        return back.contents.some(item => item && item.name === fileName);
+    }
+
     cleanup() {
         // Call parent cleanup (handles event listeners)
         super.cleanup();
@@ -376,14 +391,38 @@ export class TextFileMinigame extends MinigameScene {
             // network view, or a folder in either; slice 9.3a, 4.3) reopens that screen, so
             // the player is never dropped into the world mid-chain
             const back = window.pendingContainerReturn;
+            // Only the player's own Close or Esc goes back: a hit, the knockout screen or a
+            // conversation closing the reader leaves him in the world (review M1)
+            const ownClose = this.closedByPlayer === true;
+            const blocked = (arm) => (typeof window.containerReturnBlocked === 'function'
+                ? window.containerReturnBlocked(arm, ownClose) : (ownClose ? null : 'not_own_close'));
+            const arm = window.containerReturnArm?.() || null;
             if (back?.containerItem && typeof window.isNetworkScreenContainer === 'function'
                 && window.isNetworkScreenContainer(back.containerItem)) {
                 window.pendingContainerReturn = null;
                 window.pendingPhoneReturn = null;
+                if (!ownClose) return;
                 setTimeout(() => {
-                    if (window.MinigameFramework?.currentMinigame) return;
+                    if (blocked(arm)) return;
                     window.startContainerMinigame?.(back.containerItem, null, !!back.isTakeable, true);
                 }, 50);
+                return;
+            }
+            // Any other container (a desk drawer, a PC's file list, an NPC's items) reopens
+            // too, as the notes viewer does, so a second file is one click away (lab
+            // playtest fixes). If something else has opened by then, the return is dropped.
+            if (ownClose && TextFileMinigame.cameFrom(back, this.textFileData.fileName, this.textFileData.itemId)
+                && typeof window.returnToContainerAfterNotes === 'function') {
+                window.pendingPhoneReturn = null;
+                window.expectPanelWithin?.(1000); // held toasts wait for the container (F13, engine F24)
+                setTimeout(() => {
+                    if (window.pendingContainerReturn !== back) return;
+                    if (blocked(arm)) {
+                        window.pendingContainerReturn = null;
+                        return;
+                    }
+                    window.returnToContainerAfterNotes();
+                }, 100);
                 return;
             }
             window.pendingContainerReturn = null;
