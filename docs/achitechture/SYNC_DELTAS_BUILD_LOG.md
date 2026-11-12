@@ -40,7 +40,8 @@ Standing constraints for this build:
 | 4. P1 cloner one-card deltas | Done, committed, tested |
 | Merge main (batch 9, 33c003230) into the branch | Done (`f03396201`); capture tests reran green |
 | 5. R3 capture-log seen keys | Done, committed, tested (`cb269170c`) |
-| 6a. R2 server-owned capture record (ships first) | Unblocked (ruling below). Reader slice done + tested (`849a4fa3d`); recording machinery + client + migration REMAIN (handover 2026-11-12 builder 7) |
+| 6a-server. R2 recording machinery + migration + sync interception + carry-over guard + validator | Done, committed, tested (`a4401fb83`, `eea02e21a`, `cf05062a4`). Live browser proof NOT run (budget); HTTP/route proof is in captures_sync_test. See "6a-server session" below |
+| 6a-client. capture-client.js + main.js wiring + SERVER_OWNED_GLOBALS flip + drop the mirror | Not started (spec below) |
 | 6b. R2 reveal/proof gating | Not started |
 | 7. Node + Rails size tests, then live proof A to F | Not started |
 | 8. One release later: remove transition code | Not started (separate release) |
@@ -83,6 +84,128 @@ differ.
    (`capture_payload_secret_test`, `capture_payload_secret_routes_test`, `capture_secret_endpoint_test`,
    `lab_physical_pentest_secrets_test`, the `capture_proofs` tests), then Len's shoulder-surf beat
    played on the earned path in lab_physical_pentest.
+
+## This session (2026-11-12, 6a-server: recording machinery, migration, sync interception)
+
+Built 6a-server as one coherent, backward-compatible unit, per the orchestrator amendment
+(serving stays main's authored path; no writer pass, no candidate_secret, no legacySecret, no
+stored `writer` key). Commits: `a4401fb83` (implementation + two adapted tests), `eea02e21a`
+(new tests), `cf05062a4` (validator). Files: `lib/break_escape/capture_model.rb`,
+`app/models/break_escape/capture_proofs.rb`, `app/models/break_escape/game.rb`,
+`app/controllers/break_escape/games_controller.rb`, `app/models/break_escape/npc_frustration.rb`,
+`app/models/break_escape/carry_over.rb`, `scripts/validate_capture_log.rb`,
+`scripts/validate_scenario.rb`, and tests `capture_record_test.rb`, `captures_sync_test.rb`,
+plus adapted `capture_proofs_test.rb` and `npc_workaround_h_test.rb`.
+
+### What the record stores
+`player_state['seCaptures'] = { targetId => { targetId, roleLabel, address, kind, host, note, at,
+proven } }`, proven: true always under 6a. No secret, no `writer`. `se_captures_record` (already in
+place) keeps the legacy-global fallback so an un-migrated old save still serves.
+
+### Candidate model (`CaptureModel.capture_candidates`)
+Fields taken from the scenario exactly as the honest client writes them (captures.js
+makeCaptureEntry: closed keys, kind defaults to credential, blank strings dropped, no secret):
+- an add_capture action / addCapture mapping's `capture` hash (plain), and overlaid with the owner
+  NPC's usePayload (payload wins) where it has one;
+- a standalone usePayload with its own `targetId` (an NPC with no addCapture mapping, e.g. lena);
+- a phish credential, one per landing page a `social.mailClient.payloadKit` link kit names
+  (address = page capture.address else the target's own address, note = page capture.note,
+  roleLabel = target role); a phish foothold (host/note from the block).
+- **Account-holder address defaulting:** a writer whose owner (or payload owner) holds an account
+  and authors no address takes the account username as its address. This is load-bearing for
+  serving: both readers key an account holder's secret on `entry['address']`
+  (capture_secrets_for_client by_username, NetworkAccess#account_capture_usernames). Without it the
+  test fixture's no-address account mappings (mel) and lena's usePayload-only capture are unserved.
+
+### record_capture! selection
+Picks the candidate whose client-given address/host/roleLabel all match (client blanks ignored),
+plain preferred over overlaid, else the first plain candidate. Stores the candidate's fields whole.
+Refuses: non-Hash, targetId not a string <=100 cp (`invalid`), kind outside credential/foothold
+(`invalid`), a client address/host/roleLabel over 200 cp (`invalid`), an undeclared target
+(`undeclared`), a share-only target not in sharedLogins (`server_only`). A share-only target in
+sharedLogins is recorded by record_shared_login! from the server's own composition.
+
+### Controller
+`sync_state` runs `apply_capture_sync_step` after merge_grow_only_sections, on stale too: it reads
+`params[:captures]` + the old-tab `params[:globalVariables]['se_captures']` values (which
+merge_global_variables! drops, so the global is never stored), records each through record_capture!,
+caps at MAX_CAPTURES_PER_SYNC (64, overflow refused), and answers `captures`/`capturesRefused` on
+both the normal and the stale branch. Scenario loaded on demand
+(`Game.where(id:).pick(:scenario_data)`) only when there is something to record or a legacy global.
+`scenario` (bootstrap) ships `filtered['captures'] = captures_for_client` AND mirrors it into
+`savedGlobalVariables.se_captures` so the CURRENT client's reader (core/game.js) still fills the
+capture log until 6a-client ships. prepare_bootstrap_state! migrates the legacy global + backfills
+heard shares under the existing lock.
+
+### Backward compatibility held (invariants)
+- Current client: a capture made in play syncs the whole se_captures global; the server intercepts
+  and records it; on reload the bootstrap mirror + GET /capture_secrets (main's authored path)
+  reproduce the capture log and Len's PIN. Proven at route level in captures_sync_test
+  (old-tab interception, reload mirror, stale, Len's PIN served only after the beat, store_controller
+  note shipped whole, old-save migration).
+- No widening of the trust model: the client names the target+kind and chooses between the
+  candidate values the scenario allows; every stored field comes from the scenario. An undeclared
+  target is refused where before any sync could write the global. One narrowing worth noting: a
+  phish credential now needs a scenario with a link kit naming the page (the honest route); two
+  synthetic capture_proofs_test scenarios that lacked a kit were given one.
+
+### Tests run (affected files, no lock)
+- `capture_proofs_test capture_secret_test lab_physical_pentest_secrets_test
+  capture_payload_secret_test capture_payload_secret_routes_test capture_secret_endpoint_test`
+  -> 89 runs, 1375 assertions, 0 failures (the six named must-stay-green tests).
+- `capture_record_test` -> 13 runs, 45 assertions, 0 failures (new).
+- `captures_sync_test` -> 8 runs, 28 assertions, 0 failures (new).
+- `npc_workaround_h_test` -> 34, `reload_persistence_test npc_frustration_test
+  access_leak_scanner_test carry_over_test` -> 177, `access_model_no_password_test
+  network_no_exposure_test network_shares_test access_model_withholding_test` -> 95 (with the one
+  adapted leak assertion). All 0 failures.
+- validator: lab_physical_pentest --no-graph has 0 new ❌; the length check fires on a synthetic
+  over-long note/host; `validator-capture-log.test.mjs` passes.
+
+### Live browser proof: NOT run this session (budget)
+The HTTP/route proof is in captures_sync_test (CapturesSyncLabTest): against the real
+lab_physical_pentest scenario, `PUT /sync_state { captures: [{ targetId: 'len', kind: 'credential' }] }`
+writes `seCaptures`, `GET /capture_secrets` returns `4471` only after that call (nothing before),
+and `GET /scenario` (reload) re-ships it. The full browser drive of Len's routine on a keyless
+server at :3165 (session-start.sh --headless, setFPS(20), fixed steps on; walk Len's routine, click
+the ledger shelves; assert seCaptures server-side, GET /capture_secrets gated, reload keeps it) is
+the one remaining item for this step. No game ids were created on the dev DB this session.
+
+### Remaining 6a-client spec (exact, for the next session)
+Achieves the size win (stops the whole se_captures map riding every sync); needs 6a-server live (it
+is). When 6a-client ships, DROP the `savedGlobalVariables.se_captures` mirror from
+`GamesController#scenario` (the block added this session) in the same release.
+1. New `public/break_escape/js/systems/capture-client.js`, imported statically by main.js and
+   installed right after `new StateSync` (main.js:145) via `installCaptureClient(stateSync)`. Only
+   static imports: captures.js and global-writer.js.
+   - registers the sync part `captures` (state-sync registerPart: build/onAnswer/pendingCount/
+     flushKeep); sets `window.submitSECapture` and `window.mirrorSECapture`.
+   - `submitCapture(input)` synchronous: makeCaptureEntry; first-wins against the mirror; writes the
+     mirror (`writeGlobal('se_captures', next, { openChat:false })`), adds
+     `{ targetId, kind, address, host, roleLabel }` to a pending map, calls `stateSync.sync()`.
+   - part `build()` returns pending entries; `onAnswer(response)` replaces each answered mirror
+     entry with the server's (`response.captures`) and drops it from pending; a `capturesRefused`
+     one is dropped from pending and mirror and logged; `pendingCount()` is the pending size;
+     `flushKeep(changes)` returns the mailState changes that are sent records to a pending target.
+   - `mirrorCapture(entry)` writes the mirror only (the heard login the server recorded itself).
+2. `state-sync.js`: add `'se_captures'` to `SERVER_OWNED_GLOBALS` (:68, empty since step 2);
+   `buildSharedSections` already skips SERVER_OWNED_GLOBALS; remove the CAPTURE_ENTRY_KEYS /
+   guardLandingState capture branch (:46/:47/:102), since the key is never sent.
+3. Writers call the window fns (no new static import; harnesses stub them): mail-bridge.js
+   `recordCapture` -> `window.submitSECapture`; apply-actions.js `recordSECapture` ->
+   `window.submitSECapture` (drop its lazy captures.js import, keep `window.recordSECapture`
+   returning the boolean); npc-workarounds.js -> `window.mirrorSECapture`.
+4. core/game.js: after the globals merge (:1705-1716), set the `se_captures` mirror from
+   `gameScenario.captures` (or `{}`) only when the bootstrap carries `captures` or the scenario
+   declares se_captures; drop reliance on `savedGlobalVariables.se_captures`.
+5. Then drop the 6a-server bootstrap mirror (GamesController#scenario).
+6. JS tests (plan 6.8): new `capture-client.test.mjs`; update `state-sync.test.mjs` (no se_captures
+   in a body, none seeded, a registered part makes buildChanges non-null), `add-capture-action`,
+   `social-mail-bridge`, `social-captures`, `capture-log`, and the three seed-and-read tests
+   (`access-remote-signin`, `social-captures-view`, `social-report-footholds`).
+7. Rails route tests `captures_sync_test.rb` already exist; the leak scanner exemption
+   (access_leak_scanner.rb:677) still needs moving from `.se_captures` to the `captures` path with
+   `access_leak_scanner_test.rb` (plan 6.8) — do with 6a-client or 6b.
 
 ## This session (2026-11-12, builder 7: 6a ruling recorded + reader slice)
 
