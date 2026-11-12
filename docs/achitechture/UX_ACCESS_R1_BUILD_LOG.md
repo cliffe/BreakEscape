@@ -85,3 +85,31 @@ password-signin-mode (18 pass), container-transfer-dialog (14), inventory-restor
 - Open: live proof on a keyless :3063 server and the after shots (none taken; no server started, no game ids created); finding 6 (live check of why the PC is not gathered, then the option above); 9 (option); 11; 12 (toasts, Cancel); 13 (Friendface, phone, toasts, dialogs).
 - Files touched: public/break_escape/js/utils/escape-html.js, css/main.css, js/systems/inventory.js, js/systems/pc-sessions.js, js/systems/npc-needs-debug.js, js/minigames/password/password-minigame.js, css/password-minigame.css, js/minigames/container/container-minigame.js, css/container-minigame.css, js/minigames/network-view/network-view-minigame.js, css/network-view-minigame.css, and the tests named above.
 - Gotchas: `escaping-shared-helpers.test.mjs` pins the exact `import { escapeHtml } from ...` line, so the new helper is imported on a line of its own. The desktop sizing rule uses `100vh`; check it at 1400x1000 and at a short viewport before merging.
+
+## Round 2 (live proof, network view points, finding 6)
+
+Keyless server on :3063, headless, 1400x1000, setFPS(20) with fixed steps. Games 1766 (test_access_signin) and 1767 (test_access_habits), made with new-game.rb (both scenarios have Mission rows). After shots and manifest: session scratchpad `ux-shots/after_access/`.
+
+### Seen live and fixed in this round
+- Notepad icon, lockout once, backed sign-in errors, landscape desktop with the footer on the backdrop, Copy/Move button widths, post-it password kept whole, wrapped debug label: all as intended.
+- Desktop post-it was loose at the window's left edge (it was appended to the page, not the monitor). Now appended to `.container-minigame.desktop-mode` and placed on the monitor's lower-left frame.
+- Desktop icons zoomed 1.1x on hover (non-integer scale of pixel art): removed; the frame highlight stays.
+- Desktop icon labels were Press Start 2P at 8px, hard to read: now GNF 16px.
+- Switch-user line "Signed in now" was yellow straight on the sky: now on the same dark backing as the message line (CSS fix, not re-shot).
+
+### Network view (review R3 of build/readme-93b, after merging main 72e26f911)
+- m1: already met here; each kind is drawn at a whole-number scale of its own size (R1), and the merge kept those rules.
+- m2: the up-block title reads "Server network, through HB-FIN-02" (no em dash). The JS line landed in the merge commit be25bec9d; the test and CSS are in c6a6f45e9.
+- n1: `.network-view` has `font-style: normal` and `font-synthesis: none`, and every descendant `font-style: normal`.
+
+### Finding 6: cause
+Live, with Omar seated at his PC and the player in reach of both, a real tap on the PC's centre shows the pick-one menu with "Omar's PC" and "Omar Haddad" (shot a10). So option B is already the behaviour when both are in reach. The before shot came from the harness clicking the PC's top-left corner from 43px away: the PC was out of reach (INTERACTION_RANGE is 32px), Omar (seated over it, drawn above it) was in reach, so `gatherInteractablesNearClick` returned one candidate and `pointerdown` acted on it before the object branch that would have walked to the PC. This is the same defect as the C3 replay's U3 (an in-reach phone taken when the out-of-reach stick under the pointer was tapped).
+
+Not fixed here, by budget. Constraints for the fix, for its own branch: the single-candidate shortcut must not fire when the tap lies inside the bounds of an interactable object that is not that candidate and is out of reach; but a seated NPC drawn over the PC is also under the pointer, so for that case the choice is a menu that lists the out-of-reach PC (walk, then use) beside the NPC, or "PC wins". The out-of-reach object's walk is inline in `pointerdown` (game.js), so the menu option needs that walk pulled out into a function first. Tests needed: phone and stick (C3 U3), seated owner with the PC out of reach, seated owner with both in reach (menu stays), memo next to an NPC (menu stays), plain tap on a seated NPC's head (talk).
+
+### Not done this round
+- Claimed-session banner (owner and guest), network view, guard bark, the m01/m02 mission desktop check: no after shots (budget). The desktop CSS applies to every desktop container, so a mission PC still needs one look.
+- Findings 11 (frustration chip), 12 (toast queue, Cancel styling), 13 (toasts, dialogs, debug overlay font): not started.
+
+### Tests (single files, no lock)
+network-view 26, container-transfer-dialog 14, password-signin-mode 18, inventory-restore-sprite-image 10, minigame-title-escape 23, npc-needs-debug 8; all 17 test files importing the container, password or network-view minigames: 0 failures.
