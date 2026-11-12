@@ -877,8 +877,9 @@ export class PhoneChatMinigame extends MinigameScene {
         const INTER_MESSAGE_MS = 400;
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-        // If story has ended with no messages, end conversation immediately
-        if (lastResult.hasEnded && accumulatedMessages.length === 0) {
+        // If story has ended with no messages, end conversation immediately (unless the step places a
+        // call: #place_call is checked once the lines have shown, before the story-end checks)
+        if (lastResult.hasEnded && accumulatedMessages.length === 0 && !placeCallFromTags(accumulatedTags).found) {
             console.log('🏁 Conversation ended');
             if (this._finishPretextCall()) return;
             this._notifyConversationEnded();

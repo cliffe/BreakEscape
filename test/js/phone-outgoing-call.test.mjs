@@ -476,3 +476,346 @@ test('A2b R3 M1: #exit_conversation (_exitRingerCall) shows the beat then comple
         assert.deepEqual(c.log.completed, [true]);
     } finally { t.restore(); }
 });
+
+// ======================================================================================
+// A5: outgoing calls. Config picks, the dial timeline, #place_call (plan 2.5).
+// ======================================================================================
+
+const { normaliseCall, pickButtonCall, pickPlacedCall, placeCallFromTags } = ringConfig;
+const { DIAL_MS, RING_OUT_MS, NO_ANSWER_BEAT_MS, RINGBACK_CADENCE, RINGBACK_FREQUENCIES, ringbackGain, startRingback } = dialMod;
+const holdsFrom = (set) => (w) => set.has(w);
+
+test('A5 config: the button dials the first entry whose when holds, in order, skipping button false', () => {
+    const entries = normaliseCall([
+        { knot: 'secret_call', button: false },
+        { knot: 'late_call', when: 'globalVars.late' },
+        { knot: 'early_call' },
+    ]);
+    assert.equal(pickButtonCall(entries, holdsFrom(new Set())).entry.knot, 'early_call');
+    assert.equal(pickButtonCall(entries, holdsFrom(new Set(['globalVars.late']))).entry.knot, 'late_call', 'order, not specificity');
+    assert.equal(pickButtonCall(normaliseCall([{ knot: 'x', button: false }]), holdsFrom(new Set())), null, 'only button false entries: no button');
+});
+
+test('A5 config: when fails: no_answer rings out, hidden gives no button, and a later entry that holds still wins', () => {
+    const out = normaliseCall({ knot: 'k', when: 'globalVars.a' });
+    assert.deepEqual(pickButtonCall(out, holdsFrom(new Set())).kind, 'no_answer');
+    assert.equal(pickButtonCall(out, holdsFrom(new Set(['globalVars.a']))).kind, 'connect');
+    const hidden = normaliseCall({ knot: 'k', when: 'globalVars.a', unavailable: 'hidden' });
+    assert.equal(pickButtonCall(hidden, holdsFrom(new Set())), null);
+    const two = normaliseCall([{ knot: 'a', when: 'globalVars.a', unavailable: 'hidden' }, { knot: 'b', when: 'globalVars.b' }]);
+    assert.equal(pickButtonCall(two, holdsFrom(new Set(['globalVars.b']))).entry.knot, 'b');
+    assert.equal(pickButtonCall(two, holdsFrom(new Set())).kind, 'no_answer', 'no hidden fallback: the b entry rings out');
+    assert.equal(pickButtonCall([], holdsFrom(new Set())), null);
+    assert.equal(pickButtonCall(undefined, holdsFrom(new Set())), null);
+});
+
+test('A5 config: a pending callback wins over every entry and skips when', () => {
+    const entries = normaliseCall([{ knot: 'a', when: 'globalVars.never' }, { knot: 'b' }]);
+    const pick = pickButtonCall(entries, holdsFrom(new Set()), { knot: 'old_call' });
+    assert.equal(pick.kind, 'callback');
+    assert.equal(pick.entry.knot, 'old_call');
+    assert.equal(pickButtonCall(entries, holdsFrom(new Set()), { knot: '' }).kind, 'connect', 'a callback with no knot is no callback');
+});
+
+test('A5 config: #place_call:<knot> dials that entry (button false too); a throwing or failing when rings out; a bad knot is null', () => {
+    const entries = normaliseCall([{ knot: 'a' }, { knot: 'extract_call', button: false, when: 'globalVars.ready' }]);
+    assert.equal(pickPlacedCall(entries, holdsFrom(new Set(['globalVars.ready'])), 'extract_call').kind, 'connect');
+    assert.equal(pickPlacedCall(entries, holdsFrom(new Set()), 'extract_call').kind, 'no_answer');
+    assert.equal(pickPlacedCall(entries, () => { throw new Error('x'); }, 'extract_call').kind, 'no_answer');
+    assert.equal(pickPlacedCall(entries, holdsFrom(new Set()), 'nope'), null);
+    assert.equal(pickPlacedCall(entries, holdsFrom(new Set()), null).entry.knot, 'a', 'no knot: what the button dials');
+    assert.equal(pickPlacedCall(entries, holdsFrom(new Set()), 'a', { knot: 'a' }).kind, 'callback');
+});
+
+test('A5 config: the place_call tag, bare and with a knot, found anywhere among the step\'s tags; nothing else matches', () => {
+    assert.deepEqual(placeCallFromTags(['place_call']), { found: true, knot: null });
+    assert.deepEqual(placeCallFromTags(['speaker:x', 'place_call:extract_call']), { found: true, knot: 'extract_call' });
+    assert.deepEqual(placeCallFromTags([' PLACE_CALL : k2 ']), { found: true, knot: 'k2' });
+    assert.deepEqual(placeCallFromTags(['place_call:k.stitch']), { found: true, knot: 'k' });
+    for (const t of [['place_calls'], ['place_call_now'], ['exit_conversation'], [], null, undefined, ['no place_call here']]) {
+        assert.deepEqual(placeCallFromTags(t), { found: false, knot: null }, JSON.stringify(t));
+    }
+});
+
+// ---- the dial timeline ------------------------------------------------------------------
+
+function dialMake({ screen = true, when = null, callback = false, holds = true } = {}) {
+    const stat = { status: [], shown: [], connected: [], opened: [], completed: [], ringbackStops: 0 };
+    const inst = Object.create(PhoneChatMinigame.prototype);
+    inst.params = { npcId: 'desk', ringerCall: { id: 'call-7', direction: 'outgoing', callback }, dial: { when, callback } };
+    inst.currentNPCId = 'desk';
+    inst.gameState = { isActive: true };
+    inst.complete = (ok) => { stat.completed.push(ok); inst.gameState.isActive = false; };
+    inst.openConversation = (id) => stat.opened.push(id);
+    inst.ui = {
+        isCallMode: screen,
+        elements: { choicesContainer: { innerHTML: 'x' } },
+        showConversation: (id) => stat.shown.push(id),
+        setCallStatus: (m) => stat.status.push(m),
+    };
+    globalThis.__stubs.startRingback = () => ({ stop() { stat.ringbackStops++; } });
+    window.npcManager = { callConditionHolds: () => holds };
+    window.phoneRinger = { outgoingConnected: (n, id) => stat.connected.push([n, id]) };
+    return { inst, stat };
+}
+
+test('A5 dial: "Calling" with the ring-back for DIAL_MS, then the call connects: row 31 is told, the ring-back stops, the story opens', () => {
+    const t = timers();
+    try {
+        const { inst, stat } = dialMake();
+        inst._runDial();
+        assert.deepEqual(stat.shown, ['desk']);
+        assert.deepEqual(stat.status, ['calling']);
+        assert.deepEqual(t.list.filter((x) => x.live).map((x) => x.ms), [DIAL_MS]);
+        assert.deepEqual(stat.opened, [], 'no story before anyone answers');
+        t.run();
+        assert.deepEqual(stat.connected, [['desk', 'call-7']]);
+        assert.deepEqual(stat.opened, ['desk']);
+        assert.equal(stat.ringbackStops, 1);
+        assert.deepEqual(stat.completed, []);
+    } finally { t.restore(); delete window.phoneRinger; delete window.npcManager; }
+});
+
+test('A5 dial: when failing at the end of the dial keeps ringing for RING_OUT_MS, shows "No answer", then ends once with the no-answer flags', () => {
+    const t = timers();
+    try {
+        const { inst, stat } = dialMake({ when: 'globalVars.back', holds: false });
+        inst._runDial();
+        t.run();                                                    // the dial ends: still no answer
+        assert.deepEqual(stat.opened, []);
+        assert.deepEqual(t.list.filter((x) => x.live).map((x) => x.ms), [RING_OUT_MS]);
+        assert.deepEqual(stat.status, ['calling'], 'still "Calling" while it rings out');
+        t.run();                                                    // rang out
+        assert.deepEqual(stat.status, ['calling', 'noanswer']);
+        assert.equal(stat.ringbackStops, 1, 'the tone stops when it rings out');
+        assert.equal(inst._noAnswer, true);
+        assert.equal(inst._endedByCall, true);
+        assert.deepEqual(stat.completed, [], 'a beat first');
+        assert.deepEqual(t.list.filter((x) => x.live).map((x) => x.ms), [NO_ANSWER_BEAT_MS]);
+        t.run();
+        assert.deepEqual(stat.completed, [true]);
+        assert.deepEqual(stat.connected, [], 'row 31 is never told');
+    } finally { t.restore(); delete window.phoneRinger; delete window.npcManager; }
+});
+
+test('A5 dial: a callback connects at once at the end of the dial whatever when says', () => {
+    const t = timers();
+    try {
+        const { inst, stat } = dialMake({ when: 'globalVars.never', callback: true, holds: false });
+        inst._runDial();
+        t.run();
+        assert.deepEqual(stat.opened, ['desk']);
+    } finally { t.restore(); delete window.phoneRinger; delete window.npcManager; }
+});
+
+test('A5 dial: when is checked at the end of the dial, not at the press', () => {
+    const t = timers();
+    try {
+        const { inst, stat } = dialMake({ when: 'globalVars.x', holds: false });
+        inst._runDial();
+        window.npcManager.callConditionHolds = () => true;           // it came true while "Calling"
+        t.run();
+        assert.deepEqual(stat.opened, ['desk']);
+    } finally { t.restore(); delete window.phoneRinger; delete window.npcManager; }
+});
+
+test('A5 dial: the terminal look has no call screen, so it connects or gives up at once, with no ring-back and no beat', () => {
+    const t = timers();
+    try {
+        const a = dialMake({ screen: false });
+        a.inst._runDial();
+        assert.deepEqual(a.stat.opened, ['desk']);
+        assert.deepEqual(a.stat.status, []);
+        const b = dialMake({ screen: false, when: 'globalVars.x', holds: false });
+        b.inst._runDial();
+        assert.deepEqual(b.stat.completed, [true]);
+        assert.equal(b.inst._noAnswer, true);
+        assert.equal(t.list.filter((x) => x.live).length, 0, 'no timer at all');
+    } finally { t.restore(); delete window.phoneRinger; delete window.npcManager; }
+});
+
+test('A5 dial: End while dialling stops the timer and the tone, never opens the story, completes once with no no-answer flag', () => {
+    const t = timers();
+    try {
+        const { inst, stat } = dialMake();
+        inst._runDial();
+        inst.npcManager = { getNPC: () => ({ id: 'desk' }), addMessage() {} };
+        inst.ui.getCurrentView = () => 'conversation';
+        inst.ui.showCallEnded = () => false;
+        inst._flushPendingMessages = noop; inst._endSocialRun = noop; inst._pendingNpcMessages = [];
+        inst.closeConversation();
+        assert.deepEqual(stat.completed, [true]);
+        assert.equal(stat.ringbackStops, 1);
+        assert.equal(t.list.filter((x) => x.live).length, 0, 'the dial timer is cancelled');
+        assert.equal(inst._noAnswer, undefined);
+        assert.equal(inst._endedByCall, true);
+        t.run();
+        assert.deepEqual(stat.opened, []);
+    } finally { t.restore(); delete window.phoneRinger; delete window.npcManager; }
+});
+
+test('A5 dial: a call closed by something else mid-dial (cleanup) stops the timer and the tone', () => {
+    const t = timers();
+    try {
+        const { inst, stat } = dialMake();
+        inst._runDial();
+        inst._stopDial();
+        assert.equal(stat.ringbackStops, 1);
+        assert.equal(t.list.filter((x) => x.live).length, 0);
+        t.run();
+        assert.deepEqual(stat.opened, []);
+    } finally { t.restore(); delete window.phoneRinger; delete window.npcManager; }
+});
+
+test('A5 dial: start() dials an outgoing call before it opens the story, and opens an incoming one at once', async () => {
+    const src = readFileSync(join(chat, 'phone-chat-minigame.js'), 'utf8');
+    assert.match(src, /direction === 'outgoing' && this\.params\.dial\) \{\s*this\._runDial\(\);\s*\} else \{\s*this\.openConversation\(this\.currentNPCId\);/);
+});
+
+// ---- the ring-back tone -----------------------------------------------------------------
+
+test('A5 ring-back: the UK cadence and frequencies, and a gain from the sound manager\'s master and notification volumes', () => {
+    assert.deepEqual([...RINGBACK_CADENCE], [0.4, 0.2, 0.4, 2.0]);
+    assert.deepEqual([...RINGBACK_FREQUENCIES], [400, 450]);
+    const loud = ringbackGain({ masterVolume: 1, volumeSettings: { notifications: 0.6 }, enabled: true });
+    const quiet = ringbackGain({ masterVolume: 0.5, volumeSettings: { notifications: 0.6 }, enabled: true });
+    assert.ok(loud > 0 && quiet > 0 && Math.abs(quiet * 2 - loud) < 1e-9, 'scales with the master volume');
+    assert.equal(ringbackGain({ masterVolume: 0, volumeSettings: { notifications: 0.6 } }), 0);
+    assert.equal(ringbackGain({ masterVolume: 1, volumeSettings: { notifications: 0 } }), 0);
+    assert.equal(ringbackGain({ masterVolume: 1, volumeSettings: { notifications: 0.6 }, enabled: false }), 0, 'sound off');
+});
+
+test('A5 ring-back: schedules the on/off cadence on a gain node and stop() silences and closes what it made; no audio is a quiet no-op', () => {
+    const sched = [];
+    const made = { osc: [], stopped: 0, closed: 0, disconnected: 0 };
+    const ctx = {
+        state: 'running', currentTime: 10, destination: {},
+        createGain() { return { gain: { value: 1, setValueAtTime: (v, at) => sched.push([v, at]), cancelScheduledValues() {} }, connect() {}, disconnect() { made.disconnected++; } }; },
+        createOscillator() { const o = { frequency: {}, connect() {}, start() {}, stop() { made.stopped++; } }; made.osc.push(o); return o; },
+        close() { made.closed++; },
+    };
+    const win = { AudioContext: function () { return ctx; }, soundManager: { masterVolume: 1, volumeSettings: { notifications: 0.6 }, enabled: true } };
+    const tone = startRingback(win);
+    assert.deepEqual(made.osc.map((o) => o.frequency.value), [400, 450]);
+    const first = sched.slice(0, 4).map(([v, at]) => [v > 0 ? 'on' : 'off', +(at - sched[0][1]).toFixed(2)]);
+    assert.deepEqual(first, [['on', 0], ['off', 0.4], ['on', 0.6], ['off', 1]], '0.4 on, 0.2 off, 0.4 on, 2 off');
+    assert.ok(Math.abs(sched[4][1] - sched[0][1] - 3) < 1e-9, 'a 3 s cycle');
+    tone.stop(); tone.stop();
+    assert.deepEqual([made.stopped, made.closed], [2, 1], 'stopped once; an own context is closed');
+    assert.equal(startRingback({}).gain, 0, 'no AudioContext: nothing');
+    assert.equal(startRingback(null).gain, 0);
+    assert.equal(startRingback({ AudioContext: function () { throw new Error('no'); } }).gain, 0);
+    assert.equal(startRingback({ ...win, soundManager: { masterVolume: 0, volumeSettings: { notifications: 0.6 } } }).gain, 0, 'muted: no tone at all');
+});
+
+// ---- #place_call -------------------------------------------------------------------------
+
+function placeMake({ ended = true, ringer = false, forced = false, dialOk = true, settle = true } = {}) {
+    const log = { went: [], saved: [], placed: [], choicesShown: 0, settled: 0, order: [] };
+    const npc = { id: 'desk', homeKnot: 'start', currentKnot: 'hub' };
+    const story = { canContinue: false, currentChoices: ended ? [] : [{ sourcePath: 'hub.0' }] };
+    const inst = Object.create(PhoneChatMinigame.prototype);
+    inst.params = { npcId: 'desk', ...(ringer ? { ringerCall: { id: 'c' } } : {}), ...(forced ? { disableClose: true } : {}) };
+    inst.currentNPCId = 'desk';
+    inst.npcManager = { getNPC: () => npc, getConversationHistory: () => [{ text: 'hub line' }], addMessage() {} };
+    inst.conversation = {
+        engine: { story },
+        goToKnot(k) { log.order.push('goToKnot'); log.went.push(k); return true; },
+        settleOnSeenLines(h) { log.order.push('settle'); log.settled++; log.history = h; return settle; },
+        saveState() { return { at: log.went.at(-1) || 'unchanged' }; },
+    };
+    inst.gameState = { isActive: true };
+    inst.isConversationActive = true;
+    inst._pendingNpcMessages = ['left'];
+    inst.saveStoryState = () => { log.order.push('save'); log.saved.push(inst.conversation.saveState().at); };
+    inst.showCurrentChoices = () => { log.choicesShown++; };
+    window.phoneRinger = { placeCall: (id, opts) => { log.order.push('place'); log.placed.push([id, opts.knot]); return dialOk; } };
+    return { inst, log };
+}
+
+test('A5 #place_call: with -> DONE the story is moved to the home knot, settled on the seen hub, saved, and only then does it dial', () => {
+    const { inst, log } = placeMake();
+    assert.equal(inst._placeCallFromTags(['place_call:extract_call']), true);
+    assert.deepEqual(log.went, ['start']);
+    assert.deepEqual(log.history, [{ text: 'hub line' }], 'read ahead against the thread\'s history');
+    assert.deepEqual(log.order, ['goToKnot', 'settle', 'save', 'place']);
+    assert.deepEqual(log.saved, ['start']);
+    assert.deepEqual(log.placed, [['desk', 'extract_call']]);
+    assert.deepEqual(inst._pendingNpcMessages, [], 'nothing typed after the dial');
+    assert.equal(log.choicesShown, 0);
+});
+
+test('A5 #place_call: the bare tag dials with no knot (what the button would dial)', () => {
+    const { inst, log } = placeMake();
+    assert.equal(inst._placeCallFromTags(['place_call']), true);
+    assert.deepEqual(log.placed, [['desk', null]]);
+});
+
+test('A5 #place_call: a story still on choices (no -> DONE) is saved where it is and not moved', () => {
+    const { inst, log } = placeMake({ ended: false });
+    assert.equal(inst._placeCallFromTags(['place_call']), true);
+    assert.deepEqual(log.went, []);
+    assert.deepEqual(log.order, ['save', 'place']);
+});
+
+test('A5 #place_call: no tag is no dial; a call, a locked phone and a missing ringer never dial', () => {
+    const none = placeMake();
+    assert.equal(none.inst._placeCallFromTags(['exit_conversation']), false);
+    assert.deepEqual(none.log.placed, []);
+    assert.deepEqual(none.log.order, []);
+    for (const opts of [{ ringer: true }, { forced: true }]) {
+        const { inst, log } = placeMake(opts);
+        assert.equal(inst._placeCallFromTags(['place_call']), false, JSON.stringify(opts));
+        assert.deepEqual(log.placed, []);
+        assert.deepEqual(log.went, [], 'the story is untouched');
+    }
+    const noRinger = placeMake();
+    delete window.phoneRinger;
+    assert.equal(noRinger.inst._placeCallFromTags(['place_call']), false);
+});
+
+test('A5 #place_call: when the call cannot dial the thread stays open on its choices (not dead, not closed)', () => {
+    const { inst, log } = placeMake({ dialOk: false });
+    assert.equal(inst._placeCallFromTags(['place_call:k']), true, 'the caller must stop: the tag was handled');
+    assert.equal(log.choicesShown, 1);
+    assert.deepEqual(log.completed, undefined);
+    assert.equal(inst.isConversationActive, true);
+});
+
+test('A5 #place_call: both paths check the tag after the lines and before the exit and story-end checks', () => {
+    const src = readFileSync(join(chat, 'phone-chat-minigame.js'), 'utf8');
+    const present = src.slice(src.indexOf('async _presentOutput('), src.indexOf('async _endingKeptGoing('));
+    const choice = src.slice(src.indexOf('async handleChoice('), src.indexOf('_notifyConversationEnded() {'));
+    // continue path: after the line loop (this._pendingNpcMessages = []), before the ringer exit check and the choices
+    assert.ok(present.indexOf('this._pendingNpcMessages = [];\n\n        // #place_call') > 0, 'continue path: after the lines');
+    assert.ok(present.indexOf('_placeCallFromTags') < present.indexOf("includes('exit_conversation')"), 'continue path: before #exit_conversation');
+    assert.ok(present.indexOf('_placeCallFromTags') < present.indexOf('this.ui.addChoices'), 'continue path: before the choices');
+    assert.ok(present.indexOf('_placeCallFromTags') < present.lastIndexOf('_releaseForcedCall'), 'continue path: before the story-end branch');
+    // after-choice path
+    assert.ok(choice.indexOf('_placeCallFromTags') > choice.indexOf('this._pendingNpcMessages = [];'), 'choice path: after the lines');
+    assert.ok(choice.indexOf('_placeCallFromTags') < choice.indexOf('const shouldExit'), 'choice path: before the exit check');
+    assert.ok(choice.indexOf('_placeCallFromTags') < choice.indexOf('lastResult.hasEnded'), 'choice path: before the story-end check');
+});
+
+test('A5 #place_call: real paths, a step with only the tag types nothing, and the story-end branch never runs', async () => {
+    const { inst, log } = placeMake();
+    inst.ui = { addChoices() { log.choices = true; }, showNotification() { log.toast = true; } };
+    inst._endingKeptGoing = async () => false;
+    inst._releaseForcedCall = () => { log.released = true; };
+    inst._showStoryLine = async () => { log.typed = true; return true; };
+    await inst._presentOutput([], ['place_call:extract_call'], { choices: [], canContinue: false, hasEnded: true }, { tagsApplied: true });
+    assert.deepEqual(log.placed, [['desk', 'extract_call']]);
+    assert.equal(log.typed, undefined, 'nothing is typed before dialling');
+    assert.equal(log.released, undefined);
+    assert.equal(log.toast, undefined, 'no "Conversation ended" toast');
+    assert.equal(log.choices, undefined);
+});
+
+test('A5 #place_call: a call placed with the continue path also runs after a line that was typed (lines first, then the dial)', async () => {
+    const { inst, log } = placeMake();
+    inst.ui = { addChoices() {}, showNotification() {} };
+    inst._endingKeptGoing = async () => false;
+    inst._showStoryLine = async (line) => { log.order.push(`typed:${line}`); return true; };
+    await inst._presentOutput(['One moment.'], ['place_call'], { choices: [], canContinue: false, hasEnded: true }, { tagsApplied: true });
+    assert.deepEqual(log.order.filter((x) => x === 'place' || x.startsWith('typed')), ['typed:One moment.', 'place']);
+});
