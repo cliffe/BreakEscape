@@ -416,17 +416,19 @@ test('exportMailState then init with that export reproduces the messages, jobs, 
     const a = make();
     a.s.addMessage('guest', { id: 'sent1', folder: 'sent', body: 'mine', landed: true, tells: [] });
     a.s.markRead('guest', 'seed_now');
-    a.s.setDraft('guest', { body: 'wip' });
+    a.s.setDraft('guest', { freeText: 'wip' });
     a.s.state.metrics.t1 = { sent: 1, failed: 0, landed: 1, firstTryLanded: true };
-    a.s.setThread('t1:guest', { pos: 2 });
+    a.s.setThread('t1:guest', { position: 'two' });
     a.s.addJob(textJob({ jobId: 'jx' }), 7000);
     const exported = JSON.parse(JSON.stringify(a.s.exportMailState()));
     const b = make({ saved: exported });
     assert.equal(b.s.findMessage('sent1').body, 'mine');
     assert.equal(b.s.findMessage('seed_now').read, true);
-    assert.deepEqual(b.s.state.drafts.guest, { body: 'wip' });
+    // Draft and thread fields the server keeps (MAIL_DRAFT_KEYS, position), so the
+    // export mirrors the server and the round-trip reproduces them (2.1).
+    assert.deepEqual(b.s.state.drafts.guest, { freeText: 'wip' });
     assert.deepEqual(b.s.state.metrics.t1, a.s.state.metrics.t1);
-    assert.deepEqual(b.s.state.threads['t1:guest'], { pos: 2 });
+    assert.deepEqual(b.s.state.threads['t1:guest'], { position: 'two' });
     assert.equal(b.s.exportJobs().find((j) => j.jobId === 'jx').remainingMs, 7000);
 });
 

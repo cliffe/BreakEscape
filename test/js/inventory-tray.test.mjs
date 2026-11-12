@@ -256,3 +256,41 @@ test('unregistering a rule refreshes: its items show again', async () => {
     off();
     assert.equal(hidden(held('cable_capture')), false);
 });
+
+// Sync deltas P2 (SYNC_DELTAS_PLAN 4.6): applyInventoryDelta reconciles the tray from a
+// network route's added/removed answer, in one deferred batch.
+test('applyInventoryDelta adds and removes by id, ignores a repeat, and runs one refresh', async () => {
+    reset();
+    await add(lockpick);
+    const before = changed();
+    const link = { id: 'netlink_a', type: 'network_link', name: 'Link' };
+    const out = inv.applyInventoryDelta({ added: [link], removed: ['lockpick'] });
+    assert.deepEqual(out, { added: ['netlink_a'], removed: ['lockpick'] });
+    assert.ok(held('netlink_a'), 'the added item is in the tray');
+    assert.ok(!held('lockpick'), 'the removed item is gone');
+    assert.equal(changed(), before + 1, 'one tray refresh for the whole batch');
+
+    // The same delta again changes nothing: the link is held, the lockpick is already gone.
+    const again = inv.applyInventoryDelta({ added: [link], removed: ['lockpick'] });
+    assert.deepEqual(again, { added: [], removed: [] });
+});
+
+test('applyInventoryDelta adds an id-less item only once (by identifier)', async () => {
+    reset();
+    const cup = { type: 'office-misc-cup', name: 'Cup of coffee', decor: true, takeable: true };
+    inv.applyInventoryDelta({ added: [cup] });
+    const first = window.inventory.items.length;
+    assert.ok(first >= 1, 'the id-less item was added');
+    inv.applyInventoryDelta({ added: [cup] });
+    assert.equal(window.inventory.items.length, first, 'a second apply does not add it again');
+});
+
+test('applyInventoryDelta never removes an id the tray lacks and tolerates empty input', async () => {
+    reset();
+    await add(lockpick);
+    const out = inv.applyInventoryDelta({ removed: ['not_here'] });
+    assert.deepEqual(out, { added: [], removed: [] });
+    assert.ok(held('lockpick'), 'an unrelated held item is untouched');
+    assert.doesNotThrow(() => inv.applyInventoryDelta());
+    assert.doesNotThrow(() => inv.applyInventoryDelta({}));
+});

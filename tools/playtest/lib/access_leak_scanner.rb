@@ -680,7 +680,7 @@ class AccessLeakScanner
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
         next if shared == password && share_path?(json_path)
-        next if reveal_secret? && @shared.include?(password) && json_path.include?('.se_captures')
+        next if reveal_secret? && @shared.include?(password) && json_path.include?('.captures')
 
         owners.each do |npc_id|
           next if ctx[:capture_secrets] && @capture_npcs.include?(npc_id) && (@served_npcs.nil? || @served_npcs.include?(npc_id))
@@ -710,8 +710,8 @@ class AccessLeakScanner
 
   SHARE_PATHS = %w[$.line $.note].freeze
 
-  # The capture's note (stored in the se_captures global, so in every sync and reload) holds the
-  # password only where social.captures.revealSecret is on (review R1 m3)
+  # The capture's note (served in the bootstrap/answer `captures` record, server-owned since 6a)
+  # holds the password only where social.captures.revealSecret is on (review R1 m3)
   def share_path?(json_path)
     SHARE_PATHS.include?(json_path) || (json_path == '$.capture.note' && reveal_secret?)
   end

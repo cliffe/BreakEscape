@@ -249,3 +249,35 @@ test('m5: a capture_log holder must name a sprite that exists', { skip }, () => 
     assert.equal(run('capture_log').length, 1, 'the missing picture is refused');
     assert.equal(run('no_such_picture').length, 1);
 });
+
+test('M1: a hard-access value in a capture note, roleLabel, address or host is an error', { skip }, () => {
+    // A password lock whose code is a hard-access value; the same code hidden in a capture field.
+    for (const field of ['note', 'roleLabel', 'address', 'host']) {
+        const sc = clean();
+        sc.rooms.office.objects.push({ id: 'safe', type: 'container', lockType: 'password',
+            locked: true, requires: 'HARDCODE99' });
+        npc(sc, 'chris').eventMappings[0].addCapture[field] = 'the opening code is HARDCODE99';
+        assertHas(errors(issues(sc)), `capture ${field} for "chris" contains a hard-access value`);
+    }
+    // The clean fixture (no code in any field) stays clean.
+    assertNot(issues(clean()), 'contains a hard-access value');
+});
+
+test('M2: a credential capture on an account holder for a different target with no address is an error', { skip }, () => {
+    const sc = clean();
+    // chris is an account holder; a cross-target credential capture with no address.
+    npc(sc, 'chris').eventMappings.push({ eventPattern: 'cross', addCapture: cap('other_target') });
+    assertHas(errors(issues(sc)),
+        'capture for targetId "other_target" is written on account holder "chris" but names no address');
+
+    // The same cross-target capture with an explicit address is accepted.
+    const ok = clean();
+    npc(ok, 'chris').eventMappings.push({ eventPattern: 'cross', addCapture: cap('other_target', { address: 'other.addr' }) });
+    assertNot(issues(ok), 'but names no address');
+
+    // A foothold cross-target capture (keys on host, not address) needs no address.
+    const foot = clean();
+    npc(foot, 'chris').eventMappings.push({ eventPattern: 'cross',
+        addCapture: { targetId: 'drop_lure', kind: 'foothold', host: 'Accounts PC' } });
+    assertNot(issues(foot), 'but names no address');
+});

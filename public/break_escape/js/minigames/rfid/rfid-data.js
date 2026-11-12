@@ -17,6 +17,13 @@ import { ApiClient } from '../../api-client.js';
 // Maximum number of cards that can be saved to cloner
 const MAX_SAVED_CARDS = 50;
 
+// The display-card fields the server stores, and the rfid_data keys it keeps. Mirrors of
+// Game::SAVED_CARD_KEYS and Game::SAVED_CARD_DATA_KEYS (SYNC_DELTAS_PLAN 5.2); a node test
+// keeps the two sides in step.
+export const SAVED_CARD_KEYS = ['card_id', 'name', 'rfid_protocol', 'rfid_hex', 'rfid_facility',
+    'rfid_card_number', 'rfid_data', 'timestamp'];
+export const SAVED_CARD_DATA_KEYS = ['cardId', 'hex', 'facility', 'cardNumber', 'uid', 'sectors', 'masterKeyKnown'];
+
 // Template names for generated cards
 const CARD_NAME_TEMPLATES = [
     'Security Badge',
@@ -342,7 +349,8 @@ export class RFIDDataManager {
                 timestamp: Date.now()
             };
             console.log(`📡 Overwritten duplicate card: ${cardData.name || 'Card'}`);
-            this.persistSavedCards(cloner);
+            // The server records the copy and stores its own display card (SYNC_DELTAS_PLAN
+            // P1, recordCloneOnServer); the whole list is no longer sent.
             return { success: true, message: `Updated: ${cardData.name || 'Card'}` };
         } else {
             // Add new card
@@ -351,25 +359,52 @@ export class RFIDDataManager {
                 timestamp: Date.now()
             });
             console.log(`📡 Saved new card: ${cardData.name || 'Card'}`);
-            this.persistSavedCards(cloner);
             return { success: true, message: `Saved: ${cardData.name || 'Card'}` };
         }
     }
 
     /**
-     * Send the cloner's saved cards to the server, which keeps them on the
-     * cloner's inventory entry so they come back after a page reload.
-     * Fire-and-forget: the card is already usable this session, so a failed
-     * save is logged, not shown.
-     * @param {Object} cloner - The rfid_cloner inventory item
+     * The one-card body the server stores for a recorded copy (SYNC_DELTAS_PLAN P1): the
+     * card picked to the stored keys, with rfid_data to its own key set. The server reads
+     * only rfid_data from it (identity comes from the scenario definition), but sending the
+     * whole picked card keeps the shapes aligned and the test pins the key lists in step.
+     * @param {Object} card - The card just saved
+     * @returns {Object} the picked card
      */
-    persistSavedCards(cloner) {
+    savedCardForServer(card) {
+        if (!card || typeof card !== 'object') return {};
+        const out = {};
+        for (const key of SAVED_CARD_KEYS) {
+            if (key === 'rfid_data') continue;
+            if (card[key] !== undefined) out[key] = card[key];
+        }
+        if (card.rfid_data && typeof card.rfid_data === 'object') {
+            const data = {};
+            for (const key of SAVED_CARD_DATA_KEYS) {
+                if (card.rfid_data[key] !== undefined) data[key] = card.rfid_data[key];
+            }
+            if (Object.keys(data).length) out.rfid_data = data;
+        }
+        return out;
+    }
+
+    /**
+     * Remove one display card from the cloner's local list and tell the server
+     * (POST /inventory remove_saved_card). The copy itself stands; the list is a display
+     * convenience. No screen calls this yet (SYNC_DELTAS_PLAN P1), so the list has a way to
+     * shrink and the cloner-full message can offer it later.
+     * @param {string} cardId
+     */
+    removeSavedCard(cardId) {
+        cardId = String(cardId || '');
+        if (!cardId) return;
+        const cloner = window.inventory?.items?.find(item => item?.scenarioData?.type === 'rfid_cloner');
+        if (cloner && Array.isArray(cloner.scenarioData.saved_cards)) {
+            cloner.scenarioData.saved_cards = cloner.scenarioData.saved_cards.filter(c => c?.card_id !== cardId);
+        }
         if (!window.breakEscapeConfig?.gameId) return;
-        ApiClient.post('/inventory', {
-            action_type: 'update_saved_cards',
-            saved_cards: cloner.scenarioData.saved_cards
-        }).catch(error => {
-            console.warn('📡 Could not save cloner cards to server (lost on reload):', error.message);
+        ApiClient.post('/inventory', { action_type: 'remove_saved_card', card_id: cardId }).catch(error => {
+            console.warn('📡 Could not remove saved card on server:', error.message);
         });
     }
 

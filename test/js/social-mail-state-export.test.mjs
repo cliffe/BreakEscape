@@ -27,8 +27,8 @@ copy('systems/mail-scheduler.js', 'mail-scheduler.mjs', s => s.replace("'./globa
 
 globalThis.window = { breakEscapeConfig: { gameId: 1, apiBasePath: '/games/1', csrfToken: 't' } };
 globalThis.document = { querySelector: () => null };
-const { MailScheduler } = await import(pathToFileURL(join(dir, 'mail-scheduler.mjs')).href);
-const { StateSync } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).href);
+const { MailScheduler, flattenSavedMailState } = await import(pathToFileURL(join(dir, 'mail-scheduler.mjs')).href);
+const { StateSync, stableJson } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).href);
 
 let flushed = [];
 let answer = { success: true }; // what the fake server answers a PUT with
@@ -341,7 +341,11 @@ test('pagehide flush: mailState comes right after globalVariables in the first r
 
 test('pagehide flush: a mailState over the budget is dropped whole, not cut', () => {
   const { mail } = setup();
-  mail.addMessage('guest', { id: 'huge', folder: 'inbox', subject: 's', body: big(70_000), read: false, tells: [], landed: null });
+  // Each body is clipped to MAX_MAIL_BODY_CHARS (4000) on export now (2.1), so a
+  // single huge body no longer overflows; many clipped messages do.
+  for (let i = 0; i < 20; i++) {
+    mail.addMessage('guest', { id: `huge${i}`, folder: 'inbox', subject: 's', body: big(4000), read: false, tells: [], landed: null });
+  }
   new StateSync().flush();
   assert.equal(flushed.length, 1);
   assert.ok(flushed[0].length <= 60_000);
@@ -371,4 +375,137 @@ test('restore takes the nested server shape, keeps only stored message fields, a
   assert.equal('bogus' in out['mailboxes.guest.b'], false);
   assert.equal(mail.findMessage('welcome').body, 'Welcome.');
   assert.equal(out.jobs[0].remainingMs, 3000);
+});
+
+// --- Cross-side constants and the literal scan (SYNC_DELTAS_PLAN 2.1, 3.7) ---
+// The export clips only mirror the server while the limits agree on both sides.
+// These tests read every named limit from game.rb's source and from the client
+// source, and fail if a value drifts or a limit is written inline again in one
+// of the scanned sanitiser methods.
+
+const gameRb = readFileSync(join(here, '../../app/models/break_escape/game.rb'), 'utf8');
+const mailSrc = readFileSync(join(js, 'systems/mail-scheduler.js'), 'utf8');
+const npcSrc = readFileSync(join(js, 'systems/npc-manager.js'), 'utf8');
+const inkSrc = readFileSync(join(js, 'systems/npc-conversation-state.js'), 'utf8');
+const clientSrc = { mail: mailSrc, npc: npcSrc, ink: inkSrc };
+
+// A `NAME = <number>` definition, with N.kilobytes/N.megabyte resolved. Matches
+// only the definition (a `<=` or `==` use has no bare `=` right after the name).
+function readNum(src, name) {
+  const m = src.match(new RegExp('(?<![A-Za-z0-9_])' + name + '(?![A-Za-z0-9_])\\s*=\\s*([0-9_]+)(?:\\.(kilobytes?|megabytes?))?'));
+  if (!m) return undefined;
+  let n = parseInt(m[1].replace(/_/g, ''), 10);
+  if (/kilobyte/.test(m[2] || '')) n *= 1024;
+  if (/megabyte/.test(m[2] || '')) n *= 1024 * 1024;
+  return n;
+}
+
+// A `NAME = %w[...]` (Ruby) or `NAME = [...]` (JS) list, read to the first `]`.
+function readList(src, name) {
+  const m = src.match(new RegExp('(?<![A-Za-z0-9_])' + name + '(?![A-Za-z0-9_])\\s*=\\s*(%w\\[[\\s\\S]*?\\]|\\[[\\s\\S]*?\\])'));
+  if (!m) return undefined;
+  const block = m[1];
+  if (block.startsWith('%w')) return block.slice(3, -1).split(/\s+/).filter(Boolean);
+  return [...block.matchAll(/['"]([^'"]*)['"]/g)].map(x => x[1]);
+}
+
+// [serverName, clientName, clientFile, kind]. The five client names that keep
+// their own spelling are mapped explicitly (2.1).
+const CONSTANTS = [
+  ['MAIL_MESSAGE_KEYS', 'MAIL_MESSAGE_FIELDS', 'mail', 'list'],
+  ['MAIL_DRAFT_KEYS', 'MAIL_DRAFT_KEYS', 'mail', 'list'],
+  ['MAIL_BODY_KEYS', 'MAIL_BODY_KEYS', 'mail', 'list'],
+  ['MAIL_FOLDERS', 'MAIL_FOLDERS', 'mail', 'list'],
+  ['MAIL_EXPECT_MODES', 'MAIL_EXPECT_MODES', 'mail', 'list'],
+  ['PHONE_MESSAGE_KEYS', 'PHONE_MESSAGE_FIELDS', 'npc', 'list'],
+  ['MAX_MAIL_BODY_CHARS', 'MAX_MAIL_BODY_CHARS', 'mail', 'num'],
+  ['MAX_MAIL_STRING', 'MAX_MAIL_STRING', 'mail', 'num'],
+  ['MAX_MAIL_JSON_DEPTH', 'MAX_MAIL_JSON_DEPTH', 'mail', 'num'],
+  ['MAX_MAIL_JSON_ENTRIES', 'MAX_MAIL_JSON_ENTRIES', 'mail', 'num'],
+  ['MAX_MAIL_JSON_KEY_CHARS', 'MAX_MAIL_JSON_KEY_CHARS', 'mail', 'num'],
+  ['MAX_MAIL_TELL_CHARS', 'MAX_MAIL_TELL_CHARS', 'mail', 'num'],
+  ['MAX_MAIL_TELLS', 'MAX_MAIL_TELLS', 'mail', 'num'],
+  ['MAX_MAIL_ID_LENGTH', 'MAX_MAIL_ID_LENGTH', 'mail', 'num'],
+  ['MAX_MAIL_BOX_ID_CHARS', 'MAX_MAIL_BOX_ID_CHARS', 'mail', 'num'],
+  ['MAX_MAIL_THREAD_POSITION_BYTES', 'MAX_MAIL_THREAD_POSITION_BYTES', 'mail', 'num'],
+  ['MAX_MAIL_THREAD_KEY_CHARS', 'MAX_MAIL_THREAD_KEY_CHARS', 'mail', 'num'],
+  ['MAX_MAIL_THREAD_CHOICES', 'MAX_MAIL_THREAD_CHOICES', 'mail', 'num'],
+  ['MAX_MAIL_EXPECT_TARGET_CHARS', 'MAX_MAIL_EXPECT_TARGET_CHARS', 'mail', 'num'],
+  ['MAX_MAIL_EXPECT_OPTIONS', 'MAX_MAIL_EXPECT_OPTIONS', 'mail', 'num'],
+  ['MAX_MAIL_DRAFT_ACCOUNT_CHARS', 'MAX_MAIL_DRAFT_ACCOUNT_CHARS', 'mail', 'num'],
+  ['MAX_PHONE_HISTORY_MESSAGES', 'PHONE_HISTORY_MAX_MESSAGES', 'npc', 'num'],
+  ['MAX_PHONE_MESSAGE_TEXT', 'PHONE_MESSAGE_MAX_CHARS', 'npc', 'num'],
+  ['MAX_PHONE_STORY_STATE_BYTES', 'PHONE_STORY_STATE_MAX_BYTES', 'npc', 'num'],
+  ['MAX_PHONE_TYPE_CHARS', 'MAX_PHONE_TYPE_CHARS', 'npc', 'num'],
+  ['MAX_PHONE_STORY_PATH_CHARS', 'MAX_PHONE_STORY_PATH_CHARS', 'npc', 'num'],
+  ['MAX_PHONE_KNOT_CHARS', 'MAX_PHONE_KNOT_CHARS', 'npc', 'num'],
+  ['MAX_PHONE_DEFERRED_TAG_CHARS', 'MAX_PHONE_DEFERRED_TAG_CHARS', 'npc', 'num'],
+  ['MAX_PHONE_DEFERRED_TAGS', 'MAX_PHONE_DEFERRED_TAGS', 'npc', 'num'],
+  ['MAX_PHONE_SCALAR_KEY_CHARS', 'MAX_PHONE_SCALAR_KEY_CHARS', 'npc', 'num'],
+  ['MAX_NPC_INK_NAME_CHARS', 'MAX_NPC_INK_NAME_CHARS', 'ink', 'num'],
+];
+
+test('constants: every mirrored limit matches between game.rb and the client', () => {
+  for (const [serverName, clientName, file, kind] of CONSTANTS) {
+    const src = clientSrc[file];
+    if (kind === 'num') {
+      const s = readNum(gameRb, serverName);
+      const c = readNum(src, clientName);
+      assert.ok(s !== undefined, `server constant ${serverName} not found`);
+      assert.ok(c !== undefined, `client constant ${clientName} not found`);
+      assert.equal(c, s, `${clientName} (${c}) != ${serverName} (${s})`);
+    } else {
+      const s = readList(gameRb, serverName);
+      const c = readList(src, clientName);
+      assert.ok(s !== undefined, `server list ${serverName} not found`);
+      assert.ok(c !== undefined, `client list ${clientName} not found`);
+      assert.deepEqual(c, s, `${clientName} != ${serverName}`);
+    }
+  }
+});
+
+// The sanitiser methods whose limits the client mirrors as numbers; a bare number
+// literal here (other than 0 and 1, and the split('.', 2) piece count) means a
+// limit was written inline instead of as a named constant the client can read.
+const SCANNED_METHODS = [
+  'sanitize_mail_message', 'sanitize_mail_json', 'sanitize_mail_threads',
+  'sanitize_mail_drafts', 'sanitize_phone_state_entry', 'mail_state_updates',
+  'mail_id?', 'mail_box_id?', 'merge_npc_ink_variables!'
+];
+
+function methodBody(src, name) {
+  const esc = name.replace(/[?!]/g, c => '\\' + c);
+  const start = src.search(new RegExp('^    def ' + esc + '\\(', 'm'));
+  assert.ok(start >= 0, `method not found: ${name}`);
+  const after = src.slice(start);
+  const end = after.search(/\n    end\n/);
+  return after.slice(0, end);
+}
+
+test('literal scan: the mirrored sanitiser methods hold no inline numeric limits', () => {
+  for (const name of SCANNED_METHODS) {
+    const body = methodBody(gameRb, name)
+      .replace(/#.*$/gm, '')                       // comments
+      .replace(/split\((['"])\.\1,\s*2\)/g, 'split'); // the allowed split piece count
+    const nums = body.match(/(?<![A-Za-z0-9_.])\d[\d_]*(?![A-Za-z0-9_])/g) || [];
+    for (const tok of nums) {
+      assert.ok(tok === '0' || tok === '1', `${name} holds an inline numeric literal ${tok}`);
+    }
+  }
+});
+
+test('flattenSavedMailState equals exportMailState of a scheduler built from the saved state (R1 seed)', () => {
+  const { mail } = setup();
+  mail.addMessage('guest', { id: 'sent1', folder: 'sent', body: 'mine', landed: true, tells: [] });
+  mail.markRead('guest', 'welcome');
+  mail.setDraft('guest', { freeText: 'wip' });
+  mail.setThread('t1:guest', { position: 'two' });
+  const exported = JSON.parse(JSON.stringify(mail.exportMailState()));
+  // The server stores the keyed diff nested; rebuild that nested shape, then flatten.
+  const nested = serverMerge({}, exported);
+  const flat = flattenSavedMailState(nested);
+  for (const key of Object.keys(exported)) {
+    if (key === 'jobs') continue; // jobs compare by mailJobsChangeKey, not whole value
+    assert.equal(stableJson(flat[key]), stableJson(exported[key]), `flatten matches export for ${key}`);
+  }
 });

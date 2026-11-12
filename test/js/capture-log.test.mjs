@@ -91,6 +91,7 @@ const { MinigameScene } = await import(url('minigames/framework/base-minigame.js
 const registry = await import(url('systems/minigame-registry.js'));
 const log = await import(url('minigames/capture-log/capture-log-minigame.js'));
 const rows = await import(url('minigames/capture-log/capture-rows.js'));
+const model = await import(url('minigames/capture-log/capture-log-model.js'));
 // The real PcSessions class (M2); the module also sets window.pcSessions, which reset() clears.
 const { PcSessions } = await import(url('systems/pc-sessions.js'));
 const { addToInventory, removeFromInventory, initializeInventory, processInitialInventoryItems, trayStateOf, refreshInventoryTray } = inv;
@@ -348,12 +349,16 @@ test('new marks for each key kind and the badge; a session key is the same after
     await openDevice();
     assert.deepEqual(device().getTestState().captureLog.newMarks.sort(),
         ['capture:hampshire', 'capture:network_drop', 'item:cable_capture', 'item:netlink_fh1', 'session:lena_pc:fh1']);
-    const seen = window.gameState.globalVariables.__capture_log_seen;
-    assert.ok(seen.includes('session:lena_pc:fh1'));
+    // R3: each new row is written as its own global (__capture_log_seen:<key> = true), not a list.
+    const seenGlobals = () => Object.fromEntries(
+        Object.entries(window.gameState.globalVariables).filter(([k]) => k.startsWith('__capture_log_seen:')));
+    const seen = seenGlobals();
+    assert.equal(seen['__capture_log_seen:session:lena_pc:fh1'], true);
+    assert.equal(window.gameState.globalVariables.__capture_log_seen, undefined, 'the legacy list is never written');
     assert.equal(badge(), null, 'opened: nothing new');
 
-    // A reload: the same saved globals and inventory give the same keys, so nothing is new.
-    reset({ globals: { se_captures: structuredClone(CAPTURES), __capture_log_seen: seen },
+    // A reload: the same per-row seen globals and inventory give the same keys, so nothing is new.
+    reset({ globals: { se_captures: structuredClone(CAPTURES), ...seen },
         playerInventory: [HOLDER, FINDING, LINK] });
     window.pcSessions = { list: () => [{ pcId: 'lena_pc', remote: true, footholdId: 'fh1' }] };
     window.networkLinks = { open: () => {}, openSession: () => {} };
@@ -361,6 +366,30 @@ test('new marks for each key kind and the badge; a session key is the same after
     await settle();
     refreshInventoryTray();
     assert.equal(badge(), null, 'the keys survive a reload');
+});
+
+test('readSeen merges the legacy list and the per-row keys (R3)', () => {
+    assert.deepEqual(model.readSeen(null), []);
+    assert.deepEqual(model.readSeen({}), []);
+    assert.deepEqual(model.readSeen({ __capture_log_seen: ['capture:a', 'capture:a', 7] }).sort(), ['capture:a']);
+    const merged = model.readSeen({
+        __capture_log_seen: ['capture:a'],
+        '__capture_log_seen:item:b': true,
+        '__capture_log_seen:session:c:d': true,
+        '__capture_log_seen:item:off': false,
+    }).sort();
+    assert.deepEqual(merged, ['capture:a', 'item:b', 'session:c:d'], 'a false key is not seen');
+});
+
+test('an old save with only the legacy list shows no new badge for its rows', async () => {
+    // readSeen still reads the legacy whole-list; R1's seed keeps it from being resent.
+    reset({ globals: { se_captures: structuredClone(CAPTURES),
+        __capture_log_seen: ['capture:hampshire', 'capture:network_drop'] } });
+    await add(HOLDER);
+    assert.equal(badge(), null, 'the legacy list covers both capture rows');
+    await openDevice();
+    assert.deepEqual(device().getTestState().captureLog.newMarks.sort(), [], 'nothing new');
+    assert.equal(window.gameState.globalVariables.__capture_log_seen.length, 2, 'the legacy list is untouched');
 });
 
 test('a capture with the device closed refreshes the tray once; with it open, one write of the seen set', async () => {
@@ -374,15 +403,16 @@ test('a capture with the device closed refreshes the tray once; with it open, on
     assert.equal(d.log.filter(e => e === 'inventory_changed').length - before, 1);
     assert.equal(badge(), '1');
 
-    // Open device: one capture writes __capture_log_seen once, and the refresh and redraw stop.
+    // Open device: one new row writes its own seen key once (R3), and the refresh and redraw stop.
     await openDevice();
-    const writes = () => d.log.filter(e => e === 'global_variable_changed:__capture_log_seen').length;
+    const writes = () => d.log.filter(e => e.startsWith('global_variable_changed:__capture_log_seen')).length;
     const w0 = writes();
     window.gameState.globalVariables.se_captures = { ...window.gameState.globalVariables.se_captures,
         b: { targetId: 'b', kind: 'credential', at: 2 } };
     d.emit('global_variable_changed:se_captures', {});
     await settle();
     assert.equal(writes() - w0, 1);
+    assert.equal(window.gameState.globalVariables['__capture_log_seen:capture:b'], true, 'one key per new row');
     assert.equal(badge(), null);
 });
 

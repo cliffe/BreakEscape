@@ -418,3 +418,78 @@ test('the lockpick gate honours the condition and onceOnly', () => {
     once.triggeredEvents.set('guard:lockpick_used_in_view:0', { count: 1, lastTime: 0 });
     assert.equal(once.shouldInterruptLockpickingWithPersonChat('corridor'), null);
 });
+
+// ---------------------------------------------------------------- keyOf (SYNC_DELTAS_PLAN 2.1)
+
+// The player_state column is jsonb: Postgres does not keep object key order, it
+// sorts keys by length then bytes and reorders objects nested in arrays the same
+// way. So a phone entry that went up one way comes back reordered, and the seed
+// never matches under JSON.stringify, resending every thread with history on the
+// first sync after each load. exportPhoneState / markPhoneStateSynced /
+// restorePhoneState now take a keyOf option; the sync passes stableJson (order
+// independent), which matches across the reorder.
+const stableJson = v => JSON.stringify(v, function sortKeys(_k, val) {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+        const o = {};
+        for (const k of Object.keys(val).sort()) o[k] = val[k];
+        return o;
+    }
+    return val;
+});
+// How Postgres jsonb returns a value's object keys: shorter keys first, then by bytes.
+const jsonbReorder = value => {
+    if (Array.isArray(value)) return value.map(jsonbReorder);
+    if (value && typeof value === 'object') {
+        const keys = Object.keys(value).sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0));
+        const o = {};
+        for (const k of keys) o[k] = jsonbReorder(value[k]);
+        return o;
+    }
+    return value;
+};
+
+test('stableJson keyOf treats a jsonb-reordered saved entry as unchanged, so nothing is resent', () => {
+    resetWindow();
+    const m = phoneManager();
+    m.addMessage('hax', 'npc', 'Intro', { read: true });
+    m.addMessage('hax', 'player', 'Hi');
+    m.getNPC('hax').storyState = '{"fake":"state"}';
+    const exported = m.exportPhoneState();
+    const reordered = jsonbReorder(JSON.parse(JSON.stringify(exported)));
+    // The reorder is real: the same content, serialised differently
+    assert.notEqual(JSON.stringify(reordered.hax), JSON.stringify(exported.hax));
+    // The server confirmed the reordered copy (markPhoneStateSynced; the seed path is the same store)
+    m.markPhoneStateSynced(reordered, { keyOf: stableJson });
+    assert.deepEqual(m.exportPhoneState({ onlyChanged: true, keyOf: stableJson }), {});
+    // A genuine change is still sent
+    m.addMessage('hax', 'npc', 'New');
+    assert.deepEqual(Object.keys(m.exportPhoneState({ onlyChanged: true, keyOf: stableJson })), ['hax']);
+});
+
+test('the default JSON.stringify keyOf resends a jsonb-reordered thread (the resend keyOf removes)', () => {
+    resetWindow();
+    const m = phoneManager();
+    m.addMessage('hax', 'npc', 'Intro', { read: true });
+    m.getNPC('hax').storyState = '{"fake":"state"}';
+    const reordered = jsonbReorder(JSON.parse(JSON.stringify(m.exportPhoneState())));
+    m.markPhoneStateSynced(reordered); // default keyOf = JSON.stringify
+    // Same content, but the key order differs, so the plain stringify compare resends it
+    assert.deepEqual(Object.keys(m.exportPhoneState({ onlyChanged: true })), ['hax']);
+});
+
+test('restorePhoneState seeds with keyOf so a reordered saved thread is not resent after it registers', () => {
+    resetWindow();
+    const before = phoneManager();
+    before.addMessage('hax', 'npc', 'Intro', { read: true });
+    before.addMessage('hax', 'player', 'Hi');
+    before.getNPC('hax').storyState = '{"fake":"state"}';
+    before.getNPC('hax').deferredTags = ['complete_task:x'];
+    const saved = jsonbReorder(JSON.parse(JSON.stringify(before.exportPhoneState())));
+
+    const after = new NPCManager(makeDispatcher(), null);
+    after.restorePhoneState(saved, { keyOf: stableJson });
+    after.registerNPC({ id: 'hax', npcType: 'phone', storyPath: 'hax.json', currentKnot: 'start' });
+    // The register roundtrip preserves the thread (see the reload test above), and
+    // stableJson ignores the key reorder, so the first sync sends nothing for hax
+    assert.deepEqual(after.exportPhoneState({ onlyChanged: true, keyOf: stableJson }), {});
+});

@@ -198,11 +198,13 @@ module BreakEscape
       refute_includes response.body, DEFAULT_TEXT
 
       assert take_stick.successful?, response.body
-      held = response.parsed_body['inventory'].find { |i| i['id'] == 'amy_usb' }
-      assert_equal true, held['hasContents']
-      assert_not held.key?('contents')
+      # The add answer no longer echoes the inventory (sync deltas P2): the saved copy is read
+      # from server state. The add reply carries none of the stick's files, and the saved copy
+      # keeps hasContents but no files.
       refute_includes response.body, DEFAULT_TEXT
-      assert_nil state['inventory'].find { |i| i['id'] == 'amy_usb' }['contents'], 'the saved copy holds no files either'
+      held = state['inventory'].find { |i| i['id'] == 'amy_usb' }
+      assert_equal true, held['hasContents']
+      assert_not held.key?('contents'), 'the saved copy holds no files either'
     end
 
     test 'a given stick opens to the default work_file.txt, served from the server' do

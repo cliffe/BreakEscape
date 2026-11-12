@@ -26,7 +26,6 @@ import { writeGlobal } from '../../systems/global-writer.js';
 import { heldFactIds, heldProvides } from './mail-composer.js';
 import { linkInfoFor, describeVictimOutcome, betterVictim, captureGranted, buildRecord as buildLandingRecord }
     from '../landing-page-builder/landing-page-model.js';
-import { CAPTURES_KEY, makeCaptureEntry, mergeCapture, readCaptures } from '../../systems/captures.js';
 
 // The mail runner (P1-J) is loaded lazily: only a send to a character target needs
 // it, and keeping it off the module's static import graph lets the data-only bridge
@@ -73,20 +72,18 @@ export function resolveTarget(social, targetId) {
 }
 
 /**
- * Record a capture into se_captures, first-capture-wins (captures.js mergeCapture). The merge
- * base is read from the live globals so a second landing in the same session sees the first;
- * nothing is written when the target already has an entry, so a resend never overwrites it and
- * no redundant sync fires. `input` names the target and the authored fiction (credential
- * address/secret, or a foothold host/note) — never anything the player typed (captures.js).
+ * Record a capture through the capture client (window.submitSECapture, set by capture-client.js):
+ * it mirrors the entry, queues a server-owned `captures` sync part and runs the sync. First wins,
+ * so a resend never overwrites what the first landing recorded. `input` names the target and the
+ * authored fiction (credential address/secret, or a foothold host/note), never anything the player
+ * typed (captures.js). No static import is added; the harnesses stub window.submitSECapture.
  */
 function recordCapture(globals, input) {
-    const entry = makeCaptureEntry({ ...input, at: Date.now() });
-    if (!entry) return;
-    const base = readCaptures((typeof window !== 'undefined' && window.gameState && window.gameState.globalVariables) || globals);
-    const next = mergeCapture(base, entry);
-    if (next === base) return;
-    writeGlobal(CAPTURES_KEY, next, { openChat: false });
-    if (typeof window !== 'undefined') window.stateSync?.sync?.();
+    if (typeof window !== 'undefined' && typeof window.submitSECapture === 'function') {
+        window.submitSECapture(input);
+        return;
+    }
+    console.error('recordCapture: window.submitSECapture missing; capture not recorded');
 }
 
 /** The payload-kit `link` item named by message.link (a kitId string), or null (01 N4). */

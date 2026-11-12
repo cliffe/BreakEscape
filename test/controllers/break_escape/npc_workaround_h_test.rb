@@ -413,7 +413,13 @@ module BreakEscape
       run = fails('sam', 2, t).last['run']
       done('sam', run, t + 40, heard: true, room_id: 'office')
       get scenario_game_url(@game), as: :json
-      refute_includes response.body, SAM_PASSWORD
+      # Under revealSecret the earned heard-share capture note carries the password: that note is
+      # the payoff, now recorded server-side and shipped only under the bootstrap's `captures` and
+      # its savedGlobalVariables.se_captures mirror (sync deltas R2, 6a). It must appear nowhere else.
+      body = JSON.parse(response.body)
+      body.delete('captures')
+      body['savedGlobalVariables']&.delete('se_captures')
+      refute_includes body.to_json, SAM_PASSWORD
       get room_game_url(@game, room_id: 'office'), as: :json
       refute_includes response.body, SAM_PASSWORD
       get login_accounts_game_url(@game, pc_id: 'sam_pc'), as: :json
