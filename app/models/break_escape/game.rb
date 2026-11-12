@@ -436,6 +436,16 @@ module BreakEscape
           return false
         end
 
+        # Friendface phone review R2 M1: a stored NPC drop is later picked up as a room item,
+        # which skips every NPC check, so the drop itself must be one the NPC can make: a KO
+        # drop (the NPC's KO is recorded), or an item its story or record offers, from an NPC
+        # the player has met (the same rule as a give). The only client route is the KO drop
+        # (npc-hostile.js dropNPCItems, sent after the KO sync).
+        unless npc_room_drop_allowed?(source_data['npc_id'], held_item)
+          Rails.logger.warn "[BreakEscape] NPC #{source_data['npc_id']} is not KO'd and does not offer #{held_item['type']}, rejecting item add"
+          return false
+        end
+
         # Persist the FULL scenario definition of the held item (mode, flags, onLaunch,
         # keyPins, etc.), not just the client-supplied subset, so a dropped object
         # restored after a reload behaves exactly like the original. Only identity and
@@ -701,6 +711,17 @@ module BreakEscape
         rs.is_a?(Hash) && rs.dig('npc_states', npc_id, 'isKO') == true
       end
     end
+
+    # Review R2 M1 (FRIENDFACE_PHONE_ITEM_CODE_REVIEW_R2.md): an NPC-sourced room add is a KO drop,
+    # or an item the NPC offers, from an NPC the player has met. Also asked of a stored drop
+    # when it is picked up, for a save made before the rule.
+    def npc_room_drop_allowed?(npc_id, held_item)
+      return true if npc_defeated?(npc_id)
+
+      Array(player_state['encounteredNPCs']).include?(npc_id) &&
+        held_item.is_a?(Hash) && npc_offers_item?(npc_id, held_item['type'])
+    end
+    public :npc_room_drop_allowed?
 
     # Check if NPC exists in a room (scenario or moved)
     def npc_in_room?(npc_id, room_id)
@@ -1193,10 +1214,20 @@ module BreakEscape
       end
 
       # q35: an NPC whose Friendface phone the player has taken starts the client as
-      # "phone": false (FRIENDFACE_PHONE_ITEM_PLAN.md section 3)
+      # "phone": false (FRIENDFACE_PHONE_ITEM_PLAN.md section 3), and no longer holds that phone.
+      # Review R2 m1: a KO pickup leaves no gift record, so the filter above keeps the phone;
+      # drop it here by its owner (copy, as above).
       if room['npcs'].is_a?(Array)
         room['npcs'] = room['npcs'].map do |npc|
-          npc.is_a?(Hash) && friendface_phone_taken?(npc['id']) ? npc.merge('phone' => false) : npc
+          next npc unless npc.is_a?(Hash) && friendface_phone_taken?(npc['id'])
+
+          out = npc.merge('phone' => false)
+          if npc['itemsHeld'].is_a?(Array)
+            out['itemsHeld'] = npc['itemsHeld'].reject do |i|
+              i.is_a?(Hash) && i['type'] == SocialFeed::FRIENDFACE_PHONE && i['phoneOf'] == npc['id']
+            end
+          end
+          out
         end
       end
 

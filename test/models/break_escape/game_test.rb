@@ -56,6 +56,10 @@ module BreakEscape
         'rooms' => { 'break_room' => { 'objects' => [], 'npcs' => [{ 'id' => 'derek', 'itemsHeld' => [device] }] } }
       }
       @game.player_state['unlockedRooms'] = ['break_room']
+      # The drop follows the KO (npc-hostile.js); a live NPC's drop is refused (review R2 M1)
+      sent0 = { 'id' => 'entropy_launch_device', 'type' => 'launch-device', 'name' => 'Launch Device' }
+      refute @game.add_item_to_room!('break_room', sent0, { 'npc_id' => 'derek' })
+      assert @game.update_npc_state!('break_room', 'derek', { 'isKO' => true })
       # Client sends only a stripped subset, as the strong params allow
       # Client may send either the original id or a generated drop id; the stored id must be the scenario's
       sent = { 'id' => 'entropy_launch_device', 'type' => 'launch-device', 'name' => 'Launch Device',
@@ -115,6 +119,27 @@ module BreakEscape
       refute @game.add_item_to_room!('main_office', sent, { 'npc_id' => 'derek' })
       refute @game.add_item_to_room!('main_office', sent.merge('id' => 'other', 'type' => 'key'), meta)
       refute @game.add_item_to_room!('main_office', sent, { 'npc_id' => 'nobody', 'source_type' => 'npc_defeated' })
+    end
+
+    # Friendface phone review R2 M1: a drop from an NPC that is not KO'd stands only for an item
+    # its story or record offers, and only once the player has met it
+    test "a live NPC's room drop needs a KO, or an offer from an NPC the player has met" do
+      badge = { 'type' => 'keycard', 'name' => 'Badge', 'id' => 'derek_badge', 'takeable' => true }
+      @game.scenario_data = {
+        'startRoom' => 'lab',
+        'rooms' => { 'lab' => { 'objects' => [], 'npcs' => [{ 'id' => 'derek', 'itemsHeld' => [badge] }] } }
+      }
+      @game.player_state['unlockedRooms'] = ['lab']
+      @game.player_state['encounteredNPCs'] = ['derek']
+      sent = { 'id' => 'derek_badge', 'type' => 'keycard', 'name' => 'Badge', 'x' => 1, 'y' => 2 }
+      refute @game.add_item_to_room!('lab', sent, { 'npc_id' => 'derek' })
+
+      npc = @game.scenario_data['rooms']['lab']['npcs'].first
+      npc['eventMappings'] = [{ 'eventPattern' => 'x', 'action' => 'give_item:keycard' }]
+      @game.player_state['encounteredNPCs'] = []
+      refute @game.add_item_to_room!('lab', sent, { 'npc_id' => 'derek' }), 'offered, but never met'
+      @game.player_state['encounteredNPCs'] = ['derek']
+      assert @game.add_item_to_room!('lab', sent, { 'npc_id' => 'derek' })
     end
 
     # D3: the "already in inventory" filter matches ids when both sides have one,
@@ -192,6 +217,7 @@ module BreakEscape
       }
       @game.player_state['unlockedRooms'] = ['lab']
       @game.player_state['inventory'] = [device.dup]
+      assert @game.update_npc_state!('lab', 'derek', { 'isKO' => true })
 
       assert @game.add_item_to_room!('lab', { 'id' => 'kit_deviceB', 'type' => 'usb', 'name' => 'BadUSB',
                                               'texture' => 'key', 'x' => 1, 'y' => 2 },

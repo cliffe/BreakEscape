@@ -149,7 +149,12 @@ module BreakEscape
 
       given = player_state['npc_given_items']
       gifted = given.is_a?(Hash) && Array(given[npc_id]).any? { |g| g.is_a?(Hash) && g['type'] == FRIENDFACE_PHONE }
-      gifted || !held_friendface_phone(npc_id).nil?
+      return true if gifted
+      # Review R2 n3: scenario_room_npc asks this on every call; skip the scenario walk in
+      # held_friendface_phone when the inventory holds no Friendface phone at all
+      return false unless Array(player_state['inventory']).any? { |i| i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE }
+
+      !held_friendface_phone(npc_id).nil?
     end
 
     # Called by add_inventory_item!: an NPC's phone entering the inventory is taken for good
@@ -163,29 +168,24 @@ module BreakEscape
 
     # Review R1 M1: an NPC hands its Friendface phone over only when the scenario offers that give:
     # a give_item tag for the phone type, or a give_npc_inventory_items tag that does not filter it
-    # out, in the NPC's compiled story or anywhere in its JSON record (itemsHeld aside).
-    GIVE_PHONE_RE = /give_item:\s*#{FRIENDFACE_PHONE}\b/.freeze
-    GIVE_INVENTORY_RE = /give_npc_inventory_items(?::([^"\\]*))?/.freeze
-
+    # out, in the NPC's story or anywhere in its JSON record (itemsHeld aside). The patterns live
+    # in AccessWork.offers_item_text?, which the validator reads too (review R2 m2).
     def friendface_phone_offered?(npc_id)
+      npc_offers_item?(npc_id, FRIENDFACE_PHONE)
+    end
+
+    # Whether a room NPC's story or record offers an item of `type` (review R2 M1: the rule for an
+    # NPC-sourced room add from an NPC that is not KO'd). The story is the compiled JSON, or the
+    # .ink source when it was never compiled (review R2 n1; the game compiles a story on its first
+    # /ink request, before any give, so the fallback matters only to tools and tests).
+    def npc_offers_item?(npc_id, type)
       npc = npc_id.is_a?(String) ? self.class.scenario_room_npcs(scenario_data).find { |n| n['id'] == npc_id } : nil
       return false unless npc
 
-      texts = [JSON.generate(npc.except('itemsHeld'))]
-      if npc['storyPath'].is_a?(String) && !npc['storyPath'].empty?
-        path = InkStoryFile.find(npc['storyPath'], compile: false)
-        texts << File.read(path) if path && File.exist?(path)
+      texts = AccessWork.offer_texts(npc) do |story_path|
+        InkStoryFile.find(story_path, compile: false) || InkStoryFile.ink_source(Engine.root.join(story_path))
       end
-      texts.any? { |t| offers_phone_text?(t) }
-    end
-
-    def offers_phone_text?(text)
-      return true if text.match?(GIVE_PHONE_RE)
-
-      text.scan(GIVE_INVENTORY_RE).any? do |(param)|
-        types = param.to_s.split(',').map(&:strip).reject(&:empty?)
-        types.empty? || types.include?(FRIENDFACE_PHONE)
-      end
+      texts.any? { |t| AccessWork.offers_item_text?(t, type) }
     end
 
     # POST /friendface_phone. Returns { status:, body: }. Read only. `npc_id` a String opens that

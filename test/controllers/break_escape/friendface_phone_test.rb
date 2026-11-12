@@ -164,11 +164,110 @@ module BreakEscape
       build
       refute @game.friendface_phone_offered?('lena')
       assert @game.friendface_phone_offered?('jake')
-      assert @game.send(:offers_phone_text?, '{"#":"give_item:phone_friendface"}')
-      assert @game.send(:offers_phone_text?, '"#give_npc_inventory_items"')
-      assert @game.send(:offers_phone_text?, '"#give_npc_inventory_items:keycard, phone_friendface"')
-      refute @game.send(:offers_phone_text?, '"#give_npc_inventory_items:keycard"')
-      refute @game.send(:offers_phone_text?, '"#give_item:phone"')
+      offers = ->(text) { AccessWork.offers_item_text?(text, 'phone_friendface') }
+      assert offers.call('{"#":"give_item:phone_friendface"}')
+      assert offers.call('"#give_item:phone_friendface|jake_phone"')
+      assert offers.call('"#give_npc_inventory_items"')
+      assert offers.call('"#give_npc_inventory_items:keycard, phone_friendface"')
+      refute offers.call('"#give_npc_inventory_items:keycard"')
+      refute offers.call('"#give_item:phone"')
+      refute offers.call('"#give_item:phone_friendface-case"')
+      # An .ink source line (review R2 n1): a tag ends at a newline or the next tag
+      assert offers.call("Here.\n# give_npc_inventory_items:phone_friendface # exit_conversation\n")
+      refute offers.call("Here.\n# give_npc_inventory_items:keycard # exit_conversation\nphone_friendface\n")
+    end
+
+    def room_add(npc_id, item, source_type = nil)
+      post update_room_game_url(@game), params: { roomId: 'office', actionType: 'add_object', sourceNpcId: npc_id,
+                                                  sourceType: source_type, data: item }.compact, as: :json
+      response
+    end
+
+    def knock_out(npc_id)
+      post update_room_game_url(@game), params: { roomId: 'office', actionType: 'update_npc_state',
+                                                  data: { npcId: npc_id, stateChanges: { isKO: true, currentHP: 0 } } }, as: :json
+      assert_response :success
+    end
+
+    LENA_SENT = { 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone", 'x' => 64, 'y' => 96 }.freeze
+
+    test 'review R2 M1: a room add sourced from Lena, not KO and never offering her phone, is refused; she keeps it' do
+      build
+      # The review's probe: the NPC-sourced room add, then an unsourced inventory add
+      room_add('lena', LENA_SENT)
+      added = Array(@game.reload.player_state.dig('room_states', 'office', 'objects_added'))
+      assert(added.none? { |o| o['type'] == 'phone_friendface' }, 'the drop was stored')
+      add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" })
+      assert_response :unprocessable_entity
+      # The same with the KO drop's source type but no KO recorded
+      room_add('lena', LENA_SENT, 'npc_defeated')
+      assert(Array(@game.reload.player_state.dig('room_states', 'office', 'objects_added')).none? { |o| o['type'] == 'phone_friendface' })
+
+      @game.reload
+      refute @game.friendface_phone_taken?('lena')
+      assert_nil @game.player_state['phonesTaken']
+      assert_nil @game.scenario_room_npc('lena')['phone']
+      open_phone('lena')
+      assert_response :forbidden
+      assert_equal 'lena_post_1', feed_post('lena').dig('post', 'id')
+    end
+
+    test 'review R2 M1: the KO drop still hands Lena\'s phone over' do
+      build
+      knock_out('lena')
+      room_add('lena', LENA_SENT, 'npc_defeated')
+      assert_response :success
+      stored = @game.reload.player_state.dig('room_states', 'office', 'objects_added').find { |o| o['id'] == 'lena_phone' }
+      assert_equal 'lena', stored['phoneOf']
+      # The pickup, as inventory.js sends it (source_npc_id from the dropped sprite) and without
+      add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, source_npc_id: 'lena')
+      assert_response :success
+      assert @game.reload.friendface_phone_taken?('lena')
+      open_phone('lena')
+      assert_response :success
+    end
+
+    test 'review R2 M1: an NPC that offers its phone may drop it without a KO, once met' do
+      build('encounteredNPCs' => %w[lena omar nia])
+      room_add('jake', { 'type' => 'phone_friendface', 'id' => 'jake_phone', 'name' => "Jake's phone" })
+      assert(Array(@game.reload.player_state.dig('room_states', 'office', 'objects_added')).none? { |o| o['id'] == 'jake_phone' },
+             'an NPC the player never met cannot drop its phone')
+
+      build
+      room_add('jake', { 'type' => 'phone_friendface', 'id' => 'jake_phone', 'name' => "Jake's phone" })
+      assert_response :success
+      add_item({ 'type' => 'phone_friendface', 'id' => 'jake_phone', 'name' => "Jake's phone" })
+      assert_response :success
+      assert @game.reload.friendface_phone_taken?('jake')
+    end
+
+    test 'review R2 M1: an unoffered phone stored by a save made before the fix cannot be picked up' do
+      build('room_states' => { 'office' => { 'objects_added' => [LENA_PHONE.merge('x' => 64, 'y' => 96)], 'objects_removed' => [],
+                                             'object_states' => {}, 'npc_states' => {} } })
+      add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" })
+      assert_response :unprocessable_entity
+      refute @game.reload.friendface_phone_taken?('lena')
+
+      knock_out('lena')
+      add_item({ 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" })
+      assert_response :success
+    end
+
+    test 'review R2 m1: after a KO pickup the room bootstrap no longer lists the phone in Lena\'s itemsHeld' do
+      build('inventory' => [LENA_PHONE.dup], 'phonesTaken' => ['lena'])
+      get room_game_url(@game, room_id: 'office'), as: :json
+      npcs = response.parsed_body.dig('room', 'npcs')
+      lena = npcs.find { |n| n['id'] == 'lena' }
+      assert_equal false, lena['phone']
+      assert(Array(lena['itemsHeld']).none? { |i| i['type'] == 'phone_friendface' }, 'Lena still holds her phone after a reload')
+      # Jake's phone is untouched
+      assert(npcs.find { |n| n['id'] == 'jake' }['itemsHeld'].any? { |i| i['id'] == 'jake_phone' })
+
+      # Taken and since removed from the inventory: Lena still holds no phone
+      build('phonesTaken' => ['lena'])
+      get room_game_url(@game, room_id: 'office'), as: :json
+      lena = response.parsed_body.dig('room', 'npcs').find { |n| n['id'] == 'lena' }
+      assert(Array(lena['itemsHeld']).none? { |i| i['type'] == 'phone_friendface' })
     end
 
     test 'review R1 m1: update_room cannot mint a Friendface phone, and a held phone the scenario does not declare opens nothing' do

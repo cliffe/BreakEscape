@@ -2322,6 +2322,16 @@ module BreakEscape
           Rails.logger.warn "[BreakEscape] #{error_msg}"
           return error_msg
         end
+        # Review R2 M1: an NPC's Friendface phone lies in a room only as a stored NPC drop. A save
+        # made before add_item_to_room! checked the drop can hold one taken from a live NPC that
+        # never offered it, so the pickup asks the same question
+        owner = found_item['phoneOf']
+        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && owner.is_a?(String) &&
+           !@game.npc_room_drop_allowed?(owner, found_item)
+          error_msg = "NPC does not give this item: #{owner}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
+        end
       elsif location[:type] == 'npc'
         npc_id = location[:npc_id]
         unless @game.player_state['encounteredNPCs']&.include?(npc_id)
