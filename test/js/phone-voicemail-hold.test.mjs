@@ -40,7 +40,7 @@ function world() {
 }
 /** The contact's thread is the open phone-chat; `save()` is its own story saving over npc.storyState. */
 function openThread(w, id = 'caller') {
-    const mg = { _sceneType: 'phone-chat', _ending: false, isConversationActive: true, currentNPCId: id,
+    const mg = { _sceneType: 'phone-chat', _ending: false, isConversationActive: true, currentNPCId: id, conversation: {},
         params: { npcId: id }, gameState: { isActive: true }, _refreshCallButton() {} };
     w.fw.currentMinigame = mg;
     return mg;
@@ -400,7 +400,7 @@ test('n3: a voicemail released when the ending starts (ringer closed) shows no t
     } finally { w.restore(); }
 });
 
-test('n4: giving up after 20 blocked tries is logged, and the voicemail stays in the slot', async () => {
+test('n4: giving up after 20 blocked tries is logged, and the voicemail is released after the warning', async () => {
     const w = world();
     const warned = [];
     const orig = console.warn; console.warn = (...a) => warned.push(a.join(' '));
@@ -415,5 +415,47 @@ test('n4: giving up after 20 blocked tries is logged, and the voicemail stays in
         assert.equal(calls, 20);
         assert.ok(warned.some((m) => /voicemail/i.test(m) && /ring_vm/.test(m)), 'a warning names it');
         void real; void stub;
+        assert.equal(w.nm.getNPC('caller').pendingCall ?? null, null, 'the slot is released, not kept');
     } finally { console.warn = orig; w.restore(); }
+});
+
+// ---- A6 R3 nits ------------------------------------------------------------------------------------------
+
+test('n-a: a phone-chat on the contact with no conversation yet (preload, dial) does not hold a voicemail', async () => {
+    const w = world();
+    try {
+        const mg = openThread(w);
+        mg.conversation = null;
+        assert.equal(w.nm._threadOpenOn('caller'), false);
+        assert.equal(await w.nm.runVoicemail('caller', 'ring_vm', {}), true, 'ran at once: its close would emit nothing');
+        assert.equal(rows(w).length, 3);
+        mg.conversation = {};
+        assert.equal(w.nm._threadOpenOn('caller'), true, 'once it has a conversation it holds again');
+    } finally { w.restore(); }
+});
+
+test('n-b: a callback beside a withheld live offer with no voicemail survives a reload', async () => {
+    let w2;
+    try {
+        w2 = world();
+        w2.nm.restorePhoneState({ caller: { history: [], pendingCall: { forced: [],
+            live: { knot: 'ring_call', state: 'ringing', onMissed: 'callback', withheld: true },
+            callback: { knot: 'ring_call', callLabel: 'Boss' } } } });
+        w2.dispatcher.emit('game_loaded', {});
+        await settle(w2, 60);
+        assert.equal(w2.ringer.callbackFor('caller')?.knot, 'ring_call', 'the saved callback stands');
+    } finally { w2?.restore(); }
+});
+
+test('n-c: a voicemail released while the phone is suspended shows no toast', async () => {
+    const w = world();
+    try {
+        const mg = openThread(w);
+        const p = w.nm.runVoicemail('caller', 'ring_vm', {});
+        await settle(w);
+        w.ringer.suspend(true);
+        closeThread(w, mg);
+        assert.equal(await p, true);
+        assert.deepEqual(w.toasts, [], 'no toast while suspended');
+    } finally { w.restore(); }
 });

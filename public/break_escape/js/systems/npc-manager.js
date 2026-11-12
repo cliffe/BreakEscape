@@ -658,12 +658,14 @@ export default class NPCManager {
   /**
    * True while this contact's thread is the open phone-chat (its minigame holds its own copy of the story).
    * `isConversationActive` is not asked (A6 R2 m1): it is false while the thread loads and once its story
-   * has ended, and the thread is on screen with its own copy of the story in both.
+   * has ended, and the thread is on screen with its own copy of the story in both. It does ask for
+   * `conversation` (A6 R3 n-a): until it exists (intro preload, an outgoing dial) the thread's close
+   * emits nothing, so a hold there would never be released.
    */
   _threadOpenOn(npcId) {
     const open = typeof window !== 'undefined' ? window.MinigameFramework?.currentMinigame : null;
     return !!open && open._sceneType === 'phone-chat' && open.currentNPCId === npcId
-      && !open._ending;
+      && !open._ending && !!open.conversation;
   }
 
   /** Resolves at once when the contact's thread is not open, else when conversation_closed:<npcId> fires. */
