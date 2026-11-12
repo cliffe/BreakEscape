@@ -593,8 +593,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         },
         <%# Pass 5 A1 (m04 call_in_after_sweep pattern): the last decision or flag no
             longer opens the debrief. HaX's mappings set ready_to_extract and unlock
-            this task; the phone hub's "Bring me in" (extract_go) completes it and
-            sets start_debrief_cutscene, which opens the debrief. Optional and
+            this task; it completes on the phone hub's [Bring me in.] reply, before the
+            ending question. extract_go sets start_debrief_cutscene, which opens the debrief. Optional and
             locked, as in m03/m04, so a missed unlock can never hold the aim. %>
         {
           "taskId": "call_in_after_sweep",

@@ -471,7 +471,7 @@ Or watch it. We map every cell that draws on it, and the money reaches them.
 I'll give you the cost of each. The call's yours.
 If you freeze it, the balances never reach the cells, and ENTROPY knows its bank is burned.
 If you watch it, the balances pay for what's on that page, and we get the map.
-Watching still works with him detained. The payout's pre-signed; we keep it quiet until it's gone.
+Watching still works if we detain him. The payout's pre-signed; we keep it quiet until it's gone.
 The advances are gone either way.
 ~ reacted_fund = true
 #exit_conversation
@@ -599,7 +599,8 @@ For the file, that's Satoshi's Ghost, the Crypto Anarchists' leader. Not Ghost P
 // THE CALL-IN (Pass 5 A1, m04 extract_offer / extract_go)
 // Text first, choices in a text-free knot (phone reopen rule). extract_go sets
 // start_debrief_cutscene, which opens the debrief (closing_debrief_person's
-// mapping); the call-in task completes in the same batch.
+// mapping). The call-in task completes on the [Bring me in.] reply, before the
+// ending question, not in extract_go.
 // ================================================
 
 === extract_call ===
