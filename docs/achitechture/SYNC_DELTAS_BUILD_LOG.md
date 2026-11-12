@@ -31,9 +31,10 @@ Standing constraints for this build:
 | 1. Groundwork: `stableJson` in `buildChanges`/`mailJobsChangeKey` (item 2) | Done, committed, tested (`06815b055`) |
 | 1. Groundwork: export clips (item 4: clipMail*, phone/ink mirrors, mail constants) | Done, committed, tested (`9f85871c6`) |
 | 1. Groundwork: constants test + literal scan (item 5, part) | Done, committed, tested (`3c7d13c96`) |
-| 1. Groundwork: shared sanitiser fixture behaviour test (item 5, rest) | NOT started (see Open) |
-| 1. Groundwork: registerPart/track, item_for_answer, prepare_bootstrap_state!, refuse_oversized_body (item 6) | NOT started |
-| 1. Groundwork: live-proof tools (item 8) + baseline (item 9) | NOT started |
+| 1. Groundwork: shared sanitiser fixture behaviour test (item 5, rest) | Done, committed, tested (`efe00765a`) |
+| 1. Groundwork: registerPart/track, item_for_answer, prepare_bootstrap_state!, refuse_oversized_body (item 6) | Done, committed, tested (`0136faad5`) |
+| 1. Groundwork: live-proof tools (item 8) + baseline (item 9) | NOT started (see Open) |
+| Controller test for savedCurrentRoom (task 3) | Done, committed, tested (`853b69a59`) |
 | 2. R1 seeding | Done, committed, tested (`c12d9d1e7`) |
 | 3. P2 inventory/network answers | Not started |
 | 4. P1 cloner one-card deltas | Not started |
@@ -45,6 +46,24 @@ Standing constraints for this build:
 
 ## Commits (newest first)
 
+- `853b69a59` savedCurrentRoom controller test (task 3): present for a string saved
+  room, absent when the save holds no string currentRoom (strips it via update_column
+  past the create callback that seeds it from startRoom).
+- `0136faad5` Step 1 item 6 groundwork: state-sync `registerPart`/`track`/`_partBodies`/
+  `_flushKeep`/`_partsPending` (a part rides the sync body; `syncConfirmed` awaits tracked
+  clones and stays false while a part has pending entries; parts also feed the pagehide
+  fallback lists). `Game#item_for_answer` (deep copy minus `saved_cards`). `prepare_bootstrap_state!`
+  locked shell with `bootstrap_state_needs_write?`/`run_bootstrap_writers!` both returning
+  false for now, wired into `GamesController#scenario` right after `authorize`.
+  `refuse_oversized_npc_frustration` -> `refuse_oversized_body` with `OVERSIZED_BODY_LIMITS`
+  (npc_frustration keeps 64 KB, clone_card gets 8 KB); `prepend_before_action` lists both.
+  3 new part/track cases in social-state-sync-confirmed.
+- `efe00765a` Step 1 item 5 (rest): shared sanitiser fixture
+  `test/fixtures/files/sync_bodies/sanitiser_cases.json` (inputs tripping every mail/thread/
+  draft/phone/ink rule + the server-stored output), with a Rails unit test
+  (`sanitiser_cases_test.rb`, uses `Game.new`, no DB) and a node test
+  (`sanitiser-cases.test.mjs`) asserting the client clips match by `stableJson`. Generated once
+  by `scratchpad/gen_sanitiser_fixture.rb` from the real server methods; neither test writes it.
 - `c12d9d1e7` Step 2 (R1): seed `confirmed` from the bootstrap (seedFromSaved/seedFromBootstrap,
   flattenSavedMailState, pickNote/pickSample, per-section `_held` null-delete gate, game.js wiring,
   server `savedCurrentRoom`). 9 R1 tests + flatten-parity test.
@@ -189,6 +208,26 @@ assertion, so no further source-assertion regressions remain from the refactor.
 Both had no callers in public JS or tests (plan 9 tidy-ups). `syncState` would have sent all globals
 with no `clientTs`.
 
+## This session (2026-11-12, builder 4)
+
+Finished the rest of step 1 except the live-proof tools, and added the savedCurrentRoom test.
+Commits `efe00765a`, `0136faad5`, `853b69a59`. Tests, affected files only, no lock:
+- Item 5 rest: `node --test test/js/sanitiser-cases.test.mjs` -> 5 pass (client clips match the
+  fixture's server-stored outputs). `bin/rails test test/models/break_escape/sanitiser_cases_test.rb`
+  -> 5 runs, 21 assertions, 0 failures (server sanitisers match the same outputs). Fixture generated
+  once by `scratchpad/gen_sanitiser_fixture.rb` running the real server methods.
+- Item 6: `node --test` over the 4 state-sync suites (state-sync, social-state-sync-confirmed,
+  social-mail-state-export, sanitiser-cases) -> 51 pass, then over all 22 state-sync/api-client
+  importers -> 231 pass (groundwork is inert with no parts registered; the 3 new part/track cases
+  pass). `bin/rails test npc_frustration_test.rb reload_persistence_test.rb` -> 107 runs, 490
+  assertions, 0 failures (oversized refusal still fires under the renamed filter; GET /scenario
+  bootstrap unaffected by the prepare_bootstrap_state! no-op call).
+- savedCurrentRoom: `bin/rails test saved_current_room_test.rb` -> 2 runs, 5 assertions, 0 failures.
+- `ruby -c` on game.rb and games_controller.rb and `node --check` on state-sync.js -> OK.
+
+No live browser proof yet (items 8, 9 open; live cases A-F run after step 6). No full suites (shared
+test lock congestion rule); the orchestrator runs them per merge batch.
+
 ## This session (2026-11-12, builder 3)
 
 Built step 1 items 2, 4, 5 (part), and all of step 2 (R1). Tests, affected files only, no lock:
@@ -229,6 +268,11 @@ browser proof yet (cases A to F run after step 6).
   (61440, a byte limit); R5 n6 handled (clip never emits null, no-dot key not exported).
 - Item 5 part (`3c7d13c96`): the constants test and the literal scan.
 - Step 2 / R1 (`c12d9d1e7`): seed `confirmed` from the bootstrap; see "Step 2 (R1)" below.
+- Item 5 rest (`efe00765a`): shared sanitiser fixture + paired Rails/node behaviour tests.
+- Item 6 (`0136faad5`): registerPart/track/_partBodies/_flushKeep/_partsPending, item_for_answer,
+  prepare_bootstrap_state! locked shell + scenario wiring, refuse_oversized_body cap table. Inert
+  until steps 3/4/6a register a part or a bootstrap predicate.
+- savedCurrentRoom controller test (`853b69a59`, task 3).
 
 ### In progress
 - None. Each commit is a clean, self-contained, tested boundary.
@@ -239,16 +283,13 @@ browser proof yet (cases A to F run after step 6).
 2. DONE (`06815b055`). `stableJson` in `buildChanges`/`mailJobsChangeKey`.
 3. DONE (`b8370b88d`). `cpWithin`/`cpSlice` three copies + shared test.
 4. DONE (`9f85871c6`). The export clips.
-5. PART DONE (`3c7d13c96`): constants test + literal scan. STILL OPEN: the shared sanitiser
-   behaviour fixture `test/fixtures/files/sync_bodies/sanitiser_cases.json` with a Rails unit test
-   and a node test running the server sanitisers and the client clips over the same inputs and
-   asserting equal stored outputs by stableJson. Neither test writes the fixture. (Plan 3.7
-   "Behaviour".) The clips are already exercised by the existing round-trip harnesses and the step-2
-   R1 tests, but the explicit byte-for-byte cross-side fixture is not yet written.
-6. NOT STARTED. `registerPart`/`track`/`_syncOnce`/`flush`/`flushKeep` additions in state-sync.js (plan 2.2);
-   `Game#item_for_answer` (plan 2.3); `Game#prepare_bootstrap_state!` empty shell plus its wiring in
-   `GamesController#scenario` right after `authorize` (plan 2.4); `refuse_oversized_body` from
-   `refuse_oversized_npc_frustration` with a per-action limit table, clone_card 8 KB (plan 2.5).
+5. DONE (`3c7d13c96` + `efe00765a`): constants test + literal scan, then the shared sanitiser
+   behaviour fixture `sync_bodies/sanitiser_cases.json` with the paired Rails + node tests.
+6. DONE (`0136faad5`). registerPart/track/_partBodies/_flushKeep/_partsPending (plan 2.2);
+   item_for_answer (2.3); prepare_bootstrap_state! locked shell + scenario wiring (2.4);
+   refuse_oversized_body with the per-action cap table (2.5). All inert until a part/predicate is
+   registered by steps 3, 4 and 6a. NOTE for later steps: item_for_answer and the clone_card 8 KB
+   cap have no dedicated test yet (exercised by steps 3/4); add those with P2/P1.
 7. DONE (`6c3a2e918`). Deleted unused `ApiClient.syncState` and `ApiClient.updateInventory`.
 8. The two live-proof tools: `tools/playtest/sync-delta-proof.mjs` and the `--seed-full-cloner`
    head-start option of `tools/playtest/new-game.rb` (plan 10.3 and R5 n3: parse the flag with no
@@ -287,7 +328,19 @@ browser proof yet (cases A to F run after step 6).
   constants + exportMailState wiring; step 2 flattenSavedMailState)
 - `public/break_escape/js/systems/npc-conversation-state.js` (cpWithin/cpSlice; item 4 ink export
   name-limit mirror + MAX_NPC_INK_NAME_CHARS)
-- `app/controllers/break_escape/games_controller.rb` (step 2 `savedCurrentRoom` bootstrap field)
+- `app/controllers/break_escape/games_controller.rb` (step 2 `savedCurrentRoom` bootstrap field;
+  item 6 `prepare_bootstrap_state!` call in `scenario`, `refuse_oversized_body` + `OVERSIZED_BODY_LIMITS`,
+  `prepend_before_action` now lists `:clone_card`)
+- `app/models/break_escape/game.rb` (item 6 `item_for_answer`, `prepare_bootstrap_state!` shell,
+  `bootstrap_state_needs_write?`/`run_bootstrap_writers!` private stubs)
+- `public/break_escape/js/state-sync.js` (item 6 `registerPart`/`track`/`_partBodies`/`_flushKeep`/
+  `_partsPending`; parts wired into `buildChanges`/`_syncOnce`/`syncConfirmed`/`flush`)
+- `test/fixtures/files/sync_bodies/sanitiser_cases.json` (new; item 5 cross-side fixture)
+- `test/js/sanitiser-cases.test.mjs` (new; item 5 node behaviour test)
+- `test/models/break_escape/sanitiser_cases_test.rb` (new; item 5 Rails behaviour test)
+- `test/js/social-state-sync-confirmed.test.mjs` (item 6 part/track cases)
+- `test/controllers/break_escape/saved_current_room_test.rb` (new; task 3)
+- `scratchpad/gen_sanitiser_fixture.rb` is NOT in the repo (one-off generator in the session scratchpad)
 - `test/js/state-sync.test.mjs` (stableJson test; 9 R1 seed cases; seedFromSaved import)
 - `test/js/social-mail-state-export.test.mjs` (constants test + literal scan; flatten-parity test;
   pagehide-over-budget test moved to many clipped messages)
