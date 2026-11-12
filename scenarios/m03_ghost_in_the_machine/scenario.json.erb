@@ -747,6 +747,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "avatar": "assets/characters/agent_hax_v2_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
+          "_comment": "Phone calls M7: the revelation is an outgoing call (the Call button shows only while she is waiting: distcc flag in, revelation not yet heard) with a two-minute fallback ring (mappings below); the bring-in is a placed call from the hub choice (button: false).",
+          "call": [
+            { "knot": "m2_revelation_call", "when": "globalVars.flag_distcc_submitted && !globalVars.revelation_heard", "unavailable": "hidden" },
+            { "knot": "extract_call", "button": false }
+          ],
           "voice": {
             "name": "Aoede",
             "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
@@ -944,7 +949,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:draft_seen",
               "condition": "value === true && globalVars.pc_call_done !== true",
               "setGlobal": { "pc_call_done": true },
-              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Call me when you've had a look." },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Message me when you've had a look." },
               "onceOnly": true
             },
             {
@@ -952,7 +957,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "objective_task_completed:decode_client_roster",
               "condition": "globalVars.pc_call_done !== true",
               "setGlobal": { "pc_call_done": true },
-              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Call me when you've had a look." },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Message me when you've had a look." },
               "onceOnly": true
             },
             {
@@ -969,13 +974,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "_comment": "Pass 3c: the catalogue call used to open on objective_task_completed:lore_fragment_2, which fires when the safe unlocks, so the phone covered the PIN result. It now waits until the player reads the catalogue (its onRead sets catalogue_seen), well after the PIN screen has gone.",
               "eventPattern": "global_variable_changed:catalogue_seen",
               "condition": "value === true",
-              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_exploit_catalog_found", "message": "That's more than a price list. Call me when you've read it." },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_exploit_catalog_found", "message": "That's more than a price list. Message me when you've read it." },
               "onceOnly": true
             },
             {
               "eventPattern": "objective_task_completed:lore_fragment_3",
               "setGlobal": { "lore_directive_found": true },
-              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_architect_directive_found", "message": "A drive in her desk? Call me." },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_architect_directive_found", "message": "A drive in her desk? Tell me what's on it." },
               "onceOnly": true
             },
             <%# Pass 4 (fix 22): one line per flag so the VM stretch doesn't go quiet.
@@ -1013,8 +1018,29 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "_comment": "P3-3: a text that opens the revelation call when clicked (m02 A7 pattern), so the drop-site isn't closed under the player. revelation_heard is still set at the end of the call, so the all-flags text still waits for it.",
               "eventPattern": "objective_task_completed:submit_distcc_flag",
               "setGlobal": { "flag_distcc_submitted": true },
-              "sendTimedMessage": { "delay": 4000, "targetKnot": "m2_revelation_call", "message": "Got the distcc logs. Call me when you're done at the drop-site." },
+              "sendTimedMessage": { "delay": 4000, "message": "Got the distcc logs. Call me when you're done at the drop-site." },
               "onceOnly": true
+            },
+            {
+              "_comment": "Phone calls M7: if the player has not rung her within two minutes of the distcc flag, she rings (voiced, not forced). If the player rings first, the ring is dropped (plan row 31); the hold rule means it never cuts into the drop-site. A pending delayMs is lost on reload, so the game_loaded twin below re-arms it.",
+              "eventPattern": "global_variable_changed:flag_distcc_submitted",
+              "condition": "value === true && !globalVars.revelation_heard",
+              "conversationMode": "phone-chat",
+              "targetKnot": "m2_revelation_call",
+              "voiced": true,
+              "ring": { "onMissed": "callback" },
+              "delayMs": 120000
+            },
+            {
+              "_comment": "Phone calls M7: game_loaded twin of the ring above (a reload loses the pending delay).",
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.flag_distcc_submitted && !globalVars.revelation_heard",
+              "conversationMode": "phone-chat",
+              "targetKnot": "m2_revelation_call",
+              "voiced": true,
+              "ring": { "onMissed": "callback" },
+              "delayMs": 120000,
+              "cooldown": 0
             },
             <%# The confrontation opens only when all four flags are in, because the
                 ending is gated on all four (concludeRequires). Confronting Victoria
@@ -1091,7 +1117,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "conversationMode": "phone-chat"
             },
             {
-              "_comment": "Night KO: all four flags already in. Her fate is settled (the task ticks), but the debrief no longer fires on the spot (pass 2 blind B F1, user 2026-10-12): the player finishes the sweep and asks HaX to bring them in from the phone hub (extract_offer), which sets victoria_choice_made.",
+              "_comment": "Night KO: all four flags already in. Her fate is settled (the task ticks), but the debrief no longer fires on the spot (pass 2 blind B F1, user 2026-10-12): the player finishes the sweep and asks HaX to bring them in from the phone hub (extract_call), which sets victoria_choice_made.",
               "eventPattern": "npc_ko:victoria_sterling",
               "condition": "globalVars.night_confrontation_ready === true && globalVars.victoria_choice_made !== true",
               "onceOnly": true,
@@ -1208,7 +1234,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "completeTask": "find_operational_logs"
             },
             {
-              "_comment": "Pass 2 blind fixes (B F1): Sterling was knocked out before the last flag. Her fate is settled now (the task ticks) and the call-in task opens; the debrief waits until the player asks HaX to bring them in (phone extract_offer). This used to settle on entering the conference room, which ended the mission on the spot. On this always-loaded NPC rather than HaX so it doesn't share HaX's night_confrontation_ready pattern.",
+              "_comment": "Pass 2 blind fixes (B F1): Sterling was knocked out before the last flag. Her fate is settled now (the task ticks) and the call-in task opens; the debrief waits until the player asks HaX to bring them in (phone extract_call). This used to settle on entering the conference room, which ended the mission on the spot. On this always-loaded NPC rather than HaX so it doesn't share HaX's night_confrontation_ready pattern.",
               "eventPattern": "global_variable_changed:night_confrontation_ready",
               "condition": "value === true && globalVars.victoria_ko === true && globalVars.victoria_choice_made !== true",
               "onceOnly": true,
