@@ -169,6 +169,64 @@ Checks after the fixes:
 - CI social job replay (`RBENV_VERSION=2.7.8`, `bundle exec`): the lister finds sf_broken, sf_clean, sf_edges and sf_sprite and 84 corpus scenarios; all 84 exit 0 with `--strict-social --no-graph --skip-ink`; sf_clean exits 0, sf_broken exits 1 with `✗ --strict-social: 25 social lint error(s)`.
 - Node tests, no lock: the same 70 files as the review: 1028 pass, 0 fail, including `validator-exit-code` (30) and `validator-known-failures` (15). `MERGE_BATCH=1` on the list test: fails on the 22 awaiting sections, as ruled.
 
+## Step 2. Strict keys for the access, network and office-life blocks
+
+Date: 2026-11-12. Branch `build/harden-step2`, made from main b7d500ccf (step 1 merged). The plan's line 224 for `strict: false` is still `validate_json` (`scripts/validate_scenario.rb:225`); `check_unknown_fields` moved from 402 to 554 with the new helpers above it.
+
+### The closed set
+
+Every block below has `additionalProperties: false` and `patternProperties: { "^_": {} }`.
+
+| Block | Schema path | Before |
+|---|---|---|
+| a resource | `#/properties/resources/additionalProperties` | open |
+| a network | `#/properties/networks/additionalProperties` | open |
+| its Wi-Fi | `#/properties/networks/additionalProperties/properties/wifi` | open |
+| a policy | `#/properties/policies/additionalProperties` | open |
+| an account profile | `#/properties/accountProfiles/additionalProperties` | open |
+| a role | `#/properties/roles/additionalProperties` | `additionalProperties: true` |
+| a role's workaround | `#/properties/roles/additionalProperties/properties/workarounds/items` | open |
+| a role's frustration | `#/properties/roles/additionalProperties/properties/frustration` | closed |
+| the access list (`access` on rooms, objects and resources; a profile's `for`) | `#/definitions/accessList` | closed |
+| an NPC workaround | `#/definitions/npc/properties/workarounds/items` | open |
+| NPC `feed` | `#/definitions/npc/properties/feed` | open |
+| a feed post | `#/definitions/npc/properties/feed/properties/posts/items` | open |
+| NPC `creds`, `habits`, `screenHabit`, `printHabit`, `usbHabit`, `frustration` | `#/definitions/npc/properties/<name>` | closed |
+| an NPC `needs` entry | `#/definitions/npc/properties/needs/additionalProperties` | closed |
+| object `affordance` | `#/definitions/affordance`, through `$ref` from `#/definitions/item/properties/affordance` | **open in practice** (below) |
+| a `grant_foothold` action | `#/definitions/grantFootholdAction` (new) | open |
+
+Choices the plan left to the builder, or that the code forced:
+
+- **The closed blocks got `^_` too.** The plan says they get the pattern "where they lack a `_comment` property"; all of them have one. Adding the pattern anyway makes the rule the same in every block (any `_` key passes), which is what the README now says.
+- **Roles' own `workarounds` and `frustration`.** The plan names "each NPC `workarounds` entry"; a role's entries have the same shape and are closed too. No corpus scenario has a role workaround.
+- **`affordance` was not closed.** Its `type` is `["object", "boolean"]`, and json-schema skips `additionalProperties` on a node whose type is a list (`additionalproperties.rb`: it runs only when `type` is absent or `"object"`). So `"owner"` for `"owners"` passed the schema, as the access review found. Its keys now sit in `#/definitions/affordance`, which has no type of its own (so `false` still passes), referenced with `$ref` beside the type list.
+- **`grant_foothold`.** Actions share one open object schema, several action lists (`onConfirm`, `timers`, and the lists the schema does not describe) are untyped, and the gem has no `if`/`then`. A closed `grantFootholdAction` definition (type, pc, needsDropped, needsSession, needsHeld, name, condition) is the one key list, and `validate_grant_foothold_actions` validates every action whose `type` is `grant_foothold`, wherever it sits, against that definition with json-schema itself, prefixing each message with the action's pointer. So the schema still defines the keys and the gem still checks them.
+- **Hints on the core kinds.** Rooms, objects and NPCs stay open (item 4). Their hand-list warnings now carry the same `did you mean` hint, so the access review's `lockchance` (object) and `needHome` (NPC) slips each print one warning naming the key and its suggestion.
+
+### The message
+
+`format_schema_errors` (in `validate_scenario.rb`, called in place of the per-line `format_schema_error` map) turns each json-schema `contains additional properties [...] outside of the schema` message into one line per key: `❌ ERROR: schema: <pointer> (<room, object or NPC>): unknown key '<k>', did you mean '<known>'?`. The known keys come from the schema node at that pointer (`schema_resolve`, following `$ref`, `properties`, `patternProperties`, `additionalProperties`, `items` and combinator branches; a `grant_foothold` action uses its own definition). The hint is a case-insensitive match, else the single closest key within edit distance 2 (1 for keys under five characters); a tie gives no hint. A misspelt required key (`SSID` for `ssid`) would also raise "did not contain a required property of 'ssid'"; that line is dropped when an unknown key at the same pointer suggests `ssid`, so one slip prints one line. Social schema errors are split off before this and keep their old text.
+
+### Corpus
+
+Key walk before closing (scratch script, all 177 rendered scenarios, every block in the set compared with the schema's declared keys): 0 unknown keys. Instances seen: accessList 41, accountProfiles 12, affordance 85, creds 57, feed 15, feed posts 34, NPC frustration 4, grant_foothold 3, habits 4, needs entries 91, networks 5, NPC workarounds 12, policies 15, printHabit 1, resources 22, role frustration 1, roles 3, screenHabit 10, usbHabit 1, wifi 1. Role workarounds: none in the corpus (the fixture covers them).
+
+Validator after the change, all 177 `scenarios/*/scenario.json.erb`, ink on, `--no-graph`, default list: every scenario exits 0; 81 errors, 81 known; the same 13 scenarios print a `❌`; no `unknown key`, `could not run` or stale line; m01 to m10 print 0 `❌`. The same corpus with `--skip-ink` against main's schema (`-s`) and against the new one gives identical `Result:` lines (errors and warnings) for all 177. `git status` clean after every run. No known-failures entry added.
+
+### Tests
+
+- New: `test/js/validator-strict-keys.test.mjs` (8 tests): the base fixture with `_comment` and another `_` key in every block passes (and `affordance: false` still passes); 27 slips, one per block and placement (the plan's `PSK`, `downif`, `autoLockMins`, `lockchance` on `screenHabit`, affordance `owner`, a misspelt required `ssid`, `grant_foothold` in `triggerOnInteract`, `onConfirm` and a timer), each exactly one line with the right pointer, key and hint; two unknown keys print two lines; a tie gives no hint; every block in the set is closed in the schema; the full validator prints the `PSK` slip once and exits 1; `needHome` on an NPC and `lockchance` on an object are one warning each with a hint and no schema error; the corpus has no unknown key in any block (renders and validates all 177, about 13 s).
+- Run without the lock under `RBENV_VERSION=2.7.8`: every test file that runs the validator or reads the schema (68 files): 68 pass, 993 tests, 0 fail.
+- Not run: the full suites (the orchestrator runs them at the merge batch).
+
+### Open
+
+- `validate_network.rb:19-20` still calls `grant_foothold` reserved (access review m1); untouched.
+- Plan section 7 (q84) closes the core kinds; until then a room, object or NPC slip is a warning.
+
 ## Handover
 
 Step 1 is done; nothing in progress. Commits on `build/harden-step1`: 22e29b9db (validator, list, decisions, fixtures), 42795f922 (tests), and the commit holding this log and the README edits.
+
+Step 2 is done; nothing in progress. Commits on `build/harden-step2`: 3f80b61cb (schema, validator, tests) and the commit holding this log and the README note.

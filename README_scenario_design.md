@@ -53,7 +53,7 @@ Every hard finding prints as `❌ ERROR: <text>` (social lints as `❌ ERROR: SO
 The validator performs three phases:
 
 1. **ERB rendering** – renders the `.json.erb` template with randomised placeholder values (`random_password`, `random_pin`, `random_code`, `vm_object()`, `flags_for_vm()`)
-2. **Schema validation** – checks the rendered JSON against `scripts/scenario-schema.json`
+2. **Schema validation** – checks the rendered JSON against `scripts/scenario-schema.json`. The access, network and office-life blocks are closed: the entries of `networks` (and their `wifi`), `resources`, `policies`, `accountProfiles` and `roles` (with their `workarounds` and `frustration`), every access list (`access`, `for`), and on an NPC `creds`, `habits`, `screenHabit`, `printHabit`, `usbHabit`, `frustration`, each `needs` entry, each `workarounds` entry, `feed` and its posts, and an object's `affordance`, plus every `grant_foothold` action wherever it sits. A key the schema does not declare there is an error, `❌ ERROR: schema: <path>: unknown key '<k>'`, with `did you mean '<known>'?` when one declared key is close, and one slip prints one line (a misspelt required key does not also print "required"). These slips used to be silent and some change play: `wifi: { "PSK": ... }` leaves `psk` missing, which makes the network open. Keys starting with `_` (such as `_comment`) always pass. Rooms, objects and NPCs themselves stay open for now: an unknown field there is a warning, with the same hint.
 3. **Common issues** – structural checks including:
    - Object types with no matching sprite file in `public/break_escape/assets/objects/`
    - Containers with `contents` that are missing the required `locked` field
