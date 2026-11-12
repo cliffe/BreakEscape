@@ -2,6 +2,31 @@
 
 Cut 2026-11-12 on `build/phone-calls`, after the `check_phone_calls` check (`scripts/validate_phone_calls.rb`) and the dialoguelint rule `call-in-text-thread` landed. Command per scenario: `ruby scripts/validate_scenario.rb scenarios/<name>/scenario.json.erb --no-graph`, over every scenario with an `npcType: "phone"` record (28). The lint hits below are the full list from `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<name> --json` (the validator prints only four per rule).
 
+## Round 2 update (2026-11-12, after review R2 fixes)
+
+Rerun of all 28 scenarios with a phone record, validator (`--no-graph`) and dialoguelint (`--json`), on two scratch trees under `scratchpad/a7a_r2_fix_93302800/`: this branch at HEAD (b82742b1f) and `build/phone-calls-writing` at ae6694921 (`git archive`), each with this branch's three scripts copied over. The N1 pattern gained `call it in` and `call back` after the first run (orchestrator, from HaX writing review R3); the validator was rerun on both trees, the lint was not (it did not change after that). `lab_social_engineering`: validator and lint output identical to the previous commit's (only the path differs). `test_phone_calls`: 0 phone-call lines and 0 lint hits on this branch; on the writing branch it shows the old fixture's "Ring me" until the merge.
+
+| Tree | Phone-call lines | Errors | Lint hits |
+|---|---|---|---|
+| This branch | 93 (was 72) | 0 | 30 (was 27) |
+| Writing branch | 80 | 11 | 3 |
+
+The 21 new lines on this branch are the N1 wording (16 from the first pattern, 5 from `call it in` and `call back`); none is a false positive. The 3 new lint hits are N3 (m07 `m07_phone_agent_0x99.ink:780`, two phrases on one line, and Architect `m07_architect_comms.ink:442`, which the writers' marks already cover on their branch).
+
+Remaining on the writing branch:
+
+| Item | Owner |
+|---|---|
+| 11 errors: `#place_call` with no `call` entry (m01 `:146`; m03 `:116`, `:121`; m04 `:146`, `:150`; m05 `:186`, `:220`; m06 `:162`, `:174`; m07 `:229`; m08 `:93`) | slice config (M4-M8, M10) |
+| Lint m10 `m10_phone_agent0x99.ink:302`, `:763` and test_finale `hax_call.ink:15` | clear on merge (the markers and the "on the line" rewording at M9 are on this branch or M9) |
+| `test_phone_calls/legacy_voiced.ink:8` "Ring me" | clears on merge (fixture reworded here) |
+| Call-me lines for HaX, Vance, Patricia, lab_tesseract, sis02 (54 before the last two patterns, 59 now) | slice config, or a reword to "message me" where the contact has no live call at that point (writers) |
+| N1 lines on the writing branch: m04 `:201` "Call it in", m05 `:461`, `:476` "Call back when you're sure" (HaX), `:182`, `:201` "Ring back when you're sure" (Patricia, new) | writers reword, or clear once the contact's `call` entry is live |
+
+New on both trees, not in any slice: `scenarios/test-phone-terminal` `handler.ink:15` "Copy that. Call if you need anything." (N1). Owner: orchestrator (a test scenario; reword to "Message me if you need anything.").
+
+Remaining on this branch: the lint hits and call-me lines listed in the Round 1 tables below keep their owners; the added N1 lines belong to the same slices as the contact they sit in (m01 `m01_phone_agent0x99.ink:134`, `:177`, `:254`, `:276`, `:298`; m02 `:117`, `:204`; m03 `:153`, `:444`; m04 `:196` plus Vance; m05 `:231`, `:445`, `:460`, Patricia `:146`, `:163`; m06 `:141`, `:218`; m08, m07 ERB lines): the M-slice writers for that mission.
+
 ## Round 1 update (2026-11-12, after review R1 fixes)
 
 Rerun of the same 28 scenarios (`--no-graph`, dialoguelint `--json`) with the fixed check and rule. No scenario reports a phone-calls error. `test_phone_calls` and `lab_social_engineering`: 0 phone-call lines, 0 lint hits; the `lab_social_engineering` validator output is identical to the previous commit's (apart from the path header and a gem deprecation notice). The per-scenario sections further down are the original cut; this table and the list below supersede their counts.

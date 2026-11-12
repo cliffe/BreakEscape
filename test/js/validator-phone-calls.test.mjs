@@ -119,7 +119,7 @@ function check(npc, inks = { hax: INK }, extra = {}) {
 test('clean: ring true, ring object, call entry and a list all pass with no output', { skip }, () => {
     assert.deepEqual(check({ eventMappings: [ringMap()] }), []);
     assert.deepEqual(check({ eventMappings: [ringMap({ ring: { onMissed: 'voicemail', voicemailKnot: 'vm', withheld: true, untilAnswered: true } })] }), []);
-    assert.deepEqual(check({ call: { knot: 'support_call', when: 'globalVars.ally && !globalVars.ko', unavailable: 'hidden' } }), []);
+    assert.deepEqual(check({ call: { knot: 'support_call', when: 'globalVars.ally && !globalVars.ko', unavailable: 'hidden' } }, { hax: INK }, { globalVariables: { ally: false, ko: false } }), []);
     assert.deepEqual(check({ call: [{ knot: 'support_call', button: false }, { knot: 'ring_call' }] }), []);
     assert.deepEqual(check({ timedConversation: { delay: 1000, targetKnot: 'ring_call', ring: true } }), []);
 });
@@ -174,8 +174,9 @@ test('error: call.when that uses value, name or data.', { skip }, () => {
         assertHas(errors(check({ call: { knot: 'support_call', when } })), term);
     }
     // a global that merely contains the word, and a quoted string, are fine
-    assert.deepEqual(errors(check({ call: { knot: 'support_call', when: 'globalVars.value_seen && globalVars.name_ok' } })), []);
-    assert.deepEqual(errors(check({ call: { knot: 'support_call', when: 'globalVars.who === "name"' } })), []);
+    const declared = { globalVariables: { value_seen: false, name_ok: false, who: '' } };
+    assert.deepEqual(errors(check({ call: { knot: 'support_call', when: 'globalVars.value_seen && globalVars.name_ok' } }, { hax: INK }, declared)), []);
+    assert.deepEqual(errors(check({ call: { knot: 'support_call', when: 'globalVars.who === "name"' } }, { hax: INK }, declared)), []);
 });
 
 test('warn: untilAnswered on a forced call, and a call knot that never reads call_answer_seconds', { skip }, () => {
@@ -352,4 +353,61 @@ test('m5: the CLI lint finds no call-in-text-thread on test_phone_calls or lab_s
         const hits = out.files.flatMap(f => f.findings.filter(x => x.rule === 'call-in-text-thread').map(x => `${f.file}:${x.line}`));
         assert.deepEqual(hits, [], name);
     }
+});
+
+// ---- A7a review round 2 fixes ----
+
+test('N1: call promises without "me" warn for a contact who cannot be called; noun uses and the contact\'s own ring do not', { skip }, () => {
+    const withLine = line => ({ hax: INK.replace('Not yet.', line) });
+    for (const line of ['Call anytime.', 'Call if you get stuck.', 'Phone me when you\'ve decided.', 'Ring whenever you like.', 'Call when you\'ve got something.', 'Call it in when you have something.', 'Call back when you\'re sure.', 'Ring back once it is done.']) {
+        assertHas(warnings(check({}, withLine(line))), 'hax.ink:7');
+        assertHas(warnings(check({ timedMessages: [{ delay: 1, message: line }] })), 'timedMessages[0]');
+    }
+    for (const line of ['I\'ll ring when you\'re at the isolator.', 'I\'ll call if I need you.', 'Waiting on your call.', 'The call if it comes will be short.', 'Calling it a night.', 'I\'ll call back when I know.', 'I\'ll call you back.', 'She called back an hour ago.', 'Nightshade rings back later.']) {
+        assert.deepEqual(noVar(warnings(check({}, withLine(line)))), [], line);
+        assert.deepEqual(warnings(check({ timedMessages: [{ delay: 1, message: line }] })).filter(w => w.includes('timedMessages')), [], line);
+    }
+    // a choice's own text (in the brackets) is the player's
+    assert.deepEqual(noVar(warnings(check({}, withLine('+ [I\'ll call if I need you.]\n        Fine.')))), []);
+    // a contact with a call entry may say it
+    assert.deepEqual(warnings(check({ call: { knot: 'support_call' } }, withLine('Call anytime.'))), []);
+});
+
+test('N2: globalVars.<name> in call.when that nothing declares or sets is an error', { skip }, () => {
+    const bad = check({ call: { knot: 'support_call', when: '!globalVars.line_dead' } });
+    assertHas(errors(bad), 'call.when reads globalVars.line_dead');
+    // declared, set by setGlobal, set by an ink tag, carried over by importGlobals (the name is built, not matched by pattern)
+    const ok = (extra, inks) => assertNone(errors(check({ call: { knot: 'support_call', when: '!globalVars.line_dead' } }, inks, extra)), 'line_dead');
+    ok({ globalVariables: { line_dead: false } });
+    ok({ startItemsInInventory: [{ type: 'phone', phoneId: 'player_phone', npcIds: ['hax'] }], timers: [{ id: 't', actions: [], setGlobal: { line_dead: true } }] });
+    ok({}, { hax: INK.replace('That is all.', 'That is all.\n#set_global:line_dead:true') });
+    const carry = (name, entry) => assertNone(errors(check({ call: { knot: 'support_call', when: `globalVars.${name}` } }, { hax: INK }, { importGlobals: [entry] })), name);
+    carry('m05_line_dead', { from: 'm05_x', var: 'line_dead', default: false });
+    carry('met_maya', { from: 'm01_first_contact', as: 'met_maya', default: false });
+    carry('m06_completed', { from: 'm06_follow_the_money', completed: 'm06_completed' });
+    // a name that merely looks like a carryover name, but is not imported, is still an error
+    assertHas(errors(check({ call: { knot: 'support_call', when: 'globalVars.m05_never_imported' } })), 'm05_never_imported');
+});
+
+test('N2: the error says so when the name is an ink VAR; a mapping condition only warns', { skip }, () => {
+    const ink = 'VAR line_dead = false\n' + INK;
+    assertHas(errors(check({ call: { knot: 'support_call', when: '!globalVars.line_dead' } }, { hax: ink })), 'declare it in globalVariables so the ink VAR syncs to it');
+    const cond = check({ eventMappings: [ringMap({ condition: '!globalVars.line_dead' })] });
+    assertNone(errors(cond), 'line_dead');
+    assertHas(warnings(cond), 'eventMappings[0].condition reads globalVars.line_dead');
+    assertNone(warnings(check({ eventMappings: [ringMap({ condition: '!globalVars.line_dead' })] }, { hax: INK }, { globalVariables: { line_dead: false } })), 'line_dead');
+});
+
+test('m3: an ink function defined in an INCLUDE\'d file is not a shared knot', { skip }, () => {
+    const hax = 'INCLUDE helpers.ink\n' + INK.replace('    Not yet.\n    -> start', '    Not yet. {both()}\n    -> start').replace('Support here.', 'Support here. {both()}');
+    const inks = { helpers: '=== function both() ===\n~ return 1\n', hax };
+    assertNone(warnings(check({ call: { knot: 'support_call' } }, inks)), 'knot "both"');
+});
+
+test('m4: an empty npcIds filters nothing, so it does not warn that the contact is unlisted', { skip }, () => {
+    const empty = { startItemsInInventory: [{ type: 'phone', phoneId: 'player_phone', npcIds: [] }] };
+    assertNone(warnings(check({ call: { knot: 'support_call' } }, { hax: INK }, empty)), 'never appears');
+    // a non-empty list that omits the contact still warns
+    const other = { startItemsInInventory: [{ type: 'phone', phoneId: 'player_phone', npcIds: ['other'] }] };
+    assertHas(warnings(check({ call: { knot: 'support_call' } }, { hax: INK }, other)), 'never appears');
 });

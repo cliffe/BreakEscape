@@ -128,7 +128,8 @@ const CALL_IN_TEXT = [
   /\bon (?:the|my|her|his) line\b/i,
   /\bget off (?:her|my|his) line\b/i,
   /\bhang(?:s|ing)? up\b/i,
-  /\bthe line (?:drops|goes dead|is dead)\b/i,
+  /\bthe line (?:drops|goes dead|is dead|(?:stays|goes|went|falls|fell) (?:quiet|silent|still))\b/i,
+  /\byou read it (?:back|out) to (?:her|him|them)\b/i,
   /\byour handset (?:rings|lights)\b/i,
   /\brings out\b/i,
   /\bcaller id\b/i,
@@ -172,12 +173,22 @@ export function callKnotSet(lines, home = 'start') {
       targets.get(L.knot).add(t);
     }
   }
+  // The spread also stops at every knot the home knot reaches: a call that ends `-> hub` must not
+  // silence the text thread (review A7a R2, m1).
+  const reachHome = new Set();
+  const hq = knotNames.has(home) ? [home] : [];
+  while (hq.length) {
+    const k = hq.shift();
+    if (reachHome.has(k)) continue;
+    reachHome.add(k);
+    for (const t of targets.get(k) || []) hq.push(t);
+  }
   const set = new Set(marked);
   const queue = [...marked];
   while (queue.length) {
     const k = queue.shift();
     for (const t of targets.get(k) || []) {
-      if (t === home || set.has(t)) continue;
+      if (t === home || reachHome.has(t) || set.has(t)) continue;
       set.add(t);
       queue.push(t);
     }

@@ -5,11 +5,12 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const tool = join(root, 'scripts/ink_runtime_check/dialoguelint.mjs');
-const { lintInk, lintTexts, scenarioInfo, tellHits, countWords } = await import(tool);
+const { lintInk, lintTexts, scenarioInfo, tellHits, countWords, structureFindings, lintTargets } = await import(tool);
 
 const words = n => Array.from({ length: n }, (_, i) => 'word' + i).join(' ');
 const rules = r => r.findings.map(f => f.rule);
@@ -597,4 +598,67 @@ test('m4: "she picked up the drive" does not fire; "she picked up." still does',
   assert.deepEqual(callHits('=== idle ===\nShe picked up the drive and left.\nHe picked up a pen.\n'), []);
   assert.equal(callHits('=== idle ===\nShe picked up on the second ring.\n').length, 1);
   assert.equal(callHits('=== idle ===\nShe picked up.\n').length, 1);
+});
+
+// ---- A7a review round 2 fixes ----
+test('N3: "The line stays quiet" and "You read it back to her" in a text knot fire; in a marked call knot they do not', () => {
+  for (const p of ['The line stays quiet for a while.', 'The line goes silent.', 'The line fell still.', 'You read it back to her.', 'You read it out to him.']) {
+    assert.equal(callHits(`=== idle ===\nNarrator: ${p}\n`).length, 1, p);
+  }
+  assert.deepEqual(callHits('=== call ===\n// lint: call-knot\nNarrator: The line stays quiet.\n'), []);
+  // the channel idiom stays quiet
+  assert.deepEqual(callHits('=== idle ===\nLine\'s open.\nThe room stays quiet.\n'), []);
+});
+
+test('m1: the spread stops at any knot the home knot reaches, not only at the home knot', () => {
+  const ink = [
+    '=== start ===', 'Hello.', '-> hub', '',
+    '=== hub ===', 'Text me.', '-> idle', '',
+    '=== idle ===', 'He hangs up.', '',
+    '=== ring_call ===', '// lint: call-knot', 'Hi.', '-> hub', '',
+  ].join('\n');
+  assert.deepEqual(callHits(ink).map(h => h.line), [10]);
+});
+
+const m2ink = [
+  '=== hub ===', 'Hello.', '-> idle', '',
+  '=== idle ===', 'He hangs up.', '',
+  '=== ring_call ===', '// lint: call-knot', 'Hi.', '-> hub', '',
+].join('\n');
+
+test('m2: a custom home reaches the spread in lintInk (the marked call diverts to the custom home)', () => {
+  const lines = h => lintInk(m2ink, { channel: 'phone', home: h }).findings.filter(f => f.rule === 'call-in-text-thread').map(f => f.line);
+  assert.deepEqual(lines('hub'), [6]);
+  // with the wrong home the call spreads through hub into idle and hides the hit
+  assert.deepEqual(lines('start'), []);
+});
+
+test('m2: a custom home reaches the delivery checks (structureFindings and lintInk)', () => {
+  const ink = '=== hub ===\nHello.\n-> tail\n=== tail ===\n#delivery: quiet\n+ [Ok.]\n    -> DONE\n=== call ===\n// lint: call-knot\nHi.\n-> hub\n';
+  const unread = f => f.filter(x => x.rule === 'delivery-unread').length;
+  assert.equal(unread(structureFindings(ink, { channel: 'phone', home: 'hub' })), 0);
+  assert.equal(unread(lintInk(ink, { channel: 'phone', home: 'hub' }).findings), 0);
+  assert.equal(unread(structureFindings(ink, { channel: 'phone', home: 'nowhere' })), 1);
+});
+
+test('m2: scenarioInfo reads currentKnot whether it sits before or after the storyPath', () => {
+  const erb = `{ "npcs": [
+    { "id": "a", "npcType": "phone", "currentKnot": "first_call", "storyPath": "scenarios/m/ink/a.json" },
+    { "id": "b", "npcType": "phone", "storyPath": "scenarios/m/ink/b.json", "currentKnot": "hub" }
+  ] }`;
+  const info = scenarioInfo(erb);
+  assert.equal(info.homes['a.json'], 'first_call');
+  assert.equal(info.homes['b.json'], 'hub');
+});
+
+test('m2: the CLI path hands each contact its home knot to the lint', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dl-'));
+  try {
+    mkdirSync(join(dir, 'ink'));
+    writeFileSync(join(dir, 'scenario.json.erb'), '{ "npcs": [ { "id": "a", "npcType": "phone", "currentKnot": "hub", "storyPath": "scenarios/m/ink/h.json" } ] }');
+    writeFileSync(join(dir, 'ink', 'h.ink'), m2ink);
+    const r = lintTargets([dir]);
+    const hits = r.files[0].findings.filter(f => f.rule === 'call-in-text-thread').map(f => f.line);
+    assert.deepEqual(hits, [6]);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

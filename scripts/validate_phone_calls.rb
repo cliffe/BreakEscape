@@ -18,7 +18,13 @@ module ValidatePhoneCalls
   CALL_KEYS = %w[knot when unavailable button].freeze
   ON_MISSED = %w[callback voicemail].freeze
   UNAVAILABLE = %w[no_answer hidden].freeze
-  CALL_ME = /\b(?:call|ring) me\b/i.freeze
+  CALL_ME = /\b(?:call|ring|phone) me\b/i.freeze
+  # A promise of a call without "me": "Call anytime.", "Call if you get stuck.", "Phone me when ..."
+  # (review A7a R2, N1). A match inside CALL_NOUN ("your call if") or SELF_RING ("I'll ring when")
+  # is not a request to the player.
+  CALL_PROMISE = /\b(?:call|ring|phone)(?:\s+me)?\s+(?:anytime|any\s+time|whenever|if|when|once)\b|\b(?:call|ring|phone)\s+back\b|\bcall\s+it\s+in\b/i.freeze
+  CALL_NOUN = /\b(?:a|the|your|my|his|her|our|their|that|this|next|last|first|one|whose|on)\s+(?:call|ring|phone)\b/i.freeze
+  SELF_RING = /\b(?:I['\u2019]ll|I will|we['\u2019]ll|she['\u2019]ll|he['\u2019]ll|they['\u2019]ll|I['\u2019]d)\s+(?:call|ring|phone)\b/i.freeze
   # Stage business between asterisks or in parentheses (dialoguelint.mjs STAGE_VERB)
   STAGE_VERB = /\A(?:sigh|laugh|pause|nod|shrug|cough|exhale|inhale|smile|grin|wink|chuckle|snort|groan|gasp|sniff|frown|scoff|smirk|yawn|whistle|mutter|whisper|wince|blink|glance|cry|sob|giggle|shudder|gulp|swallow|hesitate|beat|beep|grunt|huff|tut|clap|squint)(?:s|es|ed|d|ing)?\z/i.freeze
   DIVERT_KEYS = %w[-> ->t-> f() ^-> *].freeze
@@ -30,12 +36,70 @@ module ValidatePhoneCalls
     return issues unless json_data.is_a?(Hash)
 
     phones = phone_objects(json_data)
-    records(json_data).each do |npc, path|
-      next unless npc.is_a?(Hash)
-
-      issues.concat(check_npc(npc, path, base_dir, phones))
+    recs = records(json_data).select { |npc, _| npc.is_a?(Hash) }
+    globals = known_globals(json_data, recs, base_dir)
+    recs.each do |npc, path|
+      issues.concat(check_npc(npc, path, base_dir, phones, globals))
     end
     issues
+  end
+
+  # True when the text asks the player to call: "call me", or a call promise that is not a noun use
+  # ("your call if") or the NPC's own ring ("I'll ring when ...").
+  def call_promise?(text)
+    return true if text.match?(CALL_ME)
+
+    excuses = text.to_enum(:scan, Regexp.union(CALL_NOUN, SELF_RING)).map { Regexp.last_match.then { |m| m.begin(0)...m.end(0) } }
+    text.to_enum(:scan, CALL_PROMISE).any? do
+      m = Regexp.last_match
+      excuses.none? { |r| r.begin < m.end(0) && m.begin(0) < r.end }
+    end
+  end
+
+  # ---- globals (N2) ---------------------------------------------------------------------
+
+  # Names a `globalVars.<name>` condition can see: globalVariables keys, the names a game merges in at
+  # creation from importGlobals (CarryOver.import_name; they are not in globalVariables in the file),
+  # keys of any setGlobal, and `#set_global:<name>` tags in any contact's ink.
+  def known_globals(json_data, recs, base_dir)
+    names = Set.new
+    gv = json_data['globalVariables']
+    names.merge(gv.keys.map(&:to_s)) if gv.is_a?(Hash)
+    imported = json_data['importedGlobals']
+    names.merge(imported.keys.map(&:to_s)) if imported.is_a?(Hash)
+    Array(json_data['importGlobals']).each do |e|
+      n = carry_over_name(e)
+      names << n if n
+    end
+    walk = lambda do |node|
+      case node
+      when Hash
+        node['setGlobal'].each_key { |k| names << k.to_s } if node['setGlobal'].is_a?(Hash)
+        node.each_value { |v| walk.call(v) }
+      when Array
+        node.each { |v| walk.call(v) }
+      end
+    end
+    walk.call(json_data)
+    recs.each do |npc, _|
+      _, source = read_ink(npc, base_dir)
+      source&.each { |l| l.scan(/#\s*set_global\s*:\s*(\w+)/) { |(n)| names << n } }
+    end
+    names
+  end
+
+  # Mirrors BreakEscape::CarryOver.import_name (app/models/break_escape/carry_over.rb).
+  def carry_over_name(entry)
+    return nil unless entry.is_a?(Hash)
+    return (entry['completed'].to_s.empty? ? nil : entry['completed'].to_s) if entry.key?('completed')
+    return entry['as'].to_s unless entry['as'].to_s.empty?
+
+    prefix = entry['from'].to_s[/\A((?:m|sis)\d\d)_/, 1]
+    prefix && !entry['var'].to_s.empty? ? "#{prefix}_#{entry['var']}" : nil
+  end
+
+  def global_names(cond)
+    cond.to_s.scan(/globalVars\.(\w+)/).flatten.uniq
   end
 
   # ---- records, ink ----------------------------------------------------------------------
@@ -136,9 +200,21 @@ module ValidatePhoneCalls
     knots
   end
 
-  # Names declared `=== function name(...) ===`: called from both sides without being a shared knot
-  def function_names(source)
-    source.filter_map { |l| l.strip[/\A={2,}\s*function\s+(\w+)/, 1] }.to_set
+  # Functions: called from both sides without being a shared knot. The names come from the `f()` diverts
+  # of the compiled ink, which holds INCLUDE'd functions too (review A7a R2, m3), and from
+  # `=== function name(...) ===` lines in the source.
+  def function_names(source, compiled = nil)
+    names = source ? source.filter_map { |l| l.strip[/\A={2,}\s*function\s+(\w+)/, 1] }.to_set : Set.new
+    collect = lambda do |node|
+      case node
+      when Array then node.each { |n| collect.call(n) }
+      when Hash
+        names << knot_name(node['f()']) if node['f()'].is_a?(String)
+        node.each_value { |v| collect.call(v) }
+      end
+    end
+    collect.call(compiled['root']) if compiled.is_a?(Hash)
+    names
   end
 
   def reads_var?(node, name)
@@ -162,7 +238,7 @@ module ValidatePhoneCalls
 
   # ---- per-NPC ----------------------------------------------------------------------------
 
-  def check_npc(npc, path, base_dir, phones)
+  def check_npc(npc, path, base_dir, phones, globals = Set.new)
     issues = []
     err = ->(msg) { issues << "❌ ERROR: phone calls: '#{path}' (#{npc['id']}) #{msg}" }
     warn = ->(msg) { issues << "⚠️ WARNING: phone calls: '#{path}' (#{npc['id']}) #{msg}" }
@@ -172,7 +248,7 @@ module ValidatePhoneCalls
     home = knot_name(npc['currentKnot'] || 'start')
     compiled, source = read_ink(npc, base_dir)
     named = named_knots(compiled)
-    fns = source ? function_names(source) : Set.new
+    fns = function_names(source, compiled)
     knot_exists = ->(k) { named.nil? || (k != 'global decl' && named[k].is_a?(Array)) }
 
     # ---- ring units: mappings and the timedConversation ----
@@ -302,6 +378,9 @@ module ValidatePhoneCalls
           if entry['when'].is_a?(String) && !entry['when'].strip.empty?
             bad = when_misuse(entry['when'])
             err.call("#{where}.when uses #{bad}, which a call condition cannot read (only globalVars. terms; plan 3.2)") if bad
+            global_names(entry['when']).reject { |n| globals.include?(n) }.each do |n|
+              err.call("#{where}.when reads globalVars.#{n}, which is not in globalVariables and nothing sets it: the condition sees undefined#{var_hint(source, n)}")
+            end
           else
             err.call("#{where}.when must be a condition string")
           end
@@ -310,6 +389,18 @@ module ValidatePhoneCalls
           err.call("#{where}.unavailable must be \"no_answer\" or \"hidden\", got #{entry['unavailable'].inspect}")
         end
         err.call("#{where}.button must be true or false") if entry.key?('button') && ![true, false].include?(entry['button'])
+      end
+    end
+
+    # Conditions on the mappings that open the thread or ring (the timedConversation too)
+    cond_units = Array(npc['eventMappings']).each_with_index.select { |m, _| m.is_a?(Hash) && (ring_present?(m) || m['conversationMode'] == 'phone-chat') }
+                                            .map { |m, i| [m, "eventMappings[#{i}]"] }
+    cond_units << [tc, 'timedConversation'] if tc.is_a?(Hash)
+    cond_units.each do |cfg, where|
+      next unless cfg['condition'].is_a?(String)
+
+      global_names(cfg['condition']).reject { |n| globals.include?(n) }.each do |n|
+        warn.call("#{where}.condition reads globalVars.#{n}, which is not in globalVariables and nothing sets it: the condition sees undefined#{var_hint(source, n)}")
       end
     end
 
@@ -332,7 +423,8 @@ module ValidatePhoneCalls
       # (phone-chat-history.js addMessage), so the contact is listed afterwards.
       gives_history = has_ring || !Array(npc['timedMessages']).empty? ||
                       Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && (m['sendTimedMessage'].is_a?(Hash) || m['conversationMode'] == 'phone-chat') }
-      if listed && !listed.include?(npc['id'].to_s) && !gives_history
+      # an empty npcIds filters nothing (phone-chat-ui.js: allowedNpcIds.length > 0), so it lists everyone
+      if listed && !listed.empty? && !listed.include?(npc['id'].to_s) && !gives_history
         warn.call("has a call entry but is not in its phone's npcIds and nothing gives it history (no ring, timedMessages, sendTimedMessage or phone-chat mapping): its thread, and so its call button, never appears")
       end
     end
@@ -371,6 +463,12 @@ module ValidatePhoneCalls
     issues.concat(call_me_checks(npc, path, source, named, home)) unless call_contact || voiced
 
     issues
+  end
+
+  def var_hint(source, name)
+    return '' unless source&.any? { |l| l.match?(/\A\s*VAR\s+#{Regexp.escape(name)}\b/) }
+
+    "; #{name} is a VAR in the contact's ink: declare it in globalVariables so the ink VAR syncs to it"
   end
 
   def ring_present?(cfg)
@@ -510,7 +608,7 @@ module ValidatePhoneCalls
     # The same text on many mappings (m06 repeats one per branch) is one warning with a count.
     grouped = {}
     message_texts(npc).each do |where, text|
-      next unless text.is_a?(String) && text.match?(CALL_ME)
+      next unless text.is_a?(String) && call_promise?(text)
 
       (grouped[text] ||= []) << where
     end
@@ -532,7 +630,7 @@ module ValidatePhoneCalls
       next if s.empty? || s.start_with?('#', '~', '=')
 
       s = s[/\]\s*(.*)\z/, 1].to_s if s.match?(/\A[*+]/)
-      next unless s.match?(CALL_ME)
+      next unless call_promise?(s)
 
       issues << "⚠️ WARNING: phone calls: '#{path}' (#{npc['id']}) #{sp}:#{i + 1} says \"#{s[0, 80]}\", but this contact has no call entry and no ring, so the player can't call (plan 3.5, 7.3)"
     end
