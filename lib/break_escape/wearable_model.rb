@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# Step 2b: author_notes (and, through it, scenario_schema) so the whole-tree walkers skip notes.
+require_relative 'author_notes' unless defined?(BreakEscape::AuthorNotes)
+
 module BreakEscape
   # Wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md): the scenario-level rules the server
   # (Game::Wearables) and the validator (scripts/validate_wearable.rb) share, so both agree on
@@ -31,17 +34,24 @@ module BreakEscape
     # are all found.
     def wearable_items(scenario)
       out = []
-      walk = lambda do |node, path|
-        case node
-        when Hash
-          out << { item: node, path: path } if node.key?('wearable')
-          node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") unless k == 'wearable' }
-        when Array
-          node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+      # Step 2b: each_live skips "_" notes and visits free data in full; prune the `wearable`
+      # subtree, as the by-hand walk did, since nothing wearable nests under another wearable.
+      AuthorNotes.each_live(scenario, ScenarioSchema.root, prune: ->(k) { k == 'wearable' }) do |node, _snode, keys|
+        out << { item: node, path: tree_path(keys) } if node.is_a?(Hash) && node.key?('wearable')
+      end
+      out
+    end
+
+    # The dotted/indexed path string the walkers report, built from an each_live key path.
+    def tree_path(keys)
+      keys.each_with_object(+'') do |k, s|
+        if k.is_a?(Integer)
+          s << "[#{k}]"
+        else
+          s << '/' unless s.empty?
+          s << k
         end
       end
-      walk.call(scenario, '')
-      out
     end
 
     # The worn globals the scenario declares, sorted and unique.
@@ -53,21 +63,17 @@ module BreakEscape
     # set_global actions and setGlobal maps. [{ name:, path: }]
     def global_writers(scenario)
       out = []
-      walk = lambda do |node, path|
-        case node
-        when Hash
-          if node['type'] == 'set_global' && node['key'].is_a?(String)
-            out << { name: node['key'], path: path }
-          end
-          if node['setGlobal'].is_a?(Hash)
-            node['setGlobal'].each_key { |name| out << { name: name.to_s, path: "#{path}/setGlobal" } }
-          end
-          node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
-        when Array
-          node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+      # Step 2b: each_live skips "_" notes and visits free data in full, so the 32 corpus
+      # set_global writers inside item minigameData (free data) are still collected.
+      AuthorNotes.each_live(scenario, ScenarioSchema.root) do |node, _snode, keys|
+        next unless node.is_a?(Hash)
+
+        path = tree_path(keys)
+        out << { name: node['key'], path: path } if node['type'] == 'set_global' && node['key'].is_a?(String)
+        if node['setGlobal'].is_a?(Hash)
+          node['setGlobal'].each_key { |name| out << { name: name.to_s, path: "#{path}/setGlobal" } }
         end
       end
-      walk.call(scenario, '')
       out
     end
   end

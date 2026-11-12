@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'set'
+# Step 2b: author_notes (and, through it, scenario_schema) so each_capture_writer can skip notes.
+require_relative 'author_notes' unless defined?(BreakEscape::AuthorNotes)
 
 module BreakEscape
   # Capture routes and capture proofs (docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md,
@@ -47,10 +49,14 @@ module BreakEscape
     # kind :action for an add_capture action (capture_hash is its `capture`), :mapping for a
     # mapping's addCapture. owner is the nearest enclosing hash that carries eventMappings (an
     # NPC), or nil.
-    def each_capture_writer(data, &block)
-      return enum_for(:each_capture_writer, data) unless block
+    # Step 2b: notes: :skip (the default) skips a writer an author parked in a "_" note, so such
+    # a writer never widens the target ids the server accepts, never serves or shadows a secret,
+    # and never turns proof-gating on or satisfies it. notes: :visit visits notes too, which the
+    # withholding callers (item 4) pass. Free data holds no notes and is visited either way.
+    def each_capture_writer(data, notes: :skip, &block)
+      return enum_for(:each_capture_writer, data, notes: notes) unless block
 
-      walk = lambda do |node, path, owner|
+      walk = lambda do |node, snode, path, owner|
         case node
         when Hash
           here_owner = node['eventMappings'].is_a?(Array) ? node : owner
@@ -58,12 +64,18 @@ module BreakEscape
             yield node['capture'], :action, path, here_owner
           end
           yield node['addCapture'], :mapping, "#{path}/addCapture", here_owner if node['addCapture'].is_a?(Hash)
-          node.each { |key, value| walk.call(value, "#{path}/#{key}", here_owner) }
+          node.each do |key, value|
+            ks = key.to_s
+            next if notes == :skip && AuthorNotes.note?(snode, ks)
+
+            walk.call(value, ScenarioSchema.child(snode, ks), "#{path}/#{ks}", here_owner)
+          end
         when Array
-          node.each_with_index { |value, idx| walk.call(value, "#{path}[#{idx}]", owner) }
+          inode = ScenarioSchema.item(snode)
+          node.each_with_index { |value, idx| walk.call(value, inode, "#{path}[#{idx}]", owner) }
         end
       end
-      walk.call(data, '', nil)
+      walk.call(data, ScenarioSchema.root, '', nil)
     end
 
     # [{ target_id:, kind:, path: }] for each capture writer with a target id.

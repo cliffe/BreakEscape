@@ -2,6 +2,8 @@
 
 require_relative 'access_identities' unless defined?(BreakEscape::AccessIdentities)
 require_relative 'access_work' unless defined?(BreakEscape::AccessWork)
+# Step 2b: author_notes (and, through it, scenario_schema) so the owner walkers skip notes.
+require_relative 'author_notes' unless defined?(BreakEscape::AuthorNotes)
 
 module BreakEscape
   # The owner claim (POST /login with claim: "owner", ACCESS_MODEL_PLAN.md section 6) is a client
@@ -182,15 +184,15 @@ module BreakEscape
     # entries themselves, so a field anywhere in them counts
     def mappings(owner)
       out = []
-      walk = lambda do |node|
-        case node
-        when Array then node.each { |n| walk.call(n) }
-        when Hash
-          out << node
-          node.each_value { |v| walk.call(v) }
-        end
-      end
-      walk.call(owner['eventMappings'] || owner['eventMapping'])
+      # Step 2b: carry a Node and skip "_" notes, so a patrolOverride (or any owner-claim field)
+      # an author parked under a "_draft" event mapping does not allow an owner claim. Free data
+      # is visited in full. eventMappings is an Array; the singular eventMapping is an Array or a
+      # Hash, as npc-manager.js normalises them, so the Node is the array property either way, or
+      # the eventMapping definition for the bare Hash.
+      raw = owner['eventMappings'] || owner['eventMapping']
+      array_shape = owner['eventMappings'] || raw.is_a?(Array)
+      pointer = array_shape ? '#/definitions/npc/properties/eventMappings' : '#/definitions/eventMapping'
+      AuthorNotes.each_live(raw, ScenarioSchema.at(pointer)) { |n, _snode, _keys| out << n if n.is_a?(Hash) }
       out
     end
 
@@ -324,28 +326,37 @@ module BreakEscape
       seen = {}.compare_by_identity
       add = nil
       # A hash's values; under an npcs key the NPC records keep this level's flag and what they
-      # contain is held
-      add_values = lambda do |node, room_id, held|
+      # contain is held. Step 2b: each lambda carries a schema Node (snode) and skips "_" notes
+      # (so an id or owner field under a "_draft" is not claimed), while visiting free data in
+      # full (so ids inside minigameData stay listed), as the corpus check confirms.
+      add_values = lambda do |node, snode, room_id, held|
         node.each do |k, v|
-          next add.call(v, room_id, held) unless k == 'npcs' && v.is_a?(Array)
+          ks = k.to_s
+          next if AuthorNotes.note?(snode, ks)
 
-          v.each { |npc| add.call(npc, room_id, held, true) }
+          cnode = ScenarioSchema.child(snode, ks)
+          next add.call(v, cnode, room_id, held) unless ks == 'npcs' && v.is_a?(Array)
+
+          inode = ScenarioSchema.item(cnode)
+          v.each { |npc| add.call(npc, inode, room_id, held, true) }
         end
       end
-      add = lambda do |node, room_id, held, npc = false|
+      add = lambda do |node, snode, room_id, held, npc = false|
         case node
-        when Array then node.each { |n| add.call(n, room_id, held) }
+        when Array then node.each { |n| add.call(n, ScenarioSchema.item(snode), room_id, held) }
         when Hash
           next if seen[node]
 
           seen[node] = true
           out << { obj: node, room: room_id, held: held } if node['id'].is_a?(String) && !node['id'].empty?
-          add_values.call(node, room_id, held || npc)
+          add_values.call(node, snode, room_id, held || npc)
         end
       end
+      root = ScenarioSchema.root
       rooms = data['rooms'].is_a?(Hash) ? data['rooms'] : {}
-      rooms.each { |room_id, room| add.call(room, room_id, false) }
-      add_values.call(data.reject { |k, _| k == 'rooms' }, nil, false)
+      rooms_node = ScenarioSchema.child(root, 'rooms')
+      rooms.each { |room_id, room| add.call(room, ScenarioSchema.child(rooms_node, room_id.to_s), room_id, false) }
+      add_values.call(data.reject { |k, _| k == 'rooms' }, root, nil, false)
       out
     end
 

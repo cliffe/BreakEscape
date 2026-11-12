@@ -2,6 +2,8 @@
 
 # Under Rails the autoloader finds DeclaredGrants; the validator loads it by path.
 require_relative 'declared_grants' unless defined?(BreakEscape::DeclaredGrants)
+# Step 2b: author_notes (and, through it, scenario_schema) so grant_foothold_actions skips notes.
+require_relative 'author_notes' unless defined?(BreakEscape::AuthorNotes)
 
 module BreakEscape
   # Networks (docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md, sections 3 and 4.2): which
@@ -255,20 +257,16 @@ module BreakEscape
       out = []
       return out unless data.is_a?(Hash)
 
-      walk = lambda do |node, keys|
-        case node
-        when Hash
-          if node['type'] == 'grant_foothold' && DeclaredGrants.executed?(keys)
-            shape = node['needsSession'] ? 'session' : 'dropped'
-            out << { pc: node['pc'].to_s, shape: shape, needs_dropped: node['needsDropped'],
-                     needs_held: node['needsHeld'], name: node['name'], path: DeclaredGrants.path_string(keys) }
-          end
-          node.each { |k, v| walk.call(v, keys + [k.to_s]) }
-        when Array
-          node.each_with_index { |v, i| walk.call(v, keys + [i]) }
-        end
+      # Step 2b: walk the live scenario (AuthorNotes.each_live skips "_" notes and visits free
+      # data in full), so a grant_foothold an author parked in a note never widens the server's
+      # allow list, while a grant inside a minigame's action list (free data) is still honoured.
+      AuthorNotes.each_live(data, ScenarioSchema.root) do |node, _snode, keys|
+        next unless node.is_a?(Hash) && node['type'] == 'grant_foothold' && DeclaredGrants.executed?(keys)
+
+        shape = node['needsSession'] ? 'session' : 'dropped'
+        out << { pc: node['pc'].to_s, shape: shape, needs_dropped: node['needsDropped'],
+                 needs_held: node['needsHeld'], name: node['name'], path: DeclaredGrants.path_string(keys) }
       end
-      walk.call(data, [])
       out
     end
 

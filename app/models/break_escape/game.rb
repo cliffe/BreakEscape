@@ -391,16 +391,11 @@ module BreakEscape
       return unless incoming.is_a?(Array)
 
       known_owners = []
-      collect = lambda do |node|
-        case node
-        when Hash
-          known_owners << node['fingerprintOwner'] if node['fingerprintOwner'].is_a?(String)
-          node.each_value { |v| collect.call(v) }
-        when Array
-          node.each { |v| collect.call(v) }
-        end
+      # Step 2b: AuthorNotes.each_live skips "_" notes (so a fingerprintOwner an author parked in
+      # a note is not a known owner for a synced sample) and visits free data in full.
+      AuthorNotes.each_live(scenario || scenario_data, ScenarioSchema.root) do |node, _snode, _keys|
+        known_owners << node['fingerprintOwner'] if node.is_a?(Hash) && node['fingerprintOwner'].is_a?(String)
       end
-      collect.call(scenario || scenario_data)
 
       merged = Array(player_state['biometricSamples']).select { |s| s.is_a?(Hash) }.map { |s| s.slice(*BIOMETRIC_SAMPLE_KEYS) }
       incoming.each do |raw|

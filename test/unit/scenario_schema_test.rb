@@ -4,6 +4,8 @@ require 'minitest/autorun'
 require 'json'
 require_relative '../../lib/break_escape/scenario_schema'
 require_relative '../../lib/break_escape/author_notes'
+require_relative '../../lib/break_escape/owner_claim'
+require_relative '../../lib/break_escape/capture_model'
 
 # Step 2b, the schema-walk test. It simulates the run-time walk over the schema itself, with the
 # real resolver and the eager enumerator, then checks the marks. The parts follow the plan
@@ -113,6 +115,46 @@ class ScenarioSchemaWalkTest < Minitest::Test
     end
   end
 
+  # Build nested data from an explore data path (String keys, "[]" for an array item), placing leaf
+  # at the end, so the value at that path has the walked Node.
+  def build_from_path(path, leaf)
+    path.reverse.reduce(leaf) { |acc, seg| seg == '[]' ? [acc] : { seg => acc } }
+  end
+
+  # Part 3, continued (phase B): the two state-carrying walkers that now hold a Node,
+  # OwnerClaim.scenario_objects and CaptureModel.each_capture_writer, agree with classify at every
+  # reached Node. For a Node reached by a clean data path (no "_" segment and not a start pointer),
+  # place { "_probe" => { id, addCapture } } at the path and walk from the root: where "_probe" is
+  # an id or free (kept), both walkers see the probe (its id is listed, its addCapture is a writer);
+  # where it is a note, neither does. A "_" or "#"-start path is skipped because a note or a pointer
+  # segment would block the walk before the leaf, which is not a test of the final Node.
+  def test_runtime_probe_walk_owner_and_capture_agree
+    probe_val = { 'id' => 'probe', 'addCapture' => { 'targetId' => 'probe' } }
+    checked = 0
+    explored.each do |node, path|
+      next if path.any? { |s| s.is_a?(String) && (s.start_with?('_') || s.start_with?('#')) }
+
+      kind, = SS.classify(node, '_probe')
+      # The walkers key off AuthorNotes.note?, which is false whenever the Node has a free branch
+      # (a typed property beside a free branch, such as socialExercise.config, is kept), so expect
+      # keep by note?, not by classify's kind alone.
+      expect_keep = !AN.note?(node, '_probe')
+      data = build_from_path(path, { '_probe' => Marshal.load(Marshal.dump(probe_val)) })
+      obj_ids = BreakEscape::OwnerClaim.scenario_objects(data).map { |o| o[:obj]['id'] }
+      writers = BreakEscape::CaptureModel.each_capture_writer(data).map { |cap, _k, _p, _o| cap['targetId'] }
+      loc = path.join('/')
+      checked += 1
+      if expect_keep
+        assert_includes obj_ids, 'probe', "scenario_objects missed a kept id at #{loc} (kind #{kind})"
+        assert_includes writers, 'probe', "each_capture_writer missed a kept writer at #{loc} (kind #{kind})"
+      else
+        refute_includes obj_ids, 'probe', "scenario_objects saw a note at #{loc} (kind #{kind})"
+        refute_includes writers, 'probe', "each_capture_writer saw a note at #{loc} (kind #{kind})"
+      end
+    end
+    assert_operator checked, :>, 1000, "only #{checked} clean-path Nodes checked"
+  end
+
   # --- Part 4. Marks -----------------------------------------------------------------------------
   # Every open schema location carries exactly one of x-id-map:true, x-id-map:false, x-free-data:true.
   def test_every_open_location_has_exactly_one_mark
@@ -167,6 +209,85 @@ class ScenarioSchemaWalkTest < Minitest::Test
   end
 
   # --- Part 6. The corpus (phase B) --------------------------------------------------------------
-  # Every rendered template, walked from the root, has no setGlobal/setVariable-shaped key under
-  # nil. Deferred to phase B (needs the validator's ERB renderer); the build log tracks it.
+  # Every rendered template, walked from the root with the resolver, has no setGlobal/setVariable-
+  # shaped key and no `type: set_global` hash reached under nil (an undescribed location). A map of
+  # names reached under nil would treat a "_"-prefixed global name as a note; the four such maps
+  # were marked x-id-map:true in phase A, so on main this list is empty. Needs the validator's ERB
+  # renderer (json-schema gem), so it runs under the validator Ruby and skips when that is absent.
+  # A setGlobal/setVariable MAP of names reached under nil is the hazard the plan names (the walk
+  # would treat a "_"-prefixed global name as a note): this must be empty. A `type: set_global`
+  # action reached under nil is harmless (its name is a value field, not a hash key, so no "_" name
+  # is dropped and global_writers still collects it); it is undescribed only because objects are
+  # open core kinds (scenarioData, onOwnerNoticesMissing), out of scope until the section-7 closure.
+  # So those are asserted against a known list, which still catches a new one.
+  KNOWN_SET_GLOBAL_UNDER_NIL = [
+    'lab_physical_pentest: rooms/open_plan/objects/3/onOwnerNoticesMissing/0 (type set_global)',
+    'sis01_healthcare: rooms/it_security_office/objects/1/scenarioData/minigameData/completionActions/0 (type set_global)',
+    'sis01_healthcare: rooms/it_security_office/objects/1/scenarioData/minigameData/progressActions/0 (type set_global)',
+    'sis01_healthcare: rooms/it_security_office/objects/1/scenarioData/minigameData/progressActions/1 (type set_global)',
+    'test_clone_left_card: rooms/office/objects/2/onOwnerNoticesMissing/0 (type set_global)'
+  ].sort.freeze
+
+  def test_corpus_has_no_setglobal_map_under_nil
+    begin
+      require_relative '../../scripts/validate_scenario'
+    rescue LoadError, StandardError => e
+      skip "validator renderer unavailable (run under /usr/bin/ruby3.2): #{e.class}"
+    end
+    root = File.expand_path('../..', __dir__)
+    templates = Dir.glob(File.join(root, 'scenarios/*/scenario.json.erb')).sort
+    assert_operator templates.size, :>, 150, "found only #{templates.size} templates"
+    map_findings = []
+    action_findings = []
+    rendered = 0
+    templates.each do |path|
+      scenario = File.basename(File.dirname(path))
+      begin
+        srand(1)
+        data = render_erb_to_json(path)
+      rescue StandardError
+        next # a template needing vm_context or failing to parse is not part-6's concern
+      end
+      next unless data.is_a?(Hash)
+
+      rendered += 1
+      maps, actions = corpus_setglobal_under_nil(data)
+      maps.each { |p| map_findings << "#{scenario}: #{p}" }
+      actions.each { |p| action_findings << "#{scenario}: #{p}" }
+    end
+    assert_operator rendered, :>, 150, "rendered only #{rendered} templates"
+    assert_empty map_findings, "setGlobal/setVariable MAP-of-names key reached under nil:\n#{map_findings.join("\n")}"
+    assert_equal KNOWN_SET_GLOBAL_UNDER_NIL, action_findings.sort,
+                 'a new (or removed) `type: set_global` action under nil; objects are open, so this ' \
+                 'is harmless, but update KNOWN_SET_GLOBAL_UNDER_NIL and the build log'
+  end
+
+  SETGLOBAL_KEYS = %w[setGlobal setVariable setGlobals setVariables].freeze
+
+  def setglobal_shaped_key?(key)
+    SETGLOBAL_KEYS.include?(key) || key.end_with?('SetGlobal') || key.end_with?('SetVariable')
+  end
+
+  # Walk data from the root carrying each value's Node. Returns [map_findings, action_findings]: a
+  # Hash whose own Node is nil and which carries a setGlobal-shaped key (a map of names) is a map
+  # finding (the hazard); one that is a `type: set_global` action is an action finding (harmless).
+  def corpus_setglobal_under_nil(data)
+    maps = []
+    actions = []
+    walk = lambda do |node, snode, keys|
+      case node
+      when Hash
+        if snode.nil?
+          node.each_key { |k| maps << "#{keys.join('/')}/#{k}" if setglobal_shaped_key?(k.to_s) }
+          actions << "#{keys.join('/')} (type set_global)" if node['type'] == 'set_global'
+        end
+        node.each { |k, v| walk.call(v, SS.child(snode, k.to_s), keys + [k.to_s]) }
+      when Array
+        inode = SS.item(snode)
+        node.each_with_index { |v, i| walk.call(v, inode, keys + [i]) }
+      end
+    end
+    walk.call(data, SS.root, [])
+    [maps, actions]
+  end
 end
