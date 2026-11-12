@@ -258,6 +258,52 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     assert_includes found, [1, 'feed_text', 'feed:jake|jake_post_1']
   end
 
+  # Capture npcId: the capture tags a /feed_post line with the request's npc_id, so a lost answer
+  # is credited to that NPC only. Lena and Jake both have a last reveal after the one lost row;
+  # Lena's post was out before the log began (a resumed game) and the lost row was Jake's.
+  def two_reveals_after_lost_row(tag)
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'lena' => { 'shown' => ['lena_post_1'], 'at' => (T0 + 31).to_f },
+                                                               'jake' => { 'n' => 1, 'at' => (T0 + 32).to_f } } })
+    resumed = bootstrap.merge('feedPosts' => lena_feed)
+    later = bootstrap.merge('feedPosts' => lena_feed.merge(jake_feed(feed_item(0))))
+    later['social']['intelFacts']['jake_pet_name'] = first_answer['fact']['entry']
+    lost = at(lost_answer, 30)
+    lost[2]['npcId'] = tag if tag
+    [game, numbered([at(rows(['GET', SCENARIO, resumed])[0], 0), lost, at(rows(['GET', SCENARIO, later])[0], 40)])]
+  end
+
+  test 'capture npcId: one tagged lost row is credited to its NPC only, so the other counts from the first line' do
+    game, log = two_reveals_after_lost_row('jake')
+    scanner = AccessLeakScanner.new(data, game: game)
+    assert_empty scanner.scan(log), "Lena's post was out before the log began; Jake's came with the lost row"
+    assert_equal ['jake'], scanner.feed_unknown
+    assert_equal ['lena'], scanner.feed_fallback
+  end
+
+  test 'capture npcId: a lost row tagged for Jake does not let an earlier bootstrap show his post' do
+    game, log = two_reveals_after_lost_row('jake')
+    log[0][2]['body'] = bootstrap.merge('feedPosts' => lena_feed.merge(jake_feed(feed_item(0))))
+    found = summary(AccessLeakScanner.new(data, game: game).scan(log))
+    assert_includes found, [1, 'feed_text', 'feed:jake|jake_post_1']
+    refute(found.any? { |_l, _r, owner| owner.include?('lena') }, 'Lena is clean')
+  end
+
+  test 'capture npcId: the shares from tagged rows never pass the number of lost rows' do
+    game, log = two_reveals_after_lost_row('lena')
+    scanner = AccessLeakScanner.new(data, game: game)
+    scanner.scan(log)
+    assert_equal ['lena'], scanner.feed_unknown, 'one lost row, one share'
+    assert_equal ['jake'], scanner.feed_fallback
+  end
+
+  test 'capture npcId: an untagged lost row (an older capture file) is still counted for both NPCs' do
+    game, log = two_reveals_after_lost_row(nil)
+    scanner = AccessLeakScanner.new(data, game: game)
+    found = summary(scanner.scan(log))
+    assert_equal %w[jake lena], scanner.feed_unknown.sort
+    assert_includes found, [1, 'feed_text', 'feed:lena|lena_post_1'], 'the old rule: the lost row may have been her reveal'
+  end
+
   test 'review C R2 nit: a blank post id is skipped, as the server skips it' do
     d = data.deep_dup
     jake = d['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'jake' }

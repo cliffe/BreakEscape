@@ -744,9 +744,14 @@ class AccessLeakScanner
   # (it was another NPC's answer, or a tooSoon or done answer).
   LOST_ANSWER_SLACK_S = 5
 
-  # Whether an unreadable answer may have been one of `npc_id`'s reveals. Without a capture time
-  # or a saved time it may (the log cannot settle it, so the note says so).
+  # Whether an unreadable answer may have been one of `npc_id`'s reveals. A row the capture tagged
+  # with the request's `npcId` was that NPC's answer and no other's. An untagged row (a capture
+  # file older than the tag) may be any NPC's. Without a capture time or a saved time it may (the
+  # log cannot settle it, so the note says so).
   def lost_answer_may_be?(npc_id, row)
+    tagged = row['npcId']
+    return false if tagged.is_a?(String) && !tagged.strip.empty? && tagged != npc_id
+
     at = @feed_at[npc_id]
     t = capture_time(row)
     at.nil? || t.nil? || t <= at + LOST_ANSWER_SLACK_S
@@ -766,7 +771,10 @@ class AccessLeakScanner
   # holds. An unreadable answer (review C R2 m2) may be one of them, but only from its own place
   # in the log, so up to one reveal per unreadable answer is granted there, and only what is
   # still missing after that counts from the first line (a resumed game). An unreadable answer
-  # captured after the NPC's last saved reveal is not counted for it (review C R3 m1). A complete
+  # captured after the NPC's last saved reveal is not counted for it (review C R3 m1), and one
+  # tagged with another NPC's `npcId` is not counted for it either, so tagged lost rows give out
+  # no more shares than there are of them. Untagged rows from older capture files may still be
+  # counted for every NPC they could belong to. A complete
   # log gives 0, so every reveal is judged in log order.
   def prepare_feed_base(lines)
     @feed_shown = Hash.new { |h, k| h[k] = [] }
