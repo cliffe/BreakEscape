@@ -618,7 +618,8 @@ module BreakEscape
       structural = structural_reach(foothold_id)
       nets = session_hosts.map { |h| h[:net] }.uniq.reject { |net| reach.include?(net) }
       nets.select { |net| structural.include?(net) }.sort.map do |net|
-        rows = session_hosts.select { |h| h[:net] == net }.map { |h| host_row(h[:pc]) }
+        # A down block advertises no action the server would refuse: no sign-in, no session
+        rows = session_hosts.select { |h| h[:net] == net }.map { |h| host_row(h[:pc]).except('remoteSignIn', 'session', 'responding') }
         { 'id' => net, 'name' => network_name(net), 'via' => via_for(net, session_hosts, structural),
           'hosts' => rows, 'route' => 'down' }
       end
@@ -676,11 +677,29 @@ module BreakEscape
       effective_policy(pc)['remote'] == 'blocked'
     end
 
+    # A sign-in host whose own office-life service is off (9.3b plan 5.2): its
+    # `affordance.offWhen` (9.2's field) holds on the server's copy of the globals, read the way
+    # the NPC frustration path reads them. Its row answers "not responding", and a remote
+    # sign-in, a remote desktop and a scoped request under a remote session there are refused
+    # 403 unreachable. A session already held there is kept, as one over a down route is.
+    def host_service_off?(pc)
+      cond = BreakEscape::AccessWork.affordance(scenario_data, pc)&.dig('offWhen')
+      return false if cond.nil? || cond == false || cond == ''
+
+      BreakEscape::AccessWork.globals_hold?(cond, frustration_globals)
+    end
+
     def host_row(pc)
-      remote = !remote_blocked?(pc)
       row = { 'id' => pc['id'], 'kind' => 'pc', 'name' => pc['name'], 'host' => host_label(pc),
-              'sprite' => pc['sprite'].presence || 'pc_desktop', 'headless' => NetworkModel.headless?(pc),
-              'remoteSignIn' => remote }
+              'sprite' => pc['sprite'].presence || 'pc_desktop', 'headless' => NetworkModel.headless?(pc) }
+      # A host whose service is off offers nothing: no sign-in and no session to open (5.2)
+      if host_service_off?(pc)
+        row['responding'] = false
+        return row
+      end
+
+      remote = !remote_blocked?(pc)
+      row['remoteSignIn'] = remote
       session = access_sessions[pc['id'].to_s]
       # A claimed session is physical and not offered over the network (4.3)
       if remote && session.is_a?(Hash) && session['via'] == 'password'
@@ -789,7 +808,8 @@ module BreakEscape
       # trusted. This is the safe default; a future change that makes a legitimately reachable
       # remote PC momentarily unresolvable would silently deny a held session here, so the
       # happy path (a present, reachable PC passing) is covered by a test in network_outages_test.
-      !net.nil? && player_reach(fid.to_s).include?(net)
+      # A host whose own service is off (5.2) refuses a remote session's scoped requests too.
+      !net.nil? && player_reach(fid.to_s).include?(net) && !host_service_off?(info[:object])
     end
 
     # What a foothold could reach if nothing were down (5.1): start from the foothold's own
@@ -807,7 +827,25 @@ module BreakEscape
       reach_walk(foothold_id, ignore_outages: false)
     end
 
+    # Memoised per game object on what the walk reads (review O R2 nit 2): the foothold record,
+    # the held session keys and every network's downIf value. A scoped request asks once per held
+    # session (session_admits?'s profile scope), so repeat asks in one request reuse the walk; any
+    # change to the inputs (a sign-in, an unplug, an outage global) misses the cache. A copy is
+    # returned so a caller that changes the set cannot alter the cached one.
     def reach_walk(foothold_id, ignore_outages:)
+      key = reach_cache_key(foothold_id, ignore_outages)
+      @reach_cache = {} if !defined?(@reach_cache) || @reach_cache.nil? || @reach_cache.size > 64
+      (@reach_cache[key] ||= reach_walk_uncached(foothold_id, ignore_outages: ignore_outages).freeze).dup
+    end
+
+    def reach_cache_key(foothold_id, ignore_outages)
+      fid = foothold_id.to_s
+      outages = ignore_outages ? nil : NetworkModel.networks(scenario_data).map { |id, net| [id, net.is_a?(Hash) ? outage_global(net['downIf']) : nil] }
+      [fid, ignore_outages, network_footholds[fid].to_json, access_sessions.keys.map(&:to_s).sort, outages,
+       scenario_data.object_id, scenario_data['networks'].to_json, scenario_data['networkLinks'].to_json].hash
+    end
+
+    def reach_walk_uncached(foothold_id, ignore_outages:)
       foothold = foothold_id.present? ? network_footholds[foothold_id.to_s] : nil
       return Set.new unless foothold.is_a?(Hash)
 
@@ -912,7 +950,7 @@ module BreakEscape
       pc = info[:object]
       if foothold_id.present?
         session = access_sessions[pc['id'].to_s]
-        host_reachable_through?(foothold_id, pc) && !remote_blocked?(pc) &&
+        host_reachable_through?(foothold_id, pc) && !remote_blocked?(pc) && !host_service_off?(pc) &&
           !(session.is_a?(Hash) && session['via'] == 'claim')
       else
         login_pc_reachable?(info) && !NetworkModel.headless?(pc)

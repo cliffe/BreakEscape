@@ -699,6 +699,25 @@ test('a network reachable only by a pivot with no host to open it warns', { skip
     assertHas(out, "network 'server_net' is reachable only by pivoting");
 });
 
+// Review K R2 m1: judged per path. office_lan (jacked, with hosts) -> mid_net (no host) ->
+// server_net: the office host opens the first hop, but nothing on mid_net opens the second,
+// so the server network can never be reached and warns, though a host sits on the way.
+test('a pivot chain through a network with no sign-in host warns even when the jacked network has one', { skip }, () => {
+    const sc = linkClean();
+    sc.networks.mid_net = { name: 'Middle network' };
+    sc.networkLinks = [['office_lan', 'mid_net'], ['mid_net', 'server_net']];
+    assertHas(warnings(issues(sc)), "network 'server_net' is reachable only by pivoting");
+});
+
+test('a pivot chain with a sign-in host on every network before the target does not warn', { skip }, () => {
+    const sc = linkClean();
+    sc.networks.mid_net = { name: 'Middle network' };
+    sc.networkLinks = [['office_lan', 'mid_net'], ['mid_net', 'server_net']];
+    room(sc, 'store').objects.push({ id: 'mid_pc', type: 'pc', name: 'Middle host', host: 'MID-01', network: 'mid_net',
+        locked: true, lockType: 'login', access: { roles: ['it'] } });
+    assertNot(warnings(issues(sc)), "network 'server_net' is reachable only by pivoting");
+});
+
 test('more than eight link paths between two carrying networks warns', { skip }, () => {
     const sc = clean();
     const links = [['office_lan', 'server_net']];

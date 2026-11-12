@@ -1566,6 +1566,10 @@ module BreakEscape
       foothold = foothold.presence&.to_s
       if foothold
         return unreachable unless host_reachable_through?(foothold, info[:object])
+        # A host whose own service is off does not answer over the network (9.3b plan 5.2)
+        if host_service_off?(info[:object])
+          return { status: :forbidden, body: { success: false, message: 'PC not responding', reason: 'unreachable' } }
+        end
         if remote_blocked?(info[:object])
           return { status: :unprocessable_entity,
                    body: { success: false, message: NetworkAccess::REMOTE_BLOCKED, remoteBlocked: true } }
