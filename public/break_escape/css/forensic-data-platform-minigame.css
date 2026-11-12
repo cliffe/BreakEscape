@@ -395,13 +395,14 @@
 }
 
 .fdp-minigame-container .minigame-controls {
-    position: static;
+    /* relative, not static: keeps the framework's z-index above spilled content */
+    position: relative;
     transform: none;
     width: 100%;
     box-sizing: border-box;
     padding: 10px 16px;
     background: #0d1117;
-    border-top: 1px solid #21262d;
+    border-top: 2px solid #21262d;
     flex-shrink: 0;
     justify-content: center;
 }

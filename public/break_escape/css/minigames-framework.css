@@ -117,11 +117,9 @@
 /* Full-window consoles keep a bar at the bottom of their own frame for Cancel,
    and their game area fills the screen, so in the flow Cancel would be pushed off
    the bottom (and the header off the top). They keep the old overlay placement.
-   Found by the minigame sweep (2026-11-12). */
-.siem-minigame-container .minigame-controls,
-.ehr-terminal-minigame-container .minigame-controls,
-.nad-minigame-container .minigame-controls,
-.backup-recovery-minigame-container .minigame-controls {
+   Found by the minigame sweep (2026-11-12). A scene opts in with
+   `static controlsOverlay = true`, which adds this class (code review R2 m2). */
+.minigame-controls-overlay .minigame-controls {
     position: absolute;
     bottom: 20px;
     left: 50%;

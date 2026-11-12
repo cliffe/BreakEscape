@@ -50,13 +50,34 @@ test('the game area can shrink to leave room for the Cancel row', () => {
     assert.equal(rule(framework, '.minigame-game-container')['min-height'], '0');
 });
 
-test('full-window consoles keep Cancel overlaid on their own bottom bar', () => {
+test('full-window consoles opt in to the overlaid Cancel row; no class allowlist (R2 m2)', () => {
+    const r = rule(framework, '.minigame-controls-overlay .minigame-controls');
+    assert.equal(r.position, 'absolute');
+    assert.ok(r.bottom);
     for (const box of ['.siem-minigame-container', '.ehr-terminal-minigame-container',
         '.nad-minigame-container', '.backup-recovery-minigame-container']) {
-        const r = rule(framework, `${box} .minigame-controls`);
-        assert.equal(r.position, 'absolute', box);
-        assert.ok(r.bottom, box);
+        assert.equal(rules(framework, `${box} .minigame-controls`).length, 0, `${box} is no longer listed by class`);
     }
+    const js = (p) => readFileSync(join(here, '../../public/break_escape/js/minigames', p), 'utf8');
+    for (const f of ['siem/siem-dashboard-minigame.js', 'ehr-terminal/ehr-terminal-minigame.js',
+        'network-architecture/network-architecture-minigame.js', 'backup-recovery/backup-recovery-minigame.js']) {
+        assert.match(js(f), /static controlsOverlay = true;/, f);
+    }
+    const base = js('framework/base-minigame.js');
+    assert.match(base, /static controlsOverlay = false;/);
+    assert.match(base, /classList\?\.toggle\?\.\('minigame-controls-overlay', this\.constructor\.controlsOverlay === true\)/);
+});
+
+test('scene overrides keep the Cancel row positioned, so its z-index holds (R2 m2)', () => {
+    for (const [file, sel] of [['examine-minigame.css', '.examine-minigame .minigame-controls'],
+        ['forensic-data-platform-minigame.css', '.fdp-minigame-container .minigame-controls'],
+        ['biometrics-minigame.css', '.fingerprint-reader-container .minigame-controls']]) {
+        assert.equal(rule(css(file), sel).position, 'relative', sel);
+    }
+});
+
+test('the case-lock panel has no soft focus glow (R2 m1)', () => {
+    assert.equal(rule(css('password-minigame.css'), '.password-minigame-area.case-lock .password-field:focus')['box-shadow'], 'none');
 });
 
 test('the password and container panels fit inside the game area with their margins', () => {
