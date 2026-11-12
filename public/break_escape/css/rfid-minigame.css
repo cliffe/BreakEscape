@@ -31,7 +31,6 @@
 .flipper-zero-frame {
     width: 400px;
     height: 550px;
-    box-sizing: border-box;
     background: #FF8200;
     border: 2px solid #1a0d00;
     box-shadow: inset 2px 2px 0 #ffb366, inset -2px -2px 0 #b35a00;
