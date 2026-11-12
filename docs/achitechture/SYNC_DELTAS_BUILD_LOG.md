@@ -25,7 +25,11 @@ Standing constraints for this build:
 | Import plan, audit, R1-R5 reviews | Done, committed |
 | 1. Groundwork: named constants in game.rb | Done, committed, tested |
 | 1. Groundwork: `stableJson` + `StateSync.stableJson` | Done, committed, tested |
-| 1. Groundwork: everything else (see "Open") | Not started |
+| 1. Groundwork: `cpWithin`/`cpSlice` (three copies + shared node test) | Done, committed, tested |
+| 1. Groundwork: phone `keyOf` option + stableJson wiring at the sync call sites | Done, committed, tested |
+| 1. Groundwork: remove unused `ApiClient.syncState`/`updateInventory` | Done, committed, tested |
+| 1. Groundwork: `stableJson` in `buildChanges`/`mailJobsChangeKey` (item 2) | Deferred to step 2 (see Open) |
+| 1. Groundwork: export clips, constants/fixture tests, registerPart/track, item_for_answer, prepare_bootstrap_state!, refuse_oversized_body, live-proof tools | Not started |
 | 2. R1 seeding | Not started |
 | 3. P2 inventory/network answers | Not started |
 | 4. P1 cloner one-card deltas | Not started |
@@ -37,6 +41,13 @@ Standing constraints for this build:
 
 ## Commits (newest first)
 
+- `6c3a2e918` Groundwork: remove the unused `ApiClient.syncState` and `ApiClient.updateInventory`
+- `3cec62ff4` Groundwork: phone `keyOf` option on `exportPhoneState`/`markPhoneStateSynced`/
+  `restorePhoneState`, wired to `stableJson` at the sync call sites
+- `2be60f549` Groundwork: fix `phone-player-lines` source assertion for `MAX_PHONE_TYPE_CHARS`
+  (a regression the constants refactor `91da28d22` left behind)
+- `b8370b88d` Groundwork: `cpWithin`/`cpSlice` code-point helpers in three module-local copies,
+  with one shared node test
 - `3da4b3480` Groundwork: `stableJson` for order-independent state comparison, with tests
 - `91da28d22` Groundwork: name the mail/phone/ink sanitiser limits as constants in game.rb (no
   behaviour change)
@@ -57,6 +68,18 @@ Standing constraints for this build:
   social-landing-page-state, social-triage-starter, social-mail-state-export,
   person-chat-pending-reply, social-state-sync-confirmed, social-mail-trim, social-captures,
   npc-ko-drop-retry) -> all pass. Adding an export and a static property does not affect them.
+
+This session (newest work):
+- `node --test test/js/cp-helpers.test.mjs` -> 3 pass (the three `cpWithin`/`cpSlice` copies agree
+  over ASCII, an emoji at the cut, and emoji-only strings; the cut never splits a surrogate pair).
+- `node --test test/js/phone-reopen-and-persistence.test.mjs` -> 26 pass (3 new `keyOf` cases: a
+  jsonb-reordered saved entry is unchanged under `stableJson`; the default `JSON.stringify` resends
+  it; `restorePhoneState` seeded with `keyOf` is not resent after the NPC registers).
+- `node --test test/js/phone-player-lines.test.mjs` -> 22 pass (the `MAX_PHONE_TYPE_CHARS` assertion
+  fix; this test was failing on the branch before this session, from the constants refactor).
+- Every `test/js/*` harness that copies `state-sync.js` (9 files) -> 104 pass; every harness that
+  copies `api-client.js` (10 files) -> 114 pass; `social-mail-trim`, other phone harnesses -> pass.
+  Confirms the phone `keyOf` call-site changes and the `ApiClient` deletions break nothing.
 
 No live browser proof yet: the live cases A to F (plan 10.3) run after step 6.
 
@@ -107,12 +130,63 @@ yet used anywhere: wiring it into `buildChanges()` and the phone `keyOf` is stil
 `test/js/state-sync.test.mjs` gains one case (depth sorting, array order significant, undefined
 handling, the static).
 
+### `cpWithin` / `cpSlice` (commit b8370b88d) and the deferred-decision call
+
+Plan 2.1 wants the two code-point helpers as module-local copies in mail-scheduler.js and
+npc-conversation-state.js and as static methods on `NPCManager`, "not a shared module, so no harness
+copy list changes", and then "one node test runs every copy over the same astral strings". The prior
+builder flagged these two sentences as in tension and deferred them.
+
+**Decision (this session): export the two module-local copies as named exports and test all three
+directly.** The harness copy-list rule is about a module's *static imports* (if module A imports from
+module B, every harness copying A must also copy B). Adding a named *export* to a module creates no
+import, so it changes no copy list. The helpers therefore stay as three independent copies (satisfying
+"no shared module"), and `test/js/cp-helpers.test.mjs` imports all three (the two named exports plus
+`NPCManager.cpWithin`/`cpSlice`) and runs each over the same strings. This honours both sentences: no
+import is added anywhere, and one test exercises every copy, so a drift in any copy fails it. The
+clips in step-1 item 4 call their own module's copy, so they pick up the server's code-point cut.
+
+The helpers: `cpWithin(s, n)` returns `s.length <= n || Array.from(s).length <= n` (the UTF-16 fast
+path never undercounts code points, so it is exact); `cpSlice(s, n)` returns `s` when
+`s.length <= n`, else `Array.from(s).slice(0, n).join('')`. Identical text in all three copies.
+
+### Phone `keyOf` (commit 3cec62ff4)
+
+`exportPhoneState`, `markPhoneStateSynced` and `restorePhoneState` take `keyOf` (default
+`JSON.stringify`), used for every string they store or compare in `_phoneStateSent`.
+`StateSync.buildPayload` passes `keyOf: stableJson` to `exportPhoneState`, `StateSync.confirm` to
+`markPhoneStateSynced`, and `core/game.js:1800` passes
+`{ keyOf: window.stateSync?.constructor?.stableJson }` to `restorePhoneState`. `window.stateSync`
+exists before game restore runs (created in main.js:145), so that expression resolves. Default kept so
+any caller that passes nothing falls back to today's behaviour. No import added to npc-manager.js, so
+no harness copy list changes. This is the phone half of R1: a jsonb-reordered saved thread now matches
+its seed and is not resent on the first sync after a load.
+
+### Regression fix (commit 2be60f549)
+
+`phone-player-lines.test.mjs` asserted the literal `value.length <= 20` in game.rb; the constants
+refactor (`91da28d22`) changed it to `MAX_PHONE_TYPE_CHARS`, so the test was already failing on the
+branch. The assertion now matches the constant and also pins `MAX_PHONE_TYPE_CHARS = 20`. Only two JS
+tests read game.rb source (this one and `social-mail-state-export`); the other has no literal-limit
+assertion, so no further source-assertion regressions remain from the refactor.
+
+### Removed `ApiClient.syncState` / `updateInventory` (commit 6c3a2e918)
+
+Both had no callers in public JS or tests (plan 9 tidy-ups). `syncState` would have sent all globals
+with no `clientTs`.
+
 ## Handover
 
 ### Done
 - Plan, audit and five reviews imported and committed (`a7294aece`).
 - Groundwork constants in game.rb (`91da28d22`), behaviour preserved, mail/phone/reload tests green.
 - Groundwork `stableJson` in state-sync.js with a test (`3da4b3480`), all state-sync importers green.
+- `cpWithin`/`cpSlice` in three copies with a shared test (`b8370b88d`); the deferred test-access
+  decision is made and recorded above.
+- Phone `keyOf` option wired to `stableJson` at the three sync call sites (`3cec62ff4`), with three
+  new phone-reopen cases.
+- `phone-player-lines` constants-refactor regression fixed (`2be60f549`).
+- Removed the unused `ApiClient.syncState`/`updateInventory` (`6c3a2e918`).
 
 ### In progress
 - None. Each commit is a clean, self-contained, tested boundary.
@@ -120,24 +194,18 @@ handling, the static).
 ### Open (the rest of step 1 groundwork, then steps 2 to 8)
 
 Step 1 groundwork still to build (plan 2.1 to 2.5, tested per plan 3.7 and 10):
-1. Phone `keyOf` option on `exportPhoneState` (npc-manager.js:~2241), `markPhoneStateSynced`
-   (:~2255) and `restorePhoneState` (:~2320), default `JSON.stringify`, used for every string stored
-   or compared in `_phoneStateSent`. Passed in, never imported (about thirty node harnesses copy
-   npc-manager.js with a fixed import list). Wire `StateSync.buildPayload` to pass `keyOf: stableJson`
-   to `exportPhoneState`, `StateSync.confirm` to `markPhoneStateSynced`, and the `restorePhoneState`
-   call in core/game.js (:~1800) to pass `{ keyOf: window.stateSync?.constructor?.stableJson }`.
-2. Use `stableJson` in place of `json` for every comparison string in `buildChanges()` (keyed
-   sections, notes, whole sections, `timedKey`, `clockKey`) and in `mailJobsChangeKey`. Request body
-   is unchanged; only the strings kept in `confirmed` change.
-3. `cpWithin(s, n)` and `cpSlice(s, n)` (signatures in plan 2.1) as private functions in
-   mail-scheduler.js and npc-conversation-state.js and as static methods on NPCManager (not a shared
-   module, to avoid changing any harness copy list). ONE node case runs every copy over the same
-   strings (ASCII, an emoji at the cut, emoji-only). NOTE: decide the test's access surface to the
-   two module-local copies when you write them (NPCManager's are reachable via the class; the two
-   module copies need either a test-only export or to be tested through the clip functions that use
-   them). The plan says "private functions ... so no harness copy list changes" and then "one node
-   test runs every copy" (plan 2.1, 3.7 line ~484); reconcile these before coding, which is why they
-   were NOT added this session (adding them unused risked the next agent restructuring the export).
+1. DONE (`3cec62ff4`). Phone `keyOf` option wired to `stableJson`; see "Phone `keyOf`" above.
+2. DEFERRED TO STEP 2. Use `stableJson` in place of `json` for every comparison string in
+   `buildChanges()` (keyed sections, notes, whole sections, `timedKey`, `clockKey`) and in
+   `mailJobsChangeKey`. Request body is unchanged; only the strings kept in `confirmed` change.
+   Left for the step-2 agent because it delivers nothing until `seedFromBootstrap` seeds `confirmed`
+   from the jsonb-reordered bootstrap, and that agent must touch `buildChanges`/`confirm` anyway.
+   Checked this session: no test hand-seeds `sync.confirmed[...]` with a `JSON.stringify` string
+   (grep of `.confirmed[` in test/js came back empty), so the change is internally consistent and
+   low-risk; just change `json(...)` -> `stableJson(...)` at state-sync.js:293, :307, :314, :336, :347
+   and line 19 (`mailJobsChangeKey`), and run the 9 state-sync harnesses.
+3. DONE (`b8370b88d`). `cpWithin`/`cpSlice` in three copies with the shared node test; the
+   test-access decision is recorded above ("export the two module-local copies as named exports").
 4. The export clips, exact mirrors of the server (plan 2.1), all measuring/cutting by code points:
    `clipMailMessage(key, msg)`, `clipMailThread(key, thread)`, `clipMailDrafts(drafts)` in
    mail-scheduler.js; the phone-entry export tests folded into `_phoneStateEntry` (npc-manager.js);
@@ -158,8 +226,7 @@ Step 1 groundwork still to build (plan 2.1 to 2.5, tested per plan 3.7 and 10):
    `Game#item_for_answer` (plan 2.3); `Game#prepare_bootstrap_state!` empty shell plus its wiring in
    `GamesController#scenario` right after `authorize` (plan 2.4); `refuse_oversized_body` from
    `refuse_oversized_npc_frustration` with a per-action limit table, clone_card 8 KB (plan 2.5).
-7. Delete unused `ApiClient.syncState` (api-client.js:~220) and `ApiClient.updateInventory` (:~212)
-   (plan 9 tidy-ups).
+7. DONE (`6c3a2e918`). Deleted unused `ApiClient.syncState` and `ApiClient.updateInventory`.
 8. The two live-proof tools: `tools/playtest/sync-delta-proof.mjs` and the `--seed-full-cloner`
    head-start option of `tools/playtest/new-game.rb` (plan 10.3 and R5 n3: parse the flag with no
    value, add a --help line, run it after the other head-start blocks' last save!, guard on
@@ -183,12 +250,20 @@ Step 1 groundwork still to build (plan 2.1 to 2.5, tested per plan 3.7 and 10):
   validator, or say so), n5 (validator warning for an `add_capture` secret under an account holder's
   subtree), n6 (clipMailMessage null/no-dot handling, above). Take them where cheap.
 
-### Files touched this session
+### Files touched (across sessions)
 - `docs/achitechture/SYNC_DELTAS_PLAN.md`, `PLAYER_STATE_SYNC_AUDIT.md`,
   `SYNC_DELTAS_PLAN_REVIEW_R1..R5.md` (added from build/sync-audit)
 - `app/models/break_escape/game.rb` (constants)
-- `public/break_escape/js/state-sync.js` (stableJson)
+- `public/break_escape/js/state-sync.js` (stableJson; phone keyOf call sites)
+- `public/break_escape/js/core/game.js` (restorePhoneState keyOf call site)
+- `public/break_escape/js/systems/npc-manager.js` (cpWithin/cpSlice statics; phone keyOf option)
+- `public/break_escape/js/systems/mail-scheduler.js` (cpWithin/cpSlice exports)
+- `public/break_escape/js/systems/npc-conversation-state.js` (cpWithin/cpSlice exports)
+- `public/break_escape/js/api-client.js` (removed syncState/updateInventory)
 - `test/js/state-sync.test.mjs` (stableJson test)
+- `test/js/cp-helpers.test.mjs` (new; the shared cp-helper test)
+- `test/js/phone-reopen-and-persistence.test.mjs` (new keyOf cases)
+- `test/js/phone-player-lines.test.mjs` (MAX_PHONE_TYPE_CHARS assertion fix)
 - `docs/achitechture/SYNC_DELTAS_BUILD_LOG.md` (this file)
 
 ### Gotchas
