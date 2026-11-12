@@ -255,6 +255,31 @@ test('a down block is greyed with "No route" and offers no control', async () =>
     assert.deepEqual(named('network_viewed:server_net'), [], 'a down block emits no network_viewed');
 });
 
+// Review R2 M1 (plan 5.2): the own network down, a session held there. The server sends no
+// own rows and one down block for the own network holding only the held-session row; the view
+// keeps that block, greyed, and does not also say nothing answers.
+test('a session held on the own network shows greyed while the own network is down', async () => {
+    setup({ hosts: [] });
+    const lena = { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false };
+    answer.footholds[0].networks = [{ id: 'office_lan', name: 'Harbour office LAN', via: null, route: 'down', hosts: [lena] }];
+    links.open('jack_comms_port');
+    await settle();
+    const block = document.querySelector('.network-block-down');
+    assert.ok(block, 'the own network down block is drawn');
+    assert.match(block.querySelector('.network-block-title').textContent, /Harbour office LAN \(no route\)/);
+    assert.match(block.textContent, /No route to HB-FIN-02/);
+    assert.equal(document.querySelector('[data-action]'), null, 'nothing to click');
+    assert.doesNotMatch(document.querySelector('.network-view').textContent, /Nothing answers on this network/);
+    assert.deepEqual(view().getTestState().networks.map(b => [b.id, b.route]), [['office_lan', 'down']]);
+});
+
+test('with the own network up, its own block is not drawn twice', async () => {
+    withBlocks([]);
+    links.open('jack_comms_port');
+    await settle();
+    assert.equal(document.querySelectorAll('.network-block').length, 0, 'the own up block is folded into the flat rows');
+});
+
 test('Sign in hands over to the remote sign-in screen: network_host_opened, no network_view_closed', async () => {
     setup();
     links.open('jack_comms_port');

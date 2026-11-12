@@ -81,13 +81,17 @@ test('on load, a jack never planted at leaves the task open', async () => {
 // Slice 9.3b (review R1 E1): an access point task completes on the join, a second access point
 // of a joined network included; an implant meets no task on its PC, live or on load.
 
-test('network_joined at an access point completes its unlock_object task', async () => {
+test('network_joined at an access point completes its unlock_object task, with one POST', async () => {
     const m = manager();
+    // Both listeners fire on a first join; the completing guard lets one request out (review R2 n2)
+    const posts = [];
+    m.serverCompleteTask = async (taskId) => { posts.push(taskId); return { success: true }; };
     m.dispatcher.fire('network_joined', { apId: 'guest_ap', footholdId: 'wifi_guest_wifi', networkId: 'guest_wifi', already: false });
     m.dispatcher.fire('network_foothold_gained', { footholdId: 'wifi_guest_wifi', via: 'wifi', networkId: 'guest_wifi', sourceId: 'guest_ap' });
     await settle();
     assert.equal(status(m, 'ap_task'), 'completed');
     assert.equal(status(m, 'ap2_task'), 'active');
+    assert.deepEqual(posts, ['ap_task'], 'exactly one task POST');
 });
 
 test('an already join at a second access point completes that access point\'s task', async () => {

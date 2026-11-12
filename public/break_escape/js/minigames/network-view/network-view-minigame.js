@@ -172,11 +172,21 @@ export class NetworkViewMinigame extends MinigameScene {
         return (Array.isArray(this.view?.hosts) ? this.view.hosts : []).filter(r => r && typeof r === 'object' && r.id);
     }
 
-    /** The further-network blocks (slice 9.3b K, 5.1), the own network's own entry dropped. */
+    /**
+     * The further-network blocks (slice 9.3b K, 5.1). The own network's up entry is dropped (its
+     * rows are the flat `hosts`); its down entry is kept, so a session held there while the
+     * own network is down still shows, greyed (5.2, review R2 M1).
+     */
     networkBlocks() {
         const own = this.ownNetworkId();
         return (Array.isArray(this.view?.networks) ? this.view.networks : [])
-            .filter(b => b && typeof b === 'object' && b.id && b.id !== own);
+            .filter(b => b && typeof b === 'object' && b.id && (b.id !== own || b.route === 'down'));
+    }
+
+    /** The own network's down block, when the own network is down and a session is held there. */
+    ownDownBlock() {
+        const own = this.ownNetworkId();
+        return this.networkBlocks().find(b => b.id === own && b.route === 'down') || null;
     }
 
     blockRows(block) {
@@ -272,11 +282,11 @@ export class NetworkViewMinigame extends MinigameScene {
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
                     ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}
                 </div>
-                <ul class="network-view-rows">
+                ${(v.responding !== false && !rows.length && this.ownDownBlock()) ? '' : `<ul class="network-view-rows">
                     ${v.responding === false
                         ? `<li class="network-row-empty network-row-off">${escapeHtml(linkOffText(v.sourceHost))}</li>`
                         : (rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>')}
-                </ul>
+                </ul>`}
                 ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
                 <div class="network-view-notice" aria-live="polite"></div>
             </div>`;

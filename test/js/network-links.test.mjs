@@ -1035,12 +1035,15 @@ test('a join publishes <apId>_planted as load() does: true at the first access p
     await reset();
     await links.interactWifiAp(wifiApSprite());
     assert.equal(window.gameState.globalVariables.guest_ap_planted, true, 'the first access point reads true with no reload');
+    assert.equal(named('global_variable_changed:guest_ap_planted').length, 1, 'the first access point publishes a change');
     joinAnswer = () => {
         const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
         return { success: true, already: true, first: false, foothold: wifiFoothold, inventory: inv };
     };
     await links.interactWifiAp(wifiApSprite('guest_ap2', 'Guest AP (lift)'));
     assert.equal(window.gameState.globalVariables.guest_ap2_planted, false, 'a second access point reads false');
+    // Review R2 n1: as a reload, the false is written with no change event
+    assert.deepEqual(named('global_variable_changed:guest_ap2_planted'), [], 'a second access point fires no change event');
     // The live values match what a reload writes from the same server state
     const live = { ...window.gameState.globalVariables };
     window.gameState.globalVariables = {};
