@@ -14,7 +14,7 @@ const start = src.indexOf('const notepadMemory');
 const end = src.indexOf("if (typeof window !== 'undefined') {\n    window.notepadStartIndex");
 assert.ok(start > 0 && end > start, 'notepadStartIndex block found');
 const mod = await import('data:text/javascript,' + encodeURIComponent(src.slice(start, end)));
-const { notepadStartIndex } = mod;
+const { notepadStartIndex, notepadMemoryFor } = mod;
 const notes = (n) => Array.from({ length: n }, (_, i) => ({ id: i }));
 
 test('a note added since the notepad was last shown: open on the newest', () => {
@@ -25,6 +25,19 @@ test('a note added since the notepad was last shown: open on the newest', () => 
 test('nothing new: the page last shown, clamped to the list', () => {
     assert.equal(notepadStartIndex(notes(3), { seenCount: 3, lastIndex: 1 }), 1);
     assert.equal(notepadStartIndex(notes(3), { seenCount: 5, lastIndex: 7 }), 0);
+});
+
+test('a search view is remembered against the full list (R1 m2)', () => {
+    // 12 notes; a search shows 3 of them; the player reads the second match (note 7)
+    const all = notes(12);
+    const filtered = [all[2], all[7], all[10]];
+    const memory = notepadMemoryFor(all, filtered[1], 1);
+    assert.deepEqual(memory, { seenCount: 12, lastIndex: 7 });
+    assert.equal(notepadStartIndex(all, memory), 7, 'reopens on the note read, not on the newest');
+    // a copy of the note (same id, different object) is still found
+    assert.equal(notepadMemoryFor(all, { id: 10 }, 2).lastIndex, 10);
+    // no notes list: the shown index stands in
+    assert.deepEqual(notepadMemoryFor(undefined, { id: 1 }, 1), { seenCount: 0, lastIndex: 1 });
 });
 
 test('no notes: page 0', () => {

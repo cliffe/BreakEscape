@@ -359,9 +359,9 @@ export class NotesMinigame extends MinigameScene {
         const currentNote = this.collectedNotes[this.currentNoteIndex];
         if (!currentNote) return;
         // The notepad remembers what it showed, so it reopens on a note added since (UX R1)
+        // Recorded against the full list: a search narrows collectedNotes (R1 m2)
         if (this.item?.scenarioData?.type === 'notepad') {
-            notepadMemory.seenCount = this.collectedNotes.length;
-            notepadMemory.lastIndex = this.currentNoteIndex;
+            Object.assign(notepadMemory, notepadMemoryFor(window.gameState?.notes, currentNote, this.currentNoteIndex));
         }
         
         // Parse the note text to extract observations
@@ -784,6 +784,22 @@ export function notepadStartIndex(notes, memory = notepadMemory) {
     if (count > seen) return count - 1;
     const last = Number(memory?.lastIndex) || 0;
     return last >= 0 && last < count ? last : 0;
+}
+
+/**
+ * What the notepad remembers after showing a note: the full notes list's length, and the
+ * shown note's place in that list. A search shows a filtered list, so the note is found
+ * in the full list by identity, then by id; the shown index is the fallback.
+ * Pure: allNotes is the full notes list.
+ */
+export function notepadMemoryFor(allNotes, shownNote, shownIndex = 0) {
+    const notes = Array.isArray(allNotes) ? allNotes : [];
+    let lastIndex = notes.indexOf(shownNote);
+    if (lastIndex < 0 && shownNote && shownNote.id != null) {
+        lastIndex = notes.findIndex(n => n && n.id === shownNote.id);
+    }
+    if (lastIndex < 0) lastIndex = Number(shownIndex) || 0;
+    return { seenCount: notes.length, lastIndex };
 }
 if (typeof window !== 'undefined') {
     window.notepadStartIndex = () => notepadStartIndex(window.gameState?.notes);
