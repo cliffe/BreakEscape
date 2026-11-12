@@ -592,8 +592,13 @@ test('9.2 C: an open profile re-renders on npc_posted; another profile does not'
         const feed = feedFor();
         const s = open({ start: 'social.pierce', feed });
         assert.equal(block(s, 'feed_pierce_1'), null);
+        s.main.scrollTop = 120;
+        // A real browser resets the scroll when the content is cleared; the stub DOM does not
+        const render = s._renderMain.bind(s);
+        s._renderMain = () => { s.main.scrollTop = 0; render(); };
         feed.apply('pierce', feedAnswer(0, 'feed_pierce_1', 'Mittens knocked my coffee over again.', PET));
         assert.ok(block(s, 'feed_pierce_1'), 'shown without closing the browser');
+        assert.equal(s.main.scrollTop, 120, 'review C R1 nit: the scroll position is kept');
         s.cleanup();
         assert.equal((handlers.get('npc_posted:*') || []).length, 0, 'the listener is removed on close');
     } finally { window.eventDispatcher = saved; }

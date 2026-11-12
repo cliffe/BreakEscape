@@ -414,7 +414,10 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
     _onPosted(data) {
         const p = this.place;
         if (!this.main || !p || p.view !== 'social' || p.site?.id !== data?.site || p.pageId !== data?.person) return;
+        // Review C R1 nit: a post arriving while the player reads keeps the scroll position
+        const top = this.main.scrollTop;
         this._renderMain();
+        if (typeof top === 'number') this.main.scrollTop = top;
     }
 
     _profileName(profile) {
