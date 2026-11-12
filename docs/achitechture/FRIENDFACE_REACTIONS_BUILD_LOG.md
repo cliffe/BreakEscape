@@ -248,3 +248,38 @@ in integration tests; `friendface_name` falls back to `displayName`, so validato
 - n4: `reaction_entries`'s unused `index` and `reaction_order_bound`'s `:order` removed.
 - n5: the README Replies examples carry the demo's post text.
 - n6: plan section 5.1's drawable rule names `reply_target`.
+
+## q80: icons at 2x
+
+User decisions (2026-11-12): q79 staff only (already the design); q80 like, laugh, sad, angry, pixel
+art, shown at 2x; q81 hand-drawn icons, which the user approves before merge.
+
+- **Merge:** main (b7d500ccf) into build/reactions, merge commit 23d76a68f, no conflicts.
+- **Change (commit 5c7c742dc):** `.ob-reaction-icon` is 32px wide and high (`min-width` and
+  `min-height` 32px, `flex: none`, `image-rendering: pixelated`), and the `<img>` carries
+  `width="32" height="32"`. The PNGs stay 16x16; nothing was resampled. The chip's minimum is
+  40px (32px icon, 2px padding, 2px border, `border-box`), padding `2px 6px`, and its font size
+  is 16px, so the count sits level with the icon. The names line is unchanged (14px, one line
+  reserved). The icon is drawn in one place only (`_reactionChip`), and no CSS scales the osint
+  browser in the phone view.
+- **Tests:** `social-feed-reactions.test.mjs` now wants 32px icons and 40px chips, and a new test
+  fails if any rule sizes a reaction icon below 32px or off a whole 16px step, adds a transform or
+  zoom, or lets flex shrink it; it also checks the chip fits the icon and that the PNGs are still
+  16x16 (checked by adding a 16px rule: it failed). `social-osint-browser.test.mjs` checks each
+  chip's `<img>` is `width="32" height="32"` with no inline style. Node: the 16 files that import
+  the osint browser or the feed (231 tests) pass. Rails: the 3 feed controller and 4 feed unit
+  test files (166 runs, 943 assertions) pass, under the lock.
+- **Plan:** section 4 (rendering and the pixel-art rules), section 11's CSS test and the live proof
+  wording now say 32px icons and 40px chips.
+- **Backlog:** an entry for player reactions as a possible rapport lever (q79).
+- **Live (game 1979):** keyless server on :3261 from the worktree, `swap-scenario-game.rb
+  test_seating test_access_social`, headless 1400x1000 at device pixel ratio 1, `setFPS(20)` with
+  fixed steps. Phone picked up, walked east to `f15_room`; F15's reactions arrived as in step 9
+  (Asha's vent sad Kofi and Mei, Kofi's reply like Mei, Mei's reply like Asha). Each icon's
+  `getBoundingClientRect` is 32x32 with `naturalWidth` 16 and `image-rendering: pixelated`; each
+  chip is 61x40; the row is 61.6 px before and after the names line shows. Server stopped.
+- **Shots** (scratchpad `ux-shots/reactions-2x/`, not committed):
+  `01-friendface-feed-asha-reactions-32px-icons.webp`, `02-open-sad-chip-names-line.webp`,
+  `03-close-crop-dpr1-32px-icons-native.webp`, and the preview
+  `04-icons-preview-4x-nearest-like-laugh-sad-angry.png`. Laugh and angry do not fire in F15, so
+  they show only in the preview.
