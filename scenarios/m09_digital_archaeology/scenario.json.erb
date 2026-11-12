@@ -297,9 +297,9 @@ hax_maps << { "eventPattern" => "global_variable_changed:tran_outcome", "conditi
 hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "condition" => "value === true && globalVars.tran_outcome !== 'left'", "onceOnly" => true, "completeTask" => "stop_the_tape_wipe" }
 
 # Flag 2 and the ledger (S4 §6.6, §5; S6 C-06).
-hax_maps << read_text("global_variable_changed:flag2_submitted", "value === true && !globalVars.ledger_read_heard && !globalVars.ledger_read_texted", "ledger_read", "Their ledger's open on my screen. There's an entry you need to see.", "ledger_read_texted", delay: 2500, once: true)
-hax_maps << read_text("room_entered", "globalVars.flag2_submitted && !globalVars.ledger_read_heard && !globalVars.ledger_read_texted", "ledger_read", "Their ledger's open on my screen. There's an entry you need to see.", "ledger_read_texted",
-                      comment: "Backstop: the ledger text on the next room entry (also fires on load) if the flag 2 event never sent it.")
+hax_maps << read_text("global_variable_changed:flag2_submitted", "value === true && !globalVars.ledger_read_heard", "ledger_read", "Their ledger's open on my screen. There's an entry you need to see.", nil, delay: 2500, once: true)
+hax_maps << read_text("game_loaded", "globalVars.flag2_submitted && !globalVars.ledger_read_heard", "ledger_read", "Their ledger's open on my screen. There's an entry you need to see.", nil,
+                      comment: "Backstop: a reload in the seconds before the text was delivered loses it, so it is sent again on load while the read is unheard (a text already delivered shows twice at worst).")
 hax_maps << { "eventPattern" => "global_variable_changed:flag2_submitted", "condition" => "value === true", "onceOnly" => true, "unlockTask" => "cross_reference_wren" }
 hax_maps << { "eventPattern" => "global_variable_changed:sleeper_shortlist", "condition" => "value === true", "onceOnly" => true, "completeTask" => "cross_reference_wren" }
 hax_maps << { "eventPattern" => "global_variable_changed:sleeper_named", "condition" => "value === true", "onceOnly" => true, "completeTask" => "cross_reference_wren" }
@@ -363,8 +363,8 @@ hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true 
                      "Owner first. Get me flag three, then we read the rest of his box.", once: false, delay: 1500)
 hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && globalVars.hand_before_name",
                      "His hand first. Put his file beside my notebook scan and tell me. Then the name.", once: false, delay: 1500)
-hax_maps << read_text("room_entered", "globalVars.flag4_submitted && globalVars.identity_scene_done && !globalVars.hour_read_started && !globalVars.hour_read_texted", "hour_read", "The job on his box has a clock on it. Open this.", "hour_read_texted", msg_delay: 10000,
-                      comment: "First-text backstop (S4 §5).")
+hax_maps << read_text("game_loaded", "globalVars.flag4_submitted && globalVars.identity_scene_done && !globalVars.hour_read_started", "hour_read", "The job on his box has a clock on it. Open this.", nil, msg_delay: 10000,
+                      comment: "Backstop (S4 §5): a reload before the text was delivered loses it, so it is sent again on load while the hour read is unstarted.")
 hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && globalVars.schedule_read", "hour_read_resume", voiced: false))
 hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && !globalVars.schedule_read", "hour_read", voiced: false))
 
@@ -2639,7 +2639,6 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "hand_matched": false,
     "hand_before_name": false,
     "ledger_read_heard": false,
-    "ledger_read_texted": false,
     "hour_read_texted": false,
     "recruiter_call_started": false,
     "recruiter_said_yes": false,
