@@ -76,8 +76,16 @@ and sends the ease, so frustration rises and falls with the habit rather than st
 `NpcFrustration#fail_report!`: after an accepted fail whose causes include `usb_refused`, the
 server sets `usbHabit.setGlobal` (when declared), the same rule as `set_workaround_global!`.
 `failWhy.work` records `usb_refused`, so `cause: "usb_refused"` holds from then until another fail
-replaces the whys. An honest client can send a usb fail only every `every` uses, and the pace floor
-bounds a dishonest one, as for `social_blocked`.
+replaces the whys. `usb_refused` always holds and is not owned, so a `rearmed` flag would open the use floor
+for it for good (code review R1 M1). When it is the only cause that holds, `rearmed` is ignored and
+only an accepted ease opens the use floor. The server also counts the uses (R1 m1): `usbUses` in
+the NPC's frustration entry counts accepted work uses at the station (eases, including the level-0
+ones the browser now sends while the PC refuses the stick, and fails without the cause) since the
+last accepted refusal, and a refusal is accepted only when this use is at least the `every`th. A
+held-back report is not counted. The browser's counter restarts on a reload and only lags this one,
+so an honest refusal is never refused. A tampered client climbs no faster than an honest one. A
+refusal must also name the station as its object (R1 n1), and belongs only to an NPC whose habit
+its station refuses (R1 m2).
 
 `Game::WITHHELD_WORK_NPC_KEYS` gains `usbHabit`.
 
@@ -99,10 +107,13 @@ policy with `usb: storage_blocked`, `usbHabit.every` 2. Her second work use fail
 
 ## Tests
 
-- Ruby unit (`access_work_test.rb`): can fail, belongs, holds, reachable, plan, feed selection.
-- Controller (`npc_frustration_test.rb`): a usb fail accepted and recorded with its global; refused
-  where the policy allows USB; an ease at the station still accepted.
-- JS (`npc-needs-work.test.mjs` or a new file): the counter, the cause, the event, the topic, no
-  attempt when locked out, an allowed PC copies.
-- Validator: the new warnings and the mutter.
+- Ruby unit (`test/unit/access_work_usb_habit_test.rb`): can fail, belongs, holds, reachable, plan,
+  feed selection.
+- Controller (`test/controllers/break_escape/usb_habit_test.rb`): a usb fail accepted and recorded
+  with its global; refused where the policy allows USB; an ease at the station still accepted; the
+  rearmed pump held to the park floor; the server's use count; the station match.
+- JS (`test/js/npc-needs-usb-habit.test.mjs`): the counter, the cause, the event, the topic, no
+  attempt when locked out or away from the station, an allowed PC copies, the level-0 report.
+- Validator (`test/js/validator-usb-habit.test.mjs`): the new errors and warnings and the mutter.
+- Leak scanner (`test/unit/access_leak_scanner_test.rb`): `usbHabit` is a withheld key.
 - Live: the U1 beat on a keyless server, with the fail, the post and the global checked.

@@ -85,3 +85,66 @@ Under the shared lock, on `a2ca5dd59` (code and tests; later commits are docs on
 
 - `bin/rails test`: 1811 runs, 25632 assertions, 0 failures, 0 errors, 1 skip.
 - `bin/test-js -j 3`: 509 files passed, 0 failed.
+
+## Code review R1 fixes (`docs/achitechture/USB_HABIT_CODE_REVIEW_R1.md`)
+
+- **M1:** `NpcFrustration#fail_report!` ignores `rearmed` when every cause that holds is
+  `usb_refused`, so only an accepted ease opens the use floor. Controller test "rearmed usb_refused
+  fails inside the park floor come back tooSoon" (amy at every 1) failed on `0f00d816e` (20 then
+  40) and passes now.
+- **m1:** the server counts the uses. `usbUses` in the NPC's frustration entry (saved with the
+  game, never sent) counts accepted work uses at the station since the last accepted refusal: an
+  ease (including at level 0) and a fail without the cause. A held-back (`tooSoon`) report is not
+  counted. A fail naming `usb_refused` is refused unless this use is at least the `every`th. The
+  browser now reports every met work use at a station that refuses the stick, even at level 0, so
+  the count can see them. The browser's counter can only lag the server's (it restarts on a
+  reload), so an honest refusal is never refused.
+- **m2:** `AccessWork.cause_belongs?` takes `usb_refused` only when `usb_habit_refused?`.
+- **m3:** `usbHabit` is on the leak scanner's withheld list and label, with a scanner test.
+- **m4** (pre-existing): in `docs/IDEAS_BACKLOG.md`, not fixed here.
+- **m5:** the validator warns on a habit with a work plan but no station, and on a `setGlobal` at
+  a station whose policy allows USB storage (the global can never be set).
+- **n1:** a fail naming `usb_refused` must have `object_id` equal to the cause's id (the station).
+  Tested with a non-desk work object amy can use; the test fails with the guard removed.
+- **n2:** JS test: a work use at another place (station off) neither attempts nor moves the
+  counter; it fails with the `atStation` guard removed.
+- **n3:** the README's "Refused" bullet says the mutter comes from the first cause's pool.
+- **n4:** the plan's Tests section names the files the build used; its pace-floor claim is
+  corrected.
+
+Live (keyless :3035, `--start-room u1_room`):
+
+- Game 1448, Kim's `every` set to 1 in that game's row only, a tampered client posting
+  `rearmed: true` refusals 3 s apart: 25, then `tooSoon` four times (level stays 25).
+- Game 1447, as authored (every 2): a refusal with no counted use is refused; after one level-0
+  ease, 25; then four forged refusals 3 s apart, all refused.
+- Game 1450, honest client: Kim's first met use posts an ease at level 0 (answer level 0), her
+  second posts the `usb_refused` fail (`rearmed: true`), accepted at 25.
+
+## Added scope, not started: Kim's USB stick (coordinator, 2026-11-12)
+
+Asked: an NPC with `usbHabit` holds a USB stick in `itemsHeld` (default contents one
+`work_file.txt`; a scenario can list others); the validator errors when it has none and checks the
+contents; a player who takes it (given, pickpocketed, picked up after a knock-out) can open it and
+read its files, contents served from the server only; once the stick is gone the habit stops; demo
+on Kim in U1; tests and a live check.
+
+Not built: this builder's context ran out. Research for the next builder:
+
+- An item type exists: `"type": "usb"` with `"sprite": "usb_bowl1"` and `usbClass` (see
+  `scenarios/test_access_work` `kit_usb`). `inventory.js` (about line 383) keeps the sprite apart
+  from the type on reload. No new art needed.
+- Opening: `interactions.js` (about line 1712) opens anything with `contents` or `hasContents` as
+  a container (`startContainerMinigame`); the server strips locked contents and marks
+  `hasContents`. `GET container/:id` (`games_controller.rb#container`) finds containers in room
+  objects, nested contents and `@game.held_grant_items`, and serves them only when
+  `check_container_unlocked` (the id in `unlockedObjects`). An NPC's `itemsHeld` is not searched,
+  so a held stick's contents need a lookup (held by the player: from the give record
+  `player_state['npc_given_items']`, or the inventory) and must be withheld from room data.
+- `Game` (about line 1170) drops from each NPC's `itemsHeld` what the give record says the NPC
+  handed over; `ItemIdentity.addressed_by?` matches. The habit stopping should read the same record
+  (server: in `usb_habit_refused?` or a wrapper that takes `player_state`, which makes it no longer
+  static; client: `_usbAttempt` checks the NPC still holds the stick).
+- Recommended answer for "is a missing stick a frustration cause": no. Without a stick there is
+  nothing to copy, so the use is a plain met use; no new cause, no mutter. A missing stick is the
+  player's doing and should calm the NPC, not wind it up.
