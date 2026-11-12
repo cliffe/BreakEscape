@@ -1,9 +1,8 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml as escapeTitle } from '../../utils/escape-html.js';
 
 // The title is plain text (scenario or server data): escaped before it reaches HTML.
-const escapeTitle = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 /**
  * MG-04 — Network Segmentation Map

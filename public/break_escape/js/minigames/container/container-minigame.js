@@ -5,9 +5,8 @@ import { containerImageUrl, containerImageHtml, takeStandIn } from './container-
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { resolveObjectField } from '../../utils/conditional-text.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 /**
  * The choices a takeable file on a sign-in desktop offers (access model 5.1): Open,

@@ -37,7 +37,7 @@ const { formatAddress } = await import(pathToFileURL(join(dir, 'minigames/osint-
 if (!skip) {
   for (const f of readdirSync(overlayDir)) if (f.endsWith('.js')) copy(`minigames/osint-browser/${f}`);
   for (const rel of ['minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
-    'utils/display-dashes.js', 'ui/modal-stack.js', 'systems/global-writer.js', 'systems/social-intel.js']) copy(rel);
+    'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js', 'systems/global-writer.js', 'systems/social-intel.js']) copy(rel);
 
   dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true, url: 'https://game.test/break_escape/games/42' });
   globalThis.window = dom.window;

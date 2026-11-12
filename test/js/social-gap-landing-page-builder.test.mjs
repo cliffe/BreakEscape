@@ -35,7 +35,7 @@ for (const rel of [
     'minigames/osint-browser/concept-card.js',
     'minigames/framework/base-minigame.js',
     'minigames/framework/social-overlay.js',
-    'utils/display-dashes.js',
+    'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js',
     'ui/modal-stack.js',
     'systems/global-writer.js',
     'systems/captures.js'

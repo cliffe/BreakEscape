@@ -2,6 +2,7 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { ASSETS_PATH } from '../../config.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
 /**
  * The keypad's line after a wrong password. A near miss (right apart from letter
@@ -30,8 +31,6 @@ export function passwordFieldLabel(title) {
 // only when the server reports a lockout for the username typed. It shows no
 // letter-case hint (the server sends none for /login). Signs in through pc-sessions.js.
 
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 /** Initials for a tile whose portrait and avatar both failed: "Sam Okafor" -> "SO". */
 export function tileInitials(name) {

@@ -52,10 +52,14 @@ const stubs = {
     // the starter registry: none of these cases opens a registered minigame
     './minigame-registry.js': dataUrl('export const hasMinigameStarter = () => false; export const startRegisteredMinigame = () => false;'),
     // the real inventory click menu and drop test (the chain's first two branches use them)
-    './inventory-menu.js': inventoryMenuUrl
+    './inventory-menu.js': inventoryMenuUrl,
+    // the real dash display and escape (the read-in-place display below)
+    '../utils/display-dashes.js': dataUrl(readFileSync(join(js, 'utils/display-dashes.js'), 'utf8')),
+    '../utils/escape-html.js': dataUrl(readFileSync(join(js, 'utils/escape-html.js'), 'utf8'))
 };
 
 const started = [];
+const displays = [];
 const alerts = [];
 const framework = {
     registeredScenes: { examine: class {}, notes: class {}, 'phone-chat': class {}, 'text-file': class {} },
@@ -68,7 +72,7 @@ globalThis.window = {
     player: { x: 0, y: 0, direction: 'down' },
     gameState: { globalVariables: {} },
     gameAlert: (...a) => { calls.push(['gameAlert', a[2]]); alerts.push(a); },
-    gameDisplay: (msg, title) => calls.push(['gameDisplay', title]),
+    gameDisplay: (msg, title, opts) => { calls.push(['gameDisplay', title]); displays.push([msg, title, opts]); },
     addNote: () => true,
     startNotesMinigame: (s) => calls.push(['notes', s.scenarioData?.id]),
     lockRef: () => null,
@@ -362,4 +366,18 @@ test('a storeIn item read in place or as a note is not added to the Notepad', ()
         window.addNote = addNote;
         window.startNotesMinigame = startNotes;
     }
+});
+
+test('read in place: hostile name, observations and text are escaped once (five characters), dashes shown before the escape', () => {
+    reset();
+    displays.length = 0;
+    const HOSTILE = `<img src=x onerror="x()"> & "q" 's' -- end`;
+    handleObjectInteraction(invImg({ type: 'lanyard', id: 'h', name: HOSTILE, readable: true, readDisplay: 'gameDisplay',
+        addToNotes: false, text: HOSTILE, observations: HOSTILE }));
+    assert.equal(displays.length, 1);
+    const [msg, title, opts] = displays[0];
+    const ESC = '&lt;img src=x onerror=&quot;x()&quot;&gt; &amp; &quot;q&quot; &#39;s&#39; – end';
+    assert.deepEqual(opts, { html: true });
+    assert.equal(title, ESC);
+    assert.equal(msg, `<em>${ESC}</em>\n\n${ESC}`);
 });

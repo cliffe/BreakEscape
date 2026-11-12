@@ -16,7 +16,7 @@ for (const k of ['log', 'info', 'debug', 'warn', 'error']) console[k] = () => {}
 const here = dirname(fileURLToPath(import.meta.url));
 // SWEEP_JS_ROOT points at a copy of the engine (used to show the tests fail on old code)
 const js = process.env.SWEEP_JS_ROOT || join(here, '../../public/break_escape/js');
-const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
+const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true, url: 'https://game.example/break_escape/games/1' });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.HTMLElement = dom.window.HTMLElement;
@@ -237,7 +237,8 @@ test('VM launcher: title, IP and console link are text, and the href stays one a
     assertText(box.querySelector('.vm-title'), 'VM title');
     assertText(box.querySelector('.vm-ip-value'), 'VM IP');
     const a = box.querySelector('a.vm-action-btn');
-    assert.ok(a.getAttribute('href').startsWith(`/panel${ATTR}`), 'href reads back as typed');
+    // The launcher uses the parsed href (percent-encoded), so it reads back as that parse
+    assert.ok(a.getAttribute('href').startsWith(new URL(`/panel${ATTR}`, window.location.href).href), 'href reads back as parsed');
 });
 
 test('RFID cloner: card fields and result messages are text', () => {

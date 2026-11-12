@@ -34,7 +34,7 @@ for (const rel of [
     'minigames/landing-page-builder/landing-page-model.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
-    'utils/display-dashes.js', 'utils/player-avatar.js', 'ui/modal-stack.js', 'systems/phish-rules.js',
+    'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'utils/player-avatar.js', 'ui/modal-stack.js', 'systems/phish-rules.js',
     'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js',
     'systems/awareness-measure.js'
 ]) {

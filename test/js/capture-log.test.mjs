@@ -38,6 +38,8 @@ copy('systems/inventory.js', [
 copy('systems/captures.js');
 copy('systems/global-writer.js');
 copy('utils/display-dashes.js');
+copy('utils/escape-html.js');
+copy('utils/author-html.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/capture-log/capture-log-model.js');
 copy('minigames/capture-log/capture-rows.js');

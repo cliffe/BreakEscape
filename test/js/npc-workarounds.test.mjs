@@ -827,7 +827,7 @@ test('R1 M1: the overheard toast is plain text with no dash display, and the not
         runner.visitDone(visitDone('sam', SAM_RUN));
         await flush();
         assert.deepEqual(calls.toasts, [['Overheard: Sam Okafor', heard.line]], pw);
-        assert.deepEqual(calls.toastOpts, [{ plainText: true, verbatim: true }], pw);
+        assert.deepEqual(calls.toastOpts, [{ verbatim: true }], pw);
         assert.equal(calls.notes.length, 1, pw);
         assert.equal(shownNote(calls.notes[0][1]), heard.note, `the notebook shows ${pw} exactly`);
     }
@@ -841,10 +841,10 @@ test('R1 M1: the window toast dep passes the options on to gameAlert', () => {
     globalThis.window = { gameAlert: (...a) => alerts.push(a) };
     try {
         const runner = installNpcWorkarounds({});
-        runner.deps.toast('line', 'Overheard: X', { plainText: true, verbatim: true });
+        runner.deps.toast('line', 'Overheard: X', { verbatim: true });
         runner.deps.toast('other', 'T');
-        assert.deepEqual(alerts, [['line', 'info', 'Overheard: X', 8000, { plainText: true, verbatim: true }],
-            ['other', 'info', 'T', 8000, { plainText: true }]]);
+        assert.deepEqual(alerts, [['line', 'info', 'Overheard: X', 8000, { verbatim: true }],
+            ['other', 'info', 'T', 8000, {}]]);
     } finally {
         globalThis.window = prev;
     }

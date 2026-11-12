@@ -1,4 +1,5 @@
 import { displayDashes } from '../utils/display-dashes.js';
+import { authorHtml } from '../utils/author-html.js';
 import { writeGlobal } from './global-writer.js';
 import { grantFact, readyToastText, readyToastTitle } from './social-intel.js';
 
@@ -427,7 +428,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
 
             // Show a full-screen scenario end overlay — used for failure states (e.g. thermal runaway evacuation).
             // Disables player movement. Not dismissible; player must click through to missions.
-            // action: { type, outcome ('failure'|'success'|'neutral'), title, body (HTML), buttonText }
+            // action: { type, outcome ('failure'|'success'|'neutral'), title, body (author text, utils/author-html.js), buttonText }
             case 'show_end_screen': {
                 showEndScreen(action);
                 const { title = 'SCENARIO ENDED', outcome = 'neutral' } = action;
@@ -460,6 +461,24 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
     return gives;
 }
 
+// A host shell link the end screen may navigate to, as the parsed href, or null: http or
+// https on the game's own origin with no user name or password (the server sends relative
+// paths). The same rule as safeShellUrl in utils/desktop-app.js; kept inline because tests
+// load this file on its own with only its known imports stubbed.
+export function safeShellUrl(raw, base = window.location?.href) {
+    if (typeof raw !== 'string' || !base) return null;
+    const text = raw.trim();
+    if (!text) return null;
+    try {
+        const parsed = new URL(text, base);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+        if (parsed.username || parsed.password) return null;
+        return parsed.origin === new URL(base).origin ? parsed.href : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 /**
  * Show the full-screen scenario end overlay.
  *
@@ -473,7 +492,8 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
  *
  * @param {Object} opts
  * @param {string} [opts.title]      Heading text. Defaults to 'MISSION COMPLETE'.
- * @param {string} [opts.body]       HTML body text.
+ * @param {string} [opts.body]       Body text: plain text plus entities and bare
+ *                                   <strong> <em> <b> <i> <br> (utils/author-html.js).
  * @param {string} [opts.buttonText] Button label. Defaults to 'Return to Missions'.
  * @param {string} [opts.outcome]    'success' | 'failure' | 'neutral'.
  */
@@ -488,7 +508,9 @@ export function showEndScreen(opts = {}) {
     } = opts;
     // A host game shell sends the player to its own page (the debrief), so it names the button.
     const cfg = window.breakEscapeConfig;
-    const buttonText = (cfg?.shellReturnUrl && cfg.shellReturnLabel) || opts.buttonText || 'Return to Missions';
+    const shellReturn = safeShellUrl(cfg?.shellReturnUrl);
+    const shellUrl = shellReturn || safeShellUrl(cfg?.shellMenuUrl);
+    const buttonText = (shellReturn && cfg.shellReturnLabel) || opts.buttonText || 'Return to Missions';
 
     if (window.player) window.player.disableMovement = true;
 
@@ -512,7 +534,9 @@ export function showEndScreen(opts = {}) {
     ].join(';');
 
     const bodyEl = document.createElement('p');
-    bodyEl.innerHTML = displayDashes(body);
+    // Author text through the allow-list: entities and bare <strong> <em> <b> <i> <br>
+    // survive, every other tag and attribute shows as text
+    bodyEl.innerHTML = authorHtml(body);
     bodyEl.style.cssText = [
         'color:#cccccc', 'font-size:20px', 'font-family:"VT323",monospace',
         'margin:0', 'text-align:center', 'max-width:680px', 'line-height:1.7'
@@ -530,7 +554,6 @@ export function showEndScreen(opts = {}) {
     btn.onmouseout  = () => { btn.style.background = '#333'; btn.style.borderColor = '#666'; };
     btn.onclick = () => {
         // A host game shell opened the game in its own tab and names where to go back to.
-        const shellUrl = window.breakEscapeConfig?.shellReturnUrl || window.breakEscapeConfig?.shellMenuUrl;
         if (shellUrl) {
             window.location.href = shellUrl;
             return;

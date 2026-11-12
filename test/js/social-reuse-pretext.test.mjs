@@ -19,7 +19,7 @@ const copies = [
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
     'minigames/mail-client/mail-composer.js', 'minigames/person-chat/person-chat-pretext.js',
     'systems/phish-rules.js', 'systems/global-writer.js', 'systems/social-intel.js',
-    'systems/social-influence.js', 'utils/display-dashes.js', 'ui/modal-stack.js'
+    'systems/social-influence.js', 'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js'
 ];
 const dir = mkdtempSync(join(tmpdir(), 'social-reuse-pretext-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
