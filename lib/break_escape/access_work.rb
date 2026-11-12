@@ -922,6 +922,138 @@ module BreakEscape
       end
     end
 
+    # ── reactions (docs/achitechture/FRIENDFACE_REACTIONS_PLAN.md section 5) ─────────
+
+    # The fixed reaction keys, in display order. Copies: REACTION_KEYS in social-feed.js and in
+    # tools/playtest/lib/access_leak_scanner.rb; tests check they match this one.
+    REACTION_KEYS = %w[like laugh sad angry].freeze
+    REACTION_FIELDS = %w[to toComplaint key alongside].freeze
+
+    # An NPC's `feed.reacts`, cleaned (section 5.1 step 1): hashes with a known key and exactly
+    # one of `to` and `toComplaint` as non-empty strings; `alongside`, when present, a non-empty
+    # string. Other keys in an entry are ignored. Each kept entry carries its authored index.
+    def feed_reacts(npc)
+      f = npc.is_a?(Hash) ? npc['feed'] : nil
+      list = f.is_a?(Hash) ? f['reacts'] : nil
+      return [] unless list.is_a?(Array)
+
+      list.each_with_index.filter_map do |r, idx|
+        next unless r.is_a?(Hash) && REACTION_KEYS.include?(r['key'])
+        next unless [present_string?(r['to']), present_string?(r['toComplaint'])].count(true) == 1
+        next unless r['alongside'].nil? || present_string?(r['alongside'])
+
+        { 'to' => present_string?(r['to']) ? r['to'] : nil,
+          'toComplaint' => present_string?(r['toComplaint']) ? r['toComplaint'] : nil,
+          'key' => r['key'], 'alongside' => r['alongside'], 'index' => idx }
+      end
+    end
+
+    # The served posts that can be a reaction's target or carry one (section 5.1, "drawable"):
+    # post id => { npc:, seq:, site:, reply:, complaint: }. A post needs a seq above 0, an NPC that
+    # still feeds, and, for a reply, a thread record whose post is served by a room NPC and whose
+    # named NPC is a room NPC (the conditions under which feed_answer draws it).
+    def drawable_feed_posts(data, store, revealed)
+      by_id = AccessIdentities.room_npcs(data).to_h { |e| [e[:npc]['id'], e[:npc]] }
+      revealed.each_with_object({}) do |(pid, rec), out|
+        next unless rec.is_a?(Hash) && rec['seq'].is_a?(Integer) && rec['seq'].positive?
+
+        npc = by_id[rec['npc']]
+        next unless npc && feeds?(npc)
+
+        post = feed_posts(npc).find { |p| p['id'] == pid }
+        next unless post
+
+        if reply_post?(post)
+          tgt = reply_target(data, npc, post, feed_to_map(store[rec['npc']]))
+          next unless tgt.is_a?(Hash)
+
+          thread = revealed[tgt['post']]
+          next unless thread.is_a?(Hash) && by_id[thread['npc']] && by_id[tgt['npc']]
+        end
+        out[pid] = { npc: rec['npc'], seq: rec['seq'], site: npc.dig('feed', 'site'), reply: reply_post?(post),
+                     complaint: post['complaint'] }
+      end
+    end
+
+    # Every visible reaction (section 5.1): { targetPostId => [{ 'npc', 'person', 'key', 'via' }] },
+    # each list in key order then reactor id. Derived from the scenario and the feedRevealed record
+    # only; nothing is stored. `revealed` is a revealed_map the caller already holds (built when
+    # nil). `via`, when given, keeps only reactions that come out with that post, applied after the
+    # one-per-(reactor, post) dedupe. Never raises on junk `reacts`.
+    def feed_reactions(data, store, revealed: nil, via: nil)
+      return {} unless store.is_a?(Hash)
+
+      revealed = revealed_map(data, store) unless revealed.is_a?(Hash)
+      drawable = drawable_feed_posts(data, store, revealed)
+      won = {}
+      AccessIdentities.room_npcs(data).each do |e|
+        x = e[:npc]
+        next unless feeds?(x) && present_string?(x.dig('feed', 'person'))
+
+        reacts = feed_reacts(x)
+        next if reacts.empty?
+
+        reactor_candidates(data, store, x, reacts, drawable).each do |c|
+          k = [x['id'], c[:target]]
+          best = won[k]
+          won[k] = c if best.nil? || ([c[:vseq], c[:index]] <=> [best[:vseq], best[:index]]).negative?
+        end
+      end
+
+      out = {}
+      won.each_value do |c|
+        next if via && c[:via] != via
+
+        (out[c[:target]] ||= []) << { 'npc' => c[:npc], 'person' => c[:person], 'key' => c[:key], 'via' => c[:via] }
+      end
+      out.each_value { |list| list.sort_by! { |r| [REACTION_KEYS.index(r['key']), r['npc']] } }
+      out
+    end
+
+    # Each of reactor X's cleaned reactions that resolves to a target T and a post V it comes out
+    # with: [{ npc:, person:, key:, target:, via:, vseq:, index: }]
+    def reactor_candidates(data, store, x, reacts, drawable)
+      xid = x['id']
+      site = x.dig('feed', 'site')
+      entry = store[xid]
+      shown = feed_shown_ids(x, entry)
+      seqs = feed_seq_map(entry)
+      mine = drawable.select { |_pid, d| d[:npc] == xid }.sort_by { |_pid, d| d[:seq] }
+      others = drawable.reject { |_pid, d| d[:npc] == xid || d[:site] != site }
+      done_before = lambda do |tseq|
+        before = shown.select { |pid| (seqs[pid] || 0) < tseq }
+        !before.empty? && feed_done?(data, x, before)
+      end
+
+      reacts.filter_map do |r|
+        along = r['alongside'] && mine.find { |pid, _d| pid == r['alongside'] }
+        next if r['alongside'] && along.nil?
+
+        target =
+          if r['to']
+            others.key?(r['to']) ? [r['to'], others[r['to']]] : nil
+          else
+            vents = others.select { |_pid, d| !d[:reply] && d[:complaint] == r['toComplaint'] }.sort_by { |_pid, d| d[:seq] }
+            vents = vents.select { |_pid, d| d[:seq] < along[1][:seq] } if along
+            vents.first
+          end
+        next unless target
+
+        tid, td = target
+        v =
+          if along
+            along[1][:seq] > td[:seq] ? along : nil
+          elsif done_before.call(td[:seq])
+            target
+          else
+            mine.find { |_pid, d| d[:seq] > td[:seq] }
+          end
+        next unless v
+
+        { npc: xid, person: x['feed']['person'], key: r['key'], target: tid, via: v[0], vseq: v[1][:seq], index: r['index'] }
+      end
+    end
+
     # A reply text's literal pieces around {name}: each stripped of the spaces and punctuation at
     # its ends, empty pieces dropped. The validator's 12-character and unique-text rules and the
     # leak scanner's match read the same pieces.
