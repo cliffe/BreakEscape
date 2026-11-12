@@ -394,9 +394,9 @@ module ValidateAccessWork
       hint = if owned.any?
                " It owns #{owned.map { |id| "'#{id}'" }.join(', ')} through screenOwner: make that its needsHome " \
                  '(a PC owned only through screenOwner is a desk like any other for a judged need).'
-             else
+      else
                ' Give it a station that authors affordance.satisfies "work" (a sign-in PC takes no office preset).'
-             end
+      end
       warn(issues, "#{nid} has a work plan, but its needsHome is #{what}: it has no station, so its work goes to " \
                    "any non-desk source or nowhere, and a dead or locked PC never counts.#{hint}")
     elsif !(AW.affordance(json_data, st) || {}).key?('restores')
@@ -528,10 +528,10 @@ module ValidateAccessWork
 
           v = w[field]
           ok = case kind
-               when :object then v.is_a?(String) && index.key?(v)
-               when :room then v.is_a?(String) && rooms.key?(v)
-               else v.is_a?(String) && npc_ids.include?(v)
-               end
+          when :object then v.is_a?(String) && index.key?(v)
+          when :room then v.is_a?(String) && rooms.key?(v)
+          else v.is_a?(String) && npc_ids.include?(v)
+          end
           what = { object: 'room object', room: 'room', npc: 'room NPC' }[kind]
           err(issues, "#{where}[#{i}].#{field} #{v.inspect} names no #{what}.") unless ok
         end
@@ -607,10 +607,10 @@ module ValidateAccessWork
     AW.object_index(json_data).each do |oid, entry|
       off = AW.affordance(json_data, entry[:obj])&.dig('offWhen')
       off_names = case off
-                  when String then [off]
-                  when Hash then off.keys.map(&:to_s)
-                  else []
-                  end
+      when String then [off]
+      when Hash then off.keys.map(&:to_s)
+      else []
+      end
       off_names.each { |g| reads[g] << "#{oid} offWhen" }
     end
     reads
@@ -805,6 +805,7 @@ module ValidateAccessWork
     resources = AW.resources(json_data)
     lines = []
     feed_report_lines(json_data, lines)
+    reactive_report_lines(json_data, lines)
     room_npcs(json_data).each do |e|
       npc = e[:npc]
       next unless AW.work_plan?(json_data, npc)
@@ -835,7 +836,7 @@ module ValidateAccessWork
     end
     return [] if lines.empty?
 
-    ['Work report (access slice 9.2):'] + lines.sort_by.with_index { |l, i| [l.start_with?('ℹ️ Feed') ? 1 : 0, i] }
+    ['Work report (access slice 9.2):'] + lines.sort_by.with_index { |l, i| [l.start_with?('ℹ️ Feed', 'ℹ️ Reactive feed') ? 1 : 0, i] }
   end
 
   def workaround_opens(npc, w)
@@ -1059,6 +1060,7 @@ module ValidateAccessWork
         end
       end
       fed << npc if AW.feeds?(npc)
+      check_feed_order(json_data, npc, nid, feed, issues)
       level, from_habits = awareness_level(json_data, npc)
       feed['posts'].each_with_index do |post, i|
         tag = "#{nid}.feed.posts[#{i}]"
@@ -1073,6 +1075,7 @@ module ValidateAccessWork
           err(issues, "#{tag} id '#{pid}' is also a post or block id in social.osint.")
         end
         seen_posts[pid] ||= nid
+        check_reactive_post(json_data, npc, nid, tag, post, issues) if post.is_a?(Hash) && post.key?('when')
         texts = [[post['text'], "#{tag}.text"]]
         if post.key?('fact')
           fid = post['fact']
@@ -1163,6 +1166,149 @@ module ValidateAccessWork
     end
   end
 
+  # ── sub-slice C2: reactive posts (plan ACCESS_MODEL_SLICE_9_2_C2_PLAN.md section 8) ──
+
+  # A feed's `order` must be one of the three modes; a mode that does not fit the feed's mix of
+  # ordered and reactive posts is a likely mistake (warn)
+  def check_feed_order(json_data, npc, nid, feed, issues)
+    order = feed['order']
+    unless order.nil? || AW::FEED_ORDERS.include?(order)
+      err(issues, "#{nid}.feed.order '#{order}' is not one of #{AW::FEED_ORDERS.join(', ')}.")
+      return
+    end
+    posts = feed['posts'].select { |p| p.is_a?(Hash) }
+    reactive = posts.select { |p| AW.reactive_post?(p) }
+    ordered = posts.reject { |p| AW.reactive_post?(p) }
+    if order == 'facts_first' && !reactive.empty? && ordered.empty?
+      warn(issues, "#{nid}.feed.order is 'facts_first' but every post is reactive: there is no fact post to come " \
+                   'first. Did you mean reactive_first or mixed?')
+    elsif order == 'reactive_first' && reactive.empty? && !ordered.empty?
+      warn(issues, "#{nid}.feed.order is 'reactive_first' but no post is reactive: it has no effect.")
+    end
+    return if reactive.empty?
+
+    # The reactive posts read failure/frustration state the NPC can never produce
+    unless AW::JUDGED_NEEDS.any? { |need| AW.can_fail?(json_data, npc, need) }
+      warn(issues, "#{nid} has reactive feed posts but no work plan it can fail and no blockable social_media: their " \
+                   'conditions read frustration state the NPC never produces, so they never fire.')
+    end
+  end
+
+  # A reactive post (a `when` object): its predicates must be well formed, and it should be able to
+  # fire (the shared AW.when_reachable? check, so a dead `when` warns here and does not hold the
+  # feed open at run time either).
+  def check_reactive_post(json_data, npc, nid, tag, post, issues)
+    cond = post['when']
+    unless cond.is_a?(Hash)
+      err(issues, "#{tag}.when must be an object of condition predicates.")
+      return
+    end
+    if cond.empty?
+      err(issues, "#{tag}.when is empty: a reactive post that always fires is an ordered post, so drop `when`.")
+      return
+    end
+
+    need = cond['need']
+    err(issues, "#{tag}.when.need '#{need}' is not 'work' or 'social_media'.") if cond.key?('need') && !AW::JUDGED_NEEDS.include?(need)
+    cond.each_key do |key|
+      err(issues, "#{tag}.when has an unknown predicate '#{key}' (allowed: #{AW::WHEN_KEYS.join(', ')}).") unless AW::WHEN_KEYS.include?(key)
+    end
+
+    if cond.key?('cause')
+      whys = Array(cond['cause'])
+      bad = whys.reject { |w| AW::FAIL_CAUSES.include?(w) }
+      err(issues, "#{tag}.when.cause names #{bad.map { |w| "'#{w}'" }.join(', ')}, not one of #{AW::FAIL_CAUSES.join(', ')}.") unless bad.empty?
+    end
+    %w[frustrationAtLeast frustrationBelow].each do |k|
+      next unless cond.key?(k)
+
+      v = cond[k]
+      err(issues, "#{tag}.when.#{k} must be a number from 1 to 100.") unless v.is_a?(Numeric) && v >= 1 && v <= 100
+    end
+    if cond.key?('needMet')
+      v = cond['needMet']
+      err(issues, "#{tag}.when.needMet must be 'work', 'social_media' or true.") unless AW::JUDGED_NEEDS.include?(v) || v == true
+    end
+    check_reactive_workaround(json_data, npc, tag, cond['workaround'], issues) if cond.key?('workaround')
+
+    # The whole-`when` reachability (shared with the route's `done` branch b)
+    if AW.when_reachable?(json_data, npc, cond)
+      # An unscoped `cause` on an NPC that can fail two needs matches whichever need last failed
+      if cond.key?('cause') && !cond.key?('need') && AW::JUDGED_NEEDS.count { |need| AW.can_fail?(json_data, npc, need) } > 1
+        warn(issues, "#{tag}.when.cause has no `need` scope and #{nid} can fail both work and social_media: it matches " \
+                     'whichever need last failed, which may not be the one meant. Add a `need`.')
+      end
+      # A frustrationBelow-only post never fires until the NPC first fails or eases
+      if cond.keys == ['frustrationBelow'] && !AW::JUDGED_NEEDS.any? { |need| AW.can_fail?(json_data, npc, need) }
+        warn(issues, "#{tag}.when is only frustrationBelow and #{nid} has no failable need: it never gets a frustration " \
+                     'entry, so the post never fires. An always-calm post should key on a `global`.')
+      end
+    else
+      warn(issues, "#{tag}.when can never hold for #{nid} (a cause it cannot meet, a workaround it lacks, an undeclared " \
+                   'global, or a frustration predicate on an NPC with no failable need): the reactive post never fires.')
+    end
+  end
+
+  def check_reactive_workaround(json_data, npc, tag, val, issues)
+    was = AW.workarounds(json_data, npc)
+    case val
+    when Integer
+      err(issues, "#{tag}.when.workaround index #{val} is outside #{nil_safe_label(was)}.") unless val >= 0 && val < was.size
+    when String
+      err(issues, "#{tag}.when.workaround '#{val}' names no workaround `do` of this NPC.") unless was.any? { |w| w['do'] == val }
+    else
+      err(issues, "#{tag}.when.workaround must be a `do` kind (string) or an index (integer).")
+    end
+  end
+
+  def nil_safe_label(was)
+    was.empty? ? 'the NPC has no workarounds' : "the NPC's workarounds (0 to #{was.size - 1})"
+  end
+
+  # Per NPC with reactive posts: the order mode, a count, and each reactive post's condition in
+  # words with which player action arms it (plan 8 report lines)
+  def reactive_report_lines(json_data, lines)
+    room_npcs(json_data).each do |e|
+      npc = e[:npc]
+      feed = npc['feed']
+      next unless feed.is_a?(Hash) && feed['posts'].is_a?(Array)
+
+      reactive = feed['posts'].select { |p| p.is_a?(Hash) && AW.reactive_post?(p) }
+      next if reactive.empty?
+
+      lines << "ℹ️ Reactive feed #{npc['id']}: order #{AW.feed_order(npc)}, #{reactive.size} reactive post(s)."
+      reactive.each do |post|
+        lines << "ℹ️   #{post['id']}: #{reactive_condition_words(json_data, npc, post['when'])}"
+      end
+    end
+  end
+
+  def reactive_condition_words(json_data, npc, cond)
+    return 'always (empty when)' unless cond.is_a?(Hash) && !cond.empty?
+
+    need = cond['need'].is_a?(String) ? cond['need'] : nil
+    parts = cond.filter_map do |key, val|
+      case key
+      when 'need' then nil
+      when 'cause' then reactive_cause_words(json_data, npc, val, need)
+      when 'workaround' then "after the #{val} workaround"
+      when 'needMet' then 'on recovery (including a workaround recovery, not only the cause clearing)'
+      when 'frustrationAtLeast' then "frustration at least #{val}"
+      when 'frustrationBelow' then "frustration below #{val}"
+      when 'global' then "the global #{val.is_a?(Hash) ? val.map { |k, v| "#{k}=#{v}" }.join(',') : val}"
+      end
+    end
+    parts.join('; ')
+  end
+
+  def reactive_cause_words(json_data, npc, val, need)
+    whys = Array(val)
+    resources = whys.include?('down') || whys.include?('unreachable') ? AW.work_list(json_data, npc).select { |id| AW.resources(json_data).key?(id) } : []
+    named = resources.empty? ? '' : " (candidate resource(s): #{resources.join(', ')})"
+    scope = need ? " for #{need}" : ''
+    "fires when a cause with why #{whys.join('/')}#{scope} is live#{named}"
+  end
+
   # Per NPC with a feed: when each post is expected (plan 10), from the need's timing
   def feed_report_lines(json_data, lines)
     room_npcs(json_data).each do |e|
@@ -1188,5 +1334,4 @@ module ValidateAccessWork
                "after the room loads). Server floor #{AW.post_floor(json_data, npc).round} s between posts."
     end
   end
-
 end
