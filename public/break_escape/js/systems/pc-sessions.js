@@ -408,11 +408,15 @@ export class PcSessions {
         if (!previous) return false;
         this.sessions.delete(pcId);
         const api = apiClient();
+        let ended = null;
         if (api?.logout) {
-            try { await api.logout(pcId); } catch (e) { console.warn('[pc-sessions] logout failed', e); }
+            try { ended = (await api.logout(pcId))?.endedPcIds || null; } catch (e) { console.warn('[pc-sessions] logout failed', e); }
         }
         this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'sign_out', ...this._remoteOf(previous) });
         this._closeDesktop(pcId, message, 'sign_out');
+        // Signing out of a pivot ends the onward sessions (slice 9.3b K, 5.1): the server
+        // returned them, so their desktops close with "the link dropped".
+        if (Array.isArray(ended) && ended.length) this.linkDropped(ended);
         return true;
     }
 
