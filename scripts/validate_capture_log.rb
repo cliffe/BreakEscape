@@ -34,6 +34,25 @@ def check_capture_log(json_data)
     end
   end
 
+  # ---- Authored capture strings are bounded (sync deltas R2, 6a) ----
+  # A note is at most MAX_CAPTURE_NOTE_CHARS code points; roleLabel, address and host at most
+  # MAX_CAPTURE_FIELD_CHARS; a target id at most MAX_CAPTURE_TARGET_CHARS. The server stores each
+  # whole, so an over-long authored string is an error, not a cut.
+  cm.all_capture_candidates(json_data).each do |cand|
+    fields = cand[:fields]
+    tid = fields['targetId'].to_s
+    err.call("capture targetId \"#{tid[0, 40]}...\" is over #{cm::MAX_CAPTURE_TARGET_CHARS} characters") if tid.length > cm::MAX_CAPTURE_TARGET_CHARS
+    if fields['note'].is_a?(String) && fields['note'].length > cm::MAX_CAPTURE_NOTE_CHARS
+      err.call("capture note for \"#{tid}\" is over #{cm::MAX_CAPTURE_NOTE_CHARS} characters")
+    end
+    %w[roleLabel address host].each do |field|
+      value = fields[field]
+      next unless value.is_a?(String) && value.length > cm::MAX_CAPTURE_FIELD_CHARS
+
+      err.call("capture #{field} for \"#{tid}\" is over #{cm::MAX_CAPTURE_FIELD_CHARS} characters")
+    end
+  end
+
   # ---- Where a proof may live ----
   cm.action_proofs(json_data).each do |entry|
     err.call("#{entry[:path]}: a proof on an add_capture action is not read: put it on the account holder as captureProof")
