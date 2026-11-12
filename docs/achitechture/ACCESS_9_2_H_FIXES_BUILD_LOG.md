@@ -103,7 +103,10 @@ Taken over from the first builder at the review.
   during the walk is ended on the client at `npc_sat_at` and (b) would keep it on the server;
   and over (c), a client guard, which leaves the server open to the same late write. Left: a
   "done" lost on the network is still resent after a backoff, so a password sign-in in that
-  window could still be ended. Narrow.
+  window could still be ended. Narrow. Cheat model (R2 m1): a tampered client can send it at
+  the hand-over and skip the floor. Accepted (q43 R2): the guest session is the designed
+  workaround, its secret checks are unchanged, and an honest player can cut the use short a
+  moment after the sit; the server cannot see the walk or the sit.
 - **m1:** PLAYTEST H7 says the cut-short borrow is done once and that Ian, unmet, may be handed
   the desk again later. The q43 test is now "...no second sit from the same borrow".
 - **m2:** `PRIORITY_MUTTERS` (`login_aloud`) in `npc-needs.js`: such a mutter waits only for the
@@ -148,3 +151,20 @@ Taken over from the first builder at the review.
   "Overheard: Sam Okafor" toast showed. Only Sam was placed and available, so all eight
   queued lines were his.
 - Drivers and logs: scratchpad `hfix2_live/` (m1.js, m2.js, m1.json, m2.json).
+
+## R2 fixes (`ACCESS_9_2_H_FIXES_CODE_REVIEW_R2.md`)
+
+- **m1:** the `complete_npc_workaround!` comment and the M1 entry above now say what `cut`
+  trades: a tampered client can skip the floor, accepted, with the reasons. The old "no weaker
+  than the floor" wording is gone. The access model plan keeps no cheat notes for 9.2 H, so
+  nothing changed there.
+- **n1:** `visitArrived` drops the NPC's waiting `wk_share_login` (`cancelMutter`) before it
+  asks for `login_aloud`, so a stale start line is never said after the shared login. New test
+  "q42 R2 n1" on the real mutter queue (fails without the change); the R1 n3 runner test now
+  expects the arrival's cancel too.
+- **n3:** the Rails resend assertion carries a comment that it is reached only behind the cut
+  "done", and also checks the resend writes no guest back.
+- **n2:** left as it is, as the review advised.
+- Tests (single files, no lock): `npc-workarounds.test.mjs` 64 of 64 (two fail with the n1
+  change taken out), `npc-workaround-barrier-icons.test.mjs` and `npc-needs-work.test.mjs` 75 of
+  75, Rails `npc_workaround_h_test.rb` 34 runs, 0 failures.

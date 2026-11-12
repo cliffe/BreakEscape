@@ -198,9 +198,12 @@ module BreakEscape
       assert_equal 200, response.status, response.body[0, 300]
       assert_empty state['guestSessions'], 'a password sign-in ends the guest'
       assert state['sessions']['hot_desk'], 'the player keeps the session'
-      # the runner's resend (a lost answer) writes nothing
+      # the runner's resend (a lost answer) writes nothing. Review R2 n3: reached only once the
+      # cut "done" above is accepted, so a mutation that breaks the cut stops the case first and
+      # never tests this line; the resend itself is the lastSpent path, covered on its own above
       assert_equal 200, done('ian', run, t + 60, cut: true).status
       assert state['sessions']['hot_desk'], 'a resent "done" does not end it'
+      assert_empty state['guestSessions'], 'nor writes the guest back'
     end
 
     test 'leavesOpen is false in run for each careful guest and absent for one who leaves it open' do

@@ -1122,7 +1122,8 @@ test('q42 R1 n3: a share dropped while its line waits takes the line out of the 
     runner.visitArrived(visitDone('sam', SAM_RUN));
     runner.visitDropped(visitDone('sam', SAM_RUN));
     await flush();
-    assert.deepEqual(calls.cancels, [['sam', 'login_aloud']]);
+    // the arrival drops a waiting start line (R2 n1), the drop the waiting share line
+    assert.deepEqual(calls.cancels, [['sam', 'wk_share_login'], ['sam', 'login_aloud']]);
     assert.equal(calls.sends[0].dropped, true);
     // a share dropped after its line was said cancels nothing
     const b = hStub({});
@@ -1131,7 +1132,7 @@ test('q42 R1 n3: a share dropped while its line waits takes the line out of the 
     b.runner.due({ npcId: 'sam', run: SAM_RUN });
     b.runner.visitArrived(visitDone('sam', SAM_RUN));
     b.runner.visitDropped(visitDone('sam', SAM_RUN));
-    assert.deepEqual(b.calls.cancels, []);
+    assert.deepEqual(b.calls.cancels, [['sam', 'wk_share_login']], 'only the arrival\'s start-line cancel');
 
     // on the needs system: only that NPC's line of that topic goes
     const { sys } = twoWorld(QUEUE_LINES);
@@ -1143,4 +1144,29 @@ test('q42 R1 n3: a share dropped while its line waits takes the line out of the 
     sys.mutter('dana', 'mei_a');
     assert.equal(sys.cancelMutter('dana', 'login_aloud'), 1);
     assert.deepEqual(sys.mutterWaits().map(w => [w.npcId, w.topic]), [['mei', 'login_aloud'], ['dana', 'mei_a']]);
+});
+
+test('q42 R2 n1: a share\'s start line still waiting when the NPC arrives is dropped, so it never follows login_aloud', () => {
+    const { sys, evs } = twoWorld({ ...QUEUE_LINES, wk_share_login: ["I'll go and ask."] });
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');   // takes the lock
+    for (const [id, topic] of [['mei', 'mei_a'], ['mei', 'mei_b'], ['mei', 'mei_c']]) sys.mutter(id, topic);
+    // The runner on the real mutter queue; the visit itself is not walked here
+    const runner = new NpcWorkarounds({
+        send: async () => ({}), emit: () => {}, npcRecord: () => null, playerRoom: () => 'open_office', setTimer: () => {},
+        needs: () => ({
+            mutter: (id, topic) => sys.mutter(id, topic),
+            cancelMutter: (id, topic) => sys.cancelMutter(id, topic),
+            enqueueVisit: () => true, holdVisit: () => true
+        })
+    });
+    const run = { index: 0, hand: 1, do: 'share_login', with: 'ruth', dwell: 6 };
+    runner.due({ npcId: 'dana', run, level: 70 });
+    assert.ok(sys.mutterWaits().some(w => w.npcId === 'dana' && w.topic === 'wk_share_login'), 'the start line waits behind the others');
+    runner.visitArrived(visitDone('dana', run));
+    assert.deepEqual(sys.mutterWaits().map(w => [w.npcId, w.topic]),
+        [['dana', 'login_aloud'], ['mei', 'mei_a'], ['mei', 'mei_b'], ['mei', 'mei_c']], 'the stale start line is gone');
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:').length === 5, 60000));
+    assert.deepEqual(evs('npc_mutter:dana').map(e => e.data.topic), ['work_fail', 'login_aloud'], 'no start line after the shared login');
 });

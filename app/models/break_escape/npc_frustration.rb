@@ -143,8 +143,10 @@ module BreakEscape
     # `cut` (user decision q43, review R1 M1): a borrow's "done" for a use cut short after the
     # borrower sat down. It skips the borrow's dwell floor, so the "done" lands as soon as the
     # use ends: a refused one, resent after the floor, would arrive after a password sign-in at
-    # that PC in the gap and end the player's new session there. No weaker than the floor: a
-    # client could always wait it out. Ignored for every other kind.
+    # that PC in the gap and end the player's new session there. A tampered client can send it
+    # at the hand-over and skip the floor. Accepted (q43 R2): the guest session is the designed
+    # workaround, its secret checks are unchanged, and an honest player can cut the use short a
+    # moment after the sit; the server cannot see the walk or the sit. Ignored for every other kind.
     def complete_npc_workaround!(npc_id:, index:, hand:, dropped: false, heard: false, room_id: nil, cut: false)
       npc_id = npc_id.to_s
       npc = scenario_room_npc(npc_id)

@@ -207,6 +207,9 @@ export class NpcWorkarounds {
         job.awaitingLine = true;
         if (!job.dwellMs) job.dwellMs = SHARE_DWELL_S * 1000;
         this._needs()?.holdVisit?.(job.npcId, LINE_WAIT_MS + job.dwellMs);
+        // Review R2 n1: login_aloud goes ahead of ordinary lines, so a start line still waiting
+        // now would be said after it, out of order and stale; drop it first
+        this._needs()?.cancelMutter?.(job.npcId, START_POOLS.share_login);
         this._needs()?.mutter?.(job.npcId, ALOUD_POOL);
     }
 
