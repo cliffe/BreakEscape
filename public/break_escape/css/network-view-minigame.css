@@ -162,6 +162,50 @@
     display: none;
 }
 
+/* The network blocks (slice 9.3b, 5.1): a further network, or one with no route (5.2).
+   Pixel-art rule: 2px solid square borders, flat fills, no radius, shadow or gradient. */
+.network-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 2px solid #2d3a44;
+    background: #131b22;
+}
+
+.network-block-title {
+    margin: 0;
+    font-size: 18px;
+    color: #9ee6ff;
+}
+
+/* No route: the block and its rows are greyed, and the icon is drawn grey */
+.network-block-down {
+    border-color: #3a3f44;
+    background: #15181b;
+}
+
+.network-block-down .network-block-title {
+    color: #868d93;
+}
+
+.network-row-down {
+    background: #1b1e21;
+    border-color: #33383c;
+    color: #868d93;
+}
+
+.network-row-down .network-row-name,
+.network-row-down .network-row-off {
+    color: #868d93;
+    /* No synthesised slant on the pixel font in a greyed row */
+    font-style: normal;
+}
+
+.network-row-down .network-row-icon {
+    filter: grayscale(1) brightness(0.7);
+}
+
 /* A remote desktop's header (4.4) */
 .desktop-remote-line {
     color: #9ee6ff;

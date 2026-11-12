@@ -280,5 +280,68 @@ module BreakEscape
       view = network_view(OFFICE)['footholds'].find { |f| f['id'] == OFFICE }
       assert_includes view['hosts'].map { |h| h['id'] }, 'archive_down', 'the resource row returns'
     end
+
+    # Review R1 E3 (plan 5.2): a foothold whose own network is down lists none of that
+    # network's rows, and they come back on repair.
+    test 'a foothold on a network that is down lists no rows of its own network, and they return on repair' do
+      data = NS.scenario
+      data['networks']['office_lan']['downIf'] = 'office_down'
+      data['globalVariables'] = (data['globalVariables'] || {}).merge('office_down' => false)
+      build_network_game({}, data)
+      take_drop_box
+      plant('comms_port')
+      assert_response :success, response.body
+      up = network_view(OFFICE)['footholds'].find { |f| f['id'] == OFFICE }
+      refute_empty up['hosts'], 'rows are listed while the network is up'
+
+      set_global('office_down', true)
+      view = network_view(OFFICE)
+      entry = view['footholds'].find { |f| f['id'] == OFFICE }
+      assert_equal [], entry['hosts']
+      refute(entry['networks'].any? { |b| b['route'] == 'up' }, entry['networks'].inspect)
+      # Review R2 n3: the secrecy check never skips itself
+      labels = up['hosts'].map { |h| h['host'] }.compact
+      refute_empty labels, 'the fixture lists at least one host label while up'
+      labels.each { |label| refute_includes response.body, label.to_s }
+
+      set_global('office_down', false)
+      back = network_view(OFFICE)['footholds'].find { |f| f['id'] == OFFICE }
+      assert_equal up['hosts'].map { |h| h['id'] }, back['hosts'].map { |h| h['id'] }
+    end
+
+    # Review R2 M1 (plan 5.2, "a held session is never silently missing"): a session held on
+    # the foothold's own network stays listed, greyed, while that network is down.
+    test 'a session held on the own network shows as a greyed block while it is down, and returns on repair' do
+      data = NS.scenario
+      data['networks']['office_lan']['downIf'] = 'office_down'
+      data['globalVariables'] = (data['globalVariables'] || {}).merge('office_down' => false)
+      build_network_game({}, data)
+      take_drop_box
+      plant('comms_port')
+      assert_response :success, response.body
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      assert_response :success, response.body
+      assert state['sessions'].key?('lena_pc'), 'the remote session is held'
+
+      set_global('office_down', true)
+      entry = network_view(OFFICE)['footholds'].find { |f| f['id'] == OFFICE }
+      assert_equal [], entry['hosts'], 'no own rows while the network is down'
+      assert_equal 1, entry['networks'].size, entry['networks'].inspect
+      block = entry['networks'].first
+      assert_equal 'office_lan', block['id']
+      assert_equal 'down', block['route']
+      assert_equal %w[lena_pc], block['hosts'].map { |h| h['id'] }, 'only the held session is shown'
+      block['hosts'].each do |h|
+        refute h.key?('remoteSignIn'), 'a down-block row offers no sign-in'
+        refute h.key?('session'), 'a down-block row offers no session'
+      end
+      assert state['sessions'].key?('lena_pc'), 'the session is kept across the outage'
+
+      set_global('office_down', false)
+      back = network_view(OFFICE)['footholds'].find { |f| f['id'] == OFFICE }
+      lena = back['hosts'].find { |h| h['id'] == 'lena_pc' }
+      assert lena, 'the row is back in hosts on repair'
+      assert lena['session'], 'with its session'
+    end
   end
 end
