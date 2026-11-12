@@ -82,3 +82,49 @@ leak scanner over the captured responses: `VERDICT: no leaks found`.
 ### Suites
 
 Full `bin/rails test` (1583 runs, 0 failures, 1 skip) and `bin/test-js` both green at the end.
+
+## Round 1 code review fixes (sub-slice W)
+
+Server review (R1): approve with follow-ups, no blocker/major. Client review (R1): one major (M1),
+one minor (m1), one nit (n1). All addressed.
+
+- **M1 (client, major): APs and key card unreachable.** `guest_ap`, `guest_ap2` and `wifi_note`
+  sat at x=11, two tiles past `room_reception`'s east wall (column 9). Moved onto interior tiles
+  against the east wall, each with an open floor neighbour and clear of the door-approach rows
+  (y=2, y=7): `guest_ap` -> (8,5), `guest_ap2` -> (8,8), `wifi_note` -> (6,3) by the reception desk.
+- **m1 (client, minor): double-click stacking a second key minigame.** `interactWifiAp` now refuses
+  when a minigame is already open (`MinigameFramework.currentMinigame` present and not ending), so a
+  rapid second click on an access point cannot stack a second key prompt. Test added to
+  `network-links.test.mjs`.
+- **n1 (client, nit): join-header escaping untested.** `password-join-mode.test.mjs` now loads the
+  real `display-dashes.js` (not an identity stub) and asserts that an AP name containing `<`, `>`,
+  `&`, `"` renders escaped in the join header with no element injected.
+- **Server minor: `netlink_` scanner exemption untested.** Added a test to
+  `access_leak_scanner_test.rb`: a network name on a `netlink_` held handle in an `/inventory`
+  response raises no finding, and the same name under another holder in the same response is still
+  reported.
+- **Server nit: whitespace-only psk disagreement.** `validate_network.rb` now errors on a psk that
+  is only whitespace (the server treats a blank psk as open, so a whitespace key would never be
+  asked for); the short/unreadable warnings skip it. Test in `validator-network-model.test.mjs`.
+- **Server nit: N9 could fire with N8 on a first join via the second AP.** The `network_joined`
+  event now carries `already` (from the server's `body.already`), and the N9 mapping is gated on
+  `data.already === true`, so joining through `guest_ap2` first no longer completes "join again
+  through the second access point" on a first join. The validator's static indices-11/12 warning
+  remains (same class as the accepted indices-7/10 warning); the conditions are disjoint in practice
+  because N8 is onceOnly and `already` is false on any first join.
+- **Server question: confirm a join requires reach.** Added a line to plan 5.3: a join is
+  click-to-interact, so the player must walk to a reachable access point; "no range" means no signal
+  model, not that a locked-away AP can be joined from anywhere.
+
+### Live browser proof R1 (port 3024, keyless server, game 1258)
+
+Redid the M1 proof through the **normal interaction path** (`window.__test.interact(id)`, which
+walks the player to the object and issues a real canvas pointer click), with **no** direct
+`interactWifiAp` call. In the lobby: the three W objects report interior positions (`guest_ap`
+256,160 = tile 8,5; `guest_ap2` 256,256 = 8,8; `wifi_note` 192,96 = 6,3). Walking to `guest_ap` and
+clicking opened the key minigame (title "Guest access point"); a wrong key left it open with no
+foothold; the right key joined (`wifi_guest_wifi`, link item `netlink_wifi_guest_wifi` in the tray)
+and `n8_wifi_join` completed. Walking to `guest_ap2` and clicking produced **no** second minigame
+(`already` path) and completed `n9_second_ap`; exactly one Wi-Fi foothold remained. Screenshot:
+`scratchpad/wifi_proof_3024.png` (the two access-point racks stand inside the east wall and the
+player reaches them). Validator on the scenario: 0 errors.
