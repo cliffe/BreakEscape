@@ -50,6 +50,38 @@ module BreakEscape
       TtsLineResolver.new(scenario_name: name, scenario_data: game_data, compile: false)
     end
 
+    # [file, raw line] for each voiced line that prints a variable. A person-chat
+    # host is read over its whole story. A phone contact is read only over the
+    # knots the extractor voices (TtsLineExtractor.call_knots, video_call_knots
+    # and voicemail_knots): text-thread lines may print variables.
+    def self.printed_variable_lines(ex, allowed)
+      variables = ex.instance_variable_get(:@variables)
+      dynamic = ex.send(:dynamic_variables)
+      stories = {}
+      ex.hosts.each do |host|
+        path = story_file(host['storyPath'])
+        next unless path
+
+        if host['npcType'] == 'phone'
+          ink = JSON.parse(File.read(path))
+          voiced_knots = TtsLineExtractor.call_knots(host, ink) | TtsLineExtractor.video_call_knots(host, ink) |
+                         TtsLineExtractor.voicemail_knots(host)
+          stories[path] = stories.key?(path) && stories[path].nil? ? nil : (stories[path] || Set.new) | voiced_knots
+        else
+          stories[path] = nil
+        end
+      end
+      stories.flat_map do |path, knots|
+        voiced = InkLineWalker.from_file(path, variables: variables, dynamic: dynamic)
+        names = voiced.ink_defaults.keys | variables.keys.map(&:to_s)
+        # Every variable treated as changed in play, except the allowed ones:
+        # a line that resolves only with a variable read as a constant drops out
+        strict = InkLineWalker.from_file(path, variables: variables, dynamic: names - allowed)
+        kept = voiced.lines.select { |line| knots.nil? || knots.include?(TtsLineExtractor.line_knot(line.path)) }
+        (kept.map(&:raw) - strict.lines.map(&:raw)).uniq.map { |raw| [File.basename(path), raw] }
+      end
+    end
+
     def self.missions_data
       @missions_data ||= missions
     end
@@ -175,18 +207,8 @@ module BreakEscape
       printed = []
       self.class.missions_data.each do |name, data|
         ex = TtsLineExtractor.new(name, data)
-        variables = ex.instance_variable_get(:@variables)
-        dynamic = ex.send(:dynamic_variables)
-        allowed = PRINTED_ALLOWED.fetch(name, [])
-        ex.hosts.map { |h| self.class.story_file(h['storyPath']) }.compact.uniq.each do |path|
-          voiced = InkLineWalker.from_file(path, variables: variables, dynamic: dynamic)
-          names = voiced.ink_defaults.keys | variables.keys.map(&:to_s)
-          # Every variable treated as changed in play, except the allowed ones:
-          # a line that resolves only with a variable read as a constant drops out
-          strict = InkLineWalker.from_file(path, variables: variables, dynamic: names - allowed)
-          (voiced.lines.map(&:raw) - strict.lines.map(&:raw)).uniq.each do |raw|
-            printed << "#{name} #{File.basename(path)}: #{raw[0, 80]}"
-          end
+        self.class.printed_variable_lines(ex, PRINTED_ALLOWED.fetch(name, [])).each do |file, raw|
+          printed << "#{name} #{file}: #{raw[0, 80]}"
         end
       end
       assert_empty printed, "voiced lines that print a variable"

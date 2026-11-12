@@ -1,0 +1,25 @@
+2:# tools/phone_calls/newgame.sh <scenario> [new-game.rb options]  -> prints the game id on :${PC_PORT:-3023}
+5:PLAYTEST_PORT=${PC_PORT:-3023} BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb "$@" 2>&1 | grep -E "^(GAME_ID|HEAD_START|ERROR|ABORT)|abort|rror" | head -5
+=== run replay ===
+game 1982 (replay)
+T-30: enter ops
+shot replay_t30_banner
+T-30 call: {"bar":null,"subs":[],"choices":[]}
+shot replay_t30_call
+T-30 rows: ["Missed call: No caller ID","Voicemail"]
+fire architect_t20_played
+architect_t20_played: {"bar":null,"subs":[],"choices":[]}
+shot replay_architect_t20_played_call
+fire architect_t10_played
+architect_t10_played: {"bar":null,"subs":[],"choices":[]}
+shot replay_architect_t10_played_call
+fire architect_t5_played
+architect_t5_played: {"bar":null,"subs":[],"choices":[]}
+shot replay_architect_t5_played_call
+fire architect_t1_played
+architect_t1_played: {"bar":null,"subs":[],"choices":[]}
+shot replay_architect_t1_played_call
+rows after T-1: ["Missed call: No caller ID","Voicemail","Missed call: No caller ID","Voicemail","Missed call: No caller ID","Voicemail","Missed call: No caller ID","Voicemail","Missed call: No caller ID","Voicemail"]
+architect /tts: 
+
+[exited with code 0]

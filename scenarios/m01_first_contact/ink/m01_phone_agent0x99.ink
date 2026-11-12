@@ -403,7 +403,7 @@ What did you find?
     -> shatter_casualties
 
 === shatter_casualties ===
-This is worse than we thought.
+{player_name}, this is worse than we thought.
 
 How bad are we talking?
 
@@ -417,7 +417,7 @@ How bad are we talking?
 
 They're not just terrorists. They're mass murderers with spreadsheets.
 
-Listen carefully. Your mission just changed priority.
+{player_name}, listen carefully. Your mission just changed priority.
 
 + [What do I need to do?]
     -> updated_objectives
@@ -435,7 +435,7 @@ Gather proof of Derek's involvement. And shut down their attack infrastructure b
     -> mission_commitment
 
 === people_at_stake ===
-They're counting on you. Even if they don't know it.
+They're counting on you, {player_name}. Even if they don't know it.
 
 People in the segments ENTROPY treated as statistics—and everyone downstream when switchboards flood and seconds decide outcomes.
 
@@ -528,7 +528,7 @@ Look for the compromised systems. VM access will give you deeper intelligence.
 === event_first_flag ===
 #speaker:agent_0x99
 
-First flag submitted. Nice work.
+First flag submitted. Nice work, {player_name}.
 
 Each flag unlocks intelligence. Keep correlating VM findings with physical evidence.
 
@@ -595,7 +595,7 @@ Now correlate with physical evidence. Then we can move to confrontation.
 === framing_evidence_briefing ===
 #speaker:agent_0x99
 
-Read those files carefully. Not just the content — the details around it.
+Read those files carefully, {player_name}. Not just the content — the details around it.
 
 Who filed what. Who signed off. Whether the headers actually match what they claim to be.
 
@@ -618,7 +618,7 @@ Forensic markers are easy to overlook. They're also hard to fake perfectly.
 === event_contingency_found ===
 #speaker:agent_0x99
 
-I just saw what you pulled from Derek's computer.
+{player_name}, I just saw what you pulled from Derek's computer.
 
 He's planning to frame Kevin Park for the entire breach. Fake logs, forged emails, the works.
 
@@ -759,7 +759,7 @@ Confrontation, silent extraction, or public exposure. Each has consequences.
         #exit_conversation
         -> support_hub
 + [I'm ready to proceed]
-    Good luck. You've got this.
+    Good luck, {player_name}. You've got this.
     + + [Let's do this.]
         #exit_conversation
         -> support_hub
@@ -771,7 +771,7 @@ Confrontation, silent extraction, or public exposure. Each has consequences.
 === event_sarah_attacked ===
 #speaker:agent_0x99
 
-Unorthodox approach to reception.
+Unorthodox approach to reception, {player_name}.
 
 Sarah's a civilian—nothing operational about her. Her items will be on the floor when she goes down. The visitor badge and the main office key.
 
@@ -811,7 +811,7 @@ Collateral noted. Keep the mission moving.
 === event_maya_attacked ===
 #speaker:agent_0x99
 
-That's the informant.
+{player_name}—that's the informant.
 
 Maya Chen is the one who contacted SAFETYNET. She's the reason we even know about Operation Shatter.
 
@@ -835,7 +835,7 @@ We may never know what Maya had to tell us.
 
 Whatever she'd gathered on Operation Shatter's inner workings—the names, the connections, the parts we don't have yet—that intelligence is gone.
 
-Maya Chen was our contact. Not ENTROPY. She came to us because she trusted SAFETYNET.
+Maya Chen was our contact, {player_name}. Not ENTROPY. She came to us because she trusted SAFETYNET.
 
 You had the authority. The mission can still succeed. But we lost something today.
 
@@ -857,7 +857,7 @@ You had the authority. The mission can still succeed. But we lost something toda
 === event_kevin_attacked ===
 #speaker:agent_0x99
 
-That's one way to get the lockpick.
+That's one way to get the lockpick, {player_name}.
 
 You've got full operational authority—do whatever it takes to complete the mission. Just try to minimise collateral where you can.
 
@@ -926,7 +926,7 @@ Desks, filing cabinets, notice boards. People leave more behind than they realis
 === event_kevin_accused ===
 #speaker:agent_0x99
 
-Hold on.
+Hold on, {player_name}.
 
 Those logs pointing at Kevin were filed by Derek — a Marketing Manager submitting IT security reports and bypassing the IT Manager. That's not normal.
 
@@ -951,7 +951,7 @@ Check Derek's office before you do anything you can't take back. I think you'll 
 === event_entropy_reveal_read ===
 #speaker:agent_0x99
 
-That's the full picture.
+That's the full picture, {player_name}.
 
 The Architect is real. ENTROPY is a network — nodes that don't know each other, each running independent operations.
 
