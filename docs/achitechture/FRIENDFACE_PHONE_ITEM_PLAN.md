@@ -66,6 +66,14 @@ phone is taken no longer lists it in `itemsHeld`. The validator warns when no gi
 phone ("only a KO drop hands this phone over") and refuses two phones that share an id. The offer
 patterns live in `AccessWork.offers_item_text?`, read by the server and the validator.
 
+Review R3 changes: a KO drop is a valid way to get a phone (q35), so a phone no give offers is an
+info line, not a warning; it is an error only when its NPC is `koImmune`, because then the player
+can never obtain it. A KO drop sent as `npc_defeated` from an NPC in its own room records the KO
+itself, as `update_npc_state` would, and the client retries the KO sync and each drop with a
+bounded backoff. The KO in the hostility record (`npcHostility`, saved by `sync_state`) also
+counts. After a reload, the room bootstrap lists a KO'd NPC's held items that never reached a room
+or the player as `koDropPending`, and the client drops them again; a repeated drop is a no-op.
+
 Limits authors should know:
 - Do not gate a phone give behind a condition the server must enforce. The server checks that
   the NPC is met and that its story offers the phone, not that the conversation reached the give,
@@ -75,6 +83,14 @@ Limits authors should know:
   reads room NPCs only, and the validator already requires `phoneOf` to name a room NPC.
 - A KO drop trusts the client's KO (`update_npc_state` takes `isKO` from the browser), so a
   claimed KO hands over any phone. Filed in `docs/IDEAS_BACKLOG.md` as server-checked knock-outs.
+- Give a phone with an ink tag only, and write the item type literally: `#give_item:phone_friendface`
+  (spaces around the colon are fine). A tag built from an ink variable (`#give_item:{t}`) gives on
+  the client but never matches the offer check, so the server refuses it. A JSON `give_item`
+  action carries an inline item with no NPC source and is refused for a phone; the validator
+  reports it as an error (review R3 n1, n2).
+- The validator reads an uncompiled `.ink` story with its `INCLUDE`d files. The server reads only
+  the root `.ink` file until the story's first `/ink` compile, which comes before any give in play
+  (review R3 n4).
 
 Server: `Game#scenario_room_npc` returns the NPC with `phone: false` merged in when its phone is
 taken. Every phone check (`feed_source_ok?`, `ease_report!`, `AccessWork.can_fail?`,
@@ -93,7 +109,8 @@ NPC that carries a phone holds it). Only `test_access_social` has social needs t
 `POST /games/:id/friendface_phone` with `{ npc_id }` (a string for an NPC's phone, null for the
 player's own). The server looks in `player_state.inventory` for a `phone_friendface` whose
 `phoneOf` equals `npc_id` (or is absent, for null). None: 403 `{ error: 'no such phone' }`, nothing
-written. Found: `{ npcId, site, person, feedPosts }`, read only. Pundit `friendface_phone?` is
+written. Found: `{ npcId, site, person }`, read only; with `posts: 1` (tests only) it also carries
+`feedPosts`, which the client never merges (review R3 n5). Pundit `friendface_phone?` is
 `show?`; no game lock needed (no write).
 
 ## 5. The notification blip

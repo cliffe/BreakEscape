@@ -160,6 +160,76 @@ Live proof (keyless server on :3061, headless, stopped afterwards; games 1519, 1
 - Games 1522 and 1523 were driver retries (the harness's `converse` did not find Jake's opening
   line in time), with no result to report.
 
+## R3 fixes (FRIENDFACE_PHONE_ITEM_CODE_REVIEW_R3.md)
+
+- m1: `check_friendface_phones` no longer warns for a phone that only a KO drop hands over (q35:
+  a KO is a valid route). It is an info line ("a KO drop is the only way to obtain it"), and an
+  error when the owner is `koImmune` and no give offers the phone, since the player can then never
+  obtain it. `test_access_social` now shows four info lines (Lena, Priya, Nadia, Greg) and no
+  errors.
+- m2: a KO drop no longer hangs on one request.
+  - Client (`npc-hostile.js`): `withSyncRetries` sends the KO sync, and each dropped item's add,
+    up to four times, waiting 0.5, 1.5 and 4 s between tries. Nothing is queued past that and
+    nothing is saved.
+  - Server (`Game#add_item_to_room!`): an `npc_defeated` add from an NPC in the room records the
+    KO itself, as `update_npc_state` would (the same client trust, so nothing new is trusted). A
+    `koImmune` NPC records nothing. `npc_defeated?` also reads the KO in `npcHostility` (from
+    `sync_state`), so a drop in another room lands once either KO record has arrived.
+  - A repeat add of an item already dropped, picked up or held returns true and adds nothing, so
+    a retry whose answer was lost makes no second copy.
+  - Reload: `apply_room_state_changes!` lists, for a KO'd NPC, the held item ids that never reached
+    a room or the player (`koDropPending`). `npc-sprites.js` lays the KO'd NPC down and calls
+    `npcHostileSystem.redropPending`, which drops those items again through the same retried path.
+    Held items with no id cannot be traced and are not re-dropped (none on an intended route).
+  - Changes R2's live result: an `npc_defeated` add from a live NPC in its own room is now taken
+    as a KO claim and stored, where R2 refused it. A plain NPC-sourced add from a live NPC that
+    offers nothing is still refused.
+- n1: `give_item_re` and the `give_npc_inventory_items` pattern allow spaces before the colon, as
+  the engine does. Plan section 3 says the item type must be literal.
+- n2: the validator reports a JSON `give_item` action carrying a `phone_friendface` as an error;
+  plan section 3 says phones are given by ink tags only.
+- n3: the held-phone fallback in `friendface_phone_taken?` walks the scenario only when the
+  inventory holds a Friendface phone whose `phoneOf` is that NPC, so the player's own phone never
+  brings the walk back.
+- n4: the validator follows `INCLUDE` when it reads an uncompiled `.ink` story. The server's gap
+  before the first compile is noted in plan section 3, not changed.
+- n5: `/friendface_phone` sends `feedPosts` only with `posts: 1` (the tests ask for it); the game
+  never does.
+- No nit skipped.
+
+Sync size: nothing new in `player_state`. The KO record written from a drop is the same
+`npc_states` entry `update_npc_state` writes. `koDropPending` is in the GET /room answer only,
+bounded by the NPC's `itemsHeld`, and empty once the drop lands. Retries are in memory, at most
+four requests per KO sync and per item, never a whole-state re-send.
+
+Tests (affected files only, no lock):
+- JS `npc-ko-drop-retry` (new) 5/5. Without the fix it fails: the module has no retry or re-drop,
+  so the KO sync is sent once and the drop never follows a failed one.
+- JS `combat-room-rule` 17/17 (its stub now answers true, as the real sync does),
+  `validator-access-social` 25/25, `friendface-phone` 11/11, `npc-hostility-persistence` 8/8,
+  `npc-ko-immune-and-door-event` 7/7, `npc-respawn-reset` 4/4, `engine-fixes-round6` 9/9,
+  `npc-hostile-config` 5/5, `npc-ko-restore-pose` 4/4, `npc-patrol-clock` 6/6.
+- Rails `friendface_phone_test.rb` and `game_test.rb`: 119 runs, 510 assertions, 0 failures. With
+  `inventory_canonical_item_test`, `game_state_locking_test`, `wearable_test`,
+  `capture_proofs_test`, `reload_persistence_test`, `scenario_npc_records_test`: 270 runs, 0
+  failures. Social feed and offer files (`feed_post_test`, `social_lockout_q33_test`,
+  `access_model_no_password_test`, `access_leak_scanner_feed_test`,
+  `access_work_feed_select_test`): 110 runs, 0 failures.
+- Validator on `test_access_social`: no errors.
+
+Live proof (keyless server on :3068, headless, stopped afterwards; games 1577, 1583, 1584, all
+m01):
+- Game 1577: unused (the start room stayed reception; recreated with `break_room` as start).
+- Game 1583: a page fetch hook failed the first KO sync for Derek. Requests in order:
+  `update_npc_state` blocked, `update_npc_state` 200 about 0.55 s later, `add_object
+  entropy_launch_device` 200, pickup `/inventory add` 200, `remove_object` 200. The launch
+  device ended in the inventory.
+- Game 1584: every KO sync and every drop for Derek blocked. Four KO syncs and four drops were
+  tried, then given up. The server then held Derek's KO only in `npcHostility`, with no drop. After
+  a reload Derek lay KO'd, the room answer listed the device as owed, the client dropped it again
+  (server log: "Added item launch-device (entropy_launch_device) to room break_room"), and the
+  pickup put it in the inventory. Afterwards the room answer lists nothing owed.
+
 ## Handover
 
 Not needed: the build finished in one session.
