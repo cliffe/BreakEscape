@@ -120,14 +120,16 @@ VAR hand_answered_here = false
 // Guard 1: a HaX scene is pending. Closing her thread fires the
 // conversation_closed:agent_0x99 re-ring (S4 §6).
 // Guard 2: the Recruiter's call is pending. Her ring comes back on the next
-// room exit, not on this close, so "take it when it rings".
+// room exit, not on this close.
+// Phone calls M3: both are plain texts. They never promise a ring, because the
+// forced voiced call opens at once when this thread closes.
 {
 - (recruiter_gone and not deck_choice_made) or (identity_scene_started and not identity_scene_done) or (hour_read_started and not hour_read_done) or (tesseract_call_started and not tesseract_call_done):
-    Pick up. I'm ringing you.
+    One moment. Something's come in.
     #exit_conversation
     -> DONE
 - recruiter_call_started and not recruiter_gone and not deck_choice_made:
-    Her call first. Take it when it rings.
+    Hear her out first. I'll be here after.
     + [Right.]
         #exit_conversation
     -> DONE
