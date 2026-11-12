@@ -983,16 +983,21 @@ module BreakEscape
     def feed_reactions(data, store, revealed: nil, via: nil)
       return {} unless store.is_a?(Hash)
 
-      revealed = revealed_map(data, store) unless revealed.is_a?(Hash)
-      drawable = drawable_feed_posts(data, store, revealed)
-      won = {}
-      AccessIdentities.room_npcs(data).each do |e|
+      # Review R1 n3: most missions have no reactor, so the drawable set is built only when one
+      # exists (this runs on every GET /scenario and, under the game lock, every /feed_post)
+      reactors = AccessIdentities.room_npcs(data).filter_map do |e|
         x = e[:npc]
         next unless feeds?(x) && present_string?(x.dig('feed', 'person'))
 
         reacts = feed_reacts(x)
-        next if reacts.empty?
+        [x, reacts] unless reacts.empty?
+      end
+      return {} if reactors.empty?
 
+      revealed = revealed_map(data, store) unless revealed.is_a?(Hash)
+      drawable = drawable_feed_posts(data, store, revealed)
+      won = {}
+      reactors.each do |x, reacts|
         reactor_candidates(data, store, x, reacts, drawable).each do |c|
           k = [x['id'], c[:target]]
           best = won[k]

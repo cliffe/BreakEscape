@@ -1210,12 +1210,12 @@ The validator errors on a feed whose site or person does not resolve, a bare lis
 **Replies.** NPCs can reply to each other's feed posts, so a colleague with the same unmet need comments on a complaint instead of posting the same one again. A reply is a post on the replier's own feed with one or more reply fields, and it always stands in for one of that NPC's own reactive posts:
 
 ```json
-{ "id": "f15_asha_vent", "text": "Nothing will save this morning, again.",
+{ "id": "f15_asha_vent", "text": "Project drive down again. Nothing will save today.",
   "complaint": "f15_drive", "when": { "cause": "down", "need": "work" } },
-{ "id": "f15_asha_re_drive", "text": "{name}, mine too. Has anyone rung IT?",
+{ "id": "f15_asha_re_drive", "text": "{name}, mine too. Has anyone rung IT about it?",
   "replyToComplaint": "f15_drive", "insteadOf": "f15_asha_vent",
   "when": { "cause": "down", "need": "work" } },
-{ "id": "f16_ivy_answer", "text": "{name}, did IT ever ring you back?",
+{ "id": "f16_ivy_answer", "text": "{name}, did IT ever ring you back about it?",
   "replyTo": "f16_ivy_vent", "insteadOf": "f16_ivy_still_down",
   "when": { "cause": "down", "need": "work" } }
 ```

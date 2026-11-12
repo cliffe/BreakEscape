@@ -71,7 +71,8 @@ plain string with no enum. README: a "Reactions" paragraph.
   catch-all, and the C3 test-title tripwire (19 titles). Every `validator-access*` and `validator-social*` JS file passes. `test_access_social` still validates at 0 failure lines. C3's `validator-access-reply.test.mjs`:
   19 pass. `validator-social-schema.test.mjs`: 6 pass.
 - Report line wording: the plan's "with his first post" is written "with Kofi's first post", since
-  the validator has no pronouns; the `alongside` form says "if it is out by then".
+  the validator has no pronouns; the `alongside` form says "if it is out by then" (since code
+  review R1 n1, "if '<target>' is out by then", and nothing more on the `toComplaint` form).
 
 ## Step 5: client (part done at handover)
 
@@ -129,7 +130,8 @@ changed. **The user still has to approve the icons before main.**
 `reacts` lists for Kofi, Mei, Asha, Ivy and Tomasz as plan section 10; tasks `f15_reacted` and
 `f16_reacted` with their `npc_reacted` mappings on Asha and Tomasz; PLAYTEST.md rows. Validator:
 0 failure lines, no reaction warnings, the seven expected `Reaction` report lines (the angry one
-reads "not a reply in its place and 'f16_tom_still_down' is the member served", with no comma).
+reads "not a reply in its place and 'f16_tom_still_down' is the member served", with no comma;
+code review R1 n1 put the plan's comma back).
 `validator-access-social.test.mjs` 25 pass.
 
 ## Step 9: live proof (game 1841)
@@ -223,3 +225,26 @@ and the tests named above.
 player the phone only after the thread); the dummy app shows exceptions, so raises surface as 500s
 in integration tests; `friendface_name` falls back to `displayName`, so validator fixtures print
 "Kofi Fullname".
+
+## Code review R1 fixes
+
+`FRIENDFACE_REACTIONS_CODE_REVIEW_R1.md`: 4 minors and 6 nits, all fixed.
+
+- m1: the C3 tripwire reads single-quoted, double-quoted and template-literal titles, and checks
+  that it read one title per line starting with `test(`.
+- m2: the scanner's `feed_target_out?` and `feed_poster_out?` credit a lost `/feed_post` answer
+  through `feed_allowed_ids` (from the lost line on), for `feed_reaction_target`,
+  `feed_reaction_reactor` and C3's `feed_reply_target`. Scanner test: one lost answer, then a reply
+  and reactions on and from its post, clean; the same answer before the lost line, reported.
+- m3: route test "an answer with no post carries none, and the next load agrees" (see step 3).
+- m4: a document-level `pointerup` and `pointercancel`, registered through `addEventListener` so
+  cleanup removes them, clear the pointer-focus mark; jsdom test for both endings, paired with a
+  held press.
+- n1: report wording as above, the comma, and a `toComplaint` with `alongside` fixture.
+- n2: `_`-prefixed fields in a `reacts` entry raise no warning; `_comment` is in the schema's
+  `reacts.items`.
+- n3: `feed_reactions` returns `{}` before building the revealed map or drawable set when no room
+  NPC has a non-empty cleaned `reacts`; unit test with both stubbed to count.
+- n4: `reaction_entries`'s unused `index` and `reaction_order_bound`'s `:order` removed.
+- n5: the README Replies examples carry the demo's post text.
+- n6: plan section 5.1's drawable rule names `reply_target`.

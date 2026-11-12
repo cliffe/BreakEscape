@@ -229,7 +229,7 @@ the reaction on the next load but leaves its task open, as `npc_posted` tasks do
 Validator: no reaction warnings, and seven `Reaction` report lines: Kofi's and Mei's
 `toComplaint` sads and the likes by Mei, Asha and Ivy say "with X's first post after it, or with
 it if X has finished posting by then"; Tomasz's sad ends "(only if 'f16_tom_re_ivy_again' is the
-member served)"; Tomasz's angry ends "(only if 'f16_ivy_vent' comes out, not a reply in its place
+member served)"; Tomasz's angry ends "(only if 'f16_ivy_vent' comes out, not a reply in its place,
 and 'f16_tom_still_down' is the member served)".
 
 The leak check's counts line shows a reaction item count above 0 from F15 on: a clean verdict over

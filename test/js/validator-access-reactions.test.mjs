@@ -306,6 +306,10 @@ test('errors: shape, empty fields, both or neither target, key, bad to, bad toCo
 test('warnings: unknown field, dead reactor (one warning), never-served target, dead and never-following alongside', { skip }, () => {
     let list = rxIssues(withReacts(pair(), 'ivy', [{ to: 'tom_vent', key: 'like', alongSide: 'ivy_still' }]));
     assertHas(list, "'alongSide' is not a reaction field; did you mean 'alongside'?");
+    // An `_`-prefixed annotation is not a field warning, beside an unknown key that is
+    list = rxIssues(withReacts(pair(), 'ivy', [{ to: 'tom_vent', key: 'like', _comment: 'why she likes it', _note: 'x', colour: 'red' }]));
+    assert.equal(list.filter(l => l.includes('is not a reaction field')).length, 1, list.join('\n'));
+    assertHas(list, "'colour' is not a reaction field");
     const dead = withReacts(nonFeedingFixture(), 'tomasz', [
         { to: 'ivy_vent', key: 'sad', alongside: 'tom_re_ivy' }, { to: 'ivy_answer', key: 'like', alongside: 'tom_again' }]);
     list = rxIssues(dead);
@@ -370,8 +374,8 @@ test('report lines: every main form and ending', { skip }, () => {
     ]);
     const lines = report(s);
     assertHas(lines, "ℹ️ Reaction Ivy reacts like to Tomasz's 'tom_re_ivy', with Ivy's first post after it, or with it if Ivy has finished posting by then.");
-    assertHas(lines, "ℹ️ Reaction Tomasz reacts sad to Ivy's 'ivy_answer', alongside 'tom_again', if it is out by then (only if 'tom_again' is the member served).");
-    assertHas(lines, "ℹ️ Reaction Tomasz reacts angry to Ivy's 'ivy_vent', alongside 'tom_still', if it is out by then (only if 'ivy_vent' comes out, not a reply in its place and 'tom_still' is the member served).");
+    assertHas(lines, "ℹ️ Reaction Tomasz reacts sad to Ivy's 'ivy_answer', alongside 'tom_again', if 'ivy_answer' is out by then (only if 'tom_again' is the member served).");
+    assertHas(lines, "ℹ️ Reaction Tomasz reacts angry to Ivy's 'ivy_vent', alongside 'tom_still', if 'ivy_vent' is out by then (only if 'ivy_vent' comes out, not a reply in its place, and 'tom_still' is the member served).");
     // Alone: the to ending only
     assertHas(report(withReacts(pair(), 'tomasz', [{ to: 'ivy_vent', key: 'sad' }])), "(only if 'ivy_vent' comes out, not a reply in its place).");
     // "with it, since": a reactor with one vent, its thread drawing a replyTo reply
@@ -383,6 +387,13 @@ test('report lines: every main form and ending', { skip }, () => {
         npc('kofi', [own('kofi_a', 'Kofi posts at length here.')])]);
     withReacts(comp, 'kofi', [{ toComplaint: 'c1', key: 'sad' }]);
     assertHas(report(comp), "ℹ️ Reaction Kofi Fullname reacts sad to the oldest 'c1' vent, with Kofi Fullname's first post after it, or with it if Kofi Fullname has finished posting by then.");
+    // toComplaint with alongside: "out by then" once, in the target
+    const compAlong = scenario([npc('asha', [own('asha_vent', 'Asha vents about the drive.', { complaint: 'c1' })]),
+        npc('kofi', [own('kofi_a', 'Kofi posts at length here.')])]);
+    withReacts(compAlong, 'kofi', [{ toComplaint: 'c1', key: 'sad', alongside: 'kofi_a' }]);
+    const along = report(compAlong);
+    assertHas(along, "ℹ️ Reaction Kofi Fullname reacts sad to the oldest 'c1' vent out by then, alongside 'kofi_a'.");
+    assert.equal(along.filter(l => l.includes('Reaction') && /out by then.*out by then/.test(l)).length, 0);
 });
 
 test('the schema documents reacts with a plain-string key and no enum (no fourth copy of the key set)', () => {
@@ -398,5 +409,5 @@ test('the schema documents reacts with a plain-string key and no enum (no fourth
     const key = reacts.items.properties.key;
     assert.equal(key.type, 'string');
     assert.equal(key.enum, undefined);
-    assert.deepEqual(Object.keys(reacts.items.properties).sort(), ['alongside', 'key', 'to', 'toComplaint']);
+    assert.deepEqual(Object.keys(reacts.items.properties).sort(), ['_comment', 'alongside', 'key', 'to', 'toComplaint']);
 });

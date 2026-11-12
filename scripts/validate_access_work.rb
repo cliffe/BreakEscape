@@ -2278,14 +2278,13 @@ module ValidateAccessWork
       end
     return nil unless pid
 
-    order = AW.walk_order(x).map { |p| p['id'] }
     before = AW.walk_order(x).take_while { |p| p['id'] != pid }.reject { |p| AW.reactive_post?(p) }.map { |p| p['id'] }
-    { served: before + [pid], spent: alt_set(x, pid) - [pid], order: order }
+    { served: before + [pid], spent: alt_set(x, pid) - [pid] }
   end
 
   # Each well-formed reaction of each reactor, with what the checks found: used by both the
   # issues and the report lines so the two cannot disagree
-  def reaction_entries(json_data, index = feed_post_index(json_data))
+  def reaction_entries(json_data)
     out = []
     room_npcs(json_data).each do |e|
       x = e[:npc]
@@ -2305,7 +2304,7 @@ module ValidateAccessWork
   def reaction_analysis(json_data)
     index = feed_post_index(json_data)
     name = ->(n) { AW.friendface_name(json_data, n) }
-    reaction_entries(json_data, index).map do |rec|
+    reaction_entries(json_data).map do |rec|
       x = rec[:x]
       xid = x['id']
       list = rec[:list]
@@ -2332,7 +2331,8 @@ module ValidateAccessWork
           found << [:err, "#{tag} is not an object."]
           next
         end
-        (r.keys - AW::REACTION_FIELDS).each do |k|
+        # `_`-prefixed keys (`_comment`) are annotations, as elsewhere in a scenario
+        (r.keys - AW::REACTION_FIELDS).reject { |k| k.to_s.start_with?('_') }.each do |k|
           hint = AW::REACTION_FIELDS.find { |f| f.casecmp?(k.to_s) }
           found << [:warn, "#{tag}: '#{k}' is not a reaction field#{hint ? "; did you mean '#{hint}'?" : ' (to, toComplaint, key, alongside)'}"]
         end
@@ -2450,7 +2450,8 @@ module ValidateAccessWork
           end
         line = "ℹ️ Reaction #{xn} reacts #{r['key']} to #{what}"
         line += if r['alongside']
-                  ", alongside '#{r['alongside']}', if it is out by then"
+                  # The toComplaint form already says "out by then" in `what`
+                  r['to'] ? ", alongside '#{r['alongside']}', if '#{r['to']}' is out by then" : ", alongside '#{r['alongside']}'"
                 elsif v[:finished]
                   ", with it, since #{xn} has finished posting by then"
                 else
@@ -2468,7 +2469,9 @@ module ValidateAccessWork
             ends << "#{ends.empty? ? 'only if ' : ''}'#{r['alongside']}' is the member served"
           end
         end
-        line += " (#{ends.join(' and ')})" unless ends.empty?
+        # Two endings only when the first is the "not a reply in its place" one: the comma keeps
+        # the second out of that "not"
+        line += " (#{ends.join(', and ')})" unless ends.empty?
         rows << { i: v[:i], line: "#{line}." }
       end
       { x: x, issues: found, rows: rows }

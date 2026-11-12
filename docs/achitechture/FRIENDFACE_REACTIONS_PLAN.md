@@ -317,10 +317,11 @@ A post is **drawable** (it can be a target or carry a reaction) when all of thes
 
 - it is in `revealed_map` with a `seq` above 0;
 - its NPC is a room NPC that `feeds?` (`feed_posts_for_client` skips an NPC that no longer does);
-- if it is a reply, its stored `to` is a hash, `to['post']` is in `revealed_map` with an NPC that is
-  a room NPC, and `to['npc']` names a room NPC. These are the conditions under which `feed_answer`
-  answers a reply rather than returning nil, and they include the non-nil `to` test
-  (`reply_target`) that `feed_posts_for_client` applies.
+- if it is a reply, its target from C3's `reply_target` (the stored `to`, or, with none stored, the
+  authored `replyTo` and the room NPC that owns it) is a hash, its `post` is in `revealed_map` with
+  an NPC that is a room NPC, and its `npc` names a room NPC. These are the conditions under which
+  `feed_posts_for_client` draws a reply and `feed_answer` answers it rather than returning nil
+  (the build uses `reply_target`, as `feed_posts_for_client` does; code review R1 n6).
 
 The last two fail only on an edited save or an edited scenario. For each room NPC X that `feeds?`,
 has a `reacts` list and has a `feed.person` that is a non-empty string (a reactor whose `person` is

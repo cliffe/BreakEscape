@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'minitest/mock'
 
 # Friendface reactions (docs/achitechture/FRIENDFACE_REACTIONS_PLAN.md section 5.1): the pure
 # AccessWork.feed_reactions over hand-built feeds and a hand-built feedRevealed record. `serve`
@@ -361,6 +362,23 @@ class AccessWorkFeedReactionsTest < ActiveSupport::TestCase
     d['rooms']['r1']['npcs'][1]['feed']['reacts'] = 'not an array'
     assert_empty rx(d, store)
     assert_equal({}, AW.feed_reactions(d, nil))
+  end
+
+  # Review R1 n3: with no reactor the drawable set and the revealed map are never built
+  test 'no NPC with reacts: nothing is derived and the drawable set is not built' do
+    d = f15(asha: [], kofi: [], mei: [])
+    store = {}
+    serve(d, store, 'asha')
+    serve(d, store, 'kofi')
+    built = 0
+    count = ->(*_a) { built += 1; {} }
+    AW.stub(:drawable_feed_posts, count) do
+      AW.stub(:revealed_map, count) { assert_equal({}, AW.feed_reactions(d, store)) }
+    end
+    assert_equal 0, built
+    # Paired: the same store with Kofi's reacts back builds it and finds his sad
+    d = f15(asha: [], mei: [])
+    assert_equal [%w[asha_vent kofi sad kofi_re]], rx(d, store)
   end
 
   test 'REACTION_KEYS is the four keys in display order' do
