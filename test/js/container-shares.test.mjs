@@ -62,7 +62,8 @@ const ANSWERS = {
     ledger_archive: { contents: [NOTE, YEAR_END] },
     scanned_inbox: { contents: [LETTER] },
     ledger_yearend: { contents: [] },
-    cabinet: { contents: [LETTER] }
+    cabinet: { contents: [LETTER] },
+    dana_pc: { contents: [NOTE], session: { npcId: 'dana', username: 'dana', via: 'password' } }
 };
 
 let fetches, events, interactions, unlocks, landings, started, sessions;
@@ -213,7 +214,7 @@ test('a text file read from a remote desktop folder reopens that folder when the
     assert.deepEqual(landings.at(-1), ['desktop', 'item', { pcId: 'lena_pc', host: 'HB-FIN-02' }]);
     assert.ok(window.pendingContainerReturn, 'the share is recorded for the reader');
     window.MinigameFramework.startMinigame('text-file', null, { fileName: 'IT handover.txt', fileContent: 'A note.' });
-    window.MinigameFramework.endMinigame(false, null);
+    current().closeByPlayer();
     await new Promise(r => setTimeout(r, 80));
     await settle();
     assert.equal(current()?.containerItem?.scenarioData?.id, 'ledger_archive', 'back in the share');
@@ -229,7 +230,7 @@ test('a text file read from an ordinary container reopens its file list when the
     current().handleInteractiveItem({ ...LETTER, takeable: false }, null);
     assert.equal(isNetworkScreenContainer(window.pendingContainerReturn.containerItem), false);
     window.MinigameFramework.startMinigame('text-file', null, { fileName: 'scan_0412.pdf', fileContent: 'A letter.' });
-    window.MinigameFramework.endMinigame(false, null);
+    current().closeByPlayer();
     await new Promise(r => setTimeout(r, 160));
     await settle();
     assert.equal(current()?.containerItem?.scenarioData?.id, 'cabinet', 'back in the cabinet');
@@ -258,11 +259,122 @@ test('the container return is dropped when something else opens before it', asyn
     await settle();
     current().handleInteractiveItem({ ...LETTER, takeable: false }, null);
     window.MinigameFramework.startMinigame('text-file', null, { fileName: 'scan_0412.pdf', fileContent: 'A letter.' });
-    window.MinigameFramework.endMinigame(false, null);
+    current().closeByPlayer();
     window.MinigameFramework.startMinigame('phone', null, {});
     await new Promise(r => setTimeout(r, 160));
     assert.equal(current()?._sceneType, 'phone', 'the phone stays open');
     assert.equal(window.pendingContainerReturn, null);
+});
+
+// ── Lab UX review R1: M1 (only the player's own close goes back), M2 (an ended session), M4 ──
+async function readFromCabinet() {
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    window.startContainerMinigame({ scenarioData: { id: 'cabinet', name: 'Cabinet', type: 'safe', locked: false } }, null, false, false);
+    await settle();
+    current().handleInteractiveItem({ ...LETTER, takeable: false }, null);
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'scan_0412.pdf', fileContent: 'A letter.' });
+}
+const wait = (ms = 160) => new Promise(r => setTimeout(r, ms));
+
+test('M1: a reader closed by a hit (complete(false)) or the knockout screen stays closed', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    await readFromCabinet();
+    current().complete(false);            // what player-damage-interrupt.js and closeMinigameForKnockout do
+    await wait(); await settle();
+    assert.equal(current(), null, 'a hit: the player is left in the world');
+    assert.equal(window.pendingContainerReturn, null, 'and the return is cleared');
+    setup();
+    await readFromCabinet();
+    window.MinigameFramework.forceCloseMinigame = function () { this.endMinigame(false, null); };
+    window.MinigameFramework.forceCloseMinigame();   // a conversation starting, or the fallback close
+    await wait(); await settle();
+    assert.equal(current(), null, 'a forced close: the world');
+});
+
+test('M1: an own close followed by a hit, a knockout or a room change before the return stays in the world', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    for (const [label, after] of [
+        ['a hit in the gap', () => { window.lastPlayerHitAt = () => Date.now(); }],
+        ['knocked out', () => { window.playerIsKnockedOut = () => true; }],
+        ['another room', () => { window.currentPlayerRoom = 'corridor'; }]
+    ]) {
+        setup();
+        window.currentPlayerRoom = 'office';
+        await readFromCabinet();
+        current().closeByPlayer();
+        after();
+        await wait(); await settle();
+        assert.equal(current(), null, label);
+        assert.equal(window.pendingContainerReturn, null, `${label}: the return is cleared`);
+        delete window.lastPlayerHitAt; delete window.playerIsKnockedOut; delete window.currentPlayerRoom;
+    }
+    // The same close with none of them: back in the cabinet
+    setup();
+    await readFromCabinet();
+    current().closeByPlayer();
+    await wait(); await settle();
+    assert.equal(current()?.containerItem?.scenarioData?.id, 'cabinet');
+});
+
+const localDesktop = () => ({ scenarioData: { id: 'dana_pc', name: "Dana's PC", type: 'pc', lockType: 'login', locked: true } });
+
+test('M4: Open from the transfer dialog on a local sign-in desktop returns to the desktop', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    await sessions.signIn('dana_pc', 'dana', 'x');
+    window.startContainerMinigame(localDesktop(), null, false, true);
+    await settle();
+    current().openFileInPlace(NOTE);
+    assert.ok(window.pendingContainerReturn, 'the desktop is recorded for the reader');
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'IT handover.txt', fileContent: 'A note.' });
+    current().closeByPlayer();
+    await wait(); await settle();
+    assert.equal(current()?.containerItem?.scenarioData?.id, 'dana_pc', 'back on the desktop');
+});
+
+test('M2: a session that ended while the file was open closes to the world with its message, never the sign-in screen', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a[0]);
+    const signIns = [];
+    window.openLoginSignIn = (l) => signIns.push(l);
+    await sessions.signIn('dana_pc', 'dana', 'x');
+    window.startContainerMinigame(localDesktop(), null, false, true);
+    await settle();
+    current().openFileInPlace(NOTE);
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'IT handover.txt', fileContent: 'A note.' });
+    await sessions.displaced('dana_pc', 'Dana');   // Dana sits down while the file is open
+    current().closeByPlayer();
+    await wait(); await settle();
+    assert.equal(current(), null, 'the world, not the desktop');
+    assert.deepEqual(signIns, [], 'never the sign-in screen');
+    assert.ok(alerts.includes('Dana has signed in at this PC'), 'the message the desktop would have shown');
+    assert.equal(sessions.takeEndedMessage('dana_pc'), null, 'shown once');
+});
+
+test('M2: a reopened desktop whose fetch answers 403 closes to the world, not to the sign-in screen', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    const signIns = [];
+    window.openLoginSignIn = (l) => signIns.push(l);
+    await sessions.signIn('dana_pc', 'dana', 'x');
+    window.startContainerMinigame(localDesktop(), null, false, true);
+    await settle();
+    current().openFileInPlace(NOTE);
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'IT handover.txt', fileContent: 'A note.' });
+    const realFetch = window.fetch;
+    window.fetch = globalThis.fetch = async () => ({ ok: false, status: 403, statusText: 'Forbidden', json: async () => ({}) });
+    current().closeByPlayer();
+    await wait(); await settle(); await wait(80);
+    window.fetch = globalThis.fetch = realFetch;
+    assert.equal(current(), null);
+    assert.deepEqual(signIns, [], 'no sign-in screen from a return');
+    assert.equal(sessions.has('dana_pc'), false, 'the local copy is dropped');
 });
 
 test('a locked folder opened below a network screen carries its parent, and reopens it on Close (R3-M1)', async () => {

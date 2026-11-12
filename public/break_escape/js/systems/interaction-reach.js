@@ -69,19 +69,113 @@ export function withoutChairsIfOthers(candidates) {
     return others.length ? others : candidates;
 }
 
+// "Walking away" (q55 d): an owner who has just left the PC is still beside it for a
+// moment, and a tap on the PC used to open a conversation with them instead (access
+// model step 9 playtests). A velocity at the moment of the tap was not enough: seen
+// from behind, every walking NPC is walking away, so a player following an NPC to
+// talk to them lost the click to whatever the NPC crossed, and a hostile NPC knocked
+// back by a hit looked like one leaving (code review R1 M3). So it takes a sustained
+// walk: over the last WALK_AWAY_WINDOW_MS the NPC kept moving away, the gap between
+// them grew, and the player did not move towards them. Never a hostile NPC, nor one
+// in knockback.
+const WALK_AWAY_WINDOW_MS = 600;
+const WALK_AWAY_MIN_SPAN_MS = 300;   // samples must cover at least this much of the window
+const WALK_AWAY_SAMPLE_MS = 80;      // how often positions are sampled (game.js update)
+const WALK_AWAY_MIN_TRAVEL_PX = 10;  // the NPC moved at least this far in the window
+const WALK_AWAY_MIN_GAIN_PX = 8;     // and the gap between them grew by at least this
+const PLAYER_CLOSING_PX = 4;         // the player moved at most this far towards them
+
+function W() { return typeof window !== 'undefined' ? window : {}; }
+
+/** Recent positions of the player and the NPCs, sampled from game.js update(). */
+export class WalkAwayTracker {
+    constructor() {
+        this.tracks = new WeakMap();
+        this.lastSampleAt = -Infinity;
+    }
+
+    _push(obj, now) {
+        if (!obj || !Number.isFinite(obj.x) || !Number.isFinite(obj.y)) return;
+        let track = this.tracks.get(obj);
+        if (!track) { track = []; this.tracks.set(obj, track); }
+        track.push({ t: now, x: obj.x, y: obj.y });
+        while (track.length > 1 && now - track[0].t > WALK_AWAY_WINDOW_MS * 2) track.shift();
+    }
+
+    /**
+     * Note where the player and each NPC are (throttled to WALK_AWAY_SAMPLE_MS).
+     * @param {object} player
+     * @param {Iterable<object>|function(): Iterable<object>} sprites - the NPC sprites, or a function giving them
+     * @param {number} now - ms
+     */
+    sample(player, sprites, now) {
+        if (now - this.lastSampleAt < WALK_AWAY_SAMPLE_MS) return false;
+        this.lastSampleAt = now;
+        this._push(player, now);
+        const list = typeof sprites === 'function' ? sprites() : sprites;
+        for (const s of (list || [])) this._push(s, now);
+        return true;
+    }
+
+    /** The oldest sample within the window, or null when the samples cover too little of it. */
+    _oldest(obj, now) {
+        const track = this.tracks.get(obj);
+        if (!track) return null;
+        const first = track.find(p => now - p.t <= WALK_AWAY_WINDOW_MS);
+        if (!first || now - first.t < WALK_AWAY_MIN_SPAN_MS) return null;
+        return first;
+    }
+
+    /** The player's sample nearest to time t. */
+    _near(obj, t) {
+        const track = this.tracks.get(obj);
+        if (!track || !track.length) return null;
+        return track.reduce((best, p) => (Math.abs(p.t - t) < Math.abs(best.t - t) ? p : best), track[0]);
+    }
+
+    walkingAway(player, sprite, now) {
+        if (!player || !sprite) return false;
+        if (sprite.knockbackTimer) return false;
+        const hostile = W().npcHostileSystem?.isNPCHostile;
+        if (sprite.npcId && typeof hostile === 'function') {
+            try { if (hostile(sprite.npcId)) return false; } catch (e) { /* treat as not hostile */ }
+        }
+        // Still walking now, away from the player
+        const v = sprite.body?.velocity;
+        if (!v || !Number.isFinite(v.x) || !Number.isFinite(v.y) || Math.hypot(v.x, v.y) < 10) return false;
+        const gx = sprite.x - player.x;
+        const gy = sprite.y - player.y;
+        const gap = Math.hypot(gx, gy);
+        if (!(gap > 0) || v.x * gx + v.y * gy <= 0) return false;
+        // ...and over the window
+        const n0 = this._oldest(sprite, now);
+        const p0 = n0 && this._near(player, n0.t);
+        if (!n0 || !p0) return false;
+        const mx = sprite.x - n0.x;
+        const my = sprite.y - n0.y;
+        if (Math.hypot(mx, my) < WALK_AWAY_MIN_TRAVEL_PX || mx * gx + my * gy <= 0) return false;
+        if (gap - Math.hypot(n0.x - p0.x, n0.y - p0.y) < WALK_AWAY_MIN_GAIN_PX) return false;
+        // The player not following: no move towards them over the window, nor now
+        const closing = ((player.x - p0.x) * gx + (player.y - p0.y) * gy) / gap;
+        if (closing > PLAYER_CLOSING_PX) return false;
+        const pv = player.body?.velocity;
+        if (pv && Number.isFinite(pv.x) && Number.isFinite(pv.y) && (pv.x * gx + pv.y * gy) / gap > 10) return false;
+        return true;
+    }
+}
+
+export const walkAwayTracker = new WalkAwayTracker();
+if (typeof window !== 'undefined') window.walkAwayTracker = walkAwayTracker;
+
 /**
- * An NPC walking away from the player: moving (body speed at least minSpeed px/s) with
- * its velocity pointing away from the player. An owner who has just left the PC
- * (npc_left_post) is still beside it for a moment, and a tap on the PC used to open a
- * conversation with them instead (access model step 9 playtests).
+ * An NPC walking away from the player, on the tracker's samples (see WalkAwayTracker).
+ * @param {object} player
+ * @param {object} sprite - the NPC sprite
+ * @param {number} [now]
+ * @param {WalkAwayTracker} [tracker]
  */
-export function npcWalkingAway(player, sprite, minSpeed = 10) {
-    const v = sprite?.body?.velocity;
-    if (!player || !v || !Number.isFinite(v.x) || !Number.isFinite(v.y)) return false;
-    if (Math.hypot(v.x, v.y) < minSpeed) return false;
-    const dx = sprite.x - player.x;
-    const dy = sprite.y - player.y;
-    return v.x * dx + v.y * dy > 0;
+export function npcWalkingAway(player, sprite, now = Date.now(), tracker = walkAwayTracker) {
+    return tracker.walkingAway(player, sprite, now);
 }
 
 /**

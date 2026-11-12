@@ -1109,7 +1109,9 @@ export function handleObjectInteraction(sprite) {
             return;
         }
         playUISound('item');
-        // The tool opens a second later; the toast says it was picked up first
+        // The tool opens a second later: the pickup toast waits for it and shows once it
+        // closes, not a glimpse that is pulled back and shown again (review m1, F13/F24)
+        window.expectPanelWithin?.(1500);
         Promise.resolve(addToInventory(sprite)).then(res => window.announcePickup?.(sprite, res));
         setTimeout(() => {
             // A pickup mapping may already have opened this phone's thread (m02 Ghost terminal:

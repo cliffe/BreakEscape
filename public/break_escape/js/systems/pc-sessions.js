@@ -119,6 +119,9 @@ export class PcSessions {
         this.sessions = new Map();
         this.signedIn = new Set();
         this.desktops = new Map();
+        // pcId -> { message, reason }: a session that ended while its desktop was closed for
+        // a reader; the container return shows it (container-minigame.js, review M2)
+        this.endedUnseen = new Map();
         this._listening = null;
     }
 
@@ -483,15 +486,29 @@ export class PcSessions {
 
     /** A desktop for pcId is open; `close(message, reason)` shuts it. Returns the unregister function. */
     registerDesktop(pcId, close) {
+        this.endedUnseen.delete(pcId);
         this.desktops.set(pcId, close);
         return () => { if (this.desktops.get(pcId) === close) this.desktops.delete(pcId); };
     }
 
     _closeDesktop(pcId, message, reason = null) {
         const close = this.desktops.get(pcId);
-        if (!close) return;
+        if (!close) {
+            if (message) this.endedUnseen.set(pcId, { message, reason });
+            return;
+        }
         this.desktops.delete(pcId);
         try { close(message, reason); } catch (e) { console.warn('[pc-sessions] closing the desktop failed', e); }
+    }
+
+    /**
+     * The end message of a session at pcId that ended with no desktop open (the desktop
+     * had closed for a reader), once: { message, reason }, or null.
+     */
+    takeEndedMessage(pcId) {
+        const ended = this.endedUnseen.get(pcId) || null;
+        this.endedUnseen.delete(pcId);
+        return ended;
     }
 
     /**

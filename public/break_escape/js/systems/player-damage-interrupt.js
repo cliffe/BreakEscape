@@ -39,8 +39,19 @@ export function minigameClosedByDamage(withinMs = 1500, now = Date.now()) {
   return now - lastDamageCloseAt <= withinMs;
 }
 
+// When the player was last hit (ms), whether or not a minigame was open. Read by the
+// container return (container-minigame.js containerReturnBlocked): a hit in the moment
+// between a reader closing and its container reopening keeps the player in the world.
+let lastHitAt = -Infinity;
+
+/** When the player was last hit (ms since the epoch), -Infinity if never. */
+export function lastPlayerHitAt() {
+  return lastHitAt;
+}
+
 export function closeMinigameOnDamage(amount, deps = {}) {
   if (typeof amount !== 'number' || !(amount > 0)) return false;
+  lastHitAt = typeof deps.now === 'number' ? deps.now : Date.now();
 
   // The knockout hit: the last "You're being hit! HP 1/100" notice goes now, not
   // 4 s later over the KO screen (m06 confirmation R4 M1)
@@ -173,6 +184,7 @@ export function closeMinigameForKnockout(deps = {}) {
 
 if (typeof window !== 'undefined') {
   window.minigameClosedByDamage = minigameClosedByDamage;
+  window.lastPlayerHitAt = lastPlayerHitAt;
   window.playerIsKnockedOut = playerIsKnockedOut;
   window.closeMinigameForKnockout = closeMinigameForKnockout;
   window.dismissPhoneHitNotice = dismissPhoneHitNotice;

@@ -735,6 +735,9 @@ export class NotesMinigame extends MinigameScene {
     
     cleanup() {
         super.cleanup();
+        // Read by the viewer's onComplete, which runs just after: a close by the framework
+        // alone (a hit's fallback, a conversation starting) never set closedByPlayer
+        NotesMinigame.lastCloseWasOwn = this.closedByPlayer === true;
     }
 }
 
@@ -810,35 +813,53 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
                 console.log('NOTES COMPLETED - Not added to inventory');
             }
             
+            // The returns below happen only after the player's own close (Close, Esc) or the
+            // viewer finishing; never after a hit, the knockout screen, a conversation
+            // starting, or a room change (lab UX review M1). A note to take is still taken.
+            const ownClose = success === true || NotesMinigame.lastCloseWasOwn === true;
+            const arm = window.containerReturnArm?.() || null;
+            const blocked = () => (typeof window.containerReturnBlocked === 'function'
+                ? window.containerReturnBlocked(arm, ownClose) : (ownClose ? null : 'not_own_close'));
+            const dropReturns = () => {
+                window.pendingPhoneReturn = null;
+                window.pendingTextFileReturn = null;
+            };
+
             // Check if we need to return to a container after notes minigame
             if (window.pendingContainerReturn && window.returnToContainerAfterNotes) {
                 console.log('Returning to container after notes minigame');
                 // The notes panel is closing and the container opens 100 ms later. Held
                 // toasts released in that gap showed, were pulled back by the container
                 // and showed again on close (F13, engine F24).
-                window.expectPanelWithin?.(1000);
+                if (ownClose) window.expectPanelWithin?.(1000);
+                const back = window.pendingContainerReturn;
                 // Small delay to ensure notes minigame cleanup completes
                 setTimeout(() => {
-                    window.returnToContainerAfterNotes();
-                }, 100);
+                    if (window.pendingContainerReturn !== back) return;
+                    window.returnToContainerAfterNotes({ reopen: !blocked() });
+                }, ownClose ? 100 : 0);
             }
             
             // Check if we need to return to phone after notes minigame
             if (window.pendingPhoneReturn && window.returnToPhoneAfterNotes) {
+                if (!ownClose) { dropReturns(); return; }
                 console.log('Returning to phone after notes minigame');
                 window.expectPanelWithin?.(1000); // held toasts wait for it (F13, engine F24)
                 // Small delay to ensure notes minigame cleanup completes
                 setTimeout(() => {
+                    if (blocked()) { dropReturns(); return; }
                     window.returnToPhoneAfterNotes();
                 }, 100);
             }
             
             // Check if we need to return to text file after notes minigame
             if (window.pendingTextFileReturn && window.returnToTextFileAfterNotes) {
+                if (!ownClose) { dropReturns(); window.pendingContainerReturn = null; return; }
                 console.log('Returning to text file after notes minigame');
                 window.expectPanelWithin?.(1000); // held toasts wait for it (F13, engine F24)
                 // Small delay to ensure notes minigame cleanup completes
                 setTimeout(() => {
+                    if (blocked()) { dropReturns(); window.pendingContainerReturn = null; return; }
                     window.returnToTextFileAfterNotes();
                 }, 100);
             }

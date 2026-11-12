@@ -207,6 +207,12 @@ test('E key: an object beats an NPC walking away; an NPC standing or approaching
     const pc = roomSprite({ id: 'pc1', type: 'pc', name: 'PC' }, 130, 100);   // to the right, 30 px
     const npc = { _isNPC: true, active: true, visible: true, npcId: 'owner', x: 100, y: 125, body: { velocity: { x: 0, y: 60 } } };
     globalThis.__rooms.r = { objects: { pc1: pc }, npcSprites: [npc] };
+    // Half a second of walking away, sampled as game.js update() does
+    const t = Date.now();
+    const tracker = window.walkAwayTracker;
+    npc.y = 100 + 10; tracker.sample(window.player, [npc], t - 500);
+    npc.y = 100 + 18; tracker.sample(window.player, [npc], t - 250);
+    npc.y = 125; tracker.sample(window.player, [npc], t);
     window.player.direction = 'down';    // facing the NPC, not the PC
     window.MinigameFramework.startMinigame = (type) => got.push(type);
     window.npcManager = { getNPC: () => null };
@@ -231,16 +237,74 @@ test('E key: an object beats an NPC walking away; an NPC standing or approaching
 // ── interaction-reach.js ───────────────────────────────────────────────────────────
 const reach = await import(dataUrl(readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8')));
 
-test('npcWalkingAway: moving away counts; standing, slow, approaching or no body does not', () => {
-    const player = { x: 100, y: 100 };
-    const npc = (vx, vy, x = 100, y = 130) => ({ x, y, body: { velocity: { x: vx, y: vy } } });
-    assert.equal(reach.npcWalkingAway(player, npc(0, 60)), true, 'south of the player, walking south');
-    assert.equal(reach.npcWalkingAway(player, npc(50, 20, 130, 100)), true, 'east, walking east-ish');
-    assert.equal(reach.npcWalkingAway(player, npc(0, -60)), false, 'walking towards the player');
-    assert.equal(reach.npcWalkingAway(player, npc(0, 5)), false, 'barely moving');
-    assert.equal(reach.npcWalkingAway(player, npc(0, 0)), false, 'standing');
-    assert.equal(reach.npcWalkingAway(player, { x: 1, y: 1 }), false, 'no body');
-    assert.equal(reach.npcWalkingAway(null, npc(0, 60)), false);
+// A walk sampled every 100 ms for 600 ms: positions of the player and the NPC at each step
+function walk(tracker, player, npc, steps, t0 = 10000) {
+    steps.forEach(([px, py, nx, ny], i) => {
+        player.x = px; player.y = py; npc.x = nx; npc.y = ny;
+        tracker.lastSampleAt = -Infinity;
+        tracker.sample(player, [npc], t0 + i * 100);
+    });
+    return t0 + (steps.length - 1) * 100;
+}
+const line = (n, f) => Array.from({ length: n }, (_, i) => f(i));
+
+test('npcWalkingAway: an owner walking off from a standing player counts', () => {
+    const tracker = new reach.WalkAwayTracker();
+    const player = { x: 100, y: 100, body: { velocity: { x: 0, y: 0 } } };
+    const npc = { npcId: 'dana', x: 0, y: 0, body: { velocity: { x: 0, y: 60 } } };
+    const now = walk(tracker, player, npc, line(7, i => [100, 100, 100, 110 + i * 6]));
+    assert.equal(reach.npcWalkingAway(player, npc, now, tracker), true);
+});
+
+test('npcWalkingAway: a player following the NPC does not count, close behind or lagging', () => {
+    const tracker = new reach.WalkAwayTracker();
+    const player = { x: 0, y: 0, body: { velocity: { x: 0, y: 60 } } };
+    const npc = { npcId: 'guard', x: 0, y: 0, body: { velocity: { x: 0, y: 60 } } };
+    let now = walk(tracker, player, npc, line(7, i => [100, 100 + i * 6, 100, 130 + i * 6]));
+    assert.equal(reach.npcWalkingAway(player, npc, now, tracker), false, 'same pace: the gap holds');
+    const t2 = new reach.WalkAwayTracker();
+    now = walk(t2, player, npc, line(7, i => [100, 100 + i * 3, 100, 130 + i * 6]));
+    assert.equal(reach.npcWalkingAway(player, npc, now, t2), false, 'lagging: the gap grows, but the player is moving towards them');
+    const t3 = new reach.WalkAwayTracker();
+    player.body.velocity = { x: 0, y: 0 };
+    now = walk(t3, player, npc, [...line(6, i => [100, 100 + i * 4, 100, 130 + i * 6]), [100, 120, 100, 166]]);
+    assert.equal(reach.npcWalkingAway(player, npc, now, t3), false, 'just stopped after following: the window still shows the follow');
+});
+
+test('npcWalkingAway: a hostile NPC, or one in knockback, never counts', () => {
+    const player = { x: 100, y: 100, body: { velocity: { x: 0, y: 0 } } };
+    const npc = { npcId: 'thug', x: 0, y: 0, body: { velocity: { x: 0, y: 250 } } };
+    const tracker = new reach.WalkAwayTracker();
+    const now = walk(tracker, player, npc, line(7, i => [100, 100, 100, 110 + i * 8]));
+    assert.equal(reach.npcWalkingAway(player, npc, now, tracker), true, 'the same walk counts for a friendly NPC');
+    globalThis.window.npcHostileSystem = { isNPCHostile: (id) => id === 'thug' };
+    try {
+        assert.equal(reach.npcWalkingAway(player, npc, now, tracker), false, 'hostile');
+    } finally {
+        delete globalThis.window.npcHostileSystem;
+    }
+    npc.knockbackTimer = { remove() {} };
+    assert.equal(reach.npcWalkingAway(player, npc, now, tracker), false, 'knocked back');
+    delete npc.knockbackTimer;
+});
+
+test('npcWalkingAway: standing, approaching, too short a walk, or no samples do not count', () => {
+    const player = { x: 100, y: 100, body: { velocity: { x: 0, y: 0 } } };
+    const npc = { npcId: 'dana', x: 0, y: 0, body: { velocity: { x: 0, y: 0 } } };
+    const t1 = new reach.WalkAwayTracker();
+    let now = walk(t1, player, npc, line(7, () => [100, 100, 100, 130]));
+    assert.equal(reach.npcWalkingAway(player, npc, now, t1), false, 'standing');
+    const t2 = new reach.WalkAwayTracker();
+    npc.body.velocity = { x: 0, y: -60 };
+    now = walk(t2, player, npc, line(7, i => [100, 100, 100, 170 - i * 6]));
+    assert.equal(reach.npcWalkingAway(player, npc, now, t2), false, 'approaching');
+    const t3 = new reach.WalkAwayTracker();
+    npc.body.velocity = { x: 0, y: 60 };
+    now = walk(t3, player, npc, line(2, i => [100, 100, 100, 130 + i * 6]));
+    assert.equal(reach.npcWalkingAway(player, npc, now, t3), false, 'only 100 ms of walk');
+    assert.equal(reach.npcWalkingAway(player, npc, now, new reach.WalkAwayTracker()), false, 'no samples');
+    assert.equal(reach.npcWalkingAway(player, { x: 1, y: 1 }, now, t3), false, 'no body');
+    assert.equal(reach.npcWalkingAway(null, npc, now, t3), false);
 });
 
 test('withoutLeavingNpcsIfObjects: the leaving NPC is dropped beside an object, kept alone or beside a chair', () => {

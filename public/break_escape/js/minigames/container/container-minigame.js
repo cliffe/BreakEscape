@@ -44,6 +44,40 @@ export function isNetworkScreenContainer(item) {
 if (typeof window !== 'undefined') window.isNetworkScreenContainer = isNetworkScreenContainer;
 
 /**
+ * What the world looked like when a reader (text file, notes) closed and armed its
+ * return to the container: the time and the player's room.
+ */
+export function containerReturnArm() {
+    const w = typeof window !== 'undefined' ? window : {};
+    return { at: Date.now(), room: w.currentPlayerRoom || '' };
+}
+
+/**
+ * Why a reader's return to its container must not happen, or null when it may (lab UX
+ * review M1). The reader closed some way other than the player's own Close, Cancel or
+ * Esc (a hit, the knockout screen, a conversation starting: `ownClose` false); the player
+ * is knocked out or was hit since the reader closed; something else has opened; or the
+ * player is in another room now.
+ * @param {{at:number, room:string}} arm - containerReturnArm() at the close
+ * @param {boolean} ownClose - the player closed the reader, or it finished on its own
+ */
+export function containerReturnBlocked(arm, ownClose = true) {
+    const w = typeof window !== 'undefined' ? window : {};
+    if (!ownClose) return 'not_own_close';
+    try { if (w.playerIsKnockedOut?.()) return 'knocked_out'; } catch (e) { /* no health system */ }
+    if (w.minigameClosedByDamage?.()) return 'hit';
+    const hitAt = w.lastPlayerHitAt?.();
+    if (arm && Number.isFinite(hitAt) && hitAt >= arm.at) return 'hit';
+    if (w.MinigameFramework?.currentMinigame) return 'busy';
+    if (arm && (w.currentPlayerRoom || '') !== arm.room) return 'room_changed';
+    return null;
+}
+if (typeof window !== 'undefined') {
+    window.containerReturnArm = containerReturnArm;
+    window.containerReturnBlocked = containerReturnBlocked;
+}
+
+/**
  * Which network screen a container is, for networkLinks.landed (4.3): 'desktop' for a remote
  * desktop or anything opened below one, 'share' for a share opened from the view or anything
  * opened below it, null for any other container.
@@ -352,6 +386,15 @@ export class ContainerMinigame extends MinigameScene {
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
                 this.exitReason = reason;
                 this.complete(false);
+                return null;
+            }
+            if (response.status === 403 && this.params?.fromReturn) {
+                // Reopened after a reader: the session ended meanwhile. Back to the world
+                // with the reason, never the sign-in screen (lab UX review M2)
+                window.pcSessions?.dropLocal?.(pcId);
+                const ended = window.pcSessions?.takeEndedMessage?.(pcId);
+                this.complete(false);
+                window.gameAlert?.(ended?.message || 'Signed out', 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 return null;
             }
             if (response.status === 403) {
@@ -914,10 +957,9 @@ export class ContainerMinigame extends MinigameScene {
             this.showMessage(displayDashes(obs), 'info');
             return;
         }
-        // A network screen comes back when the reader closes (4.3)
-        if (isNetworkScreenContainer(this.containerItem)) {
-            window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null };
-        }
+        // The container comes back when the reader closes: a network screen (4.3) and, as
+        // for a file opened with a click, any other (lab UX review M4)
+        window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null };
         this.exitReason = 'item';
         this.complete(false);
         const viewItem = { ...item, takeable: false };
@@ -1325,7 +1367,7 @@ export class ContainerMinigame extends MinigameScene {
 }
 
 // Function to start the container minigame
-export function startContainerMinigame(containerItem, contents, isTakeable = false, desktopMode = null, npcOptions = null) {
+export function startContainerMinigame(containerItem, contents, isTakeable = false, desktopMode = null, npcOptions = null, extra = null) {
     // Auto-detect desktop mode if not explicitly set
     if (desktopMode === null) {
         desktopMode = shouldUseDesktopModeForContainer(containerItem);
@@ -1352,6 +1394,9 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         desktopMode: desktopMode,
         cancelText: 'Close',
         showCancel: true,
+        // A reopen after a reader closed: a sign-in desktop never falls through to the
+        // sign-in screen (loadLoginDesktop)
+        fromReturn: !!extra?.fromReturn,
         ...(npcOptions && {
             mode: npcOptions.mode || 'container',
             npcId: npcOptions.npcId,
@@ -1384,7 +1429,7 @@ function shouldUseDesktopModeForContainer(containerItem) {
 }
 
 // Function to return to container after notes minigame
-export function returnToContainerAfterNotes() {
+export function returnToContainerAfterNotes({ reopen = true } = {}) {
     console.log('Returning to container after notes minigame');
     
     // Check if there's a pending container return
@@ -1434,6 +1479,25 @@ export function returnToContainerAfterNotes() {
             window.gameAlert(`${containerState.itemToTake.name} has been noted`, 'success', 'Added to Notes', 2000);
         }
         
+        // A hit, the knockout screen, a conversation or a room change closed the reader
+        // (containerReturnBlocked): the note above is still taken, the container stays shut
+        if (!reopen) return;
+
+        // A PC's sign-in desktop whose session ended while the file was open (the owner came
+        // back, the screen locked, someone signed in there): the desktop was not open to
+        // close, so its message is shown now and the player stays in the world. Never the
+        // PC's sign-in screen from here: that skips the check for an owner at the desk
+        // (lab UX review M2).
+        const lockable = containerState.containerItem;
+        const pcData = lockable?.scenarioData;
+        if (!containerState.npcOptions && pcData?.lockType === 'login' && pcData.id
+            && !isNetworkScreenContainer(lockable) && window.pcSessions
+            && typeof window.pcSessions.has === 'function' && !window.pcSessions.has(pcData.id)) {
+            const ended = window.pcSessions.takeEndedMessage?.(pcData.id);
+            window.gameAlert?.(ended?.message || 'Signed out', 'info', pcData.name || 'PC', 3000);
+            return;
+        }
+
         // Start the container minigame - don't pass contents, let it reload from server
         // This ensures items already in inventory are filtered out
         startContainerMinigame(
@@ -1443,7 +1507,8 @@ export function returnToContainerAfterNotes() {
             // A network screen keeps its desktop layout (a share from the view has no PC
             // sprite to auto-detect it from); others auto-detect or use npcOptions
             isNetworkScreenContainer(containerState.containerItem) ? true : null,
-            containerState.npcOptions // Restore NPC context if it was saved
+            containerState.npcOptions, // Restore NPC context if it was saved
+            { fromReturn: true }
         );
     } else {
         console.log('No pending container return found');

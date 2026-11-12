@@ -164,12 +164,12 @@ export class TextFileMinigame extends MinigameScene {
     setupEventListeners() {
         // Window controls
         this.addEventListener(this.closeBtn, 'click', () => {
-            this.complete(false);
+            this.closeByPlayer();
         });
         
         this.addEventListener(this.minimizeBtn, 'click', () => {
             // Minimize by closing the minigame (common behavior for modal windows)
-            this.complete(false);
+            this.closeByPlayer();
         });
         
         this.addEventListener(this.maximizeBtn, 'click', () => {
@@ -224,7 +224,7 @@ export class TextFileMinigame extends MinigameScene {
         // Handle Escape to close
         if (event.key === 'Escape') {
             event.preventDefault();
-            this.complete(false);
+            this.closeByPlayer();
         }
     }
     
@@ -391,12 +391,19 @@ export class TextFileMinigame extends MinigameScene {
             // network view, or a folder in either; slice 9.3a, 4.3) reopens that screen, so
             // the player is never dropped into the world mid-chain
             const back = window.pendingContainerReturn;
+            // Only the player's own Close or Esc goes back: a hit, the knockout screen or a
+            // conversation closing the reader leaves him in the world (review M1)
+            const ownClose = this.closedByPlayer === true;
+            const blocked = (arm) => (typeof window.containerReturnBlocked === 'function'
+                ? window.containerReturnBlocked(arm, ownClose) : (ownClose ? null : 'not_own_close'));
+            const arm = window.containerReturnArm?.() || null;
             if (back?.containerItem && typeof window.isNetworkScreenContainer === 'function'
                 && window.isNetworkScreenContainer(back.containerItem)) {
                 window.pendingContainerReturn = null;
                 window.pendingPhoneReturn = null;
+                if (!ownClose) return;
                 setTimeout(() => {
-                    if (window.MinigameFramework?.currentMinigame) return;
+                    if (blocked(arm)) return;
                     window.startContainerMinigame?.(back.containerItem, null, !!back.isTakeable, true);
                 }, 50);
                 return;
@@ -404,13 +411,13 @@ export class TextFileMinigame extends MinigameScene {
             // Any other container (a desk drawer, a PC's file list, an NPC's items) reopens
             // too, as the notes viewer does, so a second file is one click away (lab
             // playtest fixes). If something else has opened by then, the return is dropped.
-            if (TextFileMinigame.cameFrom(back, this.textFileData.fileName)
+            if (ownClose && TextFileMinigame.cameFrom(back, this.textFileData.fileName)
                 && typeof window.returnToContainerAfterNotes === 'function') {
                 window.pendingPhoneReturn = null;
                 window.expectPanelWithin?.(1000); // held toasts wait for the container (F13, engine F24)
                 setTimeout(() => {
                     if (window.pendingContainerReturn !== back) return;
-                    if (window.MinigameFramework?.currentMinigame) {
+                    if (blocked(arm)) {
                         window.pendingContainerReturn = null;
                         return;
                     }
