@@ -10,13 +10,27 @@ export const CANVAS_FONTS = Object.freeze(["16px 'VT323'"]);
 
 let ready = null;
 
-/** Ask for every canvas font once; resolves when they have loaded (or failed: never rejects). */
-export function loadCanvasFonts(doc = typeof document !== 'undefined' ? document : null) {
+// The @font-face rules arrive with the stylesheets' @imports, which can still be loading
+// when the game boots; a load asked for before them matches no face and resolves at once
+// with nothing fetched (seen live, game 1833). So wait for the page's load event first.
+function stylesheetsLoaded(doc, w) {
+    if (!doc || doc.readyState === 'complete' || typeof w?.addEventListener !== 'function') return Promise.resolve();
+    return new Promise((resolve) => w.addEventListener('load', () => resolve(), { once: true }));
+}
+
+/**
+ * Ask for every canvas font once; resolves true when each matched a face and loaded,
+ * false otherwise (no face, a failed fetch, no font API). Never rejects.
+ */
+export function loadCanvasFonts(doc = typeof document !== 'undefined' ? document : null,
+    w = typeof window !== 'undefined' ? window : null) {
     if (ready) return ready;
     const fonts = doc?.fonts;
     ready = fonts?.load
-        ? Promise.all(CANVAS_FONTS.map((f) => fonts.load(f))).then(() => true, () => false)
+        ? stylesheetsLoaded(doc, w)
+            .then(() => Promise.all(CANVAS_FONTS.map((f) => fonts.load(f))))
+            .then((faces) => faces.every((list) => list && list.length > 0), () => false)
         : Promise.resolve(false);
-    if (typeof window !== 'undefined') window.canvasFontsReady = ready;
+    if (w) w.canvasFontsReady = ready;
     return ready;
 }

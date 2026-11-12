@@ -15,12 +15,23 @@ const F = await import(dataUrl(readFileSync(join(js, 'utils/canvas-fonts.js'), '
 
 test('asks for VT323 once and publishes the promise', async () => {
     const asked = [];
-    const doc = { fonts: { load: async (f) => { asked.push(f); return []; } } };
-    const p = F.loadCanvasFonts(doc);
-    assert.equal(F.loadCanvasFonts(doc), p, 'one request');
-    assert.equal(window.canvasFontsReady, p);
+    let loaded = null;
+    const win = { addEventListener: (t, fn) => { if (t === 'load') loaded = fn; } };
+    const doc = { readyState: 'interactive', fonts: { load: async (f) => { asked.push(f); return [{}]; } } };
+    const p = F.loadCanvasFonts(doc, win);
+    assert.equal(F.loadCanvasFonts(doc, win), p, 'one request');
+    assert.equal(win.canvasFontsReady, p);
+    await new Promise((r) => setTimeout(r, 10));
+    assert.deepEqual(asked, [], 'not asked before the stylesheets (and their @font-face rules) have loaded');
+    loaded();
     assert.equal(await p, true);
     assert.deepEqual(asked, ["16px 'VT323'"]);
+});
+
+test('a load that matches no face resolves false', async () => {
+    const mod = await import(dataUrl(readFileSync(join(js, 'utils/canvas-fonts.js'), 'utf8') + '\n//2'));
+    const doc = { readyState: 'complete', fonts: { load: async () => [] } };
+    assert.equal(await mod.loadCanvasFonts(doc, {}), false);
 });
 
 test('main.js asks for the fonts before it creates the game', () => {
