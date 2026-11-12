@@ -132,7 +132,8 @@ module BreakEscape
           sources: sources(npc, scenario) }
       end
       stations = owned_workstations(scenario)
-      gates = gate_entries(scenario)
+      # A gate on an entry no doorway reads (doorway_problem) does nothing: no fill, no report
+      gates = gate_entries(scenario).reject { |gate| gate[:doorway] }
       holds = plans.to_h { |plan| [plan[:entry][:npc]['id'], plan[:habits]['holdsDoors']] }
       gate_fills = gates.to_h { |gate| [gate[:path], no_hold_for(gate, holds)] }
 
@@ -200,10 +201,11 @@ module BreakEscape
       screen
     end
 
-    # Every gate door: { gate:, path:, room:, connected_room:, direction:, open_for: }. `doors` that is not
-    # a list and a `gate` that is not an object are skipped; a gate with enabled: false is
-    # not a gate (the client ignores it). An openFor string is a one-item list, as the
-    # client reads it.
+    # Every gate door: { gate:, path:, room:, index:, connected_room:, direction:, open_for:,
+    # doorway: }. `doors` that is not a list and a `gate` that is not an object are skipped; a
+    # gate with enabled: false is not a gate (the client ignores it). An openFor string is a
+    # one-item list, as the client reads it. `doorway` is doorway_problem for the entry: nil
+    # when doors.js reads it, else why it never does (the gate is then dead).
     def gate_entries(scenario)
       out = []
       scenario['rooms'].each do |room_id, room|
@@ -216,11 +218,36 @@ module BreakEscape
           next if gate['enabled'] == false
 
           open_for = gate['openFor'].is_a?(Array) ? gate['openFor'].grep(String) : [gate['openFor']].grep(String)
-          out << { gate: gate, path: "rooms/#{room_id}/doors/#{i}", room: room_id,
-                   connected_room: door['connectedRoom'], direction: door['direction'], open_for: open_for }
+          out << { gate: gate, path: "rooms/#{room_id}/doors/#{i}", room: room_id, index: i,
+                   connected_room: door['connectedRoom'], direction: door['direction'], open_for: open_for,
+                   doorway: doorway_problem(room, i) }
         end
       end
       out
+    end
+
+    DOOR_DIRECTIONS = %w[north south east west].freeze
+
+    # Why door entry `index` of `room` never reaches a doorway, or nil when it does. doors.js
+    # builds a doorway for each room id its room lists under connections.north, south, east
+    # or west (a string or a list), then reads the first entry in `doors` whose connectedRoom
+    # and direction both equal that doorway's (createDoorSpritesForRoom). Any other entry,
+    # and the gate on it, is never read: :no_direction (none, or not one of the four),
+    # :no_connection (connections lists no connectedRoom under that direction) or :shadowed
+    # (an earlier entry matches the same doorway).
+    def doorway_problem(room, index)
+      doors = room.is_a?(Hash) && room['doors'].is_a?(Array) ? room['doors'] : []
+      door = doors[index]
+      return :no_direction unless door.is_a?(Hash) && DOOR_DIRECTIONS.include?(door['direction'])
+
+      dir = door['direction']
+      target = door['connectedRoom']
+      listed = room['connections'].is_a?(Hash) ? room['connections'][dir] : nil
+      listed = listed.is_a?(Array) ? listed : [listed]
+      return :no_connection unless target.is_a?(String) && listed.include?(target)
+
+      first = doors.index { |d| d.is_a?(Hash) && d['connectedRoom'] == target && d['direction'] == dir }
+      first == index ? nil : :shadowed
     end
 
     # The gate fill (5.4), worked out before anything is written: :player_may_pass_if or
