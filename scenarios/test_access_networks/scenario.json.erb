@@ -139,7 +139,8 @@
 
   "policies": {
     "hardened": { "remote": "blocked" },
-    "counted": { "maxAttempts": 5, "remote": "allowed" }
+    "counted": { "maxAttempts": 5, "remote": "allowed" },
+    "kiosk_locked": { "remote": "blocked", "usb": "blocked" }
   },
 
   "globalVariables": {
@@ -168,6 +169,9 @@
         { "taskId": "p10_unplug", "title": "P10: unplug the box from the comms room", "type": "custom", "status": "active" },
         { "taskId": "p11_other_network", "title": "P11: plant the box in the workshop and look", "type": "custom", "status": "active" },
         { "taskId": "p12_reload", "title": "P12: after a reload, Lena's PC opens through the box with no password", "type": "custom", "status": "active" },
+        { "taskId": "n11_dropped_implant", "title": "N11: a dropped stick an NPC uses gives a foothold on the door controller's network", "type": "custom", "status": "active" },
+        { "taskId": "n12_badusb_implant", "title": "N12: a BadUSB at Sam's desk gives a foothold and is consumed", "type": "custom", "status": "active" },
+        { "taskId": "n13_usb_refused", "title": "N13: the kiosk's USB policy refuses the BadUSB", "type": "custom", "status": "active" },
         { "taskId": "n8_wifi_join", "title": "N8: join the guest Wi-Fi with the key and look at what it reaches", "type": "custom", "status": "active" },
         { "taskId": "n9_second_ap", "title": "N9: join again through the second guest access point", "type": "custom", "status": "active" },
         { "taskId": "n2_pivot", "title": "N2: after signing in to an office PC through the box, the server network appears", "type": "custom", "status": "active" },
@@ -193,6 +197,27 @@
           "takeable": true,
           "rogueDevice": true,
           "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+        },
+        {
+          "type": "pc",
+          "id": "kit_badusb",
+          "name": "Keystroke injector",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 6 },
+          "takeable": true,
+          "usbClass": "hid",
+          "observations": "A USB device that types on its own once plugged into a PC. It needs a desk you are already signed in at."
+        },
+        {
+          "type": "pc",
+          "id": "kit_stick",
+          "name": "Spare USB stick",
+          "sprite": "drop_box1",
+          "position": { "x": 6, "y": 6 },
+          "takeable": true,
+          "droppable": true,
+          "usbClass": "storage",
+          "observations": "An ordinary USB stick. Left lying about, someone might plug it in."
         },
         {
           "type": "pc",
@@ -552,6 +577,20 @@
           "addToNotes": false,
           "text": "P9. After P5 and P8, open the finance door (north) with the code from the door controller.\nLena's PC then opens her desktop with no password: you are sitting at it now, so unplugging the box no longer ends that session.",
           "observations": "A sign by the finance door."
+        },
+        {
+          "type": "pc",
+          "id": "sam_dock",
+          "name": "USB socket by Sam's PC",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "observations": "A spare USB socket on Sam's desk. Useful only while you are signed in at his PC.",
+          "requiresItem": "kit_badusb",
+          "requiresItemHint": "You would need a device to plug in here.",
+          "triggerOnInteract": [
+            { "type": "grant_foothold", "pc": "sam_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: Sam's desk" }
+          ]
         }
       ]
     },
@@ -611,8 +650,22 @@
           "locked": true,
           "lockType": "login",
           "access": { "roles": ["staff"] },
-          "policy": "hardened",
-          "observations": "A visitor kiosk. Its policy turns remote sign-in off."
+          "policy": "kiosk_locked",
+          "observations": "A visitor kiosk. Its policy turns remote sign-in off and blocks USB devices."
+        },
+        {
+          "type": "pc",
+          "id": "kiosk_dock",
+          "name": "Kiosk USB socket",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "observations": "A USB socket on the kiosk stand.",
+          "requiresItem": "kit_badusb",
+          "requiresItemHint": "You would need a device to plug in here.",
+          "triggerOnInteract": [
+            { "type": "grant_foothold", "pc": "kiosk_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: kiosk" }
+          ]
         },
         {
           "type": "notes1",
@@ -671,6 +724,18 @@
           "addToNotes": false,
           "text": "P8. Clicking the door controller only describes it: there is nothing to sign in to here.\nIt is reached from the box's view, with Ian's details.",
           "observations": "A sign by the door controller."
+        },
+        {
+          "type": "pc",
+          "id": "door_dock",
+          "name": "Door controller USB port",
+          "sprite": "network_rack1",
+          "position": { "x": 6, "y": 3 },
+          "takeable": false,
+          "observations": "A USB port on the door controller. If a stick were left in it, the controller would read it.",
+          "triggerOnInteract": [
+            { "type": "grant_foothold", "pc": "door_box", "needsDropped": "kit_stick", "name": "USB foothold: door controller" }
+          ]
         }
       ]
     }

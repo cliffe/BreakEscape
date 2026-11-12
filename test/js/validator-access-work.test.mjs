@@ -588,6 +588,19 @@ test('H: borrow_session errors on each bad hot desk', { skip }, () => {
     }
 });
 
+test('q33 review R1 N3: a hot desk that satisfies only one of the needs its borrower can fail is warned', { skip }, () => {
+    const social = s => {
+        npcOf(s, 'ian').phone = false;
+        npcOf(s, 'ian').needs = { ...npcOf(s, 'ian').needs, social_media: { decayPerMin: 60, urgentAt: 40, initial: 50 } };
+    };
+    let s = hClean(); social(s);
+    assertHas(warnings(issues(s)), "'hot_desk' satisfies work but not social_media, which ian can also fail");
+    s = hClean(); social(s); hotDesk(s).affordance = { ...hotDesk(s).affordance, satisfies: ['work', 'social_media'] };
+    assert.ok(!has(issues(s), 'which ian can also fail'), issues(s).join('\n'));
+    s = hClean();
+    assert.ok(!has(issues(s), 'which ian can also fail'), issues(s).join('\n'));
+});
+
 test('H: lockChance on a hot desk is warned (a guest ignores it); a hot desk holding a flag station is warned', { skip }, () => {
     let s = hClean();
     hotDesk(s).lockChance = 1;

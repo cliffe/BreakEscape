@@ -346,15 +346,170 @@ module BreakEscape
       ended
     end
 
+    # ==========================================
+    # Implants (sub-slice I; sections 4.5 and 5.5)
+    # ==========================================
+
+    IMPLANT_NO_ACTION = 'No such implant here'.freeze
+    IMPLANT_NOT_READY = 'The device did not take.'.freeze
+    # The server's copy of the client's USB refusal lines (pc-policy.js), so a blocked
+    # implant shows the same authored line.
+    USB_REFUSAL_LINES = { 'storage_blocked' => 'USB storage is disabled on this PC.',
+                          'blocked' => 'USB devices are disabled on this PC.' }.freeze
+
+    def implant_foothold_id_for(pc_id)
+      "implant_#{pc_id}"
+    end
+
+    # The grow-only record of item ids the player has ever dropped (Game#add_item_to_room!),
+    # the durable proof the dropped shape reads (5.5). Empty before this slice.
+    def dropped_items
+      list = player_state.is_a?(Hash) ? player_state['droppedItems'] : nil
+      list.is_a?(Array) ? list : []
+    end
+
+    # The declared grant_foothold action for this PC and shape (5.5). The rule is one action
+    # per [pc, shape]: the validator (validate_network.rb) errors on two grant_footholds that
+    # share a PC and shape, so the spec, the validator and this selection all key on the pair.
+    # `path` is still forwarded from the client (apply-actions passes action.path) and used only
+    # as an extra tie-break if ever present; it is not load-bearing, because the validator never
+    # lets two actions reach the same [pc, shape] for it to tell apart (review R1 server minor 1).
+    def grant_foothold_action_for(pc_id, shape, path)
+      NetworkModel.grant_foothold_actions(scenario_data).find do |a|
+        a[:pc] == pc_id.to_s && a[:shape] == shape.to_s && (path.to_s.empty? || a[:path] == path.to_s)
+      end
+    end
+
+    # A held inventory item named by needsHeld (its id, type or name), or nil. needsHeld should
+    # name a device by its id when two held items share a type: id is matched first, so an
+    # id-named needsHeld is unambiguous where a type-named one could pick either (review R1 nit 2).
+    def inventory_item_matching(needs_held)
+      needs = needs_held.to_s
+      return nil if needs.empty?
+
+      Array(player_state['inventory']).find do |item|
+        item.is_a?(Hash) && [item['id'], item['type'], item['name']].compact.map(&:to_s).include?(needs)
+      end
+    end
+
+    # POST /network/implant (5.5, section 6). shape is 'dropped' or 'session'; path picks the
+    # action when a PC has several. Returns { status:, body: }. It gives a foothold on the PC's
+    # own network and nothing else: no session, no desktop, no owner's access.
+    def implant_foothold!(pc_id, shape, path)
+      pc_id = pc_id.to_s
+      shape = shape.to_s
+      action = grant_foothold_action_for(pc_id, shape, path)
+      return implant_no_action unless action
+
+      foothold_id = implant_foothold_id_for(pc_id)
+      # Already held (before the preconditions, m2): a repeat answers already, never not_ready.
+      # Name the device the first (successful) call consumed, from the stored foothold record, so
+      # a retry after a lost response reconciles the tray exactly as the first success would have
+      # (review R2 M1). The dropped shape stores no device, so consumedId is nil there.
+      if network_footholds.key?(foothold_id)
+        held = network_footholds[foothold_id]
+        consumed = held.is_a?(Hash) && held['device'].is_a?(Hash) ? held['device']['id'] : nil
+        return { status: :ok, body: { success: true, already: true, first: false, consumedId: consumed,
+                                      foothold: foothold_for_client(foothold_id), inventory: player_state['inventory'] } }
+      end
+
+      info = find_login_pc(pc_id)
+      return implant_no_action unless info
+
+      network = object_network(info[:object])
+      return implant_not_ready unless NetworkModel.present_string?(network)
+
+      device_copy = nil
+      if shape == 'session'
+        session = access_sessions[pc_id]
+        # A non-foothold session only: a claim or a keyboard sign-in, never a live
+        # remote-through-foothold session (testing via alone is wrong, 5.5).
+        return implant_not_ready unless session.is_a?(Hash) && session['foothold'].blank?
+
+        entry = inventory_item_matching(action[:needs_held])
+        return implant_not_ready unless entry
+
+        # The USB hook (5.5): the PC's policy must not refuse the device's usbClass. Reuses
+        # AccessWork.plant_refused?, the table pc-policy.js uses, never a parallel method.
+        if BreakEscape::AccessWork.plant_refused?(scenario_data, info[:object], entry)
+          usb = BreakEscape::AccessWork.usb_policy_for(scenario_data, info[:object])
+          message = USB_REFUSAL_LINES[usb] || USB_REFUSAL_LINES['blocked']
+          return { status: :unprocessable_entity, body: { success: false, reason: 'usb_refused', error: message } }
+        end
+
+        device_copy = entry.deep_dup
+        player_state['inventory'] = Array(player_state['inventory']).reject { |item| item.equal?(entry) }
+      else # dropped
+        return implant_not_ready unless dropped_items.include?(action[:needs_dropped].to_s)
+      end
+
+      first = !gained_footholds.include?(pc_id)
+      # The dropped branch never normalised the inventory (the session branch did at its reject);
+      # guard once here so the << below is safe on a nil/non-array inventory (review R1 nit 1).
+      player_state['inventory'] = Array(player_state['inventory'])
+      player_state['footholds'] = network_footholds
+      seq = network_footholds.values.map { |f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.max.to_i + 1
+      record = { 'via' => 'implant', 'network' => network, 'source' => pc_id, 'seq' => seq,
+                 'name' => action[:name], 'sprite' => implant_sprite(device_copy, info[:object]) }
+      record['device'] = device_copy if device_copy.is_a?(Hash)
+      player_state['footholds'][foothold_id] = record
+      player_state['gainedFootholds'] = gained_footholds
+      player_state['gainedFootholds'] << pc_id if first
+      player_state['inventory'] << link_item_for(foothold_id)
+      save!
+
+      # consumedId names the one tray device the session shape removed, so the client reconciles
+      # only the ids that changed (review R1 client M1); the dropped shape consumes nothing.
+      consumed_id = device_copy['id'] if device_copy.is_a?(Hash)
+      { status: :ok, body: { success: true, consumedId: consumed_id, foothold: foothold_for_client(foothold_id),
+                             inventory: player_state['inventory'], first: first } }
+    end
+
+    def implant_no_action
+      { status: :not_found, body: { success: false, reason: 'no_action', error: IMPLANT_NO_ACTION } }
+    end
+
+    def implant_not_ready
+      { status: :unprocessable_entity, body: { success: false, reason: 'not_ready', error: IMPLANT_NOT_READY } }
+    end
+
+    # The sprite stored on an implant foothold: the device's own, else the PC's (5.3).
+    def implant_sprite(device_copy, pc)
+      (device_copy.is_a?(Hash) && (device_copy['sprite'].presence || device_copy['type'].presence)) ||
+        (pc.is_a?(Hash) ? pc['sprite'] : nil)
+    end
+
+    # The link item for an implant foothold (5.3): its name and sprite from the foothold
+    # record stored at implant time, its observations naming the PC.
+    def implant_link_item(foothold_id, foothold)
+      device = foothold['device'].is_a?(Hash) ? foothold['device'] : {}
+      pc = find_login_pc(foothold['source'])&.dig(:object) || {}
+      host = pc['host'].presence || pc['name'].presence || foothold['source'].to_s
+      item = {
+        'id' => link_item_id(foothold_id),
+        'type' => 'network_link',
+        'name' => foothold['name'].presence || "Implant: #{host}",
+        'sprite' => foothold['sprite'].presence || device['sprite'].presence || device['type'],
+        'takeable' => false,
+        'footholdId' => foothold_id,
+        'sourceId' => foothold['source'],
+        'observations' => "Your implant on #{host}. Open it to see what it reaches."
+      }
+      item
+    end
+
     def link_item_id(foothold_id)
       "netlink_#{foothold_id}"
     end
 
-    # The link item for a held foothold, in exactly the shape of 4.1. For a Wi-Fi foothold
-    # (5.3) the name and sprite are read from the foothold record, written at join, so the
-    # handle survives a reload when the access point is no longer in hand.
+    # The link item for a held foothold, in exactly the shape of 4.1. An implant's source
+    # is a PC, not a jack, so it builds from the name and sprite stored on the foothold
+    # record at implant time (5.3). A Wi-Fi foothold (5.3) likewise reads its name and sprite
+    # from the record written at join, so each handle survives a reload when the device or the
+    # access point is no longer in hand, rather than re-deriving from a jack.
     def link_item_for(foothold_id)
       foothold = network_footholds[foothold_id] || {}
+      return implant_link_item(foothold_id, foothold) if foothold['via'] == 'implant'
       return wifi_link_item_for(foothold_id, foothold) if foothold['via'] == 'wifi'
 
       device = foothold['device'].is_a?(Hash) ? foothold['device'] : {}

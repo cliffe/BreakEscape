@@ -1,7 +1,8 @@
-# test_access_social: scripted playtest (slice 9.2, F1 to F8)
+# test_access_social: scripted playtest (slice 9.2, F1 to F9)
 
 The scripted runs for access model slice 9.2 sub-slice C (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
-sections 8 and 11.2). One room per beat, each with a sign; F5 and F6 are in the lobby. The scenario
+sections 8 and 11.2), plus F9 for user decision q33 (a lockout stops social media at that PC too).
+One room per beat, each with a sign; F5 and F6 are in the lobby. The scenario
 is for testing, not play. After every beat check what is on screen, what the server recorded and
 what reached the browser.
 
@@ -37,7 +38,7 @@ grep -c '/feed_post' $S/<run>-responses.jsonl
 ```
 
 The leak check must say `VERDICT: no leaks found`, and its counts line must show the feed posts and
-feed facts it checked (five feed posts, two feed facts): a run that checked none proves
+feed facts it checked (seven feed posts, two feed facts): a run that checked none proves
 nothing. The `/feed_post` count must stay within the beat's budget below. The budgets count
 answers with a post; add one request for each `tooSoon` answer (Jake's first use after the F7
 reload often is one). If the leak check notes a reveal allowed at an answer whose body the log
@@ -63,9 +64,11 @@ no errors and these warnings, each expected:
    on index 2). Their conditions never pass together; the wiring check cannot read that.
 2. The guard challenges on sight and has a `social_media` need and a phone: he can be walked past
    once a period. That is F8's point.
+3. `priya_pc` is under a policy with `maxAttempts` 3: "a lockout lasts the mission, so confirm
+   another route exists". That lockout is F9's point.
 
 Plus the generic suggestions (lock variety, PIN locks and so on) every test scenario draws. The
-work report prints one `Feed` line each for Jake, Lena and Omar (first urgent at 10 s, a server
+work report prints one `Feed` line each for Jake, Lena, Omar and Priya (first urgent at 10 s, a server
 floor of 51 s) and the password clue check finds Jake's two pieces in his two feed posts and their
 facts, with the pattern on `it_poster`.
 
@@ -81,8 +84,10 @@ facts, with the pattern on `it_poster`.
 | F5 | Read Jake's first two posts (note both facts) and the IT poster; sign in at the hot desk as `jbrooks` with the password built from them | Signs in as Jake (`pc_signed_in:hot_desk`), task `f5_signed_in` (an `unlock_object` task on `hot_desk`; it ticks on any sign-in there, and in this scenario only the password reaches Jake's account at the hot desk); his desktop holds `F5.txt` | `sessions.hot_desk` Jake by password (the "by password" check is this column's, not the task's) | Jake 2 or 3 |
 | F6 | Wait for Jake's third post (about 3 minutes after his room first loaded) | The post appears; the answer says `done: true`; task `f6_last_post`; no further `/feed_post` for Jake | `feedRevealed.jake.n` 3 | Jake 3, flat from then on |
 | F8 | Enter `gate_room`. While the guard is on his phone (`distracted` true), walk through his view; then wait until it is false and walk through again | No `player_in_view_near:guard` while distracted; task `f8_distracted` on `npc_used_phone:guard`. Once he puts the phone away the event fires, task `f8_challenged` | None (he has no feed) | Guard 0 |
+| F9 | Through `lena_room` into `priya_room`. Priya uses her PC for social media at her desk (her first post). When she gets up for the fridge, click her PC (the sign-in screen: her screen locked) and type three wrong passwords on her tile. Stand back and wait | The third answer says the account is locked on this PC. When she sits back down she finds out (`npc_locked_out:priya`, task `f9_locked_out`); from then on every social media use is on her phone (`npc_used_phone:priya`, task `f9_phone`), never `npc_used:priya_pc` with need `social_media`, and nothing counted (no `npc_use_failed:priya`). Her second post comes from the phone (task `f9_posted`) | `loginLockouts` holds `priya_pc\|pshah`; `npcFrustration.priya.lockedOut` `["priya_pc"]`, level 0; `feedRevealed.priya.n` 2, done. In the response capture her first `/feed_post` names `object_id` `priya_pc`, the second `null` | Priya 2 |
 
-Scripted runs: F1 to F4 and F7 in one run; F5, F6 and F8 in a second (or continue the first).
+Scripted runs: F1 to F4 and F7 in one run; F5, F6 and F8 in a second (or continue the first); F9
+in either (lock Priya out on her first trip to the fridge, before her next social media use).
 
 ## Earned secrets
 
@@ -106,3 +111,10 @@ Scripted runs: F1 to F4 and F7 in one run; F5, F6 and F8 in a second (or continu
   entry: listed and grantable in that page only. After a reload `GET /scenario`'s `feedPosts` and
   `social.intelFacts` hold only what the server served; the client-written `se_intel_<id>` global
   and the player's own saved note stay (the server cannot tell those from honest ones).
+- F9 (q33): after Priya's lockout, `POST /feed_post` for her with `object_id` `priya_pc`:
+  `{ post: null, done: false, refused: true }` and `feedRevealed` unchanged; the same with
+  `object_id` naming a PC that is not hers (`lena_pc`), an id not in the game, or an array. With
+  `object_id` null (her phone) the post is answered as usual. A state sync with an empty
+  `loginLockouts` changes nothing: the PC stays refused. A social media `ease` for her at
+  `priya_pc` is refused; a social media `fail` naming `locked_out` is refused too, because she has
+  a phone and so never fails the need.

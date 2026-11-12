@@ -1330,7 +1330,8 @@ PC and a phone use take `socialUse.useSeconds` (default 20, 8.1). `access_work.r
      report lists. The server works these out itself, from the scenario and its own state: a
      resource in the NPC's resolved list that it is not admitted to (`no_access`) or whose
      `routes` are `[]` (an `unreachable` with no global to clear); for `social_media`, its own
-     station under a policy that blocks it (`social_blocked`); for `work` only, a `loginLockouts`
+     station under a policy that blocks it (`social_blocked`); for `work` and (user decision q33)
+     `social_media`, a `loginLockouts`
      entry for the NPC's account at its own station (`locked_out`), and only once a `check` has
      recorded it in the NPC's `lockedOut` list (sub-slice L; with no record a lockout is no owned
      cause). None of these can clear in
@@ -1381,7 +1382,7 @@ told the feed is done. Each scripted run checks the number of requests against a
 | `POST /login` with `claim: "owner"` (changed, locked) | L | as today | As today, plus: refused when `loginLockouts` holds the owner's username at that PC | As today; refusal "Sign in required" |
 | `GET /login_accounts` (changed by 9.1; extended here) | B | as today | As today. | `postitNote` when `login_postit_for(pc)` returns one, which now includes an owner whose `writes_down` is done; `no-store` |
 | `GET /capture_secrets` (changed) | H | as today | As today. | An account holder in `sharedLogins` counts as having a capture route whose proof holds (`account_capture_passwords`, `game.rb:965`; the engine plan's `proof` rule, section 15). The proof is the server's own record of a heard "done", as strong as that client claim (6.5) |
-| `POST /feed_post` (new, locked) | C | `npc_id` | 1. NPC known. 2. The NPC has a `feed` with posts and a valid `social_media` need. 3. A post is left. 4. For a second or later post: the pace floor. | `feedRevealed[npcId] = { n, at }`; answer `{ index, post, fact, site, person, done }`, where `fact` is `{ id, entry }` for a post with a feed fact and `done` is true when that was the last post. Check 3 fails: `{ post: null, done: true }`. Check 4 fails: `{ post: null, done: false, tooSoon: true, retryAfter, revealed }`, `revealed` being the posts out so far |
+| `POST /feed_post` (new, locked) | C | `npc_id`, `object_id` (q33: where the use was; null for the phone) | 1. NPC known. 2. The NPC has a `feed` with posts and a valid `social_media` need. 3. A post is left. 3a (q33). The source: the phone only with a phone; else one of the NPC's social media places in a room the player can know of, and not a sign-in PC where `loginLockouts` holds the NPC's username; else `{ post: null, done: false, refused: true }`, nothing written. 4. For a second or later post: the pace floor. | `feedRevealed[npcId] = { n, at }`; answer `{ index, post, fact, site, person, done }`, where `fact` is `{ id, entry }` for a post with a feed fact and `done` is true when that was the last post. Check 3 fails: `{ post: null, done: true }`. Check 4 fails: `{ post: null, done: false, tooSoon: true, retryAfter, revealed }`, `revealed` being the posts out so far |
 | `GET /scenario` (changed) | A, B, H, C | as today | As today. | `filtered_scenario_for_bootstrap` also deletes `resources` and `roles` (where 9.3 or 9.1 already delete them or part of them, nothing more is needed) and, in C, every feed fact from `social.intelFacts`. The `scenario` action adds `npcFrustration` (per NPC: `level`, `tell`, `settled`, `hold`, per need the seconds until a fail with no `rearmed` mark would clear its floor, omitted when none is left (5.4), `pending`, the handed-over workarounds not yet spent, as `run` descriptions, `done`, likewise, each with its `setGlobal` (and, for a `prop_door`, `door` and the prop's room `from`), `failWhy`, per need the whys of its last counted failure, omitted when none, and `lockedOut`, the PCs a true `check` recorded) and `feedPosts` (per NPC: `site`, `person`, the posts revealed so far with their fact entries, and `done`). After answering it clears `guestSessions`, as it ends claimed sessions (`end_claimed_sessions!`, `game.rb:1542`), with the same row lock |
 | `GET /room/:id` and the room data of a door unlock (changed) | A, C | as today | As today. | Through `filtered_room_data`: each room NPC gains `work` (5.1) and, with a feed, `hasFeed: true`; `workNeeds`, `frustration` and `feed` are deleted beside the keys withheld today. `hasPostit` on a PC is 9.1's and follows `written_down?` |
 **`serve_opened_room(room_id)`.** The tail of the door unlock (`games_controller.rb:936-947`) is
@@ -1531,6 +1532,11 @@ workaround, a post or a feed fact before the server has handed it over, except w
 scenario's own event mappings, reveal props (their `revealOnGlobal` and text) and global names
 show, which are served from the start (the README tells authors to keep them neutral; sub-slice H
 withholds them).
+
+One gap is on the honest client's side (q33 review R1 m2, deferred to the ideas backlog): the
+client knows a lockout only at the NPC's own station, so a `"phone": false` NPC that borrows a hot
+desk for social media where its own username is locked out shows a met use while the server
+refuses both the guest record and the post. The server stays correct.
 
 This residual is accepted (decision 5). What keeps it small in practice: the validator prints, for
 every workaround, what it opens and the earliest it can be reached, and warns when what it opens

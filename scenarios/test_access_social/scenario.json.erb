@@ -42,6 +42,12 @@
       "maxAttempts": null,
       "usb": "allowed",
       "social": "allowed"
+    },
+    "locking": {
+      "autoLockMin": 5,
+      "maxAttempts": 3,
+      "usb": "allowed",
+      "social": "allowed"
     }
   },
   "globalVariables": {
@@ -104,6 +110,24 @@
         {
           "taskId": "f8_challenged",
           "title": "F8: the guard challenges you once he puts it away",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f9_locked_out",
+          "title": "F9: Priya finds she is locked out at her PC",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f9_phone",
+          "title": "F9: Priya uses her phone instead",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "f9_posted",
+          "title": "F9: Priya posts from her phone",
           "type": "custom",
           "status": "active"
         }
@@ -170,6 +194,17 @@
                 {
                   "id": "omar_authored",
                   "text": "Who keeps moving the stapler?"
+                }
+              ]
+            },
+            {
+              "person": "priya",
+              "name": "Priya Shah",
+              "bio": "Noodles. Spreadsheets.",
+              "posts": [
+                {
+                  "id": "priya_authored",
+                  "text": "Third week in the new team and I still get lost on the way to the kitchen."
                 }
               ]
             }
@@ -426,7 +461,8 @@
       "type": "room_office",
       "door_sign": "F3 Lena",
       "connections": {
-        "west": "lobby"
+        "west": "lobby",
+        "east": "priya_room"
       },
       "objects": [
         {
@@ -441,7 +477,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "F3. Lena's PC allows social media, so she uses it at her desk. Her first post then shows on the terminal.",
+          "text": "F3. Lena's PC allows social media, so she uses it at her desk. Her first post then shows on the terminal.\nEast: F9, a lockout stops social media too.",
           "observations": "A beat sign on a stand."
         },
         {
@@ -697,6 +733,132 @@
               "eventPattern": "player_in_view_near:guard",
               "onceOnly": true,
               "completeTask": "f8_challenged"
+            }
+          ]
+        }
+      ]
+    },
+    "priya_room": {
+      "type": "room_office",
+      "door_sign": "F9 Priya",
+      "connections": {
+        "west": "lena_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f9",
+          "name": "Sign: F9 Locked out of social media too",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "F9. Priya's PC allows social media, so she uses it at her desk. Wait for her to go to the fridge: her screen locks behind her. Click her PC and type three wrong passwords on her tile. The PC's policy locks her account out there. When she comes back she finds out, and from then on she checks Friendface on her own phone, never on that PC. Her next post comes from the phone.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "priya_pc",
+          "name": "Priya's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "locking",
+          "lockChance": 1,
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Priya's PC: social media is allowed, and three wrong passwords lock an account out."
+        },
+        {
+          "type": "qdc_fridge1",
+          "id": "priya_fridge",
+          "name": "Fridge",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "The office fridge."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "priya",
+          "displayName": "Priya Shah",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "priya_pc",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "pshah",
+            "password": "Kestrel-Priya-46"
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            },
+            "hunger": {
+              "decayPerMin": 20,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "priya",
+            "posts": [
+              {
+                "id": "priya_post_1",
+                "text": "Lunch plans: the new noodle bar by the station. Who is in?",
+                "date": "Monday"
+              },
+              {
+                "id": "priya_post_2",
+                "text": "Work PC has decided I am a stranger. Posting from my phone like it is 2009.",
+                "date": "Tuesday"
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_locked_out:priya",
+              "onceOnly": true,
+              "completeTask": "f9_locked_out"
+            },
+            {
+              "eventPattern": "npc_used_phone:priya",
+              "onceOnly": true,
+              "completeTask": "f9_phone"
+            },
+            {
+              "eventPattern": "npc_posted:priya",
+              "onceOnly": true,
+              "completeTask": "f9_posted",
+              "condition": "data.index === 1"
             }
           ]
         }

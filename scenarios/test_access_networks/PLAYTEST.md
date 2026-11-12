@@ -221,6 +221,49 @@ from the view with no password, and every task stays complete. Task `p12_reload`
 
 Server: `footholds`, `gainedFootholds`, `sessions` and `signedInPcs` unchanged.
 
+## Implants (slice 9.3b sub-slice I): N11 to N13
+
+Set-up pieces in the lobby: the "Keystroke injector" (`kit_badusb`, `usbClass` `hid`) and the
+"Spare USB stick" (`kit_stick`, droppable, `usbClass` `storage`). Pick both up first. An implant
+gives a foothold on the PC's own network and nothing else: no session, no desktop, no owner's
+access.
+
+### N13 The kiosk's USB policy refuses the BadUSB
+
+Sign in at the kiosk itself (Sam's sticky-note password), then use the "Kiosk USB socket"
+(`kiosk_dock`) with the keystroke injector held. The kiosk's `kiosk_locked` policy blocks USB, so
+the server refuses: "USB devices are disabled on this PC." No foothold is granted and the injector
+stays in the inventory.
+
+Server: no `implant_kiosk_pc` foothold; `kit_badusb` still held.
+
+### N12 BadUSB at Sam's desk
+
+Sign in at `sam_pc` (keyboard, the sticky note), then use the "USB socket by Sam's PC"
+(`sam_dock`) with the keystroke injector held. The server grants `implant_sam_pc` on `office_lan`,
+removes the injector, and the link item "BadUSB: Sam's desk" arrives. The implant's view lists the
+office network's hosts and shares; it opens no account on its own. Task `n12_badusb_implant`
+completes.
+
+Server: `footholds.implant_sam_pc` (`via` `implant`) on `office_lan`; `kit_badusb` gone from the
+inventory; no new session.
+
+### N11 A dropped stick the door controller reads
+
+Drop the spare USB stick in the store, then use the "Door controller USB port" (`door_dock`): the
+dropped-device action fires and the server, seeing the stick on its `droppedItems` record, grants
+`implant_door_box` on `office_lan`. No session is opened; the door controller's own desktop still
+needs Ian's account. Task `n11_dropped_implant` completes.
+
+Server: `footholds.implant_door_box` (`via` `implant`) on `office_lan`; no session at `door_box`.
+
+### Reload (implants) and tampered-client checks
+
+A reload (set `location.href` to the game URL with `?skip_resume=1`) keeps `implant_sam_pc` and
+`implant_door_box` with their `via` and network, and the link items come back. Tampered requests
+are refused by the server: `POST /network/implant` for a PC with no declared `grant_foothold`
+action answers 404 `no_action`; a view of a foothold the server never granted answers 404.
+
 ## Slice 9.3b sub-slice W: Wi-Fi (N8, N9)
 
 Added by slice 9.3b (`ACCESS_MODEL_SLICE_9_3B_PLAN.md`, section 11, beats N8 and N9). A guest
@@ -282,3 +325,8 @@ finance share, which maps for Lena on both of those. The open shares are not on 
 `lena_pc` (behind a PIN door) or `door_box` (headless): the chain's payoff, "Door codes", is on the
 headless host, so it still needs the box. Plus the generic suggestions every small test scenario
 gets.
+
+Slice 9.3b sub-slice I adds one expected warning: the `grant_foothold` at the kiosk socket targets
+`kiosk_pc`, whose `kiosk_locked` policy refuses the keystroke injector's USB class (this is beat
+N13 on purpose, so the refusal can be shown). The `kit_stick` "droppable without a needsTag"
+warning is the generic droppable one.

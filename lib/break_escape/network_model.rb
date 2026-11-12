@@ -243,6 +243,35 @@ module BreakEscape
       all_reach_paths(data, from, to).first(REACH_PATHS_CAP)
     end
 
+    # Every grant_foothold action the server can honour (slice 9.3b sub-slice I, 5.5).
+    # Walks the scenario and keeps a grant_foothold only where DeclaredGrants.executed?
+    # says the path is server-run (a timers entry's actions, an object's triggerOnInteract,
+    # onInteract.actions, conditionalActions, or an onConfirm whose own path is server-run),
+    # the same test the validator uses, so "declared" means one thing in both places. Each
+    # entry: { pc:, shape: 'dropped' | 'session', needs_dropped:, needs_held:, name:, path: }.
+    # Built beside the rogue-device walk, not inside DeclaredGrants.for (whose { path, item }
+    # contract for give_item must stay untouched).
+    def grant_foothold_actions(data)
+      out = []
+      return out unless data.is_a?(Hash)
+
+      walk = lambda do |node, keys|
+        case node
+        when Hash
+          if node['type'] == 'grant_foothold' && DeclaredGrants.executed?(keys)
+            shape = node['needsSession'] ? 'session' : 'dropped'
+            out << { pc: node['pc'].to_s, shape: shape, needs_dropped: node['needsDropped'],
+                     needs_held: node['needsHeld'], name: node['name'], path: DeclaredGrants.path_string(keys) }
+          end
+          node.each { |k, v| walk.call(v, keys + [k.to_s]) }
+        when Array
+          node.each_with_index { |v, i| walk.call(v, keys + [i]) }
+        end
+      end
+      walk.call(data, [])
+      out
+    end
+
     # How a station on station_network reaches a resource (4.2), as a list of routes, each a
     # list of condition globals: [[]] is one route with no conditions, [] is no route. A
     # resource with no network is reachable with no condition; one on the station's own

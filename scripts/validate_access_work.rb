@@ -660,6 +660,15 @@ module ValidateAccessWork
       err(issues, "#{tag}: '#{pid}' has no authored affordance that satisfies #{needs.join(' or ')} (a sign-in PC takes no " \
                   'office preset), so the use there would restore nothing.')
     end
+    # q33 review R1 N3: a borrow is for one need; a PC that satisfies another judged need only
+    # restores nothing for this one (and, for social_media, its feed post is refused there)
+    have = needs.select { |need| AW.satisfies?(json_data, pc, need) }
+    lacking = needs - have
+    if !have.empty? && !lacking.empty?
+      warn(issues, "#{tag}: '#{pid}' satisfies #{have.join(' and ')} but not #{lacking.join(' or ')}, which #{nid} can also " \
+                   'fail: a borrow for that need restores nothing there' \
+                   "#{lacking.include?('social_media') ? ' and its feed post is refused' : ''}.")
+    end
     if BreakEscape::AccessIdentities.screen_always_locks?({}, guest)
       warn(issues, "#{tag}: #{nid} is a careful guest (no screenHabit, or one that always locks), so it signs out of " \
                    "'#{pid}' and the workaround opens nothing. Author \"screenHabit\": { \"lockChance\": 0 } or " \
@@ -1135,9 +1144,13 @@ module ValidateAccessWork
         warn(issues, "#{nid} can fail social media at '#{st['id']}' (its policy blocks it), but no #{SOCIAL_BLOCKED_POOL} line " \
                      "is in the scenario's chatter or the NPC's own: the student sees only a picture.")
       end
-      if desk && AW.off_when?(json_data, st) && !AW.work_plan?(json_data, npc) && !chatter_off?(json_data) &&
+      # q33 review R1 m3: a lockout at the own station fails the attempt with station_fail too
+      causes = []
+      causes << 'its station going off' if desk && AW.off_when?(json_data, st)
+      causes << 'its account being locked out at its station' if desk && AW.lockout_station?(json_data, npc)
+      if !causes.empty? && !AW.work_plan?(json_data, npc) && !chatter_off?(json_data) &&
          !pool_has_line?(json_data, npc, STATION_POOL) && !pool_has_line?(json_data, npc, FALLBACK_POOL)
-        warn(issues, "#{nid} can fail social media with its station going off, but no #{STATION_POOL} or #{FALLBACK_POOL} line " \
+        warn(issues, "#{nid} can fail social media with #{causes.join(' or ')}, but no #{STATION_POOL} or #{FALLBACK_POOL} line " \
                      "is in the scenario's chatter or the NPC's own: the student sees only a picture.")
       end
     end
