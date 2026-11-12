@@ -944,7 +944,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:draft_seen",
               "condition": "value === true && globalVars.pc_call_done !== true",
               "setGlobal": { "pc_call_done": true },
-              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Call me when you've had a look." },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Message me when you've had a look." },
               "onceOnly": true
             },
             {
@@ -952,7 +952,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "objective_task_completed:decode_client_roster",
               "condition": "globalVars.pc_call_done !== true",
               "setGlobal": { "pc_call_done": true },
-              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Call me when you've had a look." },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Message me when you've had a look." },
               "onceOnly": true
             },
             {
@@ -969,13 +969,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "_comment": "Pass 3c: the catalogue call used to open on objective_task_completed:lore_fragment_2, which fires when the safe unlocks, so the phone covered the PIN result. It now waits until the player reads the catalogue (its onRead sets catalogue_seen), well after the PIN screen has gone.",
               "eventPattern": "global_variable_changed:catalogue_seen",
               "condition": "value === true",
-              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_exploit_catalog_found", "message": "That's more than a price list. Call me when you've read it." },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_exploit_catalog_found", "message": "That's more than a price list. Message me when you've read it." },
               "onceOnly": true
             },
             {
               "eventPattern": "objective_task_completed:lore_fragment_3",
               "setGlobal": { "lore_directive_found": true },
-              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_architect_directive_found", "message": "A drive in her desk? Call me." },
+              "sendTimedMessage": { "delay": 5000, "targetKnot": "on_architect_directive_found", "message": "A drive in her desk? Tell me what's on it." },
               "onceOnly": true
             },
             <%# Pass 4 (fix 22): one line per flag so the VM stretch doesn't go quiet.
