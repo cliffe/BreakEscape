@@ -940,6 +940,13 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A Wi-Fi access point (slice 9.3b sub-slice W, 5.3): its click is the join flow in
+    // network-links.js (an open network joins at once; a keyed one asks for the key).
+    if (sprite.scenarioData.wifiAp === true) {
+        window.networkLinks?.interactWifiAp?.(sprite);
+        return;
+    }
+
     // A network link item in the tray (slice 9.3a, 4.1): its own click opens the network
     // view for its foothold. It has no menu, no contents and is never dropped.
     if (sprite.scenarioData.type === 'network_link') {

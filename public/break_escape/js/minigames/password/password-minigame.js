@@ -146,6 +146,10 @@ export class PasswordMinigame extends MinigameScene {
         // Store the correct password for validation
         this.correctPassword = params.password || '';
 
+        // Wi-Fi join mode (slice 9.3b sub-slice W, 5.3): { apId, apName }. The key field has
+        // no attempt limit; submit calls ApiClient.networkJoin through networkLinks.join.
+        this.join = params.join || null;
+
         // Sign-in mode: { pcId, pcName, picker, tiles, current } (unlock-system openLoginSignIn);
         // a remote screen (slice 9.3a, 4.4) adds remote: { footholdId, linkName } and captured
         this.signIn = params.signIn || null;
@@ -163,6 +167,14 @@ export class PasswordMinigame extends MinigameScene {
     }
         /** Test bridge state (see MinigameScene.getTestState). */
     getTestState() {
+        if (this.join) {
+            return {
+                ...super.getTestState(),
+                join: { apId: this.join.apId, message: this.joinMessage || null },
+                hasPasswordField: !!document.getElementById('password-field'),
+                entryHint: 'type(0, "<key>", { submit: true })'
+            };
+        }
         if (this.signIn) {
             const st = this.signInState;
             return {
@@ -205,7 +217,18 @@ export class PasswordMinigame extends MinigameScene {
             this.initSignIn();
             return;
         }
-        
+
+        // Wi-Fi join mode (slice 9.3b W, 5.3): the key field, no attempt counter
+        if (this.join) {
+            this.headerElement.innerHTML = `
+                <h3>${escapeHtml(displayDashes(`Join Wi-Fi: ${this.join.apName || ''}`))}</h3>
+                <p>Enter the network key</p>
+            `;
+            this.setupPasswordInterface();
+            this.setupEventListeners();
+            return;
+        }
+
         // Customize the header
         this.headerElement.innerHTML = `
             <h3>${displayDashes(this.params.title || 'Password Entry')}</h3>
@@ -257,7 +280,7 @@ export class PasswordMinigame extends MinigameScene {
 
         // Name the lock over the field, as the PIN keypad does ("Enter PIN: Cable
         // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
-        const fieldLabel = passwordFieldLabel(this.params.title);
+        const fieldLabel = this.join ? 'Network key' : passwordFieldLabel(this.params.title);
         
         this.gameContainer.innerHTML = `
             <div class="password-minigame-area">
@@ -374,9 +397,11 @@ export class PasswordMinigame extends MinigameScene {
                     </div>
                 ` : ''}
                 
+                ${this.join ? '' : `
                 <div class="attempts-counter">
                     Attempts: <span id="attempts-display">${this.gameData.attempts}</span>/${this.gameData.maxAttempts}
                 </div>
+                `}
             </div>
         `;
         
@@ -574,7 +599,8 @@ export class PasswordMinigame extends MinigameScene {
         if (this.checkPending) return;
         this.checkPending = true;
         try {
-            if (this.signIn) await this._submitSignInOnce();
+            if (this.join) await this._submitJoinOnce();
+            else if (this.signIn) await this._submitSignInOnce();
             else await this._submitPasswordOnce();
         } finally {
             this.checkPending = false;
@@ -613,6 +639,35 @@ export class PasswordMinigame extends MinigameScene {
             console.error('SECURITY WARNING: API client not available, cannot validate password');
             // Fail securely - reject the attempt if we can't validate with server
             this.passwordIncorrect();
+        }
+    }
+
+    // Wi-Fi join (slice 9.3b W, 5.3): the key goes to networkLinks.join, which posts
+    // /network/join and applies the foothold. A wrong key is refused with no attempt count;
+    // a success or already closes the minigame. The key is sent as typed (no trim), since a
+    // Wi-Fi key may hold spaces, and is never stored on the scene.
+    async _submitJoinOnce() {
+        if (!this.gameState.isActive) return;
+        const key = this.passwordField ? this.passwordField.value : '';
+        if (!key) {
+            this.showFailure('Please enter the key', false, 1000);
+            return;
+        }
+        const links = window.networkLinks;
+        const result = (links && typeof links.join === 'function') ? await links.join(this.join.apId, key) : { action: 'error' };
+        if (result.action === 'joined' || result.action === 'already') {
+            this.cleanup();
+            if (window.playUISound) window.playUISound('confirm');
+            this.showSuccess('Connected.', true, 900);
+            this.gameResult = { success: true, join: result };
+        } else if (result.action === 'wrong_key') {
+            this.joinMessage = 'That key was not accepted.';
+            if (window.playUISound) window.playUISound('reject');
+            this.showFailure(this.joinMessage, false, 1500);
+            this.passwordField.value = '';
+            this.passwordField.focus();
+        } else {
+            this.showFailure('The network did not respond. Try again.', false, 1500);
         }
     }
 
@@ -747,7 +802,7 @@ export class PasswordMinigame extends MinigameScene {
     
     cancelPassword() {
         this.cleanup();
-        this.showFailure(this.signIn ? "Sign-in cancelled." : "Password entry cancelled.", true, 800);
+        this.showFailure(this.join ? "Join cancelled." : (this.signIn ? "Sign-in cancelled." : "Password entry cancelled."), true, 800);
         
         this.gameResult = {
             success: false,

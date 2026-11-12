@@ -146,6 +146,7 @@ class AccessLeakScanner
     @clue_texts = Hash.new { |h, k| h[k] = Set.new }   # password => authored strings holding it
     @login_pcs = Set.new
     @network_strings = {}    # string => [owner, ...] (network:<id>, resource:<id>)
+    @wifi_secrets = {}       # a Wi-Fi SSID or psk => [network:<id>, ...] (never in any response)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
     # password on purpose, exempt only where that item's content may be (scan_passwords)
@@ -154,6 +155,7 @@ class AccessLeakScanner
     collect_passwords
     collect_items
     collect_network_secrets
+    collect_wifi_secrets
     collect_workarounds
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
     @items.delete_if { |_, info| info[:strings].empty? }
@@ -165,6 +167,7 @@ class AccessLeakScanner
       login_items: @items.count { |_, i| i[:scope] },
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
       network_strings: @network_strings.length,
+      wifi_secrets: @wifi_secrets.length,
       share_items: @share_items.length,
       workarounds: @workarounds.length,
       lockout_records: lockout_records.values.sum(&:length)
@@ -181,9 +184,9 @@ class AccessLeakScanner
       next unless row.is_a?(Hash)
 
       body = if row.key?('dom') then row['dom']
-             elsif row.key?('body') then row['body']
-             else row['bodyText']
-             end
+      elsif row.key?('body') then row['body']
+      else row['bodyText']
+      end
       next if body.nil?
 
       ctx = response_context(row)
@@ -201,6 +204,7 @@ class AccessLeakScanner
       scan_locked_content(body, add)
       scan_share_content(body, ctx, legit, add)
       scan_network_strings(body, ctx, add)
+      scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
       scan_lockouts(body, ctx, add)
     end
@@ -229,6 +233,7 @@ class AccessLeakScanner
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
+    'wifi_secret' => 'a Wi-Fi SSID or pre-shared key in any response (the key is compared on the server, never served)',
     'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds) on an NPC record',
     'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
     'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
@@ -240,7 +245,7 @@ class AccessLeakScanner
 
   def secret_values
     @secret_values ||= (@passwords.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
-                        @share_items.values.flat_map { |i| i[:strings] }).uniq.sort_by { |v| -v.length }
+                        @wifi_secrets.keys + @share_items.values.flat_map { |i| i[:strings] }).uniq.sort_by { |v| -v.length }
   end
 
   # ---- catalogue ---------------------------------------------------------------------------
@@ -324,6 +329,27 @@ class AccessLeakScanner
         owners << "resource:#{res_id}" unless owners.include?("resource:#{res_id}")
       end
       walk_share(res['contents'], res_id.to_s, [], usable)
+    end
+  end
+
+  # A Wi-Fi SSID and pre-shared key (slice 9.3b W, 5.3) are never sent to the browser: the
+  # networks block is deleted whole from the bootstrap and the key is only compared on the
+  # server. A key the scenario deliberately shows the player in authored room text (a note, a
+  # document) is not a hidden secret, so it is skipped, the same rule network_strings uses.
+  def collect_wifi_secrets
+    public_strings = room_data_strings
+    networks = @data['networks'].is_a?(Hash) ? @data['networks'] : {}
+    networks.each do |net_id, net|
+      wifi = net.is_a?(Hash) ? net['wifi'] : nil
+      next unless wifi.is_a?(Hash)
+
+      %w[ssid psk].each do |field|
+        v = wifi[field]
+        next unless v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING
+        next if public_strings.any? { |s| s.include?(v.strip) }
+
+        (@wifi_secrets[v.strip] ||= []) << "network:#{net_id}"
+      end
     end
   end
 
@@ -867,14 +893,32 @@ class AccessLeakScanner
     return if @network_strings.empty?
     return if ctx[:network] || ctx[:any_container]
 
-    each_string(body) do |str, json_path|
+    each_string(body) do |str, json_path, holder|
       next if ctx[:scenario] && json_path.start_with?('$.footholds')
       next if ctx[:unlock] && json_path.start_with?('$.contents[')
+      # A network link item is the handle of a foothold the player holds: its label and
+      # observations name the network the player has already reached (slice 9.3b W, 5.3),
+      # so a network name there is not a leak.
+      next if holder.to_s.start_with?('netlink_')
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)
 
         owners.each { |owner| add.call('network_string', owner, safe_path(json_path)) }
+      end
+    end
+  end
+
+  # A Wi-Fi SSID or key in any response is a leak, with no route exemption: unlike a network
+  # name, neither is ever legitimately served (5.3).
+  def scan_wifi_secrets(body, add)
+    return if @wifi_secrets.empty?
+
+    each_string(body) do |str, json_path|
+      @wifi_secrets.each do |secret, owners|
+        next unless str.strip == secret || str.include?(secret)
+
+        owners.each { |owner| add.call('wifi_secret', owner, safe_path(json_path)) }
       end
     end
   end

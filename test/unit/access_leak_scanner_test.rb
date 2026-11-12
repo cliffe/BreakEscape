@@ -206,6 +206,19 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal [[1, 'network_string', 'resource:pq']], summary(scan_net(obs))
   end
 
+  # A Wi-Fi link item (slice 9.3b W, 5.3) is the handle of a foothold the player holds; its
+  # name and observations legitimately carry the network name in a plain /inventory or /room
+  # answer, so a netlink_ holder is exempt. The exemption must stay narrow: the same network
+  # name under any other holder in the same response is still a leak.
+  test 'a network name on a netlink_ held handle is exempt, under another holder it is reported' do
+    inv = '/break_escape/games/1/inventory'
+    held = { 'inventory' => [{ 'id' => 'netlink_wifi_office_lan', 'name' => 'Wi-Fi: Harbour office LAN',
+                               'observations' => 'A handle to the Harbour office LAN you joined.' }] }
+    assert_empty scan_net(held, path: inv)
+    leaked = { 'inventory' => [{ 'id' => 'stray_item', 'name' => 'Note about the Harbour office LAN' }] }
+    assert_equal [[1, 'network_string', 'network:office_lan']], summary(scan_net(leaked, path: inv))
+  end
+
   # An item opened by POST /unlock comes back with its contents, as GET /container would
   # send them (the lab's BadUSB remote session names its file server's host). The exemption
   # covers every network string there, as on /container: authored container text is the
@@ -468,6 +481,23 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal 1, AccessLeakScanner.new(data).counts[:workarounds]
   end
 
+  test 'a Wi-Fi SSID or key is reported in any response, except a key the player can read' do
+    data = scenario
+    data['networks'] = { 'guest_wifi' => { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' } } }
+    assert_equal [[1, 'wifi_secret', 'network:guest_wifi']],
+                 summary(scan({ 'psk' => 'seabreeze-2025' }, data: data))
+    assert_equal [[1, 'wifi_secret', 'network:guest_wifi']],
+                 summary(scan({ 'ssid' => 'Harbour-Guest' }, data: data))
+    assert_equal 2, AccessLeakScanner.new(data).counts[:wifi_secrets]
+    # A key the scenario deliberately shows the player in a note is not a hidden secret
+    readable = scenario
+    readable['networks'] = { 'guest_wifi' => { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' } } }
+    readable['rooms']['lobby'] ||= { 'objects' => [] }
+    readable['rooms']['lobby']['objects'] << { 'id' => 'note', 'type' => 'postit_note', 'name' => 'Note',
+                                               'text' => 'Guest key: seabreeze-2025' }
+    assert_empty scan({ 'psk' => 'seabreeze-2025' }, data: readable), 'a readable key is not treated as hidden'
+  end
+
   test 'an authored workaround entry (it carries at) is reported anywhere, a writes_down included' do
     entry = { 'at' => 50, 'do' => 'writes_down' }
     assert_equal [[1, 'workaround', 'authored writes_down']], summary(scan({ 'npcs' => [{ 'id' => 'x', 'list' => [entry] }] }))
@@ -656,5 +686,4 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
       post_rows(['GET', LOCKOUT_SCENARIO, { 'note' => 'try sam_pc|anything' }])
     )
   end
-
 end

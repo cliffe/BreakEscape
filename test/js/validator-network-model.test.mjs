@@ -262,14 +262,10 @@ test('the fields still reserved for later 9.3b sub-slices are refused with "need
     const sc = clean();
     sc.networkLinks = [['office_lan', 'plant_net']];
     sc.networks.office_lan.downIf = 'power_off';
-    sc.networks.office_lan.wifi = { ssid: 'HB', psk: 'x' };
-    room(sc, 'lobby').objects.push({ id: 'ap', type: 'pc', wifiAp: 'office_lan' });
     room(sc, 'lobby').objects.push({ id: 'btn', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', network: 'office_lan' }] });
     const out = errors(issues(sc));
     assertHas(out, "top-level 'networkLinks' needs slice 9.3b");
     assertHas(out, "'networks/office_lan' has 'downIf', which needs slice 9.3b");
-    assertHas(out, "'networks/office_lan' has 'wifi', which needs slice 9.3b");
-    assertHas(out, "has 'wifiAp', which needs slice 9.3b");
     assertHas(out, "is a 'grant_foothold' action, which needs slice 9.3b");
 });
 
@@ -317,6 +313,90 @@ test('a jack that is both portSecurity and wifiAp is an error', { skip }, () => 
     port.portSecurity = true;
     port.wifiAp = true;
     assertHas(errors(issues(sc)), "is both 'portSecurity' and 'wifiAp'");
+});
+
+// Now that W has made wifiAp a real field, the portSecurity/wifiAp cross-check can be
+// exercised on its own: the combination is refused by the cross-check itself, not because
+// either field is still reserved for a later sub-slice.
+test('the portSecurity/wifiAp cross-check fires, and neither field is refused as reserved', { skip }, () => {
+    const sc = clean();
+    const port = obj(sc, 'comms_room', 'comms_port');
+    port.portSecurity = true;
+    port.wifiAp = true;
+    const out = errors(issues(sc));
+    assertHas(out, "is both 'portSecurity' and 'wifiAp'");
+    assertNot(out, "'portSecurity', which needs slice 9.3b");
+    assertNot(out, "'wifiAp', which needs slice 9.3b");
+});
+
+// ---- Wi-Fi (slice 9.3b sub-slice W, 5.3) ----
+
+// clean() with a guest_wifi network, an access point on it, and a readable note that
+// names the key, so a clean Wi-Fi scenario raises nothing.
+function wifiClean() {
+    const sc = clean();
+    sc.networks.guest_wifi = { name: 'Guest Wi-Fi', wifi: { ssid: 'Harbour-Guest', psk: 'seabreeze-2025' } };
+    room(sc, 'lobby').objects.push({ id: 'guest_ap', type: 'pc', sprite: 'wifi_ap1', name: 'Guest AP', wifiAp: true, network: 'guest_wifi' });
+    room(sc, 'lobby').objects.push({ id: 'wifi_note', type: 'postit_note', name: 'Reception note',
+        text: 'Guest Wi-Fi key: seabreeze-2025', takeable: false });
+    return sc;
+}
+
+test('a clean Wi-Fi scenario raises no Wi-Fi error or warning', { skip }, () => {
+    const list = issues(wifiClean());
+    assertNot(errors(list), 'wifi');
+    assertNot(warnings(list), 'psk');
+    assertNot(errors(list), "has 'wifiAp'");
+});
+
+test('a wifi block needs an ssid and a string psk', { skip }, () => {
+    let sc = wifiClean();
+    delete sc.networks.guest_wifi.wifi.ssid;
+    assertHas(errors(issues(sc)), "'networks/guest_wifi/wifi' has no 'ssid'");
+    sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = 1234;
+    assertHas(errors(issues(sc)), "'networks/guest_wifi/wifi' psk must be a string");
+});
+
+test('a whitespace-only psk is an error (the server would treat it as open, not keyed)', { skip }, () => {
+    let sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = '   ';
+    const list = issues(sc);
+    assertHas(errors(list), "psk is only whitespace");
+    // and it must not also be reported as a short/unreadable key warning
+    assertNot(warnings(list), 'psk is shorter than eight characters');
+    sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = '';
+    assertNot(errors(issues(sc)), "psk is only whitespace");
+});
+
+test('wifiAp is refused without a network, without a wifi block, on a sign-in object, a jack, or a lock', { skip }, () => {
+    let sc = wifiClean();
+    delete obj(sc, 'lobby', 'guest_ap').network;
+    assertHas(errors(issues(sc)), "has 'wifiAp' but no network");
+    sc = wifiClean();
+    obj(sc, 'lobby', 'guest_ap').network = 'office_lan';
+    assertHas(errors(issues(sc)), "its network 'office_lan' defines no 'wifi' block");
+    sc = wifiClean();
+    obj(sc, 'lobby', 'guest_ap').lockType = 'login';
+    obj(sc, 'lobby', 'guest_ap').access = { roles: ['staff'] };
+    assertHas(errors(issues(sc)), "is a sign-in object");
+    sc = wifiClean();
+    obj(sc, 'lobby', 'guest_ap').networkJack = true;
+    assertHas(errors(issues(sc)), "is a network jack with 'wifiAp'");
+    sc = wifiClean();
+    obj(sc, 'lobby', 'guest_ap').locked = true;
+    assertHas(errors(issues(sc)), "has 'wifiAp' and a lock");
+});
+
+test('a short Wi-Fi key, and a key the player cannot read, warn', { skip }, () => {
+    let sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = 'short';
+    obj(sc, 'lobby', 'wifi_note').text = 'Guest Wi-Fi key: short';
+    assertHas(warnings(issues(sc)), "psk is shorter than eight characters");
+    sc = wifiClean();
+    room(sc, 'lobby').objects = room(sc, 'lobby').objects.filter(o => o.id !== 'wifi_note');
+    assertHas(warnings(issues(sc)), "psk appears nowhere the player can read");
 });
 
 // ---- warnings ----

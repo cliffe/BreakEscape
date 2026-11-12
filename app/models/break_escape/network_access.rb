@@ -255,6 +255,88 @@ module BreakEscape
       { status: :ok, body: { success: true, inventory: player_state['inventory'], endedPcIds: ended } }
     end
 
+    # ==========================================
+    # Wi-Fi (slice 9.3b sub-slice W; sections 4.3 and 5.3)
+    # ==========================================
+
+    AP_NOT_FOUND = 'Access point not found'.freeze
+    WRONG_WIFI_KEY = 'That key was not accepted'.freeze
+
+    # A Wi-Fi foothold's id (5.3): one per network, so a second access point of a network
+    # already joined is the same foothold.
+    def wifi_foothold_id(network_id)
+      "wifi_#{network_id}"
+    end
+
+    # The access point with this id: a room object with wifiAp: true on a network the
+    # scenario defines with a wifi block, with its network and { ssid, psk }, or nil.
+    def find_wifi_ap(ap_id)
+      info = network_room_object(ap_id)
+      return nil unless info && info[:object].is_a?(Hash) && info[:object]['wifiAp'] == true
+
+      network = NetworkModel.network_of(info[:object], info[:room])
+      return nil unless network && NetworkModel.networks(scenario_data).key?(network)
+
+      wifi = NetworkModel.wifi_of(scenario_data, network)
+      return nil unless wifi
+
+      info.merge(network: network, wifi: wifi)
+    end
+
+    # POST /network/join (5.3, section 6). Returns { status:, body: }. The key is compared
+    # on the server (an open network, psk absent, skips the check). A wrong key is never
+    # counted. Joining a network already held answers already: true and still records the
+    # access point in gainedFootholds.
+    def join_network!(ap_id, key = nil)
+      ap = find_wifi_ap(ap_id)
+      return { status: :not_found, body: { success: false, error: AP_NOT_FOUND } } unless ap
+      unless object_reachable?(ap)
+        return { status: :forbidden, body: { success: false, reason: 'unreachable', error: 'Access point not reachable' } }
+      end
+
+      network_id = ap[:network]
+      ap_object_id = ap[:object]['id'].to_s
+      foothold_id = wifi_foothold_id(network_id)
+      if network_footholds.key?(foothold_id)
+        record_gained_ap!(ap_object_id)
+        return { status: :ok, body: { success: true, already: true, first: false,
+                                      foothold: foothold_for_client(foothold_id), inventory: player_state['inventory'] } }
+      end
+
+      psk = ap[:wifi]['psk']
+      if NetworkModel.present_string?(psk) && !(key.is_a?(String) && key == psk)
+        return { status: :unprocessable_entity, body: { success: false, reason: 'wrong_key', error: WRONG_WIFI_KEY } }
+      end
+
+      first = !gained_footholds.include?(ap_object_id)
+      player_state['footholds'] = network_footholds
+      seq = network_footholds.values.map { |f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.max.to_i + 1
+      net_name = network_name(network_id).presence || 'Wi-Fi'
+      record = { 'via' => 'wifi', 'network' => network_id, 'source' => ap_object_id,
+                 'name' => ap[:object]['linkName'].presence || "Wi-Fi: #{net_name}", 'seq' => seq }
+      ap_sprite = ap[:object]['sprite']
+      record['sprite'] = ap_sprite if ap_sprite.is_a?(String) && !ap_sprite.empty?
+      player_state['footholds'][foothold_id] = record
+      player_state['gainedFootholds'] = gained_footholds
+      player_state['gainedFootholds'] << ap_object_id if first
+      player_state['inventory'] = Array(player_state['inventory'])
+      player_state['inventory'] << link_item_for(foothold_id)
+      save!
+
+      { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id),
+                             inventory: player_state['inventory'], first: first } }
+    end
+
+    # Add an access point id to gainedFootholds if absent, and save (5.3, N9): a task or
+    # mapping on a second access point of a joined network still completes.
+    def record_gained_ap!(ap_object_id)
+      return if gained_footholds.include?(ap_object_id)
+
+      player_state['gainedFootholds'] = gained_footholds
+      player_state['gainedFootholds'] << ap_object_id
+      save!
+    end
+
     # Ends every session opened through this foothold (4.1, an unplug); returns their
     # PC ids. The caller saves.
     def end_sessions_through!(foothold_id)
@@ -268,9 +350,13 @@ module BreakEscape
       "netlink_#{foothold_id}"
     end
 
-    # The link item for a held foothold, in exactly the shape of 4.1.
+    # The link item for a held foothold, in exactly the shape of 4.1. For a Wi-Fi foothold
+    # (5.3) the name and sprite are read from the foothold record, written at join, so the
+    # handle survives a reload when the access point is no longer in hand.
     def link_item_for(foothold_id)
       foothold = network_footholds[foothold_id] || {}
+      return wifi_link_item_for(foothold_id, foothold) if foothold['via'] == 'wifi'
+
       device = foothold['device'].is_a?(Hash) ? foothold['device'] : {}
       jack = find_jack(foothold['source'])&.dig(:object) || {}
       device_name = device['name'].presence || 'Device'
@@ -286,6 +372,24 @@ module BreakEscape
         'observations' => "Your #{device_name} on #{jack_name}. Open it to see what it reaches."
       }
       item['storeIn'] = jack['linkStoreIn'] if jack['linkStoreIn'].is_a?(String) && !jack['linkStoreIn'].empty?
+      item
+    end
+
+    # The link item for a Wi-Fi foothold (5.3): the name and sprite come from the foothold
+    # record (stored at join), the observations name the network.
+    def wifi_link_item_for(foothold_id, foothold)
+      net_name = network_name(foothold['network']).presence || 'Wi-Fi'
+      name = foothold['name'].presence || "Wi-Fi: #{net_name}"
+      item = {
+        'id' => link_item_id(foothold_id),
+        'type' => 'network_link',
+        'name' => name,
+        'takeable' => false,
+        'footholdId' => foothold_id,
+        'sourceId' => foothold['source'],
+        'observations' => "Your Wi-Fi link to #{net_name}. Open it to see what it reaches."
+      }
+      item['sprite'] = foothold['sprite'] if foothold['sprite'].is_a?(String) && !foothold['sprite'].empty?
       item
     end
 
