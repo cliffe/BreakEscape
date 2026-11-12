@@ -3,6 +3,82 @@
 Plan: `docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md`. Build order K, O, W, P, I (plan
 section 3). Sub-slices land on their own branches; this log has one section each.
 
+## Sub-slice K: Links and the pivot (branch `build/9-3b-k`, from `main` 708b154e8)
+
+Built on 9.3a and W (W was already on `main`). K adds links between in-game networks and the
+pivot through a held session. Section 13 answers taken as recommended: an outage keeps sessions;
+the eight-path cap on `reach_paths` with a validator warning above it; signing out of a pivot ends
+the onward sessions. The segmentation rule holds: a bare foothold reaches its own network only; a
+linked network is reached only by pivoting through a session.
+
+### What it adds
+
+- **Model** (`lib/break_escape/network_model.rb`): `network_links` (normalises `networkLinks` to
+  pairs of defined networks), `linked_networks` (undirected), `all_reach_paths`/`reach_paths` (every
+  simple path, shortest first, stable order, capped at eight with a ceiling of 64), and
+  `reach_conditions` extended to walk `reach_paths` and carry each path's network `downIf` globals
+  (all nil in K, so routes stay empty; the shape is ready for O). `network_up?` is introduced
+  returning true (O makes it read `downIf`).
+- **Server** (`app/models/break_escape/network_access.rb`): `structural_reach` and `player_reach`
+  (seeded from the foothold's own network, expanded only through a session at a member host),
+  `networks_reachable_from` (the pivot walk from a signed-in host), `prune_unreachable_sessions!`
+  (ends sessions carrying a foothold whose PC network is in no held foothold's `structural_reach`;
+  leaves blank-foothold local sessions), and the view's `networks` block (an up entry per reached
+  network with its `via` host, a greyed down entry per network a session is held on but not reached).
+  `host_reachable_through?`, `resource_admits_player?` and `mapped_shares` now resolve reach through
+  `player_reach`/`networks_reachable_from` instead of single-network equality.
+- **Hooks** (`game.rb`, `games_controller.rb`): `logout_session!` and `end_claimed_sessions!` run
+  `prune_unreachable_sessions!`; `POST /logout` answers `endedPcIds`.
+- **Validator/schema** (`scripts/validate_network.rb`, `scenario-schema.json`): un-reserves
+  `networkLinks` (leaves `downIf`, `portSecurity`, `grant_foothold` for O/P/I), with errors for a
+  malformed entry, an undefined or self-linked network; warnings for a network reachable only by a
+  pivot with no host to open it, and for more than eight link paths between two carrying networks;
+  an information line listing each network's link reach and its pivot hosts. Schema: `networkLinks`
+  real definition.
+- **Client** (`minigames/network-view/network-view-minigame.js`, `systems/pc-sessions.js`): the view
+  renders the further-network blocks under the own-network rows (up blocks with live controls, down
+  blocks greyed with "No route to <host>"), wires their row actions through the same foothold, and
+  emits `network_viewed:<networkId>` per up block. `signOut` reads the logout answer's `endedPcIds`
+  and closes the onward desktops (`linkDropped`). The scoped-request route test (5.2) is O's; no
+  client change here threads a foothold.
+- **Feature scenario** (`scenarios/test_access_networks/`): a `server_net` linked to `office_lan`,
+  a server host `sv_fs02` (it only) in a new server room, a protected `backup_vault` share, a sign,
+  and tasks `n2_pivot` / `n3_signin_across` / `n4_signout`.
+
+### Tests (all green)
+
+- Ruby unit (`test/unit/network_model_test.rb`): `network_links`, `linked_networks`, `reach_paths`
+  (chain, cycle, same-network single node, the eight cap), `reach_conditions` over a link.
+- Rails (`test/controllers/break_escape/network_pivot_test.rb`, 7 tests): N1 segmentation and the
+  refused sign-in, N2 the pivot block with its `via`, N3 the sign-in across the link and the mapped
+  protected share, N4 logout pruning the onward session, and `prune_unreachable_sessions!` both ways
+  (a foothold session on an unreachable network ended, a local claim kept; the pivot surviving a
+  settled keyboard session). `network_no_exposure_test.rb` gains the bare-foothold case (N1).
+- Node (`test/js/validator-network-model.test.mjs`): the un-reserve, a clean linked scenario with
+  its link-reach line, the malformed/undefined/self-link errors, the pivot-no-host warning and the
+  >8-paths warning. `test/js/network-view.test.mjs`: the up block (actionable, its own
+  `network_viewed`) and the greyed down block.
+
+### Live browser proof (port 3027, keyless server, game 1270)
+
+Drove the real client transport (`window.ApiClient` -> the real routes) and the real view UI. N1: a
+bare office foothold's view lists `office_lan` only; a sign-in to `sv_fs02` across the link is 403
+without a pivot; a forged foothold id is 404. N2: after a remote sign-in at Lena's office PC the view
+gains a `server_net` up block, through `lena_pc`. N3: `sv_fs02` signs in across the link through the
+same foothold and its protected `backup_vault` share is served. N4: signing out of `lena_pc` returns
+`endedPcIds` including `sv_fs02` and the server block disappears. After a reload (`location.href` with
+`?skip_resume=1`) the foothold persists, the pivot password session survives and the server desktop
+opens with no password; the UI view renders the `server_net` block. The leak scanner over the 19
+captured responses: `VERDICT: no leaks found`. Lab live check (game 1271): `lab_physical_pentest`
+plants and views as before, `office_lan` only (K inert, no links), `kp_dropbox_viewed` still fires.
+
+### Not done / for later sub-slices
+
+- Dungeon graph (`scripts/generate_dungeon_graph.rb`): the plan (9.3) wants a link edge and a pivot
+  edge plus `dungeon-graph-networks.test.mjs` fixtures. Deferred (as W deferred the Wi-Fi node), for
+  whoever lands the graph changes across the sub-slices. Low risk, additive.
+- O, P, I: separate sub-slices (P is already on `main`).
+
 ## Sub-slice W: Wi-Fi (branch `build/9-3b-w`, from `main` 1ba8c5cd7)
 
 Built on 9.3a only (K and O were not yet on this branch). A Wi-Fi foothold reaches its own
