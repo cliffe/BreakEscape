@@ -2222,9 +2222,15 @@ export async function create() {
         // reach (e.g. a memo lying right next to an NPC), don't guess — show a
         // disambiguation menu listing each by its observation text. This fixes the
         // "can't pick up items next to characters" problem, especially on touch.
-        // An NPC walking away is dropped when the tap also gathered an object: a tap on
-        // the PC its owner has just left is for the PC (q55 d)
-        const nearbyInteractables = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(gatherInteractablesNearClick(worldX, worldY)));
+        // An NPC walking away gives way to an object under the same tap: a tap on the PC its
+        // owner has just left is for the PC (q55 d). Dropped from the pick list when an object
+        // was gathered too; and when only leaving NPCs were gathered (the PC just out of reach)
+        // they are skipped, so the object branch below uses or walks to the PC.
+        const objectUnderTap = () => findObjectsAtPosition(worldX, worldY).some(o => o.interactable && !o.isSwivelChair);
+        let nearbyInteractables = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(gatherInteractablesNearClick(worldX, worldY)));
+        if (nearbyInteractables.length && nearbyInteractables.every(c => c.leavingNpc) && objectUnderTap()) {
+            nearbyInteractables = [];
+        }
         if (nearbyInteractables.length > 1) {
             const nativeEvent = pointer.event || {};
             showInteractionMenu(nearbyInteractables, nativeEvent.clientX, nativeEvent.clientY);
@@ -2241,8 +2247,7 @@ export async function create() {
         // Check for NPC sprites at the clicked position first. One walking away from the
         // player gives way to an interactable object under the same tap (q55 d).
         let npcAtPosition = findNPCAtPosition(worldX, worldY);
-        if (npcAtPosition && npcWalkingAway(window.player, npcAtPosition)
-            && findObjectsAtPosition(worldX, worldY).some(o => o.interactable && !o.isSwivelChair)) {
+        if (npcAtPosition && npcWalkingAway(window.player, npcAtPosition) && objectUnderTap()) {
             npcAtPosition = null;
         }
         if (npcAtPosition) {

@@ -147,8 +147,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 30px;
-  background: linear-gradient(to bottom, transparent, var(--obj-more-fade) 75%);
+  height: 40px;
+  background: linear-gradient(to bottom, transparent, var(--obj-more-fade) 60%);
   pointer-events: none;
   z-index: 1;
 }
@@ -157,7 +157,7 @@
   content: '';
   position: absolute;
   left: 50%;
-  bottom: 12px;
+  bottom: 4px;
   width: 2px;
   height: 2px;
   margin-left: -1px;
