@@ -96,3 +96,6 @@ Brief: `docs/agents/PHONE_CALLS_BRIEF.md`.
 - A2b closed after 5 review rounds (R5 6ca56c259: accept, 0/0/2 tooling minors, passed to the A2c implementer). Rounds: R1 0/4/6, R2 0/1/5, R3 0/1/4, R4 0/0/4, R5 0/0/2. A2c started at e27c30d6c (Sonnet, port 3025).
 - Writers: callers' calls accepted at writing review R4 (d4e5deea4 on the writing branch; rounds R1 2/9/?, R2 0/3/?, R3 0/1/1, R4 0/0/1 optional, left: always-hang-up route loses the echo by the player's choice). Round 5 for these calls is the live-proof review in each M slice, once config and the engine exist. HaX's calls: R3 0/2/4 text-only, fix running.
 - Writers: HaX's calls accepted at writing review R4 (734b6e922 on the writing branch; R1 1/6/8, R2 0/2/7, R3 0/2/4, R4 0/0/0). m10 hax_post :49/:53 (in person, voiced, optional) left for m10's next pass. Round 5 is the live-proof review in each M slice. Writing branch now waits for A5 and each mission's config (merge rule, plan section 8).
+
+## A2c
+- 2026-11-12, A2c implementer (Sonnet): engine, tests (507/0), scenario and tooling committed (134dfa91b, 9c840c3eb, 5f1623d32); live: hold route and banner over keypad and lockpick done; popups, forced, hit, guard, brief, terminal, lab SE and regression set open, see HANDOVER_A2c.md.

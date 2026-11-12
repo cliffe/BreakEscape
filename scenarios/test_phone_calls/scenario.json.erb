@@ -8,7 +8,8 @@
     "skip_timed": true,
     "timed_ringing": false,
     "declined_seen": false,
-    "missed_seen": false
+    "missed_seen": false,
+    "guard_off": false
   },
   "objectives": [
     {
@@ -424,7 +425,7 @@
             "enabled": true,
             "range": 220,
             "angle": 140,
-            "challengeOnSight": { "event": "player_in_view:guard", "cooldown": 8000, "rooms": ["office"] }
+            "challengeOnSight": { "event": "player_in_view:guard", "skipIfGlobal": ["guard_off"], "cooldown": 8000, "rooms": ["office"] }
           },
           "eventMappings": [
             {
