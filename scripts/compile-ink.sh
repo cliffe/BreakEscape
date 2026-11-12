@@ -71,8 +71,12 @@ for ink_dir in $ink_dirs; do
         # Get the filename without path
         filename=$(basename "$ink_file")
 
-        # Get output JSON filename
+        # Get output JSON filename: a storyPath may name X.ink.json, so compile
+        # into that when it is the only compiled file beside the .ink
         json_file="${ink_file%.ink}.json"
+        if [ ! -f "$json_file" ] && [ -f "${ink_file%.ink}.ink.json" ]; then
+            json_file="${ink_file%.ink}.ink.json"
+        fi
 
         echo -e "${YELLOW}Compiling: $filename${NC}"
 

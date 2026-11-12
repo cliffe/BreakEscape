@@ -281,16 +281,18 @@ module BreakEscape
 
     # [npc_id, text] the client voices a line of host_id's story as, for raw ink
     # text the walker could not place (glue, a divert mid-line, player_name()),
-    # or nil. Same rules as resolve, with no tags and no notes recorded.
+    # or nil. Same rules as resolve, with no tags and no notes recorded, and a
+    # voice message keeps its "voice:" marker so TtsLineResolver can tell one.
     def voiced_as(raw, host_id)
       prefix, text = InkLineWalker.split_prefix(raw)
       line = InkLineWalker::Line.new(prefix: prefix, text: text, raw: raw.to_s.strip, tags: [], path: nil)
-      resolve(line, host_id, notes: false)
+      resolve(line, host_id, notes: false, transcript: false)
     end
 
     # Which speaker the client asks for, and the text it sends, for one walker line.
     # Returns [npc_id, text], or nil when the line is not voiced (player, background).
-    def resolve(line, host_id, notes: true)
+    # With transcript: true a voice message's text is its transcript (no marker).
+    def resolve(line, host_id, notes: true, transcript: true)
       raw = line.raw
       return nil if raw.match?(BACKGROUND_LINE)
 
@@ -321,6 +323,9 @@ module BreakEscape
       return nil if speaker == 'player'
 
       text = text.sub(/\A[^:]+:\s*/, '') if text.match?(CLIENT_STRIP_PREFIX)
+      # A phone-chat voice message is voiced as its transcript, as the endpoint
+      # and phone-chat-ui.js have it, never with the "voice:" marker
+      text = text.sub(TtsLineResolver::VOICE_MESSAGE, '') if transcript && !narrator
       return nil if self.class.normalize(text).empty?
 
       return ['narrator', text] if narrator
