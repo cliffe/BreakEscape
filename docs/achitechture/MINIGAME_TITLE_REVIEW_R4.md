@@ -86,3 +86,25 @@ Fix: split the declaration list and keep only an allow-listed set of properties 
 - Games 1292, 1293 and 1294 (standalone dev database), no flag XML files (none of the three scenarios uses VM flags).
 - `tmp/keyless-3029.log` in this worktree.
 - Screenshots and probe scripts in the session scratchpad only.
+
+## Outcomes (2026-11-12)
+
+Each finding was checked against the code first; all eight were confirmed and fixed. Main was merged in before the work.
+
+- M1: `showNotification`/`gameAlert`, `gameDisplay` and `gameConfirm` render plain text by default (textContent, newlines kept). `{ html: true }` is the opt-in; the old `{ plainText: true }` is still accepted and changes nothing. Held toasts keep their `html` flag on replay. A sweep of all 168 direct calls and the indirect ones (`?.(`, `notify`, `toast` wrappers) across `public/break_escape/js` found no caller passing literal markup. Two callers pre-escaped and were changed: `interactions.js` read-in-place display (keeps its `<em>`, now passes `{ html: true }`, escapes once) and `unlock-system.js` "is using this PC" (escape removed, else `&lt;` would show; its test now expects the raw name). The phone and person chat `showNotification` methods were already textContent.
+- m1 and n1: `authorHtml` in both minigames restores matched pairs only (one level of nesting), then `<br>`, then entities, case-insensitive with lower-case output. `&lt;b&gt;` stays literal; a stray or unclosed tag stays text.
+- m2: `sanitizeRich` keeps only `color`, `background-color`, `font-weight`, `font-style`, `font-size`, `text-decoration`, `text-align`, `margin*` and `padding*`, with the character check per value; `style2` goes through the same `cleanStyle`. sis03 (`color`, `margin-top`) is unchanged.
+- m3: aim and task ids use a dedicated attribute escape (the panel's `escapeHtml` serialises a text node, which leaves quotes alone and runs the dash display) and a quoted-selector escape when looked up.
+- m4: the inline phone header and the ink error use textContent.
+- n2: a `<p>` inside a `<p>` (from the `p` block wrapper or the author) is unwrapped.
+- n3: comment added at the coverage form header join.
+
+Tests: `notifications-plain-default.test.mjs` (real notifications.js and interactions.js in jsdom, hostile name, observations and confirmation text), `panel-barks-author-text.test.mjs` (m3, m4), new cases in `minigame-html-sweep-b` (m1, n1) and `minigame-html-sweep-c` (m2, n2). Every new case except the opt-in and dash-id checks fails against the pre-fix engine (`SWEEP_JS_ROOT` pointed at a copy of the merge commit).
+
+Five toast tests used fake documents with no `createTextNode` and read the title from the markup; their fakes and assertions were updated for the plain default.
+
+Suites (under the shared lock): `bin/rails test` 1748 runs, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 506 files passed, 0 failed.
+
+Commits: 57e387201 (merge main), 7da2ca0e5 (fixes and tests), d0370f228 (toast test fakes).
+
+Not done: no live browser render this round; the change is covered by jsdom tests on the real modules.
