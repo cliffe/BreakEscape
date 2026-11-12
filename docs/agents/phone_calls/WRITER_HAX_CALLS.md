@@ -4,6 +4,8 @@ Writer owns HaX's ink: every HaX call, ring, callback/slow-answer line, bring-in
 
 Order worked: m01 (M8), m03 (M7), m04 (M4), m05 (M5), m06+m08 (M10), m07 bring-in (M6).
 
+**Expected validator warning (every mission where a call knot reads the engine VARs):** the pre-A7 validator reports `VAR call_answer_seconds/call_is_callback is read but never set`. This is a false positive: the engine writes them run-scoped via `applyEngineVariables` (2.11), never from ink. The A7/validator slice teaches the validator about them. Declaring + reading them is mandated by 7.2/2.11, so these warnings are accepted. Not a defect in the ink.
+
 Line tables below: V = voiced (call knot), T = text thread (not voiced). "Config needed" = what the implementer must add for the knot to be reached (from 7.2).
 
 ---
@@ -113,3 +115,53 @@ Call-VAR openers added per 3.6 (the ring can be missed → callback; incoming ri
 Compile OK. dialoguelint: pre-existing line-len errors at :230/:354/:1004 only (unchanged knots); my new lines under cap. Validator: Schema passed, Validation complete; no new structural errors.
 
 Voiced lines this mission: ~**18** touched (3 revelation openers incl. 2 new VAR branches; 1 impact reword; revelation_end unchanged text; 4 extract lines re-keyed). New clips: 2 revelation VAR branches + the 4 re-keyed bring-in lines + 2 name-dropped revelation lines.
+
+---
+
+## m04 (M4) — DONE, committed (HaX only; Vance is the other writer's)
+
+File: `scenarios/m04_critical_failure/ink/m04_phone_agent0x99.ink`. Declared both call VARs at top.
+
+### on_anomaly_confirmed (HaX dial ring, incoming) — openers added (7.2/3.6)
+
+| Line | Before | After | V/T |
+|---|---|---|---|
+| opener (callback) | — | "You rang. Good. Nightshade's read it." | V (new) |
+| opener (slow, `>10`) | — | "There you are. That dial won't wait." | V (new) |
+| opener (plain) | — | "Sixty-one. You were right not to trust their screens." | V (new) |
+| body | (3 reading lines) | unchanged | V |
+| on_anomaly_confirmed_choices | three `#exit_conversation ... -> support_hub` | `... -> DONE` (replies unchanged) | V |
+
+Marked `// lint: call-knot`. Opener goes in front of the existing first body line (number echoes the body's "Sixty-one degrees" deliberately).
+
+### extract_call (bring-in, renamed from the extract_offer router) — rewrite (7.6 m04)
+
+| Line | Before | After | V/T |
+|---|---|---|---|
+| opening (extract_offer_text) | "Once you're out, you don't go back in. Whatever you haven't read stays for forensics." | "Past the gate it's forensics' site, not ours. Anything you want, take it now." | V (re-key) |
+| conditional lines (Voltage log, go-bag) | — | unchanged | V |
+| [Bring me in.] reply | "Car's at the loading dock. Two minutes." | "Loading dock. The van with no livery." | V (re-key) |
+| "Not yet" reply | "Take your time. The banks aren't going anywhere." (`-> support_hub`) | "Fine. The banks will keep." (`#exit_conversation` / `-> DONE`) | V (re-key) |
+| [On my way.] | plain | `[On my way. #ending_check]` | — |
+| last line | "See you at HQ." | "Albion's grid is someone else's problem now." | V (re-key) |
+| [Understood.] (extract_blocked_choices) | `-> support_hub` | `#exit_conversation` / `-> DONE` | — |
+
+`extract_blocked` five lines: m04's own, unchanged. `#complete_task:call_in_after_sweep` moved from extract_go onto [Bring me in.] reply; `#set_global:mission_complete` + assignment stay in extract_go. All extract knots marked `// lint: call-knot`. (Router renamed `extract_offer` → `extract_call`; `extract_offer_text` is a separate kept knot.)
+
+### Hub choices → place_call
+- `[I'm done here. Bring me in.]`: `-> extract_offer` → `#place_call:extract_call` / `-> DONE`.
+- `[You wanted to talk about the dial reading.]`: `-> on_anomaly_confirmed` → `#place_call:on_anomaly_confirmed` / `-> DONE`.
+
+### Ink reword (7.3)
+- `first_call_end` (`:652`): "Call me when you've got a real reading." → "I'll ring once you've got a real reading." (T).
+
+### Config the implementer must add (M4)
+- `agent_0x99` `call`: `[{ knot: "on_anomaly_confirmed", button: false }, { knot: "extract_call", button: false }]`.
+- Drop `sendTimedMessage` on the `:898` anomaly mapping; add `conversationMode: "phone-chat"`, `targetKnot: "on_anomaly_confirmed"`, `ring: { onMissed: "callback" }`, `delayMs: 6000` (7.2).
+- Decline/miss follow-up text on `phone_call_declined/missed:agent_0x99`: **"Nightshade's got your reading. Ring me back."** (not voiced).
+- (Vance callable config + his ink are the other writer's.)
+
+### Checks
+Compile OK. dialoguelint: pre-existing line-len errors at :258 (and ERB :1129) only. Validator: Schema passed; two expected call-VAR warnings (see top). No structural errors, no dangling refs.
+
+Voiced new/re-keyed: **~12** — 3 anomaly openers (new) + 4 bring-in lines (re-key).
