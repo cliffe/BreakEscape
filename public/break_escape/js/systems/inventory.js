@@ -1147,6 +1147,21 @@ function handleKeyRingInteraction(keyRingItem) {
     }
 }
 
+// The notepad's item data. Its "sprite" names the tray picture: the tray reads the item's
+// sprite, then its type, and there is no notepad.png, so without it the slot showed a
+// broken image with the alt text "Notepad" spilling out of it.
+export function notepadItemData() {
+    return {
+        type: 'notepad',
+        name: 'Notepad',
+        sprite: 'notes5',
+        takeable: true,
+        readable: true,
+        text: 'Use this notepad to review your collected notes and observations.',
+        observations: 'A handy notepad for keeping track of important information.'
+    };
+}
+
 // Add notepad to inventory
 function addNotepadToInventory() {
     // Check if notepad is already in inventory
@@ -1160,16 +1175,7 @@ function addNotepadToInventory() {
     }
     
     // Create notepad item data
-    const notepadData = {
-        type: 'notepad',
-        name: 'Notepad',
-        // The tray picture (trayImageKey reads sprite before type; there is no notepad.png)
-        sprite: 'notes5',
-        takeable: true,
-        readable: true,
-        text: 'Use this notepad to review your collected notes and observations.',
-        observations: 'A handy notepad for keeping track of important information.'
-    };
+    const notepadData = notepadItemData();
     
     // Create a mock sprite object for the notepad
     const notepadSprite = {
