@@ -4,6 +4,10 @@ import { ASSETS_PATH, ASSETS_VERSION } from '../../config.js';
 
 const ICON_BASE = `${ASSETS_PATH}/icons`;
 
+// Scenario text is plain text: escape it once before it goes into HTML
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
 const TIMER_DURATION_MS = 72 * 60 * 60 * 1000;
 
 function parseTimestamp(value) {
@@ -128,18 +132,18 @@ export class RansomwareDisplayMinigame extends MinigameScene {
         const deployed = this.isRansomwareDeployed();
         const scenarioData = this.params.lockable?.scenarioData?.minigameData || {};
 
-        const organisation   = displayDashes(scenarioData.organisation   || 'ORGANISATION');
-        const encryptedSystems = displayDashes(scenarioData.encryptedSystems || 'systems encrypted');
-        const ransomAmount   = displayDashes(scenarioData.ransomAmount   || 'AMOUNT');
-        const ransomBitcoin  = scenarioData.ransomBitcoin  || '';
-        const walletAddress  = scenarioData.walletAddress  || '';
+        const organisation   = escapeHtml(displayDashes(scenarioData.organisation   || 'ORGANISATION'));
+        const encryptedSystems = escapeHtml(displayDashes(scenarioData.encryptedSystems || 'systems encrypted'));
+        const ransomAmount   = escapeHtml(displayDashes(scenarioData.ransomAmount   || 'AMOUNT'));
+        const ransomBitcoin  = escapeHtml(scenarioData.ransomBitcoin  || '');
+        const walletAddress  = escapeHtml(scenarioData.walletAddress  || '');
         const groupName      = scenarioData.groupName      || 'Ransomware Group';
-        const supportPortal  = scenarioData.supportPortal  || '';
+        const supportPortal  = escapeHtml(scenarioData.supportPortal  || '');
         // Optional per-terminal lines (host name, what this machine was doing, a
         // targeted threat), so each infected screen can say something of its own.
-        const extraLines = displayDashes(Array.isArray(scenarioData.extraLines)
+        const extraLines = escapeHtml(displayDashes(Array.isArray(scenarioData.extraLines)
             ? scenarioData.extraLines.join('\n')
-            : (scenarioData.extraLines || ''));
+            : (scenarioData.extraLines || '')));
 
         this.gameContainer.innerHTML = `
             <div class="ransomware-display-bg">

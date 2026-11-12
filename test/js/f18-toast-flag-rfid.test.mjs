@@ -44,8 +44,8 @@ test('holdRecentNotifications replays a glimpsed toast once, and a replayed one 
     const container = { els: [], appendChild(n) { this.els.push(n); n.parentNode = this; }, removeChild(n) { this.els = this.els.filter((e) => e !== n); n.parentNode = null; },
         querySelectorAll() { return this.els; } };
     const el = () => ({ classList: { add() {}, remove() {}, }, style: {}, set innerHTML(v) { this.html = v; },
-        querySelector: () => ({ style: {}, addEventListener() {} }) });
-    globalThis.document = { getElementById: (id) => (id === 'notification-container' ? container : null), createElement: el };
+        querySelector: () => ({ style: {}, addEventListener() {}, appendChild() {} }) });
+    globalThis.document = { getElementById: (id) => (id === 'notification-container' ? container : null), createElement: el, createTextNode: (text) => ({ text }) };
     window.MinigameFramework = { currentMinigame: null };
     const shownMessages = () => container.els.map((e) => e._toast.message);
 
@@ -71,8 +71,8 @@ test('holdRecentNotifications replays a glimpsed toast once, and a replayed one 
 test('the same toast raised twice while a panel is open shows once', async () => {
     const appended = [];
     const el = () => ({ classList: { add() {}, remove() {} }, style: {}, set innerHTML(v) { this.html = v; },
-        querySelector: () => ({ style: {}, addEventListener() {} }) });
-    globalThis.document = { getElementById: () => ({ appendChild: (n) => appended.push(n), querySelectorAll: () => [] }), createElement: el };
+        querySelector: () => ({ style: {}, addEventListener() {}, appendChild() {} }) });
+    globalThis.document = { getElementById: () => ({ appendChild: (n) => appended.push(n), querySelectorAll: () => [] }), createElement: el, createTextNode: (text) => ({ text }) };
     window.MinigameFramework = { currentMinigame: {} };
     N.showNotification('✓ Get inside the archive', 'success', 'Task Complete', 0);
     N.showNotification('✓ Get inside the archive', 'success', 'Task Complete', 0);

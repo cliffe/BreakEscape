@@ -95,6 +95,9 @@ export class MixerMatchBoard {
         return `${num.toFixed(4)} ${this.currency}`;
     }
 
+    // For templates: money() is plain text (it also feeds feedback text, escaped there)
+    moneyHtml(n) { return esc(this.money(n)); }
+
     deposit(id) { return this.deposits.find(d => d.id === id) || null; }
 
     matchedBy(withdrawal) {
@@ -141,7 +144,7 @@ export class MixerMatchBoard {
             this.matches[d.id] = w;
             this.feedback = {
                 kind: 'ok',
-                text: `Match. ${this.money(d.amount)} less ${this.mixer.feePercent}% is ${this.money(result.expected)}, `
+                text: `Match. ${this.moneyHtml(d.amount)} less ${this.mixer.feePercent}% is ${this.moneyHtml(result.expected)}, `
                     + `and it cleared ${formatHold(result.hold).slice(1)} later, after the ${this.mixer.minHoldHours}-hour hold.`
             };
             this.selected = this.nextUnmatched();
@@ -275,7 +278,7 @@ export class MixerMatchBoard {
                 <span class="bce-mx-card-main">
                     <span class="bce-mx-card-title">${esc(d.label || d.wallet)}</span>
                     <span class="bce-mx-card-sub">${esc(d.wallet)}</span>
-                    <span class="bce-mx-card-row"><span>${esc(formatTime(d.time))}</span><span class="bce-mx-amt">${this.money(d.amount)}</span></span>
+                    <span class="bce-mx-card-row"><span>${esc(formatTime(d.time))}</span><span class="bce-mx-amt">${this.moneyHtml(d.amount)}</span></span>
                     ${match ? `<span class="bce-mx-card-link">→ ${esc(this.slotLabel)} ${esc(match.slot)} · ${esc(formatTime(match.time))}</span>` : ''}
                 </span>
             </button>`;
@@ -300,7 +303,7 @@ export class MixerMatchBoard {
             <button class="${cls.join(' ')}" data-wd="${esc(w.id)}" type="button" ${by ? `style="--mx-c:${by.colour}"` : ''}>
                 <span class="bce-mx-swatch"></span>
                 <span class="bce-mx-card-main">
-                    <span class="bce-mx-card-row"><span>${esc(formatTime(w.time))}</span><span class="bce-mx-slot">${esc(this.slotLabel)} ${esc(w.slot)}</span><span class="bce-mx-amt">${this.money(w.amount)}</span></span>
+                    <span class="bce-mx-card-row"><span>${esc(formatTime(w.time))}</span><span class="bce-mx-slot">${esc(this.slotLabel)} ${esc(w.slot)}</span><span class="bce-mx-amt">${this.moneyHtml(w.amount)}</span></span>
                     ${by ? `<span class="bce-mx-card-link">← ${esc(by.label || by.wallet)}</span>` : delta}
                 </span>
             </button>`;
@@ -328,18 +331,18 @@ export class MixerMatchBoard {
         const fee = Number(d.amount) - expected;
         const earliest = parseTime(d.time) + (Number(m.minHoldHours) || 0) * 3600 * 1000;
         const change = d.change ? `
-                <div class="bce-mx-out-row"><span>${this.money(d.change.amount)} → ${esc(d.change.wallet)}</span><span class="bce-mx-tag bce-mx-tag-change">change</span></div>
+                <div class="bce-mx-out-row"><span>${this.moneyHtml(d.change.amount)} → ${esc(d.change.wallet)}</span><span class="bce-mx-tag bce-mx-tag-change">change</span></div>
                 <div class="bce-mx-note">Change goes back to the sender's own new address. It never enters the mixer.</div>` : '';
         const working = this.working.has(d.id) ? `
                 <div class="bce-mx-working">
-                    ${m.feePercent}% of ${this.money(d.amount)} is ${this.money(fee)}, so look for <b>${this.money(expected)}</b>.<br>
+                    ${esc(m.feePercent)}% of ${this.moneyHtml(d.amount)} is ${this.moneyHtml(fee)}, so look for <b>${this.moneyHtml(expected)}</b>.<br>
                     Earliest it can leave: <b>${esc(formatTime(new Date(earliest).toISOString()))}</b>.
                 </div>` : `<button class="bce-mx-work-btn" id="bce-mx-work" type="button">Show working</button>`;
         return `
             <div class="bce-mx-mid-title" style="color:${d.colour}">${esc(d.label || 'DEPOSIT')}</div>
             <div class="bce-mx-text">${esc(formatTime(d.time))} UTC, from ${esc(d.wallet)}</div>
             <div class="bce-mx-tx">
-                <div class="bce-mx-out-row"><span>${this.money(d.amount)} → ${esc(m.name)}</span><span class="bce-mx-tag">deposit</span></div>
+                <div class="bce-mx-out-row"><span>${this.moneyHtml(d.amount)} → ${esc(m.name)}</span><span class="bce-mx-tag">deposit</span></div>
                 ${change}
             </div>
             <div class="bce-mx-look">Look for: this deposit less ${esc(m.feePercent)}%, at least ${esc(m.minHoldHours)} hours later.</div>

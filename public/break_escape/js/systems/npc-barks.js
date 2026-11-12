@@ -713,10 +713,13 @@ export default class NPCBarkSystem {
       background: #2a2a2a; padding: 16px; border-bottom: 2px solid #333;
       display: flex; align-items: center; justify-content: space-between;
     `;
+    // The NPC name is author text: set as textContent below, never markup
     header.innerHTML = `
-      <span style="color: white; font-weight: bold;">${params.npcName || 'Chat'}</span>
+      <span style="color: white; font-weight: bold;"></span>
       <button id="phone-close" style="background: #d32f2f; color: white; border: none; padding: 4px 12px; cursor: pointer;">Close</button>
     `;
+
+    header.querySelector('span').textContent = params.npcName || 'Chat';
 
     // Messages container
     const messages = document.createElement('div');
@@ -903,7 +906,11 @@ export default class NPCBarkSystem {
       continueStory();
     } catch (err) {
       console.error('❌ Failed to run inline story:', err);
-      messagesContainer.innerHTML = `<div style="color: #f44; padding: 16px;">Error loading story: ${err.message}</div>`;
+      // The error can quote ink text: plain text only
+      const errEl = document.createElement('div');
+      errEl.style.cssText = 'color: #f44; padding: 16px;';
+      errEl.textContent = `Error loading story: ${err?.message ?? err}`;
+      messagesContainer.replaceChildren(errEl);
     }
   }
 }

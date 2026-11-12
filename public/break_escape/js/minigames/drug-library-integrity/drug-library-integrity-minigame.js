@@ -1,6 +1,10 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+// Scenario text is plain text: escape it once before it goes into HTML
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
 // ── Static drug library data (fallback if scenarioData not provided) ──────────
 // Full 23-entry library. Entry at index 5 (MORPHINE) is the tampered one.
 const DEFAULT_LIBRARY = [
@@ -124,10 +128,10 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
 <div class="dli-console-header">
-  <div class="dli-console-title">${displayDashes(title)}</div>
-  ${subtitle ? `<div class="dli-console-subtitle">${displayDashes(subtitle)}</div>` : ''}
+  <div class="dli-console-title">${escapeHtml(displayDashes(title))}</div>
+  ${subtitle ? `<div class="dli-console-subtitle">${escapeHtml(displayDashes(subtitle))}</div>` : ''}
   <div class="dli-console-files">
-    <span>${libFile}</span><span>${bakFile}</span><span>${hashFile}</span>
+    <span>${escapeHtml(libFile)}</span><span>${escapeHtml(bakFile)}</span><span>${escapeHtml(hashFile)}</span>
   </div>
 </div>
 <div class="dli-tab-bar" id="dli-tab-bar">
@@ -211,12 +215,12 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
             }
 
             return `<tr class="${rowClass}" id="dli-row-${i}">
-  <td class="dli-col-drug">${displayDashes(drug.name)}</td>
-  <td class="dli-col-conc">${drug.concMgPerMl}</td>
-  <td class="dli-col-dmin">${drug.doseMin}</td>
-  <td class="dli-col-dmax">${drug.doseMax}</td>
-  <td class="dli-col-unit">${drug.unit}</td>
-  <td class="dli-col-rate">${drug.rateMaxMlHr}</td>
+  <td class="dli-col-drug">${escapeHtml(displayDashes(drug.name))}</td>
+  <td class="dli-col-conc">${escapeHtml(drug.concMgPerMl)}</td>
+  <td class="dli-col-dmin">${escapeHtml(drug.doseMin)}</td>
+  <td class="dli-col-dmax">${escapeHtml(drug.doseMax)}</td>
+  <td class="dli-col-unit">${escapeHtml(drug.unit)}</td>
+  <td class="dli-col-rate">${escapeHtml(drug.rateMaxMlHr)}</td>
   <td class="dli-col-status" id="dli-status-${i}">${statusCell}</td>
 </tr>`;
         }).join('');
@@ -261,7 +265,7 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
 <div class="dli-result-banner dli-result-banner-restored" id="dli-result-banner" style="border-color:#33cc66;background:#0d2a16">
   <div class="dli-result-banner-title" style="color:#33cc66">&#x2713; Integrity Check Complete</div>
   <p>${total} entries verified: <strong style="color:#33cc66">PASS</strong></p>
-  <p>${displayDashes(this._tampered.drug)} restored from ${this._data.backupFile || 'drug_library.bak'}. The change made ${this._tampered.modifiedAt} (${this._changesText('current')}) is kept in the audit record.</p>
+  <p>${escapeHtml(displayDashes(this._tampered.drug))} restored from ${escapeHtml(this._data.backupFile || 'drug_library.bak')}. The change made ${escapeHtml(this._tampered.modifiedAt)} (${this._changesText('current')}) is kept in the audit record.</p>
 </div>`;
     }
 
@@ -285,10 +289,10 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
         const backupBtn = restored ? '' : `<button class="dli-backup-btn" id="dli-backup-btn">[COMPARE TO BACKUP &rarr;]</button>`;
         return `
 <div class="dli-hash-detail" id="dli-hash-detail">
-  <div class="dli-hash-detail-title">&#x26A0; Hash Mismatch &mdash; ${displayDashes(t.drug)}</div>
+  <div class="dli-hash-detail-title">&#x26A0; Hash Mismatch &mdash; ${escapeHtml(displayDashes(t.drug))}</div>
   <div class="dli-hash-meta">
-    <span>File: <strong>${this._data.libraryFile || 'drug_library.csv'}</strong></span>
-    <span>Modified: <span class="dli-ts">${t.modifiedAt}</span></span>
+    <span>File: <strong>${escapeHtml(this._data.libraryFile || 'drug_library.csv')}</strong></span>
+    <span>Modified: <span class="dli-ts">${escapeHtml(t.modifiedAt)}</span></span>
   </div>
   <div class="dli-hash-row">
     <span class="dli-hash-label">EXPECTED:</span>
@@ -472,15 +476,15 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
 <div class="dli-diff-split">
   <div class="dli-diff-panel">
     <div class="dli-diff-panel-header">
-      <div class="dli-diff-panel-file">${this._data.libraryFile || 'drug_library.csv'}</div>
-      <div class="dli-diff-panel-meta">${this._phase === 'restored' ? `Restored from backup &nbsp;<span class="dli-verified-ok">&#x2713; HASH MATCH</span>` : `Modified: <span class="dli-modified-at">${t.modifiedAt}</span>`}</div>
+      <div class="dli-diff-panel-file">${escapeHtml(this._data.libraryFile || 'drug_library.csv')}</div>
+      <div class="dli-diff-panel-meta">${this._phase === 'restored' ? `Restored from backup &nbsp;<span class="dli-verified-ok">&#x2713; HASH MATCH</span>` : `Modified: <span class="dli-modified-at">${escapeHtml(t.modifiedAt)}</span>`}</div>
     </div>
     <table class="dli-diff-table"><tbody>${leftRows}</tbody></table>
   </div>
   <div class="dli-diff-panel">
     <div class="dli-diff-panel-header">
-      <div class="dli-diff-panel-file">${this._data.backupFile || 'drug_library.bak'}</div>
-      <div class="dli-diff-panel-meta">Backup: ${t.backupDate} &nbsp;<span class="dli-verified-ok">&#x2713; HASH MATCH</span></div>
+      <div class="dli-diff-panel-file">${escapeHtml(this._data.backupFile || 'drug_library.bak')}</div>
+      <div class="dli-diff-panel-meta">Backup: ${escapeHtml(t.backupDate)} &nbsp;<span class="dli-verified-ok">&#x2713; HASH MATCH</span></div>
     </div>
     <table class="dli-diff-table"><tbody>${rightRows}</tbody></table>
   </div>
@@ -488,11 +492,11 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
 <div class="dli-diff-summary">
   ${this._phase === 'restored'
     ? `<div class="dli-diff-summary-title">0 differences: the live library matches the backup.</div>
-  Restored from backup. Earlier change (${t.modifiedAt}): ${displayDashes(t.drug)} ${this._changesText('current')}, kept in the audit record.`
+  Restored from backup. Earlier change (${escapeHtml(t.modifiedAt)}): ${escapeHtml(displayDashes(t.drug))} ${this._changesText('current')}, kept in the audit record.`
     : `<div class="dli-diff-summary-title">${this._changes.length} difference${this._changes.length === 1 ? '' : 's'} found:</div>
-  ${this._changes.map(c => `Row: <strong>${displayDashes(t.drug)}</strong> &nbsp;|&nbsp; Field: <strong>${c.field}</strong>
-  &nbsp;|&nbsp; Current: <strong style="color:#cc3333">${c.tamperedValue}</strong>
-  &nbsp;|&nbsp; Backup: <strong style="color:#33cc66">${c.correctValue}</strong>`).join('<br>')}`}
+  ${this._changes.map(c => `Row: <strong>${escapeHtml(displayDashes(t.drug))}</strong> &nbsp;|&nbsp; Field: <strong>${escapeHtml(c.field)}</strong>
+  &nbsp;|&nbsp; Current: <strong style="color:#cc3333">${escapeHtml(c.tamperedValue)}</strong>
+  &nbsp;|&nbsp; Backup: <strong style="color:#33cc66">${escapeHtml(c.correctValue)}</strong>`).join('<br>')}`}
 </div>`;
     }
 
@@ -503,23 +507,23 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
             const rowCls = side === 'current' ? 'dli-diff-row-current' : 'dli-diff-row-backup';
             const cell = (field, rowValue) => {
                 const c = this._changes.find(ch => ch.field === field);
-                if (!c) return `${rowValue}`;
-                if (this._phase === 'restored') return `${c.correctValue}`;
+                if (!c) return `${escapeHtml(rowValue)}`;
+                if (this._phase === 'restored') return `${escapeHtml(c.correctValue)}`;
                 const v = side === 'current' ? c.tamperedValue : c.correctValue;
-                return `<span class="dli-diff-value-large ${cls}">${v}</span>`;
+                return `<span class="dli-diff-value-large ${cls}">${escapeHtml(v)}</span>`;
             };
             return `<tr class="${rowCls}">
-  <td><strong>${displayDashes(drug.name)}</strong></td>
-  <td>${drug.concMgPerMl}</td>
+  <td><strong>${escapeHtml(displayDashes(drug.name))}</strong></td>
+  <td>${escapeHtml(drug.concMgPerMl)}</td>
   <td>${cell('DOSE_MIN', drug.doseMin)}</td>
   <td>${cell('DOSE_MAX', drug.doseMax)}</td>
-  <td>${drug.unit}</td>
+  <td>${escapeHtml(drug.unit)}</td>
   <td>${cell('RATE_MAX', drug.rateMaxMlHr)}</td>
 </tr>`;
         }
         return `<tr class="dli-diff-unchanged">
-  <td>${displayDashes(drug.name)}</td><td>${drug.concMgPerMl}</td>
-  <td>${drug.doseMin}</td><td>${drug.doseMax}</td><td>${drug.unit}</td><td>${drug.rateMaxMlHr}</td>
+  <td>${escapeHtml(displayDashes(drug.name))}</td><td>${escapeHtml(drug.concMgPerMl)}</td>
+  <td>${escapeHtml(drug.doseMin)}</td><td>${escapeHtml(drug.doseMax)}</td><td>${escapeHtml(drug.unit)}</td><td>${escapeHtml(drug.rateMaxMlHr)}</td>
 </tr>`;
     }
 
@@ -555,7 +559,7 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
                 : `<div class="dli-restore-hint">Verify correct value from independent sources before restoring.</div>`;
 
         panel.innerHTML = `
-<div class="dli-verify-title">VERIFY CORRECT VALUE${this._changes.length === 1 ? '' : 'S'} &mdash; ${displayDashes(t.drug)} ${this._changes.map(c => c.field).join(' / ')}</div>
+<div class="dli-verify-title">VERIFY CORRECT VALUE${this._changes.length === 1 ? '' : 'S'} &mdash; ${escapeHtml(displayDashes(t.drug))} ${escapeHtml(this._changes.map(c => c.field).join(' / '))}</div>
 <div class="dli-verify-values">
   <span class="dli-verify-backup-val">&#x25B6; Backup shows: <strong>${this._changesText('backup', true)}</strong></span>
   <span class="dli-verify-tampered-val">&#x2717; Current (tampered): <strong>${this._changesText('current', true)}</strong></span>
@@ -594,20 +598,20 @@ ${restoreHint}`;
         if (isConsulted) {
             btnHtml = `<span class="dli-source-consulted">CONSULTED &#x2713;</span>`;
         } else if (!isAvailable) {
-            btnHtml = `<button class="dli-source-btn" id="dli-src-btn-${source.id}" disabled>[REFERENCE]</button>`;
+            btnHtml = `<button class="dli-source-btn" id="dli-src-btn-${escapeHtml(source.id)}" disabled>[REFERENCE]</button>`;
         } else {
-            btnHtml = `<button class="dli-source-btn" id="dli-src-btn-${source.id}">[REFERENCE]</button>`;
+            btnHtml = `<button class="dli-source-btn" id="dli-src-btn-${escapeHtml(source.id)}">[REFERENCE]</button>`;
         }
 
         const sublabel = isConsulted
             ? ''
-            : (!isAvailable ? `<small>${displayDashes(source.lockedMessage || '')}</small>` : '');
+            : (!isAvailable ? `<small>${escapeHtml(displayDashes(source.lockedMessage || ''))}</small>` : '');
 
         return `
 <div class="dli-source-row">
   <div class="${indicatorClass}">${indicatorText}</div>
   <div class="dli-source-label">
-    SOURCE ${this._sources.indexOf(source) >= 0 ? this._sources.indexOf(source) + 1 : ''} &mdash; ${displayDashes(source.label)}
+    SOURCE ${this._sources.indexOf(source) >= 0 ? this._sources.indexOf(source) + 1 : ''} &mdash; ${escapeHtml(displayDashes(source.label))}
     ${sublabel}
   </div>
   ${btnHtml}
@@ -620,14 +624,16 @@ ${restoreHint}`;
         return entry ? entry.unit : 'mg/hr';
     }
 
-    // "DOSE_MIN: 0.5, DOSE_MAX: 4" for the backup side, or the tampered side.
-    _changesText(side, withUnit = false) {
-        return this._changes
+    // "DOSE_MIN: 0.5, DOSE_MAX: 4" for the backup side, or the tampered side. Returns escaped HTML.
+    // Pass plain = true for a textContent write.
+    _changesText(side, withUnit = false, plain = false) {
+        const text = this._changes
             .map(c => {
                 const unit = withUnit ? ` ${c.unit || this._getUnit(this._tampered)}` : '';
                 return `${c.field}: ${side === 'current' ? c.tamperedValue : c.correctValue}${unit}`;
             })
             .join(', ');
+        return plain ? text : escapeHtml(text);
     }
 
     // After a restore the library row shows the verified values again.
@@ -646,35 +652,35 @@ ${restoreHint}`;
 
         if (source.id === 'paper_mar_charts') {
             bodyHtml = `
-<div class="dli-modal-row"><span class="dli-modal-key">Title:</span><span class="dli-modal-val">${displayDashes(c.title || 'MEDICATION ADMINISTRATION RECORD \u2014 WARD 7')}</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Drug:</span><span class="dli-modal-val">${displayDashes(c.drug || 'Morphine Sulphate (IV)')}</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Prescribed:</span><span class="dli-modal-val">${displayDashes(c.patient || 'Patient D. [anonymised] \u2014 Bed 2')}</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Dose:</span><span class="dli-modal-val">${c.dose ? `<span class="dli-modal-val-green">${displayDashes(c.dose)}</span>` : `2 mg/hr standard; <span class="dli-modal-val-green">max ${c.value || 4} ${c.unit || 'mg/hr'}</span>`}</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Note:</span><span class="dli-modal-val">${displayDashes(c.note || '')}</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Prescriber:</span><span class="dli-modal-val">${displayDashes(c.prescriber || 'Dr. K. Mahmoud')} (signed)</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Pharmacy:</span><span class="dli-modal-val">Verified &mdash; ${displayDashes(c.verified || 'J. Chen (23 Oct 2025)')}</span></div>`;
+<div class="dli-modal-row"><span class="dli-modal-key">Title:</span><span class="dli-modal-val">${escapeHtml(displayDashes(c.title || 'MEDICATION ADMINISTRATION RECORD \u2014 WARD 7'))}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Drug:</span><span class="dli-modal-val">${escapeHtml(displayDashes(c.drug || 'Morphine Sulphate (IV)'))}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Prescribed:</span><span class="dli-modal-val">${escapeHtml(displayDashes(c.patient || 'Patient D. [anonymised] \u2014 Bed 2'))}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Dose:</span><span class="dli-modal-val">${c.dose ? `<span class="dli-modal-val-green">${escapeHtml(displayDashes(c.dose))}</span>` : `2 mg/hr standard; <span class="dli-modal-val-green">max ${escapeHtml(c.value || 4)} ${escapeHtml(c.unit || 'mg/hr')}</span>`}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Note:</span><span class="dli-modal-val">${escapeHtml(displayDashes(c.note || ''))}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Prescriber:</span><span class="dli-modal-val">${escapeHtml(displayDashes(c.prescriber || 'Dr. K. Mahmoud'))} (signed)</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Pharmacy:</span><span class="dli-modal-val">Verified &mdash; ${escapeHtml(displayDashes(c.verified || 'J. Chen (23 Oct 2025)'))}</span></div>`;
         } else if (Array.isArray(c.rows)) {
             // Scenario-supplied rows: [{ key, value, tone: 'amber'|'green'|undefined }]
             const toneCls = (tone) => tone === 'amber' ? 'dli-modal-val-amber' : tone === 'green' ? 'dli-modal-val-green' : 'dli-modal-val';
             bodyHtml = c.rows.map(r =>
-                `<div class="dli-modal-row"><span class="dli-modal-key">${displayDashes(r.key)}:</span><span class="${toneCls(r.tone)}">${displayDashes(r.value)}</span></div>`
-            ).join('\n') + (c.warning ? `\n<div class="dli-modal-warning">${displayDashes(c.warning)}</div>` : '');
+                `<div class="dli-modal-row"><span class="dli-modal-key">${escapeHtml(displayDashes(r.key))}:</span><span class="${toneCls(r.tone)}">${escapeHtml(displayDashes(r.value))}</span></div>`
+            ).join('\n') + (c.warning ? `\n<div class="dli-modal-warning">${escapeHtml(displayDashes(c.warning))}</div>` : '');
         } else {
             bodyHtml = `
-<div class="dli-modal-row"><span class="dli-modal-key">Title:</span><span class="dli-modal-val">${displayDashes(c.title || 'ALARIS GP \u2014 DRUG LIBRARY CONFIGURATION GUIDE')}</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Drug:</span><span class="dli-modal-val">${displayDashes(c.drug || 'Morphine Sulphate / Diamorphine')}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Title:</span><span class="dli-modal-val">${escapeHtml(displayDashes(c.title || 'ALARIS GP \u2014 DRUG LIBRARY CONFIGURATION GUIDE'))}</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Drug:</span><span class="dli-modal-val">${escapeHtml(displayDashes(c.drug || 'Morphine Sulphate / Diamorphine'))}</span></div>
 <div class="dli-modal-row"><span class="dli-modal-key">Concentration:</span><span class="dli-modal-val">1 mg/mL (standard)</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Dose range:</span><span class="dli-modal-val">0.5 &ndash; ${c.value || 4.0} ${c.unit || 'mg/hr'} (standard ward)</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">DOSE_MAX:</span><span class="dli-modal-val-amber">${c.value || 4.0} ${c.unit || 'mg/hr'} &larr; DO NOT EXCEED without specialist pharmacist override</span></div>
-<div class="dli-modal-row"><span class="dli-modal-key">Rate max:</span><span class="dli-modal-val">${c.value || 4.0} mL/hr</span></div>
-${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>` : ''}`;
+<div class="dli-modal-row"><span class="dli-modal-key">Dose range:</span><span class="dli-modal-val">0.5 &ndash; ${escapeHtml(c.value || 4.0)} ${escapeHtml(c.unit || 'mg/hr')} (standard ward)</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">DOSE_MAX:</span><span class="dli-modal-val-amber">${escapeHtml(c.value || 4.0)} ${escapeHtml(c.unit || 'mg/hr')} &larr; DO NOT EXCEED without specialist pharmacist override</span></div>
+<div class="dli-modal-row"><span class="dli-modal-key">Rate max:</span><span class="dli-modal-val">${escapeHtml(c.value || 4.0)} mL/hr</span></div>
+${c.warning ? `<div class="dli-modal-warning">${escapeHtml(displayDashes(c.warning))}</div>` : ''}`;
         }
 
         const overlay = document.createElement('div');
         overlay.className = 'dli-modal-overlay';
         overlay.innerHTML = `
 <div class="dli-modal">
-  <div class="dli-modal-title">${displayDashes(source.label)}</div>
+  <div class="dli-modal-title">${escapeHtml(displayDashes(source.label))}</div>
   <div class="dli-modal-body">${bodyHtml}</div>
   <button class="dli-modal-confirm-btn" id="dli-modal-confirm">CONFIRM &mdash; Value noted</button>
 </div>`;
@@ -722,7 +728,7 @@ ${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>`
         if (restoreBtn) {
             restoreBtn.disabled = true;
             restoreBtn.className = 'dli-restore-btn dli-restore-btn-done';
-            restoreBtn.textContent = `\u2713 LIBRARY RESTORED \u2014 ${this._changesText('backup', true)}`;
+            restoreBtn.textContent = `\u2713 LIBRARY RESTORED \u2014 ${this._changesText('backup', true, true)}`;
         }
 
         // Fire completion globals
@@ -764,16 +770,16 @@ ${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>`
         const pumpRows = pumps.map(p => {
             if (p.activeToday) {
                 return `<tr class="dli-fleet-row-active">
-  <td class="dli-serial-bold">${p.serial}</td>
-  <td>${p.ward}, ${p.bed}</td>
-  <td>${p.lastActive}</td>
+  <td class="dli-serial-bold">${escapeHtml(p.serial)}</td>
+  <td>${escapeHtml(p.ward)}, ${escapeHtml(p.bed)}</td>
+  <td>${escapeHtml(p.lastActive)}</td>
   <td><span class="dli-badge-active-today">&#x26A0; ACTIVE TODAY</span></td>
 </tr>`;
             }
             return `<tr class="dli-fleet-row-inactive">
-  <td>${p.serial}</td>
-  <td>${p.ward}, ${p.bed}</td>
-  <td>${p.lastActive}</td>
+  <td>${escapeHtml(p.serial)}</td>
+  <td>${escapeHtml(p.ward)}, ${escapeHtml(p.bed)}</td>
+  <td>${escapeHtml(p.lastActive)}</td>
   <td><span class="dli-badge-inactive">&#x25CB; inactive</span></td>
 </tr>`;
         }).join('');
@@ -784,8 +790,8 @@ ${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>`
 <div class="dli-fleet-title">FLEET IMPACT ANALYSIS</div>
 <div class="dli-fleet-subtitle">
   ${this._phase === 'restored'
-      ? `Pumps that loaded the tampered library (${displayDashes(t.drug)} ${this._changesText('current')}). All now restored to the verified values (${this._changesText('backup')}).`
-      : `Pumps loaded with TAMPERED library version (${displayDashes(t.drug)} ${this._changesText('current')})`}
+      ? `Pumps that loaded the tampered library (${escapeHtml(displayDashes(t.drug))} ${this._changesText('current')}). All now restored to the verified values (${this._changesText('backup')}).`
+      : `Pumps loaded with TAMPERED library version (${escapeHtml(displayDashes(t.drug))} ${this._changesText('current')})`}
 </div>
 <table class="dli-fleet-table">
   <thead>
@@ -801,14 +807,14 @@ ${c.warning ? `<div class="dli-modal-warning">${displayDashes(c.warning)}</div>`
 ${activePump ? `
 <p style="margin-top:10px;font-size:11px;color:#ccaa00">
   ${activePump._programmedNow
-      ? `<strong>${activePump.serial}</strong> was programmed at the bedside at ${activePump.lastActive.replace(/ today$/, '')} this morning.`
-      : `<strong>${activePump.serial}</strong> has been running the same infusion since ${activePump.lastActive}. Its next rate is set under this library.`}
+      ? `<strong>${escapeHtml(activePump.serial)}</strong> was programmed at the bedside at ${escapeHtml(activePump.lastActive.replace(/ today$/, ''))} this morning.`
+      : `<strong>${escapeHtml(activePump.serial)}</strong> has been running the same infusion since ${escapeHtml(activePump.lastActive)}. Its next rate is set under this library.`}
 </p>
-<button class="dli-view-log-btn" id="dli-view-log-btn">[ VIEW ${activePump.serial} ACTIVITY LOG ]</button>
+<button class="dli-view-log-btn" id="dli-view-log-btn">[ VIEW ${escapeHtml(activePump.serial)} ACTIVITY LOG ]</button>
 <div id="dli-activity-log-wrap"></div>` : ''}
 <div class="dli-fleet-closing">
   ${Array.isArray(fr.closingLines)
-      ? fr.closingLines.map((l, i) => i === fr.closingLines.length - 1 ? `<p><strong>${displayDashes(l)}</strong></p>` : `<p>${displayDashes(l)}</p>`).join('\n  ')
+      ? fr.closingLines.map((l, i) => i === fr.closingLines.length - 1 ? `<p><strong>${escapeHtml(displayDashes(l))}</strong></p>` : `<p>${escapeHtml(displayDashes(l))}</p>`).join('\n  ')
       : `<p>This pump was operating under a compromised drug library for at least 37 hours.</p>
   <p>The modification predates the ransomware deployment by 37 hours.</p>
   <p><strong>This was not an opportunistic side-effect of the ransomware.</strong></p>`}
@@ -838,13 +844,13 @@ ${activePump ? `
         if (g[apg.linkedDoseCorrectGlobal]) {
             outcomeLine = `<div class="dli-outcome-safe">
   <strong>Patient outcome: stable.</strong><br>
-  ${ot.safe ? displayDashes(ot.safe) : `Dose entered was within safe range. Note: the drug library safety limit was not the protective factor &mdash;
+  ${ot.safe ? escapeHtml(displayDashes(ot.safe)) : `Dose entered was within safe range. Note: the drug library safety limit was not the protective factor &mdash;
   the pump did not alarm because of the library guardrail, the dose happened to be correct.`}
 </div>`;
         } else if (g[apg.linkedDoseErrorGlobal]) {
             outcomeLine = `<div class="dli-outcome-risk">
   <strong>Patient outcome: at risk.</strong><br>
-  ${ot.risk ? displayDashes(ot.risk) : `Dose entered exceeded correct safe limit (${t.correctValue} mg/hr). Pump did NOT alarm &mdash;
+  ${ot.risk ? escapeHtml(displayDashes(ot.risk)) : `Dose entered exceeded correct safe limit (${escapeHtml(t.correctValue)} mg/hr). Pump did NOT alarm &mdash;
   tampered library prevented the hard-stop from triggering.`}
 </div>`;
         } else {
@@ -860,13 +866,13 @@ ${activePump ? `
         if (logWrap) {
             logWrap.innerHTML = `
 <div class="dli-activity-log">
-  <div class="dli-activity-log-title">Pump Event Log &mdash; ${pump.serial}</div>
-  <div class="dli-log-row"><span class="dli-log-ts">${logTs}</span> &nbsp;<span class="dli-log-event">${pump._programmedNow ? 'NEW RATE PROGRAMMED' : 'RATE LAST PROGRAMMED'}</span></div>
-  <div class="dli-log-row"><span class="dli-log-field">Drug:</span> <span class="dli-log-val">${drugName}</span></div>
+  <div class="dli-activity-log-title">Pump Event Log &mdash; ${escapeHtml(pump.serial)}</div>
+  <div class="dli-log-row"><span class="dli-log-ts">${escapeHtml(logTs)}</span> &nbsp;<span class="dli-log-event">${pump._programmedNow ? 'NEW RATE PROGRAMMED' : 'RATE LAST PROGRAMMED'}</span></div>
+  <div class="dli-log-row"><span class="dli-log-field">Drug:</span> <span class="dli-log-val">${escapeHtml(drugName)}</span></div>
   ${underVerified
       ? `<div class="dli-log-row"><span class="dli-log-field">Library version:</span> <span class="dli-log-correct">verified (restored)</span></div>
   <div class="dli-log-row"><span class="dli-log-field">Limits enforced during programming:</span> <span class="dli-log-correct">${this._changesText('backup', true)}</span></div>`
-      : `<div class="dli-log-row"><span class="dli-log-field">Library version:</span> <span class="dli-log-tampered">${t.modifiedAt} (tampered)</span></div>
+      : `<div class="dli-log-row"><span class="dli-log-field">Library version:</span> <span class="dli-log-tampered">${escapeHtml(t.modifiedAt)} (tampered)</span></div>
   <div class="dli-log-row"><span class="dli-log-field">Limits enforced during programming:</span> <span class="dli-log-tampered">${this._changesText('current', true)}</span></div>`}
   <div class="dli-log-row"><span class="dli-log-field">Limits (correct values):</span> <span class="dli-log-correct">${this._changesText('backup', true)}</span></div>
   ${outcomeLine}

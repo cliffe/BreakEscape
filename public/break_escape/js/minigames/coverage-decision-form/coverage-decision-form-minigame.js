@@ -1,6 +1,27 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+));
+
+// Scenario text for this document is plain text with a small, deliberate
+// formatting set: character entities (&mdash; &rsquo; &#10003;) and the bare
+// tags <strong> <em> <b> <i> <br>, in any letter case. Everything is escaped
+// first, then only those exact forms are put back, so no other tag or any
+// attribute can get through. Tags are restored before entities, so an authored
+// &lt;b&gt; stays literal text, and only as matched pairs (one level of nesting),
+// so a stray or unclosed tag shows as text instead of restyling what follows.
+const AUTHOR_PAIR = /&lt;(strong|em|b|i)&gt;((?:(?!&lt;\/?(?:strong|em|b|i)&gt;)[\s\S])*?)&lt;\/\1&gt;/gi;
+function authorHtml(value) {
+    let html = escapeHtml(displayDashes(String(value ?? '')));
+    const pairs = (s) => s.replace(AUTHOR_PAIR, (m, tag, inner) => `<${tag.toLowerCase()}>${inner}</${tag.toLowerCase()}>`);
+    html = pairs(pairs(html));
+    return html
+        .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+        .replace(/&amp;(#\d{1,7}|#x[0-9a-fA-F]{1,6}|[a-zA-Z][a-zA-Z0-9]{1,31});/g, '&$1;');
+}
+
 /**
  * Coverage Decision Form Minigame
  *
@@ -74,14 +95,17 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
     // ── Layout ───────────────────────────────────────────────────────────────
 
     _renderLayout() {
+        // HTML: each scenario part goes through authorHtml once. headerSub and badge are
+        // finished HTML (escaped parts joined by literal &mdash; and &#10003;): insert them
+        // as they are, never through authorHtml or escapeHtml again.
         const headerSub = [
             'Meridian Cyber Insurance',
-            this._headerRef   ? `Policy Ref: ${this._headerRef}`       : null,
-            this._claimsManager ? `Claims Manager: ${this._claimsManager}` : null,
+            this._headerRef   ? `Policy Ref: ${authorHtml(this._headerRef)}`       : null,
+            this._claimsManager ? `Claims Manager: ${authorHtml(this._claimsManager)}` : null,
         ].filter(Boolean).join(' &mdash; ');
 
         const badge = this._headerRef
-            ? `&#10003; RECOMMENDATION LOGGED &mdash; ${this._headerRef}`
+            ? `&#10003; RECOMMENDATION LOGGED &mdash; ${authorHtml(this._headerRef)}`
             : '&#10003; RECOMMENDATION LOGGED';
 
         const sectionsHtml = this._sections.map(s => this._renderSection(s)).join('\n');
@@ -89,8 +113,8 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
 <div class="cdf-wrap">
   <div class="cdf-header">
-    <div class="cdf-header-title">${displayDashes(this._formTitle)}</div>
-    <div class="cdf-header-sub">${displayDashes(headerSub)}</div>
+    <div class="cdf-header-title">${authorHtml(this._formTitle)}</div>
+    <div class="cdf-header-sub">${headerSub}</div>
   </div>
 
   <div class="cdf-body">
@@ -99,10 +123,10 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
 
   <div class="cdf-footer">
     <div class="cdf-outcome-note" id="cdf-outcome-note">
-      <div class="cdf-outcome-speaker">${displayDashes(this._outcomeSpeaker)}</div>
+      <div class="cdf-outcome-speaker">${authorHtml(this._outcomeSpeaker)}</div>
       <div id="cdf-outcome-text"></div>
     </div>
-    <div class="cdf-submitted-badge" id="cdf-submitted-badge">${displayDashes(badge)}</div>
+    <div class="cdf-submitted-badge" id="cdf-submitted-badge">${badge}</div>
     <button class="cdf-submit-btn" id="cdf-submit-btn" disabled>[SUBMIT RECOMMENDATION &#9654;]</button>
     <div class="cdf-hint" id="cdf-hint">Complete all ${this._sections.length} sections to submit your recommendation.</div>
     <button class="cdf-close-btn" id="cdf-close-btn">Close</button>
@@ -122,27 +146,37 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
 
     _renderSection(section) {
         const options = section.options.map(opt => `
-      <label class="cdf-radio-row" id="${section.id}-${opt.value}">
-        <input type="radio" name="${section.id}" value="${opt.value}">
+      <label class="cdf-radio-row" id="${escapeHtml(`${section.id}-${opt.value}`)}">
+        <input type="radio" name="${escapeHtml(section.id)}" value="${escapeHtml(opt.value)}">
         <span>
-          <span>${displayDashes(opt.label)}</span>
-          <span class="cdf-radio-sublabel">${displayDashes(opt.sublabel)}</span>
+          <span>${authorHtml(opt.label)}</span>
+          <span class="cdf-radio-sublabel">${authorHtml(opt.sublabel)}</span>
         </span>
       </label>`).join('');
 
         return `
     <div class="cdf-section">
-      <div class="cdf-section-title">${displayDashes(section.title)}</div>
-      <div class="cdf-section-desc">${displayDashes(section.description)}</div>
+      <div class="cdf-section-title">${authorHtml(section.title)}</div>
+      <div class="cdf-section-desc">${authorHtml(section.description)}</div>
       ${options}
     </div>`;
     }
 
     // ── Radio interaction ─────────────────────────────────────────────────────
 
+    // Section ids come from the scenario, so they are matched by property, never
+    // spliced into a selector
+    _radios(name) {
+        return [...this.gameContainer.querySelectorAll('input[type="radio"]')].filter(r => r.name === String(name));
+    }
+
+    _checked(name) {
+        return this._radios(name).find(r => r.checked) || null;
+    }
+
     _onRadioChange(radio) {
         const name = radio.name;
-        this.gameContainer.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+        this._radios(name).forEach(r => {
             r.closest('.cdf-radio-row').classList.toggle('cdf-selected', r.checked);
         });
         this._updateSubmitButton();
@@ -151,7 +185,7 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
     _updateSubmitButton() {
         if (this._submitted) return;
         const allSelected = this._sections.every(section =>
-            !!this.gameContainer.querySelector(`input[name="${section.id}"]:checked`)
+            !!this._checked(section.id)
         );
         const btn  = this.gameContainer.querySelector('#cdf-submit-btn');
         const hint = this.gameContainer.querySelector('#cdf-hint');
@@ -189,7 +223,7 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
 
         if (outcomeNote && outcomeText) {
             const quoteSection = this._outcomeQuoteSection || this._sections[0]?.id;
-            const quoteKey     = this.gameContainer.querySelector(`input[name="${quoteSection}"]:checked`)?.value;
+            const quoteKey     = this._checked(quoteSection)?.value;
             const quote        = this._outcomeQuotes[quoteKey] || '';
             if (quote) {
                 outcomeText.textContent = displayDashes(quote);
@@ -201,7 +235,7 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
             if (action.value !== undefined) {
                 this._setGlobalAndNotify(action.setVariable, action.value);
             } else if (action.fromSection) {
-                const selected = this.gameContainer.querySelector(`input[name="${action.fromSection}"]:checked`)?.value;
+                const selected = this._checked(action.fromSection)?.value;
                 const val = action.equalsValue !== undefined ? selected === action.equalsValue : selected;
                 this._setGlobalAndNotify(action.setVariable, val);
             }

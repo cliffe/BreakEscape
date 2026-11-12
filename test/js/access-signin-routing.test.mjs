@@ -268,7 +268,7 @@ test('step 9: locked, signin, attended (a race) and null all open the sign-in sc
 
 // ── Access 9.2 H review R1 m6, m8 and m4: the hot desk's user and guest branches ──
 
-test('R1 m6: a borrower using an unowned PC gives "<name> is using this PC" and in_use, with the name escaped', async () => {
+test('R1 m6: a borrower using an unowned PC gives "<name> is using this PC" and in_use, the name raw (the toast is plain text)', async () => {
     reset();
     const asked = [];
     window.workstationState = {
@@ -281,7 +281,8 @@ test('R1 m6: a borrower using an unowned PC gives "<name> is using this PC" and 
     try {
         assert.equal(await interactLoginPc(pc()), 'in_use');
         const alert = calls.find(c => c[0] === 'alert');
-        assert.equal(alert[1], 'Rosa &lt;b&gt;Lane&lt;/b&gt; is using this PC.');
+        // Not pre-escaped: gameAlert renders plain text, so escaping here would show "&lt;"
+        assert.equal(alert[1], 'Rosa <b>Lane</b> is using this PC.');
         assert.deepEqual(asked, []);
         assert.deepEqual(inUse, [['hot_desk', 'rosa']]);
         assert.equal(desktops.length, 0);

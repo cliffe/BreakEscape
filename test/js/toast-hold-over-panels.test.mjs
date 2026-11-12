@@ -54,11 +54,11 @@ test('a held toast renders once the panel closes', async () => {
     const appended = [];
     const el = () => ({
         classList: { add() {}, remove() {} }, style: {}, set innerHTML(v) { this.html = v; },
-        querySelector: () => ({ style: {}, addEventListener() {} })
+        querySelector: () => ({ style: {}, addEventListener() {}, appendChild() {} })
     });
     globalThis.document = {
         getElementById: (id) => (id === 'notification-container' ? { appendChild: (n) => appended.push(n) } : null),
-        createElement: el
+        createElement: el, createTextNode: (text) => ({ text })
     };
     window.MinigameFramework = { currentMinigame: {} };
     assert.equal(showNotification('✓ Interview Phantom', 'success', 'Task Complete', 0), null);
@@ -67,7 +67,7 @@ test('a held toast renders once the panel closes', async () => {
     window.MinigameFramework.currentMinigame = null;
     await new Promise((r) => setTimeout(r, 400));
     assert.equal(appended.length, 2, 'the task toast follows when the conversation closes');
-    assert.match(appended[1].html, /Task Complete/);
+    assert.equal(appended[1]._toast.title, 'Task Complete');  // plain text: the title is not in the markup
 });
 
 // m07 confirmation N1: "Task Complete" raised on the unlock, ~500 ms before the

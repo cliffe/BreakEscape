@@ -144,15 +144,16 @@ export class PhoneChatMinigame extends MinigameScene {
         this.appTheme = resolved.theme || null;
 
         // Customize header
+        // The app title and params.title are plain text (scenario data): escaped before HTML
+        const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         if (resolved.app?.title) {
-            const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
             this.headerElement.innerHTML = `
             <h3>${esc(resolved.app.title)}</h3>
             <p>Direct messages</p>
         `;
         } else {
             this.headerElement.innerHTML = `
-            <h3>${safeParams.title || 'Phone'}</h3>
+            <h3>${esc(safeParams.title || 'Phone')}</h3>
             <p>Messages and conversations</p>
         `;
         }

@@ -1,4 +1,12 @@
 import { displayDashes } from '../../utils/display-dashes.js';
+
+// params.title and params.cancelText are plain text: they often come from scenario
+// object names, NPC names or server data, so they are escaped before they reach the
+// header HTML. No caller needs markup in a title, and there is deliberately no option
+// for an HTML title; a subclass that wants richer header content builds it with DOM
+// nodes after super.init().
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 // Base class for minigame scenes
 export class MinigameScene {
     constructor(container, params) {
@@ -22,11 +30,11 @@ export class MinigameScene {
         this.container.innerHTML = `
             <button class="minigame-close-button" id="minigame-close" ${disableClose ? 'style="display:none"' : ''}>&times;</button>
             <div class="minigame-header">
-                <h3>${displayDashes(this.params.title || 'Minigame')}</h3>
+                <h3>${escapeHtml(displayDashes(this.params.title || 'Minigame'))}</h3>
             </div>
             <div class="minigame-game-container"></div>
             <div class="minigame-message-container"></div>
-            ${showCancel ? `<div class="minigame-controls"><button class="minigame-button" id="minigame-cancel">${this.params.cancelText || 'Cancel'}</button></div>` : ''}
+            ${showCancel ? `<div class="minigame-controls"><button class="minigame-button" id="minigame-cancel">${escapeHtml(this.params.cancelText || 'Cancel')}</button></div>` : ''}
         `;
 
         this.headerElement = this.container.querySelector('.minigame-header');

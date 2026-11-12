@@ -515,10 +515,14 @@ export class SiemDashboardMinigame extends MinigameScene {
         escalated.forEach((alert) => {
             const item = document.createElement('div');
             item.className = 'siem-queue-item';
-            item.innerHTML = `
-                <span class="siem-queue-sev sev-${alert.severity}">${alert.severity}</span>
-                <span class="siem-queue-text">${displayDashes(alert.source)} - ${displayDashes(alert.description)}</span>
-            `;
+            // Alert fields are scenario text: set as text, never parsed as HTML
+            const sevEl = document.createElement('span');
+            sevEl.className = `siem-queue-sev sev-${alert.severity}`;
+            sevEl.textContent = alert.severity;
+            const textEl = document.createElement('span');
+            textEl.className = 'siem-queue-text';
+            textEl.textContent = `${displayDashes(alert.source)} - ${displayDashes(alert.description)}`;
+            item.append(sevEl, textEl);
             this.queueListEl.appendChild(item);
         });
 

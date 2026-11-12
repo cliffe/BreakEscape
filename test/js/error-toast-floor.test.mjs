@@ -30,10 +30,10 @@ function el() {
     return {
         classList: { add() {}, remove() {} }, style: {}, parentNode: null,
         set innerHTML(v) { this.html = v; },
-        querySelector(sel) { return parts[sel] || (parts[sel] = { style: {}, addEventListener(_e, fn) { this.click = fn; } }); }
+        querySelector(sel) { return parts[sel] || (parts[sel] = { style: {}, addEventListener(_e, fn) { this.click = fn; }, appendChild() {} }); }
     };
 }
-globalThis.document = { getElementById: (id) => (id === 'notification-container' ? container : null), createElement: el };
+globalThis.document = { getElementById: (id) => (id === 'notification-container' ? container : null), createElement: el, createTextNode: (text) => ({ text }) };
 
 test('toastDuration: an error between 0 and 5000 becomes 5000; 0, longer times and other types are kept', () => {
     assert.equal(T.ERROR_TOAST_MIN_MS, 5000);

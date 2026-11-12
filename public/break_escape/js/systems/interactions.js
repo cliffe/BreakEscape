@@ -2051,7 +2051,8 @@ export function handleObjectInteraction(sprite) {
     if (readInPlace && window.gameDisplay) {
         const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const body = (resolvedObservations ? `<em>${esc(resolvedObservations)}</em>\n\n` : '') + esc(resolvedText);
-        window.gameDisplay(body, esc(data.name || sprite.name));
+        // Built as HTML on purpose (the <em>), every author piece escaped once above
+        window.gameDisplay(body, esc(data.name || sprite.name), { html: true });
         return;
     }
 
