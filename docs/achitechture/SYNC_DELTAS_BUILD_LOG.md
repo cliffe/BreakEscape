@@ -216,6 +216,46 @@ implemented in `sync-delta-proof.mjs` (only bootstrap, A and a B-bootstrap stub 
 tests (10.1/10.2) already cover the network delta answer size and the capture answer sizes
 non-live; the remaining live work is the request-captured proof for C to F per plan 10.3.
 
+### Live proof follow-up (2026-11-12, builder 10): branch clone spot-check; C to F full drives still open
+
+Two keyless headless servers were up for this (branch on :3240 from p-sync-build, base `6a834437c`
+on :3241 from p-sync-base, shared dev DB), `setFPS(20)` and fixed steps on. Game 1935 (test-rfid)
+created by the branch `new-game.rb`.
+
+Branch-side clone spot-check (game 1935, test-rfid, master_keycard via the chat-clone source
+`{ npc_id: 'security_guard' }`, driving the real `window.ApiClient.cloneCard(source, cardId, card)`
+with the UI click substituted and the wire identical): `POST /clone_card` answered 45 B with
+`{ success: true, recorded: true, saved: true }`, no `saved_cards` in the answer and no
+`update_saved_cards` request; the saved card persists server-owned (`access.savedCards()` lists
+`master_keycard` after a fresh load). The same direct call on the base server answered
+`{ success: true, recorded: true }` (no `saved` field; the base client still saves the whole list
+client-side through `/inventory update_saved_cards`). This confirms the P1 win on the real branch
+page: the clone answer carries no card list.
+
+**Still open (full before/after UI drives for cases B, C, D, E, F).** Not completed, and NOT
+faked. The honest before/after these cases ask for is portable UI-level driving that runs the same
+way on both servers, because the base commit serves different client code (no 3-arg `cloneCard`,
+no `savedCardForServer`, the save rides `persistSavedCards` -> `/inventory update_saved_cards`; the
+network answers echo the whole inventory). A direct branch-module drive is wire-identical on the
+branch only, so it cannot produce the base "before" for the same action. The remaining work:
+- **B (network):** drive `window.networkLinks.plant/unplug/join/implant` through a reachable jack /
+  AP in test_access_networks (needs the network view opened), with `--seed-full-cloner`, recording
+  each answer size and checking no `saved_cards`; `networkLinks.*` exists on both servers, so B is
+  the most portable of the five and the best next target.
+- **C (clone):** complete the real RFID clone minigame (or drive each client's own save path) for
+  master_keycard (chat), ceo_keycard (action menu, world id stamped live) and a repeat, on both
+  servers; reload and check the doors.
+- **D (captures + Len's PIN):** the phish landing in lab_social and the QR route plus Len's PIN
+  2.5 s window polling in lab_physical (stand at the ledger shelves, poll
+  `window.gameState.globalVariables` every 100 ms, click only when `len_at_door` and `len_keying`
+  are both true, up to three rounds).
+- **E / F (old save, old tab):** the base-to-branch swap and the old-tab restart; architecturally
+  the heaviest.
+These remain a multi-session effort (prior sessions reached the same conclusion). The size tests
+(10.1/10.2) and builder 9's live bootstrap/A/B-bootstrap table already bound the request and answer
+sizes non-live and for the first-sync and bootstrap paths; cases B to F are the per-action live
+request captures still owed.
+
 ## This session (2026-11-12, builder 8: clone-merge verification + 6b)
 
 ### Clone-merge verification (task 1) -> no fix needed
