@@ -30,6 +30,12 @@ BreakEscape.configure do |config|
   config.demo_user_handle = 'test_user'
 end
 
+require "tmpdir"
+# Tests keep stories in fixtures and temporary folders, outside scenarios/,
+# where the game finds stories only (InkStoryFile); Engine.root/tmp is used by
+# the TTS controller tests
+BreakEscape::InkStoryFile.allowed_roots += [File.expand_path("fixtures", __dir__), BreakEscape::Engine.root.join("tmp"), Dir.tmpdir]
+
 # Access model tests (docs/achitechture/ACCESS_MODEL_PLAN.md, step 1). A test that
 # hand-writes scenario_data skips Game#generate_scenario_data (it returns at once
 # when scenario_data is set), so it would run without the access model loader.

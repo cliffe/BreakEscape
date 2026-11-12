@@ -16,12 +16,12 @@ module BreakEscape
     test "finds the storyPath, then its .ink.json form, then its plain .json form" do
       Dir.mktmpdir do |dir|
         plain = write(File.join(dir, 'a.json'), '{}')
-        assert_equal plain, InkStoryFile.find(plain, compile: false).to_s
-        assert_equal plain, InkStoryFile.find(File.join(dir, 'a.ink.json'), compile: false).to_s
+        assert_equal plain, InkStoryFile.find(plain, compile: false, allowed_root: dir).to_s
+        assert_equal plain, InkStoryFile.find(File.join(dir, 'a.ink.json'), compile: false, allowed_root: dir).to_s
 
         ink_json = write(File.join(dir, 'b.ink.json'), '{}')
-        assert_equal ink_json, InkStoryFile.find(File.join(dir, 'b.json'), compile: false).to_s
-        assert_nil InkStoryFile.find(File.join(dir, 'missing.json'), compile: false)
+        assert_equal ink_json, InkStoryFile.find(File.join(dir, 'b.json'), compile: false, allowed_root: dir).to_s
+        assert_nil InkStoryFile.find(File.join(dir, 'missing.json'), compile: false, allowed_root: dir)
       end
     end
 
@@ -31,10 +31,10 @@ module BreakEscape
         ink = write(File.join(dir, 's.ink'), INK)
         File.utime(Time.now - 60, Time.now - 60, json)
 
-        assert_equal json, InkStoryFile.find(json, compile: false).to_s
+        assert_equal json, InkStoryFile.find(json, compile: false, allowed_root: dir).to_s
         assert_equal({ 'stale' => true }, JSON.parse(File.read(json)))
 
-        assert_equal json, InkStoryFile.find(json).to_s
+        assert_equal json, InkStoryFile.find(json, allowed_root: dir).to_s
         assert_includes File.read(json, encoding: 'bom|utf-8'), 'Hello there.'
         refute InkStoryFile.needs_compilation?(ink, json)
       end
@@ -46,7 +46,7 @@ module BreakEscape
         ink = write(File.join(dir, 'k.ink'), INK)
         File.utime(Time.now - 60, Time.now - 60, ink_json)
 
-        assert_equal ink_json, InkStoryFile.find(ink_json).to_s
+        assert_equal ink_json, InkStoryFile.find(ink_json, allowed_root: dir).to_s
         assert_includes File.read(ink_json, encoding: 'bom|utf-8'), 'Hello there.'
         refute File.exist?(File.join(dir, 'k.json'))
         refute InkStoryFile.needs_compilation?(ink, ink_json)
@@ -56,8 +56,102 @@ module BreakEscape
     test "a story with only an .ink is compiled beside it" do
       Dir.mktmpdir do |dir|
         write(File.join(dir, 'n.ink'), INK)
-        assert_equal File.join(dir, 'n.json'), InkStoryFile.find(File.join(dir, 'n.json')).to_s
+        assert_equal File.join(dir, 'n.json'), InkStoryFile.find(File.join(dir, 'n.json'), allowed_root: dir).to_s
       end
+    end
+
+    test "a storyPath outside the scenarios folder, or not ending in .json, finds nothing" do
+      Dir.mktmpdir do |dir|
+        write(File.join(dir, 'o.json'), '{}')
+        write(File.join(dir, 'o.ink'), INK)
+        # absolute, and outside the game's root (test_helper adds the tmp dir to the default)
+        scenarios = Engine.root.join('scenarios')
+        assert_nil InkStoryFile.find(File.join(dir, 'o.json'), allowed_root: scenarios)
+        assert_nil InkStoryFile.find(File.join(dir, 'o.json'), compile: false, allowed_root: scenarios)
+        assert_equal [Engine.root.join('scenarios')], InkStoryFile.allowed_roots.first(1), 'the game allows scenarios/ only'
+        # .. out of the root
+        inner = File.join(dir, 'inner')
+        Dir.mkdir(inner)
+        assert_nil InkStoryFile.find(File.join(inner, '..', 'o.json'), allowed_root: inner)
+        refute InkStoryFile.find('scenarios/../config/database.yml.json', compile: false, allowed_root: scenarios)
+        # not a .json path, or a folder named like one
+        assert_nil InkStoryFile.find(File.join(dir, 'o.ink'), allowed_root: dir)
+        Dir.mkdir(File.join(dir, 'folder.json'))
+        assert_nil InkStoryFile.find(File.join(dir, 'folder.json'), compile: false, allowed_root: dir)
+        # mirror: inside the root it is found
+        assert_equal File.join(dir, 'o.json'), InkStoryFile.find(File.join(dir, 'o.json'), compile: false, allowed_root: dir).to_s
+      end
+      # a real storyPath, relative to the engine root, is inside the default root
+      assert InkStoryFile.find('scenarios/test_event_cascade/ink/test_patient.ink.json', compile: false)
+    end
+
+    test "an INCLUDE newer than the JSON recompiles the story" do
+      Dir.mktmpdir do |dir|
+        write(File.join(dir, 'part.ink'), "=== part ===\nFrom the part.\n-> END\n")
+        ink = write(File.join(dir, 'm.ink'), "INCLUDE part.ink\nHello.\n-> part\n")
+        json = write(File.join(dir, 'm.json'), '{"stale":true}')
+        File.utime(Time.now - 120, Time.now - 120, ink)
+        File.utime(Time.now - 60, Time.now - 60, json)
+        assert InkStoryFile.needs_compilation?(ink, json), 'part.ink is newer than m.json'
+
+        assert_equal json, InkStoryFile.find(json, allowed_root: dir).to_s
+        assert_includes File.read(json, encoding: 'bom|utf-8'), 'From the part.'
+        refute InkStoryFile.needs_compilation?(ink, json)
+      end
+    end
+
+    test "includes resolve against the root story's folder, nested ones too, and names may have spaces" do
+      Dir.mktmpdir do |dir|
+        Dir.mkdir(File.join(dir, 'sub'))
+        write(File.join(dir, 'shared vars.ink'), "VAR x = 1\n")
+        write(File.join(dir, 'b.ink'), "INCLUDE shared vars.ink\n")
+        # included from sub/a.ink, but inklecate looks for b.ink beside the root story
+        write(File.join(dir, 'sub', 'a.ink'), "INCLUDE b.ink\n")
+        root = write(File.join(dir, 'root.ink'), "INCLUDE sub/a.ink\nHi.\n-> END\n")
+        assert_equal [File.join(dir, 'sub/a.ink'), File.join(dir, 'b.ink'), File.join(dir, 'shared vars.ink')],
+                     InkStoryFile.includes(root)
+      end
+    end
+
+    test "a failed compile raises with inklecate's message and leaves no file behind" do
+      Dir.mktmpdir do |dir|
+        write(File.join(dir, 'bad.ink'), "Hello.\n-> nowhere\n")
+        error = assert_raises(RuntimeError) { InkStoryFile.find(File.join(dir, 'bad.json'), allowed_root: dir) }
+        assert_includes error.message, 'Divert target not found'
+        assert_equal ['bad.ink'], Dir.children(dir)
+      end
+    end
+
+    test "requests that find the same stale story at once compile it once, and none reads half a file" do
+      Dir.mktmpdir do |dir|
+        json = write(File.join(dir, 'c.json'), '{"stale":true}')
+        ink = write(File.join(dir, 'c.ink'), INK)
+        File.utime(Time.now - 60, Time.now - 60, json)
+        compiles = 0
+        original = InkStoryFile.method(:compile!)
+        counting = lambda do |*args|
+          compiles += 1
+          sleep 0.05
+          original.call(*args)
+        end
+        InkStoryFile.stub(:compile!, counting) do
+          found = Array.new(4) { Thread.new { InkStoryFile.find(json, allowed_root: dir).to_s } }.map(&:value)
+          assert_equal [json] * 4, found
+        end
+        assert_equal 1, compiles
+        assert_includes File.read(json, encoding: 'bom|utf-8'), 'Hello there.'
+        assert_equal %w[c.ink c.json], Dir.children(dir).sort, 'no temporary file is left'
+        refute InkStoryFile.needs_compilation?(ink, json)
+      end
+    end
+
+    test "the TTS line extractor finds stories through InkStoryFile" do
+      extractor = TtsLineExtractor.new('test_event_cascade', {}, tts_service: nil)
+      # names X.json where only X.ink.json exists: served by #ink, so the batch reads it too
+      story = 'scenarios/test_event_cascade/ink/test_patient.json'
+      assert_equal InkStoryFile.find(story, compile: false), extractor.send(:resolve_ink_path, story)
+      assert_equal Engine.root.join('scenarios/test_event_cascade/ink/test_patient.ink.json'),
+                   extractor.send(:resolve_ink_path, story)
     end
 
     test "the controller and the TTS line resolver both find stories through InkStoryFile" do

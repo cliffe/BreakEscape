@@ -324,8 +324,9 @@ module BreakEscape
 
       text = text.sub(/\A[^:]+:\s*/, '') if text.match?(CLIENT_STRIP_PREFIX)
       # A phone-chat voice message is voiced as its transcript, as the endpoint
-      # and phone-chat-ui.js have it, never with the "voice:" marker
-      text = text.sub(TtsLineResolver::VOICE_MESSAGE, '') if transcript && !narrator
+      # and phone-chat-ui.js have it, never with the "voice:" marker (a narrator
+      # line too: the endpoint refuses any line still marked)
+      text = text.sub(TtsLineResolver::VOICE_MESSAGE, '') if transcript
       return nil if self.class.normalize(text).empty?
 
       return ['narrator', text] if narrator
@@ -636,11 +637,14 @@ module BreakEscape
       false
     end
 
+    # The story the game serves for this storyPath (InkStoryFile, the lookup
+    # GamesController#ink uses), else a file of that name in the scenario's own
+    # folder or its ink folder. Nothing is compiled here.
     def resolve_ink_path(story_path)
-      root = BreakEscape::Engine.root
-      full = root.join(story_path)
-      return full if File.exist?(full)
+      found = InkStoryFile.find(story_path, compile: false)
+      return found if found
 
+      root = BreakEscape::Engine.root
       scenario_dir = root.join('scenarios', scenario_name)
       candidate = scenario_dir.join(File.basename(story_path))
       return candidate if File.exist?(candidate)

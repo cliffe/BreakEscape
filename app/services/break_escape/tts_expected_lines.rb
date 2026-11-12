@@ -217,7 +217,7 @@ module BreakEscape
           next
         end
         json = path.extname == ".ink" ? path.sub_ext(".json") : path
-        ink = path.sub_ext(".ink")
+        ink = Pathname.new(path.to_s.sub(/(\.ink)?\.json\z/, ".ink"))
         json_files << json if File.exist?(json)
         ink_files << ink if File.exist?(ink)
       end
@@ -230,7 +230,7 @@ module BreakEscape
       @ink_json_files = json_files.to_a.sort
       @ink_source_files = with_includes(ink_files.to_a).sort
       @ink_json_files.each do |json|
-        ink = json.sub_ext(".ink")
+        ink = Pathname.new(json.to_s.sub(/(\.ink)?\.json\z/, ".ink"))
         if File.exist?(ink) && File.mtime(ink) > File.mtime(json)
           @warnings << "compiled ink older than source (recompile): #{relative(json)}"
         end
