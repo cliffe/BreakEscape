@@ -403,8 +403,13 @@ module BreakEscape
 
       foothold_id = implant_foothold_id_for(pc_id)
       # Already held (before the preconditions, m2): a repeat answers already, never not_ready.
+      # Name the device the first (successful) call consumed, from the stored foothold record, so
+      # a retry after a lost response reconciles the tray exactly as the first success would have
+      # (review R2 M1). The dropped shape stores no device, so consumedId is nil there.
       if network_footholds.key?(foothold_id)
-        return { status: :ok, body: { success: true, already: true, first: false,
+        held = network_footholds[foothold_id]
+        consumed = held.is_a?(Hash) && held['device'].is_a?(Hash) ? held['device']['id'] : nil
+        return { status: :ok, body: { success: true, already: true, first: false, consumedId: consumed,
                                       foothold: foothold_for_client(foothold_id), inventory: player_state['inventory'] } }
       end
 

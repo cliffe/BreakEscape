@@ -332,6 +332,28 @@ test('a needsSession grant_foothold on the sign-in PC itself, or one that consum
     assertHas(errors(issues(sc)), "whose host object sets 'consumesItem'");
 });
 
+test('a needsSession grant_foothold whose needsHeld device has no id errors (R2 m1)', { skip }, () => {
+    const sc = clean();
+    // The device is named by type, and the device object carries no id; the implant is reconciled
+    // off the tray by id, so an id-less device can never be removed.
+    sc.startItemsInInventory = [{ type: 'usb_stick', name: 'Rubber ducky', usbClass: 'hid' }];
+    room(sc, 'finance_office').objects.push({
+        id: 'usb_socket', type: 'pc',
+        triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'usb_stick', name: 'BadUSB' }]
+    });
+    assertHas(errors(issues(sc)), "device object has no 'id'");
+});
+
+test('the session-shape guards cover a grant_foothold placed in a timer (R2 m2)', { skip }, () => {
+    const sc = clean();
+    sc.startItemsInInventory = [{ id: 'badusb', type: 'usb_stick', name: 'Rubber ducky', usbClass: 'hid' }];
+    // The host-consumesItem guard must see the timer as the action's host, not nil.
+    sc.timers = [{ id: 'npc_plugs', startOnGlobal: 'g', consumesItem: true, actions: [
+        { type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'badusb', name: 'BadUSB' }
+    ] }];
+    assertHas(errors(issues(sc)), "whose host object sets 'consumesItem'");
+});
+
 test('two grant_foothold actions for one pc and shape error', { skip }, () => {
     const sc = withImplants();
     room(sc, 'finance_office').objects.push({ id: 'usb_socket2', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'badusb' }] });

@@ -451,7 +451,11 @@ def check_network_model(json_data, scenario_dir = nil)
   # Walk the scenario, carrying the nearest object that owns an action list as the action's
   # host, and test each grant_foothold against the same DeclaredGrants.executed? rule the
   # server's NetworkModel.grant_foothold_actions uses, so the two agree on "declared".
-  host_action_keys = %w[triggerOnInteract onInteract conditionalActions completionActions].freeze
+  # onConfirm is a server-run action list on its confirm_action object (DeclaredGrants.executed?),
+  # so it hosts its actions like the object keys do. timers are handled below: each timer element
+  # is carried as the host of its own actions, so the two session-shape guards do not go dark for a
+  # grant_foothold placed in a timer or onConfirm (review R2 m2).
+  host_action_keys = %w[triggerOnInteract onInteract conditionalActions completionActions onConfirm].freeze
   grant_entries = [] # { node:, keys:, path:, host: }
   gf_walk = lambda do |node, keys, host|
     case node
@@ -459,7 +463,13 @@ def check_network_model(json_data, scenario_dir = nil)
       node.each_with_index { |n, i| gf_walk.call(n, keys + [i], host) }
     when Hash
       grant_entries << { node: node, keys: keys, path: BreakEscape::DeclaredGrants.path_string(keys), host: host } if node['type'] == 'grant_foothold'
-      node.each { |k, v| gf_walk.call(v, keys + [k.to_s], host_action_keys.include?(k.to_s) ? node : host) }
+      node.each do |k, v|
+        if k.to_s == 'timers' && v.is_a?(Array)
+          v.each_with_index { |timer, i| gf_walk.call(timer, keys + ['timers', i], timer.is_a?(Hash) ? timer : host) }
+        else
+          gf_walk.call(v, keys + [k.to_s], host_action_keys.include?(k.to_s) ? node : host)
+        end
+      end
     end
   end
   gf_walk.call(json_data, [], nil)
@@ -530,8 +540,14 @@ def check_network_model(json_data, scenario_dir = nil)
         err.call("#{where} is a 'needsSession' action whose host object sets 'consumesItem'; the server removes " \
                  "'needsHeld' itself, and a client consume would race it. Drop consumesItem.")
       end
-      # USB policy warning: the target PC would refuse its own device.
+      # consumedId is keyed on the device's id, and syncInventoryFromServer keys tray items on id,
+      # so an id-less device can never be reconciled off the tray (review R2 m1).
       held_item = item_by_ref[needs_held.to_s]
+      if held_item.is_a?(Hash) && !nm.present_string?(held_item['id'])
+        err.call("#{where} 'needsHeld' names '#{needs_held}', whose device object has no 'id'; the implant is " \
+                 'reconciled by id, so an id-less device would stay in the tray. Give the device an id.')
+      end
+      # USB policy warning: the target PC would refuse its own device.
       pc_obj = signin_on_network.call(pc)&.dig(:object)
       if held_item && pc_obj && BreakEscape::AccessWork.plant_refused?(json_data, pc_obj, held_item)
         warn.call("#{where} targets pc '#{pc}', whose USB policy refuses the usbClass of '#{needs_held}', so the " \

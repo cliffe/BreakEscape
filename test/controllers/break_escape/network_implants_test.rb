@@ -153,6 +153,17 @@ module BreakEscape
       assert_response :success
       assert body['already']
       assert_equal 1, state['footholds'].keys.count { |k| k == 'implant_lena_pc' }
+      # The retry after a lost response reconciles the same device the first call consumed (R2 M1).
+      assert_equal 'kit_badusb', body['consumedId']
+    end
+
+    test 'a repeat dropped implant answers already and names no consumedId' do
+      build_implants('droppedItems' => ['kit_stick'])
+      implant('sam_pc', 'dropped')
+      body = implant('sam_pc', 'dropped')
+      assert_response :success
+      assert body['already']
+      assert_nil body['consumedId']
     end
 
     # ---- reach: the PC's own network only ----

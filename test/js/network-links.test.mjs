@@ -682,6 +682,23 @@ test('an implant retries once after a network error and then succeeds', async ()
     assert.equal(held('netlink_implant_lena_pc').length, 1);
 });
 
+test('first POST succeeds on the server, its response is lost, the retry reconciles the consumed device (R2 M1)', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    // The first POST reached the server: it granted the foothold and consumed the box, but the
+    // response was lost (thrown). The retry takes the server's already-held branch, which now
+    // names the consumed device in consumedId, so the tray is reconciled just as a first success
+    // would have reconciled it.
+    implantThrowsLeft = 1; // first call throws a 500, the retry answers already-held
+    implantAnswer = { already: true, first: false, consumedId: 'kit_dropbox', inventory: [implantLink] };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'already');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 2, 'it retried exactly once');
+    assert.equal(held('kit_dropbox').length, 0, 'the device the lost first call consumed is removed on the retry');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item is present');
+});
+
 test('an implant lost to both retries shows a message and grants nothing (n2)', async () => {
     await reset({ items: [box] });
     withStarters();
