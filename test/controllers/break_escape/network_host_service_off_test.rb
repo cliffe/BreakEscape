@@ -138,6 +138,13 @@ module BreakEscape
       get game_path('login_accounts'), params: { pc_id: 'sam_pc' }, as: :json
       assert_response :forbidden
       assert_equal 'off', response.parsed_body['reason'], 'the sign-in screen is not shown'
+      # Any foothold value, real or forged, gets the same refusal (review R3 nit 3)
+      [OFFICE, 'anything'].each do |fid|
+        get game_path('login_accounts'), params: { pc_id: 'sam_pc', foothold: fid }, as: :json
+        assert_response :forbidden
+        assert_equal 'off', response.parsed_body['reason'], "foothold=#{fid} gets no tiles"
+        refute_includes response.body, 'sokafor'
+      end
 
       post game_path('login'), params: { pc_id: 'sam_pc', claim: 'owner' }, as: :json
       assert_response :forbidden

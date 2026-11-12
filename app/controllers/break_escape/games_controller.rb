@@ -1178,8 +1178,10 @@ module BreakEscape
       unless @game.login_pc_reachable?(info) && !BreakEscape::NetworkModel.headless?(info[:object])
         return render_error("PC not reachable: #{params[:pc_id]}", :forbidden)
       end
-      # The sign-in screen at a switched-off PC's keyboard is not shown (q72)
-      if params[:foothold].blank? && @game.host_service_off?(info[:object])
+      # The sign-in screen at a switched-off PC's keyboard is not shown (q72). The route is
+      # judged at the keyboard whatever foothold value it carries (review R3 nit 3): the PC is
+      # physically reachable here, so saying it is off tells nothing new.
+      if @game.host_service_off?(info[:object])
         return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
       end
 
