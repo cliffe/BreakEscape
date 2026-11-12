@@ -41,9 +41,9 @@ array beside the existing live `network_port`:
 - `observations`: the managed-switch description (shown on examine).
 - `jackConfirm`: "Try the network drop box in this managed switch port?" (confirm dialog).
 - `requiresItemHint`: shown only if the port is clicked with no device in hand.
-- `portSecurityMessage`: "The switch logs the drop box's address and shuts the port. A managed port
-  takes only known machines, so an unknown device gets no network. The control: disable unused ports
-  and switch on port security / 802.1X." (the refusal toast).
+- `portSecurityMessage`: "The switch logs the drop box's address and shuts the port, so an unknown
+  device gets no network. The control: disable unused ports, use port security to allow only known
+  addresses, or 802.1X so a device must authenticate before it gets a network." (the refusal toast).
 
 None of these is spoken by a character, so no TTS work is needed. They render as plain text through
 the existing examine / confirm / toast paths.
