@@ -984,7 +984,7 @@ Ask me what you want to ask.
 }
 // R2 (m7): she has nothing left to offer once he's dealt with.
 {recruiter_texted and not recruiter_contacted_player:
-    That TalentStack number's still open. She's lost him. Ring her if you want to hear her lose.
+    TalentStack's line is still open. She's lost him. Ring her if you want to hear her lose.
 }
 -> extract_choices
 
