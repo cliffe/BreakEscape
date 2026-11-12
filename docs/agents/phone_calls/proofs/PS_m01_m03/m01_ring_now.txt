@@ -1,0 +1,21 @@
+game 2208 (ring_now)
+start: room="reception_area" mg=null
+{"ok":true,"reason":null}
+entered, t=0
+shot ring_now_entered
+diag: {"cur":{"n":"agent_0x99","s":"ringing"},"q":0,"mg":null,"g":true}
+banner: {"ringer":{"npc":"agent_0x99","state":"ringing","knot":"first_ring"},"banner":"Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline","pendingCb":"null"}
+shot ring_now_banner
+"answered"
+call: {"bar":"ON CALL | 0:05","subs":["Agent HaX: You're in.","AGENT HAX: One test call before it's texts only.","AGENT HAX: A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover."],"choices":[],"header":null,"thread":"AGENT HAX: One test call before it's texts only. | AGENT HAX: A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover."}
+shot ring_now_call
+end: {"subs":[],"choices":[]}
+shot ring_now_end
+after: mg=null rows=["Incoming call, 0:12"]
+handler /tts:
+"You're in."
+"One test call before it's texts only."
+"A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover."
+"So: quiet, deniable. Message me the moment you're stuck and I'll walk you through it."
+"Good. Off you go."
+["phone_call_answered:agent_0x99@49.1","conversation_closed:agent_0x99@62.1"]
