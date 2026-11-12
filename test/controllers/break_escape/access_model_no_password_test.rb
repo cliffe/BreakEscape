@@ -181,7 +181,7 @@ module BreakEscape
     # fact id with text before the server reveals it; after one /feed_post, the second post and
     # its fact are still nowhere.
     #
-    # Review R2 M1: every route answers 200 with the data it serves on success. Fay sits in
+    # Review R2 M1: each route below answers 200 with the data it serves on success. Fay sits in
     # finance, behind the PIN door, and each pass starts with finance locked again, so the door
     # unlock answers with her room. The sign-in, the inventory add, the ink, the ease report, the
     # workaround and the move all succeed; the move takes Fay to the lobby, so GET /room/lobby
@@ -230,8 +230,10 @@ module BreakEscape
       @game.save!
     end
 
-    # One successful response from every route the browser calls, labelled. Each must answer
-    # 200: a route that starts refusing fails here instead of passing the leak checks quietly.
+    # One successful response, labelled, from every route that can carry NPC or feed data and the
+    # ones next to them (review C R3 nit: not GET /network, sync_state or the other routes that
+    # carry no NPC data, nor npc_workaround's prop_door merge). Each must answer 200: a route
+    # that starts refusing fails here instead of passing the leak checks quietly.
     def every_route_body
       relock_finance!
       base = "/break_escape/games/#{@game.id}"

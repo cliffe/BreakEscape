@@ -86,6 +86,8 @@ export function cleanFact(raw) {
 export const MAX_TRIES = 4;
 /** A request that failed without an HTTP status (the network) is asked again after this. */
 const NETWORK_RETRY_S = 5;
+/** setTimeout fires at once for a delay over 2^31 - 1 ms, so no wait is longer (review C R3 nit). */
+export const MAX_WAIT_S = 2147483;
 
 export class SocialFeed {
     /**
@@ -107,16 +109,18 @@ export class SocialFeed {
      * A too-soon answer (the server's pace floor: a use that came early, after a reload or from
      * a tempt band) or a network failure is asked again after the wait (retryAfter + 1 s), up to
      * MAX_TRIES requests for the use, so the use still yields its post. A use while a retry
-     * waits asks nothing more.
+     * waits asks nothing more. A too-soon answer after a network failure whose `revealed`
+     * count is above the posts this client holds means the lost request revealed this use's
+     * post (listed after a reload), so the use stops there and never reveals a second.
      */
     onUse(npcId) {
         if (!isStr(npcId) || this.done.has(npcId) || this.inFlight.has(npcId) || this.retrying.has(npcId)) return null;
         if (!this.deps.hasFeed?.(npcId)) return null;
-        return this._ask(npcId, MAX_TRIES - 1);
+        return this._ask(npcId, MAX_TRIES - 1, false);
     }
 
-    /** One request; `retriesLeft` more may follow for the same use. */
-    _ask(npcId, retriesLeft) {
+    /** One request; `retriesLeft` more may follow for the same use; `lost`: an earlier ask of this use failed in the network. */
+    _ask(npcId, retriesLeft, lost) {
         this.inFlight.add(npcId);
         this.requests++;
         let retryIn = null;
@@ -125,12 +129,17 @@ export class SocialFeed {
             .then((body) => {
                 this.apply(npcId, body);
                 const wait = Number(body?.retryAfter);
-                if (body?.tooSoon === true && Number.isFinite(wait)) retryIn = Math.max(wait, 0) + 1;
+                if (body?.tooSoon !== true || !Number.isFinite(wait)) return;
+                if (lost && Number.isInteger(body.revealed) && body.revealed > (this.posts.get(npcId)?.length || 0)) return;
+                retryIn = Math.min(Math.max(wait, 0) + 1, MAX_WAIT_S);
             }, (err) => {
                 // 403: the server does not know the NPC (yet); a later use asks again
                 if (err?.status === 403) return;
                 console.warn('[social-feed] feed_post failed', err?.message || err);
-                if (err?.status === undefined) retryIn = NETWORK_RETRY_S;
+                if (err?.status === undefined) {
+                    retryIn = NETWORK_RETRY_S;
+                    lost = true;
+                }
             })
             .finally(() => {
                 this.inFlight.delete(npcId);
@@ -139,7 +148,7 @@ export class SocialFeed {
                     const later = this.deps.later || ((fn, ms) => setTimeout(fn, ms));
                     later(() => {
                         this.retrying.delete(npcId);
-                        if (!this.done.has(npcId)) this._ask(npcId, retriesLeft - 1);
+                        if (!this.done.has(npcId)) this._ask(npcId, retriesLeft - 1, lost);
                     }, retryIn * 1000);
                 }
             });

@@ -38,7 +38,9 @@ module BreakEscape
       now = Time.current.to_f
       if n.positive?
         wait = AccessWork.post_floor(scenario_data, npc) - (now - entry['at'].to_f)
-        return { status: :ok, body: { npcId: id, post: nil, done: false, tooSoon: true, retryAfter: wait.ceil } } if wait.positive?
+        # `revealed` (posts out so far) lets a client whose last answer was lost see that the
+        # lost request revealed a post, so it stops asking for this use (review C R3 nit)
+        return { status: :ok, body: { npcId: id, post: nil, done: false, tooSoon: true, retryAfter: wait.ceil, revealed: n } } if wait.positive?
       end
 
       store[id] = { 'n' => n + 1, 'at' => now }

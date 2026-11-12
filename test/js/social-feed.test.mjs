@@ -3,7 +3,7 @@
 // toast rule, restore on load, and the install's listeners against a stub window.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SocialFeed, cleanPost, cleanFact, installSocialFeed, liveDeps, escapeNoteText, MAX_TRIES } from '../../public/break_escape/js/systems/social-feed.js';
+import { SocialFeed, cleanPost, cleanFact, installSocialFeed, liveDeps, escapeNoteText, MAX_TRIES, MAX_WAIT_S } from '../../public/break_escape/js/systems/social-feed.js';
 import { renderNoteMarkdown, noteMatches } from '../../public/break_escape/js/utils/note-markdown.js';
 import { displayDashes } from '../../public/break_escape/js/utils/display-dashes.js';
 
@@ -192,7 +192,7 @@ test('review C R2 m1: a server that always says tooSoon is asked MAX_TRIES times
     assert.equal(log.filter((e) => e[0] === 'send').length, MAX_TRIES + 1, 'a later honest use asks again');
 });
 
-test('review C R1 nit: a network failure is asked again once; a 403 is not', async () => {
+test('review C R1 nit and R3 nit: a network failure is asked again after 5 s, up to MAX_TRIES asks; a 403 is not', async () => {
     const timers = [];
     const { feed } = harness({ answers: [new Error('offline'), answer(0, 'p1')] });
     feed.deps.later = (fn, ms) => timers.push([fn, ms]);
@@ -201,11 +201,50 @@ test('review C R1 nit: a network failure is asked again once; a 403 is not', asy
     timers[0][0]();
     await new Promise((r) => setImmediate(r));
     assert.deepEqual(feed.revealed(), { jake: ['p1'] });
+    const t3 = [];
+    const down = harness({ answers: Array.from({ length: 10 }, () => new Error('offline')) });
+    down.feed.deps.later = (fn, ms) => t3.push([fn, ms]);
+    await down.feed.onUse('jake');
+    for (let i = 0; i < t3.length; i++) {
+        await t3[i][0]();
+        await new Promise((r) => setImmediate(r));
+    }
+    assert.deepEqual(t3.map((t) => t[1]), [5000, 5000, 5000]);
+    assert.equal(down.log.filter((e) => e[0] === 'send').length, MAX_TRIES);
     const t2 = [];
     const h2 = harness({ answers: [Object.assign(new Error('no'), { status: 403 })] });
     h2.feed.deps.later = (fn, ms) => t2.push(ms);
     await h2.feed.onUse('jake');
     assert.deepEqual(t2, []);
+});
+
+test('review C R3 nit: a retryAfter beyond setTimeout\'s limit waits the longest delay setTimeout keeps', async () => {
+    const timers = [];
+    const { feed } = harness({ answers: [{ npcId: 'jake', post: null, done: false, tooSoon: true, retryAfter: 1e12 }] });
+    feed.deps.later = (fn, ms) => timers.push(ms);
+    await feed.onUse('jake');
+    assert.deepEqual(timers, [MAX_WAIT_S * 1000]);
+    assert.ok(MAX_WAIT_S * 1000 <= 2 ** 31 - 1);
+});
+
+test('review C R3 nit: a lost answer that revealed a post is not followed by a second post for the same use', async () => {
+    const timers = [];
+    const soon = { npcId: 'jake', post: null, done: false, tooSoon: true, retryAfter: 600, revealed: 1 };
+    const { feed, log } = harness({ answers: [new Error('connection dropped'), soon, answer(1, 'p2')] });
+    feed.deps.later = (fn, ms) => timers.push([fn, ms]);
+    await feed.onUse('jake');
+    await timers[0][0]();
+    await new Promise((r) => setImmediate(r));
+    assert.equal(log.filter((e) => e[0] === 'send').length, 2);
+    assert.equal(timers.length, 1, 'the too-soon answer says the lost request revealed a post: no wait for a second');
+    assert.equal(feed.retrying.has('jake'), false);
+    // Without a lost request the same too-soon answer is waited out (the client holds the post)
+    const h = harness({ answers: [answer(0, 'p1'), { ...soon }, answer(1, 'p2')] });
+    const t2 = [];
+    h.feed.deps.later = (fn, ms) => t2.push(ms);
+    await h.feed.onUse('jake');
+    await h.feed.onUse('jake');
+    assert.deepEqual(t2, [601000]);
 });
 
 test('installSocialFeed: listens on npc_used (met social_media only) and npc_used_phone; toast is plain text', async () => {
