@@ -181,6 +181,10 @@ export function toastDuration(type, duration) {
 export function showNotification(message, type = 'info', title = '', duration = 5000, options = {}) {
     duration = toastDuration(type, duration);
     if (shouldHoldNotification(type, fullScreenPanelOpen() || panelExpected())) {
+        // Toasts still waiting for a place go into the hold first, so they stay ahead of
+        // this one: a workstation popup (CyberChef, a lab sheet) holds toasts without
+        // calling holdRecentNotifications (code review R2 n1).
+        holdForPanel(takeWaiting());
         // The same toast raised twice while a panel is open (two code paths announcing one
         // event) shows once
         if (isQueuedDuplicate(heldNotifications, message, type, title, options)) return null;
@@ -227,8 +231,9 @@ function setPlainLines(el, text) {
 
 // Toasts on screen at once; info and success toasts past this wait (renderNotification).
 export const MAX_SHOWN_TOASTS = 2;
-// A waiting toast shows after this long even if both places are still taken (going over
-// the limit for a moment), so it never lands long after the event it is about.
+// The head of the waiting line shows after this long even if both places are still taken
+// (going over the limit by one for a moment), so it never lands long after the event it is
+// about. The rest follow it a TOAST_STAGGER_MS apart.
 export const MAX_TOAST_WAIT_MS = 4000;
 const waitingToasts = [];
 
@@ -245,22 +250,51 @@ export function shownToasts(container) {
 /** Number of info and success toasts waiting for a free place. */
 export function waitingToastCount() { return waitingToasts.length; }
 
-// Put a toast in the waiting line, with a timer that shows it anyway once it has waited
-// MAX_TOAST_WAIT_MS.
+// After one waiting toast has gone over the limit, the next may follow no sooner than this.
+export const TOAST_STAGGER_MS = 1500;
+let lastOverLimitAt = 0;
+
+// Put a toast in the waiting line. Only the head of the line has a timer (armHead), so a
+// burst goes over the limit one toast at a time instead of all at once at 4 s (code
+// review R2 m1: six toasts raised together put six on screen at 4.1 s).
 function addWaiting(args) {
-    args.waitTimer = setTimeout(() => {
-        const i = waitingToasts.indexOf(args);
-        if (i < 0) return;
-        waitingToasts.splice(i, 1);
-        showWaitingToast(args, true);
-    }, MAX_TOAST_WAIT_MS);
+    args.waitingSince = Date.now();
     waitingToasts.push(args);
+    armHead();
+}
+
+// Arm the wait limit on the head of the line: due MAX_TOAST_WAIT_MS after it joined, and no
+// sooner than TOAST_STAGGER_MS after the last toast shown over the limit.
+function armHead(now = Date.now()) {
+    const head = waitingToasts[0];
+    if (!head || head.waitTimer) return;
+    const due = Math.max(head.waitingSince + MAX_TOAST_WAIT_MS, lastOverLimitAt + TOAST_STAGGER_MS);
+    head.waitTimer = setTimeout(headDue, Math.max(0, due - now));
+}
+
+// The head has waited its limit. It shows over the limit unless a toast is already over it,
+// in which case it tries again a stagger later: at most MAX_SHOWN_TOASTS + 1 timed info or
+// success toasts on screen.
+function headDue() {
+    const head = waitingToasts[0];
+    if (!head) return;
+    head.waitTimer = null;
+    const container = typeof document === 'undefined' ? null : document.getElementById('notification-container');
+    const shown = shownToasts(container).length;
+    if (shown > MAX_SHOWN_TOASTS) {
+        head.waitTimer = setTimeout(headDue, TOAST_STAGGER_MS);
+        return;
+    }
+    waitingToasts.shift();
+    if (shown >= MAX_SHOWN_TOASTS) lastOverLimitAt = Date.now();
+    showWaitingToast(head, true);
+    armHead();
 }
 
 // Take every waiting toast out of the line (timers cleared), in order.
 function takeWaiting() {
     const all = waitingToasts.splice(0);
-    all.forEach((args) => clearTimeout(args.waitTimer));
+    all.forEach((args) => { clearTimeout(args.waitTimer); args.waitTimer = null; });
     return all;
 }
 
@@ -268,6 +302,7 @@ function takeWaiting() {
 // Returns false when it could not be shown and went back in the line.
 function showWaitingToast(args, overLimit) {
     clearTimeout(args.waitTimer);
+    args.waitTimer = null;
     if (shouldHoldNotification(args[1], fullScreenPanelOpen() || panelExpected())) {
         holdForPanel([args]);
         return true;
@@ -293,6 +328,7 @@ function showNextWaiting() {
     while (waitingToasts.length && shownToasts(container).length < MAX_SHOWN_TOASTS) {
         if (!showWaitingToast(waitingToasts.shift(), false)) break;
     }
+    armHead();
 }
 
 function renderNotification(message, type, title, duration, seen = false, options = {}, overLimit = false) {

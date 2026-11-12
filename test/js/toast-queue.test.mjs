@@ -158,3 +158,48 @@ test('toasts waiting when a panel opens are held ahead of toasts raised during i
     await wait(800);
     assert.equal(children.length, 0);
 });
+
+test('toasts waiting when a workstation popup holds a new toast stay ahead of it (R2 n1)', async () => {
+    const a = T.showNotification('a', 'info', '', 60000);
+    const b = T.showNotification('b', 'info', '', 60000);
+    T.showNotification('waited', 'info', '', 200);
+    globalThis.__panelOpen = true;   // CyberChef or a lab sheet: no holdRecentNotifications call
+    T.showNotification('during', 'info', '', 200);
+    assert.equal(T.waitingToastCount(), 0, 'the waiting toast joined the hold first');
+    T.removeNotification(a); T.removeNotification(b);
+    await wait(400);
+    assert.equal(children.length, 0, 'nothing shows over the popup');
+    globalThis.__panelOpen = false;
+    await wait(400);
+    assert.deepEqual(messages(), ['waited', 'during']);
+    await wait(800);
+    assert.equal(children.length, 0);
+});
+
+// Code review R2 m1: one timer per waiting toast showed a whole burst at 4 s, six on screen.
+// Only the head of the line has the wait limit now; the rest follow a stagger apart, and
+// never more than one over the limit at a time.
+test('a burst of six task toasts never puts more than three on screen, and shows each once in order', async () => {
+    const order = [];
+    const seen = new Set();
+    let most = 0;
+    const sample = setInterval(() => {
+        const live = children.filter((c) => !c._toast.closing);
+        most = Math.max(most, live.length);
+        live.forEach((c) => { if (!seen.has(c)) { seen.add(c); order.push(c._toast.message); } });
+    }, 20);
+    for (const n of [1, 2, 3, 4, 5, 6]) T.showNotification('task ' + n, 'success', 'Task Complete', 5000);
+    assert.deepEqual(messages(), ['task 1', 'task 2']);
+    assert.equal(T.waitingToastCount(), 4);
+    await wait(T.MAX_TOAST_WAIT_MS + 200);
+    assert.equal(children.filter((c) => !c._toast.closing).length, 3, 'only the head went over the limit at 4 s');
+    assert.equal(T.waitingToastCount(), 3);
+    while (T.waitingToastCount() > 0) await wait(200);
+    await wait(100);
+    clearInterval(sample);
+    assert.ok(most <= T.MAX_SHOWN_TOASTS + 1, `at most three on screen (saw ${most})`);
+    assert.deepEqual(order, ['task 1', 'task 2', 'task 3', 'task 4', 'task 5', 'task 6']);
+    children.slice().forEach((c) => T.removeNotification(c));
+    await wait(400);
+    assert.equal(children.length, 0);
+});

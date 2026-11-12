@@ -142,3 +142,31 @@ test('warnings are not delayed by the settle window', () => {
     assert.equal(drawn.length, 1);
     T.clearExpectedPanel();
 });
+
+// Code review R2 m1: the settle window and the two-toast limit together. Five task toasts
+// held over a share-to-parent handover come out through the limit: each drawn once, in
+// order, and never more than three on screen.
+test('five toasts held over a handover come out through the limit, once each and in order', async () => {
+    reset();
+    slowMs = 450;
+    let most = 0;
+    const sample = setInterval(() => {
+        most = Math.max(most, box.children.filter((c) => !c._toast?.closing).length);
+    }, 20);
+    MF.startMinigame('child', null, {});
+    const names = [1, 2, 3, 4, 5].map((n) => 'task ' + n);
+    names.forEach((m) => T.showNotification(m, 'success', 'Task Complete', 1500));
+    MF.endMinigame(true, null);   // Close: the parent reopens a tick later
+    await wait(150);
+    assert.equal(drawn.length, 0, 'nothing shown in the gap');
+    MF.endMinigame(true, null);   // Close the parent
+    await wait(1200);
+    assert.equal(drawn.length, 2, 'two shown once the screen settles');
+    assert.equal(T.waitingToastCount(), 3, 'the rest wait their turn');
+    while (T.waitingToastCount() > 0) await wait(100);
+    clearInterval(sample);
+    names.forEach((m) => assert.equal(count(m), 1, m + ' drawn once'));
+    assert.deepEqual(drawn.map((n) => n._toast.message), names);
+    assert.ok(most <= T.MAX_SHOWN_TOASTS + 1, `at most three on screen (saw ${most})`);
+    await wait(2000);
+});
