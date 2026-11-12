@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -643,7 +643,8 @@ test('a headless host opens no access-listed share without a foothold, on its ne
         sc.rooms.store.objects = sc.rooms.store.objects.filter(o => o.id !== 'file_server');
         sc.resources.it_share = { ...share, network: where };
         let g = graph(sc);
-        assert.deepEqual(into(g, 'resource_it_share'), ['signin_ian'], `${where}: a foothold on office_lan, so a remote session`);
+        assert.deepEqual(into(g, 'resource_it_share'), ['lock_door_box'], `${where}: a foothold on office_lan, so a remote session`);
+        assert.deepEqual(into(g, 'lock_door_box'), ['net_office_lan', 'signin_ian'], `${where}: the foothold and the account feed it`);
         sc.rooms.comms_room.objects = [];
         g = graph(sc);
         assert.ok(g.nodes.resource_it_share && g.nodes.signin_ian, `${where}: positive control`);
@@ -660,4 +661,184 @@ test('an access point in an open box inside a locked safe hangs from the safe', 
     const g = graph(sc);
     assert.ok(edge(g, 'lock_ap_safe', 'wifiap_guest_ap'));
     assert.ok(!edge(g, 'lobby', 'wifiap_guest_ap'));
+});
+
+// Review R4.
+const outputs = g => [g.raw, g.md, g.html];
+const hiddenIds = g => Object.keys(g.nodes).filter(id => g.nodes[id].hidden).sort();
+
+test('a label built from an id that holds the key, with underscores or hyphens, is scrubbed', { skip }, () => {
+    for (const [psk, room, spaced] of [['sea_breeze_2025', 'sea_breeze_2025_annex', /sea breeze 2025/i],
+                                       ['Harbour-Guest-2025', 'harbour_guest_2025_annex', /harbour guest 2025/i]]) {
+        const sc = keyed(psk);
+        sc.rooms.lobby.connections.west = room;
+        sc.rooms[room] = { type: 'room_office', connections: { east: 'lobby' }, locked: true, lockType: 'key', requires: 'annex_key',
+                           objects: [{ id: `${room}_box`, type: 'safe', locked: true, lockType: 'pin', requires: '1111',
+                                       contents: [{ id: 'x1', type: 'notes1', name: 'X', readable: true, text: 'x' }] }] };
+        const g = graph(sc);
+        assert.ok(g.md.includes('WIFI_KEY_HIDDEN Annex'), `${psk}: positive control, the room was drawn, scrubbed`);
+        for (const out of outputs(g)) {
+            assert.doesNotMatch(out, spaced, `${psk}: the spaced form is in no output`);
+            assert.ok(!out.toLowerCase().includes(psk.toLowerCase()), `${psk}: the key is in no output`);
+        }
+    }
+});
+
+test('the test switch always warns, and a stop it causes says so', { skip }, () => {
+    const clean = run(keyed(PSK), { DUNGEON_GRAPH_TEST_NO_SCRUB: '1' });
+    assert.equal(clean.status, 0, 'no authored label holds the key, so the run completes');
+    assert.match(clean.stderr, /WARNING: DUNGEON_GRAPH_TEST_NO_SCRUB=1 is set, so the Wi-Fi key label scrub is OFF/);
+    assert.doesNotMatch(run(keyed(PSK)).stderr, /DUNGEON_GRAPH_TEST_NO_SCRUB/, 'silent when unset');
+    const sc = keyed(PSK);
+    sc.rooms.lobby.npcs[0].displayName = `Lena ${PSK}`;
+    const r = run(sc, { DUNGEON_GRAPH_TEST_NO_SCRUB: '1' });
+    assert.equal(r.status, 3, 'the key stop has its own exit status');
+    assert.match(r.stderr, /❌ ERROR: .*still holds a Wi-Fi key.*because DUNGEON_GRAPH_TEST_NO_SCRUB=1 is set/);
+    assert.doesNotMatch(r.stderr, /does not scrub/, 'the stop does not blame the generator');
+});
+
+test('a stop deletes the graph files an earlier run left, and says so', { skip }, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'graph-networks-'));
+    try {
+        const sc = keyed(PSK);
+        sc.rooms.lobby.npcs[0].displayName = `Lena ${PSK}`;
+        writeFileSync(join(dir, 'scenario.json.erb'), JSON.stringify(sc));
+        for (const ext of ['html', 'md', 'json']) writeFileSync(join(dir, `dungeon_graph.${ext}`), `OLD GRAPH ${PSK}`);
+        const r = spawnSync('ruby', [join(root, 'scripts/generate_dungeon_graph.rb'), join(dir, 'scenario.json.erb')],
+            { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8', DUNGEON_GRAPH_TEST_NO_SCRUB: '1' } });
+        assert.equal(r.status, 3);
+        assert.match(r.stderr, /the old dungeon_graph\.html, dungeon_graph\.md, dungeon_graph\.json were deleted/);
+        for (const ext of ['html', 'md', 'json']) assert.ok(!existsSync(join(dir, `dungeon_graph.${ext}`)), `${ext} deleted`);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('the validator strips the test switch, and counts a key stop as an error', { skip }, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'graph-validator-'));
+    try {
+        const src = join(root, 'scenarios/test_access_networks');
+        for (const f of ['scenario.json.erb', 'mission.json']) writeFileSync(join(dir, f), readFileSync(join(src, f)));
+        spawnSync('cp', ['-r', join(src, 'ink'), dir]);
+        const validate = (args, env = {}) => spawnSync('ruby', [...args, join(root, 'scripts/validate_scenario.rb'), join(dir, 'scenario.json.erb')],
+            { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8', ...env } });
+        let r = validate([], { DUNGEON_GRAPH_TEST_NO_SCRUB: '1' });
+        assert.equal(r.status, 0, r.stdout + r.stderr);
+        assert.doesNotMatch(r.stdout + r.stderr, /DUNGEON_GRAPH_TEST_NO_SCRUB/, 'the switch never reaches the generator');
+        assert.match(r.stdout, /✓ Dungeon graph:/);
+        // A stand-in generator that stops as the key check does (exit 3), and one that fails otherwise.
+        for (const [code, expected, status] of [[3, /❌ ERROR: Dungeon graph stopped: an output still held a Wi-Fi key/, 1],
+                                                [1, /⚠️ Dungeon graph generation failed \(non-fatal\)/, 0]]) {
+            const stub = join(dir, `stub_${code}.rb`);
+            writeFileSync(stub, `module Kernel
+  alias_method :real_system_for_test, :system
+  def system(*args)
+    return real_system_for_test(*args) unless args.any? { |a| a.to_s.end_with?('generate_dungeon_graph.rb') }
+    real_system_for_test('ruby', '-e', 'exit ${code}')
+  end
+end
+`);
+            r = validate(['-r', stub]);
+            assert.match(r.stdout, expected);
+            assert.equal(r.status, status);
+        }
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('a headless host whose policy blocks remote sign-in opens no share', { skip }, () => {
+    const box = sc => {
+        sc.rooms.lobby.objects.push({ id: 'guest_ap', type: 'pc', name: 'Guest access point', wifiAp: true, network: 'guest_wifi' },
+                                    { id: 'wifi_card', type: 'notes1', name: 'Wi-Fi card', readable: true, text: `Key: ${PSK}` });
+        sc.networks.guest_wifi = { name: 'Guest Wi-Fi', wifi: { ssid: 'Guest', psk: PSK } };
+        sc.rooms.comms_room.objects = [];
+        sc.resources = { vault: { kind: 'file_share', name: 'Vault', host: 'HB-FS01', network: 'guest_wifi', access: { roles: ['finance'] },
+                                  contents: [{ id: 'v_doc', type: 'text_file', name: 'Doc', readable: true, text: 'x' }] } };
+        sc.rooms.lobby.objects = sc.rooms.lobby.objects.filter(o => o.id !== 'hot_desk');
+        sc.rooms.store.objects = [{ id: 'door_box', type: 'pc', name: 'Door controller', network: 'guest_wifi', locked: true,
+                                    lockType: 'login', headless: true, access: { roles: ['finance'] } }];
+        sc.policies = { hardened: { remote: 'blocked' }, open: { remote: 'allowed' } };
+        return sc;
+    };
+    let g = graph(box(scenario()));
+    assert.deepEqual(into(g, 'resource_vault'), ['lock_door_box'], 'positive control: the share hangs from the sign-in lock');
+    assert.ok(edge(g, 'net_guest_wifi', 'lock_door_box') && edge(g, 'wifiap_guest_ap', 'net_guest_wifi'), 'so behind the foothold');
+    let sc = box(scenario());
+    sc.rooms.store.objects[0].policy = 'hardened';
+    g = graph(sc);
+    assert.ok(g.nodes.resource_vault, 'the share is still drawn');
+    assert.deepEqual(into(g, 'resource_vault'), [], 'remote sign-in blocked by the host policy');
+    sc = box(scenario());
+    sc.defaultPolicy = 'hardened';
+    assert.deepEqual(into(graph(sc), 'resource_vault'), [], 'blocked by the default policy');
+    sc.rooms.store.objects[0].policy = 'open';
+    assert.deepEqual(into(graph(sc), 'resource_vault'), ['lock_door_box'], 'the host policy wins over the default');
+});
+
+test('hidden ids are marked and explained, and do not move when another part of the graph changes', { skip }, () => {
+    const plain = graph(keyed(PSK));
+    assert.ok(!plain.md.includes('Hidden:') && !Object.values(plain.nodes).some(n => 'hidden' in n), 'nothing hidden, no legend line');
+    const g = graph(keyed('office'));
+    const hidden = hiddenIds(g);
+    assert.ok(hidden.length >= 2, 'positive control');
+    for (const id of Object.keys(g.nodes)) assert.equal(!!g.nodes[id].hidden, /^hidden_\d+$/.test(id), id);
+    assert.match(g.md, /Hidden: `WIFI_KEY_HIDDEN` in a label, and an id `hidden_<n>` \(marked "hidden": true in dungeon_graph.json\)/);
+    assert.match(g.html, /an id <code>hidden_&lt;n&gt;<\/code>/);
+    const sc = keyed('office');
+    sc.rooms = { attic: { type: 'room_office', locked: true, lockType: 'pin', requires: '9999', connections: { south: 'lobby' }, objects: [] },
+                 ...sc.rooms };
+    sc.rooms.lobby.connections.up = 'attic';
+    const moved = graph(sc);
+    assert.ok(moved.nodes.door_attic, 'positive control: a node earlier in the walk');
+    assert.deepEqual(hiddenIds(moved), hidden, 'the same hidden ids');
+});
+
+test('a hidden id never takes an authored id or holds a key form', { skip }, () => {
+    const first = hiddenIds(graph(keyed('office')));
+    const sc = keyed('office');
+    for (const id of first) {
+        sc.rooms.lobby.connections[id] = id;
+        sc.rooms[id] = { type: 'room_office', connections: { south: 'lobby' }, objects: [] };
+    }
+    const g = graph(sc);
+    for (const id of first) assert.ok(g.nodes[id] && !g.nodes[id].hidden, `${id} is the authored room`);
+    const now = hiddenIds(g);
+    assert.equal(now.length, first.length);
+    assert.ok(now.every(id => !first.includes(id)), 'the hidden ids moved aside');
+    const den = keyed('den_1');
+    den.rooms.lobby.connections.west = 'garden_1';
+    den.rooms.garden_1 = { type: 'room_office', connections: { east: 'lobby' }, objects: [] };
+    const r = run(den);
+    assert.equal(r.status, 0, `a room that holds the key does not trip the check: ${r.stderr}`);
+});
+
+test('a short key is still stopped when it leaks, and a mostly punctuation key leaves the page readable', { skip }, () => {
+    const sc = keyed('n1');
+    sc.rooms.lobby.npcs[0].displayName = 'Lena n1';
+    assert.equal(run(sc).status, 0, 'scrubbed when the scrub is on');
+    assert.equal(run(sc, { DUNGEON_GRAPH_TEST_NO_SCRUB: '1' }).status, 3, 'the skeleton counters do not hide the leak');
+    const g = graph(keyed('!!a!!'));
+    assert.match(g.nodes.signin_lena.label, /^Lena Hart sign-in/, 'the squeezed form "a" scrubs nothing');
+    assert.deepEqual(hiddenIds(g), [], 'and hides no id');
+    for (const out of outputs(g)) assert.ok(!out.includes('!!a!!'));
+    const u = run(keyed('_'));
+    assert.ok(u.status === 0 || /no hidden id is free/.test(u.stderr), `a one-character key finishes: ${u.stderr}`);
+});
+
+test('the Written: lines name the folder scrubbed', { skip }, () => {
+    const parent = mkdtempSync(join(tmpdir(), 'graph-networks-'));
+    try {
+        const dir = join(parent, `mission-${PSK}`);
+        mkdirSync(dir);
+        writeFileSync(join(dir, 'scenario.json.erb'), JSON.stringify(keyed(PSK)));
+        const r = spawnSync('ruby', [join(root, 'scripts/generate_dungeon_graph.rb'), join(dir, 'scenario.json.erb')],
+            { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+        assert.equal(r.status, 0, r.stderr);
+        assert.match(r.stdout, /Written: .*mission-WIFI_KEY_HIDDEN\/dungeon_graph\.html/, 'positive control');
+        assert.ok(!r.stdout.includes(PSK) && !r.stderr.includes(PSK));
+        assert.equal(JSON.parse(readFileSync(join(dir, 'dungeon_graph.json'), 'utf8')).scenario, 'mission-WIFI_KEY_HIDDEN');
+    } finally {
+        rmSync(parent, { recursive: true, force: true });
+    }
 });

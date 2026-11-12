@@ -13,6 +13,7 @@ require 'base64'
 require 'securerandom'
 require 'set'
 require 'cgi'
+require 'digest'
 
 # Scenario and ink files are UTF-8: read them so whatever the shell's locale (LANG=C).
 Encoding.default_external = Encoding::UTF_8
@@ -524,39 +525,91 @@ WIFI_KEYS = NETWORKS.keys.filter_map { |id| (BreakEscape::NetworkModel.wifi_of(s
 # name, a container, a task title, the brief) carried it in, never the page around it: every
 # label, edge label, the title, the brief and the critical path, in any letter case and at any
 # length, in each form an output encodes it (as written, with " shown as ', HTML, JSON, JS
-# template, node id). A node id that holds a key is swapped for an opaque one (hidden_<n>), so
-# every other id keeps its value. A final check on each output (check_wifi_key_free) stops the
-# run, writing nothing, if a key form is still there.
+# template, node id, and the label a fallback builds from an id: separators turned into
+# spaces, then capitalised). A node id that holds a key is swapped for an opaque one
+# (hidden_<n>), so every other id keeps its value. A final check on each output
+# (check_wifi_key_free) stops the run if a key form is still there, and deletes the old graph
+# files so a stale copy cannot stay on disk.
+# A form that squeezes out punctuation (the id form, the spaced label form) is used only while
+# it keeps at least half the key: psk '!!a!!' must not scrub every 'a' on the page or hide
+# every id with an 'a' in it. The key as written is always used, however short.
+squeezed_forms = lambda do |k|
+  [nid(k), nid(k).tr('_', ' '), k.gsub(/[\s_-]+/, ' ').strip].select { |f| f.length * 2 >= k.length }
+end
 WIFI_KEY_FORMS = WIFI_KEYS.flat_map do |k|
-  [k, k.tr('"', "'"), CGI.escapeHTML(k), JSON.generate(k)[1..-2], k.gsub('`') { '\\`' }.gsub('${') { '\\${' }, nid(k)]
+  [k, k.tr('"', "'"), CGI.escapeHTML(k), JSON.generate(k)[1..-2], k.gsub('`') { '\\`' }.gsub('${') { '\\${' }] +
+    squeezed_forms.call(k)
 end.uniq.reject(&:empty?).sort_by { |f| -f.length }.freeze
-# The stand-in text and id prefix, chosen so neither holds a key.
-key_free = ->(word) { WIFI_KEY_FORMS.none? { |f| word.downcase.include?(f.downcase) } }
-WIFI_KEY_TOKEN = (%w[WIFI_KEY_HIDDEN REDACTED *** ##].find(&key_free) || '').freeze
-WIFI_ID_TOKEN = (%w[hidden opaque redacted zq].find(&key_free) || 'z').freeze
+# True when a word holds no key form; the stand-in text, the id prefix and every hidden id
+# handed out must pass it.
+def key_free?(word)
+  WIFI_KEY_FORMS.none? { |f| word.downcase.include?(f.downcase) }
+end
+WIFI_KEY_TOKEN = (%w[WIFI_KEY_HIDDEN REDACTED *** ##].find { |w| key_free?(w) } || '').freeze
+WIFI_ID_TOKEN = (%w[hidden opaque redacted zq].find { |w| key_free?(w) } || 'z').freeze
 WIFI_LABEL_RE = WIFI_KEY_FORMS.empty? ? nil : Regexp.union(WIFI_KEY_FORMS.map { |f| Regexp.new(Regexp.escape(f), Regexp::IGNORECASE) })
-WIFI_ID_RE = WIFI_KEYS.empty? ? nil : Regexp.union(WIFI_KEYS.flat_map { |k| [k, nid(k)] }.reject(&:empty?).uniq
+WIFI_ID_RE = WIFI_KEYS.empty? ? nil : Regexp.union(WIFI_KEYS.flat_map { |k| [k, nid(k)].select { |f| f.length * 2 >= k.length } }.reject(&:empty?).uniq
                                                        .map { |f| Regexp.new(Regexp.escape(f), Regexp::IGNORECASE) })
 $hidden_ids = {}
+$scrub_hits = false
+# Every string the scenario holds, as written and as a node id would spell it: a hidden id
+# never takes one of these, so an authored id such as hidden_2 keeps its own node.
+taken = Set.new
+walk_strings = lambda do |v|
+  case v
+  when String then taken << v << nid(v)
+  when Array then v.each { |x| walk_strings.call(x) }
+  when Hash then v.each { |k, x| taken << k.to_s; walk_strings.call(x) }
+  end
+end
+walk_strings.call(scenario) if WIFI_ID_RE
+TAKEN_IDS = taken.freeze
 def wifi_key_in?(text)
   WIFI_LABEL_RE ? WIFI_LABEL_RE.match?(text.to_s) : false
 end
+# The test switch: only the node tests set it, to prove the final check stops a leak. It is
+# never silent, and the validator strips it before running the generator.
+SCRUB_OFF_FOR_TEST = ENV['DUNGEON_GRAPH_TEST_NO_SCRUB'] == '1'
+if SCRUB_OFF_FOR_TEST
+  warn '⚠️ WARNING: DUNGEON_GRAPH_TEST_NO_SCRUB=1 is set, so the Wi-Fi key label scrub is OFF. ' \
+       'It is a test switch: unset it before generating a real graph.'
+end
 # A label with every key form replaced; the generator's own <br/> joins are kept, so a short
 # key never eats one.
-SCRUB_OFF_FOR_TEST = ENV['DUNGEON_GRAPH_TEST_NO_SCRUB'] == '1' # proves the final check stops a leak
 def scrub_label(text)
   return text unless WIFI_LABEL_RE && text && !SCRUB_OFF_FOR_TEST
 
-  text.to_s.split('<br/>', -1).map { |part| part.gsub(WIFI_LABEL_RE, WIFI_KEY_TOKEN) }.join('<br/>')
+  out = text.to_s.split('<br/>', -1).map { |part| part.gsub(WIFI_LABEL_RE, WIFI_KEY_TOKEN) }.join('<br/>')
+  $scrub_hits = true if out != text.to_s
+  out
 end
+def hidden_id?(id)
+  WIFI_ID_RE && id ? WIFI_ID_RE.match?(id.to_s) : false
+end
+# An id that holds a key becomes hidden_<n>. The number comes from a salted hash of the id with
+# every key form cut out, so it never depends on the key, and it does not move when another
+# part of the graph changes. A number whose id would hold a key form, is an authored string,
+# or is already handed out, is skipped.
+HIDDEN_ID_SALT = 'break-escape-dungeon-graph-hidden-id'
 def hide_id(id)
-  return id unless WIFI_ID_RE && id && WIFI_ID_RE.match?(id.to_s)
+  return id unless hidden_id?(id)
 
-  $hidden_ids[id] ||= "#{WIFI_ID_TOKEN}_#{$hidden_ids.size + 1}"
+  $hidden_ids[id] ||= begin
+    rest = id.to_s.gsub(WIFI_ID_RE, '~')
+    n = Digest::SHA256.hexdigest("#{HIDDEN_ID_SALT}:#{rest}").to_i(16) % 10_000
+    used = $hidden_ids.values.to_set
+    # A one-character key such as '_' fails every candidate with that separator: try another.
+    found = %w[_ x q].product((0...10_000).to_a).lazy.map { |sep, i| "#{WIFI_ID_TOKEN}#{sep}#{(n + i) % 10_000}" }
+                     .find { |c| key_free?(c) && !TAKEN_IDS.include?(c) && !used.include?(c) && !$nodes.key?(c) }
+    found || abort("❌ ERROR: no hidden id is free of the Wi-Fi key; use a longer key (WPA2 needs at least eight characters).")
+  end
 end
-# Stops the run, before any file is written, when an output holds a key form more often than
-# the same page with every authored string blanked (the skeleton): the page's own text (a
-# script that says `function`, a style that says `fullscreen`) is in both and never counts.
+# Stops the run when an output holds a key form more often than the same page with every
+# authored string blanked (the skeleton): the page's own text (a script that says `function`,
+# a style that says `fullscreen`) is in both and never counts. A stop deletes the graph files
+# a previous run left, since they may hold the very key, and exits with KEY_STOP_STATUS so the
+# validator can count it as an error.
+KEY_STOP_STATUS = 3
 def check_wifi_key_free(outputs)
   outputs.each do |file, (real, skeleton)|
     leaked = WIFI_KEY_FORMS.any? do |f|
@@ -565,8 +618,16 @@ def check_wifi_key_free(outputs)
     end
     next unless leaked
 
-    abort "❌ ERROR: #{File.basename(file)} still holds a Wi-Fi key after the label scrub; no graph file was written. " \
-          'An authored string reaches the output by a path scripts/generate_dungeon_graph.rb does not scrub.'
+    removed = outputs.keys.select { |f| File.exist?(f) }
+    removed.each { |f| File.delete(f) }
+    cause = if SCRUB_OFF_FOR_TEST
+              'The label scrub was off because DUNGEON_GRAPH_TEST_NO_SCRUB=1 is set: unset it and run again.'
+            else
+              'An authored string reaches the output by a path scripts/generate_dungeon_graph.rb does not scrub.'
+            end
+    gone = removed.empty? ? 'No graph file was written.' : "No graph file was written, and the old #{removed.map { |f| File.basename(f) }.join(', ')} were deleted so a stale copy cannot stay on disk."
+    warn "❌ ERROR: #{File.basename(file)} still holds a Wi-Fi key after the label scrub. #{gone} #{cause}"
+    exit KEY_STOP_STATUS
   end
 end
 if NETWORKS.any?
@@ -671,9 +732,19 @@ if NETWORKS.any?
     break unless grown
   end
   # A headless host has no screen: a session there (so its mapped shares) needs a remote
-  # sign-in, and so a foothold that reaches its network (Game#attempt_login!). Without one it
-  # opens no share, on its own network or across a link.
-  share_host = ->(h) { !nm.headless?(h[:object]) || foothold_reach.include?(h[:network]) }
+  # sign-in, and so a foothold that reaches its network and a policy that does not say
+  # remote: 'blocked' (Game#attempt_login!, NetworkAccess#remote_blocked?, the policy found as
+  # Game#effective_policy finds it). Without both it opens no share, on its own network or
+  # across a link.
+  policies_g = scenario['policies'].is_a?(Hash) ? scenario['policies'] : {}
+  remote_blocked = lambda do |pc|
+    name = nm.present_string?(pc['policy']) ? pc['policy'] : scenario['defaultPolicy']
+    policy = name.is_a?(String) ? policies_g[name] : nil
+    policy.is_a?(Hash) && policy['remote'] == 'blocked'
+  end
+  share_host = lambda do |h|
+    !nm.headless?(h[:object]) || (foothold_reach.include?(h[:network]) && !remote_blocked.call(h[:object]))
+  end
   NETWORKS.each_key do |net_id|
     hosts = nm.sign_in_objects_on(net_id, scenario)
     shares = nm.resources_on(net_id, scenario)
@@ -697,10 +768,23 @@ if NETWORKS.any?
         signin_hosts = signin_hosts.select(&share_host)
         accounts.each do |a|
           next unless ai.acl_admits?(res['access'], a[:npc])
-          next unless signin_hosts.any? { |h| ai.account_admitted?(h[:object], a[:npc]) }
+
+          admitting = signin_hosts.select { |h| ai.account_admitted?(h[:object], a[:npc]) }
+          next if admitting.empty?
 
           signin = "signin_#{nid(a[:npc]['id'])}"
-          add_edge(signin, node) if $nodes.key?(signin)
+          next unless $nodes.key?(signin)
+
+          if admitting.all? { |h| nm.headless?(h[:object]) }
+            # Only remote sessions reach the share, so it hangs from each host's sign-in lock,
+            # which the network (so the foothold) and the account both feed.
+            admitting.each do |h|
+              lock = access_lock_node({ kind: 'login', lock: h[:object], room: h[:room_id] }, rooms)
+              add_edge(lock, node) unless $edges.any? { |e| e[:from] == lock && e[:to] == node }
+            end
+          else
+            add_edge(signin, node)
+          end
         end
       else
         add_edge(network, node, label: 'exposes')
@@ -1716,12 +1800,27 @@ def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil, h
   lines.join("\n")
 end
 
-# The same diagram with every authored string blanked: each id a plain counter, each label
-# empty. Its text is the generator's own (shapes, classes, arrows), for check_wifi_key_free.
-def skeleton_mermaid(nodes, edges, critical_set: Set.new, start_node: nil)
+# Skeleton ids use the hidden-id prefix and skip any number that would hold a key form, so the
+# skeleton holds no text the real page lacks (a counter n1 would hide a key 'n1').
+def skeleton_counter
   ids = {}
-  idx = ->(id) { ids[id] ||= "n#{ids.size}" }
+  n = -1
+  lambda do |id|
+    ids[id] ||= begin
+      n += 1
+      n += 1 until key_free?("#{WIFI_ID_TOKEN}_#{n}") || n > 1_000_000
+      "#{WIFI_ID_TOKEN}_#{n}"
+    end
+  end
+end
+
+# The same diagram with every authored string blanked: each id a counter, each label empty
+# (the start room's too). Its text is the generator's own (shapes, classes, arrows), for
+# check_wifi_key_free.
+def skeleton_mermaid(nodes, edges, critical_set: Set.new, start_node: nil)
+  idx = skeleton_counter
   sk_nodes = nodes.to_h { |id, n| [idx.call(id), n.merge(label: '')] }
+  sk_nodes[idx.call(start_node)] ||= { label: '', klass: 'room', optional: false } if start_node
   sk_edges = edges.map { |e| e.merge(from: idx.call(e[:from]), to: idx.call(e[:to]), label: e[:label] && '') }
   emit_mermaid_diagram(sk_nodes, sk_edges, critical_set: Set.new(critical_set.map { |c| idx.call(c) }),
                                            start_node: start_node && idx.call(start_node), hide: false)
@@ -1874,6 +1973,16 @@ net_legend_md = net_notes.map { |n| "\n  Network edges: #{n.gsub(%r{</?code>}, '
 brief_full = scrub_label((scenario['scenario_brief'] || SCENARIO_ID).to_s)
 brief = brief_full.length <= 160 ? brief_full : brief_full[0, 160].sub(/\s+\S*\z/, '') + '…'
 title_id = scrub_label(SCENARIO_ID)
+json_scenario_name = scrub_label(File.basename(File.dirname(SCENARIO_FILE)))
+# One legend line, only when something was hidden or scrubbed, so every other graph keeps its
+# legend byte for byte.
+if $hidden_ids.any? || $scrub_hits
+  hidden_note = "<code>#{WIFI_KEY_TOKEN}</code> in a label, and an id <code>#{WIFI_ID_TOKEN}_&lt;n&gt;</code> " \
+                '(marked "hidden": true in dungeon_graph.json), stand in for authored text that held a Wi-Fi key. ' \
+                'Rename the id or text in the scenario to see it here.'
+  net_legend_html += %(\n          <div class="edge-row">#{hidden_note}</div>)
+  net_legend_md += "\n  Hidden: #{hidden_note.gsub(%r{</?code>}, '`').gsub('&lt;', '<').gsub('&gt;', '>')}"
+end
 # The pages are built twice: with the content, and as the skeleton (every authored string
 # blanked) that check_wifi_key_free compares each output against.
 skeletons = {
@@ -2208,25 +2317,27 @@ render_json = lambda do |scenario_name, start_id, id_of, label_of|
   JSON.pretty_generate(
     'scenario' => scenario_name,
     'start_room' => start_id,
-    'nodes' => $nodes.map { |id, n| { 'id' => id_of.call(id), 'label' => label_of.call(n[:label]), 'kind' => n[:klass], 'optional' => n[:optional] } },
+    'nodes' => $nodes.map do |id, n|
+      { 'id' => id_of.call(id), 'label' => label_of.call(n[:label]), 'kind' => n[:klass], 'optional' => n[:optional],
+        'hidden' => (true if hidden_id?(id)) }.compact
+    end,
     'edges' => $edges.map do |e|
       { 'from' => id_of.call(e[:from]), 'to' => id_of.call(e[:to]), 'soft' => e[:dashed],
         'label' => e[:label] && label_of.call(e[:label]), 'undirected' => e[:undirected] }.compact
     end
   )
 end
-json = render_json.call(scrub_label(File.basename(File.dirname(SCENARIO_FILE))), hide_id(scenario['startRoom']),
+json = render_json.call(json_scenario_name, hide_id(scenario['startRoom']),
                         method(:hide_id), ->(l) { scrub_label(l.to_s) })
-sk_ids = {}
-json_skeleton = render_json.call('', scenario['startRoom'] && '', ->(id) { sk_ids[id] ||= "n#{sk_ids.size}" }, ->(_) { '' })
+json_skeleton = render_json.call('', scenario['startRoom'] && '', skeleton_counter, ->(_) { '' })
 
 check_wifi_key_free(OUT_FILE => [html, html_skeleton], MD_FILE => [md, md_skeleton], JSON_FILE => [json, json_skeleton])
 File.write(OUT_FILE, html)
-puts "Written: #{OUT_FILE}"
+puts "Written: #{scrub_label(OUT_FILE)}"
 File.write(MD_FILE, md)
 File.write(JSON_FILE, json)
-puts "Written: #{JSON_FILE}"
-puts "Written: #{MD_FILE}"
+puts "Written: #{scrub_label(JSON_FILE)}"
+puts "Written: #{scrub_label(MD_FILE)}"
 puts "Puzzle     — Nodes: #{$nodes.size}  Edges: #{$edges.size}"
 puts "Story      — Nodes: #{aim_nodes.size}  Edges: #{aim_edges.size}"
 puts "Integrated — Nodes: #{int_nodes.size}  Edges: #{int_edges.size}"

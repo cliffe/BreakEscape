@@ -6933,10 +6933,18 @@ def main
       graph_script = File.join(__dir__, 'generate_dungeon_graph.rb')
       if File.exist?(graph_script)
         puts "Generating dungeon graph..."
-        result = system('ruby', graph_script, erb_path)
+        # The generator's test switch (it turns the Wi-Fi key scrub off) never reaches a real run.
+        result = system({ 'DUNGEON_GRAPH_TEST_NO_SCRUB' => nil }, 'ruby', graph_script, erb_path)
         graph_out = File.join(File.dirname(erb_path), 'dungeon_graph.html')
         if result
+          # The path the author typed, as the "Validating scenario:" line prints it.
           puts "✓ Dungeon graph: #{graph_out}"
+        elsif $?.exitstatus == 3
+          # The generator's key check stopped the run (KEY_STOP_STATUS) and deleted the old graph files.
+          puts "❌ ERROR: Dungeon graph stopped: an output still held a Wi-Fi key (see the message above); " \
+               'the old dungeon_graph files were deleted.'
+          puts
+          exit 1
         else
           puts "⚠️ Dungeon graph generation failed (non-fatal)"
         end
