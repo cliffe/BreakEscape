@@ -152,3 +152,91 @@ The server and the browser were stopped by PID afterwards.
 Done. Open for the orchestrator: the full Rails and JS suites under the lock with the next merge
 batch. `tools/playtest/verify-run.rb --access` reports `alwaysLocks` per PC but not the new
 never-leaves result; adding it would help regression testers read H10 (not done).
+
+## R1 fixes
+
+Review: `OWNER_CLAIM_ENFORCE_CODE_REVIEW_R1.md` (commit `3151a443c`). The rule stays q78: refuse a
+claim only where honest play could never leave the screen open, and never refuse an honest one.
+
+- **M1, the knock-out.** A knock-out leave reaches `decideLocked` with no time-away estimate, so a
+  habit's `lockIfAwayOverSeconds` never opens it. `leave_route(data, owner, pc)` now takes the PC
+  and counts the knock-out only where `OwnerClaim.open_without_estimate?` says that leave can find
+  it open: the PC's numeric `lockChance` below 1, else its `locksScreenOnLeave` key set to `false`,
+  else a `screenHabit` with a numeric `lockChance` below 1. That is `decideLocked` with
+  `expectedAwayMs` null, branch for branch. With no PC given the knock-out still counts. The
+  server and the validator both pass the PC. The branch's own honoured case ("a habit threshold
+  written as a string") now has a coffee in reach, and the knock-out-only version is a refusal.
+  `npc_habits_loader_test` had the same knock-out-only case honoured (`lockIfAwayOverSeconds: 20`,
+  no need source); it now expects a refusal and gains the honoured version with a source.
+- **M2, print commands.** An event mapping on the owner's record (`eventMappings` as a list or a
+  pattern map, or the singular `eventMapping`) with `needs: { print }` naming a producer counts as a
+  leave route: `control` always owns that print, so an errand follows.
+- **m1, print hooks.** Narrowed to what the client does: the owner's own `onUse` hook with
+  `revealOutput`, on an object one of the owner's valid needs uses (only a need use prints), with a
+  `printHabit` (an unowned print is never fetched) and a hook `chance` that is not 0 or less. Both
+  print routes also need a `needsHome` that names an object (`_errandCandidate`). A `revealOutput`
+  on a printer object, or on another NPC's hook, no longer counts. Plan check 10 is reworded, and
+  the honoured test fixture moved to a hook on Jake with a `printHabit`.
+- **m2, phones.** `answersPhones` counts only when some object has a `phoneOwner` other than the
+  owner.
+- **m3, tests.** New `test/unit/owner_claim_test.rb` (8 tests on the route labels, every M1 branch,
+  phones, both print routes and their near misses, the interest leash). Validator warning tests in
+  `test/js/validator-access-model.test.mjs`: it fires with a fix for a never-leaves owner, stays
+  silent for each route, still fires for the near misses, and skips a screen that always locks.
+- **n2.** An interest's accepting place now has to be in a room the leash allows (the item may
+  still be anywhere).
+- **n3.** The validator now judges the warning on `NpcHabits.expanded_copy` (habits expanded, ids
+  stamped), as the server's prepared data is, and only where the screen does not always lock. This
+  became necessary with M1: judged on raw data, `test_access_social` `jake_pc` and `lena_pc` and
+  `test_access_work` `amy_pc` (no lock field and no habit, so check 6 refuses them already) drew a
+  false never-leaves warning. A validator test with an id-less source covers the stamping.
+- **n4.** The `game.rb` comment says checks 1 to 10.
+- **n5.** `js_number`'s comment lists the known gaps from `Number()`.
+- **n6.** The validator warning now ends with a fix: give the owner a need met somewhere else, or
+  allow attacks and give the PC a `lockChance` below 1.
+- **n7.** `PLAYTEST.md` Run 4 step 3 says to send the page's CSRF token as `X-CSRF-Token`, and the
+  Setup section's stale Ruby and browser paths are replaced.
+- **n1, noted only.** The home preference is not modelled: a need source elsewhere counts even
+  where the owner's own `needsHome` usually serves that need (it is used elsewhere only when the
+  home is busy, off, hidden, unreachable or just turned back from, all dynamic). So
+  `lab_physical_pentest staff_pc_2` reports `need:work:staff_pc` though Pierce mostly leaves for
+  his caffeine need. The `leave_route` comment now says the label is the first route found.
+
+Merged `main` (at `de866cd20`) into the branch: one conflict in `game.rb` (the claim method's
+comment beside main's new `pc_off_answer`), resolved keeping both.
+
+### Sweep after the fixes
+
+A sweep script (in the session scratchpad, not the repo) rendered all 176 `scenario.json.erb`
+files, prepared each as the server does at game creation (`Game#prepare_scenario_data!`:
+access-model normalising, id stamping, habits expansion), and for every sign-in PC whose owner is
+tracked, holds an account, is admitted by the PC's access list and whose screen does not always
+lock, called `leave_route` as authored and with attacks forced off. 176 rendered, none failed. 18
+claimable PCs, the same 18 as the review. Only `test_access_habits noor_pc` returns nil. Routes:
+`lab_physical_pentest staff_pc_2`, `test_capture_log mel_pc` and `test_access_habits` dana, kai and
+lena by a need; the six `test_access_sessions` owners and the six `test_access_social` and
+`test_access_work` owners by a knock-out (every one of those PCs has a lock field that can leave it
+open), with a coffee need or a failure route behind it. `check_access_model` over all 176 gives the
+never-leaves warning for `noor_pc` only, beside the older untracked-owner warning for
+`test_access_work pat_pc`.
+
+No live re-check: nothing in `test_access_habits` changes result (dana, kai and lena keep their
+need routes; noor is refused as before).
+
+### Tests (without the lock, affected files only)
+
+- Rails: `owner_claim_test` (new), `owner_claim_enforce_test`, `access_identities_screen_test`,
+  `access_model_login_test`, `capture_proofs_test`, `npc_lockout_l_test`, `npc_habits_loader_test`,
+  `lab_physical_pentest_secrets_test`, `game_state_locking_test`, `network_remote_signin_test`:
+  159 runs, 1917 assertions, 0 failures, after the merge.
+- Node: `validator-access-model.test.mjs`, 33 tests, 0 failures.
+- Validator on `test_access_habits`: no errors; the never-leaves warning for `noor_pc` only.
+- `bin/rubocop` on `validate_scenario.rb` reports two layout offences near line 6391; they are on
+  `main` too and not from this branch.
+
+### Commits
+
+- `948a239ef` R1 fixes
+- `8c4b726db` merge of `main`
+- `246d995b0` validator judges the prepared data
+- this log
