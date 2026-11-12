@@ -83,7 +83,100 @@ in `restore` (no event). `public/break_escape/js/systems/test-bridge/access.js` 
   `social-feed.test.mjs`, `social-feed-replies.test.mjs`, `friendface-phone.test.mjs`,
   `social-osint-browser.test.mjs` (36), `npc-social-lockout-q33.test.mjs` (8).
 
-## Handover (2026-11-12)
+## Step 5, rest (commit bf6f812ae)
+
+`osint-browser-minigame.js`: `_feedReactions`, `_reactionRow` (a sibling of the post's `ob-item` in
+`ob-blocks`, and the last child of each `_replyEntry`), `_reactionChip`, `_paintRow`,
+`_paintReactions`, `_dropReactionNames`, `_closeReactionNames`, `_onReacted` and the
+`npc_reacted:*` listener beside `npc_posted:*`. `_renderMain` now wraps `_renderBody` with the
+`_rendering` flag, drops the hovered key, clears a focused key whose chip did not come back, and
+paints every row after `_restoreFocus`. A row is painted in place (no full render) for focus,
+hover, click and Esc, so focus never moves. The names line text is "Sad: Kofi Mensah, Mei
+Tanaka". A failed icon is swapped for the label span and its key remembered for the session
+(`MISSING_ICONS`), so a re-render does not flash. CSS: `.ob-reactions`, `.ob-reaction-chips`,
+`.ob-reaction`, `[data-open]`, `:focus-visible`, `-icon`, `-label`, `-count`, `-names`.
+
+- Tests: `social-osint-browser.test.mjs` 50 pass (14 new reaction tests, every section 11 names-line
+  case); `social-feed-reactions.test.mjs` 9 pass (the CSS rules test added). Every test file that
+  imports the osint browser (18 files) passes.
+
+## Step 6: leak scanner (commit 76189160a)
+
+`REACTION_KEYS` copy (a unit test reads the Ruby constant), `scan_reacts_key` (in `scan`, outside
+the feed early return), `scan_reactions` and `judge_reaction` (inside `scan_feed`, after
+`note_feed_served`), `@feed_posters` filled by `serve_feed`, `counts[:reaction_items]`, four
+`RULE_TEXT` rows, and "N reaction item(s)" in `access-leak-check.rb`'s counts line. A reaction on
+an unknown post id is reported as `feed_reaction_target` with owner `post:<id>`.
+
+- Tests: `access_leak_scanner_feed_test.rb` 50 runs (6 new), `access_leak_scanner_test.rb` 43 runs,
+  0 failures.
+- The gap the plan names stays: a scenario with no feed text of `MIN_FEED_TEXT` and no feed facts
+  is not feed-scanned, so its reaction items are not judged (only `feed_reacts_key` runs).
+
+## Step 7: icons (merge 3f9bba8db)
+
+Drawn on `build/reaction-icons` (20ad1565b) and merged with no conflict; that branch also brought
+C3's Replies paragraph, which sits before the Reactions paragraph in `README_scenario_design.md`.
+The chips already pointed at `reaction-<key>.png` at 16px with the label fallback, so no code
+changed. **The user still has to approve the icons before main.**
+
+## Step 8: scenario (commit 4b04da157)
+
+`reacts` lists for Kofi, Mei, Asha, Ivy and Tomasz as plan section 10; tasks `f15_reacted` and
+`f16_reacted` with their `npc_reacted` mappings on Asha and Tomasz; PLAYTEST.md rows. Validator:
+0 failure lines, no reaction warnings, the seven expected `Reaction` report lines (the angry one
+reads "not a reply in its place and 'f16_tom_still_down' is the member served", with no comma).
+`validator-access-social.test.mjs` 25 pass.
+
+## Step 9: live proof (game 1841)
+
+Keyless server on :3160 from the worktree, headless shell, `setFPS(20)` with fixed steps and the
+setTimeout RAF, `--capture-responses`. Route: bootstrap, pick up `player_phone` (F14a, leaves
+`friendface` visited), `enterRoom` east through every room to `u1_room`, then `f15_room`, stand
+back, `f16_room`, stand back, then F17 in a second session at 390x844 on the same game.
+
+- **F15:** Kofi's sad on Asha's vent with his reply (47 s); Mei's like on Kofi's reply, Asha's like
+  on Mei's reply and Mei's sad on the vent, all with Mei's reply (62 s). `npc_reacted` payloads
+  carry `site`, `targetNpc`, `targetPerson`, and `targetReplyToPerson` for reply targets. Tasks
+  `f15_replied`, `f15_thread`, `f15_reacted` complete.
+- **F16:** Ivy's like on `f16_tom_re_ivy` with her answer (112 s); Tomasz's sad on `f16_ivy_answer`
+  with his second reply (132 s); no angry. All four F16 tasks complete.
+- `feed().reactions` after F16 and after the reload equals PLAYTEST.md's block. After the reload
+  no `npc_reacted` fired.
+- `/feed_post` answers for the beat NPCs: 3 in F15, 4 in F16, no `tooSoon`, the same as C3.
+- `verify-run.rb --access`: `asha 1 [f15_asha_vent:6]`, `kofi 1 [f15_kofi_re_drive:7>...]`, `mei 1
+  [f15_mei_re_drive:8>...]`, `ivy 2 [f16_ivy_vent:17 f16_ivy_answer:20>...]`, `tomasz 2
+  [f16_tom_re_ivy:18 f16_tom_re_ivy_again:21]`: a < k < m and i < t < j < u hold, row shape as C3.
+- Leak check over both captures (173 responses): no leaks, "12 reaction item(s)" (6 live answer
+  items, 6 in the reloaded `feedPosts`).
+- No `[reactions] derivation failed` line in the server log.
+- **Sizes.** Answer items 65 to 72 B each. Kofi's reply answer 374 B against C3's 283 to 292 B
+  for a reply with none (one reaction); Mei's 515 B (three). The reloaded `GET /scenario`
+  `feedPosts` is 4548 B against 4219 B with the reactions stripped (C3's measured 4219 B): 329 B
+  for 6 items, under the 500 B bound.
+- **Row height** (`getBoundingClientRect`): 53.6 px before and after the names line shows, at
+  1400 px (main 1064 px) and at 390 px (main 370 px); the one-line list does not wrap at either.
+- **Esc:** after a click the minigame's `getTestState().overlay.layers` is `['reaction-names']`;
+  one Esc on `document` empties it and leaves the browser open; the next Esc closes the browser.
+  Checked at both widths.
+- Screenshots: scratchpad `ux-shots/reactions/` (01 to 07, `manifest.json`), not committed.
+  Looked at for the pixel-art rule: 2px square borders, pixel font, icons crisp at 16px, chips
+  44x32 px.
+- **Not done live:** a real mouse hover (the harness has no page-coordinate pointer; hover rules are
+  covered in jsdom), toast and badge counts (no toast hook was recorded; the jsdom and store
+  tests cover "no toast, no unread change"), the tamper rows, and F1 to F14 regression beyond the
+  posts that fired along the walk (F3, F9 to F13, L1, U1 posted).
+
+## Handover (2026-11-12, second session)
+
+**Done:** steps 1 to 6, 8 and 9; step 7 merged from `build/reaction-icons`.
+
+**Open:** the user's approval of the four icons before merge to main; the full suites and the
+merge-batch validator run (orchestrator). Commits this session: bf6f812ae, 76189160a, 3f9bba8db
+(merge), 4b04da157, and this log.
+
+### Earlier handover (first session)
+
 
 Stopped at the context limit, part way through step 5.
 
