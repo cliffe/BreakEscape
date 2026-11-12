@@ -2,7 +2,8 @@
 // Mission 9: Digital Archaeology - Nightshade's call (C3)
 // Host: nightshade_phone (phone contact, loading_dock). Voiced incoming call
 // (ring: answer, decline or call back when missed), rung once HaX's flag-1
-// read-out has been heard (flag1_read_heard), with a room_entered fallback.
+// read-out has reached its card line (flag1_read_done), on closing her thread;
+// a cage-gate fallback and a room_entered reload backstop cover the other paths.
 // Triple-agent branch only. His own lines take no prefix; HaX is prefixed.
 // UK English. Collegial, precise, an image in place of jargon; serene, a little
 // tired. Beat 1.4: he names what the restricted cage's locks give way to.
@@ -30,7 +31,7 @@ Agent 0x00. I'd ask how the leave was, but HaX would tell me to get off her line
 // m2: by how far on the player is when the call connects (a late call back).
 {
     - nightshade_file_held:
-        You have his file in your hand already. Then you know what she buried. Don't let her keep the rest.
+        So you've found my file. Read the hand on it, not the boy. She's still feeding the shredder.
     - cage_opened:
         You're past her gate. The plan cabinet was never on her schedule -- that's how you know he wanted it kept. Read it.
     - else:

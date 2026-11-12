@@ -953,7 +953,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           ]
         },
         {
-          "_comment": "Nightshade (triple-agent branch only): rings once HaX's flag-1 read-out has been heard (flag1_read_heard), as a voiced incoming call (ring: the player can answer, decline or call back), so his help follows HaX's print-and-card line rather than pre-empting it. A room_entered:restricted_stacks fallback covers a player who never opens the read-out text; both latch nightshade_rang at offer time so he rings once. Outside npcIds (stage 8 m-12).",
+          "_comment": "Nightshade (triple-agent branch only): rings once HaX's flag-1 read-out has reached its card line (flag1_read_done), on closing her thread, as a voiced incoming call (ring: the player can answer, decline or call back), so his help follows HaX's print-and-card line rather than pre-empting it. A door_unlock_attempt fallback at the restricted cage's gate covers a player who never opens the read-out text (his advice fits there); a room_entered backstop covers a reload between the read-out and the ring. All three latch nightshade_rang at offer time so he rings once. Outside npcIds (stage 8 m-12).",
           "id": "nightshade_phone",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "phone",
@@ -968,12 +968,21 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "eventMappings": [
 <%= jgen([
-  # M1: ring after HaX's flag-1 read-out has been heard (flag1_read_heard), on
-  # closing her thread; delay 3 s so the ring follows the read-out, not the toast.
-  call_map("conversation_closed:agent_0x99", "globalVars.flag1_read_heard && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
-  # Fallback for a player who never opens the read-out text: ring on entering the
-  # restricted stacks (opened on flag 1). Same latch, so only one of the two rings.
-  call_map("room_entered:restricted_stacks", "globalVars.flag1_submitted && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
+  # M1 R2: ring after HaX's flag-1 read-out has reached its card line (flag1_read_done,
+  # set once "Her card's on a reel at her hip" has played), on closing her thread; delay 3 s
+  # so the ring follows the read-out, not the toast. m1 R2: keyed on flag1_read_done, not
+  # flag1_read_heard (set on the read-out's first line), so a player who closes at the first
+  # choice doesn't get Nightshade before the card line; the room_entered backstop covers them.
+  call_map("conversation_closed:agent_0x99", "globalVars.flag1_read_done && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
+  # Fallback for a player who never opens the read-out text: ring at the first try on the
+  # restricted cage's gate (door_unlock_attempt), where his "crack the keys first" advice
+  # lands. M1 R2: moved off room_entered:restricted_stacks, which rang before the read-out on
+  # the direct path (the drop terminal is one room south of the stacks). Same latch.
+  call_map("door_unlock_attempt", "data.connectedRoom === 'restricted_cage' && globalVars.flag1_submitted && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
+  # Reload backstop: a reload between the read-out closing and the 3 s ring loses the close
+  # mapping's timer. Ring on entering any room once the read-out has been heard (flag1_read_heard).
+  # Same latch, and the pending offers re-check !nightshade_rang at fire time, so still one ring.
+  call_map("room_entered", "globalVars.flag1_read_heard && globalVars.m08_nightshade_triple_agent && !globalVars.nightshade_rang", "call", delay: 3000, forced: false, once: true, voiced: true, ring: true, set: { "nightshade_rang" => true }),
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin === 'nightshade_copy'",
            "You found what I cleared, too. Then you know I kept his notes. I'd have burned anything else.", delay: 4000),
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin !== 'nightshade_copy'",
@@ -2667,6 +2676,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "ledger_read_heard": false,
     "hour_read_texted": false,
     "flag1_read_heard": false,
+    "flag1_read_done": false,
     "flag1_texted": false,
     "ledger_texted": false,
     "afterwards_texted": false,

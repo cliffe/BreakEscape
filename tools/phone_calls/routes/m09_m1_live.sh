@@ -28,6 +28,38 @@ reload() { sync_now
   $S $GID '{"cmd":"waitFor","kind":"condition","fn":"() => { setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}' >/dev/null
   sleep 8; $S $GID '{"cmd":"bootstrap","tutorial":"decline","resume":"resume","autoBrief":true}' 120 >/dev/null; sleep 3; }
 gstate() { a2b_ev "const o=window.npcManager.getNPC('gary_phone'); const h=window.npcManager.getConversationHistory('gary_phone')||[]; return {rows:h.map(m=>m.type+':'+m.text.slice(0,50)), callback:window.phoneRinger.callbackFor('gary_phone'), currentKnot:o&&o.currentKnot, ringer:(window.phoneRinger.current()||{}).state||null, mg:window.MinigameFramework.currentMinigame?window.MinigameFramework.currentMinigame.constructor.name:null};"; }
+# --- M1 R2 real-path helpers: the player walks from the drop terminal, flags are never set by hand ---
+room() { a2b_ev "return window.currentPlayerRoom"; }
+ns_flags() { a2b_ev "const g=window.gameState.globalVariables; return 'flag1_submitted='+!!g.flag1_submitted+' flag1_read_heard='+!!g.flag1_read_heard+' flag1_read_done='+!!g.flag1_read_done+' nightshade_rang='+!!g.nightshade_rang;"; }
+submit_flag1() { # real path: type catalogue flag 1 into the drop terminal in the reading room.
+  # The flag is the game's own per-game stand-in for catalogue_server flag 1 (new-game.rb
+  # synthesises it, exactly as a real VM solve would hand it over); we read it by game id and
+  # type it, so the player genuinely submits at the terminal — no global is set by hand.
+  local flag
+  flag=$(BREAK_ESCAPE_STANDALONE=true bin/rails runner "puts BreakEscape::Game.find($GID).player_state['flags_by_vm']['catalogue_server'][0]" 2>/dev/null | grep '^flag{')
+  [ -n "$flag" ] || { echo "  no catalogue stand-in flag for game $GID" >&2; return 1; }
+  $S $GID '{"cmd":"moveToNear","id":"drop_terminal"}' 30 >/dev/null; $S $GID '{"cmd":"interact","id":"drop_terminal"}' 30 >/dev/null; sleep 1.5
+  [ "$(mgc)" = '"FlagStationMinigame"' ] || echo "  WARN terminal mg: $(mgc)"
+  a2b_ev "const inp=document.getElementById('flag-input'); const btn=document.getElementById('flag-submit-btn'); if(!inp||!btn) return 'no field'; inp.value='$flag'; inp.dispatchEvent(new Event('input',{bubbles:true})); btn.click(); return 'submitted';" >/dev/null; sleep 3
+  echo "  flag1_submitted=$(a2b_ev "return !!window.gameState.globalVariables.flag1_submitted") (terminal still open: $(mgc))"; }
+# Cross a room: open the near door, then moveToNear a door INSIDE the target room so the engine paths across (room_entered fires). Retry until currentPlayerRoom matches.
+enter_stacks()  { for n in 1 2 3 4; do [ "$(room)" = '"restricted_stacks"' ] && break
+  $S $GID '{"cmd":"moveToNear","id":"door:reading_room->restricted_stacks"}' 30 >/dev/null; $S $GID '{"cmd":"interact","id":"door:reading_room->restricted_stacks"}' 30 >/dev/null; sleep 1
+  $S $GID '{"cmd":"moveToNear","id":"door:restricted_stacks->restricted_cage"}' 40 >/dev/null; sleep 2; done; echo "  room: $(room)"; }
+enter_reading() { for n in 1 2 3 4; do [ "$(room)" = '"reading_room"' ] && break
+  $S $GID '{"cmd":"moveToNear","id":"door:restricted_stacks->reading_room"}' 30 >/dev/null; $S $GID '{"cmd":"interact","id":"door:restricted_stacks->reading_room"}' 30 >/dev/null; sleep 1
+  $S $GID '{"cmd":"moveToNear","id":"door:reading_room->staff_passage"}' 40 >/dev/null; sleep 2; done; echo "  room: $(room)"; }
+try_cage_gate() { $S $GID '{"cmd":"moveToNear","id":"door:restricted_stacks->restricted_cage"}' 30 >/dev/null; $S $GID '{"cmd":"interact","id":"door:restricted_stacks->restricted_cage"}' 30 >/dev/null; sleep 2; }
+tap_readout() { # tap HaX's flag-1 read-out toast to open it at the flag1_read knot (the real player action)
+  local hit=
+  for i in $(seq 1 ${1:-15}); do sleep 1
+    hit=$(a2b_ev "const t=[...document.querySelectorAll('body *')].filter(e=>e.children.length<6&&(e.textContent||'').includes('First box is in')&&e.offsetParent!==null).sort((a,b)=>a.textContent.length-b.textContent.length)[0]; if(!t) return 'none'; t.click(); return 'tapped';")
+    [ "$hit" = '"tapped"' ] && { echo "  read-out toast tapped at ${i}s"; sleep 4; return 0; }
+  done; echo "  WARN read-out toast never appeared"; return 1; }
+reload_fast() { # reload with no leading sync (caller syncs first): close-to-navigate gap is milliseconds, inside the 3 s ring delay
+  $S $GID '{"cmd":"waitFor","kind":"condition","fn":"() => { setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}' >/dev/null
+  sleep 8; $S $GID '{"cmd":"bootstrap","tutorial":"decline","resume":"resume","autoBrief":true}' 120 >/dev/null; sleep 3; }
+no_ring_for() { local n=0; for i in $(seq 1 ${1:-12}); do sleep 1; r=$(a2b_ev "const c=window.phoneRinger.current(); return c?c.npcId+':'+c.state:null"); [ "$r" != "null" ] && { echo "  RANG at ${i}s: $r"; n=1; }; done; [ $n = 0 ] && echo "  no ring in ${1:-12}s (good)"; }
 case $1 in
 gary_hold)   # rings over the keypad, Answer puts it on hold, closing the keypad opens the call
   open_m09 gary_hold --start-room tape_room
@@ -113,4 +145,58 @@ torres_once)  # m1 R1: one ring at the box; decline leaves only the callback; no
   a2b_ev "const c=document.querySelector('.contact-item[data-npc-id=\"torres_phone\"]'); if(!c) return 'no contact'; c.click(); return 'opened';" >/dev/null; sleep 2
   a2b_ev "const hb=document.querySelector('.call-button'); if(!hb) return 'no callback'; hb.click(); return 'dial';" >/dev/null; sleep 5; echo "callback: $(call_screen)"; a2b_shot callback_connected
   play_call; end_call; a2b_shot after_callback; tts; a2b_quit ;;
+
+# ===== M1 R2: state-driven order checks on the REAL path (walk from the drop terminal, no hand-set flags) =====
+race)  # walk straight in with the read-out unopened: no premature ring; the cage-gate fallback rings once
+  open_m09 race --start-room reading_room
+  echo "start room: $(room)"; echo "submit flag 1 at the drop terminal (real path):"; submit_flag1; close_mg; sleep 1
+  echo "after flag1: $(ns_flags)"; a2b_shot flag1_done
+  echo "walk into the restricted stacks (read-out NOT opened):"; enter_stacks
+  echo "no Nightshade ring while the read-out is unopened (flag1_read_heard false):"; no_ring_for 12
+  echo "  $(ns_flags)"; echo "  HaX read-out toast arrived: $(a2b_ev "return (window.npcManager.getConversationHistory('agent_0x99')||[]).some(m=>/First box is in/.test(m.text||''))")"; a2b_shot in_stacks_no_ring
+  echo "try the restricted cage gate (fallback moment: his 'crack the keys first' advice):"; try_cage_gate
+  gate wait_ring nightshade_phone 15; a2b_shot ring_at_cage_gate; echo "  ring: $(tl)"; echo "  $(ns_flags)"
+  a2b_answer >/dev/null; sleep 2; a2b_shot ns_call; echo "call: $(call_screen)"; play_call; end_call; a2b_shot after_end
+  echo "rings once (walk back to the reading room, expect no second ring):"; enter_reading; no_ring_for 6; echo "  $(ns_flags)"; tts; a2b_quit ;;
+
+readout_reload)  # read-out heard in full, reload inside the 3 s ring delay, backstop rings once on the next room entry
+  open_m09 readout_reload --start-room reading_room
+  submit_flag1; close_mg; sleep 1; echo "after flag1: $(ns_flags)"
+  echo "walk into the stacks and open HaX's read-out:"; enter_stacks; tap_readout
+  # advance to the choice menu, then take the first choice so the card line + Tomb Beta line play and
+  # flag1_read_done is set, but the thread stays open at [Got it] -- do NOT take [Got it], or the thread
+  # self-closes and mapping A rings before the reload.
+  echo "play past the card line (thread stays open at [Got it]):"; $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; sleep 4; $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; sleep 4
+  echo "  after the card line: $(ns_flags)  (flag1_read_done expected true, nightshade_rang still false)"; a2b_shot readout_played
+  echo "persist state, then close + reload with a millisecond gap (inside the 3 s ring delay):"; sync_now; close_mg >/dev/null 2>&1; reload_fast
+  echo "  after reload: $(ns_flags)  (the close mapping's +3 s timer died with the page)"; a2b_shot after_reload
+  echo "the room_entered backstop rings on resume or the next room move (one ring):"
+  wait_ring nightshade_phone 6 || { echo "  not ringing on resume; walk to trigger the backstop:"; enter_reading; }
+  gate wait_ring nightshade_phone 20; a2b_shot ring_after_reload; echo "  ring: $(tl)"; echo "  $(ns_flags)"
+  a2b_answer >/dev/null; sleep 2; play_call; end_call; a2b_shot after_end
+  echo "one ring only (walk to another room, expect none):"; enter_stacks; no_ring_for 6; echo "  $(ns_flags)"; tts; a2b_quit ;;
+
+readout_full)  # the normal path: hear the read-out in full, close at [Got it]; mapping A rings once, after the card line
+  open_m09 readout_full --start-room reading_room
+  submit_flag1; close_mg; sleep 1
+  echo "walk into the stacks and open HaX's read-out:"; enter_stacks; tap_readout
+  echo "play it to the end ([Got it] closes the thread):"; for n in 1 2 3; do $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; sleep 4; done
+  echo "  after the read-out: $(ns_flags)  (flag1_read_done expected true)"
+  gate wait_ring nightshade_phone 10; a2b_shot ring_after_readout; echo "  ring (mapping A, after the card line): $(tl)"
+  a2b_answer >/dev/null; sleep 2; a2b_shot ns_call; echo "call: $(call_screen)"; play_call; end_call; a2b_shot after_end
+  echo "rings once (walk to another room, expect none):"; enter_reading; no_ring_for 6; echo "  $(ns_flags)"; tts; a2b_quit ;;
+
+first_choice_close)  # close the read-out at its first choice (before the card line): no immediate ring; backstop rings on the next room move
+  open_m09 first_choice_close --start-room reading_room
+  submit_flag1; close_mg; sleep 1
+  echo "walk into the stacks and open HaX's read-out:"; enter_stacks; tap_readout
+  echo "advance to the first choice menu (before the card line):"; $S $GID '{"cmd":"mg","action":"choose","args":[1]}' >/dev/null; sleep 4
+  echo "  choices: $(a2b_ev "return [...document.querySelectorAll('.choice-button,.choice')].map(b=>b.innerText.trim().slice(0,28))")"
+  echo "  $(ns_flags)  (expect flag1_read_heard true, flag1_read_done false)"
+  echo "close at the first choice (do not pick one):"; close_mg >/dev/null 2>&1; sleep 1
+  echo "close mapping does NOT ring (keyed flag1_read_done, false here):"; no_ring_for 8; echo "  $(ns_flags)"; a2b_shot no_immediate_ring
+  echo "walk to another room -> room_entered backstop rings once (flag1_read_heard):"; enter_reading
+  gate wait_ring nightshade_phone 15; a2b_shot ring_on_move; echo "  ring: $(tl)"; echo "  $(ns_flags)"
+  a2b_answer >/dev/null; sleep 2; a2b_shot ns_call; echo "call: $(call_screen)"; play_call; end_call
+  echo "rings once (walk back, expect none):"; enter_stacks; no_ring_for 6; echo "  $(ns_flags)"; tts; a2b_quit ;;
 esac

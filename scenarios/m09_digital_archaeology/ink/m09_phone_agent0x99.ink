@@ -253,6 +253,10 @@ I've sent you the odd one. Salvage cage, their own code.
 // Scenario design R3 m2: name Act 3's target where the line is handed over.
 The catalogue calls what's in there Tomb Beta. It's still drawing power, and nobody's scheduled it for anything.
 ~ flag1_read_done = true
+// m1 R2: a scenario global so Nightshade's close-mapping ring keys on the card line
+// having played, not on flag1_read_heard (set on this knot's first line). A player who
+// closes at the first choice (before this) doesn't get him before the card line.
+#set_global:flag1_read_done:true
 {flag1_to_hub: -> support_hub}
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
