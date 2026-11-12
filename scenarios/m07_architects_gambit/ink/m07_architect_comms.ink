@@ -428,7 +428,7 @@ But the grid was never the point.
 - else:
     {team_assignment == "trojan_horse":
         {team_redirected:
-            And you moved them. Late, but you moved them. I had you down for staying put.
+            And you moved them. Not everyone does.
         }
         I'll have the figures from Washington and San Francisco by morning.
     - else:
