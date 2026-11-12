@@ -76,3 +76,14 @@ Base, password, text-file, forensic, segmentation, lockpicking, container, phone
 ### n3. keypad-title test lost its label assertion
 
 `test/js/keypad-title.test.mjs:60` replaced the source-shape assertion with a comment pointing at the new test. That is fine as the label is now rendered and checked there, but the comment could name the test case ("the password header and field label ...") so the link survives a rename.
+
+## Outcomes
+
+- M1 fixed: the NPC-mode heading escapes `displayDashes(npcDisplayName || 'NPC')`. The test now awaits `init()` and asserts the `.npc-mode h3` text; it fails on the old code. A second grep of the NPC-mode path found no other raw scenario string (item names go through `textContent` and `title`, messages through `textContent`).
+- m1 fixed: the container NPC avatar `src` and the phone contact avatar `src` are escaped; both are tested with a hostile path.
+- m2 fixed: the phone contact preview is escaped after the cut; tested with a markup-bearing last message.
+- m3 and m4 done in the backlog entry: the extra sinks (rfid, bluetooth, ESD pushbutton, drug names, alarm panel title with its `<br>` decision) and the sis03 `ncsc-brief` entity and `<br>` values are named.
+- m5 fixed: new tests for the text file window with the real caller's params (window title, file name, type, observations), and for the container-mode and desktop-mode panels with `init()` awaited.
+- n1 fixed: the lockpicking name and observations run through `displayDashes`; the test drops `dashes: false`. The image `alt` stays as typed, matching the other panels' alt text.
+- n2 deferred to the backlog entry: a shared helper touches nine modules and the test harness copy lists, outside this fix round.
+- n3 fixed: the keypad-title comment names the test case.

@@ -43,6 +43,9 @@ const { default: PhoneChatUI } = await imp('minigames/phone-chat/phone-chat-ui.j
 
 const HOSTILE = 'Vault <b>bold</b> <img src=x onerror="window.__pwned=1"> **md** [link](javascript:x) \u0007\u001b[31m & "q" \'s\' -- end';
 
+// Short enough to escape the 40-character preview cut
+const PREVIEW = '<img src=x onerror="1"> & co';
+
 function fresh() {
     window.__pwned = undefined;
     document.body.innerHTML = '<div id="mg"></div>';
@@ -63,6 +66,11 @@ function assertAttr(el, name, label) {
 // first, so a later throw from a missing system does not matter here.
 function initQuietly(mg) {
     try { mg.init(); } catch { /* past the header */ }
+}
+
+// The container init is async: the panels are built after its awaits
+async function initQuietlyAsync(mg) {
+    try { await mg.init(); } catch { /* past the panels */ }
 }
 
 function assertText(el, label, { dashes = true } = {}) {
@@ -153,6 +161,22 @@ test('the text file header shows a hostile file name as text', () => {
     assertText(copy, 'text file header');
 });
 
+test('the text file window shows a hostile file name, type and observations as text (real caller params)', () => {
+    // As systems/interactions.js starts it: no headerElement, so the window body is what shows
+    const mg = new TextFileMinigame(fresh(), {
+        title: `Text File - ${HOSTILE}`, fileName: HOSTILE, fileContent: 'x', fileType: HOSTILE,
+        observations: HOSTILE, lockable: null, source: 'Unknown Source'
+    });
+    initQuietly(mg);
+    assertText(document.querySelector('.window-title'), 'text file window title');
+    assertText(document.querySelector('.file-name'), 'text file name');
+    assertText(document.querySelector('.file-observations p'), 'text file observations');
+    const type = document.querySelector('.file-type');
+    assert.equal(type.children.length, 0, 'text file type: no element injected');
+    assert.equal(type.textContent, HOSTILE.toUpperCase(), 'text file type: reads back as typed (upper case)');
+    assert.equal(document.querySelector('#mg img[onerror]'), null, 'text file: no img with onerror');
+});
+
 test('the container header shows a hostile name and observations as text', () => {
     const containerItem = { scenarioData: { name: HOSTILE, observations: HOSTILE }, name: 'box' };
     const mg = new ContainerMinigame(fresh(), { containerItem, contents: [], title: HOSTILE });
@@ -161,11 +185,33 @@ test('the container header shows a hostile name and observations as text', () =>
     assertText(document.querySelector('.minigame-header p'), 'container observations');
 });
 
-test('the container NPC mode shows a hostile NPC name as text in the avatar alt', () => {
+test('the container NPC mode shows a hostile NPC name as text in the heading and avatar', async () => {
     const containerItem = { scenarioData: { name: 'Sam' }, name: 'npc' };
-    const mg = new ContainerMinigame(fresh(), { containerItem, contents: [], mode: 'npc', npcId: 'n1', npcDisplayName: HOSTILE, npcAvatar: '/a.png' });
-    initQuietly(mg);
-    assertAttr(document.querySelector('img.npc-avatar'), 'alt', 'container NPC avatar');
+    const mg = new ContainerMinigame(fresh(), { containerItem, contents: [], mode: 'npc', npcId: 'n1', npcDisplayName: HOSTILE, npcAvatar: HOSTILE });
+    await initQuietlyAsync(mg);
+    const h3 = document.querySelector('.npc-mode h3');
+    assertText(h3, 'container NPC heading');
+    assert.ok(h3.textContent.endsWith(' offers you items'), 'container NPC heading: keeps its wording');
+    assertAttr(document.querySelector('img.npc-avatar'), 'alt', 'container NPC avatar alt');
+    assertAttr(document.querySelector('img.npc-avatar'), 'src', 'container NPC avatar src');
+});
+
+test('the container panel shows a hostile name and observations as text (container mode)', async () => {
+    const containerItem = { scenarioData: { name: HOSTILE, observations: HOSTILE, type: 'box' }, name: 'box' };
+    const mg = new ContainerMinigame(fresh(), { containerItem, contents: [], mode: 'container', desktopMode: false });
+    await initQuietlyAsync(mg);
+    assert.equal(mg.desktopMode, false, 'container mode, not desktop');
+    assertText(document.querySelector('.container-info h4'), 'container panel name');
+    assertText(document.querySelector('.container-info p'), 'container panel observations');
+});
+
+test('the container panel shows a hostile name and observations as text (desktop mode)', async () => {
+    const containerItem = { scenarioData: { name: HOSTILE, observations: HOSTILE, type: 'pc' }, name: 'pc' };
+    const mg = new ContainerMinigame(fresh(), { containerItem, contents: [], mode: 'pc', desktopMode: true });
+    await initQuietlyAsync(mg);
+    assert.ok(document.querySelector('.desktop-mode'), 'desktop mode rendered');
+    assertText(document.querySelector('.container-info h4'), 'desktop panel name');
+    assertText(document.querySelector('.container-info p'), 'desktop panel observations');
 });
 
 test('the lockpicking item panel shows a hostile item name as text', () => {
@@ -173,8 +219,8 @@ test('the lockpicking item panel shows a hostile item name as text', () => {
     root.innerHTML = '<div><div class="game"></div></div>';
     const fake = { params: { itemName: HOSTILE, itemImage: HOSTILE, itemObservations: HOSTILE }, gameContainer: root.querySelector('.game') };
     LockpickingMinigamePhaser.prototype.createLockableItemDisplay.call(fake);
-    assertText(document.querySelector('.lockpicking-item-info h4'), 'lockpicking name', { dashes: false });
-    assertText(document.querySelector('.lockpicking-item-info p'), 'lockpicking observations', { dashes: false });
+    assertText(document.querySelector('.lockpicking-item-info h4'), 'lockpicking name');
+    assertText(document.querySelector('.lockpicking-item-info p'), 'lockpicking observations');
     assertAttr(document.querySelector('img.lockpicking-item-image'), 'alt', 'lockpicking image alt');
     assertAttr(document.querySelector('img.lockpicking-item-image'), 'src', 'lockpicking image src');
 });
@@ -182,11 +228,17 @@ test('the lockpicking item panel shows a hostile item name as text', () => {
 test('the phone contact list shows a hostile NPC name as text', () => {
     const root = fresh();
     const ui = Object.create(PhoneChatUI.prototype);
-    Object.assign(ui, { container: root, params: {}, npcManager: { getConversationHistory: () => [] }, formatTimestamp: () => '' });
+    Object.assign(ui, { container: root, params: {}, npcManager: { getConversationHistory: () => [{ type: 'npc', text: PREVIEW, read: true }] }, formatTimestamp: () => '' });
     let item;
-    try { item = ui.createContactItem({ id: 'n1', displayName: HOSTILE, avatar: '/a.png' }); } catch { /* past the markup */ }
+    try { item = ui.createContactItem({ id: 'n1', displayName: HOSTILE, avatar: HOSTILE }); } catch { /* past the markup */ }
     item = item || root.querySelector('.contact-item');
     root.appendChild(item);
     assertText(item.querySelector('.contact-name'), 'phone contact name', { dashes: false });
     assertAttr(item.querySelector('.contact-avatar img'), 'alt', 'phone contact avatar');
+    const img = item.querySelector('.contact-avatar img');
+    assert.equal(img.hasAttribute('onerror'), false, 'phone contact avatar src: no onerror');
+    assert.ok(img.getAttribute('src').endsWith(HOSTILE), 'phone contact avatar src: reads back as typed');
+    const preview = item.querySelector('.contact-last-message');
+    assert.equal(preview.children.length, 0, 'phone contact preview: no element injected');
+    assert.equal(preview.textContent, PREVIEW, 'phone contact preview: reads back as typed');
 });

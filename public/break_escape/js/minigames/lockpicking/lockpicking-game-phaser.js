@@ -16,6 +16,7 @@ import { KeyGeometry } from './key-geometry.js';
 import { GameUtilities } from './game-utilities.js';
 import MusicController from '../../music/music-controller.js';
 import { wirePhaserGameSoundToBreakEscape } from '../../music/phaser-audio-bus.js';
+import { displayDashes } from '../../utils/display-dashes.js';
 
 // Item names and observations are scenario text: escaped before they reach HTML
 const escapeItemText = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
@@ -388,8 +389,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
                  alt="${escapeItemText(itemName)}" 
                  class="lockpicking-item-image">
             <div class="lockpicking-item-info">
-                <h4>${escapeItemText(itemName)}</h4>
-                <p>${escapeItemText(itemObservations)}</p>
+                <h4>${escapeItemText(displayDashes(itemName))}</h4>
+                <p>${escapeItemText(displayDashes(itemObservations))}</p>
             </div>
         `;
         
