@@ -231,7 +231,7 @@ export class PasswordMinigame extends MinigameScene {
 
         // Customize the header
         this.headerElement.innerHTML = `
-            <h3>${displayDashes(this.params.title || 'Password Entry')}</h3>
+            <h3>${escapeHtml(displayDashes(this.params.title || 'Password Entry'))}</h3>
             <p>Enter the correct password to proceed</p>
         `;
         
@@ -286,19 +286,19 @@ export class PasswordMinigame extends MinigameScene {
             <div class="password-minigame-area">
                 ${imageData ? `
                     <div class="password-image-section">
-                        <img src="/break_escape/assets/objects/${imageData.imageFile}.png" 
-                             alt="${imageData.deviceName}" 
+                        <img src="/break_escape/assets/objects/${escapeHtml(imageData.imageFile)}.png" 
+                             alt="${escapeHtml(imageData.deviceName)}" 
                              class="password-image">
                         <div class="password-info">
-                            <h4>${imageData.deviceName}</h4>
-                            <p>${imageData.observations}</p>
+                            <h4>${escapeHtml(displayDashes(imageData.deviceName))}</h4>
+                            <p>${escapeHtml(displayDashes(imageData.observations))}</p>
                         </div>
                     </div>
                 ` : ''}
                 <div class="monitor-bezel">
                     <div class="monitor-screen">
                         <div class="password-input-container">
-                            <label for="password-field">${displayDashes(fieldLabel)}</label>
+                            <label for="password-field">${escapeHtml(displayDashes(fieldLabel))}</label>
                             <div class="password-field-wrapper">
                                 <input type="${this.gameData.showPassword ? 'text' : 'password'}" 
                                        id="password-field" 
@@ -320,7 +320,7 @@ export class PasswordMinigame extends MinigameScene {
                         ${this.gameData.showHint ? `
                             <div class="password-hint-container">
                                 <div class="password-hint" id="password-hint" style="display: none;">
-                                    <strong>Hint:</strong> ${this.gameData.passwordHint}
+                                    <strong>Hint:</strong> ${escapeHtml(displayDashes(this.gameData.passwordHint))}
                                 </div>
                             </div>
                         ` : ''}
@@ -329,7 +329,7 @@ export class PasswordMinigame extends MinigameScene {
                 
                 ${this.gameData.showPostit && this.gameData.postitNote ? `
                     <div class="postit-note">
-                        ${this.gameData.postitNote}
+                        ${escapeHtml(displayDashes(this.gameData.postitNote))}
                     </div>
                 ` : ''}
                 
@@ -399,7 +399,7 @@ export class PasswordMinigame extends MinigameScene {
                 
                 ${this.join ? '' : `
                 <div class="attempts-counter">
-                    Attempts: <span id="attempts-display">${this.gameData.attempts}</span>/${this.gameData.maxAttempts}
+                    Attempts: <span id="attempts-display">${escapeHtml(this.gameData.attempts)}</span>/${escapeHtml(this.gameData.maxAttempts)}
                 </div>
                 `}
             </div>

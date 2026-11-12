@@ -1,6 +1,12 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+// Every label, description and attribute value comes from scenario params: plain text,
+// escaped exactly once on the way into the SVG and the detail panel.
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const txt = (value) => escapeHtml(displayDashes(value));
+
 /**
  * MG-06 — Network Architecture Diagram (Purdue Model)
  *
@@ -68,7 +74,7 @@ export class NetworkArchitectureMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
 <div class="nad-wrap">
   <div class="nad-header">
-    <div class="nad-title">${displayDashes(title)}</div>
+    <div class="nad-title">${txt(title)}</div>
     <div class="nad-legend">
       <span class="nad-leg-item"><span class="nad-leg-line nad-leg-normal"></span>Intended path</span>
       <span class="nad-leg-item"><span class="nad-leg-line nad-leg-boundary"></span>IT/OT boundary</span>
@@ -119,19 +125,19 @@ export class NetworkArchitectureMinigame extends MinigameScene {
                         ln.type === 'boundary'  ? 'nad-line-boundary'  :
                         ln.type === 'hardwired' ? 'nad-line-hardwired' :
                                                   'nad-line-normal';
-            const pathAttr = ln.paths?.length ? `data-paths="${ln.paths.join(',')}"` : '';
+            const pathAttr = ln.paths?.length ? `data-paths="${escapeHtml(ln.paths.join(','))}"` : '';
             const dashAttr = ln.type === 'legacy' ? 'stroke-dasharray="7 4"' : '';
 
-            linesSvg += `<line class="nad-line ${cls}" ${pathAttr} x1="${cx(a)}" y1="${cy(a)}" x2="${cx(b)}" y2="${cy(b)}" ${dashAttr}/>`;
+            linesSvg += `<line class="nad-line ${cls}" ${pathAttr} x1="${escapeHtml(cx(a))}" y1="${escapeHtml(cy(a))}" x2="${escapeHtml(cx(b))}" y2="${escapeHtml(cy(b))}" ${dashAttr}/>`;
 
             if (ln.paths?.length) {
-                attackLines += `<line class="nad-line-attack" data-paths="${ln.paths.join(',')}" x1="${cx(a)}" y1="${cy(a)}" x2="${cx(b)}" y2="${cy(b)}"/>`;
+                attackLines += `<line class="nad-line-attack" data-paths="${escapeHtml(ln.paths.join(','))}" x1="${escapeHtml(cx(a))}" y1="${escapeHtml(cy(a))}" x2="${escapeHtml(cx(b))}" y2="${escapeHtml(cy(b))}"/>`;
             }
 
             if (ln.label) {
                 const mx = (cx(a) + cx(b)) / 2;
                 const my = (cy(a) + cy(b)) / 2 - 5;
-                linesSvg += `<text class="nad-line-label" x="${mx}" y="${my}">${displayDashes(ln.label)}</text>`;
+                linesSvg += `<text class="nad-line-label" x="${escapeHtml(mx)}" y="${escapeHtml(my)}">${txt(ln.label)}</text>`;
             }
         });
 
@@ -139,15 +145,15 @@ export class NetworkArchitectureMinigame extends MinigameScene {
         zones.forEach(z => {
             const zx = z.x !== undefined ? z.x : 8;
             const zw = z.width !== undefined ? z.width : 780;
-            zonesSvg += `<rect class="nad-zone" x="${zx}" y="${z.y}" width="${zw}" height="${z.h}" fill="${z.fill}" stroke="${z.stroke}" stroke-width="1"/>`;
-            zonesSvg += `<text class="nad-zone-label" x="${zx + 6}" y="${z.y + 11}">${displayDashes(z.label)}</text>`;
+            zonesSvg += `<rect class="nad-zone" x="${escapeHtml(zx)}" y="${escapeHtml(z.y)}" width="${escapeHtml(zw)}" height="${escapeHtml(z.h)}" fill="${escapeHtml(z.fill)}" stroke="${escapeHtml(z.stroke)}" stroke-width="1"/>`;
+            zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(zx + 6)}" y="${escapeHtml(z.y + 11)}">${txt(z.label)}</text>`;
         });
 
         externalOrgs.forEach(org => {
-            zonesSvg += `<rect class="nad-zone" x="${org.x}" y="${org.y}" width="${org.w}" height="${org.h}" fill="#0d1a0d" stroke="#14532d" stroke-width="1"/>`;
-            zonesSvg += `<text class="nad-zone-label" x="${org.x + 6}" y="${org.y + 11}">${displayDashes(org.label)}</text>`;
+            zonesSvg += `<rect class="nad-zone" x="${escapeHtml(org.x)}" y="${escapeHtml(org.y)}" width="${escapeHtml(org.w)}" height="${escapeHtml(org.h)}" fill="#0d1a0d" stroke="#14532d" stroke-width="1"/>`;
+            zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(org.x + 6)}" y="${escapeHtml(org.y + 11)}">${txt(org.label)}</text>`;
             if (org.label2) {
-                zonesSvg += `<text class="nad-zone-label" x="${org.x + 6}" y="${org.y + 22}">${displayDashes(org.label2)}</text>`;
+                zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(org.x + 6)}" y="${escapeHtml(org.y + 22)}">${txt(org.label2)}</text>`;
             }
         });
 
@@ -157,19 +163,19 @@ export class NetworkArchitectureMinigame extends MinigameScene {
             const nodeClass = n.nodeClass || zone?.nodeClass || 'ot';
             const zoneCls = nodeClass === 'safe' ? 'nad-node-safe' :
                             nodeClass === 'it'   ? 'nad-node-it'   : 'nad-node-ot';
-            const warnBadge = n.warn ? `<text class="nad-node-warn" x="${n.x + n.w - 6}" y="${n.y + 10}">⚠</text>` : '';
+            const warnBadge = n.warn ? `<text class="nad-node-warn" x="${escapeHtml(n.x + n.w - 6)}" y="${escapeHtml(n.y + 10)}">⚠</text>` : '';
 
             nodesSvg += `
-<g class="nad-node ${zoneCls}" id="nad-${n.id}" data-id="${n.id}" style="cursor:pointer" role="button" tabindex="0">
-  <rect class="nad-node-rect" x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="2"/>
-  <text class="nad-node-label" x="${n.x + n.w / 2}" y="${n.y + (n.sublabel ? 14 : 20)}">${displayDashes(n.label)}</text>
-  ${n.sublabel ? `<text class="nad-node-sub" x="${n.x + n.w / 2}" y="${n.y + 26}">${displayDashes(n.sublabel)}</text>` : ''}
+<g class="nad-node ${zoneCls}" id="nad-${escapeHtml(n.id)}" data-id="${escapeHtml(n.id)}" style="cursor:pointer" role="button" tabindex="0">
+  <rect class="nad-node-rect" x="${escapeHtml(n.x)}" y="${escapeHtml(n.y)}" width="${escapeHtml(n.w)}" height="${escapeHtml(n.h)}" rx="2"/>
+  <text class="nad-node-label" x="${escapeHtml(n.x + n.w / 2)}" y="${escapeHtml(n.y + (n.sublabel ? 14 : 20))}">${txt(n.label)}</text>
+  ${n.sublabel ? `<text class="nad-node-sub" x="${escapeHtml(n.x + n.w / 2)}" y="${escapeHtml(n.y + 26)}">${txt(n.sublabel)}</text>` : ''}
   ${warnBadge}
 </g>`;
         });
 
         return `
-<svg class="nad-svg" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
+<svg class="nad-svg" viewBox="${escapeHtml(viewBox)}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <marker id="nad-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/>
@@ -244,16 +250,16 @@ export class NetworkArchitectureMinigame extends MinigameScene {
         const pathEntries = (node.paths || [])
             .map(pid => this._pathMap[pid])
             .filter(Boolean)
-            .map(p => `<div class="nad-detail-path"><span class="nad-path-label">${displayDashes(p.label)}</span> <span class="nad-path-claim">[${displayDashes(p.claim)}]</span><div class="nad-path-desc">${displayDashes(p.desc)}</div></div>`)
+            .map(p => `<div class="nad-detail-path"><span class="nad-path-label">${txt(p.label)}</span> <span class="nad-path-claim">[${txt(p.claim)}]</span><div class="nad-path-desc">${txt(p.desc)}</div></div>`)
             .join('');
 
         const vulnHtml = node.vuln
-            ? `<div class="nad-detail-vuln"><span class="nad-detail-vuln-badge">⚠ VULNERABILITY</span><div class="nad-detail-vuln-text">${displayDashes(node.vuln)}</div></div>`
+            ? `<div class="nad-detail-vuln"><span class="nad-detail-vuln-badge">⚠ VULNERABILITY</span><div class="nad-detail-vuln-text">${txt(node.vuln)}</div></div>`
             : '';
 
         detail.innerHTML = `
-<div class="nad-detail-name">${displayDashes(node.label)}${node.sublabel ? ' — ' + displayDashes(node.sublabel) : ''}</div>
-<div class="nad-detail-desc">${displayDashes(node.desc)}</div>
+<div class="nad-detail-name">${txt(node.label)}${node.sublabel ? ' — ' + txt(node.sublabel) : ''}</div>
+<div class="nad-detail-desc">${txt(node.desc)}</div>
 ${vulnHtml}
 ${pathEntries
     ? '<div class="nad-detail-paths-title">ATTACK PATHS THROUGH THIS NODE:</div>' + pathEntries

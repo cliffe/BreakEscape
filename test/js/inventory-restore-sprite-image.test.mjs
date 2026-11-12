@@ -188,5 +188,5 @@ test('a container header: world sprite by texture key, tray item by its tray pic
     assert.equal(containerImageUrl({}, inventoryImageKey), null);
     assert.equal(containerImageHtml(null, 'x'), '');
     assert.equal(containerImageHtml('/a.png', 'Sofia\'s "PC" <1>'),
-        '<img src="/a.png" alt="Sofia\'s &quot;PC&quot; &lt;1>" class="container-image">');
+        '<img src="/a.png" alt="Sofia&#39;s &quot;PC&quot; &lt;1&gt;" class="container-image">');
 });

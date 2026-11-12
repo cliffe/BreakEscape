@@ -407,8 +407,9 @@ export class BlockchainExplorerMinigame extends MinigameScene {
 </g>`;
 
             // Sub-label below node (wallet display name or tx date)
+            // Raw text here: escapeText below is the one escape (_walletLabel returns HTML)
             const sublabel = node.type === 'wallet'
-                ? this._walletLabel(node.id)
+                ? (this._wallets[node.id] ? (this._wallets[node.id].displayName || 'Unknown Wallet') : 'Unknown Wallet')
                 : (this._transactions[node.id]?.timestamp?.slice(0, 10) || '');
             if (sublabel) {
                 svgNodes += `<text class="bce-gn-sublabel" x="${p.cx}" y="${p.y + NODE_H + 11}" text-anchor="middle" opacity="${opacity}">${escapeText(sublabel)}</text>`;
@@ -515,7 +516,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
             .join('');
 
         const confirms = tx.confirmations != null
-            ? `<span class="bce-meta-label">Confirms</span><span class="bce-meta-subtle">${tx.confirmations.toLocaleString()}</span>`
+            ? `<span class="bce-meta-label">Confirms</span><span class="bce-meta-subtle">${escapeText(tx.confirmations.toLocaleString())}</span>`
             : '';
 
         return `
@@ -528,7 +529,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
                 <span class="bce-meta-label">Hash</span>
                 <span class="bce-meta-value">${escapeText(truncHash(tx.hash))}</span>
                 <span class="bce-meta-label">Block</span>
-                <span class="bce-meta-value">${tx.blockHeight?.toLocaleString() || '—'}</span>
+                <span class="bce-meta-value">${escapeText(tx.blockHeight?.toLocaleString() || '—')}</span>
                 <span class="bce-meta-label">Time</span>
                 <span class="bce-meta-value">${escapeText(tx.timestamp || '—')}</span>
                 <span class="bce-meta-label">Fee</span>

@@ -532,10 +532,11 @@ export class VmLauncherMinigame extends MinigameScene {
     //     }
     // }
     
+    // VM titles, IPs and the console URL are server text: escaped once, quotes
+    // included, because the URL lands in an href attribute.
     escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+        return String(str ?? '').replace(/[&<>"']/g, ch => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     }
     
     start() {

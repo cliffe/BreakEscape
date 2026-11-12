@@ -3,6 +3,20 @@ import { displayDashes } from '../../utils/display-dashes.js';
 import { renderNoteMarkdown, noteMatches } from '../../utils/note-markdown.js';
 import { cappedText, NOTE_LIMIT } from '../../utils/test-state-text.js';
 
+// Observations are plain text: scenario data, the player's own typing, or a line another
+// minigame wrote ("Postit note found in <container name>"). They go in as text, never markup.
+function setObservationText(div, text) {
+    div.replaceChildren();
+    if (text) {
+        div.textContent = displayDashes(text);
+    } else {
+        const em = document.createElement('em');
+        em.textContent = 'Click edit to add your observations...';
+        div.appendChild(em);
+    }
+}
+
+
 // Load fonts
 const fontLink1 = document.createElement('link');
 fontLink1.href = 'https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap';
@@ -138,7 +152,7 @@ export class NotesMinigame extends MinigameScene {
 
                     const observationDiv = document.createElement('div');
                     observationDiv.className = 'notes-minigame-observation';
-                    observationDiv.innerHTML = displayDashes(this.observationText);
+                    setObservationText(observationDiv, this.observationText);
                     observationDiv.dataset.raw = this.observationText;
                     observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
                     observationDiv.title = 'Click to edit observations';
@@ -167,7 +181,7 @@ export class NotesMinigame extends MinigameScene {
 
                     const observationDiv = document.createElement('div');
                     observationDiv.className = 'notes-minigame-observation empty';
-                    observationDiv.innerHTML = '<em>Click edit to add your observations...</em>';
+                    setObservationText(observationDiv, '');
                     observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
                     observationDiv.title = 'Click to add observations';
                     observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
@@ -392,14 +406,14 @@ export class NotesMinigame extends MinigameScene {
             const editBtn = observationContainer.querySelector('.notes-minigame-edit-btn');
             
             if (this.observationText) {
-                observationDiv.innerHTML = displayDashes(this.observationText);
+                setObservationText(observationDiv, this.observationText);
                 observationDiv.dataset.raw = this.observationText;
                 observationDiv.style.color = '#666';
                 observationDiv.style.cursor = 'pointer';
                 observationDiv.title = 'Click to edit observations';
                 editBtn.title = 'Edit observations';
             } else {
-                observationDiv.innerHTML = '<em>Click edit to add your observations...</em>';
+                setObservationText(observationDiv, '');
                 observationDiv.style.color = '#999';
                 observationDiv.style.cursor = 'pointer';
                 observationDiv.title = 'Click to add observations';
@@ -547,7 +561,7 @@ export class NotesMinigame extends MinigameScene {
             
             const newText = textarea.value.trim();
             observationDiv.dataset.raw = newText || '';
-            observationDiv.innerHTML = newText ? displayDashes(newText) : '<em>Click edit to add your observations...</em>';
+            setObservationText(observationDiv, newText);
             observationDiv.style.color = newText ? '#666' : '#999';
             
             // Update the stored observation text
@@ -577,10 +591,10 @@ export class NotesMinigame extends MinigameScene {
             
             // Restore original text
             if (originalText) {
-                observationDiv.innerHTML = displayDashes(originalText);
+                setObservationText(observationDiv, originalText);
                 observationDiv.style.color = '#666';
             } else {
-                observationDiv.innerHTML = '<em>Click edit to add your observations...</em>';
+                setObservationText(observationDiv, '');
                 observationDiv.style.color = '#999';
             }
             

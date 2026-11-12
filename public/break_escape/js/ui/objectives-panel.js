@@ -9,6 +9,12 @@
  */
 import { displayDashes } from '../utils/display-dashes.js';
 
+// Ids are scenario data: escaped for a quoted attribute (quotes included, no dash display),
+// and for a quoted attribute selector when looked up again.
+const escapeAttr = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const selectorValue = (value) => String(value ?? '').replace(/["\\]/g, '\\$&').replace(/\n/g, '\\a ');
+
 // Pixel-art arrow (assets/icons/chevron-down.png), drawn as a mask in the text
 // colour; a toggle with .is-collapsed turns it to point right
 const CHEVRON = '<i class="obj-chevron" aria-hidden="true"></i>';
@@ -142,7 +148,7 @@ export class ObjectivesPanel {
         // so the completion flash plays first, then it folds away.
         this.aimCollapsed[aim.aimId] = true;
         setTimeout(() => {
-          const aimEl = this.content.querySelector(`[data-aim-id="${aim.aimId}"]`);
+          const aimEl = this.content.querySelector(`[data-aim-id="${selectorValue(aim.aimId)}"]`);
           if (!aimEl) return;
           aimEl.classList.add('aim-collapsed');
           const toggle = aimEl.querySelector('.aim-toggle');
@@ -155,7 +161,7 @@ export class ObjectivesPanel {
       const requiredKey = markedIds.size > 0 && !isCompleted ? ObjectivesPanel.requiredKeyHtml() : '';
 
       html += `
-        <div class="objective-aim ${aimClass}${collapsed ? ' aim-collapsed' : ''}" data-aim-id="${aim.aimId}">
+        <div class="objective-aim ${aimClass}${collapsed ? ' aim-collapsed' : ''}" data-aim-id="${escapeAttr(aim.aimId)}">
           <div class="aim-header">
             <span class="aim-icon">${aimIcon}</span>
             <span class="aim-title">${this.escapeHtml(aim.title)}</span>${requiredKey}
@@ -191,7 +197,7 @@ export class ObjectivesPanel {
           ? '<span class="task-required-mark" aria-label="required">*</span>' : '';
         
         html += `
-          <div class="objective-task ${taskClass}${optionalClass}" data-task-id="${task.taskId}">
+          <div class="objective-task ${taskClass}${optionalClass}" data-task-id="${escapeAttr(task.taskId)}">
             <span class="task-icon">${taskIcon}</span>
             <span class="task-title">${this.escapeHtml(task.title)}${requiredMark}${progressText}</span>${skippedLabel}
           </div>
@@ -258,7 +264,7 @@ export class ObjectivesPanel {
   /** Scroll the list (never the page) so an aim and its tasks can be seen. */
   revealAim(aimId) {
     const c = this.content;
-    const el = c?.querySelector?.(`[data-aim-id="${aimId}"]`);
+    const el = c?.querySelector?.(`[data-aim-id="${selectorValue(aimId)}"]`);
     if (!el || !el.getBoundingClientRect) return;
     const box = el.getBoundingClientRect();
     const view = c.getBoundingClientRect();
@@ -287,7 +293,7 @@ export class ObjectivesPanel {
    * Highlight a newly completed task with animation
    */
   highlightTask(taskId) {
-    const taskEl = this.content.querySelector(`[data-task-id="${taskId}"]`);
+    const taskEl = this.content.querySelector(`[data-task-id="${selectorValue(taskId)}"]`);
     if (taskEl) {
       taskEl.classList.add('new-task');
       setTimeout(() => taskEl.classList.remove('new-task'), 1000);
@@ -298,7 +304,7 @@ export class ObjectivesPanel {
    * Highlight a newly completed aim with animation
    */
   highlightAim(aimId) {
-    const aimEl = this.content.querySelector(`[data-aim-id="${aimId}"]`);
+    const aimEl = this.content.querySelector(`[data-aim-id="${selectorValue(aimId)}"]`);
     if (aimEl) {
       aimEl.classList.add('new-objective');
       setTimeout(() => aimEl.classList.remove('new-objective'), 1000);

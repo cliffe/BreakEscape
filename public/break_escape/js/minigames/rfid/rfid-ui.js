@@ -16,6 +16,10 @@
 import { getProtocolInfo, detectProtocol, getReadProfile } from './rfid-protocols.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+// Result messages can name a card from the scenario: escaped once on the way into HTML.
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
 /** Shown under "No keycards in inventory" on the Read screen. */
 export const NO_KEYCARDS_HINT = 'The cloner reads a badge at close range: one you hold, or one someone is carrying.';
 
@@ -300,7 +304,7 @@ export class RFIDUIRenderer {
         protocolDiv.className = 'flipper-info';
         protocolDiv.style.borderLeft = `4px solid ${displayData.color}`;
         protocolDiv.style.paddingLeft = '8px';
-        protocolDiv.innerHTML = `${displayData.icon} ${displayData.protocolName}`;
+        protocolDiv.textContent = `${displayData.icon} ${displayData.protocolName}`;
         screen.appendChild(protocolDiv);
 
         // Card name
@@ -316,7 +320,7 @@ export class RFIDUIRenderer {
         // Show first 3 fields (most relevant for emulation)
         displayData.fields.slice(0, 3).forEach(field => {
             const fieldDiv = document.createElement('div');
-            fieldDiv.innerHTML = `${field.label}: ${field.value}`;
+            fieldDiv.textContent = `${field.label}: ${field.value}`;
             data.appendChild(fieldDiv);
         });
 
@@ -365,7 +369,7 @@ export class RFIDUIRenderer {
         protocolDiv.className = 'flipper-info';
         protocolDiv.style.borderLeft = `4px solid ${displayData.color}`;
         protocolDiv.style.paddingLeft = '8px';
-        protocolDiv.innerHTML = `${displayData.icon} ${displayData.protocolName}`;
+        protocolDiv.textContent = `${displayData.icon} ${displayData.protocolName}`;
         screen.appendChild(protocolDiv);
 
         // Card name
@@ -381,7 +385,7 @@ export class RFIDUIRenderer {
         // Show first 3 fields (most relevant for emulation)
         displayData.fields.slice(0, 3).forEach(field => {
             const fieldDiv = document.createElement('div');
-            fieldDiv.innerHTML = `${field.label}: ${field.value}`;
+            fieldDiv.textContent = `${field.label}: ${field.value}`;
             data.appendChild(fieldDiv);
         });
 
@@ -459,7 +463,13 @@ export class RFIDUIRenderer {
         dataDiv.className = 'flipper-card-data';
         displayData.fields.forEach(field => {
             const fieldDiv = document.createElement('div');
-            fieldDiv.innerHTML = `<strong>${field.label}:</strong> ${field.value}`;
+            // Field values carry scenario card data: text nodes only
+            const strong = document.createElement('strong');
+            strong.textContent = `${field.label}:`;
+            const value = document.createElement('span');
+            value.textContent = ` ${field.value}`;
+            fieldDiv.appendChild(strong);
+            fieldDiv.appendChild(value);
             dataDiv.appendChild(fieldDiv);
         });
         screen.appendChild(dataDiv);
@@ -737,7 +747,13 @@ export class RFIDUIRenderer {
         data.className = compact ? 'flipper-card-data flipper-card-data-compact' : 'flipper-card-data';
         displayData.fields.forEach(field => {
             const fieldDiv = document.createElement('div');
-            fieldDiv.innerHTML = `<strong>${field.label}:</strong> ${field.value}`;
+            // Field values carry scenario card data: text nodes only
+            const strong = document.createElement('strong');
+            strong.textContent = `${field.label}:`;
+            const value = document.createElement('span');
+            value.textContent = ` ${field.value}`;
+            fieldDiv.appendChild(strong);
+            fieldDiv.appendChild(value);
             data.appendChild(fieldDiv);
         });
 
@@ -907,9 +923,10 @@ export class RFIDUIRenderer {
 
         const success = document.createElement('div');
         success.className = 'flipper-success';
+        // The message can name a card from the scenario: escaped, not parsed
         success.innerHTML = `
             <div class="flipper-success-icon">✓</div>
-            <div class="flipper-success-message">${message}</div>
+            <div class="flipper-success-message">${escapeHtml(message)}</div>
         `;
         screen.appendChild(success);
     }
@@ -930,7 +947,7 @@ export class RFIDUIRenderer {
         error.className = notice ? 'flipper-error flipper-notice' : 'flipper-error';
         error.innerHTML = `
             <div class="flipper-error-icon">${notice ? '📡' : '✗'}</div>
-            <div class="flipper-error-message">${message}</div>
+            <div class="flipper-error-message">${escapeHtml(message)}</div>
         `;
         if (detail) {
             const why = document.createElement('div');

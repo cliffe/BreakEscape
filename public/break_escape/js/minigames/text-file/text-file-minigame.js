@@ -1,6 +1,10 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+// File names, types and observations are scenario text: escaped before they reach HTML
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
 /**
  * The notepad entry "Add to Notepad" makes for a text file: the raw file text as the
  * body, and the file name in the title, with its source when the scenario gives one.
@@ -41,10 +45,12 @@ export class TextFileMinigame extends MinigameScene {
         super.init();
         
         // Customize the header
+        // The file name is scenario text: appended as a text node, never parsed as HTML
         this.headerElement.innerHTML = `
-            <h3><img src="/break_escape/assets/icons/notes.png" alt="Document" class="icon"> ${displayDashes(this.textFileData.fileName)}</h3>
+            <h3><img src="/break_escape/assets/icons/notes.png" alt="Document" class="icon"> </h3>
             <p>Viewing text file contents</p>
         `;
+        this.headerElement.querySelector('h3').append(displayDashes(this.textFileData.fileName ?? ''));
         
         // Add notebook button to minigame controls (before cancel button)
         if (this.controlsElement) {
@@ -78,16 +84,16 @@ export class TextFileMinigame extends MinigameScene {
                         <button class="window-control minimize" title="Minimize"></button>
                         <button class="window-control maximize" title="Maximize"></button>
                     </div>
-                    <div class="window-title">${displayDashes(this.textFileData.fileName)}</div>
+                    <div class="window-title">${escapeHtml(displayDashes(this.textFileData.fileName))}</div>
                     <div></div>
                 </div>
                 
                 <div class="file-header">
                     <div class="file-icon"><img src="/break_escape/assets/objects/text_file.png" alt="Document" class="icon-large"></div>
                     <div class="file-info">
-                        <div class="file-name">${displayDashes(this.textFileData.fileName)}</div>
+                        <div class="file-name">${escapeHtml(displayDashes(this.textFileData.fileName))}</div>
                         <div class="file-meta">
-                            <span class="file-type">${this.textFileData.fileType.toUpperCase()}</span>
+                            <span class="file-type">${escapeHtml(String(this.textFileData.fileType).toUpperCase())}</span>
                             <span class="file-size">${this.getFileSize()}</span>
                         </div>
                     </div>
@@ -108,7 +114,7 @@ export class TextFileMinigame extends MinigameScene {
                 ${this.textFileData.observations ? `
                 <div class="file-observations">
                     <h4><img src="/break_escape/assets/icons/copy-sm.png" alt="Clipboard" class="icon-small"> Observations:</h4>
-                    <p>${displayDashes(this.textFileData.observations)}</p>
+                    <p>${escapeHtml(displayDashes(this.textFileData.observations))}</p>
                 </div>
                 ` : ''}
             </div>

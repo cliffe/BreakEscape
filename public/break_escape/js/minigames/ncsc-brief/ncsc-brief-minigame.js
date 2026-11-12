@@ -1,6 +1,27 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+));
+
+// Scenario text for this document is plain text with a small, deliberate
+// formatting set: character entities (&mdash; &rsquo; &#10003;) and the bare
+// tags <strong> <em> <b> <i> <br>, in any letter case. Everything is escaped
+// first, then only those exact forms are put back, so no other tag or any
+// attribute can get through. Tags are restored before entities, so an authored
+// &lt;b&gt; stays literal text, and only as matched pairs (one level of nesting),
+// so a stray or unclosed tag shows as text instead of restyling what follows.
+const AUTHOR_PAIR = /&lt;(strong|em|b|i)&gt;((?:(?!&lt;\/?(?:strong|em|b|i)&gt;)[\s\S])*?)&lt;\/\1&gt;/gi;
+function authorHtml(value) {
+    let html = escapeHtml(displayDashes(String(value ?? '')));
+    const pairs = (s) => s.replace(AUTHOR_PAIR, (m, tag, inner) => `<${tag.toLowerCase()}>${inner}</${tag.toLowerCase()}>`);
+    html = pairs(pairs(html));
+    return html
+        .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+        .replace(/&amp;(#\d{1,7}|#x[0-9a-fA-F]{1,6}|[a-zA-Z][a-zA-Z0-9]{1,31});/g, '&$1;');
+}
+
 /**
  * NCSC Brief Minigame
  *
@@ -16,7 +37,7 @@ import { displayDashes } from '../../utils/display-dashes.js';
  *   openableStatusBadge — badge text when openable (after ✓)
  *   openableReadyMessage — body text shown when openable
  *   briefTitle         — heading inside the opened brief
- *   briefMeta          — HTML string for ref/addressee/date line
+ *   briefMeta          — ref/addressee/date line (text: entities and <strong> <em> <br> only)
  *   sections[]         — typed content blocks (see _renderSection)
  *
  * Section types:
@@ -91,9 +112,9 @@ export class NcscBriefMinigame extends MinigameScene {
 <div class="ncsc-envelope-panel">
   <div class="ncsc-envelope-icon">&#9993;</div>
   <div class="ncsc-envelope-name">NCSC Attribution Brief</div>
-  <div class="ncsc-envelope-ref">${displayDashes(this._caseRef)}</div>
+  <div class="ncsc-envelope-ref">${authorHtml(this._caseRef)}</div>
   <div class="ncsc-status-badge ncsc-status-locked">&#128274; SEALED &mdash; AUTHORISATION REQUIRED</div>
-  <div class="ncsc-sealed-message">${displayDashes(this._sealedMessage)}</div>
+  <div class="ncsc-sealed-message">${authorHtml(this._sealedMessage)}</div>
 </div>`;
     }
 
@@ -106,9 +127,9 @@ export class NcscBriefMinigame extends MinigameScene {
 <div class="ncsc-envelope-panel">
   <div class="ncsc-envelope-icon">&#9993;</div>
   <div class="ncsc-envelope-name">NCSC Attribution Brief</div>
-  <div class="ncsc-envelope-ref">${displayDashes(this._caseRef)}</div>
-  <div class="ncsc-status-badge ncsc-status-ready">&#10003; ${displayDashes(this._openableBadge)}</div>
-  <div class="ncsc-sealed-message ncsc-ready-message">${displayDashes(this._openableMessage)}</div>
+  <div class="ncsc-envelope-ref">${authorHtml(this._caseRef)}</div>
+  <div class="ncsc-status-badge ncsc-status-ready">&#10003; ${authorHtml(this._openableBadge)}</div>
+  <div class="ncsc-sealed-message ncsc-ready-message">${authorHtml(this._openableMessage)}</div>
   <button class="ncsc-open-btn" id="ncsc-open-btn">BREAK SEAL &mdash; OPEN BRIEF</button>
 </div>`;
 
@@ -129,12 +150,12 @@ export class NcscBriefMinigame extends MinigameScene {
         const el = this._body();
         if (!el) return;
         const meta = this._briefMeta
-            ? `<div class="ncsc-brief-meta">${displayDashes(this._briefMeta)}</div>`
+            ? `<div class="ncsc-brief-meta">${authorHtml(this._briefMeta)}</div>`
             : '';
         el.innerHTML = `
 <div class="ncsc-brief-content">
   <div class="ncsc-brief-header">
-    <div class="ncsc-brief-title">${displayDashes(this._briefTitle)}</div>
+    <div class="ncsc-brief-title">${authorHtml(this._briefTitle)}</div>
     ${meta}
   </div>
   ${this._sections.map(s => this._renderSection(s)).join('\n')}
@@ -154,37 +175,37 @@ export class NcscBriefMinigame extends MinigameScene {
 
     _renderStandardSection(s) {
         const confidence = s.confidence
-            ? `<p>Attribution confidence: <span class="ncsc-badge ${s.confidence.cssClass}">${displayDashes(s.confidence.text)}</span></p>`
+            ? `<p>Attribution confidence: <span class="ncsc-badge ${escapeHtml(s.confidence.cssClass)}">${authorHtml(s.confidence.text)}</span></p>`
             : '';
-        const body = s.body ? `<p>${displayDashes(s.body)}</p>` : '';
+        const body = s.body ? `<p>${authorHtml(s.body)}</p>` : '';
         const bulletsIntro = s.bullets?.length ? `<p><strong>Basis for attribution:</strong></p>` : '';
         const bullets = s.bullets?.length
-            ? `<ul class="ncsc-list">${s.bullets.map(b => `<li>${displayDashes(b)}</li>`).join('')}</ul>`
+            ? `<ul class="ncsc-list">${s.bullets.map(b => `<li>${authorHtml(b)}</li>`).join('')}</ul>`
             : '';
         const note = s.note
-            ? `<div class="ncsc-note"><div class="ncsc-note-title">${displayDashes(s.note.title)}</div><p>${displayDashes(s.note.body)}</p></div>`
+            ? `<div class="ncsc-note"><div class="ncsc-note-title">${authorHtml(s.note.title)}</div><p>${authorHtml(s.note.body)}</p></div>`
             : '';
         return `
   <div class="ncsc-section">
-    <div class="ncsc-section-title">${displayDashes(s.title)}</div>
+    <div class="ncsc-section-title">${authorHtml(s.title)}</div>
     ${confidence}${body}${bulletsIntro}${bullets}${note}
   </div>`;
     }
 
     _renderLegalGap(s) {
-        const paras = (s.paragraphs || []).map(p => `<p>${displayDashes(p)}</p>`).join('');
+        const paras = (s.paragraphs || []).map(p => `<p>${authorHtml(p)}</p>`).join('');
         return `
   <div class="ncsc-legal-gap">
-    <div class="ncsc-legal-gap-title">&#9888; ${displayDashes(s.title)}</div>
+    <div class="ncsc-legal-gap-title">&#9888; ${authorHtml(s.title)}</div>
     ${paras}
   </div>`;
     }
 
     _renderCoverageNote(s) {
-        const paras = (s.paragraphs || []).map(p => `<p>${displayDashes(p)}</p>`).join('');
+        const paras = (s.paragraphs || []).map(p => `<p>${authorHtml(p)}</p>`).join('');
         return `
   <div class="ncsc-coverage-note">
-    <div class="ncsc-coverage-note-title">&#9889; ${displayDashes(s.title)}</div>
+    <div class="ncsc-coverage-note-title">&#9889; ${authorHtml(s.title)}</div>
     ${paras}
   </div>`;
     }
