@@ -25,10 +25,10 @@ module BreakEscape
     #
     # `source` is the object the use was at (`object_id`), or nil for the NPC's phone. A post is
     # refused (`refused: true`, nothing written) for the phone of an NPC with `"phone": false`,
-    # for an object that is not one of the NPC's social media places the player can know of, and
-    # for a sign-in PC where loginLockouts holds the NPC's username: a lockout stops every use of
-    # that PC, social media included, so a tampered client cannot post from a locked-out PC. The
-    # refusal says no more than a `check` answer would (6.6).
+    # for an object that is not one of the NPC's social media places in a room the player has
+    # unlocked, and for a sign-in PC where loginLockouts holds the NPC's username: a lockout stops
+    # every use of that PC, social media included, so a tampered client cannot post from a
+    # locked-out PC. The refusal says no more than a `check` answer would (6.6).
     def reveal_feed_post!(npc_id, source = nil)
       id = npc_id.is_a?(String) ? npc_id : nil
       npc = id && scenario_room_npc(id)

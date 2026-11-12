@@ -134,6 +134,53 @@ module BreakEscape
       assert ask('lena', object_id: 'lena_pc')['refused']
     end
 
+    # Review R1 m4: Tara borrows hot_desk (a sign-in PC under strict_social that satisfies
+    # social_media) at 40; an annex the player has not opened holds a second tablet
+    def borrow_and_annex_scenario
+      data = scenario
+      office = data['rooms']['office']
+      office['objects'] << AccessSocialScenario.pc('hot_desk', 'policy' => 'strict_social',
+                                                               'affordance' => { 'satisfies' => %w[work social_media], 'useSeconds' => 5 })
+      npc_in(data, 'tara')['workarounds'] = [{ 'at' => 40, 'do' => 'borrow_session', 'pc' => 'hot_desk' }]
+      office['connections']['north'] = 'annex'
+      data['rooms']['annex'] = {
+        'type' => 'room_office', 'connections' => { 'south' => 'office' }, 'locked' => true, 'lockType' => 'key',
+        'objects' => [{ 'type' => 'tablet', 'id' => 'annex_tablet', 'name' => 'Tablet',
+                        'affordance' => { 'satisfies' => ['social_media'], 'restores' => 60, 'useSeconds' => 10 } }],
+        'npcs' => []
+      }
+      data
+    end
+
+    def hand_over_borrow!
+      ps = @game.player_state
+      ps['npcFrustration'] = { 'tara' => { 'handed' => { '0' => { 'hand' => 1, 'time' => 0, 'need' => 'social_media' } } } }
+      @game.update!(player_state: ps)
+    end
+
+    test 'R1 m4: a borrowed PC posts only once handed over, and not while the borrower is locked out there' do
+      build(data: borrow_and_annex_scenario)
+      assert ask('tara', object_id: 'hot_desk')['refused'], 'before the hand-over the hot desk is no place of hers'
+      hand_over_borrow!
+      assert_equal 'tara_post_1', ask('tara', object_id: 'hot_desk').dig('post', 'id'), 'handed over, the borrow is a source'
+
+      build(data: borrow_and_annex_scenario)
+      hand_over_borrow!
+      lock_out!('hot_desk', 'tnair')
+      assert ask('tara', object_id: 'hot_desk')['refused'], "her own username is locked out at the borrowed PC"
+      assert_nil state.dig('feedRevealed', 'tara')
+    end
+
+    test 'R1 m4: a real social media object in a room the player has not opened is refused until it is opened' do
+      build(data: borrow_and_annex_scenario)
+      assert ask('tara', object_id: 'annex_tablet')['refused'], 'the annex is not in unlockedRooms'
+      assert_nil state.dig('feedRevealed', 'tara')
+      ps = @game.player_state
+      ps['unlockedRooms'] = ps['unlockedRooms'] + ['annex']
+      @game.update!(player_state: ps)
+      assert_equal 'tara_post_1', ask('tara', object_id: 'annex_tablet').dig('post', 'id')
+    end
+
     test 'a social_media fail naming locked_out counts only behind the check record, and only with no phone' do
       build
       lock_out!('tara_pc', 'tnair')

@@ -1533,6 +1533,11 @@ scenario's own event mappings, reveal props (their `revealOnGlobal` and text) an
 show, which are served from the start (the README tells authors to keep them neutral; sub-slice H
 withholds them).
 
+One gap is on the honest client's side (q33 review R1 m2, deferred to the ideas backlog): the
+client knows a lockout only at the NPC's own station, so a `"phone": false` NPC that borrows a hot
+desk for social media where its own username is locked out shows a met use while the server
+refuses both the guest record and the post. The server stays correct.
+
 This residual is accepted (decision 5). What keeps it small in practice: the validator prints, for
 every workaround, what it opens and the earliest it can be reached, and warns when what it opens
 holds a flag station or a VM launcher, so an author puts anything that must not be passable this

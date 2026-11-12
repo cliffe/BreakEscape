@@ -1986,7 +1986,8 @@ scope field (only if the user asks later).
   clears `loginLockouts`).
 - **Client** (`c2590f9e2`). `npc-needs.js` `_socialCandidate`: a flagged station counts as
   blocked (passed over for a non-desk source, then the phone; with no phone it is the attempt
-  that fails), and a borrow at a flagged PC is skipped. The station verdict adds `locked_out` for
+  that fails). (A first version also claimed to skip a borrow at a flagged PC; that guard could
+  never fire and was removed in review round 1, m1.) The station verdict adds `locked_out` for
   `social_media` as for `work`. An NPC with a phone whose use reaches the locked station (flagged
   on the way, or by the check it waited for) drops that use unjudged (`use_dropped_locked_out`,
   nothing restored, no report) and takes the phone next, as 8.1 says a dead PC counts nothing for
@@ -2023,8 +2024,8 @@ scope field (only if the user asks later).
   whether the use really happened there (plan 9.3's residual list: a tampered browser can still
   name its phone or another real source).
 - The validator's mutter check for a lockout station looks only at work plans; a `social_media`
-  owner with `"phone": false` under a `maxAttempts` policy gets no `station_fail` warning. Not
-  added.
+  owner with `"phone": false` under a `maxAttempts` policy gets no `station_fail` warning. Added
+  in review round 1 (m3).
 
 ### Leftover games
 
@@ -2033,3 +2034,18 @@ scope field (only if the user asks later).
 ### Suites (at `460f46329`, under the lock)
 
 Rails 1702 runs, 24995 assertions, 0 failures, 0 errors, 1 skip. JS 499 of 499 files.
+
+### Code review round 1 outcomes (`Q33_LOCKOUT_CODE_REVIEW_R1.md`)
+
+- m1: the unreachable borrow guard in `_socialCandidate` removed; the docblock says the client
+  knows a lockout only at the own station.
+- m2: deferred. One paragraph in plan 9.3 and an entry in `docs/IDEAS_BACKLOG.md`.
+- m3: the validator warns for a `"phone": false`, social-only owner at a lockout station with no
+  `station_fail` or `work_fail` line; test in `validator-access-social.test.mjs`.
+- m4: two feed tests in `social_lockout_q33_test.rb` (a handed-over borrow PC, a tablet in an
+  unopened room).
+- N1 README sentence; N3 validator warning for a hot desk that lacks one of the borrower's
+  can-fail needs, with a test; N4 comment; N5 the fallback send filters a non-string source.
+- N2: a tab left open across the deploy sends no `object_id`, so a `"phone": false` NPC's posts
+  are refused until the page is reloaded. Accepted: the gem ships client and server together, and
+  a fallback would undo the check.

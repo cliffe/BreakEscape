@@ -2083,11 +2083,12 @@ export class NPCNeedsSystem {
      * socialUse's time and restores), as AccessWork.social_station? says on the server.
      * User decision q33: a station the NPC is flagged locked out at (sub-slice L) is unusable for
      * social media as for work, so it is passed over like a blocked one (to the next source and
-     * the phone) and, with no phone, is the attempt that fails. A borrowed PC it is flagged
-     * locked out at is never used either.
+     * the phone) and, with no phone, is the attempt that fails. The client knows a lockout only
+     * at the own station (lockedOut holds stations alone), so a lockout at a borrowed PC is not
+     * seen here: the use shows as met while the server refuses the post (see IDEAS_BACKLOG).
      */
     _socialCandidate(s, objects, pos, excludeId) {
-        if (s.borrow && s.borrow.need === 'social_media' && !s.lockedOut.has(s.borrow.pcId)) {
+        if (s.borrow && s.borrow.need === 'social_media') {
             return this._useCandidate(s, 'social_media', objects, pos, excludeId);
         }
         const stId = this._stationId(s);

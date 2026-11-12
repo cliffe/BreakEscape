@@ -230,7 +230,7 @@ export class SocialFeed {
 export function liveDeps(api, w) {
     const osint = () => w.gameScenario?.social?.osint || {};
     return {
-        send: (npcId, source = null) => (typeof api?.feedPost === 'function' ? api.feedPost(npcId, source) : api.post('/feed_post', { npc_id: npcId, object_id: source })),
+        send: (npcId, source = null) => (typeof api?.feedPost === 'function' ? api.feedPost(npcId, source) : api.post('/feed_post', { npc_id: npcId, object_id: isStr(source) ? source : null })),
         hasFeed: (npcId) => !!(w.npcManager?.getNPC?.(npcId) || w.npcManager?.npcs?.get?.(npcId))?.hasFeed,
         mergeFact(id, entry) {
             const sc = w.gameScenario;
