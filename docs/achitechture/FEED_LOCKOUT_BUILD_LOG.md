@@ -27,7 +27,7 @@ code review R2 leftovers, plus the needMet tweak), in `docs/handover/2026-11-11_
 - **README** "While locked out": a lockout at a borrowed PC now stops that use.
 - Both needs: a locked-out borrowed use fails for work as well as social media, which follows q33's
   "a lockout stops every use of that PC". The backlog entry named social media only. The user
-  confirmed this after review R1 (m3); F15 is the work beat.
+  confirmed this after review R1 (m3); L2 is the work beat.
 
 ### q37: q33 code review R2, m1 to m4
 
@@ -74,9 +74,9 @@ code review R2 leftovers, plus the needMet tweak), in `docs/handover/2026-11-11_
 
 ## Scenario beat
 
-`test_access_social` F14 (`f14_room`, east of `f13_room`): Sade Okafor, `"phone": false`, her PC
-under `no_social`, a `borrow_session` to `f14_hot_desk` under `locking`. Tasks `f14_locked_out` and
-`f14_borrow_failed`. `PLAYTEST.md` has the F14 row, the F14 tampered checks and the F13 note that
+`test_access_social` L1 (`l1_room`, east of `f13_room`): Sade Okafor, `"phone": false`, her PC
+under `no_social`, a `borrow_session` to `l1_hot_desk` under `locking`. Tasks `l1_locked_out` and
+`l1_borrow_failed`. `PLAYTEST.md` has the L1 row, the L1 tampered checks and the F13 note that
 waiting is enough. Validator: 0 lines with ❌.
 
 ## Live proof (game 1383, port 3034, headless)
@@ -84,11 +84,11 @@ waiting is enough. Validator: 0 lines with ❌.
 | Beat | Result |
 |---|---|
 | F13 by waiting | Entered `f13_room` and only waited. `f13_blocked` after 85 s, `f13_recovered` 90.5 s later. Server: `feedRevealed.ruth.shown` `["f13_blocked","f13_fixed"]`; the serve came at 542.35 (server time, last digits), `failAt.social_media` 530.11 and `easeAt.social_media` 542.41. So the ease landed 55 ms after the request, and the last failure was 12 s old: the new met-use rule served it, and the old rule would have read false |
-| F14 lockout | Three wrong passwords on Sade's tile at the hot desk: "2 attempts left", "1 attempt left", "This account is locked on this PC" (`pc_signin_failed` `locked_out`) |
-| F14 finding out | Two desk failures (`social_blocked`, level 25 then 50), the borrow handed over; `npc_sat_at:f14_hot_desk`, one check answered `lockedOut: true`, `npc_locked_out:sade` `objectId` `f14_hot_desk` 250 ms later, task `f14_locked_out` |
-| F14 failed use | At the end of the use: `npc_borrow_done:sade` `met: false`, `npc_use_failed:sade` `missing [{f14_hot_desk, locked_out}]`, task `f14_borrow_failed`. No `npc_used:f14_hot_desk`, no `/feed_post` for Sade, no ease |
-| F14 server | `loginLockouts` `["f14_hot_desk\|sokafor"]`; `npcFrustration.sade.lockedOut` `["f14_hot_desk"]`, `easeAt` empty; no `guestSessions.f14_hot_desk`; no `feedRevealed.sade`; GET /scenario `npcFrustration.sade.lockedOut` `["f14_hot_desk"]` |
-| Tampered | From the page: `/feed_post` for Sade at `f14_hot_desk` answered `refused: true`; a social media ease for her there answered `refused: true` |
+| L1 lockout | Three wrong passwords on Sade's tile at the hot desk: "2 attempts left", "1 attempt left", "This account is locked on this PC" (`pc_signin_failed` `locked_out`) |
+| L1 finding out | Two desk failures (`social_blocked`, level 25 then 50), the borrow handed over; `npc_sat_at:l1_hot_desk`, one check answered `lockedOut: true`, `npc_locked_out:sade` `objectId` `l1_hot_desk` 250 ms later, task `l1_locked_out` |
+| L1 failed use | At the end of the use: `npc_borrow_done:sade` `met: false`, `npc_use_failed:sade` `missing [{l1_hot_desk, locked_out}]`, task `l1_borrow_failed`. No `npc_used:l1_hot_desk`, no `/feed_post` for Sade, no ease |
+| L1 server | `loginLockouts` `["l1_hot_desk\|sokafor"]`; `npcFrustration.sade.lockedOut` `["l1_hot_desk"]`, `easeAt` empty; no `guestSessions.l1_hot_desk`; no `feedRevealed.sade`; GET /scenario `npcFrustration.sade.lockedOut` `["l1_hot_desk"]` |
+| Tampered | From the page: `/feed_post` for Sade at `l1_hot_desk` answered `refused: true`; a social media ease for her there answered `refused: true` |
 | Leak check | `VERDICT: no leaks found` (lockout_list 0, lockout_unrecorded 0) |
 
 The session log and response capture are in the session scratchpad, not the repository. Game 1383
@@ -112,10 +112,10 @@ Review: `FEED_LOCKOUT_CODE_REVIEW_R1.md` (4 minors, 6 nits). Commit ac5eec39e.
   of deleting the PC from `lockoutSeen`. `borrowSeen(pcId, npcId)` is what `onBorrowSat` tests, so
   another borrower at that hot desk still checks, and a new lockout answer there asks the first one
   again. The station path is unchanged (per PC).
-- **m3, work borrows (user: keep failing them).** New beat F15 in `test_access_social`
-  (`f15_room`, east of `f14_room`): Hamid Rahimi, work need on a `f15_ledger` share, his PC's
-  `offWhen` `f15_pc_off` starts true (a power switch toggles it), `borrow_session` to
-  `f15_hot_desk` under `locking`. Tasks `f15_locked_out` and `f15_borrow_failed`; PLAYTEST.md row.
+- **m3, work borrows (user: keep failing them).** New beat L2 in `test_access_social`
+  (`l2_room`, east of `l1_room`): Hamid Rahimi, work need on a `l2_ledger` share, his PC's
+  `offWhen` `l2_pc_off` starts true (a power switch toggles it), `borrow_session` to
+  `l2_hot_desk` under `locking`. Tasks `l2_locked_out` and `l2_borrow_failed`; PLAYTEST.md row.
 - **m4, needMet route tests.** `feed_post_test.rb`: the needMet post is served through
   `/feed_post` when the last failure is 6 s old, not at 4 s (nothing written), and a refused source
   with a met use serves nothing. The first and third fail if the route drops `met_use`.
@@ -133,15 +133,15 @@ Ruby: `feed_post_test` 27 runs, `access_work_feed_select_test`, `access_work_soc
 together, 0 failures; `tts_mission_lines_test` and `ink_compiled_staleness_test` 7 runs, 0
 failures. The sync-stall test fails with the limit set very high. Validator: 0 lines with ❌.
 
-Live proof, F15 (game 1468, port 3034, headless, started in `f15_room`):
+Live proof, L2 (game 1468, port 3034, headless, started in `l2_room`):
 
 | Step | Result |
 |---|---|
 | Lockout | Three wrong passwords on Hamid's tile at the hot desk: "2 attempts left", "1 attempt left", "This account is locked on this PC" |
-| Finding out | Two failures at his switched-off PC (level 25, then 50), the borrow started; `npc_sat_at:f15_hot_desk`, one check, `npc_locked_out:hamid` `f15_hot_desk` 500 ms later, task `f15_locked_out` |
-| Failed work | `npc_borrow_done:hamid` `met: false`, `npc_use_failed:hamid` need `work`, `missing [{f15_hot_desk, locked_out}]`, task `f15_borrow_failed`; no `npc_used:f15_hot_desk` |
-| Server | `loginLockouts` `["f15_hot_desk\|hrahimi"]`; `npcFrustration.hamid.lockedOut` `["f15_hot_desk"]`, `easeAt` empty; `guestSessions` empty; GET /scenario `npcFrustration.hamid.lockedOut` `["f15_hot_desk"]` |
-| Tampered | A work `ease` for Hamid at `f15_hot_desk` from the page: `refused: true` |
+| Finding out | Two failures at his switched-off PC (level 25, then 50), the borrow started; `npc_sat_at:l2_hot_desk`, one check, `npc_locked_out:hamid` `l2_hot_desk` 500 ms later, task `l2_locked_out` |
+| Failed work | `npc_borrow_done:hamid` `met: false`, `npc_use_failed:hamid` need `work`, `missing [{l2_hot_desk, locked_out}]`, task `l2_borrow_failed`; no `npc_used:l2_hot_desk` |
+| Server | `loginLockouts` `["l2_hot_desk\|hrahimi"]`; `npcFrustration.hamid.lockedOut` `["l2_hot_desk"]`, `easeAt` empty; `guestSessions` empty; GET /scenario `npcFrustration.hamid.lockedOut` `["l2_hot_desk"]` |
+| Tampered | A work `ease` for Hamid at `l2_hot_desk` from the page: `refused: true` |
 | Leak check | `VERDICT: no leaks found` |
 
 The answer came before the use ended, so this run did not hold; the hold limit (m1) is shown by
@@ -161,3 +161,10 @@ the unit tests only. Game 1468 is left in the shared dev database.
 - A borrower whose browser never saw a lockout answer at that hot desk sends no check, so its use
   there still shows as met; the server refuses the ease and the post. Only a lockout made in another
   browser of the same game reaches this, and a reload seeds the mark from `lockoutPcs`.
+
+## Beat rename (2026-11-12)
+
+The two lockout beats were F14 (Sade) and F15 (Hamid) when built and proved live (games 1383 and
+1468). They are now L1 and L2, since F14 belongs to the Friendface phone build and F15 to F17 to the
+C3 replies plan: rooms, signs, tasks, globals, the resource, post ids and the PLAYTEST rows use
+`l1_` and `l2_`. The live-proof tables above use the new names for the same ids.

@@ -58,8 +58,8 @@
     "f10_share_down": false,
     "f12_crm_down": false,
     "f12_pc_unplugged": false,
-    "f15_pc_off": true,
-    "f15_ledger_down": false
+    "l2_pc_off": true,
+    "l2_ledger_down": false
   },
   "objectives": [
     {
@@ -167,26 +167,26 @@
           "status": "active"
         },
         {
-          "taskId": "f14_locked_out",
-          "title": "F14: Sade finds out she is locked out at the hot desk",
+          "taskId": "l1_locked_out",
+          "title": "L1: Sade finds out she is locked out at the hot desk",
           "type": "custom",
           "status": "active"
         },
         {
-          "taskId": "f14_borrow_failed",
-          "title": "F14: Sade's borrowed use at the hot desk fails",
+          "taskId": "l1_borrow_failed",
+          "title": "L1: Sade's borrowed use at the hot desk fails",
           "type": "custom",
           "status": "active"
         },
         {
-          "taskId": "f15_locked_out",
-          "title": "F15: Hamid finds out he is locked out at the hot desk",
+          "taskId": "l2_locked_out",
+          "title": "L2: Hamid finds out he is locked out at the hot desk",
           "type": "custom",
           "status": "active"
         },
         {
-          "taskId": "f15_borrow_failed",
-          "title": "F15: Hamid's borrowed work at the hot desk fails",
+          "taskId": "l2_borrow_failed",
+          "title": "L2: Hamid's borrowed work at the hot desk fails",
           "type": "custom",
           "status": "active"
         }
@@ -1476,7 +1476,7 @@
       "door_sign": "F13 Ruth",
       "connections": {
         "west": "f12_room",
-        "east": "f14_room"
+        "east": "l1_room"
       },
       "objects": [
         {
@@ -1619,18 +1619,18 @@
         }
       ]
     },
-    "f14_room": {
+    "l1_room": {
       "type": "room_office",
-      "door_sign": "F14 Sade",
+      "door_sign": "L1 Sade",
       "connections": {
         "west": "f13_room",
-        "east": "f15_room"
+        "east": "l2_room"
       },
       "objects": [
         {
           "type": "notes1",
           "id": "sign_f14",
-          "name": "Sign: F14 Locked out at the hot desk",
+          "name": "Sign: L1 Locked out at the hot desk",
           "position": {
             "x": 2,
             "y": 3
@@ -1639,7 +1639,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "F14. Sade's PC blocks social media and she has no phone, so she borrows the hot desk. Before she gets there, lock out her username, sokafor, at the hot desk: three wrong passwords. When she sits down she finds out, and her use there fails: no post and no session left open.",
+          "text": "L1. Sade's PC blocks social media and she has no phone, so she borrows the hot desk. Before she gets there, lock out her username, sokafor, at the hot desk: three wrong passwords. When she sits down she finds out, and her use there fails: no post and no session left open.",
           "observations": "A beat sign on a stand."
         },
         {
@@ -1662,7 +1662,7 @@
         },
         {
           "type": "pc3",
-          "id": "f14_hot_desk",
+          "id": "l1_hot_desk",
           "name": "Hot desk",
           "position": {
             "x": 8,
@@ -1726,7 +1726,7 @@
             {
               "at": 50,
               "do": "borrow_session",
-              "pc": "f14_hot_desk"
+              "pc": "l1_hot_desk"
             }
           ],
           "feed": {
@@ -1734,7 +1734,7 @@
             "person": "sade",
             "posts": [
               {
-                "id": "f14_post",
+                "id": "l1_post",
                 "text": "Finally found a desk that lets me catch up with everyone."
               }
             ]
@@ -1743,30 +1743,30 @@
             {
               "eventPattern": "npc_locked_out:sade",
               "onceOnly": true,
-              "completeTask": "f14_locked_out",
-              "condition": "data.objectId === 'f14_hot_desk'"
+              "completeTask": "l1_locked_out",
+              "condition": "data.objectId === 'l1_hot_desk'"
             },
             {
               "eventPattern": "npc_borrow_done:sade",
               "onceOnly": true,
-              "completeTask": "f14_borrow_failed",
-              "condition": "data.met === false && data.objectId === 'f14_hot_desk'"
+              "completeTask": "l1_borrow_failed",
+              "condition": "data.met === false && data.objectId === 'l1_hot_desk'"
             }
           ]
         }
       ]
     },
-    "f15_room": {
+    "l2_room": {
       "type": "room_office",
-      "door_sign": "F15 Hamid",
+      "door_sign": "L2 Hamid",
       "connections": {
-        "west": "f14_room"
+        "west": "l1_room"
       },
       "objects": [
         {
           "type": "notes1",
           "id": "sign_f15",
-          "name": "Sign: F15 Locked out at the hot desk, for work",
+          "name": "Sign: L2 Locked out at the hot desk, for work",
           "position": {
             "x": 2,
             "y": 3
@@ -1775,12 +1775,12 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "F15. Hamid's PC is broken, so after two failures he takes his work to the hot desk. Before he gets there, lock out his username, hrahimi, at the hot desk: three wrong passwords. When he sits down he finds out, and his work there fails as well.",
+          "text": "L2. Hamid's PC is broken, so after two failures he takes his work to the hot desk. Before he gets there, lock out his username, hrahimi, at the hot desk: three wrong passwords. When he sits down he finds out, and his work there fails as well.",
           "observations": "A beat sign on a stand."
         },
         {
           "type": "pc",
-          "id": "f15_pc",
+          "id": "l2_pc",
           "name": "Hamid's PC",
           "position": {
             "x": 5,
@@ -1794,13 +1794,13 @@
             "satisfies": "work",
             "useSeconds": 5,
             "restores": 10,
-            "offWhen": "f15_pc_off"
+            "offWhen": "l2_pc_off"
           },
           "observations": "Hamid's PC. It has not worked all morning."
         },
         {
           "type": "pc3",
-          "id": "f15_hot_desk",
+          "id": "l2_hot_desk",
           "name": "Hot desk",
           "position": {
             "x": 8,
@@ -1824,7 +1824,7 @@
         },
         {
           "type": "aes_elec_cabinet1",
-          "id": "f15_pc_power",
+          "id": "l2_pc_power",
           "name": "Hamid's PC power",
           "position": {
             "x": 2,
@@ -1835,24 +1835,24 @@
           "triggerOnInteract": [
             {
               "type": "confirm_action",
-              "condition": "globalVars.f15_pc_off",
+              "condition": "globalVars.l2_pc_off",
               "text": "Switch Hamid's PC back on?",
               "onConfirm": [
                 {
                   "type": "set_global",
-                  "key": "f15_pc_off",
+                  "key": "l2_pc_off",
                   "value": false
                 }
               ]
             },
             {
               "type": "confirm_action",
-              "condition": "!globalVars.f15_pc_off",
+              "condition": "!globalVars.l2_pc_off",
               "text": "Switch Hamid's PC off?",
               "onConfirm": [
                 {
                   "type": "set_global",
-                  "key": "f15_pc_off",
+                  "key": "l2_pc_off",
                   "value": true
                 }
               ]
@@ -1879,10 +1879,10 @@
             "facePlayer": true,
             "facePlayerDistance": 96
           },
-          "needsHome": "f15_pc",
+          "needsHome": "l2_pc",
           "needsDeferMin": 0.5,
           "workNeeds": [
-            "f15_ledger"
+            "l2_ledger"
           ],
           "creds": {
             "username": "hrahimi",
@@ -1902,21 +1902,21 @@
             {
               "at": 50,
               "do": "borrow_session",
-              "pc": "f15_hot_desk"
+              "pc": "l2_hot_desk"
             }
           ],
           "eventMappings": [
             {
               "eventPattern": "npc_locked_out:hamid",
               "onceOnly": true,
-              "completeTask": "f15_locked_out",
-              "condition": "data.objectId === 'f15_hot_desk'"
+              "completeTask": "l2_locked_out",
+              "condition": "data.objectId === 'l2_hot_desk'"
             },
             {
               "eventPattern": "npc_borrow_done:hamid",
               "onceOnly": true,
-              "completeTask": "f15_borrow_failed",
-              "condition": "data.met === false && data.objectId === 'f15_hot_desk'"
+              "completeTask": "l2_borrow_failed",
+              "condition": "data.met === false && data.objectId === 'l2_hot_desk'"
             }
           ]
         }
@@ -1934,10 +1934,10 @@
       "kind": "crm",
       "downIf": "f12_crm_down"
     },
-    "f15_ledger": {
+    "l2_ledger": {
       "name": "Facilities ledger",
       "kind": "file_share",
-      "downIf": "f15_ledger_down"
+      "downIf": "l2_ledger_down"
     }
   },
   "accountProfiles": {
