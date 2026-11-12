@@ -358,6 +358,11 @@ export class NotesMinigame extends MinigameScene {
     updateDisplayedNote() {
         const currentNote = this.collectedNotes[this.currentNoteIndex];
         if (!currentNote) return;
+        // The notepad remembers what it showed, so it reopens on a note added since (UX R1)
+        if (this.item?.scenarioData?.type === 'notepad') {
+            notepadMemory.seenCount = this.collectedNotes.length;
+            notepadMemory.lastIndex = this.currentNoteIndex;
+        }
         
         // Parse the note text to extract observations
         const noteParts = this.parseNoteText(currentNote.text);
@@ -762,6 +767,26 @@ export function showMissionBrief() {
     };
     
     startNotesMinigame(missionBriefItem, window.gameScenario.scenario_brief, '', null, true);
+}
+
+// What the notepad last showed (client-only, never synced: it lasts until a reload).
+const notepadMemory = { seenCount: 0, lastIndex: 0 };
+
+/**
+ * The page the notepad opens on: the newest note when one was added since it was last
+ * looked at (a fact just noted, shot 04 opened on page 1), else the page last shown.
+ * Pure: notes is the notes list, memory { seenCount, lastIndex }.
+ */
+export function notepadStartIndex(notes, memory = notepadMemory) {
+    const count = Array.isArray(notes) ? notes.length : 0;
+    if (count === 0) return 0;
+    const seen = Number(memory?.seenCount) || 0;
+    if (count > seen) return count - 1;
+    const last = Number(memory?.lastIndex) || 0;
+    return last >= 0 && last < count ? last : 0;
+}
+if (typeof window !== 'undefined') {
+    window.notepadStartIndex = () => notepadStartIndex(window.gameState?.notes);
 }
 
 // Function to start the notes minigame

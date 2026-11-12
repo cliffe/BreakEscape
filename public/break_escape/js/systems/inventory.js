@@ -1163,6 +1163,8 @@ function addNotepadToInventory() {
     const notepadData = {
         type: 'notepad',
         name: 'Notepad',
+        // The tray picture (trayImageKey reads sprite before type; there is no notepad.png)
+        sprite: 'notes5',
         takeable: true,
         readable: true,
         text: 'Use this notepad to review your collected notes and observations.',
