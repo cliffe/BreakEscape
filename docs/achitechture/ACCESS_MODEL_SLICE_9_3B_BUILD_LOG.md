@@ -87,6 +87,46 @@ plants and views as before, `office_lan` only (K inert, no links), `kp_dropbox_v
 - Merge of `main` into `build/9-3b-k`: two conflicts resolved (both sides' tasks/mappings in
   `test_access_networks` kept; both `with_pivot` (K) and `with_secured_port` (P) support helpers kept).
 
+### Round 1 code review fixes (commit 4c91bf807; review `ACCESS_MODEL_SLICE_9_3B_K_CODE_REVIEW_R1.md`)
+
+0 blockers, 0 majors, 3 minors, 2 nits. Fixed m1, m2, m3 and n1; rejected n2.
+
+- **m1 (via tie-break).** `view_session_hosts` carries each session's `seq` (its insertion
+  position, kept across prunes and keyboard settles, so it is the session's creation order);
+  `via_for` tie-breaks `[seq, host_id]`, so the bridging host is the earliest pivot session then the
+  lowest host id (plan 5.1). Sessions have no stored `seq` and adding one would break many exact-hash
+  session assertions, so the insertion-order proxy is used rather than a new state field.
+- **m2 (via displayName).** `via_for` adds `displayName`, the bridging session's account display name,
+  guarding a missing npc.
+- **m3 (open share on a linked network needs a pivot) — the decision.** Plan 5.1 routes an **open**
+  share through the foothold branch ("reached by any held foothold that reaches its network") and
+  the session branch only "for a share with an access list"; 9.3a already made open shares
+  foothold-reached and access-listed shares session-reached. The code's session branch (and
+  `mapped_shares`) resolved reach with the pure link graph gated only by the ACL, so an open share
+  (ACL admits everyone) was reachable across a link from a bare session on a link-adjacent network,
+  with no pivot. Decided to require a pivot, per the plan's text and the slice rule (a linked network
+  is reachable only by pivoting through a held session). Fix: in the session branch and
+  `mapped_shares`, an open share is reached from a session only on **its own network**; an
+  access-listed share still maps across the pivot walk, gated by its list (the member-of-staff
+  model). A linked open share now needs a foothold whose `player_reach` includes it, which only a
+  held pivot session opens. The 9.3a same-network open-share-via-local-desktop path is preserved
+  (that session is on the share's own network). Two `network_pivot_test.rb` tests added: a bare
+  office session neither opens nor maps a linked open share while a same-network session does, and a
+  foothold pivoting through a held office session does reach it.
+- **n1 (dense-path warning).** The `>8 paths` validator warning says "at least 64" when the count
+  hits `REACH_PATHS_CEILING`, so a dense graph is not reported as exact.
+- **n2 (memoise `all_reach_paths`) rejected.** Performance-only, bounded by the 64 ceiling, no
+  correctness issue at K's scale; the reviewer agreed no change is needed.
+
+Main moved on past the first merge (TTS R3 minors work), so `main` (`1f5a0f7fb`) was merged again
+into `build/9-3b-k`; the merge was clean (no conflicts), keeping both sides.
+
+### R1 suites (after the second main merge, both under the shared lock)
+
+- `bin/rails test`: 1719 runs, 25105 assertions, 0 failures, 0 errors, 1 skip.
+- `bin/test-js -j 3`: 498 files passed, 0 failed.
+- Validator on `scenarios/test_access_networks/scenario.json.erb --no-graph`: 0 `❌` lines.
+
 ## Sub-slice W: Wi-Fi (branch `build/9-3b-w`, from `main` 1ba8c5cd7)
 
 Built on 9.3a only (K and O were not yet on this branch). A Wi-Fi foothold reaches its own

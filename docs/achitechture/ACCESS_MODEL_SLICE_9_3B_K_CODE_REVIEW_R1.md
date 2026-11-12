@@ -98,3 +98,29 @@ build. No change needed for K's scale.
   and `>8` warnings; link-reach info line. Schema `networkLinks` un-reserved with a real definition.
 - Lab `lab_physical_pentest` is not in the diff; K is inert without `networkLinks` (handover live
   check confirms office_lan-only behaviour unchanged).
+
+## Round 1 outcomes (commit 4c91bf807)
+
+- **m1 fixed.** `view_session_hosts` now carries each session's `seq` (its insertion position, which
+  is its creation order, kept across prunes and keyboard settles), and `via_for` tie-breaks with
+  `[seq, host_id]`, so the bridging host is the earliest pivot session then the lowest host id, as
+  plan 5.1 says. No session field was added (sessions have no stored `seq`; adding one would break
+  many exact-hash session assertions), so the insertion-order proxy is used.
+- **m2 fixed.** The `via` block now carries `displayName`, the bridging session's account display
+  name (`scenario_room_npc(session['id'])['displayName']`), guarding a missing npc.
+- **m3 fixed (an open share on a linked network needs a pivot).** Decision from the plan: plan 5.1
+  routes an **open** share through the foothold branch ("reached by any held foothold that reaches
+  its network") and the session branch only "for a share with an access list"; 9.3a already made
+  open shares foothold-reached, access-listed shares session-reached. The session branch (and
+  `mapped_shares`) wrongly admitted an open share across a link via the pure link graph, so a bare
+  session on a link-adjacent network opened a linked open share with no pivot. Fix: in the session
+  branch and `mapped_shares`, an open share is reached from a session only on **its own network**;
+  an access-listed share still maps across the pivot walk, gated by its list (the member-of-staff
+  model). A linked open share now needs a foothold whose `player_reach` includes it, which only a
+  held pivot session opens, matching the slice rule. The same-network open-share-via-local-desktop
+  case (9.3a) is preserved. Two tests added to `network_pivot_test.rb` (m3 both ways).
+- **n1 fixed.** The `>8 paths` validator warning says "at least 64" when the count hits
+  `REACH_PATHS_CEILING`, so a very dense graph is not reported as exact.
+- **n2 rejected.** Memoising `all_reach_paths` per resource is a performance-only change bounded by
+  the 64 ceiling; no correctness issue at K's scale, so left as is (the reviewer agreed no change is
+  needed).
