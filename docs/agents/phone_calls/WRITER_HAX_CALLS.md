@@ -20,14 +20,16 @@ File: `scenarios/m01_first_contact/ink/m01_phone_agent0x99.ink`
 |---|---|---|---|
 | opener (callback) | — | "You rang back. Good habit." | V (new) |
 | opener (slow, `call_answer_seconds > 10`) | — | "Took your time. Fine, nothing's on fire yet." | V (new) |
-| opener (plain) | — | "You're in. I wanted the line tested before you go dark." | V (new) |
-| body 1 | — | "A voice carries down those corridors. Someone hears one where there shouldn't be, and the cover's gone." | V (new) |
+| opener (plain) | — | "You're in." *(R1: shortened; reason moved to shared line, m1)* | V (new) |
+| shared line (all 3 paths) | — | "One test call before it's texts only." *(R1: m1, so callback/slow get the reason too)* | V (new) |
+| body 1 | — | "A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover." *(R1: M6, fits the IT-contractor cover)* | V (new) |
 | body 2 | — | "So from here it's texts. Quiet, deniable. Message me the moment you're stuck and I'll walk you through it." | V (new) |
-| reply (fast?) | — | "Then you message me fast. I'm on the thread the whole way. Go." | V (new) |
+| reply [Understood. Texts it is.] | — | "Good. Off you go." *(R1: m1, no longer closes on the player's line)* | V (new) |
+| reply [What if I need you fast?] | — | "Then you message me fast. I'm on the thread the whole way. Go." | V (new) |
 
 Declared `VAR call_answer_seconds = 0`, `VAR call_is_callback = false` at file top. Ends `#exit_conversation` then `-> DONE` on both choices. `// lint: call-knot`.
 
-Voiced new: 6.
+Voiced new: 8 (R1: was 6; +shared "One test call…" line, +"Good. Off you go." reply).
 
 ### closing_debrief (rewritten existing knot → bring-in hand-off)
 
@@ -71,9 +73,10 @@ Declared `VAR call_answer_seconds = 0`, `VAR call_is_callback = false` at file t
 | Line | Before | After | V/T |
 |---|---|---|---|
 | guard (already heard) | `{ revelation_heard: -> hub }` | `{ revelation_heard: #exit_conversation / -> DONE }` | — |
-| opener (callback) | — | "Good, you rang back. Your distcc flag landed while you were busy -- open your copy and read along." | V (new) |
-| opener (slow, `>10`) | — | "There you are. Your distcc flag landed, and the whole log came with it. Open your copy and read along." | V (new) |
-| opener (plain) | "{player_name()}, your distcc flag just landed -- the whole transaction log came through with it. Open your copy and read along." | "Your distcc flag just landed -- the whole transaction log came through with it. Open your copy and read along." | V (re-key, name dropped) |
+| opener (callback) | — | "Knew you'd get back to me. Open your copy and read along." *(R1 m2: dropped "distcc flag landed", already in the preceding text)* | V (new) |
+| opener (slow, `>10`) | — | "Thought I'd lost you. Open your copy and read along." *(R1 m2)* | V (new) |
+| opener (plain) | "{player_name()}, your distcc flag just landed -- ..." | "Logs are up on my side. Open your copy and read along." *(R1 m2: dropped the restated flag-landing and "just")* | V (re-key) |
+| m2_revelation_choices / _impact_choices | `*` choices | `+` choices *(R1 m3: redialable call must not run out of once-only choices)* | — |
 | m2_revelation_impact | "And {player_name()} -- the logs point at a Phase 2. ..." | "And listen -- the logs point at a Phase 2. ..." | V (re-key, name dropped) |
 | m2_revelation_end | ends `-> hub` | ends `#exit_conversation` / `-> DONE` | V (text unchanged) |
 
@@ -84,7 +87,8 @@ Call-VAR openers added per 3.6 (the ring can be missed → callback; incoming ri
 
 | Line | Before | After | V/T |
 |---|---|---|---|
-| opening | "Once you're out, you don't go back in. Anything you haven't read stays for the search team." | "Last look. Once you're out, the search team has that building." | V (re-key) |
+| opening (first dial) | "Once you're out, you don't go back in. Anything you haven't read stays for the search team." | "Last look. Once you're out, the search team has that building." | V (re-key) |
+| opening (redial, `extract_choices > 0`) | — | "Still in there. That search team's getting restless." *(R1 m4: redial no longer replays the opener)* | V (new) |
 | safe line (conditional) | "The server room safe's still shut, for one." | (unchanged) | V |
 | [Bring me in.] reply | "Car's at the side door. Two minutes." | "Side door, two minutes. Don't use the lobby." | V (re-key) |
 | "Not yet" reply | "Take your time. She isn't going anywhere." (`-> hub`) | "Go on, then. She's not leaving her desk tonight." (`#exit_conversation` / `-> DONE`) | V (re-key) |
@@ -126,11 +130,14 @@ File: `scenarios/m04_critical_failure/ink/m04_phone_agent0x99.ink`. Declared bot
 
 | Line | Before | After | V/T |
 |---|---|---|---|
-| opener (callback) | — | "You rang. Good. Nightshade's read it." | V (new) |
-| opener (slow, `>10`) | — | "There you are. That dial won't wait." | V (new) |
+| opener (callback) | — | "You rang. Good. Straight to it." *(R1 M3: dropped the thrice-told "Nightshade's read it")* | V (new) |
+| opener (slow, `>10`) | — | "There you are. No time for hello." *(R1 M3: dropped "That dial won't wait" echo)* | V (new) |
 | opener (plain) | — | "Sixty-one. You were right not to trust their screens." | V (new) |
-| body | (3 reading lines) | unchanged | V |
-| on_anomaly_confirmed_choices | three `#exit_conversation ... -> support_hub` | `... -> DONE` (replies unchanged) | V |
+| body :518 | "Nightshade's got your reading. Sixty-one degrees … against twenty-eight …" | "Nightshade's had a look at your reading. Thirty-three degrees over what the screens show." *(R1 M3: no "Sixty-one" echo, no "screens" double)* | V (re-key) |
+| body :520 | "The screens lie because ENTROPY feed them. That dial isn't on ENTROPY's network." | "ENTROPY feed those screens. That dial isn't on their network." *(R1 M3)* | V (re-key) |
+| body (middle line) | — | unchanged | V |
+| on_anomaly_confirmed_choices | three `#exit_conversation ... -> support_hub` | `... -> DONE`; **R1 M5: `~ anomaly_call_heard = true` moved here** (set once content heard) | V |
+| hub choice label | `[You wanted to talk about the dial reading.]` | `[About the dial reading.]` *(R1 m7: no longer quotes a call not yet had)* | — (text choice) |
 
 Marked `// lint: call-knot`. Opener goes in front of the existing first body line (number echoes the body's "Sixty-one degrees" deliberately).
 
@@ -138,7 +145,8 @@ Marked `// lint: call-knot`. Opener goes in front of the existing first body lin
 
 | Line | Before | After | V/T |
 |---|---|---|---|
-| opening (extract_offer_text) | "Once you're out, you don't go back in. Whatever you haven't read stays for forensics." | "Past the gate it's forensics' site, not ours. Anything you want, take it now." | V (re-key) |
+| opening (extract_offer_text, first dial) | "Once you're out, you don't go back in. Whatever you haven't read stays for forensics." | "Past the gate it's forensics' site, not ours. Anything you want, take it now." | V (re-key) |
+| opening (redial, `extract_choices > 0`) | — | "Forensics are almost on-site. Time to go." *(R1 m4)* | V (new) |
 | conditional lines (Voltage log, go-bag) | — | unchanged | V |
 | [Bring me in.] reply | "Car's at the loading dock. Two minutes." | "Loading dock. The van with no livery." | V (re-key) |
 | "Not yet" reply | "Take your time. The banks aren't going anywhere." (`-> support_hub`) | "Fine. The banks will keep." (`#exit_conversation` / `-> DONE`) | V (re-key) |
@@ -158,7 +166,7 @@ Marked `// lint: call-knot`. Opener goes in front of the existing first body lin
 ### Config the implementer must add (M4)
 - `agent_0x99` `call`: `[{ knot: "on_anomaly_confirmed", button: false }, { knot: "extract_call", button: false }]`.
 - Drop `sendTimedMessage` on the `:898` anomaly mapping; add `conversationMode: "phone-chat"`, `targetKnot: "on_anomaly_confirmed"`, `ring: { onMissed: "callback" }`, `delayMs: 6000` (7.2).
-- Decline/miss follow-up text on `phone_call_declined/missed:agent_0x99`: **"Nightshade's got your reading. Ring me back."** (not voiced).
+- Decline/miss follow-up text on `phone_call_declined/missed:agent_0x99`: **"Got your reading. Ring me back."** (not voiced). *(R1 M3: was "Nightshade's got your reading. Ring me back." — trimmed so the callback route stops saying it a third time.)*
 - (Vance callable config + his ink are the other writer's.)
 
 ### Checks
@@ -178,8 +186,8 @@ File: `scenarios/m05_insider_trading/ink/m05_phone_agent_0x99.ink`; ERB. Declare
 |---|---|---|---|
 | opener (callback) | — | "Thank you. Listen." | V (new) |
 | opener (slow, `>10`) | — | "Finally. Sit down for this." | V (new) |
-| body "Read it twice..." | (default opening) | unchanged | V |
-| topic_architect_choices | three `-> support_hub` | `#exit_conversation` / `-> DONE` (replies unchanged) | V |
+| body / plain opening | "Read it twice. A casualty projection, reviewed, and signed off as an acceptable cost." | "The Architect's own authorisation. I've read it twice. A casualty projection, reviewed, and signed off as an acceptable cost." *(R1 M2: names whose authorisation; "I've read it twice" not an order on the cold-open path)* | V (re-key) |
+| topic_architect_choices | three `-> support_hub` | `#exit_conversation` / `-> DONE`; **R1 M5: `~ architect_discussed = true` moved here** (set once content heard) | V |
 
 No else branch: prompt/placed answer goes straight to "Read it twice..." (the plain opening). Marked `// lint: call-knot`.
 
@@ -188,7 +196,8 @@ No else branch: prompt/placed answer goes straight to "Read it twice..." (the pl
 | Line | Before | After | V/T |
 |---|---|---|---|
 | guard (not all flags) | "Not yet. The research server..." (`-> support_hub`) | same text, now `#exit_conversation` / `-> DONE` | V |
-| opening "Once you're out, QDC's own..." | — | unchanged (m05's own, stays) | V |
+| opening "Once you're out, QDC's own..." (first dial) | — | unchanged (m05's own, stays) | V |
+| opening (redial, `extract_choices > 0`) | — | "QDC's people are nearly at the vault. Say when." *(R1 m4)* | V (new) |
 | find-lines + recruiter_texted line | — | unchanged | V |
 | [Bring me in.] reply | "Car's at the front entrance. Two minutes." | "Front entrance. Walk like you work there." | V (re-key) |
 | "Not yet" lethal branch | "Your call. He hasn't got long." | unchanged (m05's own) | V |
@@ -214,7 +223,7 @@ No else branch: prompt/placed answer goes straight to "Read it twice..." (the pl
 
 ### Config the implementer must add (M5)
 - `agent_0x99_handler` `call`: `[{ knot: "topic_architect", button: false }, { knot: "extract_call", button: false }]`.
-- Root-flag mapping (`:1101`): drop `sendTimedMessage`, keep event/condition/`setGlobal`, add `conversationMode: "phone-chat"`, `targetKnot: "topic_architect"`, `ring: { onMissed: "callback", untilAnswered: true }`, `delayMs: 1500`; decline text "Root flag's in. Ring me back. You need to hear this." (not voiced).
+- Root-flag mapping (`:1101`): drop `sendTimedMessage`, keep event/condition/`setGlobal`, add `conversationMode: "phone-chat"`, `targetKnot: "topic_architect"`, `ring: { onMissed: "callback", untilAnswered: true }`, `delayMs: 1500`; decline text "Root flag's in. Ring me back. You need to hear this." (not voiced). *(R1 M2 note for the implementer: this decline text still doesn't name the Architect; consider naming it so the fact the removed text carried isn't lost on a decline.)*
 - (Recruiter first-call ring + ring-back, Patricia callable: the other writer's.)
 
 ### Checks
@@ -231,24 +240,31 @@ Both calls are **placed** (button: false), so no call VARs declared in either fi
 ### m06 `scenarios/m06_follow_the_money/ink/m06_phone_agent_0x99.ink`
 
 **Fund call** (on_architects_fund_discovered → on_fund_choices → coordinated_attack / casualty_numbers → critical_choice_preview → critical_choice_choices → handler_recommendation): marked `// lint: call-knot`; the two call-internal `-> hub` (critical_choice_choices `[Let me think about it.]`, handler_recommendation) now `#exit_conversation` / `-> DONE`. No line rewrites (texts "Call me about it" stay). `on_blockchain_choices` is a separate text topic — left as `-> hub`.
-Hub choice `[I've found The Architect's Fund.]`: keeps `~ reacted_fund = true`, now `#place_call:on_architects_fund_discovered` / `-> DONE`.
+Hub choice `[I've found The Architect's Fund.]`: now `#place_call:on_architects_fund_discovered` / `-> DONE`. **R1 M5: `~ reacted_fund = true` removed from the hub choice and set at both fund-call exits** (`critical_choice_choices` "[Let me think about it.]" and the end of `handler_recommendation`), so an early hang-up keeps the hub choice and the call can be replayed.
+R1 M4: the two `satoshi_ko_choice` texts (a text topic, no call entry for the beat) changed "Call me when you've opened it." / "Call me when you have them." → "Message me when you've opened it." / "Message me when you have them." (text, no audio).
 
 **Bring-in** extract_call (renamed from extract_offer) — 7.6 m06:
 
 | Line | Before | After |
 |---|---|---|
-| opening | "Once you're out, you don't go back in. Whatever you haven't read stays for forensics." | "Police are twenty minutes out. Whatever you leave in there is their evidence." |
+| opening (first dial) | "Once you're out, you don't go back in. Whatever you haven't read stays for forensics." | "Police are twenty minutes out. Whatever you leave in there is their evidence." |
+| opening (redial, `extract_choices > 0`) | — | "Police are close now. Ready?" *(R1 m4)* |
 | safe line | "His safe's still shut, for one." | unchanged |
 | [Bring me in.] reply | "Car's round the back of the building. Two minutes." | "Round the back. They'll flash the headlights twice." |
 | "Not yet" reply | "Take your time. The police can wait a few minutes." (`-> hub`) | "A few minutes. The police won't give you more." (`#exit_conversation` / `-> DONE`) |
 | [On my way.] | plain | `[On my way. #ending_check]` |
-| last line | "See you at HQ." | "We'll decide about the money at HQ, not on a phone." |
+| last line | "See you at HQ." | "We'll talk about the money at HQ, not on a phone." *(R1 M1: was "We'll decide…"; the choice is already made by `ready_to_extract`, so "decide" contradicted the state)* |
 
 `#complete_task:call_in_after_sweep` moved to [Bring me in.] reply; `#set_variable:start_debrief_cutscene` + assignment stay in extract_go. Hub choice `[I'm done here. Bring me in.]` → `#place_call:extract_call`. All extract/fund knots marked `// lint: call-knot`.
 
 ### m08 `scenarios/m08_the_mole/ink/m08_phone_agent_0x99.ink`
 
 **Door audit call** (hax_read_1 → hax_read_2 → hax_read_right / wrong knots): the player reads the minute and names the leak. All `-> hub` in the chain now `#exit_conversation` / `-> DONE` (both `{ mole_identified: ... }` guards, both `[Let me read it again.]`, both wrong-answer returns, and hax_read_right). "Read it again and call me back." stays (×2, 7.3 — the hub choice re-dials). No VAR openers (placed). Knots marked `// lint: call-knot`.
+R1 fixes:
+- m5: both `[Let me read it again.]` now reply before closing — hax_read_1 "Take your time. I'm not going anywhere.", hax_read_2 "Go on. The minute's there." (V, new).
+- m5: hax_read_1 redial opener on `{ hax_read_1 > 1: … }` — "Again, then. When was the plan opened?" (V, new); first open keeps "Two questions, the ones he'd ask. When was the plan opened?".
+- m6: hax_read_right's inline `{netherton_ko:…|…} You finish the chain.` split into a `{ - netherton_ko: … - else: … }` block with "You finish the chain." as its own line (same words, re-key — the extractor now sees clean whole lines).
+- A7a (orchestrator): `scenario.json.erb:1035` hostile-state text "…Ring me. Q until…" → "…Message me. Q until…" (text; the only call here is the placed door audit, not a free ring).
 Hub choice `[I can name the leak.]` (was inline `-> hax_read_1`): now `#place_call:hax_read_1` / `-> DONE`.
 
 ### Config the implementer must add (M10)
@@ -285,6 +301,7 @@ Marked `// lint: call-knot`. Hub choice `[Bring me in.]`: `-> bring_me_in` → `
 - ink `:167`: "Call me the second you hit something you can't open." → "Message me the second you hit something you can't open." (T)
 - ERB `:896`: "...call me and say which." → "...message me and say which." (T, `skipIfGlobal: projection_revised` unchanged)
 - ERB `:904`: "...call me before you log in on their host." → "...tell me before you log in on their host." (T)
+- ink `:177` (R1, A7a — first_call_open, phone-preload text thread, HaX's): "...Call me when you hit something you can't open." → "...Message me when you hit something you can't open." (T). *(Observed, not actioned: ERB `:869` "...Phone me when you've decided..." is the same class; left for the orchestrator as it was outside the three named A7a lines.)*
 
 ### Checks
 Compile OK. "All ink files valid", Schema passed, Validation complete.
@@ -295,64 +312,92 @@ Voiced new/re-keyed: **2** (bring_me_in lines gain a voice).
 
 ## Totals (this writer)
 
-| Mission | Slice | Voiced new/re-key (approx) |
-|---|---|---|
-| m01 | M8 | 9 |
-| m03 | M7 | 18 |
-| m04 | M4 | 12 |
-| m05 | M5 | 10 |
-| m06 | M10 | 6 |
-| m08 | M10 | 10 |
-| m07 | M6 | 2 |
+Pre-R1 figures left for reference; R1 column is the new/re-key delta from fix round 1 (full
+breakdown in `REVIEW_WRITER_HAX_R1_OUTCOMES.md`).
 
-All call knots marked `// lint: call-knot`; the engine also auto-discovers them by traversal (`voicedCallKnots`). `#place_call` validation and the engine-written-VAR awareness are A7/validator work not yet on this branch, so `#place_call` tags don't error and the "call VAR read but never set" warnings are expected (see top).
+| Mission | Slice | Voiced (pre-R1) | R1 new | R1 re-key |
+|---|---|---|---|---|
+| m01 | M8 | 9 | 2 | 2 |
+| m03 | M7 | 18 | 1 | 3 |
+| m04 | M4 | 12 | 1 | 4 |
+| m05 | M5 | 10 | 1 | 1 |
+| m06 | M10 | 6 | 1 | 1 |
+| m08 | M10 | 10 | 3 | 3 |
+| m07 | M6 | 2 | 0 | 0 (ink :177 is a text reword) |
+| m10 | A7a | — | 0 | 1 (hax_post "Open it up.") |
+
+All call knots marked `// lint: call-knot`; the engine also auto-discovers them by traversal (`voicedCallKnots`). The A7a validator is now call-aware, so the old "call VAR read but never set" warnings no longer appear.
 
 ---
 
-## Variety listing (3.6) — opening + last HaX line of every call I touched
+## Merge rule (B1) — this branch merges mission-by-mission with A5 + config
 
-Checked side by side; collisions fixed (m03 slow/callback openers reworded away from m04's "There you are" and m01/m04's "You rang... Good").
+On today's engine `#place_call:<knot>` is an unknown tag and `-> DONE` ends the story, so the
+hub choices below play nothing until A5 (the `#place_call`/`call` engine support) **and** each
+mission's own `call` entries and ring mappings land. **Do not merge `build/phone-calls-writing`
+into `build/phone-calls` or `main` except one mission at a time, each with A5 and that mission's
+config in the same merge.** Each mission's dead-end choices, to verify after config lands:
+
+| Mission | Choices / beats dead-ended without config | Config each needs (from 7.2, see per-mission notes above) |
+|---|---|---|
+| m01 | `[Operation Shatter resolved — I'm ready for debrief]` (closing_debrief bring-in) | `call: [{ knot: "closing_debrief", button: false }]`; `first_ring` ring mapping on `main_office_area`; decline/miss text |
+| m03 | `[You wanted to talk about the distcc logs.]` (m2_revelation_call), `[I'm done in here. Bring me in.]` (extract_call); the `:1016` distcc text's `targetKnot` must be removed and a fallback ring + `game_loaded` twin added | `call: [m2_revelation_call (when flag_distcc_submitted && !revelation_heard), extract_call (button:false)]` |
+| m04 | `[About the dial reading.]` (on_anomaly_confirmed), `[I'm done here. Bring me in.]` (extract_call); drop `sendTimedMessage` on the `:898` anomaly mapping, add the ring | `call: [on_anomaly_confirmed (button:false), extract_call (button:false)]`; decline text "Got your reading. Ring me back." |
+| m05 | `[The Architect signed off…]` (topic_architect), `[I'm done here. Bring me in.]` (extract_call); root-flag ring (`untilAnswered`) mapping | `call: [topic_architect (button:false), extract_call (button:false)]`; decline text |
+| m06 | `[I've found The Architect's Fund.]` (fund call), `[I'm done here. Bring me in.]` (extract_call) | `call: [on_architects_fund_discovered (button:false), extract_call (button:false)]` |
+| m07 | `[Bring me in.]` (bring_me_in) — survives only because the fallback timer also sets `debrief_requested`, but still needs config to voice | `call: [{ knot: "bring_me_in", button: false }]` |
+| m08 | `[I can name the leak.]` (hax_read_1, the door audit) — the only way to name the mole when Netherton is down/hostile; the "call me back" / door-audit setup texts also warn until this lands | `call: [{ knot: "hax_read_1", button: false }]` |
+
+The A7a validator warnings "contact has no call entry and no ring, so the player can't call"
+on these contacts are exactly this state and clear once the config is in.
+
+---
+
+## Variety listing (3.6) — opening + last HaX line of every call (R1, all seven missions)
+
+Redone after the R1 rewrites; checked side by side. No whole-line repeat in any HaX voice
+block (greps confirmed). Repeat (redial) openers added in R1 are listed under each call.
 
 ### Callback openers (each opens differently)
-- m01 first_ring: "You rang back. Good habit." *(plan-fixed)*
-- m03 revelation: "Knew you'd get back to me. Your distcc flag landed while you were out there..." *(reworded for variety)*
-- m04 anomaly: "You rang. Good. Nightshade's read it." *(plan-fixed)*
-- m05 architect: "Thank you. Listen." *(plan-fixed)*
+- m01 first_ring: "You rang back. Good habit."
+- m03 revelation: "Knew you'd get back to me. Open your copy and read along." *(R1)*
+- m04 anomaly: "You rang. Good. Straight to it." *(R1)*
+- m05 architect: "Thank you. Listen."
 
-m01 and m04 share the "You rang / Good" cadence (both plan-fixed in 7.2); different sentences and clips. Noted, not overridden.
+m01 and m04 share a "You rang / Good" cadence; different sentences and clips. Noted.
 
 ### Slow-answer openers (`call_answer_seconds > 10`, each differs)
-- m01: "Took your time. Fine, nothing's on fire yet." *(plan)*
-- m03: "Thought I'd lost you. Your distcc flag landed, the whole log with it..." *(reworded)*
-- m04: "There you are. That dial won't wait." *(plan)*
-- m05: "Finally. Sit down for this." *(plan)*
+- m01: "Took your time. Fine, nothing's on fire yet."
+- m03: "Thought I'd lost you. Open your copy and read along." *(R1)*
+- m04: "There you are. No time for hello." *(R1)*
+- m05: "Finally. Sit down for this."
 
-### Plain / placed openers
-- m01 first_ring: "You're in. I wanted the line tested before you go dark."
-- m01 bring-in: "It went through. Not on an open line. Come back to HQ." / "Shatter's dead in the water. Pack up and come in..."
-- m03 revelation: "Your distcc flag just landed -- the whole transaction log came through with it..."
-- m03 bring-in: "Last look. Once you're out, the search team has that building."
+### Plain / placed openers (and R1 redial openers)
+- m01 first_ring: "You're in." + shared "One test call before it's texts only." *(R1)*
+- m01 bring-in: "It went through. Not on an open line. Come back to HQ." / "Shatter's dead in the water. Pack up and come in…"
+- m03 revelation: "Logs are up on my side. Open your copy and read along." *(R1)*
+- m03 bring-in: "Last look. Once you're out, the search team has that building." — redial: "Still in there. That search team's getting restless." *(R1)*
 - m04 anomaly: "Sixty-one. You were right not to trust their screens."
-- m04 bring-in: "Past the gate it's forensics' site, not ours. Anything you want, take it now."
-- m05 architect: "Read it twice. A casualty projection, reviewed, and signed off as an acceptable cost."
-- m05 bring-in: "Once you're out, QDC's own people go through that vault before ours do..."
+- m04 bring-in: "Past the gate it's forensics' site, not ours. Anything you want, take it now." — redial: "Forensics are almost on-site. Time to go." *(R1)*
+- m05 architect: "The Architect's own authorisation. I've read it twice. A casualty projection, reviewed, and signed off as an acceptable cost." *(R1)*
+- m05 bring-in: "Once you're out, QDC's own people go through that vault before ours do…" — redial: "QDC's people are nearly at the vault. Say when." *(R1)*
 - m06 fund: "I've got it in front of me."
-- m06 bring-in: "Police are twenty minutes out. Whatever you leave in there is their evidence."
-- m08 door audit: "Two questions, the ones he'd ask. When was the plan opened?"
+- m06 bring-in: "Police are twenty minutes out. Whatever you leave in there is their evidence." — redial: "Police are close now. Ready?" *(R1)*
 - m07 bring-in: "Putting you through. He's waiting."
+- m08 door audit: "Two questions, the ones he'd ask. When was the plan opened?" — redial: "Again, then. When was the plan opened?" *(R1)*
 
-m03 and m05 bring-ins both open "...Once you're out..." — both plan-sanctioned in 7.6 (m03 fixed, m05 stays); rest of each line differs.
+m03 and m05 bring-ins both open "…Once you're out…" — both plan-sanctioned in 7.6; rest of each line differs. The four redial openers no longer share a shape (m04/m05 reshaped off "Still …" in R1).
 
 ### Last HaX lines (bring-ins all differ, none is "See you at HQ.")
-- m01 first_ring: "Then you message me fast. I'm on the thread the whole way. Go."
+- m01 first_ring: "Then you message me fast. I'm on the thread the whole way. Go." / "Good. Off you go." *(R1: the second reply gained a line)*
 - m01 bring-in: "Walk out the way you came in. As far as Viral Dynamics knows, you were never here."
 - m03 revelation end: "Finish up, then Sterling. And be careful. Reasonable as she sounds, she signed that invoice."
 - m03 bring-in: "Leave her to us."
 - m04 bring-in: "Albion's grid is someone else's problem now."
 - m05 bring-in: "Thursday, nine o'clock. My office."
-- m06 bring-in: "We'll decide about the money at HQ, not on a phone."
+- m06 bring-in: "We'll talk about the money at HQ, not on a phone." *(R1)*
 - m07 bring-in: "Putting you through. He's waiting." (one-shot: opening is the last line)
-- m08 door audit (right answer): "...Nightshade. I trained with him. ... You finish the chain."
+- m08 door audit (right answer): "…Nightshade. I trained with him. … You finish the chain."
 
 ### [Bring me in.] replies (all differ)
 m03 "Side door, two minutes. Don't use the lobby." / m04 "Loading dock. The van with no livery." / m05 "Front entrance. Walk like you work there." / m06 "Round the back. They'll flash the headlights twice."
