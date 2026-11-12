@@ -38,6 +38,7 @@ function clean() {
                     affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } }],
                 npcs: [{ id: 'kim', displayName: 'Kim', npcType: 'person', needsHome: 'kim_pc', needsDeferMin: 0.5,
                     workNeeds: ['reports'], usbHabit: { every: 2, setGlobal: 'kim_emailed' },
+                    itemsHeld: [{ type: 'usb', id: 'kim_usb', name: "Kim's USB stick", sprite: 'usb_bowl1', usbClass: 'storage', takeable: true }],
                     needs: { work: { decayPerMin: 40, urgentAt: 50 } } }]
             }
         }
@@ -119,4 +120,52 @@ test('USB habit: a reactive post on cause usb_refused is accepted where it can f
     assertHas(run(s, 'report_lines'), 'vent: fires when a cause with why usb_refused for work is live');
     s.rooms.office.objects[0].policy = 'lax';
     assertHas(issues(s), 'kim.feed.posts[0].when can never hold for kim');
+});
+
+// ── the stick (2026-11-12) ──────────────────────────────────────────────
+
+test('USB habit: no stick in itemsHeld is an error', { skip }, () => {
+    const s = clean();
+    kim(s).itemsHeld = [{ type: 'key', id: 'k1', name: 'Key' }];
+    assertHas(issues(s), 'kim has a usbHabit but holds no USB stick');
+    delete kim(s).itemsHeld;
+    assertHas(issues(s), 'kim has a usbHabit but holds no USB stick');
+    kim(s).itemsHeld = [{ type: 'usb', name: 'No id' }];
+    assertHas(issues(s), 'kim has a usbHabit but holds no USB stick');
+});
+
+test('USB habit: authored files that are well formed raise nothing', { skip }, () => {
+    const s = clean();
+    kim(s).itemsHeld[0].contents = [
+        { type: 'text_file', id: 'kim_rota', name: 'rota.txt', text: 'Rota.', readable: true },
+        { type: 'text_file', id: 'kim_cv', name: 'cv.txt', text: 'CV.', readable: true }
+    ];
+    assert.deepEqual(issues(s), []);
+});
+
+test('USB habit: badly formed files are errors', { skip }, () => {
+    const s = clean();
+    kim(s).itemsHeld[0].contents = [];
+    assertHas(issues(s), "kim's USB stick 'kim_usb'.contents must be a non-empty list");
+    kim(s).itemsHeld[0].contents = [
+        { type: 'notes', id: 'n', name: 'n', text: 't' },
+        { type: 'text_file', name: '', text: '' },
+        { type: 'text_file', id: 'a', name: 'a.txt', text: 'A', locked: true },
+        { type: 'text_file', id: 'a', name: 'b.txt', text: 'B' }
+    ];
+    const list = issues(s);
+    assertHas(list, "kim's USB stick 'kim_usb'.contents[0] must be a file");
+    assertHas(list, "contents[1] needs an id");
+    assertHas(list, "contents[1] needs a name");
+    assertHas(list, "contents[1] needs a text");
+    assertHas(list, "contents[2] is locked or holds contents");
+    assertHas(list, "lists the file id(s) a more than once");
+});
+
+test('USB habit: a locked stick is an error, one not takeable a warning', { skip }, () => {
+    const s = clean();
+    Object.assign(kim(s).itemsHeld[0], { locked: true, takeable: false });
+    const list = issues(s);
+    assertHas(list, "kim's USB stick 'kim_usb' is locked");
+    assertHas(list, "kim's USB stick 'kim_usb' is not takeable");
 });

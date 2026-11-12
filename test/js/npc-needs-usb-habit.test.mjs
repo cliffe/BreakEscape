@@ -16,14 +16,16 @@ function stepUntil(sys, pred, maxMs = 120000) {
 }
 
 // Dana with one always-up resource, so only the habit can fail her; her PC under `usb`
-function habitWorld({ usb = 'storage_blocked', every = 2, setGlobal = 'dana_emailed', chatter = CHATTER, habit = true } = {}) {
+// The stick (2026-11-12): the plan names it and her record holds it, unless `stick` is false
+function habitWorld({ usb = 'storage_blocked', every = 2, setGlobal = 'dana_emailed', chatter = CHATTER, habit = true, stick = true } = {}) {
     const rec = dana();
     rec.work.needs = [{ id: 'email', kind: 'email', admitted: true }];
-    if (habit) rec.work.usb = { every, ...(setGlobal ? { setGlobal } : {}) };
+    if (habit) rec.work.usb = { every, ...(setGlobal ? { setGlobal } : {}), stick: 'dana_usb' };
+    rec.itemsHeld = stick ? [{ type: 'usb', id: 'dana_usb', name: "Dana's USB stick", hasContents: true }] : [];
     const objects = baseObjects();
     objects[0].usbPolicy = usb;
     objects[0].affordance.restores = 30;
-    return workWorld({ npcs: { dana: { pos: { x: 100, y: 100 }, rec } }, objects, chatter });
+    return { ...workWorld({ npcs: { dana: { pos: { x: 100, y: 100 }, rec } }, objects, chatter }), rec };
 }
 
 test('every second use is refused: usb_refused, the event, the global, the mutter and one fail report', () => {
@@ -114,7 +116,8 @@ test('at a refusing station the first met use is reported at level 0', () => {
 test('a work use away from the station: no attempt, the counter stays at 0', () => {
     const rec = dana();
     rec.work.needs = [{ id: 'email', kind: 'email', admitted: true }];
-    rec.work.usb = { every: 1, setGlobal: 'dana_emailed' };
+    rec.work.usb = { every: 1, setGlobal: 'dana_emailed', stick: 'dana_usb' };
+    rec.itemsHeld = [{ type: 'usb', id: 'dana_usb' }];
     const objects = baseObjects();
     objects[0].usbPolicy = 'storage_blocked';
     objects.push({ id: 'kiosk', x: 140, y: 100, usbPolicy: 'storage_blocked', affordance: { satisfies: 'work', restores: 30, useSeconds: 5 } });
@@ -123,4 +126,38 @@ test('a work use away from the station: no attempt, the counter stays at 0', () 
     assert.ok(stepUntil(sys, () => evs('npc_used:kiosk').length > 0, 180000), 'she works at the kiosk');
     assert.equal(evs('npc_usb_refused:').length + evs('npc_usb_copied:').length, 0);
     assert.equal(sys.states.get('dana').usbUses, 0);
+});
+
+// ── the stick (2026-11-12) ──────────────────────────────────────────────
+
+test('no stick in her itemsHeld: every use is met, no attempt, nothing counted or reported', () => {
+    const { sys, evs, reports, log } = habitWorld({ stick: false });
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length >= 3, 400000), 'three met uses');
+    assert.equal(evs('npc_use_failed:').length, 0);
+    assert.equal(evs('npc_usb_refused:').length, 0);
+    assert.equal(log('usb_refused').length, 0);
+    assert.equal(sys.states.get('dana').usbUses, 0, 'the count stands still');
+    assert.equal(reports.length, 0, 'no level-0 eases: the server counts nothing without the stick');
+});
+
+test('the stick taken after her first use: the second use is met, not refused', () => {
+    const { w, sys, evs, reports, rec } = habitWorld();
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length > 0, 60000), 'the first use is met');
+    // A give or a pickpocket splices it out of her record (npc-game-bridge, container minigame)
+    rec.itemsHeld.splice(0, 1);
+    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length >= 2, 180000), 'the second use is met');
+    assert.equal(evs('npc_use_failed:').length, 0);
+    assert.equal(evs('npc_usb_refused:').length, 0);
+    assert.equal(w.calls.globals.dana_emailed, undefined);
+    assert.equal(reports.filter(r => r.event === 'fail').length, 0);
+});
+
+test('a plan with no stick named: no attempt', () => {
+    const { sys, evs, rec } = habitWorld();
+    delete rec.work.usb.stick;
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length >= 2, 180000));
+    assert.equal(evs('npc_use_failed:').length, 0);
 });

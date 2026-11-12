@@ -90,6 +90,37 @@ class AccessWorkUsbHabitTest < ActiveSupport::TestCase
     assert_nil AW.plan(scenario, kim('usbHabit' => nil))['usb']
   end
 
+  STICK = { 'type' => 'usb', 'id' => 'kim_usb', 'name' => "Kim's USB stick", 'usbClass' => 'storage', 'takeable' => true }.freeze
+
+  test 'the stick: the first usb item with an id in itemsHeld, only for a habit NPC' do
+    held = [{ 'type' => 'key', 'id' => 'k' }, { 'type' => 'usb', 'name' => 'no id' }, STICK, STICK.merge('id' => 'second')]
+    assert_equal 'kim_usb', AW.usb_stick(kim('itemsHeld' => held))['id']
+    assert_nil AW.usb_stick(kim)
+    assert_nil AW.usb_stick(kim('itemsHeld' => [STICK], 'usbHabit' => nil)), 'no habit, no habit stick'
+  end
+
+  test 'the plan names the stick' do
+    assert_equal({ 'every' => 2, 'setGlobal' => 'kim_emailed', 'stick' => 'kim_usb' },
+                 AW.plan(scenario, kim('itemsHeld' => [STICK]))['usb'])
+  end
+
+  test 'the files: the authored contents, else one default work_file.txt' do
+    files = AW.usb_stick_files(STICK)
+    assert_equal 1, files.size
+    assert_equal({ 'type' => 'text_file', 'id' => 'kim_usb_work_file', 'name' => 'work_file.txt' },
+                 files[0].slice('type', 'id', 'name'))
+    assert_equal AW::USB_STICK_DEFAULT_TEXT, files[0]['text']
+    own = [{ 'type' => 'text_file', 'id' => 'f1', 'name' => 'rota.txt', 'text' => 'Rota.' }]
+    assert_equal own, AW.usb_stick_files(STICK.merge('contents' => own))
+    assert_equal 'work_file.txt', AW.usb_stick_files(STICK.merge('contents' => []))[0]['name']
+  end
+
+  test 'every habit stick in the rooms' do
+    s = scenario
+    s['rooms']['office']['npcs'] = [kim('itemsHeld' => [STICK]), { 'id' => 'nadia', 'itemsHeld' => [STICK.merge('id' => 'n_usb')] }]
+    assert_equal [%w[kim kim_usb]], AW.usb_habit_sticks(s).map { |npc, stick| [npc['id'], stick['id']] }
+  end
+
   test 'a reactive post keyed on cause usb_refused: served only after a recorded usb fail' do
     posts = [{ 'id' => 'ordered', 'text' => 'x' }, { 'id' => 'vent', 'text' => 'y', 'when' => { 'cause' => 'usb_refused', 'need' => 'work' } }]
     npc = kim('feed' => { 'order' => 'reactive_first', 'posts' => posts })
