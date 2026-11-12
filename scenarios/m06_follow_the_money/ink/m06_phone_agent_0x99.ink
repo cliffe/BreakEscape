@@ -171,7 +171,6 @@ Everything after that is joining up the cells' money.
     ~ reacted_network = true
     -> on_network_complete
 + {fund_debrief_available and not reacted_fund} [I've found The Architect's Fund.]
-    ~ reacted_fund = true
     #place_call:on_architects_fund_discovered
     -> DONE
 + {(irina_ko or irina_taken) and found_architects_fund and not irina_exec_badge_given and not relay_exec_badge_sent} [I need the executive badge she signed out.]
@@ -463,6 +462,7 @@ Or watch it. We map every cell that draws on it, and the money reaches them.
     -> handler_recommendation
 + [Let me think about it.]
     Take your time. Not too much.
+    ~ reacted_fund = true
     #exit_conversation
     -> DONE
 
@@ -473,6 +473,7 @@ If you freeze it, the balances never reach the cells, and ENTROPY knows its bank
 If you watch it, the balances pay for what's on that page, and we get the map.
 Watching still works with him detained. The payout's pre-signed; we keep it quiet until it's gone.
 The advances are gone either way.
+~ reacted_fund = true
 #exit_conversation
 -> DONE
 
@@ -585,12 +586,12 @@ For the file, that's Satoshi's Ghost, the Crypto Anarchists' leader. Not Ghost P
     -> hub
 + {not found_architects_fund} [Not yet. I need to know which slot it is.]
     #set_variable:asset_decision_deferred=true
-    The custody console in the data centre. Call me when you've opened it.
+    The custody console in the data centre. Message me when you've opened it.
     #exit_conversation
     -> hub
 + {found_architects_fund and not found_wallet_keys} [Not yet. I'll get the recovery keys first.]
     #set_variable:asset_decision_deferred=true
-    They're on the vault account on the backend. Last flag. Call me when you have them.
+    They're on the vault account on the backend. Last flag. Message me when you have them.
     #exit_conversation
     -> hub
 
@@ -604,7 +605,11 @@ For the file, that's Satoshi's Ghost, the Crypto Anarchists' leader. Not Ghost P
 === extract_call ===
 // lint: call-knot
 #speaker:agent_0x99
-Police are twenty minutes out. Whatever you leave in there is their evidence.
+{ extract_choices > 0:
+    Police are close now. Ready?
+- else:
+    Police are twenty minutes out. Whatever you leave in there is their evidence.
+}
 {not architect_identity_found:
     His safe's still shut, for one.
 }
@@ -631,7 +636,7 @@ Police are twenty minutes out. Whatever you leave in there is their evidence.
 #speaker:agent_0x99
 #set_variable:start_debrief_cutscene=true
 ~ start_debrief_cutscene = true
-We'll decide about the money at HQ, not on a phone.
+We'll talk about the money at HQ, not on a phone.
 #exit_conversation
 -> DONE
 
