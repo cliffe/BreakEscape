@@ -265,14 +265,87 @@ test('every field reserved for 9.3b is refused with "needs slice 9.3b"', { skip 
     sc.networks.office_lan.wifi = { ssid: 'HB', psk: 'x' };
     obj(sc, 'comms_room', 'comms_port').portSecurity = true;
     room(sc, 'lobby').objects.push({ id: 'ap', type: 'pc', wifiAp: 'office_lan' });
-    room(sc, 'lobby').objects.push({ id: 'btn', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', network: 'office_lan' }] });
     const out = errors(issues(sc));
     assertHas(out, "top-level 'networkLinks' needs slice 9.3b");
     assertHas(out, "'networks/office_lan' has 'downIf', which needs slice 9.3b");
     assertHas(out, "'networks/office_lan' has 'wifi', which needs slice 9.3b");
     assertHas(out, "has 'portSecurity', which needs slice 9.3b");
     assertHas(out, "has 'wifiAp', which needs slice 9.3b");
-    assertHas(out, "is a 'grant_foothold' action, which needs slice 9.3b");
+});
+
+// ---- grant_foothold (implants, sub-slice I) ----
+
+// A desk-side prop next to lena_pc with a BadUSB action, and a dropped-device action on a
+// timer an NPC beat fires. A badusb device sits in the lobby. lena_pc is the target PC.
+function withImplants() {
+    const sc = clean();
+    sc.startItemsInInventory = [{ id: 'badusb', type: 'usb_stick', name: 'Rubber ducky', usbClass: 'hid' }];
+    room(sc, 'finance_office').objects.push({
+        id: 'usb_socket', type: 'pc', name: 'Desk USB socket',
+        triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'badusb', name: 'BadUSB: Lena desk' }]
+    });
+    sc.timers = [{ id: 'npc_plugs', startOnGlobal: 'stick_dropped', actions: [
+        { type: 'grant_foothold', pc: 'lena_pc', needsDropped: 'badusb', name: 'USB foothold: Lena desk' }
+    ] }];
+    return sc;
+}
+
+test('a clean grant_foothold scenario raises no grant_foothold error', { skip }, () => {
+    const out = errors(issues(withImplants()));
+    assertNot(out, 'grant_foothold');
+});
+
+test('a grant_foothold on a path the engine does not run server-side errors', { skip }, () => {
+    const sc = clean();
+    sc.eventMappings = { some_event: [{ type: 'grant_foothold', pc: 'lena_pc', needsDropped: 'badusb' }] };
+    assertHas(errors(issues(sc)), 'is on a path the engine does not run server-side');
+});
+
+test('a grant_foothold with neither or both shapes errors', { skip }, () => {
+    let sc = clean();
+    room(sc, 'lobby').objects.push({ id: 'p1', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc' }] });
+    assertHas(errors(issues(sc)), "sets neither 'needsDropped' nor 'needsSession'");
+    sc = clean();
+    room(sc, 'lobby').objects.push({ id: 'p2', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsDropped: 'x', needsSession: true }] });
+    assertHas(errors(issues(sc)), "sets both 'needsDropped' and 'needsSession'");
+});
+
+test('a grant_foothold whose pc is not a sign-in object on a network errors', { skip }, () => {
+    const sc = clean();
+    room(sc, 'lobby').objects.push({ id: 'p3', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'kit_dropbox', needsDropped: 'kit_dropbox' }] });
+    assertHas(errors(issues(sc)), "names pc 'kit_dropbox', which is not a sign-in object");
+});
+
+test('a needsSession grant_foothold with a missing or unknown needsHeld errors', { skip }, () => {
+    let sc = clean();
+    room(sc, 'finance_office').objects.push({ id: 's1', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true }] });
+    assertHas(errors(issues(sc)), "is a 'needsSession' action with no 'needsHeld'");
+    sc = clean();
+    room(sc, 'finance_office').objects.push({ id: 's2', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'nope' }] });
+    assertHas(errors(issues(sc)), "'needsHeld' names 'nope', which is no item");
+});
+
+test('a needsSession grant_foothold on the sign-in PC itself, or one that consumes its item, errors', { skip }, () => {
+    let sc = withImplants();
+    // Move the action onto lena_pc itself.
+    obj(sc, 'finance_office', 'lena_pc').triggerOnInteract = [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'badusb' }];
+    assertHas(errors(issues(sc)), 'is a \'needsSession\' action on the sign-in PC it targets');
+    sc = withImplants();
+    obj(sc, 'finance_office', 'usb_socket').consumesItem = true;
+    assertHas(errors(issues(sc)), "whose host object sets 'consumesItem'");
+});
+
+test('two grant_foothold actions for one pc and shape error', { skip }, () => {
+    const sc = withImplants();
+    room(sc, 'finance_office').objects.push({ id: 'usb_socket2', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', pc: 'lena_pc', needsSession: true, needsHeld: 'badusb' }] });
+    assertHas(errors(issues(sc)), "the same shape; the route cannot tell them apart");
+});
+
+test('a grant_foothold whose PC refuses the device USB class warns', { skip }, () => {
+    const sc = withImplants();
+    sc.policies.hardened.usb = 'blocked';
+    obj(sc, 'finance_office', 'lena_pc').policy = 'hardened';
+    assertHas(warnings(issues(sc)), "whose USB policy refuses the usbClass of 'badusb'");
 });
 
 // ---- warnings ----

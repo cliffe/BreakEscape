@@ -25,7 +25,7 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
-                                        :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug,
+                                        :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant,
                                         :npc_frustration, :npc_workaround, :wear]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
@@ -91,7 +91,7 @@ module BreakEscape
     # (access model, section 6), so they take the lock like unlock. network_plant and
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
-                                          :login, :logout, :clone_card, :network_plant, :network_unplug,
+                                          :login, :logout, :clone_card, :network_plant, :network_unplug, :network_implant,
                                           :npc_frustration, :npc_workaround, :wear]
 
     # GET /games/new?mission_id=:id
@@ -1283,6 +1283,22 @@ module BreakEscape
       return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
 
       result = @game.unplug_device!(jack_id)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/implant (pc_id, shape = 'dropped' | 'session', optional path)
+    # A device in a PC (not a jack) grants a foothold: a dropped device an NPC uses, or a
+    # BadUSB the player plugs into a PC they hold a session on (slice 9.3b sub-slice I, 5.5).
+    def network_implant
+      authorize @game if defined?(Pundit)
+
+      pc_id = params[:pc_id].to_s
+      return render json: { success: false, error: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
+
+      shape = params[:shape].presence&.to_s
+      return render json: { success: false, error: 'Missing shape' }, status: :bad_request unless %w[dropped session].include?(shape)
+
+      result = @game.implant_foothold!(pc_id, shape, params[:path].presence&.to_s)
       render json: result[:body], status: result[:status]
     end
 

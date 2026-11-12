@@ -10,6 +10,7 @@ require 'json'
 require 'set'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/access_identities'
+require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/declared_grants'
 
 # Fields reserved for slice 9.3b (3.1). 9.3a refuses them.
@@ -61,15 +62,6 @@ def check_network_model(json_data)
       err.call("'#{e[:path]}' has '#{field}', which needs slice 9.3b.") if e[:object].key?(field)
     end
   end
-  find_grant_foothold = lambda do |node, path|
-    case node
-    when Array then node.each_with_index { |n, i| find_grant_foothold.call(n, "#{path}[#{i}]") }
-    when Hash
-      err.call("'#{path}' is a 'grant_foothold' action, which needs slice 9.3b.") if node['type'] == 'grant_foothold'
-      node.each { |k, v| find_grant_foothold.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
-    end
-  end
-  find_grant_foothold.call(json_data, '')
 
   # ---- Network references ----
   net_ref = lambda do |value, where|
@@ -384,6 +376,99 @@ def check_network_model(json_data)
     kind = nm.jack?(e[:object]) ? 'jack' : 'sign-in host'
     warn.call("#{kind} '#{label.call(e[:object], e[:path])}' has an 'actions' list; the object action menu runs " \
               'first and would show before its own flow.')
+  end
+
+  # ---- Implants: grant_foothold actions (sub-slice I, 5.5 and 9.2) ----
+  # Walk the scenario, carrying the nearest object that owns an action list as the action's
+  # host, and test each grant_foothold against the same DeclaredGrants.executed? rule the
+  # server's NetworkModel.grant_foothold_actions uses, so the two agree on "declared".
+  host_action_keys = %w[triggerOnInteract onInteract conditionalActions completionActions].freeze
+  grant_entries = [] # { node:, keys:, path:, host: }
+  gf_walk = lambda do |node, keys, host|
+    case node
+    when Array
+      node.each_with_index { |n, i| gf_walk.call(n, keys + [i], host) }
+    when Hash
+      grant_entries << { node: node, keys: keys, path: BreakEscape::DeclaredGrants.path_string(keys), host: host } if node['type'] == 'grant_foothold'
+      node.each { |k, v| gf_walk.call(v, keys + [k.to_s], host_action_keys.include?(k.to_s) ? node : host) }
+    end
+  end
+  gf_walk.call(json_data, [], nil)
+
+  # Every item a needsHeld could name (room objects, NPC items, start items, declared
+  # grants and resource contents), with each id/type/name mapped to its object so the USB
+  # warning can read the named device's usbClass.
+  item_refs = Set.new
+  item_by_ref = {}
+  add_item_ref = lambda do |item|
+    next unless item.is_a?(Hash)
+
+    %w[id type name].each do |f|
+      next unless nm.present_string?(item[f])
+
+      item_refs << item[f].to_s
+      item_by_ref[item[f].to_s] ||= item
+    end
+  end
+  all_objects.each { |e| add_item_ref.call(e[:object]) }
+  Array(json_data['startItemsInInventory']).each { |item| add_item_ref.call(item) }
+  BreakEscape::DeclaredGrants.for(json_data).each { |grant| add_item_ref.call(grant['item']) }
+  resources.each_value { |res| walk_items.call(res['contents'], 'contents') { |item, _p| add_item_ref.call(item) } }
+
+  signin_on_network = ->(pc_id) { hosts.find { |h| h[:object]['id'].to_s == pc_id.to_s } }
+  seen_pc_shape = {}
+  grant_entries.each do |entry|
+    node = entry[:node]
+    path = entry[:path]
+    where = "grant_foothold at '#{path}'"
+    unless BreakEscape::DeclaredGrants.executed?(entry[:keys])
+      err.call("#{where} is on a path the engine does not run server-side (e.g. under flagRewards or eventMappings); " \
+               'a grant_foothold must sit on a timer, triggerOnInteract, onInteract, conditionalActions or onConfirm.')
+      next
+    end
+    dropped = node.key?('needsDropped')
+    session = node['needsSession'] == true
+    if dropped && session
+      err.call("#{where} sets both 'needsDropped' and 'needsSession'; it must be one shape or the other.")
+    elsif !dropped && !session
+      err.call("#{where} sets neither 'needsDropped' nor 'needsSession'; it must be one or the other.")
+    end
+    shape = session ? 'session' : 'dropped'
+    pc = node['pc']
+    if !nm.present_string?(pc) || !signin_on_network.call(pc)
+      err.call("#{where} names pc '#{pc}', which is not a sign-in object (lockType \"login\") on a network.")
+    end
+    key = [pc.to_s, shape]
+    if seen_pc_shape[key]
+      err.call("#{where} and '#{seen_pc_shape[key]}' are both grant_foothold for pc '#{pc}' with the same shape; the " \
+               'route cannot tell them apart. Give the PC one action per shape.')
+    else
+      seen_pc_shape[key] = path
+    end
+    if session
+      needs_held = node['needsHeld']
+      if !nm.present_string?(needs_held)
+        err.call("#{where} is a 'needsSession' action with no 'needsHeld'; name the device the player plugs in.")
+      elsif !item_refs.include?(needs_held.to_s)
+        err.call("#{where} 'needsHeld' names '#{needs_held}', which is no item in the scenario.")
+      end
+      host = entry[:host]
+      if host.is_a?(Hash) && host['id'].to_s == pc.to_s
+        err.call("#{where} is a 'needsSession' action on the sign-in PC it targets; a sign-in PC never runs its own " \
+                 'actions, so it must sit on a separate desk-side prop.')
+      end
+      if host.is_a?(Hash) && host['consumesItem'] == true
+        err.call("#{where} is a 'needsSession' action whose host object sets 'consumesItem'; the server removes " \
+                 "'needsHeld' itself, and a client consume would race it. Drop consumesItem.")
+      end
+      # USB policy warning: the target PC would refuse its own device.
+      held_item = item_by_ref[needs_held.to_s]
+      pc_obj = signin_on_network.call(pc)&.dig(:object)
+      if held_item && pc_obj && BreakEscape::AccessWork.plant_refused?(json_data, pc_obj, held_item)
+        warn.call("#{where} targets pc '#{pc}', whose USB policy refuses the usbClass of '#{needs_held}', so the " \
+                  'implant can never be used there.')
+      end
+    end
   end
 
   # ---- Information lines ----

@@ -122,6 +122,10 @@ module BreakEscape
       show?
     end
 
+    def network_implant?
+      show?
+    end
+
     def submit_flag?
       show?
     end

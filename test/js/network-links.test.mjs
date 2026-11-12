@@ -69,7 +69,14 @@ const viewEntry = { ...foothold, hosts: [
     { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, remoteSignIn: true }
 ] };
 
-let calls, requests, toasts, events, confirms, confirmAnswer, views, desktops, links;
+// An implant foothold (slice 9.3b I): its source is a PC, not a jack.
+const implantFoothold = { id: 'implant_lena_pc', via: 'implant', name: 'BadUSB: Lena desk',
+    itemId: 'netlink_implant_lena_pc', sourceId: 'lena_pc', network: officeNet };
+const implantLink = { id: 'netlink_implant_lena_pc', type: 'network_link', name: 'BadUSB: Lena desk', sprite: 'drop_box1',
+    takeable: false, footholdId: 'implant_lena_pc', sourceId: 'lena_pc',
+    observations: 'Your implant on HB-FIN-02. Open it to see what it reaches.' };
+
+let calls, requests, toasts, events, confirms, confirmAnswer, views, desktops, links, implantAnswer;
 
 function jackSprite(extra = {}) {
     const sprite = {
@@ -90,6 +97,7 @@ async function reset({ items = [], planted = false } = {}) {
     views = [];
     desktops = [];
     confirmAnswer = true;
+    implantAnswer = {};
     globalThis.fetch = async (url, opts) => {
         const body = JSON.parse(opts?.body || '{}');
         if (body?.item?.type !== 'notepad') requests.push({ url, body });
@@ -127,6 +135,12 @@ async function reset({ items = [], planted = false } = {}) {
         async network(footholdId) {
             calls.push(['network', footholdId]);
             return { footholds: [viewEntry] };
+        },
+        async networkImplant(pcId, shape, path) {
+            calls.push(['implant', pcId, shape, path]);
+            if (implantAnswer instanceof Error) throw implantAnswer;
+            const inv = window.inventory.items.map(it => it.scenarioData).filter(d => d.type !== 'notepad');
+            return { success: true, foothold: implantFoothold, inventory: [...inv, implantLink], first: true, ...implantAnswer };
         }
     };
     inventory.initializeInventory();
@@ -530,4 +544,55 @@ test('a new trip replaces the one running', async () => {
     await settle();
     assert.deepEqual(back, []);
     assert.deepEqual(other, [{ reason: 'closed' }]);
+});
+
+// ---------------------------------------------------------------- implants (slice 9.3b I)
+
+test('an implant adds the foothold, syncs the link item and emits foothold_gained', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.deepEqual(calls.at(-1), ['implant', 'lena_pc', 'session', null]);
+    assert.ok(links.get('implant_lena_pc'), 'the foothold is held');
+    assert.equal(links.get('implant_lena_pc').via, 'implant');
+    assert.equal(held('netlink_implant_lena_pc').length, 1, 'the link item arrived');
+    const gained = named('network_foothold_gained').map(e => e.data);
+    assert.deepEqual(gained, [{ footholdId: 'implant_lena_pc', via: 'implant', networkId: 'office_lan', sourceId: 'lena_pc' }]);
+    assert.equal(views.length, 1, 'the first foothold opens the view');
+});
+
+test('an implant that answers already does not re-emit or reopen', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantAnswer = { already: true, first: false };
+    const out = await links.implant('lena_pc', 'session', null);
+    assert.equal(out.action, 'already');
+    assert.equal(named('network_foothold_gained').length, 0);
+    assert.equal(views.length, 0);
+});
+
+test('a usb_refused answer toasts the authored line and emits the refusal, no foothold', async () => {
+    await reset({ items: [box] });
+    implantAnswer = new Error('refused');
+    implantAnswer.status = 422;
+    implantAnswer.body = { reason: 'usb_refused', error: 'USB devices are disabled on this PC.' };
+    const out = await links.implant('lena_pc', 'session', null);
+    assert.equal(out.action, 'refused');
+    assert.equal(out.reason, 'usb_refused');
+    assert.deepEqual(toasts, ['USB devices are disabled on this PC.']);
+    assert.equal(links.get('implant_lena_pc'), null);
+    assert.deepEqual(named('network_device_refused').map(e => e.data), [{ pcId: 'lena_pc', reason: 'usb_refused' }]);
+});
+
+test('a not_ready answer is quiet and grants nothing', async () => {
+    await reset({ items: [box] });
+    implantAnswer = new Error('not ready');
+    implantAnswer.status = 422;
+    implantAnswer.body = { reason: 'not_ready' };
+    const out = await links.implant('lena_pc', 'session', null);
+    assert.equal(out.action, 'not_ready');
+    assert.deepEqual(toasts, []);
+    assert.equal(links.get('implant_lena_pc'), null);
 });

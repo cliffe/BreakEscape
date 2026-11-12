@@ -160,6 +160,15 @@ export class ApiClient {
     return this.post('/network/unplug', { jack_id: jackId });
   }
 
+  // A device in a PC (not a jack) grants a foothold (slice 9.3b sub-slice I). `shape` is
+  // 'dropped' (an NPC uses a dropped device) or 'session' (a BadUSB the player plugs into a
+  // PC they hold a session on); `path` names the declared action when a PC has several.
+  // Answers { success, foothold, inventory, first } (or { success, already: true, ... }); a
+  // refusal throws (404 reason "no_action", 422 reason "not_ready" or "usb_refused").
+  static async networkImplant(pcId, shape, path = null) {
+    return this.post('/network/implant', { pc_id: pcId, shape, ...(path ? { path } : {}) });
+  }
+
   // What a foothold reaches: { footholds: [{ id, via, name, network, hosts }] }, every
   // held foothold, or only `footholdId` when given (404 when it is not held).
   static async network(footholdId = null) {

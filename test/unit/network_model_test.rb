@@ -124,6 +124,34 @@ class NetworkModelTest < ActiveSupport::TestCase
     assert_equal [], game.player_state['gainedFootholds']
   end
 
+  # Slice 9.3b sub-slice I: the grant_foothold enumerator keeps only server-run paths.
+  test 'grant_foothold_actions keeps server-run paths and reads the shape and needs' do
+    sc = {
+      'rooms' => {
+        'office' => { 'objects' => [
+          { 'id' => 'socket', 'triggerOnInteract' => [
+            { 'type' => 'grant_foothold', 'pc' => 'lena_pc', 'needsSession' => true, 'needsHeld' => 'badusb', 'name' => 'BadUSB' }
+          ] }
+        ] }
+      },
+      'timers' => [
+        { 'id' => 't', 'actions' => [{ 'type' => 'grant_foothold', 'pc' => 'sam_pc', 'needsDropped' => 'stick', 'name' => 'Stick' }] }
+      ],
+      # Neither of these is a server-run path, so both are dropped.
+      'flagRewards' => [{ 'type' => 'grant_foothold', 'pc' => 'x_pc', 'needsDropped' => 'kit' }],
+      'eventMappings' => { 'ev' => [{ 'type' => 'grant_foothold', 'pc' => 'y_pc', 'needsSession' => true }] }
+    }
+    actions = NM.grant_foothold_actions(sc)
+    by_pc = actions.map { |a| [a[:pc], a[:shape]] }.sort
+    assert_equal [%w[lena_pc session], %w[sam_pc dropped]], by_pc
+    session = actions.find { |a| a[:pc] == 'lena_pc' }
+    assert_equal 'badusb', session[:needs_held]
+    assert_match %r{triggerOnInteract}, session[:path]
+    dropped = actions.find { |a| a[:pc] == 'sam_pc' }
+    assert_equal 'stick', dropped[:needs_dropped]
+    assert_match %r{timers\[0\]/actions\[0\]}, dropped[:path]
+  end
+
   test 'readers default for a game from before this slice' do
     game = BreakEscape::Game.new(scenario_data: NetworkModelScenario.scenario, player_state: {})
     assert_equal({}, game.network_footholds)

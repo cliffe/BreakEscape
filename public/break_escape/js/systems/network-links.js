@@ -22,7 +22,8 @@
  * the view opens by itself the first time a foothold is gained at that jack.
  *
  * Events, each also as `<name>:<id>`:
- *   network_foothold_gained   (jack id)     { footholdId, via, networkId, sourceId }
+ *   network_foothold_gained   (jack/pc id)  { footholdId, via, networkId, sourceId }
+ *                                           via is 'jack' or, from an implant (9.3b I), 'implant'
  *   network_device_planted    (jack id)     { jackId, footholdId, networkId, deviceId }
  *   network_device_refused    (jack id)     { jackId, reason }       reason: no_device
  *   network_device_unplugged  (jack id)     { jackId, footholdId, endedPcIds }
@@ -408,6 +409,50 @@ export class NetworkLinks {
         // Seeing what is exposed is the point: the first foothold at a jack opens the view
         if (body.first) this.open(foothold.id);
         return { action: 'planted', footholdId: foothold.id, first: !!body.first };
+    }
+
+    /**
+     * POST /network/implant (slice 9.3b I): a device in a PC, not a jack, grants a foothold.
+     * Fired from apply-actions.js when a grant_foothold action runs. `shape` is 'dropped'
+     * (an NPC uses a dropped device) or 'session' (a BadUSB the player holds). One retry on a
+     * network error, because a timer is saved fired and never re-runs, so a single lost
+     * request would lose the foothold for good. Resolves to what happened, for tests.
+     */
+    async implant(pcId, shape, path = null) {
+        const api = apiClient();
+        if (!api?.networkImplant || !pcId || !shape) return { action: 'error' };
+        let body = null;
+        for (let attempt = 0; attempt < 2 && !body; attempt++) {
+            try {
+                body = await api.networkImplant(pcId, shape, path);
+            } catch (err) {
+                const b = err?.body || {};
+                if (err?.status === 422 && b.reason === 'usb_refused') {
+                    toast(b.error || 'That device was refused.', 'info', 4000);
+                    this._emit('network_device_refused', { pcId, reason: 'usb_refused' }, pcId);
+                    return { action: 'refused', reason: 'usb_refused' };
+                }
+                // not_ready / no_action are quiet: the beat that fired this was wrong about
+                // the state. A network error retries once, then gives up quietly.
+                if (err?.status === 422 || err?.status === 404) {
+                    return { action: 'not_ready', reason: b.reason || null };
+                }
+                if (attempt === 1) return { action: 'error', status: err?.status ?? null };
+            }
+        }
+        const foothold = cleanFoothold(body?.foothold);
+        if (!body?.success || !foothold) return { action: 'error' };
+
+        win().syncInventoryFromServer?.(body.inventory, [foothold.itemId]);
+        this.footholds.set(foothold.id, foothold);
+        if (foothold.sourceId) this.gained.add(foothold.sourceId);
+        if (body.already) return { action: 'already', footholdId: foothold.id };
+
+        const networkId = foothold.network?.id ?? null;
+        this._publishPlanted(pcId, true);
+        this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: pcId }, pcId);
+        if (body.first) this.open(foothold.id);
+        return { action: 'implanted', footholdId: foothold.id, first: !!body.first };
     }
 
     /** POST /network/unplug: the device back, the link item and the foothold gone. */
