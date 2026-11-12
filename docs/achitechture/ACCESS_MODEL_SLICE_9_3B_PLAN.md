@@ -366,7 +366,12 @@ sign-in screen and desktop are the same screens as any other host's, reached thr
   display of a sign-in host whose office-life `affordance.offWhen` is truthy: `host_row` marks it
   `responding: false`, the view shows "not responding" in place of its control, and a remote sign-in
   and desktop request for it answer 403 `unreachable`. This is the host-level counterpart of a
-  network outage and uses 9.2's field, no new field of this slice's.
+  network outage and uses 9.2's field, no new field of this slice's. A switched-off PC is off for
+  everything that goes through it: scoped requests under a remote session there are refused, it
+  relays no pivot (`player_reach` skips it; `structural_reach` does not, so nothing is pruned and
+  an onward session shows in a down block until the power returns), and no share is served
+  through a session there. A session held at it is kept; its row names it (`heldAs`). The client
+  syncs the globals before `GET /network`, waiting at most about three seconds.
 - **The scoped-request route test, judged from server state.** This is the one place 9.3a's "a
   session exists is enough" rule no longer holds, because losing a pivot or an outage can take a
   route down while the session record survives. The server re-judges **from its own session record,
@@ -475,7 +480,8 @@ itself**; its `pc` field names the target PC, and the action lives on another ob
   timer is saved fired and never re-runs, so a single lost request would lose the foothold for good.
   A `not_ready` answer to the dropped shape is asked again three times, 1.5 seconds apart, because
   the timer can fire before the drop's own save has reached `droppedItems`; an author should still
-  place the timer at least a few seconds after the drop can happen. A retry whose first answer was
+  place the timer at least a few seconds after the drop can happen. The waits do not survive a
+  reload: the timer is saved fired, so a reload during them never asks again. A retry whose first answer was
   lost comes back `already`; the client then fires `network_foothold_gained` and opens the view
   once if it did not hold that foothold before, as the Wi-Fi join does.
 - **Trigger 2, the BadUSB shape (player use).** The `grant_foothold` with `needsSession` +

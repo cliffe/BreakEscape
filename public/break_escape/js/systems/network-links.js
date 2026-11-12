@@ -60,6 +60,8 @@ export const LEAVE_LABEL = 'Leave it';
 // timer that fires before the drop's save lands still grants the foothold (review I R3 m2)
 export const IMPLANT_NOT_READY_RETRIES = 3;
 export const IMPLANT_NOT_READY_DELAY_MS = 1500;
+// The longest the view waits for the globals sync before it fetches anyway (review R1 m1)
+export const VIEW_SYNC_WAIT_MS = 3000;
 export const sessionEndedMessage = (host) => `Your session on ${host || 'that host'} has ended.`;
 export const unreachableMessage = (host) => `${host || 'That host'} can't be reached over this link.`;
 
@@ -238,8 +240,15 @@ export class NetworkLinks {
         if (!api?.network) return { ok: false, reason: 'error' };
         // The server judges outages and a host's own service from its copy of the globals, so
         // send the latest first (9.3b plan 5.2): a switch flipped a moment ago shows at once
-        // rather than after the next timed sync. A failed sync still fetches the view.
-        try { await win().stateSync?.sync?.(); } catch (e) { /* fetch the view anyway */ }
+        // rather than after the next timed sync. A failed or slow sync still fetches the view:
+        // after VIEW_SYNC_WAIT_MS it opens with the server's last known state (review R1 m1).
+        try {
+            const synced = Promise.resolve(win().stateSync?.sync?.()).catch(() => false);
+            let timer;
+            const waited = new Promise(r => { timer = setTimeout(() => r(false), this.viewSyncWaitMs ?? VIEW_SYNC_WAIT_MS); });
+            await Promise.race([synced, waited]);
+            clearTimeout(timer);
+        } catch (e) { /* fetch the view anyway */ }
         let body;
         try {
             body = await api.network(footholdId);
@@ -498,6 +507,8 @@ export class NetworkLinks {
         this._publishPlanted(pcId, true);
         if (body.already && !isNew) return { action: 'already', footholdId: foothold.id };
 
+        // Two answers in flight (a double click): only the one that brought the foothold news
+        if (!isNew) return { action: 'implanted', footholdId: foothold.id, first: false };
         const networkId = foothold.network?.id ?? null;
         this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: pcId }, pcId);
         // The server answers `first: false` on an already-held retry, so the browser's own record

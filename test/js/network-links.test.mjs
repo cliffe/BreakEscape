@@ -631,6 +631,35 @@ test('view() syncs the globals before GET /network, and still fetches when the s
     delete window.stateSync;
 });
 
+// Review R1 m1: a sync that never settles holds the view only for the time limit
+test('view() fetches anyway when the sync does not settle within the time limit', async () => {
+    await reset();
+    const order = [];
+    const realNetwork = window.ApiClient.network;
+    window.ApiClient.network = async (id) => { order.push('network'); return realNetwork(id); };
+    window.stateSync = { sync: () => { order.push('sync'); return new Promise(() => {}); } };
+    links.viewSyncWaitMs = 20;
+    const out = await links.view('jack_comms_port');
+    assert.deepEqual(order, ['sync', 'network']);
+    assert.equal(out.ok, true, 'the view opens with the last known state');
+    delete links.viewSyncWaitMs;
+    delete window.stateSync;
+});
+
+// Review R1 nit 4: two answers in flight (a double click) emit and open once between them
+test('an implanted answer for a foothold an earlier answer already brought does not emit again', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantAnswer = { already: true, first: false };
+    await links.implant('lena_pc', 'session', null); // the already answer lands first
+    implantAnswer = { first: true };
+    const out = await links.implant('lena_pc', 'session', null); // then the implanted one
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.equal(named('network_foothold_gained').length, 1, 'emitted once in all');
+    assert.equal(views.length, 1, 'opened once in all');
+});
+
 // ---------------------------------------------------------------- implants (slice 9.3b I)
 
 test('an implant adds the foothold, syncs the link item and emits foothold_gained', async () => {

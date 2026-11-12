@@ -203,7 +203,9 @@ export class NetworkViewMinigame extends MinigameScene {
             const action = hostAction(row);
             let control;
             if (action === 'not_responding') {
-                control = `<span class="network-row-off">${NOT_RESPONDING_TEXT}</span>`;
+                // A session held there is kept (5.2): say so, as a down block's "No route" row does
+                const kept = row.heldAs ? ` (still signed in as ${escapeHtml(row.heldAs)})` : '';
+                control = `<span class="network-row-off">${NOT_RESPONDING_TEXT}${kept}</span>`;
             } else if (action === 'off') {
                 control = `<span class="network-row-off">${REMOTE_OFF_TEXT}</span>`;
             } else if (action === 'open') {

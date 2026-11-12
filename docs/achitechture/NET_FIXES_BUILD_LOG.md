@@ -62,6 +62,26 @@ reload, switching the PC off and opening the view at once showed "not responding
 `GET /network`). Switched off with a held remote session: row "not responding", desktop fetch 403,
 `sessions.bench_pc` kept. Leak check: no leaks.
 
+## Review R1 fixes (NET_FIXES_CODE_REVIEW_R1.md)
+
+Decision from the coordinator: a switched-off PC is off for everything that goes through it.
+
+- M1: `player_reach` skips a session host whose service is off (not `structural_reach`, so
+  nothing is pruned); the cache key carries each session host's off state. An onward session over
+  it shows in a down block and reopens with the power.
+- M2: `resource_admits_player?` serves no share through a session at an off host, nor through a
+  remote session whose route is down (`session_route_up?`).
+- m1: the sync before `GET /network` waits at most `VIEW_SYNC_WAIT_MS` (3 s), then the view opens
+  with the server's last known state.
+- m2: the keyboard sign-in at a switched-off PC is left working; it is the user's q72 and waits
+  for the answer.
+- Nits: a "soft gate" comment on `host_service_off?` (1); the cache key is the array itself (2);
+  the cache test counts walks (3); the implanted branch emits only for a foothold not held (4);
+  plan 5.5 says the not_ready waits do not survive a reload (5); an off row names a kept session
+  as "still signed in as ..." (`heldAs`) (6).
+- New tests: four in `network_host_service_off_test.rb` (M1 twice, M2, the kept-session row), all
+  failing without the fix; JS tests for the sync time limit, two answers in flight and the row.
+
 ## Open
 
 - Plan 5.2's five-second refetch of an open view, and a sync before a remote sign-in or a desktop

@@ -155,6 +155,19 @@ test('a not-responding host row shows the text and no control, and its test stat
     assert.equal(st.rows.find(r => r.id === 'lena_pc').action, 'not_responding');
 });
 
+test('a not-responding row names a session that is kept there (review R1 nit 6)', async () => {
+    const hosts = HOSTS.map(h => (h.id === 'lena_pc'
+        ? { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false,
+            responding: false, heldAs: '<b>Lena</b>' }
+        : h));
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const lena = row('data-host-id', 'lena_pc');
+    assert.match(lena.textContent, /still signed in as <b>Lena<\/b>/, 'the name is shown as text');
+    assert.equal(lena.querySelector('b'), null, 'and never as markup');
+});
+
 test('the view lists each row with its action and the row attributes, from GET /network only', async () => {
     setup();
     links.open('jack_comms_port');

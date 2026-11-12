@@ -199,6 +199,11 @@ module BreakEscape
       sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
       @game.reload
       assert_includes @game.player_reach(OFFICE), 'server_net'
+      walks = 0
+      @game.define_singleton_method(:reach_walk_uncached) { |*a, **k| walks += 1; super(*a, **k) }
+      @game.instance_variable_set(:@reach_cache, nil)
+      3.times { @game.player_reach(OFFICE) }
+      assert_equal 1, walks, 'a repeat ask with the same inputs does not walk again'
       @game.player_reach(OFFICE).add('ghost_net')
       refute_includes @game.player_reach(OFFICE), 'ghost_net', 'a caller cannot alter the cached set'
 
