@@ -14,9 +14,11 @@ const src = (p) => join(root, 'public/break_escape/js', p);
 const tmp = mkdtempSync(join(tmpdir(), 'rfid-hint-'));
 writeFileSync(join(tmp, 'rfid-protocols.mjs'), readFileSync(src('minigames/rfid/rfid-protocols.js'), 'utf8'));
 writeFileSync(join(tmp, 'display-dashes.mjs'), 'export const displayDashes = (s) => s;');
+writeFileSync(join(tmp, 'escape-html.mjs'), readFileSync(src('utils/escape-html.js'), 'utf8'));
 writeFileSync(join(tmp, 'rfid-ui.mjs'), readFileSync(src('minigames/rfid/rfid-ui.js'), 'utf8')
     .split("'./rfid-protocols.js'").join("'./rfid-protocols.mjs'")
-    .split("'../../utils/display-dashes.js'").join("'./display-dashes.mjs'"));
+    .split("'../../utils/display-dashes.js'").join("'./display-dashes.mjs'")
+    .split("'../../utils/escape-html.js'").join("'./escape-html.mjs'"));
 
 const mk = (tag) => {
     const el = { tag, children: [], style: {}, className: '', textContent: '', _html: '',

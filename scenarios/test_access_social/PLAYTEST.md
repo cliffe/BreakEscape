@@ -1,11 +1,12 @@
-# test_access_social: scripted playtest (slice 9.2, F1 to F13)
+# test_access_social: scripted playtest (slice 9.2, F1 to F13, L1 and L2)
 
 The scripted runs for access model slice 9.2 sub-slice C (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
 sections 8 and 11.2), plus F9 for user decision q33 (a lockout stops social media at that PC too),
 and F10 to F13 for sub-slice C2 reactive feed posts
 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_C2_PLAN.md`, section 10). F10 to F13 are the plan's four
 reactive beats renumbered up by one (the plan calls them F9 to F12; q33's F9 already holds that
-number).
+number). L1 is for user decision q36 (a borrower locked out at its hot desk), and L2 is the same
+for a work borrow (a lockout stops every use of that PC).
 One room per beat, each with a sign; F5 and F6 are in the lobby. The scenario
 is for testing, not play. After every beat check what is on screen, what the server recorded and
 what reached the browser.
@@ -119,7 +120,14 @@ use and is usually answered `{ post: null, done: false }`, so a per-run total gr
 | F10 | Enter `f10_room` (east of Priya's room), order **reactive_first**. Throw the breaker at once. Her first met social use may fall before her work fails and serve an ordered post; wait for her work to fail (she names the accounts share going down), then for her next met social use | The outage vent `f10_vent` is served ahead of her remaining ordered post, so it lands between the two ordered ones; task `f10_posted`. Reset the breaker | `npcFrustration.nadia.failWhy.work` lists `down`; `feedRevealed.nadia.shown` is `["f10_ordered", "f10_vent", "f10_ordered_two"]` (the vent jumps the second ordered post) | Nadia 2 to 3 across her met uses |
 | F11 | Enter `f11_room`, order **mixed**. Theo's PC blocks social media and he has no phone, so he borrows the kiosk here. Wait through his first met use, his borrow, and one more use | His ordered `f11_first` comes out first; the borrow post `f11_borrowed` slots in at its authored place on the next met use (never ahead of `f11_first`); then `f11_last`; task `f11_posted` on `f11_borrowed` | `feedRevealed.theo.shown` is `["f11_first", "f11_borrowed", ...]`; the `borrow_session` workaround is done; `guestSessions.f11_kiosk` `theo` | Theo up to 3 (one per met use) |
 | F12 | Enter `f12_room`, order **facts_first**. Wait for Greg's first met social media use, then throw the breaker (sales system down). Wait for his work to fail, then for his next met social media use. Reset the breaker | The ordered `f12_ordered` comes out first; the vent `f12_vent` follows only after the outage and a work failure; task `f12_posted` on `f12_vent`. After both the answer says `done: true` and the client stops asking | `feedRevealed.greg.shown` is `["f12_ordered", "f12_vent"]`, done; `failWhy.work` lists `down` | Greg 2 (one per post), plus any `tooSoon` |
-| F13 | Enter `f13_room`, order **reactive_first**. Ruth's PC blocks social media and she has no phone. Wait for her to fail, borrow the kiosk, and use it twice | On her first met use (the borrow) the blocked vent `f13_blocked` is served; on her next met use the recovery post `f13_fixed` (keyed on `needMet`) follows; tasks `f13_blocked` then `f13_recovered` | `failWhy.social_media` lists `social_blocked`; `easeAt.social_media` later than `failAt.social_media`; `feedRevealed.ruth.shown` is `["f13_blocked", "f13_fixed"]`, done | Ruth 2 |
+| F13 | Enter `f13_room`, order **reactive_first**. Ruth's PC blocks social media and she has no phone. Wait for her to fail, borrow the kiosk, and use it twice. Waiting is enough (q38): her second met kiosk use counts for `needMet` because her last failure is over 5 seconds old, though she fails again at her desk between borrows and that use's ease reaches the server just after the request | On her first met use (the borrow) the blocked vent `f13_blocked` is served; on her next met use the recovery post `f13_fixed` (keyed on `needMet`) follows; tasks `f13_blocked` then `f13_recovered`, about 90 s apart | `failWhy.social_media` lists `social_blocked`; `easeAt.social_media` later than `failAt.social_media`; `feedRevealed.ruth.shown` is `["f13_blocked", "f13_fixed"]`, done | Ruth 2 |
+
+## Borrowed hot desk lockouts (q36): L1 and L2
+
+| Beat | Do | Expect | Server afterwards | `/feed_post` this beat |
+|---|---|---|---|---|
+| L1 | Enter `l1_room` (east of Ruth's room) at once. Sade's PC blocks social media and she has no phone, so after two failures she borrows the hot desk. Before she does, click the hot desk, pick her tile (`sokafor`) and type three wrong passwords. Step back and wait | The third answer says the account is locked on this PC. When she sits down there one `check` goes for her at `l1_hot_desk` and comes back locked out: `npc_locked_out:sade` with `objectId` `l1_hot_desk`, task `l1_locked_out`. At the end of the use it fails: `npc_use_failed:sade` with `missing` `[{ id: l1_hot_desk, why: locked_out }]`, `npc_borrow_done:sade` `met: false` (no `lapsed`), task `l1_borrow_failed`. No `npc_used:l1_hot_desk`, no post | `loginLockouts` holds `l1_hot_desk\|sokafor`; `npcFrustration.sade.lockedOut` `["l1_hot_desk"]` (and in GET /scenario's `npcFrustration`), no `easeAt`, no `guestSessions.l1_hot_desk`, no `feedRevealed.sade` | Sade 0 |
+| L2 | Enter `l2_room` (east of Sade's room) at once. Hamid's PC is switched off (`l2_pc_off` starts true), so after two work failures he takes his work to the hot desk. Before he does, click the hot desk, pick his tile (`hrahimi`) and type three wrong passwords. Step back and wait. Leave the power switch alone | The third answer says the account is locked on this PC. When he sits down one `check` goes for him at `l2_hot_desk` and comes back locked out: `npc_locked_out:hamid`, task `l2_locked_out`. At the end of the use his work fails: `npc_use_failed:hamid` need `work`, `missing` `[{ id: l2_hot_desk, why: locked_out }]`, `npc_borrow_done:hamid` `met: false` (no `lapsed`), task `l2_borrow_failed`. No `npc_used:l2_hot_desk` | `loginLockouts` holds `l2_hot_desk\|hrahimi`; `npcFrustration.hamid.lockedOut` `["l2_hot_desk"]` (and in GET /scenario), `easeAt` empty, no `guestSessions.l2_hot_desk`. A work `ease` for him at the hot desk is refused | none (no feed) |
 
 The leak check must still say `VERDICT: no leaks found` after each reactive beat, and its counts line
 must show the reactive post texts among the feed posts it checked. One reload during the run (as F7)
@@ -179,3 +187,6 @@ a phone (Jake, Lena, Priya, Nadia, Greg) holds its own `phone_friendface` item.
   nothing. `window.startFriendfacePhone` called with a made-up phone item shows "You do not have that
   phone." and opens nothing. `POST /inventory` adding a `phone_friendface` the scenario does not
   have is 422; `phoneOf` on a client-built item (a notepad) is dropped before it is stored.
+- L1 (q36, q33 R2 m1): after Sade's lockout at the hot desk, `POST /feed_post` for her with
+  `object_id` `l1_hot_desk` is `{ post: null, done: false, refused: true }` and a social media
+  `ease` for her there is refused.

@@ -1,12 +1,11 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { ASSETS_PATH, ASSETS_VERSION } from '../../config.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
 const ICON_BASE = `${ASSETS_PATH}/icons`;
 
 // Scenario text is plain text: escape it once before it goes into HTML
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 const TIMER_DURATION_MS = 72 * 60 * 60 * 1000;
 

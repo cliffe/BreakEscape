@@ -21,8 +21,8 @@ import PhoneChatConversation from './phone-chat-conversation.js';
 import { npcDmFields, onAccentColour } from './phone-app.js';
 import { isPhoneCallMode, callLabelFor, formatCallDuration, callSubtitle, CALL_STATUS_HTML, CALL_SPEAKING_HTML, CALL_CONTROLS_HTML } from './phone-call-ui.js';
 
-const escHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 import InkEngine from '../../systems/ink/ink-engine.js';
+import { escapeHtml as escHtml } from '../../utils/escape-html.js';
 
 export default class PhoneChatUI {
     /**

@@ -1712,6 +1712,7 @@ class NPCBehavior {
         const wpSnapped = pathfindingManager.findNearestWalkableStartCell(wpnx, wpny)
                           || { x: wpnx, y: wpny };
         this._pathfindingInProgress = true;
+        const legTarget = this.patrolTarget;
         this._planMovePath(pathfindingManager,
             wpSnapped.x,
             wpSnapped.y,
@@ -1719,6 +1720,9 @@ class NPCBehavior {
             wpDest.y,
             (path) => {
                 this._pathfindingInProgress = false;
+                // The target changed while this answer was on its way (a goToAndStay move):
+                // leave it alone, path or none, as the route leg does
+                if (this.patrolTarget !== legTarget) return;
                 if (path && path.length > 0) {
                     this._pathRetryAfter = 0; // Clear any backoff on success
                     this.currentPath = path;
@@ -2158,12 +2162,15 @@ class NPCBehavior {
         const { x: rndnx, y: rndny } = this.npcBodyPos();
         const rndSnapped = pathfindingManager.findNearestWalkableStartCell(rndnx, rndny)
                            || { x: rndnx, y: rndny };
+        const legTarget = this.patrolTarget;
         pathfindingManager.findWorldPath(
             rndSnapped.x,
             rndSnapped.y,
             targetPos.x,
             targetPos.y,
             (path) => {
+                // A late answer for a target since replaced (a goToAndStay move): drop it
+                if (this.patrolTarget !== legTarget) return;
                 if (path && path.length > 0) {
                     this.currentPath = path;
                     this.pathIndex = 0;

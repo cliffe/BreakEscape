@@ -6,10 +6,11 @@
 // emit fires its event and then confirms. The needs side runs on fixtures/needs-work-world.mjs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NpcWorkarounds, openProppedDoor, START_POOLS, installNpcWorkarounds, retryDelay, RETRY_MAX_MS, escapeNoteText } from '../../public/break_escape/js/systems/npc-workarounds.js';
+import { NpcWorkarounds, openProppedDoor, START_POOLS, installNpcWorkarounds, retryDelay, RETRY_MAX_MS, escapeNoteText, LINE_WAIT_MS } from '../../public/break_escape/js/systems/npc-workarounds.js';
 import { renderNoteMarkdown, noteMatches, noteSearchText } from '../../public/break_escape/js/utils/note-markdown.js';
 import { displayDashes } from '../../public/break_escape/js/utils/display-dashes.js';
 import { workWorld, baseObjects, dana } from './fixtures/needs-work-world.mjs';
+import { MUTTER_WAIT_MS } from '../../public/break_escape/js/systems/npc-needs.js';
 
 function stub({ answers = {}, failures = [] } = {}) {
     const calls = { sends: [], emits: [], globals: [], postits: [], doors: [], mutters: [], visits: [], timers: [] };
@@ -419,7 +420,7 @@ test('R1 m6: installNpcWorkarounds twice gives the same runner and one set of li
         const a = installNpcWorkarounds({});
         const b = installNpcWorkarounds({});
         assert.equal(a, b);
-        assert.deepEqual(added, ['npc_workaround_due:*', 'npc_visit_done:*', 'npc_visit_dropped:*', 'npc_visit_arrived:*', 'npc_borrow_done:*', 'npc_borrow_dropped:*']);
+        assert.deepEqual(added, ['npc_workaround_due:*', 'npc_visit_done:*', 'npc_visit_dropped:*', 'npc_visit_arrived:*', 'npc_mutter:*', 'npc_borrow_done:*', 'npc_borrow_dropped:*']);
     } finally {
         globalThis.window = prev;
     }
@@ -699,8 +700,16 @@ const IAN_RUN = { index: 0, hand: 4, do: 'borrow_session', dwell: 2, pc: 'hot_de
 const SAM_RUN = { index: 0, hand: 2, do: 'share_login', dwell: 6, with: 'ruth' };
 const SAM_HEARD = { capture: { targetId: 'sam', kind: 'credential', address: 'sokafor', note: 'n' }, line: "It's sokafor. Password's x.", note: 'Sam Okafor told Ruth Adeyemi his login out loud: sokafor / x', displayName: 'Sam Okafor' };
 
-function hStub(answers, { hears = () => false, room = 'open_office' } = {}) {
+// lineNow: the login_aloud line is said at once (npc_mutter at the mutter call), as with a free lock
+function hStub(answers, { hears = () => false, room = 'open_office', lineNow = true } = {}) {
     const s = stub({ answers });
+    s.calls.holds = [];
+    s.needs.mutter = (id, topic) => {
+        s.calls.mutters.push([id, topic]);
+        if (topic === 'login_aloud' && lineNow) s.runner.lineSaid({ npcId: id, topic, line: "It's sokafor.", picture: null });
+        return true;
+    };
+    s.needs.holdVisit = (id, ms) => { s.calls.holds.push([id, ms]); return true; };
     s.calls.borrows = [];
     s.calls.toasts = [];
     s.calls.notes = [];
@@ -827,7 +836,7 @@ test('R1 M1: the overheard toast is plain text with no dash display, and the not
         runner.visitDone(visitDone('sam', SAM_RUN));
         await flush();
         assert.deepEqual(calls.toasts, [['Overheard: Sam Okafor', heard.line]], pw);
-        assert.deepEqual(calls.toastOpts, [{ plainText: true, verbatim: true }], pw);
+        assert.deepEqual(calls.toastOpts, [{ verbatim: true }], pw);
         assert.equal(calls.notes.length, 1, pw);
         assert.equal(shownNote(calls.notes[0][1]), heard.note, `the notebook shows ${pw} exactly`);
     }
@@ -841,10 +850,10 @@ test('R1 M1: the window toast dep passes the options on to gameAlert', () => {
     globalThis.window = { gameAlert: (...a) => alerts.push(a) };
     try {
         const runner = installNpcWorkarounds({});
-        runner.deps.toast('line', 'Overheard: X', { plainText: true, verbatim: true });
+        runner.deps.toast('line', 'Overheard: X', { verbatim: true });
         runner.deps.toast('other', 'T');
-        assert.deepEqual(alerts, [['line', 'info', 'Overheard: X', 8000, { plainText: true, verbatim: true }],
-            ['other', 'info', 'T', 8000, { plainText: true }]]);
+        assert.deepEqual(alerts, [['line', 'info', 'Overheard: X', 8000, { verbatim: true }],
+            ['other', 'info', 'T', 8000, {}]]);
     } finally {
         globalThis.window = prev;
     }
@@ -878,4 +887,286 @@ test('R2 client m3: the notebook search finds an overheard username or password 
     for (const term of ['s_okafor', 'Spring-24', 'SPRING-24*#', 'okafor / spring']) assert.equal(noteMatches(note, term), true, term);
     assert.equal(noteMatches(note, 'autumn'), false);
     assert.equal(noteSearchText('a \\\\ b \\q'), 'a \\ b \\q', 'an escaped backslash reads as one; an unknown escape is kept');
+});
+
+// ── User decision q42: the listening window opens when the line is said ──
+
+test('q42: the line wait matches the needs system\'s mutter wait', () => {
+    assert.equal(LINE_WAIT_MS, MUTTER_WAIT_MS);
+});
+
+test('q42: a line waiting for the speech lock holds the visit and opens no window; a hearing before it counts for nothing', async () => {
+    const { runner, calls } = hStub({ sam: {} }, { hears: () => true, lineNow: false });
+    runner.due({ npcId: 'sam', run: SAM_RUN });
+    runner.visitArrived(visitDone('sam', SAM_RUN));
+    assert.deepEqual(calls.mutters.at(-1), ['sam', 'login_aloud']);
+    assert.deepEqual(calls.holds, [['sam', LINE_WAIT_MS + 6000]], 'held beside the colleague while the line waits');
+    assert.equal(calls.timers.length, 0, 'no hearing tick before the line');
+    runner.visitDone(visitDone('sam', SAM_RUN));
+    await flush();
+    assert.deepEqual(calls.sends, [{ npc_id: 'sam', index: 0, hand: 2, dropped: false, heard: false }]);
+});
+
+test('q42: the window opens on the line\'s npc_mutter, the visit stands the dwell from there, and a hearing then counts', async () => {
+    const { runner, calls } = hStub({ sam: SAM_HEARD }, { hears: () => true, lineNow: false });
+    runner.due({ npcId: 'sam', run: { ...SAM_RUN, dwell: 9 } });
+    runner.visitArrived(visitDone('sam', SAM_RUN));
+    runner.lineSaid({ npcId: 'sam', topic: 'wk_share_login', line: 'other topic' });
+    runner.lineSaid({ npcId: 'ruth', topic: 'login_aloud', line: 'another NPC' });
+    assert.equal(calls.holds.length, 1, 'another topic or NPC opens nothing');
+    runner.lineSaid({ npcId: 'sam', topic: 'login_aloud', line: "It's sokafor.", picture: null });
+    assert.deepEqual(calls.holds.at(-1), ['sam', 9000], 'the dwell left, from the line');
+    runTimers(calls, 2);
+    runner.visitDone(visitDone('sam', SAM_RUN));
+    await flush();
+    assert.deepEqual(calls.sends, [{ npc_id: 'sam', index: 0, hand: 2, dropped: false, heard: true, room_id: 'open_office' }]);
+    assert.equal(calls.toasts.length, 1);
+});
+
+test('q42: a picture with no line says nothing to hear: the visit ends at once, not heard', async () => {
+    const { runner, calls } = hStub({ sam: {} }, { hears: () => true, lineNow: false });
+    runner.due({ npcId: 'sam', run: SAM_RUN });
+    runner.visitArrived(visitDone('sam', SAM_RUN));
+    runner.lineSaid({ npcId: 'sam', topic: 'login_aloud', line: null, picture: 'login_aloud' });
+    assert.deepEqual(calls.holds.at(-1), ['sam', 0]);
+    assert.equal(calls.timers.length, 0);
+    runner.visitDone(visitDone('sam', SAM_RUN));
+    await flush();
+    assert.equal(calls.sends[0].heard, false);
+});
+
+test('q42 on the needs system: behind another NPC\'s line, the share\'s line comes later and the dwell runs from it', async () => {
+    // Mei is the chatter in the room; Ruth, the colleague, runs no needs
+    const npcs = { dana: { pos: { x: 100, y: 100 }, rec: dana() }, ruth: { pos: { x: 400, y: 100 }, rec: { id: 'ruth' } },
+        mei: { pos: { x: 160, y: 100 }, rec: dana({ id: 'mei', needsHome: 'mei_pc' }) } };
+    const objects = [...baseObjects(), { id: 'mei_pc', x: 160, y: 68, desk: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 5 } }];
+    const long = 'This is a long line that holds the shared speech lock for a good few seconds while it plays out.';
+    const t = workWorld({ npcs, objects, chatter: { login_aloud: ["It's dmorgan. Password's in my head."], mei_talk: [long] } });
+    t.w.world.cellBeside = id => (id === 'ruth' ? { x: 432, y: 100 } : null);
+    let hearsFrom = Infinity;
+    t.w.world.playerHears = () => ({ overheard: t.sys.clockMs >= hearsFrom });
+    const sends = [];
+    const runner = new NpcWorkarounds({
+        send: async body => { sends.push(body); return {}; },
+        needs: () => t.sys, emit: () => {}, npcRecord: () => null, playerRoom: () => 'open_office',
+        setTimer: (fn, ms) => setTimeout(fn, 0)
+    });
+    // The live wiring: every event the needs system emits reaches the runner, as installNpcWorkarounds does
+    const marks = {};
+    const orig = t.w.world.emit.bind(t.w.world);
+    t.w.world.emit = (name, data) => {
+        orig(name, data);
+        if (name === 'npc_visit_arrived:dana') {
+            marks.arrived = t.sys.clockMs;
+            assert.equal(t.sys.mutter('mei', 'mei_talk'), true);   // chatter takes the lock just before the line
+            runner.visitArrived(data);
+        } else if (name === 'npc_mutter:dana' && data.topic === 'login_aloud') {
+            marks.line = t.sys.clockMs;
+            hearsFrom = t.sys.clockMs;   // the player walks up as the line is said
+            runner.lineSaid(data);
+        } else if (name === 'npc_visit_done:dana') {
+            marks.done = t.sys.clockMs;
+            runner.visitDone(data);
+        }
+    };
+    t.sys.registerAll();
+    const run = { index: 0, hand: 1, do: 'share_login', with: 'ruth', dwell: 6 };
+    runner.due({ npcId: 'dana', run, level: 70 });
+    assert.ok(stepUntil(t.sys, () => marks.done !== undefined, 60000), 'the visit ends');
+    assert.ok(marks.line - marks.arrived >= 2000, `the line waited for the lock (${marks.line - marks.arrived} ms)`);
+    assert.ok(marks.done - marks.line >= 6000 && marks.done - marks.line <= 6500, `the dwell ran from the line (${marks.done - marks.line} ms)`);
+    for (let i = 0; i < 5 && !sends.length; i++) await flush();
+    assert.equal(sends[0].heard, true, 'heard in the window that opened with the line');
+});
+
+// ── q43 review R1 M1: a cut-short borrow's "done" against the server's dwell floor ──
+
+// A hot desk with a long use (30 s, a 27 s floor from the hand-over) and a server stub that
+// keeps the floor as npc_frustration.rb does: refused (425) unless dropped or a cut-short borrow
+function longBorrow() {
+    const hot = { id: 'hot_desk', x: 400, y: 68, desk: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 30 } };
+    const t = workWorld({ objects: [...baseObjects(), hot], globals: { dana_pc_off: true }, chatter: { work_fail: ['Why is nothing working?'] } });
+    const floorMs = 27000;
+    let handAt = null;
+    const server = body => {
+        const elapsed = t.sys.clockMs - handAt;
+        if (!body.dropped && !body.cut && elapsed < floorMs) {
+            const e = new Error('too early'); e.status = 425; e.body = { retryAfter: Math.ceil((floorMs - elapsed) / 100) / 10 }; throw e;
+        }
+        return { pcId: 'hot_desk', guest: true };
+    };
+    const sends = [];
+    const emits = [];
+    const timers = [];
+    const runner = new NpcWorkarounds({
+        send: async body => { sends.push({ ...body }); return server(body); },
+        needs: () => t.sys,
+        emit: (name, data) => emits.push({ name, data }),
+        npcRecord: () => null,
+        setTimer: (fn, ms) => timers.push({ fn, ms })
+    });
+    const orig = t.sys._emit.bind(t.sys);
+    t.sys._emit = (name, data) => {
+        orig(name, data);
+        if (name.startsWith('npc_borrow_done:')) runner.borrowDone(data);
+        else if (name.startsWith('npc_borrow_dropped:')) runner.borrowDropped(data);
+    };
+    t.sys.registerAll();
+    assert.ok(stepUntil(t.sys, () => t.evs('npc_need_parked:dana').length > 0, 30000));
+    handAt = t.sys.clockMs;
+    runner.due({ npcId: 'dana', run: { index: 1, hand: 1, do: 'borrow_session', pc: 'hot_desk', need: 'work', dwell: 27 } });
+    return { ...t, runner, sends, emits, timers, server, handAt: () => handAt };
+}
+
+test('q43 R1 M1: a long use cut short soon after the sit says cut, and the floor-keeping server takes its "done" at once', async () => {
+    const t = longBorrow();
+    assert.ok(stepUntil(t.sys, () => t.evs('npc_sat_at:hot_desk').length > 0, 30000));
+    t.sys.step(3000);   // 3 s into a 30 s use
+    assert.ok(t.sys.clockMs - t.handAt() < 27000, 'cut before the floor');
+    // the fixture reaches the floor: the same "done" without the cut is refused
+    assert.throws(() => t.server({ npc_id: 'dana', index: 1, hand: 1, dropped: false }), e => e.status === 425);
+    t.sys.control('dana', 'suspend');
+    for (let i = 0; i < 3; i++) await flush();
+    assert.deepEqual(t.sends, [{ npc_id: 'dana', index: 1, hand: 1, dropped: false, cut: true }]);
+    assert.equal(t.timers.length, 0, 'no resend: nothing waits in the gap for a password sign-in to be ended');
+    assert.deepEqual(t.emits.filter(e => e.name === 'npc_guest_left:hot_desk').map(e => e.data), [{ npcId: 'dana', objectId: 'hot_desk' }]);
+    assert.equal(t.runner.active.size, 0);
+});
+
+test('q43 R1 M1: a whole long use carries no cut and a drop never does; the floor still applies to them', async () => {
+    const t = longBorrow();
+    assert.ok(stepUntil(t.sys, () => t.evs('npc_borrow_done:dana').length > 0, 90000));
+    for (let i = 0; i < 3; i++) await flush();
+    assert.equal(t.sends.length, 1);
+    assert.equal(t.sends[0].cut, undefined, 'a met use is not cut');
+    // a drop with a cut flag on the job still posts no cut
+    const d = hStub({});
+    d.runner.due({ npcId: 'ian', run: IAN_RUN });
+    d.runner.active.get('ian:0:4').cut = true;
+    d.runner.borrowDropped({ npcId: 'ian', index: 0, hand: 4 });
+    await flush();
+    assert.deepEqual(d.calls.sends, [{ npc_id: 'ian', index: 0, hand: 4, dropped: true }]);
+});
+
+// ── q42 review R1 m2, n1, n3 ──
+
+const QUEUE_LINES = { ...LINES, login_aloud: ["It's dmorgan. Password's in my head."],
+    mei_a: ['Has anyone seen the stapler?'], mei_b: ['The printer is jammed again.'], mei_c: ['Who moved my chair?'] };
+
+test('q42 R1 m2: a login_aloud line queued behind six other lines goes first and is said in words', () => {
+    const { sys, evs } = twoWorld(QUEUE_LINES);
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');   // takes the lock
+    for (const [id, topic] of [['mei', 'mei_a'], ['dana', 'wk_writes_down'], ['mei', 'mei_b'], ['dana', 'wk_prop_door'], ['mei', 'mei_c'], ['mei', 'wk_writes_down']]) {
+        sys.mutter(id, topic);
+    }
+    assert.equal(sys.mutterWaits().length, 6, 'six lines wait');
+    sys.mutter('dana', 'login_aloud');
+    assert.deepEqual(sys.mutterWaits().map(w => w.topic)[0], 'login_aloud', 'queued ahead of the six');
+    const queuedAt = sys.clockMs;
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:').some(e => e.data.topic === 'login_aloud'), 60000));
+    const said = evs('npc_mutter:').map(e => e.data);
+    assert.deepEqual(said.slice(0, 2).map(d => d.topic), ['work_fail', 'login_aloud'], 'said next, after the line holding the lock');
+    const line = said.find(d => d.topic === 'login_aloud');
+    assert.ok(line.line && line.picture === null, 'in words, not a picture');
+    assert.ok(sys.clockMs - queuedAt < MUTTER_WAIT_MS);
+    // the rest still come, in their order
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:').length === 8, 60000));
+    assert.deepEqual(evs('npc_mutter:').slice(2).map(e => e.data.topic), ['mei_a', 'wk_writes_down', 'mei_b', 'wk_prop_door', 'mei_c', 'wk_writes_down']);
+});
+
+test('q42 R1 m2: two priority lines keep their order; a priority line with the lock free and only ordinary lines waiting is said at once', () => {
+    const { sys, evs } = twoWorld(QUEUE_LINES);
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');
+    sys.mutter('mei', 'mei_a');
+    sys.mutter('mei', 'login_aloud');
+    sys.mutter('dana', 'login_aloud');
+    assert.deepEqual(sys.mutterWaits().map(w => [w.npcId, w.topic]), [['mei', 'login_aloud'], ['dana', 'login_aloud'], ['mei', 'mei_a']]);
+
+    const b = twoWorld(QUEUE_LINES);
+    b.sys.registerAll();
+    b.sys.step(250);
+    let held = true;
+    b.w.world.npcStatus = id => (id === 'mei' && held ? { hidden: true } : {});
+    b.sys.mutter('mei', 'mei_a');   // held: Mei is hidden, the lock stays free
+    assert.equal(b.sys.mutterWaits().length, 1);
+    b.sys.mutter('dana', 'login_aloud');
+    assert.equal(b.evs('npc_mutter:dana').length, 1, 'not stuck behind a held ordinary line');
+    assert.ok(b.evs('npc_mutter:dana')[0].data.line);
+    held = false;
+});
+
+test('q42 R1 n1: holdVisit on a frozen visit also sets the time it resumes with', () => {
+    const { sys } = wired();
+    sys.registerAll();
+    const s = sys.states.get('dana');
+    s.job = { kind: 'visit', phase: 'using', useUntil: sys.clockMs + 1000, useRemaining: 9000, frozenAt: sys.clockMs };
+    s.prevMode = 'job';
+    s.mode = 'frozen';
+    assert.equal(sys.holdVisit('dana', 3000), true);
+    assert.equal(s.job.useRemaining, 3000);
+    s.mode = 'job';
+    s.job.useRemaining = 9000;
+    sys.holdVisit('dana', 4000);
+    assert.equal(s.job.useRemaining, 9000, 'not frozen: left alone');
+});
+
+test('q42 R1 n3: a share dropped while its line waits takes the line out of the queue', async () => {
+    const { runner, calls, needs } = hStub({}, { lineNow: false });
+    calls.cancels = [];
+    needs.cancelMutter = (id, topic) => { calls.cancels.push([id, topic]); return 1; };
+    runner.due({ npcId: 'sam', run: SAM_RUN });
+    runner.visitArrived(visitDone('sam', SAM_RUN));
+    runner.visitDropped(visitDone('sam', SAM_RUN));
+    await flush();
+    // the arrival drops a waiting start line (R2 n1), the drop the waiting share line
+    assert.deepEqual(calls.cancels, [['sam', 'wk_share_login'], ['sam', 'login_aloud']]);
+    assert.equal(calls.sends[0].dropped, true);
+    // a share dropped after its line was said cancels nothing
+    const b = hStub({});
+    b.calls.cancels = [];
+    b.needs.cancelMutter = (id, topic) => { b.calls.cancels.push([id, topic]); return 0; };
+    b.runner.due({ npcId: 'sam', run: SAM_RUN });
+    b.runner.visitArrived(visitDone('sam', SAM_RUN));
+    b.runner.visitDropped(visitDone('sam', SAM_RUN));
+    assert.deepEqual(b.calls.cancels, [['sam', 'wk_share_login']], 'only the arrival\'s start-line cancel');
+
+    // on the needs system: only that NPC's line of that topic goes
+    const { sys } = twoWorld(QUEUE_LINES);
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');
+    sys.mutter('mei', 'login_aloud');
+    sys.mutter('dana', 'login_aloud');
+    sys.mutter('dana', 'mei_a');
+    assert.equal(sys.cancelMutter('dana', 'login_aloud'), 1);
+    assert.deepEqual(sys.mutterWaits().map(w => [w.npcId, w.topic]), [['mei', 'login_aloud'], ['dana', 'mei_a']]);
+});
+
+test('q42 R2 n1: a share\'s start line still waiting when the NPC arrives is dropped, so it never follows login_aloud', () => {
+    const { sys, evs } = twoWorld({ ...QUEUE_LINES, wk_share_login: ["I'll go and ask."] });
+    sys.registerAll();
+    sys.step(250);
+    sys.mutter('dana', 'work_fail');   // takes the lock
+    for (const [id, topic] of [['mei', 'mei_a'], ['mei', 'mei_b'], ['mei', 'mei_c']]) sys.mutter(id, topic);
+    // The runner on the real mutter queue; the visit itself is not walked here
+    const runner = new NpcWorkarounds({
+        send: async () => ({}), emit: () => {}, npcRecord: () => null, playerRoom: () => 'open_office', setTimer: () => {},
+        needs: () => ({
+            mutter: (id, topic) => sys.mutter(id, topic),
+            cancelMutter: (id, topic) => sys.cancelMutter(id, topic),
+            enqueueVisit: () => true, holdVisit: () => true
+        })
+    });
+    const run = { index: 0, hand: 1, do: 'share_login', with: 'ruth', dwell: 6 };
+    runner.due({ npcId: 'dana', run, level: 70 });
+    assert.ok(sys.mutterWaits().some(w => w.npcId === 'dana' && w.topic === 'wk_share_login'), 'the start line waits behind the others');
+    runner.visitArrived(visitDone('dana', run));
+    assert.deepEqual(sys.mutterWaits().map(w => [w.npcId, w.topic]),
+        [['dana', 'login_aloud'], ['mei', 'mei_a'], ['mei', 'mei_b'], ['mei', 'mei_c']], 'the stale start line is gone');
+    assert.ok(stepUntil(sys, () => evs('npc_mutter:').length === 5, 60000));
+    assert.deepEqual(evs('npc_mutter:dana').map(e => e.data.topic), ['work_fail', 'login_aloud'], 'no start line after the shared login');
 });

@@ -111,15 +111,15 @@ test('the person-chat header shows a hostile title and NPC name as text', () => 
     const mg = new PersonChatMinigame(fresh(), { npcId: 'n1', title: HOSTILE });
     initQuietly(mg);
     const h3 = document.querySelector('.minigame-header h3');
-    assertText(h3, 'person-chat header', { dashes: false });
-    assertText(document.querySelector('.minigame-header p'), 'person-chat subtitle', { dashes: false });
+    assertText(h3, 'person-chat header');
+    assertText(document.querySelector('.minigame-header p'), 'person-chat subtitle');
 });
 
 test('the phone-chat header shows a hostile title as text', () => {
     window.npcManager = { getNPC: () => ({ id: 'n1', displayName: 'Sam' }), getNPCsByPhone: () => [] };
     const mg = new PhoneChatMinigame(fresh(), { npcId: 'n1', title: HOSTILE });
     initQuietly(mg);
-    assertText(document.querySelector('.minigame-header h3'), 'phone-chat header', { dashes: false });
+    assertText(document.querySelector('.minigame-header h3'), 'phone-chat header');
 });
 
 test('the network segmentation map title bar shows a hostile title as text', () => {

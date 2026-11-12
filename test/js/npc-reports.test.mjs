@@ -163,7 +163,7 @@ test('installNpcReports: one listener, the wildcard name parsed, idempotent', ()
         assert.equal(a, b);
         assert.equal(globalThis.window.npcReports, a);
         // one listener each: the globals, and sub-slice L's lockout answers and locked returns
-        assert.deepEqual(listeners.map(l => l.name).sort(), ['global_variable_changed:*', 'pc_signin_failed', 'workstation_owner_returned:*']);
+        assert.deepEqual(listeners.map(l => l.name).sort(), ['global_variable_changed:*', 'npc_sat_at:*', 'pc_signin_failed', 'workstation_owner_returned:*']);
         const g = listeners.find(l => l.name === 'global_variable_changed:*');
         g.fn({}, 'global_variable_changed:unrelated');
         assert.equal(a.needSync, false);

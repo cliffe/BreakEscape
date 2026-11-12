@@ -22,6 +22,7 @@
 // never emits minigame_failed. Tasks key on the onTraced global.
 
 import { writeGlobal, readGlobal } from '../../systems/global-writer.js';
+import { escapeHtml as esc } from '../../utils/escape-html.js';
 import {
     evaluateLink, expectedPayout, formatHold, payoutPercent, holdMinutes,
     requiredDeposits, reusedSlot, candidatesFor, checkCase, problemText, parseTime
@@ -29,12 +30,6 @@ import {
 
 const COLOURS = ['#f0b429', '#58d6ff', '#e38cff', '#7ee787', '#ff8f6b'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function esc(value) {
-    return String(value ?? '')
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
 
 /** "14 Jul 21:40" in UTC. */
 export function formatTime(iso) {

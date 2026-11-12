@@ -157,6 +157,32 @@ class AccessWorkFeedSelectTest < ActiveSupport::TestCase
     assert_equal 'fixed', met['post']
   end
 
+  # User decision q38: the met use the request is for counts once the last failure is
+  # NEED_MET_QUIET_S old, so a need that fails again between met uses can still read as met
+  test 'needMet counts the request\'s own met use once the last failure is a short time old' do
+    n = npc([r('fixed', { 'needMet' => 'social_media' })], order: 'reactive_first')
+    g = data['globalVariables']
+    quiet = AW::NEED_MET_QUIET_S
+    refailed = entry(failat: { 'social_media' => 100 }, easeat: { 'social_media' => 50 })
+    assert_nil AW.select_feed_post(data, n, { 'shown' => [] }, refailed, g)['post'], 'no met use in hand: the last event is a failure'
+    use = ->(at, need = 'social_media') { { 'need' => need, 'at' => at } }
+    assert_equal 'fixed', AW.select_feed_post(data, n, { 'shown' => [] }, refailed, g, [], use.call(100 + quiet))['post']
+    assert_nil AW.select_feed_post(data, n, { 'shown' => [] }, refailed, g, [], use.call(100 + quiet - 1))['post'], 'a failure only just now'
+    assert_nil AW.select_feed_post(data, n, { 'shown' => [] }, refailed, g, [], use.call(100 + quiet, 'work'))['post'], 'a met use of another need'
+    never = entry(easeat: { 'social_media' => 50 })
+    assert_nil AW.select_feed_post(data, n, { 'shown' => [] }, never, g, [], use.call(500))['post'], 'never failed: nothing was fixed'
+    assert_nil AW.select_feed_post(data, n, { 'shown' => [] }, nil, g, [], use.call(500))['post'], 'no entry at all'
+  end
+
+  test 'needMet: true with a met use reads the met use\'s own need only' do
+    n = npc([r('fixed', { 'needMet' => true })], order: 'reactive_first')
+    g = data['globalVariables']
+    work_failed = entry(failat: { 'work' => 100 })
+    assert_nil AW.select_feed_post(data, n, { 'shown' => [] }, work_failed, g, [], { 'need' => 'social_media', 'at' => 500 })['post']
+    both = entry(failat: { 'work' => 100, 'social_media' => 100 })
+    assert_equal 'fixed', AW.select_feed_post(data, n, { 'shown' => [] }, both, g, [], { 'need' => 'social_media', 'at' => 500 })['post']
+  end
+
   test 'needMet also holds after a workaround-driven ease while the cause still holds (author caveat)' do
     n = npc([r('fixed', { 'needMet' => 'work' })], order: 'reactive_first')
     gd = data('srv_down' => true)['globalVariables']

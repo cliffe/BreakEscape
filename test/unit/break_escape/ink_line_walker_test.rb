@@ -458,5 +458,15 @@ module BreakEscape
       assert_empty extractor.entries
       assert(extractor.notes.any? { |n| n.reason.include?('no targetKnot') })
     end
+
+    # A narrator line marked "voice:" is voiced as its transcript, as any other
+    # voice message is: the endpoint refuses a line still marked
+    test 'a narrator voice message is voiced without its marker' do
+      extractor = TtsLineExtractor.new('walker_test', { 'rooms' => {} }, tts_service: nil)
+      raw = 'Narrator: voice: The tape clicks.'
+      prefix, text = InkLineWalker.split_prefix(raw)
+      line = InkLineWalker::Line.new(prefix: prefix, text: text, raw: raw, tags: [], path: nil)
+      assert_equal ['narrator', 'The tape clicks.'], extractor.resolve(line, 'ann')
+    end
   end
 end

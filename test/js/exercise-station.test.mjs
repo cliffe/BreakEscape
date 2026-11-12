@@ -30,7 +30,7 @@ for (const rel of [
     'minigames/assistant-chat/assistant-chat-minigame.js',
     'minigames/password-guesser/password-guesser-minigame.js', 'minigames/password-guesser/password-guesser-model.js',
     'minigames/framework/minigame-manager.js', 'minigames/framework/base-minigame.js',
-    'minigames/framework/social-overlay.js', 'ui/modal-stack.js', 'utils/display-dashes.js'
+    'minigames/framework/social-overlay.js', 'ui/modal-stack.js', 'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
