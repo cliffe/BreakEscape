@@ -172,6 +172,48 @@ class AuthorNotesTest < Minitest::Test
     assert_raises(ArgumentError) { SS.load('/no/such/schema.json') }
   end
 
+  # Step 2b, the "_"-skip-by-name audit (plan item 6), proved against the repository schema. Every
+  # site the audit MOVED resolves to an id map, so a "_" key there is an id and the hand walker now
+  # reads it instead of skipping it by name.
+  def repo_table
+    @repo_table ||= SS.load(SS::DEFAULT_PATH, starts: ['#'])
+  end
+
+  MOVED_ID_SITES = [
+    '#/properties/roles',
+    '#/properties/social/properties/intelFacts',
+    '#/definitions/socialAwarenessEpisode/properties/stepLabels',
+    '#/definitions/socialAwarenessEpisode/properties/strings/properties/flipDefenderLineByChoice',
+    '#/definitions/socialAwarenessEpisode/properties/strings/properties/flipMontageByChoice',
+    '#/definitions/socialTriageSet/properties/scoring/properties/kindPoints'
+  ].freeze
+
+  def test_moved_sites_treat_underscore_as_id
+    MOVED_ID_SITES.each do |ptr|
+      node = repo_table.node_at(ptr)
+      refute AN.note?(node, '_x'), "#{ptr}: a \"_x\" key must be read as an id, not skipped as a note"
+      assert SS.id_key?(node, '_x'), "#{ptr}: a \"_x\" key must classify as an id"
+    end
+    # replies.byChoice: byChoice is a declared property whose own keys are template ids.
+    bychoice = SS.child(repo_table.node_at('#/definitions/socialPhishTarget/properties/replies'), 'byChoice')
+    refute AN.note?(bychoice, '_tid'), 'replies.byChoice: a "_tid" key is a template id, not a note'
+    # flipMontageByChoice inner: each value is itself an id map keyed by option id.
+    montage = repo_table.node_at('#/definitions/socialAwarenessEpisode/properties/strings/properties/flipMontageByChoice')
+    refute AN.note?(SS.child(montage, 'beat'), '_oid'), 'flipMontageByChoice inner: a "_oid" key is an option id'
+  end
+
+  # Three sites the plan first listed as moves but the resolver keeps as notes: closed {phish,real}
+  # or fixed-field blocks that still carry step 2's "^_" note pattern, so a "_" key is a note. The
+  # hand walker rightly keeps its by-name skip there (recorded in the build log).
+  def test_kept_sites_treat_underscore_as_note
+    verdict_fb = repo_table.node_at('#/definitions/socialTriageSet/properties/labels/properties/verdictFeedback')
+    assert AN.note?(verdict_fb, '_x'), 'labels.verdictFeedback: a "_" key is a note'
+    kind_val = SS.child(repo_table.node_at('#/definitions/socialTriageSet/properties/scoring/properties/kindPoints'), 'phishing')
+    assert AN.note?(kind_val, '_x'), 'kindPoints.<kind>: a "_" key is a note (the {phish,real}/verdict value block)'
+    hints = repo_table.node_at('#/definitions/socialPhishTarget/properties/hintsByFactor')
+    assert AN.note?(hints, '_x'), 'hintsByFactor: a "_" key is a note (fixed factor block)'
+  end
+
   private
 
   def deep_dup(obj)

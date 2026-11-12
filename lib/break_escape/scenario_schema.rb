@@ -35,7 +35,17 @@ module BreakEscape
       '#/definitions/item',
       '#/definitions/item/properties/contents',
       '#/definitions/npc/properties/eventMappings',
-      '#/definitions/eventMapping'
+      '#/definitions/eventMapping',
+      # Step 2b, the "_"-skip-by-name audit (plan item 6): the map locations whose hand walkers now
+      # ask the resolver instead of testing the key name, so a "_" id there is validated as an id.
+      '#/properties/roles',
+      '#/properties/social/properties/intelFacts',
+      '#/definitions/socialAwarenessEpisode/properties/stepLabels',
+      '#/definitions/socialAwarenessEpisode/properties/strings/properties/flipDefenderLineByChoice',
+      '#/definitions/socialAwarenessEpisode/properties/strings/properties/flipMontageByChoice',
+      '#/definitions/socialAwarenessEpisode/properties/guess',
+      '#/definitions/socialTriageSet/properties/scoring/properties/kindPoints',
+      '#/definitions/socialPhishTarget/properties/replies'
     ].freeze
 
     # A Node is the set of schema locations that may describe a value (after following local $refs

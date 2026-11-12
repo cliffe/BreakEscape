@@ -15,6 +15,9 @@
 #
 # The triage set's own rules (message shapes, tells, scoring) stay in triage.rb. This file lints
 # what binds the set to the episode: ids, counts, the done global, the host NPC and the carry-over.
+require_relative '../../lib/break_escape/scenario_schema' unless defined?(BreakEscape::ScenarioSchema)
+require_relative '../../lib/break_escape/author_notes' unless defined?(BreakEscape::AuthorNotes)
+
 module ValidateSocial
   module Awareness
     STAGES = %w[brief osint build write flip defend debrief check mfa mistake guess].freeze
@@ -459,8 +462,10 @@ module ValidateSocial
       labels = ep['stepLabels']
       return [err('stepLabels must be an object { <stageId>: string }')] unless labels.is_a?(Hash)
 
+      labels_node = BreakEscape::ScenarioSchema.at('#/definitions/socialAwarenessEpisode/properties/stepLabels')
       labels.each_with_object([]) do |(k, v), out|
-        next if k.to_s.start_with?('_')
+        # stepLabels is an id map keyed by stage id: a "_" key is a stage id, not a note.
+        next if BreakEscape::AuthorNotes.note?(labels_node, k.to_s)
 
         out << err("stepLabels.#{k} is not a stage id (#{STAGES.join(', ')})") unless STAGES.include?(k)
         out << err("stepLabels.#{k} is empty; the step would show no name") if Mail.blank?(v)
@@ -546,8 +551,10 @@ module ValidateSocial
       template_ids = templates.is_a?(Hash) ? templates.keys : []
       pretext_ids = templates.is_a?(Hash) ? templates.select { |_, t| t.is_a?(Hash) && t['part'] == 'pretext' }.keys : []
       issues = []
+      by_node = BreakEscape::ScenarioSchema.at('#/definitions/socialAwarenessEpisode/properties/strings/properties/flipDefenderLineByChoice')
       by.each do |key, val|
-        next if key.to_s.start_with?('_')
+        # flipDefenderLineByChoice is an id map keyed by template id: a "_" key is a template id.
+        next if BreakEscape::AuthorNotes.note?(by_node, key.to_s)
 
         if !val.is_a?(String) || val.strip.empty?
           issues << err("strings.flipDefenderLineByChoice.#{key} has no text; drop the key and the branch falls back to flipDefenderLine")
@@ -682,8 +689,12 @@ module ValidateSocial
       return [err('strings.flipMontageByChoice must be an object { <beatId>: { <optionId>: string } }')] unless by.is_a?(Hash)
 
       issues = []
+      montage_node = BreakEscape::ScenarioSchema.at('#/definitions/socialAwarenessEpisode/properties/strings/properties/flipMontageByChoice')
+      beat_node = BreakEscape::ScenarioSchema.child(montage_node, 'beat')
       by.each do |bid, lines|
-        next if bid.to_s.start_with?('_')
+        # flipMontageByChoice is an id map keyed by beat id; its values are id maps keyed by option id.
+        # A "_" key at either level is an id, not a note.
+        next if BreakEscape::AuthorNotes.note?(montage_node, bid.to_s)
 
         unless option_ids.key?(bid)
           issues << err("strings.flipMontageByChoice.#{bid} is not a beat id of awarenessEpisode.mistake (#{option_ids.keys.join(', ')})")
@@ -694,7 +705,7 @@ module ValidateSocial
           next
         end
         lines.each do |oid, line|
-          next if oid.to_s.start_with?('_')
+          next if BreakEscape::AuthorNotes.note?(beat_node, oid.to_s)
 
           if !option_ids[bid].include?(oid)
             issues << err("strings.flipMontageByChoice.#{bid}.#{oid} is not an option of beat '#{bid}' (#{option_ids[bid].join(', ')})")
@@ -1586,17 +1597,21 @@ module ValidateSocial
     end
 
     # No key in the block names a credential: the guesser holds authored guesses, never a password field.
-    def self.guess_credential_checks(node, path)
+    # Carries the resolver Node down the recursion so a credential-named key is flagged unless it is a
+    # genuine author note; a credential-named "_" key that is an id or sits in free data is still caught.
+    def self.guess_credential_checks(node, path, snode = :root)
+      snode = BreakEscape::ScenarioSchema.at('#/definitions/socialAwarenessEpisode/properties/guess') if snode == :root
       case node
       when Hash
         node.flat_map do |k, v|
           here = "#{path}.#{k}"
-          named = k.to_s.match?(CREDENTIAL_KEY) && !k.to_s.start_with?('_')
+          named = k.to_s.match?(CREDENTIAL_KEY) && !BreakEscape::AuthorNotes.note?(snode, k.to_s)
           (named ? [err("#{here} looks like a credential field; the guesser holds authored guesses only, never a password, secret or hash")] : []) +
-            guess_credential_checks(v, here)
+            guess_credential_checks(v, here, BreakEscape::ScenarioSchema.child(snode, k.to_s))
         end
       when Array
-        node.each_with_index.flat_map { |v, i| guess_credential_checks(v, "#{path}[#{i}]") }
+        inode = BreakEscape::ScenarioSchema.item(snode)
+        node.each_with_index.flat_map { |v, i| guess_credential_checks(v, "#{path}[#{i}]", inode) }
       else
         []
       end
