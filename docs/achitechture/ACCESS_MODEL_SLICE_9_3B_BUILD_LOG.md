@@ -80,6 +80,13 @@ plants and views as before, `office_lan` only (K inert, no links), `kp_dropbox_v
   whoever lands the graph changes across the sub-slices. Low risk, additive.
 - O, P, I: separate sub-slices (P is already on `main`).
 
+### Suites (after merging `main` fea96124c with 9.3b P and 9.2 C, under the shared lock)
+
+- `bin/rails test`: 1707 runs, 25041 assertions, 0 failures, 0 errors, 1 skip.
+- `bin/test-js -j 3`: 498 files passed, 0 failed.
+- Merge of `main` into `build/9-3b-k`: two conflicts resolved (both sides' tasks/mappings in
+  `test_access_networks` kept; both `with_pivot` (K) and `with_secured_port` (P) support helpers kept).
+
 ## Sub-slice W: Wi-Fi (branch `build/9-3b-w`, from `main` 1ba8c5cd7)
 
 Built on 9.3a only (K and O were not yet on this branch). A Wi-Fi foothold reaches its own
