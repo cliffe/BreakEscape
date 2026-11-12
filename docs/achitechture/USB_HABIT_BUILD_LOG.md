@@ -271,3 +271,83 @@ checked, nor is a knock-out before the first refusal (combat is the author's cho
   (unused) were also created. Server stopped by PID afterwards.
 - Seen in passing, not from this branch: the bridge's approach walk once raised "Can't reach that
   seat from here." while walking to the stick.
+
+## R3 fixes (`docs/achitechture/USB_HABIT_CODE_REVIEW_R3.md`)
+
+Merge: `main` at `de866cd20` merged in (`d894ab9e6`). `npc_frustration.rb` keeps this branch's USB
+use count methods and `main`'s `borrow_locked_out?`; `npc-needs.js` keeps the `_usbAttempt` call
+and `main`'s q36 hot desk lockout check, and `_borrowDone` takes `main`'s signature (with `lapsed`)
+and comment. `main` puts `l1_room` east of `f13_room` and `l2_room` east of that, so `u1_room` moves
+east of `l2_room` (`l2_room.connections.east`, `u1_room.connections.west`). The scenario was merged
+as JSON: `main`'s file plus this branch's room, two globals, `u1_reports`, three tasks, the
+`usb_refused` chatter, Kim's profile and the `usb_locked` policy. Kim's room has no waypoints, and
+her objects and NPC use room-local tiles, so nothing else moved. PLAYTEST.md says where the room is
+now. Door alignment check: all doors line up, `l2_room` east to `u1_room` included.
+
+| Id | Status | Where |
+|----|--------|-------|
+| m1 | fixed (`faa2c45b7`) | `interaction-reach.js` `takeablesBeforeChairs`: a far tap puts a takeable item under the tap before any chair (a seat or a swivel prop) drawn above it; `core/game.js` uses it in the out-of-reach branch. The in-reach path was already right (`withoutChairsIfOthers`) |
+| m2 | left | Being fixed on build/ff-phone (the KO drop's picture) |
+| m3 | fixed (`e2530a9b5`) | README bullet "A knock-out before the first refusal stops the habit too": a habit NPC whose beats a mission needs is `koImmune`, or has a `taskOnKO`, or a mapping on its knock-out. Validator warns when a required task completes only on the refusal (`npc_usb_refused:<npc>`, the habit's global, the vent post) and the NPC can be knocked out with none of those (skipped with `disableAttacks`). `test_access_social` now draws that warning for Kim, expected (U3 is the knock-out) |
+| m4 | backlog (`e2530a9b5`) | `docs/IDEAS_BACKLOG.md`: NPC-carried containers fail once dropped or given, since `find_scenario_object` searches neither held items nor the dropped copy |
+| n1 | fixed (`e2530a9b5`) | The give-order warning now finds `#give_npc_inventory_items` (with no filter, or one naming `usb` or the stick id) and reads a mail reply's ink: the storyPath of a headless email record (a character's `emailRecord` or a mail contact's) that holds the stick's id, since a reply gives from that record's own items. A give inside a conditional block gated on the global (`{glob: ...}` across lines, or a `- glob:` branch) no longer warns |
+| n2 | fixed (`e2530a9b5`) | Scanner header comment lists the stick rule's limits: it cannot tell whether the stick was held when served, nor an `/unlock` answer's target; the server's held check and its controller tests cover that |
+| n3 | fixed (`e2530a9b5`) | Scanner: a stick string that another secret also carries (a sign-in PC's, a profile's or a share's file) is left to that secret, so the other file's own answer is not reported as `stick_content` |
+| n4 | noted | The B1 floor-stick test also matches a takeable `usb` with files and a flag lock that a flag-station reward opened earlier in the session (`hasContents`, no files, `locked` set false in the browser). It would be picked up rather than opened in place. No scenario has such an item (no room `usb` item has contents); not worth widening the server data for |
+| n5 | fixed (`e2530a9b5`, `7485dd566`) | `u1_kim_gave_usb` is set by the stick's own `onPickup` once it reaches the tray, not in the choice. A plain ink variable `u1_kim_asked_usb`, set in the give choice and cleared by Kim's other choices and in `start`, hides the choice from the hub listed straight after the give. README says how |
+
+Also: `test/js/usb-stick-pickup.test.mjs`'s stub of `interaction-reach.js` gained `npcGivesWay` and
+`objectIdOf`, which `interactions.js` imports since the merge (`ebc25a735`).
+
+Spoken lines changed: none (Kim's ink gained variable assignments only; `tagdiff` lists one new
+`VAR`, four assignments, one removed assignment and the give choice's condition).
+
+Sync size: the stick's saved inventory entry gains its `onPickup` (268 bytes in all, game 1659);
+`u1_kim_gave_usb` is still one boolean, now written when the stick reaches the tray.
+`u1_kim_asked_usb` is an ink variable in Kim's saved story state, one boolean. The whole
+`player_state` after the give route is 2996 bytes. Nothing grows with play.
+
+### Tests (run alone, no lock)
+
+- `test/js/interaction-chair-picks.test.mjs`: 9 pass (5 new, `takeablesBeforeChairs`).
+- `test/js/validator-usb-habit.test.mjs`: 25 pass (5 new: `#give_npc_inventory_items`, conditional
+  blocks gated, negated and closed, a mail reply's record, the knock-out warning and the five ways
+  to clear it).
+- Every test file that imports `interaction-reach.js`, `systems/npc-needs.js`, the validator or
+  `validate_access_work.rb` (88 files): 1521 pass, 2 fail. Rerun alone: `usb-stick-pickup` failed on
+  the missing stub export (fixed above, now 5 pass); `event-mapping-unlock-door` fails the same way
+  on `main` at `de866cd20` (its stub of `interaction-reach.js` lacks `npcGivesWay`), so it is not
+  from this branch.
+- Rails, run alone: `usb_habit_test.rb`, `access_work_usb_habit_test.rb`, `access_leak_scanner_test.rb`
+  (1 new, which fails without the n3 change), `npc_frustration_test.rb`, `npc_lockout_l_test.rb`,
+  `npc_workaround_test.rb`, `npc_workaround_h_test.rb`, `social_lockout_q33_test.rb`,
+  `access_helper_equality_test.rb`, `access_model_no_password_test.rb`: 231 runs, 1911 assertions,
+  0 failures; `access_leak_scanner_feed_test.rb` 37 runs, 0 failures.
+- Validator, `test_access_social` (`--no-graph`): 0 errors. Warnings: the three listed in
+  PLAYTEST.md, `main`'s two hot desk `maxAttempts` warnings (L1, L2), and Kim's knock-out warning.
+
+### Live proof (keyless :3050, headless, setFPS(20) with fixed steps on, `--start-room u1_room`)
+
+- Game 1658, U3: `debugKO` straight away; the stick lay above the chair in depth this time. From
+  the sign the walk stalled behind the desk, and the bridge's `interact` then picked the stick up,
+  `u1_kim_gave_usb` true from its `onPickup`. Not the m1 case.
+- Game 1660, U3 and m1: the stick's depth was set below the chair (150.5 under 153.5, the order R3
+  saw in game 1622), so the chair was first under the tap. From open floor 64 px away, one click
+  on the stick walked to it (19 px away after), with no alert and no seat; the second click picked
+  it up (`POST /inventory`, `update_room`, 200; no `/unlock`). From the tray `/unlock` 200 and
+  `work_file.txt` opened. `u1_kim_gave_usb` true. Leak check: no leaks found.
+- Game 1659, U1 and U2: no stick choice before the refusal; refusal at 35 s; tasks `u1_refused` and
+  `u1_emailed` completed; the choice, Kim's line, the stick in the tray, `u1_kim_gave_usb` true. The
+  hub straight after the give, a second conversation and a reload all left the choice out. Leak
+  check: no leaks found.
+- Game 1673, n5: the first `POST /inventory` of the give was answered 500 by the test. Kim kept the
+  stick, the global stayed false, "Could not take Kim's USB stick. Try asking again." showed, and
+  the hub straight after left the choice out. After "How's work today?" the choice came back; the
+  retry gave the stick and set the global. Leak check: no leaks found.
+- Game 1669: an earlier n5 run, before the other choices cleared the flag. It showed that an
+  in-session reopen resumes the saved choice list and never runs `start`, which led to
+  `7485dd566`.
+- Server stopped by PID afterwards.
+
+Not done here: the L1 and L2 beats were not re-run after the merge (both features touch the work
+verdict in `npc-needs.js`; the q36 and q33 controller tests pass).
