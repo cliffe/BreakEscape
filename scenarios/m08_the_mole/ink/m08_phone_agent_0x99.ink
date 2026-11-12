@@ -229,12 +229,17 @@ So I'm going to be very professional tonight. Bear with me.
     #exit_conversation
     -> DONE
 }
-Two questions, the ones he'd ask. When was the plan opened?
+{ hax_read_1 > 1:
+    Again, then. When was the plan opened?
+- else:
+    Two questions, the ones he'd ask. When was the plan opened?
+}
 + [10:15 UTC.] -> hax_read_wrong_time
 + [10:32 UTC.] -> hax_read_wrong_time
 + [10:38 UTC.] -> hax_read_2
 + [11:25 UTC.] -> hax_read_wrong_time
 + [Let me read it again.]
+    Take your time. I'm not going anywhere.
     #exit_conversation
     -> DONE
 
@@ -256,6 +261,7 @@ Who was behind the lab door at 10:38, and still inside?
 + [Phantom.] -> hax_read_wrong_who
 + [None of them.] -> hax_read_wrong_who
 + [Let me read it again.]
+    Go on. The minute's there.
     #exit_conversation
     -> DONE
 
@@ -274,7 +280,12 @@ Read the door against the minute, not the man. Who was still inside at 10:38? Ca
 #set_global:mole_identified:true
 In at 10:15, out at 11:43. Vector was gone by 10:32, and Phantom was on a plane.
 Nightshade. I trained with him.
-{netherton_ko:I'll put it in front of the Director when he can stand.|I'll put it in front of the Director myself. He won't take it from you tonight.} You finish the chain.
+{ - netherton_ko:
+    I'll put it in front of the Director when he can stand.
+- else:
+    I'll put it in front of the Director myself. He won't take it from you tonight.
+}
+You finish the chain.
 #exit_conversation
 -> DONE
 
