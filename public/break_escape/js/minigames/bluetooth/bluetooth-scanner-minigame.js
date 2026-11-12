@@ -1,9 +1,8 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
 // Device names, MACs and details are scenario text: escaped once on the way into HTML.
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 // Bluetooth Scanner Minigame Scene implementation
 export class BluetoothScannerMinigame extends MinigameScene {

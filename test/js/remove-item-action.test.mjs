@@ -23,6 +23,8 @@ function dataUrl(src) { return 'data:text/javascript,' + encodeURIComponent(src)
 // apply-actions.js with its STATIC imports stubbed; remove_item uses none of them.
 const actionsSrc = readFileSync(join(js, 'systems/apply-actions.js'), 'utf8')
     .split("'../utils/display-dashes.js'").join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
+    .split("'../utils/escape-html.js'").join(`'${dataUrl('export const escapeHtml = (s) => String(s == null ? "" : s);')}'`)
+    .split("'../utils/author-html.js'").join(`'${dataUrl('export const authorHtml = (s) => String(s == null ? "" : s);')}'`)
     .split("'./global-writer.js'").join(`'${dataUrl('export function writeGlobal(){}')}'`)
     .split("'./social-intel.js'").join(`'${dataUrl('export function grantFact(){return{granted:false};} export function readyToastText(){return "";} export function readyToastTitle(){return "";}')}'`);
 writeFileSync(join(dir, 'systems', 'apply-actions.mjs'), actionsSrc);

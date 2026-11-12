@@ -157,3 +157,22 @@ test('holdsDoors: no gate label for a disabled gate or one with playerMayPassIf,
     }));
     assert.ok(h.nodes.door_store_b.label.endsWith('<br/>gate: held by len; not held by sara'), h.nodes.door_store_b.label);
 });
+
+// Habits validator gaps review R2 minor 3: a gate on an entry no doorway reads (here, no
+// direction) is never registered, so even an authored noHold draws no gate label
+test('holdsDoors: no gate label for a gate on an entry doors.js never reads', () => {
+    const guard = (id, extra = {}) => ({ id, displayName: id, npcType: 'person', ...extra });
+    const build = (door) => graph(scenario({
+        hall: {
+            type: 'room_office', connections: { north: 'store_a' }, objects: [],
+            npcs: [guard('sara', { awareness: 'high' }), guard('len', { awareness: 'low' })],
+            doors: [{ connectedRoom: 'store_a', gate: { openFor: ['sara', 'len'], noHold: ['sara'] }, ...door }]
+        },
+        store_a: { type: 'room_office', connections: { south: 'hall' }, locked: true, lockType: 'rfid', objects: [], npcs: [] }
+    }));
+    const dead = build({});
+    assert.ok(!dead.nodes.door_store_a.label.includes('gate:'), dead.nodes.door_store_a.label);
+    // mirror: with its direction the gate is read and labelled again
+    const live = build({ direction: 'north' });
+    assert.ok(live.nodes.door_store_a.label.endsWith('<br/>gate: held by len; not held by sara'), live.nodes.door_store_a.label);
+});

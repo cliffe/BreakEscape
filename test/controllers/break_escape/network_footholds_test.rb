@@ -476,6 +476,33 @@ module BreakEscape
       assert_equal ['comms_port'], state['gainedFootholds']
     end
 
+    # Code review R2, n1: a legitimately authored network device (rogueDevice) dropped
+    # (player_drop) and picked up again is rebuilt from the server copy, so it is never marked
+    # clientAdded and held_rogue_device still finds it to plant a foothold. Guards the m1 fix
+    # (held_rogue_device now skips a forged item) against wrongly tagging a real device.
+    test 'a network device dropped and picked up again is not marked forged and still plants' do
+      data = NS.scenario
+      data['rooms']['lobby']['objects'].find { |o| o['id'] == 'kit_dropbox' }['droppable'] = true
+      build_network_game({}, data)
+      take_drop_box
+
+      post game_path('update_room'), params: { roomId: 'lobby', actionType: 'add_object', sourceType: 'player_drop',
+                                               data: { id: 'kit_dropbox', type: 'pc', name: 'Network drop box', x: 6, y: 6 } }, as: :json
+      assert_response :success, response.body
+      post game_path('inventory'), params: { action_type: 'remove', item: { id: 'kit_dropbox' } }, as: :json
+      assert_response :success, response.body
+      take_drop_box
+
+      stored = @game.reload.player_state['inventory'].find { |i| i['id'] == 'kit_dropbox' }
+      assert stored, 'the device is back in the inventory'
+      refute BreakEscape::ItemIdentity.client_forged?(stored), 'a real dropped device is not marked forged'
+      assert_equal true, stored['rogueDevice'], 'the server rogueDevice flag survived the round trip'
+
+      plant('comms_port')
+      assert_response :success, response.body
+      assert_equal ['comms_port'], state['gainedFootholds'], 'the re-picked device still plants a foothold'
+    end
+
     # ---- authorisation ----------------------------------------------------------------
 
     test 'the new actions answer an unauthorised player as the existing actions do' do

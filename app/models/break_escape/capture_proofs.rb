@@ -24,6 +24,12 @@ module BreakEscape
       return false if item_id.empty? || used_on.empty?
 
       held = (player_state['inventory'] || []).find do |inv|
+        # An object added to a room with no server-known source is a bare client hash
+        # stamped clientAdded (ItemIdentity::CLIENT_ADDED_MARKER): its type/name are
+        # client-chosen, so a forged device must never be matched against a plant
+        # target's requiresItem and mint a capture proof (code review R2, B1).
+        next false if BreakEscape::ItemIdentity.client_forged?(inv)
+
         data = inv.is_a?(Hash) ? (inv['scenarioData'] || inv) : nil
         data.is_a?(Hash) && data['id'].to_s == item_id
       end

@@ -41,3 +41,25 @@ export function appHomeUrl(w = (typeof window !== 'undefined' ? window : undefin
     if (stored && stored.gameKey) return '/app/' + encodeURIComponent(stored.gameKey);
     return DESKTOP_APP_HOME;
 }
+
+/**
+ * A host shell link (breakEscapeConfig.shellReturnUrl / shellMenuUrl, from the server's
+ * shell_links hook) as the parsed href, or null. Only http or https on the game's own
+ * origin with no user name or password passes, which is all the server sends (relative
+ * paths): javascript:, data:, //host, /\host, http:host, another host and user:pass@
+ * are refused. With no page origin to compare against, everything is refused. The same
+ * rule as safeVmPanelUrl (minigames/vm-launcher) and the inline copy in apply-actions.js.
+ */
+export function safeShellUrl(raw, base = (typeof window !== 'undefined' ? window.location?.href : undefined)) {
+    if (typeof raw !== 'string' || !base) return null;
+    const text = raw.trim();
+    if (!text) return null;
+    try {
+        const parsed = new URL(text, base);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+        if (parsed.username || parsed.password) return null;
+        return parsed.origin === new URL(base).origin ? parsed.href : null;
+    } catch (e) {
+        return null;
+    }
+}

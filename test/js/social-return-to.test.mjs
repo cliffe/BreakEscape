@@ -16,7 +16,7 @@ const read = (rel) => readFileSync(join(js, rel), 'utf8');
 const dir = mkdtempSync(join(tmpdir(), 'social-return-to-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of ['minigames/framework/minigame-manager.js', 'minigames/framework/base-minigame.js',
-    'minigames/framework/social-overlay.js', 'utils/display-dashes.js', 'ui/modal-stack.js']) {
+    'minigames/framework/social-overlay.js', 'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), read(rel));
 }

@@ -21,6 +21,8 @@ import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
 import { reachX, aimX } from './interaction-reach.js';
+import { displayDashes } from '../utils/display-dashes.js';
+import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
 // The inventory click menu (feedback plan, section 5) decides with the same two tests as
 // the chain's first two branches for a held item, imported from one place.
@@ -776,7 +778,7 @@ export function maybeInteractionWarning(sprite) {
     const declineLabel = typeof w.declineLabel === 'string' && w.declineLabel ? w.declineLabel : 'Cancel';
     const once = w.once !== false; // default true
 
-    window.gameConfirm(text, proceedLabel, declineLabel, { plainText: true }).then(proceed => {
+    window.gameConfirm(text, proceedLabel, declineLabel).then(proceed => {
         if (proceed) {
             recordInteractionWarningAnswered(sprite); // Proceed is always permanent
             if (Array.isArray(w.onProceed)) applyActions(w.onProceed, { source: 'interaction_warning' });
@@ -2049,7 +2051,9 @@ export function handleObjectInteraction(sprite) {
     }
 
     if (readInPlace && window.gameDisplay) {
-        const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        // Dash display on the text, then the shared five-character escape: gameDisplay's
+        // html mode inserts the result as given
+        const esc = (s) => escapeHtml(displayDashes(String(s)));
         const body = (resolvedObservations ? `<em>${esc(resolvedObservations)}</em>\n\n` : '') + esc(resolvedText);
         // Built as HTML on purpose (the <em>), every author piece escaped once above
         window.gameDisplay(body, esc(data.name || sprite.name), { html: true });

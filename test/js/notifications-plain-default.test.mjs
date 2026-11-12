@@ -19,7 +19,8 @@ for (const k of ['log', 'info', 'debug', 'warn']) console[k] = () => {};
 const here = dirname(fileURLToPath(import.meta.url));
 // SWEEP_JS_ROOT points at a copy of the engine (used to show the tests fail on old code)
 const js = process.env.SWEEP_JS_ROOT || join(here, '../../public/break_escape/js');
-const dataUrl = (src) => 'data:text/javascript,' + encodeURIComponent(src);
+// (a quote is encoded too, so a real module's source can sit inside a quoted specifier)
+const dataUrl = (src) => 'data:text/javascript,' + encodeURIComponent(src).replace(/'/g, '%27');
 
 const dom = new JSDOM('<!doctype html><body><div id="notification-container"></div></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;
@@ -117,6 +118,8 @@ const stubs = {
     './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;}',
     './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
     './inventory-menu.js': 'export function hasTriggerOnInteract(){return false;} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}',
+    '../utils/display-dashes.js': readFileSync(join(js, 'utils/display-dashes.js'), 'utf8'),
+    '../utils/escape-html.js': readFileSync(join(js, 'utils/escape-html.js'), 'utf8'),
 };
 let src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, body] of Object.entries(stubs)) {

@@ -22,8 +22,13 @@ const copy = (src, name, fix = s => s) => writeFileSync(join(dir, name), fix(rea
 copy('systems/global-writer.js', 'global-writer.mjs');
 copy('systems/social-intel.js', 'social-intel.mjs', s => s.replace("'./global-writer.js'", "'./global-writer.mjs'"));
 copy('utils/display-dashes.js', 'display-dashes.mjs');
+copy('utils/escape-html.js', 'escape-html.mjs');
+copy('utils/author-html.js', 'author-html.mjs', s => s
+    .replace("'./escape-html.js'", "'./escape-html.mjs'")
+    .replace("'./display-dashes.js'", "'./display-dashes.mjs'"));
 copy('systems/apply-actions.js', 'apply-actions.mjs', s => s
     .replace("'../utils/display-dashes.js'", "'./display-dashes.mjs'")
+    .replace("'../utils/author-html.js'", "'./author-html.mjs'")
     .replace("'./global-writer.js'", "'./global-writer.mjs'")
     .replace("'./social-intel.js'", "'./social-intel.mjs'"));
 

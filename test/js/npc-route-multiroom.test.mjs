@@ -303,6 +303,47 @@ test('a late answer that is a path is dropped too: the move keeps its own path a
     assert.equal(b._pathfindingInProgress, false, 'the request is still marked as answered');
 });
 
+// The same late-answer race on the two older patrol kinds: a single-room waypoint patrol
+// and a random patrol. A move that takes the target meanwhile keeps it, its path and its
+// following state, whether the old answer is a path or none.
+for (const kind of ['single-room waypoint', 'random']) {
+    test(`a late answer on a ${kind} patrol is dropped: the move keeps its target and path`, async () => {
+        const { b } = setup();
+        let release = null;
+        b.pathfindingManager.findWorldPath = (sx, sy, ex, ey, cb) => { release = cb; };
+        b.pathfindingManager.getRandomPatrolTarget = () => ({ x: 64, y: 400 });
+        const patrol = kind === 'random'
+            ? { enabled: true }
+            : { enabled: true, waypoints: [{ x: 2, y: 2 }, { x: 4, y: 1 }] };
+        b.config = await silently(() => b.parseConfig({ patrol }));
+        for (const answer of [[{ x: 1, y: 1 }], null]) {
+            release = null;
+            await silently(() => (kind === 'random' ? b.chooseRandomPatrolTarget(0) : b.chooseWaypointTarget(0)));
+            assert.equal(typeof release, 'function', 'the request is in flight');
+            const moveTarget = { x: 500, y: 500, dwellTime: 0 };   // what a goToAndStay sets
+            const movePath = [{ x: 500, y: 500 }];
+            b.patrolTarget = moveTarget;
+            b.currentPath = movePath;
+            b.pathFollowingActive = true;
+            b._pathRetryAfter = 0;
+            await silently(() => release(answer));
+            assert.equal(b.currentPath, movePath, `the move's path is kept (answer ${answer ? 'a path' : 'none'})`);
+            assert.equal(b.pathFollowingActive, true);
+            assert.equal(b.patrolTarget, moveTarget, 'the move keeps its target');
+            assert.equal(b._pathRetryAfter, 0, 'no back-off from an answer for an old target');
+            if (kind !== 'random') assert.equal(b._pathfindingInProgress, false, 'the request is still marked as answered');
+        }
+    });
+}
+
+test('a single-room waypoint patrol still takes its own answer', async () => {
+    const { b } = setup();
+    b.config = await silently(() => b.parseConfig({ patrol: { enabled: true, waypoints: [{ x: 2, y: 2 }, { x: 4, y: 1 }] } }));
+    await silently(() => b.chooseWaypointTarget(0));
+    assert.ok(b.currentPath.length > 0, 'the path is taken');
+    assert.equal(b.pathFollowingActive, true);
+});
+
 test('with the real gate system: kept out at his reader he waits; pushed out of the radius he walks back', async () => {
     // The two halves (approachPoint and _approachRouteGate) run together here. Each was
     // tested against a stand-in for the other, which is how a guard standing inside his

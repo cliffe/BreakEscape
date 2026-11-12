@@ -4003,7 +4003,7 @@
         "locked": { "type": "boolean" },
         "doors": {
           "type": "array",
-          "description": "Per-door overrides for this room's doorways. Optional.",
+          "description": "Entries for this room's doorways, matched by connectedRoom and direction (first match wins). An entry carries a gate; lock fields (locked, lockType, requires, keyPins and the rest) belong on the room the door leads into, because the game never reads them on a door entry. Optional.",
           "items": {
             "type": "object",
             "properties": {
