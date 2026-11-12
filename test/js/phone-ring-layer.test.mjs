@@ -95,7 +95,7 @@ test('an unanswered ring times out after 20 s and emits phone_call_missed', asyn
     } finally { w.restore(); }
 });
 
-test('delayed ring mappings fire with a minigame open and are queued; other delayed mappings still wait', async () => {
+test('delayed ring mappings fire with a minigame open and ring over it (A2c); other delayed mappings still wait', async () => {
     const w = makeWorld({ npcs: [npc, { id: 'other', displayName: 'Other', npcType: 'person' }] });
     try {
         w.fw.currentMinigame = { _sceneType: 'lockpicking', params: {}, _ending: false };
@@ -104,19 +104,29 @@ test('delayed ring mappings fire with a minigame open and are queued; other dela
         w.nm._scheduleDelayedMapping('other', 'door_unlock_attempt',
             { handlerIndex: 0, knot: 'x', conversationMode: 'person-chat', once: true, cooldown: 0, delayMs: 1000 }, {});
         await w.advance(1200);
-        assert.equal(w.ringer.stateOf('caller'), 'queued', 'the ring mapping fired and queued behind the minigame');
-        assert.equal(w.banner(), null, 'nothing rings over an open minigame in A2b');
+        assert.equal(w.ringer.stateOf('caller'), 'ringing', 'the ring mapping fired and rings over the minigame');
+        assert.match(w.banner().textContent, /Answer puts them on hold until you close this/);
         assert.equal(w.nm._scriptedCallQueue.length, 0);
         assert.equal(w.calls.started.length, 0, 'the person-chat mapping kept waiting');
-        // the minigame closes: the queued call rings at once
-        w.fw.currentMinigame = null;
-        w.ringer.onMinigameEnded({});
-        await w.advance(100);
-        assert.equal(w.ringer.stateOf('caller'), 'ringing');
     } finally { w.restore(); }
 });
 
-test('a popup blocks ringing; closing it (the popup hook) lets the queued call ring', async () => {
+test('A2c: a person-chat blocks ringing until it closes', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        w.fw.currentMinigame = { _sceneType: 'person-chat', params: {}, _ending: false };
+        w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
+        await w.advance(300);
+        assert.equal(w.ringer.stateOf('caller'), 'queued', 'a conversation blocks');
+        w.fw.currentMinigame = null;
+        w.ringer.onMinigameEnded({});
+        await w.advance(50);
+        assert.equal(w.ringer.stateOf('caller'), 'ringing');
+        assert.doesNotMatch(w.banner().textContent, /on hold/);
+    } finally { w.restore(); }
+});
+
+test('A2c: a call rings over an open workstation popup', async () => {
     const w = makeWorld({ npcs: [npc] });
     try {
         const popup = w.win.document.createElement('div');
@@ -125,11 +135,9 @@ test('a popup blocks ringing; closing it (the popup hook) lets the queued call r
         w.win.document.body.appendChild(popup);
         w.nm._handleEventMapping('caller', 'room_entered', ringConfig(), {});
         await w.advance(300);
-        assert.equal(w.ringer.stateOf('caller'), 'queued');
-        popup.style.display = 'none';
-        w.ringer.onPopupClosed();
-        await w.advance(50);
         assert.equal(w.ringer.stateOf('caller'), 'ringing');
+        assert.ok(w.banner());
+        assert.doesNotMatch(w.banner().textContent, /on hold/);
     } finally { w.restore(); }
 });
 
@@ -139,7 +147,7 @@ test('a timed ring conversation offers the call, sets its global at the first ri
         w.nm.scheduleTimedConversation({ npcId: 'caller', targetKnot: 'ring_call', delay: 0, ring: true, opening: true, setGlobalOnStart: 'caller_started' });
         const conv = w.nm.timedConversations[0];
         conv.delivered = true;
-        w.fw.currentMinigame = { _sceneType: 'notes', params: {}, _ending: false };
+        w.fw.currentMinigame = { _sceneType: 'person-chat', params: {}, _ending: false };
         w.nm._deliverTimedConversation(conv);
         assert.equal(w.ringer.stateOf('caller'), 'queued');
         assert.equal(w.nm.hasPendingOpeningConversation(), true, 'row 30');
@@ -367,22 +375,25 @@ async function ringing(opts = {}) {
     return { w, log };
 }
 
-test('A2b R2 m1: the ringtone stops when a minigame, a workstation popup or a knockout takes the ring away', async () => {
+test('A2b R2 m1 (A2c): the ringtone stops when a conversation or a knockout takes the ring away; a minigame or popup does not', async () => {
     {
         const { w, log } = await ringing();
         try {
-            w.fw.startMinigame('notes', null, { title: 'Notes' });
+            w.fw.startMinigame('person-chat', null, { npcId: 'x' });
             await w.advance(300);
-            assert.equal(playing(log), 0, 'a minigame opened over the ring');
+            assert.equal(playing(log), 0, 'a conversation opened over the ring');
         } finally { w.restore(); }
     }
     {
         const { w, log } = await ringing();
         try {
+            w.fw.startMinigame('notes', null, { title: 'Notes' });
+            await w.advance(300);
+            assert.equal(playing(log), 1, 'a non-conversation minigame: still rings (A2c)');
             const pop = w.win.document.createElement('div'); pop.id = 'laptop-popup'; pop.style.display = 'block';
             w.win.document.body.appendChild(pop);
             await w.advance(600);
-            assert.equal(playing(log), 0, 'a workstation popup opened');
+            assert.equal(playing(log), 1, 'a popup: still rings (A2c)');
         } finally { w.restore(); }
     }
     {

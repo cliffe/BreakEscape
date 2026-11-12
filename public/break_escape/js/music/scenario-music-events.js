@@ -243,6 +243,11 @@ function playEntry(entry, data) {
     // screen in front of a player who was simultaneously being told they were
     // not finished.
     const hasEnding = !!(entry.credits?.length || entry.closingCard);
+    // The credits start: no more calls ring (phone calls plan 2.3 row 28). A call already
+    // connected finishes normally.
+    if (hasEnding) {
+        try { window.phoneRinger?.close?.(); } catch (e) { console.warn(`${TAG} phoneRinger.close failed:`, e); }
+    }
     const ownsVisualiser = hasEnding;
     if (ownsVisualiser && window.BondVisualiser?.setAutoOpenSuppressed) {
         window.BondVisualiser.setAutoOpenSuppressed(true);

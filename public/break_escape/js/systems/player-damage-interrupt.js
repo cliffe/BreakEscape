@@ -39,8 +39,33 @@ export function minigameClosedByDamage(withinMs = 1500, now = Date.now()) {
   return now - lastDamageCloseAt <= withinMs;
 }
 
+// When the player was last hit, on the performance clock (the phone ringer's clock, phone calls
+// plan 2.3 rows 16, 22 and 26). Stamped on every hit, whether or not a minigame was open.
+let lastPlayerHitAtMs = null;
+
+/** Performance-clock time of the last hit on the player, or null if none this session. */
+export function lastPlayerHitAt() {
+  return lastPlayerHitAtMs;
+}
+
+/**
+ * True if the player was hit within the last `ms` milliseconds (performance clock).
+ * @param {number} ms
+ * @param {number} [now] - test seam
+ */
+export function playerHitWithin(ms, now = (typeof performance !== 'undefined' ? performance.now() : 0)) {
+  if (typeof lastPlayerHitAtMs !== 'number') return false;
+  const d = now - lastPlayerHitAtMs;
+  return d >= 0 && d < ms;
+}
+
 export function closeMinigameOnDamage(amount, deps = {}) {
   if (typeof amount !== 'number' || !(amount > 0)) return false;
+
+  // Stamp first: the ringer reads it from inside the close below (a forced call's re-ring)
+  lastPlayerHitAtMs = typeof deps.perfNow === 'number'
+    ? deps.perfNow
+    : (typeof performance !== 'undefined' ? performance.now() : null);
 
   // The knockout hit: the last "You're being hit! HP 1/100" notice goes now, not
   // 4 s later over the KO screen (m06 confirmation R4 M1)
@@ -173,6 +198,8 @@ export function closeMinigameForKnockout(deps = {}) {
 
 if (typeof window !== 'undefined') {
   window.minigameClosedByDamage = minigameClosedByDamage;
+  window.lastPlayerHitAt = lastPlayerHitAt;
+  window.playerHitWithin = playerHitWithin;
   window.playerIsKnockedOut = playerIsKnockedOut;
   window.closeMinigameForKnockout = closeMinigameForKnockout;
   window.dismissPhoneHitNotice = dismissPhoneHitNotice;

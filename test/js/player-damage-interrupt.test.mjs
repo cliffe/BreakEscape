@@ -154,3 +154,31 @@ test('player-health tells the interrupt when a hit is a knockout', () => {
     const src = readFileSync(join(here, '../../public/break_escape/js/systems/player-health.js'), 'utf8');
     assert.match(src, /closeMinigameOnDamage\(amount, \{ ko: state\.currentHP <= 0 \}\)/);
 });
+
+// ---- A2c: the hit stamp the phone ringer reads (plan 2.3 rows 16, 22, 26) ----------------------
+
+test('every hit is stamped on the performance clock, with or without a minigame open; playerHitWithin reads it', async () => {
+    const { lastPlayerHitAt, playerHitWithin } = await import(pathToFileURL(join(dir, 'interrupt.mjs')).href);
+    closeMinigameOnDamage(5, { framework: makeFramework(false), perfNow: 10000 });
+    assert.equal(lastPlayerHitAt(), 10000, 'stamped with no minigame open');
+    assert.equal(playerHitWithin(4000, 13999), true);
+    assert.equal(playerHitWithin(4000, 14000), false);
+    assert.equal(playerHitWithin(4000, 9000), false, 'a stamp ahead of the clock is not a hit');
+    closeMinigameOnDamage(0, { framework: makeFramework(false), perfNow: 20000 });
+    assert.equal(lastPlayerHitAt(), 10000, 'no damage, no stamp');
+});
+
+test('the hit is stamped before a forced call is closed, so the ringer sees it inside the close', () => {
+    const fw = { currentMinigame: null, ended: [] };
+    let seen = null;
+    fw.currentMinigame = {
+        _sceneType: 'phone-chat', params: { disableClose: true },
+        complete() { seen = lastSeen(); fw.currentMinigame = null; },
+    };
+    let lastSeen = () => null;
+    return import(pathToFileURL(join(dir, 'interrupt.mjs')).href).then(({ lastPlayerHitAt }) => {
+        lastSeen = lastPlayerHitAt;
+        closeMinigameOnDamage(5, { framework: fw, notify: () => {}, perfNow: 31000 });
+        assert.equal(seen, 31000);
+    });
+});

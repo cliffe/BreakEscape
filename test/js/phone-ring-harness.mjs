@@ -70,6 +70,8 @@ export function makeWorld({ npcs = [] } = {}) {
     win.breakEscapeSessionOverlayShowing = false;
     win.playerIsKnockedOut = () => false;
     delete win.phoneRinger;
+    delete win.lastPlayerHitAt;   // A2c: the hit stamp is per world
+    for (const k of ['closeLaptop', 'closeLabWorkstation', 'openCryptoWorkstation', 'openLabWorkstation']) delete win[k];
 
     const calls = { started: [], ended: [] };
     const fw = {

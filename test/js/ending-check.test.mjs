@@ -311,3 +311,31 @@ test('completeTask on an ordinary task never asks', async () => {
         delete window.endingCheck;
     }
 });
+
+// ---- A2c, phone calls plan 2.3 row 28: the ending closes the ringer ----------------------------
+
+test('A2c row 28: "End the mission now" closes the phone ringer; "Keep going" does not; a held ending closes it when it runs', async () => {
+    let closed = 0;
+    window.phoneRinger = { close: () => { closed++; } };
+    try {
+        const keep = E.confirmEnding({ reason: 'credits' });
+        click('ending-check-keep');
+        assert.equal(await keep, false);
+        assert.equal(closed, 0, 'Keep going: calls carry on');
+        const end = E.confirmEnding({ reason: 'credits' });
+        click('ending-check-end');
+        assert.equal(await end, true);
+        assert.equal(closed, 1);
+        E._resetEndingCheck();
+        E.holdEnding(() => {}, { reason: 'credits' });
+        E.endHeldEnding();
+        assert.equal(closed, 2, 'the panel button runs the ending');
+    } finally {
+        delete window.phoneRinger;
+    }
+});
+
+test('A2c row 28: the credits start (playEntry with credits) closes the phone ringer', () => {
+    const src = readFileSync(join(js, 'music/scenario-music-events.js'), 'utf8');
+    assert.match(src, /if \(hasEnding\) \{[\s\S]{0,200}try \{ window\.phoneRinger\?\.close\?\.\(\);/);
+});

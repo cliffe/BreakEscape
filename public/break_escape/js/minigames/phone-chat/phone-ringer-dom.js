@@ -6,9 +6,12 @@
  * (js/main.js), and leaves the ringer on `win.phoneRinger`. Everything it touches is read
  * from `win` when it is used, so tests can pass a fake window.
  *
- * Slice A2b (phone closed): any open minigame or workstation popup blocks ringing, and there
- * is no hold pill yet (minigameOpen() reports false), so a call is always answered with nothing
- * on screen. A2c relaxes both; A3 adds the player's phone.
+ * Slice A2c: a non-conversation minigame or a workstation popup no longer blocks ringing. The
+ * call rings over it; Answer over a minigame holds the call (the hold pill) until it closes, and
+ * Answer over a popup puts the popup aside and restores it when the call ends (rows 11 to 16).
+ * Until A3 registers the player's phone, an open phone-chat that is not a call counts as a
+ * non-conversation minigame. A person-chat, a video call, a voiced or forced phone-chat and a
+ * scripted scene are conversations and still block ringing.
  */
 import { createPhoneRinger } from './phone-ringer.js';
 import { normaliseRing } from './phone-ring-config.js';
@@ -42,9 +45,14 @@ export function installPhoneRinger(win = window) {
     const sceneActive = () => !!nm()?.scriptedConversationActive?.();
     const queuedBeats = () => (nm()?._scriptedCallQueue?.length || 0) > 0;
     const knockedOut = () => !!win.playerIsKnockedOut?.();
+    /** A conversation minigame: a person-chat, a video call, or a phone-chat showing a call (2.2). */
+    const isConversation = (m) => !!m && (m._sceneType === 'person-chat' || m._sceneType === 'video-call'
+        || (m._sceneType === 'phone-chat' && (m.params?.voiced === true || m.params?.disableClose === true)));
 
     // ---- banner and pill ---------------------------------------------------------
     let ownedCallId = null;
+    /** True while putAside() runs: the popup's close hook must not nudge the ringer (plan 2.9). */
+    let settingAside = false;
 
     function clearLayer() {
         while (layer.firstChild) layer.removeChild(layer.firstChild);
@@ -143,21 +151,22 @@ export function installPhoneRinger(win = window) {
 
     // ---- the adapter -------------------------------------------------------------
     const adapter = {
+        // A non-conversation minigame or a popup does not block: the call rings over it
         ringBlocked() {
-            return !!openMinigame() || popupOpen() || sceneActive() || queuedBeats() || knockedOut();
+            return isConversation(openMinigame()) || sceneActive() || queuedBeats() || knockedOut();
         },
+        // A popup does not block opening either: row 11 puts it aside
         openBlocked(info) {
-            if (openMinigame() || popupOpen() || sceneActive() || knockedOut()) return true;
+            if (openMinigame() || sceneActive() || knockedOut()) return true;
             return !(info && info.second) && queuedBeats();
         },
         conversationOpen() {
-            const m = openMinigame();
-            if (m && (m._sceneType === 'person-chat'
-                || (m._sceneType === 'phone-chat' && (m.params?.voiced === true || m.params?.disableClose === true)))) return true;
-            return sceneActive();
+            return isConversation(openMinigame()) || sceneActive();
         },
-        // A2b: no hold pill yet (A2c), so no non-conversation minigame is reported open.
-        minigameOpen: () => false,
+        minigameOpen() {
+            const m = openMinigame();
+            return !!m && !isConversation(m);
+        },
         knockedOut,
         isPaused() {
             if (win.breakEscapeSessionOverlayShowing) return true;
@@ -166,7 +175,11 @@ export function installPhoneRinger(win = window) {
             const m = fw()?.currentMinigame;
             return !!m && m._sceneType === 'notes' && m.params?.title === 'Mission Brief';
         },
-        lastHitAt: () => null,                   // A2c: the hit stamp, on the performance clock
+        // player-damage-interrupt.js stamps every hit on the performance clock, the ringer's clock
+        lastHitAt: () => {
+            const t = win.lastPlayerHitAt?.();
+            return typeof t === 'number' ? t : null;
+        },
         outgoingActive: () => false,             // A5
         callMinigameOpen() {
             const m = fw()?.currentMinigame;
@@ -218,8 +231,35 @@ export function installPhoneRinger(win = window) {
             if (!started) { ownedCallId = null; npc.currentKnot = previousKnot; }
             return !!started;
         },
-        putAside: () => null,                    // A2c
-        reopen: () => {},                        // A2c / A3
+        // Row 11: close the open workstation popup with its own close function (state kept,
+        // plan 1.3) and say which one it was. The lab frame's `src` property is saved, never the
+        // attribute: openLabWorkstation compares the property, and a different string would reload
+        // the sheet and lose its scroll position.
+        putAside() {
+            if (openMinigame()) return null;
+            const laptop = doc.getElementById('laptop-popup');
+            const lab = doc.getElementById('lab-popup');
+            const shown = (e) => !!e && !!e.style && e.style.display !== '' && e.style.display !== 'none';
+            let d = null;
+            settingAside = true;
+            try {
+                if (shown(laptop)) {
+                    d = { kind: 'laptop' };
+                    win.closeLaptop?.();
+                } else if (shown(lab)) {
+                    d = { kind: 'lab', src: doc.getElementById('lab-frame')?.src || null };
+                    win.closeLabWorkstation?.();
+                }
+            } finally { settingAside = false; }
+            return d;
+        },
+        // Rows 11, 25: the popup comes back as it was, unless something else is open by then
+        reopen(d) {
+            if (!d || openMinigame() || popupOpen()) return;
+            if (d.kind === 'laptop') win.openCryptoWorkstation?.();
+            else if (d.kind === 'lab') win.openLabWorkstation?.(d.src);
+            // A3 adds the phone ({ kind: 'phone', ... })
+        },
         showBanner,
         hideBanner: clearLayer,
         showPill,
@@ -285,6 +325,11 @@ export function installPhoneRinger(win = window) {
                 });
             }
             ringer.onMinigameEnded();
+        },
+        /** The workstation popups' close hook; the ringer's own close for row 11 is not a player close. */
+        onPopupClosed() {
+            if (settingAside) return;
+            ringer.onPopupClosed();
         },
         layer,
     };
