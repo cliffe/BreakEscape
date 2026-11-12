@@ -13,7 +13,7 @@ const dataUrl = (s) => 'data:text/javascript;base64,' + Buffer.from(s).toString(
 const R = await import(dataUrl(src));
 const {
     createPhoneRinger, RING_TIMEOUT_MS, UNTIL_ANSWERED_NUDGE_MS, AUTO_ANSWER_MS,
-    HIT_QUIET_MS, HOLD_MAX_MS, SCRIPTED_CALL_START_MS, TICK_MS,
+    HIT_QUIET_MS, HOLD_MAX_MS, SCRIPTED_CALL_START_MS, TICK_MS, RERING_AFTER_LOAD_MS,
 } = R;
 
 // ---- fakes -------------------------------------------------------------------------
@@ -36,29 +36,31 @@ function fakeClock() {
                 const next = timers[0];
                 if (!next || next.at > end) break;
                 timers.shift();
-                t = next.at;
+                t = Math.max(t, next.at);
                 next.fn();
                 clock.flush();
             }
             t = end;
         },
+        /** A jump of the clock with no timer firing in it: a hidden tab's throttled timers, sleep, a clock change. */
+        jump(ms) { t += ms; },
         pending: () => timers.length,
     };
     return clock;
 }
 
-function setup(over = {}) {
+function setup(over = {}, patch = null) {
     const clock = fakeClock();
     const log = [];
     const w = {
         ringBlocked: false, openBlocked: false, conversationOpen: false, minigameOpen: false,
         knockedOut: false, paused: false, lastHitAt: null, outgoing: false,
-        callOpen: false, openResult: true, popup: null, ringerCallId: null, names: { ceo: 'The CEO' },
+        callOpen: false, openResult: true, scriptedQueued: false, popup: null, ringerCallId: null, names: { ceo: 'The CEO' },
         ...over,
     };
     const adapter = {
         ringBlocked: () => w.ringBlocked,
-        openBlocked: () => w.openBlocked,
+        openBlocked: (info) => w.openBlocked || (w.scriptedQueued && !(info && info.second)),
         conversationOpen: () => w.conversationOpen,
         minigameOpen: () => w.minigameOpen,
         knockedOut: () => w.knockedOut,
@@ -88,7 +90,10 @@ function setup(over = {}) {
         savePendingCall(id, rec) { log.push(['save', id, rec]); },
         onOutcome(kind, o, extra) { log.push(['outcome', kind, o.npcId, extra]); },
     };
+    const ctx = { w, log, clock, ringer: null };
+    if (patch) patch(adapter, ctx);
     const ringer = createPhoneRinger({ adapter, clock });
+    ctx.ringer = ringer;
     const events = () => log.filter((e) => e[0] === 'emit').map((e) => e[1]);
     const count = (name) => log.filter((e) => e[0] === name).length;
     const last = (name) => [...log].reverse().find((e) => e[0] === name);
@@ -98,15 +103,21 @@ function setup(over = {}) {
 const offer = (extra = {}) => ({ npcId: 'ceo', knot: 'call_a', ...extra });
 /** Finish the call opening: the 500 ms start wait. */
 const connect = (s) => s.clock.advance(SCRIPTED_CALL_START_MS);
+/** The adapter's end hook: report the end of the last call opened, then let the deferred re-check run. */
+const endCall = (s, info = {}, npcId = 'ceo') => {
+    const r = s.ringer.callEnded(npcId, { id: s.last('openCall')[3].ringerCall.id, ...info });
+    s.clock.flush();
+    return r;
+};
 
 // ---- Offers arriving ----------------------------------------------------------------
 
-test('row 1: an offer with nothing blocking rings, applies setGlobalOnStart, persists the trigger', () => {
+test('row 1: an offer with nothing blocking rings, applies setGlobalOnStart; it never persists the trigger (the caller does)', () => {
     const s = setup();
     assert.equal(s.ringer.offer(offer({ setGlobalOnStart: { call_started: true } })), 'ringing');
     assert.equal(s.ringer.stateOf('ceo'), 'ringing');
     assert.deepEqual(s.last('setGlobal')[1], { call_started: true });
-    assert.equal(s.count('persistTrigger'), 1);
+    assert.equal(s.count('persistTrigger'), 0, 'the trigger is persisted by npc-manager, not the ringer');
     assert.equal(s.last('showBanner')[1].npcId, 'ceo');
     assert.deepEqual(s.last('ringtone'), ['ringtone', true]);
 });
@@ -125,10 +136,10 @@ test('row 2: an offer while ringBlocked() is queued at the tail, and the rington
     assert.equal(s.ringer.stateOf('ceo'), 'queued');
     assert.equal(s.count('showBanner'), 0);
     assert.equal(s.count('setGlobal'), 0);
-    assert.equal(s.count('persistTrigger'), 1, 'persisted at offer even though queued');
+    assert.equal(s.count('persistTrigger'), 0);
 });
 
-test('row 3: a second offer with the same knot is dropped; the trigger was persisted at offer', () => {
+test('row 3: a second offer with the same knot is dropped', () => {
     const s = setup();
     s.ringer.offer(offer());
     assert.equal(s.ringer.offer(offer()), 'dropped');
@@ -202,7 +213,7 @@ test('row 5: an offer for a contact whose call is connected queues behind it and
     assert.equal(s.ringer.offer(offer({ knot: 'B' })), 'queued');
     assert.equal(s.ringer.queueLength(), 1);
     s.w.callOpen = false;
-    s.ringer.callEnded('ceo', { endedByCall: true });
+    endCall(s, { endedByCall: true });
     assert.equal(s.ringer.current().knot, 'B');
     assert.equal(s.ringer.stateOf('ceo'), 'ringing');
 });
@@ -279,14 +290,15 @@ test('row 9: answer only works on a ringing offer', () => {
     assert.equal(s.ringer.answer('nobody'), false);
 });
 
-test('row 11 (★): a workstation popup is put aside at answer and reopened when the call ends', () => {
+test('row 11 (★): a workstation popup is put aside when the call opens and reopened when it ends', () => {
     const s = setup({ popup: { kind: 'lab', src: 'http://x/sheet' } });
     s.ringer.offer(offer());
     s.ringer.answer('ceo');
-    assert.equal(s.count('putAside'), 1);
+    assert.equal(s.count('putAside'), 0, 'the popup stays up through the 500 ms delay');
     connect(s);
+    assert.equal(s.count('putAside'), 1);
     s.w.callOpen = false;
-    s.ringer.callEnded('ceo', { endedByCall: true });
+    endCall(s, { endedByCall: true });
     assert.deepEqual(s.last('reopen')[1], { kind: 'lab', src: 'http://x/sheet' });
 });
 
@@ -566,11 +578,11 @@ test('row 21 (★): untilAnswered never times out; after 20 s the tone stops loo
     s.clock.advance(RING_TIMEOUT_MS);
     assert.equal(s.ringer.stateOf('ceo'), 'ringing');
     assert.deepEqual(s.last('ringtone'), ['ringtone', false]);
-    assert.equal(s.count('vibrate'), 0);
+    assert.equal(s.count('vibrate'), 1, 'the first buzz is when the loop stops (choice 4)');
     s.clock.advance(UNTIL_ANSWERED_NUDGE_MS);
-    assert.equal(s.count('vibrate'), 1);
+    assert.equal(s.count('vibrate'), 2);
     s.clock.advance(UNTIL_ANSWERED_NUDGE_MS * 3);
-    assert.equal(s.count('vibrate'), 4);
+    assert.equal(s.count('vibrate'), 5);
     assert.equal(s.ringer.stateOf('ceo'), 'ringing', 'the banner stays up');
     assert.equal(s.ringer.decline('ceo'), true, 'Decline still works');
 });
@@ -669,7 +681,7 @@ test('row 25 (★): every own-path end (End, back arrow, #exit_conversation, sto
         const s = connectedCall();
         assert.equal(s.ringer.callVariablesFor('ceo', 'phone-chat').call_answer_seconds, 0);
         s.w.callOpen = false;
-        assert.equal(s.ringer.callEnded('ceo', info), true);
+        assert.equal(endCall(s, info), true);
         assert.equal(s.ringer.stateOf('ceo'), null);
         assert.deepEqual(s.last('save'), ['save', 'ceo', null]);
         assert.equal(s.last('outcome')[1], 'ended');
@@ -683,19 +695,19 @@ test('row 25 (★): the reopen happens only when openBlocked() is false; a queue
     const a = setup({ popup: { kind: 'laptop' } });
     a.ringer.offer(offer()); a.ringer.answer('ceo'); connect(a);
     a.w.callOpen = false;
-    a.ringer.callEnded('ceo', { endedByCall: true });
+    endCall(a, { endedByCall: true });
     assert.equal(a.count('reopen'), 1);
     const b = setup({ popup: { kind: 'laptop' } });
     b.ringer.offer(offer()); b.ringer.answer('ceo'); connect(b);
     b.w.callOpen = false;
     b.w.openBlocked = true;              // a scripted debrief is queued and opens next
-    b.ringer.callEnded('ceo', { endedByCall: true });
+    endCall(b, { endedByCall: true });
     assert.equal(b.count('reopen'), 0);
     const c = setup({ popup: { kind: 'laptop' } });
     c.ringer.offer(offer()); c.ringer.answer('ceo'); connect(c);
     c.w.callOpen = false;
     c.w.lastHitAt = c.clock.now();
-    c.ringer.callEnded('ceo', { endedByCall: true });
+    endCall(c, { endedByCall: true });
     assert.equal(c.count('reopen'), 0, 'not in the middle of a fight');
 });
 
@@ -704,7 +716,7 @@ test('row 25: the next queued call rings after the end', () => {
     s.ringer.offer({ npcId: 'b', knot: 'k' });
     assert.equal(s.ringer.stateOf('b'), 'queued');
     s.w.callOpen = false;
-    s.ringer.callEnded('ceo', { endedByCall: true });
+    endCall(s, { endedByCall: true });
     assert.equal(s.ringer.stateOf('b'), 'ringing');
 });
 
@@ -716,7 +728,7 @@ test('row 26 (★): forced call, hit, rings again after the quiet time with the 
     assert.equal(s.count('openCall'), 1);
     s.w.callOpen = false;
     s.w.lastHitAt = s.clock.now();
-    s.ringer.callEnded('ceo', {});                    // closed by the hit, story not finished
+    endCall(s, {});                    // closed by the hit, story not finished
     assert.equal(s.ringer.stateOf('ceo'), 'queued');
     assert.equal(s.last('save')[2].state, 'connected', 'pendingCall kept as connected');
     assert.equal(s.events().filter((e) => e.startsWith('phone_call_missed')).length, 0);
@@ -738,7 +750,7 @@ test('row 26: a forced call whose story had ended is a normal end (row 25), not 
     s.ringer.offer(offer({ disableClose: true }));
     s.clock.advance(AUTO_ANSWER_MS); connect(s);
     s.w.callOpen = false;
-    s.ringer.callEnded('ceo', { callFinished: true });
+    endCall(s, { callFinished: true });
     assert.equal(s.ringer.stateOf('ceo'), null);
 });
 
@@ -766,7 +778,7 @@ test('row 28: a call already connected finishes normally', () => {
     assert.equal(s.ringer.stateOf('ceo'), 'connected');
     assert.equal(s.ringer.callActive(), true);
     s.w.callOpen = false;
-    s.ringer.callEnded('ceo', { endedByCall: true });
+    endCall(s, { endedByCall: true });
     assert.equal(s.ringer.stateOf('ceo'), null);
 });
 
@@ -812,7 +824,7 @@ test('row 30: hasOpeningOffer is true while an opening offer is queued, ringing 
 test('row 32 (★): a call closed by something else is missed with no toast and no reopen', () => {
     const s = connectedCall({ popup: { kind: 'laptop' } });
     s.w.callOpen = false;
-    s.ringer.callEnded('ceo', {});                    // another minigame's startMinigame ended it
+    endCall(s, {});                    // another minigame's startMinigame ended it
     assert.equal(s.ringer.stateOf('ceo'), null);
     assert.deepEqual(s.events().filter((e) => e.startsWith('phone_call_')), ['phone_call_answered:ceo', 'phone_call_missed:ceo']);
     assert.equal(s.count('toast'), 0);
@@ -826,7 +838,7 @@ test('row 32: the knockout close of a forced call is row 26', () => {
     s.clock.advance(AUTO_ANSWER_MS); connect(s);
     s.w.callOpen = false;
     s.w.lastHitAt = s.clock.now();
-    s.ringer.callEnded('ceo', {});
+    endCall(s, {});
     assert.equal(s.ringer.stateOf('ceo'), 'queued');
 });
 
@@ -862,7 +874,7 @@ test('2.11: callVariablesFor gives answerSeconds on the call minigame, the defau
     assert.equal(s.ringer.callVariablesFor('ceo', 'phone-chat').call_answer_seconds, 0);
     s.w.ringerCallId = s.last('openCall')[3].ringerCall.id;
     s.w.callOpen = false;
-    s.ringer.callEnded('ceo', { endedByCall: true });
+    endCall(s, { endedByCall: true });
     assert.equal(s.ringer.callVariablesFor('ceo', 'phone-chat').call_answer_seconds, 0);
 });
 
@@ -927,4 +939,406 @@ test('no timers are left running when idle', () => {
     s.ringer.decline('ceo');
     s.clock.advance(TICK_MS * 2);
     assert.equal(s.clock.pending(), 0);
+});
+
+// ---- Review round 1 (REVIEW_A2a_R1) --------------------------------------------------
+
+/** Silence the logged adapter errors for a test that throws on purpose. */
+function quietly(fn) {
+    const orig = console.error;
+    const seen = [];
+    console.error = (...args) => seen.push(args);
+    try { return fn(seen); } finally { console.error = orig; }
+}
+const saves = (s, id = 'ceo') => s.log.filter((e) => e[0] === 'save' && e[1] === id).map((e) => e[2]);
+
+test('M1: an openCall that throws is a refusal (row 19): back to held, not connected for ever', () => quietly((seen) => {
+    const s = setup({}, (ad, ctx) => { ad.openCall = () => { throw new Error('init failed'); }; });
+    s.ringer.offer(offer());
+    s.ringer.answer('ceo'); connect(s);
+    assert.equal(s.ringer.stateOf('ceo'), 'held');
+    assert.equal(s.ringer.callActive(), false, 'a scripted beat is not made to wait behind nothing');
+    assert.equal(s.ringer.current().opened, false);
+    assert.equal(seen.length, 1);
+}));
+
+test('M1: a throwing showBanner or emit does not stop the tick or the state machine', () => quietly(() => {
+    const s = setup({}, (ad) => {
+        ad.showBanner = () => { throw new Error('dom'); };
+        ad.emit = () => { throw new Error('bus'); };
+    });
+    s.ringer.offer(offer());
+    s.clock.advance(RING_TIMEOUT_MS);
+    assert.equal(s.ringer.stateOf('ceo'), null, 'the ring still times out');
+    assert.equal(s.clock.pending(), 0);
+    assert.equal(s.count('outcome'), 1);
+}));
+
+test('M2: the second check ignores a scripted beat queued during the open delay; the call still opens', () => {
+    const s = setup();
+    s.ringer.offer(offer());
+    s.ringer.answer('ceo');
+    s.w.scriptedQueued = true;                   // a mapping on phone_call_answered queued a beat
+    connect(s);
+    assert.equal(s.count('openCall'), 1);
+    assert.equal(s.ringer.stateOf('ceo'), 'connected');
+    assert.equal(s.ringer.openBlocked(), true, 'the public check still yields to the queue');
+});
+
+test('M3: a refusal that never clears is given up on: missed, dropped, and the next call rings', () => quietly(() => {
+    const s = setup({ openResult: false });
+    s.ringer.offer({ npcId: 'a', knot: 'k' });
+    s.ringer.offer({ npcId: 'b', knot: 'k' });
+    s.ringer.answer('a');
+    s.clock.advance(12000);
+    assert.equal(s.ringer.stateOf('a'), null);
+    assert.ok(s.events().includes('phone_call_missed:a'));
+    assert.ok(s.log.some((e) => e[0] === 'outcome' && e[1] === 'dropped' && e[2] === 'a'));
+    assert.equal(saves(s, 'a').pop(), null);
+    assert.equal(s.ringer.stateOf('b'), 'ringing');
+    assert.equal(s.count('openCall') >= 5, true);
+    assert.ok(s.count('openCall') < 12, 'retries are paced');
+}));
+
+test('M3: a forced call is given up on the same way', () => {
+    const s = setup({ openResult: false });
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(AUTO_ANSWER_MS + 60000);
+    assert.equal(s.ringer.stateOf('ceo'), null);
+    assert.ok(s.events().includes('phone_call_missed:ceo'));
+});
+
+test('M4: a 60 s jump of the clock (hidden tab, sleep) is not ringing time', () => {
+    const s = setup();
+    s.ringer.offer(offer());
+    s.clock.advance(5000);
+    s.clock.jump(60000);
+    s.ringer.tick();
+    assert.equal(s.ringer.stateOf('ceo'), 'ringing');
+    assert.ok(s.ringer.current().ringMs < 7000);
+    s.clock.advance(RING_TIMEOUT_MS - 5000 - TICK_MS * 2);
+    assert.equal(s.ringer.stateOf('ceo'), 'ringing', 'the ring still has its real time left');
+});
+
+test('M4: a 60 s jump is not hold time or answerSeconds either', () => {
+    const s = held();
+    s.clock.advance(1000);
+    s.clock.jump(120000);
+    s.ringer.tick();
+    assert.equal(s.ringer.stateOf('ceo'), 'held');
+    assert.ok(s.ringer.current().holdMs < HOLD_MAX_MS / 2);
+    const r = setup();
+    r.ringer.offer(offer());
+    r.clock.advance(1000);
+    r.clock.jump(60000);
+    r.ringer.answer('ceo'); connect(r);
+    assert.ok(r.last('openCall')[3].answerSeconds <= 1);
+});
+
+test('M5: callEnded does its bookkeeping at once but re-checks (next call, reopen) after the swap', () => {
+    const s = setup({ popup: { kind: 'lab' } });
+    s.ringer.offer({ npcId: 'ceo', knot: 'A' });
+    s.ringer.offer({ npcId: 'b', knot: 'B' });
+    s.ringer.answer('ceo'); connect(s);
+    s.w.callOpen = false;
+    const id = s.last('openCall')[3].ringerCall.id;
+    assert.equal(s.ringer.callEnded('ceo', { id, endedByCall: true }), true);
+    assert.equal(s.ringer.callActive(), false, 'bookkeeping is immediate');
+    assert.equal(s.ringer.stateOf('ceo'), null);
+    assert.equal(s.ringer.stateOf('b'), 'queued', 'the next call does not ring mid-swap');
+    assert.equal(s.count('reopen'), 0);
+    assert.equal(s.count('showBanner'), 1, 'only the first banner so far');
+    s.clock.flush();
+    assert.equal(s.ringer.stateOf('b'), 'ringing');
+    assert.equal(s.count('reopen'), 1);
+});
+
+test('M5: if the swap ends up opening a minigame, the deferred check sees it and the reopen is dropped', () => {
+    const s = setup({ popup: { kind: 'lab' } });
+    s.ringer.offer(offer()); s.ringer.answer('ceo'); connect(s);
+    s.w.callOpen = false;
+    const id = s.last('openCall')[3].ringerCall.id;
+    s.ringer.callEnded('ceo', { id, endedByCall: true });
+    s.w.openBlocked = true; s.w.minigameOpen = true;      // the new minigame is installed
+    s.clock.flush();
+    assert.equal(s.count('reopen'), 0);
+});
+
+test('M6: an end report for another call, an unknown id, none, or from inside the open delay is ignored', () => {
+    const s = setup();
+    s.ringer.offer(offer()); s.ringer.answer('ceo');
+    assert.equal(s.ringer.callEnded('ceo', { id: 'call-1', endedByCall: true }), false, 'in the open delay');
+    assert.equal(s.ringer.stateOf('ceo'), 'connected');
+    connect(s);
+    assert.equal(s.ringer.callEnded('ceo', { id: 'call-99', endedByCall: true }), false);
+    assert.equal(s.ringer.callEnded('ceo', { endedByCall: true }), false);
+    assert.equal(s.ringer.callEnded('ceo'), false);
+    assert.equal(s.ringer.stateOf('ceo'), 'connected');
+    assert.equal(endCall(s, { endedByCall: true }), true);
+    assert.equal(endCall(s, { endedByCall: true }), false, 'a duplicate report');
+});
+
+test('M6: a stale end report after a row 19 back-to-held does not close the held call', () => {
+    const s = setup();
+    s.ringer.offer(offer()); s.ringer.answer('ceo');
+    s.w.openBlocked = true;                                // the second check fails
+    connect(s);
+    assert.equal(s.ringer.stateOf('ceo'), 'held');
+    assert.equal(s.ringer.callEnded('ceo', { id: 'call-1', endedByCall: true }), false);
+    assert.equal(s.ringer.stateOf('ceo'), 'held');
+});
+
+test('M7: a second offer for the contact does not overwrite the saved slot of its connected call', () => {
+    const s = connectedCall();
+    s.ringer.offer(offer({ knot: 'call_b' }));
+    assert.equal(s.ringer.stateOf('ceo'), 'connected');
+    assert.equal(s.ringer.queueLength(), 1);
+    const rec = saves(s).pop();
+    assert.equal(rec.knot, 'call_a');
+    assert.equal(rec.state, 'connected');
+});
+
+test('M7: when the connected call ends, the slot holds the queued one, which then rings', () => {
+    const s = connectedCall();
+    s.ringer.offer(offer({ knot: 'call_b' }));
+    s.w.callOpen = false;
+    s.ringer.callEnded('ceo', { id: s.last('openCall')[3].ringerCall.id, endedByCall: true });
+    const rec = saves(s).pop();
+    assert.equal(rec.knot, 'call_b');
+    assert.equal(rec.state, 'queued');
+    s.clock.flush();
+    assert.equal(s.ringer.current().knot, 'call_b');
+    assert.equal(saves(s).pop().state, 'ringing');
+    s.ringer.decline('ceo');
+    assert.equal(saves(s).pop(), null);
+});
+
+test('M7: a forced call waiting to re-ring keeps the slot against a queued offer for the same contact', () => {
+    const s = setup();
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(AUTO_ANSWER_MS); connect(s);
+    s.ringer.offer(offer({ knot: 'call_b' }));
+    s.w.callOpen = false; s.w.lastHitAt = s.clock.now();
+    endCall(s, {});
+    const rec = saves(s).pop();
+    assert.equal(rec.knot, 'call_a');
+    assert.equal(rec.state, 'connected');
+});
+
+test('M7: close() leaves the connected call its slot and clears the queued one', () => {
+    const s = connectedCall();
+    s.ringer.offer(offer({ knot: 'call_b' }));
+    s.ringer.close();
+    const rec = saves(s).pop();
+    assert.equal(rec.knot, 'call_a');
+    assert.equal(rec.state, 'connected');
+});
+
+test('restore (A4): re-rings after RERING_AFTER_LOAD_MS with resume and the saved answerSeconds, without setGlobal, a second answered event or a trigger', () => {
+    const s = setup();
+    const rec = { knot: 'call_a', state: 'connected', disableClose: true, resume: true, answerSeconds: 4,
+        onMissed: 'callback', setGlobalOnStart: { never: true } };
+    assert.equal(s.ringer.restore('ceo', rec), 'queued');
+    s.clock.advance(RERING_AFTER_LOAD_MS - TICK_MS);
+    assert.equal(s.ringer.stateOf('ceo'), 'queued');
+    s.clock.advance(TICK_MS);
+    assert.equal(s.ringer.stateOf('ceo'), 'ringing');
+    s.clock.advance(AUTO_ANSWER_MS + SCRIPTED_CALL_START_MS);
+    const info = s.last('openCall')[3];
+    assert.equal(info.resume, true);
+    assert.equal(info.answerSeconds, 4);
+    assert.equal(s.count('setGlobal'), 0);
+    assert.equal(s.events().filter((e) => e.startsWith('phone_call_answered')).length, 0);
+    assert.equal(s.count('persistTrigger'), 0);
+    assert.equal(s.ringer.restore('x', {}), 'refused');
+});
+
+test('choice 2 (m1): once the ringer is closed a finished call does not reopen the popup', () => {
+    const s = setup({ popup: { kind: 'lab' } });
+    s.ringer.offer(offer()); s.ringer.answer('ceo'); connect(s);
+    assert.equal(s.count('putAside'), 1);
+    s.ringer.close();
+    s.w.callOpen = false;
+    endCall(s, { endedByCall: true });
+    assert.equal(s.count('reopen'), 0);
+    assert.equal(s.ringer.stateOf('ceo'), null);
+    assert.equal(saves(s).pop(), null);
+});
+
+test('choice 3 (row 28): a call in its 500 ms open delay when the ending starts still opens, and finishes normally', () => {
+    const s = setup();
+    s.ringer.offer(offer()); s.ringer.answer('ceo');
+    s.ringer.close();
+    assert.equal(s.ringer.stateOf('ceo'), 'connected');
+    assert.equal(s.ringer.callActive(), true);
+    connect(s);
+    assert.equal(s.count('openCall'), 1, 'connected includes opening (plan 2.2)');
+    assert.equal(s.ringer.callActive(), true);
+    s.w.callOpen = false;
+    endCall(s, { endedByCall: true });
+    assert.equal(s.ringer.stateOf('ceo'), null);
+    assert.equal(s.ringer.callActive(), false);
+});
+
+test('choice 3: a held call is dropped by close(), with no event; an opening call that cannot open is dropped silently', () => {
+    const h = held();
+    h.ringer.close();
+    assert.equal(h.ringer.stateOf('ceo'), null);
+    assert.deepEqual(h.events().filter((e) => e.startsWith('phone_call_missed')), []);
+    const s = setup();
+    s.ringer.offer(offer()); s.ringer.answer('ceo');
+    s.ringer.close();
+    s.w.knockedOut = true; s.w.openBlocked = true;                // the second check fails after the ending began
+    connect(s);
+    assert.equal(s.ringer.stateOf('ceo'), null);
+    assert.equal(s.count('openCall'), 0);
+    assert.deepEqual(s.events().filter((e) => e.startsWith('phone_call_missed')), []);
+    assert.equal(saves(s).pop(), null);
+});
+
+test('m2: a forced call closed by a hit after close() is finished and its save cleared, not requeued for ever', () => {
+    const s = setup();
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(AUTO_ANSWER_MS); connect(s);
+    s.ringer.close();
+    s.w.callOpen = false; s.w.lastHitAt = s.clock.now();
+    endCall(s, {});
+    assert.equal(s.ringer.stateOf('ceo'), null);
+    assert.equal(s.ringer.queueLength(), 0);
+    assert.equal(saves(s).pop(), null);
+    s.clock.advance(HIT_QUIET_MS * 2);
+    assert.equal(s.count('openCall'), 1);
+    assert.equal(s.clock.pending(), 0);
+});
+
+test('m3: a phone_call_answered handler that ends the mission leaves a consistent state (re-entrant emit)', () => {
+    const s = setup({}, (ad, ctx) => {
+        ad.emit = (name, data) => { ctx.log.push(['emit', name, data]); if (name.startsWith('phone_call_answered')) ctx.ringer.close(); };
+    });
+    s.ringer.offer(offer()); s.ringer.answer('ceo');
+    assert.equal(s.ringer.isClosed(), true);
+    connect(s);
+    assert.equal(s.count('openCall'), 1);
+    assert.equal(saves(s).pop().state, 'connected', 'the slot matches the call that is on the line');
+    s.w.callOpen = false;
+    endCall(s, { endedByCall: true });
+    assert.equal(saves(s).pop(), null);
+    s.clock.advance(TICK_MS);
+    assert.equal(s.clock.pending(), 0);
+});
+
+test('re-entrant adapter: emit calling offer from missed and declined events, and showBanner calling decline', () => {
+    const s = setup({}, (ad, ctx) => {
+        ad.emit = (name, data) => {
+            ctx.log.push(['emit', name, data]);
+            if (name === 'phone_call_missed:a') ctx.ringer.offer({ npcId: 'c', knot: 'k' });
+            if (name === 'phone_call_declined:b') ctx.ringer.offer({ npcId: 'd', knot: 'k' });
+        };
+    });
+    s.ringer.offer({ npcId: 'a', knot: 'k' });
+    s.ringer.offer({ npcId: 'b', knot: 'k' });
+    s.clock.advance(RING_TIMEOUT_MS);
+    assert.equal(s.ringer.stateOf('b'), 'ringing');
+    assert.equal(s.ringer.stateOf('c'), 'queued');
+    s.ringer.decline('b');
+    assert.equal(s.ringer.stateOf('c'), 'ringing');
+    assert.equal(s.ringer.stateOf('d'), 'queued');
+    const t = setup({}, (ad, ctx) => {
+        ad.showBanner = (v) => { ctx.log.push(['showBanner', v]); ctx.ringer.decline(v.npcId); };
+    });
+    t.ringer.offer(offer());
+    assert.equal(t.ringer.stateOf('ceo'), null);
+    assert.equal(t.count('showBanner'), 1);
+    assert.equal(t.count('hideBanner'), 1, 'the nested render saw the banner already recorded and hid it');
+});
+
+test('re-entrant adapter: openCall ending the call, or offering another call, synchronously', () => {
+    const s = setup({}, (ad, ctx) => {
+        const base = ad.openCall;
+        ad.openCall = (o, info) => {
+            const r = base(o, info);
+            ctx.ringer.offer({ npcId: 'b', knot: 'k' });
+            ctx.w.callOpen = false;
+            ctx.ringer.callEnded(o.npcId, { id: info.ringerCall.id, endedByCall: true });
+            return r;
+        };
+    });
+    s.ringer.offer(offer()); s.ringer.answer('ceo'); connect(s);
+    s.clock.flush();
+    assert.equal(s.ringer.stateOf('ceo'), null);
+    assert.equal(s.ringer.stateOf('b'), 'ringing');
+    assert.equal(s.ringer.callActive(), false);
+    assert.equal(saves(s).pop(), null);
+});
+
+test('re-entrant adapter: a forced call dropped by a hit from inside openCall is requeued, not marked opened', () => {
+    const s = setup({}, (ad, ctx) => {
+        const base = ad.openCall;
+        ad.openCall = (o, info) => {
+            const r = base(o, info);
+            ctx.w.callOpen = false; ctx.w.lastHitAt = ctx.clock.now();
+            ctx.ringer.callEnded(o.npcId, { id: info.ringerCall.id });
+            return r;
+        };
+    });
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(AUTO_ANSWER_MS); connect(s);
+    assert.equal(s.ringer.stateOf('ceo'), 'queued');
+    assert.equal(s.ringer.queueLength(), 1);
+    assert.equal(s.ringer.callActive(), false);
+});
+
+test('m4: ringing time on a replaced knot still counts towards call_answer_seconds, the new ring keeps its own timeout', () => {
+    const s = setup();
+    s.ringer.offer(offer({ knot: 'T5' }));
+    s.clock.advance(15000);
+    s.ringer.offer(offer({ knot: 'T1' }));
+    s.clock.advance(5000);
+    assert.equal(s.ringer.current().ringMs, 5000);
+    s.ringer.answer('ceo'); connect(s);
+    assert.equal(s.last('openCall')[3].answerSeconds, 20);
+});
+
+test('m5: a popup stays up while the call is only answered, and comes back when the call is given up on', () => quietly(() => {
+    const s = setup({ popup: { kind: 'lab' }, openResult: false });
+    s.ringer.offer(offer()); s.ringer.answer('ceo');
+    assert.equal(s.count('putAside'), 0);
+    s.clock.advance(60000);
+    assert.equal(s.ringer.stateOf('ceo'), null);
+    assert.equal(s.count('reopen'), 1, 'what the refused opens displaced comes back');
+}));
+
+test('m5: a held call that is hung up never touched the popup', () => {
+    const s = setup({ popup: { kind: 'lab' }, minigameOpen: true, openBlocked: true });
+    s.ringer.offer(offer()); s.ringer.answer('ceo');
+    s.ringer.hangUp('ceo');
+    assert.equal(s.count('putAside'), 0);
+    assert.equal(s.count('reopen'), 0);
+});
+
+test('m8: the pause menu opening during the 500 ms delay holds the open until it closes', () => {
+    const s = setup();
+    s.ringer.offer(offer()); s.ringer.answer('ceo');
+    s.w.paused = true;
+    connect(s);
+    assert.equal(s.count('openCall'), 0);
+    assert.equal(s.ringer.stateOf('ceo'), 'held');
+    s.clock.advance(5000);
+    assert.equal(s.count('openCall'), 0);
+    s.w.paused = false;
+    s.clock.advance(TICK_MS * 2 + SCRIPTED_CALL_START_MS);
+    assert.equal(s.count('openCall'), 1);
+});
+
+test('m10: a forced call answered by hand at 3 s keeps answerSeconds 3 when it rings again (kills an overwrite on re-answer)', () => {
+    const s = setup();
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(3000);
+    s.ringer.answer('ceo'); connect(s);
+    assert.equal(s.last('openCall')[3].answerSeconds, 3);
+    s.w.callOpen = false; s.w.lastHitAt = s.clock.now();
+    endCall(s, {});
+    s.clock.advance(HIT_QUIET_MS + AUTO_ANSWER_MS + SCRIPTED_CALL_START_MS + TICK_MS);
+    assert.equal(s.count('openCall'), 2);
+    assert.equal(s.last('openCall')[3].answerSeconds, 3);
 });
