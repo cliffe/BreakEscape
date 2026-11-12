@@ -13,6 +13,8 @@ import { parseActionCondition } from '../../public/break_escape/js/utils/global-
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const env = { ...process.env, LANG: 'C.UTF-8' };
 const skip = spawnSync('ruby', ['--version']).status !== 0 && 'ruby not found';
+// Say so in the run log: a skipped file otherwise reads as green in a count of files
+if (skip) console.error(`validator-action-condition: skipped, ${skip}`);
 
 const ruby = (expr, input) => {
   const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
@@ -103,12 +105,19 @@ test("'||' in an action condition is not flagged by the '&&'-only checks, and th
     { type: 'give_item', item: { type: 'torch', id: 't1', name: 'Torch', lighting: { condition: 'globalVars.seen || globalVars.vest' } } }
   ] });
   // An entry of a conditionalActions list is not an action: its own condition gets the soft warning
+  objects[2].minigameData.conditionalActions.push({ condition: 'globalVars.seen || globalVars.vest', actions: [] });
+  // Nor is a hash with no type under an action-list key
+  objects[3].triggerOnInteract.push({ condition: 'globalVars.vest || globalVars.seen', note: 'no type' });
   const issues = ruby('check_or_in_global_conditions(input)', j);
-  assert.deepEqual(issues.filter(s => /desk|objects\[3\]\/triggerOnInteract\[[01]\]'/.test(s) && !/lighting/.test(s)), [],
+  assert.deepEqual(issues.filter(s => /objects\[3\]\/triggerOnInteract\[[01]\]'/.test(s) && !/lighting/.test(s)), [],
     `the actions' own '||' conditions are not flagged:\n${issues.join('\n')}`);
   assert.ok(issues.some(s => /❌ INVALID: 'rooms\/lab\/objects\[3\]\/triggerOnInteract\[2\]\/item\/lighting' lighting condition .* uses '\|\|'/.test(s)),
     `the lighting block nested in the give_item is reported:\n${issues.join('\n')}`);
-  assert.equal(issues.length, 1, issues.join('\n'));
+  assert.ok(issues.some(s => /⚠️ WARNING: 'rooms\/lab\/objects\[2\]\/minigameData\/conditionalActions\[1\]' condition .* uses '\|\|'/.test(s)),
+    `the conditionalActions entry gets the soft warning:\n${issues.join('\n')}`);
+  assert.ok(issues.some(s => /⚠️ WARNING: 'rooms\/lab\/objects\[3\]\/triggerOnInteract\[3\]' condition .* uses '\|\|'/.test(s)),
+    `the entry with no type gets the soft warning:\n${issues.join('\n')}`);
+  assert.equal(issues.length, 3, issues.join('\n'));
 });
 
 test('the schema knows an action condition and wants a non-empty string', { skip }, () => {

@@ -6039,8 +6039,10 @@ def check_or_in_global_conditions(json_data)
       # An action's own condition supports '||' (check_action_conditions reads its syntax),
       # so it is exempt here. Only that one: what is nested inside the action (a give_item's
       # item with a lighting block, say) is read by its own evaluator and checked as usual.
-      is_action = ctx == :action
-      ctx = nil if is_action || ctx == :action_list
+      # A hash with no type is not an action (check_action_conditions skips it too), so
+      # its condition is checked here like any other.
+      is_action = ctx == :action && node.key?('type')
+      ctx = nil if ctx == :action || ctx == :action_list
       cond = node['condition']
       if !is_action && cond.is_a?(String) && !path.match?(checked_elsewhere)
         case ctx

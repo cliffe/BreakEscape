@@ -285,7 +285,9 @@ class ScenarioTimerDispatcher {
             this._retryTimeouts.delete(handle);
             // The give already passed its condition when the timer fired; a retry finishes
             // that give, so the condition is not read again (a global that changed since
-            // would otherwise drop the item and count the retry as settled)
+            // would otherwise drop the item and count the retry as settled). That holds
+            // within this page: a reload after the retries give up fires the timer again
+            // and reads the conditions afresh
             const { condition, ...unconditioned } = giveAction;
             const [retry] = applyActions([unconditioned], { source: `timer:${timer.id}` }) || [];
             resolve(this._settleGive(timer, giveAction, retry, attempt + 1));
