@@ -1,6 +1,10 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+// The title is plain text (scenario or server data): escaped before it reaches HTML.
+const escapeTitle = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
 /**
  * MG-02 — Forensic Data Platform
  *
@@ -183,7 +187,7 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
 <div class="fdp-wrap">
   <div class="fdp-header">
-    <span class="fdp-title">${displayDashes(title)}</span>
+    <span class="fdp-title">${escapeTitle(displayDashes(title))}</span>
     <span class="fdp-case">${displayDashes(caseRef)}</span>
   </div>
   <div class="fdp-tab-bar" id="fdp-tab-bar">

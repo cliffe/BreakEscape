@@ -1,6 +1,10 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+// The title is plain text (scenario or server data): escaped before it reaches HTML.
+const escapeTitle = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
 /**
  * MG-04 — Network Segmentation Map
  *
@@ -53,7 +57,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
             <button type="button" class="minigame-close-button" id="nsm-close">&times;</button>
             <div class="nsm-wrapper">
                 <div class="nsm-header-bar">
-                    <span class="nsm-title-text">${displayDashes(title)}</span>
+                    <span class="nsm-title-text">${escapeTitle(displayDashes(title))}</span>
                     <span class="nsm-status-badge">ACTIVE INCIDENT</span>
                 </div>
                 <div class="nsm-body">

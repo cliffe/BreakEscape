@@ -615,9 +615,8 @@ test('an access-point name containing HTML never reaches the base minigame title
     const r = await links.interactWifiAp(wifiApSprite('guest_ap', hostileName));
     assert.equal(r.action, 'prompt');
     assert.equal(started.length, 1);
-    // params.title feeds the unescaped base-minigame HTML header, so the author access-point
-    // name must never be passed as the title. The join branch builds its own escaped header
-    // from join.apName instead.
+    // The author access-point name is never passed as the title: the join branch builds its
+    // own escaped header from join.apName (the base header escapes params.title as well).
     assert.equal(started[0].opts.title, 'Join Wi-Fi');
     assert.ok(!started[0].opts.title.includes('<'), 'no author HTML reaches params.title');
     assert.equal(started[0].opts.join.apName, hostileName, 'the join header still receives the real name to escape');

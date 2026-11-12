@@ -194,10 +194,10 @@ export class PersonChatMinigame extends MinigameScene {
         this.autoAdvanceTimer = null;
         
         // Customize header
-        this.headerElement.innerHTML = `
-            <h3>🎭 ${this.title}</h3>
-            <p>Speaking with ${this.npc.displayName}</p>
-        `;
+        // The title and the NPC name are plain text (scenario data): set as text, never HTML
+        this.headerElement.innerHTML = '<h3></h3><p></p>';
+        this.headerElement.querySelector('h3').textContent = `🎭 ${this.title}`;
+        this.headerElement.querySelector('p').textContent = `Speaking with ${this.npc.displayName}`;
         
         // Create UI, passing both NPC and player data
         this.ui = new PersonChatUI(this.gameContainer, {

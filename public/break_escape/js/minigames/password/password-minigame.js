@@ -231,7 +231,7 @@ export class PasswordMinigame extends MinigameScene {
 
         // Customize the header
         this.headerElement.innerHTML = `
-            <h3>${displayDashes(this.params.title || 'Password Entry')}</h3>
+            <h3>${escapeHtml(displayDashes(this.params.title || 'Password Entry'))}</h3>
             <p>Enter the correct password to proceed</p>
         `;
         
@@ -298,7 +298,7 @@ export class PasswordMinigame extends MinigameScene {
                 <div class="monitor-bezel">
                     <div class="monitor-screen">
                         <div class="password-input-container">
-                            <label for="password-field">${displayDashes(fieldLabel)}</label>
+                            <label for="password-field">${escapeHtml(displayDashes(fieldLabel))}</label>
                             <div class="password-field-wrapper">
                                 <input type="${this.gameData.showPassword ? 'text' : 'password'}" 
                                        id="password-field" 
