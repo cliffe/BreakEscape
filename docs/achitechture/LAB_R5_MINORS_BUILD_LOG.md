@@ -26,6 +26,7 @@ Test scenario beat: `test_capture_log` beat 6 (timer `finding_pair`, two gives, 
 - `npc-route-multiroom`: 24 pass (3 new: late path and late "none" on a single-room waypoint patrol and a random patrol; the waypoint patrol still takes its own answer). The two late-answer cases fail with the guards removed.
 - `lab-physical-pentest-route-lines` (new): 5 pass; fails with the `setGlobal` removed.
 - `lab_physical_pentest_secrets_test.rb`: 36 runs, 0 failures.
+- Full suites: Rails 1796 runs, 0 failures, 1 skip; JS 508 of 508 files.
 - Validator: the lab's output is identical before and after (0 errors). `check_or_in_global_conditions` and `check_action_conditions` report nothing on all 176 scenarios before and after.
 
 ## Live proof (keyless server on :3039)
@@ -34,7 +35,7 @@ Test scenario beat: `test_capture_log` beat 6 (timer `finding_pair`, two gives, 
 - Same page: `evaluateActionCondition` true for ASCII tabs and newlines, false for a no-break space, BOM, NUL and U+2028.
 - Games 1373 and 1382 (`lab_physical_pentest`): `door_gate_player_opened` then `room_entered:secure_area` 200 ms later, through the lab's own mappings. Only "Both routes" was shown (gameAlert at 1.8 s, then on screen from about 2 s to 5.5 s); no route line. Game 1374, the same with a 2 s gap: only "Cloned badge" at 0.6 s, and `kp_route_line_shown` true.
 - Games 1387 (`test-npc-patrol`, random patrols) and 1391 (`test-npc-waypoints`, single-room waypoints): a held answer released after a move took the target, both as a path and as none, left the move's target, path and following state alone on three NPCs each.
-- `test_needs_sims` live capture (game 1394): see below.
+- `test_needs_sims` live capture (game 1394, `needs-baseline-capture.js`, its default span): ran to the end with no page errors; 14 `returned_post` events, no `npc_caught_at_post` (no player at a desk in that profile). The committed baselines predate several slices, so they are not a fair before and after; the per-tick order is pinned by the golden log in `npc-needs-slots`.
 
 Mission row 248 (`test_capture_log`) was added to the dev database for the proof, the way `db/seeds.rb` adds one; nothing else in the database was changed.
 
