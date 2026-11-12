@@ -141,7 +141,11 @@ end
 # the phone is never forced open. `latch` (where given) is set when the text is
 # sent so a second event or a backstop doesn't send it twice. The text itself
 # comes 5 s after the event, so it never stacks with HaX's other texts.
-def read_text(event, cond, knot, msg, latch, delay: nil, once: false, comment: nil, msg_delay: 5000)
+# `skip` is a global that, once true, cancels the text and its toast at delivery
+# (sendTimedMessage skipIfGlobal), so a read-out heard by opening her thread first
+# is not followed by its own text. The read-out knots also divert to the hub if
+# heard, so a stale toast tap can't replay one.
+def read_text(event, cond, knot, msg, latch, skip: nil, delay: nil, once: false, comment: nil, msg_delay: 5000)
   h = {}
   h["_comment"] = comment if comment
   h["eventPattern"] = event
@@ -150,6 +154,7 @@ def read_text(event, cond, knot, msg, latch, delay: nil, once: false, comment: n
   h["delayMs"] = delay if delay
   h["setGlobal"] = { latch => true } if latch
   h["sendTimedMessage"] = { "delay" => msg_delay, "targetKnot" => knot, "message" => msg }
+  h["sendTimedMessage"]["skipIfGlobal"] = skip if skip
   h
 end
 
@@ -221,7 +226,10 @@ hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "cond
 hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "condition" => "value === true", "onceOnly" => true, "completeTask" => "set_up_drop_terminal" }
 hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'restricted_stacks' && globalVars.flag1_submitted", "unlockDoor" => "restricted_stacks", "cooldown" => 0 }
 hax_maps << { "eventPattern" => "game_loaded", "condition" => "globalVars.flag1_submitted && !globalVars.stacks_entered", "unlockDoor" => "restricted_stacks" }
-hax_maps << read_text("global_variable_changed:flag1_submitted", "value === true", "flag1_read", "First box is in. There's a list to go with it. Open this.", nil, delay: 2500, once: true)
+hax_maps << read_text("global_variable_changed:flag1_submitted", "value === true && !globalVars.flag1_read_heard", "flag1_read", "First box is in. It came with a list.", "flag1_texted", skip: "flag1_read_heard", delay: 2500, once: true)
+# Reload backstop: the mapping waits for the drop terminal to close, so a reload
+# before then lost the text. The latch is set when the mapping fires.
+hax_maps << read_text("game_loaded", "globalVars.flag1_submitted && !globalVars.flag1_texted && !globalVars.flag1_read_heard", "flag1_read", "First box is in. It came with a list.", "flag1_texted", skip: "flag1_read_heard", msg_delay: 5000)
 hax_maps << text_map("global_variable_changed:flag1_submitted", "value === true", "I've a field guide for the ledger, if you want it. Ask me.",
                      delay: 15000, set: { "ledger_guide_offered" => true })
 hax_maps << text_map("conversation_closed:agent_0x99",
@@ -297,10 +305,13 @@ hax_maps << { "eventPattern" => "global_variable_changed:tran_outcome", "conditi
 hax_maps << { "eventPattern" => "global_variable_changed:flag1_submitted", "condition" => "value === true && globalVars.tran_outcome !== 'left'", "onceOnly" => true, "completeTask" => "stop_the_tape_wipe" }
 
 # Flag 2 and the ledger (S4 §6.6, §5; S6 C-06).
-hax_maps << read_text("global_variable_changed:flag2_submitted", "value === true && !globalVars.ledger_read_heard", "ledger_read", "Their ledger's open on my screen. There's an entry you need to see.", nil, delay: 2500, once: true)
-# No game_loaded backstop for the read-out texts: pending texts survive a reload (E12), a
-# delivered one is in the thread, and HaX's start knot diverts to a pending read-out when
-# her thread is opened, so a text can't be lost for good. A backstop resent a delivered text.
+hax_maps << read_text("global_variable_changed:flag2_submitted", "value === true && !globalVars.ledger_read_heard", "ledger_read", "Their ledger's open on my screen. There's an entry you need to see.", "ledger_texted", skip: "ledger_read_heard", delay: 2500, once: true)
+hax_maps << read_text("game_loaded", "globalVars.flag2_submitted && !globalVars.ledger_texted && !globalVars.ledger_read_heard", "ledger_read", "Their ledger's open on my screen. There's an entry you need to see.", "ledger_texted", skip: "ledger_read_heard", msg_delay: 10000)
+# The game_loaded backstop sends a read-out text only if its latch (*_texted, set when the
+# mapping fires, i.e. when the text is scheduled) is still false and the read-out wasn't
+# heard. A pending text survives a reload (E12) and a delivered one is in the thread; both
+# have the latch set, so nothing is sent twice. msg_delay is staggered so the four
+# backstops, which share one event, never stack toasts.
 hax_maps << { "eventPattern" => "global_variable_changed:flag2_submitted", "condition" => "value === true", "onceOnly" => true, "unlockTask" => "cross_reference_wren" }
 hax_maps << { "eventPattern" => "global_variable_changed:sleeper_shortlist", "condition" => "value === true", "onceOnly" => true, "completeTask" => "cross_reference_wren" }
 hax_maps << { "eventPattern" => "global_variable_changed:sleeper_named", "condition" => "value === true", "onceOnly" => true, "completeTask" => "cross_reference_wren" }
@@ -317,7 +328,8 @@ hax_maps << { "eventPattern" => "game_loaded", "setGlobal" => { "in_cage" => fal
 hax_maps << { "eventPattern" => "global_variable_changed:deck_choice_made", "condition" => "value === true", "onceOnly" => true, "unlockDoor" => "sorensen_office" }
 hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.connectedRoom === 'sorensen_office' && globalVars.deck_choice_made", "unlockDoor" => "sorensen_office", "cooldown" => 0 }
 hax_maps << { "eventPattern" => "game_loaded", "condition" => "globalVars.deck_choice_made && !globalVars.office_entered", "unlockDoor" => "sorensen_office" }
-hax_maps << read_text("global_variable_changed:deck_choice_made", "value === true && !globalVars.afterwards_heard", "afterwards", "That's done. A word when you can.", nil, delay: 2500, once: true)
+hax_maps << read_text("global_variable_changed:deck_choice_made", "value === true && !globalVars.afterwards_heard", "afterwards", "That's done. A word when you can.", "afterwards_texted", skip: "afterwards_heard", delay: 2500, once: true)
+hax_maps << read_text("game_loaded", "globalVars.deck_choice_made && !globalVars.afterwards_texted && !globalVars.afterwards_heard", "afterwards", "That's done. A word when you can.", "afterwards_texted", skip: "afterwards_heard", msg_delay: 15000)
 hax_maps << { "eventPattern" => "room_entered:sorensen_office", "onceOnly" => true, "setGlobal" => { "office_entered" => true } }
 hax_maps << text_map("room_entered:sorensen_office", "globalVars.sleeper_named", "Her cracker. Use it anyway.")
 # Educational R1 E-m9: credit the lease-date deduction when the ledger was read.
@@ -356,8 +368,9 @@ hax_maps.concat(hax_rerings("globalVars.identity_scene_started && !globalVars.id
 hax_maps << call_map("global_variable_changed:flag4_submitted", "value === true && globalVars.identity_scene_started && !globalVars.identity_scene_done", "identity_resume", delay: 1500, voiced: true, cooldown0: true)
 
 # Flag 4 and the read (S4 §4 row 10, §6.3). Text, not voiced.
-hax_maps << read_text("global_variable_changed:flag4_submitted", "value === true && globalVars.identity_scene_done && !globalVars.hour_read_started && !globalVars.hour_read_texted", "hour_read", "The job on his box has a clock on it. Open this.", "hour_read_texted", delay: 1500)
-hax_maps << read_text("global_variable_changed:identity_scene_done", "value === true && globalVars.flag4_submitted && !globalVars.hour_read_started && !globalVars.hour_read_texted", "hour_read", "The job on his box has a clock on it. Open this.", "hour_read_texted", delay: 3000)
+hax_maps << read_text("global_variable_changed:flag4_submitted", "value === true && globalVars.identity_scene_done && !globalVars.hour_read_started && !globalVars.hour_read_texted", "hour_read", "The job on his box has a clock on it.", "hour_read_texted", skip: "hour_read_started", delay: 1500)
+hax_maps << read_text("global_variable_changed:identity_scene_done", "value === true && globalVars.flag4_submitted && !globalVars.hour_read_started && !globalVars.hour_read_texted", "hour_read", "The job on his box has a clock on it.", "hour_read_texted", skip: "hour_read_started", delay: 3000)
+hax_maps << read_text("game_loaded", "globalVars.flag4_submitted && globalVars.identity_scene_done && !globalVars.hour_read_started && !globalVars.hour_read_texted", "hour_read", "The job on his box has a clock on it.", "hour_read_texted", skip: "hour_read_started", msg_delay: 20000)
 hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && !globalVars.nightshade_file_held",
                      "Nightshade's file first. Then the rest of the box.", once: false, delay: 1500)
 hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && globalVars.nightshade_file_held && !globalVars.flag3_submitted",
@@ -365,7 +378,8 @@ hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true 
 hax_maps << text_map("global_variable_changed:flag4_submitted", "value === true && !globalVars.identity_scene_started && globalVars.hand_before_name",
                      "His hand first. Put his file beside my notebook scan and tell me. Then the name.", once: false, delay: 1500)
 hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && globalVars.schedule_read", "hour_read_resume", voiced: false))
-hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && !globalVars.schedule_read", "hour_read", voiced: false))
+# hour_read_resume enters body directly (hour_read itself diverts to the hub once started).
+hax_maps.concat(hax_rerings("globalVars.hour_read_started && !globalVars.hour_read_done && !globalVars.schedule_read", "hour_read_resume", voiced: false))
 
 # Tesseract's call (S4 §4 rows 11-12, §6.4). Voiced; restarts from the top.
 hax_maps << call_map("global_variable_changed:hour_read_done", "value === true && !globalVars.tesseract_call_started", "tesseract_call", delay: 4000, voiced: true)
@@ -2639,6 +2653,10 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "hand_before_name": false,
     "ledger_read_heard": false,
     "hour_read_texted": false,
+    "flag1_read_heard": false,
+    "flag1_texted": false,
+    "ledger_texted": false,
+    "afterwards_texted": false,
     "recruiter_call_started": false,
     "recruiter_said_yes": false,
     "recruiter_gone": false,

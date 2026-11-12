@@ -92,8 +92,10 @@ VAR archive_code_guide_hint_given = false
 
 // ---- Ink-local (CONTRACT §5.4; nothing outside this file reads them) ----
 VAR dock_heard = false
-// Phone calls M3: shadows for the four read-outs. Each knot sets its own on its first
+// Phone calls M3: shadows for the read-outs. Each knot sets its own on its first
 // line, because the #set_global tag lands only after the next choice list is built.
+// flag1_read_heard is also a scenario global (the tag sets it; the flag 1 text's
+// skipIfGlobal reads it), so the shadow and the global share the name on purpose.
 VAR flag1_read_heard = false
 VAR ledger_read_here = false
 VAR afterwards_here = false
@@ -127,15 +129,17 @@ VAR hand_answered_here = false
 // conversation_closed:agent_0x99 re-ring (S4 §6).
 // Guard 2: the Recruiter's call is pending. Her ring comes back on the next
 // room exit, not on this close.
-// Phone calls M3: both are plain texts. They never promise a ring, because the
-// forced voiced call opens at once when this thread closes.
+// Phone calls M3: both are plain texts. Guard 1 never promises a ring: for a
+// forced voiced scene the call opens at once when this thread closes, but for the
+// hour read's silent re-ring it is a text and for the Recruiter's scene (guard 2)
+// the ring waits for the next room exit.
 {
-- (recruiter_gone and not deck_choice_made) or (identity_scene_started and not identity_scene_done) or (hour_read_started and not hour_read_done) or (tesseract_call_started and not tesseract_call_done):
+- hax_voiced_scene_pending():
     One moment. Something's come in.
     #exit_conversation
     -> DONE
 - recruiter_call_started and not recruiter_gone and not deck_choice_made:
-    Hear her out first. I'll be here after.
+    Her call first. I'll be on it with you.
     + [Right.]
         #exit_conversation
     -> DONE
@@ -214,7 +218,10 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
 // FLAG 1 READ (Beat 1.4; unvoiced)
 // ================================================
 === flag1_read ===
+// Idempotent: a stale toast tap, or a thread opened before her text arrived, shows the hub.
+{flag1_read_heard: -> support_hub}
 ~ flag1_read_heard = true
+#set_global:flag1_read_heard:true
 // The stacks door opens on its own mapping (S4 §4 row 1), which can retry,
 // so nothing here says the door is open.
 // Walkthrough R1 m-01: the salvage line is given on the first line, so a
@@ -248,6 +255,7 @@ The catalogue calls what's in there Tomb Beta. It's still drawing power, and nob
 // LEDGER READ (Beat 2.3; unvoiced)
 // ================================================
 === ledger_read ===
+{ledger_read_here or ledger_read_heard: -> support_hub}
 // First line sets ledger_read_heard: the Recruiter's ring (a) and ring (c)
 // key on it (CONTRACT §6.2; ring (b) removed at scenario design R4 m3). No pronoun for WREN.
 ~ ledger_read_here = true
@@ -296,6 +304,7 @@ I've told the Director. He'll say nothing to them. Neither will you.
 // AFTERWARDS (Beat 2.7; unvoiced; hub topic 7 diverts here)
 // ================================================
 === afterwards ===
+{afterwards_here or afterwards_heard: -> support_hub}
 ~ afterwards_here = true
 // One loss line, a fixed string per case (A-6): the bin that went, by
 // cage_bin (the other bin is Nightshade's copy on m08_nightshade_tidied),
@@ -597,6 +606,8 @@ It isn't my call. It isn't yours either. If you're going to, don't ask me first.
 // HOUR READ (Beat 3.5; text, forced, not voiced)
 // ================================================
 === hour_read ===
+// Idempotent. The forced re-rings use hour_read_resume, which enters body directly.
+{hour_read_here or hour_read_started: -> support_hub}
 -> body
 
 // Beat 3.5. Text, not voiced. UTC only.
@@ -708,10 +719,13 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // ================================================
 // SUPPORT HUB (unvoiced; newest topics first; S4 §7.1)
 // ================================================
-// True while one of HaX's forced scenes or the Recruiter's call is pending: the
-// two start guards above. A read-out waits for them.
+// hax_voiced_scene_pending: a forced HaX scene is pending (start guard 1).
+// hax_scene_pending: that, or the Recruiter's call is pending (guard 2) too. A read-out waits for them.
+=== function hax_voiced_scene_pending() ===
+~ return (recruiter_gone and not deck_choice_made) or (identity_scene_started and not identity_scene_done) or (hour_read_started and not hour_read_done) or (tesseract_call_started and not tesseract_call_done)
+
 === function hax_scene_pending() ===
-~ return (recruiter_gone and not deck_choice_made) or (identity_scene_started and not identity_scene_done) or (hour_read_started and not hour_read_done) or (tesseract_call_started and not tesseract_call_done) or (recruiter_call_started and not recruiter_gone and not deck_choice_made)
+~ return hax_voiced_scene_pending() or (recruiter_call_started and not recruiter_gone and not deck_choice_made)
 
 === support_hub ===
 // Phone calls M3: progress never depends on tapping a toast. A thread opened by
@@ -815,7 +829,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
         It's a floor safe, in her office.
     }
     -> support_hub
-// 7. Afterwards, for a player who closed the call early.
+// 7. Afterwards, for a player who closed the call early. It also shows while
+// hax_scene_pending() holds back the hub's own divert to afterwards.
 + {deck_choice_made and not afterwards_heard} [Afterwards.]
     -> afterwards
 // 8. The Reading (MC §4.6).

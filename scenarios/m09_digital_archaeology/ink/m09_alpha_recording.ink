@@ -20,14 +20,14 @@ VAR alpha_clip_played = false
     Narrator[none]: Empty spools. Degaussed.
 - not identity_scene_done:
     Narrator[none]: The reel turns. A man clears his throat in a lecture hall, years ago.
-    Agent HaX: I know whose voice that is. After.
+    agent_0x99: I know whose voice that is. After.
 - else:
     Dr Adrian Tesseract (recording): The best lock there is opens for the right name. Nobody fights a door that's expecting them.
     // Puzzle chains R8 n2: the credit rides his second line, so an Esc before HaX's reply keeps it.
     #set_global:alpha_clip_played:true
     Dr Adrian Tesseract (recording): And build your own way out first. Always. Then let them build their way in.
     // Blind playtest F6/F9: "Session two" matches the annotation sheets and doesn't suggest a missed tape one.
-    Agent HaX: Session two. He gave that lecture every year.
+    agent_0x99: Session two. He gave that lecture every year.
 }
 #exit_conversation
 -> DONE
