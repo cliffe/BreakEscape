@@ -520,16 +520,54 @@ NETWORKS = BreakEscape::NetworkModel.networks(scenario)
 # Every Wi-Fi key (slice 9.3b): no label in any tab may print one.
 WIFI_KEYS = NETWORKS.keys.filter_map { |id| (BreakEscape::NetworkModel.wifi_of(scenario, id) || {})['psk'] }
                     .select { |k| BreakEscape::NetworkModel.present_string?(k) }.freeze
-# The last line of defence: every output file is scrubbed of each key at write time, whatever
-# authored field (an NPC name, a container, a task title) carried it in. Each key is replaced
-# as written and in the forms the outputs encode it (HTML, JSON, JS template, node id), by a
-# token that is valid in a Mermaid id and in a label.
-WIFI_KEY_TOKEN = 'WIFI_KEY_HIDDEN'
+# Authored text is scrubbed of each key where it enters an output, whatever field (an NPC
+# name, a container, a task title, the brief) carried it in, never the page around it: every
+# label, edge label, the title, the brief and the critical path, in any letter case and at any
+# length, in each form an output encodes it (as written, with " shown as ', HTML, JSON, JS
+# template, node id). A node id that holds a key is swapped for an opaque one (hidden_<n>), so
+# every other id keeps its value. A final check on each output (check_wifi_key_free) stops the
+# run, writing nothing, if a key form is still there.
 WIFI_KEY_FORMS = WIFI_KEYS.flat_map do |k|
-  [k, CGI.escapeHTML(k), JSON.generate(k)[1..-2], k.gsub('`') { '\\`' }.gsub('${') { '\\${' }, nid(k)]
-end.uniq.reject { |f| f.length < 4 }.sort_by { |f| -f.length }.freeze
-def scrub_wifi_keys(text)
-  WIFI_KEY_FORMS.reduce(text) { |out, form| out.gsub(form, WIFI_KEY_TOKEN) }
+  [k, k.tr('"', "'"), CGI.escapeHTML(k), JSON.generate(k)[1..-2], k.gsub('`') { '\\`' }.gsub('${') { '\\${' }, nid(k)]
+end.uniq.reject(&:empty?).sort_by { |f| -f.length }.freeze
+# The stand-in text and id prefix, chosen so neither holds a key.
+key_free = ->(word) { WIFI_KEY_FORMS.none? { |f| word.downcase.include?(f.downcase) } }
+WIFI_KEY_TOKEN = (%w[WIFI_KEY_HIDDEN REDACTED *** ##].find(&key_free) || '').freeze
+WIFI_ID_TOKEN = (%w[hidden opaque redacted zq].find(&key_free) || 'z').freeze
+WIFI_LABEL_RE = WIFI_KEY_FORMS.empty? ? nil : Regexp.union(WIFI_KEY_FORMS.map { |f| Regexp.new(Regexp.escape(f), Regexp::IGNORECASE) })
+WIFI_ID_RE = WIFI_KEYS.empty? ? nil : Regexp.union(WIFI_KEYS.flat_map { |k| [k, nid(k)] }.reject(&:empty?).uniq
+                                                       .map { |f| Regexp.new(Regexp.escape(f), Regexp::IGNORECASE) })
+$hidden_ids = {}
+def wifi_key_in?(text)
+  WIFI_LABEL_RE ? WIFI_LABEL_RE.match?(text.to_s) : false
+end
+# A label with every key form replaced; the generator's own <br/> joins are kept, so a short
+# key never eats one.
+SCRUB_OFF_FOR_TEST = ENV['DUNGEON_GRAPH_TEST_NO_SCRUB'] == '1' # proves the final check stops a leak
+def scrub_label(text)
+  return text unless WIFI_LABEL_RE && text && !SCRUB_OFF_FOR_TEST
+
+  text.to_s.split('<br/>', -1).map { |part| part.gsub(WIFI_LABEL_RE, WIFI_KEY_TOKEN) }.join('<br/>')
+end
+def hide_id(id)
+  return id unless WIFI_ID_RE && id && WIFI_ID_RE.match?(id.to_s)
+
+  $hidden_ids[id] ||= "#{WIFI_ID_TOKEN}_#{$hidden_ids.size + 1}"
+end
+# Stops the run, before any file is written, when an output holds a key form more often than
+# the same page with every authored string blanked (the skeleton): the page's own text (a
+# script that says `function`, a style that says `fullscreen`) is in both and never counts.
+def check_wifi_key_free(outputs)
+  outputs.each do |file, (real, skeleton)|
+    leaked = WIFI_KEY_FORMS.any? do |f|
+      re = Regexp.new(Regexp.escape(f), Regexp::IGNORECASE)
+      real.scan(re).size > skeleton.scan(re).size
+    end
+    next unless leaked
+
+    abort "❌ ERROR: #{File.basename(file)} still holds a Wi-Fi key after the label scrub; no graph file was written. " \
+          'An authored string reaches the output by a path scripts/generate_dungeon_graph.rb does not scrub.'
+  end
 end
 if NETWORKS.any?
   nm = BreakEscape::NetworkModel
@@ -542,7 +580,7 @@ if NETWORKS.any?
   # The same, and never a label that holds a Wi-Fi key (an SSID or a note named after it).
   safe_text = lambda do |value, fallback|
     text = npc_text.call(value, fallback)
-    WIFI_KEYS.any? { |k| text.include?(k) } ? fallback.to_s : text
+    wifi_key_in?(text) ? fallback.to_s : text
   end
   net_node = lambda do |net_id|
     net = NETWORKS[net_id]
@@ -605,6 +643,37 @@ if NETWORKS.any?
     end
     seen
   end
+  # The networks a foothold lands on (an open jack with a device to plant, an access point,
+  # an implant usable at its PC), grown by the server's one-hop pivot walk (a session at a
+  # sign-in host on a reached network crosses its links). Read from the model before any
+  # edge is drawn: the share edges below need it, and the pivots further down are drawn from it.
+  foothold_reach = Set.new
+  nm.jacks(scenario).each do |e|
+    foothold_reach << e[:network] if device_nodes.any? && NETWORKS.key?(e[:network]) && !e[:object]['portSecurity']
+  end
+  nm.wifi_aps(scenario).each { |e| foothold_reach << e[:network] }
+  pcs_by_id = {}
+  nm.room_objects(scenario).each { |e| pcs_by_id[e[:object]['id']] ||= e if nm.present_string?(e[:object]['id']) }
+  nm.grant_foothold_actions(scenario).group_by { |a| a[:pc] }.each do |pc_id, acts|
+    pc = pcs_by_id[pc_id]
+    next unless pc && NETWORKS.key?(pc[:network])
+    next if nm.headless?(pc[:object]) && acts.all? { |a| a[:shape] == 'session' }
+
+    foothold_reach << pc[:network]
+  end
+  loop do
+    grown = false
+    foothold_reach.to_a.each do |net|
+      next if nm.sign_in_objects_on(net, scenario).empty?
+
+      nm.linked_networks(scenario, net).each { |linked| grown = true if foothold_reach.add?(linked) }
+    end
+    break unless grown
+  end
+  # A headless host has no screen: a session there (so its mapped shares) needs a remote
+  # sign-in, and so a foothold that reaches its network (Game#attempt_login!). Without one it
+  # opens no share, on its own network or across a link.
+  share_host = ->(h) { !nm.headless?(h[:object]) || foothold_reach.include?(h[:network]) }
   NETWORKS.each_key do |net_id|
     hosts = nm.sign_in_objects_on(net_id, scenario)
     shares = nm.resources_on(net_id, scenario)
@@ -625,6 +694,7 @@ if NETWORKS.any?
         # other access-listed resource only from a host on its own network.
         mapped = res['kind'] == 'file_share' && !nm.listed_only_share?(res)
         signin_hosts = mapped ? link_component.call(net_id).flat_map { |n| nm.sign_in_objects_on(n, scenario) } : hosts
+        signin_hosts = signin_hosts.select(&share_host)
         accounts.each do |a|
           next unless ai.acl_admits?(res['access'], a[:npc])
           next unless signin_hosts.any? { |h| ai.account_admitted?(h[:object], a[:npc]) }
@@ -644,11 +714,6 @@ if NETWORKS.any?
   # reached crosses that network's links one hop, to its directly linked networks.
   edge_once = lambda do |from, to, **opts|
     add_edge(from, to, **opts) unless $edges.any? { |e| e[:from] == from && e[:to] == to }
-  end
-  foothold_nets = Set.new # networks a foothold lands on: open jacks, access points, implants
-  # A jack gives a foothold only when there is a rogue device to plant in it.
-  nm.jacks(scenario).each do |e|
-    foothold_nets << e[:network] if device_nodes.any? && NETWORKS.key?(e[:network]) && !e[:object]['portSecurity']
   end
 
   # Links: structure, not reach. One dashed, undirected line per link (soft in the JSON),
@@ -689,17 +754,23 @@ if NETWORKS.any?
       index_held.call(npc['itemsHeld'], room_id, npc) if npc.is_a?(Hash) && npc['itemsHeld'].is_a?(Array)
     end
   end
-  # Where an object is found: behind its own lock, its container's lock, or in its room.
+  # Where an object is found: behind its own lock, the innermost locked container above it
+  # (at any depth, as the server's object_reachable? checks every one), or in its room.
+  entries_by_path = nil
   object_from = lambda do |entry|
-    obj = entry[:object]
-    cont = entry[:container]
-    if obj['locked'] && $nodes.key?("lock_#{obj['id']}")
-      "lock_#{obj['id']}"
-    elsif cont && cont['locked'] && $nodes.key?("lock_#{cont['id']}")
-      "lock_#{cont['id']}"
-    else
-      room_node.call(entry[:room_id])
+    entries_by_path ||= nm.room_objects(scenario).to_h { |e| [e[:path], e] }
+    chain = [entry[:object]]
+    path = entry[:path].to_s
+    while (m = path.match(%r{\A(.+)/contents\[\d+\]\z}))
+      path = m[1]
+      above = entries_by_path[path]
+      break unless above
+
+      chain << above[:object]
     end
+    chain << entry[:container] if chain.size == 1 && entry[:container] # an entry with no room path
+    lock = chain.compact.find { |o| o['locked'] && $nodes.key?("lock_#{o['id']}") }
+    lock ? "lock_#{lock['id']}" : room_node.call(entry[:room_id])
   end
   start_ids = Array(scenario['startItemsInInventory']).filter_map { |i| i['id'] if i.is_a?(Hash) }
   start_from = -> { room_node.call(start_room) } # called only when used, so no stray node
@@ -711,6 +782,36 @@ if NETWORKS.any?
   # a profile, social content) is a dashed edge from the start room. An open network (no
   # psk) needs no key. No label ever prints the key.
   wifi_texts = nil
+  # The locked folders (any lock but a sign-in) between a share's or a desktop's top level and
+  # a text inside it, outer first, as [[label, object]]; the label is the text walk's own
+  # (Clues.walk_objects: the id, else the path). The server serves an item only once every
+  # folder above it is open (NetworkAccess#resource_item_for_add, and so on a desktop).
+  inner_locks = lambda do |list, base, target|
+    found = nil
+    walk = lambda do |items, path, locks|
+      Array(items).each_with_index do |obj, i|
+        next if found || !obj.is_a?(Hash)
+
+        here = "#{path}[#{i}]"
+        label = obj['id'].is_a?(String) && !obj['id'].empty? ? obj['id'] : here
+        next found = locks if label == target
+
+        walk.call(obj['contents'], "#{here}/contents", obj['locked'] && obj['lockType'] != 'login' ? locks + [[label, obj]] : locks)
+      end
+    end
+    walk.call(list, base, [])
+    found || []
+  end
+  # The lock node of each such folder, chained from the share or the PC sign-in.
+  behind_locks = lambda do |from, chain|
+    chain.each do |label, obj|
+      node = $nodes.key?("lock_#{label}") ? "lock_#{label}" : "lock_#{nid(label)}"
+      add_node(node, "#{safe_text.call(obj['name'], label.tr('_', ' '))}<br/>#{LOCK_TYPE_LABELS[obj['lockType']] || 'Lock'}", 'lock')
+      edge_once.call(from, node)
+      from = node
+    end
+    from
+  end
   nm.wifi_aps(scenario).each do |entry|
     ap = entry[:object]
     ap_key = nm.present_string?(ap['id']) ? ap['id'] : entry[:path]
@@ -718,7 +819,6 @@ if NETWORKS.any?
     from = object_from.call(entry)
     edge_once.call(from, node) if from
     edge_once.call(node, net_node.call(entry[:network]))
-    foothold_nets << entry[:network]
     wifi = nm.wifi_of(scenario, entry[:network])
     psk = wifi['psk']
     next unless nm.present_string?(psk)
@@ -748,9 +848,13 @@ if NETWORKS.any?
         npc = nil
         clue = nil
         if pc_id && $nodes.key?("lock_#{pc_id}")
-          clue = hang.call("lock_#{pc_id}")
+          pc_entry = pcs_by_id[pc_id]
+          chain = pc_entry ? inner_locks.call(pc_entry[:object]['contents'], "#{pc_entry[:path]}/contents", t[:path]) : []
+          clue = hang.call(behind_locks.call("lock_#{pc_id}", chain))
         elsif share && $nodes.key?(share)
-          clue = hang.call(share)
+          res = nm.resources(scenario).to_h[scope[:resource]] || {}
+          chain = inner_locks.call(res['contents'], "resources/#{scope[:resource]}/contents", t[:path])
+          clue = hang.call(behind_locks.call(share, chain))
         elsif holder
           clue = hang.call(npc_node_for.call(*holder))
         elsif (npc = npc_at_path.call(t[:path]))
@@ -847,24 +951,14 @@ if NETWORKS.any?
       next unless NETWORKS.key?(pc[:network])
 
       edge_once.call(node, net_node.call(pc[:network]))
-      foothold_nets << pc[:network] unless headless && acts.all? { |a| a[:shape] == 'session' }
     end
   end
 
   # Pivots: an AND gate per sign-in host, fed by the host's network (reached) and the host's
   # sign-in lock (a session held there), with a `pivot` edge to each directly linked network.
-  # Drawn only for hosts on networks a foothold can reach, by the same one-hop walk.
-  reached = foothold_nets.dup
-  loop do
-    grown = false
-    reached.to_a.each do |net|
-      next if nm.sign_in_objects_on(net, scenario).empty?
-
-      nm.linked_networks(scenario, net).each { |linked| grown = true if reached.add?(linked) }
-    end
-    break unless grown
-  end
-  reached.to_a.sort.each do |net_id|
+  # Drawn only for hosts on networks a foothold can reach, by the same one-hop walk
+  # (foothold_reach, above).
+  foothold_reach.to_a.sort_by(&:to_s).each do |net_id|
     linked = nm.linked_networks(scenario, net_id)
     next if linked.empty?
 
@@ -940,7 +1034,7 @@ aw_g.with_index(scenario) do
         if $nodes.key?("door_#{door}")
           add_edge(node, "door_#{door}", label: 'propped open')
         else
-          warn "dungeon graph: #{node} props open '#{door}', which has no door node; edge left out"
+          warn "dungeon graph: #{hide_id(node)} props open '#{scrub_label(door)}', which has no door node; edge left out"
         end
       end
     end
@@ -1545,7 +1639,10 @@ critical_set = Set.new(critical_path)
 # ---------------------------------------------------------------------------
 # Mermaid emitter (shared by puzzle / story / integrated tabs)
 # ---------------------------------------------------------------------------
-def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil)
+# Every label passes through scrub_label and every id through hide_id here, so no diagram
+# prints a Wi-Fi key; the skeleton (skeleton_mermaid) is drawn with hide: false.
+def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil, hide: true)
+  hid = hide ? method(:hide_id) : ->(id) { id }
   # Ensure the start room is present as a node even if it has no puzzle elements
   if start_node && !nodes.key?(start_node)
     label = start_node.tr('_', ' ').split.map(&:capitalize).join(' ')
@@ -1572,12 +1669,12 @@ def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil)
   # Emit START anchor first so Mermaid places it at the top
   if start_node
     lines << '  node_start(("▶"))'
-    lines << "  node_start --> #{start_node}"
+    lines << "  node_start --> #{hid.call(start_node)}"
     lines << ''
   end
 
   nodes.each do |id, n|
-    lbl   = n[:label].to_s.gsub('"', "'")
+    lbl   = scrub_label(n[:label].to_s).gsub('"', "'")
     klass = n[:klass].to_s
     shape = case klass
     when 'room'                then "(\"#{lbl}\")"
@@ -1590,33 +1687,44 @@ def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil)
     when 'npc'                 then "(\"#{lbl}\")"
     else                            "(\"#{lbl}\")"
     end
-    lines << "  #{id}#{shape}"
+    lines << "  #{hid.call(id)}#{shape}"
   end
   lines << ''
 
   edges.each do |e|
     arr  = e[:dashed] ? '-.->' : '-->'
     arr  = e[:dashed] ? '-.-' : '---' if e[:undirected]
-    elbl = e[:label] ? "|#{e[:label]}|" : ''
-    lines << "  #{e[:from]} #{arr}#{elbl} #{e[:to]}"
+    elbl = e[:label] ? "|#{scrub_label(e[:label].to_s)}|" : ''
+    lines << "  #{hid.call(e[:from])} #{arr}#{elbl} #{hid.call(e[:to])}"
   end
   lines << ''
 
   effective = nodes.to_h { |id, n| [id, critical_set.include?(id) ? 'critical' : n[:klass].to_s] }
   effective.group_by { |_, k| k }.each do |klass, grp|
-    lines << "  class #{grp.map(&:first).join(',')} #{klass}"
+    lines << "  class #{grp.map { |id, _| hid.call(id) }.join(',')} #{klass}"
   end
 
   opt_ids = nodes.reject { |id, _| critical_set.include?(id) }.select { |_, n| n[:optional] }.keys
   unless opt_ids.empty?
     lines << ''
     lines << '  classDef optional stroke-dasharray:5 2'
-    lines << "  class #{opt_ids.join(',')} optional"
+    lines << "  class #{opt_ids.map { |id| hid.call(id) }.join(',')} optional"
   end
 
   lines << '  class node_start start' if start_node
 
   lines.join("\n")
+end
+
+# The same diagram with every authored string blanked: each id a plain counter, each label
+# empty. Its text is the generator's own (shapes, classes, arrows), for check_wifi_key_free.
+def skeleton_mermaid(nodes, edges, critical_set: Set.new, start_node: nil)
+  ids = {}
+  idx = ->(id) { ids[id] ||= "n#{ids.size}" }
+  sk_nodes = nodes.to_h { |id, n| [idx.call(id), n.merge(label: '')] }
+  sk_edges = edges.map { |e| e.merge(from: idx.call(e[:from]), to: idx.call(e[:to]), label: e[:label] && '') }
+  emit_mermaid_diagram(sk_nodes, sk_edges, critical_set: Set.new(critical_set.map { |c| idx.call(c) }),
+                                           start_node: start_node && idx.call(start_node), hide: false)
 end
 
 def js_escape_mermaid(src)
@@ -1670,7 +1778,7 @@ def walk_room_contents(objects, parent_id, rc_nodes, rc_edges, rc_edge_set)
     raw_id       = obj['id'] || "obj#{$rc_counter}"
     obj_name     = obj['name'] || raw_id.tr('_', ' ').split.map(&:capitalize).join(' ')
     # A name holding a Wi-Fi key (slice 9.3b) is shown by its id, so the key never prints.
-    obj_name     = raw_id.to_s if WIFI_KEYS.any? { |k| obj_name.to_s.include?(k) }
+    obj_name     = raw_id.to_s if wifi_key_in?(obj_name)
     node_id      = "rc_#{nid(raw_id)}_#{$rc_counter}"
     has_contents = !obj['contents'].nil? && !obj['contents'].empty?
     klass        = has_contents ? 'container' : 'item'
@@ -1745,7 +1853,7 @@ lock_count     = $nodes.count { |_, n| n[:klass] == 'lock' }
 room_count     = $nodes.count { |_, n| n[:klass] == 'room' }
 
 path_labels = critical_path.map { |id|
-  (aim_nodes[id] || {})[:label] || id.sub(/\Aaim_andgate_/, '+ ').sub(/\Aaim_/, '').tr('_', ' ').split.map(&:capitalize).join(' ')
+  scrub_label((aim_nodes[id] || {})[:label] || id.sub(/\Aaim_andgate_/, '+ ').sub(/\Aaim_/, '').tr('_', ' ').split.map(&:capitalize).join(' '))
 }.join(' → ')
 
 # ---------------------------------------------------------------------------
@@ -1762,15 +1870,27 @@ if (net_labels & Set['held', 'dropped', 'session at PC']).any?
 end
 net_legend_html = net_notes.map { |n| %(\n          <div class="edge-row">#{n}</div>) }.join
 net_legend_md = net_notes.map { |n| "\n  Network edges: #{n.gsub(%r{</?code>}, '`').gsub(%r{</?b>}, '')}." }.join
-brief_full = (scenario['scenario_brief'] || SCENARIO_ID).to_s
+# Scrubbed before the subtitle cuts it, so the cut never leaves part of a key.
+brief_full = scrub_label((scenario['scenario_brief'] || SCENARIO_ID).to_s)
 brief = brief_full.length <= 160 ? brief_full : brief_full[0, 160].sub(/\s+\S*\z/, '') + '…'
-html  = <<~HTML
+title_id = scrub_label(SCENARIO_ID)
+# The pages are built twice: with the content, and as the skeleton (every authored string
+# blanked) that check_wifi_key_free compares each output against.
+skeletons = {
+  mermaid_puzzle: skeleton_mermaid($nodes, $edges, start_node: start_room),
+  mermaid_story: skeleton_mermaid(aim_nodes, aim_edges, critical_set: critical_set),
+  mermaid_integrated: skeleton_mermaid(int_nodes, int_edges, critical_set: critical_set, start_node: start_room),
+  mermaid_rooms: skeleton_mermaid(rooms_nodes, rooms_edges, start_node: start_room),
+  mermaid_contents: skeleton_mermaid(rc_nodes, rc_edges, start_node: start_room)
+}
+render_html = lambda do |title_id, brief, path_labels, mermaid_puzzle, mermaid_story, mermaid_integrated, mermaid_rooms, mermaid_contents|
+  <<~HTML
   <!-- Auto-generated by scripts/generate_dungeon_graph.rb — do not edit by hand -->
   <!DOCTYPE html>
   <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>#{SCENARIO_ID} — Dungeon Graph</title>
+    <title>#{title_id} — Dungeon Graph</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3/dist/svg-pan-zoom.min.js"></script>
     <style>
@@ -1835,7 +1955,7 @@ html  = <<~HTML
     </style>
   </head>
   <body>
-    <h1>#{SCENARIO_ID} — dependency graph</h1>
+    <h1>#{title_id} — dependency graph</h1>
     <p class="sub">#{brief}</p>
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="puzzle"     onclick="showTab('puzzle',this)">Puzzle Graph</button>
@@ -1978,19 +2098,20 @@ html  = <<~HTML
   </body>
   </html>
 HTML
-
-File.write(OUT_FILE, scrub_wifi_keys(html))
-puts "Written: #{OUT_FILE}"
+end
+html = render_html.call(title_id, brief, path_labels, mermaid_puzzle, mermaid_story, mermaid_integrated, mermaid_rooms, mermaid_contents)
+html_skeleton = render_html.call('', '', '', *skeletons.values)
 
 # ---------------------------------------------------------------------------
 # Companion Markdown — AI-readable graph reference
 # Each diagram is a labelled fenced mermaid block with prose context so an
 # AI agent can load this single file and reason about the scenario structure.
 # ---------------------------------------------------------------------------
-md = <<~MD
+render_md = lambda do |title_id, brief_full, path_labels, mermaid_puzzle, mermaid_story, mermaid_integrated, mermaid_rooms, mermaid_contents|
+  <<~MD
   <!-- Auto-generated by scripts/generate_dungeon_graph.rb — do not edit by hand -->
 
-  # #{SCENARIO_ID} — Scenario Graph Reference
+  # #{title_id} — Scenario Graph Reference
 
   #{brief_full}
 
@@ -2074,18 +2195,36 @@ md = <<~MD
   #{mermaid_contents}
   ```
 MD
-
-File.write(MD_FILE, scrub_wifi_keys(md))
+end
+md = render_md.call(title_id, brief_full, path_labels, mermaid_puzzle, mermaid_story, mermaid_integrated, mermaid_rooms, mermaid_contents)
+md_skeleton = render_md.call('', '', '', *skeletons.values)
 
 # Machine-readable puzzle graph, for tooling that needs the dependency order
 # rather than a picture of it — notably the playtest harness, which uses it to
 # check that a flag or lock is only reached after its prerequisites are held.
-File.write(JSON_FILE, scrub_wifi_keys(JSON.pretty_generate(
-  'scenario' => File.basename(File.dirname(SCENARIO_FILE)),
-  'start_room' => scenario['startRoom'],
-  'nodes' => $nodes.map { |id, n| { 'id' => id, 'label' => n[:label], 'kind' => n[:klass], 'optional' => n[:optional] } },
-  'edges' => $edges.map { |e| { 'from' => e[:from], 'to' => e[:to], 'soft' => e[:dashed], 'label' => e[:label], 'undirected' => e[:undirected] }.compact }
-)))
+# Ids pass through hide_id and labels through scrub_label, as in the diagrams; the skeleton
+# blanks both (every id a counter, every label empty).
+render_json = lambda do |scenario_name, start_id, id_of, label_of|
+  JSON.pretty_generate(
+    'scenario' => scenario_name,
+    'start_room' => start_id,
+    'nodes' => $nodes.map { |id, n| { 'id' => id_of.call(id), 'label' => label_of.call(n[:label]), 'kind' => n[:klass], 'optional' => n[:optional] } },
+    'edges' => $edges.map do |e|
+      { 'from' => id_of.call(e[:from]), 'to' => id_of.call(e[:to]), 'soft' => e[:dashed],
+        'label' => e[:label] && label_of.call(e[:label]), 'undirected' => e[:undirected] }.compact
+    end
+  )
+end
+json = render_json.call(scrub_label(File.basename(File.dirname(SCENARIO_FILE))), hide_id(scenario['startRoom']),
+                        method(:hide_id), ->(l) { scrub_label(l.to_s) })
+sk_ids = {}
+json_skeleton = render_json.call('', scenario['startRoom'] && '', ->(id) { sk_ids[id] ||= "n#{sk_ids.size}" }, ->(_) { '' })
+
+check_wifi_key_free(OUT_FILE => [html, html_skeleton], MD_FILE => [md, md_skeleton], JSON_FILE => [json, json_skeleton])
+File.write(OUT_FILE, html)
+puts "Written: #{OUT_FILE}"
+File.write(MD_FILE, md)
+File.write(JSON_FILE, json)
 puts "Written: #{JSON_FILE}"
 puts "Written: #{MD_FILE}"
 puts "Puzzle     — Nodes: #{$nodes.size}  Edges: #{$edges.size}"

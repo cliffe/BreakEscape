@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -498,4 +498,166 @@ test('a clean scenario using every 9.3b field draws each feature once', { skip }
     const keys = g.edges.map(e => `${e.from}|${e.to}`);
     assert.equal(new Set(keys).size, keys.length, 'no duplicate edges');
     for (const out of [g.raw, g.md, g.html]) assert.ok(!out.includes(PSK));
+});
+
+// Review R3: the key scrub acts on authored text and ids, never on the page around them.
+function run(scenario, env = {}) {
+    const dir = mkdtempSync(join(tmpdir(), 'graph-networks-'));
+    try {
+        writeFileSync(join(dir, 'scenario.json.erb'), JSON.stringify(scenario));
+        const r = spawnSync('ruby', [join(root, 'scripts/generate_dungeon_graph.rb'), join(dir, 'scenario.json.erb')],
+            { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8', ...env } });
+        const written = ['html', 'md', 'json'].filter(ext => existsSync(join(dir, `dungeon_graph.${ext}`)));
+        return { status: r.status, stdout: r.stdout, stderr: r.stderr, written };
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+}
+const inlineScript = html => html.match(/<script>\n([\s\S]*?)<\/script>/)[1];
+const pageShell = html => inlineScript(html).replace(/const diagrams = \{[\s\S]*?\n    \};/, '') +
+    html.match(/<style>[\s\S]*?<\/style>/)[0];
+function scriptParses(html) {
+    const dir = mkdtempSync(join(tmpdir(), 'graph-script-'));
+    try {
+        writeFileSync(join(dir, 'page.js'), inlineScript(html));
+        return spawnSync(process.execPath, ['--check', join(dir, 'page.js')], { encoding: 'utf8' });
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+}
+function keyed(psk) {
+    const sc = wifi();
+    sc.networks.guest_wifi.wifi.psk = psk;
+    sc.rooms.lobby.objects.find(o => o.id === 'wifi_card').text = `Key: ${psk}`;
+    sc.rooms.lobby.connections.south = 'office';
+    sc.rooms.office = { type: 'room_office', door_sign: 'back office', connections: { north: 'lobby' },
+                        objects: [{ id: 'office_memo', type: 'notes1', name: 'Memo', readable: true, text: 'nothing' }] };
+    return sc;
+}
+
+test('a key that is also page text or an id leaves the page, its script and its other ids intact', { skip }, () => {
+    const base = graph(keyed(PSK));
+    for (const key of ['function', 'fullscreen', 'office']) {
+        const g = graph(keyed(key));
+        const re = new RegExp(key, 'i');
+        assert.ok(g.nodes.wifikey_guest_wifi, `${key}: positive control`);
+        const check = scriptParses(g.html);
+        assert.equal(check.status, 0, `${key}: the inline script parses (${check.stderr})`);
+        assert.equal(pageShell(g.html), pageShell(base.html), `${key}: script and style match the page for another key`);
+        for (const id of Object.keys(base.nodes)) {
+            if (re.test(id)) assert.ok(!g.nodes[id], `${key}: ${id} holds the key, so is hidden`);
+            else assert.ok(g.nodes[id], `${key}: ${id} keeps its id`);
+        }
+        for (const id of Object.keys(g.nodes).filter(id => !base.nodes[id])) assert.match(id, /^hidden_\d+$/);
+        assert.equal(Object.keys(g.nodes).length, Object.keys(base.nodes).length);
+        for (const n of Object.values(g.nodes)) assert.doesNotMatch(n.label, re, `${key}: no label holds it`);
+        for (const e of g.edges) assert.ok(![e.from, e.to, e.label ?? ''].some(s => re.test(s)), `${key}: no edge holds it`);
+        assert.equal(JSON.parse(g.raw).start_room, 'lobby');
+        const again = graph(keyed(key));
+        assert.deepEqual([again.nodes, again.edges], [g.nodes, g.edges], `${key}: hidden ids are stable from run to run`);
+    }
+    const office = graph(keyed('office'));
+    assert.ok(!office.md.includes('net_office_lan') && !/back office/i.test(office.md), 'the room and network named after it are hidden');
+    assert.match(office.md, /\("back WIFI_KEY_HIDDEN"\)/, 'a label in any letter case is scrubbed, the rest kept');
+});
+
+test('a key with a quote, a short key, and a key in another letter case are hidden in every output', { skip }, () => {
+    const cases = { 'sea"breeze1': ['sea"breeze1', "sea'breeze1"], abc: ['Lena abc'], SeaBreeze2025: [/seabreeze2025/i] };
+    for (const [psk, forms] of Object.entries(cases)) {
+        const sc = keyed(psk);
+        sc.rooms.lobby.npcs[0].displayName = psk === 'SeaBreeze2025' ? 'Lena SEABREEZE2025' : `Lena ${psk}`;
+        const g = graph(sc);
+        assert.ok(g.nodes.wifikey_guest_wifi, `${psk}: positive control`);
+        assert.ok(g.md.includes('Lena WIFI_KEY_HIDDEN') && g.html.includes('Lena WIFI_KEY_HIDDEN'), `${psk}: the name was drawn, scrubbed`);
+        for (const out of [g.raw, g.md, g.html]) {
+            for (const f of forms) assert.ok(typeof f === 'string' ? !out.includes(f) : !f.test(out), `${psk}: ${f} in no output`);
+        }
+    }
+});
+
+test('the subtitle cut never leaves part of a passphrase', { skip }, () => {
+    const psk = 'sea breeze two zero two five';
+    const sc = keyed(psk);
+    sc.scenario_brief = `${'x'.repeat(140)} key: ${psk} and then more`;
+    const g = graph(sc);
+    const sub = g.html.match(/<p class="sub">([^<]*)<\/p>/)[1];
+    assert.doesNotMatch(sub, /sea|breeze/, 'no word of the key before the cut');
+    assert.match(g.md, /key: WIFI_KEY_HIDDEN and then more/, 'the full brief is scrubbed');
+});
+
+test('the critical path printed to the terminal is scrubbed', { skip }, () => {
+    const sc = keyed(PSK);
+    sc.objectives = [{ aimId: 'aim_one', title: `Aim ${PSK}`, status: 'active', order: 0,
+                       tasks: [{ taskId: 'task_one', title: 'Task', type: 'custom', status: 'active' }] },
+                     { aimId: 'aim_two', title: 'Aim two', status: 'locked', order: 1, unlockCondition: { aimsCompleted: ['aim_one'] },
+                       tasks: [{ taskId: 'task_two', title: 'Task two', type: 'custom', status: 'active' }] }];
+    const r = run(sc);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /Critical path \(\d+ hops\): .*WIFI_KEY_HIDDEN/, 'positive control: the aim is printed');
+    assert.ok(!r.stdout.includes(PSK) && !r.stderr.includes(PSK));
+});
+
+test('the final check stops the run, writing nothing, when a key gets past the scrub', { skip }, () => {
+    const sc = keyed(PSK);
+    sc.rooms.lobby.npcs[0].displayName = `Lena ${PSK}`;
+    assert.equal(run(sc).status, 0, 'positive control');
+    const r = run(sc, { DUNGEON_GRAPH_TEST_NO_SCRUB: '1' });
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /still holds a Wi-Fi key/);
+    assert.ok(!r.stderr.includes(PSK) && !r.stdout.includes(PSK), 'the message never prints the key');
+    assert.deepEqual(r.written, []);
+});
+
+test('a key note in a locked folder on a share or a desktop hangs behind the folder lock', { skip }, () => {
+    const note = () => ({ id: 'key_note', type: 'text_file', name: 'Wi-Fi.txt', readable: true, text: `Guest key: ${PSK}` });
+    const folder = id => ({ id, type: 'folder', name: 'Private', locked: true, lockType: 'pin', requires: '2468', contents: [note()] });
+    let sc = wifi();
+    sc.rooms.lobby.objects.pop();
+    sc.resources.scanned_inbox.contents = [folder('share_folder')];
+    let g = graph(sc);
+    assert.ok(edge(g, 'net_office_lan', 'resource_scanned_inbox'), 'positive control');
+    assert.deepEqual(into(g, 'lock_share_folder'), ['resource_scanned_inbox']);
+    assert.deepEqual(into(g, 'clue_key_note'), ['lock_share_folder']);
+    assert.ok(edge(g, 'clue_key_note', 'wifikey_guest_wifi'));
+    sc = wifi();
+    sc.rooms.lobby.objects.pop();
+    sc.rooms.lobby.objects.find(o => o.id === 'hot_desk').contents = [folder('desk_folder')];
+    g = graph(sc);
+    assert.ok(edge(g, 'lock_hot_desk', 'lock_desk_folder'), 'the folder sits on the desktop');
+    assert.deepEqual(into(g, 'clue_key_note'), ['lock_desk_folder']);
+    assert.ok(edge(g, 'clue_key_note', 'wifikey_guest_wifi'));
+    sc.rooms.lobby.objects.find(o => o.id === 'hot_desk').contents = [note()];
+    g = graph(sc);
+    assert.deepEqual(into(g, 'clue_key_note'), ['lock_hot_desk'], 'no folder: from the sign-in, as before');
+});
+
+test('a headless host opens no access-listed share without a foothold, on its network or across a link', { skip }, () => {
+    const it = sc => {
+        sc.rooms.lobby.objects.find(o => o.id === 'hot_desk').access = { roles: ['finance'] };
+        return sc;
+    };
+    const share = { kind: 'file_share', name: 'IT share', host: 'HB-FS01', access: { roles: ['it'] },
+                    contents: [{ id: 'it_doc', type: 'text_file', name: 'Doc', readable: true, text: 'x' }] };
+    for (const where of ['office_lan', 'server_net']) {
+        let sc = it(linked());
+        sc.rooms.store.objects = sc.rooms.store.objects.filter(o => o.id !== 'file_server');
+        sc.resources.it_share = { ...share, network: where };
+        let g = graph(sc);
+        assert.deepEqual(into(g, 'resource_it_share'), ['signin_ian'], `${where}: a foothold on office_lan, so a remote session`);
+        sc.rooms.comms_room.objects = [];
+        g = graph(sc);
+        assert.ok(g.nodes.resource_it_share && g.nodes.signin_ian, `${where}: positive control`);
+        assert.deepEqual(into(g, 'resource_it_share'), [], `${where}: no foothold, no session at the headless host`);
+    }
+});
+
+test('an access point in an open box inside a locked safe hangs from the safe', { skip }, () => {
+    const sc = wifi();
+    const ap = sc.rooms.lobby.objects.find(o => o.id === 'guest_ap');
+    sc.rooms.lobby.objects = sc.rooms.lobby.objects.filter(o => o !== ap);
+    sc.rooms.lobby.objects.push({ id: 'ap_safe', type: 'safe', name: 'Safe', locked: true, lockType: 'pin', requires: '4321',
+                                  contents: [{ id: 'ap_box', type: 'box', name: 'Box', contents: [ap] }] });
+    const g = graph(sc);
+    assert.ok(edge(g, 'lock_ap_safe', 'wifiap_guest_ap'));
+    assert.ok(!edge(g, 'lobby', 'wifiap_guest_ap'));
 });
