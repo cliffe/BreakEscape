@@ -24,6 +24,9 @@ import TTSManager from '../../systems/tts-manager.js';
 import { deliveryFromTags } from '../../systems/tts-delivery.js';
 import { resolvePhoneApp, npcDmFields, profileLaunch } from './phone-app.js';
 
+/** How long a ringer call's screen holds on "Call ended m:ss" before it closes (plan 2.5). */
+const CALL_ENDED_BEAT_MS = 900;
+
 export class PhoneChatMinigame extends MinigameScene {
     /**
      * Create a PhoneChatMinigame instance
@@ -322,11 +325,22 @@ export class PhoneChatMinigame extends MinigameScene {
     }
     
     /**
+     * Esc on a ringer call is End call (handleKeyPress); the base Esc handler would
+     * complete(false), so it is not kept, whatever the listener order (A2b R1 m1).
+     */
+    _dropBaseEscOnRingerCall() {
+        if (!this.params?.ringerCall || !this._fallbackCloseHandler) return;
+        document.removeEventListener('keydown', this._fallbackCloseHandler);
+        this._fallbackCloseHandler = null;
+    }
+
+    /**
      * Start the minigame
      */
     async start() {
         super.start();
-        
+        this._dropBaseEscOnRingerCall?.();
+
         // Preload intro messages for NPCs without history
         await this.preloadIntroMessages();
 
@@ -858,7 +872,7 @@ export class PhoneChatMinigame extends MinigameScene {
         // pendingNpcMessages is what has not reached the history yet: if the phone is closed
         // mid-typeout, _flushPendingMessages() keeps it (see there). Set before the tags,
         // since a tag can close the phone (a cutscene's set_global, m06 N-6-1).
-        if (await this._endingKeptGoing?.(accumulatedTags)) accumulatedMessages = [];
+        if (await this._endingKeptGoing?.(accumulatedTags)) { accumulatedMessages = []; accumulatedTags = []; }
 
         this._pendingNpcMessages = accumulatedMessages.filter(m => m.trim()).map(m => m.trim());
 
@@ -1577,6 +1591,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
         this._flushPendingMessages();
         this._callVoice?.stop();   // a voiced call's line stops with the thread
+        if (this._callEndedPending) return;   // a second End or Esc during the "Call ended" beat
         const ringer = !!this.params?.ringerCall;
         if (ringer) this._resetAfterRingerCall();   // while the story is loaded, before it is cleared
         this._endSocialRun();      // one run per open conversation (00 §8)
@@ -1589,7 +1604,14 @@ export class PhoneChatMinigame extends MinigameScene {
             // End call / the back arrow: the player hung up (row 25). The call is over, so the
             // minigame completes; the thread comes back through the ringer's reopen, not here.
             this._endedByCall = true;
-            this.complete(true);
+            // "Call ended m:ss" for a beat before the screen goes (plan 2.5); no beat
+            // without a call screen (terminal look)
+            if (this.ui.showCallEnded?.()) {
+                this._callEndedPending = true;
+                setTimeout(() => { if (this.gameState?.isActive) this.complete(true); }, CALL_ENDED_BEAT_MS);
+            } else {
+                this.complete(true);
+            }
             return;
         }
         

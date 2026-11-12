@@ -16,7 +16,9 @@ const dataUrl = (s) => 'data:text/javascript;base64,' + Buffer.from(s).toString(
 const lock = await import(dataUrl(readFileSync(join(chat, 'phone-call-lock.js'), 'utf8')));
 
 globalThis.window = { eventDispatcher: null, dismissPhoneHitNotice() {} };
+globalThis.document = { listeners: [], addEventListener(t, f) { this.listeners.push(f); }, removeEventListener(t, f) { this.listeners = this.listeners.filter((x) => x !== f); } };
 globalThis.__stubs = {
+    history: {},
     lock,
     callHomeKnot: (npc) => String(npc?.homeKnot || npc?.currentKnot || 'start').split('.')[0],
 };
@@ -26,8 +28,8 @@ const S = globalThis.__stubs;
 const { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } = S.lock;
 const callHomeKnot = S.callHomeKnot;
 class MinigameScene { constructor(c, p) { this.container = c; this.params = p; } addEventListener() {} }
-class PhoneChatUI {} class PhoneChatHistory {} class InkEngine {} class PhoneCallVoice {} class TTSManager {}
-class PhoneChatConversation { static stepKnot(story) { return story && story.__knot || null; } }
+class PhoneChatUI {} class PhoneChatHistory { constructor() { Object.assign(this, S.history); } } class InkEngine {} class PhoneCallVoice {} class TTSManager {}
+class PhoneChatConversation { constructor() {} static stepKnot(story) { return story && story.__knot || null; } static async waitForPreload() {} static isPreloadedOpening() { return false; } }
 const attachPretext = async () => null, processGameActionTags = () => {}, choiceAsksEnding = () => false,
   confirmEndingBeforeChoice = async () => true, partitionSlowTags = () => ({}), classifyPhoneLine = () => ({}),
   displayPhoneLine = () => ({}), phoneStepLines = () => [], choiceIndexFromKey = () => -1,
@@ -146,12 +148,26 @@ test('#exit_conversation on a ringer call: saves, resets, marks the own-path end
     assert.ok(log.order.indexOf('goToKnot') < log.order.indexOf('complete'));
 });
 
-test('both #exit_conversation paths (after a choice, and the continue path) are wired for a ringer call', () => {
-    const s = readFileSync(join(chat, 'phone-chat-minigame.js'), 'utf8');
-    const present = s.slice(s.indexOf('async _presentOutput'));
-    assert.match(present.slice(0, 6000), /this\.params\?\.ringerCall && accumulatedTags\.some\(tag => String\(tag\)\.includes\('exit_conversation'\)\)\) \{\s*\n\s*this\._exitRingerCall\(\);/);
-    const afterChoice = s.slice(s.indexOf("const shouldExit = accumulatedTags.some"));
-    assert.match(afterChoice.slice(0, 600), /if \(this\.params\?\.ringerCall\) \{\s*\n\s*this\._exitRingerCall\(\);/);
+test('#exit_conversation on the continue path (_presentOutput) closes a ringer call, also with no choices; after "Keep going" it does not', async () => {
+    const a = make();
+    a.inst.saveStoryState = () => {};
+    a.inst._pendingNpcMessages = [];
+    await a.inst._presentOutput([], ['exit_conversation'], { choices: [], canContinue: false, hasEnded: false });
+    assert.deepEqual(a.log.completed, [true], 'closed through the ringer exit');
+    assert.equal(a.inst._endedByCall, true);
+    // A2b R1 m2: "Keep going" at #ending_check drops the batch's tags, #exit_conversation with them
+    const b = make();
+    b.inst.saveStoryState = () => {};
+    b.inst._endingKeptGoing = async () => true;
+    b.inst.ui.addChoices = noop;
+    await b.inst._presentOutput([], ['ending_check', 'exit_conversation'], { choices: [{ text: 'x' }], canContinue: false });
+    assert.deepEqual(b.log.completed, [], 'the call the player chose to stay on is not ended');
+    // a text thread (no ringerCall) is untouched by the new check
+    const c = make({ ringer: false });
+    c.inst.saveStoryState = () => {};
+    c.inst.ui.addChoices = noop;
+    await c.inst._presentOutput([], ['exit_conversation'], { choices: [{ text: 'x' }], canContinue: false });
+    assert.deepEqual(c.log.completed, []);
 });
 
 // ---- the story's end, and the close gap --------------------------------------------------
@@ -264,8 +280,67 @@ test('"Conversation ended" toast: skipped on a ringer call, shown on a plain thr
     assert.equal((s.match(/showNotification\('Conversation ended'/g) || []).length, 1, 'only the helper raises it');
 });
 
-test('wiring: a ringer call screen does not draw the thread history (the preloaded opening showed as a spoken line)', () => {
-    const s = readFileSync(join(chat, 'phone-chat-minigame.js'), 'utf8');
-    assert.match(s, /const callScreenOnly = !!safeParams\.ringerCall && safeParams\.theme !== 'terminal';/);
-    assert.match(s, /if \(!callScreenOnly\) this\.ui\.addMessages\(history, \{ typeTerminalOpening: wasPreloadedFirstOpen \}\);/);
+test('a ringer call screen does not draw the thread history; a text thread and a terminal-look call do', async () => {
+    for (const [ringer, theme, expected] of [[true, undefined, 0], [false, undefined, 1], [true, 'terminal', 1]]) {
+        const { inst } = make({ ringer });
+        if (theme) inst.params.theme = theme;
+        const drawn = [];
+        inst.ui.showConversation = () => {};
+        inst.ui.addMessages = (h) => drawn.push(h);
+        inst.npcManager = { getNPC: () => ({ id: 'caller', currentKnot: 'start' }), addMessage() {} };
+        __stubs.history.loadHistory = () => [{ type: 'npc', text: 'Queue One here.' }];
+        __stubs.history.markAllRead = () => {};
+        window.barkSystem = { dismissBarksForOpenThread() { throw new Error('STOP'); } };
+        await assert.rejects(inst.openConversation('caller'), /STOP/);
+        window.barkSystem = null;
+        assert.equal(drawn.length, expected, `ringer=${ringer} theme=${theme}`);
+    }
+});
+
+// ---- Esc: the base handler, "Call ended m:ss" ---------------------------------------------
+
+test('m1: with the real base minigame, the base Esc handler is dropped on a ringer call, so Esc is End call whatever the listener order', async () => {
+    const baseSrc = readFileSync(join(here, '../../public/break_escape/js/minigames/framework/base-minigame.js'), 'utf8')
+        .replace(/^import [\s\S]*?;\s*$/gm, 'const displayDashes = (s) => s;');
+    const { MinigameScene: RealBase } = await import(dataUrl(baseSrc));
+    for (const [first, ringer] of [['phone', true], ['base', true], ['phone', false]]) {
+        const { inst, log } = make({ ringer });
+        const probe = Object.assign(Object.create(RealBase.prototype), inst);
+        probe.params = { ...inst.params };
+        probe.complete = (ok) => { log.completed.push(ok); };
+        for (const k of Object.getOwnPropertyNames(PhoneChatMinigame.prototype)) {
+            if (!['constructor', 'start', 'complete'].includes(k)) probe[k] = PhoneChatMinigame.prototype[k];
+        }
+        document.listeners = [];
+        const phoneListener = (e) => probe.handleKeyPress(e);
+        if (first === 'phone') document.addEventListener('keydown', phoneListener);
+        RealBase.prototype.start.call(probe);       // registers the base Esc handler
+        if (first === 'base') document.addEventListener('keydown', phoneListener);
+        probe._dropBaseEscOnRingerCall();
+        const ev = { key: 'Escape', preventDefault() {} };
+        for (const f of [...document.listeners]) f(ev);
+        if (ringer) assert.ok(!log.completed.includes(false), `order=${first}: never complete(false)`);
+        assert.equal(log.completed.filter((x) => x === true).length, ringer ? 1 : 0, `order=${first} ringer=${ringer}`);
+        if (!ringer) assert.deepEqual(log.completed, [false], 'a text thread keeps the base Esc handler');
+    }
+});
+
+test('m5: End call holds "Call ended m:ss" for a beat, then completes once; a second End in the beat is ignored; no beat without a call screen', () => {
+    const t = timers();
+    try {
+        const { inst, log } = make();
+        let ended = 0;
+        inst.ui.showCallEnded = () => { ended++; return true; };
+        inst.closeConversation();
+        assert.equal(ended, 1);
+        assert.deepEqual(log.completed, [], 'not yet');
+        inst.closeConversation();
+        t.run();
+        assert.deepEqual(log.completed, [true]);
+        assert.deepEqual(log.closedEvents, ['conversation_closed:caller'], 'one close event');
+        const plain = make();
+        plain.inst.ui.showCallEnded = () => false;
+        plain.inst.closeConversation();
+        assert.deepEqual(plain.log.completed, [true], 'terminal look: at once');
+    } finally { t.restore(); }
 });

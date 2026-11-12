@@ -193,3 +193,45 @@ test('answering over nothing never calls endMinigame; the call ends once and the
         assert.equal(w.dispatcher.emitted.filter(([n]) => n === 'phone_call_missed:caller').length, 0, 'an own-path end is not a miss');
     } finally { w.restore(); }
 });
+
+test('A2b R1 M1: the brief stays held between Answer and the call opening (the open delay), and after it', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        w.nm.scheduleTimedConversation({ npcId: 'caller', targetKnot: 'ring_call', delay: 0, ring: true, opening: true });
+        const conv = w.nm.timedConversations[0];
+        conv.delivered = true;
+        w.nm._deliverTimedConversation(conv);
+        await w.advance(300);
+        assert.equal(w.ringer.stateOf('caller'), 'ringing');
+        w.click('.incoming-call-answer');
+        await w.advance(200);
+        assert.equal(w.ringer.stateOf('caller'), 'connected');
+        assert.equal(w.calls.started.length, 0, 'in the gap: connected, no minigame yet');
+        assert.equal(w.nm.hasPendingOpeningConversation(), true, 'the Mission Brief must not open in the gap');
+        await w.advance(500);
+        assert.equal(w.calls.started.length, 1);
+        assert.equal(w.nm.hasPendingOpeningConversation(), true, 'and while the call is open');
+        endCall(w);
+        await w.advance(100);
+        assert.equal(w.nm.hasPendingOpeningConversation(), false, 'released after the call');
+    } finally { w.restore(); }
+});
+
+test('A2b R1 M2: a declined or missed timed ring call leaves npc.currentKnot on the thread, not the call knot', async () => {
+    for (const how of ['decline', 'ringout']) {
+        const w = makeWorld({ npcs: [npc] });
+        try {
+            w.nm.scheduleTimedConversation({ npcId: 'caller', targetKnot: 'ring_call', delay: 0, ring: true });
+            const conv = w.nm.timedConversations[0];
+            conv.delivered = true;
+            w.nm._deliverTimedConversation(conv);
+            await w.advance(300);
+            assert.equal(w.ringer.stateOf('caller'), 'ringing', how);
+            assert.equal(w.nm.getNPC('caller').currentKnot, 'start', `${how}: not moved at offer`);
+            if (how === 'decline') w.click('.incoming-call-decline'); else await w.advance(30000);
+            await w.advance(200);
+            assert.equal(w.ringer.stateOf('caller'), null, how);
+            assert.equal(w.nm.getNPC('caller').currentKnot, 'start', `${how}: the thread opens on its own knot`);
+        } finally { w.restore(); }
+    }
+});

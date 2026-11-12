@@ -219,6 +219,24 @@ export default class PhoneChatUI {
         this._callTimer = null;
     }
 
+    /**
+     * Freeze the call screen on "Call ended m:ss" (plan 2.5, Ending). Returns false when
+     * there is no call screen (terminal look, thread view), so the caller closes at once.
+     */
+    showCallEnded() {
+        const bar = document.getElementById('call-status-bar');
+        const timer = this.elements?.callTimer;
+        if (!this.isCallMode || !bar || !timer) return false;
+        const shown = timer.textContent || '0:00';
+        this.stopCallTimer();
+        const label = bar.querySelector('.call-status-label');
+        if (label) label.textContent = 'Call ended';
+        timer.textContent = shown;
+        bar.classList.add('call-ended');
+        this.elements.choicesContainer && (this.elements.choicesContainer.innerHTML = '');
+        return true;
+    }
+
     /** The speaking indicator under the portrait: on while a call line plays. */
     setCallSpeaking(on) {
         if (!this.isCallMode) return;

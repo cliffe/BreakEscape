@@ -1978,6 +1978,9 @@ export default class NPCManager {
     if (this._scriptedCallQueue.some(c => c.opening)) return true;
     // A timed ring call still queued, ringing or held (row 30)
     if (window.phoneRinger?.hasOpeningOffer?.()) return true;
+    // An answered call is `connected` and not yet a minigame during the open delay:
+    // hasOpeningOffer leaves it out, and the brief would open in that gap (A2b R1 M1)
+    if (window.phoneRinger?.callActive?.()) return true;
     return this.timedConversations.some(c =>
       !c.delivered &&
       (c.delay || 0) <= withinMs &&
@@ -2126,7 +2129,9 @@ export default class NPCManager {
     if (isPhone && conversation.ring && typeof window.phoneRinger?.offer === 'function') {
       // An incoming call that rings. It is marked delivered by the caller, and its
       // setGlobalOnStart is applied by the ringer at the first ring (plan 2.3).
-      npc.currentKnot = conversation.targetKnot;
+      // npc.currentKnot is not moved here: a call that is declined, missed or still
+      // queued would leave the thread to open on the call knot as silent texts
+      // (A2b R1 M2). openCall passes the knot as startKnot.
       const outcome = window.phoneRinger.offer({
         npcId: conversation.npcId,
         knot: conversation.targetKnot,
