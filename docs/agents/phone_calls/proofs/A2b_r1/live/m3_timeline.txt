@@ -1,0 +1,11 @@
+7.9 - mg=person-chat barks=0 callActive=false
+8.9 - mg= barks=0 callActive=false
+9.4 - mg=notes barks=0 callActive=false
+10.1 - mg= barks=0 callActive=false
+11.9 caller_basic:ringing mg= barks=0 callActive=false
+13.0 caller_basic:connected mg= barks=0 callActive=true
+13.5 caller_basic:connected mg=phone-chat barks=0 callActive=true
+19.7 - mg= barks=0 callActive=false
+29.3 caller_basic:ringing mg= barks=0 callActive=false
+38.8 caller_basic:ringing mg= barks=1 callActive=false
+44.5 caller_basic:ringing mg= barks=0 callActive=false

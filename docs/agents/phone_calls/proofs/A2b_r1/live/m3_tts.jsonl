@@ -1,0 +1,6 @@
+{"t":1794481392407,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794481393433,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794481399432,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794481400851,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794481402014,"npc_id":"caller_basic","text":"Then listen carefully. This is the middle of the call.","delivery":null,"status":503}
+{"t":1794481403423,"npc_id":"caller_basic","text":"Nothing else to add.","delivery":null,"status":503}

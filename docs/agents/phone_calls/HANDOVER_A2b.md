@@ -33,3 +33,6 @@ Branch `build/phone-calls`. Stopped at the call/context budget with the live pro
 - The `phone-call` VAR writer registers once `window.npcConversationStateManager` exists (retry timer and `game_loaded`).
 - Harness: jsdom needs `pretendToBeVisual` or `document.hidden` pauses the ringer.
 - The detached worktree used for the HEAD key baseline is in the scratchpad (`headwt`); remove it with `git worktree remove` when finished.
+
+## R1 fixer (2026-11-12): stopped at the call budget
+Done and committed in `39eedbb9a`: M1, M2 (code and tests), M3 (real-path test), M4 (all three routes), m1, m2, m3, m5. Write-up: `REVIEW_A2b_R1_OUTCOMES.md`. Remaining: its "Open" list (M2 and M3 live proofs, Lab SE Dev proof, a "Call ended" screenshot, the final full `bin/test-js` run). Gotchas: the keyless server makes a call race to its story end in about 2 s, so a live "during a call" proof needs a call that stops at a choice (`caller_basic`) and a check that `callActive()` is true when the event is emitted; in-page auto-click of the banner (setInterval) is more reliable than polling from the shell, because a ring times out after 20 s and `bootstrap` with `autoBrief` can take longer. Do not `pkill`; a hung `cmd.sh quit` can be killed by pid.
