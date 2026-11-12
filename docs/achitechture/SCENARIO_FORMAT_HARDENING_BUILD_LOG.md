@@ -249,8 +249,28 @@ Checks after the fixes:
 
 - Node tests, no lock, `RBENV_VERSION=2.7.8`, plain `node`: every test file that loads `validate_scenario.rb`, `validate_npc_habits` or `validate_npc_needs` (66 files, including `validator-strict-keys` with 14 tests): 1084 pass, 0 fail. No Ruby test file was touched. Not run: the full suites (the orchestrator runs them at the merge batch).
 
+### R2 fixes
+
+Review: `docs/achitechture/SCENARIO_FORMAT_HARDENING_STEP2_REVIEW_R2.md` (0 blockers, 0 majors, 1 minor, 3 nits). m1, n1 and n2 fixed in 47f808d16 (code, tests, README); n3 left for a later step, as ruled. Each new test fails on a mutant with its fix removed and passes now.
+
+| Finding | Fix | Test |
+|---|---|---|
+| m1. The grant_foothold walker skipped a room (or any id-map entry) whose id starts with `_` | Ruling: ids are not notes. The walker now carries the schema node for each value. Where that node is an id map (its `additionalProperties` is a schema, directly or in a combinator branch: `rooms`, `networks`, `resources`, `roles`, an NPC's `needs` and the rest) and the key is not a declared property, the key is an id and is walked, `_` or not. A `_` key anywhere else is a property name, a note, and is still skipped. Where the schema does not describe a value (open action lists), its `_` keys are skipped as before | strict-keys "ids are not notes": room `_annex`, connected from `r1`, with a `pcc` slip in an onConfirm grant_foothold prints one `unknown key 'pcc', did you mean 'pc'?` line at `#/rooms/_annex/...` (formatter and full run, exit 1), while a `_note` grant_foothold inside that room is still skipped. Fails with the id-map branch removed |
+| n1. `comments` drew `did you mean 'contents'?` | `suggest_key` checks note-like keys (`comment`, `comments`, `note`, `notes`, any case) after the case-insensitive match and before the distance step: `_<k>` when the block declares it, else `_comment` | strict-keys "`comment` gets a hint towards `_comment`": `comments` in accountProfiles and `notes` in resources each hint `_comment`. Fails with the note-like branch removed |
+| n2. The `comment` branch was untested | Folded into the note-like check above | the same test: `Comment` in policies hints `_comment` (the `_<k>` branch cannot answer it). Fails with the branch removed |
+| n3. A value slip in habits, screenHabit or printHabit prints two lines | Left, as ruled: it predates step 2 (see Handover) | none |
+
+README: the schema-validation paragraph now lists the note-like keys and says an id is never a note.
+
+Checks after the fixes:
+
+- Corpus: all 177 `scenarios/*/scenario.json.erb`, ink on, `--no-graph`, the default list, 6 in parallel, under the test lock: every one exits 0; 81 errors, 81 known (unchanged); the same 13 scenarios print a `❌`; no `unknown key`, `could not run` or stale line; m01 to m10 each 0 `❌`; `git status` clean.
+- Node tests, under the test lock, `RBENV_VERSION=2.7.8`, plain `node`, 3 at a time: the 82 `test/js` files that load `validate_scenario.rb`, `validate_npc_habits`, `validate_npc_needs` or another `scripts/validate` path: 1257 pass, 0 fail, every file exit 0 (`validator-strict-keys` has 15 tests). No Ruby test file was touched.
+
 ## Handover
 
 Step 1 is done; nothing in progress. Commits on `build/harden-step1`: 22e29b9db (validator, list, decisions, fixtures), 42795f922 (tests), and the commit holding this log and the README edits.
 
-Step 2 is done; nothing in progress. Commits on `build/harden-step2`: 3f80b61cb (schema, validator, tests), 2a49c4341 (this log and the README note), and for review round 1: 35c7c20fa (fixes), df825084c (tests) and the commit holding the R1 section of this log.
+Step 2 is done; nothing in progress. Commits on `build/harden-step2`: 3f80b61cb (schema, validator, tests), 2a49c4341 (this log and the README note), and for review round 1: 35c7c20fa (fixes), df825084c (tests) and the commit holding the R1 section of this log. Review round 2: 47f808d16 (fixes) and the commit holding the R2 section of this log.
+
+R2 n3 (a value slip in habits, screenHabit or printHabit prints the schema line and the hand check's line) predates step 2 and belongs to a later step.
