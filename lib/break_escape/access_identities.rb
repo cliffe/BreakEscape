@@ -94,8 +94,25 @@ module BreakEscape
     def js_positive?(value)
       return true if positive_number?(value)
 
-      n = value.is_a?(Array) ? js_array_number(value) : js_number(value)
-      n.finite? && n.positive?
+      n = value.is_a?(Array) ? js_array_number(value) : js_number_full(value)
+      # No finite test: Number("Infinity") and a JSON 1e400 are above 0 to normaliseNeed, which
+      # clamps them. NaN is never positive.
+      n.positive?
+    end
+
+    # js_number plus the string spellings Number() also reads: 0b and 0o literals and a signed
+    # Infinity. Used by js_positive? only, so js_number's other callers read what they always did.
+    def js_number_full(value)
+      return js_number(value) unless value.is_a?(String)
+
+      s = value.strip
+      case s
+      when /\A0[bB]([01]+)\z/ then Regexp.last_match(1).to_i(2).to_f
+      when /\A0[oO]([0-7]+)\z/ then Regexp.last_match(1).to_i(8).to_f
+      when /\A\+?Infinity\z/ then Float::INFINITY
+      when '-Infinity' then -Float::INFINITY
+      else js_number(s)
+      end
     end
 
     # Number(array): Number(String(array)). An empty array is 0; one element reads as that
@@ -108,7 +125,7 @@ module BreakEscape
       el = array.first
       case el
       when nil then 0.0
-      when Numeric, String then js_number(el.to_s)
+      when Numeric, String then js_number_full(el.to_s)
       when Array then js_array_number(el)
       else Float::NAN
       end
@@ -189,8 +206,8 @@ module BreakEscape
     # JavaScript's Number(x) for a JSON value: nil, "" and false are 0, true is 1, a numeric
     # string its number; anything else NaN. Known gaps, which no scenario authors: an array is NaN
     # here where Number([]) is 0 and Number([n]) is n, and Float() reads "1_000" as 1000 where
-    # Number() gives NaN. js_positive? (needs_tracked?, OwnerClaim) reads arrays and true as
-    # Number() does.
+    # Number() gives NaN, and "Infinity", "0b101" and "0o7" are NaN here. js_positive?
+    # (needs_tracked?, OwnerClaim) reads arrays, true and those spellings as Number() does.
     def js_number(value)
       case value
       when Numeric then value.to_f

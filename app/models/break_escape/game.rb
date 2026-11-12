@@ -1917,11 +1917,10 @@ module BreakEscape
 
       auto_lock = effective_policy(pc)['autoLockMin']
       return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
-      # Owner claim q78: honest play never leaves this session open when nothing ever sends the
-      # owner away from the post in a way that can leave it open (no need source, interest, print
-      # errand, colleague's phone or failure route, and no knock-out that can find this PC open).
-      # Decided from scenario data alone (OwnerClaim.leave_route), and from the owner's ink story
-      # (a #patrol_mode tag), read as GamesController#ink finds it.
+      # Owner claim q78: refused only when the owner has no movement source at all
+      # (OwnerClaim.leave_route: no precise route, and nothing the cautious layer counts). Every
+      # object in any room counts. The owner's ink story is read as GamesController#ink finds it,
+      # and a story that cannot be read allows the claim.
       if BreakEscape::OwnerClaim.never_leaves?(scenario_data, owner, pc, story: method(:owner_claim_story_text))
         return refusal.call('the owner never leaves the post')
       end

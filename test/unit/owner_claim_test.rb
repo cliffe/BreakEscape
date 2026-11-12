@@ -276,6 +276,44 @@ class OwnerClaimTest < ActiveSupport::TestCase
     refute BreakEscape::Game.needs_tracked?({ 'interests' => { 'gossip' => '2' } })
   end
 
+  # R4 n2: Number() also reads "Infinity", a JSON 1e400, 0b and 0o literals
+  test 'need numbers in other Number() spellings are read' do
+    assert OC.valid_need?({ 'decayPerMin' => 'Infinity', 'urgentAt' => Float::INFINITY })
+    assert OC.valid_need?({ 'decayPerMin' => '0b101', 'urgentAt' => ' 0o7 ' })
+    assert OC.valid_need?({ 'decayPerMin' => ['0b1'], 'urgentAt' => 40 })
+    refute OC.valid_need?({ 'decayPerMin' => '-Infinity', 'urgentAt' => 40 })
+    refute OC.valid_need?({ 'decayPerMin' => '0b0', 'urgentAt' => 40 })
+    refute OC.valid_need?({ 'decayPerMin' => '0b2', 'urgentAt' => 40 }), 'not a binary literal'
+    assert OC.valid_interest?({ 'weight' => 'Infinity' })
+    assert BreakEscape::Game.needs_tracked?({ 'needs' => { 'coffee' => { 'decayPerMin' => '0o7', 'urgentAt' => 'Infinity' } } })
+  end
+
+  # R4 m1: the client judges work only when the shipped plan lists a need. A workNeeds id that
+  # names no resource leaves the plan empty, so work may use another desk there.
+  test 'work with an empty shipped plan may use another desk' do
+    jo = { 'id' => 'jo', 'needsHome' => 'jo_pc', 'koImmune' => true,
+           'needs' => { 'work' => { 'decayPerMin' => 5, 'urgentAt' => 40 } }, 'workNeeds' => ['no_such_resource'] }
+    d = { 'disableAttacks' => true, 'resources' => { 'mail' => { 'kind' => 'service' } },
+          'rooms' => { 'office' => { 'objects' => [
+            { 'id' => 'jo_pc', 'type' => 'pc', 'lockType' => 'login', 'affordance' => { 'satisfies' => 'work' } },
+            { 'id' => 'spare_pc', 'type' => 'pc', 'workstation' => true, 'affordance' => { 'satisfies' => 'work' } }
+          ], 'npcs' => [jo] } } }
+    BreakEscape::AccessWork.with_index(d) do
+      assert BreakEscape::AccessWork.judged?(d, jo, 'work')
+      assert_equal [], BreakEscape::AccessWork.plan(d, jo)['needs']
+    end
+    pc = { 'id' => 'jo_pc', 'locksScreenOnLeave' => false }
+    assert_equal 'need:work:spare_pc', OC.leave_route(d, jo, pc, story: ->(_) { nil })
+
+    # With a resource the plan lists, work is judged and the other desk stays out
+    d['resources']['mail']['object'] = 'jo_pc'
+    jo['workNeeds'] = ['mail']
+    BreakEscape::AccessWork.with_index(d) do
+      refute_empty BreakEscape::AccessWork.plan(d, jo)['needs']
+    end
+    refute_equal 'need:work:spare_pc', OC.precise_route(d, jo, pc)
+  end
+
   # R2 B2: _socialCandidate adds social_media to the own station, and that use prints
   test 'a print hook on the own station used for social media prints' do
     social = lambda do |habit: {}|

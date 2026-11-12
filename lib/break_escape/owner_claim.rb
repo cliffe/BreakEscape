@@ -91,6 +91,11 @@ module BreakEscape
           # _countFailure, npc-workarounds.js), and either can walk
           return "fails:#{name}" if judged && AccessWork.can_fail?(data, owner, name)
 
+          # The client's _judged reads the shipped plan: work is judged only when its needs list
+          # is non-empty. A workNeeds id that names no resource leaves work_plan? true and the
+          # plan empty, and the client then lets work use any desk. Kept local (AccessWork.judged?
+          # also drives NpcFrustration); it can only add routes.
+          judged &&= client_judged_work?(data, owner) if name == 'work'
           found = objects.find do |e|
             o = e[:obj]
             next false if home_id && o['id'] == home_id   # a use of the own post never leaves it
@@ -294,6 +299,12 @@ module BreakEscape
     def valid_need?(raw)
       raw.is_a?(Hash) && AccessIdentities.js_positive?(raw['decayPerMin']) &&
         AccessIdentities.js_positive?(raw['urgentAt'])
+    end
+
+    # npc-needs.js _judged for work: the shipped plan (AccessWork.plan) lists at least one need
+    def client_judged_work?(data, owner)
+      plan = AccessWork.plan(data, owner)
+      plan.is_a?(Hash) && plan['needs'].is_a?(Array) && !plan['needs'].empty?
     end
 
     # normaliseInterest: a number, or { weight } read by Number(), above 0
