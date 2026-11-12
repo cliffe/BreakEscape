@@ -2262,11 +2262,15 @@ export async function create() {
         // bounds hold the tap drops the in-reach things that are only near the tap (Kim's phone
         // beside her stick, C3 U3); one also under the tap (an owner seated over her PC) stays
         // and the far object joins it in the menu as walk-then-use (UX access finding 6).
-        // Seats and objects of another room never do this.
+        // Seats and objects of another room never do this. An out-of-reach NPC under the tap
+        // drops them too (one walking away gives way), and is then walked to by the NPC branch.
         const feetAtTap = window.player ? playerFeet(window.player) : null;
         const farUnderTap = objectsUnderTap.filter(o => !isObjectInInteractionRange(o)
             && !window.seating?.isSeat(o) && sameRoomFrom(feetAtTap, o));
-        const gathered = tapPickList(gatherInteractablesNearClick(worldX, worldY, tapObjectIds), farUnderTap, farObjectCandidate);
+        const npcUnderTap = findNPCAtPosition(worldX, worldY);
+        const farNpcUnderTap = npcUnderTap && !isObjectInInteractionRange(npcUnderTap)
+            && !npcGivesWay(window.player, npcUnderTap, tapObjectIds) ? [npcUnderTap] : [];
+        const gathered = tapPickList(gatherInteractablesNearClick(worldX, worldY, tapObjectIds), farUnderTap, farObjectCandidate, farNpcUnderTap);
         let nearbyInteractables = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(gathered));
         if (nearbyInteractables.length && nearbyInteractables.every(c => c.leavingNpc) && objectUnderTap()) {
             nearbyInteractables = [];

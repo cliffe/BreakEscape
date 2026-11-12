@@ -23,17 +23,26 @@
  */
 
 /**
+ * An out-of-reach NPC under the tap (her sprite's bounds hold it) counts too, through
+ * `farOthers`: the in-reach things only near the tap drop out, and with nothing in reach
+ * under the tap the list is empty, so the NPC branch walks to her (Sarah behind the m01
+ * reception desk, whose note lay within the slop of a tap on her head). She does not join
+ * a menu: a far NPC is walked to, never picked from a list.
+ *
  * @param {Array<{underTap?:boolean}>} candidates - the in-reach pick list near the tap
  * @param {Array<object>} farUnderTap - out-of-reach interactable objects whose bounds hold the tap
  * @param {function(object): object} toCandidate - a pick-list entry for a far object (walk, then use)
+ * @param {Array<object>} [farOthers] - other out-of-reach things under the tap (an NPC)
  * @returns {Array} the pick list
  */
-export function tapPickList(candidates, farUnderTap, toCandidate) {
+export function tapPickList(candidates, farUnderTap, toCandidate, farOthers = []) {
     const list = Array.isArray(candidates) ? candidates : [];
-    if (!Array.isArray(farUnderTap) || !farUnderTap.length) return list;
+    const farObjects = Array.isArray(farUnderTap) ? farUnderTap : [];
+    const others = Array.isArray(farOthers) ? farOthers.filter(Boolean) : [];
+    if (!farObjects.length && !others.length) return list;
     const under = list.filter(c => c && c.underTap);
     if (!under.length) return [];
-    return [...under, ...farUnderTap.map(toCandidate)];
+    return [...under, ...farObjects.map(toCandidate)];
 }
 
 /**

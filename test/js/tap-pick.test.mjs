@@ -36,7 +36,8 @@ function tap(player, sprites, tx, ty) {
         .filter(s => inside(s, tx, ty) || Math.hypot(s.x - tx, s.y - ty) <= SLOP)
         .map(s => ({ label: s.id, sprite: s, isObject: !s.npc, isChair: !!s.chair, leavingNpc: !!s.leaving, underTap: inside(s, tx, ty) }));
     const farUnderTap = sprites.filter(s => !s.npc && !s.chair && !reach(player, s) && inside(s, tx, ty));
-    const list = tapPickList(gathered, farUnderTap, (o) => ({ label: o.id, sprite: o, isObject: true, underTap: true, far: true }));
+    const farNpc = sprites.filter(s => s.npc && !s.ko && !s.leaving && !reach(player, s) && inside(s, tx, ty)).slice(0, 1);
+    const list = tapPickList(gathered, farUnderTap, (o) => ({ label: o.id, sprite: o, isObject: true, underTap: true, far: true }), farNpc);
     let out = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(list));
     if (out.length && out.every(c => c.leavingNpc) && farUnderTap.length) out = [];
     if (out.length > 1) return { menu: out.map(c => (c.far ? `walk:${c.label}` : c.label)) };
@@ -115,12 +116,37 @@ test('finding 6: a plain tap on a seated NPC\'s head talks to them', () => {
     assert.deepEqual(tap({ x: 116, y: 110 }, [omar, pc], tx, ty), { menu: ['omar', 'omar_pc'] });
 });
 
+// ── m01 live finding: Sarah behind the reception desk, a note within slop of her head ──
+test('a tap on an out-of-reach NPC walks to her, not the in-reach note near the tap', () => {
+    const sarah = sprite('sarah_martinez', 128, 41, 80, 80, { npc: true, originX: 0.5, originY: 0.5 });
+    const note = sprite('reception_area_notes_2', 135, 54, 16, 16);
+    const player = { x: 154, y: 69 };
+    assert.ok(!reach(player, sarah) && reach(player, note));
+    assert.ok(!inside(note, 128, 30) && Math.hypot(note.x - 128, note.y - 30) <= SLOP);
+    assert.deepEqual(tap(player, [sarah, note], 128, 30), { fallThrough: 'sarah_martinez' });
+    // A tap on the note itself, inside her frame, still takes the note
+    assert.deepEqual(tap(player, [sarah, note], 142, 62), { act: 'reception_area_notes_2' });
+});
+
+test('a far NPC walking away does not take the tap from the in-reach item near it', () => {
+    const npc = sprite('leaver', 128, 41, 80, 80, { npc: true, leaving: true, originX: 0.5, originY: 0.5 });
+    const note = sprite('note', 135, 54, 16, 16);
+    assert.deepEqual(tap({ x: 154, y: 69 }, [npc, note], 128, 30), { act: 'note' });
+});
+
 // ── tapPickList on its own ──
 test('tapPickList: nothing far under the tap leaves the list as it was', () => {
     const list = [{ label: 'a' }, { label: 'b', underTap: true }];
     assert.equal(tapPickList(list, [], () => ({})), list);
     assert.equal(tapPickList(list, undefined, () => ({})), list);
     assert.deepEqual(tapPickList(null, [], () => ({})), []);
+});
+
+test('tapPickList: a far NPC under the tap drops candidates only near it and joins no menu', () => {
+    const near = { label: 'note' }, under = { label: 'memo', underTap: true };
+    assert.deepEqual(tapPickList([near], [], () => ({}), [{ id: 'sarah' }]), []);
+    assert.deepEqual(tapPickList([near, under], [], () => ({}), [{ id: 'sarah' }]).map(c => c.label), ['memo']);
+    assert.deepEqual(tapPickList([near], [], () => ({}), [null]), [near]);
 });
 
 test('tapPickList: a far object under the tap keeps only candidates under the tap, then adds it', () => {
@@ -241,7 +267,8 @@ test('pending use: clear() drops it (any new tap)', () => {
 test('game.js: pointerdown builds the pick list with tapPickList before the chair and leaving filters', () => {
     const src = readFileSync(join(js, 'core/game.js'), 'utf8');
     assert.match(src, /import \{ tapPickList, objectStandPoint, createPendingTapUse \} from '\.\.\/systems\/tap-pick\.js'/);
-    assert.match(src, /tapPickList\(gatherInteractablesNearClick\(worldX, worldY, tapObjectIds\), farUnderTap, farObjectCandidate\)/);
+    assert.match(src, /tapPickList\(gatherInteractablesNearClick\(worldX, worldY, tapObjectIds\), farUnderTap, farObjectCandidate, farNpcUnderTap\)/);
+    assert.match(src, /!isObjectInInteractionRange\(npcUnderTap\)\s*&& !npcGivesWay\(window\.player, npcUnderTap, tapObjectIds\)/);
     assert.match(src, /withoutLeavingNpcsIfObjects\(withoutChairsIfOthers\(gathered\)\)/);
     assert.match(src, /pendingTapUse\.clear\(\)/);
     assert.match(src, /pendingTapUse\.update\(Date\.now\(\)\)/);
