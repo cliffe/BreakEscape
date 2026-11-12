@@ -1880,3 +1880,48 @@ bridge and test-bridge docs; plan 9.3's residual list; this log (L's sections, t
 ### Suites after C review round 1 (after the merge of `main`, at `d418c4cc8`)
 
 Rails 1670 runs, 24768 assertions, 0 failures, 0 errors, 1 skip. JS 497 of 497 files.
+
+## C review round 2 outcomes (2026-11-12)
+
+Review: `ACCESS_MODEL_SLICE_9_2_C_CODE_REVIEW_R2.md` (no blocker, 1 major, 2 minor, 4 nits).
+
+- **M1** (`b975d63db`): the no-exposure test now gets a 200 from every one of its 15 routes and
+  asserts that status before the leak checks, so a route that starts refusing fails the test.
+  Fay moves to finance, behind the PIN door, and each pass locks finance again first, so the door
+  unlock answers with her room. The sign-in uses Jake's password, so `GET /container/jake_pc`
+  answers; the inventory add takes a takeable lobby flyer; Fay has a `storyPath` for `GET /ink`;
+  the frustration report is a real `ease` (with `npc_id`, which the old call misspelt); her
+  workaround is an `emit` handed over in the saved state, so its "done" is answered; the
+  `move_npc` takes her from finance to the lobby, and `GET /room/lobby` then serves the record
+  the move stored. Fay's record is required on the door unlock, `GET /room/finance` and
+  `GET /room/lobby`, and the ease answer must name her and not be refused. `GET /scenario` strips
+  every room's NPCs, so it gets only the text and fact-key checks. Proof by reverting: with
+  `serve_opened_room` sending the raw room, the test fails on the door unlock ("carries a feed
+  text").
+- **m1** (`6066a1eb1`, plan 8.3 in `5e78e3efa`): the `tooSoon` retry waits the whole
+  `retryAfter` plus 1 s, with no cap, and a use makes at most four requests (`MAX_TRIES`), so a
+  server that always says `tooSoon` cannot keep it asking. Tests: `retryAfter` 420 (the review's
+  mission pace) waits 421 s and reveals the post; an always-`tooSoon` server is asked four times
+  and then a later honest use asks again. Both fail on the old code.
+- **m2** (`24309e1ac`): a `/feed_post` row with status 200 and no readable body (`bodyError`, or
+  a `bodyText`) stands for at most one reveal, from its own line on, for each NPC whose saved count
+  exceeds the log's answers. Only what is still missing after those counts from the first line (a
+  resumed game). `access-leak-check.rb` names the NPCs in a new note, and the fallback note now
+  says "a resumed game or a lost response body". Tests: the review's case (an early bootstrap
+  before a lost body is reported), a later bootstrap after it passes, and a resumed game with a
+  lost body uses both. They fail on the old scanner.
+- **Nits**: PLAYTEST.md (`081ba9d7b`) describes the retry, says the budgets gain a request per
+  `tooSoon`, and the F5 row says the task ticks on any sign-in at the hot desk, the "by password"
+  check being the server column's. The scanner skips a blank post id as `AccessWork.feed_posts`
+  does, with a test (`24309e1ac`). `cleanFact` refuses an entry whose `text` is present and not a
+  string, with a test (`6066a1eb1`).
+- **Not changed**: `locked_out` stays work only, as on `main`. Whether a locked-out NPC should
+  still browse at its PC is with the user.
+
+### Merge
+
+`main` (`94b88373d`) was already in the branch; nothing to merge.
+
+### Suites after C review round 2 (at `5e78e3efa`)
+
+Rails 1674 runs, 24848 assertions, 0 failures, 0 errors, 1 skip. JS 497 of 497 files.
