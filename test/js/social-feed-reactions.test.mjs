@@ -116,3 +116,60 @@ test('the Friendface phone listens to npc_posted only: no listener matches npc_r
     const names = [...src.matchAll(/['"`](npc_[a-z_]*)[:*'"`]/g)].map((m) => m[1]);
     assert.ok(names.every((n) => !'npc_reacted'.startsWith(n) || n === ''), names.join(','));
 });
+
+// ── Pixel-art UI rule for the reaction chips (plan sections 4 and 11) ─────────────────────────
+function reactionRules() {
+    const css = readFileSync(join(root, 'public/break_escape/css/osint-browser-minigame.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const rules = [];
+    for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const sels = m[1].split(',').map((x) => x.trim()).filter(Boolean);
+        if (!sels.some((x) => x.includes('.ob-reaction'))) continue;
+        const decls = {};
+        for (const d of m[2].split(';')) {
+            const i = d.indexOf(':');
+            if (i > 0) decls[d.slice(0, i).trim()] = d.slice(i + 1).trim();
+        }
+        rules.push({ sels, decls });
+    }
+    return rules;
+}
+const ruleFor = (rules, sel) => rules.find((r) => r.sels.includes(sel));
+
+test('CSS: the .ob-reaction* rules follow the pixel-art UI rule', () => {
+    const rules = reactionRules();
+    assert.ok(rules.length >= 5, 'rules found');
+    const fontOk = /^var\(--(se-font-[a-z-]+|ui-heading-font)(, *('GNF'|'Press Start 2P'|'VT323'))?, *monospace\)$|^('GNF'|'Press Start 2P'|'VT323')(, *monospace)?$/;
+    for (const { sels, decls } of rules) {
+        const where = sels.join(', ');
+        for (const [prop, val] of Object.entries(decls)) {
+            if (prop === 'border-radius') assert.match(val, /^0(px)?$/, `${where} ${prop}`);
+            if (prop === 'box-shadow') assert.equal(val, 'none', `${where} has a box-shadow`);
+            assert.ok(!/gradient/.test(val), `${where} ${prop} has a gradient`);
+            assert.notEqual(prop, 'border-image', `${where} has a border-image`);
+            if (/^(border(-(top|right|bottom|left))?|outline)$/.test(prop) && !/^(none|0)$/.test(val)) {
+                assert.match(val, /^2px solid /, `${where} ${prop}: 2px solid`);
+            }
+            if (/^(border(-(top|right|bottom|left))?-width|outline-width)$/.test(prop)) assert.match(val, /^(0|2px)$/, `${where} ${prop}`);
+            if (prop === 'font-family') assert.match(val, fontOk, `${where} font-family ${val}`);
+            if (prop === 'font') assert.fail(`${where} uses the font shorthand`);
+        }
+    }
+    const focus = ruleFor(rules, '.ob-reaction:focus-visible');
+    assert.ok(focus, 'a :focus-visible rule');
+    assert.match(focus.decls.outline, /^2px solid var\(--ui-accent/);
+    const icon = ruleFor(rules, '.ob-reaction-icon');
+    assert.equal(icon.decls['image-rendering'], 'pixelated');
+    assert.match(icon.decls.width, /^(16|32)px$/);
+    const open = ruleFor(rules, '.ob-reaction[data-open]');
+    assert.ok(open, '.ob-reaction[data-open] exists');
+    assert.match(open.decls.border, /^2px solid var\(--ui-accent/);
+    assert.ok(!open.decls['box-shadow'] || open.decls['box-shadow'] === 'none');
+    const chip = ruleFor(rules, '.ob-reaction');
+    assert.equal(chip.decls['min-width'], '32px');
+    assert.equal(chip.decls['min-height'], '32px');
+    const line = ruleFor(rules, '.ob-reaction-names');
+    assert.ok(line.decls['min-height'], 'one line reserved');
+    for (const p of ['height', 'max-height']) assert.equal(line.decls[p], undefined, `no ${p} on the names line`);
+    assert.notEqual(line.decls.overflow, 'hidden');
+    assert.notEqual(line.decls['white-space'], 'nowrap');
+});

@@ -77,6 +77,9 @@ export function addressify(text) {
 const icon = (name) => h('img', { class: 'ob-icon', src: `${ICON}${name}.png`, alt: '', 'aria-hidden': 'true',
     width: 16, height: 16 });
 
+// Reaction keys whose icon failed to load this session: their chips draw the label instead
+const MISSING_ICONS = new Set();
+
 const fileName = (url) => {
     const s = String(url || '');
     const i = s.lastIndexOf('/');
@@ -98,6 +101,15 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         this._last = null;
         this._liveText = '';
         this._visitedNow = [];
+        // Friendface reactions (FRIENDFACE_REACTIONS_PLAN.md section 4): chip keys are their
+        // data-focus strings. One open chip for the page (with its Esc layer), the keyboard-focused
+        // chip, the mouse-hovered chip, the pointer-focus mark and the re-render guard.
+        this._rxOpen = null;
+        this._namesLayerOff = null;
+        this._rxFocus = null;
+        this._rxHover = null;
+        this._rxPointer = false;
+        this._rendering = false;
     }
 
     // ── data ──────────────────────────────────────────────────────────────
@@ -160,6 +172,8 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         if (ed?.on) {
             this._postedHandler = (data) => this._onPosted(data);
             ed.on('npc_posted:*', this._postedHandler);
+            this._reactedHandler = (data) => this._onReacted(data);
+            ed.on('npc_reacted:*', this._reactedHandler);
         }
     }
 
@@ -252,6 +266,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         const place = locate(this._sites, key, this.globals);
         if (key === TOOLS_KEY ? !this.toolsOn : !place) return false;
         this._dropProperties();
+        this._dropReactionNames();
         // The status line belongs to the page where the note was made (R19 F19-2).
         if (this._hereKey() !== (key === TOOLS_KEY ? TOOLS_KEY : keyOf(place))) {
             this._liveText = '';
@@ -291,6 +306,17 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
     // ── drawing ───────────────────────────────────────────────────────────
     _renderMain() {
         const keepFocus = this._focusKey();
+        this._rendering = true;
+        try {
+            this._renderBody(keepFocus);
+        } finally {
+            this._rendering = false;
+        }
+    }
+
+    _renderBody(keepFocus) {
+        // The hovered chip is not kept across a re-render; it comes back on the pointer's next move
+        this._rxHover = null;
         this.addressText.textContent = this.address;
         this.main.textContent = '';
         this.main.setAttribute('aria-label', this._mainLabel());
@@ -308,6 +334,9 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         }
         this._flash = null;
         this._restoreFocus(keepFocus);
+        // A focused chip that did not come back is no longer focused
+        if (this._rxFocus && document.activeElement?.getAttribute?.('data-focus') !== this._rxFocus) this._rxFocus = null;
+        this._paintReactions();
     }
 
     _mainLabel() {
@@ -405,6 +434,8 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
                 continue;
             }
             this._addBlock(body, { kind: 'post', ...post }, site);
+            const row = this._reactionRow(post.id);
+            if (row) body.appendChild(row);
             const replies = this._feedReplies(post.id);
             if (replies.length) {
                 const thread = h('div', { class: 'ob-thread', 'aria-label': 'Replies' });
@@ -443,7 +474,139 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         const author = onProfile ? null : h('span', { class: 'ob-line ob-post-author' }, this._headshot({ person: reply.person }),
             h('span', { class: 'ob-profile-name', text: this._profileName({ person: reply.person }) }));
         return h('div', { class: `ob-item ob-post ob-reply${onProfile ? ' ob-reply-own' : ''}`, 'data-post': post.id || '' },
-            author, to, h('p', { class: 'ob-text', text: post.text || '' }));
+            author, to, h('p', { class: 'ob-text', text: post.text || '' }), this._reactionRow(post.id));
+    }
+
+    // ── reactions (FRIENDFACE_REACTIONS_PLAN.md sections 4 and 6) ───────────
+    /** A post's reactions (systems/social-feed.js reactionsFor), in key order; none: []. */
+    _feedReactions(postId) {
+        const feed = this.params.feed || (typeof window !== 'undefined' ? window.socialFeed : null);
+        if (typeof feed?.reactionsFor !== 'function' || typeof postId !== 'string') return [];
+        const out = feed.reactionsFor(postId);
+        return Array.isArray(out) ? out.filter((g) => g && Array.isArray(g.people) && g.people.length) : [];
+    }
+
+    /**
+     * The chips under one post or reply, then its names line (always there, empty until a chip
+     * is open, focused or hovered). Each chip is a button of its own, never inside the post's
+     * block button. No reaction, no row.
+     */
+    _reactionRow(postId) {
+        const groups = this._feedReactions(postId);
+        if (!groups.length) return null;
+        const chips = h('div', { class: 'ob-reaction-chips' });
+        const names = h('p', { class: 'ob-reaction-names', 'aria-hidden': 'true' });
+        const row = h('div', { class: 'ob-reactions', 'data-post': postId }, chips, names);
+        for (const g of groups) chips.appendChild(this._reactionChip(postId, g));
+        this.addEventListener(row, 'pointerleave', (e) => {
+            if (e.pointerType !== 'mouse' || !this._rowHas(row, this._rxHover)) return;
+            this._rxHover = null;
+            this._paintRow(row);
+        });
+        return row;
+    }
+
+    _reactionChip(postId, group) {
+        const key = `reaction:${postId}:${group.key}`;
+        const label = group.label || group.key;
+        const who = group.people.map((p) => this._profileName({ person: p.person }));
+        const chip = h('button', { type: 'button', class: 'ob-reaction', 'data-focus': key, 'data-key': group.key,
+            'aria-label': `${label}, ${who.length}: ${who.join(', ')}` });
+        chip._rxNames = `${label}: ${who.join(', ')}`;
+        const word = h('span', { class: 'ob-reaction-label', text: label });
+        if (MISSING_ICONS.has(group.key)) {
+            chip.appendChild(word);
+        } else {
+            const img = h('img', { class: 'ob-reaction-icon', src: `${ICON}reaction-${group.key}.png`, alt: '',
+                width: 16, height: 16 });
+            // Until the icon exists (or if it fails), the label stands in for it, in the pixel font
+            img.addEventListener('error', () => { MISSING_ICONS.add(group.key); img.replaceWith(word); });
+            chip.appendChild(img);
+        }
+        chip.appendChild(h('span', { class: 'ob-reaction-count', text: String(who.length) }));
+        this.addEventListener(chip, 'pointerdown', () => { this._rxPointer = true; });
+        this.addEventListener(chip, 'pointercancel', () => { this._rxPointer = false; });
+        this.addEventListener(chip, 'focusin', () => {
+            if (this._rendering) return;
+            if (this._rxPointer) { this._rxPointer = false; return; } // pointer focus shows nothing
+            this._rxFocus = key;
+            if (this._rxOpen && this._rxOpen !== key) this._closeReactionNames();
+            else this._paintReactions();
+        });
+        this.addEventListener(chip, 'focusout', (e) => {
+            if (this._rendering || chip.contains(e.relatedTarget) || this._rxFocus !== key) return;
+            this._rxFocus = null;
+            this._paintReactions();
+        });
+        const hover = (e) => {
+            if (e.pointerType !== 'mouse' || this._rxHover === key) return;
+            this._rxHover = key;
+            this._paintReactions();
+        };
+        this.addEventListener(chip, 'pointerenter', hover);
+        this.addEventListener(chip, 'pointermove', hover);
+        this.addEventListener(chip, 'click', (e) => {
+            e.preventDefault?.();
+            if (this._rxOpen === key) {
+                this._closeReactionNames();
+            } else {
+                this._dropReactionNames(); // the old layer goes before the new one is pushed
+                this._rxOpen = key;
+                this._namesLayerOff = this.pushLayer(() => this._closeReactionNames(), 'reaction-names');
+                this._paintReactions();
+            }
+            this._rxPointer = false;
+        });
+        return chip;
+    }
+
+    _rowHas(row, key) {
+        return !!key && [...row.querySelectorAll('.ob-reaction')].some((c) => c.getAttribute('data-focus') === key);
+    }
+
+    /** One row's names line and open mark: its open chip, else its focused chip, else its hovered one. */
+    _paintRow(row) {
+        let show = null;
+        for (const chip of row.querySelectorAll('.ob-reaction')) {
+            const key = chip.getAttribute('data-focus');
+            if (key === this._rxOpen) chip.setAttribute('data-open', '');
+            else chip.removeAttribute('data-open');
+        }
+        for (const key of [this._rxOpen, this._rxFocus, this._rxHover]) {
+            if (!this._rowHas(row, key)) continue;
+            show = [...row.querySelectorAll('.ob-reaction')].find((c) => c.getAttribute('data-focus') === key);
+            break;
+        }
+        const line = row.querySelector('.ob-reaction-names');
+        if (line) line.textContent = show?._rxNames || '';
+    }
+
+    _paintReactions() {
+        if (!this.main) return;
+        for (const row of this.main.querySelectorAll('.ob-reactions')) this._paintRow(row);
+    }
+
+    /** Clears the open chip and removes its Esc layer. No DOM work (go() and cleanup() use it). */
+    _dropReactionNames() {
+        this._rxOpen = null;
+        if (this._namesLayerOff) { this._namesLayerOff(); this._namesLayerOff = null; }
+    }
+
+    /** The Esc layer's closer, and the click and keyboard-focus route: drop, then redraw the rows. */
+    _closeReactionNames() {
+        this._dropReactionNames();
+        this._paintReactions();
+    }
+
+    /** A reaction re-renders an open profile that draws its target (as the post or in a thread). */
+    _onReacted(data) {
+        const p = this.place;
+        if (!this.main || !p || p.view !== 'social' || typeof data?.site !== 'string' || p.site?.id !== data.site) return;
+        const people = [data.targetPerson, data.targetReplyToPerson].filter((x) => typeof x === 'string');
+        if (people.length && !people.includes(p.pageId)) return;
+        const top = this.main.scrollTop;
+        this._renderMain();
+        if (typeof top === 'number') this.main.scrollTop = top;
     }
 
     /** Access 9.2 C: a post made while this profile is open appears without closing the browser. */
@@ -839,6 +1002,11 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
             (typeof window !== 'undefined' ? window.eventDispatcher : null)?.off?.('npc_posted:*', this._postedHandler);
             this._postedHandler = null;
         }
+        if (this._reactedHandler) {
+            (typeof window !== 'undefined' ? window.eventDispatcher : null)?.off?.('npc_reacted:*', this._reactedHandler);
+            this._reactedHandler = null;
+        }
+        this._dropReactionNames();
         this._dropProps = null;
         this.root = null;
         this.main = null;
