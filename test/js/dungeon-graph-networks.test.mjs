@@ -22,8 +22,11 @@ function graph(scenario) {
         const r = spawnSync('ruby', [join(root, 'scripts/generate_dungeon_graph.rb'), join(dir, 'scenario.json.erb')],
             { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
         assert.equal(r.status, 0, r.stderr);
-        const g = JSON.parse(readFileSync(join(dir, 'dungeon_graph.json'), 'utf8'));
-        return { nodes: Object.fromEntries(g.nodes.map(n => [n.id, n])), edges: g.edges };
+        const raw = readFileSync(join(dir, 'dungeon_graph.json'), 'utf8');
+        const g = JSON.parse(raw);
+        const md = readFileSync(join(dir, 'dungeon_graph.md'), 'utf8');
+        const html = readFileSync(join(dir, 'dungeon_graph.html'), 'utf8');
+        return { nodes: Object.fromEntries(g.nodes.map(n => [n.id, n])), edges: g.edges, raw, md, html };
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
@@ -101,8 +104,10 @@ test('a scenario without networks gets no network nodes', { skip }, () => {
 });
 
 // Slice 9.3b (ACCESS_MODEL_SLICE_9_3B_PLAN.md, section 9.3): links, pivots, Wi-Fi access
-// points, implants and outages, read through BreakEscape::NetworkModel.
+// points, implants and outages, read through BreakEscape::NetworkModel. The pivot follows the
+// server's reach walk (NetworkAccess#reach_walk): one link per session host.
 const edgeOf = (g, from, to) => g.edges.find(e => e.from === from && e.to === to);
+const PSK = 'seabreeze-2025';
 
 function linked() {
     const sc = scenario();
@@ -113,46 +118,68 @@ function linked() {
     return sc;
 }
 
-test('a link is one two-way edge between the network nodes', { skip }, () => {
+test('a link is one dashed, undirected line between the network nodes', { skip }, () => {
     const g = graph(linked());
     const link = edgeOf(g, 'net_office_lan', 'net_server_net');
     assert.equal(link?.label, 'link');
-    assert.equal(link.both, true);
-    assert.ok(!edgeOf(g, 'net_server_net', 'net_office_lan'), 'drawn once, not once each way');
-    assert.ok(g.edges.filter(e => e.label !== 'link').every(e => e.both === undefined), 'other edges carry no both key');
+    assert.equal(link.undirected, true);
+    assert.equal(link.soft, true, 'a link is structure, not a hard route');
+    assert.ok(!edgeOf(g, 'net_server_net', 'net_office_lan'), 'drawn once');
+    assert.ok(g.edges.filter(e => e.label !== 'link').every(e => e.undirected === undefined), 'no other edge has the key');
+    assert.match(g.md, /net_office_lan -\.-\|link\| net_server_net/);
+    assert.match(g.md, /Network edges: `-\.-` link/);
+    assert.match(g.html, /edge-row"><code>-\.-<\/code> link/);
 });
 
 test('a link naming an undefined network draws nothing', { skip }, () => {
     const sc = linked();
     sc.networkLinks = [['office_lan', 'nowhere']];
     const g = graph(sc);
+    assert.ok(g.nodes.net_office_lan, 'positive control: the network is still drawn');
     assert.ok(!g.edges.some(e => e.label === 'link' || e.label === 'pivot'));
+    assert.doesNotMatch(g.md, /Network edges/);
 });
 
-test('a sign-in host has a pivot edge to each network its links reach', { skip }, () => {
+test('a pivot is an AND gate: the host network reached and a session at the host', { skip }, () => {
+    const g = graph(linked());
+    assert.equal(g.nodes.pivot_hot_desk?.kind, 'gate');
+    assert.deepEqual(into(g, 'pivot_hot_desk'), ['lock_hot_desk', 'net_office_lan']);
+    assert.equal(edgeOf(g, 'pivot_hot_desk', 'net_server_net')?.label, 'pivot');
+    assert.ok(!edgeOf(g, 'lock_hot_desk', 'net_server_net'), 'the sign-in lock alone does not reach it');
+});
+
+test('a pivot crosses one link; a further network needs a host on the next one', { skip }, () => {
     const sc = linked();
     sc.networks.archive_net = { name: 'Archive network' };
     sc.networkLinks.push(['server_net', 'archive_net']);
-    const g = graph(sc);
-    assert.equal(edgeOf(g, 'lock_hot_desk', 'net_server_net')?.label, 'pivot');
-    assert.equal(edgeOf(g, 'lock_hot_desk', 'net_archive_net')?.label, 'pivot', 'two links away is still bridged');
-    assert.equal(edgeOf(g, 'lock_file_server', 'net_office_lan')?.label, 'pivot');
-    assert.ok(!edgeOf(g, 'lock_hot_desk', 'net_office_lan'), 'no pivot to its own network');
+    let g = graph(sc);
+    assert.ok(edgeOf(g, 'pivot_hot_desk', 'net_server_net'));
+    assert.ok(!edgeOf(g, 'pivot_hot_desk', 'net_archive_net'), 'two links away is not one pivot');
+    assert.equal(edgeOf(g, 'pivot_file_server', 'net_archive_net')?.label, 'pivot', 'the server-network host carries it on');
+    sc.rooms.store.objects = sc.rooms.store.objects.filter(o => o.id !== 'file_server');
+    g = graph(sc);
+    assert.ok(!g.edges.some(e => e.to === 'net_archive_net' && e.label === 'pivot'), 'no host on server_net: no route');
 });
 
-test('without links there are no pivot edges', { skip }, () => {
-    const sc = linked();
+test('without links, or without a foothold on the host network, there are no pivots', { skip }, () => {
+    let sc = linked();
     delete sc.networkLinks;
-    const g = graph(sc);
+    let g = graph(sc);
+    assert.ok(g.nodes.lock_hot_desk, 'positive control');
     assert.ok(!g.edges.some(e => e.label === 'pivot'));
+    sc = linked();
+    sc.rooms.comms_room.objects = [];
+    g = graph(sc);
+    assert.ok(g.nodes.net_server_net || g.nodes.net_office_lan, 'positive control');
+    assert.ok(!g.edges.some(e => e.label === 'pivot'), 'a walk-up session reaches no network');
 });
 
 function wifi() {
     const sc = scenario();
-    sc.networks.guest_wifi = { name: 'Guest Wi-Fi', wifi: { ssid: 'Harbour-Guest', psk: 'seabreeze-2025' } };
+    sc.networks.guest_wifi = { name: 'Guest Wi-Fi', wifi: { ssid: 'Harbour-Guest', psk: PSK } };
     sc.rooms.lobby.objects.push(
         { id: 'guest_ap', type: 'pc', name: 'Guest access point', wifiAp: true, network: 'guest_wifi' },
-        { id: 'wifi_card', type: 'notes1', name: 'Wi-Fi card', readable: true, text: 'Key: seabreeze-2025' });
+        { id: 'wifi_card', type: 'notes1', name: 'Wi-Fi card', readable: true, text: `Key: ${PSK}` });
     return sc;
 }
 
@@ -162,12 +189,46 @@ test('a Wi-Fi access point is a lock the key opens, with an edge to its network'
     assert.match(g.nodes.wifiap_guest_ap.label, /Wi-Fi access point/);
     assert.equal(g.nodes.wifikey_guest_wifi?.kind, 'key');
     assert.match(g.nodes.wifikey_guest_wifi.label, /Harbour-Guest/);
-    assert.ok(!g.nodes.wifikey_guest_wifi.label.includes('seabreeze'), 'the key itself is not printed');
     assert.ok(edge(g, 'lobby', 'wifiap_guest_ap'));
     assert.ok(edge(g, 'wifikey_guest_wifi', 'wifiap_guest_ap'));
     assert.ok(edge(g, 'wifiap_guest_ap', 'net_guest_wifi'));
-    assert.ok(edge(g, 'lobby', 'clue_wifi_card') && edge(g, 'clue_wifi_card', 'wifikey_guest_wifi'),
-        'the key is found on the card in the lobby');
+    assert.ok(edge(g, 'lobby', 'clue_wifi_card') && edge(g, 'clue_wifi_card', 'wifikey_guest_wifi'));
+    for (const out of [g.raw, g.md, g.html]) assert.ok(!out.includes(PSK), 'the key is in no output');
+});
+
+test('the key never reaches an output through the SSID or a note name', { skip }, () => {
+    const sc = wifi();
+    sc.networks.guest_wifi.wifi.ssid = PSK;
+    sc.rooms.lobby.objects.find(o => o.id === 'wifi_card').name = `Card: ${PSK}`;
+    const g = graph(sc);
+    assert.ok(g.nodes.wifikey_guest_wifi && g.nodes.clue_wifi_card, 'positive control');
+    assert.match(g.nodes.wifikey_guest_wifi.label, /Guest Wi-Fi/, 'the network name stands in for the SSID');
+    for (const out of [g.raw, g.md, g.html]) assert.ok(!out.includes(PSK), 'the key is in no output');
+});
+
+test('a key note in a locked safe hangs from the safe', { skip }, () => {
+    const sc = wifi();
+    const card = sc.rooms.lobby.objects.pop();
+    sc.rooms.lobby.objects.push({ id: 'desk_safe', type: 'safe', name: 'Desk safe', locked: true, lockType: 'pin',
+                                  requires: '1234', contents: [card] });
+    const g = graph(sc);
+    assert.ok(edge(g, 'lobby', 'lock_desk_safe'));
+    assert.deepEqual(into(g, 'clue_wifi_card'), ['lock_desk_safe']);
+    assert.ok(edge(g, 'clue_wifi_card', 'wifikey_guest_wifi'));
+});
+
+test('a key note an NPC holds hangs from the NPC, one in the start items from the start room', { skip }, () => {
+    let sc = wifi();
+    const card = sc.rooms.lobby.objects.pop();
+    sc.rooms.comms_room.npcs = [{ id: 'kim', displayName: 'Kim Lo', itemsHeld: [card] }];
+    let g = graph(sc);
+    assert.deepEqual(into(g, 'clue_wifi_card'), ['npc_kim_lo']);
+    assert.ok(edge(g, 'comms_room', 'npc_kim_lo'));
+    sc = wifi();
+    sc.startItemsInInventory = [sc.rooms.lobby.objects.pop()];
+    g = graph(sc);
+    assert.ok(g.edges.some(e => e.from === 'lobby' && e.to.startsWith('clue_')), 'from the start room');
+    assert.ok(g.edges.some(e => e.from.startsWith('clue_') && e.to === 'wifikey_guest_wifi'));
 });
 
 test('an open Wi-Fi network needs no key', { skip }, () => {
@@ -182,7 +243,17 @@ test('an access point on a network with no wifi block is not drawn', { skip }, (
     const sc = wifi();
     delete sc.networks.guest_wifi.wifi;
     const g = graph(sc);
+    assert.ok(g.nodes.jack_comms_port, 'positive control');
     assert.ok(!g.nodes.wifiap_guest_ap);
+});
+
+test('access points without an id get a node each', { skip }, () => {
+    const sc = wifi();
+    sc.rooms.lobby.objects.push({ type: 'pc', wifiAp: true, network: 'guest_wifi' }, { type: 'pc', wifiAp: true, network: 'guest_wifi' });
+    const g = graph(sc);
+    assert.equal(Object.keys(g.nodes).filter(id => id.startsWith('wifiap_')).length, 3);
+    const keys = g.edges.map(e => `${e.from}|${e.to}`);
+    assert.equal(new Set(keys).size, keys.length, 'no duplicate edges');
 });
 
 function implants() {
@@ -198,7 +269,7 @@ function implants() {
     return sc;
 }
 
-test('an implant is a node the device opens, with an edge to the PC network', { skip }, () => {
+test('an implant is a node the device opens, from its host, with an edge to the PC network', { skip }, () => {
     const g = graph(implants());
     assert.equal(g.nodes.implant_hot_desk?.kind, 'lock');
     assert.match(g.nodes.implant_hot_desk.label, /BadUSB: hot desk/);
@@ -206,10 +277,32 @@ test('an implant is a node the device opens, with an edge to the PC network', { 
     assert.ok(edge(g, 'lobby', 'device_kit_badusb'));
     assert.equal(edgeOf(g, 'device_kit_badusb', 'implant_hot_desk')?.label, 'held');
     assert.equal(edgeOf(g, 'lock_hot_desk', 'implant_hot_desk')?.label, 'session at PC');
+    assert.equal(edgeOf(g, 'lobby', 'implant_hot_desk')?.label, 'at Desk USB socket');
     assert.ok(edge(g, 'implant_hot_desk', 'net_office_lan'));
     assert.equal(edgeOf(g, 'device_kit_stick', 'implant_door_box')?.label, 'dropped');
+    assert.equal(edgeOf(g, 'store', 'implant_door_box')?.label, 'at Controller USB port');
     assert.ok(!edge(g, 'lock_door_box', 'implant_door_box'), 'the dropped shape needs no session');
     assert.ok(edge(g, 'implant_door_box', 'net_office_lan'));
+});
+
+test('an implant whose prop is in a locked room hangs from that room, behind its door', { skip }, () => {
+    const sc = implants();
+    sc.rooms.store.locked = true;
+    sc.rooms.store.lockType = 'key';
+    const g = graph(sc);
+    assert.ok(edgeOf(g, 'store', 'implant_door_box'));
+    assert.ok(into(g, 'store').length > 0, 'the room has its own way in');
+});
+
+test('an implant fired by a timer hangs from the start room, dashed and labelled', { skip }, () => {
+    const sc = implants();
+    const port = sc.rooms.store.objects.find(o => o.id === 'box_port');
+    sc.timers = [{ id: 'staff_uses_stick', startOnGlobal: 'stick_left', actions: port.triggerOnInteract }];
+    delete port.triggerOnInteract;
+    const g = graph(sc);
+    const e = edgeOf(g, 'lobby', 'implant_door_box');
+    assert.equal(e?.label, 'timer: stick_left');
+    assert.equal(e.soft, true);
 });
 
 test('an implant on a path the server does not run is not drawn', { skip }, () => {
@@ -218,7 +311,37 @@ test('an implant on a path the server does not run is not drawn', { skip }, () =
     port.flagRewards = port.triggerOnInteract;
     delete port.triggerOnInteract;
     const g = graph(sc);
+    assert.ok(g.nodes.implant_hot_desk, 'positive control');
     assert.ok(!g.nodes.implant_door_box);
+});
+
+test('a device named by type in the start items is found where the server finds it', { skip }, () => {
+    const sc = implants();
+    sc.rooms.lobby.objects = sc.rooms.lobby.objects.filter(o => o.id !== 'kit_badusb');
+    sc.startItemsInInventory = [{ id: 'my_injector', type: 'keystroke_injector', name: 'Injector' }];
+    sc.rooms.lobby.objects.find(o => o.id === 'desk_socket').triggerOnInteract[0].needsHeld = 'keystroke_injector';
+    const g = graph(sc);
+    assert.ok(edge(g, 'lobby', 'device_my_injector'));
+    assert.equal(edgeOf(g, 'device_my_injector', 'implant_hot_desk')?.label, 'held');
+    assert.ok(!g.nodes.device_keystroke_injector, 'no orphan node named by the type');
+});
+
+test('a PC with both implant shapes has one node, joined names and one network edge', { skip }, () => {
+    const sc = implants();
+    sc.rooms.lobby.objects.push({ id: 'desk_port2', type: 'pc', name: 'Rear port',
+        triggerOnInteract: [{ type: 'grant_foothold', pc: 'hot_desk', needsDropped: 'kit_stick', name: 'Stick: hot desk' }] });
+    const g = graph(sc);
+    assert.match(g.nodes.implant_hot_desk.label, /BadUSB: hot desk \/ Stick: hot desk/);
+    assert.equal(g.edges.filter(e => e.from === 'implant_hot_desk' && e.to === 'net_office_lan').length, 1);
+});
+
+test('a session implant on a headless PC is marked unusable and has no session edge', { skip }, () => {
+    const sc = implants();
+    sc.rooms.lobby.objects.find(o => o.id === 'desk_socket').triggerOnInteract[0].pc = 'door_box';
+    sc.rooms.store.objects = sc.rooms.store.objects.filter(o => o.id !== 'box_port');
+    const g = graph(sc);
+    assert.match(g.nodes.implant_door_box?.label, /unusable: headless/);
+    assert.ok(!edge(g, 'lock_door_box', 'implant_door_box'));
 });
 
 test('an outage is a condition on the network node, not a gate', { skip }, () => {
@@ -235,13 +358,31 @@ test('an outage is a condition on the network node, not a gate', { skip }, () =>
     assert.doesNotMatch(g.nodes.net_office_lan.label, /down/);
 });
 
-test('a jack with port security has no edge to its network', { skip }, () => {
+test('a jack with port security (any truthy value) has no edge to its network', { skip }, () => {
     const sc = scenario();
-    sc.rooms.comms_room.objects[0].portSecurity = true;
+    sc.rooms.comms_room.objects[0].portSecurity = 1;
     const g = graph(sc);
     assert.match(g.nodes.jack_comms_port.label, /port security/);
-    assert.ok(edge(g, 'device_kit_dropbox', 'jack_comms_port'));
+    assert.ok(edge(g, 'device_kit_dropbox', 'jack_comms_port'), 'positive control');
     assert.ok(!edge(g, 'jack_comms_port', 'net_office_lan'));
+});
+
+test('malformed 9.3b fields draw nothing and do not crash the generator', { skip }, () => {
+    const sc = scenario();
+    sc.networks.bad_wifi = { name: { not: 'a string' }, wifi: 'open', downIf: 7 };
+    sc.networks.odd = { name: 'Odd', wifi: { ssid: 42, psk: ['x'] } };
+    sc.networkLinks = ['office_lan', ['office_lan'], ['office_lan', 'office_lan'], [1, 2], null, ['office_lan', 'bad_wifi', 'odd']];
+    sc.globalVariables = 'nonsense';
+    sc.rooms.lobby.objects.push(
+        { type: 'pc', wifiAp: true, network: 'bad_wifi' },
+        { id: 'junk', type: 'pc', triggerOnInteract: [
+            { type: 'grant_foothold' }, { type: 'grant_foothold', pc: 42 }, { type: 'grant_foothold', pc: 'nowhere', needsDropped: 'x' },
+            { type: 'grant_foothold', pc: 'hot_desk', needsHeld: { id: 1 }, needsSession: true }] });
+    const g = graph(sc);
+    assert.ok(g.nodes.jack_comms_port, 'positive control: the 9.3a drawing is intact');
+    assert.ok(!g.edges.some(e => ['link', 'pivot'].includes(e.label)));
+    assert.ok(!Object.keys(g.nodes).some(id => /^(wifiap_|wifikey_|device_(?!kit_dropbox)|pivot_)/.test(id)));
+    assert.doesNotMatch(g.raw, /=>/, 'no Ruby hash printed into a label');
 });
 
 test('a clean scenario using every 9.3b field draws each feature once', { skip }, () => {
@@ -258,10 +399,11 @@ test('a clean scenario using every 9.3b field draws each feature once', { skip }
     const g = graph(sc);
     assert.equal(g.edges.filter(e => e.label === 'link').length, 1);
     assert.ok(g.edges.some(e => e.label === 'pivot'));
-    for (const id of ['wifiap_guest_ap', 'wifikey_guest_wifi', 'implant_hot_desk', 'implant_door_box', 'jack_locked_port']) {
+    for (const id of ['wifiap_guest_ap', 'wifikey_guest_wifi', 'implant_hot_desk', 'implant_door_box', 'jack_locked_port', 'pivot_hot_desk']) {
         assert.ok(g.nodes[id], `${id} drawn`);
     }
     assert.match(g.nodes.net_server_net.label, /down while servers_offline/);
     const keys = g.edges.map(e => `${e.from}|${e.to}`);
     assert.equal(new Set(keys).size, keys.length, 'no duplicate edges');
+    for (const out of [g.raw, g.md, g.html]) assert.ok(!out.includes(PSK));
 });

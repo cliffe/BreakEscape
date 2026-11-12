@@ -115,6 +115,9 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
         <div class="edge-row"><span class="edge-solid"></span> Hard dependency (required)</div>
         <div class="edge-row"><span class="edge-dashed"></span> Soft dependency / narrative unlock</div>
         <div class="edge-row"><span class="edge-opt"></span> Optional path</div>
+          <div class="edge-row"><code>-.-</code> link: two networks joined; crossed only by a pivot</div>
+          <div class="edge-row"><b>+</b> then <code>pivot</code>: the network reached and a session at that host open the linked network</div>
+          <div class="edge-row"><code>held</code> / <code>dropped</code> / <code>session at PC</code>: what an implant needs</div>
       </div>
       <div class="legend-section">
         <h3>Shapes</h3>
@@ -144,7 +147,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">15</td></tr>
       <tr><th>Rooms</th><td class="val">12</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">41 / 68</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">46 / 81</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
     </table>
   </div>
@@ -206,14 +209,19 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   clue_wifi_note{"Reception Wi-Fi card"}
   wifiap_guest_ap2["Guest access point (lift lobby)<br/>Wi-Fi access point"]
   implant_sam_pc["BadUSB: Sam's desk<br/>(implant)"]
+  desk_room("Desks")
   device_kit_badusb{"Keystroke injector<br/>(implant device)"}
   implant_kiosk_pc["BadUSB: kiosk<br/>(implant)"]
-  implant_door_box["USB foothold: door controller<br/>(implant)"]
-  device_kit_stick{"Spare USB stick<br/>(implant device)"}
-  desk_room("Desks")
-  server_room("Server room")
   kiosk_room("Kiosk")
+  implant_door_box["USB foothold: door controller<br/>(implant)"]
   store("Store")
+  device_kit_stick{"Spare USB stick<br/>(implant device)"}
+  pivot_door_box((" + "))
+  pivot_kiosk_pc((" + "))
+  pivot_lena_pc((" + "))
+  pivot_sam_pc((" + "))
+  pivot_sv_fs02((" + "))
+  server_room("Server room")
 
   door_finance_office --> finance_office
   lobby --> lock_lobby_vault
@@ -253,12 +261,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   net_server_net -->|exposes| lock_sv_fs02
   signin_ian --> resource_backup_vault
   net_guest_wifi -->|exposes| resource_guest_notice
-  net_office_lan <-->|link| net_server_net
-  lock_door_box -->|pivot| net_server_net
-  lock_kiosk_pc -->|pivot| net_server_net
-  lock_lena_pc -->|pivot| net_server_net
-  lock_sam_pc -->|pivot| net_server_net
-  lock_sv_fs02 -->|pivot| net_office_lan
+  net_office_lan -.-|link| net_server_net
   lobby --> wifiap_guest_ap
   wifiap_guest_ap --> net_guest_wifi
   lobby --> clue_wifi_note
@@ -267,16 +270,34 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   lobby --> wifiap_guest_ap2
   wifiap_guest_ap2 --> net_guest_wifi
   wifikey_guest_wifi --> wifiap_guest_ap2
+  desk_room -->|at USB socket by Sam's PC| implant_sam_pc
   lobby --> device_kit_badusb
   device_kit_badusb -->|held| implant_sam_pc
   lock_sam_pc -->|session at PC| implant_sam_pc
   implant_sam_pc --> net_office_lan
+  kiosk_room -->|at Kiosk USB socket| implant_kiosk_pc
   device_kit_badusb -->|held| implant_kiosk_pc
   lock_kiosk_pc -->|session at PC| implant_kiosk_pc
   implant_kiosk_pc --> net_office_lan
+  store -->|at Door controller USB port| implant_door_box
   lobby --> device_kit_stick
   device_kit_stick -->|dropped| implant_door_box
   implant_door_box --> net_office_lan
+  net_office_lan --> pivot_door_box
+  lock_door_box --> pivot_door_box
+  pivot_door_box -->|pivot| net_server_net
+  net_office_lan --> pivot_kiosk_pc
+  lock_kiosk_pc --> pivot_kiosk_pc
+  pivot_kiosk_pc -->|pivot| net_server_net
+  net_office_lan --> pivot_lena_pc
+  lock_lena_pc --> pivot_lena_pc
+  pivot_lena_pc -->|pivot| net_server_net
+  net_office_lan --> pivot_sam_pc
+  lock_sam_pc --> pivot_sam_pc
+  pivot_sam_pc -->|pivot| net_server_net
+  net_server_net --> pivot_sv_fs02
+  lock_sv_fs02 --> pivot_sv_fs02
+  pivot_sv_fs02 -->|pivot| net_office_lan
   lobby --> comms_room
   lobby --> desk_room
   lobby --> workshop
@@ -285,10 +306,11 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   desk_room --> store
 
   class door_finance_office,lock_lobby_vault,lock_sv_fs02,lock_sam_pc,lock_lena_pc,lock_kiosk_pc,lock_door_box,jack_comms_port,jack_secure_port,jack_bench_port,wifiap_guest_ap,wifiap_guest_ap2,implant_sam_pc,implant_kiosk_pc,implant_door_box lock
-  class finance_office,lobby,comms_room,net_office_lan,workshop,net_workshop_lan,net_server_net,net_guest_wifi,desk_room,server_room,kiosk_room,store room
+  class finance_office,lobby,comms_room,net_office_lan,workshop,net_workshop_lan,net_server_net,net_guest_wifi,desk_room,kiosk_room,store,server_room room
   class signin_sam,signin_lena,signin_ian,device_kit_dropbox,wifikey_guest_wifi,device_kit_badusb,device_kit_stick key
   class resource_ledger_archive,resource_print_queue,resource_scanned_inbox,resource_bench_notes,resource_backup_vault,resource_guest_notice container
   class clue_wifi_note item
+  class pivot_door_box,pivot_kiosk_pc,pivot_lena_pc,pivot_sam_pc,pivot_sv_fs02 gate
   class node_start start`,
       story:      `flowchart TD
 
@@ -364,14 +386,19 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   clue_wifi_note{"Reception Wi-Fi card"}
   wifiap_guest_ap2["Guest access point (lift lobby)<br/>Wi-Fi access point"]
   implant_sam_pc["BadUSB: Sam's desk<br/>(implant)"]
+  desk_room("Desks")
   device_kit_badusb{"Keystroke injector<br/>(implant device)"}
   implant_kiosk_pc["BadUSB: kiosk<br/>(implant)"]
-  implant_door_box["USB foothold: door controller<br/>(implant)"]
-  device_kit_stick{"Spare USB stick<br/>(implant device)"}
-  desk_room("Desks")
-  server_room("Server room")
   kiosk_room("Kiosk")
+  implant_door_box["USB foothold: door controller<br/>(implant)"]
   store("Store")
+  device_kit_stick{"Spare USB stick<br/>(implant device)"}
+  pivot_door_box((" + "))
+  pivot_kiosk_pc((" + "))
+  pivot_lena_pc((" + "))
+  pivot_sam_pc((" + "))
+  pivot_sv_fs02((" + "))
+  server_room("Server room")
   aim_network_beats{{"Run the network beats"}}
 
   door_finance_office --> finance_office
@@ -412,12 +439,7 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   net_server_net -->|exposes| lock_sv_fs02
   signin_ian --> resource_backup_vault
   net_guest_wifi -->|exposes| resource_guest_notice
-  net_office_lan <-->|link| net_server_net
-  lock_door_box -->|pivot| net_server_net
-  lock_kiosk_pc -->|pivot| net_server_net
-  lock_lena_pc -->|pivot| net_server_net
-  lock_sam_pc -->|pivot| net_server_net
-  lock_sv_fs02 -->|pivot| net_office_lan
+  net_office_lan -.-|link| net_server_net
   lobby --> wifiap_guest_ap
   wifiap_guest_ap --> net_guest_wifi
   lobby --> clue_wifi_note
@@ -426,16 +448,34 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   lobby --> wifiap_guest_ap2
   wifiap_guest_ap2 --> net_guest_wifi
   wifikey_guest_wifi --> wifiap_guest_ap2
+  desk_room -->|at USB socket by Sam's PC| implant_sam_pc
   lobby --> device_kit_badusb
   device_kit_badusb -->|held| implant_sam_pc
   lock_sam_pc -->|session at PC| implant_sam_pc
   implant_sam_pc --> net_office_lan
+  kiosk_room -->|at Kiosk USB socket| implant_kiosk_pc
   device_kit_badusb -->|held| implant_kiosk_pc
   lock_kiosk_pc -->|session at PC| implant_kiosk_pc
   implant_kiosk_pc --> net_office_lan
+  store -->|at Door controller USB port| implant_door_box
   lobby --> device_kit_stick
   device_kit_stick -->|dropped| implant_door_box
   implant_door_box --> net_office_lan
+  net_office_lan --> pivot_door_box
+  lock_door_box --> pivot_door_box
+  pivot_door_box -->|pivot| net_server_net
+  net_office_lan --> pivot_kiosk_pc
+  lock_kiosk_pc --> pivot_kiosk_pc
+  pivot_kiosk_pc -->|pivot| net_server_net
+  net_office_lan --> pivot_lena_pc
+  lock_lena_pc --> pivot_lena_pc
+  pivot_lena_pc -->|pivot| net_server_net
+  net_office_lan --> pivot_sam_pc
+  lock_sam_pc --> pivot_sam_pc
+  pivot_sam_pc -->|pivot| net_server_net
+  net_server_net --> pivot_sv_fs02
+  lock_sv_fs02 --> pivot_sv_fs02
+  pivot_sv_fs02 -->|pivot| net_office_lan
   lobby --> comms_room
   lobby --> desk_room
   lobby --> workshop
@@ -445,10 +485,11 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
   lock_lobby_vault -.-> aim_network_beats
 
   class door_finance_office,lock_lobby_vault,lock_sv_fs02,lock_sam_pc,lock_lena_pc,lock_kiosk_pc,lock_door_box,jack_comms_port,jack_secure_port,jack_bench_port,wifiap_guest_ap,wifiap_guest_ap2,implant_sam_pc,implant_kiosk_pc,implant_door_box lock
-  class finance_office,lobby,comms_room,net_office_lan,workshop,net_workshop_lan,net_server_net,net_guest_wifi,desk_room,server_room,kiosk_room,store room
+  class finance_office,lobby,comms_room,net_office_lan,workshop,net_workshop_lan,net_server_net,net_guest_wifi,desk_room,kiosk_room,store,server_room room
   class signin_sam,signin_lena,signin_ian,device_kit_dropbox,wifikey_guest_wifi,device_kit_badusb,device_kit_stick key
   class resource_ledger_archive,resource_print_queue,resource_scanned_inbox,resource_bench_notes,resource_backup_vault,resource_guest_notice container
   class clue_wifi_note item
+  class pivot_door_box,pivot_kiosk_pc,pivot_lena_pc,pivot_sam_pc,pivot_sv_fs02 gate
   class aim_network_beats aim
   class node_start start`,
       rooms:      `flowchart TD

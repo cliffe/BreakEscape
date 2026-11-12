@@ -201,6 +201,12 @@
       "optional": false
     },
     {
+      "id": "desk_room",
+      "label": "Desks",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "device_kit_badusb",
       "label": "Keystroke injector<br/>(implant device)",
       "kind": "key",
@@ -213,9 +219,21 @@
       "optional": false
     },
     {
+      "id": "kiosk_room",
+      "label": "Kiosk",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "implant_door_box",
       "label": "USB foothold: door controller<br/>(implant)",
       "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "store",
+      "label": "Store",
+      "kind": "room",
       "optional": false
     },
     {
@@ -225,26 +243,38 @@
       "optional": false
     },
     {
-      "id": "desk_room",
-      "label": "Desks",
-      "kind": "room",
+      "id": "pivot_door_box",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_kiosk_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_lena_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_sam_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_sv_fs02",
+      "label": "+",
+      "kind": "gate",
       "optional": false
     },
     {
       "id": "server_room",
       "label": "Server room",
-      "kind": "room",
-      "optional": false
-    },
-    {
-      "id": "kiosk_room",
-      "label": "Kiosk",
-      "kind": "room",
-      "optional": false
-    },
-    {
-      "id": "store",
-      "label": "Store",
       "kind": "room",
       "optional": false
     }
@@ -452,39 +482,9 @@
     {
       "from": "net_office_lan",
       "to": "net_server_net",
-      "soft": false,
+      "soft": true,
       "label": "link",
-      "both": true
-    },
-    {
-      "from": "lock_door_box",
-      "to": "net_server_net",
-      "soft": false,
-      "label": "pivot"
-    },
-    {
-      "from": "lock_kiosk_pc",
-      "to": "net_server_net",
-      "soft": false,
-      "label": "pivot"
-    },
-    {
-      "from": "lock_lena_pc",
-      "to": "net_server_net",
-      "soft": false,
-      "label": "pivot"
-    },
-    {
-      "from": "lock_sam_pc",
-      "to": "net_server_net",
-      "soft": false,
-      "label": "pivot"
-    },
-    {
-      "from": "lock_sv_fs02",
-      "to": "net_office_lan",
-      "soft": false,
-      "label": "pivot"
+      "undirected": true
     },
     {
       "from": "lobby",
@@ -527,6 +527,12 @@
       "soft": false
     },
     {
+      "from": "desk_room",
+      "to": "implant_sam_pc",
+      "soft": false,
+      "label": "at USB socket by Sam's PC"
+    },
+    {
       "from": "lobby",
       "to": "device_kit_badusb",
       "soft": false
@@ -549,6 +555,12 @@
       "soft": false
     },
     {
+      "from": "kiosk_room",
+      "to": "implant_kiosk_pc",
+      "soft": false,
+      "label": "at Kiosk USB socket"
+    },
+    {
       "from": "device_kit_badusb",
       "to": "implant_kiosk_pc",
       "soft": false,
@@ -566,6 +578,12 @@
       "soft": false
     },
     {
+      "from": "store",
+      "to": "implant_door_box",
+      "soft": false,
+      "label": "at Door controller USB port"
+    },
+    {
       "from": "lobby",
       "to": "device_kit_stick",
       "soft": false
@@ -580,6 +598,86 @@
       "from": "implant_door_box",
       "to": "net_office_lan",
       "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_door_box",
+      "soft": false
+    },
+    {
+      "from": "lock_door_box",
+      "to": "pivot_door_box",
+      "soft": false
+    },
+    {
+      "from": "pivot_door_box",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_kiosk_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_kiosk_pc",
+      "to": "pivot_kiosk_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_kiosk_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_lena_pc",
+      "to": "pivot_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_lena_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_sam_pc",
+      "to": "pivot_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_sam_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_server_net",
+      "to": "pivot_sv_fs02",
+      "soft": false
+    },
+    {
+      "from": "lock_sv_fs02",
+      "to": "pivot_sv_fs02",
+      "soft": false
+    },
+    {
+      "from": "pivot_sv_fs02",
+      "to": "net_office_lan",
+      "soft": false,
+      "label": "pivot"
     },
     {
       "from": "lobby",
