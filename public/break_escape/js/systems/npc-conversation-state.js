@@ -10,6 +10,26 @@
 // Ink VAR prefixes that live for one run only and are never saved (00 S7)
 const RUN_SCOPED_PREFIXES = ['email_'];
 
+// Code-point helpers (SYNC_DELTAS_PLAN 2.1). Ruby counts code points, JavaScript
+// counts UTF-16 units, so an astral character is cut at a different place on each
+// side. exportNpcInkVariables measures by code points to mirror the server. A
+// module-local copy (the same code lives in mail-scheduler.js and as NPCManager
+// statics) so no node harness copy list changes; one node test
+// (test/js/cp-helpers.test.mjs) runs every copy over the same astral strings.
+
+/** True when s has at most n code points. */
+export function cpWithin(s, n) {
+    // A UTF-16 length never undercounts code points, so this fast path is exact.
+    if (s.length <= n) return true;
+    return Array.from(s).length <= n;
+}
+
+/** The first n code points of s. */
+export function cpSlice(s, n) {
+    if (s.length <= n) return s;
+    return Array.from(s).slice(0, n).join('');
+}
+
 class NPCConversationStateManager {
     constructor() {
         this.conversationStates = new Map(); // { npcId: { storyState, variables, ... } }

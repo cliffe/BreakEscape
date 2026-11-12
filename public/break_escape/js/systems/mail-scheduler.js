@@ -49,6 +49,26 @@ export const MAIL_MESSAGE_FIELDS = [
 // Default reply delay when neither the character nor the target authors one (00 §10)
 export const DEFAULT_REPLY_DELAY_SECONDS = 20;
 
+// Code-point helpers (SYNC_DELTAS_PLAN 2.1). Ruby counts code points, JavaScript
+// counts UTF-16 units, so an astral character is cut at a different place on each
+// side. The mail export clips measure and cut by code points to mirror the server.
+// A module-local copy (the same code lives in npc-conversation-state.js and as
+// NPCManager statics) so no node harness copy list changes; one node test
+// (test/js/cp-helpers.test.mjs) runs every copy over the same astral strings.
+
+/** True when s has at most n code points. */
+export function cpWithin(s, n) {
+  // A UTF-16 length never undercounts code points, so this fast path is exact.
+  if (s.length <= n) return true;
+  return Array.from(s).length <= n;
+}
+
+/** The first n code points of s. */
+export function cpSlice(s, n) {
+  if (s.length <= n) return s;
+  return Array.from(s).slice(0, n).join('');
+}
+
 const pick = (obj, fields) => {
   const out = {};
   for (const f of fields) if (obj[f] !== undefined) out[f] = obj[f];

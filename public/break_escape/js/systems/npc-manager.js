@@ -144,6 +144,28 @@ export default class NPCManager {
   // shown time stays put across reopen and reload (messageClockText in game-clock.js)
   static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded'];
 
+  // Code-point helpers (SYNC_DELTAS_PLAN 2.1). Ruby's String#length and [0, n]
+  // count code points; JavaScript's length and slice count UTF-16 units, so a
+  // string with an emoji or other astral character is cut at a different place
+  // on each side. The export clips must count and cut by code points to mirror
+  // the server exactly. Kept as module-local/static copies (here, and in
+  // mail-scheduler.js and npc-conversation-state.js) rather than a shared
+  // module, so no node harness copy list changes; one node test
+  // (test/js/cp-helpers.test.mjs) runs every copy over the same astral strings.
+
+  /** True when s has at most n code points. */
+  static cpWithin(s, n) {
+    // A UTF-16 length never undercounts code points, so this fast path is exact.
+    if (s.length <= n) return true;
+    return Array.from(s).length <= n;
+  }
+
+  /** The first n code points of s. */
+  static cpSlice(s, n) {
+    if (s.length <= n) return s;
+    return Array.from(s).slice(0, n).join('');
+  }
+
   /**
    * Resolve a "Name:" speaker prefix to a character id (social build item 0.6,
    * data contract 00 S2). Same scan as person-chat's normalizeSpeakerId: the first
