@@ -23,7 +23,7 @@ for (const rel of ['ui/success-screen.js', 'utils/display-dashes.js', 'utils/des
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }
 
-const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
+const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true, url: 'https://game.example/break_escape/games/1' });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 console.log = () => {};
@@ -220,5 +220,20 @@ test('game shell: the host names the return page and its label; the tab stays op
     const ret = document.getElementById('success-screen-return');
     assert.equal(ret.textContent, 'Debrief');
     ret.click();
-    assert.deepEqual(went, ['/events/7/play/operations/3/debrief']);
+    assert.deepEqual(went, ['https://game.example/events/7/play/operations/3/debrief'], 'the parsed href');
+});
+
+test('game shell: a refused return link gets no "Debrief" label and is not followed', () => {
+    for (const bad of ['javascript:window.__pwned=1', 'https://evil.example/debrief', 'https://u:p@game.example/debrief', '//evil.example/x']) {
+        S._resetSuccessScreen();
+        window.breakEscapeConfig = { shellReturnUrl: bad, shellReturnLabel: 'Debrief' };
+        const went = [];
+        S.showSuccessScreen({ title: 'Done', buttonText: 'Return to missions' }, syncDeps({ navigate: (u) => went.push(u), closeTab: () => went.push('close') }));
+        const ret = document.getElementById('success-screen-return');
+        assert.equal(ret.textContent, 'Return to missions', `no shell label for ${bad}`);
+        ret.click();
+        // No shell: the player leaves the usual way (the missions page)
+        assert.deepEqual(went, ['/break_escape/missions'], `not followed: ${bad}`);
+    }
+    assert.equal(window.__pwned, undefined);
 });

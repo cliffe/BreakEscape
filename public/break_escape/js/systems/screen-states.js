@@ -7,9 +7,9 @@
  * (window.workstationState.isLocked) and the player holds no password session at that PC
  * (window.pcSessions.get(id).via === 'password'; a claimed session never hides it, because a
  * claim cannot exist on a locked screen). Otherwise it shows its base texture. `<key>` is the
- * sprite's own texture key, whatever the object's type: today only `pc_desktop` has locked art
- * (`pc_desktop_locked`), so a scenario sets `"sprite": "pc_desktop"` on a PC that should show
- * the padlock. Any other base keeps its look and still gets the sounds. An object with its own
+ * sprite's own texture key, whatever the object's type: every workstation PC base (`pc`,
+ * `pc1`, `pc3` to `pc12`, `pc_desktop`) has a locked picture, preloaded in core/game.js. Any
+ * other base keeps its look and still gets the sounds. An object with its own
  * `spriteVariants` is left alone (the author's swap wins), as is one with no owner.
  *
  * Event driven, never polled:

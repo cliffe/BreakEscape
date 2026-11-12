@@ -1,9 +1,8 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml as escapeTitle } from '../../utils/escape-html.js';
 
 // The title is plain text (scenario or server data): escaped before it reaches HTML.
-const escapeTitle = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 // Block content (labels, descriptions, bodies, cells, values) is rich text by design:
 // the scenarios use <strong>, <p>, <br> and <code>, a style on <strong> and <p>, and
@@ -20,6 +19,18 @@ const UNSAFE_STYLE = /url\s*\(|expression|@import|javascript:/i;
 // scenario style cannot cover the game (position:fixed, z-index, width:100%).
 const SAFE_STYLE_PROPS = /^(color|background-color|font-weight|font-style|font-size|text-decoration|text-align|(margin|padding)(-(top|right|bottom|left))?)$/;
 
+// A font size held to a readable range: px 8 to 48 or rem 0.5 to 3. Only units that do not
+// compound, so nested styled elements cannot multiply a size (em, %, larger and smaller
+// would). Anything else (em, %, keywords, calc(), vw, a bare number) is dropped.
+const FONT_SIZE_RANGE = { px: [8, 48], rem: [0.5, 3] };
+export function clampFontSize(val) {
+    const m = /^(\d+(?:\.\d+)?|\.\d+)(px|rem)$/i.exec(val);
+    if (!m) return null;
+    const unit = m[2].toLowerCase();
+    const [lo, hi] = FONT_SIZE_RANGE[unit];
+    return `${Math.min(hi, Math.max(lo, Number(m[1])))}${unit}`;
+}
+
 // A style attribute value with only allow-listed properties and safe values kept, or ''.
 export function cleanStyle(value) {
     return String(value ?? '').split(';').map((decl) => {
@@ -28,6 +39,10 @@ export function cleanStyle(value) {
         const prop = decl.slice(0, at).trim().toLowerCase();
         const val = decl.slice(at + 1).trim();
         if (!SAFE_STYLE_PROPS.test(prop) || !val || !SAFE_STYLE.test(val) || UNSAFE_STYLE.test(val)) return null;
+        if (prop === 'font-size') {
+            const size = clampFontSize(val);
+            return size ? `${prop}:${size}` : null;
+        }
         return `${prop}:${val}`;
     }).filter(Boolean).join(';');
 }

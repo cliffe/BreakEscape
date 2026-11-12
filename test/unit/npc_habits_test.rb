@@ -379,6 +379,12 @@ class NpcHabitsTest < ActiveSupport::TestCase
     assert_equal :no_connection, NH.doorway_problem(room, 6)
     assert_equal :no_direction, NH.doorway_problem(room, 7)
     assert_equal :no_connection, NH.doorway_problem({ 'doors' => [{ 'connectedRoom' => 'vault', 'direction' => 'north' }] }, 0)
+    # doors.js skips a falsy connections[dir], so "north": "" is no doorway, even for an
+    # entry whose connectedRoom is "" too
+    blank = { 'connections' => { 'north' => '' }, 'doors' => [{ 'connectedRoom' => '', 'direction' => 'north' }] }
+    assert_equal :no_connection, NH.doorway_problem(blank, 0)
+    blank['connections']['north'] = nil
+    assert_equal :no_connection, NH.doorway_problem(blank, 0)
   end
 
   # A gate on an entry no doorway reads does nothing: expand! fills no noHold on it and the

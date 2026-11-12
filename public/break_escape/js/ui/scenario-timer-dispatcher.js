@@ -240,10 +240,12 @@ class ScenarioTimerDispatcher {
 
     // A give_item reward is only done once the server has answered. Until then the
     // timer is in flight, not fired: a page closed meanwhile re-fires it on reload.
+    // Each give is paired with the action it ran (p.action), never by position: a give
+    // skipped by its condition starts no promise, so positions would pair a later give's
+    // result with the skipped one's action and a retry would re-apply the wrong action.
     if (gives.length > 0) {
-      const giveActions = timer.actions.filter(a => a?.type === 'give_item' && a.item);
       this._inFlight.add(timer.id);
-      Promise.all(gives.map((p, i) => this._settleGive(timer, giveActions[i], p, 0)))
+      Promise.all(gives.map(p => this._settleGive(timer, p.action, p, 0)))
         .then(results => {
           if (results.every(Boolean)) {
             this._inFlight.delete(timer.id);
@@ -281,7 +283,13 @@ class ScenarioTimerDispatcher {
         return new Promise(resolve => {
           const handle = setTimeout(() => {
             this._retryTimeouts.delete(handle);
-            const [retry] = applyActions([giveAction], { source: `timer:${timer.id}` }) || [];
+            // The give already passed its condition when the timer fired; a retry finishes
+            // that give, so the condition is not read again (a global that changed since
+            // would otherwise drop the item and count the retry as settled). That holds
+            // within this page: a reload after the retries give up fires the timer again
+            // and reads the conditions afresh
+            const { condition, ...unconditioned } = giveAction;
+            const [retry] = applyActions([unconditioned], { source: `timer:${timer.id}` }) || [];
             resolve(this._settleGive(timer, giveAction, retry, attempt + 1));
           }, delays[attempt]);
           this._retryTimeouts.add(handle);

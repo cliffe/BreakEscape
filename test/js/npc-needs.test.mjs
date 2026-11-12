@@ -614,6 +614,30 @@ test('a delivery to the own post: arriving with the item is the return', () => {
     assert.equal(sys.getState('finder').atPost, true);
 });
 
+test('a delivery to the own post: a player at the desk while the owner fetches the item is not caught', () => {
+    // The per-tick caught check runs only on the goto_target leg. On goto_item the owner has
+    // just left the desk (still in the home room) to fetch the item: it is not a return.
+    const w = makeWorld(curiousCfg());
+    const sys = new NPCNeedsSystem(w.world, { seed: 3, manualClock: true });
+    w.attach(sys);
+    slowWalks(w, sys);
+    let askedOnFetch = 0;
+    w.world.playerAtPost = () => {
+        const fetching = sys.getState('finder').job?.phase === 'goto_item';
+        if (fetching) askedOnFetch++;
+        return { distance: fetching ? 10 : 500, inMinigame: false };
+    };
+    sys.registerAll();
+    sys.step(30000);
+    w.objs.push({ id: 'dropped_thing', x: 160, y: 160, roomId: 'office', pickable: true, needsTag: 'found_item' });
+    sys.step(60000);
+    const log = sys.getLog().filter(e => e.npc === 'finder');
+    assert.ok(log.some(e => e.ev === 'picked_up'), 'the item was fetched');
+    assert.ok(log.some(e => e.ev === 'returned_post'), 'and carried back to the desk');
+    assert.equal(askedOnFetch, 0, 'nothing asks where the player is while the owner fetches the item');
+    assert.equal(w.calls.emits.filter(e => e.name === 'npc_caught_at_post:finder').length, 0);
+});
+
 test('a walk back that is a job for the own post checks for the player at the desk on every tick', () => {
     // An ordinary walk home is checked each tick. This one is a job, and was checked only on
     // the tick after the trip ended and on arrival: a player at the desk mid-walk who had

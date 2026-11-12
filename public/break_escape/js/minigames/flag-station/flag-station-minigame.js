@@ -9,6 +9,7 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { applyActions } from '../../systems/apply-actions.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { flagRefusalLine, flagRejectReason } from '../../utils/flag-wording.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
 export class FlagStationMinigame extends MinigameScene {
     static REWARD_ICONS = {
@@ -920,8 +921,7 @@ export class FlagStationMinigame extends MinigameScene {
     // Server and scenario text (flags, VM labels, reward names) is plain text:
     // escaped once, quotes included, so it is safe in text and in attributes.
     escapeHtml(str) {
-        return String(str ?? '').replace(/[&<>"']/g, ch => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+        return escapeHtml(str);
     }
     
     start() {

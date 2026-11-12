@@ -591,3 +591,36 @@ test('R1 m4: a guest claim granted after someone sat down at the PC ends at once
         delete window.npcManager;
     }
 });
+
+// Review R2 n3 (q44): each sign-out that awaits /logout says pc_signing_out before the request
+test('q44: Sign out, a claim ended by the owner and a restored claim say pc_signing_out before POST /logout', async () => {
+    const s = setup();
+    let release;
+    const order = [];
+    window.ApiClient.logout = (pcId) => { order.push(['logout', pcId]); return new Promise(r => { release = () => r({ success: true }); }); };
+    window.eventDispatcher.emit = (name, data) => { events.push([name, data]); if (!name.includes(':')) order.push([name, data.reason]); };
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    order.length = 0;
+    const out = s.signOut('hot_desk');
+    await settle();
+    assert.deepEqual(order, [['pc_signing_out', 'sign_out'], ['logout', 'hot_desk']], 'nothing signed out while /logout is slow');
+    release();
+    await out;
+    assert.deepEqual(order.at(-1), ['pc_signed_out', 'sign_out']);
+
+    s._replace('pc_a', { npcId: 'ann', username: 'ann', displayName: 'Ann', via: 'claim' });
+    order.length = 0;
+    const end = s._endClaim('pc_a', 'owner_returned', 'back');
+    await settle();
+    assert.deepEqual(order, [['pc_signing_out', 'owner_returned'], ['logout', 'pc_a']]);
+    release();
+    await end;
+
+    order.length = 0;
+    s._endRestoredClaim('pc_b', { npcId: 'ann' });
+    await settle();
+    assert.deepEqual(order, [['pc_signing_out', 'claim_ended'], ['logout', 'pc_b']]);
+    release();
+    await settle();
+    assert.deepEqual(order.at(-1), ['pc_signed_out', 'claim_ended']);
+});

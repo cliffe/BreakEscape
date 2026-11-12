@@ -276,8 +276,8 @@ test('installSocialFeed: listens on npc_used (met social_media only) and npc_use
         await new Promise((r) => setTimeout(r, 0));
         assert.deepEqual(sent, ['jake', 'jake']);
         assert.equal(alerts.length >= 1, true);
-        assert.deepEqual(alerts[0][4], { plainText: true, verbatim: true });
-        assert.equal(alerts[0][0], 'Jake <i>B</i> posted on <b>Friendface</b>', 'the raw names, drawn as text by plainText');
+        assert.deepEqual(alerts[0][4], { verbatim: true });
+        assert.equal(alerts[0][0], 'Jake <i>B</i> posted on <b>Friendface</b>', 'the raw names, drawn as text (toasts are plain text by default)');
         assert.equal(installSocialFeed(api, null), feed, 'installed once');
     } finally { delete globalThis.window; }
 });

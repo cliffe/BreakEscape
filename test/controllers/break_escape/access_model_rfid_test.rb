@@ -312,6 +312,39 @@ module BreakEscape
       assert_refused door('records', card_ids: ['DROPPED-01'])
     end
 
+    # Code review R2, n1: a legitimately authored keycard dropped (player_drop) and picked up
+    # again is rebuilt from the server copy, so it is never marked clientAdded and still opens
+    # its rfid door. Guards against a regression that wrongly tagged a real card forged.
+    test 'a keycard dropped and picked up again is not marked forged and still opens an rfid door' do
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['lobby']['objects'].find { |o| o['id'] == 'visitor_badge' }['droppable'] = true
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby],
+                                                 'encounteredNPCs' => [] })
+
+      take = lambda do
+        post inventory_game_url(@game), params: { action_type: 'add',
+                                                  item: { type: 'keycard', id: 'visitor_badge', name: 'Visitor badge' } }, as: :json
+        assert_response :success, response.body
+      end
+      take.call
+      # Drop it (player_drop rebuilds from the server copy), remove it, then take it back.
+      post update_room_game_url(@game), params: { roomId: 'lobby', actionType: 'add_object', sourceType: 'player_drop',
+                                                  data: { id: 'visitor_badge', type: 'keycard', name: 'Visitor badge', x: 6, y: 6 } }, as: :json
+      assert_response :success, response.body
+      post inventory_game_url(@game), params: { action_type: 'remove', item: { id: 'visitor_badge' } }, as: :json
+      assert_response :success, response.body
+      take.call
+
+      stored = @game.reload.player_state['inventory'].find { |i| i['id'] == 'visitor_badge' }
+      assert stored, 'the keycard is back in the inventory'
+      refute BreakEscape::ItemIdentity.client_forged?(stored), 'a real dropped keycard is not marked forged'
+      assert_equal 'VISITOR-07', stored['card_id'], 'the server card_id survived the round trip'
+      # mixed is locked rfid, requires VISITOR-07: the re-picked badge still opens it.
+      assert door('mixed', card_ids: ['VISITOR-07'])['success'], 'the re-picked keycard still opens the rfid door'
+    end
+
     private
 
     def keycard_item(id)

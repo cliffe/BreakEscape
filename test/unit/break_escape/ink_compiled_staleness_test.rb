@@ -30,16 +30,10 @@ module BreakEscape
       end
     end
 
-    # Every file ink includes, directly or through another include
-    def self.includes(ink, seen = Set.new)
-      File.read(Engine.root.join(ink)).scan(/^\s*INCLUDE\s+(\S+)/).flatten.each do |name|
-        path = File.join(File.dirname(ink), name)
-        next if seen.include?(path) || !File.exist?(Engine.root.join(path))
-
-        seen << path
-        includes(path, seen)
-      end
-      seen.to_a
+    # Every file ink includes, directly or through another include, resolved
+    # as inklecate resolves them (InkStoryFile.includes)
+    def self.includes(ink)
+      InkStoryFile.includes(ink)
     end
 
     def read_json(path)

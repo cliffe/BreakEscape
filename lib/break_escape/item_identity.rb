@@ -18,6 +18,29 @@ module BreakEscape
   module ItemIdentity
     module_function
 
+    # Lock references, nested locks, credential data and authored behaviour a
+    # client must never set on an item it contributes. Single source for the two
+    # strip lists: Game::FORGEABLE_LOCK_FIELDS (stripped from an unsourced room
+    # add, top level and inside scenarioData) and GamesController's
+    # CLIENT_ITEM_FORBIDDEN_FIELDS (which also strips the whole scenarioData from
+    # a client-built inventory item). Keep security-relevant fields here, not in
+    # two hand-maintained lists that drift (code review R1, m1).
+    FORGEABLE_ITEM_FIELDS = %w[
+      opens_lock key_id keyId keyPins requires lockType locked access
+      card_id rfid_protocol acceptsUIDOnly contents itemsHeld flags flagRewards
+      droppable needsTag wearable holds storeIn saved_cards
+    ].freeze
+
+    # Marker the server stamps on an object added to a room with no server-known
+    # source (Game#add_item_to_room!): a bare client hash, never a scenario item.
+    # No credential check (key, lockpick, card, cracker, needsHeld) honours such
+    # an item, so a tampered client cannot mint one (code review R1, B1).
+    CLIENT_ADDED_MARKER = 'clientAdded'
+
+    def client_forged?(item)
+      item.is_a?(Hash) && item[CLIENT_ADDED_MARKER] == true
+    end
+
     # Which lock does this item open? Never an identity.
     def lock_ref(item)
       return nil if item.blank?

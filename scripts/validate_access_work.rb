@@ -624,7 +624,40 @@ module ValidateAccessWork
 
       check_npc_workarounds(json_data, npc, e[:room], list, issues, expanded[npc['id']] || npc)
     end
+    check_hot_desk_reach(json_data, issues, expanded)
     check_workaround_globals_read_by_server(json_data, issues)
+  end
+
+  # Review 9.2 H R1 m5 (user decision q44): only a borrower's sitting down at a hot desk signs in
+  # there (npc_sat_at), which ends the player's session and a guest left there. Any other use of
+  # it, for a need that is not judged (so the desk is not filtered out), sits down with neither:
+  # the player's desktop stays open under the NPC and a guest session survives it. Warned per
+  # NPC and need; a leash that keeps the NPC out of the desk's room means it never gets there.
+  def check_hot_desk_reach(json_data, issues, expanded = {})
+    index = AW.object_index(json_data)
+    entries = room_npcs(json_data)
+    hot = entries.flat_map { |e| AW.borrow_pcs(json_data, e[:npc]) }.uniq.select { |id| index.key?(id) }
+    hot.each do |pid|
+      pc = index[pid][:obj]
+      next if private_pc?(json_data, pc)
+
+      room = index[pid][:room_id]
+      entries.each do |e|
+        npc = expanded[e[:npc]['id']] || e[:npc]
+        next unless npc['needs'].is_a?(Hash)
+        next if leash_forbids?(npc, room, e[:room])
+
+        npc['needs'].each_key do |need|
+          next unless AW.need?(npc, need) && AW.satisfies?(json_data, pc, need)
+          next if AW.judged?(json_data, npc, need)
+
+          warn(issues, "hot desk '#{pid}' (a borrow_session names it) satisfies #{need}, which #{npc['id']} can use it for " \
+                       'without borrowing it: only a borrower sitting down signs in there, so that use leaves the ' \
+                       "player's session and any guest session open under #{npc['id']}. Give the desk only the borrowed " \
+                       'need, or keep the NPC out of its room (needsRooms or needsAvoidRooms).')
+        end
+      end
+    end
   end
 
   # Review 9.2 B R2: a workaround's setGlobal is written by the server on "done", but the

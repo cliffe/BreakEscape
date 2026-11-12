@@ -4,7 +4,7 @@
 //
 // playtest-session.js turns it on with --capture-responses <file>. Each line is
 //
-//   { n, t, method, path, [query], status, cmdSeq, cmd, cmdActive, body }
+//   { n, t, method, path, [query], status, cmdSeq, cmd, cmdActive, [npcId], body }
 //
 // where `body` is the parsed JSON (or `bodyText` when it does not parse, or
 // `bodyError` when the browser no longer holds it), and cmdSeq is the session
@@ -13,7 +13,11 @@
 // name: its arguments can hold typed secrets and stay out of this file.
 // cmdActive is false for a response that arrived between commands (a timer's
 // sync, a late load), which carries the last command sent; responses before the
-// first command carry cmdSeq null.
+// first command carry cmdSeq null. A /feed_post line also carries npcId, the
+// `npc_id` its request asked for, so the leak scanner can credit an answer whose
+// body was lost to the right NPC; it is left out when the request body is
+// missing, not JSON or names no NPC, or when the URL's query names an `npc_id`
+// too.
 //
 // Only responses from the game's own origin, with a JSON content type, count;
 // static files (/js/, /css/, /assets/, /stylesheets/) and redirects are skipped.
@@ -28,6 +32,26 @@ const fs = require('fs');
 const path = require('path');
 
 const STATIC_PATH_RE = /\/(js|css|assets|stylesheets)\//;
+
+/**
+ * The `npc_id` a /feed_post request asked for, or null. Never throws. Null when the URL's query
+ * names an `npc_id` too: Rails lets the query beat the body, so the body's id may not be the NPC
+ * the server revealed for.
+ */
+function feedPostNpcId(request, url = null) {
+  try {
+    // Rack splits the query on `;` as well as `&`, so look at the whole decoded query;
+    // over-matching only leaves the row untagged (the old rule)
+    if (url && decodeURIComponent(url.search).includes('npc_id')) return null;
+  } catch { return null; }
+  let data;
+  try { data = request.postData(); } catch { return null; }
+  if (typeof data !== 'string' || !data) return null;
+  let parsed;
+  try { parsed = JSON.parse(data); } catch { return null; }
+  const id = parsed && typeof parsed === 'object' ? parsed.npc_id : null;
+  return typeof id === 'string' && id.trim() ? id : null;
+}
 
 function isJsonContentType(headers) {
   const type = headers && (headers['content-type'] || headers['Content-Type']);
@@ -78,6 +102,10 @@ function createResponseCapture({ file, origin, now = () => new Date() }) {
     const snapshot = { t: now().toISOString(), cmdSeq: current.seq, cmd: current.cmd, cmdActive: current.active };
     let method = 'GET';
     try { method = response.request().method(); } catch { /* keep GET */ }
+    let npcId = null;
+    if (w.url.pathname.endsWith('/feed_post')) {
+      try { npcId = feedPostNpcId(response.request(), w.url); } catch { /* left out */ }
+    }
     // Start reading the body at once: a navigation can drop it later.
     const bodyP = Promise.resolve()
       .then(() => response.text())
@@ -87,6 +115,7 @@ function createResponseCapture({ file, origin, now = () => new Date() }) {
       const line = { n: ++count, t: snapshot.t, method, path: w.url.pathname, status: w.status,
                      cmdSeq: snapshot.cmdSeq, cmd: snapshot.cmd, cmdActive: snapshot.cmdActive };
       if (w.url.search) line.query = w.url.search.slice(1);
+      if (npcId) line.npcId = npcId;
       if (got.error !== undefined) {
         line.bodyError = got.error;
       } else {
@@ -103,4 +132,4 @@ function createResponseCapture({ file, origin, now = () => new Date() }) {
   return { onResponse, startCommand, endCommand, flush, get count() { return count; }, file };
 }
 
-module.exports = { createResponseCapture, isJsonContentType };
+module.exports = { createResponseCapture, isJsonContentType, feedPostNpcId };

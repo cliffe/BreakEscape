@@ -2,10 +2,9 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { applyActions } from '../../systems/apply-actions.js';
 import { resolveConditionalText } from '../../utils/conditional-text.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
 // Scenario text is plain text: escape it once before it goes into HTML
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 /**
  * ESD Pushbutton Minigame

@@ -22,7 +22,9 @@
   "globalVariables": {
     "logger_planted": false,
     "box_planted": false,
-    "ned_read": false
+    "ned_read": false,
+    "pair_grant": false,
+    "pair_wants_a": false
   },
 
   "objectives": [
@@ -80,6 +82,26 @@
   ],
 
   "timers": [
+    <%# Beat 6 (test only): two gives in one timer, the first skipped by its condition. A give
+        lost to the network is retried by the action it ran, so the retry gives B, never the
+        skipped A. Started by setting pair_grant from the test bridge; nothing sets pair_wants_a. %>
+    {
+      "id": "finding_pair",
+      "startOnGlobal": "pair_grant",
+      "delayMs": 300,
+      "actions": [
+        { "type": "give_item", "condition": "globalVars.pair_wants_a", "item": {
+            "id": "finding_pair_a", "type": "text_file", "name": "Finding: pair A (skipped)", "storeIn": "capture_log",
+            "readable": true, "takeable": true,
+            "text": "FINDING (test)\n\nThis one is skipped by its condition and should never arrive."
+        } },
+        { "type": "give_item", "item": {
+            "id": "finding_pair_b", "type": "text_file", "name": "Finding: pair B", "storeIn": "capture_log",
+            "readable": true, "takeable": true,
+            "text": "FINDING (test)\n\nThe second give of a pair whose first give was skipped."
+        } }
+      ]
+    },
     {
       "id": "finding_welcome",
       "delayMs": 2000,

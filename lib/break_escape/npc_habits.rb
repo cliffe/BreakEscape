@@ -201,7 +201,7 @@ module BreakEscape
       screen
     end
 
-    # Every gate door: { gate:, path:, room:, index:, connected_room:, direction:, open_for:,
+    # Every gate door: { gate:, path:, room:, connected_room:, direction:, open_for:,
     # doorway: }. `doors` that is not a list and a `gate` that is not an object are skipped; a
     # gate with enabled: false is not a gate (the client ignores it). An openFor string is a
     # one-item list, as the client reads it. `doorway` is doorway_problem for the entry: nil
@@ -218,7 +218,7 @@ module BreakEscape
           next if gate['enabled'] == false
 
           open_for = gate['openFor'].is_a?(Array) ? gate['openFor'].grep(String) : [gate['openFor']].grep(String)
-          out << { gate: gate, path: "rooms/#{room_id}/doors/#{i}", room: room_id, index: i,
+          out << { gate: gate, path: "rooms/#{room_id}/doors/#{i}", room: room_id,
                    connected_room: door['connectedRoom'], direction: door['direction'], open_for: open_for,
                    doorway: doorway_problem(room, i) }
         end
@@ -243,7 +243,11 @@ module BreakEscape
       dir = door['direction']
       target = door['connectedRoom']
       listed = room['connections'].is_a?(Hash) ? room['connections'][dir] : nil
-      listed = listed.is_a?(Array) ? listed : [listed]
+      # doors.js skips a falsy connections[dir] ("north": ""), so it builds no doorway
+      listed = if listed.is_a?(Array) then listed
+               elsif listed.nil? || listed == '' then []
+               else [listed]
+               end
       return :no_connection unless target.is_a?(String) && listed.include?(target)
 
       first = doors.index { |d| d.is_a?(Hash) && d['connectedRoom'] == target && d['direction'] == dir }

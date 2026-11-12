@@ -1,26 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { displayDashes } from '../../utils/display-dashes.js';
-
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
-));
-
-// Scenario text for this document is plain text with a small, deliberate
-// formatting set: character entities (&mdash; &rsquo; &#10003;) and the bare
-// tags <strong> <em> <b> <i> <br>, in any letter case. Everything is escaped
-// first, then only those exact forms are put back, so no other tag or any
-// attribute can get through. Tags are restored before entities, so an authored
-// &lt;b&gt; stays literal text, and only as matched pairs (one level of nesting),
-// so a stray or unclosed tag shows as text instead of restyling what follows.
-const AUTHOR_PAIR = /&lt;(strong|em|b|i)&gt;((?:(?!&lt;\/?(?:strong|em|b|i)&gt;)[\s\S])*?)&lt;\/\1&gt;/gi;
-function authorHtml(value) {
-    let html = escapeHtml(displayDashes(String(value ?? '')));
-    const pairs = (s) => s.replace(AUTHOR_PAIR, (m, tag, inner) => `<${tag.toLowerCase()}>${inner}</${tag.toLowerCase()}>`);
-    html = pairs(pairs(html));
-    return html
-        .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
-        .replace(/&amp;(#\d{1,7}|#x[0-9a-fA-F]{1,6}|[a-zA-Z][a-zA-Z0-9]{1,31});/g, '&$1;');
-}
+import { escapeHtml } from '../../utils/escape-html.js';
+// Author text keeps entities and bare <strong> <em> <b> <i> <br> (see utils/author-html.js).
+import { authorHtml } from '../../utils/author-html.js';
 
 /**
  * Coverage Decision Form Minigame
@@ -226,7 +207,8 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
             const quoteKey     = this._checked(quoteSection)?.value;
             const quote        = this._outcomeQuotes[quoteKey] || '';
             if (quote) {
-                outcomeText.textContent = displayDashes(quote);
+                // The same author formatting as the rest of the form (entities, bare tags)
+                outcomeText.innerHTML = authorHtml(quote);
                 outcomeNote.classList.add('visible');
             }
         }

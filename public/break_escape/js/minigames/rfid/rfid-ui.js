@@ -15,10 +15,9 @@
 
 import { getProtocolInfo, detectProtocol, getReadProfile } from './rfid-protocols.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
 // Result messages can name a card from the scenario: escaped once on the way into HTML.
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 /** Shown under "No keycards in inventory" on the Read screen. */
 export const NO_KEYCARDS_HINT = 'The cloner reads a badge at close range: one you hold, or one someone is carrying.';

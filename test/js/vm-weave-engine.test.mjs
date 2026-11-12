@@ -38,6 +38,7 @@ writeFileSync(join(root, 'package.json'), '{"type":"module"}');
 writeFileSync(join(mg, 'framework', 'base-minigame.js'), 'export class MinigameScene { constructor() {} }\n');
 writeFileSync(join(root, 'systems', 'apply-actions.js'), 'export function applyActions() {}\n');
 writeFileSync(join(root, 'utils', 'display-dashes.js'), 'export function displayDashes(s) { return s; }\n');
+writeFileSync(join(root, 'utils', 'escape-html.js'), readFileSync(join(js, 'utils/escape-html.js'), 'utf8'));
 writeFileSync(join(root, 'utils', 'flag-wording.js'), readFileSync(join(js, 'utils/flag-wording.js'), 'utf8'));
 writeFileSync(join(mg, 'flag-station', 'flag-station-minigame.js'),
     readFileSync(join(js, 'minigames/flag-station/flag-station-minigame.js'), 'utf8'));

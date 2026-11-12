@@ -36,6 +36,9 @@
  *                      auto_locked (a claimed session ended by the owner's return or the
  *                      screen's auto lock; these two also carry firstAtPc, true when the ended
  *                      session was the first sign-in at this PC)
+ *   pc_signing_out     { pcId, reason }                 a sign-out (sign_out, claim_ended, owner_returned
+ *                      or auto_locked) is sending POST /logout; its pc_signed_out follows the
+ *                      answer (q44: the workstation layer keeps a guest recorded meanwhile)
  *   pc_signin_failed   { pcId, reason, attemptsLeft }  reason: wrong | not_permitted | locked_out |
  *                                                      remote_blocked
  *   pc_signin_shown    { pcId, usernames, usernameList, reason? } the sign-in screen opened with
@@ -188,6 +191,7 @@ export class PcSessions {
         const api = apiClient();
         const done = () => this._emit('pc_signed_out', { pcId, npcId: s.npcId ?? null, reason: 'claim_ended' });
         if (api?.logout) {
+            this._emit('pc_signing_out', { pcId, reason: 'claim_ended' });
             Promise.resolve(api.logout(pcId)).catch(e => console.warn('[pc-sessions] logout of a claimed session failed', e)).then(done);
         } else {
             done();
@@ -353,6 +357,7 @@ export class PcSessions {
         this.sessions.delete(pcId);
         const api = apiClient();
         if (api?.logout) {
+            this._emit('pc_signing_out', { pcId, reason });
             try { await api.logout(pcId); } catch (e) { console.warn('[pc-sessions] logout of a claimed session failed', e); }
         }
         this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason, firstAtPc: !!previous.firstAtPc });
@@ -410,6 +415,7 @@ export class PcSessions {
         const api = apiClient();
         let ended = null;
         if (api?.logout) {
+            this._emit('pc_signing_out', { pcId, reason: 'sign_out' });
             try { ended = (await api.logout(pcId))?.endedPcIds || null; } catch (e) { console.warn('[pc-sessions] logout failed', e); }
         }
         this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'sign_out', ...this._remoteOf(previous) });

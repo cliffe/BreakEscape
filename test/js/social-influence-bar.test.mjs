@@ -20,7 +20,7 @@ for (const rel of ['ui/influence-bar.js', 'systems/social-influence.js', 'system
     'systems/npc-events.js', 'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'minigames/intel-board/intel-board-minigame.js', 'minigames/intel-board/board-model.js',
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
-    'utils/display-dashes.js', 'ui/modal-stack.js', 'systems/phish-rules.js']) {
+    'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js', 'systems/phish-rules.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }

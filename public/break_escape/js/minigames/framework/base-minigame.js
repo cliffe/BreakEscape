@@ -1,12 +1,11 @@
 import { displayDashes } from '../../utils/display-dashes.js';
+import { escapeHtml } from '../../utils/escape-html.js';
 
 // params.title and params.cancelText are plain text: they often come from scenario
 // object names, NPC names or server data, so they are escaped before they reach the
 // header HTML. No caller needs markup in a title, and there is deliberately no option
 // for an HTML title; a subclass that wants richer header content builds it with DOM
 // nodes after super.init().
-const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 // Base class for minigame scenes
 export class MinigameScene {
     constructor(container, params) {

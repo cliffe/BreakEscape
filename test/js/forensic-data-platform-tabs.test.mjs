@@ -17,7 +17,8 @@ globalThis.window = { gameState: { globalVariables: {} } };
 const base = dataUrl('export class MinigameScene { constructor(c, p) { this.container = c; this.params = p; } init() {} start() {} cleanup() {} }');
 let src = readFileSync(join(js, 'minigames/forensic-data-platform/forensic-data-platform-minigame.js'), 'utf8');
 src = src.split(`'../framework/base-minigame.js'`).join(`'${base}'`)
-         .split(`'../../utils/display-dashes.js'`).join(`'${dataUrl('export const displayDashes = (s) => s;')}'`);
+         .split(`'../../utils/display-dashes.js'`).join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
+         .split(`'../../utils/escape-html.js'`).join(`'${dataUrl(readFileSync(join(js, 'utils/escape-html.js'), 'utf8'))}'`);
 const { ForensicDataPlatformMinigame } = await import(dataUrl(src));
 
 // The sis03 scenario file, rendered just enough to parse: ERB tags out, // comment lines out.

@@ -219,7 +219,7 @@ test('a declined confirm changes nothing', async () => {
 
 // Review R1, M1: the defaults show every text as plain text (names and confirm texts are
 // author text, the message can be the server's)
-test('the default alert and confirm pass plainText, so a hostile name stays text', async () => {
+test('the default alert and confirm pass no html option (toasts are plain text by default), so a hostile name stays text', async () => {
     const { w, deps } = rig({ npcs: [person('tom', { displayName: '<img src=x onerror=alert(1)>' })] });
     delete deps.alert;
     delete deps.confirm;
@@ -230,10 +230,10 @@ test('the default alert and confirm pass plainText, so a hostile name stays text
     assert.equal(alerts.length, 1);
     assert.match(alerts[0][0], /<img src=x onerror=alert\(1\)> is watching/);
     assert.equal(alerts[0][2], 'Hi-vis vest');
-    assert.deepEqual(alerts[0][4], { plainText: true });
+    assert.equal(alerts[0][4], undefined, 'no options: plain text');
     w.npcManager.npcs.get('tom').roomId = 'hall';
     assert.equal(await W.putOn('vest', { confirm: true }, deps), true);
-    assert.deepEqual(confirms[0], ['Put it on?', 'Confirm', 'Cancel', { plainText: true }]);
+    assert.deepEqual(confirms[0], ['Put it on?', 'Confirm', 'Cancel']);
 });
 
 test('the server refusal message is shown as plain text', async () => {
@@ -242,7 +242,7 @@ test('the server refusal message is shown as plain text', async () => {
     const alerts = [];
     w.gameAlert = (...a) => alerts.push(a);
     assert.equal(await W.putOn('vest', {}, deps), false);
-    assert.deepEqual(alerts[0], ['Refused by server', 'warning', 'Hi-vis vest', 4000, { plainText: true }]);
+    assert.deepEqual(alerts[0], ['Refused by server', 'warning', 'Hi-vis vest', 4000]);
 });
 
 test('an NPC with no displayName is "someone", never its id', () => {
@@ -402,6 +402,8 @@ test('apply-actions routes wear and take_off to window.wearables, wear after the
     const dataUrl = (src) => 'data:text/javascript,' + encodeURIComponent(src);
     const src = readFileSync(join(js, 'systems/apply-actions.js'), 'utf8')
         .split("'../utils/display-dashes.js'").join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
+        .split("'../utils/escape-html.js'").join(`'${dataUrl('export const escapeHtml = (s) => String(s == null ? "" : s);')}'`)
+        .split("'../utils/author-html.js'").join(`'${dataUrl('export const authorHtml = (s) => String(s == null ? "" : s);')}'`)
         .split("'./global-writer.js'").join(`'${dataUrl('export function writeGlobal(){}')}'`)
         .split("'./social-intel.js'").join(`'${dataUrl('export function grantFact(){return{granted:false};} export function readyToastText(){return "";} export function readyToastTitle(){return "";}')}'`);
     writeFileSync(join(dir, 'systems', 'apply-actions.mjs'), src);
