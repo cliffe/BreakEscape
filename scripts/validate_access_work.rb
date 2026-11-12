@@ -89,6 +89,18 @@ module ValidateAccessWork
       err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no phoneOf) takes one.") if item.key?('site')
       # Review R1 m3: an NPC phone that is not takeable can never be given or picked up
       err(issues, "Friendface phone '#{name}' (#{owner}'s) is not \"takeable\": true, so it can never be given or picked up.") unless item['takeable'] == true
+      # Review R2 m2: the server hands an NPC's phone over only when its story or record offers it
+      # (the same patterns, AccessWork.offers_item_text?); otherwise only a KO drop does
+      if npcs.key?(owner) && !npc_offers_phone?(npcs[owner])
+        warn(issues, "Friendface phone '#{name}' (#{owner}'s): no give_item:#{FRIENDFACE_PHONE} and no give_npc_inventory_items that " \
+                     "includes it in #{owner}'s story or record, so only a KO drop hands this phone over.")
+      end
+    end
+    # Review R2 n4: the server resolves an add to the first item with a matching id, so two phones
+    # sharing an id would hand over the wrong one
+    all_objects(json_data).map { |o| o[:obj] }.select { |i| i['type'] == FRIENDFACE_PHONE && i['id'].is_a?(String) }
+                          .group_by { |i| i['id'] }.each do |id, list|
+      err(issues, "Friendface phone id '#{id}' is used by #{list.size} phones: each phone needs its own id.") if list.size > 1
     end
     npcs.each do |nid, npc|
       own = held_by[nid].select { |i| i['phoneOf'] == nid }
@@ -98,6 +110,21 @@ module ValidateAccessWork
       err(issues, "#{nid} posts from a phone (social_media need, a feed, no \"phone\": false) but holds no Friendface phone: " \
                   "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"phoneOf\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")
     end
+  end
+
+  REPO_ROOT = File.expand_path('..', __dir__)
+
+  # An NPC's offers, read as the server reads them (SocialFeed#npc_offers_item?): its record, then
+  # its compiled story, or the .ink source when there is no compiled file
+  def npc_offers_phone?(npc)
+    texts = AW.offer_texts(npc) { |story_path| story_file(story_path) }
+    texts.any? { |t| AW.offers_item_text?(t, FRIENDFACE_PHONE) }
+  end
+
+  def story_file(story_path)
+    base = File.expand_path(story_path, REPO_ROOT)
+    [base, base.sub(/\.json\z/, '.ink.json'), base.sub(/\.ink\.json\z/, '.json'), base.sub(/\.(ink\.)?json\z/, '.ink')]
+      .find { |f| File.file?(f) }
   end
 
   # ── shared walks ──────────────────────────────────────────────────────

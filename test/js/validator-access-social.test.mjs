@@ -54,7 +54,9 @@ function clean() {
                         { id: 'jake_post_1', text: 'Biscuit turns 5 today! Best boy.', fact: 'jake_pet_name' },
                         { id: 'jake_post_2', text: 'Back from Crete, three hundred emails waiting.' }
                     ] },
-                    itemsHeld: [{ type: 'phone_friendface', id: 'jake_phone', name: "Jake's phone", takeable: true, phoneOf: 'jake' }]
+                    itemsHeld: [{ type: 'phone_friendface', id: 'jake_phone', name: "Jake's phone", takeable: true, phoneOf: 'jake' }],
+                    // Jake offers his phone (review R2 m2): the give is in his record, as no story file is read here
+                    eventMappings: [{ eventPattern: 'global_variable_changed:lend_phone', action: 'give_item:phone_friendface' }]
                 }]
             }
         }
@@ -302,4 +304,28 @@ test('phone (review R1 m3, m4, n1): an NPC phone must be takeable and have an id
     s = clean(); s.rooms.lobby.objects.push({ type: 'phone', id: 'desk_phone', name: 'Desk phone', phoneOf: 'jake' });
     assertHas(warnings(issues(s)), "has phoneOf, which only a phone_friendface reads");
     assert.deepEqual(issues(clean()), []);
+});
+
+test('phone (review R2 m2): an NPC phone no give offers warns that only a KO drop hands it over', { skip }, () => {
+    const msg = 'only a KO drop hands this phone over';
+    let s = clean(); delete jake(s).eventMappings;
+    assertHas(warnings(issues(s)), msg);
+    // A give_npc_inventory_items that filters the phone out is no offer; one that names it, or no filter, is
+    s = clean(); jake(s).eventMappings[0].action = 'give_npc_inventory_items:keycard';
+    assertHas(warnings(issues(s)), msg);
+    s = clean(); jake(s).eventMappings[0].action = 'give_npc_inventory_items:keycard,phone_friendface';
+    assertLacks(issues(s), msg);
+    s = clean(); jake(s).eventMappings[0].action = 'give_npc_inventory_items';
+    assertLacks(issues(s), msg);
+    // The story is read too: the test scenario's Jake gives his phone in his ink
+    s = clean(); delete jake(s).eventMappings; jake(s).storyPath = 'scenarios/test_access_social/ink/jake.json';
+    assertLacks(issues(s), msg);
+    s = clean(); delete jake(s).eventMappings; jake(s).storyPath = 'scenarios/test_access_social/ink/staff.json';
+    assertHas(warnings(issues(s)), msg);
+});
+
+test('phone (review R2 n4): two Friendface phones sharing an id are an error', { skip }, () => {
+    const s = clean();
+    s.rooms.lobby.objects.push({ type: 'phone_friendface', id: 'jake_phone', name: 'Your phone', takeable: true });
+    assertHas(errors(issues(s)), "Friendface phone id 'jake_phone' is used by 2 phones");
 });
