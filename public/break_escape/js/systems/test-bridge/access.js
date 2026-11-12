@@ -21,7 +21,8 @@
  *                       borrowLockoutSeen (the same PCs for the borrow path, which a station
  *                       "no" leaves alone) and borrowCleared (`pcId|npcId` keys of borrowers
  *                       whose "no" cleared the mark for them)
- *   feed()              slice 9.2 C: revealed feed post ids by NPC, done NPCs, request count
+ *   feed()              slice 9.2 C: revealed feed post ids by NPC, done NPCs, request count;
+ *                       C3: threads, { postId: [replyId, ...] } oldest first
  *   guest(pcId)         slice 9.2 H: the guest a borrower left at a hot desk ({ npcId, lockAt }),
  *                       who is using the PC now, and the NPC's pending borrow, if any
  *
@@ -75,8 +76,19 @@ export const accessBridge = {
      */
     feed() {
         const f = window.socialFeed;
-        if (!f) return { revealed: {}, done: [], requests: 0 };
-        return json({ revealed: f.revealed(), done: [...f.done].sort(), requests: f.requests });
+        if (!f) return { revealed: {}, done: [], requests: 0, threads: {} };
+        // C3: { postId: [replyId, ...] } in thread order, for every revealed post with replies.
+        // A null-prototype object, so no post id can reach a prototype key before json() copies it.
+        const threads = Object.create(null);
+        if (typeof f.repliesFor === 'function') {
+            for (const ids of Object.values(f.revealed())) {
+                for (const id of ids) {
+                    const replies = f.repliesFor(id);
+                    if (replies.length) threads[id] = replies.map((r) => r.post.id);
+                }
+            }
+        }
+        return json({ revealed: f.revealed(), done: [...f.done].sort(), requests: f.requests, threads });
     },
 
     /**

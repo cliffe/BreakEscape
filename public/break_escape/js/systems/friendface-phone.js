@@ -17,7 +17,7 @@
  *
  * The blip (plan section 5): `npc_posted:<npcId>` fires only for a post a /feed_post answer
  * revealed (social-feed.js; never on restore, so never on reload). For each held phone it
- * concerns (the player's own: every post; an NPC's: that NPC's) the unread count goes up and is
+ * concerns (the player's own: every post; an NPC's: that NPC's, and a reply into its thread) the unread count goes up and is
  * drawn as the tray badge; phone_vibrate plays once. While a person-chat or a full-screen minigame
  * is open (the bark hold), the sound waits and plays once when the hold ends. Opening a phone
  * clears its count. Counts are not saved.
@@ -60,14 +60,22 @@ export class FriendfacePhones {
         return isFriendfacePhone(data) ? (this.unread.get(phoneKey(data)) || 0) : 0;
     }
 
-    /** A live post revealed by the server: count it on each held phone it concerns, blip once. */
+    /**
+     * A live post revealed by the server: count it on each held phone it concerns, blip once. C3: a
+     * reply also concerns its thread poster's phone (replyToNpc), since its thread shows it; an
+     * answer (replier and poster the same NPC) and the player's own phone count once each.
+     */
     onPosted(data) {
         const npcId = data?.npcId;
         if (!isStr(npcId)) return false;
+        const owners = new Set([npcId]);
+        if (isStr(data?.replyTo) && isStr(data?.replyToNpc)) owners.add(data.replyToNpc);
+        const counted = new Set();
         let hit = false;
         for (const phone of this._held()) {
             const key = phoneKey(phone);
-            if (key !== OWN && key !== npcId) continue;
+            if (counted.has(key) || (key !== OWN && !owners.has(key))) continue;
+            counted.add(key);
             this.unread.set(key, (this.unread.get(key) || 0) + 1);
             hit = true;
         }
