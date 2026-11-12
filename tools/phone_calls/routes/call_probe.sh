@@ -20,10 +20,12 @@ fi
 for i in $(seq 1 $WAIT); do
   T=$($S $GID '{"cmd":"brief"}' 20 | jq -r '.result.activeMinigame.id // empty' 2>/dev/null)
   [ "$T" = "phone-chat" ] || [ "$T" = "person-chat" -a -n "$WANT_PERSON" ] && break
+  # UNTIL_TTS='regex': stop when a /tts request text (after the emit) matches; for calls that run on while the briefing plays
+  [ -n "$UNTIL_TTS" ] && jq -r '"\(.npc_id) \(.text)"' "$OUT/${LABEL}_tts.jsonl" 2>/dev/null | grep -Eq "$UNTIL_TTS" && T=tts && break
   sleep 1
 done
 echo "game $GID minigame=$T after ${i}s"
-sleep 8
+sleep "${SHOT_DELAY:-8}"
 $S $GID "{\"cmd\":\"screenshot\",\"path\":\"$OUT/${LABEL}.png\"}" >/dev/null
 $S $GID '{"cmd":"mg","action":"getState"}' 20 | jq '.result | {id,title,text}' > "$OUT/${LABEL}_state.json"
 echo "$GID" > "$OUT/${LABEL}_game_id.txt"
