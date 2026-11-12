@@ -44,7 +44,26 @@
     flex: 0 0 auto;
     aspect-ratio: 16 / 10;
     max-height: calc(100vh - 440px);
-    min-height: 240px;
+    /* The floor never rises above the budget (code review R2 m3): a fixed 240px pushed the
+       monitor under the Close row in a window under about 660px tall (a 1366x768 laptop
+       with its browser bars). 140px is the last resort for a very short window. */
+    min-height: min(240px, max(140px, calc(100vh - 440px)));
+}
+
+/* A short window (a laptop with browser bars): a thinner bezel and taskbar give the
+   screen back about 40px of height. Borders stay at their pixel widths. */
+@media (max-height: 700px) {
+    .container-minigame.desktop-mode .container-monitor-bezel {
+        padding: 12px;
+    }
+    .container-minigame.desktop-mode .desktop-taskbar {
+        padding: 6px 20px;
+        min-height: 36px;
+    }
+    .container-minigame.desktop-mode .desktop-background {
+        max-height: calc(100vh - 400px);
+        min-height: min(240px, max(140px, calc(100vh - 400px)));
+    }
 }
 
 /* Monitor bezel for desktop containers */
