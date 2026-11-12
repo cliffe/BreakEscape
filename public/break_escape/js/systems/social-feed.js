@@ -91,7 +91,7 @@ export const MAX_WAIT_S = 2147483;
 
 export class SocialFeed {
     /**
-     * deps: { send(npcId) -> Promise<body>, hasFeed(npcId), mergeFact(id, entry), emit(name, data),
+     * deps: { send(npcId, source) -> Promise<body>, hasFeed(npcId), mergeFact(id, entry), emit(name, data),
      *         toast(message, title), siteVisited(siteId), toastsOn(), npcName(npcId), siteName(siteId),
      *         later(fn, ms) (optional; setTimeout) }
      */
@@ -113,19 +113,24 @@ export class SocialFeed {
      * count is above the posts this client holds means the lost request revealed this use's
      * post (listed after a reload), so the use stops there and never reveals a second.
      */
-    onUse(npcId) {
+    onUse(npcId, source = null) {
         if (!isStr(npcId) || this.done.has(npcId) || this.inFlight.has(npcId) || this.retrying.has(npcId)) return null;
         if (!this.deps.hasFeed?.(npcId)) return null;
-        return this._ask(npcId, MAX_TRIES - 1, false);
+        return this._ask(npcId, MAX_TRIES - 1, false, isStr(source) ? source : null);
     }
 
-    /** One request; `retriesLeft` more may follow for the same use; `lost`: an earlier ask of this use failed in the network. */
-    _ask(npcId, retriesLeft, lost) {
+    /**
+     * One request; `retriesLeft` more may follow for the same use; `lost`: an earlier ask of this
+     * use failed in the network. `source` is the object the use was at, null for the phone (user
+     * decision q33: the server refuses a post from a PC the NPC is locked out at, `refused: true`,
+     * which is not asked again).
+     */
+    _ask(npcId, retriesLeft, lost, source = null) {
         this.inFlight.add(npcId);
         this.requests++;
         let retryIn = null;
         return Promise.resolve()
-            .then(() => this.deps.send(npcId))
+            .then(() => this.deps.send(npcId, source))
             .then((body) => {
                 this.apply(npcId, body);
                 const wait = Number(body?.retryAfter);
@@ -148,7 +153,7 @@ export class SocialFeed {
                     const later = this.deps.later || ((fn, ms) => setTimeout(fn, ms));
                     later(() => {
                         this.retrying.delete(npcId);
-                        if (!this.done.has(npcId)) this._ask(npcId, retriesLeft - 1, lost);
+                        if (!this.done.has(npcId)) this._ask(npcId, retriesLeft - 1, lost, source);
                     }, retryIn * 1000);
                 }
             });
@@ -225,7 +230,7 @@ export class SocialFeed {
 export function liveDeps(api, w) {
     const osint = () => w.gameScenario?.social?.osint || {};
     return {
-        send: (npcId) => (typeof api?.feedPost === 'function' ? api.feedPost(npcId) : api.post('/feed_post', { npc_id: npcId })),
+        send: (npcId, source = null) => (typeof api?.feedPost === 'function' ? api.feedPost(npcId, source) : api.post('/feed_post', { npc_id: npcId, object_id: source })),
         hasFeed: (npcId) => !!(w.npcManager?.getNPC?.(npcId) || w.npcManager?.npcs?.get?.(npcId))?.hasFeed,
         mergeFact(id, entry) {
             const sc = w.gameScenario;
@@ -265,10 +270,10 @@ export function installSocialFeed(api, feedPosts = null) {
     w.socialFeed = feed;
     feed.restore(feedPosts);
     w.eventDispatcher?.on?.('npc_used:*', (data) => {
-        if (data && data.need === 'social_media' && data.met === true) feed.onUse(data.npcId);
+        if (data && data.need === 'social_media' && data.met === true) feed.onUse(data.npcId, data.objectId);
     });
     w.eventDispatcher?.on?.('npc_used_phone:*', (data) => {
-        if (data && data.need === 'social_media') feed.onUse(data.npcId);
+        if (data && data.need === 'social_media') feed.onUse(data.npcId, null);
     });
     return feed;
 }

@@ -2081,9 +2081,15 @@ export class NPCNeedsSystem {
      * `"phone": false`; 5, the own workstation under a policy that blocks it, an attempt that
      * fails. The own workstation is a source whatever its affordance says (a use there takes
      * socialUse's time and restores), as AccessWork.social_station? says on the server.
+     * User decision q33: a station the NPC is flagged locked out at (sub-slice L) is unusable for
+     * social media as for work, so it is passed over like a blocked one (to the next source and
+     * the phone) and, with no phone, is the attempt that fails. A borrowed PC it is flagged
+     * locked out at is never used either.
      */
     _socialCandidate(s, objects, pos, excludeId) {
-        if (s.borrow && s.borrow.need === 'social_media') return this._useCandidate(s, 'social_media', objects, pos, excludeId);
+        if (s.borrow && s.borrow.need === 'social_media' && !s.lockedOut.has(s.borrow.pcId)) {
+            return this._useCandidate(s, 'social_media', objects, pos, excludeId);
+        }
         const stId = this._stationId(s);
         let station = null;
         const others = [];
@@ -2093,7 +2099,7 @@ export class NPCNeedsSystem {
                 station = { ...o, affordance: { ...aff, satisfies: [...new Set([...asList(aff.satisfies), 'social_media'])] } };
             } else others.push(o);
         }
-        const blocked = !!station?.socialBlocked;
+        const blocked = !!station?.socialBlocked || (!!station && s.lockedOut.has(stId));
         let cand = this._useCandidate(s, 'social_media', station && !blocked ? [station, ...others] : others, pos, excludeId);
         if (cand) return cand;
         if (this._rec(s).phone !== false) {
@@ -3110,9 +3116,20 @@ export class NPCNeedsSystem {
             // Access 9.2 H (6.4): at a borrowed PC the verdict runs with that PC's routes
             v = (job.borrowed ? this.world.useVerdict(id, job.need, obj, job.borrow?.routes || null) : this.world.useVerdict(id, job.need, obj)) || { met: true };
         }
-        // Access 9.2 L (6.6): a station failure, first in the list (5.2); work only (a lockout at a
-        // social_media station never refuses: L exempts it, and C keeps that), and never at a borrowed PC (per PC)
-        if (atStation && job.need === 'work' && s.lockedOut.has(job.targetId)) {
+        // Access 9.2 L (6.6): a station failure, first in the list (5.2), never at a borrowed PC
+        // (per PC). User decision q33: social media too, since a lockout stops every use of the PC.
+        // An NPC with a phone never fails social media (8.1): a use that reaches a locked station
+        // (flagged while it was on its way, or by the check it waited for) is dropped unjudged,
+        // like a lapse, and the next choice passes the station over for the phone
+        if (atStation && job.need === 'social_media' && s.lockedOut.has(job.targetId) && this._rec(s).phone !== false) {
+            this._log(id, 'use_dropped_locked_out', { target: job.targetId, need: job.need });
+            const stayPut = s.atPost && this._atOwnPost(s);
+            s.job = null;
+            this._clearBackoffs();
+            this._goHome(s, { stayPut });
+            return;
+        }
+        if (atStation && (job.need === 'work' || job.need === 'social_media') && s.lockedOut.has(job.targetId)) {
             const rest = (Array.isArray(v.missing) ? v.missing : []).filter(c => c && c.why !== 'locked_out');
             v = { met: false, missing: [{ id: job.targetId, why: 'locked_out' }, ...rest], station: true };
         }

@@ -135,8 +135,9 @@ export class ApiClient {
 
   // Slice 9.2 C (plan 8.3): an NPC's next social media post, after a met use. Answers
   // { index, post, fact: { id, entry } | null, site, person, done } or { post: null, done }.
-  static async feedPost(npcId) {
-    return this.post('/feed_post', { npc_id: npcId });
+  // `objectId`: where the use was, null for the NPC's phone (user decision q33)
+  static async feedPost(npcId, objectId = null) {
+    return this.post('/feed_post', { npc_id: npcId, object_id: typeof objectId === 'string' ? objectId : null });
   }
 
   // Sign in at a sign-in PC (access model 5.3, 6). `fields` is { username, password }
