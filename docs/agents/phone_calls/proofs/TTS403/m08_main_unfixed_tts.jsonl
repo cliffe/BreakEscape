@@ -1,0 +1,34 @@
+{"t":1794460163144,"npc_id":"narrator","text":"SAFETYNET headquarters, the Citadel. Every badge reader blinks red. Nobody looks at the person at the next desk.","delivery":null,"status":200}
+{"t":1794460163474,"npc_id":"opening_briefing_cutscene","text":"Welcome back, Agent 0x00. Security posture is Level Red. I have logged your entry, your route, and the precise time you crossed the threshold. Everyone's, actually. It's rather the point.","delivery":null,"status":200}
+{"t":1794460163771,"npc_id":"opening_briefing_cutscene","text":"I have also logged your kit. One pick set, one RFID cloner, one fingerprint kit.","delivery":null,"status":200}
+{"t":1794460164042,"npc_id":"opening_briefing_cutscene","text":"The PIN device you are thinking of is still signed out to Agent 0x47, Nightshade, as it has been since St. Catherine's.","delivery":null,"status":200}
+{"t":1794460164324,"npc_id":"opening_briefing_cutscene","text":"Read nothing into it. Vector has a hardware token out tonight, and Phantom a travel pack. Everyone on the planning list keeps something they shouldn't.","delivery":null,"status":503}
+{"t":1794460164576,"npc_id":"opening_briefing_cutscene","text":"You are wondering what happened here. Portland happened. Four sites in one night, one team to send, and an enemy who had the deployment before we did.","delivery":null,"status":503}
+{"t":1794460164843,"npc_id":"opening_briefing_cutscene","text":"The leak came from inside this building. Director Netherton has three names, and one of them got two of your colleagues killed.","delivery":null,"status":503}
+{"t":1794460165108,"npc_id":"opening_briefing_cutscene","text":"A word of advice, from the only voice here with no stake in the outcome. The moment they know you are hunting, they vanish. Be quiet. Be quick.","delivery":null,"status":503}
+{"t":1794460165377,"npc_id":"opening_briefing_cutscene","text":"The Director's office is north of this lobby. Do try not to trust anyone on the way.","delivery":null,"status":503}
+{"t":1794460166104,"npc_id":"narrator","text":"Netherton finds you in the corridor. He looks older than he did at the briefing a few hours ago. Your phone buzzes once: HaX.","delivery":null,"status":503}
+{"t":1794460166182,"npc_id":"agent_0x99","text":"He said it to you? Afterwards, not during. I was taught that line, and I say it to every agent I run.","delivery":null,"status":403}
+{"t":1794460166467,"npc_id":"agent_0x99","text":"Same classroom, 0x00. Don't ask me whose yet.","delivery":null,"status":403}
+{"t":1794460166759,"npc_id":"closing_debrief","text":"It's done, then. Agent 0x47. Nightshade.","delivery":null,"status":503}
+{"t":1794460167024,"npc_id":"closing_debrief","text":"A year ago Dr Okafor put a warning about him on my desk. Ideological drift, she called it.","delivery":null,"status":503}
+{"t":1794460167292,"npc_id":"closing_debrief","text":"I read it, and I sealed it. He was the best planner I had, and I did not want it to be true.","delivery":null,"status":503}
+{"t":1794460167556,"npc_id":"closing_debrief","text":"Two of ours are dead in the space between what I knew and what I did.","delivery":null,"status":503}
+{"t":1794460167844,"npc_id":"closing_debrief","text":"Say it, Agent. Whatever you think of me tonight. I would rather hear it than watch you swallow it.","delivery":null,"status":503}
+{"t":1794460168669,"npc_id":"closing_debrief","text":"Kinder than I would be. I shall carry it regardless. Thank you.","delivery":null,"status":503}
+{"t":1794460169474,"npc_id":"closing_debrief","text":"And kept credentials in its history for anyone patient enough to read it, and a sudo rule that handed you the rest. That will be in my report as well.","delivery":null,"status":503}
+{"t":1794460169738,"npc_id":"closing_debrief","text":"And no deal. He goes to the police with every page of the case file, and a court hears what he did.","delivery":null,"status":503}
+{"t":1794460170009,"npc_id":"closing_debrief","text":"We have no claim on him after that, and we will not pretend to one.","delivery":null,"status":503}
+{"t":1794460170275,"npc_id":"closing_debrief","text":"It buys us not one scrap of intelligence, and I do not care. Some lines you hold because they are the line.","delivery":null,"status":503}
+{"t":1794460171109,"npc_id":"closing_debrief","text":"Training. His own, fifteen years ago. They took a tired young idealist and they waited.","delivery":null,"status":503}
+{"t":1794460171374,"npc_id":"closing_debrief","text":"There may be others in this service, recruited the same way and still waiting.","delivery":null,"status":503}
+{"t":1794460171639,"npc_id":"closing_debrief","text":"I shall spend the rest of my career reading our own files.","delivery":null,"status":503}
+{"t":1794460172440,"npc_id":"narrator","text":"He is quiet for a moment.","delivery":null,"status":503}
+{"t":1794460172724,"npc_id":"closing_debrief","text":"Then whoever taught her taught him. There are not many people left who could have done both, and I do not like any of the names.","delivery":null,"status":503}
+{"t":1794460172992,"npc_id":"closing_debrief","text":"We will not say one aloud until we can prove it.","delivery":null,"status":503}
+{"t":1794460173791,"npc_id":"closing_debrief","text":"Now we find where the database went. We have a name from the vault, Tomb Gamma, and no coordinate.","delivery":null,"status":503}
+{"t":1794460174062,"npc_id":"closing_debrief","text":"He has it in his head, and the police will not be asking him for it. I will put the question to him before they do.","delivery":null,"status":503}
+{"t":1794460174323,"npc_id":"closing_debrief","text":"Take your seventy-two hours. We are not finished until we have that coordinate.","delivery":null,"status":503}
+{"t":1794460175114,"npc_id":"narrator","text":"Netherton stops at the door.","delivery":null,"status":200}
+{"t":1794460175375,"npc_id":"closing_debrief","text":"They spent fifteen years turning one of ours into a weapon and pointing it at the rest of us. Tonight you took it off them.","delivery":null,"status":503}
+{"t":1794460175642,"npc_id":"closing_debrief","text":"Go home. Sleep if the building will let you.","delivery":null,"status":503}

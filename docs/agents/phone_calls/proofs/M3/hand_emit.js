@@ -1,0 +1,1 @@
+ window.gameState.globalVariables['identity_scene_done'] = true; window.gameState.globalVariables['flag3_submitted'] = true; window.gameState.globalVariables['flag4_submitted'] = true; window.eventDispatcher.emit('global_variable_changed:flag4_submitted', {name:'flag4_submitted', value:true}); return true;
