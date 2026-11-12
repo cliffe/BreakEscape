@@ -222,5 +222,138 @@ module BreakEscape
       post reset_game_url(@game), as: :json
       assert_equal({}, @game.reload.player_state['feedRevealed'] || {})
     end
+
+    # ── sub-slice C2: reactive posts chosen by the server ──────────────────
+
+    VENT_TEXT = 'Server down again, second time this week on the finance share.'.freeze
+    VENT_FACT_TEXT = 'Jake Brooks keeps the finance backups on a personal drive.'.freeze
+
+    # jake gains a work need on `srv` (downIf srv_down) and a reactive vent post. `order` sets the
+    # feed order; the three ordered posts of AccessSocialScenario stay.
+    def reactive_scenario(order: 'reactive_first')
+      data = AccessSocialScenario.scenario
+      data['resources'] = { 'srv' => { 'kind' => 'file_share', 'name' => 'Finance share', 'downIf' => 'srv_down' } }
+      data['globalVariables'] = { 'srv_down' => false }
+      data['social']['intelFacts']['jake_vent_fact'] =
+        { 'label' => 'Backups', 'subject' => 'jake', 'text' => VENT_FACT_TEXT }
+      jake = data['rooms']['office']['npcs'][0]
+      jake['needs'] = jake['needs'].merge('work' => { 'decayPerMin' => 40, 'urgentAt' => 50, 'initial' => 60 })
+      jake['workNeeds'] = ['srv']
+      jake['feed']['order'] = order
+      jake['feed']['posts'] << { 'id' => 'jake_vent', 'text' => VENT_TEXT, 'fact' => 'jake_vent_fact',
+                                 'when' => { 'cause' => 'down', 'need' => 'work' } }
+      data
+    end
+
+    # make jake's reactive `cause: down` condition hold: the resource is down and he has failed at it
+    def arm_outage!
+      @game.reload
+      @game.player_state['globalVariables'] = { 'srv_down' => true }
+      @game.player_state['npcFrustration'] = { 'jake' => { 'level' => 30, 'failWhy' => { 'work' => ['down'] },
+                                                          'failAt' => { 'work' => 1.0 }, 'easeAt' => {},
+                                                          'done' => [], 'lastSpent' => {}, 'lockedOut' => [] } }
+      @game.save!
+    end
+
+    test 'C2: a reactive post is served only once its condition holds (reactive_first)' do
+      build(scenario: reactive_scenario)
+      # condition not armed: the ordered post comes out, the vent is held back
+      a = ask('jake')
+      assert_equal 'jake_post_1', a.dig('post', 'id')
+      refute_includes response.body, VENT_TEXT
+
+      # a fresh game with the outage armed serves the vent ahead of the ordered stream
+      build(scenario: reactive_scenario)
+      arm_outage!
+      b = ask('jake')
+      assert_equal 'jake_vent', b.dig('post', 'id')
+      assert_equal VENT_TEXT, b.dig('post', 'text')
+      assert_equal 'jake_vent_fact', b.dig('fact', 'id')
+      assert_equal VENT_FACT_TEXT, b.dig('fact', 'entry', 'text')
+      assert_equal 0, b['index']
+      assert_equal ['jake_vent'], @game.reload.player_state.dig('feedRevealed', 'jake', 'shown')
+    end
+
+    test 'C2: a feed with an un-triggered reachable reactive post keeps done false and a null serve writes nothing' do
+      build(scenario: reactive_scenario(order: 'facts_first'))
+      t = Time.current
+      # drain the three ordered posts (srv_down false, so the vent never fires)
+      3.times { |i| travel_to(t + (i * (FLOOR + 1))) { ask('jake') } }
+      shown = @game.reload.player_state.dig('feedRevealed', 'jake', 'shown')
+      assert_equal %w[jake_post_1 jake_post_2 jake_post_3], shown
+      # the reactive vent is unshown and still reachable: done stays false, nothing served, no write
+      c = travel_to(t + (3 * (FLOOR + 1))) { ask('jake') }
+      assert_equal({ 'npcId' => 'jake', 'post' => nil, 'done' => false }, c)
+      assert_equal shown, @game.reload.player_state.dig('feedRevealed', 'jake', 'shown')
+      refute_includes response.body, VENT_TEXT
+    end
+
+    test 'C2: the pace floor still bites for a reactive serve, and tooSoon carries no reactive text' do
+      build(scenario: reactive_scenario)
+      arm_outage!
+      t = Time.current
+      travel_to(t) { ask('jake') } # serves jake_vent
+      a = travel_to(t + FLOOR - 2) { ask('jake') }
+      assert_equal true, a['tooSoon']
+      assert_nil a['post']
+      assert_equal 1, a['revealed']
+      refute_includes response.body, VENT_TEXT # the next ordered post text is not leaked either
+    end
+
+    test 'C2: feed_posts_for_client lists an out-of-order reactive post in reveal order with no nil error' do
+      build(scenario: reactive_scenario)
+      # the server served the reactive post first, then an ordered one (reveal order, not authored)
+      @game.reload
+      @game.player_state['feedRevealed'] = { 'jake' => { 'shown' => %w[jake_vent jake_post_1], 'at' => Time.current.to_f } }
+      @game.save!
+      arm_outage! # keep the condition live so nothing is treated as dead; shown is kept from above
+      @game.reload
+      @game.player_state['feedRevealed'] = { 'jake' => { 'shown' => %w[jake_vent jake_post_1], 'at' => Time.current.to_f } }
+      @game.save!
+      fp = JSON.parse(scenario_body)['feedPosts']['jake']
+      assert_equal %w[jake_vent jake_post_1], fp['posts'].map { |p| p.dig('post', 'id') }
+      assert_equal [0, 1], fp['posts'].map { |p| p['index'] }
+      assert_equal false, fp['done']
+    end
+
+    test 'C2: a C-shape { n, at } entry migrates through reveal_feed_post! and feed_posts_for_client with no nil error' do
+      build(scenario: reactive_scenario(order: 'facts_first'))
+      at = Time.current.to_f - 1000
+      @game.reload
+      @game.player_state['feedRevealed'] = { 'jake' => { 'n' => 1, 'at' => at } }
+      @game.save!
+      # GET /scenario renders the first ordered post from the legacy count without a nil error
+      fp = JSON.parse(scenario_body)['feedPosts']['jake']
+      assert_equal ['jake_post_1'], fp['posts'].map { |p| p.dig('post', 'id') }
+      # the next /feed_post serves the second ordered post and rewrites the record in the new shape
+      b = ask('jake')
+      assert_equal 'jake_post_2', b.dig('post', 'id')
+      assert_equal %w[jake_post_1 jake_post_2], @game.reload.player_state.dig('feedRevealed', 'jake', 'shown')
+    end
+
+    test 'C2 tampered: a reactive condition that does not hold yields no reactive post, and no text anywhere until served' do
+      build(scenario: reactive_scenario)
+      secrets = [VENT_TEXT, VENT_FACT_TEXT]
+      # before any serve, the vent and its fact are in no response and not keyed in intelFacts
+      bodies = [scenario_body, room_body, room_body('lobby')]
+      bodies.each do |b|
+        secrets.each { |s| refute_includes b, s }
+        assert_empty keyed_with_text(JSON.parse(b), ['jake_vent_fact'])
+      end
+      # a use with the condition unarmed serves the ordered post, never the vent
+      a = ask('jake')
+      assert_equal 'jake_post_1', a.dig('post', 'id')
+      secrets.each { |s| refute_includes response.body, s }
+    end
+
+    test 'C2 tampered: extra request fields cannot force a reactive post' do
+      build(scenario: reactive_scenario)
+      # the client forges condition inputs; the route reads only npc_id, so the vent stays held
+      post feed_post_game_url(@game), params: { npc_id: 'jake', cause: 'down', when: { cause: 'down' },
+                                               force: true, srv_down: true }, as: :json
+      body = response.parsed_body
+      assert_equal 'jake_post_1', body.dig('post', 'id')
+      refute_includes response.body, VENT_TEXT
+    end
   end
 end
