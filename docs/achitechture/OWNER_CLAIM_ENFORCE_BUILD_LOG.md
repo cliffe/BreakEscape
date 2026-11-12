@@ -212,10 +212,12 @@ files, prepared each as the server does at game creation (`Game#prepare_scenario
 access-model normalising, id stamping, habits expansion), and for every sign-in PC whose owner is
 tracked, holds an account, is admitted by the PC's access list and whose screen does not always
 lock, called `leave_route` as authored and with attacks forced off. 176 rendered, none failed. 18
-claimable PCs, the same 18 as the review. Only `test_access_habits noor_pc` returns nil. Routes:
-`lab_physical_pentest staff_pc_2`, `test_capture_log mel_pc` and `test_access_habits` dana, kai and
-lena by a need; the six `test_access_sessions` owners and the six `test_access_social` and
-`test_access_work` owners by a knock-out (for each, the PC's lock field or the owner's habit can
+PCs passed those checks, but this sweep left out the policy check: `test_access_habits kai_pc` and
+`test_access_sessions priya_pc` are under `autoLockMin: 0`, so claim check 7 refuses them first
+(corrected in R2: 16 claimable PCs). Only `test_access_habits noor_pc` returns nil. Routes:
+`lab_physical_pentest staff_pc_2`, `test_capture_log mel_pc` and `test_access_habits` dana and
+lena by a need (kai too, though check 7 refuses kai_pc); the `test_access_sessions` owners and the
+six `test_access_social` and `test_access_work` owners by a knock-out (for each, the PC's lock field or the owner's habit can
 leave it open after a leave with no estimate), with a coffee need or a failure route behind it. `check_access_model` over all 176 gives the
 never-leaves warning for `noor_pc` only, beside the older untracked-owner warning for
 `test_access_work pat_pc`.
@@ -239,4 +241,121 @@ need routes; noor is refused as before).
 - `948a239ef` R1 fixes
 - `8c4b726db` merge of `main`
 - `246d995b0` validator judges the prepared data
+- this log
+
+## R2 fixes
+
+Review: `OWNER_CLAIM_ENFORCE_CODE_REVIEW_R2.md` (commit `8b4687830`). The rule stays q78: refuse a
+claim only where honest play could never leave the screen open, and never refuse an honest one.
+The mirror of the client's leave routes missed a route in R1 and again in R2, so the design now
+leans further towards allowing: behind the precise routes there is a cautious layer, and a claim
+is refused only when the owner has no movement source at all.
+
+### Fixes
+
+- **B1, droppable objects.** An object with `droppable: true` is treated as having no room for the
+  leash test, both as a need source and as an interest's accepting place: `item-drop.js` copies
+  its affordance to wherever the player puts it down. The private-owner test still applies.
+- **B2, social media at the own station.** `prints?` counts the owner's own hook on their
+  `needsHome` as used when the owner has a valid `social_media` need, since `_socialCandidate`
+  adds `social_media` to the station's `satisfies` and that use prints.
+- **The cautious layer.** `OwnerClaim.leave_route` is now `precise_route` (the R1 routes plus B1
+  and B2), then `might_leave`, which returns `might:<feature>` for the first movement source on
+  the owner that the precise layer does not model exactly (table below). The owner's ink is read
+  for this: the server passes a reader that finds the story as `GamesController#ink` does
+  (`InkStoryFile`, not compiled) and reads both the compiled JSON and the `.ink` source; the
+  validator uses `OwnerClaim.default_story_text`, which reads only `.json` paths under
+  `scenarios/`, symlinks resolved. A story that cannot be read counts as no movement: the client
+  is served the same file and cannot run what the server cannot read. A story is read only when
+  no precise route exists, so most claims read no file.
+- **m1 and m2, left as they are.** Narrowing `answersPhones` to a colleague's phone in the home room
+  (m1), or a print to a producer with reveal slots and no forget (m2), could change no outcome:
+  the cautious layer allows every owner with `answersPhones: true`, a `printHabit` or a print
+  command anyway. Both still count leaves that may never happen, which is the safe side.
+- **n1, the PC count.** Corrected in the R1 sweep paragraph above: 16 claimable PCs; check 7
+  refuses `kai_pc` and `priya_pc` first.
+- **n4, the validator warning.** It now fires only where check 10 is the reason: the owner holds an
+  account and is admitted by the PC's access list (as `Game#pc_admits_account?` reads it), the
+  screen does not always lock, and the policy does not have `autoLockMin: 0`. The warning text
+  lists the cautious sources too.
+- n2 and n3 are unchanged: n2 only allows more (and the cautious layer allows every owner with an
+  interest), and n3 covers no scenario.
+
+### Every client path that moves an NPC away from their post
+
+A screen opens only after `npc_left_post` (from `NPCNeedsSystem._leavePost`) or a knock-out
+(`onKnockedOut`): `workstation-state.js onInteract` answers `signin`, not `accessed`, for an owner
+who is away with no away record. "Precise" means the mirror follows the client's own test.
+"Cautious allow" means the claim is allowed wherever the feature is present on the owner, without
+asking whether it can leave the screen open.
+
+| Path (file) | What moves the NPC | Mirror |
+|---|---|---|
+| Knock-out (`workstation-state.js onKnockedOut`, `player-combat.js`, `npc-hostile.js`) | a punch at the desk counts as a leave | Precise: `disableAttacks`, `koImmune`, and `open_without_estimate?` (decideLocked with no estimate) |
+| Need use elsewhere (`npc-needs.js _select`, `_useCandidate`, `_queueCandidate`) | a `use` job at another object | Precise: affordance (own and preset), own needsHome excluded, room leash, private owners, `_otherDesk` for judged needs |
+| Droppable source (`item-drop.js`, `onItemDropped`) | the player puts a source down anywhere | Precise (B1: no leash on its authored room), and cautious allow for any droppable whose affordance meets one of the owner's needs, whoever owns it |
+| Magnet (`_addMagnet`, `_tickNews`, temptation) | a use job at the magnet | Precise as a need source (sight and word of mouth are not modelled; it counts anyway) |
+| Judged failure (`_countFailure`, `enqueueVisit`, `npc-workarounds.js` visits and `setBorrow`) | check visits, workarounds, a borrowed PC | Precise: `AccessWork.can_fail?` |
+| Interest carry (`_carryCandidate`, `_refuseUse` retarget) | fetch an item, take it to a place | Precise (item anywhere, place leashed unless droppable), and cautious allow for any valid interest |
+| Social media (`_socialCandidate`) | the own station first, then another source, then the phone (no leave) | Precise for other sources and for the station's print (B2), and cautious allow for any valid `social_media` need |
+| Print hook (`_startJob`, `_completeJob`, `_errandCandidate`) | an errand to fetch an owned print | Precise (own hook on a used object, printHabit, chance, needsHome object), and cautious allow for any `onUse` hook or `printHabit` |
+| Print command (`control` with `needs.print`) | an errand for an owned print | Precise (producer named, needsHome object), and cautious allow for any print command |
+| Desk phones (`onPhoneRing`, `_claimAnswerer`) | answering a colleague's ringing phone | Precise (a colleague's phone exists), and cautious allow for any `answersPhones: true` |
+| Needs `set` command (`control`) | raises a level; a source is still needed | Precise: the need source test covers it |
+| Needs `suspend` and `resume` (`control`) | resume walks home; no leave of its own | No movement source |
+| Patrol (`npc-behavior.js`: `behavior.patrol` waypoints, bounds, multi-room route) | patrols the room or a route | Cautious allow for any `behavior.patrol` on the owner |
+| `#patrol_mode` ink tag (`person-chat-conversation.js`, `npc-game-bridge.js setNPCPatrol`) | turns patrol on mid-conversation | Cautious allow when the owner's story, or a `changeStoryPath` story in their mappings, contains `patrol_mode` |
+| `patrolOverride` mapping (`npc-manager.js`, `goToAndStay`) | scripted walk to a tile | Cautious allow for any owner mapping with `patrolOverride` |
+| `navigateToPlayer` mapping (`npc-manager.js`, a teleport and `goToAndStay` home) | walks to and from the player for a cutscene | Cautious allow for any owner mapping with `navigateToPlayer` |
+| Delayed mappings (`delayMs`) and `timedConversation` | no movement of their own; a conversation can carry a `patrol_mode` tag | Covered by the mapping and ink checks above |
+| Seating (`seating.js`) | sits and stands as part of a needs job | Part of the needs jobs above |
+| Hidden, removed or hostile owner (`setVisible`, `remove_npc` and `hostile` tags, chase leash) | the owner is absent, with no away record | No leave: `onInteract` answers `signin` (unchanged) |
+| Test bridge and debug moves (`test-bridge`, `debug.js`) | not honest play | Not counted |
+
+On my reading, scripted moves and patrols do not emit `npc_left_post` (`onExternalMove` sets
+`atPost` false without the event), so in today's engine they may never leave a screen open. They
+are allowed anyway, as the cautious side: an engine change there would otherwise start refusing
+honest claims without anyone noticing.
+
+### Sweep after the fixes
+
+The reviewer's sweep script (session scratchpad, not the repo), re-run on this branch: 176 of 176
+rendered, 16 claimable PCs, and only `test_access_habits noor_pc` returns nil (Noor has a work need
+met at her own PC, a `facePlayer` behaviour, no mappings and a story with no `patrol_mode`). The
+other 15 keep their R2 routes, all precise (needs, knock-outs, failures). `test_access_social` jake
+and lena now have a route (`might:social_media`) but check 6 still refuses them. `check_access_model`
+gives the never-leaves warning for `noor_pc` only, beside the older untracked-owner warning for
+`test_access_work pat_pc`. Validator on `test_access_habits`: no errors, the never-leaves warning
+for `noor_pc` only. No shipped scenario changes behaviour, so there was no live run.
+
+### Tests (without the lock, affected files only)
+
+- `test/unit/owner_claim_test.rb`, 13 runs. The near-miss tests now call `precise_route`, so the
+  precise mirror stays checked under the cautious layer. New: B1 (a fixed source outside the leash
+  refused; a droppable source, a droppable magnet, a droppable item in a cabinet and a droppable
+  accepting place allowed); B2 (with and without a `printHabit`, and a hook not on the station);
+  one fixture per cautious source that must allow (patrol by waypoints and by bounds,
+  `patrolOverride` in a list and in a pattern map, `navigateToPlayer` in the singular
+  `eventMapping`, `patrol_mode` in the story and in a `changeStoryPath` story, social media, a
+  station hook, an interest, phones, a `printHabit`, a print command with no needsHome, a droppable
+  source private to somebody else); an owner with a story, a `set` command and an unrelated
+  droppable who is still refused; and the default story reader staying inside `scenarios/`.
+- `owner_claim_enforce_test.rb` through `POST /login`: 13 refusals (12 logged as "the owner never
+  leaves the post", 1 as "the screen always locks") and 30 honoured claims. Four former refusals
+  (an interest with no place, an interest with no item, `answersPhones` with no colleague's phone,
+  a hook with no printHabit) are honoured now by the cautious layer. New honoured cases cover B1,
+  B2 and the cautious sources, the ink case through the server's own story reader
+  (`scenarios/ink/test-patrol-toggle.json`); a new refusal uses a real story without the tag.
+- With `npc_habits_loader_test`, `access_identities_screen_test`, `access_model_login_test`,
+  `capture_proofs_test`, `npc_lockout_l_test`, `game_state_locking_test`,
+  `network_remote_signin_test` and `lab_physical_pentest_secrets_test`: 164 runs, 2001 assertions,
+  0 failures.
+- Node `validator-access-model.test.mjs`: 35 tests, 0 failures. The near misses are now a fixed
+  source outside the leash and a `set` command beside an unrelated droppable; new tests cover B1,
+  B2, each cautious source, and the warning staying silent where checks 4, 5 or 7 refuse.
+- `bin/rubocop` on `owner_claim.rb` and both Ruby test files: no offences.
+
+### Commits
+
+- `d2b778432` R2 fixes (code and tests)
 - this log
