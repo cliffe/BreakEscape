@@ -106,3 +106,28 @@ Open:
 - Stop the server afterwards.
 
 Gotchas: the framework Cancel change affects every minigame; if one looks wrong, give it a local rule as examine does rather than reverting. notes.css has a narrow-screen rule that assumed the absolute Cancel.
+
+## Live proof and minigame sweep (2026-11-12)
+
+Keyless headless servers: main 13a0f9f96 on :3099, this branch on :3100, 1400x1000, setFPS(20) with fixed steps on. Games made with swap-scenario-game.rb on test_seating: 1764 (branch proof), 1768 and 1769 (sweep, main and branch), 1798 and 1803 (main "before" shots; 1803 starts in the Vault). Shots and manifest.json: scratchpad ux-shots/branch/after_unlock/ (NN_name_before.png / NN_name_after.png).
+
+Live proof on the branch, all through the UI (button clicks in the page, padlock hold by pointer events):
+- Padlock (Locker): dial 1 to 13, one back-step to 12, dial 2 to 30, dial 3 to 05, Unlock: opens, header and button read "Open". Holding the dial 1 right arrow for 1.5 s spun it 00 to 11; the release click was ignored.
+- Wrong answer 01-01-01: "01-01-01 did not open it. 2 attempts left. Dials back at 00: set dial 1 again." Dials at 00, none green.
+- Cryptex down arrow: A, up B, down A, down Z. CIPHER opened the cryptex box. On main the down arrow went A to B.
+- Archive door: Vault padlock 07-21-39 opened in the UI, then the Archive door showed 4 wheels and KEYS opened it; the player walked in. Main shows 5 wheels.
+- KO drop: the Courier Bag is visible 47 px from the body (main: 8 px). It opens with the case-lock look; Satchel42 opens it and the item has its label.
+- Server state for 1764: unlockedRooms lobby, vault, archive; unlockedObjects locker, cryptex box, courier bag.
+
+Minigame sweep: 59 registered scenes started directly with MinigameFramework.startMinigame; 33 draw the framework Cancel row (coverage-decision-form hides it and draws its own Close). Each was screenshotted on main and the branch and checked for a hidden or off-screen Cancel (hit test at three points), spill below the game area, double footers, new scrollbars and page scroll. Short screens (915x412 and 800x600) were checked for nine of them, including notes.
+
+Regressions found and fixed (commit 36f0c92b0, test/js/minigame-controls-layout.test.mjs, 5 tests, all fail on the unfixed CSS):
+- SIEM dashboard, EHR terminal and network architecture: Close pushed off the bottom, header cut at the top. Backup recovery: Close hidden under the console shell. These four full-window consoles keep the old overlay placement (they reserve a bar for it).
+- Long text file: Close off the screen. `.minigame-game-container` now has `min-height: 0`, so the game area shrinks and the text scrolls above Close. Side effect: SIEM and network architecture game areas are 40 px shorter than on main; the SIEM list shows half a row as a scroll cue.
+- Password panel (and the case lock): ran 60 px past the game area and covered Cancel. Container: Take Container straddled the window edge. Both panels are now `calc(100% - 80px)` tall, which allows for their margin and padding.
+- Notes on short landscape screens: the narrow rule assumed an absolute Cancel, so Continue fell under the notepad and the notepad title was cut. The rule now sets `position: absolute` again; matches main.
+- `.minigame-controls` also gets `position: relative; z-index: 1`, so anything that still spills (biometrics field note, notes foot) is drawn under Cancel, not over it.
+
+Left as is: at 915x412 the padlock, cryptex, PIN, password, container, SIEM and backup consoles are cramped on both main and the branch (Cancel over content on main, content past the frame on the branch). PIN and biometrics titles or notes spill on both. No double footers and no new page scrollbars.
+
+Pixel-art rule (computed styles of visible elements, branch): every minigame inherits one soft shadow and two gradients from the framework shell (`.minigame-container` box-shadow, `.minigame-game-container` inset shadow). Beyond that, worst first: drug-library-integrity (174 1px borders, Courier New, radius), PIN pad (14 soft shadows, 14 gradients), scada-historian (16 hairlines, Courier New), biometrics, BLE and Bluetooth scanners (hairlines, soft shadows, radius), SIEM (13 hairlines), text-file (system UI font, shadows, gradients), forensic data platform and NCSC brief (Courier New), network architecture and infusion pump (generic monospace), notes (shadows, gradients). None fixed here.
