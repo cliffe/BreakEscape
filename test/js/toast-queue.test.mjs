@@ -95,3 +95,66 @@ test('a waiting toast that comes up while a panel is open is held for the panel,
     await wait(700);
     assert.equal(children.length, 0);
 });
+
+// Code review R1 M2: a toast that stays until closed takes no place, and no toast waits
+// longer than MAX_TOAST_WAIT_MS.
+test('a Key Ring toast held open does not take a place: two task toasts still show at once', async () => {
+    const ring = T.showNotification('Keys on the ring:\nOffice\nServer room', 'info', 'Key Ring', 0);
+    assert.ok(ring, 'the Key Ring toast shows');
+    const a = T.showNotification('Find the router', 'success', 'Task Complete', 200);
+    const b = T.showNotification('Read the memo', 'success', 'Task Complete', 200);
+    assert.ok(a && b, 'both task toasts show beside the Key Ring');
+    assert.equal(T.waitingToastCount(), 0);
+    assert.deepEqual(messages(), ['Keys on the ring:\nOffice\nServer room', 'Find the router', 'Read the memo']);
+    await wait(700);
+    assert.deepEqual(messages(), ['Keys on the ring:\nOffice\nServer room'], 'the Key Ring stays until closed');
+    T.removeNotification(ring);
+    await wait(400);
+    assert.equal(children.length, 0);
+});
+
+test('a duration-0 toast raised with both places taken shows at once', async () => {
+    T.showNotification('a', 'info', '', 300);
+    T.showNotification('b', 'info', '', 300);
+    const brief = T.showNotification('Mission brief', 'info', 'Brief', 0);
+    assert.ok(brief);
+    assert.equal(T.waitingToastCount(), 0);
+    T.removeNotification(brief);
+    await wait(800);
+    assert.equal(children.length, 0);
+});
+
+test('the wait limit is 4 s', () => { assert.equal(T.MAX_TOAST_WAIT_MS, 4000); });
+
+test('a toast that has waited past the limit shows anyway', async () => {
+    const a = T.showNotification('long one', 'info', '', 60000);
+    const b = T.showNotification('long two', 'info', '', 60000);
+    assert.equal(T.showNotification('late', 'success', '', 200), null);
+    assert.equal(T.waitingToastCount(), 1);
+    await wait(T.MAX_TOAST_WAIT_MS - 500);
+    assert.deepEqual(messages(), ['long one', 'long two'], 'still waiting before the limit');
+    await wait(800);
+    assert.equal(T.waitingToastCount(), 0);
+    assert.deepEqual(messages(), ['long one', 'long two', 'late'], 'shown over the limit');
+    T.removeNotification(a); T.removeNotification(b);
+    await wait(800);
+    assert.equal(children.length, 0);
+});
+
+test('toasts waiting when a panel opens are held ahead of toasts raised during it (n2)', async () => {
+    const a = T.showNotification('a', 'info', '', 60000);
+    const b = T.showNotification('b', 'info', '', 60000);
+    T.showNotification('waited', 'info', '', 200);
+    a._toast.shownAt = b._toast.shownAt = Date.now() - 5000;   // read long ago: dismissed when the panel opens
+    globalThis.__panelOpen = true;
+    T.holdRecentNotifications();
+    assert.equal(T.waitingToastCount(), 0, 'moved to the held queue');
+    T.showNotification('during', 'info', '', 200);
+    await wait(400);
+    assert.equal(children.length, 0, 'nothing shows over the panel');
+    globalThis.__panelOpen = false;
+    await wait(400);
+    assert.deepEqual(messages(), ['waited', 'during']);
+    await wait(800);
+    assert.equal(children.length, 0);
+});

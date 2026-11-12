@@ -148,6 +148,9 @@ export function holdRecentNotifications(now = Date.now()) {
         // seen = true: already on screen once, so it is replayed once and never pulled again
         heldNotifications.push([message, type, title, duration, true, { html: html === true, verbatim: verbatim === true }]);
     });
+    // Toasts still waiting for a place go behind the pulled ones now, so they keep their
+    // order ahead of toasts raised while the panel is open (code review R1 n2).
+    holdForPanel(takeWaiting());
     if (pulled.length && !holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
     pickStaleHoldable(shown, now).forEach(({ el }) => {
         el._toast.pulled = true;
@@ -224,16 +227,63 @@ function setPlainLines(el, text) {
 
 // Toasts on screen at once; info and success toasts past this wait (renderNotification).
 export const MAX_SHOWN_TOASTS = 2;
+// A waiting toast shows after this long even if both places are still taken (going over
+// the limit for a moment), so it never lands long after the event it is about.
+export const MAX_TOAST_WAIT_MS = 4000;
 const waitingToasts = [];
 
-/** Toasts on screen that count towards the limit: not closing, not pulled back behind a panel. */
+/**
+ * Toasts on screen that count towards the limit: not closing, not pulled back behind a
+ * panel, and timed. A toast that stays until closed (duration 0: the Key Ring, the Mission
+ * Brief fallback) is left out, or one the player leaves open would halve the limit for good.
+ */
 export function shownToasts(container) {
     const all = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
-    return all.filter((el) => el._toast && !el._toast.pulled && !el._toast.closing);
+    return all.filter((el) => el._toast && !el._toast.pulled && !el._toast.closing && el._toast.duration > 0);
 }
 
 /** Number of info and success toasts waiting for a free place. */
 export function waitingToastCount() { return waitingToasts.length; }
+
+// Put a toast in the waiting line, with a timer that shows it anyway once it has waited
+// MAX_TOAST_WAIT_MS.
+function addWaiting(args) {
+    args.waitTimer = setTimeout(() => {
+        const i = waitingToasts.indexOf(args);
+        if (i < 0) return;
+        waitingToasts.splice(i, 1);
+        showWaitingToast(args, true);
+    }, MAX_TOAST_WAIT_MS);
+    waitingToasts.push(args);
+}
+
+// Take every waiting toast out of the line (timers cleared), in order.
+function takeWaiting() {
+    const all = waitingToasts.splice(0);
+    all.forEach((args) => clearTimeout(args.waitTimer));
+    return all;
+}
+
+// Show a toast taken from the waiting line, or hold it for a panel that is open.
+// Returns false when it could not be shown and went back in the line.
+function showWaitingToast(args, overLimit) {
+    clearTimeout(args.waitTimer);
+    if (shouldHoldNotification(args[1], fullScreenPanelOpen() || panelExpected())) {
+        holdForPanel([args]);
+        return true;
+    }
+    return !!renderNotification(args[0], args[1], args[2], args[3], args[4], args[5], overLimit);
+}
+
+// Into the held queue (shown when the panel closes), skipping copies already there.
+function holdForPanel(list) {
+    list.forEach((args) => {
+        if (!isQueuedDuplicate(heldNotifications, args[0], args[1], args[2], args[5])) {
+            heldNotifications.push([args[0], args[1], args[2], args[3], args[4], args[5]]);
+        }
+    });
+    if (heldNotifications.length && !holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
+}
 
 // Show the next waiting toast once a place is free. With a panel open it joins the held
 // queue instead, like any info or success toast raised then.
@@ -241,17 +291,11 @@ function showNextWaiting() {
     if (typeof document === 'undefined') return;
     const container = document.getElementById('notification-container');
     while (waitingToasts.length && shownToasts(container).length < MAX_SHOWN_TOASTS) {
-        const args = waitingToasts.shift();
-        if (shouldHoldNotification(args[1], fullScreenPanelOpen() || panelExpected())) {
-            if (!isQueuedDuplicate(heldNotifications, args[0], args[1], args[2], args[5])) heldNotifications.push(args);
-            if (!holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
-            continue;
-        }
-        if (!renderNotification(...args)) break;
+        if (!showWaitingToast(waitingToasts.shift(), false)) break;
     }
 }
 
-function renderNotification(message, type, title, duration, seen = false, options = {}) {
+function renderNotification(message, type, title, duration, seen = false, options = {}, overLimit = false) {
     const plainText = options?.html !== true;
     const verbatim = plainText && options?.verbatim === true;
     const notificationContainer = document.getElementById('notification-container');
@@ -272,9 +316,11 @@ function renderNotification(message, type, title, duration, seen = false, option
     // UX access R2 (finding 12): at most MAX_SHOWN_TOASTS on screen. A further info or
     // success toast waits its turn and shows as one goes; warnings and errors answer
     // what the player just did, so they still show at once.
-    if (HOLDABLE_TYPES.has(type) && shownToasts(notificationContainer).length >= MAX_SHOWN_TOASTS) {
+    // A toast that stays until closed takes no place and never waits for one.
+    if (!overLimit && HOLDABLE_TYPES.has(type) && duration > 0
+        && shownToasts(notificationContainer).length >= MAX_SHOWN_TOASTS) {
         if (!isQueuedDuplicate(waitingToasts, message, type, title, options)) {
-            waitingToasts.push([message, type, title, duration, seen, options]);
+            addWaiting([message, type, title, duration, seen, options]);
         }
         return null;
     }
