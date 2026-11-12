@@ -182,3 +182,114 @@ test('the cryptex up arrow is the next letter and the down arrow the one before'
     m._rotateWheel(0, -1);
     assert.equal(m._word(), 'Z', 'down from A wraps to Z');
 });
+
+// ── Code review R2 ────────────────────────────────────────────────────────────
+
+// A padlock with its arrow buttons bound through _bindArrow, and fake timers
+function boundPadlock(t) {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const m = padlock();
+    const handlers = new Map();
+    m.addEventListener = (btn, ev, fn) => { handlers.set(`${btn.id}:${ev}`, fn); };
+    for (let i = 0; i < 3; i++) for (const dir of ['left', 'right']) m._bindArrow({ id: `${dir}${i}` }, i, dir);
+    const fire = (id, ev) => handlers.get(`${id}:${ev}`)();
+    // Small steps, so a timer set by a timer that fired is run in the same span
+    const advance = (ms) => { for (let i = 0; i < ms; i += 5) t.mock.timers.tick(5); };
+    return { m, fire, advance };
+}
+
+test('R2 m3: holding the next dial\'s arrow sets the current dial and spins the next', (t) => {
+    const { m, fire, advance } = boundPadlock(t);
+    fire('right0', 'click');
+    fire('right0', 'click');                       // dial 1 at 02
+    fire('right1', 'pointerdown');
+    advance(380);                       // first tick: sets dial 1, dial 2 to 01
+    assert.equal(m.activeDial, 1);
+    assert.equal(m.dials[0], 2);
+    advance(110 * 4);                   // four more turns
+    assert.equal(m.dials[1], 5, 'the hold keeps spinning the new dial');
+    fire('right1', 'pointerup');
+    fire('right1', 'click');                       // the click that ends a hold is ignored
+    assert.equal(m.dials[1], 5);
+    advance(1000);
+    assert.equal(m.dials[1], 5, 'released: no more turns');
+});
+
+test('R2 m3: holding a dial two ahead still does nothing', (t) => {
+    const { m, fire, advance } = boundPadlock(t);
+    fire('right2', 'pointerdown');
+    advance(2000);
+    assert.deepEqual(m.dials, [0, 0, 0]);
+    assert.equal(m.activeDial, 0);
+});
+
+test('R2 n4: a hold released off the button does not swallow the next key press', (t) => {
+    const { m, fire, advance } = boundPadlock(t);
+    fire('right0', 'pointerdown');
+    advance(380);                       // the hold fires once
+    fire('right0', 'pointerleave');                // released elsewhere: no click
+    assert.equal(m.dials[0], 1);
+    fire('right0', 'keydown');
+    fire('right0', 'click');                       // Enter on the arrow
+    assert.equal(m.dials[0], 2, 'the key press turns the dial');
+});
+
+test('R2 n5: at spin speed the click sounds on every third turn only', (t) => {
+    const { m, fire, advance } = boundPadlock(t);
+    let sounds = 0;
+    window.playUISound = () => { sounds++; };
+    try {
+        fire('right0', 'pointerdown');
+        advance(380 + 110 * 8);         // 9 slow turns, each heard
+        assert.equal(sounds, 9);
+        advance(45 * 9);                // 9 fast turns, a third heard
+        assert.equal(m.dials[0], 18);
+        assert.equal(sounds, 12);
+        fire('right0', 'pointerup');
+    } finally {
+        delete window.playUISound;
+    }
+});
+
+function failingFetch() {
+    window.ApiClient = { unlock: async () => { throw new TypeError('Failed to fetch'); } };
+}
+
+test('R2 m4: a padlock network error keeps the dials, counts no try and allows a resend', async () => {
+    const m = padlock();
+    m._rotateDial(0, 'right');
+    m._rotateDial(1, 'right');
+    m._rotateDial(1, 'right');
+    m._rotateDial(2, 'right');                     // 01-02-01
+    m.attemptCount = 0;
+    m.complete = () => {};
+    failingFetch();
+    await m._handleUnlock();
+    assert.deepEqual(m.dials, [1, 2, 1], 'the dials are kept');
+    assert.equal(m.activeDial, 2);
+    assert.equal(m.attemptCount, 0, 'no attempt is counted');
+    assert.equal(m.isLocked, false);
+    assert.equal(m.gameContainer.querySelector('#comb-unlock-btn').disabled, false, 'UNLOCK can send again');
+    assert.match(status(m).textContent, /Network error: 01-02-01 was not checked/);
+    assert.doesNotMatch(status(m).textContent, /did not open/);
+
+    const calls = sent();
+    await m._handleUnlock();
+    assert.deepEqual(calls[0], ['object', 'locker', '1-2-1', 'combination'], 'the resend carries the same numbers');
+});
+
+test('R2 m4: a cryptex network error keeps the word sendable and counts no try', async () => {
+    const m = new CryptexMinigame(null, { lockable, type: 'object', cryptexConfig: { wheelCount: 3 } });
+    m.gameContainer = fakeContainer();
+    const submitBtn = m.gameContainer.querySelector('#cryptex-submit-btn');
+    m.attemptCount = 0;
+    m._rotateWheel(0, 1);                          // BAA
+    failingFetch();
+    await m._handleSubmit();
+    assert.equal(m.attemptCount, 0);
+    assert.equal(m.lastTried, undefined, 'the word is not marked as tried');
+    assert.equal(submitBtn.disabled, false, 'Submit can send it again');
+    assert.match(m.gameContainer.querySelector('#cryptex-status').textContent, /Network error: BAA was not checked/);
+    m._checkCompletion();
+    assert.equal(submitBtn.disabled, false);
+});

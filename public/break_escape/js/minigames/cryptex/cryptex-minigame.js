@@ -253,17 +253,31 @@ export class CryptexMinigame extends MinigameScene {
         submitBtn.disabled = true;
 
         this.scopeRefusal = null;
+        this.networkError = false;
         const success = await this._validateWithServer();
 
         if (success) {
             this._handleSuccess();
         } else if (this.scopeRefusal) {
             this._handleScopeRefusal(this.scopeRefusal);
+        } else if (this.networkError) {
+            this._handleNetworkError();
         } else {
             this._handleFailure();
         }
 
         this.isSubmitting = false;
+    }
+
+    // The request never completed (R2 m4): not a wrong try. The wheels stay, no attempt
+    // is counted and the word is not marked as tried, so Submit can send it again.
+    _handleNetworkError() {
+        this._setStatus(`Network error: ${this._word()} was not checked. Press Submit to try again.`, 'wrong');
+        const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.classList.add('ready');
+        }
     }
 
     async _validateWithServer() {
@@ -314,7 +328,7 @@ export class CryptexMinigame extends MinigameScene {
                 return false;
             }
             console.error('Server validation error:', error);
-            this._setStatus('Network error. Try again.', 'wrong');
+            this.networkError = true;
             return false;
         }
     }

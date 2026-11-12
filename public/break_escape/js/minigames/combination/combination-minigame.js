@@ -126,15 +126,22 @@ export class CombinationMinigame extends MinigameScene {
             if (this._holdFired) { this._holdFired = false; return; }
             this._rotateDial(dialIndex, direction);
         });
+        // A hold released off the button gives no click, so the flag could stay set and
+        // swallow the next Enter or Space; a key press is never the end of a hold (R2 n4)
+        this.addEventListener(btn, 'keydown', () => { this._holdFired = false; });
         this.addEventListener(btn, 'pointerdown', () => {
             this._stopHold();
             this._holdFired = false;
             let repeats = 0;
             const tick = () => {
-                // Only the current dial spins; a hold on another dial does nothing more
-                if (dialIndex !== this.activeDial) { this._stopHold(); return; }
+                // The current dial spins, and so does the next one: its first turn sets
+                // the current dial and moves on, as a click does (R2 m3). Any other dial
+                // does nothing more.
+                if (dialIndex !== this.activeDial && dialIndex !== this.activeDial + 1) { this._stopHold(); return; }
                 this._holdFired = true;
-                this._rotateDial(dialIndex, direction);
+                // At spin speed the click sounds on every third turn only (R2 n5)
+                const quiet = repeats > 8 && repeats % 3 !== 0;
+                this._rotateDial(dialIndex, direction, { quiet });
                 repeats++;
                 this._holdTimer = setTimeout(tick, repeats > 8 ? 45 : 110);
             };
@@ -155,7 +162,7 @@ export class CombinationMinigame extends MinigameScene {
     // Either arrow turns the current dial, so an overshoot is one click back.
     // Turning the next dial sets the current one (it turns green and locks) and
     // moves the new dial one number, so that first click always shows.
-    _rotateDial(dialIndex, direction) {
+    _rotateDial(dialIndex, direction, { quiet = false } = {}) {
         if (this.isLocked || this.isSubmitting) return;
 
         if (dialIndex < this.activeDial) {
@@ -173,7 +180,7 @@ export class CombinationMinigame extends MinigameScene {
             this.activeDial = dialIndex;
         }
 
-        if (window.playUISound) window.playUISound('keypad');
+        if (window.playUISound && !quiet) window.playUISound('keypad');
         const step = direction === 'left' ? -1 : 1;
         this.dials[dialIndex] = (this.dials[dialIndex] + step + 40) % 40;
         this._refreshDials();
@@ -279,17 +286,27 @@ export class CombinationMinigame extends MinigameScene {
         unlockBtn.disabled = true;
 
         this.scopeRefusal = null;
+        this.networkError = false;
         const success = await this._validateWithServer();
 
         if (success) {
             this._handleSuccess();
         } else if (this.scopeRefusal) {
             this._handleScopeRefusal(this.scopeRefusal);
+        } else if (this.networkError) {
+            this._handleNetworkError();
         } else {
             this._handleFailure();
         }
 
         this.isSubmitting = false;
+    }
+
+    // The request never completed (R2 m4): not a wrong try. The dials stay as set, no
+    // attempt is counted and UNLOCK can send the same numbers again.
+    _handleNetworkError() {
+        this._setStatus(`Network error: ${this._combo()} was not checked. Press UNLOCK to try again.`, 'wrong');
+        if (this.activeDial >= 2) this._enableUnlock();
     }
 
     async _validateWithServer() {
@@ -336,7 +353,7 @@ export class CombinationMinigame extends MinigameScene {
                 return false;
             }
             console.error('Server validation error:', error);
-            this._setStatus('Network error. Try again.', 'wrong');
+            this.networkError = true;
             return false;
         }
     }
