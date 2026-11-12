@@ -2088,14 +2088,20 @@ module BreakEscape
     # hold the session that showed it, and that session is refused because its PC is off
     # ('off' at the keyboard, 'not_responding' remotely) or its route is down ('unreachable').
     # A share path, an object under no held session, a wrong code and a locked container above
-    # all give nil, so they still answer exactly as an invented id. The pad counts no attempt.
+    # all give nil, so they still answer exactly as an invented id. Only an object with every
+    # folder above it already unlocked gets a reason. The lock screen counts no attempt.
     UNLOCK_REFUSAL_MESSAGES = { 'off' => NetworkAccess::PC_OFF_MESSAGE, 'not_responding' => 'This PC is not responding.',
                                 'unreachable' => "This PC can't be reached." }.freeze
 
     def unlock_session_refusal(target_type, target_id)
       return nil if target_type.to_s == 'door' || !unlock_scope_refused?(target_id)
 
-      scope = login_scope_of(target_id)&.dig(:scope)
+      # Review R4 m1: an object behind a container still locked has never been shown, so it
+      # answers as an invented id; a reason here would confirm a guessed id exists
+      located = login_scope_of(target_id)
+      return nil unless located && path_unlocked?(located[:path])
+
+      scope = located[:scope]
       pcs =
         case scope && scope[:type]
         when 'login_pc'

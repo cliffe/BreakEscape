@@ -313,13 +313,13 @@ module BreakEscape
     VAULT_PIN = '1357'.freeze
 
     # lena_pc carries a PIN-locked folder; Lena's office is open so her PC can be walked up to
-    def with_lena_vault(lena_off: false)
+    def with_lena_vault(lena_off: false, inner: nil)
       data = scenario_with_service_off(lena_off: lena_off)
       lena = data['rooms'].values.flat_map { |room| room['objects'] || [] }.find { |o| o['id'] == 'lena_pc' }
       lena['contents'] << { 'id' => 'lena_vault', 'type' => 'safe', 'name' => 'Vault', 'locked' => true, 'lockType' => 'pin',
                             'requires' => VAULT_PIN,
                             'contents' => [{ 'id' => 'vault_note', 'type' => 'text_file', 'name' => 'note.txt', 'takeable' => true,
-                                             'text' => 'vault' }] }
+                                             'text' => 'vault' }] + [inner].compact }
       build_network_game({ 'unlockedRooms' => OPEN_ROOMS + ['finance_office'] }, data)
       take_drop_box
       plant('comms_port')
@@ -366,6 +366,35 @@ module BreakEscape
       refute body.key?('reason'), 'nothing says the PC is off to a player who never saw the folder'
       unlock_object('no_such_vault', 'pin', VAULT_PIN)
       assert_equal 'Invalid attempt', response.parsed_body['message']
+    end
+
+    # Review R4 m1: a folder inside a still-locked one has never been shown to the player
+    test 'an object behind a locked folder at an off PC answers exactly as an invented id' do
+      with_lena_vault(inner: { 'id' => 'inner_vault', 'type' => 'safe', 'name' => 'Inner', 'locked' => true,
+                               'lockType' => 'pin', 'requires' => '2468', 'contents' => [] })
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD)
+      assert_response :success, response.body
+      refute_includes container('lena_pc').to_json, 'inner_vault', 'the desktop never names the inner folder'
+
+      set_global(LENA_OFF, true)
+      answers = %w[inner_vault no_such_vault].map do |id|
+        %w[pin password].map do |method|
+          body = unlock_object(id, method, '2468')
+          [response.status, body.except('feedback')]
+        end
+      end
+      assert_equal answers[1], answers[0], 'inner id and invented id answer the same'
+      assert_equal 422, answers[0][0][0]
+      refute answers[0][0][1].key?('reason')
+
+      # Once the outer folder is open the inner one is known, so the reason is given again
+      set_global(LENA_OFF, false)
+      unlock_object('lena_vault', 'pin', VAULT_PIN)
+      assert_response :success, response.body
+      set_global(LENA_OFF, true)
+      body = unlock_object('inner_vault', 'pin', '2468')
+      assert_response :forbidden
+      assert_equal 'off', body['reason']
     end
   end
 end
