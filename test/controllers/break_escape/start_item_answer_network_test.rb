@@ -78,5 +78,56 @@ module BreakEscape
       refute_secrets response.body, 'the unplug reply'
       assert_includes @game.reload.player_state['inventory'].to_json, 'RIDDLE', 'the stored copy is left as it was'
     end
+
+    # Code review R3 n1: join Wi-Fi and implant answer with the inventory too (a first answer
+    # and an already-held answer each). Answers stored in player_state must not ship.
+    BADUSB = { 'id' => 'kit_badusb', 'type' => 'usb_stick', 'name' => 'Keystroke device',
+               'takeable' => true, 'usbClass' => 'hid' }.freeze
+
+    def join_and_implant_scenario
+      data = NS.scenario
+      data['startItemsInInventory'] = [BADUSB.dup, CRYPTEX.deep_dup, CASE.deep_dup]
+      data['networks']['visitor_wifi'] = { 'name' => 'Visitor Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Open' } }
+      data['rooms']['lobby']['objects'] << { 'id' => 'open_ap', 'type' => 'pc', 'sprite' => 'wifi_ap1',
+                                             'name' => 'Visitor access point', 'wifiAp' => true,
+                                             'network' => 'visitor_wifi' }
+      data['rooms']['finance_office']['objects'] << {
+        'id' => 'lena_usb_socket', 'type' => 'pc', 'name' => 'Desk USB socket',
+        'triggerOnInteract' => [
+          { 'type' => 'grant_foothold', 'pc' => 'lena_pc', 'needsSession' => true,
+            'needsHeld' => 'kit_badusb', 'name' => 'BadUSB: Lena desk' }
+        ]
+      }
+      data
+    end
+
+    test 'the join and implant replies ship no answer, first time or already held' do
+      build_network_game({ 'sessions' => { 'lena_pc' => { 'id' => 'lena', 'via' => 'claim' } } },
+                         join_and_implant_scenario)
+      refute_secrets @game.reload.player_state['inventory'].to_json, 'the stored inventory'
+      # As in a game stored before start items were filtered: the answers sit in player_state
+      @game.player_state['inventory'] += [CRYPTEX.deep_dup, CASE.deep_dup]
+      @game.save!
+
+      2.times do |i|
+        post game_path('network/join'), params: { ap_id: 'open_ap' }, as: :json
+        assert_response :success
+        body = response.parsed_body
+        assert_equal true, body['success'], body.inspect
+        assert_equal(i == 1, body['already'] == true, body.inspect)
+        assert body['inventory'].any? { |item| item['id'] == 'pocket_cryptex' }
+        refute_secrets response.body, "join reply #{i + 1}"
+      end
+
+      2.times do |i|
+        post game_path('network/implant'), params: { pc_id: 'lena_pc', shape: 'session' }, as: :json
+        assert_response :success
+        body = response.parsed_body
+        assert_equal true, body['success'], body.inspect
+        assert_equal(i == 1, body['already'] == true, body.inspect)
+        assert body['inventory'].any? { |item| item['id'] == 'pocket_cryptex' }
+        refute_secrets response.body, "implant reply #{i + 1}"
+      end
+    end
   end
 end
