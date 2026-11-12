@@ -6,7 +6,8 @@
   "globalVariables": {
     "call_started": false,
     "alarm": false,
-    "seen": false
+    "seen": false,
+    "skip_hax": false
   },
 
   "objectives": [
@@ -28,7 +29,7 @@
       "name": "Your Phone",
       "takeable": true,
       "phoneId": "player_phone",
-      "npcIds": ["agent_0x99"],
+      "npcIds": ["agent_0x99", "agent_dee"],
       "observations": "Your phone."
     }
   ],
@@ -52,6 +53,7 @@
             "delay": 2000,
             "targetKnot": "note_call",
             "waitForEvent": "game_loaded",
+            "skipIfGlobal": "skip_hax",
             "disableClose": true,
             "voiced": true
           },
@@ -63,6 +65,25 @@
               "targetKnot": "note_call",
               "resume": true,
               "disableClose": true,
+              "voiced": true,
+              "cooldown": 0
+            }
+          ]
+        },
+        {
+          "id": "agent_dee",
+          "displayName": "Agent Dee",
+          "npcType": "phone",
+          "voiced": true,
+          "storyPath": "scenarios/test_phone_call_notes/ink/dee_opening.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {"name": "Kore", "style": "A field agent on a bad line, hushed and quick. Consistent British accent.", "language": "en-GB"},
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_dee",
+              "conversationMode": "phone-chat",
               "voiced": true,
               "cooldown": 0
             }
