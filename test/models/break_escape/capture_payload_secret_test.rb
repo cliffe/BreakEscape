@@ -7,7 +7,7 @@ module BreakEscape
   class CapturePayloadSecretTest < ActiveSupport::TestCase
     PIN = '7302'.freeze
 
-    def scenario(extra_mapping: {}, lock_pin: nil, proofs: false)
+    def scenario(extra_mapping: {}, keyholder_mapping: {}, lock_pin: nil, proofs: false)
       lobby_objects = [{ 'id' => 'bug_spot', 'type' => 'notes', 'name' => 'Spot', 'requiresItem' => 'bug',
                          'triggerOnInteract' => [{ 'type' => 'remove_item', 'item' => 'bug' }] }]
       if lock_pin
@@ -21,7 +21,7 @@ module BreakEscape
                                                   'secret' => PIN }.merge(extra_mapping) }] },
         { 'id' => 'keyholder', 'npcType' => 'person', 'usePayload' => { 'address' => 'pad', 'secret' => 'KEY-881' },
           'eventMappings' => [{ 'eventPattern' => 'npc_used:bug_spot',
-                                'addCapture' => { 'targetId' => 'keyholder_pad', 'kind' => 'credential' } }] }
+                                'addCapture' => { 'targetId' => 'keyholder_pad', 'kind' => 'credential' }.merge(keyholder_mapping) }] }
       ]
       if proofs
         npcs << { 'id' => 'acct', 'npcType' => 'person', 'creds' => { 'username' => 'a.c', 'password' => 'Acct-Pass-1' },
@@ -85,9 +85,47 @@ module BreakEscape
       assert_equal({ 'surfed' => PIN }, game.capture_secrets_for_client)
     end
 
-    test 'in a scenario with proofs, a lock code with no proof is not served; elsewhere it is' do
+    test 'a usePayload that fills a mapping inherits the mapping proof, not the payload proof' do
+      # keyholder's usePayload (no proof, no targetId) fills its keyholder_pad mapping; the
+      # mapping carries the proof, so the payload secret waits for it (review R1 minor 1).
+      game = game_for(scenario(keyholder_mapping: { 'proof' => { 'dropped' => 'qr' } }),
+                      entry('surfed').merge(entry('keyholder_pad')))
+      assert_equal({ 'surfed' => PIN }, game.capture_secrets_for_client)
+      game.player_state['droppedItems'] = ['qr']
+      assert_equal({ 'surfed' => PIN, 'keyholder_pad' => 'KEY-881' }, game.capture_secrets_for_client)
+    end
+
+    test 'a lock code with no proof is not served, whether or not the scenario declares proofs' do
       assert_equal({}, game_for(scenario(lock_pin: PIN, proofs: true), entry('surfed')).capture_secrets_for_client)
-      assert_equal({ 'surfed' => PIN }, game_for(scenario(lock_pin: PIN), entry('surfed')).capture_secrets_for_client)
+      assert_equal({}, game_for(scenario(lock_pin: PIN), entry('surfed')).capture_secrets_for_client)
+    end
+
+    HARD = 'HARD-SECRET'.freeze
+
+    # A capture secret equal to a hard-access value (a password or PIN lock code, an RFID or
+    # biometric requires, a Wi-Fi PSK, or a flag) is never served on the capture record alone,
+    # whether or not the scenario declares proofs, matching the account gate (review R1 minor 2).
+    test 'a capture secret that is a hard-access value is withheld' do
+      homes = {
+        'pin lock' => ->(d) { d['rooms']['lobby']['objects'] << { 'id' => 's', 'type' => 'safe', 'locked' => true, 'lockType' => 'pin', 'requires' => HARD } },
+        'password lock' => ->(d) { d['rooms']['lobby']['objects'] << { 'id' => 'p', 'type' => 'pc', 'locked' => true, 'lockType' => 'password', 'requires' => HARD } },
+        'rfid lock' => ->(d) { d['rooms']['lobby']['objects'] << { 'id' => 'r', 'type' => 'door', 'locked' => true, 'lockType' => 'rfid', 'requires' => HARD } },
+        'biometric lock' => ->(d) { d['rooms']['lobby']['objects'] << { 'id' => 'b', 'type' => 'door', 'locked' => true, 'lockType' => 'biometric', 'requires' => HARD } },
+        'wifi psk' => ->(d) { d['networks'] = { 'corp' => { 'wifi' => { 'ssid' => 'Corp', 'psk' => HARD } } } },
+        'flag' => ->(d) { d['flags'] = { 'vm' => { 'flag_1' => HARD } } }
+      }
+      homes.each do |label, inject|
+        data = scenario
+        data['rooms']['lobby']['npcs'][0]['eventMappings'][0]['addCapture']['secret'] = HARD
+        inject.call(data)
+        assert_equal({}, game_for(data, entry('surfed')).capture_secrets_for_client, "#{label}: should be withheld")
+      end
+    end
+
+    test 'a capture secret that opens nothing is served on the capture record (best-effort, q78)' do
+      data = scenario
+      data['rooms']['lobby']['npcs'][0]['eventMappings'][0]['addCapture']['secret'] = 'OPENS-NOTHING'
+      assert_equal({ 'surfed' => 'OPENS-NOTHING' }, game_for(data, entry('surfed')).capture_secrets_for_client)
     end
 
     test 'an account capture keeps its proof rule: an authored secret on its mapping is not a way round it' do
@@ -129,6 +167,48 @@ module BreakEscape
         checked += 1
         answers = { 'bootstrap' => game.filtered_scenario_for_bootstrap.to_json }
         game.scenario_data['rooms'].each_key { |room_id| answers["room #{room_id}"] = game.filtered_room_data(room_id).to_json }
+
+        # Minor 3: the other serve routes a nested capture descriptor can ride. GET /container
+        # (a locked container's contents) and the inventory copy of a held item both run
+        # filter_requires_and_contents_recursive, which the room/bootstrap scan does not reach
+        # inside a locked container (the room answer drops locked contents wholesale). The
+        # Friendface phone serves posts and the site only. GET /mail serves client-synced
+        # player_state and GET /ink serves compiled static ink; neither carries a
+        # scenario-authored capture descriptor, so there is nothing from scenario_data there.
+        containers = []
+        held_items = []
+        phone_npc_ids = []
+        collect = lambda do |node|
+          case node
+          when Hash
+            containers << node if node['contents'].is_a?(Array)
+            node.each_value { |v| collect.call(v) }
+          when Array then node.each { |v| collect.call(v) }
+          end
+        end
+        collect.call(game.scenario_data)
+        game.scenario_data['rooms'].each_value do |room|
+          Array(room['npcs']).each do |npc|
+            next unless npc.is_a?(Hash)
+
+            phone_npc_ids << npc['id'] if npc['phone'] && npc['id'].is_a?(String)
+            Array(npc['itemsHeld']).each { |i| held_items << i if i.is_a?(Hash) }
+          end
+        end
+        containers.each_with_index do |obj, i|
+          copy = obj.deep_dup
+          game.send(:filter_requires_and_contents_recursive, copy)
+          answers["container[#{i}]"] = copy.to_json
+        end
+        held_items.each_with_index do |item, i|
+          copy = item.deep_dup
+          game.send(:filter_requires_and_contents_recursive, copy)
+          answers["inventory copy[#{i}]"] = copy.to_json
+        end
+        phone_npc_ids.each do |npc_id|
+          answers["phone #{npc_id}"] = game.open_friendface_phone(npc_id, with_posts: true)[:body].to_json
+        end
+
         answers.each do |where, json|
           secrets.uniq.each { |s| refute_includes json, s.to_json, "#{name} #{where} ships a capture secret" }
         end

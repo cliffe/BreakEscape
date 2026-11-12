@@ -148,6 +148,48 @@ Scanned across all 176 scenarios, bootstrap and every room answer:
   them as a rule would let every live run check this class.
 - No scenario was touched, so no validator run was needed.
 
+## R1 fixes (2026-11-12)
+
+Code review R1 (USEPAYLOAD_SECRET_CODE_REVIEW_R1.md) raised 0 blockers, 0 majors, 3 minors and
+2 nits, all latent (no shipped scenario trips them). All closed.
+
+- Minor 1: a non-account usePayload with no targetId that fills an addCapture mapping now keeps
+  the mapping's own gate. `usepayload_target_ids` is replaced by `usepayload_captures`, which
+  returns [target_id, capture] pairs, each the mapping's addCapture overlaid with the payload
+  (mapping as base, payload overrides), the same merge npc-manager.js applies. So the mapping's
+  `proof` and `address` hold unless the payload carries its own; the payload's absent proof no
+  longer drops the mapping's. The payload's own-targetId case is unchanged.
+- Minor 2: the non-account gate now matches the account gate. `authored_capture_secret` withholds
+  any secret that is a hard-access value, whether or not the scenario declares proofs. The set is
+  `CaptureModel.hard_access_values`: a password or PIN lock code, an RFID or biometric `requires`,
+  a Wi-Fi PSK, or a flag value. A secret that opens nothing (Len's 4471) is not in the set and
+  still serves on the capture record, the best-effort bucket under q78. No shipped capture route
+  breaks: the inventory's only non-account secret is 4471, which is not a lock code, PSK, flag or
+  RFID/biometric requires (the records door is badge-only), and the lab_physical_pentest secrets
+  test still proves it served after the beat.
+- Minor 3: the all-scenario scan now also asserts GET /container (every object's `contents`
+  filtered through `filter_requires_and_contents_recursive`) and the inventory copy of every held
+  item, the two routes a nested capture descriptor can ride that the room/bootstrap scan misses
+  (the room answer drops locked contents wholesale), plus the Friendface phone body. GET /mail
+  serves client-synced player_state and GET /ink serves compiled static ink; neither carries a
+  scenario-authored capture descriptor, noted in the test.
+- Nit 1: `scripts/validate_scenario.rb` (check_access_model) now warns when a non-account capture
+  secret (a usePayload or addCapture mapping) is also a password or PIN lock code with no proof,
+  so an author is told it will be withheld and never served.
+- Nit 2: `authored_capture_secrets` is memoised per request (`@authored_capture_secrets`), and the
+  hard-access set is memoised too (`@hard_access_capture_values`), so a poll no longer re-walks
+  the whole scenario each call.
+
+Files: app/models/break_escape/game.rb, lib/break_escape/capture_model.rb,
+scripts/validate_scenario.rb, test/models/break_escape/capture_payload_secret_test.rb, this log.
+
+Tests (no lock, affected files only): capture_payload_secret_test (12 runs), the capture and
+access-model files (capture_payload_secret_routes, lab_physical_pentest_secrets,
+access_model_withholding, capture_secret, access_model_rules, capture_proofs,
+capture_secret_endpoint: 97 runs), npc_workaround_h (34 runs): 0 failures. Validator on
+lab_physical_pentest, test_capture_log and lab_social_engineering: 0 ❌ each, no false-positive
+capture warning. The new nit-1 warning fires on a crafted non-account lock-code capture.
+
 ## Handover
 
 Done. Files: app/models/break_escape/game.rb, the four test files above, this log. Commits:

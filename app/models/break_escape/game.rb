@@ -1256,24 +1256,42 @@ module BreakEscape
     # The authored secret of a capture that is not an account password: a usePayload.secret, a
     # mapping's addCapture.secret or an add_capture action's capture.secret (a PIN read over a
     # shoulder at a keypad, a code copied off a desk), found by its target id (a usePayload
-    # by usepayload_target_ids). Never an account's: a writer on an account
+    # by usepayload_captures). Never an account's: a writer on an account
     # holder, or whose address is an account's username, is served by the account pass with
-    # its capture proofs. A writer with a `proof` is served only once that proof holds. In a
-    # scenario that declares proofs, a secret with no proof that is the code of a PIN or
-    # password lock is not served, as for an account (account_capture_served?).
+    # its capture proofs. A writer with a `proof` is served only once that proof holds. A
+    # secret that is a hard-access value (a password or PIN lock code, a Wi-Fi PSK, an RFID or
+    # biometric requires, or a flag) with no proof is never served on the capture record alone,
+    # as the account gate withholds a password that opens something (account_capture_served?).
     def authored_capture_secret(entry)
       return nil unless entry
 
       proof = entry[:proof]
       return (capture_proof_holds?(proof) ? entry[:secret] : nil) if proof.is_a?(Hash)
-      return nil if scenario_declares_capture_proofs? && CaptureModel.lock_codes(scenario_data).include?(entry[:secret])
+      # A hard-access value is withheld whether or not the scenario declares proofs. A secret
+      # that opens nothing (an event-gated PIN for a badge-only door) still serves: the cheat
+      # policy keeps that best-effort (q78), it only saves the player time.
+      return nil if hard_access_capture_value?(entry[:secret])
 
       entry[:secret]
     end
 
+    # Whether a capture secret is a value that grants hard access if known: the code of a
+    # password or PIN lock, the requires of an RFID or biometric lock, a Wi-Fi PSK, or a flag.
+    # Memoised per request (the set is read from the authored scenario, which does not change).
+    def hard_access_capture_value?(secret)
+      return false unless secret.is_a?(String) && !secret.empty?
+
+      (@hard_access_capture_values ||= CaptureModel.hard_access_values(scenario_data)).include?(secret)
+    end
+
     # { target_id => { secret:, address:, proof: } } for every non-account capture writer with
     # an authored secret, first writer per target id. Read from the authored scenario_data.
+    # Memoised per request: the scenario is fixed, so this is recomputed only once a poll.
     def authored_capture_secrets
+      @authored_capture_secrets ||= build_authored_capture_secrets
+    end
+
+    def build_authored_capture_secrets
       holders = self.class.scenario_room_npcs(scenario_data).select { |npc| self.class.account_holder?(npc) }
       usernames = holders.map { |npc| self.class.normalise_username(npc['creds']['username']) }.to_set
       out = {}
@@ -1293,20 +1311,29 @@ module BreakEscape
         payload = npc['usePayload']
         next unless payload.is_a?(Hash) && !self.class.account_holder?(npc)
 
-        usepayload_target_ids(npc).each { |id| add.call(id, payload) }
+        usepayload_captures(npc, payload).each { |id, capture| add.call(id, capture) }
       end
       out
     end
 
-    # The capture a usePayload fills: its own targetId, else each addCapture mapping on the same
-    # NPC (the mapping its npc_used event overlays the payload onto, as the lab wires it).
-    def usepayload_target_ids(npc)
-      own = npc['usePayload']['targetId']
-      return [own] if own.is_a?(String) && !own.empty?
+    # The captures a usePayload fills, as [target_id, capture] pairs. With its own targetId the
+    # payload fills that one. Otherwise it fills each addCapture mapping on the same NPC, and the
+    # server reads each mapping's own gate: npc-manager.js overlays the payload onto the mapping's
+    # addCapture (the mapping is the base, the payload overrides), so the mapping's proof and
+    # address hold unless the payload carries its own (review R1 minor 1). The secret comes from
+    # the payload; the mapping has none of its own on a usePayload NPC.
+    def usepayload_captures(npc, payload)
+      own = payload['targetId']
+      return [[own, payload]] if own.is_a?(String) && !own.empty?
 
       Array(npc['eventMappings']).filter_map do |mapping|
-        id = mapping.is_a?(Hash) && mapping['addCapture'].is_a?(Hash) ? mapping['addCapture']['targetId'] : nil
-        id if id.is_a?(String) && !id.empty?
+        add_capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
+        next nil unless add_capture.is_a?(Hash)
+
+        id = add_capture['targetId']
+        next nil unless id.is_a?(String) && !id.empty?
+
+        [id, add_capture.merge(payload)]
       end
     end
 

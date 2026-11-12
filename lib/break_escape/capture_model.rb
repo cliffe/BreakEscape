@@ -164,6 +164,49 @@ module BreakEscape
       out
     end
 
+    # The lock types whose requires value grants hard access if known: a password or PIN code,
+    # and the card/owner value an RFID or biometric lock accepts.
+    HARD_ACCESS_LOCK_TYPES = %w[password pin rfid biometric].freeze
+
+    # Every value that grants hard access if known, as strings: the code of a password or PIN
+    # lock, the requires of an RFID or biometric lock, a Wi-Fi PSK, or a flag value. A capture
+    # secret equal to one of these is never served on the capture record alone (the server's
+    # authored_capture_secret withholds it). A secret that opens nothing is not in this set.
+    def hard_access_values(data)
+      out = Set.new
+      add = lambda do |value|
+        Array(value).each do |v|
+          out << v.to_s if (v.is_a?(String) || v.is_a?(Integer)) && !v.to_s.strip.empty?
+        end
+      end
+
+      walk = lambda do |node|
+        case node
+        when Hash
+          add.call(node['requires']) if HARD_ACCESS_LOCK_TYPES.include?(node['lockType'])
+          node.each_value { |value| walk.call(value) }
+        when Array
+          node.each { |value| walk.call(value) }
+        end
+      end
+      walk.call(data)
+
+      networks = data.is_a?(Hash) ? data['networks'] : nil
+      if networks.is_a?(Hash)
+        networks.each_value do |net|
+          wifi = net.is_a?(Hash) ? net['wifi'] : nil
+          add.call(wifi['psk']) if wifi.is_a?(Hash)
+        end
+      end
+
+      flags = data.is_a?(Hash) ? data['flags'] : nil
+      if flags.is_a?(Hash)
+        flags.each_value { |group| group.each_value { |v| add.call(v) } if group.is_a?(Hash) }
+      end
+
+      out
+    end
+
     # Whether this account holder's password is also the code of a password or PIN lock, so a
     # served password opens that lock. codes: lock_codes(data), passed in when checking many
     # accounts.
