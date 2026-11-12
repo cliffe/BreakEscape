@@ -154,5 +154,53 @@ module BreakEscape
       refute_includes response.body, PSK
       refute_includes response.body, SSID
     end
+
+    # Review R1 E1 (plan 5.3): an unlock_object task on an access point is met once the player
+    # has joined there, a second access point of a joined network included, and not before.
+    def wifi_task_scenario
+      data = wifi_scenario
+      data['objectives'][0]['tasks'] += [
+        { 'taskId' => 'join_guest', 'title' => 'Join the guest Wi-Fi', 'type' => 'unlock_object',
+          'targetObject' => 'guest_ap', 'status' => 'active' },
+        { 'taskId' => 'join_lift', 'title' => 'Join at the lift', 'type' => 'unlock_object',
+          'targetObject' => 'guest_ap2', 'status' => 'active' }
+      ]
+      data
+    end
+
+    def complete(task_id)
+      post complete_task_game_url(@game, task_id: task_id), as: :json
+      response.parsed_body
+    end
+
+    test 'an unlock_object task on an access point is refused before a join and met after it' do
+      build_network_game({}, wifi_task_scenario)
+      body = complete('join_guest')
+      assert_equal false, body['success'], body.inspect
+      assert_equal 'Not joined here', body['error']
+      join('guest_ap', PSK)
+      body = complete('join_guest')
+      assert_equal true, body['success'], body.inspect
+      # The second access point is not met by the first join alone
+      body = complete('join_lift')
+      assert_equal false, body['success'], body.inspect
+      assert_equal 'Not joined here', body['error']
+    end
+
+    test 'an already join at a second access point meets the task on that access point' do
+      build_network_game({}, wifi_task_scenario)
+      join('guest_ap', PSK)
+      body = join('guest_ap2')
+      assert_equal true, body['already'], body.inspect
+      body = complete('join_lift')
+      assert_equal true, body['success'], body.inspect
+      assert_equal 'completed', @game.reload.player_state.dig('objectivesState', 'tasks', 'join_lift', 'status')
+    end
+
+    test 'an unlock on an access point does not stand in for the join' do
+      build_network_game({ 'unlockedObjects' => ['guest_ap'] }, wifi_task_scenario)
+      body = complete('join_guest')
+      assert_equal false, body['success'], body.inspect
+    end
   end
 end

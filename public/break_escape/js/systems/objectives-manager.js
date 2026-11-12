@@ -260,9 +260,14 @@ export class ObjectivesManager {
           // 5.3): the server's signedInPcs, restored into pc-sessions.js on load.
           // A jack is "unlocked" once a foothold has ever been gained there (slice 9.3a,
           // 3.5): the server's gainedFootholds, restored into network-links.js on load.
+          // An access point is "unlocked" the same way once the player has joined there
+          // (slice 9.3b, 5.3). An implant's PC is not (it meets no task on its PC: a dropped
+          // stick must not satisfy a sign-in task), and implant footholds are never removed,
+          // so heldAt tells an implant PC apart from a jack or access point.
           if (window.gameState?.unlockedObjects?.includes(task.targetObject) ||
               window.pcSessions?.wasSignedIn?.(task.targetObject) ||
-              window.networkLinks?.wasGained?.(task.targetObject)) {
+              (window.networkLinks?.wasGained?.(task.targetObject) &&
+               window.networkLinks?.heldAt?.(task.targetObject)?.via !== 'implant')) {
             console.log(`📋 Reconciled ${task.taskId}: object already unlocked`);
             this.completeTask(task.taskId);
           }
@@ -330,8 +335,18 @@ export class ObjectivesManager {
 
     // A foothold gained at a jack meets an unlock_object task on that jack (slice 9.3a, 3.5).
     // network-links.js also emits it as network_foothold_gained:<jackId>; the bare name counts once.
+    // An implant meets no task on its PC (slice 9.3b): a dropped stick must not satisfy a
+    // sign-in task, and the server would refuse it ("Not signed in to this PC").
     this.eventDispatcher.on('network_foothold_gained', (data) => {
+      if (data?.via === 'implant') return;
       if (data?.sourceId) this.handleObjectUnlock(data.sourceId, data.sourceId, data.sourceId);
+    });
+
+    // A Wi-Fi join meets an unlock_object task on that access point (slice 9.3b, 5.3). It fires
+    // for a second access point of a joined network too (already: true), which gains no new
+    // foothold; the server has recorded that access point in gainedFootholds by then.
+    this.eventDispatcher.on('network_joined', (data) => {
+      if (data?.apId) this.handleObjectUnlock(data.apId, data.apId, data.apId);
     });
 
     // Room entry

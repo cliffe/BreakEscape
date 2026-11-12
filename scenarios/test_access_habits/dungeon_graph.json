@@ -45,6 +45,12 @@
       "optional": false
     },
     {
+      "id": "lock_noor_pc",
+      "label": "Noor's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "lock_priya_pc",
       "label": "Priya's PC<br/>Sign-in",
       "kind": "lock",
@@ -131,6 +137,18 @@
     {
       "id": "omar_room",
       "label": "Omar",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_noor",
+      "label": "Noor Qureshi sign-in<br/>(nqureshi)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "noor_room",
+      "label": "Noor",
       "kind": "room",
       "optional": false
     },
@@ -246,6 +264,11 @@
       "soft": false
     },
     {
+      "from": "noor_room",
+      "to": "lock_noor_pc",
+      "soft": false
+    },
+    {
       "from": "priya_room",
       "to": "lock_priya_pc",
       "soft": false
@@ -317,6 +340,11 @@
     },
     {
       "from": "signin_dana",
+      "to": "lock_noor_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
       "to": "lock_priya_pc",
       "soft": false
     },
@@ -358,6 +386,11 @@
     {
       "from": "signin_ian",
       "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_noor_pc",
       "soft": false
     },
     {
@@ -407,6 +440,11 @@
     },
     {
       "from": "signin_omar",
+      "to": "lock_noor_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_omar",
       "to": "lock_priya_pc",
       "soft": false
     },
@@ -431,6 +469,56 @@
       "soft": false
     },
     {
+      "from": "noor_room",
+      "to": "signin_noor",
+      "soft": false
+    },
+    {
+      "from": "signin_noor",
+      "to": "lock_dana_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_noor",
+      "to": "lock_ian_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_noor",
+      "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_noor",
+      "to": "lock_noor_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_noor",
+      "to": "lock_priya_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_noor",
+      "to": "lock_kai_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_noor",
+      "to": "lock_mei_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_noor",
+      "to": "lock_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_noor",
+      "to": "lock_tom_pc",
+      "soft": false
+    },
+    {
       "from": "priya_room",
       "to": "signin_priya",
       "soft": false
@@ -448,6 +536,11 @@
     {
       "from": "signin_priya",
       "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_priya",
+      "to": "lock_noor_pc",
       "soft": false
     },
     {
@@ -497,6 +590,11 @@
     },
     {
       "from": "signin_kai",
+      "to": "lock_noor_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_kai",
       "to": "lock_priya_pc",
       "soft": false
     },
@@ -538,6 +636,11 @@
     {
       "from": "signin_mei",
       "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_mei",
+      "to": "lock_noor_pc",
       "soft": false
     },
     {
@@ -587,6 +690,11 @@
     },
     {
       "from": "signin_lena",
+      "to": "lock_noor_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_lena",
       "to": "lock_priya_pc",
       "soft": false
     },
@@ -628,6 +736,11 @@
     {
       "from": "signin_tom",
       "to": "lock_omar_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_tom",
+      "to": "lock_noor_pc",
       "soft": false
     },
     {
@@ -740,6 +853,11 @@
     {
       "from": "ian_room",
       "to": "kai_room",
+      "soft": false
+    },
+    {
+      "from": "omar_room",
+      "to": "noor_room",
       "soft": false
     },
     {

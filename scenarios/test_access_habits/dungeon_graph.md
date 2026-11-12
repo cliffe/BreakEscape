@@ -4,19 +4,19 @@
 
 TEST: Access model awareness and habits
 
-A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Nine beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks. Beyond Kai, the gate hall (H9): Gary holds his door into store A for you; Sara will not open hers into store B with you near.
+A test floor for NPC awareness and habits (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 11). Ten beats, each with a sign. Dana (north, H1) never locks; Ian (east, H2) always locks; Omar (beyond Dana, H3) locks but keeps his password on a note; Priya (south, H4) and Kai (beyond Ian, H5) would never lock but the PC or its policy does; Mei (beyond Priya, H6) has a password you can work out; Tom (beyond Lena, H7) reuses his locker code; Lena (west, H8) sometimes locks. Beyond Kai, the gate hall (H9): Gary holds his door into store A for you; Sara will not open hers into store B with you near. Beyond Omar, Noor (H10) never leaves her desk.
 
 ## Scenario Statistics
 
 | Metric | Value |
 |---|---|
 | Story aims | 1 |
-| Total tasks | 9 (0 optional) |
+| Total tasks | 10 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 11 |
+| Physical locks | 12 |
 | AND-gate convergences | 0 |
-| Rooms | 12 |
-| Puzzle graph nodes / edges | 36 / 106 |
+| Rooms | 13 |
+| Puzzle graph nodes / edges | 39 / 126 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -78,6 +78,7 @@ flowchart TD
   lock_dana_pc["Dana's PC<br/>Sign-in"]
   lock_ian_pc["Ian's PC<br/>Sign-in"]
   lock_omar_pc["Omar's PC<br/>Sign-in"]
+  lock_noor_pc["Noor's PC<br/>Sign-in"]
   lock_priya_pc["Priya's PC<br/>Sign-in"]
   lock_kai_pc["Kai's PC<br/>Sign-in"]
   lock_mei_pc["Mei's PC<br/>Sign-in"]
@@ -93,6 +94,8 @@ flowchart TD
   ian_room("Ian")
   signin_omar{"Omar Haddad sign-in<br/>(ohaddad)"}
   omar_room("Omar")
+  signin_noor{"Noor Qureshi sign-in<br/>(nqureshi)"}
+  noor_room("Noor")
   signin_priya{"Priya Nair sign-in<br/>(pnair)"}
   priya_room("Priya")
   signin_kai{"Kai Brennan sign-in<br/>(kbrennan)"}
@@ -113,6 +116,7 @@ flowchart TD
   dana_room --> lock_dana_pc
   ian_room --> lock_ian_pc
   omar_room --> lock_omar_pc
+  noor_room --> lock_noor_pc
   priya_room --> lock_priya_pc
   kai_room --> lock_kai_pc
   mei_room --> lock_mei_pc
@@ -127,6 +131,7 @@ flowchart TD
   signin_dana --> lock_dana_pc
   signin_dana --> lock_ian_pc
   signin_dana --> lock_omar_pc
+  signin_dana --> lock_noor_pc
   signin_dana --> lock_priya_pc
   signin_dana --> lock_kai_pc
   signin_dana --> lock_mei_pc
@@ -136,6 +141,7 @@ flowchart TD
   signin_ian --> lock_dana_pc
   signin_ian --> lock_ian_pc
   signin_ian --> lock_omar_pc
+  signin_ian --> lock_noor_pc
   signin_ian --> lock_priya_pc
   signin_ian --> lock_kai_pc
   signin_ian --> lock_mei_pc
@@ -145,15 +151,27 @@ flowchart TD
   signin_omar --> lock_dana_pc
   signin_omar --> lock_ian_pc
   signin_omar --> lock_omar_pc
+  signin_omar --> lock_noor_pc
   signin_omar --> lock_priya_pc
   signin_omar --> lock_kai_pc
   signin_omar --> lock_mei_pc
   signin_omar --> lock_lena_pc
   signin_omar --> lock_tom_pc
+  noor_room --> signin_noor
+  signin_noor --> lock_dana_pc
+  signin_noor --> lock_ian_pc
+  signin_noor --> lock_omar_pc
+  signin_noor --> lock_noor_pc
+  signin_noor --> lock_priya_pc
+  signin_noor --> lock_kai_pc
+  signin_noor --> lock_mei_pc
+  signin_noor --> lock_lena_pc
+  signin_noor --> lock_tom_pc
   priya_room --> signin_priya
   signin_priya --> lock_dana_pc
   signin_priya --> lock_ian_pc
   signin_priya --> lock_omar_pc
+  signin_priya --> lock_noor_pc
   signin_priya --> lock_priya_pc
   signin_priya --> lock_kai_pc
   signin_priya --> lock_mei_pc
@@ -163,6 +181,7 @@ flowchart TD
   signin_kai --> lock_dana_pc
   signin_kai --> lock_ian_pc
   signin_kai --> lock_omar_pc
+  signin_kai --> lock_noor_pc
   signin_kai --> lock_priya_pc
   signin_kai --> lock_kai_pc
   signin_kai --> lock_mei_pc
@@ -172,6 +191,7 @@ flowchart TD
   signin_mei --> lock_dana_pc
   signin_mei --> lock_ian_pc
   signin_mei --> lock_omar_pc
+  signin_mei --> lock_noor_pc
   signin_mei --> lock_priya_pc
   signin_mei --> lock_kai_pc
   signin_mei --> lock_mei_pc
@@ -181,6 +201,7 @@ flowchart TD
   signin_lena --> lock_dana_pc
   signin_lena --> lock_ian_pc
   signin_lena --> lock_omar_pc
+  signin_lena --> lock_noor_pc
   signin_lena --> lock_priya_pc
   signin_lena --> lock_kai_pc
   signin_lena --> lock_mei_pc
@@ -190,6 +211,7 @@ flowchart TD
   signin_tom --> lock_dana_pc
   signin_tom --> lock_ian_pc
   signin_tom --> lock_omar_pc
+  signin_tom --> lock_noor_pc
   signin_tom --> lock_priya_pc
   signin_tom --> lock_kai_pc
   signin_tom --> lock_mei_pc
@@ -211,13 +233,14 @@ flowchart TD
   lobby --> lena_room
   dana_room --> omar_room
   ian_room --> kai_room
+  omar_room --> noor_room
   priya_room --> mei_room
   kai_room --> gate_hall
   lena_room --> tom_room
 
-  class door_store_a,door_store_b,lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
-  class store_a,store_b,gate_hall,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
-  class card_store_a_badge,card_store_b_badge,signin_dana,signin_ian,signin_omar,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
+  class door_store_a,door_store_b,lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_noor_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
+  class store_a,store_b,gate_hall,dana_room,ian_room,omar_room,noor_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
+  class card_store_a_badge,card_store_b_badge,signin_dana,signin_ian,signin_omar,signin_noor,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
   class clue_mei_photo,clue_mei_calendar,clue_password_memo item
   class node_start start
 ```
@@ -282,6 +305,7 @@ flowchart TD
   lock_dana_pc["Dana's PC<br/>Sign-in"]
   lock_ian_pc["Ian's PC<br/>Sign-in"]
   lock_omar_pc["Omar's PC<br/>Sign-in"]
+  lock_noor_pc["Noor's PC<br/>Sign-in"]
   lock_priya_pc["Priya's PC<br/>Sign-in"]
   lock_kai_pc["Kai's PC<br/>Sign-in"]
   lock_mei_pc["Mei's PC<br/>Sign-in"]
@@ -297,6 +321,8 @@ flowchart TD
   ian_room("Ian")
   signin_omar{"Omar Haddad sign-in<br/>(ohaddad)"}
   omar_room("Omar")
+  signin_noor{"Noor Qureshi sign-in<br/>(nqureshi)"}
+  noor_room("Noor")
   signin_priya{"Priya Nair sign-in<br/>(pnair)"}
   priya_room("Priya")
   signin_kai{"Kai Brennan sign-in<br/>(kbrennan)"}
@@ -318,6 +344,7 @@ flowchart TD
   dana_room --> lock_dana_pc
   ian_room --> lock_ian_pc
   omar_room --> lock_omar_pc
+  noor_room --> lock_noor_pc
   priya_room --> lock_priya_pc
   kai_room --> lock_kai_pc
   mei_room --> lock_mei_pc
@@ -332,6 +359,7 @@ flowchart TD
   signin_dana --> lock_dana_pc
   signin_dana --> lock_ian_pc
   signin_dana --> lock_omar_pc
+  signin_dana --> lock_noor_pc
   signin_dana --> lock_priya_pc
   signin_dana --> lock_kai_pc
   signin_dana --> lock_mei_pc
@@ -341,6 +369,7 @@ flowchart TD
   signin_ian --> lock_dana_pc
   signin_ian --> lock_ian_pc
   signin_ian --> lock_omar_pc
+  signin_ian --> lock_noor_pc
   signin_ian --> lock_priya_pc
   signin_ian --> lock_kai_pc
   signin_ian --> lock_mei_pc
@@ -350,15 +379,27 @@ flowchart TD
   signin_omar --> lock_dana_pc
   signin_omar --> lock_ian_pc
   signin_omar --> lock_omar_pc
+  signin_omar --> lock_noor_pc
   signin_omar --> lock_priya_pc
   signin_omar --> lock_kai_pc
   signin_omar --> lock_mei_pc
   signin_omar --> lock_lena_pc
   signin_omar --> lock_tom_pc
+  noor_room --> signin_noor
+  signin_noor --> lock_dana_pc
+  signin_noor --> lock_ian_pc
+  signin_noor --> lock_omar_pc
+  signin_noor --> lock_noor_pc
+  signin_noor --> lock_priya_pc
+  signin_noor --> lock_kai_pc
+  signin_noor --> lock_mei_pc
+  signin_noor --> lock_lena_pc
+  signin_noor --> lock_tom_pc
   priya_room --> signin_priya
   signin_priya --> lock_dana_pc
   signin_priya --> lock_ian_pc
   signin_priya --> lock_omar_pc
+  signin_priya --> lock_noor_pc
   signin_priya --> lock_priya_pc
   signin_priya --> lock_kai_pc
   signin_priya --> lock_mei_pc
@@ -368,6 +409,7 @@ flowchart TD
   signin_kai --> lock_dana_pc
   signin_kai --> lock_ian_pc
   signin_kai --> lock_omar_pc
+  signin_kai --> lock_noor_pc
   signin_kai --> lock_priya_pc
   signin_kai --> lock_kai_pc
   signin_kai --> lock_mei_pc
@@ -377,6 +419,7 @@ flowchart TD
   signin_mei --> lock_dana_pc
   signin_mei --> lock_ian_pc
   signin_mei --> lock_omar_pc
+  signin_mei --> lock_noor_pc
   signin_mei --> lock_priya_pc
   signin_mei --> lock_kai_pc
   signin_mei --> lock_mei_pc
@@ -386,6 +429,7 @@ flowchart TD
   signin_lena --> lock_dana_pc
   signin_lena --> lock_ian_pc
   signin_lena --> lock_omar_pc
+  signin_lena --> lock_noor_pc
   signin_lena --> lock_priya_pc
   signin_lena --> lock_kai_pc
   signin_lena --> lock_mei_pc
@@ -395,6 +439,7 @@ flowchart TD
   signin_tom --> lock_dana_pc
   signin_tom --> lock_ian_pc
   signin_tom --> lock_omar_pc
+  signin_tom --> lock_noor_pc
   signin_tom --> lock_priya_pc
   signin_tom --> lock_kai_pc
   signin_tom --> lock_mei_pc
@@ -416,13 +461,14 @@ flowchart TD
   lobby --> lena_room
   dana_room --> omar_room
   ian_room --> kai_room
+  omar_room --> noor_room
   priya_room --> mei_room
   kai_room --> gate_hall
   lena_room --> tom_room
 
-  class door_store_a,door_store_b,lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
-  class store_a,store_b,gate_hall,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
-  class card_store_a_badge,card_store_b_badge,signin_dana,signin_ian,signin_omar,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
+  class door_store_a,door_store_b,lock_dana_pc,lock_ian_pc,lock_omar_pc,lock_noor_pc,lock_priya_pc,lock_kai_pc,lock_mei_pc,lock_lena_pc,lock_tom_pc,lock_tom_locker lock
+  class store_a,store_b,gate_hall,dana_room,ian_room,omar_room,noor_room,priya_room,kai_room,mei_room,lena_room,tom_room,lobby room
+  class card_store_a_badge,card_store_b_badge,signin_dana,signin_ian,signin_omar,signin_noor,signin_priya,signin_kai,signin_mei,signin_lena,signin_tom key
   class clue_mei_photo,clue_mei_calendar,clue_password_memo item
   class aim_habits_beats aim
   class node_start start
@@ -457,6 +503,7 @@ flowchart TD
   dana_room("Dana")
   ian_room("Ian")
   omar_room("Omar")
+  noor_room("Noor")
   priya_room("Priya")
   kai_room("Kai")
   mei_room("Mei")
@@ -472,13 +519,14 @@ flowchart TD
   lobby --> lena_room
   dana_room --> omar_room
   ian_room --> kai_room
+  omar_room --> noor_room
   priya_room --> mei_room
   kai_room --> gate_hall
   lena_room --> tom_room
   gate_hall --> store_a
   gate_hall --> store_b
 
-  class lobby,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,gate_hall room
+  class lobby,dana_room,ian_room,omar_room,noor_room,priya_room,kai_room,mei_room,lena_room,tom_room,gate_hall room
   class store_a,store_b lock
   class node_start start
 ```
@@ -512,6 +560,7 @@ flowchart TD
   dana_room("Dana")
   ian_room("Ian")
   omar_room("Omar")
+  noor_room("Noor")
   priya_room("Priya")
   kai_room("Kai")
   mei_room("Mei")
@@ -534,37 +583,40 @@ flowchart TD
   rc_omar_coffee_12{"Omar coffee"}
   rc_sign_h3_13{"Sign: H3 Careful, with a sticky note"}
   rc_npc_omar_haddad_14("Omar Haddad")
-  rc_priya_pc_15{"Priya's PC"}
-  rc_priya_coffee_16{"Priya coffee"}
-  rc_sign_h4_17{"Sign: H4 The PC's own setting wins"}
-  rc_npc_priya_nair_18("Priya Nair")
-  rc_kai_pc_19{"Kai's PC"}
-  rc_kai_coffee_20{"Kai coffee"}
-  rc_sign_h5_21{"Sign: H5 Policy beats habit"}
-  rc_npc_kai_brennan_22("Kai Brennan")
-  rc_mei_pc_23{"Mei's PC"}
-  rc_mei_coffee_24{"Mei coffee"}
-  rc_mei_photo_25{"Framed photo"}
-  rc_mei_calendar_26{"Wall calendar"}
-  rc_password_memo_27{"IT notice"}
-  rc_sign_h6_28{"Sign: H6 Guessable password"}
-  rc_npc_mei_lin_29("Mei Lin")
-  rc_lena_pc_30{"Lena's PC"}
-  rc_lena_coffee_31{"Lena coffee"}
-  rc_sign_h8_32{"Sign: H8 Sometimes locks"}
-  rc_npc_lena_fox_33("Lena Fox")
-  rc_tom_pc_34{"Tom's PC"}
-  rc_tom_coffee_35{"Tom coffee"}
-  rc_tom_locker_36[["Gym locker"]]
-  rc_tom_kit_list_37{"Kit list"}
-  rc_locker_note_38{"Note on the locker"}
-  rc_sign_h7_39{"Sign: H7 Reused password"}
-  rc_npc_tom_fletcher_40("Tom Fletcher")
-  rc_sign_h9_41{"Sign: H9 Holds doors, and does not"}
-  rc_npc_gary_whitlock_42("Gary Whitlock")
-  rc_npc_sara_quinn_43("Sara Quinn")
-  rc_sign_store_a_44{"Sign: Store A"}
-  rc_sign_store_b_45{"Sign: Store B"}
+  rc_noor_pc_15{"Noor's PC"}
+  rc_sign_h10_16{"Sign: H10 Never leaves"}
+  rc_npc_noor_qureshi_17("Noor Qureshi")
+  rc_priya_pc_18{"Priya's PC"}
+  rc_priya_coffee_19{"Priya coffee"}
+  rc_sign_h4_20{"Sign: H4 The PC's own setting wins"}
+  rc_npc_priya_nair_21("Priya Nair")
+  rc_kai_pc_22{"Kai's PC"}
+  rc_kai_coffee_23{"Kai coffee"}
+  rc_sign_h5_24{"Sign: H5 Policy beats habit"}
+  rc_npc_kai_brennan_25("Kai Brennan")
+  rc_mei_pc_26{"Mei's PC"}
+  rc_mei_coffee_27{"Mei coffee"}
+  rc_mei_photo_28{"Framed photo"}
+  rc_mei_calendar_29{"Wall calendar"}
+  rc_password_memo_30{"IT notice"}
+  rc_sign_h6_31{"Sign: H6 Guessable password"}
+  rc_npc_mei_lin_32("Mei Lin")
+  rc_lena_pc_33{"Lena's PC"}
+  rc_lena_coffee_34{"Lena coffee"}
+  rc_sign_h8_35{"Sign: H8 Sometimes locks"}
+  rc_npc_lena_fox_36("Lena Fox")
+  rc_tom_pc_37{"Tom's PC"}
+  rc_tom_coffee_38{"Tom coffee"}
+  rc_tom_locker_39[["Gym locker"]]
+  rc_tom_kit_list_40{"Kit list"}
+  rc_locker_note_41{"Note on the locker"}
+  rc_sign_h7_42{"Sign: H7 Reused password"}
+  rc_npc_tom_fletcher_43("Tom Fletcher")
+  rc_sign_h9_44{"Sign: H9 Holds doors, and does not"}
+  rc_npc_gary_whitlock_45("Gary Whitlock")
+  rc_npc_sara_quinn_46("Sara Quinn")
+  rc_sign_store_a_47{"Sign: Store A"}
+  rc_sign_store_b_48{"Sign: Store B"}
 
   lobby --> dana_room
   lobby --> ian_room
@@ -572,6 +624,7 @@ flowchart TD
   lobby --> lena_room
   dana_room --> omar_room
   ian_room --> kai_room
+  omar_room --> noor_room
   priya_room --> mei_room
   kai_room --> gate_hall
   lena_room --> tom_room
@@ -591,42 +644,45 @@ flowchart TD
   omar_room --> rc_omar_coffee_12
   omar_room --> rc_sign_h3_13
   omar_room --> rc_npc_omar_haddad_14
-  priya_room --> rc_priya_pc_15
-  priya_room --> rc_priya_coffee_16
-  priya_room --> rc_sign_h4_17
-  priya_room --> rc_npc_priya_nair_18
-  kai_room --> rc_kai_pc_19
-  kai_room --> rc_kai_coffee_20
-  kai_room --> rc_sign_h5_21
-  kai_room --> rc_npc_kai_brennan_22
-  mei_room --> rc_mei_pc_23
-  mei_room --> rc_mei_coffee_24
-  mei_room --> rc_mei_photo_25
-  mei_room --> rc_mei_calendar_26
-  mei_room --> rc_password_memo_27
-  mei_room --> rc_sign_h6_28
-  mei_room --> rc_npc_mei_lin_29
-  lena_room --> rc_lena_pc_30
-  lena_room --> rc_lena_coffee_31
-  lena_room --> rc_sign_h8_32
-  lena_room --> rc_npc_lena_fox_33
-  tom_room --> rc_tom_pc_34
-  tom_room --> rc_tom_coffee_35
-  tom_room --> rc_tom_locker_36
-  rc_tom_locker_36 --> rc_tom_kit_list_37
-  tom_room --> rc_locker_note_38
-  tom_room --> rc_sign_h7_39
-  tom_room --> rc_npc_tom_fletcher_40
-  gate_hall --> rc_sign_h9_41
-  gate_hall --> rc_npc_gary_whitlock_42
-  gate_hall --> rc_npc_sara_quinn_43
-  store_a --> rc_sign_store_a_44
-  store_b --> rc_sign_store_b_45
+  noor_room --> rc_noor_pc_15
+  noor_room --> rc_sign_h10_16
+  noor_room --> rc_npc_noor_qureshi_17
+  priya_room --> rc_priya_pc_18
+  priya_room --> rc_priya_coffee_19
+  priya_room --> rc_sign_h4_20
+  priya_room --> rc_npc_priya_nair_21
+  kai_room --> rc_kai_pc_22
+  kai_room --> rc_kai_coffee_23
+  kai_room --> rc_sign_h5_24
+  kai_room --> rc_npc_kai_brennan_25
+  mei_room --> rc_mei_pc_26
+  mei_room --> rc_mei_coffee_27
+  mei_room --> rc_mei_photo_28
+  mei_room --> rc_mei_calendar_29
+  mei_room --> rc_password_memo_30
+  mei_room --> rc_sign_h6_31
+  mei_room --> rc_npc_mei_lin_32
+  lena_room --> rc_lena_pc_33
+  lena_room --> rc_lena_coffee_34
+  lena_room --> rc_sign_h8_35
+  lena_room --> rc_npc_lena_fox_36
+  tom_room --> rc_tom_pc_37
+  tom_room --> rc_tom_coffee_38
+  tom_room --> rc_tom_locker_39
+  rc_tom_locker_39 --> rc_tom_kit_list_40
+  tom_room --> rc_locker_note_41
+  tom_room --> rc_sign_h7_42
+  tom_room --> rc_npc_tom_fletcher_43
+  gate_hall --> rc_sign_h9_44
+  gate_hall --> rc_npc_gary_whitlock_45
+  gate_hall --> rc_npc_sara_quinn_46
+  store_a --> rc_sign_store_a_47
+  store_b --> rc_sign_store_b_48
 
-  class lobby,dana_room,ian_room,omar_room,priya_room,kai_room,mei_room,lena_room,tom_room,gate_hall room
+  class lobby,dana_room,ian_room,omar_room,noor_room,priya_room,kai_room,mei_room,lena_room,tom_room,gate_hall room
   class store_a,store_b lock
-  class rc_sign_lobby_1,rc_dana_pc_3,rc_dana_coffee_4,rc_sign_h1_5,rc_ian_pc_7,rc_ian_coffee_8,rc_sign_h2_9,rc_omar_pc_11,rc_omar_coffee_12,rc_sign_h3_13,rc_priya_pc_15,rc_priya_coffee_16,rc_sign_h4_17,rc_kai_pc_19,rc_kai_coffee_20,rc_sign_h5_21,rc_mei_pc_23,rc_mei_coffee_24,rc_mei_photo_25,rc_mei_calendar_26,rc_password_memo_27,rc_sign_h6_28,rc_lena_pc_30,rc_lena_coffee_31,rc_sign_h8_32,rc_tom_pc_34,rc_tom_coffee_35,rc_tom_kit_list_37,rc_locker_note_38,rc_sign_h7_39,rc_sign_h9_41,rc_sign_store_a_44,rc_sign_store_b_45 item
-  class rc_npc_rowan_price_2,rc_npc_dana_reyes_6,rc_npc_ian_shaw_10,rc_npc_omar_haddad_14,rc_npc_priya_nair_18,rc_npc_kai_brennan_22,rc_npc_mei_lin_29,rc_npc_lena_fox_33,rc_npc_tom_fletcher_40,rc_npc_gary_whitlock_42,rc_npc_sara_quinn_43 npc
-  class rc_tom_locker_36 container
+  class rc_sign_lobby_1,rc_dana_pc_3,rc_dana_coffee_4,rc_sign_h1_5,rc_ian_pc_7,rc_ian_coffee_8,rc_sign_h2_9,rc_omar_pc_11,rc_omar_coffee_12,rc_sign_h3_13,rc_noor_pc_15,rc_sign_h10_16,rc_priya_pc_18,rc_priya_coffee_19,rc_sign_h4_20,rc_kai_pc_22,rc_kai_coffee_23,rc_sign_h5_24,rc_mei_pc_26,rc_mei_coffee_27,rc_mei_photo_28,rc_mei_calendar_29,rc_password_memo_30,rc_sign_h6_31,rc_lena_pc_33,rc_lena_coffee_34,rc_sign_h8_35,rc_tom_pc_37,rc_tom_coffee_38,rc_tom_kit_list_40,rc_locker_note_41,rc_sign_h7_42,rc_sign_h9_44,rc_sign_store_a_47,rc_sign_store_b_48 item
+  class rc_npc_rowan_price_2,rc_npc_dana_reyes_6,rc_npc_ian_shaw_10,rc_npc_omar_haddad_14,rc_npc_noor_qureshi_17,rc_npc_priya_nair_21,rc_npc_kai_brennan_25,rc_npc_mei_lin_32,rc_npc_lena_fox_36,rc_npc_tom_fletcher_43,rc_npc_gary_whitlock_45,rc_npc_sara_quinn_46 npc
+  class rc_tom_locker_39 container
   class node_start start
 ```

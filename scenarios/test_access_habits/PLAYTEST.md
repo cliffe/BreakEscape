@@ -1,9 +1,9 @@
-# test_access_habits: scripted playtest (H1 to H9)
+# test_access_habits: scripted playtest (H1 to H10)
 
 The scripted runs for access model slice 9.1 (`docs/achitechture/ACCESS_MODEL_SLICE_9_1_PLAN.md`,
-section 11). Three runs, each with its own new game: **Run 1** is H1 to H5, with a reload after
+section 11). Four runs, each with its own new game: **Run 1** is H1 to H5, with a reload after
 H3; **Run 2** is H6 to H8, with the reload inside H8; **Run 3** is H9 (holds doors, slice 9.1
-step 5). After every beat, check what is on screen, what the server recorded and what reached the
+step 5); **Run 4** is H10 (an owner who never leaves, owner claim decision q78). After every beat, check what is on screen, what the server recorded and what reached the
 browser.
 
 This file names who never locks and whose password is on a note. It is for regression testers,
@@ -13,11 +13,13 @@ never for a tester playing blind. No password is written here or on a sign: the 
 ## Setup (each run)
 
 Keyless server on :3001 (never touch :3000). In a container, set
-`PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium` and pass `--headless`. The mission row
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE` to the Playwright headless shell (on this machine
+`$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell`)
+and pass `--headless`. The mission row
 must exist (`db:seed` in standalone Break Escape, or publish this one mission).
 
 ```bash
-export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH RBENV_VERSION=3.1.6
+export RBENV_VERSION=2.7.8
 tools/playtest/start-keyless-server.sh
 PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb test_access_habits
 S=<scratchpad>/test_access_habits-regress
@@ -63,7 +65,9 @@ An open leave records neither. Do not name sound files or chime keys.
 LANG=C.UTF-8 ruby scripts/validate_scenario.rb scenarios/test_access_habits/scenario.json.erb
 ```
 
-No errors and one expected warning: rfid `store_b_badge` is opened only through a careful guard's
+No errors and two expected warnings. The first: `noor_pc` is owned by Noor, whom nothing sends
+away from her desk (her only need is met at her own PC and attacks are off), so the screen is never
+left open and the server refuses a claim there. That is what H10 tests. The second: rfid `store_b_badge` is opened only through a careful guard's
 gate into `store_b` (Sara, `holdsDoors` false), with no cloner and no keycard item, so the player
 cannot get in. That is what H9 tests (the player never enters `store_b`); in a mission it would be
 a soft-lock. Of this slice's lines, one suggestion: Lena locks `lena_pc`
@@ -283,6 +287,29 @@ noHold sara` (none for Gary's). Globals `h9_a_opened`, `h9_b_opened`, `h9_sara_t
 `h9_holds_doors` completed. `store_b` may be in `unlockedRooms`: Sara's route unlocks it on the
 server. The player never enters it. The leak check says `VERDICT: no leaks found`.
 
+## Run 4: H10 Never leaves (owner claim q78)
+
+Room `noor_room`, north of `omar_room`. PC `noor_pc` (Noor Qureshi, an account,
+`locksScreenOnLeave: false`). Her one need, `work`, is met only at her own PC (`affordance` on
+`noor_pc`), so every use is at her post and she never gets up; `disableAttacks` means she cannot be
+knocked out either. The screen would never lock, but it is never left open.
+
+1. Go to `noor_room`, read `sign_h10`.
+2. `interact` `noor_pc`: the toast "Noor Qureshi is using this PC." and `pc_in_use` for `noor_pc`.
+   Task `h10_never_leaves` complete. Wait two minutes and click again: still in use;
+   `workstation('noor_pc').present` stays true and `npc_left_post:noor` never fires.
+3. **The forged claim.** From the browser console (not the UI), send the claim a tampered client
+   would send: `POST /break_escape/games/<id>/login` with
+   `{ pc_id: "noor_pc", claim: "owner", globals: { noor_pc_screen_locked: false, noor_pc_owner_away: true } }`,
+   as JSON, with the page's CSRF token (`document.querySelector('meta[name=csrf-token]').content`) in
+   an `X-CSRF-Token` header; without it the request fails before the claim is judged.
+   The answer is 422 `{ success: false, message: "Sign in required" }`, and the server log has
+   `login claim refused at noor_pc: the owner never leaves the post`.
+4. **The honest claim still works.** In the same game, H1: wait in `dana_room` for Dana to leave
+   and click `dana_pc`: her desktop opens through a claim, as before.
+
+Server record: no `sessions.noor_pc`; `sessions.dana_pc = dana (claim)`.
+
 ## Earned secrets
 
 | Password | Earned from |
@@ -291,4 +318,4 @@ server. The player never enters it. The leak check says `VERDICT: no leaks found
 | Mei's | the photo, the calendar and the IT notice (H6) |
 | Tom's | the note on his gym locker (H7) |
 
-Dana's, Ian's, Priya's, Kai's and Lena's are never typed.
+Dana's, Ian's, Priya's, Kai's, Lena's and Noor's are never typed.

@@ -14,13 +14,20 @@
  *   browser re-renders on it.
  * - A toast "<name> posted on <site name>" shows when the player has opened that site before
  *   (se_osint_state.visited), unless social.osint.postToasts is false. Plain text.
+ * - C3 (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md 4): a reply carries post.replyTo (its thread post) and
+ *   the ids replyToNpc, replyToPerson, namedNpc and namedPerson; every served post carries a
+ *   game-wide `seq`. A reply is drawn in its thread (repliesFor, oldest first) and, unless it is
+ *   the poster's own answer, on the replier's profile too (postsFor). Its toast reads "<replier>
+ *   replied to <named NPC> on <site name>".
  *
  * Every post field is author text: it is kept as a string and only ever rendered as text
  * (the browser's h() helper sets textContent; toasts are plain text by default).
  */
 
 const OSINT_STATE_KEY = 'se_osint_state';
-const POST_FIELDS = ['id', 'text', 'fact', 'date', 'note'];
+const POST_FIELDS = ['id', 'text', 'fact', 'date', 'note', 'replyTo'];
+/** The reply ids an item may carry beside its post (C3), kept as strings */
+const REPLY_IDS = ['replyToNpc', 'replyToPerson', 'namedNpc', 'namedPerson'];
 
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 
@@ -92,7 +99,8 @@ export const MAX_WAIT_S = 2147483;
 export class SocialFeed {
     /**
      * deps: { send(npcId, source) -> Promise<body>, hasFeed(npcId), mergeFact(id, entry), emit(name, data),
-     *         toast(message, title), siteVisited(siteId), toastsOn(), npcName(npcId), siteName(siteId),
+     *         toast(message, title), siteVisited(siteId), toastsOn(), npcName(npcId) (null for an NPC
+     *         with no record), siteName(siteId), profileName(siteId, personId),
      *         later(fn, ms) (optional; setTimeout) }
      */
     constructor(deps = {}) {
@@ -197,25 +205,79 @@ export class SocialFeed {
             }
         }
         const index = Number.isInteger(item.index) ? item.index : list.length;
-        list.push({ index, post, site: item.site, person: item.person });
+        const seq = Number.isInteger(item.seq) && item.seq > 0 ? item.seq : 0;
+        const entry = { index, seq, post, site: item.site, person: item.person };
+        for (const k of REPLY_IDS) if (isStr(item[k])) entry[k] = item[k];
+        list.push(entry);
         list.sort((a, b) => a.index - b.index);
         this.posts.set(npcId, list);
         if (live) {
-            this.deps.emit?.(`npc_posted:${npcId}`, { npcId, postId: post.id, index, site: item.site, person: item.person });
+            const data = { npcId, postId: post.id, index, seq, site: item.site, person: item.person };
+            if (isStr(post.replyTo)) {
+                data.replyTo = post.replyTo;
+                for (const k of REPLY_IDS) if (isStr(entry[k])) data[k] = entry[k];
+            }
+            this.deps.emit?.(`npc_posted:${npcId}`, data);
             if (this.deps.toastsOn?.() !== false && this.deps.siteVisited?.(item.site)) {
-                this.deps.toast?.(`${this.deps.npcName?.(npcId) || npcId} posted on ${this.deps.siteName?.(item.site) || item.site}`, 'New post');
+                const site = this.deps.siteName?.(item.site) || item.site;
+                const who = this._name(npcId, item.site, item.person);
+                if (isStr(post.replyTo)) {
+                    const named = this._name(entry.namedNpc, item.site, entry.namedPerson);
+                    this.deps.toast?.(`${who} replied to ${named} on ${site}`, 'New reply');
+                } else {
+                    this.deps.toast?.(`${who} posted on ${site}`, 'New post');
+                }
             }
         }
         return true;
     }
 
-    /** The revealed posts on one profile, newest first, as post blocks (copies). */
+    /** An NPC's name for a toast: its record's name, else its Friendface profile's name, else its id. */
+    _name(npcId, siteId, personId) {
+        const rec = isStr(npcId) ? this.deps.npcName?.(npcId) : null;
+        if (isStr(rec)) return rec;
+        const prof = isStr(personId) ? this.deps.profileName?.(siteId, personId) : null;
+        if (isStr(prof)) return prof;
+        return isStr(npcId) ? npcId : (isStr(personId) ? personId : 'Someone');
+    }
+
+    /** Whether a stored entry is a reply, and whether it is the poster's own answer in her thread. */
+    static isReply(p) { return isStr(p.post.replyTo); }
+    static isAnswer(p) { return isStr(p.post.replyTo) && p.replyToPerson === p.person; }
+
+    /**
+     * The revealed posts on one profile, newest first, as post blocks (copies). An answer (the
+     * poster's own reply in her thread) is left out: it is drawn only in its thread. A reply to a
+     * colleague stays, with `replyToPerson` set so the view draws its "Replied to" line.
+     */
     postsFor(siteId, personId) {
         const out = [];
         for (const list of this.posts.values()) {
-            for (const p of list) if (p.site === siteId && p.person === personId) out.push(p);
+            for (const p of list) {
+                if (p.site === siteId && p.person === personId && !SocialFeed.isAnswer(p)) out.push(p);
+            }
         }
-        return out.sort((a, b) => b.index - a.index).map((p) => ({ ...p.post }));
+        return out.sort((a, b) => b.index - a.index).map((p) => {
+            const block = { ...p.post };
+            if (SocialFeed.isReply(p) && isStr(p.replyToPerson)) block.replyToPerson = p.replyToPerson;
+            return block;
+        });
+    }
+
+    /**
+     * The thread under one own post: every revealed reply whose replyTo is postId, from every NPC,
+     * oldest first by seq, then by poster id. Each entry is { npcId, site, person, seq, post }.
+     * A reply that arrived before its thread post is kept, so it shows once the post arrives.
+     */
+    repliesFor(postId) {
+        if (!isStr(postId)) return [];
+        const out = [];
+        for (const [npcId, list] of this.posts) {
+            for (const p of list) {
+                if (p.post.replyTo === postId) out.push({ npcId, site: p.site, person: p.person, seq: p.seq, post: { ...p.post } });
+            }
+        }
+        return out.sort((a, b) => (a.seq - b.seq) || (a.npcId < b.npcId ? -1 : a.npcId > b.npcId ? 1 : 0));
     }
 
     /** { npcId: [postId, ...] } in post order (the test bridge's feed()). */
@@ -249,7 +311,13 @@ export function liveDeps(api, w) {
         toastsOn: () => osint().postToasts !== false,
         npcName(npcId) {
             const rec = w.npcManager?.getNPC?.(npcId) || w.npcManager?.npcs?.get?.(npcId);
-            return (rec && (rec.displayName || rec.name)) || npcId;
+            const name = rec && (rec.displayName || rec.name);
+            return isStr(name) ? name : null;
+        },
+        profileName(siteId, personId) {
+            const site = (Array.isArray(osint().sites) ? osint().sites : []).find((s) => s?.id === siteId);
+            const prof = (Array.isArray(site?.profiles) ? site.profiles : []).find((p) => p?.person === personId);
+            return isStr(prof?.name) ? prof.name : null;
         },
         siteName(siteId) {
             const site = (Array.isArray(osint().sites) ? osint().sites : []).find((s) => s?.id === siteId);

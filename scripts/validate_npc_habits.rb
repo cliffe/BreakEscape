@@ -262,8 +262,16 @@ module ValidateNpcHabits
     when 'guessable'
       backing = CL.backing(npc, expanded, texts, pattern)
       unless backing[:backed]
-        warn(issues, "#{who} has password \"guessable\" but it is not backed: #{backing[:reasons].join('; ')}. " \
-                     'See the habits report for each piece.')
+        # C3 (plan 9): a second pass over the alternative-set feed posts, which may never ship.
+        set_texts = CL.set_member_texts(expanded)
+        if set_texts.any? && CL.backing(npc, expanded, texts + set_texts, pattern)[:backed]
+          warn(issues, "#{who} has password \"guessable\" backed only by posts whose shipping depends on timing " \
+                       "(alternative sets #{set_ids(set_texts) { |t| CL.backing(npc, expanded, texts + [t], pattern)[:backed] }}); move the clue to an own post outside any set; " \
+                       'the dungeon graph does not draw this clue.')
+        else
+          warn(issues, "#{who} has password \"guessable\" but it is not backed: #{backing[:reasons].join('; ')}. " \
+                       'See the habits report for each piece.')
+        end
       end
       pcs = AI.sign_in_pcs(expanded).select { |e| AI.account_admitted?(e[:object], npc) }
       if pcs.any? && pcs.all? { |e| max_attempts?(e[:object], expanded) }
@@ -279,8 +287,20 @@ module ValidateNpcHabits
         warn(issues, "#{who} has password \"strong\" but another secret in the scenario equals it.")
       elsif CL.parts_all_sourced?(npc, expanded, texts)
         warn(issues, "#{who} has password \"strong\" but every word and number part of it can be read in the scenario.")
+      else
+        set_texts = CL.set_member_texts(expanded)
+        if set_texts.any? && CL.parts_all_sourced?(npc, expanded, texts + set_texts)
+          warn(issues, "#{who} has password \"strong\" but every word and number part of it can be read in posts " \
+                       "that may ship (alternative sets #{set_ids(set_texts) { |t| CL.parts_all_sourced?(npc, expanded, texts + [t]) }}); the dungeon graph does not draw this clue.")
+        end
       end
     end
+  end
+
+  # The set ids to name: those whose text alone completes the clue, else every set that holds one
+  def set_ids(set_texts, &alone)
+    named = set_texts.select(&alone)
+    (named.empty? ? set_texts : named).map { |t| t[:set] }.uniq.join(', ')
   end
 
   def max_attempts?(pc, scenario)

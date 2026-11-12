@@ -27,10 +27,12 @@ require_relative 'validate_capture_log'
 require_relative 'validate_wearable'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
+require_relative '../lib/break_escape/capture_model'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative 'validate_npc_habits'
 require_relative '../lib/break_escape/access_work'
+require_relative '../lib/break_escape/owner_claim'
 require_relative 'validate_access_work'
 
 # Try to load json-schema gem, provide helpful error if missing
@@ -6314,6 +6316,43 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
              '(usernames compare trimmed and case-insensitively).')
   end
 
+  # A non-account capture secret that is also a password or PIN lock code is withheld until a
+  # capture proof holds (Game#authored_capture_secret), so one authored with no proof is never
+  # served and the capture silently stops working. Warn the author (usePayload/capture review R1).
+  lock_codes = BreakEscape::CaptureModel.lock_codes(json_data)
+  unless lock_codes.empty?
+    room_npcs.reject { |e| ai.account?(e[:npc]) }.each do |e|
+      npc = e[:npc]
+      payload = npc['usePayload']
+      if payload.is_a?(Hash) && lock_codes.include?(payload['secret'].to_s)
+        own = payload['targetId']
+        ungated = if own.is_a?(String) && !own.strip.empty?
+                    !payload['proof'].is_a?(Hash)
+        else
+                    Array(npc['eventMappings']).any? do |m|
+                      ac = m.is_a?(Hash) ? m['addCapture'] : nil
+                      ac.is_a?(Hash) && BreakEscape::CaptureModel.present_string?(ac['targetId']) &&
+                        !(ac['proof'].is_a?(Hash) || payload['proof'].is_a?(Hash))
+                    end
+        end
+        if ungated
+          warn.call("NPC #{name_of.call(npc)} has a usePayload.secret that is also a password or PIN lock " \
+                    'code but no capture proof gates it, so the capture is withheld and never served. Add a ' \
+                    "'proof' to the capture, or make the secret open nothing.")
+        end
+      end
+      Array(npc['eventMappings']).each_with_index do |mapping, i|
+        capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
+        next unless capture.is_a?(Hash) && lock_codes.include?(capture['secret'].to_s)
+        next if capture['proof'].is_a?(Hash)
+
+        warn.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture.secret is also a password or PIN " \
+                  'lock code but the mapping has no \'proof\', so the capture is withheld and never served. ' \
+                  "Add a 'proof' to the capture, or make the secret open nothing.")
+      end
+    end
+  end
+
   # Access lists: people must be room NPCs; roles should be held by someone
   roles_held = room_npcs.flat_map { |e| ai.identity_roles(e[:npc]) }.to_set
   acl_sources = []
@@ -6485,9 +6524,9 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
       when :no_direction
         said = if door.key?('direction')
                  "direction #{door['direction'].inspect}, which is not north, south, east or west (lower case),"
-               else
+        else
                  "no 'direction' (north, south, east or west),"
-               end
+        end
         warn.call("#{at} but #{said} #{dead} Add the direction under which room '#{room_id}' lists " \
                   "'#{door['connectedRoom']}' in its connections.")
         next
@@ -6539,6 +6578,25 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     end
   end
   find_rewards.call(json_data)
+  # Owner claim q78, judged as the server judges it: on the data as prepared at game creation
+  # (habits expanded, so screenHabit is filled; object ids stamped), and only where check 10 is
+  # the reason the claim is refused. An owner with no account or not on the PC's access list, a
+  # screen that always locks and a policy with autoLockMin 0 are refused by an earlier check.
+  claim_data = nil
+  owner_never_leaves = lambda do |raw_pc, owner_id|
+    claim_data ||= BreakEscape::NpcHabits.expanded_copy(json_data).first
+    c_pc = ai.sign_in_pcs(claim_data).map { |x| x[:object] }.find { |o| raw_pc['id'] && o['id'] == raw_pc['id'] } || raw_pc
+    c_owner = ai.room_npcs(claim_data).map { |x| x[:npc] }.find { |n| n['id'].to_s == owner_id.to_s }
+    next false unless c_owner
+    # Game#claim_login_session! checks 4 and 5 (account_holder?, pc_admits_account?)
+    next false unless ai.account?(c_owner) && (c_pc['access'].nil? || ai.acl_admits?(c_pc['access'], c_owner))
+    next false if ai.screen_always_locks?(c_pc, c_owner)
+
+    c_policy = claim_data['policies'].is_a?(Hash) ? claim_data['policies'][(c_pc['policy'] || claim_data['defaultPolicy']).to_s] : nil
+    next false if c_policy.is_a?(Hash) && c_policy['autoLockMin'].is_a?(Numeric) && c_policy['autoLockMin'].zero?
+
+    BreakEscape::OwnerClaim.never_leaves?(claim_data, c_owner, c_pc)
+  end
   pcs.each do |e|
     pc = e[:object]
     where = "sign-in PC '#{pc['id'] || e[:path]}'"
@@ -6567,9 +6625,19 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
           warn.call("#{where} has lockChance #{lock_chance}: whether its owner's session is left open depends on a " \
                     'seeded roll. Fix the chance at 0 or 1, or make sure another route exists.')
         end
-        unless ai.needs_tracked?(owner[:npc])
+        if !ai.needs_tracked?(owner[:npc])
           warn.call("#{where} is owned by '#{owner_id}', who has no valid needs or interests entry, so the owner " \
                     'never leaves and no unlocked session is possible there.')
+        elsif owner_never_leaves.call(pc, owner_id)
+          # Owner claim q78: the server refuses a claim here too
+          warn.call("#{where} is owned by '#{owner_id}', whom nothing sends away from the post in a way that " \
+                    'can leave the screen open: no need is met by any object other than their own post (in any room), no ' \
+                    'print errand or failure route, no patrol, scripted move, patrol_mode ink tag or unreadable story, ' \
+                    'social media need, station hook, interest, phone answering, print habit or movable source, and a ' \
+                    'knock-out is either ' \
+                    'impossible (disableAttacks or koImmune) or always locks this screen. No unlocked session is ' \
+                    'possible there and the server refuses a claim. If the screen is meant to be found open, give ' \
+                    'the owner a need met somewhere else, or allow attacks and give the PC a lockChance below 1.')
         end
       end
     end

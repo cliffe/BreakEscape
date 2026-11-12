@@ -728,3 +728,29 @@ test('more than eight link paths between two carrying networks warns', { skip },
     sc.networkLinks = links;
     assertHas(warnings(issues(sc)), 'link paths; the pivot keeps only the first');
 });
+
+// C3 (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md, 9): a psk only in alternative-set feed posts.
+test('a Wi-Fi key only in set member posts warns about timing; on an own post outside any set it is findable', { skip }, () => {
+    const feeder = (ventText, ownText) => ({
+        id: 'ivy', displayName: 'Ivy', npcType: 'person',
+        needs: { social_media: { decayPerMin: 60, urgentAt: 40 } },
+        feed: { site: 'friendface', person: 'ivy', posts: [
+            { id: 'ivy_own', text: ownText },
+            { id: 'ivy_vent', text: ventText, when: { cause: 'down', need: 'work' } },
+            { id: 'ivy_re', text: '{name}, the shared drive is down here too.', replyTo: 'tom_vent', insteadOf: 'ivy_vent',
+                when: { cause: 'down', need: 'work' } }
+        ] }
+    });
+    let sc = wifiClean();
+    room(sc, 'lobby').objects = room(sc, 'lobby').objects.filter(o => o.id !== 'wifi_note');
+    room(sc, 'lobby').npcs = [...(room(sc, 'lobby').npcs || []), feeder('Guest key is seabreeze-2025 if anyone asks.', 'Quiet morning so far.')];
+    let w = warnings(issues(sc));
+    assertHas(w, 'psk appears only in posts whose shipping depends on timing (alternative sets ivy_vent)');
+    assertHas(w, 'the dungeon graph does not draw this clue');
+    assert.ok(!w.some(s => s.includes('psk appears nowhere')), w.join('\n'));
+    sc = wifiClean();
+    room(sc, 'lobby').objects = room(sc, 'lobby').objects.filter(o => o.id !== 'wifi_note');
+    room(sc, 'lobby').npcs = [...(room(sc, 'lobby').npcs || []), feeder('Nothing saves this morning.', 'Guest key is seabreeze-2025 if anyone asks.')];
+    w = warnings(issues(sc));
+    assert.ok(!w.some(s => s.includes('psk appears')), w.join('\n'));
+});

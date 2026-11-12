@@ -222,3 +222,24 @@ test('site.logo: false is accepted (no logo); true is an error', { skip }, () =>
   const on = mutated((s) => { s.social.osint.sites[0].logo = true; });
   assert.equal(hits(lint(on), /logo is true/).length, 1);
 });
+
+// C3 (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md, 9): feed_elements skips posts with a reply field, so a
+// fact wrongly authored on a reply is not counted as granted by it.
+test('C3: a fact on a feed reply is not granted by it; the same post as an own post grants it', { skip }, () => {
+  const withPost = (post) => mutated((s) => {
+    s.social.intelFacts.feed_fact = { label: 'Feed fact', subject: 'pierce', text: 'A fact on a feed post.', source: 'ivy_post' };
+    s.globalVariables = { ...(s.globalVariables || {}), se_intel_feed_fact: false };
+    s.rooms.lab.npcs = [...(s.rooms.lab.npcs || []), {
+      id: 'ivy', displayName: 'Ivy', npcType: 'person',
+      needs: { social_media: { decayPerMin: 60, urgentAt: 40 } },
+      feed: { site: 'friendface', person: 'ivy', posts: [
+        { id: 'ivy_vent', text: 'The shared drive is down again.', when: { global: 'x' } },
+        { id: 'ivy_post', text: 'A post that carries the feed fact.', fact: 'feed_fact', ...post }
+      ] }
+    }];
+  });
+  const granted = lint(withPost({}));
+  assert.deepEqual(hits(granted, /feed_fact' is granted by nothing/), [], granted.join('\n'));
+  const reply = lint(withPost({ replyTo: 'tom_vent', insteadOf: 'ivy_vent', when: { global: 'x' } }));
+  assert.equal(hits(reply, /feed_fact' is granted by nothing/).length, 1, reply.join('\n'));
+});
