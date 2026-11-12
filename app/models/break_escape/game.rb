@@ -196,6 +196,8 @@ module BreakEscape
       copy = item.deep_dup
       copy.delete('saved_cards')
       filter_inventory_for_client!(copy)
+      # Step 2b (plan item 3): author notes never ship. One item handed over; Node of an item.
+      AuthorNotes.strip_notes!(copy, ScenarioSchema.at('#/definitions/item'))
       copy
     end
 
@@ -768,7 +770,11 @@ module BreakEscape
       inventory = player_state.is_a?(Hash) ? player_state['inventory'] : nil
       return inventory unless inventory.is_a?(Array)
 
-      inventory.deep_dup.tap { |items| filter_inventory_for_client!(items) }
+      inventory.deep_dup.tap do |items|
+        filter_inventory_for_client!(items)
+        # Step 2b (plan item 3): author notes never ship. A list of items; Node of a contents list.
+        AuthorNotes.strip_notes!(items, ScenarioSchema.at('#/definitions/item/properties/contents'))
+      end
     end
 
     # The stored scenario column, read one way for every capture-recording path (review
@@ -1559,6 +1565,11 @@ module BreakEscape
       # whether a device is planted in it.
       room.delete('network')
       attach_network_state!(room['objects'])
+
+      # Step 2b (plan item 3): author notes never ship. Strip them from the room copy (already a
+      # deep_dup), after this method's own filtering, with the Node of a room. Covers GET /room/:id,
+      # the door answer's roomData from POST /unlock (serve_opened_room) and POST /npc_workaround.
+      BreakEscape::AuthorNotes.strip_notes!(room, BreakEscape::ScenarioSchema.at('#/definitions/room'))
 
       room
     end
@@ -4178,7 +4189,11 @@ module BreakEscape
           next unless obj.is_a?(Hash) && obj['type'] == 'command_board'
 
           config = obj['commandBoard'] || obj.dig('scenarioData', 'commandBoard')
-          return config.is_a?(Hash) ? config : {}
+          return {} unless config.is_a?(Hash)
+
+          # Step 2b (plan item 3): author notes never ship. The schema does not declare commandBoard,
+          # so every "_" key in it is a note; strip a deep_dup (never the stored scenario_data).
+          return BreakEscape::AuthorNotes.strip_notes!(config.deep_dup, nil)
         end
       end
       nil
