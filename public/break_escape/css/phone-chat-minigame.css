@@ -718,6 +718,46 @@
     opacity: 0.5;
 }
 
+/* A call row in a thread: "Missed call", "Incoming call, 1:24" (plan 2.6) */
+.message-call-row {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 85%;
+    font-family: 'GNF', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.6);
+    padding: 3px 8px;
+}
+
+.message-call-row.missed {
+    color: #c0392b;
+}
+
+.message-call-row .call-row-glyph {
+    font-size: 14px;
+}
+
+.contact-last-message.missed {
+    color: #c0392b;
+}
+
+.phone-terminal-theme .message-call-row {
+    align-self: stretch;
+    color: #5f8f6a;
+    font-size: 16px;
+}
+
+.phone-terminal-theme .message-call-row.missed {
+    color: #d96a5a;
+}
+
+.phone-social-theme .message-call-row {
+    color: var(--dm-muted);
+}
+
 .phone-terminal-theme .message-narration {
     align-self: stretch;
     color: #5f8f6a;

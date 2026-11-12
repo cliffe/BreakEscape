@@ -379,12 +379,24 @@ export function installPhoneRinger(win = window) {
                 win.eventDispatcher?.emit?.(`global_variable_changed:${name}`, { name, value, oldValue });
             }
         },
-        // A4 persists this; until then it only lives on the NPC (plan 2.7)
+        // Kept on the NPC; exportPhoneState saves it with the thread (plan 2.7)
         savePendingCall(npcId, slot) {
             const npc = nm()?.getNPC?.(npcId);
             if (npc) npc.pendingCall = slot || null;
         },
-        onOutcome() {},                          // A4 rows, A6 callbacks
+        // The thread rows (A4, plan 2.6); A6 adds callbacks here
+        onOutcome(kind, offer, extra) {
+            const mgr = nm();
+            if (!mgr?.addCallRow || !offer) return;
+            const withheld = offer.withheld === true;
+            if (kind === 'declined' || kind === 'missed' || kind === 'rang_off'
+                || (kind === 'dropped' && extra && extra.missed)) {
+                mgr.addCallRow(offer.npcId, 'missed', { withheld });
+            } else if (kind === 'ended') {
+                mgr.addCallRow(offer.npcId, offer.direction === 'outgoing' ? 'outgoing' : 'incoming',
+                    { seconds: extra && extra.seconds, withheld });
+            }
+        },
     };
 
     const clock = {
@@ -452,6 +464,8 @@ export function installPhoneRinger(win = window) {
     registerWriter();
     win.eventDispatcher?.on?.('game_loaded', () => {
         registerWriter();
+        // A reload (row 27): forced calls ring again, other saved calls are missed
+        try { win.npcManager?.resumePendingCalls?.(); } catch (e) { console.error('[phone-ringer] resumePendingCalls failed', e); }
         phoneRinger.onGameLoaded();
     });
     // The manager may be created later than the ringer: keep trying until it is there

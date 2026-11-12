@@ -524,7 +524,7 @@ export class PhoneChatMinigame extends MinigameScene {
         
         // Filter out bark-only and timed messages to check if there's real conversation history
         // (timed messages are just notifications, not actual Ink dialogue)
-        const conversationHistory = history.filter(msg => !msg.isBark && !msg.timed);
+        const conversationHistory = history.filter(msg => !msg.isBark && !msg.timed && msg.type !== 'call');
         const hasConversationHistory = conversationHistory.length > 0;
 
         // The explicit knot is the one whose opening was preloaded, and the player hasn't

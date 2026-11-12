@@ -615,7 +615,10 @@ export default class PhoneChatUI {
         for (let i = history.length - 1; i >= 0; i--) {
             if (!isNarration(history[i])) { lastMessage = history[i]; break; }
         }
-        const unreadCount = history.filter(msg => !msg.read && msg.type === 'npc').length;
+        // A missed call counts as unread, like a text (plan 2.6)
+        const unreadCount = history.filter(msg => !msg.read &&
+            (msg.type === 'npc' || (msg.type === 'call' && msg.callEvent === 'missed'))).length;
+        const lastIsMissedCall = !!lastMessage && lastMessage.type === 'call' && lastMessage.callEvent === 'missed';
         
         const contactItem = document.createElement('div');
         contactItem.className = 'contact-item';
@@ -653,7 +656,7 @@ export default class PhoneChatUI {
             <div class="contact-info">
                 <div class="contact-name">${npc.displayName || npc.id}</div>
                 ${npcDmFields(npc).handle ? `<div class="contact-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
-                <div class="contact-last-message">${displayDashes(lastMessagePreview)}</div>
+                <div class="contact-last-message${lastIsMissedCall ? ' missed' : ''}">${displayDashes(lastMessagePreview)}</div>
             </div>
             <div class="contact-meta">
                 ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
@@ -840,6 +843,8 @@ export default class PhoneChatUI {
 
         if (this.isCallMode) return this._addCallSubtitle(type, trimmedText, contact, scrollToBottom);
 
+        if (type === 'call') return this._addCallRow(message, trimmedText, scrollToBottom);
+
         if (this.isTerminalTheme && type === 'npc' && !isVoiceMessage) {
             return this._typewriterMessage(displayDashes(trimmedText), scrollToBottom);
         }
@@ -1010,6 +1015,28 @@ export default class PhoneChatUI {
             };
             setTimeout(tick, CHAR_DELAY);
         });
+    }
+
+    /**
+     * A call row (plan 2.6): "Missed call", "Incoming call, 1:24" and the like. Centred and muted
+     * like narration, with a phone glyph; plain text only, never voiced or barked.
+     */
+    _addCallRow(message, text, scrollToBottom) {
+        const row = document.createElement('div');
+        const event = message && typeof message.callEvent === 'string' ? message.callEvent : '';
+        row.className = `message-call-row${event === 'missed' ? ' missed' : ''}`;
+        if (event) row.dataset.callEvent = event;
+        const glyph = document.createElement('span');
+        glyph.className = 'call-row-glyph';
+        glyph.setAttribute('aria-hidden', 'true');
+        glyph.textContent = '\u260E';
+        const label = document.createElement('span');
+        label.className = 'call-row-text';
+        label.textContent = displayDashes(text);
+        row.append(glyph, label);
+        this.elements.messagesContainer.appendChild(row);
+        if (scrollToBottom) this.scrollToBottom();
+        return Promise.resolve();
     }
 
     /**

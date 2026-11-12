@@ -860,7 +860,7 @@ export default class PhoneChatConversation {
     }
 
     static async _preloadOpeningOnce(npc, npcManager, inkEngine) {
-        if (npcManager.getConversationHistory(npc.id).length > 0) return 0;
+        if (npcManager.getConversationHistory(npc.id).filter(m => m.type !== 'call').length > 0) return 0;
         if (!npc.storyPath && !npc.storyJSON) return 0;
 
         const tempConversation = new PhoneChatConversation(npc.id, npcManager, inkEngine);
@@ -907,7 +907,7 @@ export default class PhoneChatConversation {
         if (allMessages.length === 0) return 0;
         // The story loaded asynchronously; if the thread gained lines meanwhile (the
         // player opened it), that run already showed the opening
-        if (npcManager.getConversationHistory(npc.id).length > 0) return 0;
+        if (npcManager.getConversationHistory(npc.id).filter(m => m.type !== 'call').length > 0) return 0;
 
         // Without an in-game clock the intro reads as sent an hour ago (wall time).
         // With one, it is stamped now: an hour back put the first texts before the

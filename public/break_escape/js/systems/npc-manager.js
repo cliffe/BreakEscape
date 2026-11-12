@@ -144,7 +144,7 @@ export default class NPCManager {
   static PHONE_STORY_STATE_MAX_CHARS = 60000;
   // gameTime: elapsed game ms when the message arrived (window.gameClock), so its
   // shown time stays put across reopen and reload (messageClockText in game-clock.js)
-  static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded', 'deliveryTags'];
+  static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded', 'deliveryTags', 'callEvent'];
 
   /**
    * Resolve a "Name:" speaker prefix to a character id (social build item 0.6,
@@ -541,6 +541,48 @@ export default class NPCManager {
     this._log('debug', `Added ${type} message to ${npcId}:`, text);
   }
 
+  /**
+   * Add a call row to a contact's thread (plan 2.6): `{ type: 'call', callEvent, text, timestamp,
+   * read }` with fixed plain text. Only the ringer's outcomes call this (never a pretext call or a
+   * legacy voiced mapping). A missed call is unread; the others are read.
+   * @param {string} npcId
+   * @param {'missed'|'incoming'|'outgoing'|'no_answer'|'voicemail'} callEvent
+   * @param {{ seconds?: number, withheld?: boolean }} [opts]
+   * @returns {Object|null} the row, or null for an unknown event or contact
+   */
+  addCallRow(npcId, callEvent, opts = {}) {
+    if (!this.npcs.has(npcId)) return null;
+    const withheld = opts.withheld === true;
+    const mss = (sec) => {
+      const n = Math.max(0, Math.min(359999, Math.floor(Number(sec) || 0)));
+      return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
+    };
+    let text;
+    switch (callEvent) {
+      case 'missed': text = withheld ? 'Missed call: No caller ID' : 'Missed call'; break;
+      case 'incoming': text = withheld ? 'Call: No caller ID' : `Incoming call, ${mss(opts.seconds)}`; break;
+      case 'outgoing': text = `Outgoing call, ${mss(opts.seconds)}`; break;
+      case 'no_answer': text = 'No answer'; break;
+      case 'voicemail': text = 'Voicemail'; break;
+      default: return null;
+    }
+    if (!this.conversationHistory.has(npcId)) this.conversationHistory.set(npcId, []);
+    const timestamp = Date.now();
+    const row = { type: 'call', callEvent, text, timestamp, ...this._gameTimeAt(timestamp), read: callEvent !== 'missed' };
+    const history = this.conversationHistory.get(npcId);
+    history.push(row);
+    // The thread is open on screen: draw the row now and count it as seen
+    const open = typeof window !== 'undefined' ? window.MinigameFramework?.currentMinigame : null;
+    if (open && open._sceneType === 'phone-chat' && open.currentNPCId === npcId && typeof open.ui?.addMessage === 'function') {
+      try { open.ui.addMessage('call', text, true, row); row.read = true; } catch (e) { /* the row stays in the thread */ }
+    }
+    const phoneId = this.npcs.get(npcId)?.phoneId;
+    if (typeof window !== 'undefined' && window.updatePhoneBadge && phoneId) {
+      try { window.updatePhoneBadge(phoneId); } catch (e) { /* inventory not ready yet */ }
+    }
+    return row;
+  }
+
   /** { gameTime } for a wall-clock time, or {} when there's no game clock yet. */
   _gameTimeAt(timestamp) {
     const clock = typeof window !== 'undefined' ? window.gameClock : null;
@@ -583,7 +625,8 @@ export default class NPCManager {
     
     for (const npc of npcs) {
       const history = this.getConversationHistory(npc.id);
-      const unreadCount = history.filter(msg => !msg.read && msg.type === 'npc').length;
+      const unreadCount = history.filter(msg => !msg.read &&
+        (msg.type === 'npc' || (msg.type === 'call' && msg.callEvent === 'missed'))).length;
       totalUnread += unreadCount;
     }
     
@@ -1920,12 +1963,26 @@ export default class NPCManager {
       voiced: voiced === true, // phone-chat: speak the NPC's lines through TTS (F17)
       callLabel: callLabel || null, // phone-chat voiced call: caption under the caller's name
       ring: videoCall === true ? null : (ring || null), // phone-chat: an incoming call that rings (plan 3.1)
+      offered: false,                          // a ring offer was made (its delivered mark is saved, A4)
       videoCall: videoCall === true,           // open as a person-chat video call (any npcType)
       videoLabel: videoLabel || null,          // label on the video-call bar
       participantTag: participantTag || null   // participant tag on the video-call bar
     };
 
+    // A ring conversation's delivered mark survives a reload (plan 2.3, A4): the id is the
+    // contact, the knot and which of that pair this is, so scenario order keeps it stable.
+    if (conversation.ring) {
+      const nth = this.timedConversations.filter(c => c.ring && c.npcId === npcId && c.targetKnot === targetKnot).length;
+      conversation.id = `conv:${npcId}:${targetKnot}:${nth}`;
+    }
     this.timedConversations.push(conversation);
+
+    if (conversation.id && this._restoredTimedDelivered.has(conversation.id)) {
+      conversation.delivered = true;
+      conversation.offered = true;
+      console.log(`[NPCManager] Timed call ${conversation.id} was offered before the reload; not scheduled again`);
+      return;
+    }
 
     if (waitForEvent) {
       console.log(`[NPCManager] Scheduled timed conversation from ${npcId} waiting for event '${waitForEvent}' (delay: ${actualDelay}ms) to knot: ${targetKnot}`);
@@ -2143,6 +2200,7 @@ export default class NPCManager {
         opening: true,
         setGlobalOnStart: conversation.setGlobalOnStart ? { [conversation.setGlobalOnStart]: true } : null
       });
+      conversation.offered = true;
       console.log(`[NPCManager] Timed conversation from ${conversation.npcId} → ring offer: ${outcome}`);
       return;
     }
@@ -2215,6 +2273,10 @@ export default class NPCManager {
     const elapsed = Date.now() - this.gameStartTime;
     const pending = [];
     const delivered = [];
+    // A ring conversation that has been offered must not be scheduled again after a reload (A4)
+    for (const c of this.timedConversations) {
+      if (c.id && c.offered && c.id.length <= 300 && !delivered.includes(c.id)) delivered.push(c.id);
+    }
     for (const m of this.timedMessages) {
       if (m.delivered) {
         if (typeof m.id === 'string' && m.id.startsWith('npc:')) delivered.push(m.id);
@@ -2251,6 +2313,8 @@ export default class NPCManager {
       this._restoredTimedDelivered.add(id);
       const existing = this.timedMessages.find(m => m.id === id);
       if (existing) existing.delivered = true;
+      const conv = this.timedConversations.find(c => c.id === id);
+      if (conv) { conv.delivered = true; conv.offered = true; }
     }
     let queued = 0;
     for (const p of Array.isArray(saved.pending) ? saved.pending : []) {
@@ -2334,8 +2398,12 @@ export default class NPCManager {
       });
     const storyState = typeof npc.storyState === 'string' &&
       npc.storyState.length <= C.PHONE_STORY_STATE_MAX_CHARS ? npc.storyState : null;
-    if (history.length === 0 && !storyState) return null;
+    // A call in flight or a callback waiting is saved with its contact (plan 2.7, A4)
+    const pendingCall = npc.pendingCall && typeof npc.pendingCall === 'object'
+      ? JSON.parse(JSON.stringify(npc.pendingCall)) : null;
+    if (history.length === 0 && !storyState && !pendingCall) return null;
     const entry = { history };
+    if (pendingCall) entry.pendingCall = pendingCall;
     if (storyState) {
       entry.storyState = storyState;
       // A story position only fits the story it came from (changeStoryPath)
@@ -2426,6 +2494,11 @@ export default class NPCManager {
       if (typeof saved.lastEnteredKnot === 'string') npc.lastEnteredKnot = saved.lastEnteredKnot;
       if (typeof saved.preloadedKnot === 'string') npc.preloadedKnot = saved.preloadedKnot;
     }
+    if (saved.pendingCall && typeof saved.pendingCall === 'object' && !npc.pendingCall) {
+      npc.pendingCall = saved.pendingCall;
+      // After game_loaded the ringer is waiting for it already (resumePendingCalls)
+      if (this._pendingCallsResumed) this._resumePendingCall(npc);
+    }
     if (Array.isArray(saved.deferredTags) && saved.deferredTags.length > 0) {
       npc.deferredTags = saved.deferredTags.filter(t => typeof t === 'string');
     }
@@ -2440,6 +2513,45 @@ export default class NPCManager {
       try { window.updatePhoneBadge(npc.phoneId); } catch (e) { /* inventory not ready yet */ }
     }
     console.log(`📱 Restored ${npcId}'s phone thread (${(this.conversationHistory.get(npcId) || []).length} message(s))`);
+  }
+
+  /**
+   * A reload (plan 2.3 row 27), run on game_loaded by the ringer's adapter and for any contact
+   * that registers later. A saved pendingCall is the slot `{ forced: [...], live }` (A2a notes).
+   * Forced calls ring again through phoneRinger.restore(). A non-forced call that was queued,
+   * ringing, held or connected is missed: a row, no toast, phone_call_missed after game_loaded.
+   * A callback already saved (state "missed", A6) is kept as it is.
+   */
+  resumePendingCalls() {
+    this._pendingCallsResumed = true;
+    for (const npc of this.npcs.values()) this._resumePendingCall(npc);
+  }
+
+  _resumePendingCall(npc) {
+    const raw = npc?.pendingCall;
+    if (!raw || typeof raw !== 'object' || npc._pendingCallResumed) return;
+    const ringer = typeof window !== 'undefined' ? window.phoneRinger : null;
+    if (!ringer || typeof ringer.restore !== 'function') return;
+    npc._pendingCallResumed = true;
+    // The old single record is one forced entry when forced, else a live one
+    const slot = Array.isArray(raw.forced) || raw.live ? raw
+      : (raw.knot ? (raw.disableClose ? { forced: [raw] } : { live: raw }) : {});
+    const forced = (Array.isArray(slot.forced) ? slot.forced : []).filter(e => e && typeof e.knot === 'string');
+    const live = slot.live && typeof slot.live === 'object' && typeof slot.live.knot === 'string' ? slot.live : null;
+    const keepCallback = live && live.state === 'missed';
+    npc.pendingCall = keepCallback ? { live } : null;
+    if (live && !keepCallback) {
+      this.addCallRow(npc.id, 'missed', { withheld: live.withheld === true });
+      // After game_loaded: mappings on phone_call_missed are all registered by then
+      setTimeout(() => {
+        this.eventDispatcher?.emit?.(`phone_call_missed:${npc.id}`, { npcId: npc.id, knot: live.knot, reload: true });
+      }, 0);
+      // onMissed (callback or voicemail) is A6's: it hangs off this point
+    }
+    if (forced.length) {
+      const outcome = ringer.restore(npc.id, { forced });
+      console.log(`[NPCManager] Restored ${forced.length} forced call(s) for ${npc.id}: ${outcome}`);
+    }
   }
 
   // Load timed messages from scenario data

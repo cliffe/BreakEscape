@@ -490,7 +490,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         o.displaced = null;
         if (!closed) {
             call('emit', `phone_call_missed:${o.npcId}`, eventData(o));
-            call('onOutcome', 'dropped', o);
+            call('onOutcome', 'dropped', o, { missed: true });
         }
         reopenDisplaced(d);         // drops it (and owes the thread's event) when the ending has started
         run();
@@ -538,6 +538,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             return;
         }
         o.opened = true;
+        o.openedAt = now();
         o.refusals = 0;
         o.firstRefusalAt = 0;
         run();
@@ -572,7 +573,11 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             reopenWhat = o.displaced;
             o.displaced = null;
             finishOffer(o);
-            call('onOutcome', 'ended', o, { displaced: !!reopenWhat });
+            // Seconds on the line, from the call opening to its end (the thread row, A4)
+            call('onOutcome', 'ended', o, {
+                displaced: !!reopenWhat,
+                seconds: o.openedAt ? Math.max(0, Math.floor((now() - o.openedAt) / 1000)) : 0,
+            });
         } else if (o.disableClose && !closed) {
             // Row 26: rings again once there has been no hit for HIT_QUIET_MS. The popup it put
             // aside stays in o.displaced, so it comes back when the call finally ends (R2 m2).
@@ -592,7 +597,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             o.displaced = null;
             finishOffer(o);
             call('emit', `phone_call_missed:${o.npcId}`, eventData(o));
-            call('onOutcome', 'dropped', o);
+            call('onOutcome', 'dropped', o, { missed: true });
         }
         render();
         // The end hook runs inside another minigame's start (row 32): the re-check, and the
