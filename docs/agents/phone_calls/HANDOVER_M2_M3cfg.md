@@ -50,3 +50,5 @@
 - Lab SE Dev: `proofs/M3/se/`, `sha256_noseed` identical to `proofs/A0` (both dumps), the 4 Dev `/tts` lines identical.
 - Checks: ink compiles; dialoguelint no new findings (the existing not-x-but-y at agent0x99 moved from line 566 to 563); validator 0 errors, same warnings (only mapping indices shifted); key dump identical; `tts_mission_lines_test.rb` run (see commit).
 - Lab sheet: `m09_digital_archaeology.md` already says "Open her text and read it"; that is true for a toast or her thread. No edit needed.
+
+- Commit note: another agent's commit 2f0d855cf ("TTS: controller test...") swept in my staged M3 proofs, this handover and the two m09_m3 route scripts. They are in history as staged; nothing lost.
