@@ -99,7 +99,7 @@ VAR hint_guard_hostile_given = false
 // D2-14: once only. The exit ends on DONE, so every reopen restarts here.
 { not greeted:
     ~ greeted = true
-    On the line, {player_name()}.
+    Here, {player_name()}.
 }
 -> hub
 
@@ -155,7 +155,7 @@ VAR hint_guard_hostile_given = false
 + [Where do I stand?]
     -> report_progress
 + [Nothing right now]
-    Copy. Call anytime, {player_name()}.
+    Copy. I'm here, {player_name()}.
     #exit_conversation
     -> DONE
 
@@ -446,7 +446,7 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
 
 === report_end ===
 + [Thanks.]
-    Call if you need me.
+    Message me if you need me.
     -> hub
 
 === on_victoria_computer_accessed ===
