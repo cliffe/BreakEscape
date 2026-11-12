@@ -148,7 +148,7 @@ function world({ player, objects = [], npcs = [], hostile = [], roomOf = () => '
         playerFeet: (p) => ({ x: p.x, y: p.y, room: p.room }),
         wallClearFrom: () => true,
         findClearStandPoint: () => null,
-        movePlayerToPoint: (x, y) => { log.push(`walk:${Math.round(x)},${Math.round(y)}`); state.moving = true; },
+        movePlayerToPoint: (x, y, opts) => { log.push(`walk:${Math.round(x)},${Math.round(y)}`); state.moveOpts = opts; state.moving = true; },
         facePlayerToward: () => {},
         startHoldWalk: () => {},
         showInteractionMenu: (list) => { state.lastMenu = list; log.push(`menu:${list.map(c => (c.far ? `far ${c.label}` : c.label)).join('|')}`); state.menuOpen = true; },
@@ -441,6 +441,7 @@ test('handler R3 m1: a walk that ends out of reach says so once', () => {
     const note = sprite('note', 120, 100, 10, 10);
     const w = world({ player, objects: [note] });
     w.tap(125, 105);
+    assert.deepEqual(w.state.moveOpts, { avoidNpcs: true }, 'the walk goes round standing NPCs');
     const t0 = Date.now();
     w.state.moving = false;                      // the walk ended, still out of reach
     w.pendingTapUse.update(t0 + 500);

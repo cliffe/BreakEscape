@@ -77,6 +77,9 @@ function updateFootstepSound(isPlayerMoving) {
 }
 let playerFollowingPath = false; // True when actively following an EasyStar route (skip physics collision-stop)
 let playerFinalGoal = null;    // Original click destination (world coords); cleared when we go direct or arrive
+// Line-of-sight options for the current click-to-move walk: { avoidNpcs: true } for a far
+// tap's walk, so its straight-line shortcuts go round standing NPCs (tap pick review R3 m1)
+let playerLosOpts = null;
 let waypointApproach = { target: null, distSq: Infinity }; // last frame's distance to targetPoint
 let pathDebugGraphics = null;  // Phaser Graphics object used to draw the path overlay
 
@@ -731,8 +734,9 @@ function drawPathDebug(fromX, fromY, smoothed, raw) {
     }
 }
 
-export function movePlayerToPoint(x, y) {
+export function movePlayerToPoint(x, y, opts = null) {
     window.seating?.onMoveIntent(); // a static chair: hop off first
+    playerLosOpts = opts?.avoidNpcs ? { avoidNpcs: true } : null;
     const worldBounds = gameRef.physics.world.bounds;
 
     // Ensure coordinates are within bounds
@@ -761,7 +765,7 @@ export function movePlayerToPoint(x, y) {
         // physics LOS to the destination (world-aware: checks all rooms' wall boxes).
         // hasPlayerLineOfSight also refuses a line through a "prefer to route
         // around" object (systems/path-avoid.js); EasyStar then decides.
-        if (pathfindingManager.hasPlayerLineOfSight(px, py, x, y)) {
+        if (pathfindingManager.hasPlayerLineOfSight(px, py, x, y, null, playerLosOpts)) {
             console.log('  → Direct LOS clear — going straight');
             drawPathDebug(px, py, [{ x, y }], null);
             playerFollowingPath = false;
@@ -785,7 +789,7 @@ export function movePlayerToPoint(x, y) {
                 // so the feet go through the opening square instead of clipping
                 // its frame on a diagonal (path-doorways.js).
                 path = insertDoorwayWaypoints({ x: cx, y: cy }, path, pathfindingManager.openDoorways);
-                const smoothed = pathfindingManager.smoothWorldPathForPlayer(cx, cy, path, true);
+                const smoothed = pathfindingManager.smoothWorldPathForPlayer(cx, cy, path, true, playerLosOpts);
                 console.log(`  → Smoothed to ${smoothed.length} waypoints:`,
                     smoothed.map((p, i) => `[${i}](${p.x.toFixed(0)},${p.y.toFixed(0)})`).join(' → '));
 
@@ -1268,7 +1272,7 @@ function updatePlayerMouseMovement() {
     if (playerFollowingPath && playerFinalGoal && !pinnedAhead) {
         const pm  = window.pathfindingManager;
         if (pm && pm.hasPlayerLineOfSight(px, py, playerFinalGoal.x, playerFinalGoal.y,
-                [targetPoint, ...playerPath.slice(playerPathIndex)])) {
+                [targetPoint, ...playerPath.slice(playerPathIndex)], playerLosOpts)) {
             targetPoint = playerFinalGoal;
             playerFinalGoal = null;
             playerPath = [];
@@ -1303,7 +1307,7 @@ function updatePlayerMouseMovement() {
         const pm = window.pathfindingManager;
         if (targetPoint.pinned) {
             arrived = false;
-        } else if (pm && !pm.hasPlayerLineOfSight(px, py, next.x, next.y, [targetPoint])) {
+        } else if (pm && !pm.hasPlayerLineOfSight(px, py, next.x, next.y, [targetPoint], playerLosOpts)) {
             arrived = false;
         }
     }

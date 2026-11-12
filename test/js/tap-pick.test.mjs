@@ -356,7 +356,7 @@ test('game.js: busy covers a knocked-out or frozen player; a short stop says so 
     const src = readFileSync(join(js, 'core/game.js'), 'utf8');
     const cut = src.slice(src.indexOf('const pendingTapUse = createPendingTapUse({'));
     assert.match(cut, /busy: [^]*?window\.playerHealth\?\.isKO\?\.\(\)[^]*?window\.player\?\.disableMovement\n\}\);/);
-    assert.match(cut, /onStoppedShort: \(\) => window\.gameAlert\?\.\("Can't reach it from here\."/);
+    assert.match(cut, /onStoppedShort: \(\) => window\.gameAlert\?\.\(npcBesidePlayer\(\) \? "Someone's in the way\." : "Can't reach it from here\."/);
 });
 
 test('opaqueAt: flipY mirrors the row; rotation is undone about the origin (R3 n3)', () => {
@@ -423,4 +423,38 @@ test('npcYieldTarget: names the object she gives way to (R2 n5)', () => {
     assert.equal(npcYieldTarget(sarah, [chair, board, logBook], deps), logBook);
     assert.equal(npcYieldTarget(sarah, [chair, board], deps), null);
     assert.equal(npcYieldTarget(sarah, [chair, board], { ...deps, npcOnPixels: () => false }), board, 'off her figure: the first non-seat');
+});
+
+// ── R3 m1: a far tap's walk goes round standing NPCs ──
+test('hasPlayerLineOfSight: { avoidNpcs } refuses a line through a standing NPC, not a knocked-out one (R3 m1)', async () => {
+    globalThis.window = globalThis.window || {};
+    const { NPCPathfindingManager } = await import('../../public/break_escape/js/systems/npc-pathfinding.js');
+    const pm = new NPCPathfindingManager({ time: { delayedCall() {} } });
+    pm.hasWorldPhysicsLineOfSight = () => true;
+    pm.getPreferAvoidRects = () => [];
+    // m06 trading floor: the trader stands between the player and the workstation's stand point
+    const trader = { npcId: 'trader', active: true, visible: true,
+        body: { enable: true, left: 150, top: 180, right: 170, bottom: 190 } };
+    const saved = { rooms: window.rooms, ko: window.npcHostileSystem };
+    window.rooms = { trading_floor: { npcSprites: [trader] } };
+    window.npcHostileSystem = { isNPCKO: () => false };
+    try {
+        assert.equal(pm.hasPlayerLineOfSight(160, 261, 172, 132), true, 'other walks: unchanged');
+        assert.equal(pm.hasPlayerLineOfSight(160, 261, 172, 132, null, { avoidNpcs: true }), false);
+        assert.equal(pm.hasPlayerLineOfSight(200, 261, 200, 132, null, { avoidNpcs: true }), true, 'a line clear of her');
+        window.npcHostileSystem = { isNPCKO: (id) => id === 'trader' };
+        assert.equal(pm.hasPlayerLineOfSight(160, 261, 172, 132, null, { avoidNpcs: true }), true, 'a knocked-out body');
+    } finally {
+        window.rooms = saved.rooms; window.npcHostileSystem = saved.ko;
+    }
+});
+
+test('player.js and game.js: a far tap\'s walk passes { avoidNpcs } to every player line-of-sight test (R3 m1)', () => {
+    const player = readFileSync(join(js, 'core/player.js'), 'utf8');
+    assert.match(player, /export function movePlayerToPoint\(x, y, opts = null\)/);
+    assert.match(player, /playerLosOpts = opts\?\.avoidNpcs \? \{ avoidNpcs: true \} : null;/);
+    assert.equal((player.match(/hasPlayerLineOfSight\([^;]*playerLosOpts\)/g) || []).length, 3);
+    assert.match(player, /smoothWorldPathForPlayer\(cx, cy, path, true, playerLosOpts\)/);
+    const game = readFileSync(join(js, 'core/game.js'), 'utf8');
+    assert.match(game, /movePlayerToPoint\(target\.x, target\.y, \{ avoidNpcs: true \}\)/);
 });

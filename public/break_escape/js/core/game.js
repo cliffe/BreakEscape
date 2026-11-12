@@ -2896,7 +2896,7 @@ const pendingTapUse = createPendingTapUse({
     // The walk was blocked: say so, not drop the use silently (code review R2 m4)
     onBlocked: () => window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Something's in the way.", 'info', '', 2500),
     // The walk ended out of reach: say so, not drop the use silently (code review R3 m1)
-    onStoppedShort: () => window.gameAlert?.("Can't reach it from here.", 'info', '', 2500),
+    onStoppedShort: () => window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Can't reach it from here.", 'info', '', 2500),
     // Something else took over on the way: a minigame, the pick-one menu or a confirm dialog;
     // or the player cannot move (knocked out, game over, frozen), so no toast (R3 m2)
     busy: () => !!window.MinigameFramework?.currentMinigame || isInteractionMenuOpen()
@@ -2946,7 +2946,8 @@ function walkToObjectThenUse(obj) {
         window.showPcInUse?.(obj);
         return;
     }
-    movePlayerToPoint(target.x, target.y);
+    // Route round anyone standing in the way, not into them (code review R3 m1)
+    movePlayerToPoint(target.x, target.y, { avoidNpcs: true });
     if (window.seating?.isSeat(obj)) window.seating.queueSit(obj);
     else if (ownRoom) pendingTapUse.arm(obj, Date.now());
 }
