@@ -28,9 +28,13 @@ Standing constraints for this build:
 | 1. Groundwork: `cpWithin`/`cpSlice` (three copies + shared node test) | Done, committed, tested |
 | 1. Groundwork: phone `keyOf` option + stableJson wiring at the sync call sites | Done, committed, tested |
 | 1. Groundwork: remove unused `ApiClient.syncState`/`updateInventory` | Done, committed, tested |
-| 1. Groundwork: `stableJson` in `buildChanges`/`mailJobsChangeKey` (item 2) | Deferred to step 2 (see Open) |
-| 1. Groundwork: export clips, constants/fixture tests, registerPart/track, item_for_answer, prepare_bootstrap_state!, refuse_oversized_body, live-proof tools | Not started |
-| 2. R1 seeding | Not started |
+| 1. Groundwork: `stableJson` in `buildChanges`/`mailJobsChangeKey` (item 2) | Done, committed, tested (`06815b055`) |
+| 1. Groundwork: export clips (item 4: clipMail*, phone/ink mirrors, mail constants) | Done, committed, tested (`9f85871c6`) |
+| 1. Groundwork: constants test + literal scan (item 5, part) | Done, committed, tested (`3c7d13c96`) |
+| 1. Groundwork: shared sanitiser fixture behaviour test (item 5, rest) | NOT started (see Open) |
+| 1. Groundwork: registerPart/track, item_for_answer, prepare_bootstrap_state!, refuse_oversized_body (item 6) | NOT started |
+| 1. Groundwork: live-proof tools (item 8) + baseline (item 9) | NOT started |
+| 2. R1 seeding | Done, committed, tested (`c12d9d1e7`) |
 | 3. P2 inventory/network answers | Not started |
 | 4. P1 cloner one-card deltas | Not started |
 | 5. R3 capture-log seen keys | Not started |
@@ -41,6 +45,16 @@ Standing constraints for this build:
 
 ## Commits (newest first)
 
+- `c12d9d1e7` Step 2 (R1): seed `confirmed` from the bootstrap (seedFromSaved/seedFromBootstrap,
+  flattenSavedMailState, pickNote/pickSample, per-section `_held` null-delete gate, game.js wiring,
+  server `savedCurrentRoom`). 9 R1 tests + flatten-parity test.
+- `3c7d13c96` Step 1 item 5 (part): cross-side constants test + inline-literal scan in
+  social-mail-state-export. (Shared-fixture behaviour test still open.)
+- `9f85871c6` Step 1 item 4: client export clips mirroring the server (clipMailMessage/Thread/
+  Drafts/Json, code-point phone-entry export, ink name limit), mail limit constants under the
+  server's names; two existing round-trip tests moved to server-kept fields.
+- `06815b055` Step 1 item 2: compare `buildChanges`/`mailJobsChangeKey` strings by `stableJson`;
+  drop the now-unused `json` helper.
 - `6c3a2e918` Groundwork: remove the unused `ApiClient.syncState` and `ApiClient.updateInventory`
 - `3cec62ff4` Groundwork: phone `keyOf` option on `exportPhoneState`/`markPhoneStateSynced`/
   `restorePhoneState`, wired to `stableJson` at the sync call sites
@@ -175,6 +189,26 @@ assertion, so no further source-assertion regressions remain from the refactor.
 Both had no callers in public JS or tests (plan 9 tidy-ups). `syncState` would have sent all globals
 with no `clientTs`.
 
+## This session (2026-11-12, builder 3)
+
+Built step 1 items 2, 4, 5 (part), and all of step 2 (R1). Tests, affected files only, no lock:
+- Item 2: `node --test` over the 14 state-sync importers -> 161 pass.
+- Item 4: `node --test` over every mail-scheduler/npc-manager/npc-conversation-state importer
+  (50 files, run individually) -> all pass except `event-mapping-unlock-door.test.mjs`, which fails
+  with a node test-runner IPC error ("Unable to deserialize cloned data"); confirmed PRE-EXISTING by
+  stashing all three source changes and re-running (still fails), so it is not a regression of this
+  work. Two existing round-trip tests used draft/thread fields the server also drops (draft `body`,
+  thread `pos`) and one oversized body; moved to server-kept fields and many clipped messages.
+- Item 5 (part): `node --test test/js/social-mail-state-export.test.mjs` -> 18 pass (new constants
+  test + literal scan; later +1 flatten-parity test).
+- Step 2: `node --test test/js/state-sync.test.mjs` -> 20 pass (9 new R1 cases). Re-ran every
+  state-sync/mail/npc importer individually -> all green except the same pre-existing event-mapping
+  flake. `ruby -c` the controller and `node --check` all five changed JS files -> OK.
+
+No Rails tests run this session (the only Ruby change is one extra read-only bootstrap field,
+`savedCurrentRoom`; a controller/reload test for it is worth adding in the merge batch). No live
+browser proof yet (cases A to F run after step 6).
+
 ## Handover
 
 ### Done
@@ -188,41 +222,30 @@ with no `clientTs`.
 - `phone-player-lines` constants-refactor regression fixed (`2be60f549`).
 - Removed the unused `ApiClient.syncState`/`updateInventory` (`6c3a2e918`).
 
+- Item 2 (`06815b055`): `buildChanges`/`mailJobsChangeKey` compare by `stableJson`; `json` helper
+  removed (no remaining callers).
+- Item 4 (`9f85871c6`): the mail/phone/ink export clips, exact server mirrors; mail limit constants
+  under the server's names; `PHONE_STORY_STATE_MAX_CHARS` renamed `PHONE_STORY_STATE_MAX_BYTES`
+  (61440, a byte limit); R5 n6 handled (clip never emits null, no-dot key not exported).
+- Item 5 part (`3c7d13c96`): the constants test and the literal scan.
+- Step 2 / R1 (`c12d9d1e7`): seed `confirmed` from the bootstrap; see "Step 2 (R1)" below.
+
 ### In progress
 - None. Each commit is a clean, self-contained, tested boundary.
 
-### Open (the rest of step 1 groundwork, then steps 2 to 8)
+### Open (rest of step 1, then steps 3 to 8)
 
-Step 1 groundwork still to build (plan 2.1 to 2.5, tested per plan 3.7 and 10):
-1. DONE (`3cec62ff4`). Phone `keyOf` option wired to `stableJson`; see "Phone `keyOf`" above.
-2. DEFERRED TO STEP 2. Use `stableJson` in place of `json` for every comparison string in
-   `buildChanges()` (keyed sections, notes, whole sections, `timedKey`, `clockKey`) and in
-   `mailJobsChangeKey`. Request body is unchanged; only the strings kept in `confirmed` change.
-   Left for the step-2 agent because it delivers nothing until `seedFromBootstrap` seeds `confirmed`
-   from the jsonb-reordered bootstrap, and that agent must touch `buildChanges`/`confirm` anyway.
-   Checked this session: no test hand-seeds `sync.confirmed[...]` with a `JSON.stringify` string
-   (grep of `.confirmed[` in test/js came back empty), so the change is internally consistent and
-   low-risk; just change `json(...)` -> `stableJson(...)` at state-sync.js:293, :307, :314, :336, :347
-   and line 19 (`mailJobsChangeKey`), and run the 9 state-sync harnesses.
-3. DONE (`b8370b88d`). `cpWithin`/`cpSlice` in three copies with the shared node test; the
-   test-access decision is recorded above ("export the two module-local copies as named exports").
-4. The export clips, exact mirrors of the server (plan 2.1), all measuring/cutting by code points:
-   `clipMailMessage(key, msg)`, `clipMailThread(key, thread)`, `clipMailDrafts(drafts)` in
-   mail-scheduler.js; the phone-entry export tests folded into `_phoneStateEntry` (npc-manager.js);
-   the `MAX_NPC_INK_NAME_CHARS` tests folded into `exportNpcInkVariables`
-   (npc-conversation-state.js:221). Client constants: add the new ones under the server's names;
-   rename `PHONE_STORY_STATE_MAX_CHARS` to `PHONE_STORY_STATE_MAX_BYTES` (value 61440) since it is
-   now a byte limit; keep the five existing client names. Read R5 nit n6 before writing
-   `clipMailMessage`: a `nil` message value is a delete handled by the keyed diff, so the clip must
-   not emit `null` for a message itself, and a key with no dot after the box id is not exported.
-5. The two plan-3.7 cross-side tests: `test/js/social-mail-state-export.test.mjs` grows a constants
-   test (reads each named constant from game.rb source, explicit map for the five existing client
-   names, handles multi-line `%w[]` and `N.kilobytes`) and the literal scan (fails on any bare number
-   other than 0/1 in the nine scanned methods, allowing only the `split('.', 2)` 2); plus a behaviour
-   test over a committed fixture `test/fixtures/files/sync_bodies/sanitiser_cases.json` (both a Rails
-   unit test and a node test run their respective sanitisers/clips over the same inputs and assert
-   the same stored outputs by stableJson). Neither test writes the fixture.
-6. `registerPart`/`track`/`_syncOnce`/`flush`/`flushKeep` additions in state-sync.js (plan 2.2);
+1. DONE (`3cec62ff4`). Phone `keyOf`.
+2. DONE (`06815b055`). `stableJson` in `buildChanges`/`mailJobsChangeKey`.
+3. DONE (`b8370b88d`). `cpWithin`/`cpSlice` three copies + shared test.
+4. DONE (`9f85871c6`). The export clips.
+5. PART DONE (`3c7d13c96`): constants test + literal scan. STILL OPEN: the shared sanitiser
+   behaviour fixture `test/fixtures/files/sync_bodies/sanitiser_cases.json` with a Rails unit test
+   and a node test running the server sanitisers and the client clips over the same inputs and
+   asserting equal stored outputs by stableJson. Neither test writes the fixture. (Plan 3.7
+   "Behaviour".) The clips are already exercised by the existing round-trip harnesses and the step-2
+   R1 tests, but the explicit byte-for-byte cross-side fixture is not yet written.
+6. NOT STARTED. `registerPart`/`track`/`_syncOnce`/`flush`/`flushKeep` additions in state-sync.js (plan 2.2);
    `Game#item_for_answer` (plan 2.3); `Game#prepare_bootstrap_state!` empty shell plus its wiring in
    `GamesController#scenario` right after `authorize` (plan 2.4); `refuse_oversized_body` from
    `refuse_oversized_npc_frustration` with a per-action limit table, clone_card 8 KB (plan 2.5).
@@ -254,17 +277,42 @@ Step 1 groundwork still to build (plan 2.1 to 2.5, tested per plan 3.7 and 10):
 - `docs/achitechture/SYNC_DELTAS_PLAN.md`, `PLAYER_STATE_SYNC_AUDIT.md`,
   `SYNC_DELTAS_PLAN_REVIEW_R1..R5.md` (added from build/sync-audit)
 - `app/models/break_escape/game.rb` (constants)
-- `public/break_escape/js/state-sync.js` (stableJson; phone keyOf call sites)
-- `public/break_escape/js/core/game.js` (restorePhoneState keyOf call site)
-- `public/break_escape/js/systems/npc-manager.js` (cpWithin/cpSlice statics; phone keyOf option)
-- `public/break_escape/js/systems/mail-scheduler.js` (cpWithin/cpSlice exports)
-- `public/break_escape/js/systems/npc-conversation-state.js` (cpWithin/cpSlice exports)
-- `public/break_escape/js/api-client.js` (removed syncState/updateInventory)
-- `test/js/state-sync.test.mjs` (stableJson test)
+- `public/break_escape/js/state-sync.js` (stableJson; phone keyOf; item 2 compares; step 2 seed:
+  SERVER_OWNED_GLOBALS, pickNote/pickSample, seedFromSaved, seedFromBootstrap, `_held`/`_seeded`)
+- `public/break_escape/js/core/game.js` (restorePhoneState keyOf; step 2 seedFromBootstrap wiring
+  + flattenSavedMailState import)
+- `public/break_escape/js/systems/npc-manager.js` (cpWithin/cpSlice/utf8ByteLength statics; phone
+  keyOf; item 4 `_phoneStateEntry` server mirror + phone constants, PHONE_STORY_STATE_MAX_BYTES)
+- `public/break_escape/js/systems/mail-scheduler.js` (cpWithin/cpSlice; item 4 clipMail* + mail
+  constants + exportMailState wiring; step 2 flattenSavedMailState)
+- `public/break_escape/js/systems/npc-conversation-state.js` (cpWithin/cpSlice; item 4 ink export
+  name-limit mirror + MAX_NPC_INK_NAME_CHARS)
+- `app/controllers/break_escape/games_controller.rb` (step 2 `savedCurrentRoom` bootstrap field)
+- `test/js/state-sync.test.mjs` (stableJson test; 9 R1 seed cases; seedFromSaved import)
+- `test/js/social-mail-state-export.test.mjs` (constants test + literal scan; flatten-parity test;
+  pagehide-over-budget test moved to many clipped messages)
+- `test/js/social-gap-mail-scheduler.test.mjs` (round-trip test moved to server-kept fields)
 - `test/js/cp-helpers.test.mjs` (new; the shared cp-helper test)
 - `test/js/phone-reopen-and-persistence.test.mjs` (new keyOf cases)
 - `test/js/phone-player-lines.test.mjs` (MAX_PHONE_TYPE_CHARS assertion fix)
 - `docs/achitechture/SYNC_DELTAS_BUILD_LOG.md` (this file)
+
+### Step 2 (R1), in detail
+- `seedFromSaved(saved, mailKeys)` builds a `confirmed`-shaped map from the `saved*` blocks, every
+  value a `stableJson` string. Mail is flattened by `flattenSavedMailState` (passed in, no import);
+  `jobs` compares by `mailJobsChangeKey`. `seedFromBootstrap(scenario, { mailKeys })` runs once
+  (`_seeded`), sets each key only where `confirmed` lacks one, and puts every saved global into
+  `_held.globalVariables`.
+- `_held[section]` (a Set per keyed section) gates the null-delete loop: a confirmed key missing from
+  the current state is sent as `null` only when this page held it. All saved globals are held (the
+  page applies them via Object.assign), so a deleted global still goes up as null; a server key the
+  client never shows this page (an unregistered NPC's ink vars) is left alone. Verified by tests.
+- game.js calls `seedFromBootstrap` BEFORE any restore touches the saved objects (some restores keep
+  references). Server adds `savedCurrentRoom` so an unchanged room is not resent.
+- Residual to watch (plan 2.1): the seed trusts the server-stored mail as already clipped, so
+  `flattenSavedMailState` does not re-run the clips; the clips are idempotent on server output, so
+  export == seed. If a future server sanitiser change is not mirrored in a clip, the shared fixture
+  test (item 5, still open) is what should catch it.
 
 ### Gotchas
 - Line numbers in the plan were taken against main 6a834437c merged into build/sync-audit; this
@@ -274,3 +322,9 @@ Step 1 groundwork still to build (plan 2.1 to 2.5, tested per plan 3.7 and 10):
 - Step 6a must stand alone (ship without 6b): commit it separately so it could ship without 6b.
 - Commit each step by explicit paths before testing it; check `git diff --cached --stat` first.
 - No model names, no em/en dashes, UK English in repo files; no attribution lines in commits.
+- `test/js/event-mapping-unlock-door.test.mjs` fails on this machine with a node test-runner IPC
+  error ("Unable to deserialize cloned data due to invalid or unsupported version"); its own
+  assertions pass (`# pass 1`). Confirmed PRE-EXISTING (fails with all step-1/2 source changes
+  stashed), so it is environmental, not a regression. Do not chase it as a build break.
+- Step 2 note: `seedFromBootstrap` must be called before the restore block mutates the saved blocks;
+  it is wired at the top of game.js's restore, before the globals `Object.assign`. Keep it there.
