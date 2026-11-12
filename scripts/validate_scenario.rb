@@ -1922,11 +1922,12 @@ def check_lock_credentials(json_data)
   # room NPC in its openFor who has a sprite (npcType person or both, as core/rooms.js
   # makes them), carrying the card or not, as door-gates.js opens for them; a phone NPC or
   # an id with no NPC behind it never comes near. A gate on an east or west door is no gate
-  # (door-gates.js declines it). A gate is a way in when it opens for someone and sets
+  # (door-gates.js declines it), nor is one on a door entry that matches no doorway (doors.js
+  # never reads it; check_access_model warns). A gate is a way in when it opens for someone and sets
   # playerMayPassIf, or when an NPC it opens for holds doors, that is, is not in the gate's
   # noHold once habits are expanded (plan 5.4). A gate that opens only for careful guards
-  # cannot be tailgated. A lock on an object (a safe, a cabinet) is never opened by
-  # tailgating, which does not give the player the card. This is a warning heuristic, not
+  # cannot be tailgated. A lock on an object (a safe, a cabinet), on a start item or on a
+  # door entry is never opened by tailgating, which does not give the player the card. This is a warning heuristic, not
   # a proof of solvability: whether a cloner is itself reachable, and whether a guard ever
   # walks the gate, are not checked.
   declared = { 'key' => Set.new, 'rfid' => Set.new }
@@ -1956,8 +1957,30 @@ def check_lock_credentials(json_data)
     ai.room_objects(json_data).map { |e| e[:path] if requires_card.call(e[:object], card_id) && !accepts_item.call(e[:object]) }
       .compact
   end
+  # Every other lock on the card, outside the rooms and their objects (a locked container in
+  # startItemsInInventory, a lock on a door entry): no gate leads to it either
+  counted = {}.compare_by_identity
+  rooms.each_value { |r| counted[r] = true }
+  ai.room_objects(json_data).each { |e| counted[e[:object]] = true }
+  other_requiring = lambda do |card_id|
+    out = []
+    walk = lambda do |node, path|
+      case node
+      when Array then node.each_with_index { |n, i| walk.call(n, "#{path}[#{i}]") }
+      when Hash
+        out << path if !counted.key?(node) && requires_card.call(node, card_id) && !accepts_item.call(node)
+        node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+      end
+    end
+    walk.call(json_data, '')
+    out
+  end
   gates = rooms.empty? ? [] : BreakEscape::NpcHabits.gate_entries(BreakEscape::NpcHabits.expanded_copy(json_data).first)
-  gates = gates.reject { |g| %w[east west].include?(g[:direction].to_s) }
+  # Only a gate the engine registers: on a north or south door (door-gates.js declines a
+  # side gate), on an entry doors.js matches to a doorway (check_access_model warns otherwise)
+  gates = gates.reject do |g|
+    %w[east west].include?(g[:direction].to_s) || BreakEscape::NpcHabits.doorway_problem(rooms[g[:room]], g[:index])
+  end
   # The NPCs a gate can open for: those with a sprite. A phone NPC (npcType phone, or none,
   # which npc-manager.js reads as phone) or an openFor id with no NPC behind it never comes near
   room_npc_ids = rooms.values.flat_map { |r| r.is_a?(Hash) && r['npcs'].is_a?(Array) ? r['npcs'] : [] }
@@ -1984,21 +2007,15 @@ def check_lock_credentials(json_data)
       next
     end
 
-    locked_rooms = rooms_requiring.call(card_id)
-    gap = { careful: [], npc_only: [], object: objects_requiring.call(card_id) }
-    if locked_rooms.empty?
-      # Only other locks require it (a lock that also accepts an item card is open): no gate
-      # leads to them. A lock found nowhere else (a door entry, a start item) is reported
-      # in general terms.
-      covered = rooms.any? { |_id, r| requires_card.call(r, card_id) } || gap[:object].any?
-      gap[:npc_only] << nil unless covered
-    else
-      locked_rooms.each do |room_id|
-        states = gates.select { |g| g[:connected_room] == room_id }.map { |g| gate_state.call(g) }
-        next if states.include?(:open)
+    # Each locked room is decided by its gates. Every other lock on the card (an object, a
+    # start item, a door entry) is a gap no gate fills; a lock that also accepts an item card
+    # is open to the player.
+    gap = { careful: [], npc_only: [], object: objects_requiring.call(card_id) + other_requiring.call(card_id) }
+    rooms_requiring.call(card_id).each do |room_id|
+      states = gates.select { |g| g[:connected_room] == room_id }.map { |g| gate_state.call(g) }
+      next if states.include?(:open)
 
-        gap[states.include?(:careful) ? :careful : :npc_only] << room_id
-      end
+      gap[states.include?(:careful) ? :careful : :npc_only] << room_id
     end
     if gap.values.all?(&:empty?)
       declared['rfid'] << card_id
@@ -2020,9 +2037,8 @@ def check_lock_credentials(json_data)
                     "cloner, a keycard item, a guard who holds doors, playerMayPassIf on the gate or another door."
         end
         unless gap[:npc_only].empty?
-          where = gap[:npc_only].compact.empty? ? 'the locked room' : quote.call(gap[:npc_only].compact)
           issues << "⚠️ WARNING: a lock requires rfid '#{req}', and only an NPC carries that card. There is no " \
-                    "rfid_cloner in the scenario and no gate into #{where} opens for an NPC, so the player " \
+                    "rfid_cloner in the scenario and no gate into #{quote.call(gap[:npc_only])} opens for an NPC, so the player " \
                     "cannot use it. Add a cloner, a keycard item or a gate, or the door is a soft-lock."
         end
         unless gap[:object].empty?
@@ -6302,6 +6318,26 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                  'which is where the server reads it.')
       end
       next unless door['gate'].is_a?(Hash) && door['gate']['enabled'] != false
+
+      # doors.js reads a door entry only when it matches a doorway of the room (connections
+      # plus direction, first match wins), so a gate on any other entry does nothing
+      at = "'rooms/#{room_id}/doors[#{i}]' has a gate into '#{door['connectedRoom']}'"
+      dead = 'so the engine never reads it: the gate does nothing and the door behaves as an ordinary door.'
+      case BreakEscape::NpcHabits.doorway_problem(room, i)
+      when :no_direction
+        warn.call("#{at} but no 'direction' (north, south, east or west), #{dead} Add the direction under " \
+                  "which room '#{room_id}' lists '#{door['connectedRoom']}' in its connections.")
+        next
+      when :no_connection
+        warn.call("#{at} on its '#{door['direction']}' door, but room '#{room_id}' lists no " \
+                  "'#{door['connectedRoom']}' under connections.#{door['direction']}, #{dead} Fix the direction " \
+                  'or the connectedRoom.')
+        next
+      when :shadowed
+        warn.call("#{at}, but an earlier entry in doors matches the same doorway and the engine reads only " \
+                  "the first, #{dead} Put the gate on the first entry and drop this one.")
+        next
+      end
 
       target = rooms[door['connectedRoom']]
       if door.key?('access') || (target.is_a?(Hash) && target.key?('access'))
