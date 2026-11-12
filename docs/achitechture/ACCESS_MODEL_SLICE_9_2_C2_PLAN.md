@@ -90,18 +90,38 @@ tampered client could forge (section 6). Every predicate is pure over `npcFrustr
 (`app/models/break_escape/npc_frustration.rb`), into pure `AccessWork` helpers that take the globals
 and lockout keys as arguments rather than reaching into `player_state`:
 `AccessWork.cause_holds?(scenario_data, npc, need, cause, globals, lockout_keys)` and
-`AccessWork.globals_hold?(cond, globals)`. `NpcFrustration` keeps its instance methods as thin
-wrappers that read `player_state` and call these, so there is one copy of the rule and the route and
-the frustration path cannot drift. The selection, eligibility, re-arm and "done" logic also live in
-`AccessWork` (section 6). The validator reuses the `AccessWork` **static** reachability check
-(section 8), not the live evaluator: it has no `player_state` and cannot read live globals or
-lockouts, so it answers only "can this predicate ever hold for this NPC", never "does it hold now".
+`AccessWork.globals_hold?(cond, globals)`. `cause_holds?` is a **per-cause primitive**: it takes a
+full cause object `{ 'id', 'why' }` and branches on the `id` (`down` reads `resources[id].downIf`,
+`off` reads the station's `offWhen`, `unreachable` reads the routes to `resources[id]`, `no_access`
+reads `resources[id]`, and so on). `NpcFrustration` keeps its instance methods as thin wrappers that
+read `player_state` and call these, so there is one copy of the rule and the frustration path cannot
+drift.
+
+A `when: { cause: "down" }` predicate carries only a `why` string, and the recorded state carries
+only whys (`failWhy[need]` is `missing.map { |c| c['why'] }`, no id). So a single `cause_holds?` call
+cannot evaluate the predicate: there is no id to pass. The `cause` predicate instead uses a new
+**why-scoped** helper, `AccessWork.cause_why_holds?(scenario_data, npc, need, why, globals,
+lockout_keys)`, which **enumerates the NPC's candidate causes** for that need and returns true when
+any cause whose `why` matches still holds now (by `cause_holds?`). The candidate set is: the server's
+never-clearing causes from `AccessWork.owned_causes` (`no_access`, `unreachable`, `social_blocked`,
+`locked_out`), plus a live scan of the NPC's work-list resources for `down` and (transient,
+route-blocked) `unreachable`, and the NPC's station for `off`. So the headline `cause:
+down/off/unreachable` live check is a per-why enumeration over the NPC's own resources, not a
+single-cause call. For an NPC with two down-able work resources, `cause_why_holds?` holds while
+*either* is down; an author who means one resource scopes with `need` and, if two resources share a
+need, keys a `global` on that resource's outage flag instead (the report line of section 8 names each
+candidate resource for the why).
+
+The selection, eligibility, re-arm and "done" logic also live in `AccessWork` (section 6). The
+validator reuses the `AccessWork` **static** reachability check (section 8), not the live evaluator:
+it has no `player_state` and cannot read live globals or lockouts, so it answers only "can this
+predicate ever hold for this NPC", never "does it hold now".
 
 | Predicate | Reads | Holds when |
 |---|---|---|
 | `frustrationAtLeast: <1..100>` | `npcFrustration[id].level` | the level is at least `n` |
 | `frustrationBelow: <1..100>` | `npcFrustration[id].level` | the level is below `n` |
-| `cause: "<why>"` or `["w", ...]` | `failWhy` + a live check | some need's last counted failure listed a matching `why` **and** that cause still holds now (below). `why` is one of `off`, `down`, `unreachable`, `no_access`, `locked_out`, `social_blocked` |
+| `cause: "<why>"` or `["w", ...]` | `failWhy` + a live enumeration | some need's last counted failure listed a matching `why` **and** a cause with that `why` still holds now for this NPC (`cause_why_holds?`, below). `why` is one of `off`, `down`, `unreachable`, `no_access`, `locked_out`, `social_blocked` |
 | `need: "work"` / `"social_media"` | scopes `cause`, `needMet` | restricts the paired predicate to that need; absent means any need |
 | `workaround: "<kind>"` or `<index>` | `done`, `lastSpent` | the named workaround has been performed: a lasting kind in `done`, or a repeating kind whose `lastSpent[index.to_s].done` is true (the key is the index stringified). A kind string matches any of the NPC's workarounds of that `do`; an integer names the `workarounds[index]` |
 | `needMet: "work"` / `"social_media"` / `true` | `easeAt`, `failAt` | that need has a recorded prior failure and its last event was a met use: `failAt[need]` is set, `easeAt[need]` is set and is later than `failAt[need]` (it was bad, now the NPC is working again). `true` means any judged need. This is the "fixed at last" trigger (see below) |
@@ -118,13 +138,24 @@ requiring the dropped level still be high is self-defeating). Dropping the magni
 small; a "fixed at last" post keys on `needMet` alone. If an author later wants magnitude, it is the
 follow-up in section 11.
 
+One caveat for authors. `needMet` records `easeAt[need]` on *any* met use once above level 0
+(`ease_report!`), including a use that was met only because the player performed a workaround (a
+`borrow_session` to another desk) while the original outage still holds. So a post whose text claims
+the thing itself was fixed ("Coffee machine fixed at last") can post while the machine is still down
+and the NPC merely borrowed a desk. When a post claims the cause itself cleared, the author should
+pair `needMet` with a `global` predicate on the outage flag being false (so the post fires only once
+the outage is really over); `needMet` alone reads as "the NPC is working again", which a workaround
+also satisfies. The validator report line for a `needMet` post spells out that it includes workaround
+recoveries (section 8).
+
 **"Still holds now"** for `cause`. `failWhy[need]` is the whys of the NPC's *last* counted failure and
 is not cleared by a later ease, so on its own it would keep matching after the player fixed the
-problem. So `cause` also asks whether that cause is still live, by `AccessWork.cause_holds?` (the
-extracted copy of the frustration route's "a cause holds" test): `no_access` and `social_blocked` from
-the scenario, `locked_out` from `loginLockouts` behind its `check` record, and `down`, `off`,
-`unreachable` from the server's copy of the globals through `NetworkModel`. So "Printer's down AGAIN"
-fires only while the printer is down.
+problem. So `cause` also asks whether a cause with that `why` is still live, by
+`AccessWork.cause_why_holds?`, which enumerates the NPC's candidate causes for the need (above) and
+calls the per-cause `cause_holds?` on each: `no_access` and `social_blocked` from the scenario,
+`locked_out` from `loginLockouts` behind its `check` record, and `down`, `off`, `unreachable` from the
+server's copy of the globals through `NetworkModel`. So "Printer's down AGAIN" fires only while a
+down-able resource on the NPC's work list is actually down.
 
 Notes and bounds:
 
@@ -136,7 +167,12 @@ Notes and bounds:
   `need` whenever the NPC has two failable needs. The validator reports this ambiguity (section 8).
 - A reactive post is served only once its NPC has a `npcFrustration` entry (the NPC has been met and
   has failed or eased at least once). Before that, every predicate but `global` is false, which is
-  correct: nothing has happened yet.
+  correct for the event-driven predicates: nothing has happened yet. Note the one counter-intuitive
+  case: `frustrationBelow` is also false before an entry exists, so a "things are quiet at the office"
+  post keyed on `frustrationBelow` alone cannot fire until the NPC has first failed or eased. C2
+  documents this rather than treating a nil entry as level 0: an always-calm post should key on a
+  `global` (which reads scenario state before any frustration event), and the validator warns when a
+  `frustrationBelow`-only reactive post sits on an NPC with no failable need (section 8).
 - **USB refusal is not a condition.** The brief lists it among the recorded causes, but sub-slice U
   records no server state for a refused device (section 3 of the C plan: "no route, no saved state,
   no frustration"), so there is nothing to read. It is left out, and listed as an open question (11).
@@ -155,7 +191,10 @@ AccessWork.select_feed_post(scenario_data, npc, feed_entry, frustration_entry, g
 
 `feed_entry` is the `feedRevealed` record (`shown`, `armed`, `at`, section 5); `frustration_entry` is
 `npcFrustration[npcId]` (or nil before the NPC has one); `globals` is `player_state.globalVariables`
-merged over the scenario defaults; `lockout_keys` is the `loginLockouts` keys. The route
+merged over the scenario defaults **by key presence** (a player key present wins even when its value
+is `false` or `0`, and the scenario default is used only when the key is absent), matching the live
+`frustration_global` rule so an explicit `false` is never dropped; `lockout_keys` is the
+`loginLockouts` keys. The route
 (`social_feed.rb`) holds all of these and passes them. The function returns the chosen post id (or
 nil) and the recomputed `done`.
 
@@ -176,12 +215,14 @@ The three modes, each a precise rule for which post is served:
   pre-empts the ordered stream; between reactive moments the ordered posts flow. Matches "reactive
   first".
 - **`mixed`**. One walk over `posts[]` in authored order. Serve the **first entry, in authored order,
-  that is not yet shown and is servable**, where an ordered post is always servable and a reactive
-  post is servable only when its `when` holds now. So ordered posts keep their order and are never
-  delayed, a reactive post slots in at its authored position once its condition is true, and a
+  that is servable and eligible**, using the same eligibility as the eligible reactive set above: an
+  ordered post is eligible when not yet shown; a reactive post is eligible when its `when` holds now
+  **and** (it is not yet shown, or it is `repeatable` and re-armed). So ordered posts keep their order
+  and are never delayed, a reactive post slots in at its authored position once its condition is true,
+  a `repeatable` post that has fired and re-armed can fire again at its authored position, and a
   reactive post whose condition is not yet true is passed over and retried on later reveals without
-  blocking the posts after it. This is the precise definition of "mixed": authored order with
-  reactive posts gated on their condition and skipped until it holds.
+  blocking the posts after it. This is the precise definition of "mixed": authored order with reactive
+  posts gated on their condition and skipped until eligible.
 
 The three differ only in priority: `facts_first` drains ordered before any reactive, `reactive_first`
 lets any eligible reactive jump the queue, `mixed` honours authored position. With no reactive posts
@@ -195,6 +236,14 @@ post comes out when its condition later holds. No client change is needed for th
 the player never triggers stays unshown, so for such a feed `done` never arrives and the client keeps
 asking on each met use (the same askable behaviour C has); this is expected, not a bug, and any
 future logic keyed on feed completion will not fire for a feed with an un-triggered reactive post.
+
+A never-closing feed (one holding an un-triggered or a `repeatable` recurring-cause reactive post)
+therefore issues one `/feed_post` per met social use for the rest of the mission, usually answered
+`{ post: null, done: false }`. This is bounded per use, not a busy-loop: C's client schedules a retry
+only on `tooSoon`, and `apply` returns false on a plain `{ post: null }` with no retry, so each met
+use makes exactly one request. The consequence is that such a feed's total request count grows with
+play, so the live proof's request budget (section 9) is checked **per beat** (requests between two
+assertions), never as a fixed per-run total.
 
 **Done.** `done` is sent when no more post can be served. A `repeatable` reactive post whose cause can
 still recur is never-closing: while such a post exists in the feed, the server keeps `done: false`
@@ -217,6 +266,13 @@ marked spent, and is **re-armed** the first time a later reveal evaluates its co
 down, and becomes eligible again only after the printer has come back up (condition false) and gone
 down once more. The armed flag lives per post in `feedRevealed` (section 5). Because the feed holding
 such a post never reports `done` (above), the client keeps asking and the second firing is delivered.
+
+**Known bound: re-arm is observed only on a reveal.** The false edge that re-arms a `repeatable` post
+is evaluated only on a `POST /feed_post` call, and those happen only on a met social use. If the cause
+clears and returns with no met use in between, the server never observes the false edge, never
+re-arms, and the second occurrence does not fire. This is acceptable for C2 (the player drives the
+pace by returning to the NPC's feed), but it means a live proof of re-arm must force a met use while
+the cause is cleared, between the two firings, or it passes by luck (section 10, F11).
 
 **Pace.** Unchanged from C. A reactive post is one post per met use like any other, so C's post floor
 (`0.9` of the need's period less the 3 second allowance, `AccessWork.post_floor`) applies to every
@@ -242,9 +298,9 @@ C2 reads only state the frustration and feed systems already keep, and adds one 
   `easeAt {need=>t}`, `done [index]`, `lastSpent {index.to_s=>{hand, done}}`, `lockedOut [pcId]`.
   Section 3 reads these; nothing new is written here. No per-need peak is recorded or needed (section
   3, "fixed at last").
-- `player_state.globalVariables`, `loginLockouts`, the scenario: the `cause` live check and the
-  `global` predicate, through the extracted `AccessWork.cause_holds?` / `AccessWork.globals_hold?`
-  helpers (section 3) which take globals and lockout keys as arguments.
+- `player_state.globalVariables`, `loginLockouts`, the scenario: the `cause` live check (the
+  `AccessWork.cause_why_holds?` enumeration over the per-cause `cause_holds?`) and the `global`
+  predicate (`AccessWork.globals_hold?`), section 3, all taking globals and lockout keys as arguments.
 - `feedRevealed[npcId]` (`social_feed.rb`): **changed shape.** C stored `{ n, at }`, an ordered
   count and the last reveal time. C2 needs the actual set of posts shown (reactive posts are not a
   prefix of the array) and the re-arm flags. New shape:
@@ -300,8 +356,9 @@ block), another is the reveal position to emit. The builder must not reuse the a
 
 The selection, eligibility, re-arm and "done" logic are pure and live in `AccessWork` so the
 validator can reuse them for its report and its static unreachable check (section 7/8). The live
-`cause_holds?` / `globals_hold?` helpers are pure too but take live globals and lockout keys, so the
-route can call them while the validator uses the static reachability check instead (section 8).
+`cause_why_holds?` enumeration (over the per-cause `cause_holds?`) and the `globals_hold?` helper are
+pure too but take live globals and lockout keys, so the route can call them while the validator uses
+the static reachability check instead (section 8).
 `social_feed.rb` holds only the state read/write and the HTTP shape.
 
 **Server authority.** The client posts only `npc_id`. Every condition input (frustration, failure
@@ -369,12 +426,19 @@ New warnings:
 - a feed with reactive posts but no NPC way to reach the state they read (the NPC has no `work` plan
   and no blockable `social_media`): the reactive posts are dead;
 - an unscoped `cause` (no sibling `need`) on an NPC that can fail two needs: the post matches whichever
-  need last failed, which may not be the author's intent, so it should be scoped with `need`.
+  need last failed, which may not be the author's intent, so it should be scoped with `need`;
+- a reactive post whose only predicate is `frustrationBelow` on an NPC with no failable need: the NPC
+  never gets a frustration entry, so the predicate stays false and the post never fires (an
+  always-calm post should key on a `global`, section 3).
 
 Report lines (in the style of C's per-feed timing line): per NPC with reactive posts, the `order`
 mode, a count of reactive posts (so an author notices a feed that takes many uses to drain), and for
 each reactive post its condition in words and which player action arms it ("fires when the printer is
-down", "fires after Jake borrows a desk"), so the author sees the chain.
+down", "fires after Jake borrows a desk"), so the author sees the chain. A `cause` post names each
+candidate resource that can meet the why (so a `cause: "down"` on an NPC with two down-able resources
+reads "fires when the server or the printer is down", making the any-resource match visible). A
+`needMet` post's line says it fires on recovery **including a workaround recovery** (section 3), so an
+author who meant "the outage itself cleared" sees they should add a `global` predicate.
 
 No password may appear in a reactive post or its fact: C's `creds.password` check already scans every
 feed post and fact, so it covers these.
@@ -387,13 +451,19 @@ Unit, tampered-client, leak scanner and a live run, matching C's approach.
   `test/.../access_work_feed_select_test.rb`: `AccessWork.select_feed_post` over hand-built feeds,
   `feedRevealed` and `npcFrustration` entries plus globals and lockout keys. One case per mode
   (`facts_first`, `reactive_first`, `mixed`) with the same posts, asserting the exact served sequence;
-  the "mixed skips an un-true reactive and picks it up later" case; the `repeatable` edge re-arm
-  (fire, stays un-eligible while the cause holds, re-arms after it clears, fires again); `done` only
-  once ordered are spent and reactive are shown **and** no `repeatable`-with-recurring-cause post
-  remains (a feed with such a post never reports `done`); a reactive post gated on each predicate
-  (`frustrationAtLeast`, `frustrationBelow`, `cause` with the live check, `workaround`, `needMet`,
-  `global`); the `cause` live check (matches while the cause holds, stops after an ease fixes it); the
-  `needMet` "fixed at last" case (holds only when `failAt` present and `easeAt` later).
+  the "mixed skips an un-true reactive and picks it up later" case; a **`mixed` + `repeatable` re-arm**
+  case (a repeatable post at an authored position fires, stays spent while the cause holds, re-arms
+  after a reveal with the cause false, and fires again at its authored position), so the corrected
+  `mixed` eligibility is pinned; the `repeatable` edge re-arm (fire, stays un-eligible while the cause
+  holds, re-arms after it clears, fires again); `done` only once ordered are spent and reactive are
+  shown **and** no `repeatable`-with-recurring-cause post remains (a feed with such a post never
+  reports `done`); a reactive post gated on each predicate (`frustrationAtLeast`, `frustrationBelow`,
+  `cause` with the live enumeration, `workaround`, `needMet`, `global`); the `cause` live check
+  (matches while the cause holds, stops after an ease fixes it); a **two-down-able-resource `cause`**
+  case (`cause_why_holds?` holds while either resource is down, and the served post is the one whose
+  `why` matched), pinning the per-why enumeration and the report wording; the `needMet` "fixed at last"
+  case (holds only when `failAt` present and `easeAt` later), with a sub-case that it also holds after
+  a workaround-driven ease while the original cause still holds (the author caveat of section 3).
 - **Extracted helpers.** A unit test that `AccessWork.cause_holds?` and `AccessWork.globals_hold?`
   return the same answer as the `NpcFrustration` instance wrappers over the same state, so the one-copy
   guarantee is checked.
@@ -420,11 +490,14 @@ Unit, tampered-client, leak scanner and a live run, matching C's approach.
   `--capture-responses`).** Extend `test_access_social`'s `PLAYTEST.md` with reactive beats (below):
   cause an outage, read the vent post on the osint terminal; clear it and cause a different cause,
   read the second vent; perform a workaround, read the workaround post; prove the `repeatable` vent
-  fires a second time after its cause clears and returns, with the client still asking (the feed never
-  reported `done`); one reload mid-run proving `feedPosts` restores reactive posts in reveal order.
-  After each beat: `verify-run.rb --access` against the expected record, `access-leak-check.rb` over
-  the responses so far, and the `/feed_post` request count against the beat's budget. The pace is
-  earned in real time, never by stepping the needs clock while an outage holds (C's rule).
+  fires a second time after its cause clears and returns, with a **met social use forced while the
+  cause is cleared** between the two firings (so the false edge is actually observed and the re-arm is
+  not passed by luck, section 4's known bound), and the client still asking (the feed never reported
+  `done`); one reload mid-run proving `feedPosts` restores reactive posts in reveal order. After each
+  beat: `verify-run.rb --access` against the expected record, `access-leak-check.rb` over the responses
+  so far, and the `/feed_post` request count against the **per-beat** budget (requests between the
+  beat's two assertions, since a never-closing feed's per-run total grows with play, section 4). The
+  pace is earned in real time, never by stepping the needs clock while an outage holds (C's rule).
 
 ## 10. Test scenario changes (`test_access_social`)
 
@@ -442,9 +515,11 @@ own event, no password in a sign). New beats, each with its own room, sign and t
   then read the "had to borrow a desk" post, slotted at its authored position.
 - **F11 `facts_first` and re-arm.** A third NPC, `order: "facts_first"`, an ordered post and a
   `repeatable` vent `when: { cause: ["down","off"] }`. The beat proves the ordered post comes first,
-  then the vent, then a second firing only after the cause clears and returns. Because the feed holds
-  a `repeatable` recurring-cause post it never reports `done`, so the beat also asserts the client is
-  still asking after the first firing (it would otherwise go quiet and miss the re-arm).
+  then the vent, then a second firing only after the cause clears and returns, with a met social use
+  forced while the cause is cleared between the two firings (so the server observes the false edge and
+  the re-arm is proven, not luck; section 4's known bound). Because the feed holds a `repeatable`
+  recurring-cause post it never reports `done`, so the beat also asserts the client is still asking
+  after the first firing (it would otherwise go quiet and miss the re-arm).
 - **F12 blocked site.** A `social_media` need under a `social: "blocked"` policy and a reactive post
   `when: { cause: "social_blocked" }`, proving the blocked-site vent and that it stops once a
   `borrow_session` to a laxer PC lets the use succeed (`needMet`).
