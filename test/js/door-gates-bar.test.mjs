@@ -483,3 +483,62 @@ test('heldShutAgainst: a near guard at a shut gate with a barred player or a for
     g.open = true;
     assert.equal(gates.heldShutAgainst('guard', 'lobby', 'vault', 0), null, 'open gate');
 });
+
+// Code review R3 (m1, n1): a guard who turned back (either form) does not open the gate as he
+// walks away, and both forms of door_gate_guard_turned_back carry the same fields.
+test('guardTurnedBack: one set of event fields; the gate does not open for the guard walking away', () => {
+    const { gates, g, guard, behaviour, events } = setup({ player: NEAR });
+    guard.x = 100; guard.y = 140;
+    behaviour.wantsCross = false;                                     // the reader stop: not crossing yet
+    const info = gates.heldShutAgainst('guard', 'lobby', 'vault', 0);
+    assert.equal(gates.guardTurnedBack('guard', info, { beforeUse: true }), true);
+    assert.deepEqual(events, [['door_gate_guard_turned_back',
+        { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100, npcId: 'guard', beforeUse: true }]]);
+    // The player steps away while he is still within the radius, walking off
+    stand(FAR);
+    gates.update(1000);
+    guard.y = 150;
+    gates.update(1100);
+    assert.equal(g.open, false, 'not opened for a guard who has turned back');
+    assert.ok(!names(events).includes('door_gate_opened'));
+    // Out of the radius and back: he may open it again
+    guard.y = 300;
+    gates.update(1200);
+    guard.y = 140;
+    gates.update(1300);
+    assert.equal(g.open, true, 'opens for him on his next approach');
+});
+
+test('guardTurnedBack: keying again or wanting to cross clears the mark', () => {
+    let s = setup();
+    s.guard.x = 100; s.guard.y = 140;
+    s.behaviour.wantsCross = false;
+    s.gates.guardTurnedBack('guard', s.gates._gateInfo(s.g));
+    s.gates.update(0);
+    assert.equal(s.g.open, false);
+    s.gates.clearTurnedBack('guard');                                 // he keys at his reader
+    s.gates.update(100);
+    assert.equal(s.g.open, true);
+    s = setup();
+    s.guard.x = 100; s.guard.y = 140;
+    s.behaviour.wantsCross = false;
+    s.gates.guardTurnedBack('guard', s.gates._gateInfo(s.g));
+    s.gates.update(0);
+    assert.equal(s.g.open, false);
+    s.behaviour.wantsCross = true;                                    // his route wants him across
+    s.gates.update(100);
+    assert.equal(s.g.open, true);
+});
+
+test('the timer form of door_gate_guard_turned_back carries the same fields, beforeUse false', () => {
+    const { gates, g, guard, events } = setup({ player: NEAR });
+    guard.x = 100; guard.y = 140;
+    gates.update(1000);
+    gates.update(1000 + GUARD_TURN_BACK_MS);
+    assert.deepEqual(events, [['door_gate_guard_turned_back',
+        { roomId: 'lobby', connectedRoom: 'vault', direction: 'north', x: 100, y: 100, npcId: 'guard', beforeUse: false }]]);
+    // The player leaves while he is still near: the gate does not open behind his back
+    stand(FAR);
+    gates.update(1000 + GUARD_TURN_BACK_MS + 100);
+    assert.equal(g.open, false);
+});
