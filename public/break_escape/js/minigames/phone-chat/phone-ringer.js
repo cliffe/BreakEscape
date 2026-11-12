@@ -54,6 +54,10 @@
  * offer(): it holds the mapping key, the ringer does not; and restore() (a reload) must
  * never persist a trigger a second time.
  *
+ * One clock: lastHitAt() must be on the same clock as clock.now() (pass performance.now and
+ * stamp hits with it; player-damage-interrupt.js's Date.now stamp must be converted in the
+ * adapter). A hit stamped ahead of now() is ignored, never counted as a hit for ever.
+ *
  * Every adapter call is guarded: a throw is logged and counts as "returned nothing". A throw
  * from openCall is therefore a refusal (row 19). The ringer is re-entrant: an adapter effect
  * may call offer, answer, decline, callEnded or close synchronously.
@@ -63,6 +67,9 @@
  * callEnded(npcId, { id, endedByCall, callFinished }). The ringer ignores a report whose id
  * is not the call it opened. callEnded does its bookkeeping at once and defers its re-check
  * (and any reopen) through clock.defer, because the end hook runs mid-swap (row 32).
+ * minigame-manager must call the hook from a `finally`, so a throwing onComplete cannot skip
+ * it. As a backstop, an opened call whose callMinigameOpen() stays false for
+ * CALL_GONE_AFTER_MS is treated as ended without an own-path flag (row 26 if forced, else row 32).
  */
 
 export const RING_TIMEOUT_MS = 20000;
@@ -83,6 +90,8 @@ export const MAX_ADVANCE_MS = 4 * TICK_MS;
 /** A refused open is given up on after this many refusals and this long since the first (row 19, M3). */
 export const MAX_OPEN_REFUSALS = 5;
 export const GIVE_UP_AFTER_MS = 4 * RETRY_OPEN_MS;
+/** A call that has opened, but whose minigame the adapter has reported gone for this long with no end report, is treated as ended (M2 backstop). */
+export const CALL_GONE_AFTER_MS = 6 * TICK_MS;
 
 const DEFAULT_VARS = Object.freeze({ call_answer_seconds: 0, call_is_callback: false });
 
@@ -120,7 +129,10 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     const isPaused = () => !!call('isPaused');
     const hitWithin = (ms) => {
         const t = call('lastHitAt');
-        return typeof t === 'number' && now() - t < ms;
+        if (typeof t !== 'number') return false;
+        // A timestamp ahead of the clock (another clock, a clock change) is not a hit (R2 m3).
+        const d = now() - t;
+        return d >= 0 && d < ms;
     };
 
     /** The world's half of "a call may not open now" (2.2): the adapter and the hit quiet time. */
@@ -162,6 +174,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             withheld: o.withheld,
             untilAnswered: o.untilAnswered,
             callLabel: o.callLabel,
+            opening: o.opening,
             answerSeconds: o.answerSeconds,
         };
     }
@@ -302,6 +315,13 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (d && !closed && !call('openBlocked') && !hitWithin(HIT_QUIET_MS)) call('reopen', d);
     }
 
+    /** A popup the offer put aside comes back when the offer ends without the call (hang-up, rang off; R2 m2). */
+    function takeDisplacedBack(o) {
+        const d = o.displaced;
+        o.displaced = null;
+        reopenDisplaced(d);
+    }
+
     /** Run a re-check after the swap in progress. */
     function afterSwap(fn) {
         if (typeof c.defer === 'function') c.defer(fn); else fn();
@@ -328,6 +348,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         finishOffer(o);
         call('emit', `phone_call_declined:${o.npcId}`, eventData(o));
         call('onOutcome', 'declined', o);
+        takeDisplacedBack(o);
         run();
     }
 
@@ -347,6 +368,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         } else {
             call('onOutcome', 'missed', o);
         }
+        takeDisplacedBack(o);
         run();
     }
 
@@ -469,8 +491,16 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         // Only the end of the call this ringer opened counts (M6): a stale or duplicate
         // report, or one for another phone-chat of the contact, is ignored.
         if (!info || !connecting || info.id !== connecting.id) return false;
+        return finishCall(o, !!(info.endedByCall || info.callFinished));
+    }
+
+    /**
+     * The connected call is over (an end report, or the M2 backstop with own = false).
+     * Own-path: row 25. Not own: row 26 for a forced call, row 32 otherwise.
+     */
+    function finishCall(o, own) {
         connecting = null;
-        const own = !!(info.endedByCall || info.callFinished);
+        o.goneSince = 0;
         let reopenWhat = null;
         if (own) {
             // Row 25: the story position was reset inside the call already.
@@ -479,10 +509,10 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             finishOffer(o);
             call('onOutcome', 'ended', o, { displaced: !!reopenWhat });
         } else if (o.disableClose && !closed) {
-            // Row 26: rings again once there has been no hit for HIT_QUIET_MS.
+            // Row 26: rings again once there has been no hit for HIT_QUIET_MS. The popup it put
+            // aside stays in o.displaced, so it comes back when the call finally ends (R2 m2).
             o.rering = true;
             o.opened = false;
-            o.displaced = null;
             requeueHead(o, 'connected');
         } else if (o.disableClose) {
             // A forced call hit after the ending began: it never rings again (row 28).
@@ -491,6 +521,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             call('onOutcome', 'dropped', o);
         } else {
             // Row 32: closed by something else. Missed, no toast; A6 adds the callback.
+            o.displaced = null;
             finishOffer(o);
             call('emit', `phone_call_missed:${o.npcId}`, eventData(o));
             call('onOutcome', 'dropped', o);
@@ -522,7 +553,25 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         ensureTick();
     }
 
+    /**
+     * M2 backstop: an opened call whose minigame the adapter says is gone, and stays gone, had its
+     * end report lost (a throwing onComplete, the stray guard). Treated as ended without an
+     * own-path flag: row 26 for a forced call (the player did not choose to close it, so it must
+     * come back), row 32 otherwise (we cannot know the story position was reset, so no row 25 and
+     * no popup reopen). CALL_GONE_AFTER_MS spares the swap between two minigames.
+     */
+    function checkCallGone() {
+        const o = active;
+        if (!o || o.state !== 'connected' || !o.opened) return false;
+        if (call('callMinigameOpen') !== false) { o.goneSince = 0; return false; }
+        if (!o.goneSince) { o.goneSince = now(); return false; }
+        if (now() - o.goneSince < CALL_GONE_AFTER_MS) return false;
+        finishCall(o, false);
+        return true;
+    }
+
     function runOnce() {
+        if (checkCallGone()) again = true;
         if (closed) return;
         const o = active;
         if (o && o.state === 'ringing') {
@@ -594,6 +643,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             refusals: 0,
             firstRefusalAt: 0,
             notBefore: 0,
+            goneSince: 0,
             saveAs: null,
         };
     }
@@ -609,7 +659,12 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (closed) return 'refused';
         advance();
         // The trigger is persisted by the caller before this (see the header), not here.
-        const existing = queue.find((x) => x.npcId === raw.npcId)
+        // A forced call waiting to ring again counts as a connected call (rows 5, 26): it is
+        // never replaced and a new offer queues behind it (R2 M1). Row 4 replaces only the
+        // contact's ringing, held or queued non-forced offer.
+        const waiting = queue.find((x) => x.npcId === raw.npcId && x.saveAs === 'connected');
+        if (waiting && waiting.knot === raw.knot) return 'dropped';
+        const existing = queue.find((x) => x.npcId === raw.npcId && x.saveAs !== 'connected')
             || (active && active.npcId === raw.npcId && active.state !== 'connected' ? active : null);
         if (existing) {
             if (existing.knot === raw.knot) return 'dropped';           // row 3
@@ -684,15 +739,21 @@ export function createPhoneRinger({ adapter, clock } = {}) {
      */
     function restore(npcId, rec) {
         if (closed || typeof npcId !== 'string' || !npcId || !rec || typeof rec.knot !== 'string' || !rec.knot) return 'refused';
-        if (queue.some((x) => x.npcId === npcId && x.knot === rec.knot)
-            || (active && active.npcId === npcId && active.knot === rec.knot)) return 'dropped';
+        // A contact's connected call, or a forced one already waiting, is the one a reload brings
+        // back: a second restore is dropped (R2 m1).
+        if (queue.some((x) => x.npcId === npcId && (x.knot === rec.knot || x.saveAs === 'connected'))
+            || (active && active.npcId === npcId && (active.knot === rec.knot || active.state === 'connected'))) return 'dropped';
         advance();
         const o = makeOffer({ ...rec, npcId, ringMs: 0 });
         o.started = true;
         o.answeredEmitted = o.answerSeconds != null;
         o.rering = true;
+        o.saveAs = 'connected';
         o.notBefore = now() + RERING_AFTER_LOAD_MS;
-        queue.push(o);
+        // It is a connected call (row 5): it goes ahead of any other offer queued for the contact,
+        // which then waits behind it. The saved slot is its record (rank 3).
+        const other = queue.findIndex((x) => x.npcId === npcId);
+        if (other >= 0) queue.splice(other, 0, o); else queue.push(o);
         save(o);
         run();
         return o.state;

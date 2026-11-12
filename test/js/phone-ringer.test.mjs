@@ -13,7 +13,7 @@ const dataUrl = (s) => 'data:text/javascript;base64,' + Buffer.from(s).toString(
 const R = await import(dataUrl(src));
 const {
     createPhoneRinger, RING_TIMEOUT_MS, UNTIL_ANSWERED_NUDGE_MS, AUTO_ANSWER_MS,
-    HIT_QUIET_MS, HOLD_MAX_MS, SCRIPTED_CALL_START_MS, TICK_MS, RERING_AFTER_LOAD_MS,
+    HIT_QUIET_MS, HOLD_MAX_MS, SCRIPTED_CALL_START_MS, TICK_MS, RERING_AFTER_LOAD_MS, CALL_GONE_AFTER_MS,
 } = R;
 
 // ---- fakes -------------------------------------------------------------------------
@@ -1342,3 +1342,211 @@ test('m10: a forced call answered by hand at 3 s keeps answerSeconds 3 when it r
     assert.equal(s.count('openCall'), 2);
     assert.equal(s.last('openCall')[3].answerSeconds, 3);
 });
+
+// ---- Round 2 ------------------------------------------------------------------------
+
+/** A forced call, auto-answered and open, then closed by a hit: it waits to ring again (row 26). */
+function forcedHit(over = {}) {
+    const s = setup(over);
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(AUTO_ANSWER_MS); connect(s);
+    s.w.callOpen = false; s.w.lastHitAt = s.clock.now();
+    endCall(s, {});
+    return s;
+}
+
+test('R2 M1: a forced call waiting to ring again is never replaced; a different knot queues behind it with its own timing', () => {
+    const s = forcedHit();
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.queueLength(), 2);
+    assert.equal(saves(s).pop().knot, 'call_a', 'the slot still holds the forced call');
+    assert.equal(saves(s).pop().state, 'connected');
+    assert.equal(s.ringer.offer(offer({ knot: 'call_a' })), 'dropped', 'the same knot is dropped');
+    s.clock.advance(HIT_QUIET_MS + TICK_MS);
+    assert.equal(s.ringer.current().knot, 'call_a');
+    s.clock.advance(AUTO_ANSWER_MS + SCRIPTED_CALL_START_MS);
+    assert.equal(s.last('openCall')[3].answerSeconds, 6, 'its own answerSeconds is kept');
+    s.w.lastHitAt = null; s.w.callOpen = false;
+    endCall(s, { endedByCall: true });
+    s.clock.advance(TICK_MS);
+    assert.equal(s.ringer.current().knot, 'call_b');
+    assert.equal(s.ringer.current().ringMs < TICK_MS * 2, true, 'no ringing time carries over');
+    s.clock.advance(2000);
+    s.ringer.answer('ceo');
+    assert.equal(s.ringer.current().answerSeconds, 2, 'call_answer_seconds counts only the new call');
+});
+
+test('R2 M1: row 4 still replaces a non-forced offer that is queued behind a connected call', () => {
+    const s = connectedCall();
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.offer(offer({ knot: 'call_c' })), 'replaced');
+    assert.equal(s.ringer.queueLength(), 1);
+    assert.equal(s.ringer.offer(offer({ knot: 'call_c' })), 'dropped');
+});
+
+test('R2 m1: restore() queues a forced call ahead of the contact\'s other offer and never leaves two unconnected offers; it keeps opening', () => {
+    const s = setup({ ringBlocked: true });
+    s.ringer.offer(offer({ knot: 'call_b' }));
+    assert.equal(s.ringer.restore('ceo', { knot: 'call_a', disableClose: true, opening: true, answerSeconds: 3 }), 'queued');
+    assert.equal(s.ringer.queueLength(), 2);
+    assert.equal(saves(s).pop().knot, 'call_a');
+    assert.equal(saves(s).pop().state, 'connected');
+    assert.equal(saves(s).pop().opening, true);
+    assert.equal(s.ringer.hasOpeningOffer(), true, 'the Mission Brief is still held for it');
+    assert.equal(s.ringer.restore('ceo', { knot: 'call_c', disableClose: true }), 'dropped');
+    assert.equal(s.ringer.queueLength(), 2);
+    s.w.ringBlocked = false;
+    s.clock.advance(RERING_AFTER_LOAD_MS + TICK_MS);
+    assert.equal(s.ringer.current().knot, 'call_a', 'the restored forced call rings first');
+});
+
+test('R2 m1: a restored forced call is not replaced by a later offer for the contact', () => {
+    const s = setup({ ringBlocked: true });
+    s.ringer.restore('ceo', { knot: 'call_a', disableClose: true });
+    assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
+    assert.equal(s.ringer.queueLength(), 2);
+    assert.equal(saves(s).pop().knot, 'call_a');
+});
+
+test('R2 M2: an end report that never comes ends the call after CALL_GONE_AFTER_MS (row 32); the next call rings', () => {
+    const s = setup();
+    s.ringer.offer({ npcId: 'a', knot: 'k' });
+    s.ringer.answer('a'); connect(s);
+    s.ringer.offer({ npcId: 'b', knot: 'k' });
+    assert.equal(s.ringer.stateOf('b'), 'queued');
+    s.w.callOpen = false;                                  // the minigame is gone, no callEnded
+    s.clock.advance(CALL_GONE_AFTER_MS - TICK_MS * 2);
+    assert.equal(s.ringer.stateOf('a'), 'connected', 'not at once: a swap between minigames is not an end');
+    s.clock.advance(TICK_MS * 4);
+    assert.equal(s.ringer.stateOf('a'), null);
+    assert.ok(s.events().includes('phone_call_missed:a'));
+    assert.ok(s.log.some((e) => e[0] === 'outcome' && e[1] === 'dropped' && e[2] === 'a'));
+    assert.equal(saves(s, 'a').pop(), null);
+    assert.equal(s.count('reopen'), 0);
+    assert.equal(s.ringer.stateOf('b'), 'ringing');
+});
+
+test('R2 M2: a call minigame that is gone only briefly (a swap) is not ended', () => {
+    const s = connectedCall();
+    s.w.callOpen = false;
+    s.clock.advance(CALL_GONE_AFTER_MS - TICK_MS * 2);
+    s.w.callOpen = true;
+    s.clock.advance(CALL_GONE_AFTER_MS);
+    s.w.callOpen = false;
+    s.clock.advance(CALL_GONE_AFTER_MS - TICK_MS * 2);
+    assert.equal(s.ringer.stateOf('ceo'), 'connected', 'the gone timer restarted when the call was seen open');
+});
+
+test('R2 M2: during the 500 ms open delay the backstop does not run', () => {
+    const s = setup();
+    s.ringer.offer(offer()); s.ringer.answer('ceo');
+    s.clock.advance(SCRIPTED_CALL_START_MS - 1);
+    assert.equal(s.ringer.stateOf('ceo'), 'connected');
+    assert.equal(s.count('emit') >= 1, true);
+    assert.equal(s.ringer.callActive(), true);
+});
+
+test('R2 M2: a forced call whose end report is lost is row 26: it waits to ring again, not dropped', () => {
+    const s = setup();
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(AUTO_ANSWER_MS); connect(s);
+    s.w.callOpen = false;
+    s.clock.advance(CALL_GONE_AFTER_MS + TICK_MS * 2);
+    assert.equal(s.ringer.stateOf('ceo'), 'ringing', 'it rings again at once, with no hit in the way');
+    assert.equal(s.ringer.current().resumeCall, true);
+    assert.equal(s.events().includes('phone_call_missed:ceo'), false);
+});
+
+test('R2 m2: a popup put aside comes back when the call is hung up after a refused open', () => quietly(() => {
+    const s = setup({ popup: { kind: 'lab' }, openResult: false });
+    s.ringer.offer(offer()); s.ringer.answer('ceo'); connect(s);
+    assert.equal(s.ringer.stateOf('ceo'), 'held');
+    assert.equal(s.count('putAside'), 1);
+    s.ringer.hangUp('ceo');
+    assert.equal(s.count('reopen'), 1);
+    assert.deepEqual(s.last('reopen')[1], { kind: 'lab' });
+}));
+
+test('R2 m2: a popup put aside comes back when a held call rings off', () => quietly(() => {
+    const s = setup({ popup: { kind: 'lab' }, openResult: false }, (ad, ctx) => {
+        ad.toast = () => { ctx.w.openBlocked = false; };     // by the time of the toast the world is free
+    });
+    s.ringer.offer(offer()); s.ringer.answer('ceo'); connect(s);
+    s.w.openBlocked = true; s.w.minigameOpen = true;         // the pill shows, the hold clock runs
+    s.clock.advance(HOLD_MAX_MS + 1000);
+    assert.equal(s.ringer.stateOf('ceo'), null);
+    assert.ok(s.events().includes('phone_call_missed:ceo'));
+    assert.equal(s.count('reopen'), 1);
+}));
+
+test('R2 m2: after close() the popup stays closed on hang-up', () => quietly(() => {
+    const s = setup({ popup: { kind: 'lab' }, openResult: false });
+    s.ringer.offer(offer()); s.ringer.answer('ceo'); connect(s);
+    s.ringer.close();
+    assert.equal(s.count('reopen'), 0);
+}));
+
+test('R2 m2: a forced call that put a popup aside and was hit keeps it; it comes back when the call ends', () => {
+    const s = setup({ popup: { kind: 'lab' } });
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(AUTO_ANSWER_MS); connect(s);
+    assert.equal(s.count('putAside'), 1);
+    s.w.callOpen = false; s.w.lastHitAt = s.clock.now();
+    endCall(s, {});
+    assert.equal(s.count('reopen'), 0, 'not while it waits to ring again');
+    s.clock.advance(HIT_QUIET_MS + AUTO_ANSWER_MS + SCRIPTED_CALL_START_MS + TICK_MS * 2);
+    assert.equal(s.count('openCall'), 2);
+    s.w.lastHitAt = null;
+    endCall(s, { endedByCall: true });
+    assert.equal(s.count('reopen'), 1);
+    assert.deepEqual(s.last('reopen')[1], { kind: 'lab' });
+});
+
+test('R2 m3: a hit stamped in the future is not a hit', () => {
+    const s = setup({ lastHitAt: 1000 + 60000 });
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(AUTO_ANSWER_MS + SCRIPTED_CALL_START_MS);
+    assert.equal(s.count('openCall'), 1, 'the forced call auto-answers and opens');
+    const t = setup({ lastHitAt: 1000 + 60000 });
+    t.ringer.offer(offer()); t.ringer.answer('ceo'); connect(t);
+    assert.equal(t.count('openCall'), 1);
+});
+
+test('R2 m4: five quick refusals from hooks do not give up before GIVE_UP_AFTER_MS', () => quietly(() => {
+    const s = setup({ openResult: false });
+    s.ringer.offer(offer()); s.ringer.answer('ceo'); connect(s);
+    for (let i = 0; i < 4; i++) { s.ringer.onMinigameEnded(); s.clock.flush(); connect(s); }
+    assert.equal(s.count('openCall'), 5);
+    assert.equal(s.ringer.stateOf('ceo'), 'held', 'five refusals in 2 s are not enough');
+    s.clock.advance(12000);
+    assert.equal(s.ringer.stateOf('ceo'), null, 'still given up on once the time has passed');
+}));
+
+test('R2 m4: a successful open clears the refusal count, so a later refusal is not the fifth', () => quietly(() => {
+    const s = setup({ openResult: false });
+    s.ringer.offer(offer({ disableClose: true }));
+    s.clock.advance(AUTO_ANSWER_MS); connect(s);
+    for (let i = 0; i < 3; i++) { s.ringer.onMinigameEnded(); s.clock.flush(); connect(s); }
+    assert.equal(s.count('openCall'), 4);
+    s.w.openResult = true;
+    s.ringer.onMinigameEnded(); s.clock.flush(); connect(s);
+    assert.equal(s.count('openCall'), 5);
+    s.w.callOpen = false; s.w.lastHitAt = s.clock.now();
+    endCall(s, {});
+    s.w.openResult = false;
+    for (let i = 0; i < 100 && s.count('openCall') < 6; i++) s.clock.advance(TICK_MS);
+    assert.equal(s.count('openCall'), 6);
+    assert.equal(s.ringer.stateOf('ceo'), 'held', 'one refusal after the success is the first');
+}));
+
+test('R2 m4: two refusals a long time apart are not given up on (the count is needed as well as the time)', () => quietly(() => {
+    const s = setup({ openResult: false });
+    s.ringer.offer(offer()); s.ringer.answer('ceo'); connect(s);
+    assert.equal(s.count('openCall'), 1);
+    s.w.paused = true;
+    s.clock.advance(20000);
+    s.w.paused = false;
+    s.ringer.onMinigameEnded(); s.clock.flush(); connect(s);
+    assert.equal(s.count('openCall'), 2);
+    assert.equal(s.ringer.stateOf('ceo'), 'held');
+}));
