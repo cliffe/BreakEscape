@@ -1207,6 +1207,18 @@ An NPC with a `social_media` need checks social media about once a period of the
 
 The validator errors on a feed whose site or person does not resolve, a bare list in place of `{ site, person, posts }`, a post with no id or one whose id is already a post or block id, a fact that names no `social.intelFacts` entry, a feed fact named anywhere else, an NPC's password in a post, a feed fact or a chatter line, and an NPC with the need, `"phone": false`, no workstation home and no object that satisfies it. It warns on a post or feed fact text under 12 characters, or one that occurs inside another shipped string (the server cannot tell them apart in a response), a feed with no `social_media` need, a high-awareness poster, a blocking policy with no `social_blocked` line, and the walkable guard. The work report prints one `Feed` line per NPC: the first urgent time, the period, the minute each post is expected and the server's floor. A guessable password whose pieces come from feed posts counts them as clues.
 
+**Reactions.** An NPC can react to other NPCs' feed posts and replies on the same site, with a `reacts` list beside its posts:
+
+```json
+"reacts": [
+  { "toComplaint": "f15_drive", "key": "sad" },
+  { "to": "f15_kofi_re_drive", "key": "like" },
+  { "to": "f16_ivy_answer", "key": "sad", "alongside": "f16_tom_re_ivy_again" }
+]
+```
+
+Each entry has exactly one of `to` (a post or reply id) and `toComplaint` (the oldest served vent of that complaint, not the reactor's own), and a `key`: `like`, `laugh`, `sad` or `angry`. A reaction comes out with the reactor's next post after its target, or with the target itself if the reactor's feed was already done when the target was served (so the poster of a vent can like the replies to it). With `alongside` (one of the reactor's own posts or replies) it comes out only with that post, which is how a reaction is tied to an event: give it a reactive post. A reactor that is not done but never posts again never reacts. One reaction per NPC per post shows, the first to come out. Nothing is stored: the server derives reactions from the posts it has served. A reaction has no text, so there is nothing to voice, no toast, no phone badge and no sound; the browser shows a row of icons with counts under the post. A task on `npc_reacted:<npcId>` is a cue, not a step the mission can depend on: the event fires only on the live answer, and a reaction that comes back on a reload fires nothing. The validator errors on a bad shape, an unknown key, a `to` naming no post, the reactor's own post or one on another site, a `toComplaint` no other NPC carries and an `alongside` that is not the reactor's; it warns on an unknown field, a reactor that never posts, a target or `alongside` post that can never come out, an `alongside` that always comes out before its target, and two reactions of one NPC that can land on the same post. The work report prints one `Reaction` line each, saying when it comes out.
+
 ### Container Objects
 
 Containers hold `contents` arrays of nested items. Every container with `contents` **must** declare `locked: true` or `locked: false`.
