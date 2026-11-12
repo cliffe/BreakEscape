@@ -138,7 +138,6 @@ EXTERNAL player_name()
     -> urgency_assessment
 
 + [That's everything for now.]
-    #exit_conversation
     -> support_call_end
 
 // ===========================================
@@ -149,11 +148,7 @@ EXTERNAL player_name()
 // lint: call-knot
 Three rack banks, A, B and C, and each one's got its own management unit and its own cooling loop.
 
-They all run over SCADA, and SCADA is theirs. Type a change at a terminal and they'll just push it back.
-
-What they can't reach is the hardwired shutdown in the plant room.
-
-It isolates the banks and forces the vents. It all comes down to that button.
+SCADA's theirs, so the only thing that works is the hardwired shutdown in the plant room.
 
 -> support_hub
 
@@ -173,8 +168,6 @@ It isolates the banks and forces the vents. It all comes down to that button.
 === safe_disabling_guidance ===
 // lint: call-knot
 One thing, and it isn't a keyboard.
-
-Every control path runs through SCADA, and SCADA is theirs. Delete their script and they'll push it back before you've closed the window.
 
 // Phase 4 dialogue C1: "the one thing they couldn't touch" is said once, in
 // charge_control_systems_explanation. D5-5: no "press it" before it can arm.
@@ -240,6 +233,7 @@ I can sound the evacuation from here. Klaxon and strobes in every hall.
 -> crew_offer_choices
 
 === crew_offer_choices ===
+// lint: call-knot
 + [Sound it. Get them out.]
     -> crew_sound
 + [Not yet.]
@@ -284,7 +278,11 @@ Call me if you need it.
     I'm not going anywhere.
 }
 
--> support_hub
+// Phone-calls M4 (plan 3.5): a call ends on its last line with #exit_conversation then -> DONE.
+// The engine moves the story to the home knot (`start`) after the call; the thread never replays
+// the hub as silent text.
+#exit_conversation
+-> DONE
 
 // The old `vance_emergency_call` knot was removed in pass 2: it was orphaned (no
 // eventMapping reached it), its "get those vectors down, all of them" line
