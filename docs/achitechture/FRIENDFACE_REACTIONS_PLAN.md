@@ -1,6 +1,6 @@
 # Friendface reactions: plan
 
-Status: **Draft.** Nothing here is built. This slice follows C3 (replies between NPCs,
+Status: **Final.** Nothing here is built. This slice follows C3 (replies between NPCs,
 `ACCESS_MODEL_SLICE_9_2_C3_PLAN.md`, Final, built on `build/c3-replies`) and answers the user's
 decisions q76 and q77 (`docs/handover/2026-11-11_USER_DECISIONS.md`): emoji reactions on Friendface
 posts, as a follow-up slice after C3, under the standing rule that player state synced between
@@ -9,10 +9,10 @@ client and server must not grow so that data is sent back and forth all the time
 questions q79 to q81 on the decisions form are section 13's decisions 2, 6 and 5; until the user
 answers, their suggested options stand.
 
-Code was read on `build/c3-replies` at a4ecfe07e (C3 steps 2 to 8 done, including the live proof
-and the measured times in its `PLAYTEST.md`; code review rounds under way). Function and key names
-are authoritative; line numbers are not given because C3 can still move. Section 12 lists what
-depends on C3.
+Code was read on `build/c3-replies` at 6d222c6fa, the tip that merges to `main` in batch 9 (C3
+steps 2 to 8 done, including the live proof and the measured times in its `PLAYTEST.md`). Function
+and key names are authoritative; line numbers are not given because C3 can still move before it
+merges. Section 12 lists what depends on C3.
 
 ## 1. Summary
 
@@ -179,7 +179,9 @@ chips in key order. Each chip is the key's icon and the count of NPCs who reacte
 - **Its icon is decorative:** the `<img>` has `alt=""`, so if the `aria-label` were ever lost, the
   file name would not become the button's name. The chip carries no `aria-expanded`: the names line
   it opens is `aria-hidden`, so a screen reader would find nothing new, and the names are already
-  in the label. The open state is a `data-open` attribute, for styling and tests.
+  in the label. The open state is a `data-open` attribute, used by tests and by the
+  `.ob-reaction[data-open]` rule, which gives the open chip a 2px solid `--ui-accent` border (square,
+  no shadow), so a mouse user can see which chip the line belongs to.
 - **It is big enough to touch:** `.ob-reaction` has a `min-width` and `min-height` of 32px (two
   whole 16px steps), with the 16px icon centred.
 - **It keeps focus across re-renders.** Each chip has `data-focus="reaction:<postId>:<key>"`, so
@@ -187,37 +189,69 @@ chips in key order. Each chip is the key's icon and the count of NPCs who reacte
   `npc_reacted` re-render, as they do for the page's links and blocks. A post appears once on any
   one profile page, so the key is unique on the page.
 - **The names line.** Each row draws one names line under its chips (not the browser's `title`
-  tooltip, which draws in a system font). It shows the names of at most one chip, chosen in this
-  order: the **open** chip (opened by a click or tap), else the **focused** chip, else the
-  **hovered** chip. So while one chip is open, focusing or hovering another changes nothing; once
-  the open chip is closed, the focused or hovered chip shows.
+  tooltip, which draws in a system font). It shows the names of at most one chip. Precedence
+  applies **per row**: a row shows its own open chip (opened by a click or tap), else its own
+  focused chip, else its own hovered chip. A chip open in another row does not blank this row, so
+  with chip A open in row 1, a chip focused or hovered in row 2 shows its names in row 2. Within a
+  row, while one chip is open, hovering another changes nothing; once the open chip is closed, the
+  focused or hovered chip shows.
   - **Open (click or tap).** A click toggles the chip: it opens it, or closes it if it is the open
     chip. A click on another chip while one is open closes the first and opens the second. The open
     chip's `data-focus` key is held on the browser instance, so a re-render redraws the line open.
-  - **Focus (keyboard only).** `focusin` on a chip makes it the focused chip and `focusout` clears
-    it. A `pointerdown` on a chip marks the instance, and the `focusin` that follows it is ignored:
-    otherwise a tap that closes a chip would leave it focused, and the line would stay up.
-    `_restoreFocus` after a re-render fires `focusin` again, which restores the focused chip.
+    The instance holds one open key for the whole page.
+  - **Focus (keyboard only).** The focused chip's key is held on the instance. It is set only by an
+    unsuppressed `focusin` on a chip, and cleared by a `focusout` whose `relatedTarget` is outside
+    that chip. A `pointerdown` on a chip sets a pointer-focus mark on the instance, and a `focusin`
+    that arrives while the mark is set is ignored: otherwise a tap that closes a chip would leave it
+    focused, and the line would stay up. The mark is cleared in that suppressed `focusin`, at the
+    end of the chip's `click` handler, and on `pointercancel`. A click on a chip that already has
+    focus fires no `focusin`, and in Safari a click never focuses a button, so without the last two
+    clears the mark would outlive the click and swallow the next keyboard Tab.
+  - **Keyboard focus moves the open state.** An unsuppressed (keyboard) `focusin` on a chip other
+    than the open one closes the open one through `_closeReactionNames()`, which removes its layer.
+    Pointer focus is suppressed, so this never fires on a click. A keyboard user who opens chip A
+    with Enter and Tabs to chip B therefore sees B's names, with no chip open and no layer.
+  - **Re-renders do not move focus state.** `_renderMain` sets a `_rendering` flag around its body
+    and its `_restoreFocus` call, and chip `focusin` and `focusout` handlers do nothing while it is
+    set. `_restoreFocus` calls `el.focus()` on the new chip, which fires `focusin` with no
+    `pointerdown` before it; unguarded, it would turn pointer focus into keyboard focus, so a chip
+    opened by a click and then re-rendered would stay up as focused after the next click closed it.
+    The instance's open and focused keys are already the truth across a re-render, and
+    `_renderMain` draws each row's line from them.
   - **Hover (mouse only).** `pointerenter` and `pointermove` on a chip make it the hovered chip, and
     `pointerleave` on the row clears it, so the line stays up while the pointer moves down onto it.
     Each handler acts only when `e.pointerType === 'mouse'`, and no `mouseover` or `mouseenter`
-    handler is used. A tap's emulated hover is therefore ignored, and on a phone a second tap
-    closes the line. The hovered chip is not kept across a re-render: `_renderMain` replaces the
-    row, and the line comes back on the pointer's next move over a chip. Only an NPC post or
-    reaction causes a re-render, so the gap is rare and brief, and it is accepted.
+    handler is used. The handlers read `e.pointerType` and never test `instanceof PointerEvent`
+    (jsdom has no `PointerEvent`; section 11). A tap's emulated hover is therefore ignored, and on a
+    phone a second tap closes the line. The hovered chip is not kept across a re-render:
+    `_renderMain` replaces the row, and the line comes back on the pointer's next move over a chip.
+    Only an NPC post or reaction causes a re-render, so the gap is rare and brief, and it is
+    accepted.
   - **Esc.** The browser is a `SocialOverlayScene`. Its Esc handler runs in the capture phase on
     `document` and closes the topmost entry in its layer stack before anything else, so no handler
     on a chip ever sees Esc. When a click opens a chip, the browser calls
     `this._namesLayerOff = this.pushLayer(() => this._closeReactionNames(), 'reaction-names')`.
-    `_closeReactionNames()` clears the open key, calls and clears `_namesLayerOff`, and redraws the
-    row. Esc then closes the open names line wherever focus is in the browser, and the next Esc
-    closes the browser. The layer is removed on **every** route that clears the open key: Esc (the
-    overlay calls the closer, which removes its own entry, since the overlay does not), a second
-    click on the open chip, a click on another chip (the old layer is removed before the new one is
-    pushed, so there is never more than one), `go()` or any other page change, and the minigame's
-    close and cleanup. The layer stays across `npc_posted` and `npc_reacted` re-renders, since the
-    open key survives them. Focus and hover push no layer: Esc with only a focused or hovered chip
-    closes the browser, as it does today.
+    Closing is split in two, as the properties panel's `_dropProperties()` and `closeProperties()`
+    are:
+    - `_dropReactionNames()` clears the open key, calls `_namesLayerOff` if it is set and nulls it.
+      It does no DOM work.
+    - `_closeReactionNames()` is `_dropReactionNames()` plus a redraw of the row. It is the closer
+      passed to `pushLayer`, and the one the click and keyboard-focus routes use.
+
+    Esc then closes the open names line wherever focus is in the browser, and the next Esc closes
+    the browser. The layer is removed on **every** route that clears the open key: Esc (the overlay
+    calls the closer, which removes its own entry, since the overlay does not), a second click on
+    the open chip, a click on another chip (the old layer is removed before the new one is pushed,
+    so there is never more than one), a keyboard focus on another chip, `go()` or any other page
+    change (through `_dropReactionNames()`, beside `_dropProperties()`, since `_renderMain` redraws
+    at once), and the minigame's cleanup (through `_dropReactionNames()`, called before
+    `this.main = null`, so it never touches a page that is gone). The layer stays across
+    `npc_posted` and `npc_reacted` re-renders, since the open key survives them. Focus and hover push
+    no layer: Esc with only a focused or hovered chip closes the browser, as it does today.
+  - **A keyboard user's first Esc can look like it does nothing.** Enter on a focused chip opens it
+    and pushes a layer, but its names were already showing from focus. Esc closes the open state,
+    the line is unchanged (focus still shows it, and the `data-open` border goes), and only the
+    second Esc closes the browser. This is accepted and tested (section 11), and is not a bug.
 - **The names line reserves one line, and may grow when it wraps.** The line is always in the row,
   empty when nothing shows, with a CSS `min-height` of one text line, so showing a short list moves
   nothing below. A list too long for one line (four full names at 16px at the phone view's width)
@@ -232,6 +266,8 @@ No reaction, no row. Every string is set as text or an attribute, never as marku
 - Each chip has a 2px solid border in `--ui-line` with square corners. The `--ui-small-button-*`
   9-slice skin is not used: it is 6px wide in every theme, and the chips sit inside a post block
   drawn with plain 2px borders. No `border-radius`, no 1px hairline, no `box-shadow`, no gradient.
+- The open chip (`.ob-reaction[data-open]`) swaps the border colour to `--ui-accent`, still 2px
+  solid with square corners and no shadow.
 - The count, the label fallback and the names line use `var(--se-font-readable, 'GNF', monospace)`.
   The `var()` fallback holds no smooth font (the osint browser's existing `Source Sans 3` fallback
   is not copied). The variable itself resolves through `--se-font-pixel` in `fonts.css`, whose own
@@ -277,7 +313,7 @@ filter is applied **after** the dedupe in step 4, never before: a candidate that
 but whose `via` is the served post must not be returned. The helper may skip any reactor that
 cannot produce a reaction with that `via`, and the result equals the full map filtered.
 
-A post is **drawable** when the client is sent it, which is when all of these hold:
+A post is **drawable** (it can be a target or carry a reaction) when all of these hold:
 
 - it is in `revealed_map` with a `seq` above 0;
 - its NPC is a room NPC that `feeds?` (`feed_posts_for_client` skips an NPC that no longer does);
@@ -511,9 +547,12 @@ not change. If a builder adds an import anyway, the file goes on each copy list.
   each `_replyEntry`, with its names line. The chips, their `data-focus` keys, `aria-label`,
   `data-open` and the names line behave as section 4 sets out. The instance holds the open chip's
   key, the remover `_namesLayerOff` from `pushLayer`, the focused chip's key, the hovered chip's key
-  and the pointer-focus mark; `_renderMain` reads the open and focused keys. A page change
-  (`go()`) and the minigame's cleanup call `_closeReactionNames()`, which clears the open key and
-  removes the layer. A new `npc_reacted:*` listener
+  the pointer-focus mark and the `_rendering` flag; `_renderMain` reads the open and focused keys
+  and sets `_rendering` around its body and its `_restoreFocus` call. A page change (`go()`) calls
+  `_dropReactionNames()` beside `_dropProperties()`, and the minigame's `cleanup()` calls it before
+  `this.main = null`; it clears the open key and removes the layer with no DOM work.
+  `_closeReactionNames()` adds the row redraw and is the closer for Esc, clicks and keyboard focus
+  (section 4). A new `npc_reacted:*` listener
   (registered and removed beside `npc_posted:*`) re-renders an open social page when it shows the
   profile of either `targetPerson` or `targetReplyToPerson`, or any open page on the same site when
   the event has no target, keeping the scroll position as `_onPosted` does. The second person is
@@ -586,7 +625,7 @@ certainly never comes out:
 |---|---|---|
 | `:never_posts` | `npc` does not `feeds?`. | its NPC never posts |
 | `:when_unreachable` | The post is reactive (an own post or a reply) and `AW.when_reachable?` is false for its `when`. | its `when` can never hold |
-| `:instead_of_dead` | A reply whose `insteadOf` names a post (found among all feed posts through `feed_post_index`, as `check_reply` finds it, so it may be a reply) that is reactive with an unreachable `when`. | its `insteadOf` post can never fire |
+| `:instead_of_dead` | A reply whose `insteadOf` names a post that is reactive with an unreachable `when`. The post is found with `AW.feed_posts(npc).find { \|p\| p['id'] == post['insteadOf'] }`, exactly as `check_reply` finds it: among the reply's own NPC's posts and replies only. An `insteadOf` naming another NPC's post finds nothing (C3 gives an error), so it gives no code. | its `insteadOf` post can never fire |
 | `:answer_unopenable` | An answer (`answer?`) and `answer_repliers` is empty. | no reply can open it |
 | `:thread_never_opens` | A reply that is not an answer, whose `reply_threads` is not empty and every thread post belongs to an NPC that does not `feeds?` or is reactive with an unreachable `when`. | its thread can never open |
 
@@ -895,21 +934,28 @@ merge batch.
   that does not `feeds?` gives `:never_posts`.
   **Agreement with C3**, built in this file so that C3's test file stays unchanged:
   - **Fixtures.** C3's reply fixtures are built inline in `validator-access-reply.test.mjs` and not
-    exported, so this file carries copies, with a comment naming the source file and the C3 commit
-    they were copied from: the `own`, `reTo`, `reC`, `npc`, `pair()` and `scenario` builders, the
+    exported, so this file carries copies, taken from merged `main` at build step 4 (C3 merges
+    first, so the copies come from C3 as merged, not from its branch), with a comment naming the
+    source file and that `main` commit: the `own`, `reTo`, `reC`, `npc`, `pair()` and `scenario` builders, the
     clean `pair()`, the "warnings" fixture, the lone answer, the `noAnswer` second-reply pair, the
     thread-never-opens fixture and the "errors" fixture. The fixture list also holds this file's
     own three-reason fixture (a reply with an unreachable `when`, a dead `insteadOf` and a thread
-    that can never open) and a reply on an NPC that does not `feeds?`.
+    that can never open), a reply on an NPC that does not `feeds?`, and a reply whose `insteadOf`
+    names another NPC's reactive post with an unreachable `when` (the helper gives no
+    `instead_of_dead` and `check` gives no never-fires warning for it, only C3's "names no post of"
+    error).
   - **Harness.** Beside C3's one-argument `run(scenario, fn)`, a `deadReasons(scenario, npcId,
     postId)` runs a Ruby snippet that parses the scenario, finds the room NPC by id and the post in
     its `feed.posts` by id, and prints
     `JSON.generate(ValidateAccessWork.post_dead_reasons(data, npc, post))`. Symbols come back as
     strings (`"when_unreachable"`). A `feeds(scenario, npcId)` snippet prints `AW.feeds?` for the
     NPC.
-  - **Both ways, per reply.** For every reply in every fixture, with `tag` its C3 tag
-    (`<npcId>.feed.posts[<i>]`): the set of codes other than `never_posts` **equals** the set of
-    codes whose message fragment appears in a `check` warning starting with that tag. The fragments
+  - **Tag matching.** A warning belongs to a reply when it starts with the reply's C3 tag
+    (`<npcId>.feed.posts[<i>]`) followed by `.`, `'`, `:` or a space, so `posts[1]` never matches
+    a warning for `posts[10]` to `posts[19]`.
+  - **Both ways, per reply.** For every reply in every fixture: the set of codes other than
+    `never_posts` **equals** the set of codes whose message fragment appears in a `check` warning
+    that belongs to the reply. The fragments
     are matched exactly, because `check_reactive_post`'s own `when` warning carries the same tag
     prefix: `when_unreachable` is ": the reply never fires, and its insteadOf post always comes out
     instead", `instead_of_dead` is "can never fire: the reply cannot fire either",
@@ -922,6 +968,21 @@ merge batch.
     every reply, whether or not it has `never_posts`.
   - **Three reasons.** The three-reason fixture also runs through `check`, which must give all
     three C3 warnings for that reply, and the helper must give all three codes.
+  - **Catch-all.** For every reply in every fixture, every `check` warning that belongs to the reply
+    either contains one of the four fragments or contains an entry in a short, named list of known
+    warnings that are not never-fires: the one-way link ("has no reply to"), the answer walk-order
+    warning ("whose insteadOf comes before its thread post"), the second-reply warning ("is a second
+    reply that no answer can open"), the text rules (the `{name}`, short-piece, shipped-piece and
+    network-string warnings on `.text`), and `check_reactive_post`'s `when` warnings (`.when.cause`,
+    `.when is only frustrationBelow`, `.when can never hold` without the reply fragment). Any other
+    warning fails with "unmapped check_reply warning: add a reason code or list it". So a new
+    never-fires warning in C3 cannot pass unseen by matching no fragment.
+  - **Case tripwire.** The test reads `test/js/validator-access-reply.test.mjs`, collects its
+    `test('...')` titles, and compares them with the list recorded in this file when the fixtures
+    were copied. A new, renamed or removed C3 test fails with "C3's reply tests changed since the
+    copy at <commit>: re-check the copied fixtures", where `<commit>` is the recorded `main`
+    commit. Edits inside a test do not trip it; reworded messages are caught by the exact
+    fragments, which then stop matching.
   - C3's test file, fixtures and messages are unchanged.
 - **Key sets in step:** `REACTION_KEYS` in `social-feed.js` (`test/js/social-feed-reactions.test.mjs`)
   and in the leak scanner (`test/unit/access_leak_scanner_feed_test.rb`) each equal the Ruby
@@ -941,21 +1002,38 @@ merge batch.
   `data-focus="reaction:<postId>:<key>"`, no `aria-expanded` attribute, and an icon `<img>` with
   `alt=""`; the names line is in the row from the first render, with `aria-hidden="true"` and
   empty (jsdom does no layout, so heights are not compared here: the reserved `min-height` is
-  checked in the CSS test, and the row's real height in the live proof). Names line behaviour:
+  checked in the CSS test, and the row's real height in the live proof). The repo's jsdom (26.1.0)
+  has no `window.PointerEvent`, so every test that dispatches `pointerenter`, `pointermove`,
+  `pointerleave`, `pointerdown` or `pointercancel` builds it as `new window.MouseEvent(type, init)`
+  and adds `Object.defineProperty(e, 'pointerType', { value: 'mouse' })` (or `'touch'`). Names line
+  behaviour:
   - keyboard focus fills it; a `pointerenter` with `pointerType: 'mouse'` fills it and a
     `pointerleave` on the row empties it; a `pointerenter` with `pointerType: 'touch'` fills
     nothing;
   - a click sets `data-open` and fills it; a second click empties it, with the chip still focused
     and no hover left showing it (a `pointerdown` before each click, as a browser sends);
-  - precedence: with chip A open, focusing or hovering chip B leaves A's names showing; closing A
-    then shows B's;
+  - **the pointer-focus mark clears:** two clicks on chip A (each with a `pointerdown` first), then
+    a keyboard `focus()` on chip B: B's names show;
+  - **a re-render does not turn pointer focus into keyboard focus:** click chip A, trigger an
+    `npc_reacted` re-render, click A again (with its `pointerdown`): the names line is empty and
+    `data-open` is gone from A;
+  - precedence in a row: with chip A open, hovering chip B in the same row (mouse) leaves A's names
+    showing; closing A then shows B's;
+  - **keyboard focus moves the open state:** Enter on chip A, Tab (keyboard `focus()`) to chip B in
+    the same row: B's names show, `data-open` is gone from A and `this._layers` is empty;
+  - **precedence is per row:** with chip A open in one row, hover a chip in another row (mouse):
+    both lines show their own names;
   - **Esc through the overlay:** open a names line by click, dispatch a `keydown` Esc on
     `document` (where the overlay's capture handler listens, not on the chip), and check the line
     is empty, `data-open` is gone, `this._layers` is empty and the minigame has not completed; a
     second Esc on `document` closes the browser;
+  - **a keyboard user's first Esc:** focus chip A by keyboard and press Enter (open, one layer);
+    Esc on `document` removes `data-open` and empties `this._layers`, the names line still shows
+    A's names (from focus), and the minigame has not completed; a second Esc closes the browser;
   - **no stale layer:** open a line, navigate with `go()`, and check `this._layers` is empty; Esc
     then closes the browser. Open chip A, then click chip B: `this._layers` holds one entry, and
-    Esc empties B's line. Open a line and close the minigame: `this._layers` is empty;
+    Esc empties B's line. Open a line and close the minigame: no throw, and `this._layers` is
+    empty;
   - focus stays on the chip, and an open names line stays open with its one layer, across an
     `npc_reacted` re-render and an `npc_posted` one;
   the row draws counts and the label fallback when an icon is missing; it works with a
@@ -969,7 +1047,8 @@ merge batch.
   and `none` are allowed, so `outline: none` on a non-focus state passes), and no `font-family`
   outside GNF, Press Start 2P, VT323 and the `--se-font-*` or `--ui-heading-font` variables with a
   `monospace` fallback; the chip's focus rule is on `:focus-visible` with a 2px outline; the icon
-  rule has `image-rendering: pixelated` and a width of 16px or 32px; `.ob-reaction` has a
+  rule has `image-rendering: pixelated` and a width of 16px or 32px; `.ob-reaction[data-open]`
+  exists and sets a 2px solid `--ui-accent` border with no `box-shadow`; `.ob-reaction` has a
   `min-width` and `min-height` of 32px; `.ob-reaction-names` has a `min-height` (its one reserved
   line) and no `height`, `max-height`, `overflow: hidden` or `white-space: nowrap`, so a long list
   wraps and is not clipped.
@@ -994,7 +1073,9 @@ merge batch.
   nothing); the row height, measured with `getBoundingClientRect()` before and after its names line
   shows, at the phone view's width and at the osint browser's width, logged in the build log (a
   one-line list must not change it; a wrapped list may grow it, as section 4 allows); the measured answer
-  growth per reaction and the bootstrap `feedPosts` growth, written into the build log; no toast and
+  growth per reaction and the bootstrap `feedPosts` growth, written into the build log; after a
+  click opens a names line, the bridge's `getTestState()` shows `overlay.layers` as
+  `['reaction-names']`, and after Esc it is empty and the browser is still open; no toast and
   no badge change from a reaction; the server's Rails log has no line from the reactions rescue
   (the proof fails if it has one, since the rescue hides a fault that the screenshots might not
   show). Screenshots for the build log: Asha's vent with sad 2, the focused chip with its names
@@ -1012,14 +1093,14 @@ merge batch.
   `answer_repliers` (which `post_dead_reasons` calls), `@feed_post_key` in the leak scanner, the
   client's `repliesFor` thread drawing and the osint browser's `_focusKey` and `_restoreFocus`.
   None of C3's code is changed except `feed_answer`'s new optional `revealed:` keyword.
-- **Times.** Section 10's times are the measured ones in C3's `PLAYTEST.md` at a4ecfe07e. If C3's
+- **Times.** Section 10's times are the measured ones in C3's `PLAYTEST.md` at 6d222c6fa. If C3's
   final `PLAYTEST.md` moves them, or moves any social `initial`, the reaction expectations move
   with it and no reaction rule changes, provided Asha still vents before Mei replies.
-- **Names and signatures.** If C3's code review rounds rename `revealed_map`, `reply_target`,
-  `feed_done?`, `FEED_ITEM_KEYS`, `feed_answer`, the validator helpers above, `_focusKey`,
-  `_restoreFocus` or the `reply` flag, or change how `revealed_map` is built per request, the
-  builder follows the new names and passes the prebuilt map to `feed_reactions` and `feed_answer`.
-  If they change which replies `check_reply` proves dead, `post_dead_reasons` follows, and its
+- **Names and signatures.** If C3 moves between 6d222c6fa and its merge, and renames
+  `revealed_map`, `reply_target`, `feed_done?`, `FEED_ITEM_KEYS`, `feed_answer`, the validator
+  helpers above, `_focusKey`, `_restoreFocus` or the `reply` flag, or changes how `revealed_map` is
+  built per request, the builder follows the new names and passes the prebuilt map to
+  `feed_reactions` and `feed_answer`. If it changes which replies `check_reply` proves dead, `post_dead_reasons` follows, and its
   agreement test (section 11) catches a drift.
 - **`feed_done?` stays pure and monotone.** Section 5.1's stability rests on it being pure, and the
   validator's lower bound on it being monotone. If C3 changes it to read live state, the done-before
@@ -1105,17 +1186,27 @@ importers, not the full suites.
    included), warnings (the unknown-field, can-never-post, never-served, never-follows and clash
    rules, with the alternative-set exception), the static order helper and the report line forms
    with their endings, the clash rule's three forms and one warning per dead reactor; schema (`key`
-   a plain string); the README paragraph; fixtures, including copies of C3's reply fixtures and
-   the `deadReasons` harness for the two-way agreement test, with the three-reason fixture run
-   through `check` too. Commit.
+   a plain string); the README paragraph; fixtures, including copies of C3's reply fixtures taken
+   from merged `main` (the source comment records that `main` commit) and the `deadReasons` harness
+   for the two-way agreement test, with the three-reason fixture run through `check` too, the
+   other-NPC `insteadOf` fixture, tag matching on the tag plus `.`, `'`, `:` or a space, the
+   catch-all check over every warning that belongs to a reply, and the C3 test-title tripwire.
+   `post_dead_reasons` finds the `insteadOf` post with `AW.feed_posts(npc)`, as `check_reply`
+   does. Commit.
 5. Client: `social-feed.js` store, events (with `targetReplyToPerson`) and `reactionsFor` (people
    sorted by NPC id); the osint browser row of 32px `button` chips with `data-focus` keys, `data-open`,
-   no `aria-expanded` and a decorative icon; the names line (open, then focused, then hovered; mouse
-   hover only; keyboard focus only; a click toggles; Esc through a `pushLayer` layer removed on every
-   closing route; one reserved line that may wrap; `aria-hidden`), the listener and CSS under the
-   pixel-art rules, with the label fallback; the bridge; JS tests including the key-set match, the
-   phone count, the other-thread re-render, Esc dispatched on `document`, touch and precedence,
-   focus and open state across a re-render, and the CSS rules check. Commit.
+   no `aria-expanded`, a decorative icon and a `data-open` border; the names line (open, then
+   focused, then hovered, per row; mouse hover only, read from `e.pointerType`; keyboard focus only,
+   with the pointer-focus mark cleared in the suppressed `focusin`, at the end of `click` and on
+   `pointercancel`; a keyboard focus on another chip closes the open one; chip focus events ignored
+   while `_rendering`; a click toggles; Esc through a `pushLayer` layer removed on every closing
+   route, with `_dropReactionNames()` for `go()` and cleanup and `_closeReactionNames()` for the
+   rest; one reserved line that may wrap; `aria-hidden`), the listener and CSS under the pixel-art
+   rules, with the label fallback; the bridge; JS tests including the key-set match, the phone
+   count, the other-thread re-render, Esc dispatched on `document` and the keyboard user's first
+   Esc, touch, per-row precedence, the mark clearing, keyboard focus moving the open state, focus
+   and open state across a re-render, cleanup with a line open, and the CSS rules check, with
+   pointer events built as `MouseEvent`s carrying a `pointerType`. Commit.
 6. Leak scanner: the `REACTION_KEYS` copy, the four new kinds with `feed_reacts_key` outside the
    early return, the reaction item count on the counts line, and their tests, including section 7's
    leak scanner row, a `reacts` key directly on an NPC record, the clean run paired with a finding,
