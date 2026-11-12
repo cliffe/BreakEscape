@@ -40,7 +40,7 @@ test('a combination out of range, or not three numbers, is an error', { skip }, 
         lock({ lockType: 'combination', requires: '12-30' })
     ]));
     assert.equal(out.length, 2);
-    for (const line of out) assert.match(line, /INVALID: .* must be three numbers from 0 to 39/);
+    for (const line of out) assert.match(line, /ERROR: .* must be three numbers from 0 to 39/);
 });
 
 test('a cryptex word of the wrong length or off its wheels is an error', { skip }, () => {
@@ -59,7 +59,7 @@ test('no requires is an error that names the old field; an old answer field warn
         lock({ lockType: 'cryptex', requires: 'MAGIC', cryptexConfig: { answer: 'MAGIC' } })
     ]));
     assert.equal(out.length, 3);
-    assert.match(out[0], /INVALID: .* combination lock with no 'requires'.*Move the answer from 'combination'/);
+    assert.match(out[0], /ERROR: .* combination lock with no 'requires'.*Move the answer from 'combination'/);
     assert.match(out[1], /WARNING: .* still has the answer in 'combination'/);
     assert.match(out[2], /WARNING: .* still has the answer in 'cryptexConfig.answer'/);
 });
@@ -88,7 +88,7 @@ test('R1 m2: a container an NPC carries with no id is an error; with an id it is
     for (const item of [{ type: 'bag1', name: 'Bag' }, { type: 'notes', name: 'Folder', contents: [] }, { type: 'safe', name: 'Tin', locked: true }]) {
         const out = run('check_npc_held_containers', npc(item));
         assert.equal(out.length, 1, JSON.stringify(item));
-        assert.match(out[0], /^❌ INVALID: 'rooms\/lobby\/npcs\/courier\/itemsHeld\[0\]'.*has no 'id'/);
+        assert.match(out[0], /^❌ ERROR: 'rooms\/lobby\/npcs\/courier\/itemsHeld\[0\]'.*has no 'id'/);
     }
     const top = run('check_npc_held_containers', { npcs: [{ id: 'mailer', itemsHeld: [{ type: 'briefcase', name: 'Case' }] }] });
     assert.equal(top.length, 1);

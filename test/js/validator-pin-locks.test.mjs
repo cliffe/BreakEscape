@@ -37,7 +37,7 @@ test('a matching pinLength is fine', { skip }, () => {
 test('a pinLength that disagrees with the PIN is an error', { skip }, () => {
     const out = issues(room({ requires: '72958', pinLength: 4 }));
     assert.equal(out.length, 1);
-    assert.match(out[0], /INVALID: 'rooms\/closet' has pinLength 4 but its PIN is 5 digits/);
+    assert.match(out[0], /ERROR: 'rooms\/closet' has pinLength 4 but its PIN is 5 digits/);
 });
 
 test('a PIN with letters is an error, in nested objects too', { skip }, () => {
@@ -45,7 +45,7 @@ test('a PIN with letters is an error, in nested objects too', { skip }, () => {
         { type: 'safe', name: 'Safe', locked: true, lockType: 'pin', requires: '12a4' }
     ]));
     assert.equal(out.length, 1);
-    assert.match(out[0], /INVALID: 'rooms\/closet\/objects\[0\]' \(Safe\) PIN '12a4' has characters other than digits/);
+    assert.match(out[0], /ERROR: 'rooms\/closet\/objects\[0\]' \(Safe\) PIN '12a4' has characters other than digits/);
 });
 
 test('a locked PIN lock with no PIN warns; other lock types are ignored', { skip }, () => {
