@@ -1898,7 +1898,7 @@ module ValidateAccessWork
     text = post['text']
     return unless text.is_a?(String)
 
-    pieces = text.split('{name}', -1)
+    pieces = AW.reply_text_pieces(text)
     names = reply_names(json_data, npc, post)
     filled = names.empty? ? [text.gsub('{name}', '')] : names.map { |n| text.gsub('{name}', n) }
     filled.each do |f|
@@ -1906,14 +1906,14 @@ module ValidateAccessWork
         err(issues, "#{tag}.text contains #{owner}'s password: feed text ships once its post is out.") if f.include?(pw)
       end
     end
-    longest = pieces.map(&:strip).max_by(&:length).to_s
+    longest = pieces.max_by(&:length).to_s
     if longest.length < SHORT_TEXT
       warn(issues, "#{tag}.text has no piece of #{SHORT_TEXT} characters or more around {name}: the leak checks " \
                    'match a reply by those pieces and cannot protect it.')
       return
     end
     shipped = yield
-    (pieces.select { |pc| pc.strip.length >= SHORT_TEXT } + filled).uniq.each do |piece|
+    (pieces.select { |pc| pc.length >= SHORT_TEXT } + filled).uniq.each do |piece|
       next unless shipped.any? { |str| str.include?(piece) }
 
       warn(issues, "#{tag}.text piece \"#{piece.strip}\" occurs inside another string that ships from the start: the leak checks cannot protect it.")

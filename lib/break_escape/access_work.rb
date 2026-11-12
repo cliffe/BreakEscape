@@ -922,6 +922,15 @@ module BreakEscape
       end
     end
 
+    # A reply text's literal pieces around {name}: each stripped of the spaces and punctuation at
+    # its ends, empty pieces dropped. The validator's 12-character and unique-text rules and the
+    # leak scanner's match read the same pieces.
+    def reply_text_pieces(text)
+      return [] unless text.is_a?(String)
+
+      text.split('{name}', -1).map { |pc| pc.gsub(/\A[[:space:][:punct:]]+|[[:space:][:punct:]]+\z/, '') }.reject(&:empty?)
+    end
+
     # The name a colleague would use for the NPC on its Friendface site: social.people forms.first
     # for its feed.person, else that person's profile name on its feed.site, else displayName, else
     # the id. Control characters removed, cut to 40 characters. The route and the validator share it.
