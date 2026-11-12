@@ -7,7 +7,10 @@ module BreakEscape
   #
   # player_state key (in Game::ACCESS_STATE_DEFAULTS):
   #   feedRevealed { npcId => { 'shown' => [postId, ...] in reveal order, 'at' => server time of
-  #                  the last reveal } }
+  #                  the last reveal, 'seq' => { postId => game-wide serve order },
+  #                  'to' => { replyId => { 'post' => threadPostId, 'npc' => namedNpcId } } } }
+  # C3 (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md section 5) added `seq` and `to`; the entry holds these
+  # four keys only, bounded by the authored posts (section 5.1).
   # Sub-slice C2 (ACCESS_MODEL_SLICE_9_2_C2_PLAN.md) changed the record from C's `{ n, at }`: a
   # reactive post is served out of authored order, so the actual set of shown ids is kept, and its
   # length is the reveal sequence. AccessWork.feed_shown_ids migrates a C `{ n, at }` save.
@@ -16,8 +19,10 @@ module BreakEscape
 
     # The keys of a post block the browser renders (the osint browser's post block); anything
     # else authored on a post (`deliberate`, and C2's `when`, server-only `order` on the feed)
-    # stays on the server and never ships
-    POST_KEYS = %w[id text fact date note].freeze
+    # stays on the server and never ships. C3: `replyTo` is set by the server from the resolved
+    # thread (`to.post`), never sliced from the authored post; `insteadOf`, `complaint` and
+    # `replyToComplaint` are server-only, and a reply's item never carries `fact`.
+    POST_KEYS = %w[id text fact date note replyTo].freeze
 
     def feed_revealed
       player_state['feedRevealed'] = {} unless player_state['feedRevealed'].is_a?(Hash)
@@ -57,7 +62,10 @@ module BreakEscape
       now = Time.current.to_f
       # q38: the request is for a met social media use, which counts for needMet (need_met_now?)
       met_use = { 'need' => 'social_media', 'at' => now }
-      selected = AccessWork.select_feed_post(scenario_data, npc, entry, raw_frustration, frustration_globals, keys, met_use)
+      # C3: the server's own record of every served post, for the thread rules
+      revealed = AccessWork.revealed_map(scenario_data, store)
+      selected = AccessWork.select_feed_post(scenario_data, npc, entry, raw_frustration, frustration_globals, keys, met_use,
+                                             revealed: revealed)
       post_id = selected['post']
       done = selected['done'] == true
 
@@ -77,9 +85,15 @@ module BreakEscape
       # cannot pick a post; nothing is written
       return { status: :ok, body: { npcId: id, post: nil, done: false, refused: true } } unless feed_source_ok?(npc, source)
 
-      store[id] = { 'shown' => shown + [post_id], 'at' => now }
+      # C3: seq and to are carried forward; next_seq is derived under the game lock, capped
+      seq = AccessWork.next_seq(store)
+      to = AccessWork.feed_to_map(entry)
+      to = to.merge(post_id => selected['to']) if selected['to'].is_a?(Hash)
+      store[id] = { 'shown' => shown + [post_id], 'at' => now,
+                    'seq' => AccessWork.feed_seq_map(entry).merge(post_id => seq), 'to' => to }
       save!
-      { status: :ok, body: feed_answer(npc, post_id, shown.length).merge('npcId' => id, 'done' => done) }
+      answer = feed_answer(npc, post_id, shown.length, seq: seq, to: selected['to'])
+      { status: :ok, body: (answer || {}).merge('npcId' => id, 'done' => done) }
     end
 
     # The feedPosts block GET /scenario carries (9.4): per NPC with a post out, its site and
@@ -99,9 +113,21 @@ module BreakEscape
         next if shown.empty?
 
         feed = npc['feed']
+        seqs = AccessWork.feed_seq_map(entry)
+        tos = AccessWork.feed_to_map(entry)
+        by_id = AccessWork.feed_posts(npc).to_h { |p| [p['id'], p] }
+        # C3: a reply's item is rebuilt from `to`; a complaint reply or an answer with no usable
+        # `to` (an edited save) is left out, and stays in `shown` so it is never served again
+        posts = shown.each_with_index.filter_map do |pid, i|
+          raw = by_id[pid]
+          target = AccessWork.reply_post?(raw) ? AccessWork.reply_target(scenario_data, npc, raw, tos) : nil
+          next if AccessWork.reply_post?(raw) && target.nil?
+
+          feed_answer(npc, pid, i, seq: seqs[pid] || 0, to: target)&.slice(*FEED_ITEM_KEYS)
+        end
         out[id] = { 'site' => feed['site'], 'person' => feed['person'],
                     # C2 R2 nit: feed_shown_ids drops a saved id the scenario no longer has
-                    'posts' => shown.each_with_index.map { |pid, i| feed_answer(npc, pid, i).slice('index', 'post', 'fact') },
+                    'posts' => posts,
                     'done' => AccessWork.feed_done?(scenario_data, npc, shown) }
       end
     end
@@ -217,7 +243,7 @@ module BreakEscape
         feed = npc.is_a?(Hash) && npc['feed'].is_a?(Hash) ? npc['feed'] : {}
         site = feed['site'].is_a?(String) ? feed['site'] : default_friendface_site
         person = feed['person'].is_a?(String) ? feed['person'] : nil
-        posts = posts.slice(npc_id)
+        posts = phone_posts_slice(posts, npc_id, feed['site'])
       else
         site = item['site'].is_a?(String) && !item['site'].empty? ? item['site'] : default_friendface_site
         person = nil
@@ -244,7 +270,28 @@ module BreakEscape
       end
     end
 
+    # The item keys of a feedPosts post: C2's index, post and fact, C3's seq and a reply's thread
+    FEED_ITEM_KEYS = %w[index seq post fact replyToNpc replyToPerson namedNpc namedPerson].freeze
+
     private
+
+    # q63, C3 section 5: an NPC's phone shows its profile, so its slice is its own served posts and
+    # replies, plus, under their own NPC ids, every served reply whose thread post is one of its
+    # served posts, on the same site. Every item already came from feedRevealed.
+    def phone_posts_slice(posts, npc_id, site)
+      own = posts[npc_id]
+      out = own ? { npc_id => own } : {}
+      thread_ids = own ? own['posts'].map { |p| p.dig('post', 'id') }.compact : []
+      return out if thread_ids.empty?
+
+      posts.each do |other_id, block|
+        next if other_id == npc_id || block['site'] != site
+
+        replies = block['posts'].select { |p| thread_ids.include?(p.dig('post', 'replyTo')) }
+        out[other_id] = block.merge('posts' => replies) unless replies.empty?
+      end
+      out
+    end
 
     def friendface_owner(item)
       item['phoneOf'].is_a?(String) && !item['phoneOf'].empty? ? item['phoneOf'] : nil
@@ -279,14 +326,37 @@ module BreakEscape
     # reveal sequence (C2: a reactive post comes out of authored order, so the served post is
     # looked up by id and the reveal position is emitted separately). `fact` is { id, entry } for a
     # post whose fact names an intelFacts entry, else nil.
-    def feed_answer(npc, post_id, reveal_index)
+    #
+    # C3: `seq` is the post's game-wide serve order. For a reply, `to` is { 'post' => thread post,
+    # 'npc' => named NPC }: the item gains post.replyTo, replyToNpc, replyToPerson, namedNpc and
+    # namedPerson, `{name}` is filled with the named NPC's Friendface name as plain text, and
+    # `fact` is never carried. nil for a reply whose thread poster is unknown.
+    def feed_answer(npc, post_id, reveal_index, seq: nil, to: nil)
       raw = AccessWork.feed_posts(npc).find { |p| p['id'] == post_id }
-      post = raw ? raw.slice(*POST_KEYS).select { |_k, v| v.is_a?(String) } : {}
+      reply = AccessWork.reply_post?(raw)
+      post = raw ? raw.slice(*(POST_KEYS - %w[replyTo])).select { |_k, v| v.is_a?(String) } : {}
+      post.delete('fact') if reply
+      extra = {}
+      if reply
+        return nil unless to.is_a?(Hash)
+
+        rec = AccessWork.revealed_map(scenario_data, player_state['feedRevealed'])[to['post']]
+        poster = rec && AccessWork.room_npc(scenario_data, rec['npc'])
+        named = AccessWork.room_npc(scenario_data, to['npc'])
+        return nil unless poster && named
+
+        post['replyTo'] = to['post']
+        post['text'] = post['text'].gsub('{name}', AccessWork.friendface_name(scenario_data, named)) if post['text']
+        extra = { 'replyToNpc' => poster['id'], 'replyToPerson' => poster.dig('feed', 'person'),
+                  'namedNpc' => named['id'], 'namedPerson' => named.dig('feed', 'person') }
+      end
       fid = post['fact']
       facts = scenario_data.dig('social', 'intelFacts')
       entry = fid && facts.is_a?(Hash) && facts[fid].is_a?(Hash) ? facts[fid].deep_dup : nil
-      { 'index' => reveal_index, 'post' => post, 'fact' => entry ? { 'id' => fid, 'entry' => entry } : nil,
-        'site' => npc['feed']['site'], 'person' => npc['feed']['person'] }
+      out = { 'index' => reveal_index, 'post' => post, 'fact' => entry ? { 'id' => fid, 'entry' => entry } : nil,
+              'site' => npc['feed']['site'], 'person' => npc['feed']['person'] }
+      out['seq'] = seq if seq
+      out.merge(extra)
     end
   end
 end
