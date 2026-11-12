@@ -37,6 +37,27 @@ Answers to the access model form (https://claude.ai/artifact/PanecaCQBMChKnqsDGa
 - q34 (2026-11-12) Friendface posts about frustrations and needs: yes, as a follow-on sub-slice "9.2 C2: reactive posts" after 9.2 C. Authored posts carry a condition (frustration level, a failure cause, a workaround, a need met or unmet) and the server picks them from state it records. The order in which fact posts and reactive posts are fed is configurable: facts first then reactive, reactive first, or mixed.
 - q35 (2026-11-12) A lockout for an NPC with work and a `"phone": false` social need: keep counting it once per need it blocks (as `off` does). Also: an NPC that carries a phone holds it in `itemsHeld` as a Friendface phone item; if the player gets it and opens it, it opens Friendface on that NPC's profile. Sprite: the existing phone sprite with its Bluetooth logo replaced by an F like the Friendface logo. Built as build/ff-phone.
 - (2026-11-12) Dungeon graph to draw links, outages, Wi-Fi and implants: now (build/graph-net). Lab port security on an unused comms-cupboard port (9.3b plan section 13 item 2): now (build/lab-portsec). Record `npcId` on captured `/feed_post` rows in the playtest skill's response-capture.js: approved (build/capture-npcid).
+- q36 to q55 (2026-11-12, second form round):
+  - q36 Borrowed hot desk lockout shown to the player: build now.
+  - q37 Four q33 server gaps (ease at a locked borrowed PC, refusal below the pace floor, blocked or off stations as feed sources, a non-owned station stalling the feed): fix all now.
+  - q38 C2 leftovers, including the needMet tweak (count a met need after a short time with no new failure): tidy now.
+  - q39 USB refusal as a frustration cause: build the USB habit and the cause now.
+  - q40 Repeatable reactive posts: dropped for now; revisit after C3 replies.
+  - q41 Per-lockout scope (for example, a domain account locked on every PC): later, when a mission needs it; in the ideas backlog.
+  - q42 `login_aloud`: start the listening window when the line is actually spoken.
+  - q43 A borrow cut short after the NPC sits: counts as done, with the session left open.
+  - q44 9.2 H small test and validator gaps: fix all now.
+  - q45 A host shown as not responding when its own service is off: build now.
+  - q46 Network minors from K, O and I: fix all now.
+  - q47 Author formatting: keep the allow-list filters; give the end screen the same filter.
+  - q48 Central escape of minigame titles, the vm-launcher URL scheme check, one shared escape helper and authorHtml module, and dash display in the chat headers: all now.
+  - q49 TTS and habits validator tooling minors: fix both sets now.
+  - q50 Lab follow-up R5 minors: fix all now.
+  - q51 Server-checked tailgating (gated `openFor` doors): write the plan now.
+  - q52 Server-proven hand-overs and declared grants: later, together with q51 if cheat resistance is wanted.
+  - q53 Lab playtest usability ideas: build all seven (pickup toasts for every item type, a text file closing back to its container, a "more below" cue on objectives, a click on an open gate walking through, a keying event at a badge reader, `noticeRadius` for NPC interests defaulting to quite wide, the player not shoving routed NPCs).
+  - q54 Locked-screen pictures for the other PC sprites: do them now and show a sheet.
+  - q55 (d) An owner walking away stealing the click: fix now. Plan the others later. (a) Defender missions are highly desirable, for soon.
 
 ## Carried out
 
