@@ -31,6 +31,7 @@ module BreakEscape
     # Callbacks
     before_create :sync_vm_set_id_column
     before_create :generate_scenario_data
+    before_create :stamp_format_version # Step 7: stamp the current format on data with no formatVersion
     before_create :resolve_imported_globals # CarryOver: earlier missions' choices, before player_state is built
     before_create :initialize_player_state
     before_create :set_started_at
@@ -1203,6 +1204,42 @@ module BreakEscape
       normalise_access_model!
       stamp_scenario_object_ids!
       BreakEscape::NpcHabits.expand!(scenario_data)
+    end
+
+    # Step 7. Stamp the current format number onto data that carries none, at creation. A caller
+    # that supplied scenario_data with formatVersion: 0 (an upgrader test wanting an old game)
+    # keeps 0, because 0 is truthy in Ruby. Generated data (no formatVersion) is stamped with
+    # current, which is 0 in step 7 and only non-zero once a rename step lands.
+    def stamp_format_version
+      return unless scenario_data.is_a?(Hash)
+
+      scenario_data['formatVersion'] ||= BreakEscape::FormatUpgrade.current
+    end
+
+    # Step 7. Bring a stored game up to the current format at load time, under the row lock. Called
+    # from set_game and from every other path that reads scenario_data without set_game. A game
+    # already at current costs one integer comparison and takes no lock. A game stored above current
+    # (or with an unreadable formatVersion) is never loaded: version_of raises Unreadable and the
+    # too-new guard raises TooNew, which the caller turns into the refusal. prepare_scenario_data!
+    # runs again only when a step actually changed scenario_data, so an unprepared game stays
+    # unprepared and a prepared one keeps the ids and fills it was played with.
+    def ensure_current_format!
+      stored = BreakEscape::FormatUpgrade.version_of(scenario_data)
+      cur = BreakEscape::FormatUpgrade.current
+      raise BreakEscape::FormatUpgrade::TooNew.new(stored, cur) if stored > cur
+      return if stored == cur
+
+      with_lock do
+        reload
+        cur = BreakEscape::FormatUpgrade.current
+        stored = BreakEscape::FormatUpgrade.version_of(scenario_data)
+        raise BreakEscape::FormatUpgrade::TooNew.new(stored, cur) if stored > cur
+        next if stored == cur
+
+        result = BreakEscape::FormatUpgrade.upgrade!(scenario_data, player_state)
+        prepare_scenario_data! if result[:scenario_changed]
+        save!
+      end
     end
 
     # An NPC has an account when creds.username is a non-empty string (section 3).

@@ -1,6 +1,9 @@
 module BreakEscape
   class StaticFilesController < BreakEscape::ApplicationController
     skip_before_action :verify_authenticity_token
+    # Step 7: a browser-cached asset must never carry a stale format header, so the static controller
+    # does not set it. Its answers are JS modules, sprites, sounds and static JSON, never a game.
+    skip_before_action :set_format_header
 
     def serve
       # Use the BreakEscape engine's root, not Rails.root

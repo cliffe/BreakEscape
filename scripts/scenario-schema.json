@@ -16,6 +16,11 @@
       "type": "string",
       "description": "Optional version string"
     },
+    "formatVersion": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Scenario format version (hardening step 7). The server stamps this onto scenario_data at game creation and bumps it when a load-time upgrade step renames a stored field; templates never carry it (the validator errors on a template that sets it). Shipped in the bootstrap so the client's reload check can tell when the tab is on a different format than the server."
+    },
     "startRoom": {
       "type": "string",
       "description": "ID of the starting room"

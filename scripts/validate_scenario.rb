@@ -28,6 +28,7 @@ require_relative 'validate_capture_log'
 require_relative 'validate_wearable'
 require_relative '../lib/break_escape/scenario_schema'
 require_relative '../lib/break_escape/author_notes'
+require_relative '../lib/break_escape/format_upgrade'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/capture_model'
@@ -581,6 +582,26 @@ end
 # value), it is dead code, so warn the author. Walks with the shared resolver, so it tells a note
 # from an id from free data exactly as the engine does: it never looks inside an id or free data (a
 # "_" key there is real), only inside genuine notes. The corpus has none, so this adds no lines.
+# Step 7. A rendered template carries current field names and no formatVersion. Error on a template
+# that sets formatVersion (the server stamps it at creation), and on every retired key present
+# (renamed by a FormatUpgrade step), unless an alias keeps it for a deployed scenario (a warning).
+# Author notes and free data are skipped (FormatUpgrade.retired_keys_in). STEPS is empty in step 7,
+# so this adds no line to the corpus until a rename step lands.
+def check_retired_keys(json_data)
+  issues = []
+  if json_data.is_a?(Hash) && json_data.key?('formatVersion')
+    issues << "❌ ERROR: '#/formatVersion': the server stamps formatVersion at creation; remove it from the template"
+  end
+  BreakEscape::FormatUpgrade.retired_keys_in(json_data).each do |r|
+    issues << if r[:aliased]
+                "⚠️ WARNING: #{r[:path]}: '#{r[:key]}' was renamed to '#{r[:now]}' in format #{r[:version]} (kept as an alias for a deployed scenario)"
+    else
+                "❌ ERROR: #{r[:path]}: '#{r[:key]}' was renamed to '#{r[:now]}' in format #{r[:version]}"
+    end
+  end
+  issues
+end
+
 def check_notes_hold_no_actions(json_data)
   warnings = []
   holds_action = lambda do |val|
@@ -7369,6 +7390,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_engine_limits') { check_engine_limits(json_data) }
   run.call('check_vm_flags_load_bearing') { check_vm_flags_load_bearing(json_data) }
   run.call('check_recurring_bugs') { check_recurring_bugs(json_data, repo_root) }
+  run.call('check_retired_keys') { check_retired_keys(json_data) }
   run.call('check_unheard_room_triggers') { check_unheard_room_triggers(json_data, repo_root) }
   habits_copy = nil
   habits_report = nil
