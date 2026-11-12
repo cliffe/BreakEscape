@@ -227,6 +227,69 @@ screenshots in the session scratchpad `net-r3fix/`):
 - One `loginFailures` entry on game 1575 (`bench_pc|`, an empty username) came from a harness call
   of mine that read no sticky note, not from the off period.
 
+## R4 fixes (NET_FIXES_CODE_REVIEW_R4.md)
+
+Main merged in first (the 9.2 H fixes, feed-lockout and graph-net): two conflicts, both kept from
+both sides. `docs/IDEAS_BACKLOG.md` keeps this branch's 9.3b K line (m1 and m2 done here) and
+drops a duplicate TTS line; `test/js/pc-sessions.test.mjs` keeps this branch's two 403 reason
+tests and main's q44 sign-out test.
+
+- m1: `unlock_session_refusal` now gives a reason only when every container on the object's path
+  is unlocked (`path_unlocked?` on `login_scope_of`'s path). An object behind a still-locked
+  folder answers the same 422 "Invalid attempt" as an invented id, so a guessed id cannot be
+  confirmed. Once the outer folder is open, the inner one gets its `off` reason again.
+- m2: the reason texts and a `lockScopeRefusal(error)` check live in
+  `js/utils/lock-scope-refusal.js` (the PIN pad's `PIN_SCOPE_REFUSAL_TEXT` now points at them).
+  The password, combination and cryptex screens treat a 403 `off`, `not_responding` or
+  `unreachable` as no try: they show the matching line ("This PC is off."), close as cancelled
+  (`cancelled: true, refused: <reason>`) and never say the answer was wrong. The password screen
+  emits no `password_failed`, and `startPasswordMinigame` shows no "Password Rejected" toast for a
+  refused result. The flag station's lock mode says the line too and tells the mission no
+  `flag_rejected`. Checked and left: `notifyServerUnlock` (key and lockpick) and the RFID access
+  list read no reason, but neither kind of lock sits in a PC folder; the NPC and action unlocks
+  have no screen.
+- Nit 2: `registerSpriteVariantListeners` swaps the proximity ghost's texture with the sprite's,
+  on the late-load path too.
+- Nit 3: the lighting skill (line 107) and the two m08 comments now say an object with
+  `spriteVariants` and no `sprite` returns to the map item's picture when matched to one, and to
+  its type otherwise (the reviewer's wording).
+- Nit 1 (an implant-off remote sign-in answers the generic 403) is left as the review accepts.
+
+Found, not fixed: `validate_unlock` has no `combination` or `cryptex` branch, so on the server
+those locks never open, even with the right answer (422). No shipped scenario uses either lock.
+It predates this branch and is out of this round's scope.
+
+Tests (no lock, per the test lock rule):
+
+- Rails: a new `network_host_service_off_test.rb` case (inner folder behind a locked one, PC off:
+  pin and password answers equal the invented id's 422; open the outer one and the inner gets 403
+  `off`). It fails against the old code ("inner id and invented id answer the same").
+  `network_host_service_off_test.rb`, `network_implants_test.rb`, `network_no_exposure_test.rb`,
+  `network_outages_test.rb`: 60 runs, 0 failures, 0 errors.
+- JS: new `lock-scope-refusal.test.mjs` (12 tests: the helper, password for each reason and a
+  422 control, combination and cryptex off, other reasons and a 422 control, the password
+  starter's toast). 8 of them fail against the old screens. A flag-station case in
+  `flag-station-resubmit.test.mjs` and a ghost case in `table-group-variant-listeners.test.mjs`.
+  The PIN harnesses now use the root/minigames layout so the new utils import resolves, and the
+  new file is on every harness copy list that loads one of the changed screens. Every JS test file
+  that loads a changed module (33 for the lock screens and starters, 18 more through
+  `unlock-system.js`, 33 through `rooms.js`): 0 failures.
+
+Live check (keyless server on :3052, headless, `setFPS(20)` with fixed steps on, game 1620,
+`test_access_networks`, with a password folder `bench_pw` and a combination folder `bench_combo`
+added to `bench_pc` in that game's copy only; session log `session-1620.jsonl` and screenshots in
+the session scratchpad `net-r4fix/`):
+
+- Ghost, standing next to `bench_pc` and flipping `bench_pc_off` with a sync: off `aw_pc_off1`
+  (34x22), on `pc6` (32x30), off, on. The ghost's key and size matched the sprite's every time.
+- Password: signed in at the keyboard as Sam, opened "Bench passwords", switched the PC off and
+  synced, entered the right password. The server answered 403 `off`; the screen said "This PC is
+  off.", attempts stayed 0, it closed as cancelled, no toast. With the PC back on the same
+  password opened the folder.
+- Combination: the same with "Bench combo" and the right dials: 403 `off`, "This PC is off.",
+  attemptCount 0, closed as cancelled, no toast. With the PC on, the right combination answers
+  422 (the missing server branch above).
+
 ## Open
 
 - Plan 5.2's five-second refetch of an open view, and a sync before a remote sign-in or a desktop
