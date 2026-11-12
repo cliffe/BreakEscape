@@ -1797,7 +1797,7 @@ export async function create() {
     // Phone threads (texts, read state, story position). Applied to each contact as
     // it registers, which for phone NPCs is the starting room's NPC load below (E9).
     if (gameScenario.savedPhoneState) {
-        window.npcManager?.restorePhoneState?.(gameScenario.savedPhoneState);
+        window.npcManager?.restorePhoneState?.(gameScenario.savedPhoneState, { keyOf: window.stateSync?.constructor?.stableJson });
     }
 
     // Mail (social missions): the saved mailState, or the scenario's seeded mail on a

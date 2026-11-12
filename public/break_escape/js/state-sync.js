@@ -226,7 +226,7 @@ export class StateSync {
 
     // Phone threads: texts, read state and story position per contact. With
     // onlyChanged, only contacts changed since the last confirmed sync.
-    const phoneState = window.npcManager?.exportPhoneState?.({ onlyChanged });
+    const phoneState = window.npcManager?.exportPhoneState?.({ onlyChanged, keyOf: stableJson });
     if (phoneState && Object.keys(phoneState).length > 0) out.phoneState = phoneState;
 
     // NPC-local ink variables (met_x, first_meeting, ...) so intros don't replay
@@ -392,7 +392,7 @@ export class StateSync {
       if (ack[key] !== undefined) this.confirmed[key] = ack[key];
     }
     if (body.scenarioClock) this.clockConfirmedAt = now;
-    if (body.phoneState && !refused.has('phoneState')) window.npcManager?.markPhoneStateSynced?.(body.phoneState);
+    if (body.phoneState && !refused.has('phoneState')) window.npcManager?.markPhoneStateSynced?.(body.phoneState, { keyOf: stableJson });
   }
 
   /**

@@ -2252,15 +2252,20 @@ export default class NPCManager {
    * @param {Object} [opts]
    * @param {boolean} [opts.onlyChanged] - only NPCs changed since markPhoneStateSynced
    *   (keeps the unload flush small)
+   * @param {function} [opts.keyOf] - how an entry is serialised for the
+   *   "changed since last save" compare (SYNC_DELTAS_PLAN 2.1). Defaults to
+   *   JSON.stringify; the sync passes stableJson so a thread restored in jsonb
+   *   key order still matches its seed and is not resent on the first sync after
+   *   a load. Passed in, not imported, so no node harness copy list changes.
    * @returns {Object} { npcId: { history, storyState, storyPath, currentKnot, ... } }
    */
-  exportPhoneState({ onlyChanged = false } = {}) {
+  exportPhoneState({ onlyChanged = false, keyOf = JSON.stringify } = {}) {
     const out = {};
     for (const npc of this.npcs.values()) {
       if (npc.npcType !== 'phone') continue;
       const entry = this._phoneStateEntry(npc);
       if (!entry) continue;
-      if (onlyChanged && this._phoneStateSent.get(npc.id) === JSON.stringify(entry)) continue;
+      if (onlyChanged && this._phoneStateSent.get(npc.id) === keyOf(entry)) continue;
       out[npc.id] = entry;
     }
     // Saved threads for NPCs this session hasn't registered yet are kept as they are
@@ -2270,11 +2275,14 @@ export default class NPCManager {
     return out;
   }
 
-  /** Record what the server now holds, after a sync that included exportPhoneState(). */
-  markPhoneStateSynced(exported) {
+  /**
+   * Record what the server now holds, after a sync that included exportPhoneState().
+   * keyOf must match the one exportPhoneState was called with (SYNC_DELTAS_PLAN 2.1).
+   */
+  markPhoneStateSynced(exported, { keyOf = JSON.stringify } = {}) {
     if (!exported || typeof exported !== 'object') return;
     for (const [npcId, entry] of Object.entries(exported)) {
-      this._phoneStateSent.set(npcId, JSON.stringify(entry));
+      this._phoneStateSent.set(npcId, keyOf(entry));
     }
   }
 
@@ -2332,14 +2340,19 @@ export default class NPCManager {
    * Restore exportPhoneState() output on load (game.js), before the phone can open.
    * Applied now to NPCs already registered, otherwise when registerNPC sees them.
    * @param {Object} saved - { npcId: entry }
+   * @param {Object} [opts]
+   * @param {function} [opts.keyOf] - how the seed is serialised for the
+   *   "changed since last save" compare (SYNC_DELTAS_PLAN 2.1). Must match the
+   *   one exportPhoneState uses; the sync passes stableJson so the jsonb-reordered
+   *   saved entry matches the client's export and is not resent.
    */
-  restorePhoneState(saved) {
+  restorePhoneState(saved, { keyOf = JSON.stringify } = {}) {
     if (!saved || typeof saved !== 'object') return;
     for (const [npcId, entry] of Object.entries(saved)) {
       if (!entry || typeof entry !== 'object') continue;
       this._savedPhoneState.set(npcId, entry);
       // The server holds this already; only send it again once it changes
-      this._phoneStateSent.set(npcId, JSON.stringify(entry));
+      this._phoneStateSent.set(npcId, keyOf(entry));
       if (this.npcs.has(npcId)) this._applySavedPhoneState(npcId);
     }
     console.log(`📱 Restored saved phone state for ${Object.keys(saved).length} contact(s)`);
