@@ -479,7 +479,6 @@ Narrator: A carrier tone on a channel that should not have one. Nobody on it. He
 }
 // M6: the ringer delivers every taunt and the sign-off now, so this menu no longer routes into them.
 + [(Hang up.)]
-    Narrator: The tone stops a half-second before you do.
     #exit_conversation
     -> parked
 
