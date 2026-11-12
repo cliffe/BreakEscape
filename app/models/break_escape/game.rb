@@ -3688,9 +3688,19 @@ module BreakEscape
     # Get current objectives state
     def objectives_state
       {
-        'objectives' => filter_target_flags(scenario_data['objectives']&.map(&:deep_dup)),
+        'objectives' => strip_objective_notes(filter_target_flags(scenario_data['objectives']&.map(&:deep_dup))),
         'state' => objectives_state_for_client
       }
+    end
+
+    # Step 2b review R1 (B1): GET /objectives deep_dups each objective straight out of scenario_data,
+    # so an author "_" note on an objective (open-with-properties -> undeclared -> note) would ship.
+    # Strip each duped objective on the copy this method owns, after filter_target_flags.
+    def strip_objective_notes(objectives)
+      return objectives unless objectives.is_a?(Array)
+
+      node = BreakEscape::ScenarioSchema.at('#/definitions/objective')
+      objectives.each { |aim| BreakEscape::AuthorNotes.strip_notes!(aim, node) if aim.is_a?(Hash) }
     end
 
     # The saved objectivesState plus the aim reveals the client makes but never

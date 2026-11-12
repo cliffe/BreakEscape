@@ -36,6 +36,11 @@ module BreakEscape
       '#/definitions/item/properties/contents',
       '#/definitions/npc/properties/eventMappings',
       '#/definitions/eventMapping',
+      # Step 2b review R1 (blocker B1): the two sub-objects a model method deep_dups straight out of
+      # scenario_data and ships, each stripped with its own Node before it leaves (feed_answer's
+      # intel fact; objectives_state's objective).
+      '#/definitions/socialIntelFact',
+      '#/definitions/objective',
       # Step 2b, the "_"-skip-by-name audit (plan item 6): the map locations whose hand walkers now
       # ask the resolver instead of testing the key name, so a "_" id there is validated as an id.
       '#/properties/roles',

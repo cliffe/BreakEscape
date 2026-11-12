@@ -357,6 +357,9 @@ module BreakEscape
       fid = post['fact']
       facts = scenario_data.dig('social', 'intelFacts')
       entry = fid && facts.is_a?(Hash) && facts[fid].is_a?(Hash) ? facts[fid].deep_dup : nil
+      # Step 2b review R1 (B1): the whole fact is embedded unsliced, so strip its author notes on
+      # this owned copy before it ships (bootstrap feedPosts, POST /feed_post, POST /friendface_phone).
+      AuthorNotes.strip_notes!(entry, ScenarioSchema.at('#/definitions/socialIntelFact')) if entry
       out = { 'index' => reveal_index, 'post' => post, 'fact' => entry ? { 'id' => fid, 'entry' => entry } : nil,
               'site' => npc['feed']['site'], 'person' => npc['feed']['person'] }
       out['seq'] = seq if seq

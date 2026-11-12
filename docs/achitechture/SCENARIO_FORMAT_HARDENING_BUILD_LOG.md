@@ -436,6 +436,47 @@ Confirmed and recorded: `api/games_controller.rb` is **not routed** (`config/rou
 - Stored `scenario_data` of game 2345 still holds `_creds_old` and `commandBoard._note` (the strips work on copies).
 - The server was stopped afterwards (its own PID on 3270). The grant_foothold live/dead behaviour was proven through the real `POST network/implant` route in phase B1 (`network_notes_not_live_test`), so the fixture keeps only the dead note grant (schema-valid without a full network block); the HTTP proof here covers item 3's strips.
 
+### R1 fixes
+
+Review: `docs/achitechture/SCENARIO_FORMAT_HARDENING_STEP2B_REVIEW_R1.md` (1 blocker, 0 majors, 1 minor, 1 nit), all fixed.
+
+**B1 (blocker) and n1 (STARTS).** Two routes shipped a scenario sub-object that a model method deep_dups straight out of `scenario_data`, bypassing the six controller strips:
+- `social_feed.rb` `feed_answer`: the intel fact (`facts[fid].deep_dup`) was embedded unsliced as `fact.entry`. Now `AuthorNotes.strip_notes!(entry, ScenarioSchema.at('#/definitions/socialIntelFact'))` on that owned copy before `out` is built. Closes the bootstrap `feedPosts`, `POST /feed_post` and `POST /friendface_phone?posts=1` paths, which all route through `feed_answer`.
+- `game.rb` `objectives_state` (`GET /objectives`): each objective was `map(&:deep_dup)`ed and filtered for target flags only. New `strip_objective_notes` strips each duped objective with `#/definitions/objective` after `filter_target_flags`.
+- `ScenarioSchema::STARTS` gains `#/definitions/socialIntelFact` and `#/definitions/objective` (n1). `scenario_schema_test`'s Explore-pointer assertion (every `ScenarioSchema.at` literal is in STARTS) still passes; the test now reaches more Nodes (12610 assertions).
+
+**Route audit redone as "what each render embeds" (B1 fix instruction).** Every `render json:` in `app/controllers/break_escape/` traced back to its source; the question is no longer "what the controller builds" but "what the response actually carries". A scenario sub-object can carry a note only when it is embedded wholesale (deep_dup or an unsliced reference). Results:
+
+| Render / route | What it embeds from scenario_data | Wholesale? | Strip |
+|---|---|---|---|
+| `GET scenario` (bootstrap) | whole scenario, `feedPosts`, `playerInventory`, `commandBoard` | yes | root strip + `feed_answer` + `client_inventory` + `command_board_config` |
+| `GET room/:id`, `POST unlock` roomData, `POST npc_workaround` roomData | room (deep_dup) | yes | `filtered_room_data` (`#/definitions/room`) |
+| `GET container/:id`, unlock contents, `render_login_desktop` | object contents | yes | `filter_container_contents` |
+| `POST feed_post`, `POST friendface_phone`, bootstrap feedPosts | intel fact entry (`feed_answer`) | **yes — was unstripped** | **FIXED: `feed_answer` strip** |
+| `GET objectives` | each objective (`objectives_state`) | **yes — was unstripped** | **FIXED: `strip_objective_notes`** |
+| `GET network` (`network_rows`) | host and resource rows | no — `host_row`/`resource_row` build key-by-key | none needed |
+| `GET login_accounts` | account tiles | no — `login_account_tiles` builds `{username,displayName,portrait,avatar}` | none needed |
+| `GET capture_secrets` | `{target_id => secret_string}` | no — key-by-key strings | none needed |
+| `GET container` PC session, `session_for_client` | login session answer | no — `login_session_answer` key-by-key | none needed |
+| `GET scenario_map`, `GET ink`, flag/tts/`{success:...}` routes | navigation metadata / compiled ink / action outcomes | no scenario `_` note | none needed |
+
+Only `feed_answer` and `objectives_state` embedded a sub-object wholesale without a strip; both are fixed. No other leak found.
+
+**Sentinel backstop (orchestrator addition; m1).** `scenarios/test_author_notes/scenario.json` extended so a `_`-prefixed author note holding a unique `SENTINEL-` value sits in every note-capable block a player route can ship. The resolver (not memory) was used to pick the locations: a scratch walk with `AuthorNotes.note?`/`ScenarioSchema` over the fixture confirms 20 `_sentinel*` keys resolve to **notes** (rooms, objects, contents, NPCs, intel facts, feed posts, objectives, tasks, command board, items held, start items, phone, networks + wifi, social + mailClient, policy, resource) and 3 `_` keys resolve to id/free (`_secretglobal` global id, `board_state._inner` free value, `_annex` room id). The fixture validates clean (`validate_scenario.rb --no-graph`: 0 errors, 10 warnings, all recommended-field / action-in-note / unused-resource warnings).
+
+`test/controllers/break_escape/author_notes_sentinel_test.rb` (5 tests): plays the main routes (bootstrap, rooms lobby/vault/_annex, container crate, feed_post, friendface_phone, objectives, capture_secrets, network, inventory echo, sync_state) and asserts no body carries a `SENTINEL` value or a `_sentinel` key; asserts the free value, `_` global id and `_annex` id ship in the bootstrap; asserts the feed reveals the `jake_secret` fact and `GET /objectives` ships `aim_1` (so the B1 routes are actually exercised); and a resolver-driven coverage test asserting each required block kind has a sentinel note. **Must-fail proof:** with both B1 strips disabled, the main-route test fails (`feed_post shipped a sentinel note value`, `SENTINEL-FACT` in the fact entry); restored.
+
+**Live proof (port 3272, game 2356, keyless server, now stopped).** `swap-scenario-game.rb test_access_networks test_author_notes --unlock-all` (no `db:` task; Mission count unchanged), then `encounteredNPCs`/`unlockedObjects` set on the one game row. A headless-browser capture (Playwright, headless shell) recorded every `/games/2356/*` response: the engine's own boot fetches plus a driven sweep of `/scenario`, `/room/{lobby,vault,_annex}`, `/container/crate`, `/feed_post`, `/friendface_phone`, `/objectives`, `/capture_secrets`, `/network`, `/sync_state`. All 200. No `SENTINEL` value and no `_sentinel` key in any body. `FREE-GLOBAL-VALUE-555`, `_secretglobal` and `_annex` ship in the bootstrap. The feed revealed `jake_secret` (fact entry shipped, note stripped) and `/objectives` shipped `aim_1`. Server stopped by its own PID.
+
+**Tests run (test-lock congestion rule; single/targeted files under the shared flock lock).**
+- Rails: `author_notes_sentinel_test` (5/110); `feed_post_test`, `feed_post_reply_test`, `friendface_phone_test`, `social_sync_then_emit_test`, `games_controller_test`, `filtered_scenario_test`, `reload_persistence_test` (223/992) — the consumers of the two changed methods.
+- Unit: `scenario_schema_test` (10/12610, STARTS change), `author_notes_test` (19/72).
+- No node test references `test_author_notes` or `scenario_schema` (grep), so none is affected by this round; the change is Ruby-only.
+- Validator: `validate_scenario.rb scenarios/test_author_notes/scenario.json --no-graph` → 0 errors, 10 warnings.
+- Diffs checked for the PostToolUse reindent gotcha: no unrelated Ruby block moved.
+
+**Files touched (R1):** `app/models/break_escape/social_feed.rb`, `app/models/break_escape/game.rb`, `lib/break_escape/scenario_schema.rb`, `scenarios/test_author_notes/scenario.json`, `test/controllers/break_escape/author_notes_sentinel_test.rb`, this log.
+
 ## Handover
 
 ### Step 2b (build/harden-2b) handover
