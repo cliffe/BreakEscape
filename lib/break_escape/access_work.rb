@@ -340,7 +340,9 @@ module BreakEscape
     # Every fact id a room NPC's feed post names, sorted: withheld from the bootstrap's
     # social.intelFacts until its post is out
     def feed_facts(data)
-      AccessIdentities.room_npcs(data).flat_map { |e| feed_posts(e[:npc]).map { |p| p['fact'] } }
+      # C3: a reply is never an own post, so a fact wrongly authored on one is not withheld with no
+      # post to grant it (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md section 3)
+      AccessIdentities.room_npcs(data).flat_map { |e| own_feed_posts(e[:npc]).map { |p| p['fact'] } }
                       .select { |f| present_string?(f) }.uniq.sort
     end
 
@@ -418,7 +420,7 @@ module BreakEscape
       end
 
       n = entry['n'].is_a?(Integer) ? [entry['n'], 0].max : 0
-      feed_posts(npc).reject { |p| reactive_post?(p) }.first(n).map { |p| p['id'] }
+      feed_posts(npc).reject { |p| reactive_post?(p) || reply_post?(p) }.first(n).map { |p| p['id'] }
     end
 
     # The extracted live checks (plan 3): a cause condition and a global condition, pure over the
@@ -675,43 +677,273 @@ module BreakEscape
     # Whether the feed is finished (plan 4): the ordered queue is empty and every reactive post is
     # already shown or statically unable ever to fire. Reads only scenario reachability, never the
     # live globals or lockouts, so a transiently-false but reachable post keeps the feed open.
+    # C3: walks own posts only. An own post's alternative set is finished when any member is
+    # shown, or when the post is reactive and can never fire (no reply in its place can either).
     def feed_done?(data, npc, shown)
       shown = Array(shown)
-      feed_posts(npc).all? do |post|
-        shown.include?(post['id']) || (reactive_post?(post) && !when_reachable?(data, npc, post['when']))
+      replies = feed_replies(npc)
+      own_feed_posts(npc).all? do |post|
+        members = [post['id']] + replies.select { |r| r['insteadOf'] == post['id'] }.map { |r| r['id'] }
+        members.any? { |m| shown.include?(m) } || (reactive_post?(post) && !when_reachable?(data, npc, post['when']))
       end
     end
 
     # Pick the next post to serve by the feed's `order` and the eligibility tests (plan 4).
-    # Returns { 'post' => id or nil, 'done' => bool }. Pure: every piece of state it reads is
-    # passed in. `feed_entry` is the feedRevealed record, `frustration_entry` the raw
-    # npcFrustration[id] (or nil), `globals` the merged globals, `lockout_keys` the pre-gated set.
-    # `met_use` (q38) is the met use the request is for, passed on to needMet (need_met_now?).
-    def select_feed_post(data, npc, feed_entry, frustration_entry, globals, lockout_keys = [], met_use = nil)
-      posts = feed_posts(npc)
+    # Returns { 'post' => id or nil, 'done' => bool, 'to' => { 'post', 'npc' } or nil }. Pure:
+    # every piece of state it reads is passed in. `feed_entry` is the feedRevealed record,
+    # `frustration_entry` the raw npcFrustration[id] (or nil), `globals` the merged globals,
+    # `lockout_keys` the pre-gated set. `met_use` (q38) is the met use the request is for, passed
+    # on to needMet (need_met_now?). `revealed` (C3) is revealed_map of the whole feedRevealed
+    # record: every served post id => { 'npc', 'seq', 'to' }, built by the server alone.
+    #
+    # C3 (ACCESS_MODEL_SLICE_9_2_C3_PLAN.md section 3): the walk runs over own posts only. When it
+    # reaches a candidate own post P, a reply standing in for P (`insteadOf`) whose `when` holds and
+    # whose thread is open is served in P's slot, the one with the oldest thread first, ties by
+    # authored order; otherwise P.
+    def select_feed_post(data, npc, feed_entry, frustration_entry, globals, lockout_keys = [], met_use = nil,
+                         revealed: {})
       shown = feed_shown_ids(npc, feed_entry)
-      eligible = lambda do |post|
+      replies = feed_replies(npc)
+      revealed = revealed.is_a?(Hash) ? revealed : {}
+      holds = ->(cond) { when_holds?(data, npc, cond, frustration_entry, globals, lockout_keys, met_use) }
+      candidate = lambda do |post|
         next false if shown.include?(post['id'])
+        next false if replies.any? { |r| r['insteadOf'] == post['id'] && shown.include?(r['id']) } # spent
 
-        reactive_post?(post) ? when_holds?(data, npc, post['when'], frustration_entry, globals, lockout_keys, met_use) : true
+        reactive_post?(post) ? holds.call(post['when']) : true
       end
 
-      chosen =
-        case feed_order(npc)
-        when 'reactive_first'
-          posts.find { |p| reactive_post?(p) && eligible.call(p) } ||
-            posts.find { |p| !reactive_post?(p) && eligible.call(p) }
-        when 'mixed'
-          posts.find { |p| eligible.call(p) }
-        else # facts_first
-          posts.find { |p| !reactive_post?(p) && eligible.call(p) } ||
-            posts.find { |p| reactive_post?(p) && eligible.call(p) }
+      chosen = nil
+      to = nil
+      walk_order(npc).each do |post|
+        next unless candidate.call(post)
+
+        chosen = post
+        best = nil
+        replies.each_with_index do |r, idx|
+          next unless r['insteadOf'] == post['id'] && !shown.include?(r['id'])
+          next unless reply_servable_in?(r, post) && holds.call(r['when'])
+
+          thread = open_threads(data, npc, r, revealed).min_by { |t| t[:seq] }
+          next unless thread
+
+          key = [thread[:seq], idx]
+          best = [key, r, thread] if best.nil? || (key <=> best[0]).negative?
         end
+        if best
+          chosen = best[1]
+          to = { 'post' => best[2][:post], 'npc' => best[2][:named] }
+        end
+        break
+      end
 
       # `done` reflects the state after this serve: when a post is chosen it counts as shown, so
       # the reveal of the last post answers done (matching C's n + 1 >= posts.size)
       after = chosen ? shown + [chosen['id']] : shown
-      { 'post' => chosen ? chosen['id'] : nil, 'done' => feed_done?(data, npc, after) }
+      { 'post' => chosen ? chosen['id'] : nil, 'done' => feed_done?(data, npc, after), 'to' => to }
+    end
+
+    # ── replies between NPCs (sub-slice C3, ACCESS_MODEL_SLICE_9_2_C3_PLAN.md) ───────────
+
+    REPLY_FIELDS = %w[replyTo replyToComplaint insteadOf].freeze
+    SEQ_MAX = (2**31) - 1
+    FRIENDFACE_NAME_MAX = 40
+
+    # A post with any reply field is a reply everywhere the server reads feeds
+    def reply_post?(post)
+      post.is_a?(Hash) && REPLY_FIELDS.any? { |k| !post[k].nil? }
+    end
+
+    def own_feed_posts(npc)
+      feed_posts(npc).reject { |p| reply_post?(p) }
+    end
+
+    def feed_replies(npc)
+      feed_posts(npc).select { |p| reply_post?(p) }
+    end
+
+    # A reply the server may ever serve: a `when`, an `insteadOf`, and exactly one of `replyTo`
+    # and `replyToComplaint`, each a non-empty string
+    def well_formed_reply?(post)
+      return false unless reply_post?(post) && reactive_post?(post) && present_string?(post['insteadOf'])
+
+      [present_string?(post['replyTo']), present_string?(post['replyToComplaint'])].count(true) == 1 &&
+        [post['replyTo'], post['replyToComplaint']].compact.size == 1
+    end
+
+    # Runtime guards for reply R standing in for own post P: R is well formed, P is reactive and
+    # carries no fact (a reply never spends a fact post), and R's replyTo is not P
+    def reply_servable_in?(reply, post)
+      well_formed_reply?(reply) && reactive_post?(post) && !present_string?(post['fact']) &&
+        reply['replyTo'] != post['id']
+    end
+
+    # The order selection tries an NPC's own posts in, by its `order` mode (section 1)
+    def walk_order(npc)
+      own = own_feed_posts(npc)
+      case feed_order(npc)
+      when 'reactive_first' then own.select { |p| reactive_post?(p) } + own.reject { |p| reactive_post?(p) }
+      when 'mixed' then own
+      else own.reject { |p| reactive_post?(p) } + own.select { |p| reactive_post?(p) }
+      end
+    end
+
+    # Every post id in the alternative sets of an NPC's feed: every post with a reply field (well
+    # formed or not) and every own post some reply's `insteadOf` names
+    def set_member_ids(npc)
+      posts = feed_posts(npc)
+      replies = posts.select { |p| reply_post?(p) }
+      named = replies.map { |r| r['insteadOf'] }.select { |i| present_string?(i) }
+      own = posts.reject { |p| reply_post?(p) }.map { |p| p['id'] }
+      (replies.map { |r| r['id'] } + own.select { |i| named.include?(i) }).uniq
+    end
+
+    # A feedRevealed entry's `seq`, keeping only a non-empty string id and an integer 1..2^31-1
+    def feed_seq_map(entry)
+      seq = entry.is_a?(Hash) ? entry['seq'] : nil
+      return {} unless seq.is_a?(Hash)
+
+      seq.each_with_object({}) do |(k, v), out|
+        out[k] = v if present_string?(k) && v.is_a?(Integer) && v >= 1 && v <= SEQ_MAX
+      end
+    end
+
+    # A feedRevealed entry's `to`, keeping only entries whose post and npc are non-empty strings
+    def feed_to_map(entry)
+      to = entry.is_a?(Hash) ? entry['to'] : nil
+      return {} unless to.is_a?(Hash)
+
+      to.each_with_object({}) do |(k, v), out|
+        next unless present_string?(k) && v.is_a?(Hash) && present_string?(v['post']) && present_string?(v['npc'])
+
+        out[k] = { 'post' => v['post'], 'npc' => v['npc'] }
+      end
+    end
+
+    # One more than the largest seq in the whole feedRevealed record, or 1; capped at 2^31-1
+    def next_seq(store)
+      return 1 unless store.is_a?(Hash)
+
+      top = store.values.flat_map { |e| feed_seq_map(e).values }.max || 0
+      [top + 1, SEQ_MAX].min
+    end
+
+    def room_npc(data, id)
+      return nil unless present_string?(id)
+
+      AccessIdentities.room_npcs(data).find { |e| e[:npc]['id'] == id }&.dig(:npc)
+    end
+
+    # A served reply's thread record { 'post', 'npc' } from the stored `to`, or, for a replyTo
+    # reply that is not an answer, its authored replyTo and that post's poster (an edited save).
+    # nil for a complaint reply or an answer with no usable `to`, which is then no word anywhere.
+    def reply_target(data, npc, post, to_map)
+      stored = to_map[post['id']]
+      return stored if stored
+      return nil unless present_string?(post['replyTo'])
+
+      poster = AccessIdentities.room_npcs(data).find do |e|
+        own_feed_posts(e[:npc]).any? { |p| p['id'] == post['replyTo'] }
+      end&.dig(:npc)
+      return nil if poster.nil? || poster['id'] == npc['id']
+
+      { 'post' => post['replyTo'], 'npc' => poster['id'] }
+    end
+
+    # Every post shown on any NPC's feed => { 'npc' => npcId, 'seq' => n (0 when missing),
+    # 'to' => threadPostId or nil }, from the feedRevealed record. A later entry wins on a reused id.
+    def revealed_map(data, store)
+      return {} unless store.is_a?(Hash)
+
+      store.each_with_object({}) do |(npc_id, entry), out|
+        npc = room_npc(data, npc_id)
+        next unless npc && entry.is_a?(Hash)
+
+        seq = feed_seq_map(entry)
+        to = feed_to_map(entry)
+        posts = feed_posts(npc).to_h { |p| [p['id'], p] }
+        feed_shown_ids(npc, entry).each do |pid|
+          post = posts[pid]
+          target = reply_post?(post) ? reply_target(data, npc, post, to) : nil
+          out[pid] = { 'npc' => npc_id, 'seq' => seq[pid] || 0, 'to' => target && target['post'],
+                       'reply' => reply_post?(post) }
+        end
+      end
+    end
+
+    # The threads open to reply R by NPC X now: [{ post:, seq:, named: }]. See section 3.
+    def open_threads(data, npc, reply, revealed)
+      x = npc['id']
+      site = npc.dig('feed', 'site')
+      candidates =
+        if present_string?(reply['replyTo'])
+          [reply['replyTo']]
+        else
+          revealed.select { |_pid, rec| rec['npc'] != x }.keys
+        end
+
+      candidates.filter_map do |t|
+        rec = revealed[t]
+        next unless rec && !rec['reply']
+
+        poster = room_npc(data, rec['npc'])
+        tpost = poster && own_feed_posts(poster).find { |p| p['id'] == t }
+        next unless tpost && poster.dig('feed', 'site') == site
+        next if present_string?(reply['replyToComplaint']) && (tpost['complaint'] != reply['replyToComplaint'] || poster['id'] == x)
+        next if reply['insteadOf'] == t
+
+        words = [{ npc: poster['id'], seq: rec['seq'] }] +
+                revealed.select { |_pid, r2| r2['reply'] && r2['to'] == t }.map { |_pid, r2| { npc: r2['npc'], seq: r2['seq'] } }
+        next unless thread_open_to?(words, poster['id'], x)
+
+        named = poster['id']
+        if poster['id'] == x
+          newest = words.reject { |w| w[:npc] == x }.max_by { |w| w[:seq] }
+          named = newest[:npc]
+        end
+        { post: t, seq: rec['seq'], named: named }
+      end
+    end
+
+    # The last-word rule and the turn rule over a thread's words ({ npc:, seq: }, the thread post
+    # first), for X; the poster's own words are the thread post and her answers
+    def thread_open_to?(words, poster_id, x)
+      last = words.max_by { |w| w[:seq] }
+      return false if last.nil? || last[:npc] == x
+
+      mine = words.select { |w| w[:npc] == x }
+      return true if mine.empty?
+
+      newest_mine = mine.map { |w| w[:seq] }.max
+      if x == poster_id
+        words.any? { |w| w[:npc] != x && w[:seq] > newest_mine }
+      else
+        words.any? { |w| w[:npc] == poster_id && w[:seq] > newest_mine && !w.equal?(words.first) }
+      end
+    end
+
+    # The name a colleague would use for the NPC on its Friendface site: social.people forms.first
+    # for its feed.person, else that person's profile name on its feed.site, else displayName, else
+    # the id. Control characters removed, cut to 40 characters. The route and the validator share it.
+    def friendface_name(data, npc)
+      return '' unless npc.is_a?(Hash)
+
+      person = npc.dig('feed', 'person')
+      site = npc.dig('feed', 'site')
+      social = data.is_a?(Hash) && data['social'].is_a?(Hash) ? data['social'] : {}
+      people = social['people'].is_a?(Array) ? social['people'] : []
+      entry = people.find { |p| p.is_a?(Hash) && p['id'] == person }
+      first = entry && entry['forms'].is_a?(Hash) ? entry['forms']['first'] : nil
+      sites = social.dig('osint', 'sites')
+      st = sites.is_a?(Array) ? sites.find { |s| s.is_a?(Hash) && s['id'] == site } : nil
+      prof = st && st['profiles'].is_a?(Array) ? st['profiles'].find { |p| p.is_a?(Hash) && p['person'] == person } : nil
+      [first, prof && prof['name'], npc['displayName'], npc['id']].each do |c|
+        next unless c.is_a?(String)
+
+        clean = c.gsub(/[[:cntrl:]]/, '')
+        return clean[0, FRIENDFACE_NAME_MAX] unless clean.strip.empty?
+      end
+      ''
     end
 
     # ── resources, admission, reach ─────────────────────────────────────
