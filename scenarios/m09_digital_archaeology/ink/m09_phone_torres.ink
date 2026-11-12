@@ -16,9 +16,12 @@ VAR sleeper_shortlist = false
 VAR hl_box_opened = false   // Synced scenario global (puzzle chains R1 P2): HaX sets it on the box's unlock
 
 === start ===
-// Home stub: not reached by the call. After a finished call the thread rests here and
-// shows the transcript; a missed call leaves the engine's Call back button (no fake ring-back).
--> DONE
+// Home stub (lesson 21): not reached by the call. A finished call rests the thread here and shows
+// the transcript; the Close choice keeps the story live, so no "(End of conversation)" shows next to
+// a missed call's Call back button. A missed call still leaves the engine's Call back (no fake ring-back).
++ [(Close.)]
+    #exit_conversation
+    -> start
 
 === call ===
 // lint: call-knot

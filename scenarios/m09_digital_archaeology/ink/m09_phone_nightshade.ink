@@ -10,9 +10,12 @@
 // ================================================
 
 === start ===
-// Home stub: not reached by the call. After a finished call the thread rests here and
-// shows the transcript; a missed call leaves the engine's Call back button (no fake ring-back).
--> DONE
+// Home stub (lesson 21): not reached by the call. A finished call rests the thread here and shows
+// the transcript; the Close choice keeps the story live, so no "(End of conversation)" shows next to
+// a missed call's Call back button. A missed call still leaves the engine's Call back (no fake ring-back).
++ [(Close.)]
+    #exit_conversation
+    -> start
 
 === call ===
 // lint: call-knot
@@ -25,7 +28,9 @@ That plan cabinet isn't on her schedule. It never was. Whatever's in it, he want
 + [HaX is on this line.]
     I know. She's been listening since before you picked up.
 - Every lock is a promise somebody made years ago. Most of them forget they made it. Goodnight, 0x00.
-Agent HaX: He's right. I hate that he's right.
+// Phone-calls M10 (2.10, 3.5): m09 has two "Agent HaX" records (agent_0x99 phone, hax_voice in person),
+// so the co-speaker prefix is the id, not the display name, to fix the voice to the phone record.
+agent_0x99: He's right. I hate that he's right.
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
 + [Noted.]
