@@ -3300,7 +3300,9 @@ module BreakEscape
     MAX_PHONE_HISTORY_MESSAGES = 150
     MAX_PHONE_MESSAGE_TEXT = 4000
     MAX_PHONE_STORY_STATE_BYTES = 60.kilobytes
-    PHONE_MESSAGE_KEYS = %w[type text timestamp gameTime read isBark timed preloaded].freeze
+    PHONE_MESSAGE_KEYS = %w[type text timestamp gameTime read isBark timed preloaded deliveryTags].freeze
+    PHONE_DELIVERY_TAG_MAX = 300
+    PHONE_DELIVERY_TAGS_MAX = 5
 
     # Merge the client's phone threads, one entry per phone contact, each replacing
     # the saved one: the texts (with read state), the ink story position, and a
@@ -3327,13 +3329,27 @@ module BreakEscape
       true
     end
 
+    # A preloaded call opening's #delivery: tags, kept so the first open speaks the
+    # line with its note after a reload. Untrusted text: plain strings only, capped,
+    # no control characters. Never rendered; it only reaches the TTS prompt, which
+    # TtsService cleans again.
+    def clean_phone_delivery_tags(value)
+      return nil unless value.is_a?(Array)
+
+      tags = value.select do |t|
+        t.is_a?(String) && t.length <= PHONE_DELIVERY_TAG_MAX && !t.match?(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/)
+      end.first(PHONE_DELIVERY_TAGS_MAX)
+      tags.empty? ? nil : tags
+    end
+
     def sanitize_phone_state_entry(entry)
       history = Array(entry['history']).last(MAX_PHONE_HISTORY_MESSAGES).filter_map do |msg|
         next unless msg.is_a?(Hash) && msg['type'].is_a?(String) && msg['text'].is_a?(String)
         next if msg['text'].empty?
 
-        msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
+        kept = msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
           case key
+          when 'deliveryTags' then false # cleaned below
           when 'type' then value.length <= 20
           when 'text' then true
           # gameTime: elapsed game ms when the text arrived (the time its bubble shows)
@@ -3341,6 +3357,8 @@ module BreakEscape
           else value == true || value == false
           end
         end.merge('text' => msg['text'][0, MAX_PHONE_MESSAGE_TEXT])
+        delivery_tags = clean_phone_delivery_tags(msg['deliveryTags'])
+        delivery_tags ? kept.merge('deliveryTags' => delivery_tags) : kept
       end
 
       clean = { 'history' => history }

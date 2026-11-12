@@ -14,7 +14,7 @@ const dir = mkdtempSync(join(tmpdir(), 'phone-ids-test-'));
 writeFileSync(join(dir, 'phone-chat-speaker.mjs'), read('minigames/phone-chat/phone-chat-speaker.js'));
 writeFileSync(join(dir, 'phone-call-voice.mjs'), read('minigames/phone-chat/phone-call-voice.js')
     .replace("'./phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
-const { otherSpeaker } = await import(pathToFileURL(join(dir, 'phone-chat-speaker.mjs')).href);
+const { otherSpeaker, displayPhoneLine } = await import(pathToFileURL(join(dir, 'phone-chat-speaker.mjs')).href);
 const { phoneLineVoice } = await import(pathToFileURL(join(dir, 'phone-call-voice.mjs')).href);
 
 const contact = { id: 'agent_0x99', displayName: 'Agent HaX', voice: { name: 'Kore' } };
@@ -101,4 +101,26 @@ test('phone-chat-ui passes the id map at both otherSpeaker call sites', () => {
     assert.equal(calls.length, 2);
     for (const c of calls) assert.match(c, /_knownSpeakerIds\(\)/);
     assert.match(src, /_knownSpeakerIds\(\)\s*\{/);
+});
+
+// R2 m1: the contact's own display name is stripped before any id is read, in either record order.
+// The Rails twin is tts_line_resolver_test.rb "a voiced call line prefixed with the host's own display name".
+// _speakCallLine: displayPhoneLine (drops the contact's own prefix), then phoneLineVoice
+const voicedAsMinigame = (text, host, characters) =>
+    phoneLineVoice(displayPhoneLine('npc', text, host), host, characters);
+
+test("the contact's own display name, id and spaced id stay with the contact even when another record's id matches", () => {
+    const host = { id: 'ghost_phone', displayName: 'Ghost', voice: { name: 'Kore' } };
+    const person = { id: 'ghost', displayName: 'Ghost Person', voice: { name: 'B' } };
+    const other = { id: 'ghost_old', displayName: 'Ghost Old', voice: { name: 'C' } };
+    for (const order of [[person, other, host], [host, other, person]]) {
+        const characters = new Map(order.map(c => [c.id, c]));
+        for (const text of ['Ghost: Hello there.', 'ghost phone: Hello there.', 'GHOST_PHONE: Hello there.']) {
+            assert.deepEqual(voicedAsMinigame(text, host, characters),
+                { speakerId: 'ghost_phone', text: 'Hello there.' }, text);
+        }
+        // "ghost" is the host's display name (case-insensitive) as well as an id: the host wins
+        assert.equal(voicedAsMinigame('ghost: Same as its name.', host, characters).speakerId, 'ghost_phone');
+        assert.equal(voicedAsMinigame('ghost_old: Named by id.', host, characters).speakerId, 'ghost_old');
+    }
 });

@@ -21,6 +21,9 @@ const copy = (src, name, fix = s => s) => writeFileSync(join(dir, name), fix(rea
 copy('minigames/phone-chat/phone-chat-speaker.js', 'phone-chat-speaker.mjs');
 copy('minigames/phone-chat/phone-call-voice.js', 'phone-call-voice.mjs', s => s.replace("'./phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
 copy('systems/tts-delivery.js', 'tts-delivery.mjs');
+copy('systems/npc-los.js', 'npc-los.mjs');
+copy('systems/npc-manager.js', 'npc-manager.mjs', s => s.replace("'./npc-los.js'", "'./npc-los.mjs'")
+    .replace("'../minigames/phone-chat/phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
 copy('systems/ink/ink-engine.js', 'ink-engine.mjs');
 copy('minigames/phone-chat/phone-chat-conversation.js', 'phone-chat-conversation.mjs',
     s => s.replace("'./phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
@@ -33,6 +36,7 @@ const { default: PhoneChatConversation } = await imp('phone-chat-conversation.mj
 const speaker = await imp('phone-chat-speaker.mjs');
 const voice = await imp('phone-call-voice.mjs');
 const { deliveryFromTags } = await imp('tts-delivery.mjs');
+const { default: NPCManager } = await imp('npc-manager.mjs');
 const storyJson = JSON.parse(readFileSync(join(here, 'fixtures/phone_call_notes.json'), 'utf8').replace(/^﻿/, ''));
 console.log = () => {};
 console.warn = () => {};
@@ -103,6 +107,48 @@ test('_speakPreloadedOpening speaks the opening with the preloaded note', async 
     ]);
 });
 
+// R2 M1: the note survives a reload before the thread is first opened. Real preload ->
+// real NPCManager export -> JSON (the server round trip) -> restore -> _speakPreloadedOpening.
+const noopDispatcher = { on() {}, off() {}, emit() {} };
+async function preloadedThenReloaded(mutateSaved = s => s) {
+    window.gameState = { globalVariables: { flag: false, seen: false } };
+    const before = new NPCManager(noopDispatcher, null);
+    const def = { id: 'agent', npcType: 'phone', displayName: 'Agent', voiced: true, storyJSON: storyJson, currentKnot: 'start', voice: { name: 'Zephyr' } };
+    before.registerNPC({ ...def });
+    await PhoneChatConversation.preloadOpening(before.getNPC('agent'), before, new InkEngine('agent'));
+    const saved = mutateSaved(JSON.parse(JSON.stringify(before.exportPhoneState())));
+    const after = new NPCManager(noopDispatcher, null);
+    after.restorePhoneState(saved);
+    after.registerNPC({ ...def });
+    return after;
+}
+
+test('a preloaded opening keeps its note across a save and reload (R2 M1)', async () => {
+    const after = await preloadedThenReloaded();
+    const history = after.getConversationHistory('agent');
+    assert.equal(history.length, 2);
+    const spoken = [];
+    const mg = minigameForCall(spoken);
+    mg.npcManager = after;
+    await mg._speakPreloadedOpening(history);
+    assert.deepEqual(spoken, [
+        { id: 'agent', text: 'Opening line.', delivery: 'calm and low' },
+        { id: 'agent', text: 'Second line, no note.', delivery: null }
+    ]);
+});
+
+test('hostile deliveryTags in a saved thread are dropped on restore, the text stays', async () => {
+    const after = await preloadedThenReloaded(saved => {
+        saved.agent.history[0].deliveryTags = ['delivery: ok', 7, { a: 1 }, 'x'.repeat(301), '1', '2', '3', '4'];
+        saved.agent.history[1].deliveryTags = 'delivery: not an array';
+        return saved;
+    });
+    const [first, second] = after.getConversationHistory('agent');
+    assert.deepEqual(first.deliveryTags, ['delivery: ok', '1', '2', '3', '4'].slice(0, 5));
+    assert.equal(second.deliveryTags, undefined);
+    assert.equal(second.text, 'Agent: Second line, no note.');
+});
+
 // ---- 2. reopen re-run -----------------------------------------------------------------------
 
 const syncGlobals = story => {
@@ -111,12 +157,12 @@ const syncGlobals = story => {
     }
 };
 
-async function savedAtCall() {
-    window.gameState = { globalVariables: { flag: false, seen: false } };
+async function savedAtCall(knot = 'call') {
+    window.gameState = { globalVariables: { flag: false, seen: false, on: true } };
     const conv = new PhoneChatConversation('agent', { getNPC: () => null }, new InkEngine('agent'));
     await conv.loadStory(storyJson);
     syncGlobals(conv.engine.story);
-    conv.goToKnot('call');
+    conv.goToKnot(knot);
     let r;
     do { r = conv.continue(); } while (!r.choices?.length && !r.hasEnded);
     return conv.saveState();
@@ -133,6 +179,18 @@ test('reopenWithCurrentGlobals returns the note of each fresh line, a tag on an 
     assert.deepEqual(out.messages, ['Agent: Fresh line one.', 'Agent: Fresh line two.', 'Agent: Fresh line three.']);
     assert.equal(out.messageTags.length, out.messages.length, 'parallel to the messages');
     assert.deepEqual(out.messageTags.map(t => deliveryFromTags(t)), ['firm', 'urgent', null]);
+});
+
+test('a note on an empty step that ends the replayed part reaches the first fresh line (R2 m2)', async () => {
+    const saved = await savedAtCall('call2');
+    window.gameState.globalVariables.flag = true;      // the third step changes; the tagged empty step before it is replayed
+    const conv = new PhoneChatConversation('agent', { getNPC: () => null }, new InkEngine('agent'));
+    await conv.loadStory(storyJson);
+    assert.equal(conv.restoreState(saved), true);
+    const out = conv.reopenWithCurrentGlobals(syncGlobals);
+    assert.equal(out.renavigated, true);
+    assert.deepEqual(out.messages, ['Agent: Changed line.']);
+    assert.deepEqual(out.messageTags.map(t => deliveryFromTags(t)), ['tense']);
 });
 
 test('a reopened voiced call hands each fresh line\'s note to the line it types (_presentReopened -> _presentOutput)', async () => {
@@ -162,8 +220,72 @@ test('a reopened voiced call hands each fresh line\'s note to the line it types 
     ]);
 });
 
-test('the minigame\'s reopen branch goes through _presentReopened', () => {
-    assert.match(src, /if \(reopen\.renavigated\) \{\s*this\._presentReopened\(reopen\);/);
+// R2 m5: the real branch that picks the open path (_showRestoredThread), on stubs for what it calls.
+function restoredThreadHarness({ params = { voiced: true }, ended = false, pretext = null } = {}) {
+    const calls = [];
+    const mg = {
+        params, _pretext: pretext,
+        conversation: {
+            getCurrentState: () => ({ hasEnded: ended }),
+            restartAfterEnd: () => { calls.push('restartAfterEnd'); return true; }
+        },
+        _presentReopened: r => calls.push(['presentReopened', r.knot]),
+        continueStory: () => calls.push('continueStory'),
+        showCurrentChoices: () => calls.push('showCurrentChoices'),
+        _speakPreloadedOpening: h => calls.push(['speakPreloaded', h.length])
+    };
+    mg._showRestoredThread = method('_showRestoredThread', { isVoicedCall: voice.isVoicedCall });
+    return { mg, calls };
+}
+const preloaded = [{ type: 'npc', text: 'a', preloaded: true }, { type: 'npc', text: 'b', preloaded: true }];
+const played = [...preloaded, { type: 'player', text: 'hi' }];
+const voicedNpc = { id: 'agent', voiced: true };
+
+test('open path: a reopen re-run presents the new lines and speaks nothing from the preload (R2 m5)', () => {
+    const { mg, calls } = restoredThreadHarness();
+    mg._showRestoredThread(voicedNpc, 'agent', played, { renavigated: true, knot: 'call' });
+    assert.deepEqual(calls, [['presentReopened', 'call']]);
+});
+
+test('open path: a voiced call on only-preloaded lines shows the choices and speaks the opening', () => {
+    const { mg, calls } = restoredThreadHarness();
+    mg._showRestoredThread(voicedNpc, 'agent', preloaded, { renavigated: false });
+    assert.deepEqual(calls, ['showCurrentChoices', ['speakPreloaded', 2]]);
+});
+
+test('open path: a reopen on only-preloaded lines presents them and also speaks the opening', () => {
+    const { mg, calls } = restoredThreadHarness();
+    mg._showRestoredThread(voicedNpc, 'agent', preloaded, { renavigated: true, knot: 'start' });
+    assert.deepEqual(calls, [['presentReopened', 'start'], ['speakPreloaded', 2]]);
+});
+
+test('open path: no opening is spoken in a silent thread, for a non-voiced NPC, a resuming pretext or a played thread', () => {
+    for (const [label, opts, npc, history] of [
+        ['silent thread', { params: {} }, voicedNpc, preloaded],
+        ['non-voiced npc', {}, { id: 'agent' }, preloaded],
+        ['resuming pretext', { pretext: { resuming: true } }, voicedNpc, preloaded],
+        ['played thread', {}, voicedNpc, played]
+    ]) {
+        const { mg, calls } = restoredThreadHarness(opts);
+        mg._showRestoredThread(npc, 'agent', history, { renavigated: false });
+        assert.deepEqual(calls, ['showCurrentChoices'], label);
+    }
+});
+
+test('open path: an ended story restarts, unless the thread is only the preload or restartOnRetalk is false', () => {
+    let h = restoredThreadHarness({ ended: true });
+    h.mg._showRestoredThread(voicedNpc, 'agent', played, { renavigated: false });
+    assert.deepEqual(h.calls, ['restartAfterEnd', 'continueStory']);
+    h = restoredThreadHarness({ ended: true });
+    h.mg._showRestoredThread(voicedNpc, 'agent', preloaded, { renavigated: false });
+    assert.deepEqual(h.calls, ['showCurrentChoices', ['speakPreloaded', 2]]);
+    h = restoredThreadHarness({ ended: true });
+    h.mg._showRestoredThread({ ...voicedNpc, restartOnRetalk: false }, 'agent', played, { renavigated: false });
+    assert.deepEqual(h.calls, ['showCurrentChoices']);
+});
+
+test('the minigame\'s open code calls _showRestoredThread with the reopen result', () => {
+    assert.match(src, /this\._showRestoredThread\(npc, npcId, conversationHistory, reopen\);/);
 });
 
 // ---- 3. the typed line: a call speaks it with its note, a silent thread never speaks (m2) ----

@@ -234,7 +234,8 @@ export function lintInk(text, { channel = 'person', names = [], file = '' } = {}
 //                       ("...", dropped), or with {braces} (the server cannot read
 //                       what they print, so the line plays untagged). Also a tag whose name is
 //                       printed (`#{t}`): it may be a #delivery: tag, so the server drops every
-//                       note before it on the line.
+//                       note before it on the line. Also a tag inside an inline conditional or sequence
+//                       (`{cond: text #delivery: note}`): the server's walker skips that line.
 //   crowded-hub         (check) a knot whose choice block offers more than 10 choices at once (sticky,
 //                       once-only and conditional all count). Passes when every conditional choice is
 //                       retired by a "not ..." guard and the unconditional ones sit last, which is how
@@ -663,6 +664,11 @@ const DELIVERY_IN_LINE = /(?<!\\)#\s*delivery\s*:([^#]*)/gi;
 // A tag whose name is printed (`#{t}`, t = "delivery: shout"): inkjs may send it as a note.
 const PRINTED_TAG = /(?<!\\)#\s*\{/;
 
+// A tag inside an inline conditional or sequence, `{flag: text #delivery: note}`. inklecate opens the
+// tag in the branch and closes it after the braces; inkjs reads it, but the server's walker cannot
+// (it skips the line, logged), so the line is voiced untagged and its co-speaker request is refused.
+const TAG_IN_BRACES = /\{[^{}]*(?<!\\)#[^{}]*\}/;
+
 function deliveryNotes(code) {
   return [...code.matchAll(DELIVERY_IN_LINE)].map(m => m[1].replace(/(^|\s)\/\/.*$/, '').replace(/\s+/g, ' ').trim());
 }
@@ -784,6 +790,10 @@ function deliveryFindings(lines, idx, channel) {
       // review R5 m1: the walker reads such a tag as a note it cannot match
       F.push({ level: 'warn', rule: 'delivery-note', line: L.n, text: cleanInkText(L.t) || L.t,
         note: 'a tag opens with {braces}, so its name is printed: it may be a #delivery: note the server cannot read, so the line plays untagged and any note before it is dropped; write the tag name out, or \\# for a # in the line' });
+    }
+    if (TAG_IN_BRACES.test(code) && !PRINTED_TAG.test(code)) {
+      F.push({ level: 'warn', rule: 'delivery-note', line: L.n, text: cleanInkText(L.t) || L.t,
+        note: 'a tag sits inside an inline conditional or sequence ({cond: text #tag}), which the server cannot read: the line is skipped and plays untagged. Put the tag after the closing brace, {cond: text} #tag, or use a multi-line block' });
     }
     const notes = deliveryNotes(code);
     if (!notes.length) continue;

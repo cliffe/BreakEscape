@@ -139,10 +139,12 @@ export default class NPCManager {
   static SCRIPTED_CALL_START_MS = 500;
   static SCRIPTED_CALL_RETRY_MS = 500;
   static PHONE_MESSAGE_MAX_CHARS = 4000;
+  static PHONE_DELIVERY_TAG_MAX_CHARS = 300; // a #delivery: tag (game.rb PHONE_DELIVERY_TAG_MAX)
+  static PHONE_DELIVERY_TAGS_MAX = 5;
   static PHONE_STORY_STATE_MAX_CHARS = 60000;
   // gameTime: elapsed game ms when the message arrived (window.gameClock), so its
   // shown time stays put across reopen and reload (messageClockText in game-clock.js)
-  static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded'];
+  static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded', 'deliveryTags'];
 
   /**
    * Resolve a "Name:" speaker prefix to a character id (social build item 0.6,
@@ -2340,6 +2342,14 @@ export default class NPCManager {
             if (msg[field] !== undefined) copy[field] = msg[field];
           }
           copy.read = !!msg.read;
+          // A preloaded call opening's note tags: plain strings only, as the server keeps them
+          if (copy.deliveryTags !== undefined) {
+            const tags = Array.isArray(copy.deliveryTags)
+              ? copy.deliveryTags.filter(t => typeof t === 'string' && t.length <= NPCManager.PHONE_DELIVERY_TAG_MAX_CHARS)
+                  .slice(0, NPCManager.PHONE_DELIVERY_TAGS_MAX)
+              : [];
+            if (tags.length) copy.deliveryTags = tags; else delete copy.deliveryTags;
+          }
           if (typeof copy.timestamp !== 'number') copy.timestamp = Date.now();
           // A thread saved before U3 holds "You: …" lines as the NPC's
           const line = classifyPhoneLine(copy.type, copy.text);

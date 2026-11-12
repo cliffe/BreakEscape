@@ -663,7 +663,13 @@ export default class PhoneChatConversation {
         const messages = [];
         const tags = [];
         const messageTags = [];     // parallel to messages: the tags whose #delivery: note a line carries
-        let carried = [];           // tags of steps that printed nothing go to the next visible line (InkEngine.continue)
+        // Tags of steps that printed nothing go to the next visible line (InkEngine.continue).
+        // The run starts with the empty steps that end the replayed part: a tag there is
+        // already seen, but its note still belongs to the first fresh line.
+        let carried = [];
+        for (let i = replayed - 1; i >= 0 && phoneStepLines(steps[i].text, steps[i].tags).length === 0; i--) {
+            carried.unshift(...steps[i].tags);
+        }
         fresh.forEach(step => {
             tags.push(...step.tags);
             const stepLines = phoneStepLines(step.text, step.tags);

@@ -316,6 +316,11 @@ module BreakEscape
           @notes << Note.new(source: host_id, path: line.path, text: raw,
                              reason: "Narrator[#{character}] names no character; the client voices it unprefixed")
         end
+      elsif id_names && own_name_prefix?(prefix, host_id)
+        # The client strips the contact's own name first (contactNames in phone-chat-speaker.js), so
+        # the line is the host's even when another record has that name as its id (R2 m1)
+        speaker = host_id
+        text = line.text
       elsif prefix
         resolved, by_id = speaker_id_for(prefix, host_id)
         if resolved
@@ -343,6 +348,17 @@ module BreakEscape
       else
         [host_id, text]
       end
+    end
+
+    # True when prefix is one of the host's own names as the client's contactNames builds them:
+    # displayName, id, and id with underscores read as spaces, compared case-insensitively.
+    def own_name_prefix?(prefix, host_id)
+      host = characters[host_id]
+      return false unless host
+
+      names = [host['displayName'], host_id, host_id.to_s.tr('_', ' ')]
+      wanted = prefix.to_s.strip.downcase
+      names.any? { |n| n.is_a?(String) && !n.strip.empty? && n.strip.downcase == wanted }
     end
 
     # The `#delivery:` note the scenario's ink gives the line the client voices as

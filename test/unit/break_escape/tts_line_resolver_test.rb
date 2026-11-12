@@ -93,6 +93,36 @@ module BreakEscape
       end
     end
 
+    # R2 m1: the client strips the contact's own display name before it reads a prefix
+    # (contactNames), so "Ghost: ..." on host ghost_phone stays with ghost_phone even when another
+    # voiced record has the id `ghost`, whichever comes first in the scenario.
+    GHOST_STORY = { 'inkVersion' => 21, 'listDefs' => {},
+                    'root' => [[['done', { '#n' => 'g-0' }], nil], 'done',
+                               { 'start' => ['^Ghost: Hello there.', "\n", '^ghost phone: Own id with spaces.', "\n",
+                                             '^GHOST_PHONE: Own id.', "\n", '^ghost: Same as its name.', "\n", '^ghost_old: Named by id.', "\n", 'end', nil] }] }.freeze
+
+    [true, false].each do |person_first|
+      test "a voiced call line prefixed with the host's own display name stays with the host (record order #{person_first ? 'person first' : 'host first'})" do
+        Dir.mktmpdir do |dir|
+          File.write(File.join(dir, 'ghost.json'), GHOST_STORY.to_json)
+          person = { 'id' => 'ghost', 'displayName' => 'Ghost Person', 'npcType' => 'person', 'voice' => VOICE_B }
+          host = { 'id' => 'ghost_phone', 'displayName' => 'Ghost', 'npcType' => 'phone', 'voiced' => true,
+                   'currentKnot' => 'start', 'voice' => VOICE_A, 'storyPath' => File.join(dir, 'ghost.json') }
+          other = { 'id' => 'ghost_old', 'displayName' => 'Ghost Old', 'npcType' => 'person', 'voice' => VOICE_B }
+          data = { 'rooms' => { 'r' => { 'npcs' => person_first ? [person, other, host] : [host, other, person] } } }
+          by_text = TtsLineExtractor.new("ghost_name_#{person_first}", data).entries.to_h { |e| [e.text, e.npc_id] }
+          assert_equal 'ghost_phone', by_text['Hello there.'], 'the contact\'s own display name'
+          assert_equal 'ghost_phone', by_text['Own id with spaces.']
+          assert_equal 'ghost_phone', by_text['Own id.']
+          assert_equal 'ghost_phone', by_text['Same as its name.'], '"ghost" is also the host\'s display name: the client strips it'
+          assert_equal 'ghost_old', by_text['Named by id.'], 'another record\'s id still names that record'
+          # The endpoint accepts what the client sends: the own-name line under the host
+          assert_equal 'Hello there.', line(data, 'ghost_phone', 'Hello there.')
+          assert_nil line(data, 'ghost', 'Hello there.')
+        end
+      end
+    end
+
     test "a missing story is a 404, not an error" do
       data = { 'rooms' => { 'r' => { 'npcs' => [{ 'id' => 'ann', 'voice' => VOICE, 'storyPath' => 'nowhere.json' }] } } }
       result = TtsLineResolver.new(scenario_name: 'resolver_missing', scenario_data: data, story_file: ->(_) { nil })

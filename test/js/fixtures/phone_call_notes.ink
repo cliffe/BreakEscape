@@ -24,3 +24,13 @@ Agent: Fresh line one.
 Agent: Fresh line two. #delivery: urgent
 Agent: Fresh line three.
 -> call.opts
+
+// R2 m2: the replayed part ends on a step that prints nothing but holds a tag (the
+// conditional is true both times), so its note must still reach the first fresh line.
+VAR on = true
+
+=== call2 ===
+Agent: Before the change.
+{on: #delivery: tense}
+{flag: Agent: Changed line.|Agent: Plain line.}
++ [Carry on] -> DONE

@@ -489,3 +489,24 @@ test('delivery-note: a note over 200 characters, with braces, or with no letter 
   assert.match(f[2].note, /no ASCII letter or digit/);
   assert.equal(only(lintInk(ink), 'delivery-unread').length, 0);
 });
+
+// Review R2 m4: a tag inside an inline conditional or sequence is a walker skip on the server.
+test('delivery-note: warns for a tag inside {cond: text #tag}, quiet for the forms the server reads', () => {
+  const ink = [
+    'VAR on = true',
+    '=== a ===',
+    'Kevin Park: Before.',
+    '{on: Kevin Park: Odd one. #delivery: hushed}',       // 4: warns
+    '{on: Kevin Park: Fine one.} #delivery: calm',         // 5: tag after the brace
+    '{on:',                                                // 6
+    '    Kevin Park: Block line. #delivery: block',        // 7: multi-line block form
+    '}',
+    '{~Kevin Park: One. #delivery: x|Kevin Park: Two.}',   // 9: warns (sequence)
+    'Kevin Park: Plain. #delivery: ok',                    // 10
+    '-> END',
+  ].join('\n') + '\n';
+  for (const opts of [{}, { channel: 'phone' }]) {
+    const f = only(lintInk(ink, opts), 'delivery-note').filter(x => /inline conditional/.test(x.note));
+    assert.deepEqual(f.map(x => x.line), [4, 9], JSON.stringify(opts));
+  }
+});

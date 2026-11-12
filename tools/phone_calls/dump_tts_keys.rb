@@ -8,6 +8,9 @@
 #
 #   TTS_DUMP_CHATTER=1   also list bark and chatter keys (the extractor's `chatter: true`); a dump made
 #                        with it is only comparable with another made with it (keys_baseline_a1/ is).
+#   TTS_DUMP_LABELS=1    also write <outdir>/_labels/<scenario>.tsv (key, npc id, text, delivery note) for the
+#                        keys that have a line, so compare_tts_keys.rb can say which lines moved. It adds
+#                        files, so `diff -r` of a labelled dump against an unlabelled one lists _labels.
 #
 # A scenario that fails to render is an error: the script finishes the others, then exits 1.
 require 'json'
@@ -39,7 +42,13 @@ Dir.glob(BreakEscape::Engine.root.join('scenarios', '*', 'scenario.json.erb').to
   walk.call(data['npcs'] || [])
   next if phones.empty?
 
-  keys = BreakEscape::TtsLineExtractor.new(name, data, **(chatter ? { chatter: true } : {})).keys.to_a.sort
+  extractor = BreakEscape::TtsLineExtractor.new(name, data, **(chatter ? { chatter: true } : {}))
+  keys = extractor.keys.to_a.sort
+  if ENV['TTS_DUMP_LABELS'] == '1'
+    FileUtils.mkdir_p(File.join(out, '_labels'))
+    rows = extractor.entries.map { |e| [e.key, e.npc_id, e.text.to_s.gsub(/[\t\r\n]+/, ' '), e.delivery.to_s.gsub(/[\t\r\n]+/, ' ')].join("\t") }
+    File.write(File.join(out, '_labels', "#{name}.tsv"), rows.sort.join("\n") + "\n")
+  end
   File.write(File.join(out, "#{name}.txt"), keys.join("\n") + "\n")
   index << "#{name}\t#{phones.uniq.sort.join(',')}\t#{keys.size}"
 end

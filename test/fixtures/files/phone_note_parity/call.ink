@@ -17,6 +17,8 @@ Glued part one <>
     Block line two. #delivery: block end
 }
 -> next_knot
+- (menu)
++ [Hang up] -> END
 
 === tun ===
 In the tunnel. #delivery: echoing
@@ -25,4 +27,5 @@ In the tunnel. #delivery: echoing
 === next_knot ===
 Diverted line. #delivery: crisp
 Closing line.
--> END
+-> start.menu
+

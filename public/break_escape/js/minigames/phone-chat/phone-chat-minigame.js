@@ -600,29 +600,7 @@ export class PhoneChatMinigame extends MinigameScene {
                 this._pretext?.fillVars?.();
             }, { force: forcePretextRebake });
 
-            // If the saved story had ended (DONE/END), the restored story has no position and
-            // would only show "Conversation ended". Restart at the NPC's knot instead. Skip when
-            // the only history is the preload intro (NPC config "restartOnRetalk": false also opts out): that intro has already been shown and its
-            // tags are still deferred, so replaying would duplicate both.
-            const onlyPreloaded = conversationHistory.every(msg => msg.preloaded);
-            if (reopen.renavigated) {
-                this._presentReopened(reopen);
-            } else if (npc.restartOnRetalk !== false && !onlyPreloaded &&
-                this.conversation.getCurrentState().hasEnded &&
-                this.conversation.restartAfterEnd()) {
-                console.log(`🔁 Previous conversation had ended - restarting ${npcId} at knot: ${npc.currentKnot}`);
-                this.continueStory();
-            } else {
-                // Show current choices without continuing
-                this.showCurrentChoices();
-            }
-
-            // A first call to a voiced contact (a desk-phone pretext call) opens on the lines the
-            // phone preloaded into its empty thread. Drawn from the history, they were never
-            // spoken (lab: Dev's "Service desk, Dev speaking"), so voice them now.
-            if (onlyPreloaded && npc.voiced === true && isVoicedCall(this.params) && !this._pretext?.resuming) {
-                this._speakPreloadedOpening(conversationHistory);
-            }
+            this._showRestoredThread(npc, npcId, conversationHistory, reopen);
 
             // Process any game action tags that were collected during preload but deferred
             // until the player actually opens the conversation (e.g. complete_task, set_global)
@@ -940,6 +918,37 @@ export class PhoneChatMinigame extends MinigameScene {
         // in the history, so a close mid-line must not flush it again: always true here.
         if (line.type === 'npc' && isVoicedCall(this.params)) await this._speakCallLine(line, raw, { delivery });
         return true;
+    }
+
+    /**
+     * Choose how a reopened thread appears: the re-run's new lines (reopen.renavigated), a restart
+     * after an ended story, the saved choices, and, for a voiced call that opens on the lines the
+     * phone preloaded, those lines spoken. A method so a test can drive the real branches.
+     */
+    _showRestoredThread(npc, npcId, conversationHistory, reopen) {
+        // If the saved story had ended (DONE/END), the restored story has no position and
+        // would only show "Conversation ended". Restart at the NPC's knot instead. Skip when
+        // the only history is the preload intro (NPC config "restartOnRetalk": false also opts out): that intro has already been shown and its
+        // tags are still deferred, so replaying would duplicate both.
+        const onlyPreloaded = conversationHistory.every(msg => msg.preloaded);
+        if (reopen.renavigated) {
+            this._presentReopened(reopen);
+        } else if (npc.restartOnRetalk !== false && !onlyPreloaded &&
+            this.conversation.getCurrentState().hasEnded &&
+            this.conversation.restartAfterEnd()) {
+            console.log(`🔁 Previous conversation had ended - restarting ${npcId} at knot: ${npc.currentKnot}`);
+            this.continueStory();
+        } else {
+            // Show current choices without continuing
+            this.showCurrentChoices();
+        }
+
+        // A first call to a voiced contact (a desk-phone pretext call) opens on the lines the
+        // phone preloaded into its empty thread. Drawn from the history, they were never
+        // spoken (lab: Dev's "Service desk, Dev speaking"), so voice them now.
+        if (onlyPreloaded && npc.voiced === true && isVoicedCall(this.params) && !this._pretext?.resuming) {
+            this._speakPreloadedOpening(conversationHistory);
+        }
     }
 
     /**
