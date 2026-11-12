@@ -122,8 +122,41 @@ route can fill), posts the 10.1 fixtures, and asserts `response.body.bytesize` o
 - `GET /scenario` for all four scenarios: within the base commit measure + 1 KB (base figures from
   the Baseline table, commit 6a834437c, written as `BASE_BOOTSTRAP_BYTES`).
 
-### Live proof (10.3): in progress
-See the builder-9 handover section for what ran and what is open.
+### Live proof (10.3): bootstrap + A + B-bootstrap run; C to F open
+
+Two keyless headless servers, shared dev DB: branch `build/sync-deltas` on :3235 (from
+p-sync-build), base `6a834437c` on :3236 (from p-sync-base). `setFPS(20)`, fixed steps on.
+Games created by the branch `new-game.rb`: 1907 (test_access_networks + `--seed-full-cloner`,
+50 cards = 12,903 B), 1908 and 1909 (lab_social_engineering). Both servers stopped after the run.
+
+**P1/P2, bootstrap and the inventory echo (game 1907, test_access_networks + full cloner):**
+
+| Request | Base (:3236) | Branch (:3235) |
+|---|---:|---:|
+| `GET /scenario` resp | 18,973 B (saved_cards in playerInventory) | 19,220 B (saved_cards in playerInventory) |
+| `POST /inventory` boot echo | 13,303 B (carries the 50-card list) | 31 B (no saved_cards) |
+
+The 50-card list rides `GET /scenario`'s `playerInventory` once per load on both, which the rule
+allows (bounded, once per load). P2 is proven: the `POST /inventory` echo drops from 13,303 B to
+31 B and no longer carries `saved_cards`. Branch `GET /scenario` 19,220 B is within base 18,973 + 1 KB.
+
+**R1, first `PUT /sync_state` after each load (lab_social_engineering):**
+
+| Phase | Base (:3236, game 1908) | Branch (:3235, game 1909) |
+|---|---:|---:|
+| load1 (fresh game, nothing confirmed yet) | 5,021 B | 5,004 B |
+| first sync after reload 1 | 5,471 B | 917 B |
+| first sync after reload 2 | 5,470 B | 602 B |
+
+R1 is proven: the base resends the whole client state (~5.47 KB) on every reload; the branch sends
+only the delta after a reload (602 to 917 B: `currentRoom` with the clock and timed-text riders,
+plus what the tool changed during play). Answer 16 B each on both.
+
+**Open live cases (handover):** the full case B drive (plant/unplug/join/implant answer sizes) and
+cases C to F (cloner reload, captures D, old save E, old tab F, with Len's PIN timing) are not yet
+implemented in `sync-delta-proof.mjs` (only bootstrap, A and a B-bootstrap stub exist). The size
+tests (10.1/10.2) already cover the network delta answer size and the capture answer sizes
+non-live; the remaining live work is the request-captured proof for C to F per plan 10.3.
 
 ## This session (2026-11-12, builder 8: clone-merge verification + 6b)
 
