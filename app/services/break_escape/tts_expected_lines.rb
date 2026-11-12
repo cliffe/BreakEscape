@@ -239,11 +239,13 @@ module BreakEscape
       end
     end
 
-    # The story the game serves for ref (InkStoryFile), else a file of that
-    # name here (an .ink, or a fixture outside the engine root)
+    # The story the game serves for ref (InkStoryFile). Only an .ink ref
+    # (inkPath, inkFile) is looked for anywhere else, since the game serves
+    # no other compiled story.
     def resolve_story(ref)
       found = InkStoryFile.find(ref, compile: false)
       return found if found
+      return nil unless ref.end_with?('.ink')
 
       candidates = []
       p = Pathname.new(ref)

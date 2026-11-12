@@ -184,8 +184,11 @@ module BreakEscape
         assert_equal 1, outputs.size
         tmp = outputs.first
         refute_equal json, tmp
-        assert tmp.start_with?("#{json}.") && tmp.end_with?('.tmp'), tmp
-        refute File.exist?(tmp), 'the temporary file is renamed away'
+        # in a fresh folder of its own beside the output, not at a guessable name
+        assert_equal dir, File.dirname(File.dirname(tmp))
+        assert File.basename(File.dirname(tmp)).start_with?('.inkc'), tmp
+        refute File.exist?(File.dirname(tmp)), 'the temporary folder is gone'
+        assert_equal %w[t.ink t.json], Dir.children(dir).sort
         assert_includes File.read(json, encoding: 'bom|utf-8'), 'Hello there.'
       end
     end
@@ -242,6 +245,38 @@ module BreakEscape
         npc = TtsLineResolver.find_npc(data, 'ann')
         result = TtsLineResolver.new(scenario_name: nil, scenario_data: data).resolve('ann', npc, 'Hello there.')
         assert_equal :not_found, result.status
+      end
+    ensure
+      InkStoryFile.allowed_roots = saved
+    end
+
+    test "read opens a story only while it still resolves inside the roots" do
+      Dir.mktmpdir do |outside|
+        Dir.mktmpdir do |root|
+          secret = write(File.join(outside, 's.json'), '{"secret":true}')
+          story = write(File.join(root, 'ok.json'), '{"ok":true}')
+          assert_equal '{"ok":true}', InkStoryFile.read(story, [root])
+          # the story is swapped for a symlink out after the lookup
+          File.delete(story)
+          File.symlink(secret, story)
+          assert_nil InkStoryFile.read(story, [root])
+          assert_nil InkStoryFile.read(File.join(root, 'gone.json'), [root])
+        end
+      end
+    end
+
+    test "an INCLUDE that leads outside the roots is not followed" do
+      saved = InkStoryFile.instance_variable_get(:@allowed_roots)
+      Dir.mktmpdir do |dir|
+        inner = File.join(dir, 'inner')
+        Dir.mkdir(inner)
+        write(File.join(dir, 'outside.ink'), "VAR o = 1\n")
+        write(File.join(inner, 'near.ink'), "VAR n = 1\n")
+        root = write(File.join(inner, 'r.ink'), "INCLUDE ../outside.ink\nINCLUDE near.ink\nHi.\n-> END\n")
+        InkStoryFile.allowed_roots = [inner]
+        missing = []
+        assert_equal [File.join(inner, 'near.ink')], InkStoryFile.includes(root, missing: missing)
+        assert_equal [['../outside.ink', root]], missing
       end
     ensure
       InkStoryFile.allowed_roots = saved

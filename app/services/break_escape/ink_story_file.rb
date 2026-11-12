@@ -1,5 +1,6 @@
 require 'open3'
 require 'set'
+require 'tmpdir'
 
 module BreakEscape
   # The compiled story file a scenario's storyPath names, decided in one place.
@@ -16,7 +17,9 @@ module BreakEscape
   # A storyPath must end in .json and resolve inside one of allowed_roots (the
   # scenarios folder; test_helper.rb adds the test fixtures and the temporary
   # folder), with symlinks resolved, so a storyPath cannot name, or have
-  # compiled over, any other file the server can reach.
+  # compiled over, any other file the server can reach. The check holds at
+  # lookup time; read re-checks when it opens the file, and a compile writes
+  # into a fresh folder of its own. INCLUDE names must stay inside the roots too.
   module InkStoryFile
     # One lock per output file, so two requests that find the same stale story
     # at once compile it once, and neither reads a half-written file
@@ -75,6 +78,17 @@ module BreakEscape
       full = File.expand_path(story_path, Engine.root.to_s)
       inside = Array(roots).any? { |root| full.start_with?("#{File.expand_path(root.to_s)}/") }
       inside ? Pathname.new(full) : nil
+    end
+
+    # The text of a found story, opened at its real path without following a
+    # final symlink, or nil when it now resolves outside the roots or is gone
+    def read(path, roots = InkStoryFile.allowed_roots)
+      real = File.realpath(path.to_s)
+      return nil unless really_inside?(real, roots)
+
+      File.open(real, File::RDONLY | File::NOFOLLOW) { |f| f.read }
+    rescue SystemCallError
+      nil
     end
 
     # The file (or, for one not yet written, its folder) resolves, symlinks
@@ -142,7 +156,7 @@ module BreakEscape
           next if looked.include?(path)
 
           looked << path
-          if File.file?(Engine.root.join(path))
+          if File.file?(Engine.root.join(path)) && really_inside?(Engine.root.join(path).to_s, InkStoryFile.allowed_roots)
             found << path
             queue << path
           else
@@ -179,7 +193,7 @@ module BreakEscape
       COMPILE_LOCKS_GUARD.synchronize { COMPILE_LOCKS[output_path.to_s] }
     end
 
-    # Compiles ink_path to output_path: into a temporary file beside it, then
+    # Compiles ink_path to output_path: into a fresh temporary folder beside it, then
     # renamed into place, so a reader sees the old file or the new one, never
     # half of one. inklecate prints errors, warnings and TODOs on stdout. The
     # output takes the newest source mtime seen before the compile, so an edit
@@ -187,16 +201,20 @@ module BreakEscape
     # @raise [RuntimeError] when inklecate fails
     def compile!(ink_path, output_path)
       sources_at = source_mtime(ink_path)
-      tmp = "#{output_path}.#{Process.pid}.#{Thread.current.object_id}.tmp"
-      stdout, stderr, status = Open3.capture3(inklecate.to_s, '-o', tmp, ink_path.to_s)
-      detail = [stdout, stderr].map(&:to_s).map(&:strip).reject(&:empty?).join("\n")
-      unless status.success? && File.file?(tmp)
-        File.delete(tmp) if File.exist?(tmp)
-        Rails.logger.error "[BreakEscape] Ink compilation failed for #{File.basename(ink_path)}: #{detail}"
-        raise "Ink compilation failed for #{File.basename(ink_path)}: #{detail}"
-      end
+      # A fresh folder beside the output (mkdir fails on an existing name), so
+      # nothing planted at a guessable name is written through
+      detail = nil
+      Dir.mktmpdir('.inkc', File.dirname(output_path.to_s)) do |work|
+        tmp = File.join(work, 'story.json.tmp')
+        stdout, stderr, status = Open3.capture3(inklecate.to_s, '-o', tmp, ink_path.to_s)
+        detail = [stdout, stderr].map(&:to_s).map(&:strip).reject(&:empty?).join("\n")
+        unless status.success? && File.file?(tmp)
+          Rails.logger.error "[BreakEscape] Ink compilation failed for #{File.basename(ink_path)}: #{detail}"
+          raise "Ink compilation failed for #{File.basename(ink_path)}: #{detail}"
+        end
 
-      File.rename(tmp, output_path.to_s)
+        File.rename(tmp, output_path.to_s)
+      end
       File.utime(File.atime(output_path.to_s), sources_at, output_path.to_s)
       Rails.logger.warn "[BreakEscape] Ink compilation warnings for #{File.basename(ink_path)}: #{detail}" unless detail.empty?
       Rails.logger.info "[BreakEscape] Compiled #{File.basename(ink_path)} (#{(File.size(output_path) / 1024.0).round(2)} KB)"

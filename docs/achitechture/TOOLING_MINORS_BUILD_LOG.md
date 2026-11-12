@@ -46,9 +46,17 @@ From docs/achitechture/TOOLING_MINORS_CODE_REVIEW_R1.md.
 - m6: a test resets `allowed_roots` to the default and checks that it is `[scenarios]`. It then checks that `GamesController#resolve_and_compile_ink` returns nil and `TtsLineResolver` returns `:not_found` for a story in the temporary folder. With the test roots the same story is found.
 - Nits: a `// comment` after an INCLUDE name is dropped (n1). `TtsExpectedLines` takes an .ink only from a `.json` or `.ink` ref (n2). There is a narrator `voice:` extractor test (n3). The guard test uses `scenarios/../package.json` (n4). The three npc-hub-demo-ghost-protocol storyPaths now point at `scenarios/ink/*_hub.json` (n5). The compiled JSON takes the newest source mtime read before the compile (n7). A storyPath with a null byte returns nil, so `#ink` answers 404 rather than 500.
 - Not done: n6 (point the 8 test_scenarios storyPaths at X.json and delete the X.ink.json copies). It edits five test scenarios for a small gain, and the copy step in `compile-ink.sh` keeps both files right.
-- n5 side effect: npc-hub-demo-ghost-protocol loses its 3 ❌ storyPath lines. With those gone, the validator runs the checks that the INVALID lines had stopped, so 28 warnings that already applied to this demo now show (lockpick graph hints and similar). None comes from this build.
+- n5 side effect: npc-hub-demo-ghost-protocol loses its 3 ❌ storyPath lines, and the checks they had stopped now run: 1 warning (the chen_lab lockpick has no puzzle_graph_unlocks) and 22 generic suggestions comparing the demo with m01. The validator's header says 28 because it counts output lines. None comes from this build.
 
 R1 tests: `bin/rails test` 1810 runs, 25646 assertions, 0 failures, 0 errors, 1 skip. `bin/test-js -j 3` 507 of 507 files pass. In the validator sweep only npc-hub-demo-ghost-protocol changed (106 ❌ down to 103).
+
+## Code review R2 fixes
+
+- m1: the door-entry requires warning shows no values at all, and there is a test with an rfid room and a pin entry.
+- n1: `#ink` reads through `InkStoryFile.read`, which re-checks the realpath against the roots and opens with `O_NOFOLLOW`. A compile writes into a fresh `Dir.mktmpdir` beside the output and renames from there. The class comment says the guard holds at lookup time.
+- n2: an INCLUDE that resolves outside the roots is not followed and is reported as missing.
+- n3: `TtsExpectedLines#resolve_story` falls back past `InkStoryFile.find` only for `.ink` refs.
+- n4: the ghost-protocol count above is corrected.
 
 ## Open
 

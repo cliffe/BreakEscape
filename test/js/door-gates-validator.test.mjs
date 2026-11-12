@@ -444,7 +444,7 @@ test('a door-entry requires that differs from the room it leads into warns', { s
     sc.rooms.office.doors[0].requires = 'OTHER-9';
     let out = issues(sc);
     const differs = "'rooms/office/doors[0]' has a 'requires' that differs from the requires on room 'vault'";
-    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes(`${differs} (OTHER-9, the room's SAM-1)`) &&
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes(`${differs} (values not shown)`) && !s.includes('OTHER-9') &&
         s.includes("the gate and the door use the room's")), out.join('\n'));
     // mirror: the same card, as a one-item list, draws nothing
     sc.rooms.office.doors[0].requires = ['SAM-1'];
@@ -454,7 +454,16 @@ test('a door-entry requires that differs from the room it leads into warns', { s
     const open = carelessGate();
     delete open.rooms.vault.requires;
     open.rooms.office.doors[0].requires = 'SAM-1';
-    assert.ok(has(issues(open), `${differs} (SAM-1, the room's none)`));
+    assert.ok(has(issues(open), `${differs} (values not shown)`));
+});
+
+// Code review R2 m1: an entry carrying its own pin lock against an rfid room shows no value
+test('a pin door entry against an rfid room warns without its value', { skip }, () => {
+    const sc = carelessGate();
+    Object.assign(sc.rooms.office.doors[0], { lockType: 'pin', requires: '4821' });
+    const out = issues(sc);
+    assert.ok(has(out, "'rooms/office/doors[0]' has a 'requires' that differs"), out.join('\n'));
+    assert.ok(!out.some(s => s.includes('4821')), out.join('\n'));
 });
 
 // Code review R1 M1: for a PIN or password room, requires is the answer, so neither value is shown
