@@ -206,6 +206,19 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal [[1, 'network_string', 'resource:pq']], summary(scan_net(obs))
   end
 
+  # A Wi-Fi link item (slice 9.3b W, 5.3) is the handle of a foothold the player holds; its
+  # name and observations legitimately carry the network name in a plain /inventory or /room
+  # answer, so a netlink_ holder is exempt. The exemption must stay narrow: the same network
+  # name under any other holder in the same response is still a leak.
+  test 'a network name on a netlink_ held handle is exempt, under another holder it is reported' do
+    inv = '/break_escape/games/1/inventory'
+    held = { 'inventory' => [{ 'id' => 'netlink_wifi_office_lan', 'name' => 'Wi-Fi: Harbour office LAN',
+                               'observations' => 'A handle to the Harbour office LAN you joined.' }] }
+    assert_empty scan_net(held, path: inv)
+    leaked = { 'inventory' => [{ 'id' => 'stray_item', 'name' => 'Note about the Harbour office LAN' }] }
+    assert_equal [[1, 'network_string', 'network:office_lan']], summary(scan_net(leaked, path: inv))
+  end
+
   # An item opened by POST /unlock comes back with its contents, as GET /container would
   # send them (the lab's BadUSB remote session names its file server's host). The exemption
   # covers every network string there, as on /container: authored container text is the

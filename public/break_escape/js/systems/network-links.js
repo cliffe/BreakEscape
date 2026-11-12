@@ -464,6 +464,9 @@ export class NetworkLinks {
         const apId = data?.id;
         if (!apId || data.wifiAp !== true) return { action: 'none' };
         if (this._busy) return { action: 'busy' };
+        // A key minigame already open (e.g. a rapid second click) must not stack a second one
+        const mg = win().MinigameFramework;
+        if (mg?.currentMinigame && !mg.currentMinigame._ending) return { action: 'busy' };
         const probe = await this.join(apId, null);
         if (probe.action === 'wrong_key') return this._promptWifiKey(apId, data);
         return probe;
@@ -497,7 +500,7 @@ export class NetworkLinks {
         const networkId = foothold.network?.id ?? null;
         // Events are client-emitted from the answer (as the plant does); network_joined fires
         // for a second access point too, so a task or mapping on either one completes (5.3)
-        this._emit('network_joined', { apId, footholdId: foothold.id, networkId }, apId);
+        this._emit('network_joined', { apId, footholdId: foothold.id, networkId, already: !!body.already }, apId);
         if (body.already) return { action: 'already', footholdId: foothold.id };
         this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: apId }, apId);
         // Seeing what is exposed is the point: the first join opens the view

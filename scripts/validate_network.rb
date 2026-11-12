@@ -189,12 +189,16 @@ def check_network_model(json_data, scenario_dir = nil)
     end
     err.call("'networks/#{net_id}/wifi' has no 'ssid'.") unless nm.present_string?(wifi['ssid'])
     err.call("'networks/#{net_id}/wifi' psk must be a string.") if wifi.key?('psk') && !wifi['psk'].is_a?(String)
+    if wifi['psk'].is_a?(String) && !wifi['psk'].empty? && wifi['psk'].strip.empty?
+      err.call("'networks/#{net_id}/wifi' psk is only whitespace; omit the key or use '' for an open network " \
+               '(the server treats a blank psk as open, so a whitespace key would never be asked for).')
+    end
   end
   readable = BreakEscape::NpcHabits::Clues.readable_texts(json_data, scenario_dir).map { |t| t[:text].to_s }.join("\n")
   networks.each do |net_id, net|
     wifi = net['wifi']
     psk = wifi.is_a?(Hash) ? wifi['psk'] : nil
-    next unless psk.is_a?(String) && !psk.empty?
+    next unless psk.is_a?(String) && !psk.strip.empty?
 
     warn.call("'networks/#{net_id}/wifi' psk is shorter than eight characters.") if psk.length < 8
     unless readable.include?(psk)

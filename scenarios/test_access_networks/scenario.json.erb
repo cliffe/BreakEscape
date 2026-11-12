@@ -172,7 +172,7 @@
           "id": "guest_ap",
           "name": "Guest access point",
           "sprite": "network_rack1",
-          "position": { "x": 11, "y": 6 },
+          "position": { "x": 8, "y": 5 },
           "takeable": false,
           "wifiAp": true,
           "network": "guest_wifi",
@@ -183,7 +183,7 @@
           "id": "guest_ap2",
           "name": "Guest access point (lift lobby)",
           "sprite": "network_rack1",
-          "position": { "x": 11, "y": 8 },
+          "position": { "x": 8, "y": 8 },
           "takeable": false,
           "wifiAp": true,
           "network": "guest_wifi",
@@ -193,7 +193,7 @@
           "type": "notes1",
           "id": "wifi_note",
           "name": "Reception Wi-Fi card",
-          "position": { "x": 11, "y": 4 },
+          "position": { "x": 6, "y": 3 },
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
@@ -287,7 +287,7 @@
             { "eventPattern": "network_viewed", "condition": "data.networkId === 'workshop_lan'", "onceOnly": true, "completeTask": "p11_other_network" },
             { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.restored === true && data.remote === true", "onceOnly": true, "completeTask": "p12_reload" },
             { "eventPattern": "network_joined", "condition": "data.networkId === 'guest_wifi'", "onceOnly": true, "completeTask": "n8_wifi_join" },
-            { "eventPattern": "network_joined", "condition": "data.apId === 'guest_ap2'", "onceOnly": true, "completeTask": "n9_second_ap" }
+            { "eventPattern": "network_joined", "condition": "data.apId === 'guest_ap2' && data.already === true", "onceOnly": true, "completeTask": "n9_second_ap" }
           ]
         },
         {

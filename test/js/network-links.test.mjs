@@ -605,6 +605,28 @@ test('a keyed network: the probe gets wrong_key, the key minigame opens, and a r
     assert.ok(links.get('wifi_guest_wifi'));
 });
 
+test('a rapid second click on a keyed access point does not stack a second key minigame', async () => {
+    await reset();
+    // The server refuses the keyless probe, so the first click opens the key minigame
+    joinAnswer = () => { const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e; };
+    const started = [];
+    const mg = { currentMinigame: null, mainGameScene: {},
+        startMinigame: (name, _b, opts) => { started.push({ name, opts }); mg.currentMinigame = { name, _ending: false }; } };
+    window.MinigameFramework = mg;
+    const r1 = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r1.action, 'prompt');
+    assert.equal(started.length, 1);
+    // A second click while the key minigame is open is refused before any probe, so no stack
+    const r2 = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r2.action, 'busy');
+    assert.equal(started.length, 1, 'no second key minigame is opened');
+    // Once the minigame has ended, a click probes again
+    mg.currentMinigame._ending = true;
+    const r3 = await links.interactWifiAp(wifiApSprite());
+    assert.equal(r3.action, 'prompt');
+    assert.equal(started.length, 2);
+});
+
 test('a wrong key from join resolves wrong_key with no toast and no foothold', async () => {
     await reset();
     joinAnswer = () => { const e = new Error('x'); e.status = 422; e.body = { reason: 'wrong_key' }; throw e; };

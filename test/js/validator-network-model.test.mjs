@@ -300,6 +300,18 @@ test('a wifi block needs an ssid and a string psk', { skip }, () => {
     assertHas(errors(issues(sc)), "'networks/guest_wifi/wifi' psk must be a string");
 });
 
+test('a whitespace-only psk is an error (the server would treat it as open, not keyed)', { skip }, () => {
+    let sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = '   ';
+    const list = issues(sc);
+    assertHas(errors(list), "psk is only whitespace");
+    // and it must not also be reported as a short/unreadable key warning
+    assertNot(warnings(list), 'psk is shorter than eight characters');
+    sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = '';
+    assertNot(errors(issues(sc)), "psk is only whitespace");
+});
+
 test('wifiAp is refused without a network, without a wifi block, on a sign-in object, a jack, or a lock', { skip }, () => {
     let sc = wifiClean();
     delete obj(sc, 'lobby', 'guest_ap').network;

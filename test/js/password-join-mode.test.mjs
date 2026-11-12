@@ -21,7 +21,7 @@ const put = (rel, text) => { mkdirSync(dirname(join(dir, rel)), { recursive: tru
 const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('config.js', 'export const ASSETS_PATH = "/break_escape/assets";\n');
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
-put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
+copy('utils/display-dashes.js'); // the real module, so the header's escapeHtml(displayDashes(...)) is exercised as it ships
 copy('minigames/framework/base-minigame.js');
 copy('minigames/password/password-minigame.js');
 
@@ -31,7 +31,7 @@ globalThis.document = dom.window.document;
 const { PasswordMinigame } = await import(pathToFileURL(join(dir, 'minigames/password/password-minigame.js')));
 
 let ended, joins, nextJoin;
-function open(apName = 'Guest access point') {
+function open(apName = 'Guest access point', title = apName) {
     ended = []; joins = [];
     document.body.innerHTML = '<div id="mg"></div>';
     window.MinigameFramework = { currentMinigame: null, endMinigame: (success, result) => ended.push([success, result]) };
@@ -44,7 +44,7 @@ function open(apName = 'Guest access point') {
         }
     };
     const mg = new PasswordMinigame(document.getElementById('mg'), {
-        title: apName, lockable: null, requiresKeyboardInput: true,
+        title, lockable: null, requiresKeyboardInput: true,
         join: { apId: 'guest_ap', apName }
     });
     window.MinigameFramework.currentMinigame = mg;
@@ -90,6 +90,18 @@ test('an already-joined answer also closes with success', async () => {
     q('#password-field').value = 'seabreeze-2025';
     await mg.submitPassword();
     assert.equal(mg.gameResult.success, true);
+});
+
+test('an AP name with HTML-special characters is escaped in the join header', () => {
+    // A benign title keeps the framework header clean; the AP name is the sink under test
+    open('Harbour <script> & "guest"', 'Join Wi-Fi');
+    const h3 = q('.minigame-header h3');
+    assert.ok(h3, 'the join header renders');
+    // No element was injected from the name; the characters survive only as text
+    assert.equal(h3.querySelector('script'), null, 'no script element injected');
+    assert.ok(h3.innerHTML.includes('&lt;script&gt;'), 'angle brackets are escaped');
+    assert.ok(h3.innerHTML.includes('&amp;'), 'ampersand is escaped');
+    assert.ok(h3.textContent.includes('Harbour <script> & "guest"'), 'the name reads back as typed');
 });
 
 test('the key is sent as typed, without trimming (a Wi-Fi key may hold spaces)', async () => {
