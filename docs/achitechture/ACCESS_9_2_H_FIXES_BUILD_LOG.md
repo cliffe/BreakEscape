@@ -89,3 +89,62 @@ Branch `build/h-fixes`. Source: the "Access 9.2 H: deferred review items" sectio
   on the live path without delaying the server).
 - H7 cuts the use short with the `needs: "suspend"` entry point; no scenario mapping does that
   at the hot desk today.
+
+## Round 1 review fixes (`ACCESS_9_2_H_FIXES_CODE_REVIEW_R1.md`)
+
+Taken over from the first builder at the review.
+
+- **M1** (a cut-short borrow's late "done" ended a password session opened in the gap): the
+  review's option (a). `_borrowDone`'s `cut` reaches the runner, which posts the "done" with
+  `cut: true`; the controller reads it (true or "true" only) and `complete_npc_workaround!`
+  skips the borrow's dwell floor for it (every other kind keeps its floor). The "done" lands as
+  the use ends, so there is no refused-and-resent gap, and `guestSessionsAt` is stamped then.
+  Chosen over (b), keeping a session signed in after the hand-over time, because a sign-in
+  during the walk is ended on the client at `npc_sat_at` and (b) would keep it on the server;
+  and over (c), a client guard, which leaves the server open to the same late write. Left: a
+  "done" lost on the network is still resent after a backoff, so a password sign-in in that
+  window could still be ended. Narrow.
+- **m1:** PLAYTEST H7 says the cut-short borrow is done once and that Ian, unmet, may be handed
+  the desk again later. The q43 test is now "...no second sit from the same borrow".
+- **m2:** `PRIORITY_MUTTERS` (`login_aloud`) in `npc-needs.js`: such a mutter waits only for the
+  lock and for other priority lines, and is queued ahead of every ordinary one. A queue of
+  start lines at one outage can no longer turn the share into a picture.
+- Nits: n1 `holdVisit` on a frozen visit also sets `useRemaining`; n2 the H6 row notes that a
+  conversation over 20 s that starts before the line drops it; n3 a share dropped while its line
+  waits removes it (`NPCNeedsSystem.cancelMutter`); n4 `pc_signed_out` uses the sign-out
+  snapshot only for the four reasons that send `pc_signing_out` (`SIGNING_OUT_REASONS`); n5 the
+  `_abortJob` comment lists the real causes; n6 a validator case where the desk serves a
+  non-borrower's judged `work` (no warning) and the same need unjudged (warned).
+
+### Tests
+
+- Rails `npc_workaround_h_test.rb`: a 30 s hot desk (27 s floor). A whole-use "done" and a
+  `cut: "yes"` get 425, a `cut: true` "done" 5 s after the hand-over is taken at once with
+  `guestSessionsAt` stamped then; a share's `cut` changes nothing. A cut "done", then a password
+  sign-in, ends the guest and keeps the session, and a resend does not end it. Both fail with
+  the floor put back.
+- JS `npc-workarounds.test.mjs`: the same long-use fixture on the needs system with a stub
+  server that keeps the floor (it refuses the same "done" without `cut`): the cut "done" is
+  sent once with `cut: true`, no resend timer, guest recorded (fails without the client
+  change); a whole use and a drop carry no `cut`. m2 with six queued lines (and the order after
+  it), priority order and a held ordinary line, n1, n3 (runner and needs system). Fails with
+  priority off.
+- `workstation-state.test.mjs` n4 (fails with `true` for every reason);
+  `validator-access-work.test.mjs` n6.
+- Suites under the shared lock: Rails 1798 runs, 0 failures, 0 errors, 1 skip; JS 508 of 508 files pass.
+
+### Live proof (port 3036)
+
+- M1, game 1449: `test_access_work` created with the hot desk's `useSeconds`
+  set to 30 in the game's copy only (the scenario file was put back at once). Ian was handed
+  the desk at needs clock 74250, sat at 79000, and was suspended at 81750, 7.5 s after the
+  hand-over against a 27 s floor. `POST /npc_workaround` went once with `cut: true` and was
+  answered 200 `{ pcId: "hot_desk", guest: true }`, no 425. `npc_guest_left:hot_desk`; a click
+  on the hot desk sent a guest claim and opened Ian's desktop.
+- m2, game 1451 (start room `open_office`): just before the runner asked for Sam's line, the
+  driver queued seven more mutters through the real speech lock, so eight lines were waiting.
+  `login_aloud` was queued at the head (`sam:login_aloud!` first in `mutterWaits`), said in
+  words 2500 ms after arrival, the visit ended 6000 ms after it, `heard: true`, the
+  "Overheard: Sam Okafor" toast showed. Only Sam was placed and available, so all eight
+  queued lines were his.
+- Drivers and logs: scratchpad `hfix2_live/` (m1.js, m2.js, m1.json, m2.json).
