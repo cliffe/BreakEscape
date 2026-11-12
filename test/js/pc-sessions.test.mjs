@@ -606,3 +606,14 @@ test('a 403 sign-in refusal carries the server reason (off at the keyboard, not_
     const s = setup({ answer: () => { throw Object.assign(new Error('x'), { status: 500 }); } });
     assert.equal((await s.signIn('hot_desk', 'sokafor', 'right-sam')).serverReason, null);
 });
+
+// Review R3 nit 4: a claim refused 403 off carries the server's reason too, as signIn does
+test('a 403 claim refusal carries the server reason, owner or guest', async () => {
+    for (const as of ['owner', 'guest']) {
+        const s = setup({ answer: () => { throw Object.assign(new Error('x'), { status: 403, body: { success: false, message: 'This PC is off.', reason: 'off' } }); } });
+        const r = await s.claim('hot_desk', { as });
+        assert.equal(r.ok, false);
+        assert.equal(r.serverReason, 'off', as);
+        assert.equal(s.has('hot_desk'), false);
+    }
+});

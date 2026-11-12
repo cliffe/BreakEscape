@@ -295,7 +295,9 @@ export class PcSessions {
         } catch (err) {
             const b = err?.body || {};
             if (err?.status === 422) return { ok: false, reason: 'refused', message: b.message || 'Sign in required' };
-            return { ok: false, reason: 'error', error: true, status: err?.status ?? null, message: b.message || b.error || 'Could not reach the sign-in service' };
+            // serverReason as signIn gives it: 'off' at a switched-off PC (q72, review R3 nit 4)
+            return { ok: false, reason: 'error', error: true, status: err?.status ?? null, message: b.message || b.error || 'Could not reach the sign-in service',
+                serverReason: typeof b.reason === 'string' ? b.reason : null };
         }
         if (!body || body.success === false || !body.npcId) {
             return { ok: false, reason: 'refused', message: body?.message || 'Sign in required' };

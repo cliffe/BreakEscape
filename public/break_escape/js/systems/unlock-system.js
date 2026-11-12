@@ -400,6 +400,12 @@ export async function interactLoginPc(lockable) {
         // m1), so the screen is locked here too and the next click sends no claim. Only a real
         // refusal locks: a 5xx, 403 or network failure keeps the guest record (review R3 m1),
         // and only the guest that was claimed is dropped (review R3 n1)
+        if (r?.serverReason === 'off') {
+            // The server says the PC is off though the client thought it on (review R3 nit 4):
+            // say so once, and open no sign-in screen (it would only be refused the same way)
+            window.gameAlert?.(PC_OFF_TEXT, 'info', data.name || 'PC', 3000);
+            return 'off';
+        }
         if (guestId && r?.reason === 'refused') ws?.guestClaimRefused?.(pcId, guestId);
         else if (guestId && r?.message) window.gameAlert?.(r.message, 'info', data.name || 'PC', 4000, { plainText: true });
         openLoginSignIn(lockable, { reason: 'claim_refused' });

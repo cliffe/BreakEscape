@@ -421,3 +421,25 @@ test('the server holding the PC off answers the sign-in screen with "This PC is 
     assert.equal(started.length, 0);
     assert.ok(calls.some(c => c[0] === 'alert' && c[1] === 'This PC is off.'));
 });
+
+// Review R3 nit 4: client thinks on, server says off. A guest (or owner) claim refused 403 off
+// shows "This PC is off." once, and no sign-in screen follows to say it again.
+test('a claim refused 403 off says "This PC is off." once and opens no sign-in screen', async () => {
+    for (const guestId of ['ian', null]) {
+        reset();
+        const locked = [];
+        window.workstationState = {
+            presence: () => ({ ownerId: guestId ? null : 'dana', present: false, userId: null, guestId }),
+            onInteract: () => 'accessed',
+            guestOf: () => guestId,
+            guestClaimRefused: (pcId) => locked.push(pcId)
+        };
+        window.pcSessions.claim = async () => ({ ok: false, reason: 'error', error: true, status: 403, message: 'This PC is off.', serverReason: 'off' });
+        assert.equal(await interactLoginPc(pc()), 'off', String(guestId));
+        await settle();
+        const alerts = calls.filter(c => c[0] === 'alert').map(c => c[1]);
+        assert.deepEqual(alerts, ['This PC is off.'], `one toast (${guestId})`);
+        assert.equal(started.length, 0, 'no sign-in screen');
+        assert.deepEqual(locked, [], 'the guest record is kept');
+    }
+});
