@@ -119,10 +119,19 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     assert_includes found, [2, 'feed_text', 'feed:jake|jake_post_2']
   end
 
-  test 'review R1 M1: a /feed_post answer out of order is reported' do
+  test 'C2: a /feed_post answer serving a post out of authored order is marked by its body id, no false leak' do
+    # Under C2 the server serves reactive posts out of authored order, so a /feed_post answer
+    # carrying jake_post_2 before jake_post_1 is the serving event itself (the server decides), not
+    # a leak: the scanner reads the served id from the body and raises no false feed_text finding.
     second = first_answer.merge('post' => feed_item(1)['post'], 'fact' => feed_item(1)['fact'])
     found = summary(AccessLeakScanner.new(data).scan(rows(['POST', FEED, second])))
-    assert_includes found, [1, 'feed_text', 'feed:jake|jake_post_2']
+    assert_empty found
+    # and a later bootstrap may then list jake_post_2 (shown), but not the still-unserved jake_post_1
+    later = bootstrap.merge('feedPosts' => jake_feed(feed_item(1), feed_item(0)))
+    later['social']['intelFacts']['jake_wedding_year'] = feed_item(1)['fact']['entry']
+    found2 = summary(AccessLeakScanner.new(data).scan(rows(['POST', FEED, second], ['GET', SCENARIO, later])))
+    assert_includes found2, [2, 'feed_text', 'feed:jake|jake_post_1']
+    refute_includes found2.map { |f| f[2] }, 'feed:jake|jake_post_2'
   end
 
   test 'review R1 M1: a log that starts after reveals falls back to the saved count and says so' do
@@ -131,6 +140,35 @@ class AccessLeakScannerFeedTest < ActiveSupport::TestCase
     body['social']['intelFacts']['jake_pet_name'] = first_answer['fact']['entry']
     scanner = AccessLeakScanner.new(data, game: game)
     assert_empty scanner.scan(rows(['GET', SCENARIO, body]))
+    assert_equal ['jake'], scanner.feed_fallback
+  end
+
+  test 'C2: a resumed run whose feedRevealed is the new shown shape lists an out-of-order reactive post, no false leak' do
+    # jake's saved reveal set holds jake_post_3 (ordered index 2) ahead of jake_post_1, as a
+    # reactive_first feed would serve it. The scanner reads the ids from `shown`, so a feedPosts
+    # block listing them in reveal order raises no false feed_text leak, and the base is right.
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'jake' => { 'shown' => %w[jake_post_3 jake_post_1], 'at' => 0 } } })
+    body = bootstrap.merge('feedPosts' => jake_feed(
+      { 'index' => 0, 'post' => feed_item(2)['post'] },
+      first_answer.merge('index' => 1).slice('index', 'post', 'fact')
+    ))
+    body['social']['intelFacts']['jake_pet_name'] = first_answer['fact']['entry']
+    scanner = AccessLeakScanner.new(data, game: game)
+    assert_empty summary(scanner.scan(rows(['GET', SCENARIO, body])))
+    assert_equal ['jake'], scanner.feed_fallback
+    # a post not in the saved shown set is still reported
+    leaked = bootstrap.merge('feedPosts' => jake_feed(feed_item(1)))
+    assert_includes summary(AccessLeakScanner.new(data, game: game).scan(rows(['GET', SCENARIO, leaked]))),
+                    [1, 'feed_text', 'feed:jake|jake_post_2']
+  end
+
+  test 'C2: a legacy { n, at } feedRevealed migrates to the first n ordered ids for the base' do
+    game = Struct.new(:player_state).new({ 'feedRevealed' => { 'jake' => { 'n' => 2, 'at' => 0 } } })
+    body = bootstrap.merge('feedPosts' => jake_feed(feed_item(0), feed_item(1)))
+    body['social']['intelFacts']['jake_pet_name'] = first_answer['fact']['entry']
+    body['social']['intelFacts']['jake_wedding_year'] = feed_item(1)['fact']['entry']
+    scanner = AccessLeakScanner.new(data, game: game)
+    assert_empty summary(scanner.scan(rows(['GET', SCENARIO, body])))
     assert_equal ['jake'], scanner.feed_fallback
   end
 

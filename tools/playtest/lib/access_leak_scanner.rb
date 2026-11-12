@@ -162,7 +162,13 @@ class AccessLeakScanner
     @feed_fact_ids = Set.new
     @feed_served = Set.new    # "npc|post_id" and "fact:<id>"
     @feed_order = Hash.new { |h, k| h[k] = [] } # npc id => [[post_id, fact id or nil], ...] as authored
-    @feed_answers = Hash.new(0) # npc id => /feed_post answers with a post seen so far in the log
+    @feed_ordered_ids = Hash.new { |h, k| h[k] = [] } # npc id => authored post ids with no `when` (C2 migration)
+    # C2: reactive posts come out of authored order, so "revealed so far" is no longer an authored
+    # prefix; the scanner accumulates the ids the log shows served and falls back to the game's
+    # saved reveal set (its `shown` list, or a legacy count migrated to ordered ids) only where no
+    # log line names them (a resumed game, or a lost /feed_post body)
+    @feed_shown = Hash.new { |h, k| h[k] = [] } # npc id => post ids the log has shown served so far
+    @saved_shown = {}           # npc id => the game's saved reveal ids (new shape, or migrated)
     @feed_base = {}             # npc id => reveals made before the log starts (a resumed game)
     @feed_fallback = []         # npc ids whose base came from the game's feedRevealed
     # Review C R2 m2: /feed_post answers (200) whose body the capture could not read. Each
@@ -711,6 +717,7 @@ class AccessLeakScanner
         key = "#{npc['id']}|#{post['id']}"
         fid = post['fact'].is_a?(String) && facts[post['fact']].is_a?(Hash) ? post['fact'] : nil
         @feed_order[npc['id'].to_s] << [post['id'], fid]
+        @feed_ordered_ids[npc['id'].to_s] << post['id'] unless post['when'].is_a?(Hash)
         text = post['text']
         (@feed_texts[text] ||= { kind: :post, owner: "feed:#{key}", served: [] })[:served] << key if text.is_a?(String) && text.length >= MIN_FEED_TEXT
         next unless fid
@@ -762,7 +769,8 @@ class AccessLeakScanner
   # captured after the NPC's last saved reveal is not counted for it (review C R3 m1). A complete
   # log gives 0, so every reveal is judged in log order.
   def prepare_feed_base(lines)
-    @feed_answers.clear
+    @feed_shown = Hash.new { |h, k| h[k] = [] }
+    @saved_shown = {}
     @feed_base = {}
     @feed_fallback = []
     @feed_unknown_share = {}
@@ -787,7 +795,11 @@ class AccessLeakScanner
 
     @feed_order.each_key do |npc_id|
       entry = revealed[npc_id].is_a?(Hash) ? revealed[npc_id] : {}
-      n = entry['n'].to_i
+      # C2: the saved reveal set is `shown` (ids) when present, else a legacy `{ n, at }` count
+      # migrated to the first n ordered post ids (mirrors AccessWork.feed_shown_ids)
+      saved = entry['shown'].is_a?(Array) ? entry['shown'].select { |i| i.is_a?(String) } : @feed_ordered_ids[npc_id].first(entry['n'].to_i)
+      @saved_shown[npc_id] = saved
+      n = saved.length
       @feed_at[npc_id] = entry['at'].to_f if entry['at'].is_a?(Numeric)
       missing = n - in_log[npc_id]
       next unless missing.positive?
@@ -805,36 +817,49 @@ class AccessLeakScanner
     end
   end
 
-  # How many of an NPC's posts the server had revealed at this point of the log
-  def feed_revealed_now(npc_id)
-    unknown = [@feed_unknown_seen[npc_id], @feed_unknown_share[npc_id] || 0].min
-    (@feed_base[npc_id] || 0) + unknown + @feed_answers[npc_id]
+  # The post ids this NPC may legitimately carry at this point of the log: the ids the log has
+  # shown served so far, plus, where no log line names them (reveals before the log, or a lost
+  # /feed_post body), the first of the game's saved reveal ids up to that count. Saved ids are
+  # never used as the whole `allowed` on a live run, only to cover reveals the log cannot show.
+  def feed_allowed_ids(npc_id)
+    ids = @feed_shown[npc_id].dup
+    credits = (@feed_base[npc_id] || 0) + [@feed_unknown_seen[npc_id], @feed_unknown_share[npc_id] || 0].min
+    saved = @saved_shown[npc_id]
+    ids |= (saved - ids).first(credits) if credits.positive? && saved
+    ids
   end
 
-  # A /feed_post answer with a post serves the NPC's next authored post and its fact, whatever
-  # the answer says, so an answer out of order is reported by scan_feed. A GET /scenario
-  # feedPosts entry is allowed only for a post among the ones revealed so far (looked up by its
-  # own id in the catalogue, never by the response's index) and only with that post's fact.
+  # A /feed_post answer with a post serves the post its own body names and its own fact id (C2:
+  # the server serves reactive posts out of authored order, so the served id is read from the
+  # answer, not from an authored-order prefix). A GET /scenario feedPosts entry is allowed only
+  # for a post among the ids shown so far (feed_allowed_ids), looked up by its own id, and only
+  # with that post's authored fact; an out-of-order reactive post the server served is covered by
+  # the accumulated ids, so it raises no false feed_text leak.
   def note_feed_served(body, ctx)
     return if @feed_texts.empty? && @feed_fact_ids.empty?
     return unless body.is_a?(Hash)
 
     if ctx[:route].end_with?('/feed_post') && body['post'].is_a?(Hash)
       npc_id = body['npcId'].to_s
-      @feed_answers[npc_id] += 1
-      post_id, fid = @feed_order[npc_id][feed_revealed_now(npc_id) - 1]
-      serve_feed(npc_id, post_id, fid) if post_id
+      post_id = body['post']['id']
+      return unless post_id.is_a?(String)
+
+      @feed_shown[npc_id] << post_id unless @feed_shown[npc_id].include?(post_id)
+      fact = body['fact']
+      serve_feed(npc_id, post_id, fact.is_a?(Hash) ? fact['id'] : nil)
     elsif ctx[:scenario] && body['feedPosts'].is_a?(Hash)
       body['feedPosts'].each do |npc_id, f|
-        allowed = @feed_order[npc_id.to_s].first(feed_revealed_now(npc_id.to_s))
+        nid = npc_id.to_s
+        allowed = feed_allowed_ids(nid)
         Array(f.is_a?(Hash) ? f['posts'] : nil).each do |item|
           next unless item.is_a?(Hash) && item['post'].is_a?(Hash)
 
-          post_id, fid = allowed.find { |id, _| id == item['post']['id'] }
-          next unless post_id
+          post_id = item['post']['id']
+          next unless allowed.include?(post_id)
 
+          _id, fid = @feed_order[nid].find { |id, _| id == post_id }
           fact = item['fact']
-          serve_feed(npc_id, post_id, fact.is_a?(Hash) && fact['id'] == fid ? fid : nil)
+          serve_feed(nid, post_id, fact.is_a?(Hash) && fact['id'] == fid ? fid : nil)
         end
       end
     end
