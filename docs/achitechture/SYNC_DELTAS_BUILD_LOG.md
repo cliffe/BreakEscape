@@ -44,7 +44,8 @@ Standing constraints for this build:
 | 6a-client. capture-client.js + main.js wiring + SERVER_OWNED_GLOBALS flip + drop the mirror | Done, committed, tested + live-proven (`360232028`, `627caa0db`). See "6a-client session" below |
 | Merge main (`f2d53bb40`, unlock-gaps-r1) into the branch | Done (`ccc1ec435`); delta replies kept, item_for_answer/inventory_answer_fields now filter like client_inventory. See "builder 6 session" |
 | 6a-server review R1 fixes (M1, M2, N1-N4) + tests | Done, committed, tested (`5620ec5b6`). See "builder 6 session" |
-| 6b. R2 reveal/proof gating | Not started |
+| Clone-merge verification (task 1): branch's `cloneFrom: 'world'` records a world-card copy | Done, code + live proven (game 1894); no fix needed. See "builder 8 session" |
+| 6b. R2 reveal/proof gating | Done, committed, tested (`9271f4435`). Route tests only; live cases D-F not run. See "builder 8 session" |
 | 7. Node + Rails size tests, then live proof A to F | Not started |
 | 8. One release later: remove transition code | Not started (separate release) |
 
@@ -86,6 +87,90 @@ differ.
    (`capture_payload_secret_test`, `capture_payload_secret_routes_test`, `capture_secret_endpoint_test`,
    `lab_physical_pentest_secrets_test`, the `capture_proofs` tests), then Len's shoulder-surf beat
    played on the earned path in lab_physical_pentest.
+
+## This session (2026-11-12, builder 8: clone-merge verification + 6b)
+
+### Clone-merge verification (task 1) -> no fix needed
+Merge `ccc1ec435` kept this branch's `action-menu.js:84` call `cloneFrom: 'world'` (dropping main's
+`cloneSource: {object_id}`). Confirmed the branch's path still records a world-card copy:
+- **Code.** The action menu passes `cardToClone: data` (data = `sprite.scenarioData`, the room
+  object, which carries `id`). `recordCloneOnServer` (rfid-minigame.js:384) builds
+  `body = { object_id: cardData.id }` when `cardData.id` is present (:394). The world keycard in
+  test_clone_left_card carries `id: "clerk_card_item"` (scenario.json.erb:117), so the body is
+  `{ object_id: "clerk_card_item" }` -> `record_card_clone!` records it via `clone_source_keycard`.
+  main's `cloneSource: {object_id}` produced the same body; it is redundant given `cardData.id`.
+- **Live** (keyless :3220, game 1894, test_clone_left_card). Drove the live page's real
+  `ApiClient.cloneCard({object_id:'clerk_card_item'},'clerk_card',card)` (the exact body the
+  action-menu->recordCloneOnServer path builds for a world card; UI click substituted, wire
+  identical). Answer `{success:true, recorded:true, saved:true}`. After reload, server state:
+  `serverClones["clerk_card"] = { source:{ object:"clerk_card_item" }, uidOnly:false }`, and the
+  saved display card is stored under the SERVER's own name ("Clerk's access card"), not the
+  client-sent name (P1 identity-from-server holds). The vault door is `lockType rfid requires
+  clerk_card`, which the clone emulates, so it opens. No `PUT /sync_state` body carried
+  `se_captures`. Verdict: the merge choice is correct; no restore needed.
+
+### 6b (R2 reveal/proof gating) -> `9271f4435`
+Built per plan 6.3-6.8 as amended by the orchestrator ruling (serving stays main's
+`authored_capture_secret` path; 6b adds a `capture_revealable?` gate on the readers, no writer pass).
+- **CaptureModel** (`lib/break_escape/capture_model.rb`): `target_capture_proofs(data, target_id)`
+  (part 3, keyed on the captured account: account holder's `proofs_for` when the candidate address
+  is a username, else the owner/payload_owner `captureProof` and the candidate's own `proof`);
+  `pages_with_secret(data)` (single-secret fallback page set).
+- **CaptureProofs** (`app/models/break_escape/capture_proofs.rb`): `capture_evidence_holds?`
+  (foothold -> true; credential: part 2 phish page record + landed sent mail from stored mailState
+  or `extra_sent`; part 3 proofs), `capture_revealable?`, `stamp_proven_captures!`,
+  `stampable_captures?`, `unproven_captures?`, private `phish_evidence_page_for`/
+  `phish_page_evidence_holds?`/`each_stored_sent_message`. `record_capture!` now computes `proven`
+  via `capture_evidence_holds?` instead of hard `true`. `record_shared_login!`/migration keep
+  `proven: true` (heard shares and migrated 6a entries are grandfathered).
+- **Readers** (`game.rb` `capture_secrets_for_client`, `network_access.rb`
+  `account_capture_usernames`): skip an entry unless `capture_revealable?`.
+- **se_captures_record** (`game.rb`): a legacy `globalVariables.se_captures` fallback now returns
+  each entry marked `proven: true` (an old save is grandfathered; plan 6.3 "every kept entry taken
+  as proven"). This is why the four capture_secret/endpoint/proofs tests that seed the legacy
+  global stay green.
+- **Bootstrap** (`game.rb`): `bootstrap_state_needs_write?` ORs `stampable_captures?`;
+  `run_bootstrap_writers!` runs `stamp_proven_captures!` so a secret earned across a reload serves
+  without a fresh sync.
+- **Sync step** (`games_controller.rb` `apply_capture_sync_step(stale:)`): after recording, on a
+  non-stale request, stamps with the request's own sent messages
+  (`Game#incoming_sent_messages`); the scenario is also loaded (and the stamp runs) when an
+  unproven entry exists and the request carries globalVariables or mailState, even with no new
+  capture. A stale request never stamps (its mail is not merged).
+- **N1 follow-up** (`game.rb` `stored_scenario_data`): reuses the loaded `scenario_data` attribute
+  on a full load (GET /scenario, /capture_secrets) and only queries on the narrow sync load, so
+  GET /scenario loses the extra pick. One source either way (`with_lock` reloads all columns).
+
+**Behaviour checked (task 2):** Len's PIN in lab_physical_pentest is still served on the honest
+earned path (not proof-gated, not a phish target -> `capture_evidence_holds?` true at record;
+lab_physical_pentest_secrets_test green). A forged phish page claim (a capture recorded on a client
+claim with no built page / sent mail) is NO LONGER served (new tests
+`6b: a landing page capture claimed with no phish evidence is not served` and
+`6b: a stale request records but does not serve a phish credential`); adding the evidence later
+serves it and stamps proven, and un-building the page afterwards keeps it served. A 6a-grandfathered
+`proven: true` entry is still served with no evidence. lab_physical_pentest's account captures
+(hampshire/lord/pierce) were already proof-gated by the account pass under 6a; 6b's part 3 keys on
+the same proofs, so no change there.
+
+**Tests (affected files, no lock):** capture_secret/capture_payload_secret/
+lab_physical_pentest_secrets/capture_proofs/capture_secret_endpoint/capture_payload_secret_routes
+(89 runs) green after adapting one capture_proofs case to supply the phish evidence and adding four
+6b cases (31 runs); capture_record + captures_sync + capture_secret (68 runs) green; network_withholding
++ access_model_withholding + npc_workaround_h + access_leak_scanner (98 runs) green;
+games_controller + mail_state_sync + reload_persistence (141 runs) green. No JS changed (6b is
+server-only); no harness copy-list change.
+
+### Open after this session (builder 8)
+- **Step 7** NOT started: node request-size cases (plan 10.1) + `test/js/sync-delta-proof.test.mjs`
+  is the only size-ish JS test present; the 10.1 body-builder size cases and
+  `test/fixtures/files/sync_bodies/*` fixtures do not exist. Rails `test/integration/
+  sync_payload_size_test.rb` (10.2) does not exist; use the Baseline table figures
+  (`GET /scenario` base bytes per scenario above). Live A-F via
+  `tools/playtest/sync-delta-proof.mjs` against `.claude/worktrees/p-sync-base` on a second
+  keyless server (>= 3205) not run; cases C-F are not yet implemented in the tool (only bootstrap,
+  A, B stubs). Record before/after.
+- **6b live cases D, E, F** (plan 10.3) not run; 6b is proven only at route/model level.
+- Server on :3220 and tmp scripts were cleaned up at end of session.
 
 ## This session (2026-11-12, builder 6: merge main f2d53bb40 + 6a-server review R1 fixes)
 
