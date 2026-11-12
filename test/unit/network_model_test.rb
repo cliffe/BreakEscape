@@ -152,6 +152,27 @@ class NetworkModelTest < ActiveSupport::TestCase
     assert_match %r{timers\[0\]/actions\[0\]}, dropped[:path]
   end
 
+  # Slice 9.3b sub-slice W (ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.3): Wi-Fi.
+  test 'wifi_of reads a network block, and absent psk means an open network' do
+    d = NetworkModelScenario.scenario
+    d['networks']['guest_wifi'] = { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' } }
+    d['networks']['visitor_wifi'] = { 'name' => 'Visitor Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Open' } }
+    assert_equal({ 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' }, NM.wifi_of(d, 'guest_wifi'))
+    assert_nil NM.wifi_of(d, 'visitor_wifi')['psk']
+    assert_nil NM.wifi_of(d, 'office_lan'), 'a network with no wifi block'
+    assert_nil NM.wifi_of(d, 'no_such_net')
+  end
+
+  test 'wifi_aps lists objects with wifiAp on a network that defines wifi' do
+    d = NetworkModelScenario.scenario
+    d['networks']['guest_wifi'] = { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest', 'psk' => 'seabreeze-2025' } }
+    d['rooms']['lobby']['objects'] << { 'id' => 'guest_ap', 'type' => 'pc', 'name' => 'AP', 'wifiAp' => true, 'network' => 'guest_wifi' }
+    d['rooms']['lobby']['objects'] << { 'id' => 'guest_ap2', 'type' => 'pc', 'name' => 'AP2', 'wifiAp' => true, 'network' => 'guest_wifi' }
+    # wifiAp on a network with no wifi block is not an access point
+    d['rooms']['lobby']['objects'] << { 'id' => 'bogus_ap', 'type' => 'pc', 'name' => 'Bogus', 'wifiAp' => true, 'network' => 'office_lan' }
+    assert_equal %w[guest_ap guest_ap2], ids(NM.wifi_aps(d)).sort
+  end
+
   test 'readers default for a game from before this slice' do
     game = BreakEscape::Game.new(scenario_data: NetworkModelScenario.scenario, player_state: {})
     assert_equal({}, game.network_footholds)

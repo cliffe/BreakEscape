@@ -48,6 +48,7 @@ BreakEscape::Engine.routes.draw do
       post 'network/plant',   to: 'games#network_plant',   as: 'network_plant'    # Plant a rogue device in a jack
       post 'network/unplug',  to: 'games#network_unplug',  as: 'network_unplug'   # Take it back
       post 'network/implant', to: 'games#network_implant', as: 'network_implant' # Foothold from a device in a PC (9.3b I)
+      post 'network/join',    to: 'games#network_join',    as: 'network_join'     # Join an in-game Wi-Fi network (slice 9.3b W)
 
       # Objectives system
       get 'objectives'                                      # Get current objective state

@@ -74,8 +74,13 @@ def access_section(ps)
   end
   footholds = hash.call(ps['footholds']).sort_by { |_, f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.map do |id, f|
     f = {} unless f.is_a?(Hash)
-    device = f['device'].is_a?(Hash) ? (f['device']['id'] || f['device']['type'] || '?') : '?'
-    "#{id} = #{f['via'] || '?'} #{f['source'] || '?'}, device #{device} (network #{f['network'] || '?'})"
+    # A Wi-Fi or implant foothold (slice 9.3b) carries a name, not a device (5.3)
+    if %w[wifi implant].include?(f['via'])
+      "#{id} = #{f['via']} #{f['source'] || '?'}, #{f['name'] || '?'} (network #{f['network'] || '?'})"
+    else
+      device = f['device'].is_a?(Hash) ? (f['device']['id'] || f['device']['type'] || '?') : '?'
+      "#{id} = #{f['via'] || '?'} #{f['source'] || '?'}, device #{device} (network #{f['network'] || '?'})"
+    end
   end
   clones = hash.call(ps['serverClones']).map do |card_id, rec|
     rec = {} unless rec.is_a?(Hash)
@@ -94,10 +99,13 @@ def access_section(ps)
     ['loginLockouts', list.call(ps['loginLockouts']).map(&:to_s)],
     ['footholds', footholds],
     ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)],
-    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC
+    # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC;
+    # sub-slice L adds the PCs a check recorded the NPC locked out at (only when there are any)
     ['npcFrustration', hash.call(ps['npcFrustration']).sort.map do |id, e|
       e = {} unless e.is_a?(Hash)
-      "#{id} level #{e['level'] || 0}, handed #{hash.call(e['handed']).size}, done #{list.call(e['done']).inspect}"
+      locked = list.call(e['lockedOut'])
+      "#{id} level #{e['level'] || 0}, handed #{hash.call(e['handed']).size}, done #{list.call(e['done']).inspect}" \
+        "#{locked.empty? ? '' : ", locked out at #{locked.join(' ')}"}"
     end],
     # Slice 9.2 H (6.4, 6.5): who last left a borrowed session open at each PC, and the accounts
     # the player heard shared (ids only)

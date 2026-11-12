@@ -78,6 +78,25 @@ require 'uri'
 # allowed inside savedNotes, and inside the se_captures global only under revealSecret. The note exception
 # above follows a done writes_down through the game's written_down?.
 #
+# Slice 9.2 sub-slice L (ACCESS_MODEL_SLICE_9_2_PLAN.md 6.6 and 9.2): no list of locked-out
+# accounts ever reaches the browser. It reports (rule `lockout_list`) a `loginLockouts` or
+# `loginFailures` key in any response, and a `lockedOut` list anywhere but GET /scenario's
+# `$.npcFrustration.<npcId>.lockedOut`. With the game given it also reports (rule
+# `lockout_unrecorded`) a PC in that list, or a `lockedOut: true` in a POST /npc_frustration
+# answer, for an NPC whose saved npcFrustration record does not hold it: the browser learns of a
+# lockout only through the server's own `check` record.
+# Review R1 m4 widened `lockout_list` to a boolean `lockedOut` outside POST /npc_frustration and
+# POST /login, and (with the game given) any string holding one of the game's loginLockouts or
+# loginFailures keys ("pcId|username"), whatever key it sits under. R1 M1 allows one more field:
+# GET /scenario's `$.lockoutPcs`, the sign-in PCs where the player caused a lockout, PC ids only;
+# a `lockoutPcs` anywhere else, or an entry in it that is not such a PC, is reported.
+# Review R2 n3: the key rule reads hash keys as well as strings (a key under another name, such
+# as an attempts map, is reported at its parent's path, so the finding never names the username).
+# Its one limit: the game's lockouts and failures are read once, at scan time, from the state at
+# the end of the run, so a response that listed a PC before the player locked it out passes.
+# R2 n4: a key whose username part is blank ("pc|") is skipped, since it would match any string
+# naming that PC.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -127,6 +146,7 @@ class AccessLeakScanner
     @clue_texts = Hash.new { |h, k| h[k] = Set.new }   # password => authored strings holding it
     @login_pcs = Set.new
     @network_strings = {}    # string => [owner, ...] (network:<id>, resource:<id>)
+    @wifi_secrets = {}       # a Wi-Fi SSID or psk => [network:<id>, ...] (never in any response)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
     # password on purpose, exempt only where that item's content may be (scan_passwords)
@@ -135,6 +155,7 @@ class AccessLeakScanner
     collect_passwords
     collect_items
     collect_network_secrets
+    collect_wifi_secrets
     collect_workarounds
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
     @items.delete_if { |_, info| info[:strings].empty? }
@@ -146,8 +167,10 @@ class AccessLeakScanner
       login_items: @items.count { |_, i| i[:scope] },
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
       network_strings: @network_strings.length,
+      wifi_secrets: @wifi_secrets.length,
       share_items: @share_items.length,
-      workarounds: @workarounds.length
+      workarounds: @workarounds.length,
+      lockout_records: lockout_records.values.sum(&:length)
     }
   end
 
@@ -161,9 +184,9 @@ class AccessLeakScanner
       next unless row.is_a?(Hash)
 
       body = if row.key?('dom') then row['dom']
-             elsif row.key?('body') then row['body']
-             else row['bodyText']
-             end
+      elsif row.key?('body') then row['body']
+      else row['bodyText']
+      end
       next if body.nil?
 
       ctx = response_context(row)
@@ -181,7 +204,9 @@ class AccessLeakScanner
       scan_locked_content(body, add)
       scan_share_content(body, ctx, legit, add)
       scan_network_strings(body, ctx, add)
+      scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
+      scan_lockouts(body, ctx, add)
     end
     findings
   end
@@ -208,15 +233,19 @@ class AccessLeakScanner
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
+    'wifi_secret' => 'a Wi-Fi SSID or pre-shared key in any response (the key is compared on the server, never served)',
     'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds) on an NPC record',
-    'workaround' => 'a workaround (its kind beside its target) outside a hand-over'
+    'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
+    'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
+                      'npcFrustration, a lockedOut flag outside a check or sign-in answer, or a lockoutPcs entry that is not a locked-out PC',
+    'lockout_unrecorded' => 'a lockout the server\'s check did not record'
   }.freeze
 
   private
 
   def secret_values
     @secret_values ||= (@passwords.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
-                        @share_items.values.flat_map { |i| i[:strings] }).uniq.sort_by { |v| -v.length }
+                        @wifi_secrets.keys + @share_items.values.flat_map { |i| i[:strings] }).uniq.sort_by { |v| -v.length }
   end
 
   # ---- catalogue ---------------------------------------------------------------------------
@@ -300,6 +329,27 @@ class AccessLeakScanner
         owners << "resource:#{res_id}" unless owners.include?("resource:#{res_id}")
       end
       walk_share(res['contents'], res_id.to_s, [], usable)
+    end
+  end
+
+  # A Wi-Fi SSID and pre-shared key (slice 9.3b W, 5.3) are never sent to the browser: the
+  # networks block is deleted whole from the bootstrap and the key is only compared on the
+  # server. A key the scenario deliberately shows the player in authored room text (a note, a
+  # document) is not a hidden secret, so it is skipped, the same rule network_strings uses.
+  def collect_wifi_secrets
+    public_strings = room_data_strings
+    networks = @data['networks'].is_a?(Hash) ? @data['networks'] : {}
+    networks.each do |net_id, net|
+      wifi = net.is_a?(Hash) ? net['wifi'] : nil
+      next unless wifi.is_a?(Hash)
+
+      %w[ssid psk].each do |field|
+        v = wifi[field]
+        next unless v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING
+        next if public_strings.any? { |s| s.include?(v.strip) }
+
+        (@wifi_secrets[v.strip] ||= []) << "network:#{net_id}"
+      end
     end
   end
 
@@ -485,7 +535,9 @@ class AccessLeakScanner
       any_container: path.include?('/container/'),
       scenario: method == 'GET' && path.end_with?('/scenario'),
       login_accounts: method == 'GET' && path.end_with?('/login_accounts'),
-      npc_workaround: method == 'POST' && path.end_with?('/npc_workaround')
+      npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
+      npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
+      login: method == 'POST' && path.end_with?('/login')
     }
   end
 
@@ -609,6 +661,98 @@ class AccessLeakScanner
     when Hash
       yield node, path
       node.each { |k, v| walk_hashes(v, "#{path}.#{k}", &block) }
+    end
+  end
+
+  # Sub-slice L: the game's own check records, npcId => [pcId] (empty without a game)
+  def lockout_records
+    @lockout_records ||= begin
+      store = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state['npcFrustration'] : nil
+      (store.is_a?(Hash) ? store : {}).each_with_object({}) do |(id, e), out|
+        list = e.is_a?(Hash) && e['lockedOut'].is_a?(Array) ? e['lockedOut'].map(&:to_s) : []
+        out[id.to_s] = list unless list.empty?
+      end
+    end
+  end
+
+  LOCKOUT_LIST_KEYS = %w[loginLockouts loginFailures].freeze
+  CLIENT_LOCKED_OUT_PATH = /\A\$\.npcFrustration\.([^.\[]+)\.lockedOut\z/.freeze
+  CLIENT_LOCKOUT_PCS_PATH = '$.lockoutPcs'.freeze
+
+  # Review R1 m4: the game's loginLockouts and loginFailures keys ("pcId|username"), empty without a game
+  def lockout_key_strings
+    @lockout_key_strings ||= begin
+      ps = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state : {}
+      list = ps['loginLockouts'].is_a?(Array) ? ps['loginLockouts'] : []
+      fails = ps['loginFailures'].is_a?(Hash) ? ps['loginFailures'].keys : []
+      (list + fails).select { |k| k.is_a?(String) && k.include?('|') && !k.split('|', 2).last.to_s.strip.empty? }.uniq
+    end
+  end
+
+  # Review R1 M1: the PCs of the game's loginLockouts keys, which GET /scenario may list
+  def lockout_pc_ids
+    @lockout_pc_ids ||= begin
+      ps = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state : {}
+      (ps['loginLockouts'].is_a?(Array) ? ps['loginLockouts'] : []).filter_map { |k| k.is_a?(String) && k.include?('|') ? k.split('|', 2).first : nil }.to_set
+    end
+  end
+
+  # Sub-slice L (6.6, 9.2): no lockout list, and no lockout the server's check did not record
+  def scan_lockouts(body, ctx, add)
+    walk_hashes(body, '$') do |hash, json_path|
+      LOCKOUT_LIST_KEYS.each do |key|
+        add.call('lockout_list', key, safe_path("#{json_path}.#{key}")) if hash.key?(key)
+      end
+      scan_lockout_pcs(hash, json_path, ctx, add) if hash.key?('lockoutPcs')
+      next unless hash.key?('lockedOut')
+
+      value = hash['lockedOut']
+      path = "#{json_path}.lockedOut"
+      if value.is_a?(Array)
+        m = ctx[:scenario] ? CLIENT_LOCKED_OUT_PATH.match(path) : nil
+        unless m
+          add.call('lockout_list', 'lockedOut', safe_path(path))
+          next
+        end
+        next unless @game
+
+        value.each do |pc|
+          add.call('lockout_unrecorded', "npc:#{m[1]}/#{pc}", safe_path(path)) unless Array(lockout_records[m[1]]).include?(pc.to_s)
+        end
+      elsif [true, false].include?(value) && !ctx[:npc_frustration] && !ctx[:login]
+        # Review R1 m4: a lockout answer belongs to a check answer or a sign-in answer only
+        add.call('lockout_list', 'lockedOut', safe_path(path))
+      elsif value == true && ctx[:npc_frustration] && @game
+        npc = hash['npcId'].to_s
+        add.call('lockout_unrecorded', "npc:#{npc}", safe_path(path)) if Array(lockout_records[npc]).empty?
+      end
+    end
+    # Review R1 m4: a lockout or failure key under any key name (a global, a log payload)
+    keys = lockout_key_strings
+    return if keys.empty?
+
+    each_string(body) do |str, json_path, _owner|
+      add.call('lockout_list', 'lockout_key', safe_path(json_path)) if keys.any? { |k| str.include?(k) }
+    end
+    # Review R2 n3: a lockout key used as a hash key, reported at the parent's path
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash.keys.any? { |hk| hk.is_a?(String) && keys.any? { |k| hk.include?(k) } }
+
+      add.call('lockout_list', 'lockout_key', safe_path("#{json_path}.[lockout key]"))
+    end
+  end
+
+  # Review R1 M1: GET /scenario's top-level lockoutPcs, PC ids where the game holds a lockout
+  def scan_lockout_pcs(hash, json_path, ctx, add)
+    path = "#{json_path}.lockoutPcs"
+    value = hash['lockoutPcs']
+    unless ctx[:scenario] && path == CLIENT_LOCKOUT_PCS_PATH && value.is_a?(Array)
+      add.call('lockout_list', 'lockoutPcs', safe_path(path))
+      return
+    end
+    value.each_with_index do |pc, i|
+      bad = !pc.is_a?(String) || pc.include?('|') || (@game && !lockout_pc_ids.include?(pc))
+      add.call('lockout_list', 'lockoutPcs', safe_path("#{path}[#{i}]")) if bad
     end
   end
 
@@ -749,14 +893,32 @@ class AccessLeakScanner
     return if @network_strings.empty?
     return if ctx[:network] || ctx[:any_container]
 
-    each_string(body) do |str, json_path|
+    each_string(body) do |str, json_path, holder|
       next if ctx[:scenario] && json_path.start_with?('$.footholds')
       next if ctx[:unlock] && json_path.start_with?('$.contents[')
+      # A network link item is the handle of a foothold the player holds: its label and
+      # observations name the network the player has already reached (slice 9.3b W, 5.3),
+      # so a network name there is not a leak.
+      next if holder.to_s.start_with?('netlink_')
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)
 
         owners.each { |owner| add.call('network_string', owner, safe_path(json_path)) }
+      end
+    end
+  end
+
+  # A Wi-Fi SSID or key in any response is a leak, with no route exemption: unlike a network
+  # name, neither is ever legitimately served (5.3).
+  def scan_wifi_secrets(body, add)
+    return if @wifi_secrets.empty?
+
+    each_string(body) do |str, json_path|
+      @wifi_secrets.each do |secret, owners|
+        next unless str.strip == secret || str.include?(secret)
+
+        owners.each { |owner| add.call('wifi_secret', owner, safe_path(json_path)) }
       end
     end
   end

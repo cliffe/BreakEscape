@@ -152,7 +152,7 @@ module BreakEscape
 
     end
 
-    test 'R2 m2: in sub-slice A a lockout is no cause: locked_out is refused, the station eases, rearmed keeps the use floor' do
+    test 'R2 m2 and L: a lockout with no check record is no cause: locked_out is refused, the station eases, rearmed keeps the use floor' do
       build(scenario: with_kiosk, globals: { 'finance_share_down' => true }, player_state: { 'loginLockouts' => ['dana_pc|dreyes'] })
       t = Time.current
       assert_equal({ 'npcId' => 'dana', 'refused' => true },
@@ -555,7 +555,7 @@ module BreakEscape
       data
     end
 
-    # Dana's causes that all belong to her (locked_out is refused in A): 6 distinct, 20 entries
+    # Dana's causes that all belong to her (locked_out is refused with no check record): 6 distinct, 20 entries
     def worst_dana_fail
       causes = [%w[finance_share down], %w[email down], %w[finance_share unreachable], %w[email unreachable],
                 %w[dana_pc off], %w[dana_pc social_blocked]]

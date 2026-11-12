@@ -209,6 +209,25 @@ module BreakEscape
       []
     end
 
+    # Wi-Fi (slice 9.3b sub-slice W, docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md 5.3).
+    # The { ssid, psk } block of a network, or nil. It lives on the network and never ships
+    # to the browser; psk absent means an open network.
+    def wifi_of(data, network_id)
+      net = networks(data)[network_id]
+      wifi = net.is_a?(Hash) ? net['wifi'] : nil
+      wifi.is_a?(Hash) ? wifi : nil
+    end
+
+    # Every room object with wifiAp: true whose network defines a wifi block (5.3), as
+    # room_objects entries. Several access points may serve one network.
+    def wifi_aps(data)
+      room_objects(data).select do |entry|
+        obj = entry[:object]
+        obj.is_a?(Hash) && obj['wifiAp'] == true && present_string?(entry[:network]) &&
+          !wifi_of(data, entry[:network]).nil?
+      end
+    end
+
     def present_string?(value)
       value.is_a?(String) && !value.strip.empty?
     end

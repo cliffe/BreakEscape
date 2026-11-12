@@ -126,6 +126,10 @@ module BreakEscape
       show?
     end
 
+    def network_join?
+      show?
+    end
+
     def submit_flag?
       show?
     end

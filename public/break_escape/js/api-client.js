@@ -28,9 +28,11 @@ export class ApiClient {
   /**
    * POST request
    */
-  static async post(endpoint, data = {}) {
+  static async post(endpoint, data = {}, options = {}) {
     const response = await fetch(`${getApiBase()}${endpoint}`, {
       method: 'POST',
+      // an AbortSignal, so a caller can bound the request (npc-reports.js, review R2 m2)
+      ...(options && options.signal ? { signal: options.signal } : {}),
       credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
@@ -121,8 +123,8 @@ export class ApiClient {
 
   // Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1): NPC failed and met uses,
   // [{ npc_id, event, need, object_id, missing, rearmed }]. Answers { answers: [...] }.
-  static async npcFrustration(reports) {
-    return this.post('/npc_frustration', { reports });
+  static async npcFrustration(reports, options = {}) {
+    return this.post('/npc_frustration', { reports }, options);
   }
 
   // Slice 9.2 (plan 6): a workaround performed or dropped, { npc_id, index, hand, dropped }.
@@ -167,6 +169,15 @@ export class ApiClient {
   // refusal throws (404 reason "no_action", 422 reason "not_ready" or "usb_refused").
   static async networkImplant(pcId, shape, path = null) {
     return this.post('/network/implant', { pc_id: pcId, shape, ...(path ? { path } : {}) });
+  }
+
+  // Join an in-game Wi-Fi network through an access point (slice 9.3b sub-slice W, 5.3).
+  // The key is compared on the server; an open network sends no key. Answers
+  // { success, foothold, inventory, first } (or { success, already: true, ... } when the
+  // network is already joined); a refusal throws with err.status (404 no access point,
+  // 403 reason "unreachable", 422 reason "wrong_key") and err.body. The key is never echoed.
+  static async networkJoin(apId, key = null) {
+    return this.post('/network/join', { ap_id: apId, ...(key != null ? { key } : {}) });
   }
 
   // What a foothold reaches: { footholds: [{ id, via, name, network, hosts }] }, every

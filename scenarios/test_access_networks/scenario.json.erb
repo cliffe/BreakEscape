@@ -9,7 +9,8 @@
 
   "networks": {
     "office_lan": { "name": "Harbour office LAN" },
-    "workshop_lan": { "name": "Workshop bench LAN" }
+    "workshop_lan": { "name": "Workshop bench LAN" },
+    "guest_wifi": { "name": "Guest Wi-Fi", "wifi": { "ssid": "Harbour-Guest", "psk": "seabreeze-2025" } }
   },
 
   "resources": {
@@ -77,6 +78,23 @@
       "network": "office_lan",
       "observations": "A print queue anyone on the LAN can read: three payslips waiting for collection."
     },
+    "guest_notice": {
+      "kind": "file_share",
+      "name": "Guest-Notice",
+      "host": "HB-GUEST-01",
+      "network": "guest_wifi",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "guest_note",
+          "name": "guest_wifi.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Guest Wi-Fi notice: this network reaches the internet only. (N8: the guest network was joined.)",
+          "observations": "A notice left on the guest network's little file share."
+        }
+      ]
+    },
     "bench_notes": {
       "kind": "file_share",
       "name": "Bench-Notes",
@@ -130,7 +148,9 @@
         { "taskId": "p12_reload", "title": "P12: after a reload, Lena's PC opens through the box with no password", "type": "custom", "status": "active" },
         { "taskId": "n11_dropped_implant", "title": "N11: a dropped stick an NPC uses gives a foothold on the door controller's network", "type": "custom", "status": "active" },
         { "taskId": "n12_badusb_implant", "title": "N12: a BadUSB at Sam's desk gives a foothold and is consumed", "type": "custom", "status": "active" },
-        { "taskId": "n13_usb_refused", "title": "N13: the kiosk's USB policy refuses the BadUSB", "type": "custom", "status": "active" }
+        { "taskId": "n13_usb_refused", "title": "N13: the kiosk's USB policy refuses the BadUSB", "type": "custom", "status": "active" },
+        { "taskId": "n8_wifi_join", "title": "N8: join the guest Wi-Fi with the key and look at what it reaches", "type": "custom", "status": "active" },
+        { "taskId": "n9_second_ap", "title": "N9: join again through the second guest access point", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -171,6 +191,40 @@
           "droppable": true,
           "usbClass": "storage",
           "observations": "An ordinary USB stick. Left lying about, someone might plug it in."
+        },
+        {
+          "type": "pc",
+          "id": "guest_ap",
+          "name": "Guest access point",
+          "sprite": "network_rack1",
+          "position": { "x": 8, "y": 5 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "guest_wifi",
+          "observations": "A small wireless access point on the wall. Its label reads Harbour-Guest."
+        },
+        {
+          "type": "pc",
+          "id": "guest_ap2",
+          "name": "Guest access point (lift lobby)",
+          "sprite": "network_rack1",
+          "position": { "x": 8, "y": 8 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "guest_wifi",
+          "observations": "A second access point for the same guest network, by the lift."
+        },
+        {
+          "type": "notes1",
+          "id": "wifi_note",
+          "name": "Reception Wi-Fi card",
+          "position": { "x": 6, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Visitors: connect your laptop to the wireless.\nNetwork name (SSID): Harbour-Guest\nKey: seabreeze-2025\n\n(N8: click an access point and enter the key. N9: the second point by the lift joins the same network.)",
+          "observations": "A printed card on the reception desk with the guest Wi-Fi details."
         },
         {
           "type": "safe",
@@ -256,7 +310,9 @@
             { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.remote !== true && globalVars.p5_lena_remote", "onceOnly": true, "completeTask": "p9_sit_down" },
             { "eventPattern": "network_device_unplugged", "condition": "data.jackId === 'comms_port' && data.endedPcIds.includes('door_box')", "onceOnly": true, "completeTask": "p10_unplug" },
             { "eventPattern": "network_viewed", "condition": "data.networkId === 'workshop_lan'", "onceOnly": true, "completeTask": "p11_other_network" },
-            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.restored === true && data.remote === true", "onceOnly": true, "completeTask": "p12_reload" }
+            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.restored === true && data.remote === true", "onceOnly": true, "completeTask": "p12_reload" },
+            { "eventPattern": "network_joined", "condition": "data.networkId === 'guest_wifi'", "onceOnly": true, "completeTask": "n8_wifi_join" },
+            { "eventPattern": "network_joined", "condition": "data.apId === 'guest_ap2' && data.already === true", "onceOnly": true, "completeTask": "n9_second_ap" }
           ]
         },
         {

@@ -20,15 +20,15 @@ module BreakEscape
     # unread, and after removing repeats more than MAX_CAUSES is refused.
     MAX_MISSING = 20
     MAX_CAUSES = 8
-    EVENTS = %w[fail ease].freeze
+    EVENTS = %w[fail ease check].freeze
     # Causes the server owns: no event in play clears them (plan 9.1, gate 2)
     OWNED_WHYS = %w[no_access social_blocked locked_out].freeze
-    # Review R2 m2 (orchestrator decision): sub-slice A refuses a report naming `locked_out` and
-    # never counts a lockout as an owned cause. The browser sends none in A (its station verdict
-    # has lockedOut false); sub-slice L adds the cause back behind its `check` record, which is
-    # the leak decision 14 accepts. Accepting it in A would let a guessed username, locked out
-    # at an NPC's PC, be confirmed through this route before L's record exists.
-    REFUSED_IN_A_WHYS = %w[locked_out].freeze
+    # Sub-slice L (6.6, decision 14): a lockout counts only behind the `check` record. A `check`
+    # answers whether loginLockouts holds the owner's username at its own station and, when it
+    # does, records the station in the NPC's lockedOut list. A fail naming `locked_out` is refused
+    # unless that record exists (review R2 m2 in A: without it a guessed username, locked out at
+    # an NPC's PC, could be confirmed through a fail); a lockout with no record is no owned cause.
+    RECORDED_WHYS = %w[locked_out].freeze
 
     # Workarounds (plan 6). Lasting ones (sub-slice B) are performed once; repeating ones
     # (sub-slice H: borrow_session, share_login) again after each later counted failure while
@@ -112,7 +112,9 @@ module BreakEscape
             hold[need] = left.ceil(1) if left.positive?
           end
           block = { 'level' => e['level'], 'tell' => frustration_tell(npc, e), 'settled' => frustration_settled?(npc, e),
-                    'pending' => pending_runs(npc, e), 'done' => done_list(npc, e), 'lockedOut' => e['lockedOut'] }
+                    'pending' => pending_runs(npc, e), 'done' => done_list(npc, e),
+                    # Review R1 n4: the station only, as the client reads it
+                    'lockedOut' => e['lockedOut'] & [AccessWork.station(scenario_data, npc)&.dig('id')].compact }
           block['hold'] = hold unless hold.empty?
           # Review R3 m1: the whys of each need's last counted failure (what the client reported),
           # so the frustration icon can fade after a reload once the cause has cleared (q17)
@@ -348,7 +350,8 @@ module BreakEscape
     def record_borrow_done!(npc, w)
       pc_id = borrow_pc_id(w)
       player_state['sessions'] = access_sessions.except(pc_id)
-      if careful_guest?(npc)
+      # Sub-slice L review R1 m1: a borrower locked out at this PC cannot have signed in there
+      if careful_guest?(npc) || account_locked_out_at?(pc_id, npc)
         guest_sessions.delete(pc_id)
         guest_sessions_at.delete(pc_id)
       else
@@ -550,9 +553,12 @@ module BreakEscape
       refused = { 'npcId' => npc_id, 'refused' => true }
       # 1. NPC known
       return refused unless npc && Array(player_state['encounteredNPCs']).include?(npc_id)
-      return refused unless EVENTS.include?(event) && AccessWork.judged?(scenario_data, npc, need)
+      return refused unless EVENTS.include?(event)
 
       object_id = report['object_id'].presence&.to_s
+      return check_report!(npc_id, npc, object_id) if event == 'check'
+      return refused unless AccessWork.judged?(scenario_data, npc, need)
+
       if event == 'fail'
         fail_report!(npc_id, npc, need, object_id, report)
       else
@@ -573,7 +579,7 @@ module BreakEscape
       # 2. can fail, and every cause and object_id belong to the NPC
       return refused unless AccessWork.can_fail?(scenario_data, npc, need)
       return refused if missing.empty? || missing.any? { |c| !AccessWork.cause_belongs?(scenario_data, npc, need, c) }
-      return refused if missing.any? { |c| REFUSED_IN_A_WHYS.include?(c['why']) }
+      return refused if missing.any? { |c| RECORDED_WHYS.include?(c['why']) && (need != 'work' || !lockout_recorded?(npc)) }
       return refused unless object_id && frustration_places(npc, need).include?(object_id)
 
       # 3. a cause holds on the server
@@ -628,9 +634,51 @@ module BreakEscape
       answer(npc_id, npc, entry, previous)
     end
 
-    # No lockouts in A (review R2 m2): sub-slice L passes the lockouts its `check` record confirms
+    # Sub-slice L: a lockout is an owned cause only once a `check` has recorded it (6.6)
     def owned_causes(npc, need)
-      AccessWork.owned_causes(scenario_data, npc, need, nil)
+      AccessWork.owned_causes(scenario_data, npc, need, lockout_recorded?(npc) ? lockout_keys : nil)
+    end
+
+    # Sub-slice L (6.6, plan 9.1): a `check` report. Refused unless the object is the NPC's own
+    # station, a sign-in PC it owns under a policy with maxAttempts (AccessWork.lockout_station?),
+    # in a room the player can know of (review R2 m5). Answers { npcId, lockedOut }; a true answer
+    # records the station in the NPC's lockedOut list, and nothing else is ever written. No list
+    # of locked-out accounts is sent: the answer is about this owner at this PC only.
+    def check_report!(npc_id, npc, object_id)
+      refused = { 'npcId' => npc_id, 'refused' => true }
+      st = AccessWork.station(scenario_data, npc)
+      return refused unless st && object_id == st['id'] && AccessWork.lockout_station?(scenario_data, npc)
+      # Review R1 m3: only an owner with a work plan, as the honest client asks (shouldCheckLockout)
+      return refused unless AccessWork.work_plan?(scenario_data, npc)
+
+      room = AccessWork.object_index(scenario_data)[st['id']]&.dig(:room_id)
+      return refused unless room && room_unlocked?(room)
+
+      locked = AccessWork.locked_out_at?(npc, st, lockout_keys)
+      if locked
+        entry = frustration_entry(npc_id)
+        entry['lockedOut'] << st['id'] unless entry['lockedOut'].include?(st['id'])
+      end
+      { 'npcId' => npc_id, 'lockedOut' => locked }
+    end
+
+    # Whether a `check` recorded the NPC locked out at its own station, and the lockout still
+    # stands (it lasts the mission; read again so a record never outlives loginLockouts)
+    def lockout_recorded?(npc)
+      st = AccessWork.station(scenario_data, npc)
+      return false unless st && npc.is_a?(Hash)
+
+      store = player_state['npcFrustration']
+      entry = store.is_a?(Hash) ? store[npc['id'].to_s] : nil
+      return false unless entry.is_a?(Hash) && Array(entry['lockedOut']).include?(st['id'])
+
+      AccessWork.locked_out_at?(npc, st, lockout_keys)
+    end
+
+    # player_state.loginLockouts read only (login_lockouts would write a default)
+    def lockout_keys
+      list = player_state['loginLockouts']
+      list.is_a?(Array) ? list : []
     end
 
     # The NPC's places the player can know of (review R2 m5): an object in a room the server has
@@ -704,7 +752,11 @@ module BreakEscape
         !cond.nil? && frustration_globals_hold?(cond)
       when 'social_blocked'
         need == 'social_media' && AccessWork.social_blocked?(scenario_data, npc)
-      else # locked_out is refused before this in A (REFUSED_IN_A_WHYS); L adds its branch
+      when 'locked_out'
+        # Sub-slice L: the server's own loginLockouts, behind the check record (a fail with no
+        # record is refused before this)
+        lockout_recorded?(npc)
+      else
         false
       end
     end

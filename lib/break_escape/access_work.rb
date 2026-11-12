@@ -380,6 +380,9 @@ module BreakEscape
         return true if list.any? { |r| !admitted?(r, npc) || present_string?(r['downIf']) }
         return true if list.any? { |r| (rt = routes(data, npc, r)) && (rt.empty? || rt.any? { |route| !route.empty? }) }
 
+        # Sub-slice L (6.6): its own sign-in PC under a policy with maxAttempts can lock it out
+        return true if lockout_station?(data, npc)
+
         # The station only: a borrow PC counts once handed over (sub-slice H; review R1 M2)
         off_when?(data, station(data, npc))
       when 'social_media'
@@ -402,7 +405,8 @@ module BreakEscape
         need == 'work' && work_list(data, npc).include?(id) && resources(data).key?(id)
       when 'no_access'
         need == 'work' && work_list(data, npc).include?(id) && !admitted?(resources(data)[id], npc)
-      else # off, locked_out, social_blocked: the station only until H hands a borrow PC over
+      else # off, locked_out, social_blocked: the station only (a lockout is per PC, and a failed
+        # borrowed use is never reported, 6.4)
         st = station(data, npc)
         !st.nil? && st['id'] == id
       end
@@ -425,8 +429,25 @@ module BreakEscape
       end
       st = station(data, npc)
       out << { 'id' => st['id'], 'why' => 'social_blocked' } if need == 'social_media' && st && social_blocked?(data, npc)
-      out << { 'id' => st['id'], 'why' => 'locked_out' } if st && locked_out_at?(npc, st, lockouts)
+      # Sub-slice L review R1 m2: work only, as on the client (a lockout at a social_media
+      # station is left to sub-slice C), so a social ease at the station is not refused
+      out << { 'id' => st['id'], 'why' => 'locked_out' } if need == 'work' && st && locked_out_at?(npc, st, lockouts)
       out
+    end
+
+    # Sub-slice L (6.6): the NPC's own station is a sign-in PC it owns (no screenOwner, or its
+    # own id there), the NPC has an account, and the PC's policy (its own, else defaultPolicy)
+    # sets a positive maxAttempts. Only then can a lockout stop its work, and only then does the
+    # server answer a `check` for it.
+    def lockout_station?(data, npc)
+      st = station(data, npc)
+      return false unless st && AccessIdentities.login_pc?(st) && AccessIdentities.account?(npc)
+
+      owner = st['screenOwner']
+      return false if present_string?(owner) && owner != npc['id']
+
+      max = policy_of(data, st)&.dig('maxAttempts')
+      max.is_a?(Numeric) && max.positive?
     end
 
     # Sub-slice L: whether loginLockouts (a list of "pcId|username" keys) holds the NPC's
