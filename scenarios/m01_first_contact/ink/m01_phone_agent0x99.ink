@@ -287,7 +287,7 @@ I've uploaded the lockpicking field guide to your secure terminal.
 Covers pin tumbler mechanics, tension control, and how to read pin feedback. Light pressure — if you're forcing it, ease off.
 
 + [Thanks, I'll use it]
-    Good. Work the pins one at a time. Message me if you get stuck.
+    Good. Work the pins one at a time.
     -> support_hub
 + [Understood]
     The guide covers the rest. Patience is the technique.

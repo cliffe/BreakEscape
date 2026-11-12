@@ -799,7 +799,7 @@ Leave it with me. And keep it out of your notes for now.
 ~ mole_discussed = true
 Narrator: Nothing comes back for a while.
 
-Slowly. I want to be sure I've read this right.
+Wait. I want to be sure I've read this right.
 
 He had your deployment before the order went out. Somebody handed ENTROPY you, by name.
 

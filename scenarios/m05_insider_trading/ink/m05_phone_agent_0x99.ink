@@ -458,7 +458,7 @@ Go on. Who?
 + {found_door_log} [Ben Ashworth.]
     ~ torres_reason_guessed = true
     Ben's on that log one evening, at eight. Patricia's transfers run two till four in the morning.
-    Don't guess at me. Call back when you're sure.
+    Don't guess at me. Come back when you're sure.
     #exit_conversation
     -> support_hub
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
@@ -473,7 +473,7 @@ Go on. Who?
     // Puzzle R1 (P2): striking a cleared decoy is a guess too.
     ~ torres_reason_guessed = true
     Halloran was in Zurich the night that badge first went in. You know that.
-    Don't guess at me. Call back when you're sure.
+    Don't guess at me. Come back when you're sure.
     #exit_conversation
     -> support_hub
 }

@@ -198,7 +198,7 @@ EXTERNAL player_name()
 
 + [Nothing right now.]
     #exit_conversation
-    Line's open. Call it in when you have something.
+    Line's open. Send me whatever you find.
     -> support_hub
 
 // Choices-only: the guides on offer and not yet sent (m02/m03 field_guides).

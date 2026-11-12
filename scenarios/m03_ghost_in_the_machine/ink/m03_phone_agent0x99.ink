@@ -155,7 +155,7 @@ VAR hint_guard_hostile_given = false
 + [Where do I stand?]
     -> report_progress
 + [Nothing right now]
-    Copy. I'm here, {player_name()}.
+    Copy. Go carefully, {player_name()}.
     #exit_conversation
     -> DONE
 
@@ -446,7 +446,7 @@ distcc is the one that matters -- that's where the operational logs sit. Submit 
 
 === report_end ===
 + [Thanks.]
-    Message me if you need me.
+    Good. Back to it.
     -> hub
 
 === on_victoria_computer_accessed ===
