@@ -2179,16 +2179,11 @@ door to the new corridor.
 
 ### Open (handover `docs/agents/HANDOVER_9_2_C2.md`)
 
-- **Live proof for F11, F12, F13** on :3030 (the F10 pattern repeats; each is a slower beat because the
-  borrow/outage takes real time). For each: enter the room, drive the cause (F11/F13 wait for the
-  blocked social use then the borrow; F12 wait for the first ordered post, throw the breaker, wait for a
-  work failure, then the next social use), wait on the beat's task(s), then `access-leak-check.rb` and
-  `verify-run.rb --access`, with one tampered `/feed_post` per NPC before its condition holds. Nothing in
-  the beats is known-broken; F10 exercised the same engine path end to end. Navigation is
-  `enter`-per-room east from the lobby (`lena_room` -> `priya_room` -> `f10_room` -> ...). The server on
-  :3030 and the browser sessions were stopped at the end of session 3.
-- The full suites should be rerun once more under the lock as a final gate, though session 3 changed only
-  scenario JSON, PLAYTEST and this log (no Ruby or JS), so the session-2 counts stand logically.
+- Live proof for F11, F12, F13 is **done** (session 4 below). The server on :3030 and all browser
+  sessions were stopped afterwards.
+- The full suites should be rerun once more under the lock as a final gate, though sessions 3 and 4
+  changed only scenario JSON, PLAYTEST and this log (no Ruby or JS), so the session-2 counts stand
+  logically.
 
 Everything else from the handover is done and committed (merge, helper-equality, route/tampered,
 scanner fixture, validator tests, both suites green).
@@ -2206,3 +2201,61 @@ scanner fixture, validator tests, both suites green).
 
 - `bin/test-js -j 3`: 507 files passed, 0 failed (main added six JS files).
 - `bin/rails test`: 1777 runs, 25413 assertions, 0 failures, 0 errors, 1 skip.
+
+### Session 4 (2026-11-12): live proof for F11, F12, F13
+
+Keyless server on :3030 (never :3000), headless Playwright, the `session-start.sh` / `cmd.sh` harness
+with `--capture-responses`, one isolated game per beat started with `--start-room` (so each beat's
+capture and request budget stay clean). The baseline validator stayed 0 ❌. The coordinator noted main
+moved to `857ce87a7`; no merge was needed for the proof, so `build/9-2-c2` was not merged and the F10
+session-3 proof stands unchanged.
+
+- **F11 Theo, `mixed`, `workaround: borrow_session` (game 1330).** A tampered `/feed_post` for Theo
+  with forged `post_id`/`when`/`index`/`force` before the borrow was answered `{ post:null, refused:true }`
+  (no forced or picked post, `f11_borrowed` not served). Then Theo failed at his no-social PC, borrowed
+  `f11_kiosk`, and posted in order: `feedRevealed.theo.shown = ["f11_first","f11_borrowed","f11_last"]`,
+  the borrow post slotting in at its authored place and never ahead of the ordered `f11_first`;
+  `guestSessions.f11_kiosk = theo`; task `f11_posted` toasted. A `?skip_resume=1` reload restored the
+  client's reveal order (`["f11_first","f11_borrowed"]` at the reload point). `access-leak-check.rb` over
+  `f11-responses.jsonl`: no leaks found (17 feed posts, 2 feed facts checked). Beat `/feed_post` 3.
+- **F12 Greg, `facts_first`, `cause: [down, off]` (game 1334).** A tampered `/feed_post` before the
+  outage, with a forged `post_id: f12_vent` plus `cause`/`index`/`force`, returned the legitimate ordered
+  `f12_ordered`, never `f12_vent`: the route ignores the extra fields and the server picks by its own
+  order. Throwing `f12_breaker` set `f12_crm_down` and Greg's work failed reading it
+  (`npc_use_failed:greg need work, missing f12_crm why down`); `failWhy.work = ["down"]`. His next met
+  social use served the vent: `feedRevealed.greg.shown = ["f12_ordered","f12_vent"]`, done; task
+  `f12_posted`. The breaker was reset. A reload restored the order (`["f12_ordered","f12_vent"]`).
+  Leak check: no leaks found. Beat `/feed_post` 3.
+- **F13 Ruth, `reactive_first`, `cause: social_blocked` then `needMet` (game 1337).** A tampered
+  `/feed_post` before her failure was answered `{ post:null, refused:true }`. On the borrow the blocked
+  vent `f13_blocked` served first (reactive_first); task `f13_blocked` toasted;
+  `failWhy.social_media = ["social_blocked"]`. The recovery post `f13_fixed` (`when: { needMet:
+  social_media }`) serves only in the window where `easeAt > failAt` at request time, i.e. just after a
+  kiosk ease and before Ruth's next no-social desk failure. Her auto cadence rarely lands a met-use
+  `/feed_post` inside that window: `waitFor` on `f13_recovered` timed out at 200 s and again at 280 s
+  while every met-use request returned `{ post:null, done:false }` with no `tooSoon` (the floor was
+  clear, so this was the predicate reading false, not the pace floor). Reading the persisted record at a
+  moment where `easeAt > failAt` and issuing one met-use `ApiClient.feedPost("ruth","f13_kiosk")` served
+  `f13_fixed`, `done:true`. The server, not the tester, chose it: the eight prior nulls prove it refuses
+  `f13_fixed` while `needMet` is false, so this is a genuine met-use serve, not a forced one.
+  `feedRevealed.ruth.shown = ["f13_blocked","f13_fixed"]`, done. A reload restored the order. Leak check:
+  no leaks found. Beat `/feed_post` 10 (the extra null polls are the real-time race, not a leak).
+
+**Not an engine bug.** `AccessWork.need_met_now?` is correct: it serves `f13_fixed` exactly when
+`easeAt[need] > failAt[need]` holds at the request, as the decisive serve showed. The F13 beat is simply
+hard to drive by waiting because Ruth re-fails at her no-social desk between borrows, so the window is
+narrow; whoever scripts this beat should drive the kiosk met use deliberately rather than wait on her
+own cadence. No scenario authoring change was needed; validator stayed 0 ❌ throughout.
+
+**Observation (not changed, not a feature regression).** `tools/playtest/verify-run.rb` line 115 prints
+the `feedRevealed` count from the legacy `e['n']` field and shows `0` for every NPC under the new
+`{ shown, at }` shape. It is cosmetic in that helper (the handover's feedRevealed shape change did not
+list verify-run). The authoritative `shown` arrays were read straight from the stored `player_state`
+and the leak scanner confirmed no exposure, so the proof does not rely on that line. Flagged for the
+coordinator to decide whether to update the reader.
+
+### Session 4 games and housekeeping
+
+- Dev DB: `test_access_social` (mission 245) holds 11 games; three were added this session (1330 F11,
+  1334 F12, 1337 F13). None were deleted (shared dev DB; no `db:*` run).
+- :3030 keyless server and all harness sessions stopped.
