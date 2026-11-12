@@ -56,31 +56,29 @@ EXTERNAL player_name()
 // ENTRY
 // ===========================================
 
+// Phone-calls M4 (Vance callable). The support line is a voiced call now. The hub is reached only
+// by the call knot `support_call` (the `call` entry's knot, dialled by the green Call button or a
+// #place_call tag). The call rings out until Vance is an ally and while he is knocked out: that is
+// the `call` entry's `when` (vance_is_ally && !robert_vance_ko) and `unavailable: "no_answer"`,
+// config set by the implementer, so the ink no longer routes the not-ally / KO / no-answer cases
+// (the old vance_not_yet_ally / vance_no_answer knots are gone). The whole file from `support_call`
+// to `support_call_end` is the voiced call; `start` stays a silent text stub.
+
 === start ===
-{robert_vance_ko: -> vance_no_answer}
-{not vance_is_ally: -> vance_not_yet_ally}
+// Home text stub (phone reopen rule). Opening the thread by hand shows only a way out; the Call
+// button places the call (support_call). No NPC line here: a preload would add an unread message.
++ [(Close.)]
+    #exit_conversation
+    -> start
+
+// ===========================================
+// CALL
+// ===========================================
+
+=== support_call ===
+// lint: call-knot
+// Reached only when vance_is_ally && !robert_vance_ko (the `call` entry's `when`), so no KO/ally guard.
 ~ vance_support_calls += 1
--> vance_phone_support_start
-
-// PASS 3 phone-chat rule. A phone chat reopened after a synced global changed
-// re-navigates to the knot of the first saved choice, not `start`
-// (phone-chat-minigame.js:532-566), so every resting knot re-checks its own
-// state at the top. This one prints no NPC text (the preload would add an
-// unread message), so a player who opens the phone before allying sees only a
-// way out, and is routed on as soon as vance_is_ally flips.
-=== vance_not_yet_ally ===
-{robert_vance_ko: -> vance_no_answer}
-{vance_is_ally: -> start}
-+ [(He's at the ops desk. Talk to him there.)]
-    #exit_conversation
-    -> vance_not_yet_ally
-
-=== vance_no_answer ===
-+ [(No answer.)]
-    #exit_conversation
-    -> vance_no_answer
-
-=== vance_phone_support_start ===
 {
 - vance_support_calls == 1:
     Vance. What do you need?
@@ -100,7 +98,7 @@ EXTERNAL player_name()
 // ===========================================
 
 === support_hub ===
-{robert_vance_ko: -> vance_no_answer}
+// lint: call-knot
 + {not asked_charge_control} [How do the charge controls work?]
     ~ asked_charge_control = true
     ~ vance_trust_level += 3
@@ -148,6 +146,7 @@ EXTERNAL player_name()
 // ===========================================
 
 === charge_control_systems_explanation ===
+// lint: call-knot
 Three rack banks, A, B and C, and each one's got its own management unit and its own cooling loop.
 
 They all run over SCADA, and SCADA is theirs. Type a change at a terminal and they'll just push it back.
@@ -159,6 +158,7 @@ It isolates the banks and forces the vents. It all comes down to that button.
 -> support_hub
 
 === server_room_guidance ===
+// lint: call-knot
 {attack_mechanism_known:
     You've got their setup mapped. That's the hard part done.
     Now it's the shutdown. Nothing you type will hold. They own that layer.
@@ -171,6 +171,7 @@ It isolates the banks and forces the vents. It all comes down to that button.
 -> support_hub
 
 === safe_disabling_guidance ===
+// lint: call-knot
 One thing, and it isn't a keyboard.
 
 Every control path runs through SCADA, and SCADA is theirs. Delete their script and they'll push it back before you've closed the window.
@@ -201,6 +202,7 @@ The shutdown button in the plant room is hardwired. Straight to the bank isolato
 // Round 2 (review m2): mirrors the face-to-face vance_priority, so the phone
 // never sends the player to the shutdown before it can work.
 === priority_guidance ===
+// lint: call-knot
 {
 - attack_prevented:
     Go and see what they left behind. I'll watch the banks.
@@ -224,6 +226,7 @@ The shutdown button in the plant room is hardwired. Straight to the bank isolato
 // "Sound it.", and it is true to when it's asked: before the attack is mapped
 // the alarm starts a clock; after, the clock is already running.
 === crew_offer ===
+// lint: call-knot
 I can sound the evacuation from here. Klaxon and strobes in every hall.
 {
 - voltage_neutralised:
@@ -244,12 +247,14 @@ I can sound the evacuation from here. Klaxon and strobes in every hall.
     -> support_hub
 
 === crew_sound ===
+// lint: call-knot
 #set_global:crew_warned:true
 ~ crew_warned = true
 Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors.
 -> support_hub
 
 === urgency_assessment ===
+// lint: call-knot
 {
 - attack_prevented:
     Not any more. The cells are cooling.
@@ -270,6 +275,7 @@ Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors
 -> support_hub
 
 === support_call_end ===
+// lint: call-knot
 Call me if you need it.
 
 {urgency_stage >= 3 and not attack_prevented:
