@@ -625,7 +625,7 @@ VAR call_is_callback = false
 | Variable | Value |
 |---|---|
 | `call_answer_seconds` | On an incoming call, the whole seconds the phone rang before the player answered. An auto-answer counts (it comes at 6 s at most), and so does ringing from an offer that a newer one replaced. Time queued behind something, time paused and time on hold don't count. Outgoing calls and callbacks: 0. |
-| `call_is_callback` | `true` when the call is a callback connecting (the Call back button, the missed row's button, or `#place_call` dialling a pending callback). `false` on every other call. |
+| `call_is_callback` | `true` when the call is a callback connecting (the Call back button, the missed row's button, or `#place_call` (bare, or naming the callback's knot) dialling a pending callback). `false` on every other call. |
 
 Both are set fresh on every load and never saved, so they are right even after a reload. Choose between whole lines with a conditional, and never print the number (voiced lines can't print variables):
 
@@ -659,7 +659,7 @@ voice: Leave this with me. I will ring again.
 ```
 
 - A line that starts `voice:` becomes a voice message with a play button, and is spoken in the contact's voice. The prefix is stripped. A line without it is an ordinary text in the thread, silent.
-- It runs only when the contact's thread is closed. If the player declined with that thread open, the knot, and anything it sets, waits until they leave the thread. Don't make a hub choice in the same thread depend on a voicemail global at once.
+- It runs only when nothing of that contact is open (its thread, or a call with it). If the player declined with the thread open, the knot, and anything it sets, waits until they leave, and it may run after the contact's next call. Write it so it reads right then: set only flags that no later call depends on having been set first, or give the later call a branch for both orders. Don't make a hub choice in the same thread depend on a voicemail global at once.
 - No choices, no `#exit_conversation`. The knot runs to its end and the thread is left on the home knot. Variables the knot sets (`heard_vm`) persist, so the home knot can read them on the next open.
 - The knot is not part of the call, so it doesn't widen what the call voices. The voiced-line rules (no printed variables, no inline stage directions) apply to it as to a call. If `dialoguelint` flags call wording in a text line of it, mark the knot `// lint: call-knot`.
 - A withheld caller (`withheld: true`) must have a voicemail knot: it is the only way back to what they had to say.
