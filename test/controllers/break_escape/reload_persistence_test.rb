@@ -691,6 +691,8 @@ module BreakEscape
       game = create_game
       game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'guard', 'npcType' => 'person' }]
       game.player_state['room_states'] = { 'lobby' => { 'npcs_added' => [{ 'id' => 'runner' }] } }
+      # A KO counts only for a room NPC the player has met (review R4 M1)
+      game.player_state['encounteredNPCs'] = %w[guard runner]
       game.save!
 
       put sync_state_game_url(game), params: { npcHostility: { 'guard' => { hostile: true, ko: true },
@@ -711,6 +713,7 @@ module BreakEscape
       game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'guard', 'npcType' => 'person' },
                                                      { 'id' => 'clerk', 'npcType' => 'person' },
                                                      { 'id' => 'boxer', 'npcType' => 'person' }]
+      game.player_state['encounteredNPCs'] = %w[guard clerk boxer]
       game.save!
 
       put sync_state_game_url(game), params: { npcHostility: {
@@ -732,6 +735,7 @@ module BreakEscape
       game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'athena', 'npcType' => 'person' },
                                                      { 'id' => 'guard', 'npcType' => 'person' },
                                                      { 'id' => 'clerk', 'npcType' => 'person' }]
+      game.player_state['encounteredNPCs'] = %w[athena guard clerk]
       game.save!
 
       put sync_state_game_url(game), params: { npcHostility: {
@@ -834,9 +838,15 @@ module BreakEscape
     test 'every section saves on the narrow load (no MissingAttributeError), and startRoom is fetched on its own' do
       game = create_game
       game.scenario_data['rooms']['lobby']['objects'] = [{ 'type' => 'pc', 'fingerprintOwner' => 'Robert Vance' }]
-      game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'guard', 'npcType' => 'person' }]
+      # Review R4 M1 and m2 on the narrow load: a KO counts for a met room NPC only, and never
+      # for a koImmune one or one not met
+      game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'guard', 'npcType' => 'person' },
+                                                     { 'id' => 'warden', 'npcType' => 'person', 'koImmune' => true },
+                                                     { 'id' => 'stranger', 'npcType' => 'person' },
+                                                     { 'id' => 'hq', 'npcType' => 'phone' }]
       game.scenario_data['rooms']['vault'] = { 'type' => 'room_office', 'connections' => {}, 'objects' => [] }
       game.scenario_data['startRoom'] = 'vault'
+      game.player_state['encounteredNPCs'] = %w[guard warden hq]
       game.save!
 
       put sync_state_game_url(game), params: {
@@ -846,13 +856,19 @@ module BreakEscape
         timedMessages: { pending: [], delivered: ['npc:hax:1'] }, commandBoardLog: [{ id: 'x', t: 1 }],
         biometricSamples: [{ id: 's1', owner: 'Robert Vance', quality: 0.8 }, { id: 's2', owner: 'Nobody', quality: 1 }],
         phoneState: { 'hax' => { 'history' => [{ 'type' => 'npc', 'text' => 'Hi' }] } }, clientTs: 1000,
-        npcHostility: { 'guard' => { hostile: true, ko: true }, 'ghost' => { hostile: true, ko: false } }
+        npcHostility: { 'guard' => { hostile: true, ko: true }, 'ghost' => { hostile: true, ko: false },
+                        'warden' => { hostile: true, ko: true }, 'stranger' => { hostile: true, ko: true },
+                        'hq' => { hostile: true, ko: true } }
       }, as: :json
       assert_response :success
 
       state = game.reload.player_state
       assert_equal 'vault', state['currentRoom'], 'the start room is allowed although not in unlockedRooms'
-      assert_equal({ 'guard' => { 'hostile' => true, 'ko' => true } }, state['npcHostility'], 'NPC ids still checked against scenario_data')
+      assert_equal({ 'guard' => { 'hostile' => true, 'ko' => true },
+                     'warden' => { 'hostile' => true, 'ko' => false },
+                     'stranger' => { 'hostile' => true, 'ko' => false },
+                     'hq' => { 'hostile' => true, 'ko' => false } },
+                   state['npcHostility'], 'NPC ids, met, koImmune and phone NPCs still checked against scenario_data')
       assert_equal ['Robert Vance'], state['biometricSamples'].map { |s| s['owner'] }, 'owners still checked against scenario_data'
       assert_equal 1000, state['lastSyncClientTs']
       assert_equal({ 'met' => true }, state.dig('npcInkVariables', 'hax'))

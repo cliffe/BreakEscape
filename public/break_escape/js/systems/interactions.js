@@ -1098,7 +1098,8 @@ export function handleObjectInteraction(sprite) {
         'workstation', 'lab-workstation',
         'vm-launcher', 'vm_launcher',
         'launch-device', 'phone',
-        'mail_terminal'   // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
+        'mail_terminal',  // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
+        'phone_friendface' // q35: a Friendface phone, opened from inventory
     ]);
     if (sprite.scenarioData.takeable && PICKUP_THEN_INTERACT_TYPES.has(sprite.scenarioData.type)) {
         // A locked takeable mail terminal must be unlocked before it is picked up and

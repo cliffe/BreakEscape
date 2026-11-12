@@ -152,6 +152,45 @@ module BreakEscape
       npc.is_a?(Hash) && npc['phone'] != false
     end
 
+    # Whether an NPC's ink or JSON record offers an item type (Friendface phone review R1 M1 and
+    # R2 M1, m2): a give_item tag for the type, with or without a `|` or `:` selector, or a
+    # give_npc_inventory_items tag whose comma filter is empty or names the type. Read by the
+    # server (SocialFeed#npc_offers_item?) and by the validator, so the two cannot drift. `text`
+    # is a compiled story, an .ink source or a JSON record; a tag ends at a quote, a backslash
+    # (an escape in JSON), a newline or the next `#` (another ink tag on the same line).
+    GIVE_INVENTORY_RE = /give_npc_inventory_items(?:\s*:([^"\\\n#]*))?/.freeze
+
+    # The engine trims around the first colon (chat-helpers.js), so `give_item : type` gives too
+    # (review R3 n1). The type must be literal: a tag built from an ink variable never matches.
+    def give_item_re(type)
+      /give_item\s*:\s*#{Regexp.escape(type.to_s)}(?![\w-])/
+    end
+
+    def offers_item_text?(text, type)
+      return false unless text.is_a?(String) && type.is_a?(String) && !type.empty?
+      return true if text.match?(give_item_re(type))
+
+      text.scan(GIVE_INVENTORY_RE).any? do |(param)|
+        types = param.to_s.split(',').map(&:strip).reject(&:empty?)
+        types.empty? || types.include?(type)
+      end
+    end
+
+    # The texts an NPC's offers are read from: its JSON record without itemsHeld, then its story,
+    # found by `story_file` (storyPath -> path or nil; the server and the validator each resolve
+    # it their own way)
+    def offer_texts(npc, &story_file)
+      return [] unless npc.is_a?(Hash)
+
+      texts = [JSON.generate(npc.reject { |k, _| k == 'itemsHeld' })]
+      sp = npc['storyPath']
+      if sp.is_a?(String) && !sp.empty? && story_file
+        path = story_file.call(sp)
+        texts << File.read(path) if path && File.exist?(path)
+      end
+      texts
+    end
+
     # Judged: work with a plan, or social_media
     def judged?(data, npc, need)
       case need

@@ -41,6 +41,7 @@ export class NPCGameBridge {
       itemType: item.type,
       itemName: item.name,
       itemId: item.id,
+      lockRef: item.opens_lock ?? item.key_id,
       collectionGroup: item.collection_group || null,
       roomId: window.currentPlayerRoom
     });

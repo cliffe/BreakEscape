@@ -59,11 +59,11 @@ module BreakEscape
       assert_no_secrets('door /unlock')
     end
 
-    test 'an NPC moved by update_room is withheld in the room it joins' do
+    # update_room no longer takes move_npc from a client (friendface phone code review R5 M1);
+    # a server-side move still stores the NPC in npcs_added, so the withholding is still checked
+    test 'an NPC moved between rooms is withheld in the room it joins' do
       build('unlockedRooms' => %w[lobby finance])
-      post update_room_game_url(@game), params: { roomId: 'finance', actionType: 'move_npc',
-                                                  data: { npcId: 'jake', fromRoom: 'finance', toRoom: 'lobby' } }, as: :json
-      assert_response :success, response.body
+      assert @game.move_npc_to_room!('jake', 'finance', 'lobby')
       get room_game_url(@game, room_id: 'lobby'), as: :json
       assert_response :success
       assert response.parsed_body['room']['npcs'].any? { |n| n['id'] == 'jake' }, 'Jake joined the lobby'
@@ -184,8 +184,8 @@ module BreakEscape
     # Review R2 M1: each route below answers 200 with the data it serves on success. Fay sits in
     # finance, behind the PIN door, and each pass starts with finance locked again, so the door
     # unlock answers with her room. The sign-in, the inventory add, the ink, the ease report, the
-    # workaround and the move all succeed; the move takes Fay to the lobby, so GET /room/lobby
-    # serves the record the move stored.
+    # workaround and an object update all succeed; a server-side move takes Fay to the lobby
+    # first, so GET /room/lobby serves the record the move stored.
     FEED_POSTS = ['Fay adopted a cat called Pickles today, so happy.', 'Fay ran the 2011 city marathon, still proud.'].freeze
     FEED_FACTS = { 'fay_cat' => 'Fay Ngata has a cat called Pickles.', 'fay_marathon' => 'Fay Ngata ran a marathon in 2011.' }.freeze
     FEED_STORY = 'test/fixtures/files/ink_line_walker/text_match_fixture.json'.freeze
@@ -258,10 +258,14 @@ module BreakEscape
         }],
         ['POST /npc_workaround', -> { post npc_workaround_game_url(@game), params: { npc_id: 'fay', index: 0, hand: 1 }, as: :json }],
         ['POST /update_room', lambda {
-          post update_room_game_url(@game), params: { roomId: 'finance', actionType: 'move_npc',
-                                                      data: { npcId: 'fay', fromRoom: 'finance', toRoom: 'lobby' } }, as: :json
+          post update_room_game_url(@game), params: { roomId: 'lobby', actionType: 'update_object_state',
+                                                      data: { objectId: 'club_flyer', stateChanges: { opened: true } } }, as: :json
         }],
-        ['GET /room/lobby', -> { get room_game_url(@game, room_id: 'lobby'), as: :json }]
+        # The move is server-side now (review R5 M1): it takes Fay to the lobby as before
+        ['GET /room/lobby', lambda {
+          @game.reload.move_npc_to_room!('fay', 'finance', 'lobby')
+          get room_game_url(@game, room_id: 'lobby'), as: :json
+        }]
       ]
       calls.map do |label, call|
         call.call

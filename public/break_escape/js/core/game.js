@@ -3,7 +3,7 @@
 import { initializeRooms, calculateWorldBounds, calculateRoomPositions, createRoom, revealRoom, updatePlayerRoom, rooms } from './rooms.js';
 import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward, startHoldWalk, stopHoldWalk, player, isMoving as playerIsMoving } from './player.js';
 import { resumeSpawnFor } from './resume-spawn.js';
-import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
+import { initializeInventory, processInitialInventoryItems, registerTrayRule, refreshInventoryTray } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
 import { aimX, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
@@ -34,6 +34,8 @@ import { ApiClient } from '../api-client.js'; // Import to ensure window.ApiClie
 import '../systems/npc-work.js'; // Access slice 9.2: sets window.npcWork (the use verdict) before the needs system runs
 import { installNpcReports } from '../systems/npc-reports.js'; // Access slice 9.2 (5.4): ready before the needs system's first tick (R1 m2)
 import { installNpcWorkarounds } from '../systems/npc-workarounds.js'; // Access slice 9.2 B (6): listening before a restored hand-over is emitted
+import { installFriendfacePhones } from '../systems/friendface-phone.js'; // q35: Friendface phone items, their open route and the post blip
+import { socialOverlayParams } from '../minigames/framework/social-overlay.js';
 import { installSocialFeed } from '../systems/social-feed.js'; // Access slice 9.2 C (8.3): revealed posts in place before the browser can open
 import { getTutorialManager } from '../systems/tutorial-manager.js';
 import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE, INTERACTION_RANGE } from '../utils/constants.js';
@@ -1665,6 +1667,7 @@ export async function create() {
     // Access slice 9.2 C (8.3): the posts the server has revealed, with their facts, merged now,
     // before anything can open the browser; then the listener that asks after each met use
     try { installSocialFeed(ApiClient, gameScenario?.feedPosts || null); } catch (e) { console.warn('social feed failed to install', e); }
+    try { installFriendfacePhones(ApiClient, { registerTrayRule, refreshTray: refreshInventoryTray, socialOverlayParams }); } catch (e) { console.warn('Friendface phones failed to install', e); }
     
     console.log('🔍 Raw gameScenario loaded from cache:', gameScenario);
     if (gameScenario?.npcs && gameScenario.npcs.length > 0) {

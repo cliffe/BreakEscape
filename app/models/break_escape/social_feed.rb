@@ -106,6 +106,127 @@ module BreakEscape
       end
     end
 
+    # ── Friendface phone item (q35, docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md) ─────────
+
+    FRIENDFACE_PHONE = 'phone_friendface'.freeze
+
+    # The Friendface phone the player holds for `npc_id` (nil: the player's own phone, one with no
+    # phoneOf), or nil. Reads the server's inventory, and counts only a phone the scenario declares
+    # (review R1 m1: an unsourced room add cannot mint one); phoneOf is a field a client-built item
+    # can never carry.
+    def held_friendface_phone(npc_id)
+      declared = declared_friendface_phones
+      Array(player_state['inventory']).find do |item|
+        next false unless item.is_a?(Hash) && item['type'] == FRIENDFACE_PHONE
+
+        owner = friendface_owner(item)
+        owner == npc_id && declared.any? { |d| d['id'] == item['id'] && friendface_owner(d) == owner }
+      end
+    end
+
+    # Every phone_friendface the scenario declares (room objects and their contents, NPC itemsHeld,
+    # start items), as authored
+    def declared_friendface_phones
+      out = []
+      walk = lambda do |list|
+        Array(list).each do |o|
+          next unless o.is_a?(Hash)
+
+          out << o if o['type'] == FRIENDFACE_PHONE && o['id'].is_a?(String)
+          walk.call(o['contents'])
+          walk.call(o['itemsHeld'])
+        end
+      end
+      (scenario_data['rooms'] || {}).each_value do |room|
+        next unless room.is_a?(Hash)
+
+        walk.call(room['objects'])
+        walk.call(room['npcs'])
+      end
+      walk.call(scenario_data['startItemsInInventory'])
+      out
+    end
+
+    # True once an NPC's Friendface phone has left it (plan section 3): recorded in phonesTaken the
+    # first time it reaches the inventory by any route (a give, the NPC's items, a KO drop picked
+    # up), so dropping or removing it later changes nothing (review R1 m2). A gift record or a held
+    # phone from a save made before the record existed counts too.
+    def friendface_phone_taken?(npc_id)
+      return false unless npc_id.is_a?(String) && !npc_id.empty?
+      return true if Array(player_state['phonesTaken']).include?(npc_id)
+
+      given = player_state['npc_given_items']
+      gifted = given.is_a?(Hash) && Array(given[npc_id]).any? { |g| g.is_a?(Hash) && g['type'] == FRIENDFACE_PHONE }
+      return true if gifted
+      # Review R2 n3, R3 n3: scenario_room_npc asks this on every call; skip the scenario walk in
+      # held_friendface_phone unless the inventory holds a Friendface phone of this NPC's (the
+      # player's own phone, with no phoneOf, never brings the walk back)
+      return false unless Array(player_state['inventory']).any? do |i|
+        i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE && friendface_owner(i) == npc_id
+      end
+
+      !held_friendface_phone(npc_id).nil?
+    end
+
+    # Called by add_inventory_item!: an NPC's phone entering the inventory is taken for good
+    def note_friendface_phone_taken!(item)
+      owner = item.is_a?(Hash) && item['type'] == FRIENDFACE_PHONE ? friendface_owner(item) : nil
+      return unless owner
+
+      player_state['phonesTaken'] = [] unless player_state['phonesTaken'].is_a?(Array)
+      player_state['phonesTaken'] << owner unless player_state['phonesTaken'].include?(owner)
+    end
+
+    # Review R1 M1: an NPC hands its Friendface phone over only when the scenario offers that give:
+    # a give_item tag for the phone type, or a give_npc_inventory_items tag that does not filter it
+    # out, in the NPC's story or anywhere in its JSON record (itemsHeld aside). The patterns live
+    # in AccessWork.offers_item_text?, which the validator reads too (review R2 m2).
+    def friendface_phone_offered?(npc_id)
+      npc_offers_item?(npc_id, FRIENDFACE_PHONE)
+    end
+
+    # Whether a room NPC's story or record offers an item of `type` (review R2 M1: the rule for an
+    # NPC-sourced room add from an NPC that is not KO'd). The story is the compiled JSON, or the
+    # .ink source when it was never compiled (review R2 n1; the game compiles a story on its first
+    # /ink request, before any give, so the fallback matters only to tools and tests).
+    def npc_offers_item?(npc_id, type)
+      npc = npc_id.is_a?(String) ? self.class.scenario_room_npcs(scenario_data).find { |n| n['id'] == npc_id } : nil
+      return false unless npc
+
+      texts = AccessWork.offer_texts(npc) do |story_path|
+        InkStoryFile.find(story_path, compile: false) || InkStoryFile.ink_source(Engine.root.join(story_path))
+      end
+      texts.any? { |t| AccessWork.offers_item_text?(t, type) }
+    end
+
+    # POST /friendface_phone. Returns { status:, body: }. Read only. `npc_id` a String opens that
+    # NPC's phone, nil the player's own. Refused (403) unless the player holds that phone. The body
+    # names the site and the profile to open. With `with_posts` (a test asks, `posts: 1`) it also
+    # carries the server's feedPosts for it (that NPC's, or all of them for the player's own
+    # phone): posts already revealed, nothing new. The client never merges them (review R1 M2), so
+    # a game open leaves them out (review R3 n5).
+    def open_friendface_phone(npc_id, with_posts: false)
+      return { status: :forbidden, body: { error: 'no such phone' } } unless npc_id.nil? || (npc_id.is_a?(String) && !npc_id.empty?)
+
+      item = held_friendface_phone(npc_id)
+      return { status: :forbidden, body: { error: 'no such phone' } } unless item
+
+      posts = feed_posts_for_client
+      if npc_id
+        npc = scenario_room_npc(npc_id)
+        feed = npc.is_a?(Hash) && npc['feed'].is_a?(Hash) ? npc['feed'] : {}
+        site = feed['site'].is_a?(String) ? feed['site'] : default_friendface_site
+        person = feed['person'].is_a?(String) ? feed['person'] : nil
+        posts = posts.slice(npc_id)
+      else
+        site = item['site'].is_a?(String) && !item['site'].empty? ? item['site'] : default_friendface_site
+        person = nil
+      end
+      body = { 'npcId' => npc_id, 'site' => site, 'person' => person }
+      body['feedPosts'] = posts if with_posts
+      { status: :ok, body: body }
+    end
+
     # Deletes every feed fact's entry from the bootstrap's social.intelFacts (plan 8.3), never the
     # block itself: an empty intelFacts stays an object, because grantFact grants any id when the
     # block is absent (social-intel.js).
@@ -124,6 +245,17 @@ module BreakEscape
     end
 
     private
+
+    def friendface_owner(item)
+      item['phoneOf'].is_a?(String) && !item['phoneOf'].empty? ? item['phoneOf'] : nil
+    end
+
+    # The first social site in the scenario's osint block, or nil
+    def default_friendface_site
+      sites = scenario_data.dig('social', 'osint', 'sites')
+      site = Array(sites).find { |st| st.is_a?(Hash) && st['type'] == 'social' && st['id'].is_a?(String) }
+      site && site['id']
+    end
 
     # q33: the phone (nil) when the NPC has one; else a social media place of the NPC (its own
     # station, a non-desk source, a borrowed PC handed over) in a room the player can know of,

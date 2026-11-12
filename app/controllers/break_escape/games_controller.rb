@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
                                         :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
-                                        :npc_frustration, :npc_workaround, :feed_post, :wear]
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -880,17 +880,9 @@ module BreakEscape
         # Use strong parameters instead of to_unsafe_h
         @game.update_npc_state!(room_id, npc_id, npc_state_params)
 
-      when 'move_npc'
-        npc_id = data[:npcId] || data['npcId']
-        from_room = data[:fromRoom] || data['fromRoom']
-        to_room = data[:toRoom] || data['toRoom']
-
-        unless npc_id.present? && from_room.present? && to_room.present?
-          return render json: { success: false, message: 'Invalid NPC move data' }, status: :bad_request
-        end
-
-        @game.move_npc_to_room!(npc_id, from_room, to_room)
-
+      # No 'move_npc' action: nothing in the game called it, and a client could name any NPC
+      # and any room next to an unlocked one, so the NPC was served there and recorded as met
+      # (friendface phone code review round 5, M1). An unknown action answers 400 below.
       when 'remove_npc_from_scene'
         npc_id = data[:npcId] || data['npcId']
 
@@ -1255,6 +1247,18 @@ module BreakEscape
       source = params[:object_id]
       source = false unless source.nil? || source.is_a?(String) # any other shape is refused
       result = @game.reveal_feed_post!(params[:npc_id].is_a?(String) ? params[:npc_id] : nil, source)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/friendface_phone: open a Friendface phone the player holds (q35,
+    # FRIENDFACE_PHONE_ITEM_PLAN.md section 4). npc_id a string: that NPC's phone; null: the
+    # player's own. Read only; refused unless the server's inventory holds that phone.
+    def friendface_phone
+      authorize @game if defined?(Pundit)
+      npc_id = params[:npc_id]
+      npc_id = false unless npc_id.nil? || npc_id.is_a?(String) # any other shape is refused
+      # Review R3 n5: the revealed posts come back only when asked for (tests); the game never reads them
+      result = @game.open_friendface_phone(npc_id, with_posts: params[:posts].to_s == '1')
       render json: result[:body], status: result[:status]
     end
 
@@ -1991,6 +1995,9 @@ module BreakEscape
           Rails.logger.error "[BreakEscape] note_npcs_met! failed: #{e.message}"
         end
         @game.save!
+        # Code review R5 m1: the payload was composed before these NPCs were met, so a KO'd one
+        # (an old save with a KO and no met record) is listed now, on this load
+        room_data['npcs'] = @game.with_ko_drop_pending(room_data['npcs'], only: new_npcs)
 
         total_encountered = @game.player_state['encounteredNPCs'].length
         Rails.logger.info "[BreakEscape] ✅ Tracked #{new_npcs.length} new NPC encounter(s) in room #{room_id}. Total NPCs encountered: #{total_encountered}"
@@ -2213,9 +2220,11 @@ module BreakEscape
     # Game#add_item_to_room! stamps it. A client must not set it on an item it builds
     # (an always-allowed item reaches the non-Hash branch below with just this filter),
     # so a security marker is never client-writable (code review R2, m2).
+    # phoneOf names whose Friendface phone an item is; only the scenario sets it
+    # (q35 review R1 m1).
     CLIENT_ITEM_FORBIDDEN_FIELDS = (
       BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS +
-      %w[scenarioData] +
+      %w[scenarioData phoneOf] +
       [BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER]
     ).freeze
 
@@ -2348,6 +2357,16 @@ module BreakEscape
           Rails.logger.warn "[BreakEscape] #{error_msg}"
           return error_msg
         end
+        # Review R2 M1: an NPC's Friendface phone lies in a room only as a stored NPC drop. A save
+        # made before add_item_to_room! checked the drop can hold one taken from a live NPC that
+        # never offered it, so the pickup asks the same question
+        owner = found_item['phoneOf']
+        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && owner.is_a?(String) &&
+           !@game.npc_room_drop_allowed?(owner, found_item)
+          error_msg = "NPC does not give this item: #{owner}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
+        end
       elsif location[:type] == 'npc'
         npc_id = location[:npc_id]
         unless @game.player_state['encounteredNPCs']&.include?(npc_id)
@@ -2362,6 +2381,18 @@ module BreakEscape
             Rails.logger.warn "[BreakEscape] #{error_msg}"
             return error_msg
           end
+        end
+        # q35 review R1 M1: an NPC's Friendface phone changes what the server decides for that
+        # NPC, so it is handed over only when the scenario offers that give (a KO drop is a room
+        # location and stays allowed). Specific to this item; other held items keep the old rule.
+        # Code review R5 n2: an NPC the server holds as KO'd (npc_defeated?, the claim rule) gives
+        # its phone too, so a KO drop the server refused (its KO sync had not landed) can still be
+        # picked up from the local sprite once the KO has reached the server.
+        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && !@game.friendface_phone_offered?(npc_id) &&
+           !@game.npc_defeated?(npc_id)
+          error_msg = "NPC does not give this item: #{npc_id}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
         end
       elsif location[:type] == 'flag_station'
         # A flag station's item is its reward for a flag: collectible only once

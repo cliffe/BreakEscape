@@ -36,7 +36,150 @@ module ValidateAccessWork
     check_work(json_data, issues)
     check_workarounds(json_data, issues)
     check_social(json_data, issues)
+    check_friendface_phones(json_data, issues)
     issues
+  end
+
+  # ── Friendface phone items (q35, docs/achitechture/FRIENDFACE_PHONE_ITEM_PLAN.md section 3) ──
+
+  FRIENDFACE_PHONE = 'phone_friendface'
+
+  # An NPC's Friendface phone (`phoneOf`) sits in that NPC's itemsHeld, the NPC has a phone, and it
+  # holds at most one; an NPC with a social_media need, a feed and a phone holds its phone. A phone
+  # with no phoneOf is the player's own and may be anywhere; its `site` must be a social site.
+  def check_friendface_phones(json_data, issues)
+    npcs = room_npcs(json_data).to_h { |e| [e[:npc]['id'], e[:npc]] }
+    sites = osint_sites(json_data).to_h { |site| [site['id'], site] }
+    held_by = Hash.new { |h, k| h[k] = [] }
+    room_npcs(json_data).each do |e|
+      Array(e[:npc]['itemsHeld']).each { |i| held_by[e[:npc]['id']] << i if i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE }
+    end
+    social_site = sites.values.any? { |site| site['type'] == 'social' }
+    no_site_said = false
+    all_objects(json_data).each do |o|
+      item = o[:obj]
+      if item['type'] != FRIENDFACE_PHONE
+        if item.key?('phoneOf')
+          warn(issues, "'#{item['name'] || item['id'] || item['type']}' (type '#{item['type']}') has phoneOf, which only a " \
+                       "#{FRIENDFACE_PHONE} reads: it is ignored here.")
+        end
+        next
+      end
+
+      owner = item['phoneOf']
+      name = item['name'] || item['id'] || FRIENDFACE_PHONE
+      # Review R1 m4: the phone opens a social site (its owner's feed site, else the first one)
+      if !social_site && !no_site_said
+        err(issues, "Friendface phone '#{name}': the scenario has no social osint site, so the phone has nowhere to open.")
+        no_site_said = true
+      end
+      err(issues, "Friendface phone '#{name}' needs an id: the server matches a held phone to the scenario's by id.") unless item['id'].is_a?(String) && !item['id'].empty?
+      if owner.nil?
+        if item.key?('site') && !(sites[item['site']] && sites[item['site']]['type'] == 'social')
+          err(issues, "Friendface phone '#{name}' site '#{item['site']}' names no social osint site.")
+        end
+        next
+      end
+      if !owner.is_a?(String) || !npcs.key?(owner)
+        err(issues, "Friendface phone '#{name}' phoneOf '#{owner}' names no room NPC.")
+      elsif !held_by[owner].any? { |i| i.equal?(item) }
+        err(issues, "Friendface phone '#{name}' is #{owner}'s (phoneOf) but is not in #{owner}'s itemsHeld: an NPC's phone starts with that NPC.")
+      elsif !AW.phone?(npcs[owner])
+        err(issues, "Friendface phone '#{name}' belongs to #{owner}, who is \"phone\": false: that NPC has no personal phone.")
+      end
+      err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no phoneOf) takes one.") if item.key?('site')
+      # Review R1 m3: an NPC phone that is not takeable can never be given or picked up
+      err(issues, "Friendface phone '#{name}' (#{owner}'s) is not \"takeable\": true, so it can never be given or picked up.") unless item['takeable'] == true
+      # Review R2 m2, R3 m1: the server hands an NPC's phone over only when its story or record
+      # offers it (the same patterns, AccessWork.offers_item_text?); otherwise a KO drop does,
+      # which is a valid route (q35), unless the NPC is koImmune and cannot be knocked out
+      if npcs.key?(owner) && !npc_offers_phone?(npcs[owner])
+        if npcs[owner]['koImmune'] == true
+          err(issues, "Friendface phone '#{name}' (#{owner}'s): no give_item:#{FRIENDFACE_PHONE} and no give_npc_inventory_items that " \
+                      "includes it in #{owner}'s story or record, and #{owner} is koImmune, so the player can never obtain it.")
+        else
+          issues << "ℹ️ work: Friendface phone '#{name}' (#{owner}'s): no give offers it, so a KO drop is the only way to obtain it."
+        end
+      end
+    end
+    # Review R3 n2: a JSON give_item action carries an inline item with no NPC source, which the
+    # server never matches to a declared phone; phones are given by ink tags only
+    json_actions(json_data).each do |a|
+      next unless a['type'] == 'give_item' && a['item'].is_a?(Hash) && a['item']['type'] == FRIENDFACE_PHONE
+
+      err(issues, "A JSON give_item action gives a #{FRIENDFACE_PHONE} ('#{a['item']['name'] || a['item']['id'] || FRIENDFACE_PHONE}'): " \
+                  "the server refuses it. Give a phone with an ink tag (#give_item:#{FRIENDFACE_PHONE}) from its owner's story.")
+    end
+    # Review R2 n4: the server resolves an add to the first item with a matching id, so two phones
+    # sharing an id would hand over the wrong one
+    all_objects(json_data).map { |o| o[:obj] }.select { |i| i['type'] == FRIENDFACE_PHONE && i['id'].is_a?(String) }
+                          .group_by { |i| i['id'] }.each do |id, list|
+      err(issues, "Friendface phone id '#{id}' is used by #{list.size} phones: each phone needs its own id.") if list.size > 1
+    end
+    npcs.each do |nid, npc|
+      own = held_by[nid].select { |i| i['phoneOf'] == nid }
+      err(issues, "#{nid} holds #{own.size} Friendface phones of its own; an NPC carries one.") if own.size > 1
+      next unless AW.need?(npc, 'social_media') && npc['feed'].is_a?(Hash) && AW.phone?(npc) && own.empty?
+
+      err(issues, "#{nid} posts from a phone (social_media need, a feed, no \"phone\": false) but holds no Friendface phone: " \
+                  "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"phoneOf\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")
+    end
+  end
+
+  REPO_ROOT = File.expand_path('..', __dir__)
+
+  # An NPC's offers, read as the server reads them (SocialFeed#npc_offers_item?): its record, then
+  # its compiled story, or the .ink source when there is no compiled file
+  # Review R3 n4: an .ink source (a story never compiled) brings in its INCLUDEd files too.
+  def npc_offers_phone?(npc)
+    texts = AW.offer_texts(npc) { |story_path| story_file(story_path) }
+    sp = npc['storyPath']
+    path = sp.is_a?(String) && !sp.empty? ? story_file(sp) : nil
+    texts += ink_included_texts(path) if path&.end_with?('.ink')
+    texts.any? { |t| AW.offers_item_text?(t, FRIENDFACE_PHONE) }
+  end
+
+  # The text of every file an .ink file INCLUDEs, followed recursively, each read once
+  def ink_included_texts(path)
+    seen = Set[path]
+    queue = [path]
+    out = []
+    until queue.empty?
+      f = queue.shift
+      File.readlines(f, encoding: 'UTF-8').each do |l|
+        next unless l =~ /^\s*INCLUDE\s+(\S+)/
+
+        inc = File.expand_path(Regexp.last_match(1), File.dirname(f))
+        next if seen.include?(inc) || !File.file?(inc)
+
+        seen << inc
+        queue << inc
+        out << File.read(inc, encoding: 'UTF-8')
+      end
+    end
+    out
+  end
+
+  # Every hash in the scenario with a String `type` and an `item` (the shape of a JSON give_item
+  # action, wherever it sits: eventMappings, timers, flag stations), found by walking the document
+  def json_actions(json_data)
+    out = []
+    walk = lambda do |v|
+      case v
+      when Hash
+        out << v if v['type'].is_a?(String) && v.key?('item')
+        v.each_value { |x| walk.call(x) }
+      when Array then v.each { |x| walk.call(x) }
+      end
+    end
+    walk.call(json_data)
+    out
+  end
+
+  def story_file(story_path)
+    base = File.expand_path(story_path, REPO_ROOT)
+    [base, base.sub(/\.json\z/, '.ink.json'), base.sub(/\.ink\.json\z/, '.json'), base.sub(/\.(ink\.)?json\z/, '.ink')]
+      .find { |f| File.file?(f) }
   end
 
   # ── shared walks ──────────────────────────────────────────────────────

@@ -269,7 +269,7 @@ test('items drop in the room the NPC fell in, and are registered there (B1)', as
         npcBehaviorManager: { getBehavior: () => null },
         eventDispatcher: { emit() {} },
         gameState: { globalVariables: {} },
-        RoomStateSync: { updateNpcState: () => Promise.resolve(), addItemToRoom: (room, item) => { synced.push({ room, item }); return Promise.resolve(); } }
+        RoomStateSync: { updateNpcState: () => Promise.resolve(true), addItemToRoom: (room, item) => { synced.push({ room, item }); return Promise.resolve(true); } }
     });
     const { initNPCHostileSystem } = await import(dataUrl(swap(read('systems/npc-hostile.js'))));
     const sys = quiet(() => initNPCHostileSystem());
