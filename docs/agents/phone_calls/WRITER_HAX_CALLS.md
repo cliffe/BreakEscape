@@ -221,3 +221,43 @@ No else branch: prompt/placed answer goes straight to "Read it twice..." (the pl
 Compile OK; `extract_offer` now only in a comment. dialoguelint: pre-existing line-len error at :1077 only. Validator: Schema passed; two expected call-VAR warnings. No structural errors.
 
 Voiced new/re-keyed: **~10** — 2 architect openers (new) + ~4 bring-in lines (re-key).
+
+---
+
+## m06 + m08 (M10) — DONE, committed
+
+Both calls are **placed** (button: false), so no call VARs declared in either file.
+
+### m06 `scenarios/m06_follow_the_money/ink/m06_phone_agent_0x99.ink`
+
+**Fund call** (on_architects_fund_discovered → on_fund_choices → coordinated_attack / casualty_numbers → critical_choice_preview → critical_choice_choices → handler_recommendation): marked `// lint: call-knot`; the two call-internal `-> hub` (critical_choice_choices `[Let me think about it.]`, handler_recommendation) now `#exit_conversation` / `-> DONE`. No line rewrites (texts "Call me about it" stay). `on_blockchain_choices` is a separate text topic — left as `-> hub`.
+Hub choice `[I've found The Architect's Fund.]`: keeps `~ reacted_fund = true`, now `#place_call:on_architects_fund_discovered` / `-> DONE`.
+
+**Bring-in** extract_call (renamed from extract_offer) — 7.6 m06:
+
+| Line | Before | After |
+|---|---|---|
+| opening | "Once you're out, you don't go back in. Whatever you haven't read stays for forensics." | "Police are twenty minutes out. Whatever you leave in there is their evidence." |
+| safe line | "His safe's still shut, for one." | unchanged |
+| [Bring me in.] reply | "Car's round the back of the building. Two minutes." | "Round the back. They'll flash the headlights twice." |
+| "Not yet" reply | "Take your time. The police can wait a few minutes." (`-> hub`) | "A few minutes. The police won't give you more." (`#exit_conversation` / `-> DONE`) |
+| [On my way.] | plain | `[On my way. #ending_check]` |
+| last line | "See you at HQ." | "We'll decide about the money at HQ, not on a phone." |
+
+`#complete_task:call_in_after_sweep` moved to [Bring me in.] reply; `#set_variable:start_debrief_cutscene` + assignment stay in extract_go. Hub choice `[I'm done here. Bring me in.]` → `#place_call:extract_call`. All extract/fund knots marked `// lint: call-knot`.
+
+### m08 `scenarios/m08_the_mole/ink/m08_phone_agent_0x99.ink`
+
+**Door audit call** (hax_read_1 → hax_read_2 → hax_read_right / wrong knots): the player reads the minute and names the leak. All `-> hub` in the chain now `#exit_conversation` / `-> DONE` (both `{ mole_identified: ... }` guards, both `[Let me read it again.]`, both wrong-answer returns, and hax_read_right). "Read it again and call me back." stays (×2, 7.3 — the hub choice re-dials). No VAR openers (placed). Knots marked `// lint: call-knot`.
+Hub choice `[I can name the leak.]` (was inline `-> hax_read_1`): now `#place_call:hax_read_1` / `-> DONE`.
+
+### Config the implementer must add (M10)
+- m06 `agent_0x99_handler` `call`: `[{ knot: "on_architects_fund_discovered", button: false }, { knot: "extract_call", button: false }]`.
+- m08 `agent_0x99` `call`: `[{ knot: "hax_read_1", button: false }]`.
+
+### Checks
+Both compile, "All ink files valid", Schema passed, Validation complete.
+- m06: pre-existing validator `❌ ERROR`s on `rooms/data_center/objects[0](transaction_server)` minigameData (undeclared fields `mode`/`title`/… for `pc`) — **not mine** (m06 ERB untouched); flagged for the orchestrator. Pre-existing lint error at :238.
+- m08: pre-existing lint error at :190. No new call-set issues.
+
+Voiced new/re-keyed: m06 ~6 (4 bring-in re-key + fund call lines keep wording); m08 ~10 (door-audit lines keep wording, now voiced).
