@@ -235,6 +235,21 @@ test('a server refusal (no_device) shows the hint and emits the refusal', async 
     assert.deepEqual(links.list(), []);
 });
 
+test('a port-security refusal shows the authored message, keeps the device and emits the refusal', async () => {
+    await reset({ items: [box] });
+    const message = 'This port only takes known machines. Disable unused ports.';
+    window.ApiClient.networkPlant = async () => {
+        const e = new Error('x'); e.status = 422; e.body = { reason: 'port_security', error: message }; throw e;
+    };
+    const out = await links.interactJack(jackSprite());
+    assert.equal(out.action, 'refused');
+    assert.equal(out.reason, 'port_security');
+    assert.deepEqual(named('network_device_refused').map(e => e.data), [{ jackId: 'comms_port', reason: 'port_security' }]);
+    assert.ok(toasts.includes(message), 'the authored message is shown');
+    assert.equal(held('kit_dropbox').length, 1, 'the device stays in the tray');
+    assert.deepEqual(links.list(), []);
+});
+
 test('a planted jack asks "Unplug it" / "Leave it"; "Leave it" and Esc send nothing', async () => {
     await reset({ planted: true });
     confirmAnswer = false; // "Leave it", Esc and the close cross all resolve false

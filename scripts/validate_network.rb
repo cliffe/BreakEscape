@@ -12,8 +12,9 @@ require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/declared_grants'
 
-# Fields reserved for slice 9.3b (3.1). 9.3a refuses them.
-NETWORK_RESERVED_OBJECT_FIELDS = %w[wifiAp portSecurity portSecurityMessage].freeze
+# Fields reserved for later 9.3b sub-slices (3.1). Sub-slice P un-reserves portSecurity
+# and portSecurityMessage; wifiAp stays reserved until sub-slice W.
+NETWORK_RESERVED_OBJECT_FIELDS = %w[wifiAp].freeze
 NETWORK_RESERVED_NETWORK_FIELDS = %w[downIf wifi].freeze
 
 # Items that are physical things: taken down the wire from a remote desktop, they would
@@ -70,6 +71,22 @@ def check_network_model(json_data)
     end
   end
   find_grant_foothold.call(json_data, '')
+
+  # ---- Port security (sub-slice P, section 5.4 / 9.2) ----
+  # portSecurity is only valid on a networkJack; portSecurityMessage needs portSecurity;
+  # a jack cannot be a secured port and a Wi-Fi access point at once (4.4).
+  all_objects.each do |e|
+    obj = e[:object]
+    if obj['portSecurity'] && !nm.jack?(obj)
+      err.call("'#{e[:path]}' has 'portSecurity' but is not a networkJack; port security is only valid on a jack.")
+    end
+    if obj.key?('portSecurityMessage') && !obj['portSecurity']
+      err.call("'#{e[:path]}' has 'portSecurityMessage' without 'portSecurity': true.")
+    end
+    if obj['portSecurity'] && obj['wifiAp']
+      err.call("'#{e[:path]}' is both 'portSecurity' and 'wifiAp'; a jack cannot be a secured port and an access point.")
+    end
+  end
 
   # ---- Network references ----
   net_ref = lambda do |value, where|

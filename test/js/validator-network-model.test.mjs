@@ -258,21 +258,50 @@ test('an account password in a network or resource string is an error, and is ne
     assert.ok(!out.some(s => s.includes(PASSWORD)), 'no message quotes the password');
 });
 
-test('every field reserved for 9.3b is refused with "needs slice 9.3b"', { skip }, () => {
+test('the fields still reserved for later 9.3b sub-slices are refused with "needs slice 9.3b"', { skip }, () => {
     const sc = clean();
     sc.networkLinks = [['office_lan', 'plant_net']];
     sc.networks.office_lan.downIf = 'power_off';
     sc.networks.office_lan.wifi = { ssid: 'HB', psk: 'x' };
-    obj(sc, 'comms_room', 'comms_port').portSecurity = true;
     room(sc, 'lobby').objects.push({ id: 'ap', type: 'pc', wifiAp: 'office_lan' });
     room(sc, 'lobby').objects.push({ id: 'btn', type: 'pc', triggerOnInteract: [{ type: 'grant_foothold', network: 'office_lan' }] });
     const out = errors(issues(sc));
     assertHas(out, "top-level 'networkLinks' needs slice 9.3b");
     assertHas(out, "'networks/office_lan' has 'downIf', which needs slice 9.3b");
     assertHas(out, "'networks/office_lan' has 'wifi', which needs slice 9.3b");
-    assertHas(out, "has 'portSecurity', which needs slice 9.3b");
     assertHas(out, "has 'wifiAp', which needs slice 9.3b");
     assertHas(out, "is a 'grant_foothold' action, which needs slice 9.3b");
+});
+
+// ---- port security (sub-slice P, section 5.4 / 9.2) ----
+
+test('portSecurity on a jack is accepted (no error)', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'comms_room', 'comms_port').portSecurity = true;
+    obj(sc, 'comms_room', 'comms_port').portSecurityMessage = 'Known machines only.';
+    const out = issues(sc);
+    assertNot(out, 'portSecurity');
+    assertNot(out, 'needs slice 9.3b');
+});
+
+test('portSecurity on an object that is not a jack is an error', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'store', 'door_box').portSecurity = true;
+    assertHas(errors(issues(sc)), "has 'portSecurity' but is not a networkJack");
+});
+
+test('portSecurityMessage without portSecurity is an error', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'comms_room', 'comms_port').portSecurityMessage = 'Known machines only.';
+    assertHas(errors(issues(sc)), "has 'portSecurityMessage' without 'portSecurity'");
+});
+
+test('a jack that is both portSecurity and wifiAp is an error', { skip }, () => {
+    const sc = clean();
+    const port = obj(sc, 'comms_room', 'comms_port');
+    port.portSecurity = true;
+    port.wifiAp = true;
+    assertHas(errors(issues(sc)), "is both 'portSecurity' and 'wifiAp'");
 });
 
 // ---- warnings ----

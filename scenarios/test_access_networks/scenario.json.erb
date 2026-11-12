@@ -126,7 +126,8 @@
         { "taskId": "p9_sit_down", "title": "P9: open Lena's PC at her desk", "type": "custom", "status": "active" },
         { "taskId": "p10_unplug", "title": "P10: unplug the box from the comms room", "type": "custom", "status": "active" },
         { "taskId": "p11_other_network", "title": "P11: plant the box in the workshop and look", "type": "custom", "status": "active" },
-        { "taskId": "p12_reload", "title": "P12: after a reload, Lena's PC opens through the box with no password", "type": "custom", "status": "active" }
+        { "taskId": "p12_reload", "title": "P12: after a reload, Lena's PC opens through the box with no password", "type": "custom", "status": "active" },
+        { "taskId": "n10_port_security", "title": "N10: a secured port refuses the box and keeps it", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -231,7 +232,8 @@
             { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.remote !== true && globalVars.p5_lena_remote", "onceOnly": true, "completeTask": "p9_sit_down" },
             { "eventPattern": "network_device_unplugged", "condition": "data.jackId === 'comms_port' && data.endedPcIds.includes('door_box')", "onceOnly": true, "completeTask": "p10_unplug" },
             { "eventPattern": "network_viewed", "condition": "data.networkId === 'workshop_lan'", "onceOnly": true, "completeTask": "p11_other_network" },
-            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.restored === true && data.remote === true", "onceOnly": true, "completeTask": "p12_reload" }
+            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'lena_pc' && data.restored === true && data.remote === true", "onceOnly": true, "completeTask": "p12_reload" },
+            { "eventPattern": "network_device_refused", "condition": "data.jackId === 'secure_port' && data.reason === 'port_security'", "onceOnly": true, "completeTask": "n10_port_security" }
           ]
         },
         {
@@ -323,6 +325,33 @@
           "addToNotes": false,
           "text": "P10. Click the port again: it says the box is plugged in here, with Unplug it and Leave it. Leave it does nothing.\nUnplug it gives the box back and ends the door controller's session. Lena's PC still opens at her desk. Plant again: the door controller asks for a password again.",
           "observations": "A sign by the wall port."
+        },
+        {
+          "type": "pc",
+          "id": "secure_port",
+          "name": "Locked switch port",
+          "sprite": "network_rack1",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "networkJack": true,
+          "network": "office_lan",
+          "portSecurity": true,
+          "portSecurityMessage": "The switch logs the device address and shuts the port. It only takes known machines; unused ports like this should be disabled.",
+          "jackConfirm": "Plug the drop box into this locked port?",
+          "requiresItemHint": "A second wall port. It looks locked down.",
+          "observations": "A second network port, with a switch label warning that the port is access controlled."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_n10",
+          "name": "Sign: N10 Port security",
+          "position": { "x": 6, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "N10. Take the drop box and plug it into the locked switch port.\nThe box goes in, the switch refuses it and shuts the port: no link item, no view, and the box stays in your bag. The switch's message names the fix: disable unused ports.",
+          "observations": "A sign by the locked port."
         }
       ]
     },

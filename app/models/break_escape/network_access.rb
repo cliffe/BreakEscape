@@ -74,6 +74,10 @@ module BreakEscape
     JACK_NOT_FOUND = 'Jack not found'.freeze
     NO_DEVICE = 'You have nothing to plug into this port.'.freeze
     DEVICE_IN_USE = 'That device is already in use'.freeze
+    # Default shown when a secured jack refuses an unknown device (section 5.4): names
+    # the fix the lab's own text teaches, disabling unused ports. Overridden per jack by
+    # portSecurityMessage.
+    PORT_SECURITY_REFUSAL = 'This switch port only takes known machines. Unused ports like this one should be disabled.'.freeze
 
     # A room object found by id alone, as jacks and devices are named:
     # { object:, room_id:, room:, path: } with path the containers between the room and
@@ -100,6 +104,15 @@ module BreakEscape
       return nil unless network && NetworkModel.networks(scenario_data).key?(network)
 
       info.merge(network: network)
+    end
+
+    # The refusal text when a jack object has port security (section 5.4), or nil when it
+    # does not. The authored portSecurityMessage wins; a default names the fix otherwise.
+    def port_security_refusal(jack_object)
+      return nil unless jack_object.is_a?(Hash) && jack_object['portSecurity']
+
+      message = jack_object['portSecurityMessage']
+      message.is_a?(String) && !message.strip.empty? ? message : PORT_SECURITY_REFUSAL
     end
 
     # "Object reachable" (section 5): a room object whose room is unlocked or never
@@ -172,6 +185,13 @@ module BreakEscape
       return { status: :not_found, body: { success: false, error: JACK_NOT_FOUND } } unless jack
       unless object_reachable?(jack)
         return { status: :forbidden, body: { success: false, reason: 'unreachable', error: 'Jack not reachable' } }
+      end
+
+      # Port security (section 5.4): a secured jack takes the device in, refuses an
+      # unknown machine, gives no foothold and leaves the device in the inventory. It
+      # only refuses; a bypass is not part of this slice.
+      if (refusal = port_security_refusal(jack[:object]))
+        return { status: :unprocessable_entity, body: { success: false, reason: 'port_security', error: refusal } }
       end
 
       jack_id = jack[:object]['id'].to_s

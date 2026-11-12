@@ -24,7 +24,7 @@
  * Events, each also as `<name>:<id>`:
  *   network_foothold_gained   (jack id)     { footholdId, via, networkId, sourceId }
  *   network_device_planted    (jack id)     { jackId, footholdId, networkId, deviceId }
- *   network_device_refused    (jack id)     { jackId, reason }       reason: no_device
+ *   network_device_refused    (jack id)     { jackId, reason }       reason: no_device | port_security
  *   network_device_unplugged  (jack id)     { jackId, footholdId, endedPcIds }
  *   network_view_closed       (foothold id) { footholdId, reason }   reason: closed |
  *                                           link_dropped | foothold_gone
@@ -383,6 +383,13 @@ export class NetworkLinks {
                 toast(NO_DEVICE_HINT, 'info', 3500);
                 this._emit('network_device_refused', { jackId, reason: 'no_device' }, jackId);
                 return { action: 'refused', reason: 'no_device' };
+            }
+            if (err?.status === 422 && b.reason === 'port_security') {
+                // Port security (section 5.4): the switch refused the device, which stays in
+                // the inventory. Show the authored message so the fix is not lost.
+                toast(b.error || 'That port only takes known machines.', 'info', 5000);
+                this._emit('network_device_refused', { jackId, reason: 'port_security' }, jackId);
+                return { action: 'refused', reason: 'port_security' };
             }
             toast(err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.', 'error');
             return { action: 'error', status: err?.status ?? null };
