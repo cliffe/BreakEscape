@@ -143,7 +143,11 @@ test('social: short text and text inside another shipped string warn; a feed wit
     s = clean(); s.rooms.lobby.objects.push({ id: 'card', type: 'notes', text: 'Back from Crete, three hundred emails waiting.' });
     assertHas(warnings(issues(s)), 'jake.feed.posts[1].text occurs inside another string that ships');
     s = clean(); delete jake(s).needs;
+    assertHas(errors(issues(s)), 'has a feed but no social_media need');
+    // Review C R1 m1: an error when a post names a fact (the feed hides it); a warning otherwise
+    s = clean(); delete jake(s).needs; jake(s).feed.posts.forEach((p) => delete p.fact);
     assertHas(warnings(issues(s)), 'has a feed but no social_media need');
+    assertLacks(errors(issues(s)), 'has a feed but no social_media need');
 });
 
 test('social: a high-awareness poster warns unless the post is deliberate', { skip }, () => {
@@ -215,4 +219,11 @@ test('social: a feed post is its fact\'s granting element in the OSINT lint; its
     assertHas(lint(s), "fact 'jake_pet_name' source \"jake_post_2\" must equal the id of the element that grants it ('jake_post_1')");
     jake(s).feed.posts[0].fact = null;
     assertHas(lint(s), "fact 'jake_pet_name' is granted by nothing");
+    // Review C R1 m1: a post of an NPC with no social_media need is never served, so it grants nothing
+    const t = clean();
+    t.globalVariables = { se_osint_state: {}, se_intel_jake_office: false, se_intel_jake_pet_name: false };
+    t.social.intelFacts.jake_office.source = 'jake_authored';
+    t.social.intelFacts.jake_pet_name.source = 'jake_post_1';
+    delete jake(t).needs;
+    assertHas(lint(t), "fact 'jake_pet_name' is granted by nothing");
 });

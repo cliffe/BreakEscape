@@ -1015,7 +1015,12 @@ module ValidateAccessWork
         err(issues, "#{nid}.feed.person '#{feed['person']}' is no profile on '#{feed['site']}': its posts would show nowhere.")
       end
       unless AW.need?(npc, 'social_media')
-        warn(issues, "#{nid} has a feed but no social_media need: it never posts.")
+        # Review C R1 m1: a post with a fact hides that fact for good, so that is an error
+        if feed['posts'].any? { |p| p.is_a?(Hash) && AW.present_string?(p['fact']) }
+          err(issues, "#{nid} has a feed but no social_media need: it never posts, so its posts' facts can never be granted.")
+        else
+          warn(issues, "#{nid} has a feed but no social_media need: it never posts.")
+        end
       end
       fed << npc if AW.feeds?(npc)
       level, from_habits = awareness_level(json_data, npc)

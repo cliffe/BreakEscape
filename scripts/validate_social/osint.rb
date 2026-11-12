@@ -191,10 +191,12 @@ module ValidateSocial
       rooms.flat_map do |rid, room|
         npcs = room.is_a?(Hash) && room['npcs'].is_a?(Array) ? room['npcs'] : []
         npcs.each_with_index.flat_map do |npc, i|
-          feed = npc.is_a?(Hash) ? npc['feed'] : nil
-          posts = feed.is_a?(Hash) && feed['posts'].is_a?(Array) ? feed['posts'] : []
-          posts.each_with_index.filter_map do |p, j|
-            next unless p.is_a?(Hash) && p['fact'].is_a?(String) && p['id'].is_a?(String)
+          # Review C R1 m1: only posts the server serves grant (an NPC that feeds, a post with an id)
+          next [] unless BreakEscape::AccessWork.feeds?(npc)
+
+          served = BreakEscape::AccessWork.feed_posts(npc)
+          npc['feed']['posts'].each_with_index.filter_map do |p, j|
+            next unless served.any? { |s| s.equal?(p) } && p['fact'].is_a?(String)
 
             { id: p['id'], fact: p['fact'], where: "rooms.#{rid}.npcs[#{i}].feed.posts[#{j}][#{p['id']}]" }
           end
