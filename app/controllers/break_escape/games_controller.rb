@@ -932,6 +932,14 @@ module BreakEscape
       is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
 
       unless is_valid
+        # Under a session the player holds at a PC that is off, or over a route that is down
+        # (review R3 m1): say why, so the pad counts no attempt. Nil where that would tell the
+        # player something new; those answer as any wrong code.
+        refusal = @game.unlock_session_refusal(target_type, target_id)
+        if refusal
+          return render json: { success: false, reason: refusal[:reason], message: refusal[:message] }, status: :forbidden
+        end
+
         body = { success: false, message: 'Invalid attempt' }
         # A carried PIN cracker reads the keypad's response: send its pips,
         # worked out against the real PIN, which the client never holds.
@@ -1172,6 +1180,12 @@ module BreakEscape
       # A headless host has no screen and no tiles (networks slice 9.3a, section 5)
       unless @game.login_pc_reachable?(info) && !BreakEscape::NetworkModel.headless?(info[:object])
         return render_error("PC not reachable: #{params[:pc_id]}", :forbidden)
+      end
+      # The sign-in screen at a switched-off PC's keyboard is not shown (q72). The route is
+      # judged at the keyboard whatever foothold value it carries (review R3 nit 3): the PC is
+      # physically reachable here, so saying it is off tells nothing new.
+      if @game.host_service_off?(info[:object])
+        return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
       end
 
       answer = { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
@@ -2114,7 +2128,13 @@ module BreakEscape
       return render json: { error: "Not signed in: #{container_id}", reason: 'no_session' }, status: :forbidden unless npc
 
       foothold = params[:foothold].presence&.to_s
-      unless @game.desktop_request_allowed?(info, foothold)
+      refusal = @game.desktop_refusal(info, foothold)
+      if refusal == 'off'
+        # At the keyboard of a switched-off PC (q72): the session is kept, the desktop refused
+        return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
+      elsif refusal == 'not_responding'
+        return render json: { error: BreakEscape::NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' }, status: :forbidden
+      elsif refusal
         return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
       end
 

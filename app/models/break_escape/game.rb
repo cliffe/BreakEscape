@@ -1612,12 +1612,19 @@ module BreakEscape
       foothold = foothold.presence&.to_s
       if foothold
         return unreachable unless host_reachable_through?(foothold, info[:object])
+        # A host whose own service is off does not answer over the network (9.3b plan 5.2)
+        if host_service_off?(info[:object])
+          return { status: :forbidden, body: { success: false, message: NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' } }
+        end
         if remote_blocked?(info[:object])
           return { status: :unprocessable_entity,
                    body: { success: false, message: NetworkAccess::REMOTE_BLOCKED, remoteBlocked: true } }
         end
       elsif NetworkModel.headless?(info[:object]) || !login_pc_reachable?(info)
         return unreachable
+      elsif host_service_off?(info[:object])
+        # Off is off at its own keyboard too (q72): nothing is read, nothing counted
+        return pc_off_answer
       end
 
       pc = info[:object]
@@ -1643,8 +1650,14 @@ module BreakEscape
       record_login_failure!(pc, key, account: !npc.nil?)
     end
 
+    # 403 for a sign-in or claim at the keyboard of a PC whose own service is off (q72)
+    def pc_off_answer
+      { status: :forbidden, body: { success: false, message: NetworkAccess::PC_OFF_MESSAGE, reason: 'off' } }
+    end
+
     # POST /login with claim: "owner" (section 6, claim checks 1 to 7). Every refusal
-    # answers "Sign in required"; the client then shows the sign-in screen. The
+    # answers "Sign in required"; the client then shows the sign-in screen. The one exception
+    # is a switched-off PC (q72): 403 off, "This PC is off." The
     # workstation globals the client sends are logged, not trusted.
     def claim_login_session!(pc_id, globals = nil, foothold: nil)
       refusal = lambda do |reason|
@@ -1659,6 +1672,8 @@ module BreakEscape
       return refusal.call('no such sign-in PC') unless info
       return refusal.call('a headless host') if NetworkModel.headless?(info[:object])
       return refusal.call('PC not reachable') unless login_pc_reachable?(info)
+      # A switched-off PC has no screen to claim (q72): said plainly, as the sign-in is
+      return pc_off_answer if host_service_off?(info[:object])
 
       pc = info[:object]
       # A session already held here (a password sign-in) is never replaced by a claim
@@ -1719,6 +1734,8 @@ module BreakEscape
       return refusal.call('no such sign-in PC') unless info
       return refusal.call('a headless host') if NetworkModel.headless?(info[:object])
       return refusal.call('PC not reachable') unless login_pc_reachable?(info)
+      # A switched-off PC has no screen to claim (q72)
+      return pc_off_answer if host_service_off?(info[:object])
 
       pc = info[:object]
       # 2. no session held here
@@ -2064,6 +2081,50 @@ module BreakEscape
       return true if self.class.login_pc?(located[:object])
 
       !located[:scope].nil? && !(session_admits?(located[:scope]) && path_unlocked?(located[:path]))
+    end
+
+    # Why an unlock under a sign-in PC or a profile is refused for its scope rather than its
+    # code (review R3 m1), or nil. Only where the player already knows the object is there: they
+    # hold the session that showed it, and that session is refused because its PC is off
+    # ('off' at the keyboard, 'not_responding' remotely) or its route is down ('unreachable').
+    # A share path, an object under no held session, a wrong code and a locked container above
+    # all give nil, so they still answer exactly as an invented id. Only an object with every
+    # folder above it already unlocked gets a reason. The lock screen counts no attempt.
+    UNLOCK_REFUSAL_MESSAGES = { 'off' => NetworkAccess::PC_OFF_MESSAGE, 'not_responding' => 'This PC is not responding.',
+                                'unreachable' => "This PC can't be reached." }.freeze
+
+    def unlock_session_refusal(target_type, target_id)
+      return nil if target_type.to_s == 'door' || !unlock_scope_refused?(target_id)
+
+      # Review R4 m1: an object behind a container still locked has never been shown, so it
+      # answers as an invented id; a reason here would confirm a guessed id exists
+      located = login_scope_of(target_id)
+      return nil unless located && path_unlocked?(located[:path])
+
+      scope = located[:scope]
+      pcs =
+        case scope && scope[:type]
+        when 'login_pc'
+          access_sessions[scope[:id].to_s].is_a?(Hash) ? [scope[:id].to_s] : []
+        when 'profile'
+          profile = account_profiles[scope[:id]]
+          held = profile ? access_sessions.keys.map(&:to_s) : []
+          held.select { |pc_id| (npc = session_identity(pc_id)) && self.class.acl_admits?(profile['for'], npc) }
+        else
+          []
+        end
+      # A session that would admit it means the refusal is a locked container above, not the PC
+      return nil if pcs.empty? || pcs.any? { |pc_id| session_route_up?(pc_id) }
+
+      pc_id = pcs.first
+      info = find_login_pc(pc_id)
+      reason =
+        if info && host_service_off?(info[:object])
+          access_sessions[pc_id]['foothold'].present? ? 'not_responding' : 'off'
+        else
+          'unreachable'
+        end
+      { reason: reason, message: UNLOCK_REFUSAL_MESSAGES[reason] }
     end
 
     def record_copied_item!(item_id)

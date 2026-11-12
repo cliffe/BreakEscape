@@ -153,6 +153,8 @@ predicate ever hold for this NPC", never "does it hold now".
 | `needMet: "work"` / `"social_media"` / `true` | `easeAt`, `failAt` | that need has a recorded prior failure and its last event was a met use: `failAt[need]` is set, `easeAt[need]` is set and is later than `failAt[need]` (it was bad, now the NPC is working again). `true` means any judged need. This is the "fixed at last" trigger (see below) |
 | `global: "name"` or `{ "name": value }` | `globalVariables` | the global is truthy, or equals `value`. Reuses the needs system's `requiredGlobalsHold` rule, the same one `offWhen` uses, so an author can key straight off an outage or a workaround `setGlobal` |
 
+**Amended by user decision q38 (2026-11-12).** A feed request is itself a met social media use, and it reaches the server before that use's ease (which waits up to two seconds in the report queue). So `needMet` also holds for the request's own need (`social_media`) when its last failure is at least `AccessWork::NEED_MET_QUIET_S` (5) seconds old with no newer one. Without this, an NPC that fails again between met uses (a borrower back at a blocked desk) never read as met when its request landed.
+
 **"Fixed at last".** Because `needMet` already requires `easeAt[need]` later than `failAt[need]`, it
 only holds for an NPC that failed this need and then recovered. That is the whole "it was bad, now it
 is good" trigger, with no extra state. C2 does **not** add a "was at least this frustrated" magnitude

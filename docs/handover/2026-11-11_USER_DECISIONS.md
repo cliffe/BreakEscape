@@ -65,6 +65,8 @@ Answers to the access model form (https://claude.ai/artifact/PanecaCQBMChKnqsDGa
   - q72 a switched-off PC also refuses a sign-in at its own keyboard, with a "this PC is off" message. q73 a click on an open gate with an NPC in the doorway: leave as it is. q74 remove the leftover no-op `plainText` options once the parallel builds merge. q75 the office-life mission skill offers the USB habit where a PC policy blocks USB, when that skill is written.
   - (Orchestrator decisions, same day: a switched-off PC is off for everything that passes through it, no pivot and no shares; a USB habit NPC whose stick has gone counts that use as met, not as a frustration cause; the lab's cloned-badge route line waits 1.5 s like the tailgate line.)
   - q76 (2026-11-12): after the original poster answers a Friendface thread, another NPC may reply a second time if the author wrote that reply, with no extra rule. The user also asked to consider emoji replies or reactions; the C3 plan keeps them for a later slice (open as q77).
+  - q77 (2026-11-12): emoji reactions are a follow-up slice after C3. Standing constraint with it: player state synced between client and server must not grow so that data is constantly sent back and forth; anything kept in player_state changes as a delta. A sync audit of the access and office-life features was started (docs/achitechture/PLAYER_STATE_SYNC_AUDIT.md).
+  - q78 (2026-11-12): the password-free owner claim stays best effort: a tampered client claiming early only saves time, which is fine. Where the NPC would never give that access (honest play could never leave the screen open), the server must refuse the claim.
 
 ## Carried out
 
@@ -73,3 +75,4 @@ Answers to the access model form (https://claude.ai/artifact/PanecaCQBMChKnqsDGa
 - q05: done in this commit's parent.
 - q12/q18, later: deleted dev-database games 1201 to 1227 (27 playtest games made on 2026-11-11 under the demo user, once no agent was using them).
 - q12/q18, 2026-11-12: deleted 50 more playtest games made by this session's agents (missions 243, 245, 246 above id 1227, plus 1283, 1292 to 1294, 1318 and the newer ones from the same runs; all demo user, all after 2026-11-11).
+- q12/q18, 2026-11-12, later: deleted 78 dev-database playtest games from this work package's scenarios (test_access_*, test_capture_log, test_needs_*, test_npc_needs, test_gate_tailgate, lab_physical_pentest, lab_social_engineering), demo user, ids 1234 to 1459, all over an hour old. Games from other tracks (m01 to m10, sis, other test scenarios) were left.

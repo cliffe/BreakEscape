@@ -350,6 +350,9 @@ module BreakEscape
     # copy and cannot drift.
 
     FEED_ORDERS = %w[facts_first reactive_first mixed].freeze
+    # q38: a met use counts for needMet once the last failure of that need is this old (seconds)
+    NEED_MET_QUIET_S = 5
+
     WHEN_KEYS = %w[frustrationAtLeast frustrationBelow cause need workaround needMet global].freeze
 
     def reactive_post?(post)
@@ -368,7 +371,12 @@ module BreakEscape
       return [] unless entry.is_a?(Hash)
 
       shown = entry['shown']
-      return shown.select { |i| present_string?(i) } if shown.is_a?(Array)
+      # C2 R1 n4: a saved id the scenario no longer has is dropped, so `revealed`, the next post's
+      # index and GET /scenario's block all count the same posts
+      if shown.is_a?(Array)
+        known = feed_posts(npc).map { |p| p['id'] }
+        return shown.select { |i| present_string?(i) && known.include?(i) }
+      end
 
       n = entry['n'].is_a?(Integer) ? [entry['n'], 0].max : 0
       feed_posts(npc).reject { |p| reactive_post?(p) }.first(n).map { |p| p['id'] }
@@ -484,14 +492,16 @@ module BreakEscape
 
     # Whether a `when` holds now: every predicate holds (logical AND). `entry` is the NPC's raw
     # npcFrustration record, or nil before it has one (then every predicate but `global` is false).
-    def when_holds?(data, npc, cond, entry, globals, lockout_keys)
+    # `met_use` is { 'need' =>, 'at' => } for the met use a request is for (a feed request after a
+    # met social media use), else nil (see need_met_now?).
+    def when_holds?(data, npc, cond, entry, globals, lockout_keys, met_use = nil)
       return false unless cond.is_a?(Hash) && !cond.empty?
 
       need = cond['need'].is_a?(String) ? cond['need'] : nil
-      cond.all? { |key, val| when_predicate_holds?(data, npc, key, val, need, entry, globals, lockout_keys) }
+      cond.all? { |key, val| when_predicate_holds?(data, npc, key, val, need, entry, globals, lockout_keys, met_use) }
     end
 
-    def when_predicate_holds?(data, npc, key, val, need, entry, globals, lockout_keys)
+    def when_predicate_holds?(data, npc, key, val, need, entry, globals, lockout_keys, met_use = nil)
       case key
       when 'need'
         true # a scope for cause/needMet, not a predicate of its own
@@ -504,7 +514,7 @@ module BreakEscape
       when 'workaround'
         entry.is_a?(Hash) && workaround_performed?(data, npc, val, entry)
       when 'needMet'
-        entry.is_a?(Hash) && need_met_now?(val, need, entry)
+        entry.is_a?(Hash) && need_met_now?(val, need, entry, met_use)
       when 'cause'
         entry.is_a?(Hash) && cause_predicate_holds?(data, npc, val, need, entry, globals, lockout_keys)
       else
@@ -534,7 +544,12 @@ module BreakEscape
 
     # "Fixed at last": the need had a recorded failure and its last event was a met use
     # (failAt set, easeAt set and later). `true` means any judged need; a `need` scope narrows it.
-    def need_met_now?(val, need, entry)
+    # User decision q38: the met use a request is for (`met_use`, the feed request that follows a
+    # met social media use) also counts once NEED_MET_QUIET_S have passed since the last failure
+    # with no new one. The feed request goes at once while that use's ease waits in the report
+    # queue, so without this a need that fails again between met uses (a borrower back at a
+    # blocked desk) would never read as met when the request lands.
+    def need_met_now?(val, need, entry, met_use = nil)
       needs = if JUDGED_NEEDS.include?(val) then [val]
       elsif val == true then (need ? [need] : JUDGED_NEEDS)
       else []
@@ -543,7 +558,12 @@ module BreakEscape
       eases = entry['easeAt']
       return false unless fails.is_a?(Hash) && eases.is_a?(Hash)
 
-      needs.any? { |n| fails[n] && eases[n] && eases[n].to_f > fails[n].to_f }
+      needs.any? do |n|
+        next false unless fails[n]
+        next true if eases[n] && eases[n].to_f > fails[n].to_f
+
+        met_use.is_a?(Hash) && met_use['need'] == n && met_use['at'].to_f - fails[n].to_f >= NEED_MET_QUIET_S
+      end
     end
 
     # A `cause` predicate holds only when both the NPC has actually failed at that why
@@ -627,13 +647,14 @@ module BreakEscape
     # Returns { 'post' => id or nil, 'done' => bool }. Pure: every piece of state it reads is
     # passed in. `feed_entry` is the feedRevealed record, `frustration_entry` the raw
     # npcFrustration[id] (or nil), `globals` the merged globals, `lockout_keys` the pre-gated set.
-    def select_feed_post(data, npc, feed_entry, frustration_entry, globals, lockout_keys = [])
+    # `met_use` (q38) is the met use the request is for, passed on to needMet (need_met_now?).
+    def select_feed_post(data, npc, feed_entry, frustration_entry, globals, lockout_keys = [], met_use = nil)
       posts = feed_posts(npc)
       shown = feed_shown_ids(npc, feed_entry)
       eligible = lambda do |post|
         next false if shown.include?(post['id'])
 
-        reactive_post?(post) ? when_holds?(data, npc, post['when'], frustration_entry, globals, lockout_keys) : true
+        reactive_post?(post) ? when_holds?(data, npc, post['when'], frustration_entry, globals, lockout_keys, met_use) : true
       end
 
       chosen =
@@ -911,8 +932,14 @@ module BreakEscape
     # sets a positive maxAttempts. Only then can a lockout stop its work, and only then does the
     # server answer a `check` for it.
     def lockout_station?(data, npc)
-      st = station(data, npc)
-      return false unless st && AccessIdentities.login_pc?(st) && AccessIdentities.account?(npc)
+      lockout_pc?(data, npc, station(data, npc))
+    end
+
+    # q36: the same test for any PC the NPC signs in at (its station, or a borrowed hot desk, which
+    # has no screenOwner): a sign-in PC, not owned by someone else, under a policy with a positive
+    # maxAttempts, for an NPC with an account
+    def lockout_pc?(data, npc, st)
+      return false unless st.is_a?(Hash) && AccessIdentities.login_pc?(st) && AccessIdentities.account?(npc)
 
       owner = st['screenOwner']
       return false if present_string?(owner) && owner != npc['id']

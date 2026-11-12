@@ -148,7 +148,9 @@
     "bench_port_planted": false,
     "p5_lena_remote": false,
     "servers_offline": false,
-    "n7_armed": false
+    "n7_armed": false,
+    "bench_pc_off": true,
+    "n14_seen_off": false
   },
 
   "objectives": [
@@ -182,7 +184,8 @@
         { "taskId": "n10_port_security", "title": "N10: a secured port refuses the box and keeps it", "type": "custom", "status": "active" },
         { "taskId": "n5_outage", "title": "N5: take the server network down; it leaves the box's view and a sign-in on it is refused", "type": "custom", "status": "active" },
         { "taskId": "n6_repair", "title": "N6: restore the server network; its block fills in and its host signs in again", "type": "custom", "status": "active" },
-        { "taskId": "n7_held_route", "title": "N7: a held server session survives the outage, shows no route, and reopens on repair", "type": "custom", "status": "active" }
+        { "taskId": "n7_held_route", "title": "N7: a held server session survives the outage, shows no route, and reopens on repair", "type": "custom", "status": "active" },
+        { "taskId": "n14_host_off", "title": "N14: the bench PC is not responding while its power is off; switch it on and sign in to it through the box", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -349,7 +352,9 @@
             { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'sv_fs02' && data.remote === true", "onceOnly": true, "completeTask": "n3_signin_across" },
             { "eventPattern": "pc_signed_out", "condition": "data.pcId === 'sv_fs02' && data.reason === 'link_dropped'", "onceOnly": true, "completeTask": "n4_signout" },
             { "eventPattern": "network_device_refused", "condition": "data.jackId === 'secure_port' && data.reason === 'port_security'", "onceOnly": true, "completeTask": "n10_port_security" },
-            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'sv_fs02' && data.remote === true && globalVars.n7_armed && !globalVars.servers_offline", "onceOnly": true, "completeTask": "n7_held_route" }
+            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'sv_fs02' && data.remote === true && globalVars.n7_armed && !globalVars.servers_offline", "onceOnly": true, "completeTask": "n7_held_route" },
+            { "eventPattern": "network_viewed", "condition": "data.networkId === 'workshop_lan' && globalVars.bench_pc_off", "onceOnly": true, "setGlobal": { "n14_seen_off": true } },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'bench_pc' && data.remote === true && globalVars.n14_seen_off", "onceOnly": true, "completeTask": "n14_host_off" }
           ]
         },
         {
@@ -573,8 +578,82 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "P11. Unplug the box from the comms room, then plug it in here. The link item is named for this switch.\nIts view lists one open share and nothing from the office.",
+          "text": "P11. Unplug the box from the comms room, then plug it in here. The link item is named for this switch.\nIts view lists the bench PC, one open share and nothing from the office.",
           "observations": "A sign by the bench."
+        },
+        {
+          "type": "pc",
+          "id": "bench_pc",
+          "name": "Bench PC",
+          "host": "WS-BENCH-01",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "access": { "roles": ["staff"] },
+          "affordance": { "offWhen": "bench_pc_off" },
+          "spriteVariants": [
+            { "condition": "globalVars.bench_pc_off", "value": "aw_pc_off1" }
+          ],
+          "contents": [
+            {
+              "type": "safe",
+              "id": "bench_logs",
+              "name": "Bench logs",
+              "takeable": false,
+              "locked": true,
+              "lockType": "pin",
+              "requires": "3141",
+              "observations": "A PIN-locked folder of bench logs. The sticker on the folder icon says 3141.",
+              "contents": [
+                {
+                  "type": "text_file",
+                  "id": "bench_log",
+                  "name": "bench_log.txt",
+                  "takeable": true,
+                  "readable": true,
+                  "text": "Bench log: the soldering station passed its checks. (N14: the PIN folder on the bench PC opened.)",
+                  "observations": "The bench log."
+                }
+              ]
+            }
+          ],
+          "observations": "The workbench PC. Its power lead runs to the switch on the wall."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "bench_power",
+          "name": "Bench PC power",
+          "position": { "x": 8, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.bench_pc_off",
+              "text": "Switch the bench PC on?",
+              "onConfirm": [ { "type": "set_global", "key": "bench_pc_off", "value": false } ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.bench_pc_off",
+              "text": "Switch the bench PC off?",
+              "onConfirm": [ { "type": "set_global", "key": "bench_pc_off", "value": true } ]
+            }
+          ],
+          "observations": "The bench PC's power switch. Click it to switch the PC on, and again to switch it off."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_n14",
+          "name": "Sign: N14 A host that is switched off",
+          "position": { "x": 2, "y": 5 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "N14. With the box in this switch and the bench PC's power off, the box's view shows the bench PC as not responding, with no sign-in.\nSwitch the power on, look again, and sign in to it through the box with Sam's details.",
+          "observations": "A sign by the bench PC."
         }
       ]
     },

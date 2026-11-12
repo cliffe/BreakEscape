@@ -67,6 +67,8 @@
     "f10_share_down": false,
     "f12_crm_down": false,
     "f12_pc_unplugged": false,
+    "l2_pc_off": true,
+    "l2_ledger_down": false,
     "u1_kim_emailed_file": false,
     "u1_kim_gave_usb": false
   },
@@ -172,6 +174,30 @@
         {
           "taskId": "f13_recovered",
           "title": "F13: Ruth posts once the kiosk gets her back online",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l1_locked_out",
+          "title": "L1: Sade finds out she is locked out at the hot desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l1_borrow_failed",
+          "title": "L1: Sade's borrowed use at the hot desk fails",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l2_locked_out",
+          "title": "L2: Hamid finds out he is locked out at the hot desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l2_borrow_failed",
+          "title": "L2: Hamid's borrowed work at the hot desk fails",
           "type": "custom",
           "status": "active"
         },
@@ -311,6 +337,17 @@
                 {
                   "id": "ruth_authored",
                   "text": "Three meetings before the kettle even boiled this morning."
+                }
+              ]
+            },
+            {
+              "person": "sade",
+              "name": "Sade Okafor",
+              "bio": "Facilities. Never at the same desk twice.",
+              "posts": [
+                {
+                  "id": "sade_authored",
+                  "text": "New badge photo. Somehow worse than the old one."
                 }
               ]
             },
@@ -1479,7 +1516,7 @@
       "door_sign": "F13 Ruth",
       "connections": {
         "west": "f12_room",
-        "east": "u1_room"
+        "east": "l1_room"
       },
       "objects": [
         {
@@ -1622,11 +1659,315 @@
         }
       ]
     },
+    "l1_room": {
+      "type": "room_office",
+      "door_sign": "L1 Sade",
+      "connections": {
+        "west": "f13_room",
+        "east": "l2_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f14",
+          "name": "Sign: L1 Locked out at the hot desk",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "L1. Sade's PC blocks social media and she has no phone, so she borrows the hot desk. Before she gets there, lock out her username, sokafor, at the hot desk: three wrong passwords. When she sits down she finds out, and her use there fails: no post and no session left open.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "sade_pc",
+          "name": "Sade's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "no_social",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5
+          },
+          "observations": "Sade's PC, under a policy that blocks social media."
+        },
+        {
+          "type": "pc3",
+          "id": "l1_hot_desk",
+          "name": "Hot desk",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "locking",
+          "access": {
+            "people": [
+              "sade"
+            ]
+          },
+          "affordance": {
+            "satisfies": [
+              "social_media"
+            ],
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A hot desk under the locking policy: three wrong passwords lock an account here."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "sade",
+          "displayName": "Sade Okafor",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "sade_pc",
+          "needsDeferMin": 0.5,
+          "phone": false,
+          "creds": {
+            "username": "sokafor",
+            "password": "Plover-Sade-47"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "social_media": {
+              "decayPerMin": 60,
+              "urgentAt": 40,
+              "initial": 50
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "l1_hot_desk"
+            }
+          ],
+          "feed": {
+            "site": "friendface",
+            "person": "sade",
+            "posts": [
+              {
+                "id": "l1_post",
+                "text": "Finally found a desk that lets me catch up with everyone."
+              }
+            ]
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_locked_out:sade",
+              "onceOnly": true,
+              "completeTask": "l1_locked_out",
+              "condition": "data.objectId === 'l1_hot_desk'"
+            },
+            {
+              "eventPattern": "npc_borrow_done:sade",
+              "onceOnly": true,
+              "completeTask": "l1_borrow_failed",
+              "condition": "data.met === false && !data.lapsed && data.objectId === 'l1_hot_desk'"
+            }
+          ]
+        }
+      ]
+    },
+    "l2_room": {
+      "type": "room_office",
+      "door_sign": "L2 Hamid",
+      "connections": {
+        "west": "l1_room",
+        "east": "u1_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_f15",
+          "name": "Sign: L2 Locked out at the hot desk, for work",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "L2. Hamid's PC is broken, so after two failures he takes his work to the hot desk. Before he gets there, lock out his username, hrahimi, at the hot desk: three wrong passwords. When he sits down he finds out, and his work there fails as well.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "l2_pc",
+          "name": "Hamid's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "lax",
+          "affordance": {
+            "satisfies": "work",
+            "useSeconds": 5,
+            "restores": 10,
+            "offWhen": "l2_pc_off"
+          },
+          "observations": "Hamid's PC. It has not worked all morning."
+        },
+        {
+          "type": "pc3",
+          "id": "l2_hot_desk",
+          "name": "Hot desk",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "locking",
+          "access": {
+            "people": [
+              "hamid"
+            ]
+          },
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 10
+          },
+          "observations": "A hot desk under the locking policy: three wrong passwords lock an account here."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "l2_pc_power",
+          "name": "Hamid's PC power",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.l2_pc_off",
+              "text": "Switch Hamid's PC back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "l2_pc_off",
+                  "value": false
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.l2_pc_off",
+              "text": "Switch Hamid's PC off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "l2_pc_off",
+                  "value": true
+                }
+              ]
+            }
+          ],
+          "observations": "The power switch for Hamid's PC. It starts off; click it to switch the PC on, and again to switch it off."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "hamid",
+          "displayName": "Hamid Rahimi",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/test_access_social/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "l2_pc",
+          "needsDeferMin": 0.5,
+          "workNeeds": [
+            "l2_ledger"
+          ],
+          "creds": {
+            "username": "hrahimi",
+            "password": "Curlew-Hamid-62"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "l2_hot_desk"
+            }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_locked_out:hamid",
+              "onceOnly": true,
+              "completeTask": "l2_locked_out",
+              "condition": "data.objectId === 'l2_hot_desk'"
+            },
+            {
+              "eventPattern": "npc_borrow_done:hamid",
+              "onceOnly": true,
+              "completeTask": "l2_borrow_failed",
+              "condition": "data.met === false && !data.lapsed && data.objectId === 'l2_hot_desk'"
+            }
+          ]
+        }
+      ]
+    },
     "u1_room": {
       "type": "room_office",
       "door_sign": "U1 Kim",
       "connections": {
-        "west": "f13_room"
+        "west": "l2_room"
       },
       "objects": [
         {
@@ -1768,6 +2109,11 @@
       "name": "Revenue tracker",
       "kind": "crm",
       "downIf": "f12_crm_down"
+    },
+    "l2_ledger": {
+      "name": "Facilities ledger",
+      "kind": "file_share",
+      "downIf": "l2_ledger_down"
     },
     "u1_reports": {
       "name": "Team reports",

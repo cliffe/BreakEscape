@@ -546,6 +546,15 @@ test('landing: a 403 no_session or unreachable returns to the view with its mess
     ]);
 });
 
+// Review R2 nit 1: a host whose own service is off is "not responding", as its row says
+test('landing: a 403 not_responding returns to the view saying the host is not responding', async () => {
+    await tripFromView();
+    links.views.set('jack_comms_port', viewEntry);
+    links.landed('desktop', 'not_responding', { pcId: 'lena_pc' });
+    await settle();
+    assert.deepEqual(views.map(v => v.message), ['HB-FIN-02 is not responding.']);
+});
+
 test('landing: "The link dropped" goes to the world with reason link_dropped', async () => {
     const back = await tripFromView();
     assert.equal(links.landed('desktop', 'link_dropped').landing, 'world');
@@ -611,6 +620,77 @@ test('a new trip replaces the one running', async () => {
     await settle();
     assert.deepEqual(back, []);
     assert.deepEqual(other, [{ reason: 'closed' }]);
+});
+
+// 9.3b plan 5.2: the server reads outages and a host's own service from its globals, so the
+// view sends the latest globals before GET /network, and a failed sync still fetches the view.
+test('view() syncs the globals before GET /network, and still fetches when the sync fails', async () => {
+    await reset();
+    const order = [];
+    const realNetwork = window.ApiClient.network;
+    window.ApiClient.network = async (id) => { order.push('network'); return realNetwork(id); };
+    window.stateSync = { sync: async () => { order.push('sync'); return true; } };
+    await links.view('jack_comms_port');
+    assert.deepEqual(order, ['sync', 'network']);
+
+    order.length = 0;
+    window.stateSync = { sync: async () => { order.push('sync'); throw new Error('offline'); } };
+    await links.view('jack_comms_port');
+    assert.deepEqual(order, ['sync', 'network'], 'a failed sync does not stop the fetch');
+    delete window.stateSync;
+});
+
+// Review R1 m1: a sync that never settles holds the view only for the time limit
+test('view() fetches anyway when the sync does not settle within the time limit', async () => {
+    await reset();
+    const order = [];
+    const realNetwork = window.ApiClient.network;
+    window.ApiClient.network = async (id) => { order.push('network'); return realNetwork(id); };
+    window.stateSync = { sync: () => { order.push('sync'); return new Promise(() => {}); } };
+    links.viewSyncWaitMs = 20;
+    const out = await links.view('jack_comms_port');
+    assert.deepEqual(order, ['sync', 'network']);
+    assert.equal(out.ok, true, 'the view opens with the last known state');
+    delete links.viewSyncWaitMs;
+    delete window.stateSync;
+});
+
+// Review R2 m3: a view fetched after the time limit says it may be out of date, and hands back
+// the sync so the screen can fetch once more when it lands
+test('view() marks a view fetched after the time limit stale, with the sync still to land', async () => {
+    await reset();
+    let land;
+    window.stateSync = { sync: () => new Promise(r => { land = r; }) };
+    links.viewSyncWaitMs = 20;
+    const out = await links.view('jack_comms_port');
+    assert.equal(out.ok, true);
+    assert.equal(out.stale, true, 'the timer won');
+    let landed = null;
+    out.synced.then(v => { landed = v; });
+    land(true);
+    await settle();
+    assert.equal(landed, true, 'synced resolves once the late sync lands');
+
+    window.stateSync = { sync: async () => true };
+    const fresh = await links.view('jack_comms_port');
+    assert.equal(fresh.stale, undefined, 'a view after a sync in time is not stale');
+    assert.equal(fresh.synced, undefined);
+    delete links.viewSyncWaitMs;
+    delete window.stateSync;
+});
+
+// Review R1 nit 4: two answers in flight (a double click) emit and open once between them
+test('an implanted answer for a foothold an earlier answer already brought does not emit again', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantAnswer = { already: true, first: false };
+    await links.implant('lena_pc', 'session', null); // the already answer lands first
+    implantAnswer = { first: true };
+    const out = await links.implant('lena_pc', 'session', null); // then the implanted one
+    await settle();
+    assert.equal(out.action, 'implanted');
+    assert.equal(named('network_foothold_gained').length, 1, 'emitted once in all');
+    assert.equal(views.length, 1, 'opened once in all');
 });
 
 // ---------------------------------------------------------------- implants (slice 9.3b I)
@@ -712,9 +792,11 @@ test('an implant lost to both retries shows a message and grants nothing (n2)', 
     assert.equal(links.get('implant_lena_pc'), null, 'no foothold');
 });
 
-test('an implant that answers already does not re-emit or reopen', async () => {
+test('an implant that answers already on a foothold this browser holds does not re-emit or reopen', async () => {
     await reset({ items: [box] });
     withStarters();
+    await links.implant('lena_pc', 'session', null); // the first, seen grant
+    events.length = 0; views.length = 0;
     implantAnswer = { already: true, first: false };
     const out = await links.implant('lena_pc', 'session', null);
     assert.equal(out.action, 'already');
@@ -722,6 +804,72 @@ test('an implant that answers already does not re-emit or reopen', async () => {
     assert.equal(views.length, 0);
     // n1: the planted global is published before the already return, as plant() does
     assert.equal(window.gameState.globalVariables.lena_pc_planted, true);
+});
+
+// Review I R3 m1: the first POST's answer was lost, so the retry's `already` is the first this
+// browser hears of the foothold. It fires the event and opens the view once, as Wi-Fi does.
+test('a retry answered already for a foothold not held before fires foothold_gained and opens the view once', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    implantThrowsLeft = 1;
+    implantAnswer = { already: true, first: false, consumedId: 'kit_dropbox', inventory: [implantLink] };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.action, 'already');
+    assert.equal(out.first, true, 'no foothold was ever gained here before, so this is the first');
+    assert.deepEqual(named('network_foothold_gained').map(e => e.data),
+        [{ footholdId: 'implant_lena_pc', via: 'implant', networkId: 'office_lan', sourceId: 'lena_pc' }]);
+    assert.deepEqual(views.map(v => v.footholdId), ['implant_lena_pc'], 'the view opens once');
+
+    // A further repeat is quiet
+    await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(named('network_foothold_gained').length, 1);
+    assert.equal(views.length, 1);
+});
+
+test('a retry answered already where a foothold was gained here before fires the event but does not open', async () => {
+    await reset({ items: [box] });
+    withStarters();
+    links.gained.add('lena_pc'); // gained once before, then lost (an unplug, say)
+    implantAnswer = { already: true, first: false };
+    const out = await links.implant('lena_pc', 'session', null);
+    await settle();
+    assert.equal(out.first, false);
+    assert.equal(named('network_foothold_gained').length, 1, 'the foothold is news to this browser');
+    assert.equal(views.length, 0, 'not the first foothold from this PC, so the view stays shut');
+});
+
+// Review I R3 m2: a dropped device's timer can fire before the drop's save lands
+test('a dropped-shape implant answered not_ready asks again and is granted when the drop lands', async () => {
+    await reset();
+    withStarters();
+    links.notReadyDelayMs = 0;
+    let left = 2;
+    const real = window.ApiClient.networkImplant;
+    window.ApiClient.networkImplant = async (...args) => {
+        if (left > 0) { left--; calls.push(['implant', ...args]); const e = new Error('not ready'); e.status = 422; e.body = { reason: 'not_ready' }; throw e; }
+        return real(...args);
+    };
+    implantAnswer = { inventory: [implantLink] };
+    const out = await links.implant('door_box', 'dropped', null);
+    assert.equal(out.action, 'implanted');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 3, 'two not_ready answers, then the grant');
+    assert.deepEqual(toasts, []);
+    delete links.notReadyDelayMs;
+});
+
+test('a dropped-shape implant gives up quietly after its not_ready retries', async () => {
+    await reset();
+    links.notReadyDelayMs = 0;
+    implantAnswer = new Error('not ready');
+    implantAnswer.status = 422;
+    implantAnswer.body = { reason: 'not_ready' };
+    const out = await links.implant('door_box', 'dropped', null);
+    assert.equal(out.action, 'not_ready');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 4, 'the first ask and three more');
+    assert.deepEqual(toasts, []);
+    delete links.notReadyDelayMs;
 });
 
 test('a usb_refused answer toasts the authored line and emits the refusal, no foothold', async () => {
@@ -744,6 +892,7 @@ test('a not_ready answer is quiet and grants nothing', async () => {
     implantAnswer.body = { reason: 'not_ready' };
     const out = await links.implant('lena_pc', 'session', null);
     assert.equal(out.action, 'not_ready');
+    assert.equal(calls.filter(c => c[0] === 'implant').length, 1, 'the session shape does not wait and ask again');
     assert.deepEqual(toasts, []);
     assert.equal(links.get('implant_lena_pc'), null);
 });

@@ -288,6 +288,36 @@ test('a 403 unreachable on a remote desktop returns to the view with its reason 
     assert.deepEqual(views, [['jack_comms_port', "HB-FIN-02 can't be reached over this link."]]);
 });
 
+// 9.3b plan 5.2, review R2 nit 1: a host whose own service is off says "not responding", as its row
+test('a 403 not_responding on a remote desktop returns to the view saying so and keeps the session', async () => {
+    setup();
+    await remoteDesktopOpen();
+    window.MinigameFramework.endMinigame(false, null);
+    await settle();
+    views.length = 0;
+    fetchAnswer = { status: 403, body: { error: 'PC not responding', reason: 'not_responding' } };
+    openRemoteDesktop('lena_pc', 'jack_comms_port');
+    await settle(6);
+    assert.equal(sessions.has('lena_pc'), true, 'the session is kept for when it comes back on');
+    assert.deepEqual(views, [['jack_comms_port', 'HB-FIN-02 is not responding.']]);
+});
+
+// q72: the desktop at the keyboard of a switched-off PC is refused and the session is kept
+test('a 403 off at the keyboard says "This PC is off.", keeps the session and opens no sign-in screen', async () => {
+    setup();
+    await sessions.signIn('lena_pc', 'lfox', 'right');
+    let physical = 0;
+    window.openLoginSignIn = () => { physical++; };
+    fetchAnswer = { status: 403, body: { error: 'This PC is off.', reason: 'off' } };
+    const sprite = { scenarioData: { id: 'lena_pc', type: 'pc', name: "Lena's PC", lockType: 'login', locked: true } };
+    window.startContainerMinigame(sprite, null, false, true);
+    await settle(6);
+    assert.equal(sessions.has('lena_pc'), true, 'the client keeps its copy');
+    assert.equal(physical, 0, 'no sign-in screen');
+    assert.ok(alerts.some(a => a[0] === 'This PC is off.'));
+    assert.equal(current(), null, 'the desktop closed');
+});
+
 test('the remote desktop closed by its Close returns to the view; Sign out too', async () => {
     setup();
     await remoteDesktopOpen();

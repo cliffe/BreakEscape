@@ -102,6 +102,10 @@ const APPROACH_PX = 48;
 // the radius edge, just out of it, with nothing left to walk (seen at radius 56).
 const APPROACH_MARGIN_PX = 16;
 const TILE = 32;
+// How far past the doorway's centre a click on an open gate walks the player
+// (walkThroughTarget): clear of a north or south wall's depth, or of a side wall
+const WALK_THROUGH_NS_PX = 2 * TILE;
+const WALK_THROUGH_SIDE_PX = 1.5 * TILE;
 const OPPOSITE = { north: 'south', south: 'north', east: 'west', west: 'east' };
 
 function W() { return typeof window !== 'undefined' ? window : {}; }
@@ -567,6 +571,39 @@ export class DoorGates {
         }
         if (holdsCredential && this.playerOpen(connectedRoom, { now })) return 'granted';
         return g && this.openToPlayer(g, now) ? 'pass' : 'denied';
+    }
+
+    /**
+     * Where a click on an open gate walks the player (game.js scene pointerdown): through
+     * the doorway to the floor beyond it, as a click on an open ordinary door does (that
+     * door's sprite is gone, so the click lands on the floor). Null when the click should
+     * keep its present answer: no gate here, a shut gate, or an open gate that bars the
+     * player (the refusal, doors.js). A player inside the secured room may always leave.
+     * @param {object} doorSprite - the door sprite clicked (either room's)
+     * @param {{x:number, y:number}} feet - the player's feet (interaction-walls.js playerFeet)
+     */
+    walkThroughTarget(doorSprite, feet, { playerRoom = currentPlayerRoom(), now = Date.now() } = {}) {
+        const props = doorSprite?.doorProperties;
+        if (!props || !feet || !Number.isFinite(feet.x) || !Number.isFinite(feet.y)) return null;
+        const g = (props.gateKey && this.groups.get(props.gateKey))
+            || this.groupAtPosition(props.worldX ?? doorSprite.x, props.worldY ?? doorSprite.y);
+        if (!g?.open) return null;
+        const inside = !!playerRoom && playerRoom === g.securedRoom;
+        if (!inside && !this.openToPlayer(g, now)) return null;
+        const dir = g.direction || props.direction;
+        // The far side is the other room: g.direction points from g.roomId into
+        // g.connectedRoom. Only when the player's room is neither is it read from his feet
+        // against the doorway's centre line, which walks a player standing in the doorway
+        // past that line back the way he came (review R1 n4).
+        const towards = playerRoom === g.roomId ? dir : (playerRoom === g.connectedRoom ? OPPOSITE[dir] : null);
+        // East and west: register() declines a gate on a side door, so this does not run in
+        // the game today; it is kept for a side gate later (review R1 n3)
+        if (dir === 'east' || dir === 'west') {
+            const east = towards ? towards === 'east' : feet.x < g.x;
+            return { x: east ? g.x + WALK_THROUGH_SIDE_PX : g.x - WALK_THROUGH_SIDE_PX, y: g.y + TILE / 2 };
+        }
+        const south = towards ? towards === 'south' : feet.y < g.y;
+        return { x: g.x, y: south ? g.y + WALK_THROUGH_NS_PX : g.y - WALK_THROUGH_NS_PX };
     }
 
     /**

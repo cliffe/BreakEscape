@@ -122,6 +122,9 @@ export class PcSessions {
         this.sessions = new Map();
         this.signedIn = new Set();
         this.desktops = new Map();
+        // pcId -> { message, reason }: a session that ended while its desktop was closed for
+        // a reader; the container return shows it (container-minigame.js, review M2)
+        this.endedUnseen = new Map();
         this._listening = null;
     }
 
@@ -223,7 +226,9 @@ export class PcSessions {
      * foothold (slice 9.3a, 4.4). Resolves to
      *   { ok: true, session }
      *   { ok: false, reason: 'wrong' | 'not_permitted' | 'locked_out' | 'remote_blocked', message, attemptsLeft }
-     *   { ok: false, reason: 'error', error: true, status, message }   (no answer, or not reachable)
+     *   { ok: false, reason: 'error', error: true, status, message, serverReason }   (no answer,
+     *       or refused: serverReason is the server's own reason, 'off' at the keyboard of a
+     *       switched-off PC (q72) or 'not_responding' through a foothold (9.3b plan 5.2))
      * The current session at this PC (if any) stays until the new account's password is
      * accepted; then pc_signed_out fires for the old account and pc_signed_in for the new.
      */
@@ -253,7 +258,8 @@ export class PcSessions {
             }
             return {
                 ok: false, reason: 'error', error: true, status: err?.status ?? null,
-                message: b.message || b.error || 'Could not reach the sign-in service'
+                message: b.message || b.error || 'Could not reach the sign-in service',
+                serverReason: typeof b.reason === 'string' ? b.reason : null
             };
         }
         if (!body || body.success === false || !body.npcId) {
@@ -296,7 +302,9 @@ export class PcSessions {
         } catch (err) {
             const b = err?.body || {};
             if (err?.status === 422) return { ok: false, reason: 'refused', message: b.message || 'Sign in required' };
-            return { ok: false, reason: 'error', error: true, status: err?.status ?? null, message: b.message || b.error || 'Could not reach the sign-in service' };
+            // serverReason as signIn gives it: 'off' at a switched-off PC (q72, review R3 nit 4)
+            return { ok: false, reason: 'error', error: true, status: err?.status ?? null, message: b.message || b.error || 'Could not reach the sign-in service',
+                serverReason: typeof b.reason === 'string' ? b.reason : null };
         }
         if (!body || body.success === false || !body.npcId) {
             return { ok: false, reason: 'refused', message: body?.message || 'Sign in required' };
@@ -489,15 +497,29 @@ export class PcSessions {
 
     /** A desktop for pcId is open; `close(message, reason)` shuts it. Returns the unregister function. */
     registerDesktop(pcId, close) {
+        this.endedUnseen.delete(pcId);
         this.desktops.set(pcId, close);
         return () => { if (this.desktops.get(pcId) === close) this.desktops.delete(pcId); };
     }
 
     _closeDesktop(pcId, message, reason = null) {
         const close = this.desktops.get(pcId);
-        if (!close) return;
+        if (!close) {
+            if (message) this.endedUnseen.set(pcId, { message, reason });
+            return;
+        }
         this.desktops.delete(pcId);
         try { close(message, reason); } catch (e) { console.warn('[pc-sessions] closing the desktop failed', e); }
+    }
+
+    /**
+     * The end message of a session at pcId that ended with no desktop open (the desktop
+     * had closed for a reader), once: { message, reason }, or null.
+     */
+    takeEndedMessage(pcId) {
+        const ended = this.endedUnseen.get(pcId) || null;
+        this.endedUnseen.delete(pcId);
+        return ended;
     }
 
     /**
