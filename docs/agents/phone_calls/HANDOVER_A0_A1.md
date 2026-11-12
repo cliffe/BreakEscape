@@ -21,15 +21,19 @@ Worktree `.claude/worktrees/p-phone-calls`, branch `build/phone-calls`. Plan: `d
 
 - `bin/test-js -j 3` under flock: 494 files, 493 passed on the first run, 1 failed (`finale-forced-call-and-closing-card`, a source-text assertion on the old `otherSpeaker` call); fixed, file re-run alone 17 pass. A full re-run was not repeated after that one-line fix.
 - Rails: 6 TTS test files (`tts_mission_lines`, `tts_delivery`, `tts_line_resolver`, `tts_wasted_clips`, `ink_line_walker`, `tts_carried_globals`): 79 runs, 0 failures.
-- Key diff against the A0 baseline: exactly 5 keys moved (4 in `m09_digital_archaeology`, 1 in `m10_full_disclosure`), nothing else. The five lines: `m09_phone_agent0x99.ink:494, 506, 678`, `m09_phone_recruiter.ink:171`, `m10_ghost_phone.ink:146`.
+- Key diff against the A0 baseline: exactly 5 keys moved (4 in `m09_digital_archaeology`, 1 in `m10_full_disclosure`), nothing else. The five lines (by text, since line numbers move; the number at A1, then at `b40d0c916`): `m09_phone_agent0x99.ink` "Don't be kind about it. Thank you. Once." (494, then 496); "...That's mine. You don't get to use it on me. Thank you." (506, then 508); "Nobody's called me that since the course. It's HaX. It has been for seven years." (678, now 680); `m09_phone_recruiter.ink` "Then I'll tidy my own desk. Gone. Goodnight, agent." (171); `m10_ghost_phone.ink` "No. I'd rather not leave on that." (146).
 - `reopencheck.mjs missions.json` (in `scripts/ink_runtime_check/`): total problems 4, the same four m09 contacts as before.
 
 ## Open
 
-1. **Recruiter hit and re-ring.** `window.playerHealth.damage()` did not close the call. Closing it with the Close button, then save, reload, resume, gave no re-ring within 60 s. Not proved either way; re-prove with a real guard attack in A2c. See `ROUTES.md`.
+1. **Recruiter hit and re-ring: not reached.** The call had ended before `window.playerHealth.damage()` ran (the whole call and HaX's follow-up played first, `A0/m09_hit_tts.jsonl`; `m09_hit_2_after_hit.png` shows a text thread, no call screen). Nothing was tested about a hit during a call, and "no re-ring" is explained by the re-ring conditions already being false. Corrected in review round 1 (M3). See `ROUTES.md` and "A2c: start here" below.
 2. Screenshots for the m09 identity and m10 breach calls show the map after the call ended (keyless 503 makes calls advance at once); the `/tts` request lists are the evidence.
 3. Log line for `docs/agents/phone_calls/PHONE_CALLS_LOG.md` not added (the orchestrator's file).
 4. A2a not started.
+
+## A2c: start here
+
+Before any A2c code change, capture a real mid-call baseline for the Recruiter hit from the **pre-A2c engine** (the A0 run never had a call connected when it hit; see Open 1). Stop at the Recruiter's first choice before answering (`UNTIL_TTS` on the first Recruiter line, then the hit), on a server with cached audio so the call does not race through on 503s, and use a real guard hit if one can be staged. Record whether the call stays open, what the thread shows, and whether any re-ring fires after close, save, reload and resume. A2c designs against that record, not against the A0 note.
 
 ## Gotchas
 

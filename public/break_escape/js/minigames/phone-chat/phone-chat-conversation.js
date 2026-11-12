@@ -662,9 +662,18 @@ export default class PhoneChatConversation {
         const fresh = steps.slice(replayed);
         const messages = [];
         const tags = [];
+        const messageTags = [];     // parallel to messages: the tags whose #delivery: note a line carries
+        let carried = [];           // tags of steps that printed nothing go to the next visible line (InkEngine.continue)
         fresh.forEach(step => {
             tags.push(...step.tags);
-            messages.push(...phoneStepLines(step.text, step.tags));
+            const stepLines = phoneStepLines(step.text, step.tags);
+            messages.push(...stepLines);
+            if (stepLines.length) {
+                messageTags.push(...PhoneChatConversation.lastLineTags(stepLines.length, [...carried, ...step.tags]));
+                carried = [];
+            } else {
+                carried.push(...step.tags);
+            }
             this._noteCallStep(step.text, step.tags, step.knot);
         });
         if (tags.length > 0) this.processTags(tags);
@@ -677,6 +686,7 @@ export default class PhoneChatConversation {
             renavigated: true,
             knot,
             messages,
+            messageTags,
             tags,
             replayedSteps: replayed,
             result: { text: '', choices, tags, canContinue: false, hasEnded }
@@ -874,9 +884,12 @@ export default class PhoneChatConversation {
         // Accumulate all intro messages and game action tags until we hit choices or end
         const allMessages = [];
         const allTags = [];
+        const allNoteTags = [];     // parallel to allMessages: the step's tags on its last line (A1 R1 M1)
         for (let guard = 0; guard < 500; guard++) {
             const result = tempConversation.continue();
-            allMessages.push(...phoneStepLines(result.text, result.tags));
+            const stepLines = phoneStepLines(result.text, result.tags);
+            allMessages.push(...stepLines);
+            allNoteTags.push(...PhoneChatConversation.lastLineTags(stepLines.length, result.tags));
             if (result.tags && result.tags.length > 0) {
                 allTags.push(...result.tags);
                 // The game applies these on first open, but a later line of this dry run
@@ -897,9 +910,13 @@ export default class PhoneChatConversation {
         const preloadStamp = clock?.configured
             ? { timestamp: Date.now(), gameTime: clock.elapsedMs() }
             : { timestamp: Date.now() - 3600000 };
-        allMessages.forEach(message => {
+        allMessages.forEach((message, i) => {
+            // The line's #delivery: tag(s), kept so a voiced call speaks the opening with its
+            // note (phone-chat-minigame.js _speakPreloadedOpening). Never shown.
+            const noteTags = (allNoteTags[i] || []).filter(PhoneChatConversation.isDeliveryTag);
             npcManager.addMessage(npc.id, 'npc', message.trim(), {
                 preloaded: true,
+                ...(noteTags.length ? { deliveryTags: noteTags } : {}),
                 ...preloadStamp
             });
         });
@@ -983,6 +1000,25 @@ export default class PhoneChatConversation {
             out.applied.push(name);
         }
         return out;
+    }
+
+    /**
+     * Tags for each of a step's printed lines: the step's tags belong to its last line (the line
+     * the tag ends), the others get none. Parallel to the lines; stepDeliveries does the same
+     * for notes, but this module takes no imports.
+     * @param {number} lineCount
+     * @param {string[]} tags
+     * @returns {string[][]}
+     */
+    static lastLineTags(lineCount, tags) {
+        const out = Array.from({ length: Math.max(0, lineCount) }, () => []);
+        if (out.length && Array.isArray(tags)) out[out.length - 1] = tags.slice();
+        return out;
+    }
+
+    /** True for a `#delivery:` tag (tts-delivery.js reads the note from it). */
+    static isDeliveryTag(tag) {
+        return typeof tag === 'string' && /^\s*delivery\s*:/i.test(tag);
     }
 
     /**

@@ -16,7 +16,8 @@ echo "return window.playerHealth.damage(10) ?? true;" > /tmp/pc-hit-$GID.js; too
 sleep 3
 echo "after hit: minigame=$($S $GID '{"cmd":"brief"}' 20 | jq -r '.result.activeMinigame.id // "none"')"
 $S $GID "{\"cmd\":\"screenshot\",\"path\":\"$OUT/m09_hit_2_after_hit.png\"}" >/dev/null
-# A bare playerHealth.damage() leaves the call open (A0 finding), so close it with the call screen's own Close button
+# NOT a finding: in the A0 run the call had already ended before damage() ran (the screenshot shows HaX's text thread),
+# so this route has not tested a hit during a call. Close the call screen with its own Close button here (a no-op if it has ended).
 $S $GID '{"cmd":"mg","action":"clickText","args":["Close"]}' >/dev/null; sleep 3
 echo "after Close: minigame=$($S $GID '{"cmd":"brief"}' 20 | jq -r '.result.activeMinigame.id // "none"')"
 $S $GID '{"cmd":"sync"}' >/dev/null

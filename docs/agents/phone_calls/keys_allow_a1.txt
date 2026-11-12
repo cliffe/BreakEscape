@@ -1,0 +1,5 @@
+# Allowed key moves of keys_baseline/ (A0, pre-A1) to the tree at b40d0c916: scenario, removed, added.
+# The five A1 delivery re-keys, and M9's Ruth text change.
+m09_digital_archaeology 4 4
+m10_full_disclosure 1 1
+lab_physical_pentest 1 1

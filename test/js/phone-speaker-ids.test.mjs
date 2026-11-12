@@ -64,14 +64,35 @@ test('phoneLineVoice voices an id-prefixed line under that record, not the first
     assert.equal(byName.speakerId, 'ghost');
 });
 
-test('a Narrator: line still stays with the contact voice path (no id match)', () => {
+test('a Narrator: line goes to the narrator record by its display name, as before A1', () => {
     const characters = new Map([
         ['agent_0x99', { id: 'agent_0x99', displayName: 'Agent HaX', voice: { name: 'Kore' } }],
         ['narrator', { id: 'narrator', displayName: 'Narrator', voice: { name: 'N' } }],
     ]);
     const r = phoneLineVoice({ type: 'npc', text: 'Narrator: The number rings out.' }, contact, characters);
-    // display-name rule is unchanged by A1: this is whatever it was before (narrator record speaks)
-    assert.ok(r === null || typeof r.speakerId === 'string');
+    assert.deepEqual(r, { speakerId: 'narrator', text: 'The number rings out.' });
+});
+
+// Plan 2.10 (A1 R1 M2): the server (TtsLineExtractor, id_names for a voiced call) agrees. The Rails
+// twin is test/unit/break_escape/tts_line_resolver_test.rb "a voiced call's id prefix voices the named record".
+test('same-name pair: an id prefix voices the named record even though it shares the host display name', () => {
+    const characters = new Map([
+        ['hax_post', { id: 'hax_post', displayName: 'Agent HaX', voice: { name: 'B' } }],
+        ['agent_0x99', { id: 'agent_0x99', displayName: 'Agent HaX', voice: { name: 'Kore' } }],
+    ]);
+    assert.deepEqual(phoneLineVoice({ type: 'npc', text: 'hax_post: Listen up.' }, contact, characters),
+        { speakerId: 'hax_post', text: 'Listen up.' });
+    // The shared display name is the host's own: it stays with the host (the contact's prefix is dropped)
+    assert.deepEqual(phoneLineVoice({ type: 'npc', text: 'Plain line.' }, contact, characters),
+        { speakerId: 'agent_0x99', text: 'Plain line.' });
+    // The host's id is never an id match
+    assert.equal(phoneLineVoice({ type: 'npc', text: 'agent_0x99: Hello.' }, contact, characters).speakerId, 'agent_0x99');
+});
+
+test('an id that equals another record display name: the display name wins (client order; the validator warns)', () => {
+    const clash = new Map([['ghost', 'Spectre'], ['y', 'Ghost']]);
+    const r = otherSpeaker('ghost: Hi.', contact, Array.from(clash.values()), clash);
+    assert.deepEqual(r, { name: 'Ghost', text: 'Hi.' });
 });
 
 test('phone-chat-ui passes the id map at both otherSpeaker call sites', () => {

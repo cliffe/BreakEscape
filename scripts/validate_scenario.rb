@@ -963,6 +963,22 @@ def give_item_placement_issues(ink_lines, source_ink_path)
   issues
 end
 
+# A1 R1 m1: a record whose id is another record's display name (ignoring case). A line prefix such as
+# "ghost:" then names different records on the phone client (display names first) and the extractor
+# (first match in scenario order), so the voiced speaker can differ from the one shown.
+def check_speaker_id_name_clashes(json_data)
+  records = scenario_npc_records(json_data).map { |npc, path| [npc, path] }.select { |npc, _| npc['id'] }
+  records.flat_map do |npc, path|
+    id = npc['id'].to_s.downcase
+    records.filter_map do |other, other_path|
+      next if other.equal?(npc) || other['displayName'].to_s.downcase != id
+
+      "⚠️ WARNING: #{path}: NPC id '#{npc['id']}' is also the display name of '#{other['id']}' (#{other_path}); " \
+        "a '#{npc['id']}:' line prefix is ambiguous between the two. Rename one of them, or avoid the prefix."
+    end
+  end
+end
+
 def check_ink_files(json_data, base_dir, scenario_dir = nil)
   issues = []
   ink_files_to_check = Set.new
@@ -6766,6 +6782,7 @@ def main
     habits_copy, habits_report = BreakEscape::NpcHabits.expanded_copy(json_data)
     common_issues += ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy))
     common_issues += check_access_model(json_data, repo_root, File.dirname(erb_path))
+    common_issues += check_speaker_id_name_clashes(json_data)
     common_issues += check_network_model(json_data)
     common_issues += check_capture_log(json_data)
     common_issues += check_wearables(json_data, File.dirname(erb_path))

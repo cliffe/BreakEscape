@@ -52,6 +52,47 @@ module BreakEscape
       end
     end
 
+    # Plan 2.10 (A1 R1 M2): on a voiced phone call an id prefix names its record even when that
+    # record shares the host's display name; person-chat keeps the same-name rule (it sends the
+    # conversation's own id, person-chat-minigame.js isOwnNpcByName).
+    HAX_STORY = { 'inkVersion' => 21, 'listDefs' => {},
+                  'root' => [[['done', { '#n' => 'g-0' }], nil], 'done',
+                             { 'start' => ['^hax_post: Listen up.', "\n", '^Agent HaX: And me.', "\n", '^Plain line.', "\n", 'end', nil] }] }.freeze
+    VOICE_A = { 'name' => 'Kore', 'style' => 'Phone.', 'language' => 'en-GB' }.freeze
+    VOICE_B = { 'name' => 'Puck', 'style' => 'In person.', 'language' => 'en-GB' }.freeze
+
+    def same_name_pair(dir, host)
+      File.write(File.join(dir, 'hax.json'), HAX_STORY.to_json)
+      { 'rooms' => { 'r' => { 'npcs' => [
+        { 'id' => 'hax_post', 'displayName' => 'Agent HaX', 'npcType' => 'person', 'voice' => VOICE_B },
+        { 'id' => 'agent_0x99', 'displayName' => 'Agent HaX', 'voice' => VOICE_A,
+          'storyPath' => File.join(dir, 'hax.json') }.merge(host)
+      ] } } }
+    end
+
+    test "a voiced call's id prefix voices the named record even when it shares the host's display name" do
+      Dir.mktmpdir do |dir|
+        data = same_name_pair(dir, 'npcType' => 'phone', 'voiced' => true, 'currentKnot' => 'start')
+        by_text = TtsLineExtractor.new('same_name_call', data).entries.to_h { |e| [e.text, e.npc_id] }
+        assert_equal 'hax_post', by_text['Listen up.'], 'the id names the record'
+        assert_equal 'agent_0x99', by_text['And me.'], 'a display name that two records share stays with the host'
+        assert_equal 'agent_0x99', by_text['Plain line.']
+        # The endpoint's side: the client's request (npc_id hax_post) is accepted, under hax_post only
+        assert_equal 'Listen up.', line(data, 'hax_post', 'Listen up.')
+        assert_nil line(data, 'agent_0x99', 'Listen up.')
+        assert_equal 'And me.', line(data, 'agent_0x99', 'And me.')
+      end
+    end
+
+    test "person-chat keeps the same-name rule: the id prefix voices the conversation's own record" do
+      Dir.mktmpdir do |dir|
+        data = same_name_pair(dir, 'npcType' => 'person')
+        by_text = TtsLineExtractor.new('same_name_person', data).entries.to_h { |e| [e.text, e.npc_id] }
+        assert_equal 'agent_0x99', by_text['Listen up.']
+        assert_nil line(data, 'hax_post', 'Listen up.')
+      end
+    end
+
     test "a missing story is a 404, not an error" do
       data = { 'rooms' => { 'r' => { 'npcs' => [{ 'id' => 'ann', 'voice' => VOICE, 'storyPath' => 'nowhere.json' }] } } }
       result = TtsLineResolver.new(scenario_name: 'resolver_missing', scenario_data: data, story_file: ->(_) { nil })

@@ -8,7 +8,7 @@ mkdir -p "$OUT"; S=tools/playtest/cmd.sh
 GID=$(tools/phone_calls/newgame.sh "$@" | sed -n 's/^GAME_ID=//p')
 [ -n "$GID" ] || { echo "no game id" >&2; exit 1; }
 tools/phone_calls/open.sh "$GID" "$OUT/${LABEL}_session.jsonl" "$OUT/${LABEL}_tts.jsonl" "${AUTOBRIEF:-false}" >/dev/null
-# TRIGGER="name=value name2=value2": globals set through the game's own proxy after bootstrap (emits global_variable_changed)
+# TRIGGER="name=value name2=value2": globals set through the game's own proxy after bootstrap. This does NOT emit global_variable_changed: use EMIT for that.
 # EMIT='eventName|{"json":"data"}': dispatch a game event after bootstrap.
 if [ -n "$TRIGGER" ]; then
   JS=""; for kv in $TRIGGER; do JS="$JS window.gameState.globalVariables['${kv%%=*}'] = ${kv#*=};"; done

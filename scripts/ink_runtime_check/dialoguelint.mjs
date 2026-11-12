@@ -795,7 +795,9 @@ function deliveryFindings(lines, idx, channel) {
       if (why) F.push({ level: 'warn', rule: 'delivery-note', line: L.n, text: cleanInkText(L.t) || L.t,
         note: `the #delivery: note ${why}, so the voice does not get it as written; use a short note in plain words` });
     }
-    if (channel === 'phone') continue;      // voiced phone calls do not send notes yet
+    // Voiced phone calls send notes since A1, but the linter cannot tell a call knot from a text
+    // knot yet: A7 reads `// lint: call-knot` (plan 4.4) and runs the target checks below for those.
+    if (channel === 'phone') continue;
     let target = null, reason = null;
     if (L.kind === 'text' && L.printable) {
       target = i;

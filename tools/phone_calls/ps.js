@@ -72,11 +72,11 @@ const { chromium } = require('playwright');
 const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
-const { briefTasks } = require('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-phone-calls/.claude/skills/playtest-scenario/scripts/brief-tasks');
-const { createVmSteps } = require('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-phone-calls/.claude/skills/playtest-scenario/scripts/vm-steps');
-const { completeConfiguration } = require('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-phone-calls/.claude/skills/playtest-scenario/scripts/config-gate');
-const { nextBootstrapTarget, readBootstrapFacts, converseEnding } = require('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-phone-calls/.claude/skills/playtest-scenario/scripts/bootstrap-steps');
-const { createResponseCapture } = require('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-phone-calls/.claude/skills/playtest-scenario/scripts/response-capture');
+const { briefTasks } = require(path.join(__dirname, '../../.claude/skills/playtest-scenario/scripts/brief-tasks'));
+const { createVmSteps } = require(path.join(__dirname, '../../.claude/skills/playtest-scenario/scripts/vm-steps'));
+const { completeConfiguration } = require(path.join(__dirname, '../../.claude/skills/playtest-scenario/scripts/config-gate'));
+const { nextBootstrapTarget, readBootstrapFacts, converseEnding } = require(path.join(__dirname, '../../.claude/skills/playtest-scenario/scripts/bootstrap-steps'));
+const { createResponseCapture } = require(path.join(__dirname, '../../.claude/skills/playtest-scenario/scripts/response-capture'));
 
 const args = process.argv.slice(2);
 const argv = {};

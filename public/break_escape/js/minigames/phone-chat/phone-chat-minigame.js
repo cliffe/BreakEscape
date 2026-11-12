@@ -606,7 +606,7 @@ export class PhoneChatMinigame extends MinigameScene {
             // tags are still deferred, so replaying would duplicate both.
             const onlyPreloaded = conversationHistory.every(msg => msg.preloaded);
             if (reopen.renavigated) {
-                this._presentOutput(reopen.messages, reopen.tags, reopen.result);
+                this._presentReopened(reopen);
             } else if (npc.restartOnRetalk !== false && !onlyPreloaded &&
                 this.conversation.getCurrentState().hasEnded &&
                 this.conversation.restartAfterEnd()) {
@@ -943,6 +943,17 @@ export class PhoneChatMinigame extends MinigameScene {
     }
 
     /**
+     * Show what a reopen's re-run of the current knot printed (PhoneChatConversation
+     * .reopenWithCurrentGlobals). A voiced call speaks those lines with their #delivery: notes,
+     * as continueStory does (A1 R1 M1).
+     * @param {{messages: string[], messageTags?: string[][], tags: string[], result: Object}} reopen
+     */
+    _presentReopened(reopen) {
+        const deliveries = (reopen.messageTags || []).map(t => deliveryFromTags(t));
+        return this._presentOutput(reopen.messages, reopen.tags, reopen.result, { deliveries });
+    }
+
+    /**
      * Voice one NPC line of a voiced call (params.voiced) and wait until it ends, the
      * player clicks the thread, or the call is left. Lines redrawn from the history on a
      * reopen don't come through here, so a resumed call doesn't replay them.
@@ -985,7 +996,7 @@ export class PhoneChatMinigame extends MinigameScene {
         for (const msg of messages) {
             if (!this.isConversationActive || run !== this._typeoutRun) return;
             if (msg.type !== 'npc') continue;
-            try { await this._speakCallLine(msg, msg.text, { preloaded: true }); }
+            try { await this._speakCallLine(msg, msg.text, { preloaded: true, delivery: deliveryFromTags(msg.deliveryTags) }); }
             catch (e) { console.warn('⚠️ opening line voice failed:', e?.message); return; }
         }
     }
