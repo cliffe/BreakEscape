@@ -60,3 +60,19 @@ The three owned PCs get `pc8` (amara_pc), `pc6` (tom_pc) and `pc11` (sanjay_pc) 
 
 - Amara's lock depends on her trip estimate, so a plain coffee run in a fresh game leaves her
   screen open (16 s); the lock above needed the coffee station busy. Not a bug.
+
+## Review R1 fixes (LOCKED_SCREENS_CODE_REVIEW_R1.md)
+
+- Minor 1: the screen rectangles moved to `scripts/room_gen/locked_screen_rects.json`, read by
+  the script and by the test. The art test now fails any changed pixel outside the base's
+  rectangle (or on a rounded corner). A second test recolours a keyboard key, a bezel pixel and
+  pc7's corner and checks each is reported. Proof: a pc7_locked.png with one keyboard pixel
+  repainted failed both tests; the file was then restored from git.
+- Nit 2: `pc_locked` is an alias of `pc1_locked` made in `create()` (`textures.addImage`), so
+  pc1_locked.png is fetched once.
+- Nit 3: every lock whose spare space is even is already exactly centred. The rest cannot be,
+  with a 7-wide, even-height padlock (x on pc3, pc4, pc5, pc6, pc7, pc9, pc11, pc_desktop; y on
+  pc4, pc5, pc8, pc10, pc12, pc_desktop). No picture changed.
+- Nit 4: left as it is (the user accepts a locked screen lighting up).
+- Nit 5: the corner rule is a `rounded` argument to `build()`, the candidates and `fill()`; no
+  module global. Rebuilding every base gives the committed pictures byte for byte.

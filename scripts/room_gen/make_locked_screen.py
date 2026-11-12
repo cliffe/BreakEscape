@@ -13,8 +13,8 @@ Candidates:
   c  dim screen, a small padlock over a row of password dots
 
 The screen interior of `pc` is x 3..24, y 1..13 (inclusive, 22x13 = 286 px),
-which is exactly the area pc_ransomware.png repaints. RECTS below holds a hand-placed
-rectangle for every workstation base; any other sprite needs --rect.
+which is exactly the area pc_ransomware.png repaints. locked_screen_rects.json holds a
+hand-placed rectangle for every workstation base; any other sprite needs --rect.
 
 Candidate a uses the 7x8 padlock on a screen at least 12 rows tall and the 7x6 padlock
 on a shorter one (pc1, pc3, pc4, pc8). Candidates b and c need a 17x12 screen and are
@@ -35,6 +35,7 @@ Output is deterministic: the same base sprite gives the same bytes.
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -48,25 +49,11 @@ OBJECTS = ROOT / "public/break_escape/assets/objects"
 # key `pc` from pc1.png (different art), so the navy desktop PC and its locked look are the
 # keys `pc_desktop` and `pc_desktop_locked` (systems/screen-states.js).
 #
-# The others were placed by hand on a 20x grid of each sprite: the rectangle covers the
-# lit (or dark) glass only, never the bezel or an inner border line. pc7's glass has
-# rounded corners, so its four corner pixels are left alone (ROUNDED).
-RECTS = {
-    "pc": (3, 1, 24, 13),
-    "pc_desktop": (3, 1, 24, 13),
-    "pc1": (5, 2, 19, 11),     # 15x10, purple bezel with a peach frame
-    "pc3": (5, 2, 20, 11),     # 16x10, cyan glass
-    "pc4": (6, 2, 19, 10),     # 14x9, terminal inside a white frame
-    "pc5": (1, 1, 26, 15),     # 26x15, the area pc5_ransomware.png repaints
-    "pc6": (3, 2, 24, 15),     # 22x14
-    "pc7": (7, 3, 24, 14),     # 18x12, rounded corners
-    "pc8": (4, 2, 16, 10),     # 13x9, grey glass with a dark inner border
-    "pc9": (7, 3, 30, 16),     # 24x14
-    "pc10": (5, 2, 27, 16),    # 23x15
-    "pc11": (1, 1, 20, 12),    # 20x12
-    "pc12": (5, 1, 25, 13),    # 21x13, dark glass inside a white frame
-}
-ROUNDED = {"pc7"}
+# Every other base's rectangle lives in locked_screen_rects.json (placed by hand on a 20x grid of
+# each sprite), which the node test also reads to check that no pixel outside it changes.
+_RECTS_FILE = json.loads((Path(__file__).resolve().parent / "locked_screen_rects.json").read_text())
+RECTS = {k: tuple(v) for k, v in _RECTS_FILE["rects"].items()}
+ROUNDED = set(_RECTS_FILE["rounded"])
 
 # Colours that already occur in pc.png.
 BEZEL = (23, 25, 75, 255)
@@ -123,13 +110,10 @@ def stamp(img, rows, x, y, colour, hole=None):
                 img.putpixel((x + dx, y + dy), hole)
 
 
-# Set by main() for a base in ROUNDED: fill() then skips the rectangle's corner pixels.
-SKIP_CORNERS = False
-
-
-def fill(img, rect, colour):
+def fill(img, rect, colour, rounded=False):
+    """Paint the rectangle; `rounded` leaves its four corner pixels alone."""
     x0, y0, x1, y1 = rect
-    corners = {(x0, y0), (x1, y0), (x0, y1), (x1, y1)} if SKIP_CORNERS else set()
+    corners = {(x0, y0), (x1, y0), (x0, y1), (x1, y1)} if rounded else set()
     for y in range(y0, y1 + 1):
         for x in range(x0, x1 + 1):
             if (x, y) not in corners:
@@ -144,18 +128,18 @@ def centre_y(rect, height):
     return rect[1] + (rect[3] - rect[1] + 1 - height) // 2
 
 
-def candidate_a(img, rect):
+def candidate_a(img, rect, rounded=False):
     """Dark navy screen, one large padlock."""
-    fill(img, rect, NAVY)
+    fill(img, rect, NAVY, rounded)
     if rect[3] - rect[1] + 1 >= 12:
         stamp(img, PADLOCK_BIG, centre_x(rect, 7), centre_y(rect, 8), WHITE, NAVY)
     else:
         stamp(img, PADLOCK_MID, centre_x(rect, 7), centre_y(rect, 6), WHITE, NAVY)
 
 
-def candidate_b(img, rect):
+def candidate_b(img, rect, rounded=False):
     """Blue-violet screen, clock line over a small padlock."""
-    fill(img, rect, VIOLET)
+    fill(img, rect, VIOLET, rounded)
     text = "09:41"
     width = sum(len(DIGITS[c][0]) for c in text) + len(text) - 1
     block = 5 + 1 + 5
@@ -166,9 +150,9 @@ def candidate_b(img, rect):
     stamp(img, PADLOCK_SMALL, centre_x(rect, 7), y + 6, WHITE, VIOLET)
 
 
-def candidate_c(img, rect):
+def candidate_c(img, rect, rounded=False):
     """Dim screen, small padlock over four password dots."""
-    fill(img, rect, DIM)
+    fill(img, rect, DIM, rounded)
     block = 6 + 2 + 2
     y = centre_y(rect, block)
     stamp(img, PADLOCK_MID, centre_x(rect, 7), y, WHITE, DIM)
@@ -185,9 +169,10 @@ LABELS = {
 }
 
 
-def build(base_img, rect, key):
+def build(base_img, rect, key, rounded=False):
+    """Candidate `key` on a copy of the base; `rounded` keeps the rectangle's corner pixels."""
     img = base_img.copy()
-    CANDIDATES[key](img, rect)
+    CANDIDATES[key](img, rect, rounded)
     # The body must not change: check every pixel outside the rectangle.
     x0, y0, x1, y1 = rect
     for y in range(img.height):
@@ -246,11 +231,10 @@ def main():
         sys.exit("give --out DIR (candidates) or --install a|b|c")
     if args.install and args.install not in fits:
         sys.exit(f"candidate {args.install} needs a 17x12 screen; this one is {w}x{h}")
-    global SKIP_CORNERS
-    SKIP_CORNERS = args.base in ROUNDED and not args.rect
+    rounded = args.base in ROUNDED and not args.rect
 
     base_img = Image.open(OBJECTS / f"{args.base}.png").convert("RGBA")
-    built = {k: build(base_img, rect, k) for k in sorted(fits)}
+    built = {k: build(base_img, rect, k, rounded) for k in sorted(fits)}
 
     if args.out:
         out = Path(args.out)

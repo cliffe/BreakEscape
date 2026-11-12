@@ -429,10 +429,36 @@ async function rgba(path) {
     return out;
 }
 
-test('art: every workstation PC base has a locked picture, preloaded as <key>_locked, the size of the base, changed only inside the screen', async () => {
+/**
+ * Where a locked picture differs from its base. `rect` is the base's screen interior, inclusive
+ * [x0, y0, x1, y1] (scripts/room_gen/locked_screen_rects.json); `rounded` means its four corner
+ * pixels must not change either. Returns { changed, outside: [[x, y], ...], alpha: [[x, y], ...] }.
+ */
+function lockedDiff(a, b, width, rect, rounded = false) {
+    const [x0, y0, x1, y1] = rect;
+    const corner = (x, y) => rounded && (x === x0 || x === x1) && (y === y0 || y === y1);
+    const out = { changed: 0, outside: [], alpha: [] };
+    for (let i = 0; i < a.length; i += 4) {
+        if (a.readUInt32BE(i) === b.readUInt32BE(i)) continue;
+        const x = (i / 4) % width, y = Math.floor(i / 4 / width);
+        out.changed++;
+        if (a[i + 3] !== b[i + 3]) out.alpha.push([x, y]);
+        if (x < x0 || x > x1 || y < y0 || y > y1 || corner(x, y)) out.outside.push([x, y]);
+    }
+    return out;
+}
+
+const rectsFile = JSON.parse(readFileSync(join(root, 'scripts/room_gen/locked_screen_rects.json'), 'utf8'));
+
+test('art: every workstation PC base has a locked picture, preloaded as <key>_locked, the size of the base, changed only inside its screen rectangle', async () => {
     const game = readFileSync(join(root, 'public/break_escape/js/core/game.js'), 'utf8');
     const dir = join(root, 'public/break_escape/assets/objects');
     const loaded = new Map([...game.matchAll(/load\.image\('([^']+)', 'objects\/([^']+)'\)/g)].map(m => [m[1], m[2]]));
+    // the key `pc` is pc1.png: pc_locked is an alias of pc1_locked made in create(), one fetch
+    assert.equal(loaded.get('pc'), 'pc1.png');
+    assert.equal(loaded.has('pc_locked'), false, 'pc_locked is not fetched a second time');
+    assert.match(game, /this\.textures\.addImage\('pc_locked', this\.textures\.get\('pc1_locked'\)\.getSourceImage\(\)\)/);
+    loaded.set('pc_locked', loaded.get('pc1_locked'));
     const size = (name) => { const b = readFileSync(join(dir, name)); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
     const keys = ['pc', 'pc1', 'pc3', 'pc4', 'pc5', 'pc6', 'pc7', 'pc8', 'pc9', 'pc10', 'pc11', 'pc12', 'pc_desktop'];
     for (const key of keys) {
@@ -440,19 +466,28 @@ test('art: every workstation PC base has a locked picture, preloaded as <key>_lo
         const locked = loaded.get(`${key}_locked`);
         assert.ok(base, `${key} is preloaded`);
         assert.ok(locked, `${key}_locked is preloaded`);
+        const stem = base.replace(/\.png$/, '');
+        const rect = rectsFile.rects[stem];
+        assert.ok(rect, `${stem} has a screen rectangle`);
         assert.deepEqual(size(locked), size(base), `${key}_locked is the size of ${base}`);
-        assert.ok(!readFileSync(join(dir, locked)).equals(readFileSync(join(dir, base))), `${locked} differs from ${base}`);
-        // the body keeps its outline (no pixel turns transparent or opaque) and the screen is repainted
-        const a = await rgba(join(dir, base));
-        const b = await rgba(join(dir, locked));
-        let changed = 0;
-        for (let i = 0; i < a.length; i += 4) {
-            if (a[i + 3] !== b[i + 3]) assert.fail(`${locked} changes the outline at pixel ${i / 4}`);
-            if (a.readUInt32BE(i) !== b.readUInt32BE(i)) changed++;
-        }
-        assert.ok(changed > 40, `${locked} repaints the screen (${changed} px)`);
+        const d = lockedDiff(await rgba(join(dir, base)), await rgba(join(dir, locked)), size(base)[0], rect, rectsFile.rounded.includes(stem));
+        assert.deepEqual(d.alpha, [], `${locked} keeps the outline`);
+        assert.deepEqual(d.outside, [], `${locked} changes nothing outside ${stem}'s screen ${JSON.stringify(rect)}`);
+        assert.ok(d.changed > 40, `${locked} repaints the screen (${d.changed} px)`);
     }
-    // the key `pc` is pc1.png, so it shares pc1's locked picture
-    assert.equal(loaded.get('pc'), 'pc1.png');
-    assert.equal(loaded.get('pc_locked'), 'pc1_locked.png');
+});
+
+test('art: the check catches a locked picture that repaints the keyboard, the bezel or a rounded corner', async () => {
+    const dir = join(root, 'public/break_escape/assets/objects');
+    const base = await rgba(join(dir, 'pc7.png'));
+    const good = await rgba(join(dir, 'pc7_locked.png'));
+    const rect = rectsFile.rects.pc7, w = 32;
+    assert.deepEqual(lockedDiff(base, good, w, rect, true).outside, []);
+    const recolour = (buf, x, y) => { const c = Buffer.from(buf); const i = (y * w + x) * 4; c[i] ^= 0x40; return c; };
+    // a keyboard key (x 8, y 23), the bezel just left of the glass, and the glass's top-left corner
+    for (const [x, y] of [[8, 23], [rect[0] - 1, 8], [rect[0], rect[1]]]) {
+        const bad = recolour(good, x, y);
+        assert.notEqual(base.readUInt32BE((y * w + x) * 4), bad.readUInt32BE((y * w + x) * 4), 'the bad pixel differs from the base');
+        assert.deepEqual(lockedDiff(base, bad, w, rect, true).outside, [[x, y]], `a change at ${x},${y} is reported`);
+    }
 });

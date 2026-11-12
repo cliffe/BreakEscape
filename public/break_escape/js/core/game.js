@@ -805,8 +805,8 @@ export function preload() {
     this.load.image('pc12', 'objects/pc12.png');
     // Locked screens for the workstation PCs (systems/screen-states.js shows `<key>_locked`
     // while the owner is away with the screen locked; scripts/room_gen/make_locked_screen.py).
-    // The key `pc` is pc1.png, so it shares pc1's locked picture.
-    this.load.image('pc_locked', 'objects/pc1_locked.png');
+    // The key `pc` is pc1.png, so `pc_locked` is an alias of `pc1_locked`, made in create()
+    // (one fetch instead of two).
     this.load.image('pc1_locked', 'objects/pc1_locked.png');
     this.load.image('pc3_locked', 'objects/pc3_locked.png');
     this.load.image('pc4_locked', 'objects/pc4_locked.png');
@@ -1646,6 +1646,12 @@ export async function create() {
 
     // Set game instance for interactions module early
     setGameInstance(this);
+
+    // The key `pc` is pc1.png, so its locked look is pc1's picture under a second key
+    // (systems/screen-states.js looks for `<key>_locked`); preload fetches the file once
+    if (this.textures.exists('pc1_locked') && !this.textures.exists('pc_locked')) {
+        this.textures.addImage('pc_locked', this.textures.get('pc1_locked').getSourceImage());
+    }
 
     // NPC lazy loading uses the scene to load any character atlas the boot list missed
     window.npcLazyLoader?.setScene(this);
