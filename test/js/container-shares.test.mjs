@@ -2,8 +2,8 @@
 // container minigame. A share stub fetches its contents on open; the inventory add from a mapped
 // share carries source_pc_id, from a share opened in the view source_resource_id; the remote
 // desktop fetch carries the foothold; a share stub never calls handleObjectInteraction or
-// /unlock; a text file read from a remote desktop reopens it when closed, and one read from an
-// ordinary container still closes to the world; a folder opened below a network screen reopens
+// /unlock; a text file read from a remote desktop reopens it when closed, and so does one read from
+// an ordinary container (lab UX build); a folder opened below a network screen reopens
 // its parent (the round 3 review's R3-M1); network_share_opened says how the share was reached.
 // The real container-minigame.js, base-minigame.js, text-file-minigame.js and pc-sessions.js
 // run against jsdom.
@@ -64,7 +64,8 @@ const ANSWERS = {
     ledger_archive: { contents: [NOTE, YEAR_END] },
     scanned_inbox: { contents: [LETTER] },
     ledger_yearend: { contents: [] },
-    cabinet: { contents: [LETTER] }
+    cabinet: { contents: [LETTER] },
+    dana_pc: { contents: [NOTE], session: { npcId: 'dana', username: 'dana', via: 'password' } }
 };
 
 let fetches, events, interactions, unlocks, landings, started, sessions;
@@ -215,26 +216,191 @@ test('a text file read from a remote desktop folder reopens that folder when the
     assert.deepEqual(landings.at(-1), ['desktop', 'item', { pcId: 'lena_pc', host: 'HB-FIN-02' }]);
     assert.ok(window.pendingContainerReturn, 'the share is recorded for the reader');
     window.MinigameFramework.startMinigame('text-file', null, { fileName: 'IT handover.txt', fileContent: 'A note.' });
-    window.MinigameFramework.endMinigame(false, null);
+    current().closeByPlayer();
     await new Promise(r => setTimeout(r, 80));
     await settle();
     assert.equal(current()?.containerItem?.scenarioData?.id, 'ledger_archive', 'back in the share');
     assert.equal(window.pendingContainerReturn, null);
 });
 
-test('a text file read from an ordinary container still closes to the world', async (t) => {
+test('a text file read from an ordinary container reopens its file list when the reader closes', async (t) => {
     if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
     setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
     window.startContainerMinigame({ scenarioData: { id: 'cabinet', name: 'Cabinet', type: 'safe', locked: false } }, null, false, false);
     await settle();
     current().handleInteractiveItem({ ...LETTER, takeable: false }, null);
     assert.equal(isNetworkScreenContainer(window.pendingContainerReturn.containerItem), false);
     window.MinigameFramework.startMinigame('text-file', null, { fileName: 'scan_0412.pdf', fileContent: 'A letter.' });
-    window.MinigameFramework.endMinigame(false, null);
-    await new Promise(r => setTimeout(r, 80));
-    assert.equal(current(), null);
-    assert.equal(window.pendingContainerReturn, null);
+    current().closeByPlayer();
+    await new Promise(r => setTimeout(r, 160));
+    await settle();
+    assert.equal(current()?.containerItem?.scenarioData?.id, 'cabinet', 'back in the cabinet');
+    assert.equal(window.pendingContainerReturn, null, 'the return is spent');
     assert.equal(landings.length, 0, 'an ordinary container reports nothing');
+});
+
+test('a text file read from the world closes to the world, even with a stale container return', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    window.pendingContainerReturn = { containerItem: { scenarioData: { id: 'cabinet', name: 'Cabinet', type: 'safe' } },
+        contents: [LETTER], isTakeable: false, npcOptions: null };
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'Wall notice.txt', fileContent: 'Not in the cabinet.' });
+    window.MinigameFramework.endMinigame(false, null);
+    await new Promise(r => setTimeout(r, 160));
+    assert.equal(current(), null);
+    assert.equal(window.pendingContainerReturn, null, 'the stale return is cleared');
+});
+
+test('the container return is dropped when something else opens before it', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    window.startContainerMinigame({ scenarioData: { id: 'cabinet', name: 'Cabinet', type: 'safe', locked: false } }, null, false, false);
+    await settle();
+    current().handleInteractiveItem({ ...LETTER, takeable: false }, null);
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'scan_0412.pdf', fileContent: 'A letter.' });
+    current().closeByPlayer();
+    window.MinigameFramework.startMinigame('phone', null, {});
+    await new Promise(r => setTimeout(r, 160));
+    assert.equal(current()?._sceneType, 'phone', 'the phone stays open');
+    assert.equal(window.pendingContainerReturn, null);
+});
+
+// ── Lab UX review R1: M1 (only the player's own close goes back), M2 (an ended session), M4 ──
+async function readFromCabinet() {
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    window.startContainerMinigame({ scenarioData: { id: 'cabinet', name: 'Cabinet', type: 'safe', locked: false } }, null, false, false);
+    await settle();
+    current().handleInteractiveItem({ ...LETTER, takeable: false }, null);
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'scan_0412.pdf', fileContent: 'A letter.' });
+}
+const wait = (ms = 160) => new Promise(r => setTimeout(r, ms));
+
+test('M1: a reader closed by a hit (complete(false)) or the knockout screen stays closed', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    await readFromCabinet();
+    current().complete(false);            // what player-damage-interrupt.js and closeMinigameForKnockout do
+    await wait(); await settle();
+    assert.equal(current(), null, 'a hit: the player is left in the world');
+    assert.equal(window.pendingContainerReturn, null, 'and the return is cleared');
+    setup();
+    await readFromCabinet();
+    window.MinigameFramework.forceCloseMinigame = function () { this.endMinigame(false, null); };
+    window.MinigameFramework.forceCloseMinigame();   // a conversation starting, or the fallback close
+    await wait(); await settle();
+    assert.equal(current(), null, 'a forced close: the world');
+});
+
+test('M1: an own close followed by a hit, a knockout or a room change before the return stays in the world', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    for (const [label, after] of [
+        ['a hit in the gap', () => { window.lastPlayerHitAt = () => Date.now(); }],
+        ['knocked out', () => { window.playerIsKnockedOut = () => true; }],
+        ['another room', () => { window.currentPlayerRoom = 'corridor'; }]
+    ]) {
+        setup();
+        window.currentPlayerRoom = 'office';
+        await readFromCabinet();
+        current().closeByPlayer();
+        after();
+        await wait(); await settle();
+        assert.equal(current(), null, label);
+        assert.equal(window.pendingContainerReturn, null, `${label}: the return is cleared`);
+        delete window.lastPlayerHitAt; delete window.playerIsKnockedOut; delete window.currentPlayerRoom;
+    }
+    // The same close with none of them: back in the cabinet
+    setup();
+    await readFromCabinet();
+    current().closeByPlayer();
+    await wait(); await settle();
+    assert.equal(current()?.containerItem?.scenarioData?.id, 'cabinet');
+});
+
+const localDesktop = () => ({ scenarioData: { id: 'dana_pc', name: "Dana's PC", type: 'pc', lockType: 'login', locked: true } });
+
+test('M4: Open from the transfer dialog on a local sign-in desktop returns to the desktop', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    await sessions.signIn('dana_pc', 'dana', 'x');
+    window.startContainerMinigame(localDesktop(), null, false, true);
+    await settle();
+    current().openFileInPlace(NOTE);
+    assert.ok(window.pendingContainerReturn, 'the desktop is recorded for the reader');
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'IT handover.txt', fileContent: 'A note.' });
+    current().closeByPlayer();
+    await wait(); await settle();
+    assert.equal(current()?.containerItem?.scenarioData?.id, 'dana_pc', 'back on the desktop');
+});
+
+test('R1 n2: cameFrom matches the file by id when it has one, so a world file with the same name does not go back', (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    const back = { containerItem: { scenarioData: { id: 'cabinet' } }, contents: [LETTER] };
+    assert.equal(TextFileMinigame.cameFrom(back, 'scan_0412.pdf', 'inbox_letter'), true, 'the same file');
+    assert.equal(TextFileMinigame.cameFrom(back, 'scan_0412.pdf', 'lobby_scan'), false, 'another file, same name');
+    assert.equal(TextFileMinigame.cameFrom(back, 'scan_0412.pdf'), true, 'no id: by name, as before');
+    assert.equal(TextFileMinigame.cameFrom(null, 'scan_0412.pdf', 'inbox_letter'), false);
+});
+
+test('R2 n3: Open on a type with text but no reader (not a text file or readable note) arms no return', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    await sessions.signIn('dana_pc', 'dana', 'x');
+    window.startContainerMinigame(localDesktop(), null, false, true);
+    await settle();
+    window.pendingContainerReturn = null;
+    current().openFileInPlace({ id: 'memo_doc', type: 'document', name: 'memo.doc', takeable: true, text: 'A memo.' });
+    assert.equal(window.pendingContainerReturn, null, 'no reader spends it, so none is armed');
+    window.startContainerMinigame(localDesktop(), null, false, true);
+    await settle();
+    current().openFileInPlace({ id: 'memo_note', type: 'notes', name: 'Memo', takeable: true, readable: true, text: 'A memo.' });
+    assert.ok(window.pendingContainerReturn, 'a readable note opens the notes viewer, which spends it');
+});
+
+test('M2: a session that ended while the file was open closes to the world with its message, never the sign-in screen', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a[0]);
+    const signIns = [];
+    window.openLoginSignIn = (l) => signIns.push(l);
+    await sessions.signIn('dana_pc', 'dana', 'x');
+    window.startContainerMinigame(localDesktop(), null, false, true);
+    await settle();
+    current().openFileInPlace(NOTE);
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'IT handover.txt', fileContent: 'A note.' });
+    await sessions.displaced('dana_pc', 'Dana');   // Dana sits down while the file is open
+    current().closeByPlayer();
+    await wait(); await settle();
+    assert.equal(current(), null, 'the world, not the desktop');
+    assert.deepEqual(signIns, [], 'never the sign-in screen');
+    assert.ok(alerts.includes('Dana has signed in at this PC'), 'the message the desktop would have shown');
+    assert.equal(sessions.takeEndedMessage('dana_pc'), null, 'shown once');
+});
+
+test('M2: a reopened desktop whose fetch answers 403 closes to the world, not to the sign-in screen', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    window.returnToContainerAfterNotes = returnToContainerAfterNotes;
+    const signIns = [];
+    window.openLoginSignIn = (l) => signIns.push(l);
+    await sessions.signIn('dana_pc', 'dana', 'x');
+    window.startContainerMinigame(localDesktop(), null, false, true);
+    await settle();
+    current().openFileInPlace(NOTE);
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'IT handover.txt', fileContent: 'A note.' });
+    const realFetch = window.fetch;
+    window.fetch = globalThis.fetch = async () => ({ ok: false, status: 403, statusText: 'Forbidden', json: async () => ({}) });
+    current().closeByPlayer();
+    await wait(); await settle(); await wait(80);
+    window.fetch = globalThis.fetch = realFetch;
+    assert.equal(current(), null);
+    assert.deepEqual(signIns, [], 'no sign-in screen from a return');
+    assert.equal(sessions.has('dana_pc'), false, 'the local copy is dropped');
 });
 
 test('a locked folder opened below a network screen carries its parent, and reopens it on Close (R3-M1)', async () => {
@@ -416,4 +582,69 @@ test('through the real minigame manager: desktop, share, a cancelled PIN pad, ba
     } finally {
         if (MF.currentMinigame) MF.endMinigame(false, null);
     }
+});
+
+// Review R3 nit 2: a desktop left open when its PC is switched off closes, and so does a share
+// opened from it; the session is kept. At the keyboard: "This PC is off."; remotely: not_responding.
+const samDesktop = () => ({ scenarioData: { id: 'sam_pc', name: "Sam's PC", type: 'pc', lockType: 'login', locked: true,
+    affordance: { offWhen: 'sam_pc_off' } } });
+
+function switchSamOff() {
+    window.gameState.globalVariables.sam_pc_off = true;
+    window.eventDispatcher.emit('global_variable_changed:sam_pc_off', { name: 'sam_pc_off', value: true, oldValue: false });
+}
+
+test('a keyboard desktop open when its PC goes off closes with "This PC is off." and keeps the session', async () => {
+    setup();
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a);
+    window.gameState = { globalVariables: { sam_pc_off: false } };
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    window.startContainerMinigame(samDesktop(), null, false, true);
+    await settle();
+    assert.equal(current()?.loginPcId, 'sam_pc');
+    window.eventDispatcher.emit('global_variable_changed:sam_pc_off', { name: 'sam_pc_off', value: false });
+    assert.equal(current()?.loginPcId, 'sam_pc', 'a change that leaves it on keeps it open');
+    switchSamOff();
+    await settle();
+    assert.equal(current(), null, 'the desktop closed');
+    assert.deepEqual(alerts.map(a => a[0]), ['This PC is off.']);
+    assert.ok(sessions.get('sam_pc'), 'the session is kept');
+});
+
+test('a share opened from that desktop closes too when the PC goes off', async () => {
+    setup();
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a);
+    window.gameState = { globalVariables: { sam_pc_off: false } };
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    window.startContainerMinigame(samDesktop(), null, false, true);
+    await settle();
+    icon('Scanned-Inbox').click();
+    await settle();
+    assert.equal(current().containerItem.scenarioData.id, 'scanned_inbox');
+    switchSamOff();
+    await settle();
+    assert.equal(current(), null, 'the share closed rather than stay open on an off PC');
+    assert.deepEqual(alerts.map(a => a[0]), ['This PC is off.']);
+});
+
+test('a share clicked on a desktop whose PC is already off says "This PC is off.", not a load error', async () => {
+    setup();
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a);
+    window.gameState = { globalVariables: { sam_pc_off: false } };
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    window.startContainerMinigame(samDesktop(), null, false, true);
+    await settle();
+    // The global changed with no event (a server-side or silent write), and the share is refused
+    window.gameState.globalVariables.sam_pc_off = true;
+    const saved = ANSWERS.scanned_inbox;
+    delete ANSWERS.scanned_inbox;
+    try {
+        icon('Scanned-Inbox').click();
+        await settle();
+    } finally { ANSWERS.scanned_inbox = saved; }
+    assert.equal(current(), null);
+    assert.deepEqual(alerts.map(a => a[0]), ['This PC is off.'], 'no "Could not load container contents"');
 });

@@ -1,4 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 export class CryptexMinigame extends MinigameScene {
     constructor(container, params = {}) {
@@ -277,10 +278,13 @@ export class CryptexMinigame extends MinigameScene {
         const submitBtn = this.gameContainer.querySelector('#cryptex-submit-btn');
         submitBtn.disabled = true;
 
+        this.scopeRefusal = null;
         const success = await this._validateWithServer();
 
         if (success) {
             this._handleSuccess();
+        } else if (this.scopeRefusal) {
+            this._handleScopeRefusal(this.scopeRefusal);
         } else {
             this._handleFailure();
         }
@@ -325,6 +329,13 @@ export class CryptexMinigame extends MinigameScene {
             // A status means the server answered and said no -- that is a wrong
             // combination, not a network problem. Only a request that never
             // completed deserves the network message.
+            // The server refused the PC the lock sits on (off, not responding or out of
+            // reach), not the answer (review R4 m2): no attempt, and never "wrong"
+            const refusal = lockScopeRefusal(error);
+            if (refusal) {
+                this.scopeRefusal = refusal;
+                return false;
+            }
             if (error?.status) {
                 return false;
             }
@@ -335,6 +346,14 @@ export class CryptexMinigame extends MinigameScene {
     }
 
     // ── Success / Failure ────────────────────────────────────────────────────
+
+    // Says why and closes as cancelled, counting no attempt (as the PIN pad does)
+    _handleScopeRefusal(reason) {
+        this.isLocked = true;
+        this._setStatus(LOCK_SCOPE_REFUSAL_TEXT[reason], '');
+        this.gameResult = { success: false, cancelled: true, refused: reason, attempts: this.attemptCount };
+        setTimeout(() => this.complete(false), 2000);
+    }
 
     _handleSuccess() {
         this.isLocked = true;

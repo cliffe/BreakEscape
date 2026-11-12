@@ -38,6 +38,11 @@ import { escapeHtml } from '../../utils/escape-html.js';
 
 
 export const REMOTE_OFF_TEXT = 'remote sign-in off';
+export const NOT_RESPONDING_TEXT = 'not responding';
+// Shown when the view was fetched before the latest globals reached the server (review R2 m3)
+export const STALE_TEXT = 'Still updating, so this may be out of date.';
+// An implant whose own PC is off (review R3 M1): the link is listed and reaches nothing
+export const linkOffText = (host) => `This link is not responding: ${host || 'its PC'} is off.`;
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
 const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
 const KIND_ICONS = {
@@ -47,10 +52,11 @@ const KIND_ICONS = {
 };
 
 /**
- * The action a host row offers (4.3), in the plan's order: 'off' | 'open' | 'sign-in'.
- * Exported for tests.
+ * The action a host row offers (4.3), in the plan's order: 'not_responding' (the host's own
+ * service is off, 9.3b plan 5.2) | 'off' | 'open' | 'sign-in'. Exported for tests.
  */
 export function hostAction(row) {
+    if (row?.responding === false) return 'not_responding';
     if (row?.remoteSignIn === false) return 'off';
     if (row?.session && row.session.via !== 'claim') return 'open';
     return 'sign-in';
@@ -90,6 +96,8 @@ export class NetworkViewMinigame extends MinigameScene {
         this.status = 'loading';
         this.exitReason = 'close';
         this.notice = null;
+        this.stale = false;
+        this._staleRefetched = false;
     }
 
     links() { return window.networkLinks || null; }
@@ -111,9 +119,9 @@ export class NetworkViewMinigame extends MinigameScene {
     }
 
     /** GET /network for this foothold (through network-links.js), then the rows. */
-    async load() {
+    async load({ sync = true } = {}) {
         const links = this.links();
-        const answer = links?.view ? await links.view(this.footholdId) : { ok: false, reason: 'error' };
+        const answer = links?.view ? await links.view(this.footholdId, { sync }) : { ok: false, reason: 'error' };
         // Closed, or replaced by another screen, while the answer was on its way
         if (this._reported || (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this)) return answer;
         if (!answer.ok && answer.reason === 'gone') {
@@ -130,6 +138,18 @@ export class NetworkViewMinigame extends MinigameScene {
         }
         this.view = answer.view;
         this.status = 'ready';
+        // Fetched after the sync's time limit (review R2 m3): say so, and fetch once more when
+        // that sync lands, if this view is still open by then
+        this.stale = !!answer.stale;
+        if (answer.stale && answer.synced && !this._staleRefetched) {
+            this._staleRefetched = true;
+            this.refetched = Promise.resolve(answer.synced).then(ok => {
+                if (!ok || this._reported) return null;
+                if (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this) return null;
+                // The late sync has landed, so the globals are on the server: no second sync
+                return this.load({ sync: false });
+            });
+        }
         this.render();
         const hostIds = this.rows().filter(r => r.kind === 'pc').map(r => r.id);
         const networkId = this.view?.network?.id ?? null;
@@ -199,7 +219,11 @@ export class NetworkViewMinigame extends MinigameScene {
         if (row.kind === 'pc') {
             const action = hostAction(row);
             let control;
-            if (action === 'off') {
+            if (action === 'not_responding') {
+                // A session held there is kept (5.2): say so, as a down block's "No route" row does
+                const kept = row.heldAs ? ` (still signed in as ${escapeHtml(row.heldAs)})` : '';
+                control = `<span class="network-row-off">${NOT_RESPONDING_TEXT}${kept}</span>`;
+            } else if (action === 'off') {
                 control = `<span class="network-row-off">${REMOTE_OFF_TEXT}</span>`;
             } else if (action === 'open') {
                 const who = row.session.displayName || row.session.username || 'session';
@@ -246,9 +270,12 @@ export class NetworkViewMinigame extends MinigameScene {
                     <h4 class="network-view-title">${escapeHtml(title)}</h4>
                     ${obs ? `<p class="network-view-observations">${escapeHtml(obs)}</p>` : ''}
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
+                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}
                 </div>
                 <ul class="network-view-rows">
-                    ${rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>'}
+                    ${v.responding === false
+                        ? `<li class="network-row-empty network-row-off">${escapeHtml(linkOffText(v.sourceHost))}</li>`
+                        : (rows.length ? rows.map(r => this.rowHtml(r)).join('') : '<li class="network-row-empty">Nothing answers on this network.</li>')}
                 </ul>
                 ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
                 <div class="network-view-notice" aria-live="polite"></div>
@@ -321,6 +348,7 @@ export class NetworkViewMinigame extends MinigameScene {
             footholdId: this.footholdId,
             status: this.status,
             network: this.view?.network ? { id: this.view.network.id, name: this.view.network.name } : null,
+            responding: this.view?.responding !== false,
             message: this.message,
             notice: this.notice,
             rows: this.rows().map(r => (r.kind === 'pc'

@@ -130,6 +130,7 @@ test('the station panel lists only its own flags', async () => {
     mk('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
     mk('utils/escape-html.js', readFileSync(new URL('../../public/break_escape/js/utils/escape-html.js', import.meta.url), 'utf8'));
     mk('utils/flag-wording.js', read('public/break_escape/js/utils/flag-wording.js'));
+    mk('utils/lock-scope-refusal.js', read('public/break_escape/js/utils/lock-scope-refusal.js'));
     mk('minigames/flag-station/flag-station-minigame.js', read('public/break_escape/js/minigames/flag-station/flag-station-minigame.js'));
     globalThis.window = { gameState: { submittedFlags: ['catalogue_server_1', 'catalogue_server_2'] } };
     const { FlagStationMinigame } = await import(pathToFileURL(join(tmp, 'minigames/flag-station/flag-station-minigame.js')).href);

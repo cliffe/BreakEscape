@@ -104,7 +104,7 @@ To see the strike or the torch, drive a session yourself (`tools/playtest/sessio
 - **Overlays stay above the light map.** Any new marker drawn in the world that must stay readable in the dark (icons, bars, labels) sets its depth through `overlayDepth()` from `utils/constants.js`.
 - **WebGL only.** Lighting turns itself off on the Canvas renderer, and players can turn it off with `?lighting=off`. Never make a puzzle need the lighting.
 
-- **A lit prop that changes face needs a base `sprite`.** An object with `spriteVariants` and no `sprite` falls back to its `type` (`rooms.js`) when a variant clears, so the screen turns into a generic `smartscreen` mid-scene. Both m07 (video wall) and m08 (disposition screen) hit this on 2026-10-14. Set `"sprite"` to the normal face even when the map slot already places it. A light can't make a prop look lit if the art doesn't: draw the lit face too.
+- **A lit prop that changes face needs a base `sprite`.** An object with `spriteVariants` and no `sprite` returns to the map item's picture when it is matched to one, and to its `type` texture when it is placed without a map item (`rooms.js`), so give a lit prop a base `sprite` unless it takes a map slot. Before November 2026 a matched object fell back to its `type` too, which turned m07's video wall and m08's disposition screen into a generic `smartscreen` mid-scene (2026-10-14). A light can't make a prop look lit if the art doesn't: draw the lit face too.
 
 ## Known limits
 

@@ -264,8 +264,9 @@ def check_network_model(json_data, scenario_dir = nil)
     paths = jacked_nets.flat_map { |src| nm.all_reach_paths(json_data, src, net_id) }
     next if paths.empty? # unreachable by a pivot too: the no-jack info line covers it
 
-    intermediates = (paths.flatten.uniq - [net_id])
-    next if intermediates.any? { |net| host_on.call(net) }
+    # Judged per path (review K R2 m1): a path is usable only when every network before the
+    # target carries a sign-in host to open the next hop's pivot session; the target needs none.
+    next if paths.any? { |path| path[0..-2].all? { |net| host_on.call(net) } }
 
     warn.call("network '#{net_id}' is reachable only by pivoting over a link, but no network on the way to it has " \
               'a sign-in host a foothold can use to open the pivot session; it can never be reached.')

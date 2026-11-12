@@ -133,6 +133,51 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* "More below": while the list goes on past the panel's bottom edge, the last line
+   fades out over a small down arrow (objectives-panel.js updateMoreBelow). Drawn in
+   CSS: a fade strip, and a 7x4 pixel arrow at 2x made of box-shadow pixels. */
+.objectives-panel {
+  --obj-more-fade: rgba(0, 0, 0, 0.92);
+  --obj-more-arrow: #ccc;
+}
+
+.objectives-panel.has-more-below::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40px;
+  background: linear-gradient(to bottom, transparent, var(--obj-more-fade) 60%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.objectives-panel.has-more-below::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 2px;
+  height: 2px;
+  margin-left: -1px;
+  background: var(--obj-more-arrow);
+  /* rows of 7, 5, 3 and 1 pixels, each 2px square, pointing down */
+  box-shadow:
+    -6px -6px var(--obj-more-arrow), -4px -6px var(--obj-more-arrow), -2px -6px var(--obj-more-arrow),
+    0 -6px var(--obj-more-arrow), 2px -6px var(--obj-more-arrow), 4px -6px var(--obj-more-arrow), 6px -6px var(--obj-more-arrow),
+    -4px -4px var(--obj-more-arrow), -2px -4px var(--obj-more-arrow), 0 -4px var(--obj-more-arrow),
+    2px -4px var(--obj-more-arrow), 4px -4px var(--obj-more-arrow),
+    -2px -2px var(--obj-more-arrow), 0 -2px var(--obj-more-arrow), 2px -2px var(--obj-more-arrow);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.objectives-panel.collapsed::before,
+.objectives-panel.collapsed::after {
+  display: none;
+}
+
 /* Aim Styling */
 .objective-aim {
   margin-bottom: 12px;
