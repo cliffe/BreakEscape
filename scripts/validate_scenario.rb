@@ -239,7 +239,11 @@ def validate_grant_foothold_actions(schema, json_data)
 
   sub = { 'definitions' => schema['definitions'], '$ref' => '#/definitions/grantFootholdAction' }
   out = []
-  walk = lambda do |node, pointer|
+  # The walk carries the schema node for each value (nil where the schema does not describe it), so
+  # it can tell a note from an id: a key of an id map (rooms, networks, resources, roles, an NPC's
+  # needs, any node whose additionalProperties is a schema) is an id and is walked even when it
+  # starts with "_"; a "_" key anywhere else is a property name, a note, and is skipped.
+  walk = lambda do |node, pointer, snode|
     case node
     when Hash
       if node['type'] == 'grant_foothold'
@@ -250,18 +254,43 @@ def validate_grant_foothold_actions(schema, json_data)
           end
         end
       end
+      map_value = schema_map_value(schema, snode)
+      declared = snode ? schema_node_keys(schema, snode, underscore: true) : []
       node.each do |k, v|
-        # a "_" key is a note: its value is never checked, whatever it holds
-        next if k.to_s.start_with?('_')
-
-        walk.call(v, "#{pointer}/#{k.to_s.gsub('~', '~0').gsub('/', '~1')}")
+        key = k.to_s
+        child_pointer = "#{pointer}/#{key.gsub('~', '~0').gsub('/', '~1')}"
+        if map_value && !declared.include?(key)
+          walk.call(v, child_pointer, map_value)
+        elsif key.start_with?('_')
+          # a "_" property is a note: its value is never checked, whatever it holds
+          next
+        else
+          walk.call(v, child_pointer, snode && schema_resolve(schema, snode, [key]))
+        end
       end
     when Array
-      node.each_with_index { |v, i| walk.call(v, "#{pointer}/#{i}") }
+      items = snode && schema_resolve(schema, snode, ['0'])
+      node.each_with_index { |v, i| walk.call(v, "#{pointer}/#{i}", items) }
     end
   end
-  walk.call(json_data, '#')
+  walk.call(json_data, '#', schema)
   out
+end
+
+# The schema for the values of an id map (an object node whose additionalProperties is a schema,
+# directly or in a combinator branch), or nil when the node is not an id map.
+def schema_map_value(root, node, depth = 0)
+  node = schema_deref(root, node)
+  return nil unless node.is_a?(Hash) && depth < 8
+  return node['additionalProperties'] if node['additionalProperties'].is_a?(Hash)
+
+  %w[allOf anyOf oneOf].each do |comb|
+    Array(node[comb]).each do |branch|
+      found = schema_map_value(root, branch, depth + 1)
+      return found if found
+    end
+  end
+  nil
 end
 
 # Step 2 of the format hardening: json-schema reports every unknown key of a closed block in one
@@ -377,22 +406,31 @@ def unknown_key_hint(key, known)
   s ? ", did you mean '#{s}'?" : ''
 end
 
-# The one known key a slip most likely meant: a case-insensitive match, else the single closest key
-# within edit distance 2 (1 for keys under 5 characters; a swap of two neighbouring letters is one
-# edit). nil when none or more than one is closest. With no such key, a note key written without
-# its "_" ("comment", or any "<k>" whose "_<k>" the block declares) gets "_comment" or "_<k>".
+NOTE_LIKE_KEYS = %w[comment comments note notes].freeze
+
+# The one known key a slip most likely meant: a case-insensitive match; else, for a note key
+# written without its "_" (comment, comments, note, notes, any case), "_<k>" when the block
+# declares it and "_comment" otherwise; else the single closest key within edit distance 2 (1 for
+# keys under 5 characters; a swap of two neighbouring letters is one edit), and with none close,
+# "_<k>" when the block declares it. nil when none or more than one is closest.
 def suggest_key(key, known, underscore_known = [])
   low = key.downcase
   same = known.select { |k| k.downcase == low }
   return same.first if same.length == 1
   return nil if same.length > 1
 
+  # a note key written without its "_" ("comments" is two edits from "contents") points at the note
+  if NOTE_LIKE_KEYS.include?(low)
+    return "_#{key}" if underscore_known.include?("_#{key}")
+
+    return '_comment'
+  end
+
   limit = key.length < 5 ? 1 : 2
   scored = known.map { |k| [k, key_edit_distance(low, k.downcase)] }.select { |_, d| d <= limit }
   if scored.empty?
     return nil if key.start_with?('_')
     return "_#{key}" if underscore_known.include?("_#{key}")
-    return '_comment' if low == 'comment'
 
     return nil
   end

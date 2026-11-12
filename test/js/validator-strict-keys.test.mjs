@@ -210,12 +210,41 @@ test('a grant_foothold under a "_" key is not checked by the schema walker', { s
   assert.deepEqual(full.lines.filter((l) => /'pcc'|'needsDroped'|^❌ ERROR: schema:/.test(l)), []);
 });
 
+test('ids are not notes: a grant_foothold slip in a room whose id starts with "_" is checked', { skip }, async () => {
+  const slip = (j) => {
+    j.rooms.r1.connections = { north: '_annex' };
+    j.rooms._annex = {
+      type: 'room_office', connections: { south: 'r1' }, _note: { type: 'grant_foothold', pcc: 'skipped' },
+      objects: [{ type: 'pc', id: 'pc9', name: 'Annex PC', triggerOnInteract: [
+        { type: 'confirm_action', text: 'Plug it in?', onConfirm: [{ type: 'grant_foothold', pcc: 'pc9', needsDropped: 'stick' }] }] }]
+    };
+  };
+  const want = "❌ ERROR: schema: #/rooms/_annex/objects/0/triggerOnInteract/0/onConfirm/0";
+  const [lines] = schemaLines([scenario(slip)]);
+  const hits = lines.filter((l) => l.includes("'pcc'"));
+  assert.equal(hits.length, 1, JSON.stringify(lines));
+  assert.ok(hits[0].startsWith(want), hits[0]);
+  assert.match(hits[0], /unknown key 'pcc', did you mean 'pc'\?$/);
+  const [full] = await fullRuns([scenario(slip)]);
+  const fullHits = full.lines.filter((l) => l.includes("'pcc'"));
+  assert.equal(fullHits.length, 1, JSON.stringify(full.lines));
+  assert.ok(fullHits[0].startsWith(want), fullHits[0]);
+  assert.equal(full.status, 1);
+});
+
 test('"comment" gets a hint towards "_comment"; a map-level "_comment" under roles still fails', { skip }, () => {
-  const [comment, mapLevel] = schemaLines([
+  const [comment, mapLevel, capital, plural, note] = schemaLines([
     scenario((j) => { j.policies.strict.comment = 'why'; }),
-    scenario((j) => { j.roles._comment = 'note'; })
+    scenario((j) => { j.roles._comment = 'note'; }),
+    scenario((j) => { j.policies.strict.Comment = 'why'; }),
+    scenario((j) => { j.accountProfiles.staff_desktop.comments = 'why'; }),
+    scenario((j) => { j.resources.printer.notes = 'why'; })
   ]);
   assert.deepEqual(comment, ["❌ ERROR: schema: #/policies/strict: unknown key 'comment', did you mean '_comment'?"]);
+  assert.deepEqual(capital, ["❌ ERROR: schema: #/policies/strict: unknown key 'Comment', did you mean '_comment'?"]);
+  // "comments" is two edits from "contents", which accountProfiles and resources declare
+  assert.deepEqual(plural, ["❌ ERROR: schema: #/accountProfiles/staff_desktop: unknown key 'comments', did you mean '_comment'?"]);
+  assert.deepEqual(note, ["❌ ERROR: schema: #/resources/printer: unknown key 'notes', did you mean '_comment'?"]);
   assert.equal(mapLevel.length, 1, JSON.stringify(mapLevel));
   assert.match(mapLevel[0], /^❌ ERROR: schema: #\/roles\/_comment: of type string did not match the following type: object$/);
 });
