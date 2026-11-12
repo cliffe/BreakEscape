@@ -39,7 +39,7 @@ The work, in order (mechanics before polish):
 ## Where to work
 
 - **Worktree** `.claude/worktrees/p-phone-calls`, branch `build/phone-calls`. Work and commit there, never in the main checkout.
-- Environment: `export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH RBENV_VERSION=3.1.6`. Worktrees have no `.bundle/config`, so set `BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle` and use `bundle exec`.
+- Environment: the default Ruby (2.7.8; 3.1.6 is not installed here). Worktrees have no `.bundle/config`, so set `BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle` and use `bundle exec`.
 - Browser proof: run your own keyless server on **port 3023** (`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true BUNDLE_PATH=... bundle exec rails server -b 127.0.0.1 -p 3023`, or `tools/playtest/start-keyless-server.sh`), create games with `bundle exec rails runner tools/playtest/new-game.rb <scenario>`, and drive with `.claude/skills/playtest-scenario/scripts/playtest-session.js`. Headless only. Stop the server when done. Never touch :3000 or another track's port (3018–3022 are in use).
 - **The Postgres dev DB is shared, with no backup.** Never run db:create, db:schema:load, db:migrate, db:reset, db:drop or db:setup. If the server fails for a schema reason, stop and report.
 - Full Rails and JS suites share the test DB with other tracks: run them under `flock /tmp/be-test-suite.lock`.
