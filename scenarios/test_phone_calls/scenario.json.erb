@@ -28,6 +28,7 @@
     }
   ],
   "startItemsInInventory": [
+    { "type": "lockpick", "name": "Lock Pick Kit", "takeable": true, "observations": "For the pick case." },
     {
       "type": "phone",
       "name": "Your Phone",
@@ -41,6 +42,9 @@
         "caller_queue",
         "caller_queue_b",
         "caller_replace",
+        "caller_hold",
+        "caller_forced",
+        "caller_popup",
         "timed_caller",
         "legacy_voiced",
         "texter"
@@ -320,6 +324,137 @@
           }
         },
         {
+          "id": "caller_hold",
+          "displayName": "Caller Hold",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_hold.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_hold",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": true,
+              "cooldown": 0,
+              "delayMs": 8000,
+              "callLabel": "Hold"
+            }
+          ]
+        },
+        {
+          "id": "caller_forced",
+          "displayName": "Caller Forced",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_forced.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_forced",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": true,
+              "disableClose": true,
+              "cooldown": 0,
+              "callLabel": "Forced"
+            }
+          ]
+        },
+        {
+          "id": "caller_popup",
+          "displayName": "Caller Popup",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_phone_calls/ink/caller_popup.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {
+            "name": "Kore",
+            "style": "A calm, businesslike phone contact. Consistent British accent. Short, even sentences.",
+            "language": "en-GB"
+          },
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "ring_popup",
+              "conversationMode": "phone-chat",
+              "targetKnot": "ring_call",
+              "ring": true,
+              "cooldown": 0,
+              "delayMs": 8000,
+              "callLabel": "Popup"
+            }
+          ]
+        },
+        {
+          "id": "guard",
+          "displayName": "Guard",
+          "npcType": "person",
+          "position": { "x": 3, "y": 8 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_phone_calls/ink/guard.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Aoede",
+            "style": "A bored security guard. Consistent British accent.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "pauseForPlayer": false,
+              "speed": 60,
+              "waypoints": [ { "x": 3, "y": 8 }, { "x": 8, "y": 8 } ]
+            }
+          },
+          "los": {
+            "enabled": true,
+            "range": 220,
+            "angle": 140,
+            "challengeOnSight": { "event": "player_in_view:guard", "cooldown": 8000, "rooms": ["office"] }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "player_in_view:guard",
+              "conversationMode": "person-chat",
+              "targetKnot": "challenge",
+              "cooldown": 8000
+            }
+          ]
+        },
+        {
+          "id": "brute",
+          "displayName": "Brute",
+          "npcType": "person",
+          "position": { "x": 8, "y": 6 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_phone_calls/ink/brute.json",
+          "currentKnot": "start",
+          "voice": {
+            "name": "Aoede",
+            "style": "A gruff heavy. Consistent British accent.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "facePlayer": false,
+            "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true }
+          }
+        },
+        {
           "id": "legacy_voiced",
           "displayName": "Legacy Voiced",
           "npcType": "phone",
@@ -522,6 +657,88 @@
             }
           ],
           "observations": "Lever: Texter sends a text"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_hold",
+          "name": "Lever: Hold (rings in 8 s)",
+          "position": { "x": 2, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [ { "type": "emit_event", "event_name": "ring_hold" } ],
+          "observations": "Lever: Hold (rings in 8 s)"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_forced",
+          "name": "Lever: Forced (auto-answers)",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [ { "type": "emit_event", "event_name": "ring_forced" } ],
+          "observations": "Lever: Forced (auto-answers)"
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "lever_popup",
+          "name": "Lever: Popup (rings in 8 s)",
+          "position": { "x": 4, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [ { "type": "emit_event", "event_name": "ring_popup" } ],
+          "observations": "Lever: Popup (rings in 8 s)"
+        },
+        {
+          "type": "safe",
+          "sprite": "filing_cabinet_locked2",
+          "id": "keypad_safe",
+          "name": "Keypad Safe (PIN 1234)",
+          "position": { "x": 2, "y": 6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "1234",
+          "observations": "A keypad: a non-conversation minigame to ring over.",
+          "contents": [ { "type": "notes", "name": "Safe Note", "takeable": true, "readable": true, "text": "Inside the safe.", "observations": "A note." } ]
+        },
+        {
+          "type": "suitcase",
+          "id": "pick_case",
+          "name": "Pick Case (lockpick)",
+          "position": { "x": 4, "y": 6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [40, 60, 30, 50],
+          "difficulty": "medium",
+          "observations": "A lockpicking minigame to ring over."
+        },
+        {
+          "type": "suitcase",
+          "id": "open_case",
+          "name": "Open Case (container with a note)",
+          "position": { "x": 6, "y": 6 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A container: open the note inside it to test the parent minigame returning.",
+          "contents": [ { "type": "notes", "name": "Case Note", "takeable": true, "readable": true, "text": "A note inside the case.", "observations": "A note." } ]
+        },
+        {
+          "type": "workstation",
+          "id": "cyberchef_ws",
+          "name": "CyberChef Workstation",
+          "position": { "x": 2, "y": 8 },
+          "takeable": false,
+          "observations": "CyberChef: the first workstation popup."
+        },
+        {
+          "type": "lab-workstation",
+          "id": "lab_ws",
+          "name": "Lab Sheet Workstation",
+          "position": { "x": 9, "y": 8 },
+          "takeable": false,
+          "labUrl": "about:blank",
+          "observations": "The lab-sheet popup."
         }
       ]
     }

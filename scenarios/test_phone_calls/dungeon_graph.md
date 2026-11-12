@@ -11,10 +11,10 @@ TEST: phone calls (A2b). The ringer and the ring banner with the phone closed. T
 | Story aims | 1 |
 | Total tasks | 1 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 0 |
+| Physical locks | 2 |
 | AND-gate convergences | 0 |
-| Rooms | 0 |
-| Puzzle graph nodes / edges | 0 / 0 |
+| Rooms | 1 |
+| Puzzle graph nodes / edges | 3 / 2 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -69,9 +69,14 @@ flowchart TD
   node_start(("▶"))
   node_start --> office
 
-  office("Office")
+  lock_keypad_safe["Keypad Safe (PIN 1234)<br/>PIN lock"]
+  lock_pick_case["Pick Case (lockpick)<br/>Key lock"]
+  office("Phone Test Office")
 
+  office --> lock_keypad_safe
+  office --> lock_pick_case
 
+  class lock_keypad_safe,lock_pick_case lock
   class office room
   class node_start start
 ```
@@ -129,12 +134,17 @@ flowchart TD
   node_start(("▶"))
   node_start --> office
 
+  lock_keypad_safe["Keypad Safe (PIN 1234)<br/>PIN lock"]
+  lock_pick_case["Pick Case (lockpick)<br/>Key lock"]
+  office("Phone Test Office")
   aim_take_calls{{"Take the Calls"}}
-  office("Office")
 
+  office --> lock_keypad_safe
+  office --> lock_pick_case
 
-  class aim_take_calls aim
+  class lock_keypad_safe,lock_pick_case lock
   class office room
+  class aim_take_calls aim
   class node_start start
 ```
 
@@ -205,17 +215,32 @@ flowchart TD
   rc_lever_replace_7{"Lever: Replace (old then new)"}
   rc_lever_legacy_8{"Lever: Legacy voiced call"}
   rc_lever_text_9{"Lever: Texter sends a text"}
-  rc_npc_host_10("Host")
-  rc_npc_caller_basic_11("Caller Basic")
-  rc_npc_caller_patient_12("Caller Patient")
-  rc_npc_caller_decline_13("Caller Decline")
-  rc_npc_caller_debrief_14("Caller Debrief")
-  rc_npc_caller_queue_one_15("Caller Queue One")
-  rc_npc_caller_queue_two_16("Caller Queue Two")
-  rc_npc_caller_replace_17("Caller Replace")
-  rc_npc_timed_caller_18("Timed Caller")
-  rc_npc_legacy_voiced_19("Legacy Voiced")
-  rc_npc_texter_20("Texter")
+  rc_lever_hold_10{"Lever: Hold (rings in 8 s)"}
+  rc_lever_forced_11{"Lever: Forced (auto-answers)"}
+  rc_lever_popup_12{"Lever: Popup (rings in 8 s)"}
+  rc_keypad_safe_13[["Keypad Safe (PIN 1234)"]]
+  rc_obj14_14{"Safe Note"}
+  rc_pick_case_15{"Pick Case (lockpick)"}
+  rc_open_case_16[["Open Case (container with a note)"]]
+  rc_obj17_17{"Case Note"}
+  rc_cyberchef_ws_18{"CyberChef Workstation"}
+  rc_lab_ws_19{"Lab Sheet Workstation"}
+  rc_npc_host_20("Host")
+  rc_npc_caller_basic_21("Caller Basic")
+  rc_npc_caller_patient_22("Caller Patient")
+  rc_npc_caller_decline_23("Caller Decline")
+  rc_npc_caller_debrief_24("Caller Debrief")
+  rc_npc_caller_queue_one_25("Caller Queue One")
+  rc_npc_caller_queue_two_26("Caller Queue Two")
+  rc_npc_caller_replace_27("Caller Replace")
+  rc_npc_timed_caller_28("Timed Caller")
+  rc_npc_caller_hold_29("Caller Hold")
+  rc_npc_caller_forced_30("Caller Forced")
+  rc_npc_caller_popup_31("Caller Popup")
+  rc_npc_guard_32("Guard")
+  rc_npc_brute_33("Brute")
+  rc_npc_legacy_voiced_34("Legacy Voiced")
+  rc_npc_texter_35("Texter")
 
   office --> rc_obj1_1
   office --> rc_lever_basic_again_2
@@ -226,20 +251,36 @@ flowchart TD
   office --> rc_lever_replace_7
   office --> rc_lever_legacy_8
   office --> rc_lever_text_9
-  office --> rc_npc_host_10
-  office --> rc_npc_caller_basic_11
-  office --> rc_npc_caller_patient_12
-  office --> rc_npc_caller_decline_13
-  office --> rc_npc_caller_debrief_14
-  office --> rc_npc_caller_queue_one_15
-  office --> rc_npc_caller_queue_two_16
-  office --> rc_npc_caller_replace_17
-  office --> rc_npc_timed_caller_18
-  office --> rc_npc_legacy_voiced_19
-  office --> rc_npc_texter_20
+  office --> rc_lever_hold_10
+  office --> rc_lever_forced_11
+  office --> rc_lever_popup_12
+  office --> rc_keypad_safe_13
+  rc_keypad_safe_13 --> rc_obj14_14
+  office --> rc_pick_case_15
+  office --> rc_open_case_16
+  rc_open_case_16 --> rc_obj17_17
+  office --> rc_cyberchef_ws_18
+  office --> rc_lab_ws_19
+  office --> rc_npc_host_20
+  office --> rc_npc_caller_basic_21
+  office --> rc_npc_caller_patient_22
+  office --> rc_npc_caller_decline_23
+  office --> rc_npc_caller_debrief_24
+  office --> rc_npc_caller_queue_one_25
+  office --> rc_npc_caller_queue_two_26
+  office --> rc_npc_caller_replace_27
+  office --> rc_npc_timed_caller_28
+  office --> rc_npc_caller_hold_29
+  office --> rc_npc_caller_forced_30
+  office --> rc_npc_caller_popup_31
+  office --> rc_npc_guard_32
+  office --> rc_npc_brute_33
+  office --> rc_npc_legacy_voiced_34
+  office --> rc_npc_texter_35
 
   class office room
-  class rc_obj1_1,rc_lever_basic_again_2,rc_lever_patient_3,rc_lever_decline_4,rc_lever_debrief_5,rc_lever_queue_6,rc_lever_replace_7,rc_lever_legacy_8,rc_lever_text_9 item
-  class rc_npc_host_10,rc_npc_caller_basic_11,rc_npc_caller_patient_12,rc_npc_caller_decline_13,rc_npc_caller_debrief_14,rc_npc_caller_queue_one_15,rc_npc_caller_queue_two_16,rc_npc_caller_replace_17,rc_npc_timed_caller_18,rc_npc_legacy_voiced_19,rc_npc_texter_20 npc
+  class rc_obj1_1,rc_lever_basic_again_2,rc_lever_patient_3,rc_lever_decline_4,rc_lever_debrief_5,rc_lever_queue_6,rc_lever_replace_7,rc_lever_legacy_8,rc_lever_text_9,rc_lever_hold_10,rc_lever_forced_11,rc_lever_popup_12,rc_obj14_14,rc_pick_case_15,rc_obj17_17,rc_cyberchef_ws_18,rc_lab_ws_19 item
+  class rc_keypad_safe_13,rc_open_case_16 container
+  class rc_npc_host_20,rc_npc_caller_basic_21,rc_npc_caller_patient_22,rc_npc_caller_decline_23,rc_npc_caller_debrief_24,rc_npc_caller_queue_one_25,rc_npc_caller_queue_two_26,rc_npc_caller_replace_27,rc_npc_timed_caller_28,rc_npc_caller_hold_29,rc_npc_caller_forced_30,rc_npc_caller_popup_31,rc_npc_guard_32,rc_npc_brute_33,rc_npc_legacy_voiced_34,rc_npc_texter_35 npc
   class node_start start
 ```
