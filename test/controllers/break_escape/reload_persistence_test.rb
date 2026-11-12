@@ -837,9 +837,14 @@ module BreakEscape
       assert_response :success
 
       game_loads = sql.select { |s| s.start_with?('SELECT') && s.include?('"break_escape_games"') }
-      assert_equal 1, game_loads.size, sql.join("\n")
-      refute_includes game_loads.first, '"break_escape_games".*', 'scenario_data must not be loaded to save'
-      assert_includes game_loads.first, 'FOR UPDATE'
+      # The narrow FOR UPDATE load, plus step 7's one jsonb-scalar pluck of the stored formatVersion
+      # (scenario_data -> 'formatVersion'); neither loads the full scenario_data blob.
+      assert_equal 2, game_loads.size, sql.join("\n")
+      narrow_load = game_loads.find { |s| s.include?('FOR UPDATE') }
+      assert narrow_load, "a FOR UPDATE load is expected:\n#{sql.join("\n")}"
+      refute_includes narrow_load, '"break_escape_games".*', 'scenario_data must not be loaded to save'
+      refute game_loads.any? { |s| s.include?('"break_escape_games"."scenario_data"') },
+             "the full scenario_data column must not be loaded:\n#{sql.join("\n")}"
       assert sql.none? { |s| s.include?('"break_escape_missions"') }, "mission loaded:\n#{sql.join("\n")}"
       assert sql.none? { |s| s.include?('"break_escape_demo_users"') && s.include?('WHERE "break_escape_demo_users"."id"') },
              "player loaded:\n#{sql.join("\n")}"
