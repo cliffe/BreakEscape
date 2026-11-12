@@ -7,9 +7,12 @@ what reached the browser.
 
 **Posts are earned in real time.** The server refuses a post that comes sooner than its floor
 (51 s for every NPC here, server time). Never step the needs clock in this scenario: a stepped
-clock brings the next use before the floor, the answer is `tooSoon`, nothing is listed, and the
-next honest use asks again. Every social media need here is fast (first urgent about 10 s after
-the room loads, then about once a minute), so each beat takes one to four minutes of waiting.
+clock brings the next use before the floor and the answer is `tooSoon` with a `retryAfter`. The
+browser then asks again once that wait has passed (retryAfter plus 1 s, up to four requests for
+one use), and a use while that retry waits asks nothing. So the post still comes from that use,
+late, and each `tooSoon` adds a request to the beat's `/feed_post` count. Every social media
+need here is fast (first urgent about 10 s after the room loads, then about once a minute), so
+each beat takes one to four minutes of waiting.
 
 ## Setup (each run)
 
@@ -35,7 +38,11 @@ grep -c '/feed_post' $S/<run>-responses.jsonl
 
 The leak check must say `VERDICT: no leaks found`, and its counts line must show the feed posts and
 feed facts it checked (five feed posts, two feed facts): a run that checked none proves
-nothing. The `/feed_post` count must stay within the beat's budget below.
+nothing. The `/feed_post` count must stay within the beat's budget below. The budgets count
+answers with a post; add one request for each `tooSoon` answer (Jake's first use after the F7
+reload often is one). If the leak check notes a reveal allowed at an answer whose body the log
+lost, or one judged by the saved count from the first line, that beat's order was not fully
+checked: run it again with no reload during a request.
 
 **Two things the first run taught.** Stand clear of a doorway while an NPC walks between rooms:
 the player blocks the door, the walk times out after 20 s and a borrow is dropped after 60 s
@@ -71,7 +78,7 @@ facts, with the pattern on `it_poster`.
 | F3 | Enter `lena_room` and wait | Lena uses her PC (`npc_used:lena_pc`, need `social_media`, `met: true`), task `f3_pc`; her post appears on her profile | `feedRevealed.lena.n` 1, done | 2 or 3 (Jake may post again) |
 | F4 | Enter `omar_room`, step away from the door, and wait about two minutes | Omar's first try fails: "Blocked. Of course." Second failure: "I'll use the spare PC.", he walks to the lobby kiosk, uses it (met), task `f4_borrowed`, his post appears, and he walks back leaving the kiosk signed in. A click on the kiosk while nobody sits there opens his desktop | `npcFrustration.omar` level at least 50, workaround done; `guestSessions.kiosk` `omar`; `feedRevealed.omar.n` 1 | Omar 1 (his failed uses ask nothing) |
 | F7 | Reload (set `location.href` to the game URL with `?skip_resume=1`) | The terminal shows every revealed post at once; a revealed fact noted before the reload still reads the same in the notebook; nothing unrevealed in any response after the reload | Unchanged | No new request from the reload itself |
-| F5 | Read Jake's first two posts (note both facts) and the IT poster; sign in at the hot desk as `jbrooks` with the password built from them | Signs in as Jake (`pc_signed_in:hot_desk`, `via: "password"`), task `f5_signed_in` (an `unlock_object` task on `hot_desk`); his desktop holds `F5.txt` | `sessions.hot_desk` Jake by password | Jake 2 or 3 |
+| F5 | Read Jake's first two posts (note both facts) and the IT poster; sign in at the hot desk as `jbrooks` with the password built from them | Signs in as Jake (`pc_signed_in:hot_desk`), task `f5_signed_in` (an `unlock_object` task on `hot_desk`; it ticks on any sign-in there, and in this scenario only the password reaches Jake's account at the hot desk); his desktop holds `F5.txt` | `sessions.hot_desk` Jake by password (the "by password" check is this column's, not the task's) | Jake 2 or 3 |
 | F6 | Wait for Jake's third post (about 3 minutes after his room first loaded) | The post appears; the answer says `done: true`; task `f6_last_post`; no further `/feed_post` for Jake | `feedRevealed.jake.n` 3 | Jake 3, flat from then on |
 | F8 | Enter `gate_room`. While the guard is on his phone (`distracted` true), walk through his view; then wait until it is false and walk through again | No `player_in_view_near:guard` while distracted; task `f8_distracted` on `npc_used_phone:guard`. Once he puts the phone away the event fires, task `f8_challenged` | None (he has no feed) | Guard 0 |
 
