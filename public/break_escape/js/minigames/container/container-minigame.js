@@ -958,8 +958,14 @@ export class ContainerMinigame extends MinigameScene {
             return;
         }
         // The container comes back when the reader closes: a network screen (4.3) and, as
-        // for a file opened with a click, any other (lab UX review M4)
-        window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null };
+        // for a file opened with a click, any other (lab UX review M4). Only for the types
+        // whose reader spends it (the text file viewer, a readable note): any other type with
+        // text opens no reader, and the armed return would reopen this desktop after a later
+        // note read in the world (review R2 n3)
+        const opensReader = item.type === 'text_file' || (/^notes\d*$/.test(item.type) && !!item.readable);
+        if (opensReader) {
+            window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null };
+        }
         this.exitReason = 'item';
         this.complete(false);
         const viewItem = { ...item, takeable: false };

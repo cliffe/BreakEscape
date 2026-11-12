@@ -5,12 +5,15 @@
 //   (ui/objectives-panel.js hasMoreBelow / updateMoreBelow);
 // - a click on an open gate the player may pass walks him through (door-gates.js walkThroughTarget);
 // - an NPC walking away gives way to the object under the same tap or E press
-//   (interaction-reach.js npcWalkingAway / withoutLeavingNpcsIfObjects, interactions.js).
+//   (interaction-reach.js npcWalkingAway / npcGivesWay / withoutLeavingNpcsIfObjects, interactions.js),
+//   and an owner on the move from her own PC gives way to it (workstation-state.js leftBy);
+// - a far click on an open gate is re-checked once in reach (pending-gate-walk.js);
+// - a pickup toast waits for the tool the pickup opens (notifications.js expectPanelWithin).
 // The text file returning to its container is in container-shares.test.mjs.
 // Run with: node test/js/lab-ux-ui.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -166,6 +169,9 @@ function resetInteractions() {
 }
 resetInteractions();
 const { handleObjectInteraction, tryInteractWithNearest } = await import(dataUrl(src));
+// The tracker interactions.js reads (its own copy of interaction-reach.js sets it on load;
+// the copy loaded further down for the unit tests replaces window.walkAwayTracker)
+const interactionsTracker = window.walkAwayTracker;
 const roomSprite = (data, x = 100, y = 120) => ({ name: data.type, objectId: data.id, x, y, active: true, visible: true,
     interactable: true, scenarioData: data, texture: { key: data.type }, frame: { name: '__BASE', cutWidth: 32, cutHeight: 24 } });
 const settle = () => new Promise(r => setTimeout(r, 0));
@@ -204,19 +210,22 @@ test('E key: an object beats an NPC walking away; an NPC standing or approaching
     resetInteractions();
     const got = [];
     window.handleObjectInteraction = handleObjectInteraction;
-    const pc = roomSprite({ id: 'pc1', type: 'pc', name: 'PC' }, 130, 100);   // to the right, 30 px
+    // In front and a little to the right (23 degrees off the facing), so the faced NPC wins unless she gives way
+    const pc = roomSprite({ id: 'pc1', type: 'pc', name: 'PC' }, 112, 128);
     const npc = { _isNPC: true, active: true, visible: true, npcId: 'owner', x: 100, y: 125, body: { velocity: { x: 0, y: 60 } } };
     globalThis.__rooms.r = { objects: { pc1: pc }, npcSprites: [npc] };
     // Half a second of walking away, sampled as game.js update() does
     const t = Date.now();
-    const tracker = window.walkAwayTracker;
+    const tracker = interactionsTracker;
     npc.y = 100 + 10; tracker.sample(window.player, [npc], t - 500);
     npc.y = 100 + 18; tracker.sample(window.player, [npc], t - 250);
     npc.y = 125; tracker.sample(window.player, [npc], t);
     window.player.direction = 'down';    // facing the NPC, not the PC
     window.MinigameFramework.startMinigame = (type) => got.push(type);
-    window.npcManager = { getNPC: () => null };
+    let walkingChosen = false;
+    window.npcManager = { getNPC: () => { walkingChosen = true; return null; } };
     tryInteractWithNearest();
+    assert.equal(walkingChosen, false, 'walking away: the NPC branch did not run');
     assert.ok(calls.length === 0 || !calls.some(c => c[0] === 'gameAlert' && /conversation/i.test(c[1])));
     // The PC's branch ran (a plain pc object shows its observation toast or examine), not the NPC's
     const npcHandled = got.includes('person-chat') || got.includes('phone-chat');
@@ -232,6 +241,31 @@ test('E key: an object beats an NPC walking away; an NPC standing or approaching
     window.npcManager = orig;
     assert.equal(chosenNpc, true, 'standing: the faced NPC is chosen');
     delete globalThis.__rooms.r;
+});
+
+test('E key: a player who has just walked up gets the PC its owner is on her way from (review R2 m1)', () => {
+    resetInteractions();
+    const got = [];
+    const pc = roomSprite({ id: 'pc1', type: 'pc', name: 'PC' }, 112, 128);
+    // A fresh sprite: no tracker samples, so walking away alone says no (as for an arrival)
+    const npc = { _isNPC: true, active: true, visible: true, npcId: 'owner', x: 100, y: 125, body: { velocity: { x: 0, y: 60 } } };
+    globalThis.__rooms.r = { objects: { pc1: pc }, npcSprites: [npc] };
+    window.player.direction = 'down';    // facing her, not the PC
+    window.MinigameFramework.startMinigame = (type) => got.push(type);
+    let chosenNpc = false;
+    window.npcManager = { getNPC: () => { chosenNpc = true; return null; } };
+    try {
+        window.workstationState = { leftBy: () => false };
+        tryInteractWithNearest();
+        assert.equal(chosenNpc, true, 'still at her post: the faced owner is chosen');
+        chosenNpc = false;
+        window.workstationState = { leftBy: (objectId, npcId) => objectId === 'pc1' && npcId === 'owner' };
+        tryInteractWithNearest();
+        assert.equal(chosenNpc, false, 'left her post and on the move: the PC is used');
+    } finally {
+        delete window.workstationState;
+        delete globalThis.__rooms.r;
+    }
 });
 
 // ── interaction-reach.js ───────────────────────────────────────────────────────────
@@ -307,6 +341,85 @@ test('npcWalkingAway: standing, approaching, too short a walk, or no samples do 
     assert.equal(reach.npcWalkingAway(null, npc, now, t3), false);
 });
 
+// Review R2 m1: the player walks north to the desk at 150 px/s and stops there at 400 ms; the
+// owner stands at her PC, then gets up and walks north at 90 px/s from 300 ms. Sampled every 80 ms.
+const { WorkstationState } = await import(dataUrl(readFileSync(join(js, 'systems/workstation-state.js'), 'utf8')));
+function arriveThenTap(stopAt = 400, until = 640) {
+    const tracker = new reach.WalkAwayTracker();
+    const player = { x: 100, y: 260, body: { velocity: { x: 0, y: 0 } } };
+    const npc = { npcId: 'dana', x: 100, y: 170, body: { velocity: { x: 0, y: 0 } } };
+    for (let t = 0; t <= until; t += 80) {
+        player.y = t < stopAt ? 200 + (stopAt - t) * 0.15 : 200;
+        player.body.velocity.y = t < stopAt ? -150 : 0;
+        npc.y = t < 300 ? 170 : 170 - (t - 300) * 0.09;
+        npc.body.velocity.y = t < 300 ? 0 : -90;
+        tracker.sample(player, [npc], t);
+    }
+    return { tracker, player, npc, now: until };
+}
+function danaDesk() {
+    const objects = [{ id: 'dana_pc', workstation: true, lockType: 'login' }, { id: 'ian_pc', workstation: true }];
+    const env = {
+        objects: () => objects,
+        npcs: () => [{ id: 'dana', needsHome: 'dana_pc' }, { id: 'ian', needsHome: 'ian_pc' }],
+        on() {}, emit() {}, setGlobal() {}, roll: () => 0
+    };
+    return new WorkstationState(env).install();
+}
+
+test('npcGivesWay: a player who has just walked up to the desk, then taps, gets the PC its owner is leaving (review R2 m1)', () => {
+    const { tracker, player, npc, now } = arriveThenTap();
+    // The tracker alone reads the arrival as following her: the case the review found
+    assert.equal(reach.npcWalkingAway(player, npc, now, tracker), false, 'the tracker alone misses it');
+    const ws = danaDesk();
+    window.workstationState = ws;
+    try {
+        assert.equal(reach.npcGivesWay(player, npc, ['dana_pc'], now, tracker), false, 'still at her post: the tap is hers');
+        ws.onLeft('dana', { expectedAwayMs: 30000 });      // npc_left_post, as she gets up
+        assert.equal(ws.leftBy('dana_pc', 'dana'), true);
+        assert.equal(reach.npcGivesWay(player, npc, ['dana_pc'], now, tracker), true, 'just arrived, tapped her PC: the PC');
+        assert.equal(reach.npcGivesWay(player, npc, ['ian_pc'], now, tracker), false, 'somebody else\'s PC under the tap');
+        assert.equal(reach.npcGivesWay(player, npc, [], now, tracker), false, 'no object under the tap');
+        npc.body.velocity = { x: 0, y: 0 };
+        assert.equal(reach.npcGivesWay(player, npc, ['dana_pc'], now, tracker), false, 'away but standing still: she can be talked to');
+        npc.body.velocity = { x: 0, y: -90 };
+        window.npcHostileSystem = { isNPCHostile: (id) => id === 'dana' };
+        assert.equal(reach.npcGivesWay(player, npc, ['dana_pc'], now, tracker), false, 'hostile');
+        delete window.npcHostileSystem;
+        npc.knockbackTimer = {};
+        assert.equal(reach.npcGivesWay(player, npc, ['dana_pc'], now, tracker), false, 'knocked back');
+        delete npc.knockbackTimer;
+        ws.onReturned('dana');
+        assert.equal(reach.npcGivesWay(player, npc, ['dana_pc'], now, tracker), false, 'back at her post');
+    } finally {
+        delete window.workstationState;
+        delete window.npcHostileSystem;
+    }
+});
+
+test('npcGivesWay: the follower rule is unchanged for an NPC with no PC of her own under the tap (review R1 M3)', () => {
+    const tracker = new reach.WalkAwayTracker();
+    const player = { x: 0, y: 0, body: { velocity: { x: 0, y: 0 } } };
+    const npc = { npcId: 'ian', x: 0, y: 0, body: { velocity: { x: 0, y: 60 } } };
+    const now = walk(tracker, player, npc, [...line(6, i => [100, 100 + i * 4, 100, 130 + i * 6]), [100, 120, 100, 166]]);
+    window.workstationState = danaDesk();
+    try {
+        assert.equal(reach.npcGivesWay(player, npc, ['dana_pc'], now, tracker), false, 'just stopped after following, not her PC');
+    } finally { delete window.workstationState; }
+});
+
+test('workstation leftBy: the owner away, or the guest whose session is open; nothing for anybody else', () => {
+    const ws = danaDesk();
+    assert.equal(ws.leftBy('dana_pc', 'dana'), false, 'at her post');
+    ws.onLeft('dana');
+    assert.equal(ws.leftBy('dana_pc', 'dana'), true);
+    assert.equal(ws.leftBy('dana_pc', 'ian'), false, 'not his');
+    assert.equal(ws.leftBy('no_such_pc', 'dana'), false);
+    assert.equal(ws.leftBy('dana_pc', null), false);
+    ws.guests.set('ian_pc', { npcId: 'zoe' });
+    assert.equal(ws.leftBy('ian_pc', 'zoe'), true, 'a guest who left the session open');
+});
+
 test('withoutLeavingNpcsIfObjects: the leaving NPC is dropped beside an object, kept alone or beside a chair', () => {
     const pc = { label: 'PC', isObject: true };
     const chair = { label: 'Chair', isObject: true, isChair: true };
@@ -369,7 +482,21 @@ test('walkThroughTarget: an east or west gate walks across, to the doorway\'s fl
     const g = gates.groupAtPosition(100, 100);
     gates.open(g, 1000, 'door_gate_opened');
     assert.deepEqual(gates.walkThroughTarget(a, { x: 40, y: 116 }, { playerRoom: 'lobby', now: 1000 }), { x: 148, y: 116 });
-    assert.deepEqual(gates.walkThroughTarget(a, { x: 160, y: 116 }, { playerRoom: 'lobby', now: 1000 }), { x: 52, y: 116 });
+    assert.deepEqual(gates.walkThroughTarget(a, { x: 160, y: 116 }, { playerRoom: 'vault', now: 1000 }), { x: 52, y: 116 });
+    assert.deepEqual(gates.walkThroughTarget(a, { x: 160, y: 116 }, { playerRoom: 'lobby', now: 1000 }), { x: 148, y: 116 }, 'in the doorway past the centre: on, not back');
+});
+
+test('walkThroughTarget: the far side is the other room, even for a player in the doorway past its centre line (review R1 n4)', () => {
+    const { gates, a } = gateSetup();
+    const g = gates.groupAtPosition(100, 100);
+    window.gameState.globalVariables.disguised = true;
+    gates.open(g, 1000, 'door_gate_opened');
+    // Still in the lobby, feet just north of the centre line: on north, into the vault
+    assert.deepEqual(gates.walkThroughTarget(a, { x: 100, y: 92 }, { playerRoom: 'lobby', now: 1000 }), { x: 100, y: 36 });
+    // In the vault, feet just south of it: back south, into the lobby
+    assert.deepEqual(gates.walkThroughTarget(a, { x: 100, y: 108 }, { playerRoom: 'vault', now: 1000 }), { x: 100, y: 164 });
+    // A room that is neither (not known yet): read from the feet, as before
+    assert.deepEqual(gates.walkThroughTarget(a, { x: 100, y: 92 }, { playerRoom: 'hall', now: 1000 }), { x: 100, y: 164 });
 });
 
 // ── ui/objectives-panel.js ──────────────────────────────────────────────────────────
@@ -438,4 +565,113 @@ test('the panel: the cue also watches the rendered list, and destroy() lets go o
         globalThis.ResizeObserver = saved.gRO; window.ResizeObserver = saved.RO;
         window.removeEventListener = realRemove;
     }
+});
+
+// ── R1 m1: a pickup toast waits for the tool the pickup opens (interactions.js, notifications.js) ──
+test('pick-up-then-open: the branch expects the panel before the add, for every type that opens one', async () => {
+    resetInteractions();
+    const order = [];
+    window.expectPanelWithin = (ms) => order.push(['expect', ms]);
+    const realPush = calls.push.bind(calls);
+    calls.push = (c) => { order.push([c[0]]); return realPush(c); };
+    try {
+        for (const type of ['lab-workstation', 'workstation', 'phone', 'mail_terminal', 'vm-launcher']) {
+            order.length = 0;
+            handleObjectInteraction(roomSprite({ id: 'x_' + type, type, name: type, takeable: true, phoneId: 'p1' }));
+            await settle();
+            const iE = order.findIndex(o => o[0] === 'expect');
+            const iA = order.findIndex(o => o[0] === 'addToInventory');
+            assert.ok(iE >= 0 && iA > iE, `${type}: expectPanelWithin before addToInventory (${JSON.stringify(order)})`);
+            assert.equal(order[iE][1], 1500);
+        }
+    } finally { calls.push = realPush; delete window.expectPanelWithin; }
+});
+
+// notifications.js, real, with its imports (copy list: keep in step with its import lines)
+const notifDir = join(dir, 'notif');
+for (const f of ['utils/display-dashes.js', 'utils/overlay-open.js', 'ui/modal-stack.js', 'systems/notifications.js']) {
+    mkdirSync(dirname(join(notifDir, f)), { recursive: true });
+    writeFileSync(join(notifDir, f), readFileSync(join(js, f), 'utf8'));
+}
+const notif = await import(pathToFileURL(join(notifDir, 'systems/notifications.js')).href);
+
+test('pickup toast raised before the tool opens: hidden while it is open, shown once after it closes (fast and slow answers)', async () => {
+    for (const answerMs of [50, 400]) {
+        document.body.innerHTML = '<div id="notification-container"></div><div id="lab-popup" style="display:none"></div>';
+        // startMinigame kept: the tools the previous test picked up open a moment after it ends
+        window.MinigameFramework = { currentMinigame: null, startMinigame() {} };
+        notif.clearExpectedPanel();
+        const box = document.getElementById('notification-container');
+        const seen = [];
+        new window.MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.classList?.contains('notification') && seen.push([Date.now(), n.textContent])))).observe(box, { childList: true });
+        const t0 = Date.now();
+        notif.expectPanelWithin(1500);                        // interactions.js, before the add
+        await new Promise(r => setTimeout(r, answerMs));
+        notif.gameAlert('Lab tablet added to inventory.', 'success', 'Item Acquired', 5000);   // the add answers
+        await new Promise(r => setTimeout(r, 1000 - answerMs));
+        document.getElementById('lab-popup').style.display = 'block';   // the tool opens at 1 s
+        notif.holdRecentNotifications();                     // as a panel opening does
+        await new Promise(r => setTimeout(r, 1200));
+        assert.equal(seen.length, 0, `answer ${answerMs} ms: nothing shown while the tool is open`);
+        document.getElementById('lab-popup').style.display = 'none';
+        const closedAt = Date.now();
+        await new Promise(r => setTimeout(r, 700));
+        assert.equal(seen.length, 1, `answer ${answerMs} ms: shown once after the close`);
+        assert.ok(seen[0][0] >= closedAt, 'after the close, not before');
+        assert.ok(seen[0][0] - t0 > 2000);
+    }
+});
+
+// ── R1 m2: a far click on an open gate, re-checked in reach (systems/pending-gate-walk.js) ──
+const { createPendingGateWalk, PENDING_GATE_WALK_MS } = await import(dataUrl(readFileSync(join(js, 'systems/pending-gate-walk.js'), 'utf8')));
+function gateWalkRig() {
+    const env = { moves: [], moving: true, minigame: false, through: { x: 48, y: -32 }, player: { x: 48, y: 200 } };
+    const g = createPendingGateWalk({
+        player: () => env.player,
+        walkThroughTarget: () => env.through,
+        moveTo: (x, y) => env.moves.push([x, y]),
+        isMoving: () => env.moving,
+        feet: (p) => ({ x: p.x, y: p.y + 30 }),
+        range: 64,
+        minigameOpen: () => env.minigame
+    });
+    return { env, g };
+}
+
+test('pending gate walk: through only if the gate still lets him by once in reach', () => {
+    const { env, g } = gateWalkRig();
+    const door = { x: 48, y: 32 };
+    const t = 100000;
+    g.arm(door, t); g.update(t + 500);
+    assert.deepEqual(env.moves, [], 'far: nothing yet'); assert.ok(g.get());
+    env.player.y = 90; g.update(t + 1500);
+    assert.deepEqual(env.moves, [[48, -32]], 'in reach, still open: on through'); assert.equal(g.get(), null);
+    env.moves.length = 0; env.through = null; env.player.y = 200;
+    g.arm(door, t); env.player.y = 90; g.update(t + 1500);
+    assert.deepEqual(env.moves, [], 'in reach, shut now: stays on the near side'); assert.equal(g.get(), null);
+});
+
+test('pending gate walk: dropped when he stops short, after the time limit, for a destroyed door, or a new click', () => {
+    const { env, g } = gateWalkRig();
+    const door = { x: 48, y: 32 };
+    const t = 100000;
+    env.moving = false;
+    g.arm(door, t); g.update(t + 300); assert.ok(g.get(), 'not before 400 ms');
+    g.update(t + 500); assert.equal(g.get(), null, 'stopped short');
+    env.moving = true;
+    g.arm(door, t); g.update(t + PENDING_GATE_WALK_MS + 1); assert.equal(g.get(), null, 'time limit, even while moving');
+    g.arm({ ...door, destroyed: true }, t); g.update(t + 100); assert.equal(g.get(), null, 'destroyed door');
+    g.arm(door, t); g.clear(); assert.equal(g.get(), null, 'a new click');
+    assert.deepEqual(env.moves, []);
+});
+
+test('pending gate walk: a minigame opening on the way drops it, so he does not walk through when it closes (review R2 n1)', () => {
+    const { env, g } = gateWalkRig();
+    const t = 100000;
+    g.arm({ x: 48, y: 32 }, t);
+    env.player.y = 90; env.minigame = true;          // a conversation opens with him already in reach
+    g.update(t + 600);
+    assert.equal(g.get(), null);
+    env.minigame = false; g.update(t + 700);
+    assert.deepEqual(env.moves, [], 'no walk under the panel, nor after it');
 });

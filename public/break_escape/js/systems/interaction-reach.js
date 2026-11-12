@@ -179,6 +179,48 @@ export function npcWalkingAway(player, sprite, now = Date.now(), tracker = walkA
 }
 
 /**
+ * An NPC on the move who has left one of `objectIds` (their own workstation, or a hot desk
+ * they left signed in), by the workstation state's away record, which the needs system's
+ * npc_left_post sets as they get up. The tracker alone misses the commonest case (lab UX
+ * review R2 m1): a player who has just walked up to the desk reads as following an owner who
+ * leaves the same way, and she is gone before the window clears. This does not loosen the
+ * follower rule for anyone else: it needs her own PC in the tap. Never a hostile NPC, nor
+ * one in knockback, nor one standing still.
+ *
+ * @param {object} sprite - the NPC sprite
+ * @param {Iterable<string>} objectIds - ids of the objects under the tap (or in reach)
+ * @param {{leftBy: function(string, string): boolean}} [ws] - window.workstationState
+ */
+export function npcLeftObject(sprite, objectIds, ws = W().workstationState) {
+    if (!sprite?.npcId || !ws || typeof ws.leftBy !== 'function') return false;
+    if (sprite.knockbackTimer) return false;
+    const hostile = W().npcHostileSystem?.isNPCHostile;
+    if (typeof hostile === 'function') {
+        try { if (hostile(sprite.npcId)) return false; } catch (e) { /* treat as not hostile */ }
+    }
+    const v = sprite.body?.velocity;
+    if (!v || !Number.isFinite(v.x) || !Number.isFinite(v.y) || Math.hypot(v.x, v.y) < 10) return false;
+    for (const id of (objectIds || [])) {
+        if (!id) continue;
+        try { if (ws.leftBy(id, sprite.npcId)) return true; } catch (e) { /* no answer: not left */ }
+    }
+    return false;
+}
+
+/** The id an object sprite is known by (scenario id first). */
+export function objectIdOf(obj) {
+    return obj?.scenarioData?.id ?? obj?.objectId ?? null;
+}
+
+/**
+ * Whether an NPC gives way to an object near the player: walking away (the tracker), or
+ * on the move from one of `objectIds` they have just left (npcLeftObject).
+ */
+export function npcGivesWay(player, sprite, objectIds = [], now = Date.now(), tracker = walkAwayTracker) {
+    return npcWalkingAway(player, sprite, now, tracker) || npcLeftObject(sprite, objectIds);
+}
+
+/**
  * Drop NPCs who are walking away from a tap's pick list when an object (not a chair)
  * was gathered with them: the player tapped the thing, not the person leaving it.
  * The NPC stays when nothing else is there.

@@ -33,6 +33,8 @@ export class TextFileMinigame extends MinigameScene {
         // Initialize text file specific state
         this.textFileData = {
             fileName: safeParams.fileName || 'Unknown File',
+            // The scenario id of the file, when known (cameFrom matches on it first)
+            itemId: typeof safeParams.itemId === 'string' && safeParams.itemId ? safeParams.itemId : null,
             fileContent: safeParams.fileContent || '',
             fileType: safeParams.fileType || 'text',
             observations: safeParams.observations || '',
@@ -372,10 +374,13 @@ export class TextFileMinigame extends MinigameScene {
     /**
      * Whether this file was opened from the container in `back` (window.pendingContainerReturn):
      * the file is among that container's contents. A return left over from a container the
-     * player closed some other way never matches a file read from the world.
+     * player closed some other way never matches a file read from the world. With an itemId
+     * the file is matched by id, so a world file that only shares the name does not match
+     * (review R1 n2); without one (an older caller), by name.
      */
-    static cameFrom(back, fileName) {
+    static cameFrom(back, fileName, itemId = null) {
         if (!back?.containerItem || !Array.isArray(back.contents)) return false;
+        if (itemId) return back.contents.some(item => item && item.id === itemId);
         return back.contents.some(item => item && item.name === fileName);
     }
 
@@ -411,7 +416,7 @@ export class TextFileMinigame extends MinigameScene {
             // Any other container (a desk drawer, a PC's file list, an NPC's items) reopens
             // too, as the notes viewer does, so a second file is one click away (lab
             // playtest fixes). If something else has opened by then, the return is dropped.
-            if (ownClose && TextFileMinigame.cameFrom(back, this.textFileData.fileName)
+            if (ownClose && TextFileMinigame.cameFrom(back, this.textFileData.fileName, this.textFileData.itemId)
                 && typeof window.returnToContainerAfterNotes === 'function') {
                 window.pendingPhoneReturn = null;
                 window.expectPanelWithin?.(1000); // held toasts wait for the container (F13, engine F24)

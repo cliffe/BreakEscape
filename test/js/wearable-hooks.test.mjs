@@ -108,7 +108,7 @@ const stubs = {
     '../utils/locked-hint.js': 'export function hintToastMs(){ return 6000; }',
     './requires-item-hint.js': 'export function requiresItemHint(data){ return (data && data.requiresItemHint) || ""; }',
     './pc-policy.js': readFileSync(join(js, 'systems/pc-policy.js'), 'utf8'),
-    './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;} export function npcWalkingAway(){return false;}',
+    './interaction-reach.js': 'export function reachX(){return 0;} export function aimX(){return 0;} export function npcWalkingAway(){return false;} export function npcGivesWay(){return false;} export function objectIdOf(o){return o?.scenarioData?.id ?? o?.objectId ?? null;}',
     './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
     './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}'
 };

@@ -6,7 +6,7 @@ import { resumeSpawnFor } from './resume-spawn.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
-import { aimX, withoutChairsIfOthers, npcWalkingAway, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
+import { aimX, withoutChairsIfOthers, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
@@ -42,6 +42,7 @@ import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdo
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // Opt-in los.challengeOnSight guards
+import { createPendingGateWalk } from '../systems/pending-gate-walk.js';  // A far click on an open gate, re-checked in reach
 import { doorGates } from '../systems/door-gates.js';  // Gate doors: open for listed NPCs, hold, relock (sets window.doorGates)
 import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props block NPC sight (sets window.npcSightOcclusion)
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
@@ -2188,7 +2189,7 @@ export async function create() {
     this.input.mouse?.disableContextMenu();
     this.input.addPointer(1);
     this.input.on('pointerdown', (pointer) => {
-        pendingGateWalk = null; // any new click replaces a far click on a gate
+        pendingGateWalk.clear(); // any new click replaces a far click on a gate
         // Check if a minigame is currently running - if so, don't process main game clicks
         if (window.MinigameFramework && window.MinigameFramework.currentMinigame) {
             console.log('Minigame is running, ignoring main game click', {
@@ -2227,8 +2228,11 @@ export async function create() {
         // owner has just left is for the PC (q55 d). Dropped from the pick list when an object
         // was gathered too; and when only leaving NPCs were gathered (the PC just out of reach)
         // they are skipped, so the object branch below uses or walks to the PC.
-        const objectUnderTap = () => findObjectsAtPosition(worldX, worldY).some(o => o.interactable && !o.isSwivelChair);
-        let nearbyInteractables = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(gatherInteractablesNearClick(worldX, worldY)));
+        // An owner on the move from her own PC under the tap gives way too (review R2 m1).
+        const objectsUnderTap = findObjectsAtPosition(worldX, worldY).filter(o => o.interactable && !o.isSwivelChair);
+        const objectUnderTap = () => objectsUnderTap.length > 0;
+        const tapObjectIds = objectsUnderTap.map(objectIdOf);
+        let nearbyInteractables = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(gatherInteractablesNearClick(worldX, worldY, tapObjectIds)));
         if (nearbyInteractables.length && nearbyInteractables.every(c => c.leavingNpc) && objectUnderTap()) {
             nearbyInteractables = [];
         }
@@ -2248,7 +2252,7 @@ export async function create() {
         // Check for NPC sprites at the clicked position first. One walking away from the
         // player gives way to an interactable object under the same tap (q55 d).
         let npcAtPosition = findNPCAtPosition(worldX, worldY);
-        if (npcAtPosition && npcWalkingAway(window.player, npcAtPosition) && objectUnderTap()) {
+        if (npcAtPosition && objectUnderTap() && npcGivesWay(window.player, npcAtPosition, tapObjectIds)) {
             npcAtPosition = null;
         }
         if (npcAtPosition) {
@@ -2391,9 +2395,9 @@ export async function create() {
 
                 if (distance > DOOR_INTERACTION_RANGE) {
                     // A far click on an open gate walks to the near side first and goes on
-                    // through only if the gate still lets him by on arrival (updatePendingGateWalk):
+                    // through only if the gate still lets him by on arrival (pending-gate-walk.js):
                     // a passing guard's hold can end on the way (code review R1 m2)
-                    if (through) pendingGateWalk = { door: doorAtPosition, at: Date.now() };
+                    if (through) pendingGateWalk.arm(doorAtPosition, Date.now());
                     // Out of range — navigate to the nearest free tile on the player's
                     // side of the door rather than using a generic player→door vector.
                     // For N/S doors the wall is horizontal, so we offset vertically;
@@ -2578,7 +2582,7 @@ export function update(time, delta) {
     // Gate doors open as their NPCs near them and shut after the hold window
     doorGates.update(Date.now());
     // A far click on an open gate: walked through only if it is still open on arrival
-    updatePendingGateWalk();
+    pendingGateWalk.update(Date.now());
 
     // Where the player and NPCs have been, for "walking away" (q55 d, interaction-reach.js)
     walkAwayTracker.sample(window.player, allNpcSprites, Date.now());
@@ -2693,9 +2697,10 @@ function talkIcon()      { return { src: `${interactionIconsBase()}/talk.png` };
  *
  * @param {number} worldX - World X coordinate of the tap
  * @param {number} worldY - World Y coordinate of the tap
+ * @param {string[]} [tapObjectIds] - ids of the objects under the tap (an NPC leaving one of them gives way)
  * @returns {Array<{label:string, detail:?string, onSelect:Function}>}
  */
-function gatherInteractablesNearClick(worldX, worldY) {
+function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = []) {
     const player = window.player;
     if (!player || !window.rooms) return [];
 
@@ -2767,7 +2772,7 @@ function gatherInteractablesNearClick(worldX, worldY) {
                     label: name,
                     detail: npc?.observations || null,
                     icon: hostile ? jabHandIcon() : talkIcon(),
-                    leavingNpc: npcWalkingAway(player, sprite),
+                    leavingNpc: npcGivesWay(player, sprite, tapObjectIds),
                     onSelect: () => {
                         facePlayerToward(sprite.x, sprite.y);
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
@@ -2812,12 +2817,6 @@ function gatherInteractablesNearClick(worldX, worldY) {
     return candidates;
 }
 
-/**
- * Find an NPC sprite at the clicked position
- * @param {number} worldX - World X coordinate
- * @param {number} worldY - World Y coordinate
- * @returns {Object|null} NPC sprite if found, null otherwise
- */
 // Every NPC sprite in every loaded room (the walking-away tracker's samples)
 function allNpcSprites() {
     const out = [];
@@ -2828,32 +2827,25 @@ function allNpcSprites() {
     return out;
 }
 
-// A far click on an open gate (scene pointerdown): the door, and when it was clicked
-let pendingGateWalk = null;
-const PENDING_GATE_WALK_MS = 10000;
+// A far click on an open gate (scene pointerdown): walked through only if the gate still
+// lets him by on arrival (systems/pending-gate-walk.js)
+const pendingGateWalk = createPendingGateWalk({
+    player: () => window.player,
+    walkThroughTarget: (door, feet) => doorGates.walkThroughTarget(door, feet),
+    moveTo: (x, y) => movePlayerToPoint(x, y),
+    isMoving: () => playerIsMoving,
+    feet: (p) => playerFeet(p),
+    range: DOOR_INTERACTION_RANGE,
+    minigameOpen: () => !!window.MinigameFramework?.currentMinigame
+});
+if (typeof window !== 'undefined') window.__pendingGateWalk = () => pendingGateWalk.get();
 
 /**
- * Finish a far click on an open gate. Once the player is in reach of the door, the gate
- * is asked again: still open to him, he walks on through; shut, or barring him now, he
- * stays on the near side, as a far click on a shut gate leaves him. Dropped if he stops
- * short (a wall, another walk) or after PENDING_GATE_WALK_MS.
+ * Find an NPC sprite at the clicked position
+ * @param {number} worldX - World X coordinate
+ * @param {number} worldY - World Y coordinate
+ * @returns {Object|null} NPC sprite if found, null otherwise
  */
-function updatePendingGateWalk(now = Date.now()) {
-    const pending = pendingGateWalk;
-    const player = window.player;
-    if (!pending || !player) return;
-    if (now - pending.at > PENDING_GATE_WALK_MS || pending.door?.destroyed) { pendingGateWalk = null; return; }
-    const d = Phaser.Math.Distance.Between(player.x, player.y, pending.door.x, pending.door.y);
-    if (d <= DOOR_INTERACTION_RANGE) {
-        pendingGateWalk = null;
-        const through = doorGates.walkThroughTarget(pending.door, playerFeet(player));
-        if (through) movePlayerToPoint(through.x, through.y);
-        return;
-    }
-    if (now - pending.at > 400 && !playerIsMoving) pendingGateWalk = null;
-}
-if (typeof window !== 'undefined') window.__pendingGateWalk = () => pendingGateWalk;
-
 function findNPCAtPosition(worldX, worldY) {
     let closestNPC = null;
     let closestDistance = Infinity;

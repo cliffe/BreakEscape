@@ -334,6 +334,30 @@ test('M4: Open from the transfer dialog on a local sign-in desktop returns to th
     assert.equal(current()?.containerItem?.scenarioData?.id, 'dana_pc', 'back on the desktop');
 });
 
+test('R1 n2: cameFrom matches the file by id when it has one, so a world file with the same name does not go back', (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    const back = { containerItem: { scenarioData: { id: 'cabinet' } }, contents: [LETTER] };
+    assert.equal(TextFileMinigame.cameFrom(back, 'scan_0412.pdf', 'inbox_letter'), true, 'the same file');
+    assert.equal(TextFileMinigame.cameFrom(back, 'scan_0412.pdf', 'lobby_scan'), false, 'another file, same name');
+    assert.equal(TextFileMinigame.cameFrom(back, 'scan_0412.pdf'), true, 'no id: by name, as before');
+    assert.equal(TextFileMinigame.cameFrom(null, 'scan_0412.pdf', 'inbox_letter'), false);
+});
+
+test('R2 n3: Open on a type with text but no reader (not a text file or readable note) arms no return', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    await sessions.signIn('dana_pc', 'dana', 'x');
+    window.startContainerMinigame(localDesktop(), null, false, true);
+    await settle();
+    window.pendingContainerReturn = null;
+    current().openFileInPlace({ id: 'memo_doc', type: 'document', name: 'memo.doc', takeable: true, text: 'A memo.' });
+    assert.equal(window.pendingContainerReturn, null, 'no reader spends it, so none is armed');
+    window.startContainerMinigame(localDesktop(), null, false, true);
+    await settle();
+    current().openFileInPlace({ id: 'memo_note', type: 'notes', name: 'Memo', takeable: true, readable: true, text: 'A memo.' });
+    assert.ok(window.pendingContainerReturn, 'a readable note opens the notes viewer, which spends it');
+});
+
 test('M2: a session that ended while the file was open closes to the world with its message, never the sign-in screen', async (t) => {
     if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
     setup();
