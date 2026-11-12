@@ -179,6 +179,12 @@ test('error: call.when that uses value, name or data.', { skip }, () => {
     assert.deepEqual(errors(check({ call: { knot: 'support_call', when: 'globalVars.who === "name"' } }, { hax: INK }, declared)), []);
 });
 
+test('error: call.when containing || says to write two entries', { skip }, () => {
+    const declared = { globalVariables: { a: false, b: false } };
+    assertHas(errors(check({ call: { knot: 'support_call', when: 'globalVars.a || globalVars.b' } }, { hax: INK }, declared)), 'Write two entries with the same knot');
+    assert.deepEqual(errors(check({ call: { knot: 'support_call', when: 'globalVars.a && globalVars.b' } }, { hax: INK }, declared)), []);
+});
+
 test('warn: untilAnswered on a forced call, and a call knot that never reads call_answer_seconds', { skip }, () => {
     assertHas(warnings(check({ eventMappings: [ringMap({ disableClose: true, ring: { untilAnswered: true } })] })), 'has no effect on a forced call');
     const quiet = INK.replace(/\{\n- call_is_callback[\s\S]*?\n\}\n/, 'Good.\n');

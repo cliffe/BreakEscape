@@ -40,6 +40,7 @@ Written 2026-11-12 on `build/phone-calls`. Field names, defaults and behaviour f
 - Never edit a route script while it runs: bash reads it incrementally.
 - `conversation_closed:<npc>` fires once per call (sweep item 1, R1 m1), including a call placed from that contact's thread; a later visit to the thread fires it again. Count one per conversation in proofs.
 - `ring.ringWhile` drops a queued or ringing call with no row, no event and no callback, so a proof checks `phoneRinger` state, not the thread. An answered or held call is never dropped, and a mapping's trigger `condition` is never re-checked after it fires.
+- A `ringWhile` drop puts back the mapping's own `setGlobal` keys (only those still holding the value it wrote) and emits no `global_variable_changed`. A proof of a latch twin reads the global after the drop; it will not see a change event.
 - A ring under a tutorial step panel waits up to 20 s of unpaused time (or until the step changes) and then rings with the banner moved clear of SKIP TUTORIAL. A route that skips the tutorial sees no wait.
 - A terminal-look call that closes itself stays open for its read beat, so wait for the phone to close before the next step.
 - A choice whose whole text is in parentheses (`(Close.)`) posts no player bubble. A route that counts player bubbles must not count it.
@@ -60,7 +61,7 @@ Written 2026-11-12 on `build/phone-calls`. Field names, defaults and behaviour f
 
 - Mention `scripts/validate_phone_calls.rb` (`check_phone_calls`) and the `call-in-text-thread` rule of `dialoguelint.mjs`; the expected "call me" warnings clear as each mission gets its `call` or `ring` entry. Baseline: `docs/agents/phone_calls/A7_VALIDATOR_BASELINE.md`.
 - Every mission with HaX calls sets a contact-level `callLabel: "SAFETYNET secure line"` on `agent_0x99`; the ring banner, callbacks and placed calls all read it.
-- A ring that should stop ringing once its reason is gone needs `ring.ringWhile` (and usually the same string as `callbackWhen`); a trigger `condition` is not re-checked.
+- A ring that should stop ringing once its reason is gone needs `ring.ringWhile` (and usually the same string as `callbackWhen`), with the same terms repeated in the mapping's trigger `condition`: a trigger `condition` is not re-checked, and a ring whose `ringWhile` is already false when the mapping fires is dropped at once but its `completeTask` and timed messages still run. `ringWhile` and `callbackWhen` are `&&` chains of single-segment `globalVars.` terms (negated, or compared to a literal or another `globalVars.` value); `||` or any other term is a validator error.
 
 ## Not documented, deliberately
 

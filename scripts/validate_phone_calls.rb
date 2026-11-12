@@ -446,6 +446,7 @@ module ValidatePhoneCalls
           if entry['when'].is_a?(String) && !entry['when'].strip.empty?
             bad = when_misuse(entry['when'])
             err.call("#{where}.when uses #{bad}, which a call condition cannot read (only globalVars. terms; plan 3.2)") if bad
+            err.call("#{where}.when contains `||`, which the engine does not read: the whole condition fails and the entry never holds. Write two entries with the same knot") if entry['when'].include?('||')
             global_names(entry['when']).reject { |n| globals.include?(n) }.each do |n|
               err.call("#{where}.when reads globalVars.#{n}, which is not in globalVariables and nothing sets it: the condition sees undefined#{var_hint(source, n)}")
             end
