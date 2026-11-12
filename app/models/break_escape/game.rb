@@ -805,7 +805,8 @@ module BreakEscape
 
     # Review R4 M1 and m2: a KO is a client claim (combat runs in the browser), so the server
     # takes it only for an NPC the player can have fought: one standing in a scenario room (no
-    # phone or headless record), met (its room was served to the player: track_npc_encounters,
+    # headless record, and not npcType "phone": a phone NPC listed in a room, such as m03's
+    # handler holding a keycard, has no sprite to fight), met (its room was served to the player: track_npc_encounters,
     # which only runs for a room the player may enter), and not koImmune. A hostile NPC follows
     # the player through doors, but it is met first, in its own room. Used by every KO record
     # (update_npc_state!, merge_npc_hostility!, an in-room KO drop) and by every reader.
@@ -817,7 +818,7 @@ module BreakEscape
     end
     public :npc_ko_claimable?
 
-    # Ids of the scenario's room NPCs that are not koImmune. Reads scenario_data when it is
+    # Ids of the scenario's room NPCs that are not koImmune and not phone NPCs. Reads scenario_data when it is
     # loaded; sync_state's narrow load leaves it out, so there two jsonpath lists are read,
     # as scenario_npc_ids does. Bounded by the scenario.
     def ko_claimable_room_npc_ids
@@ -830,7 +831,7 @@ module BreakEscape
           next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
 
           room['npcs'].each do |npc|
-            next unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['koImmune'] != true
+            next unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['koImmune'] != true && npc['npcType'] != 'phone'
 
             ids << npc['id']
           end
@@ -840,7 +841,7 @@ module BreakEscape
 
       all, immune = self.class.where(id: id).pick(
         Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"),
-        Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*] ? (@.koImmune == true).id')")
+        Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*] ? (@.koImmune == true || @.npcType == \"phone\").id')")
       )
       parse = ->(list) { Array(list.is_a?(String) ? JSON.parse(list) : list).select { |i| i.is_a?(String) } }
       Set.new(parse.call(all)) - Set.new(parse.call(immune))

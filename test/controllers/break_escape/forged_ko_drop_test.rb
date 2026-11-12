@@ -31,7 +31,10 @@ module BreakEscape
                 'itemsHeld' => [{ 'type' => 'key', 'name' => 'Office Key', 'takeable' => true }] },
               { 'id' => 'warden', 'displayName' => 'Warden', 'npcType' => 'person', 'koImmune' => true,
                 'position' => { 'x' => 5, 'y' => 3 },
-                'itemsHeld' => [{ 'type' => 'key', 'id' => 'warden_key', 'name' => 'Warden Key', 'takeable' => true }] }
+                'itemsHeld' => [{ 'type' => 'key', 'id' => 'warden_key', 'name' => 'Warden Key', 'takeable' => true }] },
+              # A phone NPC listed in a room, holding a keycard (m03's handler has this shape)
+              { 'id' => 'handler', 'displayName' => 'Handler', 'npcType' => 'phone',
+                'itemsHeld' => [{ 'type' => 'keycard', 'id' => 'relayed_keycard', 'name' => 'Relayed keycard', 'takeable' => true }] }
             ]
           },
           'it_room' => {
@@ -175,6 +178,16 @@ module BreakEscape
       assert_equal 200, drop('sarah', { 'type' => 'key', 'id' => 'sarah_held_0', 'name' => 'Office Key' }).status
       assert_equal 200, drop('sarah', { 'type' => 'key', 'id' => 'sarah_held_0', 'name' => 'Office Key' }).status
       assert_equal ['sarah_held_0'], added.map { |o| o['id'] }
+    end
+  
+    test 'M1: a phone NPC listed in a room is never KO, so a forged KO drops nothing' do
+      build
+      get_room('reception_area')
+      assert_includes @game.reload.player_state['encounteredNPCs'], 'handler'
+      forge_ko('handler')
+      assert_equal false, @game.reload.player_state.dig('npcHostility', 'handler', 'ko')
+      assert_equal 422, drop('handler', { 'type' => 'keycard', 'id' => 'relayed_keycard', 'name' => 'Relayed keycard' }).status
+      assert_equal [], added
     end
   end
 end

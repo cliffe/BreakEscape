@@ -842,10 +842,11 @@ module BreakEscape
       # for a koImmune one or one not met
       game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'guard', 'npcType' => 'person' },
                                                      { 'id' => 'warden', 'npcType' => 'person', 'koImmune' => true },
-                                                     { 'id' => 'stranger', 'npcType' => 'person' }]
+                                                     { 'id' => 'stranger', 'npcType' => 'person' },
+                                                     { 'id' => 'hq', 'npcType' => 'phone' }]
       game.scenario_data['rooms']['vault'] = { 'type' => 'room_office', 'connections' => {}, 'objects' => [] }
       game.scenario_data['startRoom'] = 'vault'
-      game.player_state['encounteredNPCs'] = %w[guard warden]
+      game.player_state['encounteredNPCs'] = %w[guard warden hq]
       game.save!
 
       put sync_state_game_url(game), params: {
@@ -856,7 +857,8 @@ module BreakEscape
         biometricSamples: [{ id: 's1', owner: 'Robert Vance', quality: 0.8 }, { id: 's2', owner: 'Nobody', quality: 1 }],
         phoneState: { 'hax' => { 'history' => [{ 'type' => 'npc', 'text' => 'Hi' }] } }, clientTs: 1000,
         npcHostility: { 'guard' => { hostile: true, ko: true }, 'ghost' => { hostile: true, ko: false },
-                        'warden' => { hostile: true, ko: true }, 'stranger' => { hostile: true, ko: true } }
+                        'warden' => { hostile: true, ko: true }, 'stranger' => { hostile: true, ko: true },
+                        'hq' => { hostile: true, ko: true } }
       }, as: :json
       assert_response :success
 
@@ -864,8 +866,9 @@ module BreakEscape
       assert_equal 'vault', state['currentRoom'], 'the start room is allowed although not in unlockedRooms'
       assert_equal({ 'guard' => { 'hostile' => true, 'ko' => true },
                      'warden' => { 'hostile' => true, 'ko' => false },
-                     'stranger' => { 'hostile' => true, 'ko' => false } },
-                   state['npcHostility'], 'NPC ids, met and koImmune still checked against scenario_data')
+                     'stranger' => { 'hostile' => true, 'ko' => false },
+                     'hq' => { 'hostile' => true, 'ko' => false } },
+                   state['npcHostility'], 'NPC ids, met, koImmune and phone NPCs still checked against scenario_data')
       assert_equal ['Robert Vance'], state['biometricSamples'].map { |s| s['owner'] }, 'owners still checked against scenario_data'
       assert_equal 1000, state['lastSyncClientTs']
       assert_equal({ 'met' => true }, state.dig('npcInkVariables', 'hax'))
