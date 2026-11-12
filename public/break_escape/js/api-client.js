@@ -169,6 +169,15 @@ export class ApiClient {
     return this.post('/network/unplug', { jack_id: jackId });
   }
 
+  // A device in a PC (not a jack) grants a foothold (slice 9.3b sub-slice I). `shape` is
+  // 'dropped' (an NPC uses a dropped device) or 'session' (a BadUSB the player plugs into a
+  // PC they hold a session on); `path` names the declared action when a PC has several.
+  // Answers { success, foothold, inventory, first } (or { success, already: true, ... }); a
+  // refusal throws (404 reason "no_action", 422 reason "not_ready" or "usb_refused").
+  static async networkImplant(pcId, shape, path = null) {
+    return this.post('/network/implant', { pc_id: pcId, shape, ...(path ? { path } : {}) });
+  }
+
   // Join an in-game Wi-Fi network through an access point (slice 9.3b sub-slice W, 5.3).
   // The key is compared on the server; an open network sends no key. Answers
   // { success, foothold, inventory, first } (or { success, already: true, ... } when the

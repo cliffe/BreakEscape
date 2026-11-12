@@ -481,8 +481,11 @@ end
 # holdsDoors (ACCESS_MODEL_SLICE_9_1_PLAN.md 7.3, step 5): a gate with a noHold (filled by the
 # loader, or authored) gets no node of its own; its secured room's door node says who holds
 # it for the player and who does not. As the client reads it: a gate with enabled: false is
-# no gate (gate_entries drops it), and a gate with playerMayPassIf ignores its noHold.
+# no gate (gate_entries drops it), nor is one on an entry no doorway reads (entry[:doorway]),
+# and a gate with playerMayPassIf ignores its noHold.
 (habits_copy['rooms'].is_a?(Hash) ? BreakEscape::NpcHabits.gate_entries(habits_copy) : []).each do |entry|
+  next if entry[:doorway]
+
   gate = entry[:gate]
   pass_if = gate['playerMayPassIf']
   next if pass_if.is_a?(String) && !pass_if.empty?

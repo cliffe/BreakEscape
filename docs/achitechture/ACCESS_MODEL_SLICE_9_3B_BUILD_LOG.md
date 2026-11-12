@@ -4,6 +4,174 @@ Plan: `docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md`. Build order K, O, W, 
 section 3). Sub-slices land on their own branches; this log has one section each. Keep sections
 self-contained.
 
+## Sub-slice I: implants (branch `build/9-3b-i`, from `main` ecc009d10)
+
+Built on top of 9.3a only (K and O's reach model is not on this branch). An implant grants a
+foothold on the target PC's own network through 9.3a's single-network reach, which is exactly
+"the PC's own network and nothing else" with no links present. Reused `AccessWork#plant_refused?`
+(9.2 U, on main) for the USB hook. `reach_conditions` was not touched (K/O own it).
+
+### What was built
+
+- **Model** (`lib/break_escape/network_model.rb`): `NetworkModel.grant_foothold_actions(data)`, a
+  walk that keeps a `grant_foothold` only where `DeclaredGrants.executed?` says the path is
+  server-run (the same test the validator uses), returning `{ pc, shape, needs_dropped, needs_held,
+  name, path }`. `reach_conditions` left unchanged.
+- **Server** (`app/models/break_escape/network_access.rb`): `implant_foothold!(pc_id, shape, path)`
+  with the preconditions of 5.5 (action exists by path; already-held before the preconditions; the
+  dropped shape reads `droppedItems`; the session shape needs a non-foothold session and the held
+  `needsHeld`, which it removes; the USB hook via `plant_refused?`). `link_item_for` branches on
+  `via == 'implant'` into `implant_link_item`, reading the `name`/`sprite` stored on the foothold
+  record so a reload and the tray are right. New helpers: `implant_foothold_id_for`, `dropped_items`,
+  `grant_foothold_action_for`, `inventory_item_matching`, `implant_sprite`.
+- **Route and policy**: `POST network/implant` (`config/routes.rb`), `network_implant` controller
+  action (locked, in the before_action and `with_game_lock` lists), `network_implant?` policy.
+- **Validator** (`scripts/validate_network.rb`): dropped the `grant_foothold` reservation; added the
+  path-aware checks (not server-run, neither/both shape, pc not a sign-in host on a network, missing
+  or unknown `needsHeld`, the action on the sign-in PC it targets, `consumesItem` on its host, two of
+  the same pc and shape) and the USB-policy warning, all reusing `DeclaredGrants.executed?`.
+- **Schema** (`scripts/scenario-schema.json`): `grant_foothold` added to the triggerOnInteract action
+  `type` enum, with `pc`/`needsDropped`/`needsSession`/`needsHeld`/`name` property docs. Not added to
+  the `flagReward` enum (the validator refuses it there).
+- **Client**: `ApiClient.networkImplant` (`api-client.js`); the `grant_foothold` case in
+  `systems/apply-actions.js` delegating to `networkLinks.implant`; `NetworkLinks.implant(pcId, shape,
+  path)` in `systems/network-links.js` (one retry on a network error, syncs the inventory, adds the
+  foothold, emits `network_foothold_gained`/`network_device_refused`, opens the view on the first).
+
+### Tests
+
+- Unit: `test/unit/network_model_test.rb` (`grant_foothold_actions` keeps server-run paths, reads the
+  shape and needs).
+- Rails: `test/controllers/break_escape/network_implants_test.rb` (12 tests: the enumerator; the
+  dropped shape; the session shape and its consume; the non-foothold-session rule; the USB refusal;
+  the already-held idempotence; reach to the PC's own network only; forged/bad-shape/never-granted
+  tampered checks). 12 runs, 46 assertions, 0 failures.
+- Validator fixtures: `test/js/validator-network-model.test.mjs` (a clean implant scenario raising no
+  error, one fixture per new error, and the USB warning). 38 of 38 pass.
+- Client: `test/js/network-links.test.mjs` (4 implant tests: grant and emit, already, usb_refused
+  toast, not_ready quiet). 38 of 38 pass.
+
+### Feature scenario and browser proof
+
+`scenarios/test_access_networks` gained beats N11 (dropped), N12 (BadUSB), N13 (USB refusal), with a
+`kit_badusb` and a droppable `kit_stick` in the lobby, props `sam_dock`/`kiosk_dock`/`door_dock`, and
+a `kiosk_locked` USB-blocking policy. `PLAYTEST.md` documents them; the expected validator output
+notes the one deliberate USB warning (N13). Validator: 0 errors.
+
+Browser proof on :3026 through the real `window.__test` bridge (game 1262, :3026, headless, 17/17 checks): picked up both
+USB items; signed in at the kiosk and used `kiosk_dock` (N13: refused, no foothold, device kept);
+signed in at `sam_pc` and used `sam_dock` (N12: `implant_sam_pc` on `office_lan`, device consumed);
+dropped `kit_stick` and used `door_dock` (N11: `implant_door_box` on `office_lan`, no session); the
+implant view listed only office hosts/shares; tampered requests (a forged session implant, a non
+sign-in target, a never-granted foothold view) all refused; a reload with `?skip_resume=1` kept both
+implant footholds with their `via` and network.
+
+Leak scanner (`access-leak-check.rb` over the 39 captured responses): VERDICT no leaks found. The network name appears only in the `$.footholds[*].network.name` of `GET /scenario` for held footholds, which section 7 allows and the scanner exempts.
+
+### Suites
+
+Under the shared lock: `bin/rails test` 1619 runs, 23653 assertions, 0 failures, 0 errors, 1 skip. `bin/test-js -j 3` 493 files passed, 0 failed. Phone reopen check: the 4 problems are all m09 phone ink files, unrelated to this change (no ink/phone code touched).
+
+### Open / not done
+
+- The dungeon graph's implant node (plan 9.3, stream T) is not added here; the generator does not
+  error on `grant_foothold` and no shipping scenario uses it. The scenario's `dungeon_graph.*` were
+  regenerated to match the new objects.
+- (Done in R1, server minor 2) `network_no_exposure_test.rb` carries a `POST /network/implant`
+  not_ready case under `refute_exposed`, so the implant's "a foothold and nothing else" is asserted
+  there as well as in `network_implants_test.rb` and the live leak scan.
+
+### Review R1 outcomes (server `..._R1_SERVER.md`, client `..._R1_CLIENT.md`)
+
+Both reviews: no blockers, one client Major. Fixes applied:
+
+- **Client M1 (tray reconcile)** `network-links.js` `implant()` no longer passes the whole tray to
+  `syncInventoryFromServer`, which could remove a tray item whose own pickup persist was still in
+  flight. `implant_foothold!` now returns `consumedId` (the one device the session shape removes;
+  the dropped shape consumes nothing), and the client reconciles only `[foothold.itemId,
+  consumedId]`, as 9.3a's `plant()` does. New JS test: an unrelated, not-yet-synced tray item is
+  kept; plus server assertions that `consumedId` names the device (session) or is nil (dropped).
+- **Client m1 (plain-text toasts)** adopted P's `toast()` wrapper passing `{ plainText: true }`, so
+  server/author strings (USB refusal, network names) render as text; matches main for a clean merge.
+- **Client m2 (test gaps)** added JS tests: the dropped shape (N11), a one-retry-then-success path
+  (mock call counter), the M1 kept-item case, and a new `grant-foothold-action.test.mjs` for
+  apply-actions `grant_foothold` (shape mapping, `pc`/`path` forwarding, no-networkLinks warning).
+- **Client n1** `_publishPlanted` now runs before the `already` return, as `plant()` does (asserted).
+- **Client n2** a foothold lost after both retries shows a plain-text toast rather than failing
+  silently (asserted).
+- **Server minor 1** one grant_foothold per `[pc, shape]` is the single rule: the validator already
+  enforced it; the spec (5.5) and the `grant_foothold_action_for` comment now say so, and document
+  that `path` is forwarded but not load-bearing (no two actions can reach the same pair).
+- **Server minor 2** `network_no_exposure_test.rb` gains a `POST /network/implant` not_ready case
+  under `refute_exposed`.
+- **Server minor 3** the dropped shape stays graded weak (client-reported trigger, a bounded host
+  list, every host still password-checked); this matches the plan 5.5 grading and is unchanged.
+- **Server nits** the dropped branch now wraps the inventory in `Array(...)` before `<<`; a comment
+  on `inventory_item_matching` notes `needsHeld` should name a device by id when types collide.
+
+### Live check R1 (port 3026, keyless server, game 1263)
+
+18/18 checks: N13 refused (no foothold, BadUSB kept), N12 BadUSB consumed with the foothold on
+`office_lan` and an unrelated held `kit_stick` kept through the implant (M1), N11 dropped-stick
+foothold with no session, the implant view listing only office hosts, three tampered requests
+refused, and a `?skip_resume=1` reload keeping both implant footholds with their `via` and network.
+
+### Merge of main (sub-slices W then P) into build/9-3b-i
+
+Merged main twice (W at `708b154e8`, then P at `32b767faf`). Conflicts were the shared symbol
+lists (controller before/around_action), the new route, the policy method, `api-client`'s new
+method, `link_item_for`'s via branch, the network-links event doc, and the network test files,
+scenario, PLAYTEST and this log; all additive, both sides kept. The "needs slice 9.3b" guard test
+now asserts only K's `networkLinks` and O's `downIf`, since grant_foothold (I), wifiAp (W) and
+portSecurity (P) have all landed. Used main/P's `toast()` wrapper and `toastCalls` mock.
+
+### R1 suites (after both merges, both under the shared lock)
+
+- `bin/rails test`: 1662 runs, 24397 assertions, 0 failures, 0 errors, 1 skip.
+- `bin/test-js -j 3`: 496 files passed, 0 failed.
+- Changed JS files alone: `network-links.test.mjs` 55 pass, `validator-network-model.test.mjs`
+  49 pass, new `grant-foothold-action.test.mjs` 4 pass.
+
+### Review R2 outcomes (`..._SLICE_9_3B_I_CODE_REVIEW_R2.md`)
+
+No blockers, one Major, two minors, two nits. Fixes applied (see the review file for detail):
+
+- **M1 (lost-response retry)** the already-held branch of `implant_foothold!` now returns
+  `consumedId` from the stored foothold record's device id, so a retry after a lost response
+  reconciles the consumed device off the tray exactly as the first success would. No client change
+  (it already forwards `body.consumedId`). New JS test for throw-after-server-success-then-retry and
+  server tests for the repeat session (names the device) and dropped (names none) cases.
+- **m1** the validator errors when a `needsHeld` device object has no `id` (it can never be
+  reconciled off the tray). New JS test.
+- **m2** the validator adds `onConfirm` to the host keys and carries each timer element as the host
+  of its own actions, so the two session-shape guards cover a grant_foothold on a timer or onConfirm.
+  New JS test.
+- **n1** kept as documented (`path` is forwarded but not load-bearing).
+- **n2** this log's stale "Open / not done" line corrected.
+
+### Merge of main (9.2 C, social media) into build/9-3b-i
+
+Merged main at `fea96124c`. One conflict, `games_controller.rb`: both sides add to the
+before/around_action symbol lists (`:network_implant` here, `:feed_post` on main); kept both, as the
+merge rule says. Everything else auto-merged (routes, policy, api-client, schema, the social feed
+files are additive).
+
+### Live check R2 (port 3026, keyless server, game 1277, real client)
+
+Re-ran the implant steps through the real `window.__test` client after the fix and the merge. All
+six checks pass: N13 kiosk USB refused (no foothold, BadUSB kept); N12 BadUSB at Sam's desk
+(`implant_sam_pc` on `office_lan`, device consumed, link item present, no extra session); N11
+dropped stick at the door controller (`implant_door_box` on `office_lan`, no session); a
+`?skip_resume=1` reload keeps both implant footholds with their `via` and network; a forged implant
+on a PC with no `grant_foothold` action answers 404 `no_action`; a view of a never-granted foothold
+answers 404. `verify-run.rb --access` on game 1277 confirms both footholds on `office_lan` and no
+kiosk foothold.
+
+### R2 suites (after the fix and the merge, under the shared lock)
+
+- `bin/rails test`: 1708 runs, 25044 assertions, 0 failures, 0 errors, 1 skip (the known skip).
+- `bin/test-js -j 3`: 499 files passed, 0 failed.
+
 ## Sub-slice W: Wi-Fi (branch `build/9-3b-w`, from `main` 1ba8c5cd7)
 
 Built on 9.3a only (K and O were not yet on this branch). A Wi-Fi foothold reaches its own
