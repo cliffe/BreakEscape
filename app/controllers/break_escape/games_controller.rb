@@ -807,7 +807,11 @@ module BreakEscape
         # waiting on it, so the capture step can tell whether this request advanced that evidence
         # and skip the scenario load otherwise. A forged, never-provable unproven entry no longer
         # forces the scenario load on every later evidence-carrying sync.
-        @phish_fp_before = (!stale && @game.unproven_captures?) ? @game.phish_evidence_fingerprint : nil
+        # Branch review R1 n2: gate on phish_gated_unproven_captures?, not unproven_captures?. An
+        # entry unproven only because a part 3 proof (a captureProof) has not yet held can never be
+        # advanced by a sync_state request (part 3 proofs arrive through other routes), so it needs
+        # no fingerprint; walking the whole mailbox to produce one a sync can never move is wasted.
+        @phish_fp_before = (!stale && @game.phish_gated_unproven_captures?) ? @game.phish_evidence_fingerprint : nil
         refusal = merge_last_write_wins_sections unless stale
         raise ActiveRecord::Rollback if refusal
 
@@ -863,7 +867,13 @@ module BreakEscape
       # they match, no new evidence arrived and the scenario load is skipped, so a forged,
       # never-provable unproven entry does not force the load on every later sync.
       mail_incoming = params[:mailState].respond_to?(:to_unsafe_h) ? params[:mailState].to_unsafe_h : nil
-      extra_sent = stale ? [] : @game.incoming_sent_messages(mail_incoming)
+      # Branch review R1 m1: parse the incoming mail (incoming_sent_messages re-sanitises the whole
+      # body) only when extra_sent can be used: when this request can advance the phish evidence
+      # (an unproven phish-gated entry, so @phish_fp_before is set), or carries a new capture, or
+      # has a legacy global to migrate and then stamp. The common sync (no incoming, nothing
+      # unproven and phish-gated, no legacy) now skips the second mail walk.
+      extra_sent = (!stale && (incoming.any? || !@phish_fp_before.nil? || @game.legacy_captures?)) ?
+        @game.incoming_sent_messages(mail_incoming) : []
       needs_stamp = false
       if !stale && !@phish_fp_before.nil?
         needs_stamp = @game.phish_evidence_fingerprint(extra_sent: extra_sent) != @phish_fp_before

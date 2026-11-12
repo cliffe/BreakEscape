@@ -128,6 +128,32 @@ module BreakEscape
       assert_nil @game.reload.player_state['inventory'].find { |i| i['type'] == 'rfid_cloner' }
     end
 
+    # Branch review R1 n1: remove_saved_card! on a no-op (a bogus id that names no display card and
+    # no serverClones record) must not write the row. POST /inventory remove_saved_card is reachable
+    # by any client, so a loop of junk ids must not force an unconditional player_state write.
+    test 'remove_saved_card! on a no-op does not save and returns false' do
+      build('inventory' => [CLONER.dup])
+      clone(JAKE, npc_id: 'jake', card: { 'card_id' => JAKE, 'rfid_data' => { 'uid' => 'U' } })
+      assert_equal [JAKE], stored_cards.map { |c| c['card_id'] }
+
+      saves = 0
+      spy = Module.new do
+        define_method(:save!) do |*a, **k|
+          saves += 1
+          super(*a, **k)
+        end
+      end
+      @game.singleton_class.prepend(spy)
+
+      assert_equal false, @game.remove_saved_card!('no_such_card'), 'a bogus id changes nothing'
+      assert_equal 0, saves, 'no write when nothing changed'
+
+      # A real removal still saves and returns true.
+      assert_equal true, @game.remove_saved_card!(JAKE), 'removing a listed card still writes'
+      assert_equal 1, saves, 'the real change is written once'
+      assert_empty @game.reload.player_state['inventory'].find { |i| i['type'] == 'rfid_cloner' }['saved_cards']
+    end
+
     test 'a clone_card body over 8 KB is refused with 413 before parsing' do
       build('inventory' => [CLONER.dup])
       big = 'x' * (9 * 1024)

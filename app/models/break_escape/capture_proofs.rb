@@ -167,7 +167,12 @@ module BreakEscape
       # proven: false and stamped later (stamp_proven_captures!) once the evidence reaches the
       # server. A foothold, and a credential with no evidence to wait on, is proven at once.
       proven = capture_evidence_holds?(chosen[:fields], scenario: scenario)
-      entry = store_capture_entry(record, chosen[:fields], proven: proven)
+      # Branch review R1 n2: mark an unproven entry phishGated when a sync can advance its evidence
+      # (it waits on a landing page's part 2 evidence). An entry unproven only because of a part 3
+      # proof carries no mark, so phish_gated_unproven_captures? stays false and the sync step skips
+      # the mailbox fingerprint walk. A server-only field, never served to the client.
+      phish_gated = !proven && !phish_evidence_page_for(chosen[:fields], scenario).nil?
+      entry = store_capture_entry(record, chosen[:fields], proven: proven, phish_gated: phish_gated)
       { result: :recorded, entry: entry }
     end
 
@@ -399,6 +404,18 @@ module BreakEscape
       record.is_a?(Hash) && record.each_value.any? { |entry| entry.is_a?(Hash) && entry['proven'] != true }
     end
 
+    # Cheap (player_state alone): whether any unproven entry waits on part 2 phish evidence a
+    # sync_state request can advance (phishGated, set at record time). An entry unproven only
+    # because of a part 3 proof carries no mark, so it returns false and the sync step skips the
+    # fingerprint walk (branch review R1 n2). Migrated legacy entries are always stored proven, so
+    # they never reach here unproven.
+    def phish_gated_unproven_captures?
+      record = player_state['seCaptures']
+      record.is_a?(Hash) && record.each_value.any? do |entry|
+        entry.is_a?(Hash) && entry['proven'] != true && entry['phishGated'] == true
+      end
+    end
+
     private
 
     # The landing page id whose part 2 evidence a credential entry needs, or nil. The entry's
@@ -489,11 +506,15 @@ module BreakEscape
 
     # Store the candidate's fields whole (nothing authored is cut), with the server's `at` and
     # `proven`. Returns the stored entry.
-    def store_capture_entry(record, fields, proven:)
+    def store_capture_entry(record, fields, proven:, phish_gated: false)
       entry = { 'targetId' => fields['targetId'], 'kind' => fields['kind'] }
       %w[roleLabel address host note].each { |k| entry[k] = fields[k] if fields.key?(k) }
       entry['at'] = capture_now_ms
       entry['proven'] = proven
+      # Branch review R1 n2: a server-only hint that this unproven entry waits on part 2 phish
+      # evidence a sync can advance. Only stored when true (keeps the record small); captures_for_client
+      # never copies it, so it never reaches the browser.
+      entry['phishGated'] = true if phish_gated
       record[fields['targetId']] = entry
       entry
     end

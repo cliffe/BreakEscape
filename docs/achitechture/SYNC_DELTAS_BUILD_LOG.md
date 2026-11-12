@@ -1389,3 +1389,94 @@ test rerun green). Tests run (affected files only, no lock):
   stashed), so it is environmental, not a regression. Do not chase it as a build break.
 - Step 2 note: `seedFromBootstrap` must be called before the restore block mutates the saved blocks;
   it is wired at the top of game.js's restore, before the globals `Object.assign`. Keep it there.
+
+## This session (2026-11-12, branch review R1 fixes: m1, n1, n2, case F)
+
+Full-branch review R1 copied to `docs/achitechture/SYNC_DELTAS_BRANCH_REVIEW_R1.md` (0 blockers, 0
+majors, 1 minor, 2 nits). Server-only Ruby plus docs; no JS changed, so no JS harness copy-list
+change and no JS rerun. Each fix has a test that fails without it (confirmed red by reverting the
+fix).
+
+### Review R1 fixes
+
+- **m1 (`games_controller.rb#apply_capture_sync_step`): the capture step re-sanitised the whole
+  incoming mail on every non-stale sync.** `extra_sent` was computed unconditionally, then discarded
+  by the early return on the common no-capture sync; `incoming_sent_messages` re-parses the mail body
+  that `merge_mail_state!` already walked. Fix: compute `extra_sent` lazily, only when it can be used
+  (`!stale && (incoming.any? || !@phish_fp_before.nil? || @game.legacy_captures?)`), covering every
+  path that reaches `stamp_proven_captures!` with real evidence. Test
+  `capture_proofs_test "m1: a plain sync does not re-walk the incoming mail a second time"` counts
+  `incoming_sent_messages` calls (0 after, 1 before).
+
+- **n1 (`game.rb#remove_saved_card!`): always saved and returned true, even on a no-op.** A tampered
+  client could loop `POST /inventory remove_saved_card` with junk ids and force an unconditional
+  `player_state` write each time. Fix: track whether the list changed or a `listed` mark was set and
+  `save!` / return `true` only then, else return `false` with no write. The one caller ignores the
+  return value, so returning `false` is safe. Test
+  `clone_card_saved_cards_test "remove_saved_card! on a no-op does not save and returns false"` spies
+  on `save!` (0 saves and `false` on a bogus id; 1 save and `true` on a real removal).
+
+- **n2 (`games_controller.rb` sync_state, `capture_proofs.rb`): the pre-merge phish fingerprint
+  walked the whole mailbox on every sync while any entry was unproven, including a part-3-only
+  unproven entry a sync can never advance.** Fix: an unproven credential records a server-only
+  `phishGated` flag at store time (`store_capture_entry`), set when `phish_evidence_page_for` names a
+  landing page (part 2 evidence a sync can move); a part-3-only unproven entry carries no flag.
+  New cheap predicate `phish_gated_unproven_captures?` gates `@phish_fp_before`, so a part-3-only
+  unproven set skips the fingerprint. `phishGated` is never served (`captures_for_client` /
+  `client_capture_entry` copy a fixed whitelist). Migrated legacy entries are always stored proven,
+  so they never reach the predicate unproven. Serving is unaffected: `GET /capture_secrets` re-checks
+  evidence live. Test `capture_proofs_test "n2: a part-3-only unproven entry skips the phish
+  fingerprint, a phish-gated one keeps it"` counts `phish_evidence_fingerprint` calls (0 for a
+  `captureProof`-gated credential, >= 1 for a landing-page credential).
+
+### Case F investigation and fix (SYNC_DELTAS_BUILD_LOG game 1972)
+
+Builder 12's live case F caveat: a card cloned on pre-branch code (action-menu clone via
+`update_saved_cards`, no `serverClones` record) stays listed after a reload onto the branch. The
+branch validates access through `held_rfid_cards`, which counts a copy only via `serverClones`, so
+such a copy is listed but refused. Confirmed with a Rails test (`access_model_rfid_test`,
+`assert_refused door('power_room', ...)` before the bootstrap). Cheat policy q78: access honest play
+reached must not be refused, and access honest play could never reach must be refused. A copy the
+player genuinely cloned on the old code is access honest play reached, so refusing it after the
+deploy is a regression for a game in progress at deploy time.
+
+Decision (safest fix, both directions of q78): on the bootstrap, reconcile each legacy copy (listed,
+no `serverClones`) against what the server can still confirm, because an old save's `saved_cards`
+was client-trusted and cannot by itself prove an honest clone.
+
+- Where the server can confirm the player could have cloned the card now, a `serverClones` record is
+  backfilled (`backfilled: true`) and the copy keeps its access. Confirmation
+  (`confirmable_clone_source`): the card's holder NPC is in `encounteredNPCs` and is cloneable, or a
+  cloneable keycard object with that id is still within reach (`clone_source_keycard`), while a real
+  cloner is held.
+- Where the server cannot confirm it (holder never met, no reachable object), the copy is dropped
+  from the display list, so the player re-clones it honestly; access honest play could never reach
+  stays refused.
+
+New `game.rb` methods `legacy_cloned_cards?` (cheap bootstrap predicate, ORed into
+`bootstrap_state_needs_write?`), `backfill_legacy_cloned_cards!` (bootstrap writer, runs before
+`repair_saved_cards!`) and `confirmable_clone_source`. Idempotent: a confirmable copy gains a record
+and an unconfirmable one is dropped on the first bootstrap, so the predicate is false afterwards.
+Tests in `access_model_rfid_test`: `case F: a legacy copy the server can confirm is backfilled and
+opens its door after a reload` and `case F: a legacy copy of a card the player never met is dropped
+and stays refused` (both confirmed red with the backfill writer disabled).
+
+### Step 4 note (accepted)
+
+Builder 12's observation that an old tab re-sends its whole `se_captures` map for one release
+(bounded by the authored capture count, stops after the reload) is recorded as accepted in
+`SYNC_DELTAS_PLAN.md` section 6.5 (Old tabs / Compatibility).
+
+### Tests run (affected files, no lock, per the 2026-11-12 test-lock rule)
+
+All green. No JS module changed, so no node test is affected (phishGated is server-only and never
+served). Rails:
+- `capture_proofs_test`, `clone_card_saved_cards_test` (45 runs, 239 assertions).
+- `access_model_rfid_test` (37 runs, 138 assertions).
+- `captures_sync_test`, `capture_proofs_test`, `clone_card_saved_cards_test`, `access_model_rfid_test`,
+  `capture_record_test`, `games_controller_test` (170 runs, 668 assertions).
+- `reload_persistence_test`, `network_inventory_delta_test`, `saved_current_room_test`,
+  `inventory_canonical_item_test`, `game_test` (183 runs, 733 assertions).
+- `capture_secret_test`, `capture_payload_secret_test` (part of an earlier 44-run green batch).
+
+Each new test was confirmed to fail with its fix reverted, then pass with it restored.

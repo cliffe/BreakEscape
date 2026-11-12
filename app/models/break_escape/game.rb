@@ -816,7 +816,8 @@ module BreakEscape
     # and 6a OR in cards_need_repair?, legacy_captures?, unrecorded_shared_logins?
     # and stampable_captures?; until then no bootstrap write is ever needed.
     def bootstrap_state_needs_write?
-      cards_need_repair? || legacy_captures? || unrecorded_shared_logins? || stampable_captures?
+      cards_need_repair? || legacy_cloned_cards? || legacy_captures? || unrecorded_shared_logins? ||
+        stampable_captures?
     end
 
     # Run the bootstrap writers inside the lock (none of which saves) and return
@@ -827,7 +828,10 @@ module BreakEscape
       # needless save when another was the reason. migrate first, so a legacy heard-share entry
       # exists before the backfill looks for a gap.
       scenario = stored_scenario_data
-      changed = repair_saved_cards!
+      # Branch review R1 case F: reconcile a legacy copy (listed, no serverClones) before the repair,
+      # so a confirmable one has its record in place and an unconfirmable one is already dropped.
+      changed = backfill_legacy_cloned_cards!
+      changed = repair_saved_cards! || changed
       changed = migrate_legacy_captures!(scenario: scenario) || changed
       changed = record_shared_logins!(scenario: scenario) || changed
       # 6b: an unproven entry whose page evidence now holds is stamped proven: true on the
@@ -3877,13 +3881,27 @@ module BreakEscape
     # a later copy of the same card clears the mark (SYNC_DELTAS_PLAN 5.2). Saves.
     def remove_saved_card!(card_id)
       card_id = card_id.to_s
+      # Branch review R1 n1: save and return true only when something changed. POST /inventory
+      # remove_saved_card is reachable by any client, so a loop of junk ids (no held cloner, no
+      # serverClones record) must not force an unconditional player_state write each time.
+      changed = false
       cloner = real_cloner
       list = cloner && cloner['saved_cards'].is_a?(Array) ? cloner['saved_cards'] : nil
-      cloner['saved_cards'] = list.reject { |c| c.is_a?(Hash) && c['card_id'].to_s == card_id } if list
-      if server_clones[card_id].is_a?(Hash)
+      if list
+        trimmed = list.reject { |c| c.is_a?(Hash) && c['card_id'].to_s == card_id }
+        if trimmed.length != list.length
+          cloner['saved_cards'] = trimmed
+          changed = true
+        end
+      end
+      clone = server_clones[card_id]
+      if clone.is_a?(Hash) && clone['listed'] != false
         player_state['serverClones'] = server_clones
         player_state['serverClones'][card_id]['listed'] = false
+        changed = true
       end
+      return false unless changed
+
       save!
       true
     end
@@ -3906,6 +3924,84 @@ module BreakEscape
     # Whether the bootstrap repair would add any card (the unlocked predicate, no write).
     def cards_need_repair?
       saved_card_ids_to_repair.any?
+    end
+
+    # A listed display card with no serverClones record, while a real cloner is held: a copy an old
+    # tab made on pre-branch code (update_saved_cards with no clone record) and then reloaded onto
+    # the branch (SYNC_DELTAS branch review R1, case F). Cheap predicate (no write).
+    def legacy_cloned_cards?
+      cloner = real_cloner
+      return false unless cloner
+
+      list = cloner['saved_cards']
+      list.is_a?(Array) && list.any? do |c|
+        c.is_a?(Hash) && c['card_id'].present? && !server_clones.key?(c['card_id'].to_s)
+      end
+    end
+
+    # Reconcile a legacy copy (listed, no serverClones) the server can still confirm the player
+    # could have cloned: branch review R1 case F. Access is validated against held_rfid_cards, which
+    # counts a copy only through serverClones, so without a record the old copy would be listed but
+    # refused, a regression for a game in progress at the deploy. Cheat policy q78: access honest
+    # play reached must not be refused; access honest play could never reach must be refused. So a
+    # copy the server can confirm now (a cloner held and the card's holder NPC encountered, or its
+    # keycard object still within reach) is backfilled a serverClones record and keeps its access;
+    # one the server cannot confirm is dropped from the list, so the player re-clones it honestly.
+    # The branch's own copies (a serverClones key already) are untouched. Returns whether it wrote.
+    def backfill_legacy_cloned_cards!
+      cloner = real_cloner
+      return false unless cloner
+
+      list = cloner['saved_cards']
+      return false unless list.is_a?(Array) && list.any?
+
+      changed = false
+      kept = []
+      list.each do |card|
+        card_id = card.is_a?(Hash) ? card['card_id'].to_s : ''
+        if card_id.empty? || server_clones.key?(card_id)
+          kept << card
+          next
+        end
+
+        source = confirmable_clone_source(card_id)
+        if source
+          definition = scenario_keycard_definitions.find { |k| k['card_id'].to_s == card_id } ||
+                       npc_card_definition_for(card_id)
+          player_state['serverClones'] = server_clones
+          player_state['serverClones'][card_id] = {
+            'source' => source,
+            'uidOnly' => definition.is_a?(Hash) && definition['rfid_protocol'] == 'MIFARE_DESFire',
+            'backfilled' => true
+          }
+          kept << card
+        end
+        changed = true
+      end
+
+      cloner['saved_cards'] = kept if changed
+      changed
+    end
+
+    # A clone source the server can confirm now for a legacy copy's card_id (branch review R1 case
+    # F): an encountered, cloneable NPC whose card carries it, or a cloneable keycard object still
+    # within reach (clone_source_keycard). nil when the server cannot confirm the player could have
+    # cloned it, so the copy is dropped rather than granted access honest play may never have reached.
+    def confirmable_clone_source(card_id)
+      card_id = card_id.to_s
+      self.class.scenario_room_npcs(scenario_data).each do |npc|
+        card = self.class.npc_card(npc)
+        next unless card && card['card_id'].to_s == card_id && npc['cloneable'] != false
+        return { 'npc' => npc['id'] } if Array(player_state['encounteredNPCs']).include?(npc['id'])
+      end
+
+      scenario_keycard_definitions.each do |k|
+        next unless k['card_id'].to_s == card_id && k['id'].present?
+
+        source = clone_source_keycard(k['id'])
+        return { 'object' => (source['id'] || k['id']).to_s } if source
+      end
+      nil
     end
 
     # Put back a recorded copy missing from the list, built from the scenario definition

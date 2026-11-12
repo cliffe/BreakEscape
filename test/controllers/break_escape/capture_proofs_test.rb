@@ -3,6 +3,26 @@ require_relative '../../support/capture_proof_scenario'
 require_relative '../../support/network_model_scenario'
 
 module BreakEscape
+  # Branch review R1 m1/n2: count the hot-path mail walks so a plain sync can be proved not to
+  # re-parse the mail (m1) or fingerprint the mailbox for an entry a sync can never advance (n2).
+  module CaptureHotPathSpy
+    COUNTS = Hash.new(0)
+    def self.reset
+      COUNTS.clear
+    end
+
+    def incoming_sent_messages(*args)
+      CaptureHotPathSpy::COUNTS[:incoming_sent_messages] += 1
+      super
+    end
+
+    def phish_evidence_fingerprint(*args, **kwargs)
+      CaptureHotPathSpy::COUNTS[:phish_evidence_fingerprint] += 1
+      super
+    end
+  end
+  Game.prepend(CaptureHotPathSpy) unless Game.ancestors.include?(CaptureHotPathSpy)
+
   # Capture proofs (docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md, section 6). Every
   # proof is earned through the real requests, never by writing player_state: an inventory remove
   # with used_on, a player_drop, a sign-in or an owner claim, a network plant.
@@ -375,6 +395,44 @@ module BreakEscape
       end
       assert loads >= 1, 'the scenario loads when the request advanced the phish evidence'
       assert_equal true, @game.reload.player_state.dig('seCaptures', 'phished', 'proven'), 'now stamped proven'
+    end
+
+    # Branch review R1 m1: a sync with no capture and nothing phish-gated must not re-parse the
+    # incoming mail. The merge already walked it once; the discarded extra_sent walked it again.
+    test 'm1: a plain sync does not re-walk the incoming mail a second time' do
+      build_game(phish_scenario)
+      CaptureHotPathSpy.reset
+      put game_path('sync_state'), params: { clientTs: 1,
+        globalVariables: { 'some_flag' => true },
+        mailState: { 'mailboxes.inbox.m1' => { 'id' => 'm1', 'folder' => 'inbox', 'landed' => true } } }, as: :json
+      assert_response :success
+      assert_equal 0, CaptureHotPathSpy::COUNTS[:incoming_sent_messages],
+                   'no second mail walk on a no-capture, nothing-phish-gated sync'
+    end
+
+    # Branch review R1 n2: an entry unproven only because of a part 3 proof can never be advanced by
+    # a sync, so a sync must not fingerprint the whole mailbox for it; a phish-gated entry still does.
+    test 'n2: a part-3-only unproven entry skips the phish fingerprint, a phish-gated one keeps it' do
+      build_network_game({}, network_scenario_with_proof({ 'planted' => 'kit_dropbox', 'on' => 'comms_port' }))
+      network_forge
+      refute @game.reload.player_state.dig('seCaptures', 'lena', 'proven'), 'lena is unproven'
+      refute @game.phish_gated_unproven_captures?, 'lena waits only on a part 3 proof'
+      CaptureHotPathSpy.reset
+      put game_path('sync_state'), params: { clientTs: 50, globalVariables: { 'x' => 1 } }, as: :json
+      assert_response :success
+      assert_equal 0, CaptureHotPathSpy::COUNTS[:phish_evidence_fingerprint],
+                   'no fingerprint walk for a part-3-only unproven entry'
+
+      # Contrast: a phish-gated unproven entry still makes the sync fingerprint the phish evidence.
+      build_game(phish_scenario)
+      put game_path('sync_state'), params: { clientTs: 1, globalVariables: { 'se_captures' => {
+        'phished' => { 'targetId' => 'phished', 'kind' => 'credential', 'address' => 'other@x.example', 'at' => 1 }
+      } } }, as: :json
+      assert @game.reload.phish_gated_unproven_captures?, 'the phished entry is phish-gated'
+      CaptureHotPathSpy.reset
+      put game_path('sync_state'), params: { clientTs: 2, globalVariables: { 'y' => 1 } }, as: :json
+      assert CaptureHotPathSpy::COUNTS[:phish_evidence_fingerprint] >= 1,
+             'a phish-gated unproven entry still fingerprints the evidence'
     end
 
     # 6b: phish evidence that arrives in a later sync serves the secret and stamps proven: true,

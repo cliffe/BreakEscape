@@ -148,6 +148,46 @@ module BreakEscape
       assert_refused door('records', card_ids: [JAKE_CARD_ID])
     end
 
+    # Branch review R1 case F (SYNC_DELTAS_BUILD_LOG, game 1972): a copy made on pre-branch code
+    # (update_saved_cards, no serverClones record) is listed but, since the branch validates access
+    # against serverClones, would be refused after a reload. Cheat policy q78: access honest play
+    # reached must not be refused. When the server can still confirm the player could have cloned the
+    # card (the holder NPC encountered, a cloner held), the bootstrap backfills a serverClones record.
+    test 'case F: a legacy copy the server can confirm is backfilled and opens its door after a reload' do
+      cloner = CLONER.merge('saved_cards' => [{ 'card_id' => POWER_CARD_ID, 'name' => 'Power room card',
+                                                'rfid_protocol' => 'EM4100' }])
+      build('inventory' => [cloner]) # gary encountered, cloner held, no serverClones record
+      assert_refused door('power_room', card_ids: [POWER_CARD_ID]) # the regression before the bootstrap
+
+      get scenario_game_url(@game) # the branch bootstrap runs
+      assert_response :success
+      record = @game.reload.player_state['serverClones'][POWER_CARD_ID]
+      assert record, 'a serverClones record was backfilled'
+      assert_equal true, record['backfilled']
+      assert record['source'].key?('npc'), 'the source is the confirmed holder the player met'
+      assert_equal [POWER_CARD_ID], stored_cards.map { |c| c['card_id'] }, 'the copy stays listed'
+
+      door('power_room', card_ids: [POWER_CARD_ID])
+      assert_response :success, 'honest access the player reached is restored'
+      assert_includes @game.reload.player_state['unlockedRooms'], 'power_room'
+    end
+
+    # q78, the other direction: a legacy copy the server cannot confirm (the holder was never met and
+    # no keycard object carries the id) is access honest play could never reach, so the bootstrap
+    # drops it from the list rather than mint a record, and it stays refused.
+    test 'case F: a legacy copy of a card the player never met is dropped and stays refused' do
+      cloner = CLONER.merge('saved_cards' => [{ 'card_id' => POWER_CARD_ID, 'name' => 'Power room card',
+                                                'rfid_protocol' => 'EM4100' }])
+      build('inventory' => [cloner], 'encounteredNPCs' => %w[len jake dana]) # gary and imran not met
+
+      get scenario_game_url(@game)
+      assert_response :success
+      @game.reload
+      refute @game.player_state['serverClones'].key?(POWER_CARD_ID), 'no record minted for an unconfirmable copy'
+      refute_includes stored_cards.map { |c| c['card_id'] }, POWER_CARD_ID, 'the unconfirmable copy is dropped'
+      assert_refused door('power_room', card_ids: [POWER_CARD_ID]) # access never honestly reached stays refused
+    end
+
     test 'an access-only door without card_ids is refused' do
       build('inventory' => [keycard_item('jake_spare')])
       assert_refused door('records')
@@ -397,6 +437,10 @@ module BreakEscape
     end
 
     private
+
+    def stored_cards
+      @game.reload.player_state['inventory'].find { |i| i['type'] == 'rfid_cloner' }['saved_cards'] || []
+    end
 
     def keycard_item(id)
       card = AccessModelScenario.routes_scenario['rooms']['lobby']['objects'].find { |o| o['id'] == id }

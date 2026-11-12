@@ -1275,6 +1275,13 @@ figures below are of whole entries.
   and an old tab would have to stay open from before 2026-11-09 across the deploy to hold an account
   holder's secret.
 - Old tabs load the new captures.js when they first capture (6.3), so its exports stay.
+- Accepted (branch review R1, builder 12 live case F, games 1972 and 1977): for the one release an
+  old tab keeps re-sending its whole `globalVariables.se_captures` map on each sync that touches it
+  (up to 4,472 bytes measured), and the server answers each with a `captures` part listing every
+  entry it sent (1,598 to 2,082 bytes). The old client ignores the answer part. The traffic is
+  bounded by the authored capture count, not by play, and stops the moment the tab reloads onto the
+  branch, after which the new client sends no `se_captures`. Within the sync-size rule: the per-sync
+  volume is fixed by authoring and does not grow with play, and it is a transitional one-release cost.
 - The scenario declarations `"se_captures": {}` stay; the client sets the mirror from the bootstrap
   after they are applied.
 - The pagehide flush carries the pending captures in every fallback list, with the sent mail that
