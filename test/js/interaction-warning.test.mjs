@@ -7,7 +7,7 @@
 //     again) only when once is truthy (default true). With once:false a Decline re-shows.
 //   - "answered" persists as the global iw_<id>_answered (survives reload with globalVariables).
 //   - Busy-guard: never opens over a chat or minigame the player is already in.
-//   - gameConfirm's plainText option renders the author text and both labels via textContent.
+//   - gameConfirm renders the author text and both labels via textContent (plain is the default).
 //
 // Run with: bin/test-js test/js/interaction-warning.test.mjs
 import test from 'node:test';
@@ -242,9 +242,18 @@ test('gameConfirm plainText puts author text and labels in via textContent, neve
   assert.equal(lastOverlay.querySelector('.game-confirm-cancel').textContent, 'Leave it');
 });
 
-test('gameConfirm without plainText keeps the legacy innerHTML path (labels interpolated)', () => {
-  gameConfirm('Plain message', 'Yes', 'No');
-  // The non-plainText path renders through the overlay innerHTML template; the message
+test('gameConfirm without any option is plain text too (review R4 M1: plain is the default)', () => {
+  const hostile = 'Open <img src=x onerror=alert(1)> this?';
+  gameConfirm(hostile, 'Yes', 'No');
+  const msg = lastOverlay.querySelector('.game-confirm-message');
+  assert.equal(msg.textContent, hostile);
+  assert.equal(msg.innerHTML, '');
+  assert.doesNotMatch(lastOverlay.innerHTML, /onerror/);
+});
+
+test('gameConfirm with { html: true } keeps the innerHTML path (labels interpolated)', () => {
+  gameConfirm('Plain message', 'Yes', 'No', { html: true });
+  // The html path renders through the overlay innerHTML template; the message
   // node textContent is left untouched.
   assert.equal(lastOverlay.querySelector('.game-confirm-message').textContent, '');
   assert.match(lastOverlay.innerHTML, /Plain message/);

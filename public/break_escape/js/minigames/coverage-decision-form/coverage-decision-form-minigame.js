@@ -7,13 +7,19 @@ const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => (
 
 // Scenario text for this document is plain text with a small, deliberate
 // formatting set: character entities (&mdash; &rsquo; &#10003;) and the bare
-// tags <strong> <em> <b> <i> <br>. Everything is escaped first, then only those
-// exact forms are put back, so no other tag or any attribute can get through.
+// tags <strong> <em> <b> <i> <br>, in any letter case. Everything is escaped
+// first, then only those exact forms are put back, so no other tag or any
+// attribute can get through. Tags are restored before entities, so an authored
+// &lt;b&gt; stays literal text, and only as matched pairs (one level of nesting),
+// so a stray or unclosed tag shows as text instead of restyling what follows.
+const AUTHOR_PAIR = /&lt;(strong|em|b|i)&gt;((?:(?!&lt;\/?(?:strong|em|b|i)&gt;)[\s\S])*?)&lt;\/\1&gt;/gi;
 function authorHtml(value) {
-    return escapeHtml(displayDashes(String(value ?? '')))
-        .replace(/&amp;(#\d{1,7}|#x[0-9a-fA-F]{1,6}|[a-zA-Z][a-zA-Z0-9]{1,31});/g, '&$1;')
-        .replace(/&lt;(\/?)(strong|em|b|i)&gt;/g, '<$1$2>')
-        .replace(/&lt;br\s*\/?&gt;/g, '<br>');
+    let html = escapeHtml(displayDashes(String(value ?? '')));
+    const pairs = (s) => s.replace(AUTHOR_PAIR, (m, tag, inner) => `<${tag.toLowerCase()}>${inner}</${tag.toLowerCase()}>`);
+    html = pairs(pairs(html));
+    return html
+        .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+        .replace(/&amp;(#\d{1,7}|#x[0-9a-fA-F]{1,6}|[a-zA-Z][a-zA-Z0-9]{1,31});/g, '&$1;');
 }
 
 /**
@@ -89,7 +95,9 @@ export class CoverageDecisionFormMinigame extends MinigameScene {
     // ── Layout ───────────────────────────────────────────────────────────────
 
     _renderLayout() {
-        // HTML: each scenario part goes through authorHtml once
+        // HTML: each scenario part goes through authorHtml once. headerSub and badge are
+        // finished HTML (escaped parts joined by literal &mdash; and &#10003;): insert them
+        // as they are, never through authorHtml or escapeHtml again.
         const headerSub = [
             'Meridian Cyber Insurance',
             this._headerRef   ? `Policy Ref: ${authorHtml(this._headerRef)}`       : null,

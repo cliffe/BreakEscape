@@ -13,38 +13,55 @@ const RICH_TAGS = new Set(['STRONG', 'P', 'BR', 'CODE']);
 const RICH_STYLE_TAGS = new Set(['STRONG', 'P']);
 const RICH_DROP = new Set(['SCRIPT', 'STYLE', 'TEMPLATE', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH',
     'NOSCRIPT', 'TEXTAREA', 'TITLE', 'XMP', 'NOEMBED', 'NOFRAMES', 'SELECT']);
-// A plain declaration list: no url(), expression(), @import, escapes or markup.
-const SAFE_STYLE = /^[\w\s#%.,:;()-]*$/;
+// A plain declaration value: no url(), expression(), @import, escapes or markup.
+const SAFE_STYLE = /^[\w\s#%.,()-]*$/;
 const UNSAFE_STYLE = /url\s*\(|expression|@import|javascript:/i;
+// Only text styling and spacing: nothing that positions, sizes or layers a block, so a
+// scenario style cannot cover the game (position:fixed, z-index, width:100%).
+const SAFE_STYLE_PROPS = /^(color|background-color|font-weight|font-style|font-size|text-decoration|text-align|(margin|padding)(-(top|right|bottom|left))?)$/;
 
-function cleanRich(node) {
+// A style attribute value with only allow-listed properties and safe values kept, or ''.
+export function cleanStyle(value) {
+    return String(value ?? '').split(';').map((decl) => {
+        const at = decl.indexOf(':');
+        if (at < 0) return null;
+        const prop = decl.slice(0, at).trim().toLowerCase();
+        const val = decl.slice(at + 1).trim();
+        if (!SAFE_STYLE_PROPS.test(prop) || !val || !SAFE_STYLE.test(val) || UNSAFE_STYLE.test(val)) return null;
+        return `${prop}:${val}`;
+    }).filter(Boolean).join(';');
+}
+
+// insideP: a <p> already holds this content, so a nested <p> is unwrapped (a <p> in a <p>
+// re-parses into sibling paragraphs and an empty one).
+function cleanRich(node, insideP = false) {
     for (const child of [...node.childNodes]) {
         if (child.nodeType === 3) continue;                    // text
         if (child.nodeType !== 1) { child.remove(); continue; } // comments and the rest
         const tag = child.tagName.toUpperCase();
         if (RICH_DROP.has(tag)) { child.remove(); continue; }
-        cleanRich(child);
-        if (!RICH_TAGS.has(tag)) { child.replaceWith(...child.childNodes); continue; }
+        cleanRich(child, insideP || tag === 'P');
+        if (!RICH_TAGS.has(tag) || (tag === 'P' && insideP)) { child.replaceWith(...child.childNodes); continue; }
         for (const attr of [...child.attributes]) {
-            const keep = attr.name === 'style' && RICH_STYLE_TAGS.has(tag)
-                && SAFE_STYLE.test(attr.value) && !UNSAFE_STYLE.test(attr.value);
-            if (!keep) child.removeAttribute(attr.name);
+            const style = attr.name === 'style' && RICH_STYLE_TAGS.has(tag) ? cleanStyle(attr.value) : '';
+            if (style) child.setAttribute('style', style);
+            else child.removeAttribute(attr.name);
         }
     }
 }
 
-export function sanitizeRich(value) {
+export function sanitizeRich(value, { insideP = false } = {}) {
     // No DOM to parse with (a bare node test): fail closed, as plain text
     if (typeof document === 'undefined') return escapeTitle(value);
     const tpl = document.createElement('template');
     tpl.innerHTML = String(value ?? '');
-    cleanRich(tpl.content);
+    cleanRich(tpl.content, insideP);
     const box = document.createElement('div');
     box.appendChild(tpl.content);
     return box.innerHTML;
 }
 
-const rich = (value) => sanitizeRich(displayDashes(value));
+const rich = (value, opts) => sanitizeRich(displayDashes(value), opts);
 const plain = (value) => escapeTitle(displayDashes(value));
 
 /**
@@ -141,7 +158,9 @@ function _renderCallout(block) {
     const cls       = CSS_CLASS[block.style] || 'fdp-evidence-gap';
     const titleCls  = TITLE_CLASS[block.style];
     const titleHtml = (block.title && titleCls) ? `<div class="${titleCls}">${rich(block.title)}</div>` : '';
-    const extraStyle = block.style2 ? ` style="${escapeTitle(block.style2)}"` : '';
+    // style2 goes through the same property allow-list as a style inside the rich text
+    const style2 = block.style2 ? cleanStyle(block.style2) : '';
+    const extraStyle = style2 ? ` style="${escapeTitle(style2)}"` : '';
     return `<div class="${cls}"${extraStyle}>${titleHtml}${rich(block.body)}</div>`;
 }
 
@@ -149,7 +168,7 @@ function _renderBlocks(blocks, globals) {
     return blocks.map(block => {
         if (block.showIf && !globals[block.showIf]) return '';
         switch (block.type) {
-            case 'p':                return `<p>${rich(block.html)}</p>`;
+            case 'p':                return `<p>${rich(block.html, { insideP: true })}</p>`;
             case 'timeline':        return _renderTimeline(block.steps);
             case 'log-table':       return _renderLogTable(block);
             case 'setpoint-table':  return _renderSetpointTable(block);

@@ -184,6 +184,41 @@ test('NCSC brief: the scenario formatting set still works (entities, strong, br)
     assert.ok(document.querySelector('.ncsc-section p').textContent.includes('– not more <strong onclick="x">no'), "an unlisted form stays text");
 });
 
+// Review R4 m1 and n1: entity-encoded tags stay literal, tags restore only as pairs, any case
+test('NCSC brief: an entity-encoded tag stays text and a stray tag cannot restyle what follows', () => {
+    const mg = brief({
+        briefMeta: 'Shown as &lt;b&gt;x&lt;/b&gt;',
+        sections: [
+            { type: 'section', title: 'One', body: 'Open <i>italic and <b onclick=1>bad</b> then <BR> and <Strong>Bold</Strong>' },
+            { type: 'section', title: 'Two', body: 'After <b><i>both</i></b>' }
+        ]
+    });
+    mg._renderContent();
+    assertClean('stray tags');
+    const meta = document.querySelector('.ncsc-brief-meta');
+    assert.equal(meta.querySelector('b'), null, 'no real <b> from &lt;b&gt;');
+    assert.equal(meta.textContent, 'Shown as <b>x</b>');
+    const [one, two] = document.querySelectorAll('.ncsc-section p');
+    assert.equal(one.querySelector('i'), null, 'an unclosed <i> stays text');
+    assert.equal(one.querySelectorAll('b').length, 0, 'a </b> without its own opening tag stays text');
+    assert.ok(one.textContent.includes('<i>italic and <b onclick=1>bad</b>'), one.textContent);
+    assert.equal(one.querySelectorAll('br').length, 1, 'upper-case <BR> works');
+    assert.equal(one.querySelector('strong')?.textContent, 'Bold', 'mixed-case <Strong> pair works, lower case out');
+    assert.equal(two.closest('i, b'), null, 'the next section is not inside a carried-over tag');
+    assert.equal(two.querySelector('b > i')?.textContent, 'both', 'one level of nesting is restored');
+});
+
+test('coverage decision form: an entity-encoded tag stays text and a stray tag stays text', () => {
+    const md = { headerRef: 'MC-007', sections: [{ id: 's1', title: 'Show &lt;em&gt;this&lt;/em&gt;', description: 'Open <em>never closed', options: [{ value: 'A1', label: '<b>A1</b> ok' }] }] };
+    const mg = new CoverageDecisionFormMinigame(fresh(), lockable(md));
+    quietly(() => mg.init());
+    assert.equal(document.querySelector('.cdf-section-title').textContent, 'Show <em>this</em>');
+    assert.equal(document.querySelector('.cdf-section-title em'), null);
+    assert.equal(document.querySelector('.cdf-section-desc em'), null);
+    assert.equal(document.querySelector('.cdf-section-desc').textContent, 'Open <em>never closed');
+    assert.equal(document.querySelector('.cdf-radio-row b')?.textContent, 'A1');
+});
+
 test('coverage decision form: every field renders as text, ids and values stay inside attributes', () => {
     const md = {
         headerRef: HOSTILE, claimsManager: HOSTILE, formTitle: HOSTILE, outcomeSpeaker: HOSTILE,

@@ -14,7 +14,8 @@ import { JSDOM } from 'jsdom';
 for (const k of ['log', 'info', 'debug', 'warn', 'error']) console[k] = () => {};
 
 const here = dirname(fileURLToPath(import.meta.url));
-const js = join(here, '../../public/break_escape/js');
+// SWEEP_JS_ROOT points at a copy of the engine (used to show the tests fail on old code)
+const js = process.env.SWEEP_JS_ROOT || join(here, '../../public/break_escape/js');
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
@@ -93,7 +94,7 @@ test('forensic platform: block content keeps the allowed markup and drops the re
     assertText(root.querySelector('#fdp-confirm-hint'), 'forensic confirm hint');
     const panel = root.querySelector('#fdp-panel');
     assert.ok(panel.textContent.includes('bold'), 'unwrapped tag keeps its text');
-    assert.equal(panel.querySelector('.fdp-evidence-gap').getAttribute('style'), ATTR, 'style2 stays inside its attribute');
+    assert.equal(panel.querySelector('.fdp-evidence-gap').hasAttribute('style'), false, 'a style2 with no allowed declaration is dropped');
     const strong = [...panel.querySelectorAll('strong')].find(s => s.textContent === 'Red');
     assert.ok(strong, 'author <strong> still renders');
     assert.equal(strong.getAttribute('style'), 'color:#f85149', 'its style is kept');
@@ -112,6 +113,45 @@ test('forensic allow-list: handlers, script, links and unsafe styles go', () => 
     assert.equal(box.querySelector('strong').hasAttribute('style'), false, 'a url() style is dropped');
     assert.equal(box.querySelector('p').getAttribute('style'), 'color:red', 'a plain style is kept');
     assert.equal(box.textContent, 'alinkok');
+});
+
+// Review R4 m2: styles keep only text styling and spacing, in the rich text and in style2
+const OVERLAY = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:#000';
+
+test('forensic allow-list: an overlay style is cut down to its allowed properties', () => {
+    const box = document.createElement('div');
+    box.innerHTML = sanitizeRich(`<strong style="${OVERLAY};color:#f85149">a</strong><p style="${OVERLAY}">b</p>`);
+    assert.equal(box.querySelector('strong').getAttribute('style'), 'color:#f85149', 'only color survives');
+    assert.equal(box.querySelector('p').hasAttribute('style'), false, 'nothing allowed: the style goes');
+    assert.equal(box.querySelector('[style*="position"], [style*="z-index"], [style*="width"]'), null);
+});
+
+test('forensic callout: style2 goes through the same allow-list', () => {
+    const tabs = [{ id: 'tab1', label: 'T', heading: 'H', blocks: [
+        { type: 'callout', style: 'evidence-gap', style2: `${OVERLAY};margin-top:10px`, title: 't', body: 'b' },
+        { type: 'callout', style: 'evidence-gap', style2: 'background:url(https://example.invalid/x.png)', title: 't', body: 'b' }
+    ] }];
+    const mg = new ForensicDataPlatformMinigame(fresh(), { tabs });
+    initQuietly(mg);
+    mg._renderTabContent('tab1');
+    const callouts = document.querySelectorAll('#fdp-panel .fdp-evidence-gap');
+    assert.equal(callouts[0].getAttribute('style'), 'margin-top:10px', 'sis03 margin kept, overlay dropped');
+    assert.equal(callouts[1].hasAttribute('style'), false, 'a url() background is dropped');
+});
+
+test('forensic p block: an authored <p> inside it is unwrapped, so the output is stable when re-parsed', () => {
+    const tabs = [{ id: 'tab1', label: 'T', heading: 'H', blocks: [
+        { type: 'p', html: '<p>one</p><p><button><p>two</p></button></p>' }
+    ] }];
+    const mg = new ForensicDataPlatformMinigame(fresh(), { tabs });
+    initQuietly(mg);
+    mg._renderTabContent('tab1');
+    const panel = document.getElementById('fdp-panel');
+    const before = panel.innerHTML;
+    assert.equal(panel.querySelectorAll('p').length, 1, 'one paragraph, no empty siblings');
+    assert.equal(panel.querySelector('p').textContent, 'onetwo');
+    panel.innerHTML = before;
+    assert.equal(panel.innerHTML, before, 're-parsing gives the same markup');
 });
 
 test('network architecture: SVG labels, attributes and the detail panel are text', () => {
