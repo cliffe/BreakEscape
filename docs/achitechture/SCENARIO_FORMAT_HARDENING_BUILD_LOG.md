@@ -267,7 +267,50 @@ Checks after the fixes:
 - Corpus: all 177 `scenarios/*/scenario.json.erb`, ink on, `--no-graph`, the default list, 6 in parallel, under the test lock: every one exits 0; 81 errors, 81 known (unchanged); the same 13 scenarios print a `❌`; no `unknown key`, `could not run` or stale line; m01 to m10 each 0 `❌`; `git status` clean.
 - Node tests, under the test lock, `RBENV_VERSION=2.7.8`, plain `node`, 3 at a time: the 82 `test/js` files that load `validate_scenario.rb`, `validate_npc_habits`, `validate_npc_needs` or another `scripts/validate` path: 1257 pass, 0 fail, every file exit 0 (`validator-strict-keys` has 15 tests). No Ruby test file was touched.
 
+## Step 2b. Author notes are not live
+
+Date: 2026-11-12. Branch `build/harden-2b`, made from main 35993ec89 (steps 1 and 2 merged at 406fa7791, plus the plan commits). This section records a partial build: the self-contained schema resolver and notes helper are built and unit-tested; the live wiring (schema marks, server walkers, payload strips, boot check, validator migration) and the live proof are not yet done and are specified below for the next worker.
+
+### Done and tested (commit 732f41433)
+
+- **`lib/break_escape/scenario_schema.rb`** (`BreakEscape::ScenarioSchema`), plain Ruby (`json` only). The resolver the plan's item 1 calls for, as module functions over a `Node`:
+  - `load(path, starts: STARTS)` parses a schema file, compiles a `Table`, and checks every start the file holds (raising with the pointer on a missing file, an unparsable file, or a broken `$ref` at a start). `root` loads `DEFAULT_PATH` on first use under a Mutex; `at(pointer)` raises `ArgumentError` on a pointer not in `STARTS`. `boot_check!(app, path:)` loads under `eager_load` and installs the process table for the default path, else no-ops.
+  - `child(node, key)`, `item(node)`, `id_key?(node, key)`, `free?(node)`, `classify(node, key)` implement rules 1-4 (property / id / free / undeclared), the map test (`additionalProperties` a schema, or `x-id-map: true`), the free test (`x-free-data: true`), and the "a map branch's `patternProperties` are never consulted" rule. `FREE` is the sentinel; `child`/`item` of `FREE` are `FREE`; nil passes through.
+  - `STARTS` currently holds `#`, `#/definitions/room`, `#/definitions/item`, `#/definitions/item/properties/contents`, `#/definitions/npc/properties/eventMappings`, `#/definitions/eventMapping`. Extend it as walkers/strips are wired (the plan names more: the player_state item copies start at `#/definitions/item`).
+- **`lib/break_escape/author_notes.rb`** (`BreakEscape::AuthorNotes`): `note?(node, key)`, `each_live(data, node, prune:, free:)` and `strip_notes!(obj, node)` exactly as the plan's items 1 (the calls), 2 and 3 describe. `strip_notes!` returns its argument.
+- **Tests.** `test/unit/author_notes_test.rb` (17 runs, 55 assertions, all pass under `RBENV_VERSION=2.7.8 ruby test/unit/author_notes_test.rb`) with `test/fixtures/files/author_notes_schema.json`, covering every classification case the plan's unit list names: a `_` property and `^_` pattern note; a `_` room id, `_` global name (`x-id-map: true`, open value -> nil child), `_` need id; a `_` note inside a `_` room's object; `x-id-map: false` note; free data never a note with `FREE` children (direct and two levels down); a map-with-properties node (`byChoice` property beside `_` ids); a character id; a patterned map key (pattern ignored); a typed branch beside a free branch; a key under nil; `strip_notes!` (notes gone, free data and ids kept, returns its argument); `each_live` (free visited, notes skipped, `free: :skip` prunes the free subtree); `at` STARTS restriction; `load` on a broken `$ref` and a missing file. Smoke-checked against the real `scripts/scenario-schema.json`: `root` loads, `at('#/definitions/room')` and `child`/`item`/`id_key?`/`note?` behave.
+
+### Deliberate design note (flag for review)
+
+The plan's item 1 describes an eager compile into a frozen table of about 2,540 interned Nodes, used both at run time and by the schema-walk test (Explore/Reach). This build instead resolves lazily, data-driven: each walker holds a Node and asks `child`/`item` as it descends over finite data, so the schema is never traversed without data to bound it. This is behaviourally equivalent for every walker and strip (the resolver gives the same note/id/free answer per location), and it sidesteps the interning-by-location-set machinery. The cost: the resolver does not itself enumerate every schema Node, so the **schema-walk test's Explore/Reach parts (the ~2,540-node and 94-map-location counts) are not implemented yet** and must be written as part of the remaining work, either by adding an eager compile to `Table` or by driving the walk from the schema with a probe (the plan's Explore already describes a data-driven probe). The marks-check (part 4), the run-time-walk probe (part 3), the parent-name fixture (part 5) and the corpus check (part 6) can all run against the lazy resolver.
+
+### NOT DONE (remaining step 2b work, in plan order)
+
+1. **Schema marks** (plan item 1, "Open nodes carry a mark", and item 6): add `x-id-map: true` (21 nodes), `x-id-map: false` (15), `x-free-data: true` (15); close the 2 extra nodes (`timers` entries gain an `actions` list with `item` `#/definitions/item`; `emailRecord.itemsHeld` gains `items`); **remove the 18 `^_` patterns from map nodes** (lines listed by `grep -n '"\^_"' scripts/scenario-schema.json`; the plan names them). Take the final lists from the schema-walk test's output on this main. Until this is done, `free?` is false everywhere on the real schema, so free-data `_` keys would be treated as notes by the live wiring: **the marks must land with, or before, the walkers and strips.**
+2. **Walkers skip notes** (item 2): `NetworkModel.grant_foothold_actions`, `DeclaredGrants.collect`, `WearableModel.wearable_items` and `.global_writers`, `OwnerClaim.scenario_objects` and `.mappings`, `Game#merge_biometric_samples!`' known-owner walk, the capture-writer callers (item 5), `scripts/validate_network.rb`'s `gf_walk`, and the validator's grant walker. Each carries a Node and skips `note?` keys, visits free data in full.
+3. **Notes never ship** (item 3): `AuthorNotes.strip_notes!` at the bootstrap (`games_controller.rb:278` area, on `filtered` before player-state keys), `command_board_config`, `filtered_room_data`, `filter_container_contents`, and the `filter_inventory_for_client!` entry points (`item_for_answer`, inventory list). The route audit (grep every `render json:` in `app/controllers/break_escape/`).
+4. **Capture writers** (item 5): `CaptureModel.each_capture_writer(data, notes: :skip)` plus the `enum_for` keyword fix; the seven callers keep `:skip`.
+5. **Validator migration** (item 1 "The validator's own resolution"): replace `schema_deref`/`schema_resolve`/`schema_map_value`/`schema_node_keys` with `ScenarioSchema` in the grant walker, `schema_known_keys` and the step 2 unknown-key formatter; keep step 2's node tests green.
+6. **The `_`-skip-by-name audit** (item 6): move/keep each `start_with?('_')` site in `scripts/validate_*` and `lib/break_escape/npc_habits/clues.rb` per the plan's move/keep lists; re-grep on this main and record any that move sides.
+7. **Boot initializer**: `initializer 'break_escape.scenario_schema'` in `engine.rb` calling `boot_check!`; the Rails unit boot-check test.
+8. **The action-in-a-note validator warning** (item 7) and **README** schema-section update (item 8).
+9. **Tests**: the Rails tests (implant note/first-match, plant, granted-item, free-data-honoured, biometric/wearable/owner, captures, notes-never-ship per route, guards, free-data guards); the schema-walk test; the node grant-walker agreement test; the corpus checks (grants/captures/leave_route/global_writers before-after identical; `_` keys under nil; bootstrap sizes/time).
+10. **Live proof** (keyless server on port 3270, `swap-scenario-game.rb`, `scenarios/test_author_notes/`, `_annex` room and a `_draft` grant; `verify-run.rb`): still to do.
+
+### Audit outcome
+
+Not started (item 6 grep and the move/keep classification against the resolver). To record here when done.
+
 ## Handover
+
+### Step 2b (build/harden-2b) handover
+
+- **Done:** the schema resolver and notes helper (`lib/break_escape/scenario_schema.rb`, `lib/break_escape/author_notes.rb`), their unit tests (`test/unit/author_notes_test.rb`, `test/fixtures/files/author_notes_schema.json`), committed at 732f41433, and this log section. 17/17 unit tests pass; the resolver was smoke-checked against the real schema.
+- **In progress:** none.
+- **Open:** everything under "NOT DONE" above (schema marks, walkers, strips, capture writers, validator migration, `_`-skip audit, boot init, the action-in-a-note warning, README, the Rails/schema-walk/node/corpus tests, and the live proof). The marks must land with or before the walkers and strips, or free-data `_` keys will be mis-treated as notes on the real schema.
+- **Files touched:** the four above plus this log.
+- **Commits:** 732f41433 (lib + tests), plus the commit holding this log section.
+- **Gotchas:** (1) the eager-compiled Node table and the schema-walk test's Explore/Reach counts are not built; the lazy resolver is behaviourally equivalent but does not enumerate Nodes (see "Deliberate design note"); flag for the orchestrator. (2) `STARTS` must grow as new `at` pointers are introduced, or `at` raises. (3) The boot initializer was deliberately left out so this commit stays inert (no live route requires the new files yet); adding it changes boot-time behaviour under `eager_load`. (4) Full Rails/JS suites not run (test-lock congestion rule); only the pure-Ruby unit file was run.
 
 Step 1 is done; nothing in progress. Commits on `build/harden-step1`: 22e29b9db (validator, list, decisions, fixtures), 42795f922 (tests), and the commit holding this log and the README edits.
 
