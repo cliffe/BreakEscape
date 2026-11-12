@@ -3752,6 +3752,8 @@ export class NPCNeedsSystem {
         const st = this.world.npcStatus(s.npcId) || {};
         if (st.ko || st.hostile || st.hidden) return false;
         if (s.mode === 'idle' || s.mode === 'returning') return true;   // returning at its post: the own-desk tick
+        // Access 9.2 C (review R1 m5): an owner on its own phone (a `self` job) does not answer its
+        // desk phone; a colleague is claimed or it rings out (NPC_NEEDS_SYSTEM.md 5.10)
         return s.mode === 'job' && this._atOwnPost(s) && s.job.phase === 'using';
     }
 

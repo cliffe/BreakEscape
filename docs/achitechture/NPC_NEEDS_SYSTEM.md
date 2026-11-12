@@ -831,7 +831,14 @@ Author-facing rules are in `README_scenario_design.md`, "Work, frustration and w
   `npc_used_phone:<npcId>`; no `npc_used` (there is no object).
 - **Distracted.** While a `self` job runs, `isDistracted(id)` and `getState().distracted` are
   true; `systems/npc-sight-challenge.js` skips that NPC, so a guard on his phone can be walked
-  past once a period of the need. `seating.js` keeps a seated phone user seated.
+  past once a period of the need. `seating.js` keeps a seated phone user at its post seated; one
+  away from its post stands where it stopped (no stop, so it never takes a chair it was passing).
+- **The desk phone.** An owner on its own phone does not answer its desk phone (slice 19,
+  `_ownerCanAnswer` takes only an idle owner or one using its own desk): a colleague is claimed,
+  or the phone rings out. The phone use runs on.
+- **The own workstation with no affordance.** The engine adapter lists the `needsHome` desk of
+  an NPC with a `social_media` need even when it has no `affordance` (it gets an empty one), so
+  it is a source in the browser as on the server and in the validator.
 - **The feed.** Each met `social_media` use (an `npc_used` with `met: true`, or `npc_used_phone`)
   asks the server for the NPC's next post (`systems/social-feed.js`, `POST /feed_post`); the needs
   system itself knows nothing of posts.

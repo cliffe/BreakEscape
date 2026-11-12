@@ -213,6 +213,8 @@ test('seating keeps a phone user at its post seated; the icon is npc-social', as
     window.npcManager = { getNPC: () => ({ needsHome: 'jake_pc' }) };
     try {
         assert.deepEqual(needsStop(ns), { key: 'at:jake_pc', targetId: 'jake_pc', post: true });
+        // Review C R1 m1: a phone use away from the post is no stop, so no chair it passes is taken
+        assert.equal(needsStop({ ...ns, atPost: false }), null);
     } finally { window.npcManager = prev; }
     assert.equal(pickIconEntry(ns.job, {}, null).key, 'social');
     assert.equal(pickIconEntry({ kind: 'use', need: 'social_media', targetId: 'jake_pc' }, {}, { id: 'jake_pc', satisfies: 'work' }).key, 'social');
@@ -281,4 +283,30 @@ test('review C R1 m3: the adapter marks a no-social PC socialBlocked and its ver
     const lax = engineObjects({ affordance: { satisfies: 'work' } });
     assert.equal(lax.list[0].socialBlocked, undefined);
     assert.equal(lax.verdict.met, true);
+});
+
+test('review C R1 m2: a phone use clears a shown barrier and a shown workaround icon, as any job does', () => {
+    const { sys } = socialWorld();
+    sys.registerAll();
+    sys.step(250);
+    const s = sys.states.get('jake');
+    s.failedShow = { need: 'social_media', missing: [{ id: 'jake_pc', why: 'social_blocked' }], until: sys.clockMs + 60000 };
+    s.workaroundShow = { until: sys.clockMs + 60000 };
+    assert.ok(sys.getState('jake').failed, 'the barrier shows');
+    assert.equal(sys.getState('jake').workaround, true);
+    sys._startJob(s, { kind: 'self', need: 'social_media', targetId: null });
+    const st = sys.getState('jake');
+    assert.equal(st.job?.kind, 'self');
+    assert.equal(st.failed, null);
+    assert.equal(st.workaround, false);
+});
+
+test('review C R1 m5: an owner on its own phone does not answer its desk phone; idle at its post it does', () => {
+    const { sys } = socialWorld();
+    sys.registerAll();
+    assert.ok(stepUntil(sys, () => sys.getState('jake').job?.kind === 'self' && sys.getState('jake').atPost === true, 30000));
+    const s = sys.states.get('jake');
+    assert.equal(sys._ownerCanAnswer(s), false);
+    assert.ok(stepUntil(sys, () => sys.getState('jake').mode === 'idle' && sys.getState('jake').atPost === true, 30000));
+    assert.equal(sys._ownerCanAnswer(s), true);
 });
