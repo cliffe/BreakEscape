@@ -234,6 +234,36 @@ module NetworkModelScenario
     data
   end
 
+  # Slice 9.3b sub-slice O: the pivot fixture with server_net carrying a downIf global,
+  # down by default (servers_offline true). A repair sets the global false. The player side
+  # of the resource downIf is exercised by backup_vault_down, an open share on office_lan
+  # whose own service can be switched off while its network stays up.
+  OUTAGE_GLOBAL = 'servers_offline'.freeze
+  RESOURCE_OUTAGE_GLOBAL = 'archive_offline'.freeze
+  OUTAGE_SHARE_NAME = 'Archive-Down'.freeze
+  OUTAGE_SHARE_TEXT = 'ARCHIVE-DOWN-TEXT-5529'.freeze
+
+  def with_outage(down: true)
+    data = with_pivot
+    data['networks']['server_net']['downIf'] = OUTAGE_GLOBAL
+    data['globalVariables'] = (data['globalVariables'] || {}).merge(OUTAGE_GLOBAL => down)
+    data
+  end
+
+  # A resource whose own downIf takes its service off while its network (office_lan) stays
+  # up: an open share listing contents, down while archive_offline is truthy.
+  def with_resource_outage(down: true)
+    data = scenario
+    data['resources']['archive_down'] = {
+      'kind' => 'file_share', 'name' => OUTAGE_SHARE_NAME, 'host' => FS_HOST, 'network' => 'office_lan',
+      'downIf' => RESOURCE_OUTAGE_GLOBAL,
+      'contents' => [{ 'id' => 'archive_note', 'type' => 'text_file', 'name' => 'archive_readme.txt',
+                       'takeable' => true, 'text' => OUTAGE_SHARE_TEXT }]
+    }
+    data['globalVariables'] = (data['globalVariables'] || {}).merge(RESOURCE_OUTAGE_GLOBAL => down)
+    data
+  end
+
   # Port security message on the secured jack (sub-slice P, 5.4).
   PORT_SECURITY_MESSAGE = 'The switch logs the device address and shuts the port. Known machines only.'.freeze
 
@@ -327,6 +357,18 @@ module NetworkRequests
 
   def container(id, foothold: nil)
     get game_path("container/#{id}"), params: foothold ? { foothold: foothold } : {}, as: :json
+    response.parsed_body
+  end
+
+  # A hostile client sync: PUT /sync_state carrying globalVariables straight from the request,
+  # the real route a tampered client would use to try to clear an outage global.
+  def sync_globals(globals)
+    put game_path('sync_state'), params: { globalVariables: globals }, as: :json
+    response.parsed_body
+  end
+
+  def bootstrap_scenario
+    get game_path('scenario'), as: :json
     response.parsed_body
   end
 

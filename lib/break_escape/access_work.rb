@@ -378,8 +378,10 @@ module BreakEscape
     # arguments. `globals` is player globals merged over the scenario defaults by key presence;
     # `lockout_keys` is player_state.loginLockouts, pre-gated by the per-NPC check record (empty
     # when no check holds), so a `locked_out` cause matches only behind the record.
+    # Delegates to NetworkModel.truthy?, the single Ruby truthy source, so frustration, the feed
+    # and outages read a global's truthiness one way.
     def truthy_global?(value)
-      !(value.nil? || value == false || value == 0 || value == '')
+      NetworkModel.truthy?(value)
     end
 
     def globals_hold?(cond, globals)

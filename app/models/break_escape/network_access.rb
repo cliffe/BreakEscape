@@ -660,7 +660,10 @@ module BreakEscape
     # The rows of a network's view: each sign-in host, then each resource, each sorted by id.
     def network_rows(network_id)
       hosts = NetworkModel.sign_in_objects_on(network_id, scenario_data).map { |entry| host_row(entry[:object]) }
-      hosts + NetworkModel.resources_on(network_id, scenario_data).map { |id, resource| resource_row(id, resource) }
+      # A resource whose own downIf is truthy is withheld while down (5.2), as a resource on a
+      # down network is: its row leaves the view until the global clears.
+      resources = NetworkModel.resources_on(network_id, scenario_data).reject { |_id, resource| resource_down?(resource) }
+      hosts + resources.map { |id, resource| resource_row(id, resource) }
     end
 
     # A sign-in PC's label on the network (3.2).
@@ -722,10 +725,71 @@ module BreakEscape
     # Links and the pivot (slice 9.3b sub-slice K; sections 4.1 and 5.1)
     # ==========================================
 
-    # Is a network's route up now (5.1)? In sub-slice K there are no outages, so every
-    # network is always up; sub-slice O reads the network's downIf global here.
-    def network_up?(_network_id)
-      true
+    # Is a network's route up now (5.1, 5.2)? A network with no downIf is always up.
+    # Otherwise the network is down while its downIf global is truthy (NetworkModel.truthy?).
+    # The global is read from server state (player_state, falling back to the scenario's
+    # declared default), never from a parameter in this access call, so the server decides the
+    # route from its own view rather than from a value the request carries.
+    #
+    # The outage global is itself client-published: plan 5.2 has the browser sync it, so a
+    # tampered client CAN clear it (merge_global_variables! does not protect it, by design).
+    # An outage alone is therefore not a security boundary, only a soft gate. Clearing it buys
+    # nothing a boundary would stop: a down-by-default network nobody has reached stays absent
+    # and unnamed because reach still needs a server-held foothold or session, and a host
+    # brought back into reach still demands its own password or ACL. validate_network.rb warns
+    # that a secret which must not be read early needs an account-gated share or a session, not
+    # an outage. network_outages_test's N5 cases drive the hostile sync and prove this.
+    def network_up?(network_id)
+      return true unless NetworkModel.present_string?(network_id)
+
+      net = NetworkModel.networks(scenario_data)[network_id]
+      down_if = net.is_a?(Hash) ? net['downIf'] : nil
+      return true unless NetworkModel.present_string?(down_if)
+
+      !NetworkModel.truthy?(outage_global(down_if))
+    end
+
+    # A resource whose own downIf is truthy (5.2, the player side of 9.2's resource downIf):
+    # its own service is off, so it is withheld from the view and never served, exactly as a
+    # resource on a down network is. A resource with no downIf is never down. 9.2 owns the NPC
+    # side of a resource outage; this reads the same field for the player.
+    def resource_down?(resource)
+      down_if = resource.is_a?(Hash) ? resource['downIf'] : nil
+      return false unless NetworkModel.present_string?(down_if)
+
+      NetworkModel.truthy?(outage_global(down_if))
+    end
+
+    # A global's current value for an outage test (5.2). Delegates to Game#global_variable_value,
+    # the shared globals reader; npc_frustration.rb#frustration_globals applies the same
+    # key-presence merge for NPC frustration, so both read the same server state.
+    def outage_global(name)
+      global_variable_value(name)
+    end
+
+    # The scoped-request route test (5.2), judged from the server's own session record, never
+    # a client-sent foothold. A scoped request (a folder under a desktop, an inventory add, an
+    # unlock) under a remote session (its sessions[pc] carries a foothold) is allowed only
+    # while that PC is in the player_reach of that foothold, so a lost pivot or an outage over
+    # the route is caught though the session record survives. A local session (blank foothold:
+    # a local sign-in, a claim, or a remote session settled at the keyboard) is judged as 9.3a
+    # did, so no 9.3a scenario (which has no footholds) gains a refusal.
+    def session_route_up?(pc_id)
+      session = access_sessions[pc_id.to_s]
+      return true unless session.is_a?(Hash)
+
+      fid = session['foothold']
+      return true if fid.blank?
+      return false unless network_footholds.key?(fid.to_s)
+
+      info = find_login_pc(pc_id)
+      net = info ? object_network(info[:object]) : nil
+      # A deliberate deny when the PC cannot be resolved (info nil) or has no network (net nil):
+      # a session whose host the server can no longer place is treated as off-route rather than
+      # trusted. This is the safe default; a future change that makes a legitimately reachable
+      # remote PC momentarily unresolvable would silently deny a held session here, so the
+      # happy path (a present, reachable PC passing) is covered by a test in network_outages_test.
+      !net.nil? && player_reach(fid.to_s).include?(net)
     end
 
     # What a foothold could reach if nothing were down (5.1): start from the foothold's own
@@ -882,6 +946,9 @@ module BreakEscape
       return false unless resource.is_a?(Hash)
       # A listed-only share has nothing to serve, so GET /container answers "not found"
       return false if NetworkModel.listed_only_share?(resource)
+      # A resource whose own downIf is truthy is off (5.2): not served, like one on a down
+      # network. network_up? below also refuses a resource on a down network (player_reach).
+      return false if resource_down?(resource)
 
       network = resource['network']
       return false unless NetworkModel.present_string?(network)
@@ -932,6 +999,8 @@ module BreakEscape
       networks_reachable_from(network).each do |net|
         NetworkModel.resources_on(net, scenario_data).each do |id, resource|
           next unless resource['kind'] == 'file_share' && !NetworkModel.listed_only_share?(resource)
+          # A share whose own downIf is truthy is off (5.2): not mapped while down.
+          next if resource_down?(resource)
 
           admit = resource['access'].nil? ? net == network : resource_acl_admits?(resource, npc)
           shares << [id, resource] if admit

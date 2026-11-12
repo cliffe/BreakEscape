@@ -201,12 +201,12 @@
     "defaultPolicy": { "type": "string", "description": "Access model: the policy a PC with no policy of its own uses." },
     "networks": {
       "type": "object",
-      "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.1): network id to { name }. The name is what the player sees once they hold a foothold on it. Never sent in the bootstrap. downIf is reserved for slice 9.3b (outages) and refused by the validator.",
+      "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.1): network id to { name }. The name is what the player sees once they hold a foothold on it. Never sent in the bootstrap.",
       "additionalProperties": {
         "type": "object",
         "properties": {
           "name": { "type": "string", "minLength": 1 },
-          "downIf": { "type": "string", "description": "Reserved for slice 9.3b (outages)." },
+          "downIf": { "type": "string", "description": "Slice 9.3b (outages, 5.2): a global name; the network is down while that global is truthy. While down its hosts leave the view, its desktops and shares are not served, and a held session over the route is kept but shown no route until the route returns. Read server-side." },
           "wifi": {
             "type": "object",
             "description": "Slice 9.3b (Wi-Fi, 5.3): an in-game SSID and pre-shared key for this network. Never sent in the bootstrap. psk absent means an open network. An access point object (wifiAp) joins it in the key minigame.",

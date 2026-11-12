@@ -15,11 +15,11 @@ require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/npc_habits/clues'
 
 # Fields still reserved for later 9.3b sub-slices. Sub-slice W un-reserved 'wifi' and
-# 'wifiAp' and sub-slice P un-reserved 'portSecurity' and 'portSecurityMessage' (both added
-# their real checks below); 'downIf' (sub-slice O) stays refused until its code lands. The
-# implant work keeps the 'grant_foothold' action reserved (checked below).
+# 'wifiAp', sub-slice P un-reserved 'portSecurity' and 'portSecurityMessage', and sub-slice O
+# un-reserved network 'downIf' (each added its real checks below). The implant work keeps the
+# 'grant_foothold' action reserved (checked below).
 NETWORK_RESERVED_OBJECT_FIELDS = %w[].freeze
-NETWORK_RESERVED_NETWORK_FIELDS = %w[downIf].freeze
+NETWORK_RESERVED_NETWORK_FIELDS = %w[].freeze
 
 # Items that are physical things: taken down the wire from a remote desktop, they would
 # arrive in the player's hand (7.2).
@@ -284,6 +284,42 @@ def check_network_model(json_data, scenario_dir = nil)
     shown = count >= ceiling ? "at least #{ceiling}" : count.to_s
     warn.call("networks '#{a}' and '#{b}' are joined by #{shown} link paths; the pivot keeps only the first " \
               "#{BreakEscape::NetworkModel::REACH_PATHS_CAP}. Simplify the link graph.")
+  end
+
+  # ---- Outages (slice 9.3b sub-slice O, 5.2 and 9.2) ----
+  # A network downIf names a global; the network is down while it is truthy. The value must be
+  # a string, and the global should be declared. 9.2 owns the resource downIf checks
+  # (validate_access_work.rb); this adds the network side and the start-down open-share warning.
+  decl_globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
+  networks.each do |net_id, net|
+    next unless net.key?('downIf')
+
+    dn = net['downIf']
+    unless dn.is_a?(String)
+      err.call("'networks/#{net_id}/downIf' must be a string naming a global.")
+      next
+    end
+    next if dn.strip.empty?
+
+    warn.call("networks.#{net_id}.downIf '#{dn}' is not declared in globalVariables.") unless decl_globals.key?(dn)
+  end
+  # An open share with contents on a network whose downIf default is truthy (it starts down): a
+  # browser can write the global false, so a secret that must not be read early needs a session
+  # as well, not an outage alone.
+  net_starts_down = lambda do |net_id|
+    net = networks[net_id]
+    dn = net.is_a?(Hash) ? net['downIf'] : nil
+    nm.present_string?(dn) && nm.truthy?(decl_globals[dn])
+  end
+  resources.each do |res_id, res|
+    next unless res['kind'] == 'file_share' && res['access'].nil? && nm.resource_contents?(res)
+
+    net = res['network']
+    next unless net.is_a?(String) && net_starts_down.call(net)
+
+    warn.call("open share '#{res_id}' with contents is on network '#{net}', which starts down (its downIf default is " \
+              'truthy); a browser can set that global false, so a secret that must not be read early needs an ' \
+              'account-gated share or a session as well, not an outage alone.')
   end
 
   # ---- Policies ----
@@ -631,6 +667,19 @@ def check_network_model(json_data, scenario_dir = nil)
     host_ids = nm.sign_in_objects_on(net_id, json_data).map { |h| h[:object]['id'] || h[:path] }
     via = host_ids.empty? ? 'no sign-in host to pivot through' : "pivot hosts #{quote_list.call(host_ids)}"
     info << "ℹ️ Link reach: from '#{net_id}' a pivot reaches #{quote_list.call(reached)}; #{via}"
+  end
+  # Outages: each network and resource with a downIf, and its declared starting state (5.2).
+  networks.keys.sort.each do |net_id|
+    dn = networks[net_id]['downIf']
+    next unless nm.present_string?(dn)
+
+    info << "ℹ️ Outage: network '#{net_id}' is down while '#{dn}' is truthy; it starts #{nm.truthy?(decl_globals[dn]) ? 'down' : 'up'}."
+  end
+  resources.keys.sort.each do |res_id|
+    dn = resources[res_id]['downIf']
+    next unless nm.present_string?(dn)
+
+    info << "ℹ️ Outage: resource '#{res_id}' is down while '#{dn}' is truthy; it starts #{nm.truthy?(decl_globals[dn]) ? 'down' : 'up'}."
   end
 
   resources.keys.sort.each do |res_id|

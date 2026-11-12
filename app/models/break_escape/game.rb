@@ -306,6 +306,20 @@ module BreakEscape
       end
     end
 
+    # The current value of a scenario global for a server-side gate: the player's own value if
+    # the key is set, else the scenario's declared default in globalVariables, else nil. Read
+    # from server state alone, never a request parameter, so the server decides. This is the one
+    # shared globals reader for outages: NetworkAccess#outage_global (5.2) delegates here. NPC
+    # frustration and the reactive feed (9.2 C2) read the same key-presence merge through
+    # NpcFrustration#frustration_globals and AccessWork.
+    def global_variable_value(name)
+      globals = player_state['globalVariables']
+      return globals[name] if globals.is_a?(Hash) && globals.key?(name)
+
+      defaults = scenario_data['globalVariables']
+      defaults.is_a?(Hash) ? defaults[name] : nil
+    end
+
     # Minigame state
     BIOMETRIC_SAMPLE_KEYS = %w[
       id type owner ownerId ownerName quality rating pattern identified
@@ -1373,14 +1387,16 @@ module BreakEscape
 
       case scope[:type]
       when 'login_pc'
-        access_sessions[scope[:id].to_s].is_a?(Hash)
+        # Slice 9.3b O (5.2): a scoped request under a remote session whose route is no longer
+        # reached is refused, read from the server's own session record (session_route_up?).
+        access_sessions[scope[:id].to_s].is_a?(Hash) && session_route_up?(scope[:id])
       when 'profile'
         profile = account_profiles[scope[:id]]
         return false unless profile
 
         access_sessions.keys.any? do |pc_id|
           npc = session_identity(pc_id)
-          npc && self.class.acl_admits?(profile['for'], npc)
+          npc && self.class.acl_admits?(profile['for'], npc) && session_route_up?(pc_id)
         end
       when 'resource'
         # Slice 9.3a, 4.5: a held foothold or session reaches it and is allowed
@@ -1395,6 +1411,9 @@ module BreakEscape
     def scope_admitted_by_session?(scope, pc_id)
       npc = session_identity(pc_id)
       return false unless npc
+      # Slice 9.3b O (5.2): a remote session whose route is down no longer admits its scoped
+      # requests (an inventory add, an unlock), judged from the server's own session record.
+      return false unless session_route_up?(pc_id)
 
       case scope && scope[:type]
       when 'login_pc'

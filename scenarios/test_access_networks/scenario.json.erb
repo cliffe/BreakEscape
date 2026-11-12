@@ -10,7 +10,7 @@
   "networks": {
     "office_lan": { "name": "Harbour office LAN" },
     "workshop_lan": { "name": "Workshop bench LAN" },
-    "server_net": { "name": "Server network" },
+    "server_net": { "name": "Server network", "downIf": "servers_offline" },
     "guest_wifi": { "name": "Guest Wi-Fi", "wifi": { "ssid": "Harbour-Guest", "psk": "seabreeze-2025" } }
   },
 
@@ -146,7 +146,9 @@
   "globalVariables": {
     "comms_port_planted": false,
     "bench_port_planted": false,
-    "p5_lena_remote": false
+    "p5_lena_remote": false,
+    "servers_offline": false,
+    "n7_armed": false
   },
 
   "objectives": [
@@ -177,7 +179,10 @@
         { "taskId": "n2_pivot", "title": "N2: after signing in to an office PC through the box, the server network appears", "type": "custom", "status": "active" },
         { "taskId": "n3_signin_across", "title": "N3: sign in to the server host across the link", "type": "custom", "status": "active" },
         { "taskId": "n4_signout", "title": "N4: sign out of the office pivot and the server session ends", "type": "custom", "status": "active" },
-        { "taskId": "n10_port_security", "title": "N10: a secured port refuses the box and keeps it", "type": "custom", "status": "active" }
+        { "taskId": "n10_port_security", "title": "N10: a secured port refuses the box and keeps it", "type": "custom", "status": "active" },
+        { "taskId": "n5_outage", "title": "N5: take the server network down; it leaves the box's view and a sign-in on it is refused", "type": "custom", "status": "active" },
+        { "taskId": "n6_repair", "title": "N6: restore the server network; its block fills in and its host signs in again", "type": "custom", "status": "active" },
+        { "taskId": "n7_held_route", "title": "N7: a held server session survives the outage, shows no route, and reopens on repair", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -343,7 +348,8 @@
             { "eventPattern": "network_viewed", "condition": "data.networkId === 'server_net' && data.footholdId === 'jack_comms_port'", "onceOnly": true, "completeTask": "n2_pivot" },
             { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'sv_fs02' && data.remote === true", "onceOnly": true, "completeTask": "n3_signin_across" },
             { "eventPattern": "pc_signed_out", "condition": "data.pcId === 'sv_fs02' && data.reason === 'link_dropped'", "onceOnly": true, "completeTask": "n4_signout" },
-            { "eventPattern": "network_device_refused", "condition": "data.jackId === 'secure_port' && data.reason === 'port_security'", "onceOnly": true, "completeTask": "n10_port_security" }
+            { "eventPattern": "network_device_refused", "condition": "data.jackId === 'secure_port' && data.reason === 'port_security'", "onceOnly": true, "completeTask": "n10_port_security" },
+            { "eventPattern": "pc_desktop_opened", "condition": "data.pcId === 'sv_fs02' && data.remote === true && globalVars.n7_armed && !globalVars.servers_offline", "onceOnly": true, "completeTask": "n7_held_route" }
           ]
         },
         {
@@ -498,6 +504,45 @@
           "addToNotes": false,
           "text": "The server network is linked to the office LAN, but the box's foothold does not reach it on its own (N1).\nSign in to an office PC through the box (Lena's), then the box's view gains a Server network block, through that PC (N2). Sign in to this host across the link with Ian's details (N3). Sign out of the office PC and this session ends with it (N4).",
           "observations": "A sign by the server host."
+        },
+        {
+          "type": "pc",
+          "id": "server_breaker",
+          "name": "Server rack breaker",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "observations": "A breaker switch on the server rack. Flipping it takes the whole server network down.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "servers_offline", "value": true },
+            { "type": "set_global", "key": "n7_armed", "value": true },
+            { "type": "complete_task", "taskId": "n5_outage" }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "server_power",
+          "name": "Server rack power",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 6 },
+          "takeable": false,
+          "observations": "The power switch that restores the server network after the breaker trips.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "servers_offline", "value": false },
+            { "type": "complete_task", "taskId": "n6_repair" }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "sign_n5",
+          "name": "Sign: N5 to N7 Outages",
+          "position": { "x": 2, "y": 5 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Flip the rack breaker: the server network goes down, it leaves the box's view, and a sign-in on it is refused (N5). Flip the power back: its block fills in and its host signs in again (N6).\nSign in to this host first, then flip the breaker: your session is kept but shows no route; flip the power and its desktop opens again with no password (N7).",
+          "observations": "A sign by the server rack."
         }
       ]
     },
