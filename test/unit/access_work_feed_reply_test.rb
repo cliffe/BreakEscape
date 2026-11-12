@@ -274,7 +274,7 @@ class AccessWorkFeedReplyTest < ActiveSupport::TestCase
     assert_equal 'tom_still', res['post'], 'tom_vent is spent by its reply'
     res = AW.select_feed_post(d, n, { 'shown' => ['tom_vent'] }, down_entry, d['globalVariables'],
                               revealed: { 'ivy_vent' => { 'npc' => 'ivy', 'seq' => 1, 'to' => nil, 'reply' => false } })
-    assert_equal 'tom_still', res['post'], 'the reply is spent by its post'
+    assert_equal 'tom_again', res['post'], 'tom_re_ivy is spent by its post; the walk moves to tom_still, whose reply fills it'
   end
 
   # ── Runtime guards ──
@@ -284,7 +284,7 @@ class AccessWorkFeedReplyTest < ActiveSupport::TestCase
     cases = {
       'another site' => [re_to('re', 'ivy2_vent', 'tom_vent')],
       'own complaint vent' => [re_c('re', 'tc', 'tom_vent')],
-      'insteadOf a reply' => [re_to('re0', 'ivy_vent', 'tom_vent'), re_to('re', 'ivy_vent', 're0')],
+      'insteadOf a reply' => [re_to('re0', 'ivy_vent', 'tom_vent', { 'global' => 'never_set' }), re_to('re', 'ivy_vent', 're0')],
       'insteadOf its own replyTo' => [re_to('re', 'tom_vent', 'tom_vent')],
       'missing when' => [re_to('re', 'ivy_vent', 'tom_vent').except('when')],
       'both thread fields' => [re_to('re', 'ivy_vent', 'tom_vent').merge('replyToComplaint' => 'x')],
