@@ -1750,7 +1750,7 @@
               "eventPattern": "npc_borrow_done:sade",
               "onceOnly": true,
               "completeTask": "l1_borrow_failed",
-              "condition": "data.met === false && data.objectId === 'l1_hot_desk'"
+              "condition": "data.met === false && !data.lapsed && data.objectId === 'l1_hot_desk'"
             }
           ]
         }
@@ -1916,7 +1916,7 @@
               "eventPattern": "npc_borrow_done:hamid",
               "onceOnly": true,
               "completeTask": "l2_borrow_failed",
-              "condition": "data.met === false && data.objectId === 'l2_hot_desk'"
+              "condition": "data.met === false && !data.lapsed && data.objectId === 'l2_hot_desk'"
             }
           ]
         }

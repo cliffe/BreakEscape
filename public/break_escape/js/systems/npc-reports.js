@@ -21,10 +21,10 @@
  *   test; a borrower's "no" there clears the mark for that borrower only (R1 m2), and its use
  *   waits at most BORROW_CHECK_WAIT_MS of needs clock (which stops while the game is paused;
  *   SEND_TIMEOUT_MS is wall time) for the answer, then is skipped unjudged (R1 m1, R2 m1,
- *   npc-needs.js), since the sync before a send has no time limit. So a mission with no lockout sends no check at all. Every
- *   check gets an answer for the needs system (refused
- *   or lost: lockedOut false, after one resend of a lost request), which ends the hold on the
- *   owner's first use there. A send that has not settled after SEND_TIMEOUT_MS is aborted and
+ *   npc-needs.js), since the sync before a send has no time limit. So a mission with no lockout
+ *   sends no check at all. Every check gets an answer for the needs system (refused or lost:
+ *   lockedOut false, after one resend of a lost request), which ends the hold on the owner's
+ *   first use there. A send that has not settled after SEND_TIMEOUT_MS is aborted and
  *   counts as lost (review R2 m2), so a hung request cannot hold the queue or the owner.
  *   The mark survives a reload: GET /scenario's `lockoutPcs` (the sign-in PCs where the player
  *   caused a lockout, ids only) seeds it at install (review R1 M1). A check the server answers
@@ -250,8 +250,9 @@ export class NpcReports {
                 // Review R1 m1: the server said no, and no lockout answer came at that PC since
                 // the check was queued, so the mark goes (a refused or lost answer keeps it).
                 // At a station the "no" clears the mark per PC (q33 R2 n1: no two owners share a
-                // sign-in needsHome), for station checks only (R2 n2). A borrow check's "no" clears it for that borrower only (R1 m2),
-                // since a hot desk is shared and another borrower may be the one locked out there
+                // sign-in needsHome). It clears lockoutSeen only, never the borrow mark (R2 n2).
+                // A borrow check's "no" clears the mark for that borrower only (R1 m2), since a hot
+                // desk is shared and another borrower may be the one locked out there
                 const a = answers[i];
                 if (a && a.npcId === r.npc_id && a.lockedOut === false && !a.refused
                     && r._mark !== null && (this.lockoutCount.get(r.object_id) || 0) === r._mark) {

@@ -103,10 +103,11 @@ Under the shared lock: `bin/rails test` 1806 runs, 25626 assertions, 0 failures,
 Review: `FEED_LOCKOUT_CODE_REVIEW_R1.md` (4 minors, 6 nits). Commit ac5eec39e.
 
 - **m1, a borrowed hold with no limit.** `npc-needs.js`: a borrowed use held for its check waits at
-  most `BORROW_CHECK_WAIT_MS` (5 s, needs clock) from when the hold began. Past that it goes ahead
-  as if not locked out (logged `lock_check_lapsed` with `borrowed: true`); the server still refuses
-  the ease, the post and the guest record. The check stays in `lockCheck`, so a late answer still
-  flags the PC for the next use. The no-op restart line is gone.
+  most `BORROW_CHECK_WAIT_MS` (5 s, needs clock) from when the hold began. Past that the use is
+  skipped unjudged (logged `lock_check_lapsed` with `borrowed: true`): nothing restored, no
+  `npc_used`, no ease or feed request, and the borrow ends not met (R2 m1; R3 m1 adds `lapsed:
+  true` to both borrow events). The check stays in `lockCheck`, so a late answer still flags the PC
+  for the next use. The no-op restart line is gone.
 - **m2, one borrower's "no" cleared the mark for all.** `npc-reports.js`: a borrow check carries
   `_borrow`, and its "no" goes into `borrowCleared` (`pcId|npcId` to the lockout count then) instead
   of deleting the PC from `lockoutSeen`. `borrowSeen(pcId, npcId)` is what `onBorrowSat` tests, so
@@ -157,7 +158,7 @@ Review: `FEED_LOCKOUT_CODE_REVIEW_R2.md` (1 minor, 2 nits).
   `npc_borrow_done` says `met: false`; the NPC goes home. The check stays in `lockCheck`, so a late
   answer still flags the PC and the next borrow there waits again. The `lockLapsed` job flag is gone.
   As before for a failed borrow, `npc_borrowed_session` fires with `met: false` when the borrow
-  leaves a session open. The R1 m1 entry above ("goes ahead as if not locked out") is out of date.
+  leaves a session open. The R1 m1 entry above now describes this behaviour (rewritten in R3).
 - **n1, the two clocks.** The header comment in `npc-reports.js` now says the wait is needs clock,
   which stops while the game is paused, and that `SEND_TIMEOUT_MS` is wall time.
 - **n2, a station "no" cleared the mark for borrowers.** Fixed, small change: `noteLockout` also
@@ -171,6 +172,36 @@ Tests, run alone: `npc-lockout.test.mjs` 32 pass. The changed lapse test (no `np
 met, no failed use, no ease), the changed sync-stall test and the new n2 test fail on the old code
 (3 fail, 29 pass). The 34 JS test files that import `npc-needs.js` or `npc-reports.js`: 640 pass,
 0 fail. No Ruby code changed. No live server was started.
+
+## Code review R3 fixes
+
+Review: `FEED_LOCKOUT_CODE_REVIEW_R3.md` (1 minor, 2 nits).
+
+- **m1, a lapse read as a failed sign-in.** `npc-needs.js` `_borrowDone` takes `{ lapsed }`; the
+  borrowed lapse branch passes `lapsed: true`, so `npc_borrow_done` and `npc_borrowed_session` (and
+  the `borrow_done` log entry) carry `met: false, lapsed: true` on a lapse. The key is absent
+  otherwise. Comments on `_borrowDone`, the lapse branch and the `npc-workarounds.js` header say a
+  lapse is a skipped use, not a refusal. The conditions for `l1_borrow_failed`, `l2_borrow_failed`
+  (`test_access_social`) and `h3_failed_there` (`test_access_work`) now add `!data.lapsed`; the
+  mapping evaluator supports the negation, and a failing condition does not use up a `onceOnly`
+  mapping, so a lapse followed by a real failure still completes the task. The PLAYTEST rows for
+  L1, L2 and H3 say "no `lapsed`". `README_scenario_design.md` (lockout at a borrowed PC) names
+  both borrow events, their payload and the flag, and says a "failed there" mapping should test
+  `data.met === false && !data.lapsed`. A slowed answer as in game 1508 no longer completes
+  `l1_borrow_failed` at the lapse.
+- **n1, stale and overlong text.** The R1 m1 entry above is rewritten to match the code, and the R2
+  pointer to it updated. In `npc-reports.js` the overlong header line is rewrapped and the `flush`
+  comment's R2 n2 note is its own sentence.
+- **n2, the bridge did not show the borrow mark.** `__test.access.reports()` adds
+  `borrowLockoutSeen` (sorted PC ids) and `borrowCleared` (sorted `pcId|npcId` keys);
+  `docs/test-bridge.md` says what each means.
+
+Tests, run alone: `npc-lockout.test.mjs` 32 pass (the lapse test asserts `lapsed: true` on both
+events; the locked-out borrow test asserts no `lapsed` key); `test-bridge-access.test.mjs` passes
+with a new borrow-mark case. The 33 JS test files that import `npc-needs.js`, `npc-reports.js`,
+`npc-workarounds.js` or the access bridge, or read either scenario: 690 pass, 0 fail; the 6 that
+use `fixtures/needs-work-world.mjs`: 182 pass. No Ruby code changed. Validator on
+`test_access_social` and `test_access_work`: 0 lines with ❌. No live run.
 
 ## Left open
 

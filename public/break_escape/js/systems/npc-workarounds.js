@@ -39,7 +39,9 @@
  * mirror of the frustration, not the server's figure; a mapping must not rely on it.
  *
  * Sub-slice H (plan 6.4, 6.5). `borrow_session` calls `NPCNeedsSystem.setBorrow(npcId, run)`, so
- * the NPC's next use of the failing need is at the borrowed PC; `npc_borrow_done` posts "done",
+ * the NPC's next use of the failing need is at the borrowed PC; `npc_borrow_done` posts "done"
+ * (with `met: false` and `lapsed: true` when the use there was skipped unjudged after a lock
+ * check hold ran out: not refused, so "failed there" mappings exclude it, review R3 m1),
  * `npc_borrow_dropped` posts it dropped, and an answer with `guest: true` emits
  * `npc_guest_left:<pcId>` with { npcId, objectId }, which the workstation layer records as the
  * PC's guest. `share_login` is a visit to the colleague (`with`): on arrival the NPC says a

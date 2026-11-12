@@ -3108,14 +3108,14 @@ export class NPCNeedsSystem {
         // settles), so the hold there lasts at most BORROW_CHECK_WAIT_MS (needs clock) from when it
         // began. Review R2 m1: a lapse there fails closed, as at the station. The use is skipped
         // unjudged (nothing restored, no npc_used, no ease or feed request) and the borrow ends
-        // not met; the check stays in flight, so a late answer still flags the PC and the next
-        // borrow there waits again
+        // not met, with `lapsed: true` on both borrow events (review R3 m1); the check stays in
+        // flight, so a late answer still flags the PC and the next borrow there waits again
         const atBorrow = judged && !!job.borrowed && (job.need === 'work' || job.need === 'social_media');
         if (atBorrow && s.lockCheck[job.targetId] !== undefined) {
             if (!job.lockHeld) { job.lockHeld = true; job.lockHeldAt = this.clockMs; this._log(id, 'use_held', { target: job.targetId }); }
             if (this.clockMs - job.lockHeldAt < BORROW_CHECK_WAIT_MS) return;
             this._log(id, 'lock_check_lapsed', { target: job.targetId, borrowed: true });
-            this._borrowDone(s, job, false);
+            this._borrowDone(s, job, false, { lapsed: true });
             s.job = null;
             this._clearBackoffs();
             this._goHome(s, { stayPut: false });
@@ -3273,14 +3273,22 @@ export class NPCNeedsSystem {
         this._goHome(s, { stayPut });
     }
 
-    _borrowDone(s, job, met) {
+    /**
+     * Ends a borrow: emits `npc_borrowed_session:<pcId>` (when the borrow leaves a session open)
+     * and `npc_borrow_done:<npcId>`. `met: false` alone means the borrowed use was judged and
+     * failed. Review R3 m1: `met: false` with `lapsed: true` means the use was skipped unjudged
+     * (a lock check hold that ran past BORROW_CHECK_WAIT_MS), not refused, so a mapping for
+     * "failed there" should require `!data.lapsed`. `lapsed` is only present on a lapse.
+     */
+    _borrowDone(s, job, met, { lapsed = false } = {}) {
         const id = s.npcId;
         const b = job.borrow;
         if (!b) return;
         if (s.borrow === b) s.borrow = null;
-        this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen });
-        if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met });
-        this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand });
+        const lapse = lapsed ? { lapsed: true } : {};
+        this._log(id, 'borrow_done', { target: job.targetId, met, leftOpen: b.leavesOpen, ...lapse });
+        if (b.leavesOpen) this._emit(`npc_borrowed_session:${job.targetId}`, { npcId: id, objectId: job.targetId, met, ...lapse });
+        this._emit(`npc_borrow_done:${id}`, { npcId: id, objectId: job.targetId, met, leftOpen: b.leavesOpen, index: b.index, hand: b.hand, ...lapse });
         // Review R1 m1: as a workaround visit, the start line can hide a short borrowed use's icon
         this._showWorkaround(s);
     }

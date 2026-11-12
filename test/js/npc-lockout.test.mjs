@@ -235,6 +235,8 @@ test('q36: a check sent as the borrower sits holds the borrowed use; true fails 
     assert.deepEqual(evs('npc_locked_out:dana').at(-1).data, { npcId: 'dana', objectId: 'hot_desk' });
     assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 5000));
     assert.equal(evs('npc_borrow_done:dana')[0].data.met, false, 'her sign-in there fails');
+    assert.equal('lapsed' in evs('npc_borrow_done:dana')[0].data, false, 'a judged failure is not marked lapsed');
+    assert.equal('lapsed' in evs('npc_borrowed_session:hot_desk')[0].data, false);
     assert.equal(evs('npc_used:hot_desk').length, 0, 'no met use, nothing restored');
     const failed = evs('npc_use_failed:dana').at(-1).data;
     assert.equal(failed.objectId, 'hot_desk');
@@ -264,6 +266,10 @@ test('R1 m1, R2 m1: a hold at the hot desk lasts BORROW_CHECK_WAIT_MS, then the 
     assert.equal(evs('npc_borrow_done:dana').length, 0);
     assert.ok(stepUntil(sys, () => evs('npc_borrow_done:dana').length > 0, 3000), 'the hold ends with no answer');
     assert.equal(evs('npc_borrow_done:dana')[0].data.met, false, 'a lapse never shows a met use');
+    // Review R3 m1: a lapse is marked, so a "failed there" mapping can tell it from a refusal
+    assert.equal(evs('npc_borrow_done:dana')[0].data.lapsed, true, 'the done event says the use lapsed');
+    assert.equal(evs('npc_borrowed_session:hot_desk').length, 1);
+    assert.deepEqual(evs('npc_borrowed_session:hot_desk')[0].data, { npcId: 'dana', objectId: 'hot_desk', met: false, lapsed: true });
     assert.equal(evs('npc_used:hot_desk').length, 0, 'no npc_used, nothing restored');
     assert.equal(evs('npc_use_failed:dana').length, failedBefore, 'unjudged: not a failed use either');
     assert.equal(reports.slice(before).filter(r => r.event === 'ease').length, 0, 'no ease is sent');

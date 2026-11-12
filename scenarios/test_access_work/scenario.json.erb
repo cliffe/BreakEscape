@@ -989,7 +989,7 @@
           "eventMappings": [
             {
               "eventPattern": "npc_borrowed_session:hot_desk",
-              "condition": "data.npcId === 'rosa' && data.met === false",
+              "condition": "data.npcId === 'rosa' && data.met === false && !data.lapsed",
               "onceOnly": true,
               "completeTask": "h3_failed_there"
             }
