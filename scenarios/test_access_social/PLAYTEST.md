@@ -1,11 +1,12 @@
-# test_access_social: scripted playtest (slice 9.2, F1 to F14)
+# test_access_social: scripted playtest (slice 9.2, F1 to F15)
 
 The scripted runs for access model slice 9.2 sub-slice C (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`,
 sections 8 and 11.2), plus F9 for user decision q33 (a lockout stops social media at that PC too),
 and F10 to F13 for sub-slice C2 reactive feed posts
 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_C2_PLAN.md`, section 10). F10 to F13 are the plan's four
 reactive beats renumbered up by one (the plan calls them F9 to F12; q33's F9 already holds that
-number). F14 is for user decision q36 (a borrower locked out at its hot desk).
+number). F14 is for user decision q36 (a borrower locked out at its hot desk), and F15 is the same
+for a work borrow (a lockout stops every use of that PC).
 One room per beat, each with a sign; F5 and F6 are in the lobby. The scenario
 is for testing, not play. After every beat check what is on screen, what the server recorded and
 what reached the browser.
@@ -126,6 +127,7 @@ use and is usually answered `{ post: null, done: false }`, so a per-run total gr
 | Beat | Do | Expect | Server afterwards | `/feed_post` this beat |
 |---|---|---|---|---|
 | F14 | Enter `f14_room` (east of Ruth's room) at once. Sade's PC blocks social media and she has no phone, so after two failures she borrows the hot desk. Before she does, click the hot desk, pick her tile (`sokafor`) and type three wrong passwords. Step back and wait | The third answer says the account is locked on this PC. When she sits down there one `check` goes for her at `f14_hot_desk` and comes back locked out: `npc_locked_out:sade` with `objectId` `f14_hot_desk`, task `f14_locked_out`. At the end of the use it fails: `npc_use_failed:sade` with `missing` `[{ id: f14_hot_desk, why: locked_out }]`, `npc_borrow_done:sade` `met: false`, task `f14_borrow_failed`. No `npc_used:f14_hot_desk`, no post | `loginLockouts` holds `f14_hot_desk\|sokafor`; `npcFrustration.sade.lockedOut` `["f14_hot_desk"]` (and in GET /scenario's `npcFrustration`), no `easeAt`, no `guestSessions.f14_hot_desk`, no `feedRevealed.sade` | Sade 0 |
+| F15 | Enter `f15_room` (east of Sade's room) at once. Hamid's PC is switched off (`f15_pc_off` starts true), so after two work failures he takes his work to the hot desk. Before he does, click the hot desk, pick his tile (`hrahimi`) and type three wrong passwords. Step back and wait. Leave the power switch alone | The third answer says the account is locked on this PC. When he sits down one `check` goes for him at `f15_hot_desk` and comes back locked out: `npc_locked_out:hamid`, task `f15_locked_out`. At the end of the use his work fails: `npc_use_failed:hamid` need `work`, `missing` `[{ id: f15_hot_desk, why: locked_out }]`, `npc_borrow_done:hamid` `met: false`, task `f15_borrow_failed`. No `npc_used:f15_hot_desk` | `loginLockouts` holds `f15_hot_desk\|hrahimi`; `npcFrustration.hamid.lockedOut` `["f15_hot_desk"]` (and in GET /scenario), `easeAt` empty, no `guestSessions.f15_hot_desk`. A work `ease` for him at the hot desk is refused | none (no feed) |
 
 The leak check must still say `VERDICT: no leaks found` after each reactive beat, and its counts line
 must show the reactive post texts among the feed posts it checked. One reload during the run (as F7)

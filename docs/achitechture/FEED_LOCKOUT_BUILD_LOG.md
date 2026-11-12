@@ -26,7 +26,8 @@ code review R2 leftovers, plus the needMet tweak), in `docs/handover/2026-11-11_
   fails a work or social media use with `locked_out`; as before, a failed borrowed use is not reported.
 - **README** "While locked out": a lockout at a borrowed PC now stops that use.
 - Both needs: a locked-out borrowed use fails for work as well as social media, which follows q33's
-  "a lockout stops every use of that PC". The backlog entry named social media only.
+  "a lockout stops every use of that PC". The backlog entry named social media only. The user
+  confirmed this after review R1 (m3); F15 is the work beat.
 
 ### q37: q33 code review R2, m1 to m4
 
@@ -96,6 +97,55 @@ is left in the shared dev database (mission 245, `test_access_social`).
 ## Full suites
 
 Under the shared lock: `bin/rails test` 1806 runs, 25626 assertions, 0 failures, 0 errors, 1 skip; `bin/test-js -j 3` 507 files passed, 0 failed.
+
+## Code review R1 fixes
+
+Review: `FEED_LOCKOUT_CODE_REVIEW_R1.md` (4 minors, 6 nits). Commit ac5eec39e.
+
+- **m1, a borrowed hold with no limit.** `npc-needs.js`: a borrowed use held for its check waits at
+  most `BORROW_CHECK_WAIT_MS` (5 s, needs clock) from when the hold began. Past that it goes ahead
+  as if not locked out (logged `lock_check_lapsed` with `borrowed: true`); the server still refuses
+  the ease, the post and the guest record. The check stays in `lockCheck`, so a late answer still
+  flags the PC for the next use. The no-op restart line is gone.
+- **m2, one borrower's "no" cleared the mark for all.** `npc-reports.js`: a borrow check carries
+  `_borrow`, and its "no" goes into `borrowCleared` (`pcId|npcId` to the lockout count then) instead
+  of deleting the PC from `lockoutSeen`. `borrowSeen(pcId, npcId)` is what `onBorrowSat` tests, so
+  another borrower at that hot desk still checks, and a new lockout answer there asks the first one
+  again. The station path is unchanged (per PC).
+- **m3, work borrows (user: keep failing them).** New beat F15 in `test_access_social`
+  (`f15_room`, east of `f14_room`): Hamid Rahimi, work need on a `f15_ledger` share, his PC's
+  `offWhen` `f15_pc_off` starts true (a power switch toggles it), `borrow_session` to
+  `f15_hot_desk` under `locking`. Tasks `f15_locked_out` and `f15_borrow_failed`; PLAYTEST.md row.
+- **m4, needMet route tests.** `feed_post_test.rb`: the needMet post is served through
+  `/feed_post` when the last failure is 6 s old, not at 4 s (nothing written), and a refused source
+  with a met use serves nothing. The first and third fail if the route drops `met_use`.
+- **n4, a stale shown id in `revealed`.** `AccessWork.feed_shown_ids` drops ids the scenario no
+  longer has, so `revealed`, the next post's index and GET /scenario's block all count the same
+  posts; the stale id goes on the next write. `feed_post_known?` in `social_feed.rb` is gone. The
+  NIT-1 test now expects indexes `[0, 1]`; a new test covers `revealed` and the index.
+- **n1** (older than this branch) is in `docs/IDEAS_BACKLOG.md`, with n2, n3, n5 and n6, not fixed.
+
+Tests, run alone: `npc-lockout.test.mjs` 31 pass (new: the hold limit, a sync PUT that never
+settles with a real `NpcReports` wired through `npc_sat_at`, two borrowers at one hot desk); 38 JS
+files that import `npc-needs.js` or `npc-reports.js`, or read the scenario, 751 pass, 0 fail.
+Ruby: `feed_post_test` 27 runs, `access_work_feed_select_test`, `access_work_social_test`,
+`access_leak_scanner_feed_test`, `social_lockout_q33_test`, `access_helper_equality_test` 97 runs
+together, 0 failures; `tts_mission_lines_test` and `ink_compiled_staleness_test` 7 runs, 0
+failures. The sync-stall test fails with the limit set very high. Validator: 0 lines with ❌.
+
+Live proof, F15 (game 1468, port 3034, headless, started in `f15_room`):
+
+| Step | Result |
+|---|---|
+| Lockout | Three wrong passwords on Hamid's tile at the hot desk: "2 attempts left", "1 attempt left", "This account is locked on this PC" |
+| Finding out | Two failures at his switched-off PC (level 25, then 50), the borrow started; `npc_sat_at:f15_hot_desk`, one check, `npc_locked_out:hamid` `f15_hot_desk` 500 ms later, task `f15_locked_out` |
+| Failed work | `npc_borrow_done:hamid` `met: false`, `npc_use_failed:hamid` need `work`, `missing [{f15_hot_desk, locked_out}]`, task `f15_borrow_failed`; no `npc_used:f15_hot_desk` |
+| Server | `loginLockouts` `["f15_hot_desk\|hrahimi"]`; `npcFrustration.hamid.lockedOut` `["f15_hot_desk"]`, `easeAt` empty; `guestSessions` empty; GET /scenario `npcFrustration.hamid.lockedOut` `["f15_hot_desk"]` |
+| Tampered | A work `ease` for Hamid at `f15_hot_desk` from the page: `refused: true` |
+| Leak check | `VERDICT: no leaks found` |
+
+The answer came before the use ended, so this run did not hold; the hold limit (m1) is shown by
+the unit tests only. Game 1468 is left in the shared dev database.
 
 ## Left open
 
