@@ -359,3 +359,104 @@ for `noor_pc` only. No shipped scenario changes behaviour, so there was no live 
 
 - `d2b778432` R2 fixes (code and tests)
 - this log
+
+## R3 fixes
+
+Review: `OWNER_CLAIM_ENFORCE_CODE_REVIEW_R3.md` (commit `71b3ec5fa`). Three rounds in a row found
+a way an object or an NPC changes room that the mirror missed (droppables, then knock-out drops,
+aborted carries and reveal slots). Orchestrator decision: no room or leash reasoning refuses a
+claim any more. When judging whether the owner can leave, every object anywhere in the scenario
+counts as reachable, whatever room it is authored in. This supersedes the room leash in routes 4
+and 6 of "How the owner can leave is decided" above.
+
+### Fixes
+
+- **B1, objects that change room.** `precise_route` no longer reads `needsRooms`,
+  `needsAvoidRooms` or a room's `needsPrivateTo`. A need source counts in any room, as does an
+  interest's accepting place. `home_room`, `room_forbidden?` and `room_list` are gone. The fixed
+  rules kept are those play can never get round: a use of the owner's own `needsHome` is no leave
+  (`_atOwnPost`), a `private` affordance serves only its owners (`_owners` reads
+  `affordance.owners`, `screenOwner` or `needsHome`, all fixed scenario data that every drop and
+  carry copies with the item, and nothing in the engine writes them), and a judged need skips
+  another person's desk (`_otherDesk`).
+- **B1, the cautious test.** The droppable test is now a movable test (`movable?`, label
+  `might:movable`): an object that is `droppable`, nested in an NPC record (`scenario_objects`
+  marks it `held`), has a `needsTag` or has an `outputOf`. It ignores `private` and the own
+  `needsHome`, so it only allows more.
+- **m1, an unreadable story.** A `storyPath` (or `changeStoryPath`) that is named but cannot be
+  read now returns `might:story_unread`, which allows the claim. An owner with no story reads
+  nothing and is unaffected.
+- **n1, the movement-path table.** The rows below complete the R2 table.
+- **n2, story spellings.** `OwnerClaim.default_story_text` reads every spelling
+  `InkStoryFile.compiled_json` tries (the path, its `.ink.json` form, its plain `.json` form) and
+  the `.ink`. The server takes the first JSON it finds, so the validator now reads at least as
+  much and cannot warn where the server allows.
+- **n3, left as it is.** The cautious test stays as a hedge (now `movable?`); it only allows more.
+- **n4, need numbers.** New `AccessIdentities.js_positive?`: `positive_number?`, or `Number()`'s
+  reading of `true` (1) and of a one-element array (`Number([5])` is 5). `valid_need?`,
+  `valid_interest?` (the object form), `AccessIdentities.needs_tracked?` and
+  `Game.needs_tracked?` (claim check 3, through `Game.positive_number?`) use it. It is never
+  narrower than before, so it can only allow more. `js_number` itself is unchanged, so
+  `screen_always_locks?` reads exactly what it read before.
+- The validator's never-leaves warning names the new wording (a need met by any object other than
+  the own post, in any room; an unreadable story; a movable source). `ACCESS_MODEL_PLAN.md` check 10
+  is updated to match.
+
+### Rows added to the movement-path table
+
+| Path (file) | What moves | Mirror |
+|---|---|---|
+| USB habit refusal (`npc-needs.js _usbAttempt`, `usb_refused`) | a refused stick counts as a failure of the judged need, so checks and workarounds walk | Precise: `AccessWork.can_fail?` through `usb_habit_refused?` (it does not ask whether the stick is still held, which only widens it) |
+| `#personal_space` ink tag (`person-chat-conversation.js`) | sets a distance the NPC keeps from the player | No leave: it never emits `npc_left_post` |
+| Knock-out drop (`npc-hostile.js dropNPCItems`) | a colleague's `itemsHeld` land where the colleague falls, affordance included | Precise: any room counts; cautious allow as movable (`held`) |
+| NPC carry drop (`npc-needs.js dropHeld`, from an aborted or refused carry) | a `needsTag` item is put down where the carrier stands | Precise: any room counts; cautious allow as movable (`needsTag`) |
+| Slot placement (`npc-needs.js placeHeld`) | a reveal slot is set down at an accepting place | Precise: any room counts; cautious allow as movable (`outputOf`) |
+| Interest `noticeRadius` (from `main`, `_carryCandidate`) | narrows which items the client notices | The mirror stays wider: the item may be anywhere |
+
+### Sweep after the fixes
+
+The reviewer's R3 sweep script (session scratchpad, not the repo), run on this branch: 176 of 176
+rendered, none failed. Of the 16 PCs that pass claim checks 3 to 7, only
+`test_access_habits noor_pc` returns nil. The other 15 keep the same precise routes as in R3
+(needs for the habits PCs, `staff_pc_2` and `mel_pc`; a knock-out with a need or failure route
+behind it for the rest). `test_access_social` jake and lena reach `might:social_media` but check 6
+refuses them first. The validator gives the never-leaves warning for `noor_pc` only, beside the
+older untracked-owner warning for `test_access_work pat_pc`. No shipped scenario changes behaviour.
+
+Noor is still refused for a real reason, with no room reasoning. Her only need is `work`, not
+judged (no work plan) and unable to fail. The scenario has no `officePresets`, so no PC gets the
+`desk_pc` preset, and `noor_pc` (her own `needsHome`) is the only object in the whole scenario
+whose affordance satisfies `work`. She has attacks off, no mappings, phones, prints, interests or
+patrol, and her story (`ink/owner.json`) is readable and has no `patrol_mode`. The H10 beat needed
+no change.
+
+The reviewer's three B1 probes (`r3_owner_sweep/probe.rb`) now all return
+`need:caffeine:<id>`: the knock-out drop with a habit that always locks, the same with Jo
+`koImmune`, and a tagged kitchen coffee.
+
+### Tests (without the lock, affected files only)
+
+- `test/unit/owner_claim_test.rb` and `owner_claim_enforce_test.rb`: 18 runs, 287 assertions,
+  0 failures. Fixtures that relied on the leash are flipped to allow (a source outside
+  `needsRooms`, in `needsAvoidRooms`, in a room private to someone else, an accepting place
+  outside `needsRooms`); a source private to another person is still refused. New allow fixtures
+  for each B1 path (a colleague's `itemsHeld` with the owner's knock-out always locking, the same
+  with the owner `koImmune`, a `needsTag` source, an `outputOf` slot), each cautious movable kind,
+  an unreadable story (unit, and through `POST /login` with the server's own reader), the other
+  story spelling (a temporary folder under `scenarios/`, removed afterwards), and need numbers
+  written as `true` and `[40]`.
+- With `access_model_rules_test`, `access_identities_screen_test`, `npc_habits_loader_test`,
+  `access_model_login_test`, `capture_proofs_test`, `npc_lockout_l_test`,
+  `game_state_locking_test`, `network_remote_signin_test`, `lab_physical_pentest_secrets_test`,
+  `usb_habit_test` and `access_work_usb_habit_test`: 206 runs, 2359 assertions, 0 failures.
+- Node `validator-access-model.test.mjs`: 36 of 36 (a new test for sources in any room, movable
+  sources and an unreadable story; the near miss "a fixed source outside needsRooms" is replaced by
+  "the only source is the own PC" and "the only source is private to somebody else").
+  `validator-usb-habit.test.mjs`: 25 of 25.
+- Validator on `test_access_habits` and `test_access_work`: 0 lines with ❌; warnings as above.
+- `bin/rubocop` on `owner_claim.rb`, `access_identities.rb` and both Ruby test files: no offences.
+
+### Commits
+
+- `6f71a1a64` R3 fixes (code, tests, plan check 10)
+- this log
