@@ -3683,6 +3683,8 @@ module BreakEscape
     end
 
     MAX_NPC_INK_VARIABLES_BYTES = 128.kilobytes
+    # Longest NPC id or ink variable name kept by merge_npc_ink_variables!, in code points.
+    MAX_NPC_INK_NAME_CHARS = 100
 
     # Merge NPC-local ink variables (the ones that aren't scenario globals)
     # sent by the client, one entry per NPC. These are what the client's
@@ -3695,10 +3697,10 @@ module BreakEscape
 
       merged = (player_state['npcInkVariables'] || {}).dup
       incoming.each do |npc_id, vars|
-        next unless npc_id.is_a?(String) && npc_id.length <= 100 && vars.is_a?(Hash)
+        next unless npc_id.is_a?(String) && npc_id.length <= MAX_NPC_INK_NAME_CHARS && vars.is_a?(Hash)
 
         merged[npc_id] = vars.select do |k, v|
-          k.is_a?(String) && k.length <= 100 &&
+          k.is_a?(String) && k.length <= MAX_NPC_INK_NAME_CHARS &&
             (v.is_a?(String) || v.is_a?(Numeric) || v == true || v == false || v.nil?)
         end
       end
@@ -3752,6 +3754,13 @@ module BreakEscape
     MAX_PHONE_MESSAGE_TEXT = 4000
     MAX_PHONE_STORY_STATE_BYTES = 60.kilobytes
     PHONE_MESSAGE_KEYS = %w[type text timestamp gameTime read isBark timed preloaded].freeze
+    # Per-field caps inside sanitize_phone_state_entry, in code points.
+    MAX_PHONE_TYPE_CHARS = 20
+    MAX_PHONE_STORY_PATH_CHARS = 300
+    MAX_PHONE_KNOT_CHARS = 200
+    MAX_PHONE_DEFERRED_TAG_CHARS = 300
+    MAX_PHONE_DEFERRED_TAGS = 100
+    MAX_PHONE_SCALAR_KEY_CHARS = 100
 
     # Merge the client's phone threads, one entry per phone contact, each replacing
     # the saved one: the texts (with read state), the ink story position, and a
@@ -3785,7 +3794,7 @@ module BreakEscape
 
         msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
           case key
-          when 'type' then value.length <= 20
+          when 'type' then value.length <= MAX_PHONE_TYPE_CHARS
           when 'text' then true
           # gameTime: elapsed game ms when the text arrived (the time its bubble shows)
           when 'timestamp', 'gameTime' then value.is_a?(Numeric)
@@ -3798,16 +3807,16 @@ module BreakEscape
       story_state = entry['storyState']
       if story_state.is_a?(String) && story_state.bytesize <= MAX_PHONE_STORY_STATE_BYTES
         clean['storyState'] = story_state
-        clean['storyPath'] = entry['storyPath'] if entry['storyPath'].is_a?(String) && entry['storyPath'].length <= 300
+        clean['storyPath'] = entry['storyPath'] if entry['storyPath'].is_a?(String) && entry['storyPath'].length <= MAX_PHONE_STORY_PATH_CHARS
       end
       %w[currentKnot lastEnteredKnot preloadedKnot].each do |key|
-        clean[key] = entry[key] if entry[key].is_a?(String) && entry[key].length <= 200
+        clean[key] = entry[key] if entry[key].is_a?(String) && entry[key].length <= MAX_PHONE_KNOT_CHARS
       end
-      tags = Array(entry['deferredTags']).select { |t| t.is_a?(String) && t.length <= 300 }.first(100)
+      tags = Array(entry['deferredTags']).select { |t| t.is_a?(String) && t.length <= MAX_PHONE_DEFERRED_TAG_CHARS }.first(MAX_PHONE_DEFERRED_TAGS)
       clean['deferredTags'] = tags if tags.any?
       scalar_map = lambda do |hash|
         hash.to_h.select do |k, v|
-          k.is_a?(String) && k.length <= 100 &&
+          k.is_a?(String) && k.length <= MAX_PHONE_SCALAR_KEY_CHARS &&
             (v.is_a?(String) || v.is_a?(Numeric) || v == true || v == false || v.nil?)
         end
       end
@@ -3855,6 +3864,21 @@ module BreakEscape
     MAIL_JOB_BOOL_KEYS = %w[plain afterSend chaser loadPosition].freeze
     MAIL_DRAFT_KEYS = %w[to subject templates slots attachment link targetId headerFrom contactId freeText].freeze
     MAIL_METRIC_COUNTS = %w[sent failed landed].freeze
+    # Per-field caps and value sets inside the mail sanitisers, in code points
+    # except the key/mode lists. Named so the client mirror and the constants
+    # test read the same values (SYNC_DELTAS_PLAN 2.1).
+    MAIL_BODY_KEYS = %w[body hiddenText hiddenTextLabel].freeze
+    MAIL_FOLDERS = %w[inbox sent].freeze
+    MAX_MAIL_TELL_CHARS = 100
+    MAX_MAIL_TELLS = 50
+    MAX_MAIL_JSON_KEY_CHARS = 100
+    MAX_MAIL_BOX_ID_CHARS = 100
+    MAX_MAIL_THREAD_KEY_CHARS = 200
+    MAX_MAIL_THREAD_CHOICES = 20
+    MAIL_EXPECT_MODES = %w[choices compose waiting].freeze
+    MAX_MAIL_EXPECT_TARGET_CHARS = 100
+    MAX_MAIL_EXPECT_OPTIONS = 10
+    MAX_MAIL_DRAFT_ACCOUNT_CHARS = 100
 
     # Merge the mail client's keyed section (00 §10a "Persistence"). Keys:
     #   mailboxes.<box>.<msgId>  one message, upserted by id into the mailbox
@@ -3956,7 +3980,7 @@ module BreakEscape
           end
         elsif key.start_with?('threads.')
           thread_key = key.delete_prefix('threads.')
-          next unless thread_key.present? && thread_key.length <= 200
+          next unless thread_key.present? && thread_key.length <= MAX_MAIL_THREAD_KEY_CHARS
 
           if value.nil?
             updates[['threads', thread_key]] = nil
@@ -4058,10 +4082,10 @@ module BreakEscape
 
         value = msg[key]
         case key
-        when 'body', 'hiddenText', 'hiddenTextLabel'
+        when *MAIL_BODY_KEYS
           clean[key] = value[0, MAX_MAIL_BODY_CHARS] if value.is_a?(String)
         when 'folder'
-          clean[key] = value if %w[inbox sent].include?(value)
+          clean[key] = value if MAIL_FOLDERS.include?(value)
         when 'gameTime'
           clean[key] = value if value.is_a?(Numeric)
         when 'read', 'seeded'
@@ -4069,7 +4093,7 @@ module BreakEscape
         when 'landed'
           clean[key] = value if [true, false, nil].include?(value)
         when 'tells'
-          clean[key] = value.select { |t| t.is_a?(String) && t.length <= 100 }.first(50) if value.is_a?(Array)
+          clean[key] = value.select { |t| t.is_a?(String) && t.length <= MAX_MAIL_TELL_CHARS }.first(MAX_MAIL_TELLS) if value.is_a?(Array)
         else
           clean[key] = sanitize_mail_json(value)
         end
@@ -4100,7 +4124,7 @@ module BreakEscape
       return nil unless value.is_a?(Hash)
 
       value.each_with_object({}) do |(key, thread), clean|
-        next unless key.is_a?(String) && key.length <= 200 && thread.is_a?(Hash)
+        next unless key.is_a?(String) && key.length <= MAX_MAIL_THREAD_KEY_CHARS && thread.is_a?(Hash)
 
         entry = {}
         position = thread['position']
@@ -4108,15 +4132,15 @@ module BreakEscape
            (position.is_a?(String) ? position.bytesize : position.to_json.bytesize) <= MAX_MAIL_THREAD_POSITION_BYTES
           entry['position'] = position.is_a?(Hash) ? position.to_h : position
         end
-        entry['choices'] = sanitize_mail_json(thread['choices'].first(20)) if thread['choices'].is_a?(Array)
+        entry['choices'] = sanitize_mail_json(thread['choices'].first(MAX_MAIL_THREAD_CHOICES)) if thread['choices'].is_a?(Array)
         expects = thread['expects']
-        if expects.is_a?(Hash) && %w[choices compose waiting].include?(expects['mode'])
+        if expects.is_a?(Hash) && MAIL_EXPECT_MODES.include?(expects['mode'])
           entry['expects'] = { 'mode' => expects['mode'] }
-          entry['expects']['targetId'] = expects['targetId'] if expects['targetId'].is_a?(String) && expects['targetId'].length <= 100
+          entry['expects']['targetId'] = expects['targetId'] if expects['targetId'].is_a?(String) && expects['targetId'].length <= MAX_MAIL_EXPECT_TARGET_CHARS
           # The "Choose a reply" option texts (01 N8): kept so the follow-up control
           # survives a reload before the player picks. Bounded in count and length.
           if expects['options'].is_a?(Array)
-            opts = expects['options'].select { |o| o.is_a?(String) }.first(10).map { |o| o[0, MAX_MAIL_STRING] }
+            opts = expects['options'].select { |o| o.is_a?(String) }.first(MAX_MAIL_EXPECT_OPTIONS).map { |o| o[0, MAX_MAIL_STRING] }
             entry['expects']['options'] = opts unless opts.empty?
           end
         end
@@ -4128,7 +4152,7 @@ module BreakEscape
       return nil unless value.is_a?(Hash)
 
       value.each_with_object({}) do |(account_id, draft), clean|
-        next unless account_id.is_a?(String) && account_id.length <= 100 && draft.is_a?(Hash)
+        next unless account_id.is_a?(String) && account_id.length <= MAX_MAIL_DRAFT_ACCOUNT_CHARS && draft.is_a?(Hash)
 
         clean[account_id] = draft.slice(*MAIL_DRAFT_KEYS).to_h.transform_values { |v| sanitize_mail_json(v) }
       end
@@ -4154,7 +4178,7 @@ module BreakEscape
     end
 
     def mail_box_id?(value)
-      value.is_a?(String) && value.present? && value.length <= 100
+      value.is_a?(String) && value.present? && value.length <= MAX_MAIL_BOX_ID_CHARS
     end
 
     # Plain JSON only: string-keyed hashes, arrays, short strings, finite
@@ -4168,7 +4192,7 @@ module BreakEscape
         return {} if depth >= MAX_MAIL_JSON_DEPTH
 
         value.first(MAX_MAIL_JSON_ENTRIES).each_with_object({}) do |(k, v), out|
-          out[k.to_s] = sanitize_mail_json(v, depth + 1) if k.to_s.length <= 100
+          out[k.to_s] = sanitize_mail_json(v, depth + 1) if k.to_s.length <= MAX_MAIL_JSON_KEY_CHARS
         end
       when Array
         return [] if depth >= MAX_MAIL_JSON_DEPTH
