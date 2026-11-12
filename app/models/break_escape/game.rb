@@ -476,6 +476,17 @@ module BreakEscape
         player_state['droppedItems'] << item['id'] unless player_state['droppedItems'].include?(item['id'])
       end
 
+      # SECURITY: an add with no server-known source (not an NPC drop, not a player
+      # drop of a held item) must never carry lock-relevant fields from the client.
+      # The two source branches above rebuilt the item from the server's own copy;
+      # anything else is a bare client hash, and find_accessible_item treats a stored
+      # added object as already validated. A forged opens_lock / key_id / keyPins would
+      # otherwise be picked up as a working key for any key lock (and card_id, requires,
+      # lockType and the authored-behaviour flags are stripped for the same reason).
+      unless source_data['npc_id'].present? || source_data['source_type'] == 'player_drop'
+        item = strip_forgeable_lock_fields(item)
+      end
+
       # Generate unique ID if not provided
       item['id'] ||= "#{room_id}_added_#{SecureRandom.hex(4)}"
 
@@ -485,6 +496,28 @@ module BreakEscape
 
       Rails.logger.info "[BreakEscape] Added item #{item['type']} (#{item['id']}) to room #{room_id}"
       true
+    end
+
+    # Lock-relevant and authored-behaviour fields a client must never set on an item.
+    # Stripped from an unsourced add_object (add_item_to_room!), top level and inside
+    # scenarioData, so a tampered client cannot mint a key, keycard or lock from thin
+    # air. A legitimate dropped object carries these from the server's own scenario
+    # copy, not from here. Mirrors the controller's CLIENT_ITEM_FORBIDDEN_FIELDS, with
+    # the card/lock fields a room object can also carry added.
+    FORGEABLE_LOCK_FIELDS = %w[
+      opens_lock key_id keyId keyPins requires lockType locked access
+      card_id rfid_protocol acceptsUIDOnly contents itemsHeld flags flagRewards
+      droppable needsTag wearable holds storeIn saved_cards
+    ].freeze
+
+    def strip_forgeable_lock_fields(item)
+      return item unless item.is_a?(Hash)
+
+      cleaned = item.except(*FORGEABLE_LOCK_FIELDS)
+      if cleaned['scenarioData'].is_a?(Hash)
+        cleaned = cleaned.merge('scenarioData' => cleaned['scenarioData'].except(*FORGEABLE_LOCK_FIELDS))
+      end
+      cleaned
     end
 
     # Remove an item from a room (e.g., player picks up)

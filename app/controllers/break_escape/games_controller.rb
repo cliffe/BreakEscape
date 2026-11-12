@@ -2702,14 +2702,19 @@ module BreakEscape
     end
 
     # Strong parameters for room state sync (SECURITY)
+    #
+    # Only identity and placement come from the client. The lock-relevant fields
+    # (opens_lock, key_id, keyPins and the like) are NOT permitted: a legitimate
+    # drop (NPC or player_drop) rebuilds the item from the server's own scenario
+    # copy in Game#add_item_to_room!, and an unsourced add has its lock fields
+    # stripped there (Game#strip_forgeable_lock_fields). Permitting them here would
+    # let a tampered client forge a key for any key lock.
     def item_add_params
-      # Allow common item properties, including nested scenarioData
       params.require(:data).permit(
         :id, :type, :name, :texture, :x, :y, :takeable, :interactable,
         position: [:x, :y],
         scenarioData: [
-          :type, :name, :takeable, :id, :opens_lock, :key_id, :observations, :active, :visible, :interactable,
-          keyPins: []
+          :type, :name, :takeable, :id, :observations, :active, :visible, :interactable
         ]
       ).to_h
     end
