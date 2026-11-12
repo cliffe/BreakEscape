@@ -194,3 +194,83 @@ Games created: 1836 (m01), 1837 (test_access_habits, unused), 1838 (test_access_
 - The menu entry for an in-use PC says "Walk over and use it." although picking it only shows
   the in-use message; the detail could check `pcInUseBy` too.
 - `objectStandPoint` still does not route round NPC bodies (review M2, later).
+
+## R2 fixes
+
+Against docs/achitechture/TAP_PICK_CODE_REVIEW_R2.md (0 blockers, 2 majors, 5 minors, 5 nits).
+No player_state or sync change: the pending use is still one object reference in client memory.
+The only new UI is toast and menu detail text through the existing `gameAlert` and pick-one
+menu, so the pixel-art rule is not engaged.
+
+### What changed
+
+- **M1.** `createPendingTapUse` counts feet movement as progress only while click-to-move is
+  active, so a keyboard walk leaves `progressAt` alone and the 400 ms stopped-short drop fires.
+  `updatePlayerKeyboardMovement` (player.js) also clears the pending use, as the E key does.
+- **M2.** An in-reach NPC is under the tap only when the tap is on her figure and no
+  interactable object of the player's room (not a seat) drawn above her is opaque there
+  (`npcCovered`, which is `npcYieldsToObject`). With nothing else in reach under the tap the pick
+  list is empty, and the NPC branch sends the tap to the object: walk then use, or the in-use
+  message for a seated owner's PC drawn in front of him.
+- **m1.** An in-reach object under the tap on its own pixels (`onObjectPixels`, not a chair)
+  drops in-reach NPCs not under the tap (`tapPickList`). A tap on her uncovered figure within an
+  object's slop keeps the menu. Hostiles are left as gathered.
+- **m2.** `opaqueAt` passes untrimmed frame coordinates to `getPixelAlpha` (Phaser subtracts the
+  trim itself) and uses the trim only for the empty-margin test.
+- **m3.** `farObjectCandidate` asks `pcInUseBy`: the entry reads "<name> is using it." plus the
+  observations, and stays selectable so picking it shows the in-use toast.
+- **m4.** A blocked walk (on a path, feet still for a second) now toasts "Someone's in the way."
+  when an NPC is within a tile of the player's feet, otherwise "Something's in the way."
+  (`onBlocked`). Routing `objectStandPoint` round NPC bodies is still open.
+- **m5.** `opaqueNear`: an NPC's figure counts with a 2 px slop (5 x 5 pixel tests, only once the
+  exact pixel misses). Used for the in-reach NPC, the far NPC (`farUnderTap`) and the yield test
+  on her side; objects keep the exact test.
+- **n1.** A flipped frame reads texel `w - lx`, clamped to `w - 1`.
+- **n2.** test_access_habits: a far tap on `noor_pc` records `pc_in_use` and completes
+  `h10_never_leaves` from across the room. Kept as intended (the task is about trying her PC, and
+  she is in plain sight at it); PLAYTEST.md run 4 says so, so testers do not report it.
+- **n3.** tap-pick-handler.test.mjs lists every free name in the cut source statically (strings,
+  comments, template text and regex literals removed, then declared names, properties and object
+  keys left out) and fails naming any the harness does not pass in. A second test proves the
+  check finds a name. A regex after `return`, `typeof` or `case` is read as a regex. The harness
+  also reads `playerIsMoving` live from its deps: before, the destructured stub froze it at
+  false, so the handler tests never ran the "on a path" branch.
+- **n4.** `__MISSING` and `__DEFAULT` texture keys get no pixel test (bounds decide).
+- **n5.** `npcYieldTarget` returns the object she gives way to; the object branch puts it first
+  in `tapOrder`. `npcYieldsToObject` is now its boolean wrapper.
+
+### Tests
+
+tap-pick.test.mjs 35 pass (9 new); tap-pick-handler.test.mjs 25 pass (10 new: the reviewer's M2
+case, the monitor-in-front variant, m1 both ways, m1 memo beside her, m3, m5 both ways, M1
+through the handler, m4 both messages, and the two n3 tests). The M1 handler test fails with the
+`isMoving` guard removed. Every test file that imports or reads game.js, player.js, tap-pick.js
+or unlock-system.js, or the "is using this PC" text: 48 files, 706 tests, 0 failures, run
+without the lock.
+
+### Live proof
+
+Keyless headless server on :3190 from this worktree, `session-start.sh --headless`, setTimeout
+loop, `smoothStep` off, `setFPS(20)` with fixed steps on. Taps are `window.__test.clickAt` on the
+canvas; keys are `pressKey` with `holdMs`; the player was placed with `body.reset`.
+
+| Check | Game | Result |
+|---|---|---|
+| M1 repro | 1859 (m01) | From (200, 150), tap (200, 58) armed `reception_desk_phone`; ArrowDown 0.6 s (to y 233, pending dropped), ArrowUp 2 s (to (199, 64), 16 px from the phone): nothing opened |
+| Sarah's head | 1859 | From (126, 71), tap (128, 20): PersonChatMinigame, no menu |
+| m1, log beside her, both in reach | 1859 | From (126, 71), tap (140, 62) on Sign-In Log pixels, in her frame, off her figure: NotesMinigame, no menu (the menu before this fix) |
+| Her uncovered figure in the log's slop | 1864 (m01) | From (126, 71), tap (128, 30): menu "Visitor Sign-In Log" / "Sarah O'Brien", as ruled |
+| Far log over far Sarah | 1864 | From (160, 144), tap (135.5, 60.5): armed `reception_area_notes_2`, walked, NotesMinigame on arrival |
+| m3, in-use PC menu | 1870 (test_access_habits, walked to omar_room) | `omar_coffee` moved over the PC's corner (client only), player at (224, -400), coffee in reach, PC not: menu "Omar coffee" / "Omar's PC: Omar Haddad is using it. Omar's desk PC. ..."; picking the PC showed the in-use toast, no walk, nothing armed |
+| m4, blocked walk | 1870 | Far tap on the coffee machine, then the player's body held still (`body.moves = false`): use dropped after a second with the toast "Something's in the way." |
+
+M2 has no live geometry in m01 (R2 checked nine stand points: wherever Sarah is in reach, the
+Sign-In Log is too); the handler tests carry it.
+
+Games created: 1859, 1864 (m01_first_contact), 1870 (test_access_habits). Server and sessions
+stopped.
+
+### Open
+
+- `objectStandPoint` still does not route round NPC bodies (R2 m4, second half); the blocked
+  walk now says why it stopped.
