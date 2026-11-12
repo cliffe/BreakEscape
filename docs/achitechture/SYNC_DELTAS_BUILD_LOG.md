@@ -37,7 +37,7 @@ Standing constraints for this build:
 | Controller test for savedCurrentRoom (task 3) | Done, committed, tested (`853b69a59`) |
 | 2. R1 seeding | Done, committed, tested (`c12d9d1e7`) |
 | 3. P2 inventory/network answers | Done, committed, tested |
-| 4. P1 cloner one-card deltas | Not started |
+| 4. P1 cloner one-card deltas | Done, committed, tested |
 | 5. R3 capture-log seen keys | Not started |
 | 6a. R2 server-owned capture record (ships first) | Not started |
 | 6b. R2 reveal/proof gating | Not started |
@@ -46,6 +46,20 @@ Standing constraints for this build:
 
 ## Commits (newest first)
 
+- Step 4 (P1): cloner saved cards as one-card deltas. Server: `add_saved_card!` (identity and
+  name from the scenario definition, rfid_data from the client picked to `SAVED_CARD_DATA_KEYS`,
+  per-card 4 KB and list 64 KB/50 caps, replace-in-place), `remove_saved_card!` (listed:false mark),
+  `repair_saved_cards!`/`cards_need_repair?`/`saved_card_ids_to_repair` wired into
+  `bootstrap_state_needs_write?`/`run_bootstrap_writers!`, `real_cloner`, `npc_card_definition_for`;
+  `record_card_clone!` gains `card:` and answers `saved`/`reason`; `update_cloner_saved_cards!` is a
+  filtered merge (kept for one release). Controller: `clone_card` passes `card`; `/inventory`
+  `remove_saved_card`. Client: `savedCardForServer`, `removeSavedCard`, `SAVED_CARD_KEYS`/
+  `SAVED_CARD_DATA_KEYS` in rfid-data.js; `persistSavedCards` deleted and saveCardToCloner no longer
+  calls the server; recordCloneOnServer builds the source from `cloneFrom`/the card id, sends the
+  card and `stateSync.track()`s the request; interactions.js and action-menu.js pass `cloneFrom`;
+  api-client `cloneCard(source, cardId, card)`. Tests: clone_card_saved_cards_test (10, incl. the
+  8 KB cap 413 and the repair), reload_persistence update_saved_cards tests rewritten to the merge,
+  rfid-clone-card.test (card body, track, world/no-id warn, cross-side key-set).
 - Step 3 (P2): inventory and network answers carry deltas. `/inventory` add/remove answer
   `{ success: true }` (already-held: `{ success: true, already: true }`), no inventory echo.
   Each `/network/*` route answers `added`/`removed` (through `item_for_answer`, so no saved_cards
@@ -336,6 +350,32 @@ Built step 1 items 2, 4, 5 (part), and all of step 2 (R1). Tests, affected files
 No Rails tests run this session (the only Ruby change is one extra read-only bootstrap field,
 `savedCurrentRoom`; a controller/reload test for it is worth adding in the merge batch). No live
 browser proof yet (cases A to F run after step 6).
+
+## This session (2026-11-12, builder 5: steps 3 and 4)
+
+Built P2 (step 3, commit `7c7b55c83`) and P1 (step 4, this commit), merged
+`build/sync-proof-tools` in (merge `9263c1fdf`, both build-log sections kept, sync-delta-proof
+test rerun green). Tests run (affected files only, no lock):
+- P2: `item_for_answer_test` (4), `network_inventory_delta_test` (5), `network_footholds_test` +
+  `network_implants_test` + `network_wifi_test` (60), `games_controller_test` + `declared_grants_test`
+  (79), `inventory-tray.test.mjs` (16), `network-links.test.mjs` (65), `inventory-server-items` +
+  `network-links-routing` + `network-view` (35) -> all pass.
+- P1: `clone_card_saved_cards_test` (10, incl. 8 KB cap 413 + repair), `reload_persistence_test`
+  (69), `access_model_rfid_test` (30), `rfid-clone-card.test.mjs` (12), and the clone-entry /
+  denial / revocation / test-bridge-access / keycard-guard JS set (53) -> all pass.
+- `ruby -c` game.rb + games_controller.rb, `node --check` on all five changed JS files -> OK.
+
+### Open / outstanding for P1 (SYNC_DELTAS_PLAN 5.3, 5.4 verification; NOT yet done)
+- The cloner-card census: count cloneable keycard/NPC-card definitions in test-rfid and each mission
+  with a cloner, and confirm each is within the 50/64 KB bound; record the counts here.
+- The `#clone_keycard` ink-tag check (m03-m10, lab_physical_pentest): confirm each tag names its own
+  NPC's `rfidCard.card_id`, and rerun the keycard walk (which keycards have no `card_id`/`id`). The
+  plan's walk said only m01/m02/m04/m05/m07/m08 have id-less keycards, all in itemsHeld/contents
+  (taken and held, not copied in place), so the behaviour change in 5.4 is safe; re-verify before merge.
+- The request-size node test (plan 5.6 / 10.1) for `savedCardForServer` of an EM4100 and a fully
+  cracked MIFARE Classic card (bytes under 600 / 1 500) is not written yet; it belongs with step 7.
+
+### Remaining steps (not started this session): 5 (R3), 6a/6b (R2), 7 (size + live proof A-F), 8.
 
 ## Handover
 

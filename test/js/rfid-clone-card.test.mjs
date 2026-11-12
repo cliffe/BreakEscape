@@ -39,7 +39,19 @@ const { RFIDMinigame } = await import(rewrite('minigames/rfid/rfid-minigame.js',
     './rfid-attacks.js': dataUrl('export class MIFAREAttackManager {}'),
     './rfid-protocols.js': fileUrl('minigames/rfid/rfid-protocols.js')
 }));
-const { RFIDDataManager } = await import(rfidData);
+const { RFIDDataManager, SAVED_CARD_KEYS, SAVED_CARD_DATA_KEYS } = await import(rfidData);
+
+// The client's stored-card key lists must equal the server's (SYNC_DELTAS_PLAN 5.2).
+test('savedCardForServer key lists match the server SAVED_CARD_KEYS / SAVED_CARD_DATA_KEYS', () => {
+    const gameRb = readFileSync(join(js, '../../../app/models/break_escape/game.rb'), 'utf8');
+    const wlist = (name) => {
+        const m = gameRb.match(new RegExp(`${name}\\s*=\\s*%w\\[([^\\]]*)\\]`));
+        assert.ok(m, `${name} found in game.rb`);
+        return m[1].split(/\s+/).filter(Boolean);
+    };
+    assert.deepEqual(SAVED_CARD_KEYS, wlist('SAVED_CARD_KEYS'));
+    assert.deepEqual(SAVED_CARD_DATA_KEYS, wlist('SAVED_CARD_DATA_KEYS'));
+});
 const { processGameActionTags } = await import(rewrite('minigames/helpers/chat-helpers.js', {
     '../../utils/room-display-name.js': dataUrl('export function getRoomDisplayName(id) { return id; }'),
     '../../utils/portrait-variants.js': dataUrl('export function parsePortraitTag() { return null; }'),
@@ -61,9 +73,9 @@ function keycardBranch() {
 }
 
 // ── a stubbed browser ────────────────────────────────────────────────────────
-let cloneCalls, started, cloner;
+let cloneCalls, cardArgs, trackCalls, started, cloner;
 function reset({ withCloner = true, fullCloner = false } = {}) {
-    cloneCalls = []; started = [];
+    cloneCalls = []; cardArgs = []; trackCalls = []; started = [];
     cloner = { scenarioData: { type: 'rfid_cloner', saved_cards: [] } };
     if (fullCloner) {
         cloner.scenarioData.saved_cards = Array.from({ length: 50 }, (_, n) => ({ card_id: `FILL-${n}` }));
@@ -76,7 +88,8 @@ function reset({ withCloner = true, fullCloner = false } = {}) {
         eventDispatcher: { emit: () => {} },
         MinigameFramework: { isOpen: () => false },
         startRFIDMinigame: (...a) => started.push(a),
-        ApiClient: { cloneCard: async (source, cardId) => { cloneCalls.push([source, cardId]); return { success: true, recorded: true }; } },
+        ApiClient: { cloneCard: async (source, cardId, card) => { cloneCalls.push([source, cardId]); cardArgs.push(card); return { success: true, recorded: true, saved: true }; } },
+        stateSync: { track: (p) => trackCalls.push(p) },
         NPCGameBridge: {},
         currentConversationNPCId: 'dana',
         npcManager: { getNPC: (id) => id === 'dana'
@@ -139,7 +152,9 @@ test('a save from a held-keycard click calls cloneCard once with object_id', asy
     assert.equal(out, undefined);
     assert.equal(started.length, 1);
     const params = started[0][2];
-    assert.deepEqual(params.cloneSource, { object_id: 'ian_spare_badge' });
+    // Sync deltas P1: the source is decided in recordCloneOnServer from cloneFrom and the
+    // card's id; a card with an id is recorded by object_id whether held or in the world.
+    assert.equal(params.cloneFrom, 'inventory');
     const m = minigameFrom(params);
     m.handleSaveCard(params.cardToClone);
     await settle();
@@ -150,10 +165,39 @@ test('a held keycard with no id (an NPC badge handed over) is recorded as a held
     reset();
     const badge = { type: 'keycard', takeable: false, name: 'Old card', card_id: 'OLD-1', rfid_protocol: 'EM4100' };
     keycardBranch()({ objectId: 'inventory_keycard', scenarioData: badge }, window);
-    assert.deepEqual(started[0][2].cloneSource, { held_card: true });
+    assert.equal(started[0][2].cloneFrom, 'inventory');
     minigameFrom(started[0][2]).handleSaveCard(badge);
     await settle();
+    // No id and cloneFrom 'inventory': recorded as a held card by its card_id.
     assert.deepEqual(cloneCalls, [[{ held_card: true }, 'OLD-1']]);
+});
+
+test('the clone_card request carries the picked display card and is tracked (sync deltas P1)', async () => {
+    reset();
+    const badge = { id: 'ian_spare_badge', type: 'keycard', takeable: false, name: "Ian's badge",
+        card_id: 'IT-IAN-01', rfid_protocol: 'EM4100', evil: 'drop-me',
+        rfid_data: { uid: 'U', hex: 'AA', secret: 'drop-me' } };
+    keycardBranch()({ objectId: 'world_badge', scenarioData: badge }, window);
+    assert.equal(started[0][2].cloneFrom, 'world');
+    minigameFrom(started[0][2]).handleSaveCard(badge);
+    await settle();
+    const card = cardArgs[0];
+    assert.equal(card.card_id, 'IT-IAN-01');
+    assert.ok(!('evil' in card), 'unknown top-level keys are dropped');
+    assert.deepEqual(card.rfid_data, { uid: 'U', hex: 'AA' }, 'only SAVED_CARD_DATA_KEYS are kept');
+    assert.equal(trackCalls.length, 1, 'the request is tracked so syncConfirmed() waits for it');
+});
+
+test('a world keycard with no id sends no request and warns (sync deltas P1)', async () => {
+    reset();
+    const warnings = [];
+    console.warn = (...a) => warnings.push(a.join(' '));
+    const m = minigameFrom({ mode: 'clone', cloneFrom: 'world', cardToClone: { card_id: 'NOID-1' } });
+    assert.equal(m.recordCloneOnServer({ card_id: 'NOID-1' }), undefined);
+    await settle();
+    assert.equal(cloneCalls.length, 0);
+    assert.ok(warnings.some(w => /not recorded/.test(w)));
+    console.warn = () => {};
 });
 
 test('a failed save calls nothing', async () => {

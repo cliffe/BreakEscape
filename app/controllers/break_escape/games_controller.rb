@@ -1100,7 +1100,8 @@ module BreakEscape
           render json: { success: true }
 
         when 'update_saved_cards'
-          # The RFID cloner's saved cards, so a reload doesn't empty it
+          # The RFID cloner's saved cards (kept for one release while old tabs still send
+          # it; SYNC_DELTAS_PLAN 5.4). A filtered merge now: only a recorded card is kept.
           cards = Array(params[:saved_cards]).map { |c| c.respond_to?(:to_unsafe_h) ? c.to_unsafe_h : c }
           if @game.update_cloner_saved_cards!(cards)
             render json: { success: true }
@@ -1108,6 +1109,12 @@ module BreakEscape
             render json: { success: false, message: 'No RFID cloner in inventory, or invalid card data' },
                    status: :unprocessable_entity
           end
+
+        when 'remove_saved_card'
+          # Remove one display card from the cloner's list (SYNC_DELTAS_PLAN P1). The copy
+          # itself stands; the list is a display convenience.
+          @game.remove_saved_card!(params[:card_id].to_s)
+          render json: { success: true }
 
         else
           render json: { success: false, message: 'Invalid action' }, status: :bad_request
@@ -1208,11 +1215,16 @@ module BreakEscape
     def clone_card
       authorize @game if defined?(Pundit)
 
+      # The display card the copy saves to the cloner's list (SYNC_DELTAS_PLAN P1): stored
+      # only for a copy the server records, and only its rfid_data is read from the client.
+      # Capped at 8 KB before parsing (refuse_oversized_body, clone_card).
+      card = params[:card].respond_to?(:to_unsafe_h) ? params[:card].to_unsafe_h : nil
       result = @game.record_card_clone!(
         card_id: params[:card_id].to_s,
         npc_id: params[:npc_id].presence&.to_s,
         object_id: params[:object_id].presence&.to_s,
-        held_card: ActiveModel::Type::Boolean.new.cast(params[:held_card]) == true
+        held_card: ActiveModel::Type::Boolean.new.cast(params[:held_card]) == true,
+        card: card
       )
       render json: result[:body], status: result[:status]
     end

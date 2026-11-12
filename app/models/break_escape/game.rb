@@ -762,14 +762,14 @@ module BreakEscape
     # and 6a OR in cards_need_repair?, legacy_captures?, unrecorded_shared_logins?
     # and stampable_captures?; until then no bootstrap write is ever needed.
     def bootstrap_state_needs_write?
-      false
+      cards_need_repair?
     end
 
     # Run the bootstrap writers inside the lock (none of which saves) and return
     # whether anything changed. Steps 4 and 6a add repair_saved_cards!,
     # migrate_legacy_captures!, record_shared_logins! and stamp_proven_captures!.
     def run_bootstrap_writers!
-      false
+      repair_saved_cards!
     end
 
     def sync_vm_set_id_column
@@ -2259,43 +2259,56 @@ module BreakEscape
 
     # POST /clone_card (section 6): record a copy the card copier made, only of the
     # source's own card. Returns { status:, body: }.
-    def record_card_clone!(card_id:, npc_id: nil, object_id: nil, held_card: false)
+    def record_card_clone!(card_id:, npc_id: nil, object_id: nil, held_card: false, card: nil)
       refuse = ->(message) { { status: :forbidden, body: { success: false, message: message } } }
       return refuse.call('No card copier') unless rfid_cloner_held?
 
       if npc_id.present?
         npc = scenario_room_npc(npc_id)
-        card = self.class.npc_card(npc)
-        return refuse.call('No card to copy') unless card && card['card_id'].present?
+        definition = self.class.npc_card(npc)
+        return refuse.call('No card to copy') unless definition && definition['card_id'].present?
         return refuse.call('NPC not encountered') unless Array(player_state['encounteredNPCs']).include?(npc['id'])
         return refuse.call('This card cannot be copied') if npc['cloneable'] == false
 
         source = { 'npc' => npc['id'] }
       elsif object_id.present?
-        card = clone_source_keycard(object_id)
-        return refuse.call('Keycard not within reach') unless card
+        definition = clone_source_keycard(object_id)
+        return refuse.call('Keycard not within reach') unless definition
 
-        source = { 'object' => card['id'] || object_id.to_s }
+        source = { 'object' => definition['id'] || object_id.to_s }
       elsif held_card
         # A held keycard with no id (an NPC's itemsHeld badge): the source is the held
         # card that carries this card_id, as held_rfid_cards decides "held".
-        card = held_clone_source_keycard(card_id)
-        return refuse.call('Keycard not held') unless card
+        definition = held_clone_source_keycard(card_id)
+        return refuse.call('Keycard not held') unless definition
 
-        source = { 'held' => card['card_id'].to_s }
+        source = { 'held' => definition['card_id'].to_s }
       else
         return { status: :bad_request, body: { success: false, message: 'Missing npc_id, object_id or held_card' } }
       end
 
-      return { status: :ok, body: { success: true, recorded: false } } unless card['card_id'].to_s == card_id.to_s
+      return { status: :ok, body: { success: true, recorded: false } } unless definition['card_id'].to_s == card_id.to_s
 
+      stored_card_id = definition['card_id'].to_s
       player_state['serverClones'] = server_clones
-      player_state['serverClones'][card['card_id'].to_s] = {
+      # Overwriting the record drops any `listed: false` mark (remove_saved_card!), so a
+      # fresh copy of a removed card is listed again by the bootstrap repair (SYNC_DELTAS_PLAN 5.2).
+      player_state['serverClones'][stored_card_id] = {
         'source' => source,
-        'uidOnly' => card['rfid_protocol'] == 'MIFARE_DESFire'
+        'uidOnly' => definition['rfid_protocol'] == 'MIFARE_DESFire'
       }
+
+      # Only a recorded copy stores a display card, and only its name/protocol/authored
+      # fields come from the server definition; the client supplies attack progress alone (5.2).
+      saved = add_saved_card!(definition, card) if card.is_a?(Hash)
       save!
-      { status: :ok, body: { success: true, recorded: true } }
+
+      body = { success: true, recorded: true }
+      unless card.nil?
+        body[:saved] = saved == :saved
+        body[:reason] = saved.to_s unless saved == :saved
+      end
+      { status: :ok, body: body }
     end
 
     # The scenario keycard a held-card copy may be taken from: one the scenario defines
@@ -3454,28 +3467,144 @@ module BreakEscape
 
     MAX_SAVED_CARDS = 50
     MAX_SAVED_CARDS_BYTES = 64.kilobytes
+    MAX_SAVED_CARD_BYTES = 4.kilobytes
+    # The fields a stored display card carries. card_id, name, rfid_protocol and the authored
+    # rfid_* fields come from the server's definition; rfid_data (attack progress) from the
+    # client, to a closed key set (SYNC_DELTAS_PLAN 5.2).
+    SAVED_CARD_KEYS = %w[card_id name rfid_protocol rfid_hex rfid_facility rfid_card_number rfid_data timestamp].freeze
+    SAVED_CARD_AUTHORED_KEYS = %w[rfid_hex rfid_facility rfid_card_number].freeze
+    SAVED_CARD_DATA_KEYS = %w[cardId hex facility cardNumber uid sectors masterKeyKnown].freeze
 
-    # Store the RFID cloner's saved cards on its inventory entry. The cards
-    # lived only in the client's copy of the item, so a reload emptied the
-    # cloner. The playerInventory sent on load carries them back. RFID unlocks
-    # are already client-trusted, so this stores nothing the client couldn't
-    # already assert. Returns false when there is no cloner or the data is bad.
+    # The real RFID cloner in the inventory (never a forged clientAdded one, so a real
+    # cloner is found when both are present), or nil.
+    def real_cloner
+      Array(player_state['inventory']).find do |item|
+        next false if BreakEscape::ItemIdentity.client_forged?(item)
+
+        item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'rfid_cloner'
+      end
+    end
+
+    # Build the stored display card for a recorded copy: identity and name from the server's
+    # definition, attack progress (rfid_data) from the client picked to SAVED_CARD_DATA_KEYS,
+    # timestamp from the server. No save (the caller saves). Returns :saved, :full, :too_big
+    # or :no_cloner. A card with the same card_id is replaced in place; otherwise it is added
+    # unless 50 are held or a byte cap would be passed (SYNC_DELTAS_PLAN 5.2).
+    def add_saved_card!(definition, client_card)
+      cloner = real_cloner
+      return :no_cloner unless cloner
+
+      card_id = definition['card_id'].to_s
+      stored = { 'card_id' => card_id }
+      stored['name'] = definition['name'] if definition['name'].present?
+      stored['rfid_protocol'] = definition['rfid_protocol'] if definition['rfid_protocol'].present?
+      SAVED_CARD_AUTHORED_KEYS.each { |k| stored[k] = definition[k] if definition[k].present? }
+      if client_card.is_a?(Hash) && client_card['rfid_data'].is_a?(Hash)
+        data = client_card['rfid_data'].slice(*SAVED_CARD_DATA_KEYS)
+        stored['rfid_data'] = data unless data.empty?
+      end
+      stored['timestamp'] = (Time.now.to_f * 1000).round
+      return :too_big if stored.to_json.bytesize > MAX_SAVED_CARD_BYTES
+
+      list = cloner['saved_cards'].is_a?(Array) ? cloner['saved_cards'] : []
+      idx = list.index { |c| c.is_a?(Hash) && c['card_id'].to_s == card_id }
+      new_list = list.dup
+      if idx
+        new_list[idx] = stored
+      else
+        return :full if list.length >= MAX_SAVED_CARDS
+
+        new_list << stored
+      end
+      return :too_big if new_list.to_json.bytesize > MAX_SAVED_CARDS_BYTES
+
+      cloner['saved_cards'] = new_list
+      :saved
+    end
+
+    # Remove one display card from the cloner's list and mark its serverClones record
+    # listed:false, so the bootstrap repair does not put it back. The copy itself stands;
+    # a later copy of the same card clears the mark (SYNC_DELTAS_PLAN 5.2). Saves.
+    def remove_saved_card!(card_id)
+      card_id = card_id.to_s
+      cloner = real_cloner
+      list = cloner && cloner['saved_cards'].is_a?(Array) ? cloner['saved_cards'] : nil
+      cloner['saved_cards'] = list.reject { |c| c.is_a?(Hash) && c['card_id'].to_s == card_id } if list
+      if server_clones[card_id].is_a?(Hash)
+        player_state['serverClones'] = server_clones
+        player_state['serverClones'][card_id]['listed'] = false
+      end
+      save!
+      true
+    end
+
+    # A serverClones card id whose copy should be listed but is not: it has a recorded
+    # copy, no listed:false mark, and no stored display card, while a real cloner is held.
+    def saved_card_ids_to_repair
+      return [] unless real_cloner
+
+      cloner = real_cloner
+      stored_ids = Array(cloner['saved_cards']).filter_map { |c| c['card_id'].to_s if c.is_a?(Hash) }
+      server_clones.filter_map do |cid, record|
+        next unless record.is_a?(Hash) && record['listed'] != false
+        next if stored_ids.include?(cid.to_s)
+
+        cid.to_s
+      end
+    end
+
+    # Whether the bootstrap repair would add any card (the unlocked predicate, no write).
+    def cards_need_repair?
+      saved_card_ids_to_repair.any?
+    end
+
+    # Put back a recorded copy missing from the list, built from the scenario definition
+    # alone (no sectors), so a save whose card request was lost, or an old tab, still lists
+    # it after a reload. No save (the locked bootstrap step saves). Returns whether it wrote.
+    def repair_saved_cards!
+      wrote = false
+      saved_card_ids_to_repair.each do |card_id|
+        definition = scenario_keycard_definitions.find { |k| k['card_id'].to_s == card_id } ||
+                     npc_card_definition_for(card_id)
+        next unless definition
+
+        wrote = true if add_saved_card!(definition, nil) == :saved
+      end
+      wrote
+    end
+
+    # The scenario card definition for a card_id carried by an NPC (its creds/rfidCard card).
+    def npc_card_definition_for(card_id)
+      card_id = card_id.to_s
+      self.class.scenario_room_npcs(scenario_data).each do |npc|
+        card = self.class.npc_card(npc)
+        return card if card && card['card_id'].to_s == card_id
+      end
+      nil
+    end
+
+    # Store the RFID cloner's saved cards on its inventory entry (kept for one release while
+    # old tabs still send update_saved_cards, SYNC_DELTAS_PLAN 5.4). A filtered merge now:
+    # stored cards stay; an incoming card is added or replaced only when its card_id names a
+    # serverClones key (through add_saved_card!), never removing anything. Returns false when
+    # there is no cloner or the data is bad.
     def update_cloner_saved_cards!(cards)
       return false unless cards.is_a?(Array) && cards.length <= MAX_SAVED_CARDS
       return false unless cards.all? { |c| c.is_a?(Hash) }
       return false if cards.to_json.bytesize > MAX_SAVED_CARDS_BYTES
 
-      cloner = (player_state['inventory'] || []).find do |item|
-        # A forged clientAdded item typed rfid_cloner must not be treated as the cloner
-        # (rfid_cloner_held? already skips it for cloning; keep writes off it too, so a
-        # real cloner is found when both are present) (code review R2, B1 sweep).
-        next false if BreakEscape::ItemIdentity.client_forged?(item)
-
-        item.is_a?(Hash) && (item['type'] || item.dig('scenarioData', 'type')) == 'rfid_cloner'
-      end
+      cloner = real_cloner
       return false unless cloner
 
-      cloner['saved_cards'] = cards
+      recorded = server_clones
+      cards.each do |card|
+        card_id = card['card_id'].to_s
+        next if card_id.empty? || !recorded.key?(card_id)
+
+        definition = scenario_keycard_definitions.find { |k| k['card_id'].to_s == card_id } ||
+                     npc_card_definition_for(card_id) || { 'card_id' => card_id }
+        add_saved_card!(definition, card)
+      end
       save!
       true
     end

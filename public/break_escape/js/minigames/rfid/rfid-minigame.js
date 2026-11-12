@@ -44,8 +44,11 @@ export class RFIDMinigame extends MinigameScene {
         this.availableCards = params.availableCards || []; // For unlock mode
         this.hasCloner = params.hasCloner || false; // For unlock mode
         this.cardToClone = params.cardToClone; // For clone mode
-        // Clone mode: where the card came from, { npc_id } or { object_id } (access model 4.2)
+        // Clone mode: the source. Chat clones pass cloneSource { npc_id }; every other clone
+        // passes cloneFrom 'world' | 'inventory', and recordCloneOnServer builds the body from
+        // it and the card's id (SYNC_DELTAS_PLAN 5.2, access model 4.2).
         this.cloneSource = params.cloneSource || null;
+        this.cloneFrom = params.cloneFrom || null;
         this.isLockingAttempt = this.requiredCardIds.length > 0; // True if trying to unlock a specific lock, false if just browsing
 
         // Components
@@ -369,25 +372,39 @@ export class RFIDMinigame extends MinigameScene {
      */
     recordCloneOnServer(cardData) {
         if (this.mode !== 'clone') return undefined;
-        const source = this.cloneSource;
         const cardId = cardData && cardData.card_id;
-        if (!source || !cardId) return undefined;
-        const body = source.npc_id ? { npc_id: source.npc_id }
-            : (source.object_id ? { object_id: source.object_id }
-                : (source.held_card ? { held_card: true } : null));
-        if (!body) return undefined;
+        if (!cardId) return undefined;
+        // The body's source: a chat clone's NPC; otherwise the card's own id as object_id;
+        // otherwise a held inventory card with no id. A world card with no id cannot occur in
+        // a game created since the id stamping (5.1); if one does, nothing is sent (5.2).
+        let body;
+        if (this.cloneSource && this.cloneSource.npc_id) {
+            body = { npc_id: this.cloneSource.npc_id };
+        } else if (cardData && cardData.id) {
+            body = { object_id: cardData.id };
+        } else if (this.cloneFrom === 'inventory') {
+            body = { held_card: true };
+        } else {
+            console.warn('💾 Clone source has no id; the copy is not recorded and lasts this session only');
+            return undefined;
+        }
         const apiClient = window.ApiClient || window.APIClient;
         if (!apiClient || typeof apiClient.cloneCard !== 'function') return undefined;
+        // The display card the server stores for the list (SYNC_DELTAS_PLAN P1): identity
+        // comes from the server's definition, only rfid_data is read from this.
+        const savedCard = this.dataManager?.savedCardForServer?.(cardData) || null;
         const record = Promise.resolve()
-            .then(() => apiClient.cloneCard(body, cardId))
+            .then(() => apiClient.cloneCard(body, cardId, savedCard))
             .then(answer => {
-                console.log('💾 Card copy recorded on server:', answer && answer.recorded);
+                console.log('💾 Card copy recorded on server:', answer && answer.recorded, 'saved:', answer && answer.saved);
                 return answer;
             })
             .catch(error => {
                 console.warn('💾 Could not record card copy on server:', error && error.message);
                 return null;
             });
+        // syncConfirmed() waits for tracked requests, so an access-list unlock sees the copy (2.2).
+        window.stateSync?.track?.(record);
         // An access-list unlock waits for this (unlock-system.js requestRfidAccessUnlock),
         // so a reader tapped straight after Save sees the recorded copy.
         if (typeof window !== 'undefined') {

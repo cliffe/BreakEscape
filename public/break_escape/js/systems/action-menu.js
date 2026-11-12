@@ -66,7 +66,9 @@ export function objectActions(sprite) {
             detail: 'Read and copy the card onto your cloner. The card stays where it is.',
             onSelect: () => {
                 if (window.startRFIDMinigame) {
-                    window.startRFIDMinigame(null, null, { mode: 'clone', cardToClone: data });
+                    // A world keycard copied in place: its stamped id is the clone source, so the
+                    // copy is recorded and listed (SYNC_DELTAS_PLAN 5.2).
+                    window.startRFIDMinigame(null, null, { mode: 'clone', cardToClone: data, cloneFrom: 'world' });
                 } else {
                     window.gameAlert?.('RFID minigame not available', 'error', 'Error', 3000);
                 }
