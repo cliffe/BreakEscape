@@ -619,7 +619,7 @@ module BreakEscape
     # Returns { 'post' => id or nil, 'done' => bool }. Pure: every piece of state it reads is
     # passed in. `feed_entry` is the feedRevealed record, `frustration_entry` the raw
     # npcFrustration[id] (or nil), `globals` the merged globals, `lockout_keys` the pre-gated set.
-    def select_feed_post(data, npc, feed_entry, frustration_entry, globals, lockout_keys)
+    def select_feed_post(data, npc, feed_entry, frustration_entry, globals, lockout_keys = [])
       posts = feed_posts(npc)
       shown = feed_shown_ids(npc, feed_entry)
       eligible = lambda do |post|
