@@ -353,3 +353,60 @@ sentence between two of them is not a shared audio clip; only the Architect reus
 calls (listed above, all distinct). No caller of mine reuses a HaX opening. Openings reviewed side by side:
 m09 three one-shot calls distinct; m04 Vance's state-branch openings distinct; m05 Recruiter first_call vs
 return_contact distinct, Patricia distinct; m07 Architect's seven calls distinct. No repeats to change.
+
+---
+
+## Fix round 1 (callers) — updated counts and variety listings (2026-11-12)
+
+Review `REVIEW_WRITER_CALLERS_R1.md` actioned; see `REVIEW_WRITER_CALLERS_R1_OUTCOMES.md` for each finding.
+Commits: m09 `7666e9494`, m04 `a5bc7eb32`, m05 `09df82fcc`, m07 `acc063b4c`.
+
+### Voiced-line count per mission (after the fixes)
+
+| Mission | Caller | Before (writer) | After fix round 1 |
+|---|---|---|---|
+| m09 | Nightshade, Torres, Gary | ~22 | ~22 (co-speaker reprefix + home stubs, no count change; optional m8 not taken) |
+| m04 | Vance | ~51 | ~48 (−3: M5 SCADA cuts; M4 call-end adds no lines) |
+| m05 | Recruiter | ~60 | ~49 (B2 −13, m4 +2 call-VAR openers; longest answered path ~17–18) |
+| m05 | Patricia | ~50 | ~53 (M2 +3 answer lines, M3 +1 goodbye, m6 −1) |
+| m07 | Architect live calls | ~60 | ~59 (M7 +1 ten-minutes; M8 net −1) |
+| m07 | Architect voicemails | ~14 | ~16 (M6 whole-line branches; seattle_vm −1) |
+
+### Variety listing — redone after the fixes
+
+**m09 (unchanged in shape):** Nightshade "Agent 0x00. I'd ask how the leave was…" (last line now
+`agent_0x99:` "He's right. I hate that he's right."); Torres "I gave you this address back in October…";
+Gary "It's Gary. Whitlock, from St. Catherine's…". All distinct, none a HaX opening.
+
+**m04 Vance** (one call): openings "Vance. What do you need?" / "Banks are isolated…" / "Vance. The hydrogen's
+still climbing." / "Vance."; last line "Call me if you need it." + "And hurry." / "I'm not going anywhere."
+(now ends the call). SCADA guidance no longer repeats between `charge_control` and `safe_disabling`.
+
+**m05 Recruiter** (two call paths):
+- `first_call` opening (branch): callback "You rang back. Manners, or curiosity?" / slow answer "Take your
+  time. Patience is most of my job." / plain "Agent. Or whatever they're calling you this week." Last line
+  (branch): "…the other forty-seven were never your problem." / `recruiter_final_statement` "…didn't stop
+  because you found one of mine."
+- `return_contact` opening: "Still deciding? The offer doesn't improve with age, agent." /
+  `recruiter_deal` "Since you've rung, here's what I wanted. …" (player_rang). Last line as above.
+- "Everyone has a price" is said once (in `recruiter_deal`). Casualty projection de-duped against HaX
+  (`architect_discussed`).
+
+**m05 Patricia** (one call): opening (new, state-varied) "Morgan. Where is he?" / "Morgan. Is it over?" /
+"Morgan."; last line "Whatever you decide in front of him, ring me when it's done." / "I'll be on the vault
+log." / "That's all for now." → "Right." (plain goodbye after a topic). "[Just checking in.]" shows only when
+no topic was taken on the call.
+
+**m07 Architect** (shared voice block — all distinct):
+| Call | Opening (first spoken) | Last NPC line |
+|---|---|---|
+| taunt_t30 | "Don't look for the trace. It isn't there." | "Let it hurt afterwards, not during…" |
+| taunt_t20 | "You've sent your team." | "Did you decide with a number, or with your stomach?" |
+| taunt_t10 | (branch) "Ten minutes before your team is too committed to move. You moved them…" / "You logged in…" / "The beauty of entropy…" | "You still have a door open…" / "Doors close…" |
+| taunt_t5 | "The man in your control room would give you his figure…" | "…name them? You will have to, eventually, to somebody with a tablet." |
+| taunt_t1 | (branch) "Late. I did wonder." / "Closer than the file suggested." | after "…written every one of them down." |
+| seattle_call | "Seattle first. Exactly as scheduled." | "No. That's rather why I rang." |
+| sign_off | "You saved eight point four million people…" / "You saved the rest of it…" | "You'll have the figures too. Then we'll both know the same thing about you." |
+
+Voicemails (`taunt_*_vm`, `seattle_call_vm`) mirror each taunt's point, mutually exclusive with the live
+taunt; T-30 and T-20 carry an opener in his voice ("You let it ring. Sensible." / "Busy. Of course.").
