@@ -290,6 +290,13 @@ module BreakEscape
         # Remove 'requires' fields recursively for security
         filter_requires_recursive(filtered)
 
+        # Step 2b (plan item 3): author notes ("_"-prefixed properties) never ship. Strip them from
+        # the bootstrap copy here, after this route's own filtering and before any player-state key
+        # (objectivesState, savedGlobalVariables, captures, savedCurrentRoom, ...) is attached, so a
+        # "_"-prefixed saved global is kept. Free data (object/array globals, minigameData) holds no
+        # notes and ships as authored. The secret-keeping filters above still visit notes.
+        BreakEscape::AuthorNotes.strip_notes!(filtered, BreakEscape::ScenarioSchema.root)
+
         # Include objectives state for page reload recovery
         # This allows the client to restore completed/progress state
         # Aims the client opened by unlockCondition are derived here, since
@@ -2381,6 +2388,12 @@ module BreakEscape
       end
 
       Rails.logger.debug "[BreakEscape] Container has #{filtered_contents.length} items after filtering"
+
+      # Step 2b (plan item 3): author notes never ship. Strip them from the returned contents copy
+      # (each item is already a deep_dup), with the Node of a contents list.
+      BreakEscape::AuthorNotes.strip_notes!(
+        filtered_contents, BreakEscape::ScenarioSchema.at('#/definitions/item/properties/contents')
+      )
       filtered_contents
     end
 

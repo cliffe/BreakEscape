@@ -12,6 +12,7 @@ require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/declared_grants'
+require_relative '../lib/break_escape/author_notes'
 require_relative '../lib/break_escape/npc_habits/clues'
 
 # Items that are physical things: taken down the wire from a remote desktop, they would
@@ -532,22 +533,31 @@ def check_network_model(json_data, scenario_dir = nil)
   # grant_foothold placed in a timer or onConfirm (review R2 m2).
   host_action_keys = %w[triggerOnInteract onInteract conditionalActions completionActions onConfirm].freeze
   grant_entries = [] # { node:, keys:, path:, host: }
-  gf_walk = lambda do |node, keys, host|
+  # Step 2b: carry a schema Node and skip "_" notes (AuthorNotes.note?), so the network validator
+  # and the server (NetworkModel.grant_foothold_actions) agree that a grant parked in a note is
+  # not declared. Free data holds no notes and is walked in full, as the server walks it.
+  gf_walk = lambda do |node, snode, keys, host|
     case node
     when Array
-      node.each_with_index { |n, i| gf_walk.call(n, keys + [i], host) }
+      inode = BreakEscape::ScenarioSchema.item(snode)
+      node.each_with_index { |n, i| gf_walk.call(n, inode, keys + [i], host) }
     when Hash
       grant_entries << { node: node, keys: keys, path: BreakEscape::DeclaredGrants.path_string(keys), host: host } if node['type'] == 'grant_foothold'
       node.each do |k, v|
-        if k.to_s == 'timers' && v.is_a?(Array)
-          v.each_with_index { |timer, i| gf_walk.call(timer, keys + ['timers', i], timer.is_a?(Hash) ? timer : host) }
+        ks = k.to_s
+        next if BreakEscape::AuthorNotes.note?(snode, ks)
+
+        cnode = BreakEscape::ScenarioSchema.child(snode, ks)
+        if ks == 'timers' && v.is_a?(Array)
+          tnode = BreakEscape::ScenarioSchema.item(cnode)
+          v.each_with_index { |timer, i| gf_walk.call(timer, tnode, keys + ['timers', i], timer.is_a?(Hash) ? timer : host) }
         else
-          gf_walk.call(v, keys + [k.to_s], host_action_keys.include?(k.to_s) ? node : host)
+          gf_walk.call(v, cnode, keys + [ks], host_action_keys.include?(ks) ? node : host)
         end
       end
     end
   end
-  gf_walk.call(json_data, [], nil)
+  gf_walk.call(json_data, BreakEscape::ScenarioSchema.root, [], nil)
 
   # Every item a needsHeld could name (room objects, NPC items, start items, declared
   # grants and resource contents), with each id/type/name mapped to its object so the USB

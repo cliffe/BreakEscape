@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# Step 2b: author_notes (and, through it, scenario_schema) so collect skips notes.
+require_relative 'author_notes' unless defined?(BreakEscape::AuthorNotes)
+
 module BreakEscape
   # A scenario's own client-side give_item actions, read as the server's allowlist
   # for those rewards (docs/achitechture/DECLARED_GRANTS_PLAN.md).
@@ -113,21 +116,19 @@ module BreakEscape
 
     def collect(scenario_data)
       out = []
-      walk = lambda do |node, keys|
-        case node
-        when Hash
-          if identified_give_item?(node)
-            excluded = keys.any? { |k| SKIPPED_KEYS.include?(k) }
-            never_run = keys.any? { |k| NEVER_RUN_KEYS.include?(k) }
-            out << { path: path_string(keys), item: node['item'],
-                     excluded: excluded, executed: !excluded && !never_run && executed?(keys) }
-          end
-          node.each { |k, v| walk.call(v, keys + [k.to_s]) }
-        when Array
-          node.each_with_index { |v, i| walk.call(v, keys + [i]) }
-        end
+      return out unless scenario_data.is_a?(Hash)
+
+      # Step 2b: AuthorNotes.each_live skips "_" notes (so a give_item an author commented out
+      # under a "_draft" never counts as declared) and visits free data in full (so a give_item
+      # inside a minigame's completionActions is still declared).
+      AuthorNotes.each_live(scenario_data, ScenarioSchema.root) do |node, _snode, keys|
+        next unless node.is_a?(Hash) && identified_give_item?(node)
+
+        excluded = keys.any? { |k| SKIPPED_KEYS.include?(k) }
+        never_run = keys.any? { |k| NEVER_RUN_KEYS.include?(k) }
+        out << { path: path_string(keys), item: node['item'],
+                 excluded: excluded, executed: !excluded && !never_run && executed?(keys) }
       end
-      walk.call(scenario_data, []) if scenario_data.is_a?(Hash)
       out
     end
 

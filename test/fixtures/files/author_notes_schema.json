@@ -1,0 +1,56 @@
+{
+  "type": "object",
+  "properties": {
+    "rooms": { "type": "object", "additionalProperties": { "$ref": "#/definitions/room" } },
+    "globals": { "type": "object", "additionalProperties": true, "x-id-map": true },
+    "narrator": {
+      "type": "object",
+      "additionalProperties": true,
+      "x-id-map": false,
+      "properties": { "voice": { "type": "string" } }
+    },
+    "minigameData": { "type": "object", "x-free-data": true },
+    "closed": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "properties": { "name": { "type": "string" }, "_comment": { "type": "string" } }
+    },
+    "phish": { "$ref": "#/definitions/socialPhishTarget" },
+    "characters": { "type": "object", "additionalProperties": { "$ref": "#/definitions/character" } },
+    "patternedMap": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "patternProperties": { "^_": {} }
+    },
+    "mixed": {
+      "type": "object",
+      "properties": { "socialGuess": { "type": "string" } },
+      "x-free-data": true
+    }
+  },
+  "definitions": {
+    "room": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "properties": {
+        "objects": { "type": "array", "items": { "$ref": "#/definitions/object" } },
+        "needs": { "type": "object", "additionalProperties": { "$ref": "#/definitions/need" } }
+      }
+    },
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "properties": { "id": { "type": "string" } }
+    },
+    "need": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} } },
+    "socialPhishTarget": {
+      "type": "object",
+      "properties": { "byChoice": { "type": "object" } },
+      "additionalProperties": { "type": "object" }
+    },
+    "character": { "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} } }
+  }
+}

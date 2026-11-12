@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative '../access_work' unless defined?(BreakEscape::AccessWork)
+require_relative '../scenario_schema' unless defined?(BreakEscape::ScenarioSchema)
+require_relative '../author_notes' unless defined?(BreakEscape::AuthorNotes)
 
 module BreakEscape
   module NpcHabits
@@ -200,8 +202,10 @@ module BreakEscape
         return unless social.is_a?(Hash)
 
         if social['intelFacts'].is_a?(Hash)
+          facts_node = BreakEscape::ScenarioSchema.at('#/properties/social/properties/intelFacts')
           social['intelFacts'].each do |fact_id, fact|
-            next if fact_id.to_s.start_with?('_')
+            # intelFacts is an id map: a "_" key is a fact id (an id, never a note), so it is read.
+            next if BreakEscape::AuthorNotes.note?(facts_node, fact_id.to_s)
 
             strings = []
             collect_strings(fact, strings)

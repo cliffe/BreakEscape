@@ -11,6 +11,9 @@
 #
 # Returns an array of issue strings starting with "❌" (error, fails --strict-social) or "⚠️"
 # (warning), in the style of validate_scenario.rb. Runs only when the scenario has a `social` key.
+require_relative '../../lib/break_escape/scenario_schema' unless defined?(BreakEscape::ScenarioSchema)
+require_relative '../../lib/break_escape/author_notes' unless defined?(BreakEscape::AuthorNotes)
+
 module ValidateSocial
   module Mail
     PARTS = %w[from greeting pretext ask].freeze
@@ -265,8 +268,12 @@ module ValidateSocial
       unless by.is_a?(Hash)
         return [err("#{where}.replies.byChoice must be an object keyed by template id")]
       end
+      bychoice_node = BreakEscape::ScenarioSchema.child(
+        BreakEscape::ScenarioSchema.at('#/definitions/socialPhishTarget/properties/replies'), 'byChoice'
+      )
       by.each do |tid, v|
-        next if tid.start_with?('_')
+        # replies.byChoice is an id map keyed by template id: a "_" key is a template id, not a note.
+        next if BreakEscape::AuthorNotes.note?(bychoice_node, tid.to_s)
         issues << err("#{where}.replies.byChoice names template '#{tid}', which is not in social.templates") unless tpls.key?(tid)
         if v.is_a?(String)
           issues << err("#{where}.replies.byChoice.#{tid} is empty; the reply would be blank") if blank?(v)
