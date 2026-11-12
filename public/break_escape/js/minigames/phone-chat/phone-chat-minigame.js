@@ -1520,7 +1520,7 @@ export class PhoneChatMinigame extends MinigameScene {
                 // reset's save comes last
                 this._endedByCall = true;
                 this._resetAfterRingerCall();
-                this._completeRingerCallWithBeat();
+                this._completeRingerCallWithBeat(true);   // the call closed itself (story end): read beat
                 return;
             }
             this.complete(true);
@@ -1568,16 +1568,22 @@ export class PhoneChatMinigame extends MinigameScene {
         this.saveStoryState();
         this._endedByCall = true;
         this._resetAfterRingerCall();
-        this._completeRingerCallWithBeat();
+        this._completeRingerCallWithBeat(true);   // #exit_conversation: the call closed itself, read beat
     }
 
     /**
      * Finish a ringer call the way a handset does, whichever side hung up: "Call ended m:ss" for
-     * a beat, then complete(true). No beat in the terminal look (no call screen). Shared by End /
-     * the back arrow, the story's end and #exit_conversation. `_endedByCall` and `_callFinished`
-     * are set before the beat, so a hit during it is still read as a call that ended.
+     * a beat, then complete(true). Shared by End / the back arrow, the story's end and
+     * #exit_conversation. `_endedByCall` and `_callFinished` are set before the beat, so a hit during
+     * it is still read as a call that ended.
+     *
+     * `selfClose` is true only when the call closed itself (#exit_conversation or the story's end):
+     * then the terminal look holds a read beat (sweep item 10). A player hang-up (the back arrow or
+     * Esc, `selfClose` false) closes at once in the terminal look, as before the sweep — otherwise the
+     * beat freezes the partial thread with the back arrow dead (R1 m3). The handset "Call ended" beat
+     * is unchanged either way.
      */
-    _completeRingerCallWithBeat() {
+    _completeRingerCallWithBeat(selfClose = false) {
         if (this._callEndedPending) return;   // idempotent: one beat, one complete timer
         this._callEndedPending = true;
         if (this.ui.showCallEnded?.()) {
@@ -1586,7 +1592,7 @@ export class PhoneChatMinigame extends MinigameScene {
             setTimeout(() => { if (this.gameState?.isActive) this.complete(true); }, CALL_ENDED_BEAT_MS);
             return;
         }
-        if (this.params?.theme === 'terminal') {
+        if (selfClose && this.params?.theme === 'terminal') {
             // Terminal look (no call screen, sweep item 10): without a beat the phone closed the instant
             // #exit_conversation ran, so the last line of every Architect call showed for under 50 ms
             // (M6 R1 M2). Hold a read beat before closing; where the last clip is still playing, let it
@@ -1853,8 +1859,9 @@ export class PhoneChatMinigame extends MinigameScene {
             // End call / the back arrow: the player hung up (row 25). The call is over, so the
             // minigame completes; the thread comes back through the ringer's reopen, not here.
             this._endedByCall = true;
-            // "Call ended m:ss" for a beat before the screen goes (plan 2.5)
-            this._completeRingerCallWithBeat();
+            // "Call ended m:ss" for a beat before the screen goes (plan 2.5). A player hang-up, so no
+            // terminal read beat (R1 m3): the terminal look closes at once, the handset shows its beat.
+            this._completeRingerCallWithBeat(false);
             return;
         }
         

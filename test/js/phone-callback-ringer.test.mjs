@@ -353,9 +353,10 @@ test('item 7: a callback with no callbackWhen keeps the plain two-field shape (n
     assert.deepEqual(s.ringer.callbackFor('ceo'), { knot: 'ring_call', callLabel: 'Boss' });
 });
 
-// ---- sweep item 8: a stale ring condition drops the offer quietly ---------------------------
+// ---- ring.ringWhile: a stale ring condition drops the offer quietly before pickup -------------
+// (The ringer field is `ringCondition`; the adapter feeds it from the author's `ring.ringWhile`.)
 
-test('item 8: a ringing offer whose condition stops holding is dropped quietly: no row, no missed event, no callback', () => {
+test('ringWhile: a ringing offer whose condition stops holding is dropped quietly: no row, no missed event, no callback', () => {
     const s = setup();
     s.ringer.offer(offer({ ringCondition: 'globalVars.go === true' }));
     assert.equal(s.ringer.stateOf('ceo'), 'ringing');
@@ -368,7 +369,7 @@ test('item 8: a ringing offer whose condition stops holding is dropped quietly: 
     assert.equal(s.lastSlot('ceo'), null, 'the slot is empty');
 });
 
-test('item 8: a queued offer whose condition goes stale before it rings never rings', () => {
+test('ringWhile: a queued offer whose condition goes stale before it rings never rings', () => {
     const s = setup();
     s.w.ringBlocked = true;             // something keeps it queued
     s.ringer.offer(offer({ ringCondition: 'globalVars.go === true' }));
@@ -380,7 +381,7 @@ test('item 8: a queued offer whose condition goes stale before it rings never ri
     assert.equal(s.all('emit').filter((e) => String(e[1]).startsWith('phone_call_')).length, 0, 'no ring, no miss');
 });
 
-test('item 8: a forced call is never dropped by a stale condition', () => {
+test('ringWhile: a forced call is never dropped by a stale condition', () => {
     const s = setup();
     s.ringer.offer(offer({ ringCondition: 'globalVars.go === true', disableClose: true }));
     assert.equal(s.ringer.stateOf('ceo'), 'ringing');
@@ -389,7 +390,19 @@ test('item 8: a forced call is never dropped by a stale condition', () => {
     assert.equal(s.ringer.stateOf('ceo'), 'ringing', 'the forced call rings on');
 });
 
-test('item 8: an offer with no condition is unaffected even when the hook would say false', () => {
+test('ringWhile: a call already answered (held) is never dropped, even when the condition stops holding (M1 R4 rule 3)', () => {
+    const s = setup();
+    s.w.minigame = true; s.w.openBlocked = true;   // a minigame is open, so Answer holds the call
+    s.ringer.offer(offer({ ringCondition: 'globalVars.go === true' }));
+    s.ringer.answer('ceo');
+    assert.equal(s.ringer.stateOf('ceo'), 'held', 'answered, on hold behind the minigame');
+    s.w.ringHolds = false;                          // the player has picked up: ringWhile no longer applies
+    s.clock.run(2000);
+    assert.equal(s.ringer.stateOf('ceo'), 'held', 'the held call is not dropped');
+    assert.equal(s.all('outcome').filter((e) => e[1] === 'dropped').length, 0, 'no quiet drop once answered');
+});
+
+test('ringWhile: an offer with no condition is unaffected even when the hook would say false', () => {
     const s = setup();
     s.w.ringHolds = false;
     s.ringer.offer(offer());            // no ringCondition

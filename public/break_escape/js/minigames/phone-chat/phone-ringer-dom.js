@@ -378,11 +378,14 @@ export function installPhoneRinger(win = window) {
         // conversation_closed; it is emitted here, once, for the thread it was on (not for the list).
         dropDisplaced(d) {
             if (d?.kind !== 'phone' || !d.thread) return;
-            // A call placed from, or answered over, the same contact's own thread: its own
-            // phone-chat has already emitted conversation_closed for this contact, so emitting
-            // here would fire it twice (plan 2.5 says once). Only a different thread is owed it
-            // (row 10: a call to Y answered over X's thread). Sweep item 1.
-            if (d.callNpcId && d.thread === d.callNpcId) return;
+            // A call placed from, or answered over, the same contact's own thread: when that call
+            // actually opened its own phone-chat, it already emitted conversation_closed for this
+            // contact, so emitting here would fire it twice (plan 2.5 says once). The ringer marks
+            // `callOpened` when the call's conversation opens. A call for the same contact that never
+            // opened (giveUp, the ending closing over a held offer, an outgoing dial that rang out)
+            // emits nothing, so the displaced thread is still owed its event (R1 m1). A different
+            // thread is always owed it (row 10: a call to Y answered over X's thread). Sweep item 1.
+            if (d.callNpcId && d.thread === d.callNpcId && d.callOpened) return;
             win.eventDispatcher?.emit?.(`conversation_closed:${d.thread}`, { npcId: d.thread, timestamp: Date.now() });
         },
         // Rows 11, 25: the popup comes back as it was, unless something else is open by then
@@ -513,6 +516,8 @@ export function installPhoneRinger(win = window) {
                 withheld: ring ? ring.withheld : raw?.withheld,
                 untilAnswered: ring ? ring.untilAnswered : raw?.untilAnswered,
                 callbackWhen: ring ? ring.callbackWhen : raw?.callbackWhen,
+                // The opt-in `ring.ringWhile` is the ringer's re-check condition while queued or ringing.
+                ringCondition: ring ? ring.ringWhile : (raw?.ringWhile ?? raw?.ringCondition ?? null),
             });
         },
         /**

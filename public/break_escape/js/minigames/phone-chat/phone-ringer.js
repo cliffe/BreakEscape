@@ -399,22 +399,28 @@ export function createPhoneRinger({ adapter, clock } = {}) {
     }
 
     /**
-     * Item 8: the ring mapping's condition no longer holds. A global that changed since the ring was
-     * offered can make it stale (m04: the ESD goes live while HaX's dial ring is queued or ringing).
-     * A forced call is never dropped. The adapter re-checks the condition (it owns the globals).
+     * `ring.ringWhile`: the author's opt-in condition no longer holds. A global that changed since the
+     * ring was offered can make it stale (m04: the ESD goes live while HaX's dial ring is queued or
+     * ringing). Only a queued or ringing offer is re-checked — once answered or on hold the player has
+     * picked up, so it is never dropped. A forced call is never dropped. The adapter re-checks the
+     * condition (it owns the globals).
      */
     function ringStale(o) {
         return !o.disableClose && !!o.ringCondition && call('ringConditionHolds', o.ringCondition) === false;
     }
 
     /**
-     * Item 8: drop a stale offer quietly, like a held bark dropped on release: no "Missed call" row,
-     * no phone_call_missed, no callback or voicemail. A popup it had put aside comes back.
+     * Drop a stale `ringWhile` offer quietly, like a held bark dropped on release: no "Missed call"
+     * row, no phone_call_missed, no callback or voicemail. A popup it had put aside comes back.
      */
     function dropQuietly(o) {
         const d = o.displaced;
         o.displaced = null;
         finishOffer(o);
+        // R1 m2: the mapping's own setGlobal (its latch) ran at offer time. Put those globals back to
+        // their pre-offer values, so a twin mapping, or the same trigger later, is not blocked by a
+        // latch for a ring that never happened. The adapter owns the globals and re-emits the changes.
+        if (o.ringSetGlobalRestore) call('setGlobal', o.ringSetGlobalRestore);
         call('onOutcome', 'dropped', o);
         if (d) reopenDisplaced(d);
     }
@@ -683,6 +689,10 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         }
         o.opened = true;
         o.openedAt = now();
+        // R1 m1: the call's own phone-chat is now open, so it will emit conversation_closed for this
+        // contact itself. Mark a displaced phone descriptor, so the adapter skips the duplicate emit
+        // only for a call that actually opened (not giveUp / the ending over a held offer / a ring-out).
+        if (o.displaced && o.displaced.kind === 'phone') o.displaced.callOpened = true;
         o.refusals = 0;
         o.firstRefusalAt = 0;
         run();
@@ -807,7 +817,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         const o = active;
         if (o && o.state === 'ringing') {
             if (ringStale(o)) {
-                // Item 8: the mapping's condition stopped holding while it rang. Drop it quietly.
+                // ringWhile: the author's condition stopped holding while it rang. Drop it quietly.
                 dropQuietly(o);
                 again = true;
             } else if (call('ringBlocked', o.npcId) || tutorialHold(o)) {
@@ -829,9 +839,8 @@ export function createPhoneRinger({ adapter, clock } = {}) {
                 call('vibrate');
             }
         } else if (o && o.state === 'held') {
-            // Item 8: a held (answered, not yet opened) call whose mapping condition has gone stale
-            // is dropped quietly too, before the hold limit or the open.
-            if (ringStale(o)) { dropQuietly(o); again = true; return; }
+            // ringWhile is never re-checked once answered or on hold (the player has picked up): a held
+            // call is not dropped, only missed on the hold limit or opened.
             // Row 18: the hold limit, only while the pill shows (advance() counts only then).
             if (!o.disableClose && o.holdMs >= HOLD_MAX_MS) { miss(o, 'rang_off'); again = true; return; }
             // Rows 13 to 16: open once nothing blocks it; row 19 and the second check follow.
@@ -841,7 +850,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (!active && queue.length > 0) {
             const head = queue[0];
             if (ringStale(head)) {
-                // Item 8: its condition went stale while it waited in the queue; drop it, don't ring.
+                // ringWhile: its condition went stale while it waited in the queue; drop it, don't ring.
                 dropQuietly(head);
                 again = true;
             } else if (tutorialHold(head)) {
@@ -868,6 +877,11 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             voicemailKnot: typeof raw.voicemailKnot === 'string' ? raw.voicemailKnot : null,
             callbackWhen: typeof raw.callbackWhen === 'string' && raw.callbackWhen ? raw.callbackWhen : null,
             ringCondition: typeof raw.ringCondition === 'string' && raw.ringCondition ? raw.ringCondition : null,
+            // R1 m2: in memory only (not saved). The pre-offer values of the mapping's own setGlobal
+            // keys, put back if the item-8 re-check drops this ring quietly, so its latch does not
+            // block a twin for a ring that never happened.
+            ringSetGlobalRestore: raw.ringSetGlobalRestore && typeof raw.ringSetGlobalRestore === 'object'
+                ? raw.ringSetGlobalRestore : null,
             withheld: !!raw.withheld,
             untilAnswered: !!raw.untilAnswered && !forced,
             callLabel: typeof raw.callLabel === 'string' ? raw.callLabel : null,
@@ -1041,6 +1055,10 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         if (!o || o.direction !== 'outgoing' || o.npcId !== npcId || !connecting || connecting.id !== id) return false;
         o.connectedAt = now();
         o.openedAt = o.connectedAt;
+        // R1 m1: an outgoing call that connects opens its conversation, so it emits conversation_closed
+        // for this contact itself; a dial that rings out never gets here and the displaced thread is
+        // still owed its event.
+        if (o.displaced && o.displaced.kind === 'phone') o.displaced.callOpened = true;
         // A callback connecting clears it (2.6) and counts as answered (3.4)
         if (o.callbackDial) {
             dropCallback(npcId);

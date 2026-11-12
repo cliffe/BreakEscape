@@ -103,6 +103,37 @@ test('item 9: a step starting while a call rings requeues it; it rings again wit
     } finally { w.restore(); }
 });
 
+test('item 9 (R1 n3): paused time does not build up the 20 s step hold', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        tutorial(w, { active: true, promptOpen: false, currentStep: 0 });
+        fire(w);
+        w.win.breakEscapeSessionOverlayShowing = true;   // the session overlay / Mission Brief / hidden tab
+        await w.advance(30000);
+        assert.equal(w.banner(), null, 'the hold does not accrue while paused, even past 20 s of wall time');
+        assert.notEqual(w.ringer.stateOf('caller'), 'ringing');
+        w.win.breakEscapeSessionOverlayShowing = false;  // back in the game
+        await w.advance(21000);
+        assert.equal(w.ringer.stateOf('caller'), 'ringing', 'the 20 s counts only unpaused time');
+    } finally { w.restore(); }
+});
+
+test('item 9 (R1 n3): hideBanner clears the under-tutorial class when the ring stops', async () => {
+    const w = makeWorld({ npcs: [npc] });
+    try {
+        tutorial(w, { active: true, promptOpen: false, currentStep: 0 });
+        fire(w);
+        await w.advance(22000);
+        const layer = w.win.document.getElementById('phone-ring-layer');
+        assert.ok(w.banner(), 'it rings with a step up');
+        assert.ok(layer.classList.contains('under-tutorial'), 'the banner drops clear of the tutorial');
+        w.ringer.decline('caller');                      // the ring stops: render hides the banner
+        await w.advance(500);
+        assert.equal(w.banner(), null, 'the banner is gone');
+        assert.ok(!layer.classList.contains('under-tutorial'), 'hideBanner cleared the class');
+    } finally { w.restore(); }
+});
+
 test('item 9: no tutorial manager on the window, or an inactive one, does not hold', async () => {
     const w = makeWorld({ npcs: [npc] });
     try {

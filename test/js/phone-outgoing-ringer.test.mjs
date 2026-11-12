@@ -182,7 +182,9 @@ test('own end of a connected call: row "ended" for the outgoing direction, reope
     const out = s.last('outcome');
     assert.deepEqual([out[1], out[3]], ['ended', 'outgoing']);
     assert.equal(out[4].seconds, 12);
-    assert.deepEqual(s.last('reopen')[1], { kind: 'phone', thread: 'ceo' });
+    // callOpened: the connected call opened its own conversation, so it emits conversation_closed
+    // itself; the adapter uses this to skip a duplicate emit for the same contact (R1 m1).
+    assert.deepEqual(s.last('reopen')[1], { kind: 'phone', thread: 'ceo', callOpened: true });
     assert.equal(s.log.filter((e) => e[0] === 'emit').length, 0);
     assert.equal(s.ringer.current(), null);
 });

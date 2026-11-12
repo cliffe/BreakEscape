@@ -908,7 +908,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "delayMs": 6000,
               "conversationMode": "phone-chat",
               "targetKnot": "on_anomaly_confirmed",
-              "ring": { "onMissed": "callback", "callbackWhen": "globalVars.esd_authorized !== true && globalVars.mission_complete !== true" }
+              "ring": { "onMissed": "callback", "callbackWhen": "globalVars.esd_authorized !== true && globalVars.mission_complete !== true", "ringWhile": "globalVars.esd_authorized !== true && globalVars.mission_complete !== true" }
             },
             {
               "eventPattern": "phone_call_declined:agent_0x99",

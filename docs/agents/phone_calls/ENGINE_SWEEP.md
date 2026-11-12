@@ -151,6 +151,63 @@ reload lost its stale-clear condition and a stale "Call back" never cleared. `NP
 restored callback/live rec before `restoreCallback`, which now passes it to `setCallback`. Save format
 unchanged. Tests: `phone-callback-restore-when.test.mjs` (array and object eventMappings, and no-config).
 
+## M1 R4: item 8 replaced by the opt-in `ring.ringWhile`
+From `REVIEW_M1_R4.md` (orchestrator). Re-checking a mapping's **trigger** `condition` surprised authors:
+a trigger-time guard like `!globalVars.hl_box_opened` on m09's Torres lid ring (erb :1018) silently dropped
+the call once the box was opened, even on hold. The implicit re-check (item 8 / 8b / M4 R3) is removed:
+
+- `npc-manager.js`: the ring offer no longer carries `ringCondition` built from `config.condition`;
+  `_ringRecheckCondition` (the self-latch filter) is deleted. `ringConditionHolds` stays — it is now the
+  evaluator for the author's opt-in condition only.
+- New author field **`ring.ringWhile`** (`phone-ring-config.js` `normaliseRing`): a condition in the
+  `callbackWhen` grammar (`globalVars.*` terms joined by `&&`, including `!globalVars.x`). The adapter
+  feeds it to the ringer as `ringCondition`; the ringer re-checks it while the call is **queued or
+  ringing** only. A failing `ringWhile` drops the call quietly and restores the mapping's own `setGlobal`
+  (the R1 m2 fix). A call the player has **answered or put on hold is never dropped** (the held-state
+  re-check in `runOnce` is removed); a forced call is exempt.
+- Validator (`scripts/validate_phone_calls.rb`): `ringWhile` is checked like `callbackWhen` (globalVars
+  terms only, undeclared globals error, a warning on a forced call).
+- m04 (`scenarios/m04_critical_failure/scenario.json.erb`, the one dial-ring mapping): the ESD dial ring
+  gets `"ringWhile": "globalVars.esd_authorized !== true && globalVars.mission_complete !== true"`. It is
+  the only mission that opts in.
+- README: "A ring whose reason goes away" rewritten for `ringWhile`; the ring field table gains a
+  `ringWhile` row. Tests: `phone-ringwhile.test.mjs` (replaces `phone-ring-self-latch.test.mjs`),
+  `phone-callback-ringer.test.mjs` (a held call is not dropped), `phone-ring-config.test.mjs`,
+  `validator-phone-calls.test.mjs`.
+
+## Engine sweep review R1 fixes
+From `REVIEW_ENGINE_SWEEP_R1.md`. M1 (the item-8 re-check missing `!globalVars.x` and mixed conditions)
+was fixed by the orchestrator in `45ece8b8a`, then the whole implicit re-check was replaced by
+`ring.ringWhile` (M1 R4, above). The rest:
+
+- **m1** (`phone-ringer-dom.js`, `phone-ringer.js`). Item 1's `dropDisplaced` skip (`d.thread ===
+  d.callNpcId`) also fired on paths where the call never opened its own conversation (giveUp, the ending
+  closing over a held offer that had put the phone aside, an outgoing dial that rang out), so those owed
+  nobody the thread's `conversation_closed`. The ringer now marks a displaced phone descriptor
+  `callOpened` only when the call's conversation actually opens (`finishOpen` success, `outgoingConnected`);
+  the adapter skips the duplicate emit only when `d.thread === d.callNpcId && d.callOpened`. A never-opened
+  call for the same contact is owed its one emit again. Test: `phone-displaced-emit.test.mjs`,
+  `phone-outgoing-ringer.test.mjs`.
+- **m2** (`npc-manager.js`, `phone-ringer.js`). A quiet ringWhile drop would keep the mapping's own
+  `setGlobal` latch, which blocks its twin. `_handleEventMapping` snapshots the pre-offer values of a ring
+  mapping's own `setGlobal` keys and passes them as `ringSetGlobalRestore`; `dropQuietly` puts them back
+  (in memory only, not in the save), so a twin — or the same trigger again — is not blocked by a latch for
+  a ring that never happened. A dropped `onceOnly` ring does not re-fire itself; give such a ring a twin.
+  Documented in README "A ring whose reason goes away". Test: `phone-ringwhile.test.mjs` (the restore
+  carries over unchanged from the old item-8 drop to the ringWhile drop).
+- **m3** (`phone-chat-minigame.js`). Item 10's terminal read beat (2.6 s) also ran on the player's own
+  hang-up (the back arrow / Esc, `closeConversation`), freezing the partial thread with the back arrow
+  dead. `_completeRingerCallWithBeat(selfClose)` now holds the terminal beat only when the call closes
+  itself (`#exit_conversation`, the story's end); a player hang-up closes at once, as before the sweep. The
+  handset "Call ended" beat is unchanged. Test: `phone-call-terminal-beat.test.mjs`.
+- **n1** moot: the implicit re-check (where a mixed `globalVars.x === data.y` term mattered) is gone;
+  `ringWhile` is globalVars-only by the validator. **n2** the item-11 decision is now stated plainly in
+  README "The call look". **n3**
+  `phone-ring-tutorial.test.mjs` gains the paused-clock case and the `under-tutorial` clear-on-hideBanner
+  case. **n4** is m07 ink content (for the M6 round), not touched here.
+
+No new static import was added, so no test harness copy list changed.
+
 ## Author-visible docs
 `README_scenario_design.md` "Voiced phone calls" documents `ring.callbackWhen` (item 7, now with the
 reload recovery, 7b), the condition re-check (item 8), the tutorial-hold row in the "what the player
@@ -160,9 +217,9 @@ sees" table (item 9, 20 s rule), and the call look / `phoneTheme` with the termi
 ## New exposed engine surface
 - `phoneRinger.clearStaleCallback(npcId)` (pure ringer): drop a callback whose `callbackWhen` failed and save the empty slot.
 - `phoneRinger.dropDisplaced` (adapter): exposed on the returned object for the item-1 test.
-- `NPCManager.ringConditionHolds(cond)`: the safe-false re-check of a ring mapping condition.
-- `NPCManager._ringRecheckCondition(cond, setGlobal)`: the condition slice item 8 re-checks, minus the mapping's own latch (8b).
+- `NPCManager.ringConditionHolds(cond)`: the safe-false evaluator of a ring's `ringWhile` (M1 R4; the item-8/8b implicit re-check and `_ringRecheckCondition` are removed).
 - `NPCManager._ringCallbackWhenFor(npc, knot)`: the ring config's `callbackWhen` for a knot, for the reload recovery (7b).
 - Ringer adapter `tutorialPromptOpen()` / `tutorialStep()`; ringer `TUTORIAL_HOLD_MS` and per-offer `tutHold*` (item 9).
 - `TERMINAL_CALL_END_READ_MS` (`phone-call-lock.js`) and `PhoneChatMinigame._waitForCallClipThen` (item 10).
+- R1 fixes: the offer carries `ringSetGlobalRestore` (in memory only) and a displaced phone descriptor carries `callOpened`; `PhoneChatMinigame._completeRingerCallWithBeat(selfClose)` takes a flag.
 No new static import was added (item 10 adds a named export to `phone-call-lock.js`, already imported), so no test harness copy list changed.

@@ -13,22 +13,28 @@ const closedEmits = (w) => w.dispatcher.emitted.filter(([n]) => n.startsWith('co
 test('dropDisplaced owes conversation_closed only for a thread other than the call contact', () => {
     const w = makeWorld({ npcs: [{ id: 'hax', displayName: 'HaX' }, { id: 'vance', displayName: 'Vance' }] });
     try {
-        // Same contact (a call placed from hax's thread, or hax answered over hax's thread): the
-        // call's own close already emitted conversation_closed:hax, so dropDisplaced must stay quiet.
+        // Same contact, the call actually opened (callOpened): its own close already emitted
+        // conversation_closed:hax, so dropDisplaced must stay quiet (sweep item 1).
+        w.ringer.dropDisplaced({ kind: 'phone', thread: 'hax', callNpcId: 'hax', callOpened: true });
+        assert.deepEqual(closedEmits(w), [], 'no second emit for a call that opened for the contact');
+
+        // Same contact, but the call never opened its conversation (giveUp, the ending over a held
+        // offer, an outgoing dial that rang out): nothing emitted it, so the thread is still owed it
+        // (R1 m1). Before the fix this skipped and left zero emits.
         w.ringer.dropDisplaced({ kind: 'phone', thread: 'hax', callNpcId: 'hax' });
-        assert.deepEqual(closedEmits(w), [], 'no second emit for the call contact');
+        assert.deepEqual(closedEmits(w), ['conversation_closed:hax'], 'a never-opened call still owes it');
 
         // Different contact (row 10, a call to vance answered over hax's thread): hax is still owed it.
-        w.ringer.dropDisplaced({ kind: 'phone', thread: 'hax', callNpcId: 'vance' });
-        assert.deepEqual(closedEmits(w), ['conversation_closed:hax']);
+        w.ringer.dropDisplaced({ kind: 'phone', thread: 'hax', callNpcId: 'vance', callOpened: true });
+        assert.deepEqual(closedEmits(w), ['conversation_closed:hax', 'conversation_closed:hax']);
 
         // A legacy descriptor with no callNpcId still emits (keeps A3 R1 M1).
         w.ringer.dropDisplaced({ kind: 'phone', thread: 'vance' });
-        assert.deepEqual(closedEmits(w), ['conversation_closed:hax', 'conversation_closed:vance']);
+        assert.deepEqual(closedEmits(w), ['conversation_closed:hax', 'conversation_closed:hax', 'conversation_closed:vance']);
 
         // Not a phone descriptor, or the contact list (no thread): nothing.
         w.ringer.dropDisplaced({ kind: 'laptop' });
         w.ringer.dropDisplaced({ kind: 'phone', thread: null, callNpcId: null });
-        assert.equal(closedEmits(w).length, 2, 'unchanged');
+        assert.equal(closedEmits(w).length, 3, 'unchanged');
     } finally { w.restore(); }
 });

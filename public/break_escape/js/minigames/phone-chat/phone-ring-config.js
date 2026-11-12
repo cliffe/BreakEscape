@@ -8,7 +8,7 @@
  * No imports, so node tests load it on its own.
  */
 
-const RING_KEYS = new Set(['onMissed', 'voicemailKnot', 'withheld', 'untilAnswered', 'callbackWhen']);
+const RING_KEYS = new Set(['onMissed', 'voicemailKnot', 'withheld', 'untilAnswered', 'callbackWhen', 'ringWhile']);
 const CALL_KEYS = new Set(['knot', 'when', 'unavailable', 'button']);
 
 function makeWarn(opts) {
@@ -102,7 +102,18 @@ export function normaliseRing(raw, opts) {
         warn('ring.callbackWhen has no effect unless ring.onMissed is "callback"');
     }
 
-    return { onMissed, voicemailKnot, withheld, untilAnswered, callbackWhen };
+    // A condition (`globalVars.*` terms joined by `&&`, including `!globalVars.x`, as `callbackWhen`)
+    // re-checked while the call is queued or ringing. If it stops holding the call is dropped quietly
+    // (no row, no event, no callback). A call that has been answered or put on hold is never dropped,
+    // and a forced call is exempt. It is the opt-in replacement for the old implicit re-check of the
+    // mapping's trigger `condition`.
+    let ringWhile = null;
+    if (src.ringWhile !== undefined && src.ringWhile !== null) {
+        if (typeof src.ringWhile === 'string' && src.ringWhile.trim()) ringWhile = src.ringWhile.trim();
+        else warn('ring.ringWhile must be a non-empty string; ignored');
+    }
+
+    return { onMissed, voicemailKnot, withheld, untilAnswered, callbackWhen, ringWhile };
 }
 
 /**

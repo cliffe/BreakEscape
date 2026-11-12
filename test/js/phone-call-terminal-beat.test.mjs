@@ -77,10 +77,10 @@ test('the handset "Call ended" beat is unchanged: closes after the beat, not at 
     assert.deepEqual(state.completed, [true], 'closed after the beat');
 });
 
-test('a terminal call holds a read beat before closing, not an instant close', () => {
+test('a terminal call that closes itself holds a read beat before closing, not an instant close', () => {
     const tick = clock();
     const { i, state } = minigame({ terminal: true, playing: false });
-    i._completeRingerCallWithBeat();
+    i._completeRingerCallWithBeat(true);   // #exit_conversation or the story's end
     tick(0);
     assert.deepEqual(state.completed, [], 'the phone does not close the instant the call ends');
     tick(TERMINAL_CALL_END_READ_MS - 200);
@@ -89,10 +89,18 @@ test('a terminal call holds a read beat before closing, not an instant close', (
     assert.deepEqual(state.completed, [true], 'closes once the read beat is up');
 });
 
+test('a terminal call the player hangs up closes at once, no read beat (R1 m3)', () => {
+    const tick = clock();
+    const { i, state } = minigame({ terminal: true, playing: false });
+    i._completeRingerCallWithBeat(false);   // the back arrow / Esc: a player hang-up
+    tick(0);
+    assert.deepEqual(state.completed, [true], 'the back arrow closes the terminal call at once');
+});
+
 test('a terminal call with its last clip still playing waits for the clip, then the read beat', () => {
     const tick = clock();
     const { i, state } = minigame({ terminal: true, playing: true });
-    i._completeRingerCallWithBeat();
+    i._completeRingerCallWithBeat(true);
     tick(2000);
     assert.deepEqual(state.completed, [], 'does not close while the clip is playing');
     state.playing = false;               // the clip finished
@@ -106,8 +114,8 @@ test('a terminal call with its last clip still playing waits for the clip, then 
 test('the terminal read beat is idempotent: a second call schedules nothing new', () => {
     const tick = clock();
     const { i, state } = minigame({ terminal: true, playing: false });
-    i._completeRingerCallWithBeat();
-    i._completeRingerCallWithBeat();      // e.g. End and the story-end both reach it
+    i._completeRingerCallWithBeat(true);
+    i._completeRingerCallWithBeat(true);      // e.g. two story-end paths both reach it
     tick(TERMINAL_CALL_END_READ_MS + 100);
     assert.deepEqual(state.completed, [true], 'closed exactly once');
 });

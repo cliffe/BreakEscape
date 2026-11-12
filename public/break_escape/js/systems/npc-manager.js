@@ -553,21 +553,21 @@ export default class NPCManager {
   }
 
   /**
-   * Whether a ring mapping's `condition` still holds while its call is queued or ringing (plan 2.3,
-   * sweep item 8). Like a held bark, the condition is re-run so a global that has changed since the
-   * ring was offered can drop it. The original event is gone, so only a condition made entirely of
-   * `globalVars.*` terms (the state that can change under a pending ring) is re-evaluated; a
-   * condition that reads event data is left holding. Returns true (keep ringing) unless it can
-   * confidently say the condition is now false.
+   * Whether a ring's opt-in `ring.ringWhile` still holds while its call is queued or ringing (plan
+   * 2.3). Like a held bark, the condition is re-run so a global that has changed since the ring was
+   * offered can drop it. `ringWhile` is written in the `call.when` / `callbackWhen` grammar
+   * (`globalVars.*` terms joined by `&&`, including `!globalVars.x`). Returns true (keep ringing)
+   * unless it can confidently say the condition is now false. M1 R4: this re-checks only the author's
+   * opt-in `ringWhile`, never a mapping's trigger `condition`, so typing a trigger-time guard never
+   * silently drops a call.
    * @param {string|null} condition
    * @returns {boolean}
    */
   ringConditionHolds(condition) {
     if (!condition || typeof condition !== 'string' || !condition.trim()) return true;
     if (condition.includes('||')) return true;   // only plain && chains are split safely
-    // Re-check the terms that read only globals (`globalVars.x`, `!globalVars.x`, `(globalVars.x !== true)`);
-    // a term that reads event data (`value`, `name`, `data.`) can't be re-run without its event and is
-    // left holding (M4 R3 m1: m04's `value === true && globalVars.esd_authorized !== true`).
+    // Re-check the terms that read only globals (`globalVars.x`, `!globalVars.x`, `globalVars.x !== true`);
+    // anything else is left holding (a stray non-global term keeps the ring rather than dropping it).
     const LITERALS = new Set(['true', 'false', 'null', 'undefined']);
     const globalOnly = (t) => {
       if (!/globalVars\.[A-Za-z_$]/.test(t)) return false;
@@ -577,28 +577,6 @@ export default class NPCManager {
     const kept = condition.split('&&').map((t) => t.trim()).filter(Boolean).filter(globalOnly);
     if (!kept.length) return true;
     try { return !!safeEvaluateCondition(kept.join(' && '), {}); } catch (e) { return true; }
-  }
-
-  /**
-   * The slice of a ring mapping's `condition` worth re-checking while the call is queued or ringing
-   * (sweep item 8). A mapping's own `setGlobal` runs at offer time (`_handleEventMapping`), so a term
-   * reading a variable that same mapping writes — a latch like `recruiter_texted` or
-   * `revelation_ring_offered` — is already false by the first re-check and would drop the ring on its
-   * own latch (M5 R2 cross-track). Drop those terms and re-check only the rest; the ring is carried
-   * on the condition the ringer stores (`ringCondition`).
-   * @param {string|null} condition - the mapping's `condition`
-   * @param {Object|null} setGlobal - the mapping's own `setGlobal` ({ varName: value })
-   * @returns {string|null} the condition to re-check, or null (nothing left to re-check: always holds)
-   */
-  _ringRecheckCondition(condition, setGlobal) {
-    if (typeof condition !== 'string' || !condition.trim()) return null;
-    const keys = setGlobal && typeof setGlobal === 'object' ? Object.keys(setGlobal) : [];
-    if (!keys.length) return condition;
-    const self = new Set(keys);
-    const kept = condition.split('&&').map((t) => t.trim()).filter(Boolean)
-      .filter((t) => !(t.match(/globalVars\.([A-Za-z_$][\w$]*)/g) || [])
-        .some((ref) => self.has(ref.replace('globalVars.', ''))));
-    return kept.length ? kept.join(' && ') : null;
   }
 
   /**
@@ -1282,10 +1260,15 @@ export default class NPCManager {
       ? () => this._persistTriggerOnClose(npcId, eventKey)
       : () => {};
     
-    // Set global variables if specified
+    // Set global variables if specified. For a ring mapping (R1 m2) snapshot the keys' pre-offer
+    // values first: a ring dropped quietly by the item-8 re-check restores them, so the mapping's
+    // own latch does not block its twin (or the same trigger later) for a ring that never happened.
+    let ringSetGlobalRestore = null;
     if (config.setGlobal && window.gameState?.globalVariables) {
+      if (isRing) ringSetGlobalRestore = {};
       Object.entries(config.setGlobal).forEach(([varName, value]) => {
         const oldValue = window.gameState.globalVariables[varName];
+        if (isRing) ringSetGlobalRestore[varName] = oldValue;
         window.gameState.globalVariables[varName] = value;
         console.log(`🌐 Event setGlobal: ${varName} = ${value}`);
         if (window.npcConversationStateManager) {
@@ -1730,10 +1713,12 @@ export default class NPCManager {
             disableClose: config.disableClose || false,
             resume: config.resume === true,
             callLabel: config.callLabel || null,
-            // Sweep item 8: the mapping's condition, re-checked while queued or ringing (a global
-            // that changes under a pending ring can drop it). A term the mapping's own setGlobal
-            // writes is left out, so a self-latching ring is not dropped by its own latch (M5 R2).
-            ringCondition: this._ringRecheckCondition(config.condition, config.setGlobal)
+            // The opt-in `ring.ringWhile` (normalised in the ringer adapter) is re-checked while the
+            // call is queued or ringing. The mapping's trigger `condition` is NOT re-checked (M1 R4):
+            // a trigger-time guard never silently drops a call.
+            // R1 m2: the pre-offer values of the mapping's own setGlobal keys. A quiet ringWhile drop
+            // puts them back, so a dropped ring leaves its latch where a twin can still ring.
+            ringSetGlobalRestore
           });
           console.log(`[NPCManager] Event '${eventPattern}' for NPC '${npcId}' → ring offer: ${outcome}`);
           return;

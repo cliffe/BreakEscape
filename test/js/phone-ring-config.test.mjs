@@ -12,7 +12,7 @@ const { normaliseRing, normaliseCall } = await import('data:text/javascript;base
 
 const collect = () => { const w = []; return { warns: w, opts: { warn: (m) => w.push(m) } }; };
 
-const DEFAULT = { onMissed: 'callback', voicemailKnot: null, withheld: false, untilAnswered: false, callbackWhen: null };
+const DEFAULT = { onMissed: 'callback', voicemailKnot: null, withheld: false, untilAnswered: false, callbackWhen: null, ringWhile: null };
 
 test('ring: nothing, false and null mean no ring', () => {
     for (const v of [undefined, null, false]) assert.equal(normaliseRing(v), null);
@@ -29,7 +29,7 @@ test('ring: the object form carries every field', () => {
     const { warns, opts } = collect();
     assert.deepEqual(
         normaliseRing({ onMissed: 'voicemail', voicemailKnot: 'vm', withheld: true, untilAnswered: true }, opts),
-        { onMissed: 'voicemail', voicemailKnot: 'vm', withheld: true, untilAnswered: true, callbackWhen: null });
+        { onMissed: 'voicemail', voicemailKnot: 'vm', withheld: true, untilAnswered: true, callbackWhen: null, ringWhile: null });
     assert.deepEqual(warns, []);
 });
 
@@ -46,6 +46,18 @@ test('ring.callbackWhen: a non-empty string is carried; a blank or non-string wa
     const d = collect();
     normaliseRing({ onMissed: 'voicemail', voicemailKnot: 'vm', callbackWhen: 'globalVars.x' }, d.opts);
     assert.ok(d.warns.some((w) => w.includes('callbackWhen has no effect')), 'warns when onMissed is not callback');
+});
+
+test('ring.ringWhile: a non-empty string is carried; a blank or non-string warns (M1 R4)', () => {
+    const a = collect();
+    assert.equal(normaliseRing({ ringWhile: 'globalVars.esd_authorized !== true' }, a.opts).ringWhile, 'globalVars.esd_authorized !== true');
+    assert.deepEqual(a.warns, []);
+    const b = collect();
+    assert.equal(normaliseRing({ ringWhile: '  ' }, b.opts).ringWhile, null);
+    assert.equal(b.warns.length, 1);
+    const c = collect();
+    assert.equal(normaliseRing({ ringWhile: 7 }, c.opts).ringWhile, null);
+    assert.equal(c.warns.length, 1);
 });
 
 test('ring: malformed values fall back to defaults with a warning each, and never throw', () => {

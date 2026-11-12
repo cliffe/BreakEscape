@@ -14,7 +14,7 @@ require 'json'
 require 'set'
 
 module ValidatePhoneCalls
-  RING_KEYS = %w[onMissed voicemailKnot withheld untilAnswered callbackWhen].freeze
+  RING_KEYS = %w[onMissed voicemailKnot withheld untilAnswered callbackWhen ringWhile].freeze
   CALL_KEYS = %w[knot when unavailable button].freeze
   ON_MISSED = %w[callback voicemail].freeze
   UNAVAILABLE = %w[no_answer hidden].freeze
@@ -357,6 +357,20 @@ module ValidatePhoneCalls
           warn.call("#{where}: ring.callbackWhen has no effect unless ring.onMissed is \"callback\" (got #{on_missed.inspect})") if on_missed != 'callback'
         else
           err.call("#{where}: ring.callbackWhen must be a non-empty condition string")
+        end
+      end
+
+      if src.key?('ringWhile') && !src['ringWhile'].nil?
+        rw = src['ringWhile']
+        if rw.is_a?(String) && !rw.strip.empty?
+          bad = when_misuse(rw)
+          err.call("#{where}: ring.ringWhile uses #{bad}, which a call condition cannot read (only globalVars. terms; plan 3.1)") if bad
+          global_names(rw).reject { |n| globals.include?(n) }.each do |n|
+            err.call("#{where}: ring.ringWhile reads globalVars.#{n}, which is not in globalVariables and nothing sets it: the condition sees undefined#{var_hint(source, n)}")
+          end
+          warn.call("#{where}: ring.ringWhile has no effect on a forced call (disableClose), which is never dropped") if forced
+        else
+          err.call("#{where}: ring.ringWhile must be a non-empty condition string")
         end
       end
 

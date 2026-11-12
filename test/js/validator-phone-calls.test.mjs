@@ -475,6 +475,25 @@ test('sweep item 7: ring.callbackWhen is validated like a call condition', { ski
     assertNone(warnings(check({ eventMappings: [ringMap({ ring: { callbackWhen: 'globalVars.live !== true' } })] }, { hax: INK }, glob)), 'unknown field "callbackWhen"');
 });
 
+test('M1 R4: ring.ringWhile is validated like a call condition', { skip }, () => {
+    const glob = { globalVariables: { live: false } };
+    // clean: a globalVars condition
+    assert.deepEqual(check({ eventMappings: [ringMap({ ring: { ringWhile: 'globalVars.live !== true' } })] }, { hax: INK }, glob), []);
+    // error: an undeclared global
+    assertHas(errors(check({ eventMappings: [ringMap({ ring: { ringWhile: 'globalVars.nope !== true' } })] })),
+        'ring.ringWhile reads globalVars.nope');
+    // error: a non-event-mapping term
+    assertHas(errors(check({ eventMappings: [ringMap({ ring: { ringWhile: 'data.x === true' } })] }, { hax: INK }, glob)),
+        'ring.ringWhile uses');
+    // error: a non-string
+    assertHas(errors(check({ eventMappings: [ringMap({ ring: { ringWhile: 7 } })] })), 'ring.ringWhile must be a non-empty condition string');
+    // warn: ringWhile on a forced call has no effect
+    assertHas(warnings(check({ eventMappings: [ringMap({ ring: { ringWhile: 'globalVars.live !== true' }, disableClose: true })] }, { hax: INK }, glob)),
+        'ring.ringWhile has no effect on a forced call');
+    // ringWhile is a known ring field (no "unknown field" warning)
+    assertNone(warnings(check({ eventMappings: [ringMap({ ring: { ringWhile: 'globalVars.live !== true' } })] }, { hax: INK }, glob)), 'unknown field "ringWhile"');
+});
+
 test('sweep item 5 / A6 n-e: a voicemail knot with no voice: line warns', { skip }, () => {
     const silent = INK + `
 === vm_silent ===
