@@ -445,6 +445,49 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal [[1, 'withheld_key', 'npc:omar/usbHabit']], summary(scan(body, data: habits_scenario))
   end
 
+  # USB habit review R2 m2: a habit stick's files, authored or the default, are secrets outside
+  # a /container or /unlock answer for the stick, and never public room strings
+  STICK_TEXT = 'STICK-ROTA-SECRET-TEXT'.freeze
+  NESTED_TEXT = 'STICK-NESTED-SECRET-TEXT'.freeze
+
+  def stick_scenario(contents: nil)
+    data = habits_scenario
+    stick = { 'type' => 'usb', 'id' => 'omar_usb', 'name' => "Omar's USB stick", 'usbClass' => 'storage', 'takeable' => true }
+    stick['contents'] = contents if contents
+    omar = data['rooms']['office']['npcs'][0]
+    omar['usbHabit'] = { 'every' => 2 }
+    omar['itemsHeld'] = [stick]
+    data
+  end
+
+  def authored_files
+    [{ 'type' => 'text_file', 'id' => 'omar_rota', 'name' => 'rota.txt', 'text' => STICK_TEXT },
+     { 'type' => 'zip_archive', 'id' => 'omar_zip', 'name' => 'old.zip',
+       'contents' => [{ 'type' => 'text_file', 'id' => 'omar_inner', 'name' => 'inner.txt', 'text' => NESTED_TEXT }] }]
+  end
+
+  test 'a habit stick file in room data is reported; in its own container or unlock answer it is not' do
+    data = stick_scenario(contents: authored_files)
+    room = { 'room' => { 'npcs' => [{ 'id' => 'omar', 'itemsHeld' => [{ 'id' => 'omar_usb', 'note' => STICK_TEXT }] }] } }
+    assert_equal [[1, 'stick_content', 'item:omar_rota']], summary(scan(room, data: data))
+
+    files = { 'contents' => authored_files }
+    assert_empty scan(files, path: '/break_escape/games/1/container/omar_usb', data: data)
+    assert_empty scan({ 'contents' => authored_files[1]['contents'] }, path: '/break_escape/games/1/container/omar_zip', data: data)
+    assert_empty scan({ 'success' => true, 'contents' => authored_files }, path: '/break_escape/games/1/unlock', method: 'POST', data: data)
+    other = scan(files, path: '/break_escape/games/1/container/omar_pc', data: data)
+    assert_equal ['item:omar_inner', 'item:omar_rota', 'item:omar_zip'], summary(other).map(&:last).sort
+  end
+
+  test 'the default work_file.txt is a secret too' do
+    data = stick_scenario
+    body = { 'inventory' => [{ 'id' => 'omar_usb', 'text' => BreakEscape::AccessWork::USB_STICK_DEFAULT_TEXT }] }
+    assert_equal [[1, 'stick_content', 'item:omar_usb_work_file']], summary(scan(body, path: '/break_escape/games/1/inventory', method: 'POST', data: data))
+    assert_empty scan({ 'contents' => [{ 'name' => 'work_file.txt', 'text' => BreakEscape::AccessWork::USB_STICK_DEFAULT_TEXT }] },
+                      path: '/break_escape/games/1/container/omar_usb', data: data)
+    assert_equal 1, AccessLeakScanner.new(data).counts[:stick_items]
+  end
+
   private
 
   def run_check(game_id, *files)

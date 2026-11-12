@@ -98,6 +98,11 @@ require 'uri'
 # R2 n4: a key whose username part is blank ("pc|") is skipped, since it would match any string
 # naming that PC.
 #
+# The USB habit's stick (USB habit code review R2 m2): the files on a habit NPC's stick, authored
+# or the default work_file.txt, are served only to a player who holds it. Their names and texts are
+# secrets (rule `stick_content`) anywhere but a GET /container/:id answer for that stick or a folder
+# on it, or the contents of an /unlock answer, and they are never public room strings.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -194,7 +199,8 @@ class AccessLeakScanner
   def counts
     {
       passwords: @passwords.values.flatten.uniq.length,
-      login_items: @items.count { |_, i| i[:scope] },
+      login_items: @items.count { |_, i| i[:scope] && i[:scope] != :stick },
+      stick_items: @items.count { |_, i| i[:scope] == :stick },
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
       network_strings: @network_strings.length,
       wifi_secrets: @wifi_secrets.length,
@@ -283,6 +289,7 @@ class AccessLeakScanner
   RULE_TEXT = {
     'password' => 'an NPC password in a response',
     'signin_content' => 'sign-in PC content outside its own container response',
+    'stick_content' => "a habit USB stick's files outside a container or unlock response for that stick",
     'profile_content' => 'profile content outside a sign-in PC container response',
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
@@ -348,6 +355,7 @@ class AccessLeakScanner
   end
 
   def collect_items
+    @stick_ids = habit_stick_ids
     rooms = @data['rooms']
     (rooms.is_a?(Hash) ? rooms.values : []).each do |room|
       next unless room.is_a?(Hash)
@@ -433,7 +441,7 @@ class AccessLeakScanner
       when String then out << node.strip
       when Array then node.each { |v| walk.call(v) }
       when Hash
-        hidden = BreakEscape::Game.login_pc?(node) || node['locked'] == true
+        hidden = BreakEscape::Game.login_pc?(node) || node['locked'] == true || habit_stick?(node)
         node.each do |k, v|
           next if WITHHELD_ROOM_KEYS.include?(k)
           next if k == 'contents' && hidden
@@ -480,6 +488,10 @@ class AccessLeakScanner
     if BreakEscape::Game.login_pc?(item) && item['id']
       @login_pcs << item['id'].to_s
       child_ctx = ctx.merge(scope: :signin, pc: item['id'].to_s, profile: nil, ancestors: [])
+    elsif habit_stick?(item)
+      sid = item['id'].to_s
+      child_ctx = ctx.merge(scope: :stick, pc: nil, profile: nil, ancestors: [sid])
+      add_default_stick_file(item, child_ctx)
     else
       child_ctx = ctx.merge(ancestors: ctx[:ancestors] + [item['id'].to_s]) if item['id']
       if item['locked'] == true && item['id']
@@ -487,6 +499,27 @@ class AccessLeakScanner
       end
     end
     walk_children(item, child_ctx)
+  end
+
+  # Every habit NPC's stick id (BreakEscape::AccessWork.usb_stick: a storage usb item in itemsHeld)
+  def habit_stick_ids
+    BreakEscape::AccessWork.usb_habit_sticks(@data).map { |_npc, stick| stick['id'].to_s }.to_set
+  end
+
+  def habit_stick?(node)
+    @stick_ids ||= habit_stick_ids
+    node.is_a?(Hash) && node['type'] == 'usb' && node['id'] && @stick_ids.include?(node['id'].to_s)
+  end
+
+  # A stick with no authored files holds the engine's default one, which no scenario text names
+  def add_default_stick_file(stick, ctx)
+    files = stick['contents']
+    return if files.is_a?(Array) && files.any? { |f| f.is_a?(Hash) }
+
+    @items["#{stick['id']}_work_file"] = {
+      strings: [BreakEscape::AccessWork::USB_STICK_DEFAULT_FILE, BreakEscape::AccessWork::USB_STICK_DEFAULT_TEXT], scope: :stick, profile: nil, pc: nil,
+      ancestors: ctx[:ancestors].dup, locked_ancestors: []
+    }
   end
 
   # The item's id; an item without one (data that skipped the id stamp) is named by where it sits.
@@ -1111,7 +1144,7 @@ class AccessLeakScanner
       end
       next if legit.include?(item_id)
 
-      rule = info[:scope] == :profile ? 'profile_content' : 'signin_content'
+      rule = { profile: 'profile_content', stick: 'stick_content' }.fetch(info[:scope], 'signin_content')
       add.call(rule, "item:#{item_id}", safe_path(paths.first))
     end
   end
@@ -1129,6 +1162,8 @@ class AccessLeakScanner
   def allowed_login_route?(info, container)
     return false unless container
     return true if info[:ancestors].include?(container)
+
+    return false if info[:scope] == :stick
 
     info[:scope] == :profile ? @login_pcs.include?(container) : container == info[:pc]
   end
