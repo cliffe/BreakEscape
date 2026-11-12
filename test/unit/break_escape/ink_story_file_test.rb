@@ -73,7 +73,11 @@ module BreakEscape
         inner = File.join(dir, 'inner')
         Dir.mkdir(inner)
         assert_nil InkStoryFile.find(File.join(inner, '..', 'o.json'), allowed_root: inner)
-        refute InkStoryFile.find('scenarios/../config/database.yml.json', compile: false, allowed_root: scenarios)
+        # package.json exists at the engine root, so only the guard refuses it
+        assert File.file?(Engine.root.join('package.json'))
+        refute InkStoryFile.find('scenarios/../package.json', compile: false, allowed_root: scenarios)
+        # a null byte is no path: nil, not an ArgumentError
+        assert_nil InkStoryFile.find("scenarios/test_event_cascade/ink/test_patient\0.ink.json")
         # not a .json path, or a folder named like one
         assert_nil InkStoryFile.find(File.join(dir, 'o.ink'), allowed_root: dir)
         Dir.mkdir(File.join(dir, 'folder.json'))
@@ -145,6 +149,104 @@ module BreakEscape
       end
     end
 
+    test "a symlink inside the root that leads out of it finds nothing, and nothing is compiled through it" do
+      Dir.mktmpdir do |outside|
+        Dir.mktmpdir do |root|
+          secret = write(File.join(outside, 'secret.json'), '{"secret":true}')
+          write(File.join(outside, 'story.ink'), INK)
+          File.symlink(secret, File.join(root, 'link.json'))
+          File.symlink(outside, File.join(root, 'out'))
+          assert_nil InkStoryFile.find(File.join(root, 'link.json'), compile: false, allowed_root: root)
+          assert_nil InkStoryFile.find(File.join(root, 'out', 'secret.json'), compile: false, allowed_root: root)
+          # an .ink through the folder link would compile beside it, outside the root
+          assert_nil InkStoryFile.find(File.join(root, 'out', 'story.json'), allowed_root: root)
+          refute File.exist?(File.join(outside, 'story.json'))
+          # mirror: a symlink that stays inside the root is followed
+          inner = write(File.join(root, 'inner.json'), '{}')
+          File.symlink(inner, File.join(root, 'alias.json'))
+          assert_equal File.join(root, 'alias.json'),
+                       InkStoryFile.find(File.join(root, 'alias.json'), compile: false, allowed_root: root).to_s
+        end
+      end
+    end
+
+    test "a compile writes a temporary file beside the output and renames it into place" do
+      Dir.mktmpdir do |dir|
+        ink = write(File.join(dir, 't.ink'), INK)
+        json = File.join(dir, 't.json')
+        outputs = []
+        real = Open3.method(:capture3)
+        recording = lambda do |*args|
+          outputs << args[args.index('-o') + 1]
+          real.call(*args)
+        end
+        Open3.stub(:capture3, recording) { InkStoryFile.compile!(ink, json) }
+        assert_equal 1, outputs.size
+        tmp = outputs.first
+        refute_equal json, tmp
+        assert tmp.start_with?("#{json}.") && tmp.end_with?('.tmp'), tmp
+        refute File.exist?(tmp), 'the temporary file is renamed away'
+        assert_includes File.read(json, encoding: 'bom|utf-8'), 'Hello there.'
+      end
+    end
+
+    test "the compiled JSON takes the newest source mtime, so an edit made during the compile still counts" do
+      Dir.mktmpdir do |dir|
+        ink = write(File.join(dir, 'e.ink'), INK)
+        at = Time.now - 300
+        File.utime(at, at, ink)
+        json = InkStoryFile.find(File.join(dir, 'e.json'), allowed_root: dir)
+        assert_equal at.to_i, File.mtime(json).to_i
+        refute InkStoryFile.needs_compilation?(ink, json)
+        File.utime(at + 1, at + 1, ink)
+        assert InkStoryFile.needs_compilation?(ink, json)
+      end
+    end
+
+    test "the include walk is cached until a file it read or looked for changes, and drops a // comment" do
+      Dir.mktmpdir do |dir|
+        write(File.join(dir, 'a.ink'), "VAR a = 1\n")
+        root = write(File.join(dir, 'r.ink'), "INCLUDE a.ink // shared vars\nINCLUDE later.ink\nHi.\n-> END\n")
+        missing = []
+        assert_equal [File.join(dir, 'a.ink')], InkStoryFile.includes(root, missing: missing)
+        assert_equal [['later.ink', root]], missing
+
+        walks = 0
+        real = InkStoryFile.method(:walk_includes)
+        counting = ->(ink) { walks += 1; real.call(ink) }
+        InkStoryFile.stub(:walk_includes, counting) do
+          InkStoryFile.includes(root)
+          assert_equal 0, walks, 'nothing changed, so nothing is read again'
+          # the missing include appears: the walk runs again and finds it
+          write(File.join(dir, 'later.ink'), "VAR b = 2\n")
+          assert_equal [File.join(dir, 'a.ink'), File.join(dir, 'later.ink')], InkStoryFile.includes(root)
+          assert_equal 1, walks
+          # an include gains a nested INCLUDE
+          write(File.join(dir, 'deep.ink'), "VAR c = 3\n")
+          write(File.join(dir, 'a.ink'), "INCLUDE deep.ink\nVAR a = 1\n")
+          File.utime(Time.now + 5, Time.now + 5, File.join(dir, 'a.ink'))
+          assert_includes InkStoryFile.includes(root), File.join(dir, 'deep.ink')
+          assert_equal 2, walks
+        end
+      end
+    end
+
+    test "the game's default root is scenarios/ only, and #ink and the TTS resolver refuse a story outside it" do
+      saved = InkStoryFile.instance_variable_get(:@allowed_roots)
+      InkStoryFile.allowed_roots = nil
+      assert_equal [Engine.root.join('scenarios')], InkStoryFile.allowed_roots
+      Dir.mktmpdir do |dir|
+        story = write(File.join(dir, 'outside.json'), '{"inkVersion":21,"root":[["^Hello there.","\n",["done",{"#n":"g-0"}],null],"done",null]}')
+        assert_nil GamesController.new.send(:resolve_and_compile_ink, story)
+        data = { 'rooms' => { 'r' => { 'npcs' => [{ 'id' => 'ann', 'voice' => { 'name' => 'Kore' }, 'storyPath' => story }] } } }
+        npc = TtsLineResolver.find_npc(data, 'ann')
+        result = TtsLineResolver.new(scenario_name: nil, scenario_data: data).resolve('ann', npc, 'Hello there.')
+        assert_equal :not_found, result.status
+      end
+    ensure
+      InkStoryFile.allowed_roots = saved
+    end
+
     test "the TTS line extractor finds stories through InkStoryFile" do
       extractor = TtsLineExtractor.new('test_event_cascade', {}, tts_service: nil)
       # names X.json where only X.ink.json exists: served by #ink, so the batch reads it too
@@ -152,6 +254,8 @@ module BreakEscape
       assert_equal InkStoryFile.find(story, compile: false), extractor.send(:resolve_ink_path, story)
       assert_equal Engine.root.join('scenarios/test_event_cascade/ink/test_patient.ink.json'),
                    extractor.send(:resolve_ink_path, story)
+      # a story #ink refuses is not read from the scenario folder either
+      assert_nil extractor.send(:resolve_ink_path, 'elsewhere/ink/test_patient.ink.json')
     end
 
     test "the controller and the TTS line resolver both find stories through InkStoryFile" do

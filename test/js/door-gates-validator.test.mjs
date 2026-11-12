@@ -443,17 +443,31 @@ test('a door-entry requires that differs from the room it leads into warns', { s
     const sc = carelessGate();
     sc.rooms.office.doors[0].requires = 'OTHER-9';
     let out = issues(sc);
-    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("'rooms/office/doors[0]' requires OTHER-9 but room 'vault' requires SAM-1") &&
+    const differs = "'rooms/office/doors[0]' has a 'requires' that differs from the requires on room 'vault'";
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes(`${differs} (OTHER-9, the room's SAM-1)`) &&
         s.includes("the gate and the door use the room's")), out.join('\n'));
     // mirror: the same card, as a one-item list, draws nothing
     sc.rooms.office.doors[0].requires = ['SAM-1'];
     out = issues(sc);
-    assert.ok(!has(out, "'rooms/office/doors[0]' requires"), out.join('\n'));
+    assert.ok(!has(out, differs), out.join('\n'));
     // a room with no requires: any card on the entry is one the game never asks for
     const open = carelessGate();
     delete open.rooms.vault.requires;
     open.rooms.office.doors[0].requires = 'SAM-1';
-    assert.ok(has(issues(open), "'rooms/office/doors[0]' requires SAM-1 but room 'vault' requires none"));
+    assert.ok(has(issues(open), `${differs} (SAM-1, the room's none)`));
+});
+
+// Code review R1 M1: for a PIN or password room, requires is the answer, so neither value is shown
+test('a door-entry requires that differs on a pin or password room warns without the values', { skip }, () => {
+    for (const lockType of ['pin', 'password']) {
+        const sc = carelessGate();
+        Object.assign(sc.rooms.vault, { lockType, requires: '4812' });
+        sc.rooms.office.doors[0].requires = '1999';
+        const out = issues(sc);
+        const line = out.find(s => s.includes("'rooms/office/doors[0]' has a 'requires' that differs"));
+        assert.ok(line && line.startsWith('⚠️') && line.includes('(values not shown)'), `${lockType}:\n${out.join('\n')}`);
+        assert.ok(!out.some(s => s.includes('4812') || s.includes('1999')), `${lockType}:\n${out.join('\n')}`);
+    }
 });
 
 test('lock fields on a door entry warn that the game never reads them', { skip }, () => {

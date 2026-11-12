@@ -638,21 +638,10 @@ module BreakEscape
     end
 
     # The story the game serves for this storyPath (InkStoryFile, the lookup
-    # GamesController#ink uses), else a file of that name in the scenario's own
-    # folder or its ink folder. Nothing is compiled here.
+    # GamesController#ink uses), or nil: a story #ink refuses is not voiced
+    # either. Nothing is compiled here.
     def resolve_ink_path(story_path)
-      found = InkStoryFile.find(story_path, compile: false)
-      return found if found
-
-      root = BreakEscape::Engine.root
-      scenario_dir = root.join('scenarios', scenario_name)
-      candidate = scenario_dir.join(File.basename(story_path))
-      return candidate if File.exist?(candidate)
-
-      candidate = scenario_dir.join('ink', "#{File.basename(story_path, '.*')}.json")
-      return candidate if File.exist?(candidate)
-
-      nil
+      InkStoryFile.find(story_path, compile: false)
     end
 
     def each_room_npc(&block)

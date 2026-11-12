@@ -217,9 +217,11 @@ module BreakEscape
           next
         end
         json = path.extname == ".ink" ? path.sub_ext(".json") : path
-        ink = Pathname.new(path.to_s.sub(/(\.ink)?\.json\z/, ".ink"))
+        ink = if path.extname == ".ink" then path
+              elsif path.to_s.end_with?(".json") then Pathname.new(path.to_s.sub(/(\.ink)?\.json\z/, ".ink"))
+              end
         json_files << json if File.exist?(json)
-        ink_files << ink if File.exist?(ink)
+        ink_files << ink if ink && File.exist?(ink)
       end
       # Everything in the scenario's own ink folder, referenced or not
       ink_dir = @scenario_dir.join("ink")
@@ -237,7 +239,12 @@ module BreakEscape
       end
     end
 
+    # The story the game serves for ref (InkStoryFile), else a file of that
+    # name here (an .ink, or a fixture outside the engine root)
     def resolve_story(ref)
+      found = InkStoryFile.find(ref, compile: false)
+      return found if found
+
       candidates = []
       p = Pathname.new(ref)
       candidates << p if p.absolute?
@@ -247,18 +254,17 @@ module BreakEscape
       candidates.find { |c| File.exist?(c) }
     end
 
+    # The files and everything they include, resolved as inklecate does
+    # (InkStoryFile.includes)
     def with_includes(files)
       all = Set.new
-      queue = files.dup
-      until queue.empty?
-        f = Pathname.new(queue.shift)
-        next unless all.add?(f)
-        File.foreach(f) do |line|
-          next unless line =~ /\A\s*INCLUDE\s+(\S.*?)\s*\z/
-          inc = f.dirname.join(Regexp.last_match(1))
-          if File.exist?(inc) then queue << inc
-          else @warnings << "INCLUDE not found: #{Regexp.last_match(1)} (from #{relative(f)})"
-          end
+      files.each do |file|
+        all << Pathname.new(file)
+        missing = []
+        InkStoryFile.includes(file.to_s, missing: missing).each { |inc| all << Pathname.new(inc) }
+        missing.each do |name, from|
+          warning = "INCLUDE not found: #{name} (from #{relative(Pathname.new(from))})"
+          @warnings << warning unless @warnings.include?(warning)
         end
       end
       all.to_a

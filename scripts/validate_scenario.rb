@@ -6343,10 +6343,18 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
         door_cards = Array(door['requires']).map(&:to_s).sort
         room_cards = Array(target_room.is_a?(Hash) ? target_room['requires'] : nil).map(&:to_s).sort
         if door_cards != room_cards
-          room_said = room_cards.empty? ? 'none' : room_cards.join(', ')
-          warn.call("'rooms/#{room_id}/doors[#{i}]' requires #{door_cards.join(', ')} but room " \
-                    "'#{door['connectedRoom']}' requires #{room_said}; the gate and the door use the room's, " \
-                    'and the game never reads requires on a door entry.')
+          # For a password, PIN or keypad room, requires is the answer, so the values are shown
+          # only for card and key ids
+          shown = target_room.is_a?(Hash) && %w[rfid key].include?(target_room['lockType'])
+          said = if shown
+                   room_said = room_cards.empty? ? 'none' : room_cards.join(', ')
+                   " (#{door_cards.join(', ')}, the room's #{room_said})"
+                 else
+                   ' (values not shown)'
+                 end
+          warn.call("'rooms/#{room_id}/doors[#{i}]' has a 'requires' that differs from the requires on room " \
+                    "'#{door['connectedRoom']}'#{said}; the gate and the door use the room's, and the game never " \
+                    'reads requires on a door entry.')
         end
       end
       DOOR_ENTRY_LOCK_FIELDS.each do |field|
