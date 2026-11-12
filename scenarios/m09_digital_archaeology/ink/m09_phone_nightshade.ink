@@ -10,13 +10,15 @@
 // ================================================
 
 === start ===
-// Home stub: not reached by the call; shows only if the player opens his thread after it.
-+ [Ring back.]
-    Narrator: The number rings out.
+// Home stub (lesson 21): not reached by the call. A finished call rests the thread here and shows
+// the transcript; the Close choice keeps the story live, so no "(End of conversation)" shows next to
+// a missed call's Call back button. A missed call still leaves the engine's Call back (no fake ring-back).
++ [(Close.)]
     #exit_conversation
-    -> DONE
+    -> start
 
 === call ===
+// lint: call-knot
 Agent 0x00. I'd ask how the leave was, but HaX would tell me to get off her line.
 // Alignment R1 m3: help only he can give (HaX has said print and card).
 Sorensen's card is on custom keys. Crack the keys first, then read it. Don't guess.
@@ -26,7 +28,9 @@ That plan cabinet isn't on her schedule. It never was. Whatever's in it, he want
 + [HaX is on this line.]
     I know. She's been listening since before you picked up.
 - Every lock is a promise somebody made years ago. Most of them forget they made it. Goodnight, 0x00.
-Agent HaX: He's right. I hate that he's right.
+// Phone-calls M10 (2.10, 3.5): m09 has two "Agent HaX" records (agent_0x99 phone, hax_voice in person),
+// so the co-speaker prefix is the id, not the display name, to fix the voice to the phone record.
+agent_0x99: He's right. I hate that he's right.
 // Final playtest: the thread closed ~3 ms after the last line, so the call
 // ends on a one-word reply (m01/m05 pattern) and the line can be read.
 + [Noted.]

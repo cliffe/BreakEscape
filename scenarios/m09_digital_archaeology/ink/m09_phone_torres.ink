@@ -16,13 +16,15 @@ VAR sleeper_shortlist = false
 VAR hl_box_opened = false   // Synced scenario global (puzzle chains R1 P2): HaX sets it on the box's unlock
 
 === start ===
-// Home stub: not reached by the call; shows only if the player opens his thread after it.
-+ [Ring back.]
-    Narrator: The number rings out.
+// Home stub (lesson 21): not reached by the call. A finished call rests the thread here and shows
+// the transcript; the Close choice keeps the story live, so no "(End of conversation)" shows next to
+// a missed call's Call back button. A missed call still leaves the engine's Call back (no fake ring-back).
++ [(Close.)]
     #exit_conversation
-    -> DONE
+    -> start
 
 === call ===
+// lint: call-knot
 #set_global:torres_called:true
 I gave you this address back in October. It was a line in a list.
 I am still a live placement. Every morning I wake up, and I am still a line in her book.

@@ -120,7 +120,7 @@ def text_map(event, cond, msg, once: true, delay: nil, msg_delay: 0, set: nil, e
   h.merge(extra)
 end
 
-def call_map(event, cond, knot, delay: nil, voiced: false, forced: true, once: false, resume: false, cooldown0: false, comment: nil)
+def call_map(event, cond, knot, delay: nil, voiced: false, forced: true, once: false, resume: false, cooldown0: false, comment: nil, ring: nil)
   h = {}
   h["_comment"] = comment if comment
   h["eventPattern"] = event
@@ -130,6 +130,7 @@ def call_map(event, cond, knot, delay: nil, voiced: false, forced: true, once: f
   h["resume"] = true if resume
   h["disableClose"] = true if forced
   h["voiced"] = true if voiced
+  h["ring"] = ring unless ring.nil?
   h["delayMs"] = delay if delay
   h["onceOnly"] = true if once
   h["cooldown"] = 0 if cooldown0
@@ -948,7 +949,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           ]
         },
         {
-          "_comment": "Nightshade (triple-agent branch only): rings after HaX's flag-1 call. Unvoiced. Outside npcIds (stage 8 m-12).",
+          "_comment": "Nightshade (triple-agent branch only): rings after HaX's flag-1 call as a voiced incoming call (ring: the player can answer, decline or call back). Outside npcIds (stage 8 m-12).",
           "id": "nightshade_phone",
           "displayName": "Agent 0x47 'Nightshade'",
           "npcType": "phone",
@@ -963,7 +964,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "eventMappings": [
 <%= jgen([
-  call_map("global_variable_changed:flag1_submitted", "value === true && globalVars.m08_nightshade_triple_agent", "call", delay: 7000, forced: false, once: true),
+  call_map("global_variable_changed:flag1_submitted", "value === true && globalVars.m08_nightshade_triple_agent", "call", delay: 7000, forced: false, once: true, voiced: true, ring: true),
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin === 'nightshade_copy'",
            "You found what I cleared, too. Then you know I kept his notes. I'd have burned anything else.", delay: 4000),
   text_map("global_variable_changed:nightshade_shown_file", "value === true && globalVars.cage_bin !== 'nightshade_copy'",
@@ -972,7 +973,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           ]
         },
         {
-          "_comment": "David Torres (turned branch only): rings at the Harwick & Lowe boxes after flag 2, or after the safe. Unvoiced. Voice copied from m05.",
+          "_comment": "David Torres (turned branch only): rings at the Harwick & Lowe boxes after flag 2, or after the safe, as a voiced incoming call (ring: it rings over the box container and holds if answered there). Voice copied from m05.",
           "id": "torres_phone",
           "displayName": "David Torres",
           "npcType": "phone",
@@ -991,16 +992,16 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
   # (hl_box_opened, set synchronously on item_unlocked), so a retry in the
   # 500 ms keypad-to-container gap can't shut the opened box; a second ring
   # waits for the open container and plays after the sheet is read.
-  call_map("object_interacted", "data.objectName === 'Harwick & Lowe, Dead Files' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.hl_box_opened", "call", delay: 1500, forced: false, once: true),
-  call_map("item_unlocked", "data.itemId === 'hl_box' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true),
+  call_map("object_interacted", "data.objectName === 'Harwick & Lowe, Dead Files' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called && !globalVars.hl_box_opened", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true),
+  call_map("item_unlocked", "data.itemId === 'hl_box' && globalVars.flag2_submitted && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true),
   # P7 (F7): the fallback rings on leaving the office (was 8 s after
   # reading_found, which could shut the safe between page reads).
-  call_map("room_exited", "data.roomId === 'sorensen_office' && globalVars.reading_found && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true)
+  call_map("room_exited", "data.roomId === 'sorensen_office' && globalVars.reading_found && globalVars.m05_torres_turned && !globalVars.torres_called", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true)
 ]) %>
           ]
         },
         {
-          "_comment": "Gary Whitlock (protected branch only): rings at the first try of the salvage keypad. Unvoiced. Voice copied from m02 (Charon, the same as Netherton; harmless, his call is a text thread).",
+          "_comment": "Gary Whitlock (protected branch only): rings at the first try of the salvage keypad as a voiced incoming call. Charon voice, copied from m02 and shared with m10's gary (where it already runs alongside a Charon Netherton); the audio step checks for a Netherton clash and logs it for the user if there is one.",
           "id": "gary_phone",
           "displayName": "Gary Whitlock",
           "npcType": "phone",
@@ -1015,7 +1016,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "eventMappings": [
 <%= jgen([
-  call_map("door_unlock_attempt", "data.connectedRoom === 'salvage_cage' && globalVars.m02_gary_protected", "call", delay: 1500, forced: false, once: true)
+  call_map("door_unlock_attempt", "data.connectedRoom === 'salvage_cage' && globalVars.m02_gary_protected", "call", delay: 1500, forced: false, once: true, voiced: true, ring: true)
 ]) %>
           ]
         },
