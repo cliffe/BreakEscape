@@ -257,6 +257,55 @@ export function evenShareLabels(grid, selector = '.container-content-label') {
     if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
 }
 
+/** Pixel font sizes a desktop icon label steps down through before it truncates a word. */
+export const LABEL_FIT_SIZES = [15, 14, 13, 12];
+
+/**
+ * A word wider than its box is the only reason a label overflows sideways (labels wrap at
+ * spaces only, never inside a word). Fit one label: reset it, and when a word still sticks
+ * out, step the pixel font down one whole size at a time; if even the smallest does not fit,
+ * go back to the full size and cut that word short with an ellipsis (its whole name stays in
+ * the title). Never a break inside a word. Returns what was done: 'fits', 'shrunk' or 'ellipsis'.
+ */
+export function fitIconLabel(label, sizes = LABEL_FIT_SIZES) {
+    if (!label?.style) return 'fits';
+    const full = String(label.dataset?.fullName ?? label.textContent ?? '');
+    if (label.dataset) label.dataset.fullName = full;
+    label.style.fontSize = '';
+    label.style.width = '';
+    label.removeAttribute?.('title');
+    label.classList?.remove('desktop-icon-label-cut');
+    if (label.firstElementChild) label.textContent = full;
+    const over = () => (label.scrollWidth || 0) - (label.clientWidth || 0) > 0;
+    if (!over()) return 'fits';
+    for (const size of sizes) {
+        label.style.fontSize = `${size}px`;
+        if (!over()) return 'shrunk';
+    }
+    label.style.fontSize = '';
+    label.setAttribute?.('title', full);
+    label.classList?.add('desktop-icon-label-cut');
+    label.textContent = '';
+    full.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { label.appendChild(label.ownerDocument.createTextNode(' ')); return; }
+        const word = label.ownerDocument.createElement('span');
+        word.className = 'desktop-icon-word';
+        word.textContent = part;
+        label.appendChild(word);
+    });
+    return 'ellipsis';
+}
+
+/** fitIconLabel for every label in a grid, again once laid out and once the pixel font arrives. */
+export function fitIconLabels(grid, selector = '.desktop-icon-label') {
+    if (!grid?.querySelectorAll) return;
+    const fit = () => { for (const label of grid.querySelectorAll(selector)) fitIconLabel(label); };
+    fit();
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fit);
+    if (typeof document !== 'undefined') document.fonts?.ready?.then?.(fit);
+}
+
 /**
  * Centre an absolutely placed box in its host on whole pixels (R4 m3): left and top are
  * the spare width and height halved and rounded down, never below 0.
@@ -1290,6 +1339,7 @@ export class ContainerMinigame extends MinigameScene {
         });
         // On the monitor a label is a backed box as wide as its text (R2 m3): an even width,
         // so centring it under the icon lands on a whole pixel
+        fitIconLabels(desktopIcons);
         if (this.pcMonitor) evenShareLabels(desktopIcons, '.desktop-icon-label');
         this.updateDesktopScrollCue();
         if (this.desktopMoreElement && typeof requestAnimationFrame === 'function') {

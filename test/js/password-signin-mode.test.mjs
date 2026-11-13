@@ -222,41 +222,54 @@ test('the talk-sheet rule and portrait URLs', () => {
     assert.equal(tileInitials(''), '?');
 });
 
-test('a square talk sheet shows a crop of its top-left frame; an odd-sized image is not fitted', async () => {
+test('UI PC polish 3: a tile never crops the talk image; a headshot, else the silhouette', async () => {
+    // a talk sheet and a dialogue bust exist, no headshot file: the silhouette, not a crop
     const el = document.createElement('span');
-    applyTilePortrait(el, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [256, 256] }));
-    await settle();
-    assert.equal(el.dataset.frame, 'talk-sheet');
-    assert.equal(el.style.backgroundSize, '256px 256px', 'the sheet at scale 1');
-    assert.equal(el.style.backgroundPosition, '-32px 0px', 'unreadable alpha: the top centre of the frame');
-    assert.match(el.style.backgroundImage, /sam_talk\.png/);
+    const missing = [];
+    applyTilePortrait(el, { ...TILES[0], portrait: 'assets/characters/sam_talk.png' }, fakeImage({
+        '/break_escape/assets/characters/sam_talk.png': [256, 256],
+        '/break_escape/assets/npc/avatars/sam.png': [64, 64]
+    }), undefined, { record: null, onMissing: (k) => missing.push(k) });
+    await settle(); await settle();
+    assert.equal(el.dataset.frame, 'silhouette');
+    assert.match(el.style.backgroundImage, /pc-user-silhouette\.png/);
+    assert.equal(el.style.backgroundSize, '64px 64px', 'the 32px silhouette at x2');
+    assert.equal(el.style.getPropertyValue('--signin-short-size'), '32px 32px', 'and at x1 in the short window');
+    assert.doesNotMatch(el.style.backgroundImage, /talk|avatars/);
+    assert.equal(el.dataset.short, 'silhouette');
+    assert.equal(el.textContent, '');
+    assert.equal(missing.length, 1, 'the keys tried are logged once');
 
-    // R4 n3: a 128x128 picture (no talk sheet, no 32 or 64 headshot) would have to shrink
-    const single = document.createElement('span');
-    applyTilePortrait(single, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [128, 128] }));
-    await settle();
-    assert.equal(single.dataset.frame, 'initials');
-    assert.equal(single.textContent, 'SO');
-    assert.equal(single.style.backgroundSize, '');
+    // the authored headshot comes first and is drawn at x2
+    const withHead = document.createElement('span');
+    applyTilePortrait(withHead, { ...TILES[0], portrait: 'assets/characters/sam_talk.png' }, fakeImage({
+        '/break_escape/assets/characters/sam_talk.png': [256, 256],
+        '/break_escape/assets/characters/sam_headshot.png': [32, 32]
+    }), undefined, { record: null });
+    await settle(); await settle();
+    assert.equal(withHead.dataset.frame, 'single');
+    assert.equal(withHead.dataset.headshot, 'sam');
+    assert.match(withHead.style.backgroundImage, /sam_headshot\.png/);
+    assert.equal(withHead.style.backgroundSize, '64px 64px');
+    assert.equal(withHead.style.getPropertyValue('--signin-short-size'), '32px 32px');
+
+    // a headshot file of the wrong size is skipped, never fitted: the silhouette
+    const odd = document.createElement('span');
+    applyTilePortrait(odd, { ...TILES[0], portrait: 'assets/characters/sam_talk.png' }, fakeImage({
+        '/break_escape/assets/characters/sam_headshot.png': [64, 64]
+    }), undefined, { record: null });
+    await settle(); await settle();
+    assert.equal(odd.dataset.frame, 'silhouette');
 });
 
-test('a failed portrait falls back to the avatar, then to initials', async () => {
-    const tile = { username: 'sokafor', displayName: 'Sam Okafor', portrait: 'assets/characters/missing_talk.png', avatar: 'assets/npc/avatars/sam.png' };
-    const withAvatar = document.createElement('span');
-    applyTilePortrait(withAvatar, tile, fakeImage({ '/break_escape/assets/npc/avatars/sam.png': [64, 64] }));
-    await settle();
-    assert.match(withAvatar.style.backgroundImage, /avatars\/sam\.png/);
-    assert.equal(withAvatar.dataset.frame, 'single');
-
-    const none = document.createElement('span');
-    applyTilePortrait(none, tile, fakeImage({}));
-    await settle();
-    assert.equal(none.dataset.frame, 'initials');
-    assert.equal(none.textContent, 'SO');
-
-    const noPictures = document.createElement('span');
-    applyTilePortrait(noPictures, { username: 'ishaw', displayName: 'Ian Shaw' }, fakeImage({}));
-    assert.equal(noPictures.textContent, 'IS');
+test('UI PC polish 3: initials only without any image machinery', async () => {
+    const noImages = document.createElement('span');
+    applyTilePortrait(noImages, { username: 'ishaw', displayName: 'Ian Shaw' }, null, undefined, { record: null });
+    assert.equal(noImages.dataset.frame, 'initials');
+    assert.equal(noImages.textContent, 'IS');
+    const silhouette = document.createElement('span');
+    applyTilePortrait(silhouette, { username: 'ishaw', displayName: 'Ian Shaw' }, fakeImage({}), undefined, { record: null });
+    assert.equal(silhouette.dataset.frame, 'silhouette', 'no pictures at all: the silhouette');
 });
 
 // q72 and review R2 nit 1: a switched-off PC says so, in the words its row and the keyboard use
@@ -366,7 +379,7 @@ test('UX 2b0: a captured tile is named and pictured from the NPC record the clie
         const pic = lenaTile.querySelector('.signin-portrait');
         assert.equal(pic.dataset.headshot, 'female_blowse_v2', 'the authored headshot');
         assert.match(pic.style.backgroundImage, /female_blowse_v2_headshot\.png/);
-        assert.equal(ianTile.querySelector('.signin-portrait').textContent, tileInitials('ishaw'), 'no record and no picture: initials');
+        assert.equal(ianTile.querySelector('.signin-portrait').dataset.frame, 'silhouette', 'no record and no headshot: the silhouette');
         lenaTile.click();
         await settle();
         const box = q('.signin-selected-headshot');
@@ -850,47 +863,6 @@ test('R3 n1: headCropOffset centres a 32x32 box on the head, 4px below its top',
     assert.equal(SHORT_PORTRAIT_PX, 32);
 });
 
-test('R3 n1: a talk sheet gives the short window a head crop at scale 1; a 32x32 avatar comes first', async () => {
-    const head = (x, y) => (y >= 2 && x >= 40 && x <= 70) ? 255 : 0;
-    const el = document.createElement('span');
-    applyTilePortrait(el, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [256, 256] }), () => head);
-    await settle();
-    assert.equal(el.dataset.short, 'head-crop');
-    assert.equal(el.style.getPropertyValue('--signin-short-size'), '256px 256px', 'the whole sheet at scale 1');
-    assert.equal(el.style.getPropertyValue('--signin-short-position'), '-39px -6px');
-    assert.match(el.style.getPropertyValue('--signin-short-image'), /sam_talk\.png/);
-    assert.equal(el.style.backgroundSize, '256px 256px', 'the 64px tile keeps its own crop');
-    assert.equal(el.style.backgroundPosition, '-23px -6px');
-
-    const unreadable = document.createElement('span');
-    applyTilePortrait(unreadable, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [256, 256] }), () => null);
-    await settle();
-    assert.equal(unreadable.style.getPropertyValue('--signin-short-position'), '-48px 0px', 'top centre of the frame');
-
-    const withAvatar = document.createElement('span');
-    const tile = { ...TILES[0], avatar: 'assets/characters/sam_headshot.png' };
-    applyTilePortrait(withAvatar, tile, fakeImage({
-        '/break_escape/assets/characters/sam_talk.png': [256, 256],
-        '/break_escape/assets/characters/sam_headshot.png': [32, 32]
-    }), () => head);
-    await settle(); await settle();
-    assert.equal(withAvatar.dataset.short, 'avatar');
-    assert.equal(withAvatar.style.getPropertyValue('--signin-short-size'), '32px 32px');
-    assert.equal(withAvatar.style.getPropertyValue('--signin-short-position'), '0px 0px');
-    // UX slice 2c: the headshot is the tile's picture too (x2), never the talk crop
-    assert.equal(withAvatar.dataset.frame, 'single', 'the 64px tile shows the headshot at x2');
-    assert.equal(withAvatar.dataset.headshot, 'sam');
-    assert.equal(withAvatar.style.backgroundSize, '64px 64px');
-
-    const bigAvatar = document.createElement('span');
-    applyTilePortrait(bigAvatar, { ...TILES[0], avatar: 'assets/npc/avatars/sam.png' }, fakeImage({
-        '/break_escape/assets/characters/sam_talk.png': [256, 256],
-        '/break_escape/assets/npc/avatars/sam.png': [64, 64]
-    }), () => head);
-    await settle(); await settle();
-    assert.equal(bigAvatar.dataset.short, 'head-crop', 'a 64px avatar would need a downscale: the crop stays');
-});
-
 test('R3 n1: the short-window portrait rule reads the crop properties; no 1/4 frame rule is left', () => {
     const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
     const short = css.slice(css.indexOf('@media (max-height: 640px)'));
@@ -915,82 +887,34 @@ const sizeScale = (size, w, h) => {
     return Number.isInteger(k) && k >= 1 && Number(m[2]) === h * k ? k : null;
 };
 
-test('R4 m1: the 64px tile is a 64x64 head crop of the talk frame at scale 1', async () => {
-    assert.equal(TILE_PORTRAIT_PX, 64);
-    const head = (x, y) => (y >= 2 && x >= 40 && x <= 70) ? 255 : 0;
-    const el = document.createElement('span');
-    applyTilePortrait(el, TILES[0], fakeImage({ '/break_escape/assets/characters/sam_talk.png': [256, 256] }), () => head);
-    await settle();
-    assert.equal(el.style.backgroundSize, '256px 256px');
-    assert.equal(el.style.backgroundPosition, '-23px -6px', 'centred on the head, 4px below its top');
-    // the same finder as the 32px crop, with a 64px box (the R4 review's o64 = o32 - 16)
-    const alpha = (x, y) => ((y >= 6 && y < 40 && x >= 50 && x <= 77) || (y >= 40 && x >= 20 && x <= 108)) ? 255 : 0;
-    assert.deepEqual(headCropOffset(alpha, 128, 64), { left: 32, top: 10 });
-    assert.deepEqual(headCropOffset(alpha, 128), { left: 48, top: 10 });
-});
-
-test('R4 m1: no portrait box ever gets a background size that is not a whole multiple of the image', async () => {
-    const head = (x, y) => (y >= 2 && x >= 20 && x <= 44) ? 255 : 0;
+test('R4 m1 / UI PC polish 3: every tile picture is at a whole multiple of its image, in the 64px box and the 32px one', async () => {
     const cases = [
-        ['talk sheet', { portrait: 'assets/characters/sam_talk.png' }, { '/break_escape/assets/characters/sam_talk.png': [256, 256] }, [256, 256], 'talk-sheet'],
-        ['big talk sheet', { portrait: 'assets/characters/sam_talk.png' }, { '/break_escape/assets/characters/sam_talk.png': [512, 512] }, [512, 512], 'talk-sheet'],
-        ['64 avatar', { avatar: 'assets/npc/avatars/sam.png' }, { '/break_escape/assets/npc/avatars/sam.png': [64, 64] }, [64, 64], 'single'],
-        ['32 headshot', { avatar: 'assets/characters/sam_headshot.png' }, { '/break_escape/assets/characters/sam_headshot.png': [32, 32] }, [32, 32], 'single'],
-        ['override sheet', { portrait: 'assets/characters/mr_ahmed_talk.png' }, { '/break_escape/assets/characters/mr_ahmed_talk.png': [256, 256] }, [256, 256], 'talk-sheet'],
-        ['120 picture', { portrait: 'assets/characters/male_hacker_hood_talk.png' }, { '/break_escape/assets/characters/male_hacker_hood_talk.png': [120, 120] }, null, 'initials'],
-        ['128 picture', { portrait: 'assets/characters/x.png' }, { '/break_escape/assets/characters/x.png': [128, 128] }, null, 'initials']
+        ['32 headshot', { portrait: 'assets/characters/sam_talk.png' }, { '/break_escape/assets/characters/sam_headshot.png': [32, 32] }, 'single'],
+        ['no headshot, a 64 avatar and a talk sheet', { portrait: 'assets/characters/sam_talk.png', avatar: 'assets/npc/avatars/sam.png' },
+            { '/break_escape/assets/characters/sam_talk.png': [256, 256], '/break_escape/assets/npc/avatars/sam.png': [64, 64] }, 'silhouette'],
+        ['120 picture', { portrait: 'assets/characters/male_hacker_hood_talk.png' }, { '/break_escape/assets/characters/male_hacker_hood_talk.png': [120, 120] }, 'silhouette']
     ];
-    for (const [name, pics, sizes, natural, frame] of cases) {
+    for (const [name, pics, sizes, frame] of cases) {
         const el = document.createElement('span');
-        applyTilePortrait(el, { username: 'sokafor', displayName: 'Sam Okafor', ...pics }, fakeImage(sizes), () => head);
+        applyTilePortrait(el, { username: 'sokafor', displayName: 'Sam Okafor', ...pics }, fakeImage(sizes), undefined, { record: null });
         await settle(); await settle();
         assert.equal(el.dataset.frame, frame, name);
         assert.doesNotMatch(el.style.backgroundSize, /%|contain|cover/, name);
-        if (!natural) {
-            assert.equal(el.style.backgroundSize, '', `${name}: no picture`);
-            assert.equal(el.textContent, 'SO', `${name}: initials in the pixel font`);
-            assert.equal(el.dataset.short, undefined, name);
-            continue;
-        }
-        assert.ok(sizeScale(el.style.backgroundSize, ...natural), `${name}: 64px box at ${el.style.backgroundSize}`);
-        assert.equal(sizeScale(el.style.getPropertyValue('--signin-short-size'), ...natural), 1, `${name}: 32px box at scale 1`);
-        assert.match(el.style.backgroundPosition, /^-?\d+px -?\d+px$/, `${name}: whole-pixel offset`);
+        assert.equal(sizeScale(el.style.backgroundSize, 32, 32), 2, `${name}: 64px box at x2`);
+        assert.equal(sizeScale(el.style.getPropertyValue('--signin-short-size'), 32, 32), 1, `${name}: 32px box at x1`);
+        assert.equal(el.style.backgroundPosition, '0px 0px', `${name}: no crop offset`);
     }
-    // the 32x32 headshot fills the 64px box at x2, the only upscale
-    const small = document.createElement('span');
-    applyTilePortrait(small, { displayName: 'Sam', avatar: 'assets/characters/sam_headshot.png' }, fakeImage({ '/break_escape/assets/characters/sam_headshot.png': [32, 32] }));
-    await settle();
-    assert.equal(small.style.backgroundSize, '64px 64px');
     // the CSS has no fitted portrait rule left
     const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
     const rule = css.slice(css.indexOf('.signin-portrait {'), css.indexOf('}', css.indexOf('.signin-portrait {')));
     assert.doesNotMatch(rule, /background-size/);
 });
 
-test('R4 n3: bedside portraits use their own crops; an odd sheet falls through to the avatar or initials', async () => {
-    for (const [file, crop] of Object.entries(PORTRAIT_CROP_OVERRIDES)) {
-        for (const [box, o] of [[64, crop.tile], [32, crop.short]]) {
-            assert.ok(o.left >= 0 && o.top >= 0 && o.left + box <= 128 && o.top + box <= 128, `${file} ${box} inside the frame`);
-        }
-    }
-    assert.deepEqual(Object.keys(PORTRAIT_CROP_OVERRIDES).sort(),
-        ['mr_ahmed_talk.png', 'mr_pryce_talk.png', 'mrs_kowalski_talk.png', 'ms_okafor_talk.png']);
-    assert.equal(portraitCropOverride('/break_escape/assets/characters/mr_pryce_talk.png?v=2'), PORTRAIT_CROP_OVERRIDES['mr_pryce_talk.png']);
-    assert.equal(portraitCropOverride('/break_escape/assets/characters/sam_talk.png'), null);
-
-    const el = document.createElement('span');
-    applyTilePortrait(el, { displayName: 'Mr Ahmed', portrait: 'assets/characters/mr_ahmed_talk.png' },
-        fakeImage({ '/break_escape/assets/characters/mr_ahmed_talk.png': [256, 256] }), () => () => 255);
-    await settle();
-    assert.equal(el.style.backgroundPosition, '-36px -18px', 'the override, not the finder');
-    assert.equal(el.style.getPropertyValue('--signin-short-position'), '-46px -32px');
-
-    const odd = document.createElement('span');
-    applyTilePortrait(odd, { displayName: 'Hood', portrait: 'assets/characters/male_hacker_hood_talk.png', avatar: 'assets/characters/male_hacker_hood_headshot.png' },
-        fakeImage({ '/break_escape/assets/characters/male_hacker_hood_talk.png': [120, 120], '/break_escape/assets/characters/male_hacker_hood_headshot.png': [32, 32] }));
-    await settle(); await settle();
-    assert.equal(odd.dataset.frame, 'single', 'the headshot, not the 120px picture');
-    assert.match(odd.style.backgroundImage, /headshot/);
+test('UI PC polish 4: "Other user" and its subtitle are one line each', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
+    const rule = css.slice(css.indexOf('.signin-other .signin-name,'), css.indexOf('}', css.indexOf('.signin-other .signin-name,')));
+    assert.match(rule, /\.signin-other \.signin-username/);
+    assert.match(rule, /white-space: nowrap/);
 });
 
 // R4 m2: the boxes inside the frame are on whole pixels too

@@ -408,7 +408,7 @@ test('a tile shows the headshot at x2, never the talk crop, when the file exists
     assert.equal(el.dataset.headshot, 'female_blowse_v2');
     assert.match(el.style.backgroundImage, /female_blowse_v2_headshot\.png/);
     assert.equal(el.style.backgroundSize, '64px 64px', 'the 32px headshot at x2');
-    assert.equal(el.dataset.short, 'avatar', 'and at x1 in the short window');
+    assert.equal(el.dataset.short, 'single', 'and at x1 in the short window');
     assert.deepEqual(missing, []);
 });
 
@@ -424,15 +424,16 @@ test('the world sprite from the NPC record picks the headshot', async () => {
     assert.equal(el.dataset.headshot, 'male_nerd_v2');
 });
 
-test('no headshot file: the talk crop as before, and the key is logged once', async () => {
+test('no headshot file: the silhouette, never the talk crop, and the key is logged once', async () => {
     const el = document.createElement('span');
     const missing = [];
     applyTilePortrait(el, { username: 'okafor', portrait: 'assets/characters/ms_okafor_talk.png' }, fakeImage({
         '/break_escape/assets/characters/ms_okafor_talk.png': [256, 256]
     }), () => null, { record: null, onMissing: (k) => missing.push(k) });
     for (let i = 0; i < 4; i++) await settle(5);
-    assert.equal(el.dataset.frame, 'talk-sheet', 'the crop fallback');
+    assert.equal(el.dataset.frame, 'silhouette', 'the silhouette fallback');
     assert.equal(el.dataset.headshot, undefined);
+    assert.doesNotMatch(el.style.backgroundImage, /talk/);
     assert.deepEqual(missing, [['ms_okafor_v2', 'ms_okafor']], 'logged once, with every key tried');
     assert.equal(el.dataset.headshotMissing, 'ms_okafor_v2 ms_okafor');
 });
@@ -801,6 +802,79 @@ test('R2 m3 and m5: icon labels on the monitor have the dark backing, not the ou
     const s = frame.indexOf('.pc-monitor[data-ui-scale="2"] .pc-monitor-name {');
     assert.ok(s > 0, 'an x2 rule for the name');
     assert.match(frame.slice(s, frame.indexOf('}', s)), /font-size: 16px;\s*line-height: 16px;/);
+});
+
+// UI PC polish 2: labels wrap at spaces only; a word that cannot fit steps the pixel font down a
+// whole size, then ends in an ellipsis. jsdom has no layout, so the widths are stubbed from the
+// label's font size: a word is `chars` characters wide at `px` pixels per character.
+function stubWidths(label, chars, perChar = 0.5, box = 104) {
+    Object.defineProperty(label, 'clientWidth', { configurable: true, get: () => box });
+    Object.defineProperty(label, 'scrollWidth', { configurable: true, get: () => {
+        const size = parseInt(label.style.fontSize, 10) || 16;
+        if (label.querySelector('.desktop-icon-word')) return box;
+        return Math.round(chars * size * perChar);
+    } });
+}
+
+test('UI PC polish 2: a word that does not fit shrinks one whole pixel size at a time, never breaking inside it', async () => {
+    const { fitIconLabel, LABEL_FIT_SIZES } = await imp('minigames/container/container-minigame.js');
+    assert.deepEqual(LABEL_FIT_SIZES, [15, 14, 13, 12], 'whole pixel sizes below the 16px base');
+    const fits = document.createElement('div');
+    fits.textContent = 'Personal Notes - Safe';
+    stubWidths(fits, 12);
+    assert.equal(fitIconLabel(fits), 'fits');
+    assert.equal(fits.style.fontSize, '', 'a label that fits keeps the base size');
+    // 14 characters at 8px a character is 112px wide at 16px, 105 at 15, 98 at 14
+    const word = document.createElement('div');
+    word.textContent = 'CONTINGENCYXY';
+    stubWidths(word, 14);
+    assert.equal(fitIconLabel(word), 'shrunk');
+    assert.equal(word.style.fontSize, '14px');
+    assert.equal(word.textContent, 'CONTINGENCYXY', 'the text is untouched');
+});
+
+test('UI PC polish 2: a word too wide even at the smallest size ends in an ellipsis; the whole name stays in the title', async () => {
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    const label = document.createElement('div');
+    label.textContent = 'ELECTROENCEPHALOGRAPHY - Audit Response';
+    stubWidths(label, 40);
+    assert.equal(fitIconLabel(label), 'ellipsis');
+    assert.equal(label.style.fontSize, '', 'back at the base size');
+    assert.equal(label.getAttribute('title'), 'ELECTROENCEPHALOGRAPHY - Audit Response');
+    const words = [...label.querySelectorAll('.desktop-icon-word')].map(w => w.textContent);
+    assert.deepEqual(words, ['ELECTROENCEPHALOGRAPHY', '-', 'Audit', 'Response'], 'one box per word, so a break can only fall at a space');
+    assert.equal(label.textContent, 'ELECTROENCEPHALOGRAPHY - Audit Response', 'the text reads the same');
+    // refitting from the cut state restores the whole name first
+    stubWidths(label, 5);
+    assert.equal(fitIconLabel(label), 'fits');
+    assert.equal(label.querySelector('.desktop-icon-word'), null);
+    assert.equal(label.getAttribute('title'), null);
+});
+
+test('UI PC polish 2: the label CSS breaks only at spaces and cuts a word with an ellipsis', () => {
+    const box = css('container-minigame.css');
+    const rule = box.slice(box.indexOf('.desktop-icon-label {'), box.indexOf('}', box.indexOf('.desktop-icon-label {')));
+    assert.match(rule, /overflow-wrap: normal;/);
+    assert.doesNotMatch(rule, /overflow-wrap: anywhere|break-all|break-word/);
+    const word = box.slice(box.indexOf('.desktop-icon-label .desktop-icon-word {'), box.indexOf('}', box.indexOf('.desktop-icon-label .desktop-icon-word {')));
+    assert.match(word, /text-overflow: ellipsis;/);
+    assert.match(word, /white-space: nowrap;/);
+});
+
+// UI PC polish 5: the post-it's pin (8px wide, 5px in from the edge) leaves the text clear
+test('UI PC polish 5: the post-it keeps right padding past its pin at every size', () => {
+    const frame = css('pc-monitor.css');
+    const pin = css('password-minigame.css');
+    const pinRule = pin.slice(pin.indexOf('.postit-note::after {'), pin.indexOf('}', pin.indexOf('.postit-note::after {')));
+    const right = Number(/right: (\d+)px/.exec(pinRule)[1]);
+    const width = Number(/width: (\d+)px/.exec(pinRule)[1]);
+    for (const sel of ['.pc-monitor > .postit-note.pc-monitor-postit {', '.pc-monitor[data-compact] > .postit-note.pc-monitor-postit {']) {
+        const start = frame.indexOf(sel);
+        const rule = frame.slice(start, frame.indexOf('}', start));
+        const padding = /padding: (\d+)px (\d+)px (\d+)px (\d+)px;/.exec(rule);
+        assert.ok(padding, `${sel} sets four paddings`);
+        assert.ok(Number(padding[2]) >= right + width + 2, `${sel}: right padding ${padding[2]}px clears the pin (${right + width}px)`);
+    }
 });
 
 // ── The one rule in CSS ──────────────────────────────────────────────────────

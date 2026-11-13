@@ -317,7 +317,8 @@
     z-index: 6;
     box-sizing: border-box;
     width: max-content;
-    padding: 10px 14px;
+    /* The right padding clears the pin (.postit-note::after: 8px wide, 5px from the edge) */
+    padding: 10px 18px 10px 14px;
     font-size: 18px;
     line-height: 20px;
 }
@@ -352,7 +353,7 @@
 }
 
 .pc-monitor[data-compact] > .postit-note.pc-monitor-postit {
-    padding: 6px 10px;
+    padding: 6px 18px 6px 10px;
     font-size: 16px;
     line-height: 18px;
 }

@@ -112,92 +112,54 @@ export function setShortPortrait(el, { src, width, height, kind, offset = null }
 }
 
 /**
- * Draw a tile's picture into `el` as person-chat would: the portrait, else the avatar,
- * else the display name's initials. Every picture is at a whole scale (R4 m1 and n3):
- * - a talk sheet: a 64x64 head crop of its top-left frame (closed mouth) at scale 1, and
- *   a 32x32 crop for the short window (setShortPortrait);
- * - a 64x64 image at scale 1, with a 32x32 head crop of it for the short window;
- * - a 32x32 headshot at scale 2, and at scale 1 in the short window;
- * - any other size is skipped (the next source, else initials in the pixel font), since
- *   fitting it to the box would scale it down.
- * `ImageCtor` and `readAlpha` are injectable for tests.
+ * Draw a tile's picture into `el`: the character's authored 32x32 `<key>_headshot.png`, else
+ * the pixel silhouette. Never a crop of the talk image, a dialogue bust or any other picture
+ * (standing rule; UI PC polish item 3). Every picture is at a whole scale:
+ * - the headshot at scale 2 in the 64px tile and scale 1 in the short window's 32px one;
+ * - the silhouette (also 32x32) the same;
+ * - initials in the pixel font only when there is no image machinery at all.
+ * The keys tried are logged once when no headshot file exists. `ImageCtor` is injectable for
+ * tests; `readAlpha` is kept in the signature for callers and is no longer used.
  */
 export function applyTilePortrait(el, tile, ImageCtor = (typeof Image !== 'undefined' ? Image : null), readAlpha = frameAlphaReader,
                                   { record = undefined, onMissing = noteMissingHeadshot } = {}) {
-    // The character's own 32x32 headshot comes first (UX slice 2c): the talk sheet is cropped
-    // only when no headshot file exists, and that key is logged once
     const rec = record === undefined ? npcRecordFor({ username: tile?.username }) : record;
     const headSource = headshotSourceFor(tile || {}, rec);
     const heads = headshotCandidates(headSource);
     const headKeys = headshotKeys(headSource);
-    const sources = [...heads, ...[tile?.portrait, tile?.avatar].map(portraitUrl).filter(Boolean)]
-        .filter((v, i, a) => a.indexOf(v) === i);
-    let missingNoted = heads.length === 0;
-    const noteMissing = (i) => {
-        if (missingNoted || i < heads.length) return;
-        missingNoted = true;
-        // Every key tried, the world sprite's first (R1 m8)
-        el.dataset.headshotMissing = headKeys.join(' ');
-        onMissing?.(headKeys);
-    };
     const initials = () => {
         el.style.backgroundImage = '';
         el.dataset.frame = 'initials';
         el.classList.add('signin-portrait-initials');
         el.textContent = tileInitials(tile?.displayName || tile?.username);
     };
+    const draw = (src, kind) => {
+        setTilePortrait(el, { src, width: SHORT_PORTRAIT_PX, height: SHORT_PORTRAIT_PX, kind, scale: TILE_PORTRAIT_PX / SHORT_PORTRAIT_PX });
+        setShortPortrait(el, { src, width: SHORT_PORTRAIT_PX, height: SHORT_PORTRAIT_PX, kind });
+        el.textContent = '';
+        el.classList.remove('signin-portrait-initials');
+        el.dataset.src = src;
+    };
+    const silhouette = () => {
+        if (headKeys.length) {
+            el.dataset.headshotMissing = headKeys.join(' ');
+            onMissing?.(headKeys);
+        }
+        if (!ImageCtor) { initials(); return; }
+        draw(SILHOUETTE_URL, 'silhouette');
+    };
     const tryAt = (i) => {
-        noteMissing(i);
-        if (i >= sources.length || !ImageCtor) { initials(); return; }
-        const src = sources[i];
+        if (i >= heads.length || !ImageCtor) { silhouette(); return; }
         const img = new ImageCtor();
         img.onload = () => {
             const w = img.naturalWidth || img.width;
             const h = img.naturalHeight || img.height;
-            const crop = (frameSize, box) => {
-                const alpha = readAlpha ? readAlpha(img, frameSize) : null;
-                return alpha ? headCropOffset(alpha, frameSize, box) : { left: frameSize / 2 - box / 2, top: 0 };
-            };
-            if (isTalkSheetSize(w, h)) {
-                const frameSize = w / 2;
-                const override = portraitCropOverride(src);
-                setTilePortrait(el, { src, width: w, height: h, kind: 'talk-sheet',
-                                      offset: override?.tile || crop(frameSize, TILE_PORTRAIT_PX) });
-                setShortPortrait(el, { src, width: w, height: h, kind: 'head-crop',
-                                       offset: override?.short || crop(frameSize, SHORT_PORTRAIT_PX) });
-            } else if (w === TILE_PORTRAIT_PX && h === TILE_PORTRAIT_PX) {
-                setTilePortrait(el, { src, width: w, height: h, kind: 'single' });
-                setShortPortrait(el, { src, width: w, height: h, kind: 'head-crop', offset: crop(w, SHORT_PORTRAIT_PX) });
-            } else if (w === SHORT_PORTRAIT_PX && h === SHORT_PORTRAIT_PX) {
-                setTilePortrait(el, { src, width: w, height: h, kind: 'single', scale: TILE_PORTRAIT_PX / SHORT_PORTRAIT_PX });
-                setShortPortrait(el, { src, width: w, height: h, kind: 'avatar' });
-            } else {
-                tryAt(i + 1);
-                return;
-            }
-            el.textContent = '';
-            el.classList.remove('signin-portrait-initials');
-            el.dataset.src = src;
-            if (i < heads.length) { el.dataset.headshot = headKeys[i]; return; }
-            preferAvatar(src);
+            if (w !== SHORT_PORTRAIT_PX || h !== SHORT_PORTRAIT_PX) { tryAt(i + 1); return; }
+            draw(heads[i], 'single');
+            el.dataset.headshot = headKeys[i];
         };
         img.onerror = () => tryAt(i + 1);
-        img.src = src;
-    };
-    // The avatar, when it is a 32x32 headshot, is the short window's picture
-    const avatar = portraitUrl(tile?.avatar);
-    const preferAvatar = (shown) => {
-        if (!avatar || avatar === shown || !ImageCtor) return;
-        const a = new ImageCtor();
-        a.onload = () => {
-            const w = a.naturalWidth || a.width;
-            const h = a.naturalHeight || a.height;
-            if (w === SHORT_PORTRAIT_PX && h === SHORT_PORTRAIT_PX) {
-                setShortPortrait(el, { src: avatar, width: w, height: h, kind: 'avatar' });
-            }
-        };
-        a.onerror = () => {};
-        a.src = avatar;
+        img.src = heads[i];
     };
     tryAt(0);
 }
