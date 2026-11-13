@@ -110,7 +110,7 @@ Review: `UX_SLICE4_REVIEW_R2.md` (B 0, M 0, m 7). Branch at 0e8768d41, which alr
 
 ### Tests (R2)
 
-Run without the lock, per the test rule. inventory-tray-narrow 6, inventory-menu 21, wearables 34, hud-caption-wrap 4, and every file that imports or stubs `inventory.js` or `inventory-menu.js` (34 files, all pass, including wearable-hooks, lab-ux-ui, examine-minigame, minigame-launch-routes, interaction-warning, wearable-take-offer, item-drop, inventory-tray), plus the JS tests that read either scenario. Rails: lab_physical_pentest_content, tts_mission_lines, wearable controller and scenario_schema, 48 runs, 0 failures. Full suites left to the orchestrator's merge batch.
+Run without the lock, per the test rule. inventory-tray-narrow 6, inventory-menu 21, wearables 34, hud-caption-wrap 4, and every file that imports or stubs `inventory.js` or `inventory-menu.js` (31 files, all pass, including wearable-hooks, lab-ux-ui, examine-minigame, minigame-launch-routes, interaction-warning, wearable-take-offer, item-drop, inventory-tray), plus the JS tests that read either scenario. Rails: lab_physical_pentest_content, tts_mission_lines, wearable controller and scenario_schema, 48 runs, 0 failures. Full suites left to the orchestrator's merge batch.
 
 ### Live proof (R2)
 
