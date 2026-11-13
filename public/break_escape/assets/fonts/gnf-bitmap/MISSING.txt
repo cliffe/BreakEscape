@@ -1,4 +1,5 @@
-Characters wanted but not in gnf.ttf (BitmapText draws nothing for them):
+Characters wanted but not in gnf.ttf. pixel-text.js draws these as the plain letter,
+a stand-in or ?:
 U+00A4 ¤
 U+00C5 Å
 U+00C6 Æ

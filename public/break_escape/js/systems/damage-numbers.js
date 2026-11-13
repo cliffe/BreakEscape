@@ -4,12 +4,26 @@
  */
 
 import { overlayDepth } from '../utils/constants.js';
-import { pixelText, setPixelText, placePixelText } from '../utils/pixel-text.js';
+import { pixelText, setPixelText, placePixelText, setPixelColour } from '../utils/pixel-text.js';
 
-// GNF from its outlined bitmap sheet at x2 (q105): the 14 px figures the bold Arial drew,
-// on whole pixels, with the 1 px font outline (2 px at x2) in place of the stroke
+// GNF at x2 (q105): the 14 px figures the bold Arial drew, on whole pixels, with a black shadow
+// sheet under a tinted fill: one outline round the whole number (2 px at x2), drawn once
 const DAMAGE_SCALE = 2;
-const COLOURS = { damage: 0xff4444, heal: 0x44ff44, blocked: 0xbbbbbb };
+export const DAMAGE_COLOURS = { damage: 0xff4444, heal: 0x44ff44, blocked: 0xd8d8d8 };
+export const DAMAGE_MS = 1000;
+export const RISE_PX = 50;
+
+/**
+ * Pure: the stepped fade (q105 R1 M1). Full colour to 70% of the time, half brightness for the
+ * next 15%, then hidden. Half brightness is the fill's colour halved at full alpha: a partial
+ * alpha would show the sprite under it and darken again where two glyphs' shadows overlap.
+ * Returns { visible, colour }.
+ */
+export function damageFadeStep(progress, colour) {
+  if (progress < 0.7) return { visible: true, colour };
+  if (progress < 0.85) return { visible: true, colour: (colour >> 1) & 0x7f7f7f };
+  return { visible: false, colour };
+}
 
 export class DamageNumbersSystem {
   constructor(scene) {
@@ -20,7 +34,7 @@ export class DamageNumbersSystem {
 
     // Pre-create pool of text objects
     for (let i = 0; i < this.poolSize; i++) {
-      const text = pixelText(scene, 0, 0, '', { scale: DAMAGE_SCALE, outline: true, color: COLOURS.damage });
+      const text = pixelText(scene, 0, 0, '', { scale: DAMAGE_SCALE, outline: true, color: DAMAGE_COLOURS.damage });
       text.setVisible(false);
       text.setDepth(overlayDepth(1000)); // Above everything
       this.pool.push(text);
@@ -44,22 +58,20 @@ export class DamageNumbersSystem {
       return;
     }
 
-    // Configure text
-    text.pixelAnchor = { x, y };
-    setPixelText(text, `${Math.round(amount)}`);
+    // Configure text: red for damage, green for heal, grey for what got through a guard or block
+    const colour = DAMAGE_COLOURS[type] ?? DAMAGE_COLOURS.damage;
+    setPixelText(text, `${Math.round(amount)}`, { x, y });
+    setPixelColour(text, colour);
     text.setVisible(true);
-
-    // Colour by type: red for damage, green for heal, grey for what got through a guard or block
-    const colour = COLOURS[type] ?? COLOURS.damage;
-    if (text.pixelFallback) text.setColor?.(`#${colour.toString(16).padStart(6, '0')}`);
-    else text.setTint?.(colour);
 
     // Add to active list
     this.active.push({
       text,
+      x,
       startY: y,
+      colour,
       startTime: Date.now(),
-      duration: 1000
+      duration: DAMAGE_MS
     });
   }
 
@@ -81,14 +93,12 @@ export class DamageNumbersSystem {
         this.pool.push(item.text);
         this.active.splice(i, 1);
       } else {
-        // Update position and opacity
-        const riseDistance = 50;
-        const newY = item.startY - (riseDistance * progress);
-        placePixelText(item.text, item.text.pixelAnchor.x, newY);
-
-        // Fade out
-        const alpha = 1 - progress;
-        item.text.setAlpha(alpha);
+        // Rise in whole pixels; fade in steps, never by alpha
+        const newY = item.startY - (RISE_PX * progress);
+        placePixelText(item.text, item.x, newY);
+        const step = damageFadeStep(progress, item.colour);
+        setPixelColour(item.text, step.colour);
+        item.text.setVisible(step.visible);
       }
     }
   }

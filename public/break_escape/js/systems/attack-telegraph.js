@@ -3,12 +3,19 @@
  * Visual indicators for incoming attacks to give players fair warning
  */
 
-import { pixelText, placePixelText, setPixelScale } from '../utils/pixel-text.js';
+import { pixelText, placePixelText, setPixelColour } from '../utils/pixel-text.js';
 
-// GNF '!' from the outlined bitmap sheet (q105): x3 (21 px tall, like the 24 px bold Arial),
-// pulsing in whole steps to x4 and back every PULSE_MS instead of a smooth 1.3 scale tween
+// GNF '!' at x3 (21 px tall, like the 24 px bold Arial) on its black outline tag (q105). The tag
+// holds its size; the fill steps between red and amber every PULSE_MS (R1 m3: a size pulse
+// re-centred the tag and read as a jitter)
 const MARK_SCALE = 3;
-const PULSE_MS = 250;
+export const PULSE_MS = 250;
+export const PULSE_COLOURS = [0xff0000, 0xffd000];
+
+/** Pure: the mark's fill colour `elapsed` ms into the telegraph. */
+export function telegraphColour(elapsed) {
+  return PULSE_COLOURS[Math.floor(Math.max(0, elapsed) / PULSE_MS) % PULSE_COLOURS.length];
+}
 
 export class AttackTelegraphSystem {
   constructor(scene) {
@@ -32,7 +39,7 @@ export class AttackTelegraphSystem {
 
     // Create visual indicator - exclamation mark above NPC
     const indicator = pixelText(this.scene, npcSprite.x, npcSprite.y - 50, '!', {
-      scale: MARK_SCALE, outline: true, color: 0xff0000, origin: [0.5, 0.5], depth: 900
+      scale: MARK_SCALE, outline: true, color: PULSE_COLOURS[0], origin: [0.5, 0.5], depth: 900
     });
 
     // Create danger zone circle around NPC
@@ -106,9 +113,8 @@ export class AttackTelegraphSystem {
 
       // Update positions to follow NPC
       if (telegraph.indicator) {
-        // Stepped pulse: x3, x4, x3 ... (whole-number scales only)
-        const step = Math.floor((Date.now() - telegraph.startTime) / PULSE_MS) % 2;
-        setPixelScale(telegraph.indicator, MARK_SCALE + step);
+        // Stepped colour pulse, same size and place
+        setPixelColour(telegraph.indicator, telegraphColour(Date.now() - telegraph.startTime));
         placePixelText(telegraph.indicator, telegraph.npcSprite.x, telegraph.npcSprite.y - 50);
       }
       if (telegraph.dangerCircle) {

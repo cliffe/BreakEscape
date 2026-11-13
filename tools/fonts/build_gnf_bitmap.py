@@ -15,13 +15,15 @@ What this does, for each wanted character the font has:
      coverage at every pixel. A glyph that fails stops the build. The large drawing is only a
      check; nothing is resized into the output.
   3. Packs the glyphs into a white-on-clear sheet and writes the AngelCode BMFont XML that
-     Phaser's load.bitmapFont reads. A second sheet, gnf-outline, has each glyph with a 1 px
-     black outline (8 neighbours) for text that had a stroke.
+     Phaser's load.bitmapFont reads. A second sheet, gnf-shadow, has each glyph grown by 1 px
+     (8 neighbours) and drawn all black, with the same pen offsets less one pixel: drawn under
+     the plain sheet at the same position, the union of the shadows is a 1 px outline round the
+     whole string, drawn once, so where two glyphs' outlines meet nothing is drawn twice.
 
 Usage:
   python3 tools/fonts/build_gnf_bitmap.py            build into public/break_escape/assets/fonts/gnf-bitmap
   python3 tools/fonts/build_gnf_bitmap.py --check    build into a temporary folder and compare with the committed files
-Only Pillow is needed.
+Only Pillow (10.1 or later, for the fractional font size) is needed.
 """
 import argparse
 import io
@@ -30,7 +32,24 @@ import struct
 import sys
 import tempfile
 
+import PIL
 from PIL import Image, ImageDraw, ImageFont
+
+# ImageFont.truetype takes a float size (10.24) only from Pillow 10.1
+MIN_PILLOW = (10, 1)
+
+
+def pillow_version():
+    parts = []
+    for p in PIL.__version__.split(".")[:2]:
+        digits = "".join(c for c in p if c.isdigit())
+        parts.append(int(digits or 0))
+    return tuple(parts)
+
+
+if pillow_version() < MIN_PILLOW:
+    raise SystemExit("Pillow %s is too old: this build needs %d.%d or later for the 10.24 px font size"
+                     % (PIL.__version__, MIN_PILLOW[0], MIN_PILLOW[1]))
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 FONT_PATH = os.path.join(ROOT, "public", "break_escape", "assets", "fonts", "gnf.ttf")
@@ -39,12 +58,14 @@ OUT_DIR = os.path.join(ROOT, "public", "break_escape", "assets", "fonts", "gnf-b
 UNITS_PER_PIXEL = 200          # GNF's grid, in font units
 CHECK_FACTOR = 50              # the coverage check's drawing: 50 x 50 per native pixel
 # A few accent contours overlap the letter's cells by 4 to 12 font units (at most 6% of a pixel),
-# so a pixel counts as fully off up to SLIVER coverage and fully on from 1 - SLIVER.
-SLIVER = 0.10
+# so a pixel counts as fully off up to SLIVER coverage and fully on from 1 - SLIVER. The build
+# prints the largest sliver it accepted, so a font edit that creeps towards the limit shows.
+SLIVER = 0.07
 ASCENT_PX = 9                  # rows above the baseline (accented capitals reach 1800 units)
 DESCENT_PX = 2                 # rows below it (descenders reach -400 units)
 LINE_HEIGHT = 12               # one clear row between a descender and the next line's accents
 SHEET_W = 256
+SHEETS = (("gnf", False), ("gnf-shadow", True))   # (name, grown by 1 px and all black)
 PAD = 1                        # clear pixels between glyphs on the sheet
 
 # Wanted: printable ASCII, Latin-1 (the £ sign and the accented letters in our names), the
@@ -117,8 +138,9 @@ class GlyphError(Exception):
     pass
 
 
-def render_glyph(ch, native, big, native_px):
-    """(bitmap rows of 0/1 over the line box, advance in px); raises GlyphError if off grid."""
+def render_glyph(ch, native, big, native_px, slivers=None):
+    """(bitmap rows of 0/1 over the line box, advance in px); raises GlyphError if off grid.
+    `slivers`, a list, gets the largest partial coverage this glyph had (off or on side)."""
     cell_w = 24
     cell_h = ASCENT_PX + DESCENT_PX
     left = 4                                   # pen origin column inside the cell
@@ -130,6 +152,7 @@ def render_glyph(ch, native, big, native_px):
     b = Image.new("L", (cell_w * k, (cell_h + 2) * k), 0)
     ImageDraw.Draw(b).text((left * k - k // 2, (ASCENT_PX + 1) * k), ch, font=big, fill=255, anchor="ls")
     rows = []
+    worst = 0.0
     for y in range(cell_h + 2):
         row = []
         for x in range(cell_w):
@@ -142,8 +165,11 @@ def render_glyph(ch, native, big, native_px):
                 raise GlyphError("%r: pixel (%d,%d) is %.0f%% covered: the outline is off the grid" % (ch, x, y, cov * 100))
             if (cov >= 0.5) != (v == 255):
                 raise GlyphError("%r: pixel (%d,%d) native %d disagrees with coverage %.2f" % (ch, x, y, v, cov))
+            worst = max(worst, min(cov, 1 - cov))
             row.append(1 if v else 0)
         rows.append(row)
+    if slivers is not None:
+        slivers.append((worst, ch))
     if any(rows[0]) or any(rows[-1]):
         raise GlyphError("%r: ink outside the %d px line box" % (ch, cell_h))
     rows = rows[1:-1]
@@ -180,7 +206,8 @@ def outlined(rows):
 
 
 def pack(glyphs, outline):
-    """Sheet image and per-glyph rects. glyphs: list of (code, rows, left, adv)."""
+    """Sheet image and per-glyph rects. glyphs: list of (code, rows, left, adv). `outline` true
+    is the shadow sheet: each glyph grown by 1 px and drawn all black."""
     placed = []
     x = y = PAD
     row_h = 0
@@ -214,10 +241,10 @@ def pack(glyphs, outline):
         for yy in range(h):
             for xx in range(w):
                 v = grid[y0 + yy][x0 + xx]
-                if v == 2 or (v == 1 and not outline):
-                    px[sx + xx, sy + yy] = (255, 255, 255, 255)
-                elif v == 1:
+                if v and outline:
                     px[sx + xx, sy + yy] = (0, 0, 0, 255)
+                elif v:
+                    px[sx + xx, sy + yy] = (255, 255, 255, 255)
     return img, placed, sheet_h
 
 
@@ -251,13 +278,13 @@ def build(out_dir, quiet=False):
     if abs(native_px * CHECK_FACTOR - round(native_px * CHECK_FACTOR)) > 1e-9:
         raise SystemExit("check size is not whole")
     cmap = read_cmap(FONT_PATH)
-    glyphs, missing, errors = [], [], []
+    glyphs, missing, errors, slivers = [], [], [], []
     for ch in WANTED:
         if ord(ch) not in cmap:
             missing.append(ch)
             continue
         try:
-            rows, left, adv = render_glyph(ch, native, big, native_px)
+            rows, left, adv = render_glyph(ch, native, big, native_px, slivers)
         except GlyphError as e:
             errors.append(str(e))
             continue
@@ -267,10 +294,10 @@ def build(out_dir, quiet=False):
             print("FAIL", e, file=sys.stderr)
         raise SystemExit(1)
     os.makedirs(out_dir, exist_ok=True)
-    for name, outline in (("gnf", False), ("gnf-outline", True)):
+    for name, outline in SHEETS:
         img, placed, sheet_h = pack(glyphs, outline)
-        # The finished sheet must hold only clear, white or (outline) black pixels
-        allowed = {(0, 0, 0, 0), (255, 255, 255, 255)} | ({(0, 0, 0, 255)} if outline else set())
+        # The finished sheet must hold only clear and white pixels (the shadow: clear and black)
+        allowed = {(0, 0, 0, 0), (0, 0, 0, 255) if outline else (255, 255, 255, 255)}
         bad = [p for p in img.getdata() if p not in allowed]
         if bad:
             raise SystemExit("%s: %d pixels are neither fully on nor fully off" % (name, len(bad)))
@@ -282,11 +309,14 @@ def build(out_dir, quiet=False):
     report = "GNF native size %.2f px/em (%d units per pixel, upem %d); %d glyphs; line height %d, base %d" % (
         native_px, UNITS_PER_PIXEL, upem, len(glyphs), LINE_HEIGHT, ASCENT_PX)
     open(os.path.join(out_dir, "MISSING.txt"), "w", encoding="utf-8").write(
-        "Characters wanted but not in gnf.ttf (BitmapText draws nothing for them):\n"
+        "Characters wanted but not in gnf.ttf. pixel-text.js draws these as the plain letter,\n"
+        "a stand-in or ?:\n"
         + "".join("U+%04X %s\n" % (ord(c), c) for c in missing))
+    worst, worst_ch = max(slivers) if slivers else (0.0, "")
     if not quiet:
         print(report)
         print("missing from the font:", " ".join("U+%04X" % ord(c) for c in missing) or "none")
+    print("largest sliver accepted: %.1f%% of a pixel (%r; limit %.0f%%)" % (worst * 100, worst_ch, SLIVER * 100))
     return glyphs, missing
 
 
@@ -301,7 +331,7 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         build(tmp, quiet=True)
         stale = []
-        for name in ("gnf.png", "gnf.xml", "gnf-outline.png", "gnf-outline.xml", "MISSING.txt"):
+        for name in [n + ext for n, _o in SHEETS for ext in (".png", ".xml")] + ["MISSING.txt"]:
             a = os.path.join(tmp, name)
             b = os.path.join(OUT_DIR, name)
             if not os.path.exists(b):
