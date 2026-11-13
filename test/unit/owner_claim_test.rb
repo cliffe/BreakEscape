@@ -111,12 +111,12 @@ class OwnerClaimTest < ActiveSupport::TestCase
     assert_nil route(data { |x| jake(x)['answersPhones'] = true })
     own = data do |x|
       jake(x)['answersPhones'] = true
-      add(x, 'office', { 'id' => 'jake_phone', 'phoneOwner' => 'jake' })
+      add(x, 'office', { 'id' => 'jake_phone', 'deskPhone' => true, 'owner' => 'jake' })
     end
     assert_nil route(own), 'his own phone is no colleague\'s'
     other = data do |x|
       jake(x)['answersPhones'] = true
-      add(x, 'office', { 'id' => 'dana_phone', 'phoneOwner' => 'dana' })
+      add(x, 'office', { 'id' => 'dana_phone', 'deskPhone' => true, 'owner' => 'dana' })
     end
     assert_equal 'answers_phones', route(other)
   end
@@ -202,7 +202,7 @@ class OwnerClaimTest < ActiveSupport::TestCase
       add(x, 'lobby', { 'id' => 'cup', 'affordance' => { 'satisfies' => ['caffeine'] } })
     end
     assert_equal 'need:caffeine:cup', route(priv), 'a source in a room private to somebody else'
-    owned = leashed.call { |x| add(x, 'office', { 'id' => 'cup', 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } }) }
+    owned = leashed.call { |x| add(x, 'office', { 'id' => 'cup', 'private' => true, 'owner' => ['dana'], 'affordance' => { 'satisfies' => ['caffeine'] } }) }
     assert_nil route(owned), 'a private affordance still serves only its owners'
     source = leashed.call { |x| add(x, 'lobby', { 'id' => 'cup', 'droppable' => true, 'affordance' => { 'satisfies' => ['caffeine'] } }) }
     assert_equal 'need:caffeine:cup', route(source)
@@ -359,16 +359,16 @@ class OwnerClaimTest < ActiveSupport::TestCase
         jake(x)['eventMappings'] = [{ 'eventPattern' => 'go', 'needs' => { 'print' => 'copier' } }]
       },
       'movable (droppable)' => lambda { |x|
-        add(x, 'lobby', { 'id' => 'cup', 'droppable' => true, 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } })
+        add(x, 'lobby', { 'id' => 'cup', 'droppable' => true, 'private' => true, 'owner' => ['dana'], 'affordance' => { 'satisfies' => ['caffeine'] } })
       },
       'movable (held by an NPC)' => lambda { |x|
-        x['rooms']['office']['npcs'][1]['itemsHeld'] = [{ 'id' => 'cup', 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } }]
+        x['rooms']['office']['npcs'][1]['itemsHeld'] = [{ 'id' => 'cup', 'private' => true, 'owner' => ['dana'], 'affordance' => { 'satisfies' => ['caffeine'] } }]
       },
       'movable (needsTag)' => lambda { |x|
-        add(x, 'lobby', { 'id' => 'cup', 'needsTag' => 'mug', 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } })
+        add(x, 'lobby', { 'id' => 'cup', 'needsTag' => 'mug', 'private' => true, 'owner' => ['dana'], 'affordance' => { 'satisfies' => ['caffeine'] } })
       },
       'movable (outputOf)' => lambda { |x|
-        add(x, 'lobby', { 'id' => 'cup', 'outputOf' => 'copier', 'affordance' => { 'satisfies' => ['caffeine'], 'private' => true, 'owners' => ['dana'] } })
+        add(x, 'lobby', { 'id' => 'cup', 'outputOf' => 'copier', 'private' => true, 'owner' => ['dana'], 'affordance' => { 'satisfies' => ['caffeine'] } })
       },
       'story_unread' => ->(x) { jake(x)['storyPath'] = 'scenarios/x/ink/missing.json' }
     }

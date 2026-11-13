@@ -21,7 +21,7 @@ module BreakEscape
   # them, a knocked-out NPC drops what it held, a carry is put down where the carrier stands, a
   # reveal slot lands at its accepting place), so every object anywhere in the scenario counts as
   # reachable, whatever room it is authored in. The fixed rules kept are the ones play can never
-  # get round: the owner's own needsHome is no leave, a private affordance serves only its owners,
+  # get round: the owner's own needsHome is no leave, a private object serves only its owners,
   # and a judged need never uses another person's desk.
   #
   # Two layers. The precise routes (knock-out, phones, prints, need sources, failures, interests)
@@ -77,7 +77,7 @@ module BreakEscape
       AccessWork.with_index(data) do
         objects = scenario_objects(data)
         # A colleague's desk phone (npc-needs.js _claimAnswerer): an answersPhones NPC walks only
-        # to a ringing phone whose phoneOwner is somebody else
+        # to a ringing desk phone whose owner is somebody else
         return 'answers_phones' if owner['answersPhones'] == true && objects.any? { |e| colleague_phone?(e[:obj], owner) }
 
         home_id = owner['needsHome'].is_a?(String) ? owner['needsHome'] : nil
@@ -106,7 +106,7 @@ module BreakEscape
             # workaround, which needs a failure, handled above)
             next false if judged && AccessWork.desk?(data, o)
 
-            # Any room counts (see the module comment): only a private affordance's owners
+            # Any room counts (see the module comment): only a private object's owners
             permitted?(data, owner, o)
           end
           return "need:#{name}:#{found[:obj]['id']}" if found
@@ -239,9 +239,11 @@ module BreakEscape
       raw.is_a?(Numeric) && raw < 1
     end
 
-    # An object somebody else answers to (phoneOwner set, and not this owner)
+    # An object somebody else answers to (a desk phone whose owner is not this owner)
     def colleague_phone?(obj, owner)
-      po = obj['phoneOwner']
+      return false unless obj['deskPhone'] == true
+
+      po = obj['owner']
       po.is_a?(String) && !po.empty? && po != owner['id']
     end
 
@@ -362,21 +364,20 @@ module BreakEscape
     end
 
     # _permitted(s, o, true) without the room leash (see the module comment): a private
-    # affordance serves only its owners
-    def permitted?(data, owner, obj)
-      aff = AccessWork.affordance(data, obj)
-      return true unless aff.is_a?(Hash) && aff['private'] == true
+    # object serves only its owners
+    def permitted?(_data, owner, obj)
+      return true unless obj['private'] == true
 
-      owners_of(data, obj, aff).include?(owner['id'])
+      owners_of(obj).include?(owner['id'])
     end
 
-    # _owners: affordance.owners, else screenOwner, else the NPCs whose needsHome is the object
-    # (every one of them, where the client takes the first: wider, so never a wrongful refusal)
-    def owners_of(data, obj, aff)
-      return aff['owners'] if aff['owners'].is_a?(Array)
-      return [obj['screenOwner']] if obj['screenOwner'].is_a?(String) && !obj['screenOwner'].empty?
+    # _owners: the object's explicit owner(s), a String or a list. needsHome no longer sets one.
+    def owners_of(obj)
+      o = obj['owner']
+      return o if o.is_a?(Array)
+      return [o] if o.is_a?(String) && !o.empty?
 
-      AccessIdentities.room_npcs(data).filter_map { |e| e[:npc]['id'] if e[:npc]['needsHome'] == obj['id'] }
+      []
     end
   end
 end

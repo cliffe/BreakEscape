@@ -85,7 +85,7 @@ module BreakEscape
         'the need is met only at the owner\'s own PC' =>
           scenario { |d| jake_pc(d)['affordance'] = { 'satisfies' => 'caffeine' } },
         'the only source is private to another owner' =>
-          scenario { |d| add_object(d, 'finance', coffee('private' => true, 'owners' => ['dana'])) },
+          scenario { |d| add_object(d, 'finance', coffee.merge('private' => true, 'owner' => ['dana'])) },
         'a judged need that cannot fail, met only at another desk' =>
           scenario do |d|
             judged_work(d)
@@ -135,7 +135,7 @@ module BreakEscape
         'a source in a private room that lists the owner' =>
           scenario { |d| d['rooms']['lobby']['needsPrivateTo'] = ['jake']; add_object(d, 'lobby', coffee) },
         'a private source the owner is listed on' =>
-          scenario { |d| add_object(d, 'finance', coffee('private' => true, 'owners' => ['jake'])) },
+          scenario { |d| add_object(d, 'finance', coffee.merge('private' => true, 'owner' => ['jake'])) },
         'a source that starts hidden or switched off (it can come on)' =>
           scenario { |d| add_object(d, 'finance', coffee.merge('offWhen' => 'power_out', 'revealOnGlobal' => 'shown')) },
         'a source outside every room (the start inventory)' =>
@@ -148,7 +148,7 @@ module BreakEscape
         'the owner answers colleagues\' phones (a colleague\'s phone exists)' =>
           scenario do |d|
             jake(d)['answersPhones'] = true
-            add_object(d, 'finance', { 'id' => 'dana_phone', 'type' => 'notes', 'name' => 'Desk phone', 'phoneOwner' => 'dana' })
+            add_object(d, 'finance', { 'id' => 'dana_phone', 'type' => 'notes', 'name' => 'Desk phone', 'deskPhone' => true, 'owner' => 'dana' })
           end,
         'the owner\'s own print hook with a printHabit gives an errand' =>
           scenario do |d|
@@ -283,7 +283,7 @@ module BreakEscape
         'cautious: a printHabit' =>
           scenario { |d| jake(d)['printHabit'] = { 'fetchAfterSeconds' => [30, 60] } },
         'cautious: a droppable source private to somebody else' =>
-          scenario { |d| add_object(d, 'lobby', coffee('private' => true, 'owners' => ['dana']).merge('droppable' => true)) }
+          scenario { |d| add_object(d, 'lobby', coffee.merge('private' => true, 'owner' => ['dana'], 'droppable' => true)) }
       }
       cases.each do |label, data|
         build(data)

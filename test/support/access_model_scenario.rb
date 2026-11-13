@@ -52,7 +52,7 @@ module AccessModelScenario
           'type' => 'room_office', 'connections' => { 'south' => 'lobby' },
           'locked' => true, 'lockType' => 'pin', 'requires' => '4321',
           'objects' => [
-            { 'id' => 'jake_pc', 'type' => 'pc', 'name' => "Jake's PC",
+            { 'id' => 'jake_pc', 'type' => 'pc', 'name' => "Jake's PC", 'owner' => 'jake',
               'locked' => true, 'lockType' => 'login', 'access' => { 'roles' => ['staff'] },
               'policy' => 'corp_default', 'loginPicker' => 'accounts',
               'contents' => [{ 'type' => 'text_file', 'name' => 'Local.txt', 'takeable' => false, 'text' => PC_LOCAL_MARKER }] },
@@ -128,7 +128,7 @@ module AccessModelScenario
     jake_pc['lockChance'] = 0.5
     finance['objects'] << { 'id' => 'profile_pc', 'type' => 'pc', 'name' => 'Hot desk',
                             'locked' => true, 'lockType' => 'login', 'access' => { 'roles' => ['staff'] } }
-    finance['objects'] << { 'id' => 'it_pc', 'type' => 'pc', 'name' => 'IT PC', 'screenOwner' => 'jake',
+    finance['objects'] << { 'id' => 'it_pc', 'type' => 'pc', 'name' => 'IT PC', 'owner' => 'jake',
                             'lockChance' => 0.5, 'locked' => true, 'lockType' => 'login',
                             'access' => { 'roles' => ['it'] } }
 

@@ -1364,7 +1364,7 @@ module BreakEscape
       out
     end
 
-    # Sub-slice L (6.6): the NPC's own station is a sign-in PC it owns (no screenOwner, or its
+    # Sub-slice L (6.6): the NPC's own station is a sign-in PC it owns (no owner, or its
     # own id there), the NPC has an account, and the PC's policy (its own, else defaultPolicy)
     # sets a positive maxAttempts. Only then can a lockout stop its work, and only then does the
     # server answer a `check` for it.
@@ -1373,12 +1373,12 @@ module BreakEscape
     end
 
     # q36: the same test for any PC the NPC signs in at (its station, or a borrowed hot desk, which
-    # has no screenOwner): a sign-in PC, not owned by someone else, under a policy with a positive
+    # has no owner): a sign-in PC, not owned by someone else, under a policy with a positive
     # maxAttempts, for an NPC with an account
     def lockout_pc?(data, npc, st)
       return false unless st.is_a?(Hash) && AccessIdentities.login_pc?(st) && AccessIdentities.account?(npc)
 
-      owner = st['screenOwner']
+      owner = st['owner']
       return false if present_string?(owner) && owner != npc['id']
 
       max = policy_of(data, st)&.dig('maxAttempts')

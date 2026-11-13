@@ -19,6 +19,15 @@ module BreakEscape
     end
 
     def scenario(npcs:, objects:, extra: {})
+      # Format 2: ownership is an explicit `owner`, never derived from needsHome. Write it on any
+      # id-bearing PC whose id is an NPC's needsHome, as the rewrite/upgrade does, so these fixtures
+      # exercise the new reader. An id-less PC sets its own `owner`.
+      homes = npcs.each_with_object({}) do |n, h|
+        h[n['needsHome']] ||= n['id'] if n.is_a?(Hash) && n['needsHome'].is_a?(String) && n['id'].is_a?(String)
+      end
+      objects.each do |o|
+        o['owner'] = homes[o['id']] if o.is_a?(Hash) && o['id'].is_a?(String) && !o.key?('owner') && homes.key?(o['id'])
+      end
       { 'scenario_brief' => 'habits loader fixture', 'startRoom' => 'office',
         'rooms' => { 'office' => { 'type' => 'room_office', 'connections' => {}, 'objects' => objects, 'npcs' => npcs } } }
         .merge(extra)
@@ -81,9 +90,9 @@ module BreakEscape
       room['npcs'].each { |npc| refute npc.key?('habits'), npc['id'] }
     end
 
-    test 'the owner of a PC with a screenOwner and no authored id is filled' do
+    test 'the owner of a PC with an owner and no authored id is filled' do
       data = scenario(npcs: [owner('dana', nil, 'awareness' => 'low').tap { |n| n.delete('needsHome') }],
-                      objects: [{ 'type' => 'pc', 'name' => 'Desk', 'workstation' => true, 'screenOwner' => 'dana' }])
+                      objects: [{ 'type' => 'pc', 'name' => 'Desk', 'workstation' => true, 'owner' => 'dana' }])
       game = build(data)
       assert_equal 'office_pc_0', game.scenario_data['rooms']['office']['objects'][0]['id']
       assert_equal({ 'lockChance' => 0 }, npc_in(game, 'dana')['screenHabit'])
@@ -165,8 +174,8 @@ module BreakEscape
                owner('mei', 'mei_pc', 'habits' => { 'locksScreen' => 'sometimes' })],
         objects: [{ 'type' => 'desk', 'name' => 'Desk', 'contents' => [{ 'type' => 'notes', 'name' => 'n' },
                                                                          { 'type' => 'box', 'name' => 'b', 'contents' => [{ 'type' => 'key', 'name' => 'k' }] }] },
-                  { 'type' => 'pc', 'name' => 'Dana PC', 'workstation' => true },
-                  { 'type' => 'pc', 'name' => 'Ian PC', 'lockType' => 'login', 'locked' => true, 'screenOwner' => 'ian',
+                  { 'type' => 'pc', 'name' => 'Dana PC', 'workstation' => true, 'owner' => 'dana' },
+                  { 'type' => 'pc', 'name' => 'Ian PC', 'lockType' => 'login', 'locked' => true, 'owner' => 'ian',
                     'contents' => [{ 'type' => 'text_file', 'name' => 'f' }] },
                   login_pc('mei_pc')]
       )

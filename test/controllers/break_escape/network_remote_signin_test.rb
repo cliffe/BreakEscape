@@ -166,7 +166,7 @@ module BreakEscape
       ian = data['rooms']['lobby']['npcs'].find { |npc| npc['id'] == 'ian' }
       ian['needs'] = { 'coffee' => { 'decayPerMin' => 1, 'urgentAt' => 50 } }
       door = data['rooms']['store']['objects'].find { |obj| obj['id'] == 'door_box' }
-      door.merge!('screenOwner' => 'ian', 'locksScreenOnLeave' => false)
+      door.merge!('owner' => 'ian', 'locksScreenOnLeave' => false)
       door.delete('headless') unless headless
       data
     end

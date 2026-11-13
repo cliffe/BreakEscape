@@ -159,9 +159,8 @@ module BreakEscape
       report
     end
 
-    # { npc_id => [{ object:, room:, path: }] } for every workstation an NPC owns. An object
-    # with no id is never matched to an owner (owner_id would match a missing id to the
-    # first NPC with no needsHome); AccessIdentities.workstation? needs an id.
+    # { npc_id => [{ object:, room:, path: }] } for every workstation an NPC owns, read from the
+    # object's explicit owner (owner_id); AccessIdentities.workstation? needs an id.
     def owned_workstations(scenario)
       out = Hash.new { |h, k| h[k] = [] }
       AccessIdentities.room_objects(scenario).each do |entry|
@@ -245,9 +244,9 @@ module BreakEscape
       listed = room['connections'].is_a?(Hash) ? room['connections'][dir] : nil
       # doors.js skips a falsy connections[dir] ("north": ""), so it builds no doorway
       listed = if listed.is_a?(Array) then listed
-               elsif listed.nil? || listed == '' then []
-               else [listed]
-               end
+      elsif listed.nil? || listed == '' then []
+      else [listed]
+      end
       return :no_connection unless target.is_a?(String) && listed.include?(target)
 
       first = doors.index { |d| d.is_a?(Hash) && d['connectedRoom'] == target && d['direction'] == dir }
@@ -283,8 +282,8 @@ module BreakEscape
         reason = fill.is_a?(Symbol) ? fill : nil
         # In the gate's noHold: the one written for the habit, or an authored one
         listed = if reason == :authored_no_hold then gate_no_hold(gate[:gate]).include?(npc_id)
-                 else fill.is_a?(Array) && fill.include?(npc_id)
-                 end
+        else fill.is_a?(Array) && fill.include?(npc_id)
+        end
         { path: gate[:path], room: gate[:room], connected_room: gate[:connected_room],
           applied: reason.nil?, no_hold: listed, reason: reason }
       end

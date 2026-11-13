@@ -7011,7 +7011,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     if owner_id
       owner = npc_by_id[owner_id.to_s]
       if owner.nil?
-        err.call("#{where} screenOwner '#{owner_id}' names unknown person (it must be a room NPC id).")
+        err.call("#{where} owner '#{owner_id}' names unknown person (it must be a room NPC id).")
       else
         lock_chance = pc['lockChance']
         if lock_chance.is_a?(Numeric) && lock_chance.positive? && lock_chance < 1
@@ -7062,7 +7062,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     owner_pairs << [e, home] if home.is_a?(String) && ws_room.key?(home)
   end
   workstations.each do |w|
-    owner = w[:object]['screenOwner']
+    owner = w[:object]['owner']
     owner_pairs << [npc_by_id[owner], w[:object]['id']] if owner.is_a?(String) && npc_by_id[owner]
   end
   owner_pairs.each do |e, ws_id|

@@ -44,9 +44,9 @@ module ValidateAccessWork
 
   FRIENDFACE_PHONE = 'phone_friendface'
 
-  # An NPC's Friendface phone (`phoneOf`) sits in that NPC's itemsHeld, the NPC has a phone, and it
+  # An NPC's Friendface phone (`owner`) sits in that NPC's itemsHeld, the NPC has a phone, and it
   # holds at most one; an NPC with a social_media need, a feed and a phone holds its phone. A phone
-  # with no phoneOf is the player's own and may be anywhere; its `site` must be a social site.
+  # with no owner is the player's own and may be anywhere; its `site` must be a social site.
   def check_friendface_phones(json_data, issues)
     npcs = room_npcs(json_data).to_h { |e| [e[:npc]['id'], e[:npc]] }
     sites = osint_sites(json_data).to_h { |site| [site['id'], site] }
@@ -58,15 +58,9 @@ module ValidateAccessWork
     no_site_said = false
     all_objects(json_data).each do |o|
       item = o[:obj]
-      if item['type'] != FRIENDFACE_PHONE
-        if item.key?('phoneOf')
-          warn(issues, "'#{item['name'] || item['id'] || item['type']}' (type '#{item['type']}') has phoneOf, which only a " \
-                       "#{FRIENDFACE_PHONE} reads: it is ignored here.")
-        end
-        next
-      end
+      next if item['type'] != FRIENDFACE_PHONE
 
-      owner = item['phoneOf']
+      owner = item['owner']
       name = item['name'] || item['id'] || FRIENDFACE_PHONE
       # Review R1 m4: the phone opens a social site (its owner's feed site, else the first one)
       if !social_site && !no_site_said
@@ -81,13 +75,13 @@ module ValidateAccessWork
         next
       end
       if !owner.is_a?(String) || !npcs.key?(owner)
-        err(issues, "Friendface phone '#{name}' phoneOf '#{owner}' names no room NPC.")
+        err(issues, "Friendface phone '#{name}' owner '#{owner}' names no room NPC.")
       elsif !held_by[owner].any? { |i| i.equal?(item) }
-        err(issues, "Friendface phone '#{name}' is #{owner}'s (phoneOf) but is not in #{owner}'s itemsHeld: an NPC's phone starts with that NPC.")
+        err(issues, "Friendface phone '#{name}' is #{owner}'s but is not in #{owner}'s itemsHeld: an NPC's phone starts with that NPC.")
       elsif !AW.phone?(npcs[owner])
         err(issues, "Friendface phone '#{name}' belongs to #{owner}, who is \"phone\": false: that NPC has no personal phone.")
       end
-      err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no phoneOf) takes one.") if item.key?('site')
+      err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no owner) takes one.") if item.key?('site')
       # Review R1 m3: an NPC phone that is not takeable can never be given or picked up
       err(issues, "Friendface phone '#{name}' (#{owner}'s) is not \"takeable\": true, so it can never be given or picked up.") unless item['takeable'] == true
       # Review R2 m2, R3 m1: the server hands an NPC's phone over only when its story or record
@@ -117,12 +111,12 @@ module ValidateAccessWork
       err(issues, "Friendface phone id '#{id}' is used by #{list.size} phones: each phone needs its own id.") if list.size > 1
     end
     npcs.each do |nid, npc|
-      own = held_by[nid].select { |i| i['phoneOf'] == nid }
+      own = held_by[nid].select { |i| i['owner'] == nid }
       err(issues, "#{nid} holds #{own.size} Friendface phones of its own; an NPC carries one.") if own.size > 1
       next unless AW.need?(npc, 'social_media') && npc['feed'].is_a?(Hash) && AW.phone?(npc) && own.empty?
 
       err(issues, "#{nid} posts from a phone (social_media need, a feed, no \"phone\": false) but holds no Friendface phone: " \
-                  "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"phoneOf\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")
+                  "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"owner\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")
     end
   end
 
@@ -392,9 +386,9 @@ module ValidateAccessWork
     home.is_a?(Hash) || (home.is_a?(Array) && home.size == 2)
   end
 
-  # The PCs an NPC owns through screenOwner
+  # The PCs an NPC owns through its explicit owner
   def screen_owned_pcs(json_data, npc)
-    AW.object_index(json_data).values.map { |e| e[:obj] }.select { |o| o['screenOwner'] == npc['id'] }.map { |o| o['id'] }
+    AW.object_index(json_data).values.map { |e| e[:obj] }.select { |o| o['owner'] == npc['id'] }.map { |o| o['id'] }
   end
 
   def check_work(json_data, issues)
@@ -547,8 +541,8 @@ module ValidateAccessWork
       owned = screen_owned_pcs(json_data, npc)
       what = coordinate?(home) ? 'a coordinate' : (st ? "'#{home}', which satisfies no work" : (home ? "'#{home}', which names no object" : 'unset'))
       hint = if owned.any?
-               " It owns #{owned.map { |id| "'#{id}'" }.join(', ')} through screenOwner: make that its needsHome " \
-                 '(a PC owned only through screenOwner is a desk like any other for a judged need).'
+               " It owns #{owned.map { |id| "'#{id}'" }.join(', ')} through owner: make that its needsHome " \
+                 '(a PC owned only through owner is a desk like any other for a judged need).'
       else
                ' Give it a station that authors affordance.satisfies "work" (a sign-in PC takes no office preset).'
       end
@@ -1123,9 +1117,9 @@ module ValidateAccessWork
     {}
   end
 
-  # A PC marked private (office life: in its affordance, or on the object)
-  def private_pc?(json_data, pc)
-    pc['private'] == true || AW.affordance(json_data, pc)&.dig('private') == true
+  # A PC marked private (office life: an object-level private flag)
+  def private_pc?(_json_data, pc)
+    pc['private'] == true
   end
 
   # Sub-slice H (plan 6.4 and section 10): the hot desk's rules
@@ -1223,11 +1217,11 @@ module ValidateAccessWork
           warn(issues, "#{tag}: '#{st['id']}' authors its own postitNote or sets showPostit: false, which wins over the " \
                        'written-down note: the workaround shows nothing new.')
         else
-          # The server's owner rule (Game#login_pc_owner): screenOwner first, else the first room
-          # NPC whose needsHome is the PC. Another owner means a mark on the screen and no note.
-          owner = st['screenOwner'].is_a?(String) && !st['screenOwner'].empty? ? st['screenOwner'] : room_npcs(json_data).map { |x| x[:npc] }.find { |n| n['needsHome'] == st['id'] }&.dig('id')
+          # The server's owner rule (Game#login_pc_owner): the PC's explicit owner. Another owner
+          # means a mark on the screen and no note.
+          owner = BreakEscape::AccessIdentities.owner_id(st, json_data)
           if owner != nid
-            err(issues, "#{tag}: '#{st['id']}' belongs to #{owner.inspect} (screenOwner, else the first NPC with it as needsHome), " \
+            err(issues, "#{tag}: '#{st['id']}' belongs to #{owner.inspect} (its owner), " \
                         "not #{nid}, so the sign-in screen shows no note.")
           end
         end
@@ -2466,11 +2460,11 @@ module ValidateAccessWork
         line += if r['alongside']
                   # The toComplaint form already says "out by then" in `what`
                   r['to'] ? ", alongside '#{r['alongside']}', if '#{r['to']}' is out by then" : ", alongside '#{r['alongside']}'"
-                elsif v[:finished]
+        elsif v[:finished]
                   ", with it, since #{xn} has finished posting by then"
-                else
+        else
                   ", with #{xn}'s first post after it, or with it if #{xn} has finished posting by then"
-                end
+        end
         ends = []
         if v[:never]
           ends = ['never comes out']

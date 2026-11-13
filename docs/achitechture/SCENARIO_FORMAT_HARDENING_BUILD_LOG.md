@@ -1730,3 +1730,109 @@ this build log.
   and `validator-retired-keys` node tests drive the Ruby validator (not the changed JS modules) and
   are chunk 1/2's; chunk 3 did not touch them. `lighting.js`'s `workstationIndicators(data, npcs, …)`
   signature keeps its now-unused `npcs` param (external callers pass it); only `ownerOf`'s dropped.
+
+## Step 8b chunk 2 — Ruby readers (2026-11-13)
+
+Chunk 2 of the five-chunk split: every Ruby owner reader now reads `owner`/`private`/`deskPhone`
+only, never deriving an owner from `needsHome`. Single-owner readers accept a String only. Built on
+chunk 1 (schema, transform, validator), on branch `build/hard-8b`. Templates stay on the old names
+until chunk 4, so the live corpus is not clean yet; the expected failures below clear then.
+
+### What changed
+
+- **`lib/break_escape/access_identities.rb`.** `owner_id(obj, _scenario = nil)` returns `obj['owner']`
+  (a String) or nil; no `needsHome` fallback. The scenario arg is kept for callers.
+- **`lib/break_escape/owner_claim.rb`.** `colleague_phone?` gates on `deskPhone == true` and reads
+  `owner`; `permitted?` reads object-level `private`; `owners_of(obj)` returns the object's explicit
+  `owner` (String → one-element list, or a list as-is), no `needsHome`.
+- **`lib/break_escape/access_work.rb`.** `lockout_pc?` reads `st['owner']` (hot-desk-has-no-owner rule).
+- **`lib/break_escape/npc_habits.rb`.** comment only (`owned_workstations` delegates to `owner_id`).
+- **`app/models/break_escape/social_feed.rb`.** `friendface_owner` reads item `owner`. A phone taken
+  before the upgrade still counts: the player_state transform (chunk 1) renames the stored inventory
+  copy's `phoneOf` to `owner`, which `held_friendface_phone`/`friendface_phone_taken?` read.
+- **`app/models/break_escape/game.rb`.** `login_pc_owner` reads `pc['owner']` (no `needsHome`); the
+  room-bootstrap held-phone drop reads item `owner`.
+- **`app/controllers/break_escape/games_controller.rb`.** `CLIENT_ITEM_FORBIDDEN_FIELDS` gains `owner`
+  and keeps `phoneOf` (an old-code tab cannot send either); the found-item friendface check reads
+  `owner`.
+- **Validators (owner derivers moved to the new names, messages reworded):**
+  `validate_network.rb` (headless-owner message); `validate_access_work.rb` (`screen_owned_pcs`,
+  `private_pc?` now object-level only, the writes-down owner rule via `AccessIdentities.owner_id`, the
+  friendface-phone block reads item `owner`); `validate_npc_habits.rb` (owned message, `check_ids`
+  owner); `validate_npc_needs.rb` (`check_phones` keyed on `deskPhone` reading `owner`, the answerer
+  checks, `station_owner`, `owners_of` object-level `owner`, `private` reads moved off `affordance`,
+  `check_left_behind` keyed on `leftBehindChance` reading `owner`); `validate_scenario.rb` (the
+  owner-name error message and the placement-warning workstation owner read; its `check_owner_fields`
+  conflict/`needsHome`-warning block and `check_item_fields` suppression are chunk 1's and untouched).
+  `tools/playtest/verify-run.rb` and `generate_dungeon_graph.rb` read owners only through
+  `AccessIdentities.owner_id`, so they move with it and needed no edit.
+- **Support fixtures and tests moved to the new names.** `test/support/{access_model,capture_proof,
+  network_model}_scenario.rb` rename explicit `screenOwner`; `access_work_scenario.rb` gains an
+  `assign_owners!(data)` that writes `owner` on any id-bearing PC an NPC's `needsHome` names (what the
+  chunk-4 rewrite does), called by its `scenario` builder and by two tests that add owned PCs after
+  it (`npc_lockout_l`, `npc_workaround`). `npc_habits_loader_test.rb`'s `scenario` helper does the
+  same. The owner Rails/unit tests set explicit `owner` where they relied on `needsHome` ownership.
+
+### Tests (RBENV_VERSION=2.7.8, single files, no full suite)
+
+- `owner_claim_test` + `npc_habits_test`: 50 runs, 288 assertions, 0 fail.
+- `npc_habits_loader_test` + `npc_habits_postit_test`: 16 runs, 166, 0 fail.
+- `friendface_phone_test` + `feed_post_reply_test` + `feed_post_reactions_test`: 49 runs, 271, 0 fail.
+- `owner_claim_enforce_test` + `social_lockout_q33_test` + `npc_lockout_l_test`: 38 runs, 358, 0 fail.
+- `access_model_login_test` + `network_remote_signin_test`: 47 runs, 576, 0 fail.
+- `access_model_{loader,rules,withholding}_test` + `access_work_plan_test` + `network_model_test`
+  (unit): 62 runs, 417, 0 fail.
+- `npc_workaround_test` + `npc_workaround_h_test`: 63 runs, 431, 0 fail (after adding `assign_owners!`
+  to npc_workaround's scenario). `npc_frustration_test` + `capture_proofs_test` + `usb_habit_test`
+  passed in the same batch.
+- `access_model_{desktop,no_password,rfid}_test` + `access_helper_equality_test` +
+  `access_model_rules_test`: 85 runs, 937, 0 fail.
+- network batch 1 (`network_model` unit, `network_remote_signin`, `network_host_service_off`,
+  `network_outages`, `network_withholding`): 77 runs, 755, 0 fail.
+- misc batch (`captures_sync`, `network_footholds`, `network_pivot`, `network_shares`, `network_wifi`,
+  `usb_habit`, `wearable`, `clone_card_saved_cards`): 142 runs, 944, 0 fail.
+- network batch 2 (`network_implants`, `network_inventory_delta`, `network_link_names`,
+  `network_no_exposure`, `network_notes_not_live`, `start_item_answer_network`,
+  `lab_physical_pentest_network`): 67 runs, 2280, 0 fail.
+- Ruby validator (`scripts/validate_scenario.rb test_needs_sims --no-graph`): runs clean, no
+  exception; the retired-key / owner-absent errors are the un-rewritten template (chunk 4).
+
+### Expected failures left for later chunks
+
+- `test/models/break_escape/lab_physical_pentest_secrets_test.rb`: **3 failures** (lines 94, 482, 506).
+  All read ownership off the live `lab_physical_pentest` template, which still carries `screenOwner`
+  (staff_pc, staff_pc_2) until **chunk 4** rewrites it, so `owner_id`/`login_pc_owner` return nil and
+  the screenHabit fill and claim do not fire. Cleared by chunk 4's template rewrite. No other Rails
+  test depends on an un-rewritten template.
+
+### Sync size
+
+No growth. Readers only; no state added. The player_state transform (chunk 1) renames item copies in
+place once per load. Sync reads and writes no owner field.
+
+### Files touched
+
+`lib/break_escape/{access_identities,owner_claim,access_work,npc_habits}.rb`,
+`app/models/break_escape/{social_feed,game}.rb`,
+`app/controllers/break_escape/games_controller.rb`,
+`scripts/validate_{network,access_work,npc_habits,npc_needs,scenario}.rb`,
+`test/support/{access_model,capture_proof,network_model,access_work}_scenario.rb`,
+`test/unit/{owner_claim,npc_habits}_test.rb`, `test/models/break_escape/{npc_habits_loader,
+lab_physical_pentest_secrets}_test.rb`, `test/controllers/break_escape/{npc_habits_postit,
+friendface_phone,feed_post_reply,feed_post_reactions,owner_claim_enforce,social_lockout_q33,
+npc_lockout_l,npc_workaround,access_model_login,network_remote_signin}_test.rb`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Handover
+
+- **Done:** chunk 2 as specified. Every Ruby owner reader reads only `owner`/`private`/`deskPhone`;
+  grep of app/lib/scripts/tools for the retired names leaves only comments, the schema and transform
+  (chunk 1), and the intentional `check_owner_fields` conflict block and `CLIENT_ITEM_FORBIDDEN_FIELDS`
+  `phoneOf` entry.
+- **For chunk 4:** rewriting the nine templates clears the 3 `lab_physical_pentest_secrets` failures
+  and the un-rewritten-template validator errors. The `assign_owners!` helpers added to the test
+  fixtures mirror the rewrite; they are test-only and do not change the shipped templates.
+- **For chunk 5 (live proofs):** the desk phone answers only with `deskPhone: true` and `owner`; the
+  owner claim reads `pc['owner']` (`login_pc_owner`); a Friendface phone taken on the base server is
+  still taken after the upgrade because the player_state transform renames its stored `phoneOf` to
+  `owner`, which `SocialFeed` reads.

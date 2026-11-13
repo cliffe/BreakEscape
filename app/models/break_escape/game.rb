@@ -1736,7 +1736,7 @@ module BreakEscape
           out = npc.merge('phone' => false)
           if npc['itemsHeld'].is_a?(Array)
             out['itemsHeld'] = npc['itemsHeld'].reject do |i|
-              i.is_a?(Hash) && i['type'] == SocialFeed::FRIENDFACE_PHONE && i['phoneOf'] == npc['id']
+              i.is_a?(Hash) && i['type'] == SocialFeed::FRIENDFACE_PHONE && i['owner'] == npc['id']
             end
           end
           out
@@ -2082,13 +2082,13 @@ module BreakEscape
       self.class.acl_admits?(pc['access'], npc)
     end
 
-    # The PC's owner (screenOwner, else the room NPC whose needsHome is the PC), or nil,
-    # as ownerOf does on the client (workstation-state.js:52-58).
+    # The PC's owner (its explicit owner, a single NPC id), or nil, as ownerOf does on the
+    # client (workstation-state.js). needsHome no longer sets an owner.
     def login_pc_owner(pc)
-      owner_id = pc['screenOwner']
+      owner_id = pc['owner']
       return scenario_room_npc(owner_id) if owner_id.is_a?(String) && !owner_id.empty?
 
-      self.class.scenario_room_npcs(scenario_data).find { |npc| npc['needsHome'] == pc['id'] }
+      nil
     end
 
     # A screen that locks on every leave, in decideLocked's order without the policy: the

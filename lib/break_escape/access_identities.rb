@@ -226,12 +226,11 @@ module BreakEscape
       room_objects(scenario).select { |entry| login_pc?(entry[:object]) }
     end
 
-    # A workstation's owner id: screenOwner, else the room NPC whose needsHome names it.
-    def owner_id(obj, scenario)
-      return obj['screenOwner'] if obj['screenOwner'].is_a?(String) && !obj['screenOwner'].empty?
+    # A workstation's owner id: its explicit owner (a single NPC id). needsHome no longer sets one.
+    def owner_id(obj, _scenario = nil)
+      return obj['owner'] if obj['owner'].is_a?(String) && !obj['owner'].empty?
 
-      found = room_npcs(scenario).find { |entry| entry[:npc]['needsHome'] == obj['id'] }
-      found && found[:npc]['id']
+      nil
     end
 
     # Every rfid lock and sign-in PC: [{ kind: 'door' | 'object' | 'login', id:, room:,
