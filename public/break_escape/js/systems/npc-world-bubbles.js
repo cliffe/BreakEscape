@@ -683,7 +683,7 @@ export class NpcWorldBubbles {
                 heads.set(id, { x: a.x - HEAD_HALF_W, y: a.y, w: HEAD_HALF_W * 2, h: HEAD_H, soft: true });
             } catch (e) { /* no anchor: nothing to keep clear */ }
         }
-        const taken = [...this._hudRects(view), ...(head ? [{ ...head, soft: true }] : [])];
+        const taken = [...this._hudRects(view, first?.scene), ...(head ? [{ ...head, soft: true }] : [])];
         for (const id of order) {
             const { sprite, line, picture, partnerId, bark } = info.get(id);
             let bb = this.bubbles.get(id);
@@ -719,9 +719,11 @@ export class NpcWorldBubbles {
      * camera's view each frame. Anything hidden, empty or covering most of the screen (a full
      * screen layer) is left out. None without a DOM, a canvas or a view (node tests). R2 m2.
      */
-    _hudRects(view) {
+    _hudRects(view, scene = null) {
         if (!view || typeof document === 'undefined') return [];
-        const canvas = win().game?.canvas;
+        // window.game is the main scene; the canvas hangs off its game
+        const g = win().game;
+        const canvas = scene?.sys?.game?.canvas || g?.sys?.game?.canvas || g?.canvas;
         if (!canvas?.getBoundingClientRect) return [];
         const t = this.now();
         if (!this._hud || t - this._hud.at >= HUD_EVERY_MS || t < this._hud.at) {
