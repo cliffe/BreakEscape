@@ -556,7 +556,8 @@
               "cancelLabel": "Leave it",
               "onConfirm": [
                 { "type": "set_global", "key": "servers_offline", "value": false },
-                { "type": "complete_task", "taskId": "n6_repair" }
+                { "type": "complete_task", "taskId": "n6_repair" },
+                { "type": "hint", "title": "Server rack power", "message": "The rack powers up. The server network is back." }
               ]
             },
             { "type": "hint", "condition": "!globalVars.servers_offline", "title": "Server rack power", "message": "The server rack is on." }

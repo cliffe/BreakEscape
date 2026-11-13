@@ -248,7 +248,7 @@
           "name": "Wall socket",
           "position": { "x": 9.05, "y": 7.3 },
           "takeable": false,
-          "_comment": "Slice 18a: the coffee machine's switch is its own object, so clicking the machine still shows its observations. One-way (set_global has no toggle). The hint is worded as a state, so it reads well on every click, and carries a neutral title (without one it shows under 'Intelligence Received'). UX slice 15 R1 (m3, R4e): a named confirm while it is on, as every physical switch; once off, the state hint.",
+          "_comment": "Slice 18a: the coffee machine's switch is its own object, so clicking the machine still shows its observations. The hint is worded as a state, so it reads well on every click, and carries a neutral title (without one it shows under 'Intelligence Received'). UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as every physical switch and as Ian's socket: switch off while it is on, switch back on while it is off.",
           "triggerOnInteract": [
             {
               "type": "confirm_action",
@@ -261,7 +261,17 @@
                 { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched off at the wall." }
               ]
             },
-            { "type": "hint", "condition": "globalVars.office_coffee_off", "title": "Wall socket", "message": "The coffee machine is switched off at the wall." }
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.office_coffee_off",
+              "text": "Switch the coffee machine back on at the wall?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "office_coffee_off", "value": false },
+                { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched on at the wall." }
+              ]
+            }
           ]
         },
         {
@@ -318,7 +328,7 @@
           "name": "Wall socket",
           "position": { "x": 5.6, "y": 1.75 },
           "takeable": false,
-          "_comment": "Slice 22: the copier's switch, as the coffee machine's (slice 18a): one-way, a state-worded hint with a neutral title. UX slice 15 R1 (m3, R4e): a named confirm while it is on; once off, the state hint.",
+          "_comment": "Slice 22: the copier's switch, as the coffee machine's (slice 18a): a state-worded hint with a neutral title. UX slice 15 R1 (m3, R4e) and R2 (n4): a named confirm each way, as Ian's socket.",
           "triggerOnInteract": [
             {
               "type": "confirm_action",
@@ -331,7 +341,17 @@
                 { "type": "hint", "title": "Wall socket", "message": "The photocopier is switched off at the wall." }
               ]
             },
-            { "type": "hint", "condition": "globalVars.office_copier_off", "title": "Wall socket", "message": "The photocopier is switched off at the wall." }
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.office_copier_off",
+              "text": "Switch the photocopier back on at the wall?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "office_copier_off", "value": false },
+                { "type": "hint", "title": "Wall socket", "message": "The photocopier is switched on at the wall." }
+              ]
+            }
           ]
         },
         {
@@ -726,10 +746,30 @@
           "name": "Wall socket",
           "position": { "x": 9.05, "y": 6.4 },
           "takeable": false,
-          "_comment": "Slice 22: the kitchen copier's switch, one-way like the others.",
+          "_comment": "Slice 22: the kitchen copier's switch. UX slice 15 R2 (n4): a named confirm each way, as the office sockets and Ian's.",
           "triggerOnInteract": [
-            { "type": "set_global", "key": "kitchen_copier_off", "value": true },
-            { "type": "hint", "title": "Wall socket", "message": "The kitchen copier is switched off at the wall." }
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.kitchen_copier_off",
+              "text": "Switch off the kitchen copier at the wall?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "kitchen_copier_off", "value": true },
+                { "type": "hint", "title": "Wall socket", "message": "The kitchen copier is switched off at the wall." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.kitchen_copier_off",
+              "text": "Switch the kitchen copier back on at the wall?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "kitchen_copier_off", "value": false },
+                { "type": "hint", "title": "Wall socket", "message": "The kitchen copier is switched on at the wall." }
+              ]
+            }
           ]
         },
         {
