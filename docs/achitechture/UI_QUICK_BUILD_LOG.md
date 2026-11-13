@@ -106,3 +106,21 @@ phone-intro-once-and-notepad-raw 12, access-remote-signin 15, access-signin-post
 container-transfer-dialog 14, keypad-title 6, lock-scope-refusal 12, engine-fixes-round6 9, minigame-title-escape 24,
 minigame-controls-layout 11, password-join-mode 6, password-minigame-submit 2, password-case-hint 5, unlock-r1-ux 11:
 all pass. Full suites are left to the orchestrator's merge batch.
+
+## 2026-11-13: review round 3 fix (minor 1)
+
+`PasswordMinigame.cleanup()` runs part-way through some flows (lockout, sign-in accepted, correct and wrong
+password, lock-scope refusal, Wi-Fi join) while the screen stays up with a message. The round 2 teardown
+(`stopFrameSnap()` and `pcMonitor.destroy()`) therefore stopped the pixel snap and removed `pc-view` early, and the
+lockout line landed on a half pixel at 1400x1000. Both calls now sit inside `if (this._ending)`. `endMinigame` sets
+`_ending` before it calls `cleanup()`, `cleanup()` has no other caller in the framework, and the X reaches
+`endMinigame` through the same path, so every real exit sets it; `complete()` still releases them on its own path.
+
+Tests (pc-monitor-frame 47/47): the observer test now sets `_ending` before `cleanup()` and still sees 0 live
+observers; a new test calls `signInLockedOut()` and asserts the observer count is unchanged and `pc-view` is still on
+the container, then ends for real and sees 0. With the guard forced to `true` the new test fails.
+
+Live (test_access_networks, keyless server :3446, scrollbars shown, probe in the scratch folder ui-quick-fix3/probe.mjs):
+at 1400x1000, 390x844, 915x412 and 391x845 the wrong-password message and the lockout message both sit at x 0.0, y 0.0
+(whole pixels) with `pc-view` still on. Three opens each closed by the X and by `endMinigame`: observers settle at
+the 2 ResizeObserver / 2 MutationObserver baseline after every close, no growth.
