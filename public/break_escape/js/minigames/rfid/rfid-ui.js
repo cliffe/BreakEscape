@@ -611,11 +611,17 @@ export class RFIDUIRenderer {
      */
     snapFrameToPixels(frame) {
         if (typeof window === 'undefined' || !frame || typeof frame.getBoundingClientRect !== 'function') return;
+        // A layout offset (the frame is position: relative), not a transform: Chrome snaps
+        // the box's own paint to whole pixels but draws the clip-path where layout put it,
+        // so at y 164.5 the box is crisp and its stepped clip is blurred. A transform moves
+        // both by the same half pixel and swaps which one blurs; top/left moves the layout.
         const snap = () => {
             if (!frame.isConnected) return;
-            frame.style.translate = '';
+            frame.style.left = '';
+            frame.style.top = '';
             const { x, y } = wholePixelOffset(frame.getBoundingClientRect(), window.devicePixelRatio || 1);
-            if (x || y) frame.style.translate = `${x}px ${y}px`;
+            if (x) frame.style.left = `${x}px`;
+            if (y) frame.style.top = `${y}px`;
         };
         snap();
         // Once more after the first paint, in case fonts or the overlay settle the layout

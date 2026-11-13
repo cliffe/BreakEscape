@@ -310,10 +310,11 @@ test('the copier frame is snapped to whole pixels, now and on resize', () => {
         const frame = { isConnected: true, style: {}, getBoundingClientRect: () => ({ left: 480, top }) };
         const g = makeGame({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
         g.ui.snapFrameToPixels(frame);
-        assert.equal(frame.style.translate, '0px 0.5px');
+        assert.equal(frame.style.top, '0.5px', 'a layout offset (a transform would blur the box paint instead)');
+        assert.equal(frame.style.left, '');
         top = 170;
         listeners.resize();
-        assert.equal(frame.style.translate, '', 'already whole: no offset');
+        assert.equal(frame.style.top, '', 'already whole: no offset');
         g.ui.cleanup();
         assert.equal(listeners.resize, undefined, 'the resize listener goes with the copier');
     } finally {
