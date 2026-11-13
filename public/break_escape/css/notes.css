@@ -33,17 +33,22 @@
         margin: 2% 4% 6% 8%;
     }
 
+    /* The notepad fits the window (critique A03): no 450px floor and no shift left, which
+       ran the page and Next off a 390px screen */
     .notes-minigame-notepad {
-        left: -50px;
+        min-width: 0;
     }
 }
 
-/* Game container */
+/* Game container: as tall as the notepad, so the navigation row and Continue sit under it in
+   the shell's column (critique A04) */
 .notes-minigame-game-container {
     width: 100%;
+    height: auto;
+    flex: 0 1 auto;
     position: relative;
-    margin: 0 auto;
-    overflow: hidden; /* Crop sides on narrow screens */
+    margin: 8px auto;
+    overflow: visible;
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -52,8 +57,10 @@
 /* Notepad background container */
 .notes-minigame-notepad {
     /* Allow shrinkage but set a reasonable minimum to prevent working area from being too small */
-    min-width: 450px;
-    width: min(90vw, 90vh * (165/205)); /* Scale based on smaller dimension */
+    min-width: min(450px, 92vw);
+    /* Scaled by the smaller side; the height leaves room for the navigation row and
+       Continue under the page (critique A04) */
+    width: min(92vw, (100vh - 176px) * 165 / 205);
     aspect-ratio: 165 / 205; /* Match notepad image dimensions */
     background-image: url('../assets/mini-games/notepad.png');
     background-size: contain;
@@ -81,6 +88,12 @@
     margin: 0;
     overflow: auto; /* Allow scrolling if content is too long */
     box-sizing: border-box;
+    /* The page's scrollbar in paper colours (the shared .pixel-scroll rule, class added in
+       notes-minigame.js) */
+    --pixel-scroll-track: #e9e4d6;
+    --pixel-scroll-thumb: #b7ae98;
+    --pixel-scroll-edge: #5c5446;
+    --pixel-scroll-hover: #2c3e50;
     height: 90%; /* so that it scolls before the bottom of the image */
 }
 
@@ -95,16 +108,18 @@
     min-height: fit-content;
 }
 
-/* Celotape effect */
+/* Celotape effect: a short strip of yellowed tape across the top edge. It was a long white
+   box with a grey border that read as an empty title field (critique A06). */
 .notes-minigame-celotape {
     position: absolute;
-    top: -14px;
-    left: 10%;
-    right: 10%;
-    height: 16px;
-    background: rgba(255,255,255,0.9);
-    border: 4px solid rgba(200,200,200,0.8);
-    box-shadow: 0 2px 0 rgba(0,0,0,0.1), inset 0 2px 0 rgba(255,255,255,0.9);
+    top: -10px;
+    left: 35%;
+    right: 35%;
+    height: 12px;
+    background: rgba(240, 226, 170, 0.75);
+    border-left: 2px solid rgba(190, 172, 110, 0.8);
+    border-right: 2px solid rgba(190, 172, 110, 0.8);
+    box-shadow: none;
     z-index: 1;
 }
 
@@ -237,16 +252,21 @@
     background: #2980b9;
 }
 
-/* Navigation container */
+/* Navigation row: in the shell's column under the notepad, never drawn over the page
+   (critique A04); it wraps on a narrow window (A03) */
 .notes-minigame-nav-container {
-    position: absolute;
-    bottom: 80px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
     display: flex;
-    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 0 8px 12px;
+    flex-shrink: 0;
     z-index: 10;
 }
+
+.notes-minigame-nav-button { white-space: nowrap; }
 
 /* Search input */
 .notes-minigame-search {
@@ -256,7 +276,8 @@
     color: white;
     font-size: 18px;
     width: 200px;
-    margin-right: 10px;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 /* Navigation buttons */
@@ -421,5 +442,5 @@
     .minigame-container:has(.notes-minigame-notepad) .minigame-controls {
         position: absolute; left: auto; right: 24px; bottom: 16px; transform: none; margin: 0;
     }
-    .notes-minigame-nav-container { left: 24px; bottom: 16px; transform: none; flex-wrap: wrap; max-width: 28%; }
+    .notes-minigame-nav-container { position: absolute; left: 24px; bottom: 16px; transform: none; flex-wrap: wrap; max-width: 28%; margin: 0; justify-content: flex-start; }
 }

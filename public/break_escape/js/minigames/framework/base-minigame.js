@@ -62,6 +62,10 @@ export class MinigameScene {
         this.gameContainer = this.container.querySelector('.minigame-game-container');
         this.messageContainer = this.container.querySelector('.minigame-message-container');
         this.controlsElement = this.container.querySelector('.minigame-controls');
+        // The shell and the game area scroll when a short window cannot hold a frame: both
+        // show the shared pixel-art scrollbar (css/utilities.css, UI shell build)
+        this.container.classList?.add?.('pixel-scroll');
+        this.gameContainer?.classList?.add?.('pixel-scroll');
 
         // Set up close button (skipped if disableClose)
         const closeBtn = document.getElementById('minigame-close');
@@ -136,11 +140,18 @@ export class MinigameScene {
         const c = this.container.getBoundingClientRect();
         const cs = window.getComputedStyle(frame);
         const gap = 4;
-        const top = Math.max(r.top, c.top) + (parseFloat(cs.borderTopWidth) || 0) + gap - c.top;
+        // The X is absolute inside the shell, which scrolls (UI shell build): its offsets are in
+        // the shell's scrolled content, so the scroll is added back
+        const scrollTop = this.container.scrollTop || 0;
+        const top = Math.max(r.top, c.top) + (parseFloat(cs.borderTopWidth) || 0) + gap - c.top + scrollTop;
         // A frame that scrolls keeps its scrollbar clear of the X
         const borders = (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
         const scrollbar = Math.max(0, (frame.offsetWidth || 0) - (frame.clientWidth || 0) - borders);
-        const right = c.right - Math.min(r.right, c.right) + (parseFloat(cs.borderRightWidth) || 0) + scrollbar + gap;
+        // right is measured from the shell's padding box, which a shell scrollbar narrows
+        const ccs = window.getComputedStyle(this.container);
+        const shellBorders = (parseFloat(ccs.borderLeftWidth) || 0) + (parseFloat(ccs.borderRightWidth) || 0);
+        const shellBar = Math.max(0, (this.container.offsetWidth || 0) - (this.container.clientWidth || 0) - shellBorders);
+        const right = c.right - Math.min(r.right, c.right) + (parseFloat(cs.borderRightWidth) || 0) + scrollbar + gap - shellBar;
         btn.style.top = `${Math.round(top)}px`;
         btn.style.right = `${Math.round(right)}px`;
         btn.classList.add('minigame-close-in-frame');
@@ -151,6 +162,8 @@ export class MinigameScene {
         const raf = window.requestAnimationFrame || ((f) => setTimeout(f, 16));
         raf(place);
         this.addEventListener(window, 'resize', place);
+        // A scrolled shell keeps the X at the visible top of the frame
+        if (this.container?.addEventListener) this.addEventListener(this.container, 'scroll', place);
         if (typeof window.ResizeObserver === 'function') {
             const frame = this.closeAnchor?.();
             if (frame) {
