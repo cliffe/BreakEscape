@@ -40,7 +40,7 @@ Fix (optional, voiced cost): add `+ { courier_ready and not lw_post_door_propped
 
 ### m6. The jam trigger is untested and adds a validator warning
 The trigger is on `ruth_phone` (`SCN:749`), a phone NPC registered with the start room. `game.js` always loads `gameScenario.startRoom` first, resumes included, so in real play it is reliable. It is missed only when a tool overrides the start room, which is the case the builder hit. No room-entry trigger exists in the schema, and the existing `player_on_floor` mappings already use this pattern, so a new trigger type would be engine work out of proportion to the gain. Two loose ends remain:
-- `lab_physical_pentest_wedge_test.rb` sets `lw_post_printer_jammed` by hand in `setup` (line 17), so no test proves that the mapping exists. Fix: add an assertion that `ruth_phone`'s `eventMappings` hold `room_entered:hall` with `onceOnly` and `setGlobal.lw_post_printer_jammed == true`.
+- `lab_physical_pentest_wedge_test.rb` sets `lw_post_printer_jammed` by hand in `setup` (line 19), so no test proves that the mapping exists. Fix: add an assertion that `ruth_phone`'s `eventMappings` hold `room_entered:hall` with `onceOnly` and `setGlobal.lw_post_printer_jammed == true`.
 - The validator now warns that `ruth_phone` has two `room_entered:hall` mappings, one onceOnly, that can fire together. Firing together is intended. Fix: say so in the ERB comment above `SCN:749` and in the build log, so the merge-batch check does not chase it.
 
 ### m7. The narrowed "withheld" tests stopped checking the printer's display name
