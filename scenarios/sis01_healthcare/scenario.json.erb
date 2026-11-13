@@ -877,8 +877,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "bark": "The pump console's just dropped off. Come and tell me what's happened.",
-              "barkDelay": 11300
-<%# Bark timing (clip lengths measured, at least 0.3 s between voices that can fire together). network_isolated, both paths: Ravi 0.5 (his variant for the path), Helen 7.7, Sarah 11.3, David 15.8 (his variant for the path). drug_library_compromised: nurse 0, David 4.3, Sarah 10.3 (longest variant 5.6 s), Helen 16.3. ico_deadline_missed: Sarah 2, Hartley 7.3. patient_bed4_deceased: nurse 0.8, Sarah 2.8, Helen 6.6. patient_bed4_state: nurse 0, Mr Ahmed 4.3. %>
+              "barkDelay": 11600
+<%# Bark timing (clip lengths measured, at least 0.3 s between voices that can fire together). network_isolated, both paths: Ravi 0.5 (his variant for the path), Helen 8.0, Sarah 11.6, David 16.1 (his variant for the path); each allows about 0.2 s for a voice to start after its bark shows. drug_library_compromised: nurse 0, David 4.3, Sarah 10.3 (longest variant 5.6 s), Helen 16.3. ico_deadline_missed: Sarah 2, Hartley 7.3. patient_bed4_deceased: nurse 0.8, Sarah 2.8, Helen 6.6. patient_bed4_state: nurse 0, Mr Ahmed 4.3. %>
             },
             {
               "eventPattern": "global_variable_changed:drug_library_compromised",
@@ -2213,14 +2213,14 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true && globalVars.network_isolation_authorised === true && !globalVars.drug_library_restored",
               "onceOnly": true,
               "bark": "We're isolated. Talk to me before anyone touches the drug library.",
-              "barkDelay": 15800
+              "barkDelay": 16100
             },
             {
               "eventPattern": "global_variable_changed:network_isolated",
               "condition": "value === true && globalVars.network_isolation_authorised === true && globalVars.drug_library_restored",
               "onceOnly": true,
               "bark": "We're isolated, and the library's already checked. Come and see me.",
-              "barkDelay": 15800
+              "barkDelay": 16100
             },
             {
 <%# Bypass path: player used NSM SEVER without dual-auth. David never signed off.
@@ -2229,7 +2229,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true && !globalVars.network_isolation_authorised",
               "onceOnly": true,
               "bark": "Hold on. The network's been cut and I haven't signed anything. Where was the clinical sign-off?",
-              "barkDelay": 15800
+              "barkDelay": 16100
             },
             {
               "eventPattern": "global_variable_changed:patient_bed2_deceased",
@@ -2305,7 +2305,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "bark": "Isolated. Good. I'll want you up here next.",
-              "barkDelay": 7700
+              "barkDelay": 8000
             },
             {
               "eventPattern": "global_variable_changed:patient_bed4_deceased",
