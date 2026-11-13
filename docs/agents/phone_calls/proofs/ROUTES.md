@@ -37,3 +37,5 @@ Two facts about the bridge that cost time:
 | m10 HaX co-speaker portraits | New m10 game, no autoBrief, click choice 2 ("Go on") through Netherton's briefing until the first `hax_post` line | Done: `m10_hax_portrait.png` (portrait, name "Agent HaX", subtitle "Our former chief strategist..."); `/tts` request for that line uses `npc_id` `hax_post` (a separate record from `agent_0x99`), see `m10_hax_portrait_tts.jsonl`. Pre-A1 baseline for the M2 rename to `agent_0x99:`. |
 
 `call_probe.sh` env: `TRIGGER="name=value ..."` sets globals through the game's own proxy after bootstrap. It does **not** emit `global_variable_changed` (see "Two facts" above); `EMIT='event|{json}'` dispatches an event, which is how to fire a mapping that listens for a global change. Setting a trigger global this way is weaker than the plan's "real trigger" rule; say so when it is used.
+
+**Warning (engine R5):** `ENGINE_SWEEP_R1/r1_live.sh` loads the R1 `beat_probe.js`, which calls `beat()` without `selfClose`, so every terminal call end looks like a hang-up. For m07 beat checks use `ENGINE_SWEEP_R1/r1_live_r2probe.sh` or `ENGINE_SWEEP_R5/r5_live.sh`.
