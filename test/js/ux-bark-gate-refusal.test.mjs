@@ -151,14 +151,26 @@ test('no NPC answers: the notification shows, as before', async () => {
     assert.match(s.alerts[0].msg, DENIED);
 });
 
-test('a gate\'s lockedHint is never lost: with the notification dropped it shows on its own', async () => {
+test('R2 m3: a gate\'s lockedHint is never lost: with an answer in view it goes in her bubble, after her line', async () => {
     const s = rig({ lockedHint: HINT });
     handleGateBump(s.door);
     await settle();
-    assert.equal(s.alerts.length, 1, 'one toast: the hint');
-    assert.equal(s.alerts[0].msg, HINT);
-    assert.doesNotMatch(s.alerts[0].msg, DENIED, 'the generic line is not shown');
-    assert.ok(window.npcWorldBubbles.hasLine('dana'));
+    assert.deepEqual(s.alerts, [], 'no toast over the guard: not the notification, not the hint');
+    const st = window.npcWorldBubbles.says.get('dana');
+    assert.ok(st, 'Dana says it in a bubble');
+    assert.equal(st.pages[0], 'Not with you behind me.\nAsk at reception.');
+    assert.ok(st.pages.slice(st.linePages).join(' ').replace(/\s+/g, ' ') === HINT, 'the hint is the pages after her line');
+    assert.equal(st.tag, 'door_gate_denied');
+    assert.deepEqual(toasts(), []);
+});
+
+test('R2 m3: a hinted refusal whose bubble cannot open still shows the hint (on her toast)', async () => {
+    const s = rig({ lockedHint: HINT });
+    window.npcWorldBubbles.say = () => null;   // the bubble layer turns it down (a full set)
+    handleGateBump(s.door);
+    await settle();
+    assert.deepEqual(s.alerts, []);
+    assert.deepEqual(toasts(), [`Dana Price: ${LINE} ${HINT}`]);
 });
 
 test('a gate\'s lockedHint with no answer in view rides on the notification, as before', async () => {
@@ -192,15 +204,76 @@ test('answersInView follows the bubble layer\'s facts', () => {
     assert.equal(s.bark.answersInView('dana'), false, 'a phone contact never answers in a bubble');
 });
 
-test('a knot bark answering in view counts too (marked before its ink loads)', async () => {
-    const s = rig();
+// A knot bark (R2 m4): Dana's story already loaded (story and ink engine cached), the knot's
+// lines given by `lines`, one per continue()
+function knotRig(lines, { cached = true, lockedHint = null } = {}) {
+    const s = rig({ lockedHint });
     s.manager.eventDispatcher.off('door_gate_denied');
     const npc = s.manager.npcs.get('dana');
     npc.storyPath = 'scenarios/x/ink/dana.json';
-    const loads = [];
-    s.manager._showBarkFromKnot = (id, n, knot) => { loads.push(knot); };
+    const fetches = [];
+    globalThis.fetch = window.fetch = (url) => { fetches.push(url); return new Promise(() => {}); };   // never arrives
+    if (cached) {
+        s.manager.storyCache.set(npc.storyPath, { inkVersion: 21 });
+        let i = 0;
+        s.manager.inkEngineCache.set('dana', { goToKnot() { i = 0; }, continue: () => ({ text: lines[i++] ?? '', tags: [] }) });
+    }
     s.manager._setupEventMappings('dana', [{ eventPattern: 'door_gate_denied', cooldown: 0, knot: 'refused' }]);
+    return { ...s, fetches };
+}
+
+test('R2 m4: a knot bark with its story loaded answers in view: her bubble, no notification', async () => {
+    const s = knotRig([`${LINE}\n`]);
     handleGateBump(s.door);
-    assert.deepEqual(loads, ['refused']);
     assert.deepEqual(s.alerts, [], 'no notification');
+    await settle();
+    assert.ok(window.npcWorldBubbles.hasLine('dana'));
+});
+
+test('R2 m4: a knot that yields no text never leaves a refusal silent: the notification shows', async () => {
+    for (const lines of [[], ['   '], ['']]) {
+        const s = knotRig(lines, { lockedHint: HINT });
+        handleGateBump(s.door);
+        await settle();
+        assert.equal(s.alerts.length, 1, `knot ${JSON.stringify(lines)}: the notification`);
+        assert.match(s.alerts[0].msg, DENIED);
+        assert.ok(s.alerts[0].msg.includes(HINT), 'with the hint');
+        assert.equal(window.npcWorldBubbles.hasLine('dana'), false);
+        assert.deepEqual(toasts(), []);
+    }
+});
+
+test('R2 m4: a knot whose ink is not loaded yet cannot be known in time: the notification shows', async () => {
+    const s = knotRig([LINE], { cached: false });
+    handleGateBump(s.door);
+    assert.equal(s.alerts.length, 1);
+    assert.match(s.alerts[0].msg, DENIED);
+    assert.equal(s.fetches.length, 1, 'the ink is being fetched');
+});
+
+test('R2 n1: a refusal in the cooldown closes her bubble from the last one, and the notification shows', async () => {
+    const s = rig();
+    handleGateBump(s.door);
+    await settle();
+    assert.ok(window.npcWorldBubbles.hasLine('dana'));
+    handleGateBump(s.door);   // inside her 4 s cooldown
+    await settle();
+    assert.equal(s.alerts.length, 1);
+    assert.match(s.alerts[0].msg, DENIED);
+    assert.equal(window.npcWorldBubbles.hasLine('dana'), false, 'the stale bubble is closed');
+    assert.equal(window.npcWorldBubbles.log.at(-1).event, 'superseded');
+    assert.deepEqual(toasts(), [], 'no remainder toast');
+});
+
+test('R2 n4: a bark that would be held (a call opening) is not an answer in view: the notification shows', async () => {
+    const s = rig();
+    window.phoneRinger = { callActive: () => true };
+    try {
+        assert.equal(s.bark.answersInView('dana'), false);
+        handleGateBump(s.door);
+        await settle();
+        assert.equal(s.alerts.length, 1);
+        assert.match(s.alerts[0].msg, DENIED);
+        assert.equal(s.bark.deferredBarkQueue.length, 1, 'her bark waits for the call');
+    } finally { delete window.phoneRinger; }
 });

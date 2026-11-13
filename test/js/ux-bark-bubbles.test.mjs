@@ -30,7 +30,7 @@ const NPCBarkSystem = barksMod.default;
 const { routeBark } = barksMod;
 const B = await imp('systems/npc-world-bubbles.js');
 const { NpcWorldBubbles, crispText, pageLine, pagesText, pageTimes, lineTotalMs, readingMs, wrapLines, onCamera, placeBubble,
-    MAX_BUBBLES, PAGE_LINES, LINE_CHARS, PAGE_MIN_MS, AUDIO_TAIL_MS, SPEECH_FONT, SPEECH_FONT_PX, BORDER_PX, CAMERA_MARGIN, TEXT_RIGHT_SLACK } = B;
+    MAX_LIFT, HEAD_POINT_DY, hookCameraPass, followUpTimes, MAX_BUBBLES, PAGE_LINES, LINE_CHARS, PAGE_MIN_MS, AUDIO_TAIL_MS, SPEECH_FONT, SPEECH_FONT_PX, BORDER_PX, CAMERA_MARGIN, TEXT_RIGHT_SLACK } = B;
 const { displayDashes } = await imp('utils/display-dashes.js');
 
 // A 150-character bark, the length of the longest authored one (test_bark_bubbles, Dana)
@@ -229,7 +229,8 @@ test('a minigame opening mid-bark sends the remainder to the toast, held until i
 
 test('a bark outranks needs chatter for a place', () => {
     const npcs = {};
-    for (let i = 0; i < 5; i++) npcs[`n${i}`] = { x: 100 + i * 10, y: 100, room: 'hall' };
+    // Spaced so four bubbles fit side by side (R2: a bubble with no clear place shows no more)
+    for (let i = 0; i < 5; i++) npcs[`n${i}`] = { x: 100 + i * 70, y: 100, room: 'hall' };
     const r = rig({ npcs, player: { x: 100, y: 100 } });
     // Chatter from the four nearest; the bark comes from the farthest
     const talking = new Map([0, 1, 2, 3].map(i => [`n${i}`, { line: 'Chat.', partnerId: null }]));
@@ -474,10 +475,33 @@ test('R1 n4: placeBubble slides sideways first and lifts only when both sides ar
     const left = placeBubble(at, 60, 20, [{ x: 115, y: 70, w: 20, h: 30 }]);   // in the way on the right
     assert.ok(left.dx < 0, 'slid left');
     assert.equal(left.lift, 0);
+    // A small thing across the top of the tail: a short lift clears it
+    const low = [{ x: 60, y: 92, w: 80, h: 6 }];
+    const up = placeBubble(at, 60, 20, low);
+    assert.ok(up.lift > 0 && up.lift <= MAX_LIFT && !up.beside, JSON.stringify(up));
+    assert.equal(hit(up.rect, low[0]), false);
+});
+
+test('R2 n3: the lift is capped at MAX_LIFT; past it the bubble sits beside the head instead', () => {
+    const at = { x: 100, y: 100 };
     const wall = [{ x: 0, y: 60, w: 300, h: 40 }];
-    const up = placeBubble(at, 60, 20, wall);
-    assert.ok(up.lift > 0 && up.lift % 2 === 0);
-    assert.equal(hit(up.rect, wall[0]), false);
+    const p = placeBubble(at, 60, 20, wall);
+    assert.equal(p.beside, true, 'beside, not a 42 px stem');
+    assert.equal(hit(p.rect, wall[0]), false);
+    // The player's head just above (2 px into the tail): never a lift past the cap
+    const head = { x: 90, y: 62, w: 20, h: 22, soft: true };
+    for (const w of [40, 60, 120]) {
+        const q = placeBubble(at, w, 20, [head]);
+        assert.ok(q.beside || q.lift <= MAX_LIFT, `w ${w}: ${JSON.stringify(q)}`);
+    }
+});
+
+test('R2 m1: no place clear of other bubbles gives null; a soft rect (a head) is covered only as a last resort', () => {
+    const at = { x: 100, y: 100 };
+    const all = [{ x: -1000, y: -1000, w: 3000, h: 3000 }];
+    assert.equal(placeBubble(at, 60, 20, all), null, 'every place covers a bubble: none');
+    const soft = placeBubble(at, 60, 20, [{ ...all[0], soft: true }]);
+    assert.ok(soft, 'a head everywhere: covered, since nothing better exists');
 });
 
 // A Text whose canvas holds smoothed glyph pixels: 4 wide, 2 high; ink in columns 1 and 2
@@ -532,7 +556,9 @@ test('R1 M1: a bubble stays inside the camera view: slid in from a side edge, be
     const top = placeBubble({ x: 200, y: 30 }, 100, 40, [], { view });
     assert.equal(top.beside, true);
     assert.ok(inside(top.rect), JSON.stringify(top.rect));
-    assert.ok(top.rect.x >= 200 + 10 || top.rect.x + top.rect.w <= 200 - 10, 'clear of the NPC\'s head');
+    assert.ok(top.rect.x >= 200 + 10 || top.rect.x + top.rect.w <= 200 - 10, 'body and pointer clear of the NPC\'s head');
+    assert.ok(top.side === -1 || top.side === 1);
+    assert.equal(top.pointY, HEAD_POINT_DY);
 });
 
 test('R1 M1: live layer: an NPC at the top of the view gets a whole bubble on screen, with no tail', () => {
@@ -546,5 +572,133 @@ test('R1 M1: live layer: an NPC at the top of the view gets a whole bubble on sc
     const top = bb.box.y - bb.layout.lift - 4 - bb.h;
     assert.ok(top >= view.y, `bubble top ${top} above the view`);
     const rects = bb.g.calls.filter(c => c[0] === 'fillRect');
-    assert.equal(rects.length, 5, 'fill and four edges: no tail pieces');
+    // R2 m1: fill, four edges and the side pointer (seven whole-pixel pieces) at head height
+    assert.equal(rects.length, 5 + 7);
+    for (const [, x, y, w, h] of rects) for (const v of [x, y, w, h]) assert.ok(Number.isInteger(v));
+    const pointer = rects.slice(5);
+    const ys = pointer.flatMap(([, , y, , h]) => [y, y + h]);
+    assert.ok(Math.min(...ys) >= HEAD_POINT_DY - 4 && Math.max(...ys) <= HEAD_POINT_DY + 4, 'the pointer sits at head height');
+    const xs = pointer.flatMap(([, x, , w]) => [x, x + w]);
+    const tip = bb.layout.side < 0 ? Math.max(...xs) : Math.min(...xs);
+    assert.ok(Math.abs(tip) >= 10 && Math.abs(tip) <= 14, `the tip points at the head, stopping short of it: ${tip}`);
+});
+
+// ---- R2 ----
+
+test('R2 m1: two speakers 40 px apart at the top of the view: no overlap, each pointer at its own head', () => {
+    const view = { x: 0, y: 40, width: 400, height: 300 };
+    const r = rig({ npcs: { dana: { x: 160, y: 100, room: 'hall' }, lee: { x: 200, y: 100, room: 'hall' } }, view, player: { x: 180, y: 260 } });
+    r.bubbles.say('dana', 'Not with you behind me. Ask at reception.');
+    r.bubbles.say('lee', "Morning. Printer's jammed again.");
+    r.bubbles.update();
+    const shown = ['dana', 'lee'].filter(id => r.bubbles.bubbles.get(id)?.box.visible);
+    const toasted = ['dana', 'lee'].filter(id => !r.bubbles.hasLine(id));
+    assert.equal(shown.length + toasted.length, 2, 'each line is a bubble or went to the toast');
+    if (shown.length === 2) {
+        const [a, b] = shown.map(id => r.bubbles.bubbles.get(id));
+        assert.equal(hit(a.rect, b.rect), false, `bubbles overlap: ${JSON.stringify([a.rect, b.rect])}`);
+    }
+    for (const id of shown) {
+        const bb = r.bubbles.bubbles.get(id);
+        const headX = r.sprites[id].x;
+        assert.ok(bb.rect.y >= view.y, `${id}: inside the view`);
+        // The tail or pointer belongs to this NPC: the container sits on its head
+        assert.equal(bb.box.x, headX);
+        if (bb.layout.beside) {
+            const bodyLeft = headX + bb.layout.dx - bb.w / 2;
+            assert.ok(bb.layout.side < 0 ? bodyLeft + bb.w <= headX - 12 : bodyLeft >= headX + 12, `${id}: body clear of its head`);
+        }
+    }
+    // Stable next frame
+    const before = shown.map(id => ({ ...r.bubbles.bubbles.get(id).layout }));
+    r.bubbles.update();
+    assert.deepEqual(shown.map(id => r.bubbles.bubbles.get(id).layout), before);
+});
+
+test('R2 m1: a bark with no clear place goes to the toast from the page on screen', async () => {
+    const r = rig();
+    const sys = barkSystem();
+    r.bubbles._hudRects = () => [{ x: -1000, y: -1000, w: 3000, h: 3000, hud: true }];
+    await sys._renderBark({ npcId: 'sara', npcName: 'Sara', message: 'Not with you behind me.' });
+    r.bubbles.update();
+    await tick();
+    assert.equal(r.bubbles.hasLine('sara'), false);
+    assert.equal(r.bubbles.log.some(e => e.event === 'no-room'), true);
+    assert.deepEqual(toasts(), ['Sara: Not with you behind me.']);
+});
+
+test('R2 m2: bubbles keep off the HUD panels (Objectives at the top left), read from the DOM through the camera', () => {
+    const view = { x: 0, y: 0, width: 400, height: 300 };
+    const r = rig({ npcs: { dana: { x: 60, y: 120, room: 'hall' } }, view, player: { x: 200, y: 260 } });
+    document.body.innerHTML = '<div class="objectives-panel"></div><div id="inventory-container"></div>';
+    const panel = document.querySelector('.objectives-panel');
+    // The canvas is drawn at 2x: 800x600 on screen for a 400x300 view
+    window.game = { canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }) } };
+    panel.getBoundingClientRect = () => ({ left: 20, top: 14, width: 200, height: 120 });   // world 10..110, 7..67
+    document.querySelector('#inventory-container').getBoundingClientRect = () => ({ left: 0, top: 520, width: 800, height: 80 });
+    const hud = r.bubbles._hudRects(view);
+    assert.equal(hud.length, 2);
+    assert.deepEqual(hud[0], { x: 8, y: 5, w: 104, h: 64, hud: true });
+    r.bubbles.say('dana', 'Not with you behind me. Ask at reception.');
+    r.bubbles.update();
+    const bb = r.bubbles.bubbles.get('dana');
+    assert.ok(bb.box.visible);
+    for (const h of hud) assert.equal(hit(bb.rect, h), false, `under the HUD: ${JSON.stringify([bb.rect, h])}`);
+    // A hidden panel is not in the way
+    panel.style.display = 'none';
+    r.clock.advance(500);
+    assert.equal(r.bubbles._hudRects(view).length, 1);
+    delete window.game;
+});
+
+test('R2 n2: the pass runs in the camera\'s preRender, after the camera has moved, once per stepped frame', () => {
+    const r = rig({ view: { x: 0, y: 0, width: 400, height: 300 } });
+    let passes = 0;
+    const seen = [];
+    r.bubbles.update = () => { passes++; seen.push(cam.worldView.x); };
+    const cam = { worldView: { x: 0, y: 0, width: 400, height: 300 },
+        preRender() { this.worldView = { ...this.worldView, x: this.worldView.x + 5 }; } };
+    assert.equal(hookCameraPass(r.bubbles, cam), true);
+    assert.equal(hookCameraPass(r.bubbles, cam), true, 'wrapped once');
+    cam.preRender();
+    assert.equal(passes, 0, 'no postupdate this frame (scene paused): no pass');
+    r.bubbles._due = true;   // postupdate ran
+    cam.preRender();
+    assert.equal(passes, 1);
+    assert.deepEqual(seen, [10], 'the pass saw this frame\'s view, after the camera moved');
+    cam.preRender();
+    assert.equal(passes, 1, 'once per frame');
+    assert.equal(hookCameraPass(r.bubbles, null), false);
+});
+
+test('R2 m3: follow-up pages come after the line, timed for reading; the voice re-times only the line', () => {
+    const r = rig();
+    const HINT = 'Store B needs a staff badge. Reception issues them to visitors with an escort.';
+    const h = r.bubbles.say('sara', 'Not with you behind me. Ask at reception.', { followUp: HINT, tag: 'door_gate_denied' });
+    const st = h.state;
+    assert.equal(st.linePages, 1);
+    assert.deepEqual(st.pages.slice(1), pageLine(HINT));
+    assert.deepEqual(st.times.slice(1), followUpTimes(pageLine(HINT)));
+    const hintTimes = st.times.slice(1);
+    h.setAudioMs(9000);
+    assert.deepEqual(st.times.slice(1), hintTimes, 'the hint is not stretched to the audio');
+    // Leaving view on the line's page hands the hint on too
+    window.currentPlayerRoom = 'lobby';
+    const rest = [];
+    st.onRemainder = (t) => rest.push(t);
+    r.bubbles.update();
+    assert.equal(rest[0], pagesText(st.pages));
+    assert.ok(rest[0].endsWith('escort.'));
+});
+
+test('R2 n1: closeTagged closes the bubbles answering that event, with no remainder', () => {
+    const r = rig({ npcs: { dana: { x: 100, y: 100, room: 'hall' }, lee: { x: 220, y: 100, room: 'hall' } } });
+    const rest = [];
+    r.bubbles.say('dana', 'Not with you behind me.', { tag: 'door_gate_denied', onRemainder: (t) => rest.push(t) });
+    r.bubbles.say('lee', 'Morning.', { tag: 'test_bark_short' });
+    assert.deepEqual(r.bubbles.closeTagged('door_gate_denied'), ['dana']);
+    assert.equal(r.bubbles.hasLine('dana'), false);
+    assert.equal(r.bubbles.hasLine('lee'), true);
+    assert.deepEqual(rest, []);
+    assert.deepEqual(r.bubbles.closeTagged(null), []);
 });
