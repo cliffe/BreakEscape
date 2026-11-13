@@ -118,6 +118,8 @@ function cssBreaches(file) {
             }
             if (prop === 'box-shadow' || prop === 'text-shadow') {
                 if (blurs(value).some(b => b > 0)) found.push(`shadow: ${at}`);
+                // a hard 1px offset or ring is a hairline too
+                else if (/(^|[\s,])(0?\.\d+|1)px\b/.test(value)) found.push(`hairline: ${at}`);
             }
             if (prop === 'filter' && (/blur\(/.test(value) || /drop-shadow\(/.test(value) && blurs(value.replace(/drop-shadow\(([^()]|\([^()]*\))*\)/, s => s.slice(12, -1))).some(b => b > 0))) found.push(`shadow: ${at}`);
             if (/^(background|background-image|border-image|border-image-source)$/.test(prop)) {

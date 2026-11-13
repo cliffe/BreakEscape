@@ -14,12 +14,18 @@
     align-items: center;
     font-family: 'GNF', monospace;
     color: white;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    box-shadow: none;   /* pixel-art UI: no soft shadow (slice 7) */
     font-size: 18px;
 }
 
 .minigame-container input, .minigame-container select, .minigame-container textarea, .minigame-container button, .minigame-game-container pre {
     font-family: 'GNF', monospace;
+}
+
+/* Authored HTML (scenario text with <code>) gets the browser's monospace otherwise
+   (pixel-art UI rule, slice 7) */
+.minigame-container code, .minigame-container kbd, .minigame-container samp {
+    font-family: 'VT323', monospace;
 }
 
 .minigame-header {
@@ -48,7 +54,7 @@
     /* max-width: 600px; */
     margin: 20px auto;
     background: #1a1a1a;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5) inset;
+    box-shadow: none;   /* pixel-art UI: no soft inner shade (slice 7) */
     position: relative;
     /* Lets the game area shrink to leave room for the Cancel row under it when
        its content is taller than the screen (a long text file), instead of
@@ -254,7 +260,7 @@
 
 .minigame-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #2ecc71, #27ae60);
+    background: #2ecc71;   /* solid fill, no gradient (slice 7) */
     transition: width 0.3s ease;
     border: 2px solid #27ae60;
 }
