@@ -161,7 +161,9 @@ export function joinedStatus(n) {
 export function hostAction(row) {
     if (row?.responding === false) return 'not_responding';
     if (row?.remoteSignIn === false) return 'off';
-    if (row?.session && row.session.via !== 'claim') return 'open';
+    // UI slice 6: a held-but-locked session is shown Locked, not Open: opening it is refused
+    // by the server until the account's password is entered again.
+    if (row?.session && row.session.via !== 'claim') return row.session.locked ? 'locked' : 'open';
     return 'sign-in';
 }
 
@@ -352,7 +354,12 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** One further-network block (up: live controls; down: greyed "No route" rows). */
     blockSectionHtml(block) {
-        const via = block.via ? `, through ${escapeHtml(block.via.host || block.via.hostId || '')}` : '';
+        // UI slice 6: a locked pivot still bridges structurally (the view draws structural
+        // reach), so the "through <host>" label stays but is marked Locked, matching that the
+        // far network's rows will not open until the password is re-entered.
+        const via = block.via
+            ? `, through ${escapeHtml(block.via.host || block.via.hostId || '')}${block.via.locked ? ' (Locked)' : ''}`
+            : '';
         if (block.route === 'down') {
             // Each row drawn as its own kind, under the same group headings as an up block
             // (code review R1 n3: every row was drawn as a PC, so a share sorted after the
@@ -412,6 +419,10 @@ export class NetworkViewMinigame extends MinigameScene {
             let control;
             if (action === 'not_responding' || action === 'off') {
                 control = null;
+            } else if (action === 'locked') {
+                // UI slice 6: the same padlock "Locked" badge a locked share shows, in place of
+                // the Open button; the server refuses the open until the password is re-entered.
+                control = '<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> Locked</span>';
             } else if (action === 'open') {
                 const who = row.session.displayName || row.session.username || 'session';
                 control = `<button type="button" class="minigame-button network-row-action" data-action="open">Open <span class="network-row-who">(${escapeHtml(who)})</span></button>`;

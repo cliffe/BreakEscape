@@ -421,14 +421,24 @@ export class PasswordMinigame extends MinigameScene {
         if (this.signIn) {
             const picker = this.signIn.picker;
             const tiles = picker === false ? [] : (Array.isArray(this.signIn.tiles) ? this.signIn.tiles : []);
+            // A locked session (UI slice 6) pre-chooses its own account: start with that username
+            // selected (a tile when it is shown, else the "Other user" field pre-filled), so the
+            // player lands straight on the password. The server still checks the password.
+            const preselect = typeof this.signIn.preselect === 'string' && this.signIn.preselect ? this.signIn.preselect : null;
+            const presetTile = preselect ? tiles.find(t => t.username === preselect) : null;
+            const presetOther = !!preselect && !presetTile;
             this.signInState = {
                 tiles,
                 // null: no account chosen yet; '' with other: true: typing a username
-                selected: null,
+                // A locked session (UI slice 6) pre-selects its own account.
+                selected: presetTile ? preselect : null,
                 // A remote screen with captures starts on its tiles as the keyboard does, with
-                // none on the typed form; while they load it shows neither (UX slice 2b0 R1 M2)
-                other: picker === false && !(this.signIn.remote && (this.signIn.capturedLoading
-                    || (Array.isArray(this.signIn.captured) && this.signIn.captured.length > 0))),
+                // none on the typed form; while they load it shows neither (UX slice 2b0 R1 M2).
+                // A pre-chosen account with no tile (presetOther) types its username instead.
+                other: (picker === false && !(this.signIn.remote && (this.signIn.capturedLoading
+                    || (Array.isArray(this.signIn.captured) && this.signIn.captured.length > 0)))) || presetOther,
+                // The "Other user" field's pre-filled value, when the pre-chosen account has no tile
+                presetUsername: presetOther ? preselect : null,
                 message: ''
             };
         }
@@ -1490,6 +1500,10 @@ export class PasswordMinigame extends MinigameScene {
         this.togglePasswordBtn = this.gameContainer.querySelector('#toggle-password');
         this.submitBtn = this.gameContainer.querySelector('#submit-password');
         this.signInMessageEl = this.gameContainer.querySelector('#signin-message');
+        // A locked session with no tile (UI slice 6): pre-fill the "Other user" field.
+        if (this.signInState?.presetUsername && this.usernameField && !this.usernameField.value) {
+            this.usernameField.value = this.signInState.presetUsername;
+        }
 
         this.gameContainer.querySelectorAll('.signin-tile[data-tile-index]').forEach(el => {
             const idx = el.dataset.tileIndex;

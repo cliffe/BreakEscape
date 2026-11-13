@@ -835,6 +835,10 @@ module BreakEscape
       session = access_sessions[best[:host_id].to_s]
       npc = session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
       via['displayName'] = npc['displayName'] || npc['id'] if npc
+      # UI slice 6: the network view draws structural_reach, so a locked pivot still names the
+      # bridge; mark it locked so the label does not read as a live route (the access walk has
+      # already dropped it, so nothing on the far network opens without the password).
+      via['locked'] = true if session_locked?(session)
       via
     end
 
@@ -920,6 +924,9 @@ module BreakEscape
         if npc && self.class.account_holder?(npc)
           held = { 'username' => npc['creds']['username'], 'displayName' => npc['displayName'] || npc['id'],
                    'via' => 'password', 'remote' => session['foothold'].present? }
+          # UI slice 6: a locked session is still held but refused until the password is
+          # entered again; the view marks it Locked rather than offering Open.
+          held['locked'] = true if session_locked?(session)
         end
       end
       # A host whose service is off offers nothing: no sign-in and no session to open (5.2).
@@ -1068,8 +1075,11 @@ module BreakEscape
         hosts_off = access_sessions.keys.map(&:to_s).sort.map { |id| (info = find_login_pc(id)) ? host_service_off?(info[:object], globals) : nil }
         # and the power of an implant's source PC (review R3 M1)
         source_off = implant_source_off?(fid, globals)
+        # and the lock state of each held session, which the access walk reads (UI slice 6):
+        # a lock cuts the pivot without changing the session keys, so it must key the cache.
+        sessions_locked = access_sessions.keys.map(&:to_s).sort.map { |id| session_locked_at?(id) }
       end
-      [fid, ignore_outages, network_footholds[fid].to_json, access_sessions.keys.map(&:to_s).sort, outages, hosts_off, source_off,
+      [fid, ignore_outages, network_footholds[fid].to_json, access_sessions.keys.map(&:to_s).sort, outages, hosts_off, source_off, sessions_locked,
        scenario_data.object_id, scenario_data['networks'].to_json, scenario_data['networkLinks'].to_json]
     end
 
@@ -1097,6 +1107,11 @@ module BreakEscape
           # counterpart of a down network. Outages only: structural_reach still counts it, so
           # nothing is pruned and the onward session returns with the power.
           next if !ignore_outages && host_service_off?(host[:pc])
+          # UI slice 6: a locked session extends no pivot reach for access until the password
+          # is entered again, so an open share reached only through it is refused. The access
+          # walk only (ignore_outages): structural_reach still counts it, so the network view
+          # (which draws structural_reach) is unchanged, mirroring the host-off cut above.
+          next if !ignore_outages && session_locked_at?(host[:pc_id])
 
           NetworkModel.linked_networks(scenario_data, net).each do |linked|
             next unless up.call(linked)
@@ -1240,6 +1255,8 @@ module BreakEscape
       open_share = resource['access'].nil?
       access_sessions.any? do |pc_id, session|
         next false unless session.is_a?(Hash)
+        # UI slice 6: a locked session maps no shares until the password is entered again.
+        next false if session_locked?(session)
 
         info = find_login_pc(pc_id)
         npc = scenario_room_npc(session['id'])
