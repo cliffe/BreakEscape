@@ -567,12 +567,14 @@
        past both edges (UX slice 3a R1 m3). The height is the old 80vh of content plus the
        padding, rounded to whole 2px so the bottom steps land on whole pixels.
        The close X (top 15px, 30px square plus its 4px border: it ends at y 45) sits
-       above the frame and never on its border or stepped corner (R2 m1): the copier's
-       area starts 52px down and ends 52px up, and the frame is centred in it, or starts
-       at its top when it is too tall ("safe" centring never pushes it under the X). */
+       above the frame and never on its border or stepped corner (R2 m1). The game
+       container already sits 20px in from the top and bottom (minigames-framework.css
+       margin: 20px auto), so 32px of padding starts the copier's area 52px down and ends
+       it 52px up (100vh - 104px high). The frame is centred in that area, or starts at
+       its top when it is too tall ("safe" centring never pushes it under the X). */
     .rfid-minigame-game-container {
         box-sizing: border-box;
-        padding: 52px 0;
+        padding: 32px 0;
         justify-content: safe center;
     }
 

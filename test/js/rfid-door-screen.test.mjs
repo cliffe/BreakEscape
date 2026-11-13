@@ -349,7 +349,9 @@ test('at phone width the frame starts below the close X', () => {
     const area = media.match(/\.rfid-minigame-game-container \{([^}]*)\}/);
     assert.ok(area, 'the phone rule pads the copier area');
     assert.match(area[1], /box-sizing:\s*border-box/);
-    assert.match(area[1], /padding:\s*52px 0/, 'clear of the X, which ends 45px down');
+    assert.match(area[1], /padding:\s*32px 0/, 'with the 20px margin, 52px: clear of the X, which ends 45px down');
+    assert.match(readFileSync(src('../css/minigames-framework.css'), 'utf8'), /\.minigame-game-container \{[^}]*margin:\s*20px auto/,
+        'the 20px the padding adds to');
     assert.match(area[1], /justify-content:\s*safe center/, 'a too-tall frame starts at the top of the area');
     const frame = media.match(/\.flipper-zero-frame \{([^}]*)\}/)[1];
     assert.match(frame, /round\(down, min\(calc\(80vh \+ 40px\), calc\(100vh - 104px\)\), 2px\)/,
