@@ -790,6 +790,9 @@ test('rows lay out in two columns when there is room; headings and locked shares
 test('a down row keeps the kept name and the host with its tag on one line', async () => {
     assert.match(ruleBody('.network-row-kept') || '', /white-space:\s*nowrap/);
     assert.match(ruleBody('.network-row-title') || '', /white-space:\s*nowrap/);
+    // When the two do not fit side by side, the control drops under the label, never over it
+    assert.match(ruleBody('.network-row-down') || '', /flex-wrap:\s*wrap/);
+    assert.match(ruleBody('.network-row-down .network-row-control') || '', /margin-left:\s*auto/);
     withBlocks([{ id: 'server_net', name: 'Server network', via: { hostId: 'lena_pc', host: 'HB-FIN-02' }, route: 'down',
         hosts: [{ ...SERVER_ROW, heldAs: 'Ian Shaw' }] }]);
     links.open('jack_comms_port');

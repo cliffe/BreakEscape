@@ -269,6 +269,17 @@
     white-space: nowrap;
 }
 
+/* A down row whose label and reason (and kept note) do not fit side by side drops the control
+   under the label, right-aligned, rather than squeezing either (code review R3 m2). Only down
+   rows: elsewhere the button shrinks beside the label, as before. */
+.network-row-down {
+    flex-wrap: wrap;
+}
+
+.network-row-down .network-row-control {
+    margin-left: auto;
+}
+
 /* A host and its down tag share one line: "SV-FS02 (down)" (code review R3 m2) */
 .network-row-title {
     white-space: nowrap;
