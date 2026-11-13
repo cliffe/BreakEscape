@@ -1,0 +1,713 @@
+{
+  "scenario": "test_access_networks",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "door_finance_office",
+      "label": "Finance office<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "finance_office",
+      "label": "Finance office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_lobby_vault",
+      "label": "Lobby vault<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_sv_fs02",
+      "label": "Server file host<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_sam_pc",
+      "label": "Sam's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_lena_pc",
+      "label": "Lena's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_kiosk_pc",
+      "label": "Reception kiosk<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_door_box",
+      "label": "Door controller<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_sam",
+      "label": "Sam Okafor sign-in<br/>(sokafor)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_lena",
+      "label": "Lena Fox sign-in<br/>(lfox)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_ian",
+      "label": "Ian Shaw sign-in<br/>(ishaw)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "jack_comms_port",
+      "label": "Spare wall port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "comms_room",
+      "label": "Comms room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Harbour office LAN<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "jack_secure_port",
+      "label": "Locked switch port<br/>Network jack<br/>(port security: refuses the device)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "jack_bench_port",
+      "label": "Bench switch<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "workshop",
+      "label": "Workshop",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "net_workshop_lan",
+      "label": "Workshop bench LAN<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "resource_ledger_archive",
+      "label": "Ledger-Archive<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "resource_print_queue",
+      "label": "Office print queue<br/>(printer)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "resource_scanned_inbox",
+      "label": "Scanned-Inbox<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "resource_bench_notes",
+      "label": "Bench-Notes<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "net_server_net",
+      "label": "Server network<br/>Network<br/>down while servers_offline",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "resource_backup_vault",
+      "label": "Backup-Vault<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "net_guest_wifi",
+      "label": "Guest Wi-Fi<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "resource_guest_notice",
+      "label": "Guest-Notice<br/>(file share)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "wifiap_guest_ap",
+      "label": "Guest access point<br/>Wi-Fi access point",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "wifikey_guest_wifi",
+      "label": "Wi-Fi key<br/>(Harbour-Guest)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "clue_wifi_note",
+      "label": "Reception Wi-Fi card",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "wifiap_guest_ap2",
+      "label": "Guest access point (lift lobby)<br/>Wi-Fi access point",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "implant_sam_pc",
+      "label": "BadUSB: Sam's desk<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "desk_room",
+      "label": "Desks",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "device_kit_badusb",
+      "label": "Keystroke injector<br/>(implant device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "implant_kiosk_pc",
+      "label": "BadUSB: kiosk<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "kiosk_room",
+      "label": "Kiosk",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "implant_door_box",
+      "label": "USB foothold: door controller<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "store",
+      "label": "Store",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "device_kit_stick",
+      "label": "Spare USB stick<br/>(implant device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "pivot_door_box",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_kiosk_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_lena_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_sam_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_sv_fs02",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_finance_office",
+      "to": "finance_office",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "lock_lobby_vault",
+      "soft": false
+    },
+    {
+      "from": "server_room",
+      "to": "lock_sv_fs02",
+      "soft": false
+    },
+    {
+      "from": "desk_room",
+      "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "finance_office",
+      "to": "lock_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "kiosk_room",
+      "to": "lock_kiosk_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "signin_sam",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_kiosk_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "signin_lena",
+      "soft": false
+    },
+    {
+      "from": "signin_lena",
+      "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_lena",
+      "to": "lock_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_lena",
+      "to": "lock_kiosk_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "signin_ian",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_sv_fs02",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_kiosk_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_door_box",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "comms_room",
+      "to": "jack_comms_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_comms_port",
+      "soft": false
+    },
+    {
+      "from": "jack_comms_port",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "comms_room",
+      "to": "jack_secure_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_secure_port",
+      "soft": false
+    },
+    {
+      "from": "workshop",
+      "to": "jack_bench_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_bench_port",
+      "soft": false
+    },
+    {
+      "from": "jack_bench_port",
+      "to": "net_workshop_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_door_box",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_kiosk_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_lena_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_sam_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "signin_lena",
+      "to": "resource_ledger_archive",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "resource_print_queue",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "resource_scanned_inbox",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_workshop_lan",
+      "to": "resource_bench_notes",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_server_net",
+      "to": "lock_sv_fs02",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "signin_ian",
+      "to": "resource_backup_vault",
+      "soft": false
+    },
+    {
+      "from": "net_guest_wifi",
+      "to": "resource_guest_notice",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "net_server_net",
+      "soft": true,
+      "label": "link",
+      "undirected": true
+    },
+    {
+      "from": "lobby",
+      "to": "wifiap_guest_ap",
+      "soft": false
+    },
+    {
+      "from": "wifiap_guest_ap",
+      "to": "net_guest_wifi",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "clue_wifi_note",
+      "soft": false
+    },
+    {
+      "from": "clue_wifi_note",
+      "to": "wifikey_guest_wifi",
+      "soft": false
+    },
+    {
+      "from": "wifikey_guest_wifi",
+      "to": "wifiap_guest_ap",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "wifiap_guest_ap2",
+      "soft": false
+    },
+    {
+      "from": "wifiap_guest_ap2",
+      "to": "net_guest_wifi",
+      "soft": false
+    },
+    {
+      "from": "wifikey_guest_wifi",
+      "to": "wifiap_guest_ap2",
+      "soft": false
+    },
+    {
+      "from": "desk_room",
+      "to": "implant_sam_pc",
+      "soft": false,
+      "label": "at USB socket by Sam's PC"
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_badusb",
+      "soft": false
+    },
+    {
+      "from": "device_kit_badusb",
+      "to": "implant_sam_pc",
+      "soft": false,
+      "label": "held"
+    },
+    {
+      "from": "lock_sam_pc",
+      "to": "implant_sam_pc",
+      "soft": false,
+      "label": "session at PC"
+    },
+    {
+      "from": "implant_sam_pc",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "kiosk_room",
+      "to": "implant_kiosk_pc",
+      "soft": false,
+      "label": "at Kiosk USB socket"
+    },
+    {
+      "from": "device_kit_badusb",
+      "to": "implant_kiosk_pc",
+      "soft": false,
+      "label": "held"
+    },
+    {
+      "from": "lock_kiosk_pc",
+      "to": "implant_kiosk_pc",
+      "soft": false,
+      "label": "session at PC"
+    },
+    {
+      "from": "implant_kiosk_pc",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "implant_door_box",
+      "soft": false,
+      "label": "at Door controller USB port"
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_stick",
+      "soft": false
+    },
+    {
+      "from": "device_kit_stick",
+      "to": "implant_door_box",
+      "soft": false,
+      "label": "dropped"
+    },
+    {
+      "from": "implant_door_box",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_door_box",
+      "soft": false
+    },
+    {
+      "from": "lock_door_box",
+      "to": "pivot_door_box",
+      "soft": false
+    },
+    {
+      "from": "pivot_door_box",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_kiosk_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_kiosk_pc",
+      "to": "pivot_kiosk_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_kiosk_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_lena_pc",
+      "to": "pivot_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_lena_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_sam_pc",
+      "to": "pivot_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_sam_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_server_net",
+      "to": "pivot_sv_fs02",
+      "soft": false
+    },
+    {
+      "from": "lock_sv_fs02",
+      "to": "pivot_sv_fs02",
+      "soft": false
+    },
+    {
+      "from": "pivot_sv_fs02",
+      "to": "net_office_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "lobby",
+      "to": "comms_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "desk_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "workshop",
+      "soft": false
+    },
+    {
+      "from": "comms_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "desk_room",
+      "to": "kiosk_room",
+      "soft": false
+    },
+    {
+      "from": "desk_room",
+      "to": "store",
+      "soft": false
+    }
+  ]
+}

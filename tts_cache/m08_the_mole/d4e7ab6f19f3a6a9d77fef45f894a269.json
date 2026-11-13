@@ -1,0 +1,13 @@
+{
+  "key": "d4e7ab6f19f3a6a9d77fef45f894a269",
+  "npc": "narrator",
+  "text": "You step up beside him, as if to look out through the slats. The cloner in your jacket comes within an inch of his lanyard.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:46:19Z"
+}

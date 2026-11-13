@@ -1,0 +1,13 @@
+{
+  "key": "bdcce9ee29ef62590d5be2f1f1b1d3f1",
+  "npc": "blockchain_analyst",
+  "text": "But she's been here till all hours, re-running my work. Either she's thorough or it's eating her.",
+  "voice": "Leda",
+  "style": "Blockchain forensics analyst in her mid-thirties, British-Indian, who loves the work and has not yet understood what her own graph proves. Speak with a consistent Northern English (Leeds) accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick pace. Enthusiastic and technical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:14:08Z"
+}

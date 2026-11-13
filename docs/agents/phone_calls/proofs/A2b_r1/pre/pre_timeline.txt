@@ -1,0 +1,42 @@
+call open after 7s (phone-chat)
+{"t":27,"mg":"phone-chat:recruiter","ringer":"n/a","hp":100,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":null,"ended":false,"bubbles":0}
+{"ok":true,"cmd":"eval","result":"hostile set, los off"}
+{"t":31,"mg":"phone-chat:recruiter","ringer":"n/a","hp":100,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":true,"sub":"THE RECRUITER: Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","ended":false,"bubbles":0}
+{"t":33,"mg":"phone-chat:recruiter","ringer":"n/a","hp":100,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":true,"sub":"THE RECRUITER: Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","ended":false,"bubbles":0}
+{"t":36,"mg":"person-chat:old_coyote","ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":true,"sub":null,"ended":false,"bubbles":0}
+{"t":38,"mg":"person-chat:old_coyote","ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":true,"sub":null,"ended":false,"bubbles":0}
+{"t":40,"mg":"person-chat:old_coyote","ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":true,"sub":null,"ended":false,"bubbles":0}
+{"id":"person-chat","title":null,"text":"×\nCody Old Coyote\n\nStill auditing?\n\n1. Same as before. Carry on.\n2. I'm not an auditor. You don't want to see tonight.\nEnd Conversation"}
+{"ok":true,"cmd":"eval","result":"ended person-chat"}
+--- quiet watch (no room change)
+{"t":43,"mg":null,"ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":null,"ended":false,"bubbles":0}
+{"t":46,"mg":null,"ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":null,"ended":false,"bubbles":0}
+{"t":49,"mg":null,"ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":null,"ended":false,"bubbles":0}
+{"t":53,"mg":null,"ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":null,"ended":false,"bubbles":0}
+{"t":56,"mg":null,"ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":null,"ended":false,"bubbles":0}
+{"t":59,"mg":null,"ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":null,"ended":false,"bubbles":0}
+{"t":62,"mg":null,"ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":null,"ended":false,"bubbles":0}
+{"t":65,"mg":null,"ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":null,"ended":false,"bubbles":0}
+--- after room_exited (re-ring 1)
+{"t":69,"mg":null,"ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":null,"ended":false,"bubbles":0}
+{"t":71,"mg":"phone-chat:recruiter","ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":"THE RECRUITER: Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","ended":false,"bubbles":0}
+{"t":73,"mg":"phone-chat:recruiter","ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":"THE RECRUITER: Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","ended":false,"bubbles":0}
+{"t":75,"mg":"phone-chat:recruiter","ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":"THE RECRUITER: Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","ended":false,"bubbles":0}
+{"t":78,"mg":"phone-chat:recruiter","ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":"THE RECRUITER: Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","ended":false,"bubbles":0}
+{"t":80,"mg":"phone-chat:recruiter","ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":"THE RECRUITER: Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","ended":false,"bubbles":0}
+{"t":82,"mg":"phone-chat:recruiter","ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":"THE RECRUITER: Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","ended":false,"bubbles":0}
+{"t":84,"mg":"phone-chat:recruiter","ringer":"n/a","hp":96,"started":true,"said_yes":false,"gone":false,"recKnot":"call","pending":false,"codyHostile":false,"sub":"THE RECRUITER: Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","ended":false,"bubbles":0}
+{"id":"phone-chat","title":"The Recruiter","text":"85%\nON CALL\n0:17\nThe Recruiter\nTHE RECRUITER: Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.\nTHE RECRUITER: Margaret's shredding eleven years of my placements tonight, for his schedule. I'd like something back on the books.\n1. He's ENTROPY's planner. You work for him.\n2. Go on."}
+--- tts so far
+200 old_coyote | Hold on, sis, I'll call you back. Hey. Building's closed. Who let you in?
+503 old_coyote | She didn't tell me. She doesn't tell me much. Go ahead.
+200 recruiter | Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.
+503 old_coyote | Still auditing?
+200 old_coyote | Hold on, sis, I'll call you back. Hey. Building's closed. Who let you in?
+503 old_coyote | She didn't tell me. She doesn't tell me much. Go ahead.
+200 recruiter | Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.
+503 old_coyote | Still auditing?
+200 old_coyote | Hold on, sis, I'll call you back. Hey. Building's closed. Who let you in?
+503 old_coyote | She didn't tell me. She doesn't tell me much. Go ahead.
+200 recruiter | Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.
+503 old_coyote | Still auditing?

@@ -1,0 +1,59 @@
+{
+ "steps": [
+  {
+   "note": "R38 (carry-over, 2026-10-17): m06 never finished, so every import is at its default. Both lines are today's neutral ones, word for word (their audio is cached)."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Fracture"
+   ]
+  },
+  {
+   "said": [
+    "Frozen or watched, the advances had already been paid"
+   ],
+   "notSaid": [
+    "You froze it before the payout",
+    "You left it running so we could see where it went",
+    "You never froze that fund."
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "fracture"
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "set": {
+    "architect_echo_heard": true
+   }
+  },
+  {
+   "talk": "phone",
+   "knot": "hub",
+   "picks": [
+    "He used your line"
+   ]
+  },
+  {
+   "said": [
+    "Somebody taught it to me, a long time ago"
+   ],
+   "notSaid": [
+    "You opened Satoshi's safe, so you've read the name"
+   ]
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

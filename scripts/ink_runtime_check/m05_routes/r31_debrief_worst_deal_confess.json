@@ -1,0 +1,66 @@
+{
+"steps": [
+{
+"note": "R31 (phase 4 dialogue C1, D5-1): the hand-over with the deal (it used to have no choice at all), after a wrong accusation, with the Recruiter's deal taken and confessed."
+},
+{
+"set": {
+"found_medical_bills": true,
+"found_vetting_file": true,
+"found_door_log": true,
+"found_incident_log": true,
+"found_pamphlet": true,
+"found_stand_down_email": true,
+"found_halloran_vetting": true,
+"found_torres_journal": true,
+"found_upload_schedule": true,
+"found_manifest": true,
+"flag1_submitted": true,
+"flag2_submitted": true,
+"flag3_submitted": true,
+"flag4_submitted": true,
+"torres_identified": true,
+"knows_full_stakes": true,
+"halloran_accused": true,
+"final_choice": "arrest",
+"elena_treatment_funded": true,
+"torres_arrested": true,
+"recruiter_deal_offered": true,
+"recruiter_deal_decided": true,
+"recruiter_deal_accepted": true,
+"found_pipeline_list": true,
+"player_approach": "cautious"
+}
+},
+{
+"talk": "debrief",
+"picks": [
+"That one's on me",
+"And the research portal",
+"Whose job",
+"court know",
+"She offered to keep me out",
+"Same hand",
+"Did I get him right"
+]
+},
+{
+"said": [
+"The final upload stopped at ninety-nine per cent. Most of the rotation windows",
+"Yes. Dr Halloran will want to hear you say it.",
+"He talked to you before the police arrived",
+"No. What he told us stays with us.",
+"less than a double agent",
+"One more thing. Your report doesn't mention"
+],
+"notSaid": [
+"The key material left in pieces",
+"very expensive paperweight, and one region",
+"His family gets through this"
+]
+},
+{
+"maxRun": 9
+}
+]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "6733c9fdb0e3a20ddc57acdf08b35957",
+  "npc": "receptionist",
+  "text": "I'm guessing that's you. I want your version first.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

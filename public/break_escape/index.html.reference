@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Break Escape Game</title>
+    
+    <!-- Google Fonts - Press Start 2P, VT323, Pixelify Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Web Font Loader script to ensure fonts load properly -->
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+    <script>
+      WebFont.load({
+        google: {
+          families: ['Press Start 2P', 'VT323', 'Pixelify Sans']
+        },
+        active: function() {
+          console.log('Fonts loaded successfully');
+        }
+      });
+    </script>
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/utilities.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="css/panels.css">
+    <link rel="stylesheet" href="css/hud.css">
+    <link rel="stylesheet" href="css/minigames-framework.css">
+    <link rel="stylesheet" href="css/dusting.css">
+    <link rel="stylesheet" href="css/lockpicking.css">
+    <link rel="stylesheet" href="css/modals.css">
+    <link rel="stylesheet" href="css/notes.css">
+    <link rel="stylesheet" href="css/bluetooth-scanner.css">
+    <link rel="stylesheet" href="css/biometrics-minigame.css">
+    <link rel="stylesheet" href="css/container-minigame.css">
+    <link rel="stylesheet" href="css/phone-chat-minigame.css">
+    <link rel="stylesheet" href="css/person-chat-minigame.css">
+    <link rel="stylesheet" href="css/rfid-minigame.css">
+    <link rel="stylesheet" href="css/npc-interactions.css">
+    <link rel="stylesheet" href="css/pin.css">
+    <link rel="stylesheet" href="css/minigames-framework.css">
+    <link rel="stylesheet" href="css/password-minigame.css">
+    <link rel="stylesheet" href="css/text-file-minigame.css">
+    <link rel="stylesheet" href="css/npc-barks.css">
+    
+    <!-- External JavaScript libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/easystarjs@0.4.4/bin/easystar-0.4.4.js"></script>
+    <script src="assets/vendor/ink.js"></script>
+</head>
+<body>
+    <div id="game-container">
+        <div id="loading">Loading...</div>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notification-container"></div>
+
+    <!-- Toggle Buttons Container -->
+    <div id="toggle-buttons-container">
+        <!-- Biometrics is now handled as a minigame -->
+    </div>
+
+    <!-- Inventory Container -->
+    <div id="inventory-container"></div>
+
+    <!-- Laptop Popup -->
+    <div id="laptop-popup">
+        <div class="laptop-frame">
+            <div class="laptop-screen">
+                <div class="title-bar">
+                    <span>Crypto Workstation</span>
+                    <button class="minigame-close-button" onclick="closeLaptop()">×</button>
+                </div>
+                <div id="cyberchef-container">
+                    <iframe id="cyberchef-frame" src=""></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="password-modal">
+        <div class="password-modal-content">
+            <div class="password-modal-title">
+                Enter Password
+            </div>
+            <input id="password-modal-input" type="password" autocomplete="off" autofocus>
+            <div class="password-modal-checkbox-container">
+                <input type="checkbox" id="password-modal-show">
+                <label for="password-modal-show" class="password-modal-checkbox-label">Show password</label>
+            </div>
+            <div class="password-modal-buttons">
+                <button id="password-modal-ok" class="password-modal-button">OK</button>
+                <button id="password-modal-cancel" class="password-modal-button">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup Overlay -->
+    <div class="popup-overlay"></div>
+
+    <!-- Main Game JavaScript Module -->
+    <script type="module" src="js/main.js?v=47"></script>
+    
+    <!-- Mobile touch handling -->
+    <script>
+        // Allow zooming on mobile devices
+        document.addEventListener('DOMContentLoaded', function() {
+            // Prevent Phaser from capturing touch events that should be used for zooming
+            const gameContainer = document.getElementById('game-container');
+            
+            // Allow zooming on the document level
+            document.addEventListener('gesturestart', function(e) {
+                e.preventDefault();
+            });
+            
+            document.addEventListener('gesturechange', function(e) {
+                e.preventDefault();
+            });
+            
+            // Prevent default touch behavior only within the game container
+            gameContainer.addEventListener('touchmove', function(e) {
+                // Only prevent default if it's not a multi-touch gesture (like pinch-to-zoom)
+                if (e.touches.length <= 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+            
+        });
+    </script>
+
+</body>
+</html> 

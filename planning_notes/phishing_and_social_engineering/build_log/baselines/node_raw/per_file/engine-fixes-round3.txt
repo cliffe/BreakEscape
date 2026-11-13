@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: m06 F1: the hostile toast uses the display name and a matching pronoun
+ok 1 - m06 F1: the hostile toast uses the display name and a matching pronoun
+  ---
+  duration_ms: 7.721355
+  ...
+# Subtest: m06 F2: older info toasts are dismissed, not left over, when a minigame opens
+ok 2 - m06 F2: older info toasts are dismissed, not left over, when a minigame opens
+  ---
+  duration_ms: 3.303294
+  ...
+# Subtest: m04 R2 N1: nothing opens while knocked out, and the KO screen closes what is open
+ok 3 - m04 R2 N1: nothing opens while knocked out, and the KO screen closes what is open
+  ---
+  duration_ms: 2.975309
+  ...
+# Subtest: m05 blind B \#7: after six fine strokes below the threshold the coach suggests the feather
+ok 4 - m05 blind B \#7: after six fine strokes below the threshold the coach suggests the feather
+  ---
+  duration_ms: 3.138435
+  ...
+# Subtest: fingerprint art: only PNGs that exist are requested
+ok 5 - fingerprint art: only PNGs that exist are requested
+  ---
+  duration_ms: 4.714802
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 300.436864

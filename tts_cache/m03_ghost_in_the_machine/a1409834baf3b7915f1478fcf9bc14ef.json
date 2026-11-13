@@ -1,0 +1,13 @@
+{
+  "key": "a1409834baf3b7915f1478fcf9bc14ef",
+  "npc": "narrator",
+  "text": "Against your leg, the cloner is still working. A few seconds more.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:20:10Z"
+}

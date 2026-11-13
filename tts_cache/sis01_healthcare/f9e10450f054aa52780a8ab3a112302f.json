@@ -1,0 +1,13 @@
+{
+  "key": "f9e10450f054aa52780a8ab3a112302f",
+  "npc": "dr_sharma",
+  "text": "Ms Okafor's pump said her prescribed dose was below its minimum. You kept the prescribed rate and went to pharmacy.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

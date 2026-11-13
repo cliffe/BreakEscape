@@ -1,0 +1,13 @@
+{
+  "key": "1560c4bb7c4596b0a727956347ac1923",
+  "npc": "narrator",
+  "text": "A torch beam lands on your hands, and on the pick in them.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:35:40Z"
+}

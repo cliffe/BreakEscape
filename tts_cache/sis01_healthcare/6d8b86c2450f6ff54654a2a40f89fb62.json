@@ -1,0 +1,13 @@
+{
+  "key": "6d8b86c2450f6ff54654a2a40f89fb62",
+  "npc": "dr_sharma",
+  "text": "The ICO heard after the isolation. It was inside the seventy-two hours, so it stands. But the law says without undue delay.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

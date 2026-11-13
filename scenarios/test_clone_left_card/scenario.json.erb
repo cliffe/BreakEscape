@@ -1,0 +1,193 @@
+{
+  "scenario_id": "test_clone_left_card",
+  "scenario_name": "Test: Clone the left-behind card",
+  "scenario_brief": "TEST: action menu + clone-in-place + left-card consequence.\n\nA clerk works at a desk with his access card beside the keyboard. When he gets a coffee he leaves the card on the desk (leftBehindChance 1). You start with an RFID cloner.\n\n  - Tap the card with the cloner in hand: an ACTION MENU offers 'Copy it with the RFID cloner' and 'Take it'.\n  - CLONE IN PLACE: the card stays on the desk, so when the clerk comes back he collects it and notices nothing. Your clone opens the vault (north).\n  - TAKE IT: the clerk comes back to a missing card, barks, and has it cancelled (revoke_card). The physical card AND any earlier clone of it stop opening the vault.\n  - The guard's badge can be read in conversation (# clone_keycard) — the conversation clone still works.\n\nForce the clerk out with window.__test.needs.set('clerk','caffeine',5).",
+  "endGoal": "Engine test. No win condition.",
+  "version": "1.0",
+  "show_scenario_brief": "never",
+  "disableAttacks": true,
+  "startRoom": "office",
+
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
+  "needsDebugOverlay": true,
+  "npcNeedsSeed": "test_clone_left_card",
+
+  "player": {
+    "id": "player",
+    "displayName": "Pentester",
+    "spriteSheet": "female_hacker_hood_v2"
+  },
+
+  "globalVariables": {
+    "vault_reached": false,
+    "card_cancelled": false,
+    "revoked_card_ids": []
+  },
+
+  "objectives": [
+    {
+      "aimId": "test",
+      "title": "Exercise the clone / take choice",
+      "description": "Clone or take the clerk's card and see what the vault reader does.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "enter_vault", "title": "Open the vault", "type": "enter_room", "targetRoom": "vault", "status": "active" }
+      ]
+    }
+  ],
+
+  "startItemsInInventory": [
+    {
+      "type": "rfid_cloner",
+      "id": "kit_cloner",
+      "name": "RFID cloner",
+      "sprite": "rfid_cloner",
+      "saved_cards": []
+    }
+  ],
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Records Office",
+      "connections": { "north": "vault" },
+      "npcs": [
+        {
+          "id": "clerk",
+          "displayName": "Dan Mercer",
+          "npcType": "person",
+          "position": { "x": 2, "y": 3 },
+          "spriteSheet": "male_office_worker_v2",
+          "needsHome": "clerk_pc",
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": { "decayPerMin": 3, "urgentAt": 30, "initial": 90 }
+          },
+          "usePayload": { "who": "clerk" },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_left_item_gone:clerk",
+              "onceOnly": true,
+              "cooldown": 0,
+              "bark": "My access card — it was right here. Someone's taken it. I'll get it cancelled."
+            }
+          ]
+        },
+        {
+          "id": "guard",
+          "displayName": "Site Guard",
+          "npcType": "person",
+          "position": { "x": 7, "y": 6 },
+          "spriteSheet": "male_security_guard_v2",
+          "storyPath": "scenarios/test_clone_left_card/ink/guard.json",
+          "currentKnot": "start",
+          "spriteTalk": "assets/characters/len_talk.png",
+          "spriteVisemes": "assets/characters/male_security_guard_visemes.png",
+          "rfidCard": { "name": "Vault access badge", "card_id": "clerk_card", "rfid_protocol": "EM4100" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 }
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Instructions",
+          "position": { "x": 5, "y": 1 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "A note with test instructions.",
+          "text": "TEST: action menu + clone-in-place + left-card consequence.\n\n1. window.__test.needs.set('clerk','caffeine',5) sends the clerk for a coffee; he leaves his card on the desk.\n2. Tap the card (cloner in hand): the action menu offers Clone or Take.\n3. Clone in place -> the card stays, the clerk collects it on return, the clone opens the vault.\n4. Take it -> the clerk returns to a missing card, barks, and the card is cancelled: neither it nor a clone opens the vault."
+        },
+        {
+          "type": "pc",
+          "id": "clerk_pc",
+          "name": "Clerk's workstation",
+          "position": { "x": 1, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "affordance": false,
+          "observations": "The clerk's desk workstation."
+        },
+        {
+          "type": "keycard",
+          "id": "clerk_card_item",
+          "sprite": "keycard",
+          "name": "Clerk's access card",
+          "position": { "x": 2, "y": 2 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "card_id": "clerk_card",
+          "rfid_protocol": "EM4100",
+          "leftBehindBy": "clerk",
+          "leftBehindChance": 1,
+          "revealOnGlobal": "clerk_card_left",
+          "observations": "An RFID access card on the desk. With a cloner in hand you can copy it in place or take it.",
+          "onOwnerNoticesMissing": [
+            { "type": "set_global", "key": "card_cancelled", "value": true },
+            { "type": "revoke_card", "card_id": "clerk_card" },
+            { "type": "add_capture", "capture": { "targetId": "clerk_card", "kind": "foothold", "note": "Took the clerk's access card from the desk; the owner noticed it gone and had it cancelled.", "at": 0 } }
+          ]
+        },
+        {
+          "type": "keycard",
+          "id": "spare_card_item",
+          "sprite": "keycard",
+          "name": "Spare access card",
+          "position": { "x": 8, "y": 2 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "card_id": "spare_card",
+          "rfid_protocol": "EM4100",
+          "_comment": "Deliberate decoy: no lock requires spare_card. It is only here for the 'pick up a world keycard with no cloner held' check (proof d).",
+          "observations": "A spare access card on a side desk. A plain world keycard, for the no-cloner pickup check."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "office_coffee",
+          "name": "Coffee station",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 6 },
+          "observations": "A coffee station across the office."
+        }
+      ]
+    },
+
+    "vault": {
+      "type": "room_lw_ceo",
+      "door_sign": "Vault",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "clerk_card",
+      "connections": { "south": "office" },
+      "npcs": [],
+      "objects": [
+        {
+          "type": "notes",
+          "id": "vault_notice",
+          "name": "Vault notice",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A notice inside the vault.",
+          "text": "VAULT\n\nYou got in with the card (or a clone of it).",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "vault_reached", "value": true }
+          ]
+        }
+      ]
+    }
+  }
+}

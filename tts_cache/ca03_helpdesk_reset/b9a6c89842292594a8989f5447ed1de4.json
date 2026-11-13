@@ -1,0 +1,13 @@
+{
+  "key": "b9a6c89842292594a8989f5447ed1de4",
+  "npc": "darren_price",
+  "text": "Welcome to the Quayholt exercise. Start at the kiosk: research us, ring the service desk as the locked-out manager, then swap seats and cover the queue yourself.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:59Z"
+}

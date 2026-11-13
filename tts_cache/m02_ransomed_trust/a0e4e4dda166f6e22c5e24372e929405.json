@@ -1,0 +1,13 @@
+{
+  "key": "a0e4e4dda166f6e22c5e24372e929405",
+  "npc": "narrator",
+  "text": "You call down the bay for help and step back. Whether a nurse reaches him before the machine wins is out of your hands now.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

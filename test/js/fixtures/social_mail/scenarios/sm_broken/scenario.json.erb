@@ -1,0 +1,1069 @@
+{
+  "scenario_brief": "Fixture: every mail and board lint fires once.",
+  "startRoom": "office",
+  "globalVariables": {
+    "acct_freemail": false,
+    "acct_freemail_choice": "",
+    "acct_jed_pc": false,
+    "se_intel_hampshire_careers": false,
+    "se_intel_careers_attachment": false,
+    "phish_hampshire_attempts": 0,
+    "phish_hampshire_landed": false,
+    "phish_pierce_attempts": 0,
+    "phish_pierce_landed": false,
+    "target_ready_hampshire": false,
+    "target_ready_pierce": false,
+    "mail_arrived": false,
+    "dock_ready": false,
+    "phish_both_landed": false
+  },
+  "objectives": [
+    {
+      "aimId": "a1",
+      "title": "One",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "t1",
+          "title": "Land it",
+          "status": "active",
+          "unlockCondition": {
+            "globalVariable": "phish_hampshire_landed",
+            "equals": true
+          },
+          "type": "enter_room",
+          "targetRoom": "office"
+        },
+        {
+          "taskId": "t2",
+          "title": "Land hers",
+          "status": "active",
+          "unlockCondition": {
+            "globalVariable": "phish_pierce_landed",
+            "equals": true
+          },
+          "type": "enter_room",
+          "targetRoom": "office"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "connections": {},
+      "objects": [
+        {
+          "type": "mail_terminal",
+          "id": "desk_mail",
+          "name": "Mail",
+          "minigameData": {
+            "accountIds": [
+              "guest",
+              "freemail"
+            ],
+            "defaultAccount": "guest"
+          }
+        },
+        {
+          "type": "mail_terminal",
+          "id": "jed_laptop",
+          "name": "Jed's laptop",
+          "takeable": true,
+          "minigameData": {
+            "accountIds": [
+              "jed_pc"
+            ]
+          }
+        },
+        {
+          "type": "mail_terminal",
+          "id": "no_accounts",
+          "name": "Bare"
+        },
+        {
+          "type": "mail_terminal",
+          "id": "bad_accounts",
+          "name": "Bad",
+          "minigameData": {
+            "accountIds": [
+              "guest",
+              "phantom"
+            ],
+            "defaultAccount": "freemail"
+          }
+        },
+        {
+          "type": "mail_terminal",
+          "id": "bad_default",
+          "name": "Bad2",
+          "minigameData": {
+            "accountIds": [
+              "guest"
+            ],
+            "defaultAccount": "nonesuch"
+          }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "clash_mail",
+          "displayName": "Clash",
+          "npcType": "person",
+          "storyPath": "x.json"
+        },
+        {
+          "id": "plain_room_npc",
+          "displayName": "Plain",
+          "npcType": "person",
+          "storyPath": "x.json"
+        }
+      ]
+    }
+  },
+  "social": {
+    "people": [
+      {
+        "id": "baker",
+        "name": "Jed Baker",
+        "address": "j.baker@ledgerwell.example"
+      },
+      {
+        "id": "hampshire",
+        "name": "Chris Hampshire",
+        "address": "careers@ledgerwell.example"
+      },
+      {
+        "id": "pierce",
+        "name": "Melanie Pierce",
+        "address": "m.pierce@ledgerwell.example"
+      }
+    ],
+    "intelFacts": {
+      "hampshire_careers": {
+        "text": "The careers inbox accepts mail from anyone.",
+        "subject": "hampshire",
+        "source": "r1",
+        "provides": []
+      },
+      "careers_attachment": {
+        "text": "Chris takes .odt and .docx files.",
+        "subject": "hampshire",
+        "source": "r2",
+        "provides": [
+          {
+            "type": "document",
+            "value": "cv",
+            "label": "",
+            "kind": "distinctive",
+            "attachmentKind": "document"
+          }
+        ]
+      },
+      "pierce_role": {
+        "text": "Melanie works in Finance.",
+        "subject": "pierce",
+        "source": "r3",
+        "provides": [
+          {
+            "type": "name",
+            "about": "recipient",
+            "value": "pierce_short",
+            "label": "Mel",
+            "kind": "generic"
+          }
+        ]
+      },
+      "pierce_trusts_jed": {
+        "text": "Melanie trusts Jed.",
+        "subject": "pierce",
+        "source": "r4",
+        "provides": [
+          {
+            "type": "name",
+            "about": "sender",
+            "value": "baker_full",
+            "label": "Jed Baker",
+            "kind": "distinctive"
+          }
+        ]
+      },
+      "memo_fact": {
+        "text": "",
+        "subject": "company",
+        "source": "m_memo",
+        "provides": [
+          {
+            "type": "document",
+            "value": "balance_sheet",
+            "label": "the balance sheet",
+            "kind": "distinctive",
+            "attachmentKind": "spreadsheet"
+          }
+        ]
+      }
+    },
+    "templates": {
+      "from_own": {
+        "part": "from",
+        "text": "{account_name} <{account_address}>",
+        "slots": []
+      },
+      "from_named": {
+        "part": "from",
+        "text": "{sender_name}",
+        "slots": [
+          {
+            "id": "sender_name",
+            "type": "name",
+            "about": "sender"
+          }
+        ]
+      },
+      "greet_generic": {
+        "part": "greeting",
+        "text": "Hello,",
+        "slots": []
+      },
+      "greet_named": {
+        "part": "greeting",
+        "text": "Hi {name},",
+        "slots": [
+          {
+            "id": "name",
+            "type": "name",
+            "about": "recipient"
+          }
+        ]
+      },
+      "pretext_apply": {
+        "part": "pretext",
+        "text": "I am applying for the open role.",
+        "slots": [],
+        "implies": [
+          {
+            "type": "document",
+            "value": "cv"
+          }
+        ]
+      },
+      "pretext_enquiry": {
+        "part": "pretext",
+        "text": "A quick enquiry about your services.",
+        "slots": []
+      },
+      "pretext_sheet": {
+        "part": "pretext",
+        "text": "Here is {document}.",
+        "slots": [
+          {
+            "id": "document",
+            "type": "document"
+          }
+        ]
+      },
+      "pretext_hello": {
+        "part": "pretext",
+        "text": "Just checking in.",
+        "slots": []
+      },
+      "ask_review": {
+        "part": "ask",
+        "text": " ",
+        "slots": []
+      },
+      "pretext_three": {
+        "part": "pretext",
+        "text": "{a} {b} {c} {d}",
+        "slots": [
+          {
+            "id": "a",
+            "type": "document"
+          },
+          {
+            "id": "b",
+            "type": "date"
+          },
+          {
+            "id": "c",
+            "type": "date"
+          }
+        ]
+      },
+      "pretext_dupe": {
+        "part": "pretext",
+        "text": "{x}",
+        "slots": [
+          {
+            "id": "x",
+            "type": "date"
+          },
+          {
+            "id": "x",
+            "type": "date"
+          }
+        ]
+      },
+      "pretext_unused": {
+        "part": "pretext",
+        "text": "Hi",
+        "slots": [
+          {
+            "id": "u",
+            "type": "date"
+          }
+        ]
+      },
+      "greet_x": {
+        "part": "greeting",
+        "text": "Hello {x}",
+        "slots": [
+          {
+            "id": "x",
+            "type": "name"
+          }
+        ]
+      }
+    },
+    "phishTargets": [
+      {
+        "id": "hampshire",
+        "address": "careers@ledgerwell.example",
+        "displayName": "Chris Hampshire",
+        "subjects": [
+          {
+            "id": "s_application",
+            "text": "Application",
+            "topic": "recruitment"
+          },
+          {
+            "id": "s_hello",
+            "text": "Hello",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "recruitment"
+          ]
+        },
+        "templateSets": {
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_generic"
+          ],
+          "pretext": [
+            "pretext_apply",
+            "pretext_enquiry"
+          ],
+          "ask": [
+            "ask_review"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "cv"
+          ],
+          "minDistinct": 1,
+          "expectedAttachment": "document",
+          "trusts": [
+            "*"
+          ]
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "pretextRelevant",
+          "attachmentPlausible"
+        ],
+        "advisoryFactors": [
+          "senderAuth",
+          "urgencyCalibrated"
+        ],
+        "factorStrings": {
+          "senderTrust": {
+            "pass": "✓ An open inbox accepts any sender",
+            "fail": "",
+            "redFlag": ""
+          },
+          "senderAuth": {
+            "pass": "✓ Sent as your own address.",
+            "redFlag": null
+          },
+          "attachmentPlausible": {
+            "pass": "✓ The CV is attached",
+            "missing": {
+              "fail": "You mention a CV, but there is nothing attached.",
+              "redFlag": null
+            },
+            "wrong-type": {
+              "fail": "That is not a file type I can open as a CV.",
+              "redFlag": null
+            },
+            "bogus": {
+              "fail": "x"
+            }
+          },
+          "preSend": {
+            "fail": "Enter something first"
+          },
+          "urgencyCalibrated": {
+            "fail": "That feels rushed."
+          }
+        },
+        "replies": {
+          "landed": "   "
+        },
+        "hints": [
+          ""
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_hampshire_landed": true
+          }
+        }
+      },
+      {
+        "id": "pierce",
+        "address": "m.pierce@ledgerwell.example",
+        "displayName": "Melanie Pierce",
+        "subjects": [
+          {
+            "id": "s_quick",
+            "text": "Quick one",
+            "topic": "general"
+          },
+          {
+            "id": "s_review",
+            "text": "For your review",
+            "topic": "finance"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "finance"
+          ]
+        },
+        "addressedAs": [
+          "pierce_short"
+        ],
+        "templateSets": {
+          "from": [
+            "from_named"
+          ],
+          "greeting": [
+            "greet_named"
+          ],
+          "pretext": [
+            "pretext_sheet",
+            "pretext_hello"
+          ],
+          "ask": [
+            "ask_review"
+          ]
+        },
+        "senderAuth": {
+          "domainPublishesAuth": true,
+          "spoofAligns": false,
+          "dmarcPolicy": "none"
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "balance_sheet"
+          ],
+          "minDistinct": 1,
+          "expectedAttachment": "spreadsheet",
+          "trusts": [
+            "baker"
+          ]
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "addressedTo",
+          "pretextRelevant",
+          "attachmentPlausible"
+        ],
+        "requiresIntelToAttempt": [
+          "pierce_role"
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_pierce_landed": true
+          }
+        },
+        "preSendLine": "Nothing yet",
+        "hints": [
+          "A blank needs evidence you haven’t found yet.",
+          "fine"
+        ]
+      },
+      {
+        "id": "nopart",
+        "address": "a@ledgerwell.example",
+        "displayName": "A",
+        "character": "ghost_char",
+        "subjects": [
+          {
+            "id": "s1",
+            "text": "One",
+            "topic": "t"
+          },
+          {
+            "id": "s1",
+            "text": " ",
+            "topic": ""
+          }
+        ],
+        "interests": {
+          "topics": [
+            "t"
+          ]
+        },
+        "templateSets": {
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_generic",
+            "greet_x"
+          ],
+          "pretext": [
+            "pretext_apply",
+            "tpl_missing",
+            "greet_generic",
+            "pretext_dupe",
+            "pretext_three",
+            "pretext_unused"
+          ],
+          "ask": []
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "cv"
+          ],
+          "trusts": [
+            "*"
+          ]
+        },
+        "requiredFactors": [
+          "senderTrust"
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_nopart_landed": true
+          }
+        }
+      },
+      {
+        "id": "oneprest",
+        "address": "b@ledgerwell.example",
+        "displayName": "B",
+        "subjects": [
+          {
+            "id": "s1",
+            "text": "One",
+            "topic": "finance"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "finance"
+          ]
+        },
+        "addressedAs": [
+          "ghost_form"
+        ],
+        "templateSets": {
+          "from": [
+            "from_named"
+          ],
+          "greeting": [
+            "greet_named"
+          ],
+          "pretext": [
+            "pretext_hello"
+          ],
+          "ask": [
+            "ask_review"
+          ]
+        },
+        "senderAuth": {
+          "domainPublishesAuth": true
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "ghost",
+            "cv"
+          ],
+          "minDistinct": 3,
+          "trusts": [
+            "nobody",
+            "baker"
+          ]
+        },
+        "requiredFactors": [
+          "pretextRelevant",
+          "addressedTo",
+          "attachmentPlausible"
+        ],
+        "requiresIntelToAttempt": [
+          "unknown_thing"
+        ]
+      },
+      {
+        "id": "nosub",
+        "address": "c@ledgerwell.example",
+        "displayName": "C",
+        "templateSets": {
+          "from": [
+            "from_named"
+          ],
+          "greeting": [
+            "greet_named"
+          ],
+          "pretext": [
+            "pretext_hello",
+            "pretext_apply",
+            "pretext_sheet",
+            "pretext_enquiry",
+            "pretext_three"
+          ],
+          "ask": [
+            "ask_review"
+          ]
+        },
+        "senderAuth": {
+          "domainPublishesAuth": false,
+          "dmarcPolicy": "strict"
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "cv"
+          ],
+          "trusts": [
+            "baker"
+          ]
+        },
+        "outcome": {
+          "setGlobal": {}
+        }
+      },
+      {
+        "id": "both",
+        "address": "d@ledgerwell.example",
+        "displayName": "D",
+        "character": "clasher",
+        "subjects": [
+          {
+            "id": "s1",
+            "text": "One",
+            "topic": "x"
+          },
+          {
+            "id": "s2",
+            "text": "Two",
+            "topic": "y"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "x"
+          ]
+        },
+        "templateSets": {
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_generic"
+          ],
+          "pretext": [
+            "pretext_apply",
+            "pretext_enquiry"
+          ],
+          "ask": [
+            "ask_review"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "cv"
+          ],
+          "trusts": [
+            "*"
+          ]
+        },
+        "outcome": {
+          "setGlobal": {
+            "phish_both_landed": true
+          }
+        }
+      }
+    ],
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "guest",
+          "address": "guest@workstation.example",
+          "displayName": "Operator",
+          "kind": "given",
+          "person": null,
+          "mailbox": "guest",
+          "spoofsFrom": true
+        },
+        {
+          "id": "freemail",
+          "kind": "created",
+          "person": null,
+          "unlockedBy": "acct_freemail",
+          "mailbox": "freemail",
+          "spoofsFrom": false,
+          "createMenu": [
+            {
+              "id": "tt1",
+              "address": "tarnside.test@freemail.example",
+              "displayName": "T. Test"
+            },
+            {
+              "id": "nt2",
+              "address": "n.assurance@freemail.example",
+              "displayName": "N. Assurance"
+            }
+          ]
+        },
+        {
+          "id": "jed_pc",
+          "address": "j.baker@ledgerwell.example",
+          "displayName": "Jed Baker",
+          "kind": "found",
+          "person": "baker",
+          "unlockedBy": "acct_jed_pc",
+          "mailbox": "jed",
+          "spoofsFrom": false
+        },
+        {
+          "id": "weird",
+          "kind": "secret",
+          "address": "w@x.example",
+          "mailbox": "nowhere",
+          "person": "ghost"
+        },
+        {
+          "id": "foundless",
+          "kind": "found",
+          "address": "f@x.example",
+          "mailbox": "guest"
+        },
+        {
+          "id": "nomenu",
+          "kind": "created",
+          "mailbox": "freemail"
+        },
+        {
+          "id": "burner",
+          "kind": "created",
+          "mailbox": "freemail",
+          "unlockedBy": "acct_undeclared",
+          "createMenu": [
+            {
+              "id": "m1",
+              "address": "a@f.example",
+              "displayName": "A"
+            },
+            {
+              "id": "m1",
+              "address": "b@f.example"
+            }
+          ]
+        },
+        {
+          "id": "guest",
+          "address": "g2@x.example",
+          "kind": "given",
+          "mailbox": "guest"
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "guest"
+        },
+        {
+          "id": "freemail"
+        },
+        {
+          "id": "jed",
+          "owner": "baker"
+        },
+        {
+          "id": "jed",
+          "owner": "nobody"
+        }
+      ],
+      "seededMessages": [
+        {
+          "id": "seed_1",
+          "mailbox": "jed",
+          "folder": "inbox",
+          "from": {
+            "name": "Finance",
+            "address": "finance@ledgerwell.example"
+          },
+          "subject": "Q3 sheet",
+          "body": "Please send the balance sheet every Friday.",
+          "unread": true,
+          "highlights": [
+            {
+              "id": "hl_sheet",
+              "text": "balance sheet every Friday",
+              "grants": "memo_fact"
+            }
+          ]
+        },
+        {
+          "id": "seed_2",
+          "mailbox": "jed",
+          "folder": "sent",
+          "fromAccount": "jed_pc",
+          "to": "m.pierce@ledgerwell.example",
+          "subject": "Sheet",
+          "body": "Attached.",
+          "deliverAt": {
+            "global": "mail_arrived"
+          }
+        },
+        {
+          "id": "seed_3",
+          "mailbox": "guest",
+          "folder": "inbox",
+          "subject": "Welcome",
+          "body": "Hello.",
+          "deliverAt": {
+            "afterSeconds": 30
+          }
+        },
+        {
+          "id": "bad_1",
+          "mailbox": "ghostbox",
+          "folder": "draft",
+          "subject": "x",
+          "body": "Hello there",
+          "deliverAt": {
+            "global": "never_declared"
+          },
+          "highlights": [
+            {
+              "id": "h1",
+              "text": "absent text",
+              "grants": "memo_fact"
+            },
+            {
+              "id": "h2",
+              "text": "Hello",
+              "grants": "memo_fact"
+            },
+            {
+              "id": "h3",
+              "text": "there",
+              "grants": "no_such_fact"
+            }
+          ]
+        },
+        {
+          "id": "bad_2",
+          "mailbox": "guest",
+          "folder": "sent",
+          "subject": "x",
+          "body": "b",
+          "deliverAt": {}
+        },
+        {
+          "id": "seed_1",
+          "mailbox": "guest",
+          "folder": "sent",
+          "fromAccount": "ghostacct",
+          "subject": "dupe",
+          "body": "b"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "c_hampshire",
+          "person": "hampshire",
+          "name": "Chris Hampshire",
+          "addresses": [
+            "careers@ledgerwell.example"
+          ],
+          "role": "Careers",
+          "revealedBy": "se_intel_hampshire_careers",
+          "targetId": "hampshire"
+        },
+        {
+          "id": "c_baker",
+          "person": "baker",
+          "name": "Jed Baker",
+          "addresses": [
+            "j.baker@ledgerwell.example"
+          ],
+          "role": "Finance",
+          "revealedBy": "se_intel_hampshire_careers",
+          "accountIds": [
+            "guest",
+            "freemail"
+          ]
+        },
+        {
+          "id": "c_bad",
+          "person": "ghost",
+          "name": "X",
+          "addresses": [],
+          "accountIds": [
+            "guest",
+            "phantom"
+          ],
+          "character": "ghost_char",
+          "targetId": "nothere",
+          "revealedBy": "se_intel_undeclared"
+        },
+        {
+          "id": "c_mismatch",
+          "person": "baker",
+          "name": "Y",
+          "addresses": [
+            "other@ledgerwell.example"
+          ],
+          "targetId": "pierce",
+          "revealedBy": "se_intel_hampshire_careers"
+        }
+      ]
+    },
+    "intelBoard": {
+      "title": "Case file",
+      "people": [
+        "hampshire",
+        "pierce",
+        "oneprest",
+        "phantom"
+      ],
+      "readinessSlots": {
+        "hampshire": [
+          {
+            "label": "Where mail goes",
+            "needsIntel": [
+              "hampshire_careers"
+            ],
+            "goalString": "You still don't know how Chris receives mail.",
+            "doneString": "The careers inbox accepts mail from anyone."
+          },
+          {
+            "label": "What the file should be",
+            "needsIntel": [
+              "careers_attachment"
+            ],
+            "goalString": "You still don't know what file Chris will open.",
+            "doneString": "Chris takes .odt and .docx files."
+          }
+        ],
+        "pierce": [
+          {
+            "label": "What she expects",
+            "needsIntel": [
+              "pierce_trusts_jed",
+              "memo_fact"
+            ],
+            "needsGlobal": [
+              "dock_ready"
+            ],
+            "goalString": "You still don't know what Melanie expects.",
+            "doneString": "She expects a balance sheet from Jed."
+          }
+        ],
+        "ghost": [
+          {
+            "label": "x",
+            "needsIntel": [
+              "hampshire_careers"
+            ],
+            "goalString": "g",
+            "doneString": "d"
+          }
+        ],
+        "nopart": [],
+        "oneprest": [
+          {
+            "label": "",
+            "needsIntel": [
+              "no_fact"
+            ],
+            "goalString": " ",
+            "doneString": "ok"
+          },
+          {
+            "label": "Both missing",
+            "goalString": "g",
+            "doneString": "d"
+          },
+          {
+            "label": "Globals",
+            "needsIntel": [
+              "pierce_role"
+            ],
+            "needsGlobal": [
+              "undeclared_flag",
+              "dock_ready",
+              "acct_jed_pc"
+            ],
+            "goalString": "g",
+            "doneString": "d"
+          },
+          {
+            "label": "Num",
+            "needsGlobal": [
+              "phish_pierce_attempts"
+            ],
+            "goalString": "g",
+            "doneString": "d"
+          }
+        ]
+      }
+    },
+    "characters": {
+      "clasher": {
+        "displayName": "Clasher",
+        "channels": {
+          "email": "clash_mail"
+        },
+        "emailRecord": {
+          "storyPath": "scenarios/x/ink/clash.json",
+          "displayName": "Clasher"
+        },
+        "influence": {
+          "global": "clasher_influence"
+        }
+      },
+      "okay": {
+        "displayName": "Okay",
+        "channels": {
+          "email": "plain_room_npc"
+        },
+        "influence": {
+          "global": "okay_influence"
+        }
+      },
+      "headless": {
+        "displayName": "Headless",
+        "channels": {
+          "email": "headless_mail"
+        },
+        "emailRecord": {
+          "storyPath": "scenarios/x/ink/h.json",
+          "displayName": "H"
+        },
+        "influence": {
+          "global": "headless_influence"
+        }
+      }
+    }
+  }
+}

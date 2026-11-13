@@ -1,0 +1,13 @@
+{
+  "key": "2451389832bdca174e8cc4be1846ba9c",
+  "npc": "narrator",
+  "text": "A security officer walks a slow beat along the main corridor, past the door marked Security Office. She clocks you before you're halfway along.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

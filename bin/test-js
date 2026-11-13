@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# Run every test/js/*.test.mjs in its own `node` process (tests auto-run from the
+# imported node:test module; see "Why plain node" below).
+#
+# Why plain node, not `node --test`: the `--test` runner spawns a child process per
+# file and pipes the child's TAP back over an IPC channel. When the engine under
+# test console.logs emoji-heavy multi-line text, that output occasionally corrupts
+# the IPC framing and the parent dies with "Unable to deserialize cloned data" —
+# a false failure even though every subtest passed (seen on Node 18, 20 and 22,
+# load-dependent, so `-j` and a busy CI runner make it worse). Running the file
+# directly with `node "$f"` runs its tests in the same process with no child and
+# no IPC, which removes that error class entirely while keeping file isolation
+# (each file is still its own process) and the correct exit code (non-zero if any
+# subtest fails or the file throws).
+#
+# What's left is a rarer, genuine filesystem race: the many tests that mkdtemp a
+# dir, copy a slice of public/break_escape/js into it and import from there can hit
+# a transient ERR_MODULE_NOT_FOUND when the ESM loader stats a just-written fixture
+# file under full-suite load. A file whose log shows a module missing when imported
+# from the OS temp dir is re-run, up to TEST_JS_RETRIES times (default 3 attempts).
+# This cannot hide a real missing import: a genuinely absent repo source fails every
+# attempt (and is imported from the repo path, not the temp dir) and stays FAIL. The
+# retry is reported as "PASS (fixture-resolution retry, n attempts)", never hidden.
+#
+# Usage: bin/test-js [-j N] [-v] [file ...]
+#   -j N   files to run at once (default: $TEST_JS_JOBS, else 4)
+#   -v     print the output of passing files too (failures are always printed)
+#   file   test files to run (default: test/js/*.test.mjs)
+# Exit status: 0 if every file passed, 1 if any failed.
+set -uo pipefail
+cd "$(dirname "$0")/.."
+
+jobs=${TEST_JS_JOBS:-4}
+verbose=0
+while getopts "j:v" opt; do
+  case $opt in
+    j) jobs=$OPTARG ;;
+    v) verbose=1 ;;
+    *) echo "usage: bin/test-js [-j N] [-v] [file ...]" >&2; exit 2 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [ $# -gt 0 ]; then files=("$@"); else files=(test/js/*.test.mjs); fi
+
+out=$(mktemp -d)
+trap 'rm -rf "$out"' EXIT
+export out
+
+# The OS temp dir the fixtures mkdtemp under; a module reported missing when
+# "imported from <tmp>/..." is a transient fixture-resolution race, not a real bug.
+tmp=$(node -p 'require("os").tmpdir()' 2>/dev/null || echo /tmp)
+export tmp
+
+run_one() {
+  f=$1
+  b=$(basename "$f")
+  start=$(date +%s)
+  attempt=1
+  while :; do
+    node "$f" >"$out/$b.log" 2>&1
+    code=$?
+    if [ "$code" -ne 0 ] && [ "$attempt" -lt "${TEST_JS_RETRIES:-3}" ] \
+       && grep -q "ERR_MODULE_NOT_FOUND" "$out/$b.log" \
+       && grep -q "imported from ${tmp}" "$out/$b.log"; then
+      attempt=$((attempt + 1)); continue
+    fi
+    break
+  done
+  echo "$code $(( $(date +%s) - start ))" >"$out/$b.status"
+  note=""; [ "$attempt" -gt 1 ] && note=" (fixture-resolution retry, $attempt attempts)"
+  if [ "$code" -eq 0 ]; then echo "PASS  $b$note"; else echo "FAIL  $b (exit $code)$note"; fi
+}
+export -f run_one
+
+echo "Running ${#files[@]} files, $jobs at a time"
+printf '%s\0' "${files[@]}" | xargs -0 -n1 -P "$jobs" bash -c 'run_one "$0"'
+
+pass=0; fail=0; failed=()
+for f in "${files[@]}"; do
+  b=$(basename "$f")
+  read -r code _ <"$out/$b.status" 2>/dev/null || code=missing
+  if [ "$code" = 0 ]; then
+    pass=$((pass + 1))
+    [ "$verbose" -eq 1 ] && { echo "=== $b"; cat "$out/$b.log"; }
+  else
+    fail=$((fail + 1)); failed+=("$b")
+    echo "=== FAILED: $b"; cat "$out/$b.log" 2>/dev/null
+  fi
+done
+
+echo
+echo "Files: $pass passed, $fail failed, ${#files[@]} total"
+if [ "$fail" -gt 0 ]; then printf 'Failed: %s\n' "${failed[*]}"; exit 1; fi

@@ -1,0 +1,13 @@
+{
+  "key": "fc52dca58856e1818a59dbbbfc92dd11",
+  "npc": "gwen_pritchard",
+  "text": "Next, the inbox at the kiosk. Treat what the assistant hands you like a note from a stranger.",
+  "voice": "Sulafat",
+  "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:21:42Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "56db8e1d92666b936c05b1d69014e319",
+  "npc": "maya_chen",
+  "text": "From what I've gathered, Operation Shatter is a coordinated disinformation attack.",
+  "voice": "Leda",
+  "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-10-18",
+  "recorded_at": "2026-10-17T23:06:22Z"
+}

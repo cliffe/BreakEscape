@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: matches the PixelLab plan for "Hello, I'm Bernie."
+ok 1 - matches the PixelLab plan for "Hello, I'm Bernie."
+  ---
+  duration_ms: 4.163268
+  ...
+# Subtest: runs of the same viseme collapse into one step
+ok 2 - runs of the same viseme collapse into one step
+  ---
+  duration_ms: 0.412393
+  ...
+# Subtest: letter classes
+ok 3 - letter classes
+  ---
+  duration_ms: 0.563058
+  ...
+# Subtest: punctuation and whitespace become a single rest; sentence ends hold longer
+ok 4 - punctuation and whitespace become a single rest; sentence ends hold longer
+  ---
+  duration_ms: 0.260995
+  ...
+# Subtest: empty and missing text give a single rest
+ok 5 - empty and missing text give a single rest
+  ---
+  duration_ms: 0.213116
+  ...
+# Subtest: steps default to 90 ms and scale to the audio duration
+ok 6 - steps default to 90 ms and scale to the audio duration
+  ---
+  duration_ms: 0.419981
+  ...
+# Subtest: visemeAt picks the step for the elapsed time and rests outside it
+ok 7 - visemeAt picks the step for the elapsed time and rests outside it
+  ---
+  duration_ms: 0.264053
+  ...
+# Subtest: column map: full 7-name set maps directly
+ok 8 - column map: full 7-name set maps directly
+  ---
+  duration_ms: 0.211093
+  ...
+# Subtest: column map: smaller or unfamiliar sets degrade gracefully
+ok 9 - column map: smaller or unfamiliar sets degrade gracefully
+  ---
+  duration_ms: 0.196582
+  ...
+# Subtest: column map: blink only when the sheet has it
+ok 10 - column map: blink only when the sheet has it
+  ---
+  duration_ms: 0.388054
+  ...
+# Subtest: blinks: one short blink per 4 s slot, 2-6 s apart, varying with the seed
+ok 11 - blinks: one short blink per 4 s slot, 2-6 s apart, varying with the seed
+  ---
+  duration_ms: 3.308871
+  ...
+# Subtest: holdTimeline: no shape shorter than the hold, same total, rests at the ends
+ok 12 - holdTimeline: no shape shorter than the hold, same total, rests at the ends
+  ---
+  duration_ms: 0.76058
+  ...
+# Subtest: holdTimeline: closed lips win a merge over an in-between shape
+ok 13 - holdTimeline: closed lips win a merge over an in-between shape
+  ---
+  duration_ms: 0.238616
+  ...
+# Subtest: envelopeFromSamples: RMS per frame
+ok 14 - envelopeFromSamples: RMS per frame
+  ---
+  duration_ms: 0.374994
+  ...
+# Subtest: textToUnits: sounds, word gaps and punctuation pauses
+ok 15 - textToUnits: sounds, word gaps and punctuation pauses
+  ---
+  duration_ms: 1.076354
+  ...
+# Subtest: alignToEnvelope: silences rest, loud stretches talk
+ok 16 - alignToEnvelope: silences rest, loud stretches talk
+  ---
+  duration_ms: 5.992298
+  ...
+# Subtest: alignToEnvelope: an "a" opens wide only on a loud peak
+ok 17 - alignToEnvelope: an "a" opens wide only on a loud peak
+  ---
+  duration_ms: 3.215331
+  ...
+# Subtest: alignToEnvelope on a real TTS line: pauses land on silences
+ok 18 - alignToEnvelope on a real TTS line: pauses land on silences
+  ---
+  duration_ms: 60.858258
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 232.833188

@@ -1,0 +1,13 @@
+{
+  "key": "70e93a778629bcc72a19d12883849d12",
+  "npc": "agent_nightshade",
+  "text": "Capture and replay. Her card broadcasts, we copy it, we wear it. Same trick they use on us.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's technical analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:54:06Z"
+}

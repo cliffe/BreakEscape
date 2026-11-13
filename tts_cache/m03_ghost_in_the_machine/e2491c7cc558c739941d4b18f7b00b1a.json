@@ -1,0 +1,13 @@
+{
+  "key": "e2491c7cc558c739941d4b18f7b00b1a",
+  "npc": "terry_mott",
+  "text": "SAFETYNET. Never heard of you. Is that meant to make me feel better?",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:31:57Z"
+}

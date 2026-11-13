@@ -1,0 +1,14 @@
+
+## R17 (C5-1, reworked in pass 2 blind fixes 2): a player Terry catches picking a lock gets no talking: on_lockpick_detected carries #hostile:terry_mott and the detection counts. A later talk (if he hasn't chased them down) gets his hostile line, not the excuse menu.
+   {set {"briefing_played":true,"victoria_card_cloned":true,"mission_phase":"act2_infiltration","clone_call_done":true,"day_greeted":false}}
+
+--- terry @on_lockpick_detected ---
+  Narrator: A torch beam lands on your hands, and on the pick in them.
+  Terry Mott: Picks. Right. We're done talking.
+  [chat closes]
+
+--- terry @start ---
+  Terry Mott: Not another word. I'm calling the police.
+  [chat closes]
+
+[stats] spoken/narrated lines 3, choices 0, longest run without a choice 2 (terry); runs>=6: 

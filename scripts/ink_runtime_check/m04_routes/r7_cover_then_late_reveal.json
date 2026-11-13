@@ -1,0 +1,99 @@
+{
+"steps": [
+{
+"note": "R7 (round 2): the cover held, then a late reveal on the hub's evidence choice. No crew offer while he isn't an ally; after the reveal he offers it, states the 'half an hour' cost (attack not mapped yet), and sounds it. Then whichever clock fires first: the attack is mapped 20 minutes after the alarm, the alarm clock vents bank B at 30 (the normal clock would have at 34)."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true
+}
+},
+{
+"talk": "vance",
+"picks": [
+"Just doing the job",
+"Tell me about the recent maintenance",
+"Any other contractors",
+"Lean in over the site map",
+"Thank you. I'll start"
+]
+},
+{
+"set": {
+"anomaly_detected": true
+}
+},
+{
+"talk": "vance",
+"picks": []
+},
+{
+"notSaid": [
+"Is anyone working"
+]
+},
+{
+"talk": "vance",
+"reload": "page",
+"knot": "initial_meeting",
+"picks": [
+"Your Hall 1 dial reads 61",
+"Deadly serious",
+"I can stop it",
+"I'm going"
+]
+},
+{
+"expect": {
+"vance_is_ally": true
+}
+},
+{
+"talk": "vance",
+"picks": [
+"Is anyone working",
+"Sound it",
+"Stay on the ops desk"
+]
+},
+{
+"said": [
+"half an hour, maybe"
+]
+},
+{
+"expect": {
+"crew_warned": true,
+"crew_warned_early": true
+}
+},
+{
+"advance": 20
+},
+{
+"set": {
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"evidence_maintenance_logs_found": true,
+"attack_mechanism_known": true
+}
+},
+{
+"advance": 11
+},
+{
+"expect": {
+"racks_vented": true,
+"vented_by_alarm_clock": true,
+"crew_lost": false
+}
+}
+]
+}

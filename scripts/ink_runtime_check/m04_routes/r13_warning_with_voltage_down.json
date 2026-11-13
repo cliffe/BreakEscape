@@ -1,0 +1,77 @@
+{
+"steps": [
+{
+"note": "R13 (round 4, review M2, m8b): Voltage fought before the mapping and the race won (KO: voltage_neutralised, voltage_captured). Then the dial and the warning: it costs nothing. No crew_warned_early, no 'half an hour', no alarm clock, no music change."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"vance_card_cloned": true,
+"vance_is_ally": true,
+"plant_room_entered": true,
+"voltage_fight_started": true,
+"vance_spoken": true
+}
+},
+{
+"set": {
+"voltage_neutralised": true,
+"voltage_captured": true,
+"anomaly_detected": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Can we get the night crew",
+"Nothing right now"
+]
+},
+{
+"said": [
+"Voltage is down, so nobody's listening"
+],
+"notSaid": [
+"half an hour"
+]
+},
+{
+"talk": "vance",
+"knot": "vance_hub",
+"picks": [
+"Is anyone working",
+"Sound it",
+"Stay on the ops desk"
+]
+},
+{
+"said": [
+"isn't listening any more. It costs you nothing."
+],
+"notSaid": [
+"half an hour"
+]
+},
+{
+"expect": {
+"crew_warned": true,
+"crew_warned_early": false,
+"clock_started": false
+}
+},
+{
+"hud": null
+},
+{
+"advance": 40
+},
+{
+"expect": {
+"racks_vented": false
+}
+}
+]
+}

@@ -1,0 +1,13 @@
+{
+  "key": "41dff7d2434c330520ab1364e1cf34d9",
+  "npc": "satoshi_minder",
+  "text": "Na gut. Go in.",
+  "voice": "Iapetus",
+  "style": "Turkish-German former bank vault security chief in his late fifties, now a true believer in the Crypto Anarchists' cause and Satoshi's minder. Speak with a consistent German accent (Hamburg) in fluent, careful English throughout — do not shift to any other accent. Low, gravelly pitch; slow, deliberate pace. Courteous and immovable; thirty years of guarding other people's money.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:20:24Z"
+}

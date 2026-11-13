@@ -1,0 +1,69 @@
+# m09 finale loop: alignment review, round 6
+
+## Scope and method
+
+2026-10-22. Phase 1 (alignment), round 6, of the AGENTS.md five-phase loop. This round runs past the AGENTS.md cap of five because the user's rule says the phase completes only at 0 major and 0 minor. A fresh Opus reviewer, read-only, static only (no browser). I worked the `mission-alignment-plan` ten-row rubric as a single reviewer, as rounds 1–5 did, and judged the tree at commit 3958f5aa ("alignment round 5 fixes"; m09 has no uncommitted changes). I read the R5 diff line by line. Then I reread HaX's phone in full, the briefing, the debrief, Tran, Sorensen's cage record, HaX's mappings (erb:105-388), the music, closing card, credits and objectives (erb:419-716) and the server closet, and judged the mission afresh against m01/m02 and the brief's aim: a TV spy thriller in which earlier choices change the night, and which hands m10 what its ending needs. No SecGen file, VM plan or field guide was opened.
+
+**Counts: 0 blockers, 0 majors, 2 minors.** Both R5 findings are closed in the game, and the fixes introduced nothing new in play. One new minor is a player-visible text on Victoria's route that the earlier rounds didn't reach: after the player has dealt with Sorensen in the cage, flag 2 still brings "She's still feeding it." The other is two contract rows: the second half of r5-2a, and an older stale pair in §2.3.
+
+## Checks run
+
+- **Validator** (`--skip-ink --no-graph`, so no `dungeon_graph.*` rewrite): ERB, JSON, schema, geometry and door alignment clean. 0 errors. 23 issues, the same set as R2–R5: 13 onceOnly-overlap warnings (justified at erb:116-126), 4 cutscene `onceOnly` warnings, the two-paths warning on `salvage_cage`, the `sorensen_office` graph warning, the two expected "nothing opens it" locks (`beta_crate`, `stacks_release`), and suggestions. 6 missing-recommended notes for the hidden cutscene hosts.
+- **dialoguelint**: 0 errors; 5 `not-x-but-y` warnings (briefing, debrief L117, HaX L518, Sorensen door L45, hatch L70) and 1 allowed `you-after-choice`, as in R3–R5. They belong to the dialogue phase. HaX's L517 moved to L518 because of the one-line comment r5-2b added.
+- **reopencheck** (`missions.json`): `agent_0x99` 0 problems over 1,614 reopens (1,426 re-runs), identical to R5, as it should be after a comment-only ink change. The Recruiter, Nightshade, Torres and Gary show the known `[Hello?]`-stub restart, as in every round.
+- **HaX ink JSON**: `m09_phone_agent0x99.ink` compiled to scratch with `inklecate`; the output is identical to the committed JSON, so r5-2b changed only a comment. No m09 ink JSON is older than its ink.
+- **Voiced lines**: R5's fixes touched no spoken line (one scenario condition in three places, docs, an ink comment). CONTRACT §15's 369 still stands.
+- **Exports**: twenty-three, unchanged (erb:2407-2411).
+
+## Round 5 findings: closed?
+
+| R5 | Outcome | Evidence | New problem from the fix? |
+|---|---|---|---|
+| r5-1 a Tran already knocked out still "sent the guard" | **Closed** | `&& globalVars.tran_outcome === 'left'` is on all three: HaX's text (erb:174), Old Coyote's flag 1 override (erb:1256) and its `open_stacks` relay (erb:1263). Tran's knock-out sets `tran_outcome` to `ko` through HaX's `npc_ko:jesse_tran` mapping (erb:227), and HaX is always loaded, so the term is false from the moment he goes down. A later knock-out (after the guard has already been sent) changes nothing that has already happened, which is right. Copied into texts A3-04 (texts/A:19) and CONTRACT §2.3 (CONTRACT:140) | None. `text_map` is `onceOnly` (erb:82); `tran_outcome` never goes back to `left`, so a blocked text can't fire later out of turn |
+| r5-2 docs the R4 fixes didn't reach | **Closed** for (b) and (c); **half done** for (a) | (a) §2.1 topic 17's guard now reads `... and tran_outcome == "left"` (CONTRACT:117), but its "retires" cell still says "given or `cage_opened`", where R5 asked for "given, `cage_opened`, or Tran talked or knocked out" (r6-2a). (b) The `tran_warning` header says "Used by hub topic 17 only (unvoiced); the dock call has the warning inline since stage 9" (phone ink:130-132). (c) LIGHTING_PLAN m7 carries the "Superseded by m09 alignment R4 r4-1" note (LIGHTING_PLAN.md:135). §15 has an "Alignment round 5 changes" paragraph (CONTRACT:793) | No |
+
+## Severity table (new findings)
+
+| # | Sev. | Finding | Where | Fix |
+|---|---|---|---|---|
+| r6-1 | minor | **On Victoria's route, flag 2 still says "She's still feeding it." after the player has dealt with Sorensen.** The text keys on `flag2_submitted && !hatch_talked` (erb:208). Only the hatch record sets `hatch_talked` (hatch.ink:35); Victoria's route opens the gate with the maintenance code (phone ink:781-785, erb:183-185), plays the `door` scene instead, and "sets no `hatch_talked`" by design (sorensen_door.ink:5-6, erb:1792). HaX tells every player "Stacks first" before the ledger (phone ink:198, 201), and the status ladder sends them cage, then flag 2 (phone ink:908-911). So the usual Victoria-route player opens the cage, then either knocks Sorensen out (HaX has already texted "She's sixty-six.", erb:213), talks her down with Nightshade's file in hand ("sets the stamp down", sorensen_cage.ink:60-63), or leaves her. They then submit flag 2, and the next room entry sends "She's still feeding it." about a woman who is unconscious or has stopped. On the left fate the line is true but nudges toward a hatch the route skipped. Same class as r5-1: a text written for one route firing on another | erb:208; texts/A_hax_texts.md:27; CONTRACT.md:144 | Add `&& !globalVars.cage_opened` to the condition, so it reads `globalVars.flag2_submitted && !globalVars.hatch_talked && !globalVars.cage_opened`. The text exists to send a flag-2-first player to the hatch, and once the gate is open its job is done. On the hatch route nothing changes, because the gate takes the card cloned at the hatch, so `hatch_talked` is always set before `cage_opened` there. Copy the term into A3-08 (texts/A:27) and CONTRACT §2.3 (CONTRACT:144). Scenario only; no ink or audio cost |
+| r6-2 | minor | **Two contract rows still lag the shipped game.** (a) The second half of r5-2a: §2.1 topic 17's "retires" cell still reads "given or `cage_opened`" (CONTRACT:117), though its guard cell now includes `tran_outcome == "left"`. (b) §2.3 still gives the office keypad text as "Her keypad's off the card system. Leave it for now." on `door_unlock_failed` (CONTRACT:138), and the tape room text on `door_unlock_failed` with no `deck_choice_made` guard (CONTRACT:139). Since walkthrough R1 m-03 the game sends A3-02b "Her keypad's off the card system. There's no code to find for it. Leave it for now." and A3-03b on `door_unlock_attempt` before the deck, and A3-03 only after it (erb:155-159). texts/A marks A3-02 "Superseded… Don't paste it back" (texts/A:10). The contract's header says its body quotes the strings as shipped (CONTRACT:5), and the erb names the contract as its first authority (erb:7), so a fixer working from §2.3 could restore the superseded trigger | CONTRACT.md:117, 138-139 | (a) Retires: "given, `cage_opened`, or Tran talked or knocked out (alignment R4 r4-2)". (b) Replace the two rows with A3-02b and A3-03b as texts/A:12-13 give them, and A3-03 with `globalVars.deck_choice_made` (texts/A:11). Mark A3-02 superseded, or drop it, with a pointer to texts/A:10 |
+
+Severity notes: neither touches the critical path, a flag, an export, `concludeRequires` or a voiced line. r6-1 is the only one a player can see. It shows only on Victoria's route (`m03_victoria_fate == "recruited"`), but nearly every player on that route will see it.
+
+## The whole mission, judged again
+
+| # | Rubric row | R6 judgement |
+|---|---|---|
+| 1 | Canon and stakes | At the bar. The order's cold open ("Burn Helena before the Publication", briefing:27), the infusion-pump entry and Analysis' guess "labelled as a guess" (briefing:272-274), replaced by his signed 1,100–2,600 in the hour read (phone:577-581). Villanueva, Noor and the eleven legacy names are people at risk tonight, and the two dead agents are read off a card at the pen (debrief:256). Netherton keeps his promise not to say the name until it's proved (briefing:267, phone:381). No Cabal, institute, eldritch content or Director Cross |
+| 2 | Aims and staging | At the bar. Six aims, each opened by the one before (erb:622-716); reveal tasks ship locked and are unlocked in their scenes; titles are actions and give nothing away; `concludeRequires` holds the four flag tasks only (erb:711) |
+| 3 | HaX hub | At the bar. Nineteen topics gated on progress globals, retired by ink-local shadows where a tag lands late (phone:95-100); a status ladder that never names a flag already in (phone:880-925); four guide offers behind one button, gated `_offered` / `_hint_given` and written with `~` (phone:808, 930-956); per-flag VM steers at story level only |
+| 4 | Ink craft | At the bar. dialoguelint 0 errors; every call that carries information ends on a one-word reply; the voiced scenes guard their restarts (identity_resume, hour_read_resume). The briefing wall stays with the dialogue phase |
+| 5 | Moral choices | At the bar. The raid-team answer, bins, the Recruiter's four outcomes and the m05 secret, Tran, Sorensen, Noor, the hand, the Reading, Nightshade's file, the confession, the notice (hub or debrief) and the memo each have a scene payoff and a line at the end. The credits take the first clause that holds (closing-sequence.js:66), so Kowalczyk's double-cross clause correctly displaces the cracker clauses, and the purge section pairs every saved line with its shredded partner (erb:523-537) |
+| 6 | Music | At the bar. noir → cutscene (identity) → noir → threat (the hour) → silence (his call) → spy-action once on "[Understood.]" → cutscene (debrief) → victory on `debrief_closed`, each with a disjoint `game_loaded` row (erb:425-451) |
+| 7 | Rooms | At the bar. Geometry and doors clean; the staff passage keeps the RFID lock off route B; the closet's light, console and credit agree on `tran_outcome` |
+| 8 | Mechanics and VM | At the bar on the game side. Picks, two clones (Noor's staff-door card, Sorensen's custom-keys stacks card), a print, the PIN cracker, Vigenère and four flags on two stations, each tied to a story beat. Lab URLs and the box wait for F9 and the lab-sheet stage |
+| 9 | KO resilience | At the bar. Every person NPC has a fallback (`koImmune` hatch holder, cage Sorensen's held card, `taskOnKO`/fate globals) and every bystander a reaction. Tran's early knock-out now reads right everywhere (console, light, hub topic, the guard) |
+| 10 | Bookends | At the bar. Briefing with `skipIfGlobal`; "[Bring me in.]" opens a debrief that replays as short bridging lines after a reload (debrief:54-58, 68-71, 101-103, 125-135); the card and credits roll on `debrief_closed` |
+
+**Earlier choices.** Still strong. The imported m01–m08 branches change who helps (Noor's card, Gary on the cipher, Torres, Victoria's maintenance code, Nightshade's custom-keys tip), what is possible (the second bin, the Recruiter's leverage, Nightshade's file, Tran's guard on m01's knock-out) and what is said to the player (Sorensen's recognition, HaX's four confession forms and two recognition lines, the m04 landing lines in the identity scene, the m08 echo in the ledger call, Netherton's floor and stance lines, Kemal Aydin's walk-out against the signed number).
+
+**Setting up m10.** Unchanged and complete on m09's side: the proved name, the bunker and its hour (06:00 UTC, the cells at 04:00, the key), the signed toll, the invitation by name, WREN in one of three states, HaX's owed "rest", and twenty-three exports including the player's own stances.
+
+## Deferred, not counted
+
+- **m10's imports** of the four R2 exports, and its `''` defaults for `sorensen_fate` / `tran_outcome`: m10's loop.
+- **R1 m8**, the handwriting word: m10 says "sloping"; for m10's loop to confirm.
+- **R1 m10**, the briefing's wall of cards: the dialogue phase.
+- **F9**, the SecGen box: with the user. VM-WIRE placeholders unchanged.
+
+## Considered and withdrawn
+
+- **Kowalczyk's credit on the double-cross could stack the cracker clause under "walked away".** It can't: the credits show the first clause that holds (closing-sequence.js:66), and `double_crossed` comes first (erb:488).
+- **A Noor-route clone could open the cage gate without the hatch, which would make r6-1's fix wrong on the hatch route.** No: Noor's card is `reading_staff_door` (erb:1093), the gate needs `stacks_card` (erb:1694), and the only `stacks_card` the player can reach before the gate is the hatch record's `rfidCard` (erb:1611-1615). Cage Sorensen's own card is inside the cage (erb:1724-1733).
+- **HaX's "[Tran.]" topic retires on `cage_opened`, so a player who opens the cage first loses the hub's Tran pointer.** The dock call has already named him, the status ladder never needed him (the task is optional), and "[Bring me in.]" says "Tran's still at his tapes." if he's left (phone:671-672). A pacing call; no change.
+- **erb:484's indentation.** Cosmetic, already noted in R4 and R5.
+
+## Verdict
+
+**Another round, as a confirmation.** 0 blockers, 0 majors, 2 minors. Both R5 findings are closed in the game; r5-2a is half done in the contract (r6-2a). m09 is at the m01/m02 bar on all ten rubric rows. The phase isn't complete under the user's rule (0 major and 0 minor). What's left is one condition term in the scenario file (r6-1), two copied doc cells, and three contract cells (r6-2). Round 7 should confirm them, re-run the validator (`--skip-ink --no-graph`), dialoguelint and reopencheck for `agent_0x99` (unchanged, since no ink moves), and grep CONTRACT §2.3 against texts/A for any other row that still differs.

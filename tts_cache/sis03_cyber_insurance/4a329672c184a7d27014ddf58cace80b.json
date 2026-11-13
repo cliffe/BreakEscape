@@ -1,0 +1,13 @@
+{
+  "key": "4a329672c184a7d27014ddf58cace80b",
+  "npc": "eleanor_vance",
+  "text": "Meridian set a remediation deadline: December thirty-first. That passed less than three months before the attack.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:18:30Z"
+}

@@ -1,0 +1,5 @@
+game 2347 (hax_banner)
+banner: "Agent HaX / SAFETYNET secure line / Incoming call / Answer / Decline"
+shot hax_banner_banner
+seen: [{"k":"caption=- | banner=- | mg=-","t":"0.2"},{"k":"caption=- | banner=Agent HaX / SAFETYNET secure line / Incoming call / Answer / Decline | mg=-","t":"0.3"},{"k":"caption=- | banner=- | mg=-","t":"2.8"},{"k":"caption=Voice call | banner=- | mg=PhoneChatMinigame:agent_0x99","t":"3.2"},{"k":"caption=SAFETYNET secure line | banner=- | mg=PhoneChatMinigame:agent_0x99","t":"3.7"}]
+shot hax_banner_call

@@ -1,0 +1,13 @@
+Make portrait for Mrs Kowalski
+A Polish-born white woman in her early eighties with fair, lined skin, an elderly bed-bound patient sitting propped up in an NHS hospital ward bed, alert, watchful and anxious. Thin white hair, large round glasses, a small gold cross on a fine chain at her throat. A soft knitted cardigan over a pale hospital gown, a green hospital blanket over her lap. No text and no logos.
+Sitting propped up against the pillows, upper body, face angled in a three-quarter view toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the patient sitting up in a hospital bed, upper body and head, a green hospital blanket over the lap, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism. Smooth vector linework, NOT pixel art.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention).
+
+# Saved 2026-10-12 from tmp/pixellab/mrs_kowalski/concept.png (the concept the pipeline used)

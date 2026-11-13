@@ -1,0 +1,13 @@
+{
+  "key": "ccb6bec8f26ec5a3fb0eb3b917e0c8b5",
+  "npc": "helen_marsh",
+  "text": "Use the station by the hall door, out here, or mine on the console. Not the one inside.",
+  "voice": "Aoede",
+  "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:14:37Z"
+}

@@ -1,0 +1,14 @@
+game            1630  (mission 79)
+created         2026-10-06 14:23:25 UTC
+last write      2026-10-06 14:51:11 UTC
+played for      1665s of wall clock
+current room    "foyer"
+unlocked rooms  11: foyer, common_room, library, corridor, workshop, seminar_room, sidhu_office, staff_office, teaching_lab, lecture_theatre, special_collections
+unlocked objs   2: staff_photocopier, lab_account_pc
+inventory       14: Your Phone, Notepad, Comms Discipline, ASCII Chart Handout, Punched Paper Tape (1979), Keyholder Leaflet, Lab Laptop (CyberChef), Field Note 1: Bits, Bytes, Bases, CyberChef, Field Note 2: Characters Are Numbers, Field Note 3: Hex and Binary, Trial V Poster, Tag on the Drop Box, Returns Slip, Handout: Hashes
+NPCs met        11: briefing_cutscene, agent_0x99, ghost, closing_debrief_person, jordan_pike, megan_oyelaran, cliffe_schreuders, oleg_illiashenko, tom_shaw, sidhu_selvarajan, cliffe_workshop
+flags submitted 0: 
+globals set     13: briefing_played, comms_had, corridor_open, ending, engine_tutorial_declined, fn04_offered, fn05_offered, fn07_had, library_open, megan_choice, player_name, report_read_claimed, workshop_open
+
+VERDICT: progress recorded — 10 rooms beyond the first, 2 objects unlocked, 0 flags submitted.
+Cross-check the specifics above against the report.

@@ -1,0 +1,20 @@
+  corridor W <-> library (door centre 0,-48; drawn height player.y=-82)
+    east->west, drawn      from (40,-82) left  -> [-95,-82]      library
+    west->east, drawn      from (-40,-82) right -> [95,-82]       corridor
+    east->west, listed y   from (40,-48) left  -> [41,-48]       corridor
+    west->east, listed y   from (-40,-48) right -> [-41,-48]      library
+  corridor E <-> Sidhu's office (door centre 320,-48; drawn height player.y=-82)
+    east->west, drawn      from (360,-82) left  -> [225,-82]      corridor
+    west->east, drawn      from (280,-82) right -> [415,-82]      sidhu_office
+    east->west, listed y   from (360,-48) left  -> [361,-48]      sidhu_office
+    west->east, listed y   from (280,-48) right -> [279,-48]      corridor
+  foyer W <-> teaching lab (door centre 0,80; drawn height player.y=46)
+    east->west, drawn      from (40,46) left  -> [-95,46]       teaching_lab
+    west->east, drawn      from (-40,46) right -> [95,46]        foyer
+    east->west, listed y   from (40,80) left  -> [41,80]        foyer
+    west->east, listed y   from (-40,80) right -> [-41,80]       teaching_lab
+  common room E <-> staff office (door centre 640,80; drawn height player.y=46)
+    east->west, drawn      from (680,46) left  -> [545,46]       
+    west->east, drawn      from (600,46) right -> [735,46]       
+    east->west, listed y   from (680,80) left  -> [545,80]       
+    west->east, listed y   from (600,80) right -> [735,80]       

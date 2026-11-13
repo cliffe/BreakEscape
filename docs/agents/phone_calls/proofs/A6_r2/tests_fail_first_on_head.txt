@@ -1,0 +1,12 @@
+not ok 9 - M1: a held voicemail is in the contact's saved slot (voicemails list) until it runs, then the slot clears
+not ok 10 - M1: a reload while a voicemail is held delivers it after the load, quietly, without a second "Missed call" row
+not ok 12 - M1 P1: a held voicemail and a newer ring of the same contact both survive a reload
+not ok 13 - M1 P2: two held voicemails both survive a reload, in order, each delivered once
+not ok 14 - M1 P3: a held voicemail and a callback for the same contact both survive a reload
+not ok 16 - m1: a thread that is still loading (isConversationActive false) holds the voicemail until it closes
+not ok 17 - m1: an ended thread (isConversationActive false, still the open phone-chat) holds the voicemail
+not ok 18 - m1: two windows on one contact: the second thread opened during the hold keeps holding
+not ok 19 - n3: a voicemail released when the ending starts (ringer closed) shows no toast
+not ok 20 - n4: giving up after 20 blocked tries is logged, and the voicemail stays in the slot
+# pass 10
+# fail 10

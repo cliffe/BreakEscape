@@ -1,0 +1,10 @@
+Make portrait for Officer Dev Malhotra
+A slim British-Indian man of about 33 from Hounslow, with medium-brown skin, a short neatly trimmed black beard, and thick black hair cut short at the sides and tidy on top, a communications officer who runs the radio net from a surveillance van. Dark brown eyes and an alert, earnest, slightly tired look. He wears a black over-the-head radio headset with a single padded earcup over one ear and a thin boom microphone by his mouth, a dark bottle-green quarter-zip jumper over a white t-shirt, dark blue jeans and a brown leather belt; a plain steel watch on his wrist, hands relaxed at his sides. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (finale batch). Reframed with reframe_portrait.py --flip; unflipped original is dev_malhotra_concept_1_raw.png. Approved by the user 2026-10-22; adopted from wip/dev_malhotra_concept_1.png.

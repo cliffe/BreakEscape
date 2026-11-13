@@ -1,0 +1,13 @@
+{
+  "key": "db5031524eed80edee513122afe7bcf2",
+  "npc": "narrator",
+  "text": "SAFETYNET backup arrives. Derek Lawson is taken into custody.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

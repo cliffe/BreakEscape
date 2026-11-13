@@ -1,0 +1,4 @@
+13.4s caller_basic:ringing |  | callActive=false | barks=0
+20.8s caller_basic:connected |  | callActive=true | barks=0
+21.3s caller_basic:connected | phone-chat | callActive=true | barks=0
+32.1s  |  | callActive=false | barks=1

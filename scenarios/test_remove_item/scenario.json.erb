@@ -1,0 +1,98 @@
+{
+  "scenario_brief": "TEST: remove_item action\n\nMinimal 1-room scenario proving the apply-actions remove_item action. The player carries kit_dropbox and plants it on the live network port. The port is requiresItem (kit_dropbox) with NO consumesItem: a confirm_action's onConfirm sets a global AND runs remove_item, so cancelling the dialog keeps the kit and only confirming takes it. Mirrors lab_physical_pentest network_port.",
+  "endGoal": "Plant the network drop box on the live port (confirm the dialog) to complete the mission.",
+  "startRoom": "test_room",
+
+  "objectives": [
+    {
+      "aimId": "plant_dropbox",
+      "title": "Plant the drop box",
+      "description": "Plant the network drop box on the live wall port.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "conclusionScreen": { "type": "end_screen" },
+      "tasks": [
+        {
+          "taskId": "plant_task",
+          "title": "Plant the drop box on the live port",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "test_room": {
+      "type": "room_office",
+      "door_sign": "Test Room",
+      "connections": {},
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Instructions",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "text": "TEST: remove_item\n\nYou carry the network drop box (kit_dropbox). Interact with the LIVE WALL NETWORK PORT. A confirm dialog appears.\n  - Cancel: the drop box STAYS in your inventory.\n  - Confirm: kp_test_planted is set AND remove_item takes the drop box; it persists over reload.",
+          "observations": "A note with test instructions."
+        },
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 7, "y": 2 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "observations": "A small network drop box from the kit. Carry it to the live wall port and plug it in."
+        },
+        {
+          "type": "pc",
+          "id": "network_port",
+          "name": "Live wall network port",
+          "sprite": "network_rack1",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "requiresItem": "kit_dropbox",
+          "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+          "triggerOnInteract": [
+            { "type": "confirm_action",
+              "text": "Plug the network drop box into this live port?",
+              "onConfirm": [
+                { "type": "set_global", "key": "kp_test_planted", "value": true },
+                { "type": "remove_item", "item": "kit_dropbox" },
+                { "type": "complete_task", "taskId": "plant_task" }
+              ]
+            }
+          ],
+          "observations": "A patch panel with a spare port, patched through and live."
+        },
+        {
+          "type": "pc",
+          "id": "network_port_planted",
+          "name": "Planted drop box",
+          "sprite": "pi_cluster1",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "readable": true,
+          "interactable": true,
+          "active": true,
+          "revealOnGlobal": "kp_test_planted",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "Your drop box, plugged into the live port and blinking.",
+          "text": "NETWORK DROP BOX — plugged into a live port (simulated). Link up."
+        }
+      ]
+    }
+  },
+
+  "globalVariables": {
+    "kp_test_planted": false
+  }
+}

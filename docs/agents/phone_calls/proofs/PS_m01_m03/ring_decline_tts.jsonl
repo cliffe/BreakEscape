@@ -1,0 +1,38 @@
+{"t":1794516208896,"npc_id":"briefing_cutscene","text":"Agent, thanks for getting here on short notice.","delivery":null,"status":200}
+{"t":1794516219319,"npc_id":"briefing_cutscene","text":"We have a situation at Viral Dynamics Media. ENTROPY's Social Fabric cell is operating there.","delivery":null,"status":200}
+{"t":1794516220369,"npc_id":"briefing_cutscene","text":"Three weeks ago, we flagged suspicious activity at Viral Dynamics—far beyond typical disinformation work.","delivery":null,"status":200}
+{"t":1794516220736,"npc_id":"briefing_cutscene","text":"Our intel suggests they're coordinating something larger. Data collection, psychological profiling, attack infrastructure.","delivery":null,"status":200}
+{"t":1794516221125,"npc_id":"briefing_cutscene","text":"The details are unclear, but it's active and operational.","delivery":null,"status":200}
+{"t":1794516222125,"npc_id":"briefing_cutscene","text":"Large-scale data aggregation. Personal profiles, vulnerability assessments.","delivery":null,"status":200}
+{"t":1794516222470,"npc_id":"briefing_cutscene","text":"Whatever they're building, it's targeted and sophisticated.","delivery":null,"status":200}
+{"t":1794516222791,"npc_id":"briefing_cutscene","text":"Your job is to get inside and find out what they're actually planning.","delivery":null,"status":200}
+{"t":1794516223692,"npc_id":"briefing_cutscene","text":"Derek Lawson. Senior Marketing Manager at Viral Dynamics.","delivery":null,"status":200}
+{"t":1794516224097,"npc_id":"briefing_cutscene","text":"He's been there about eighteen months. The timeline matches when the suspicious activity started.","delivery":null,"status":200}
+{"t":1794516224459,"npc_id":"briefing_cutscene","text":"He's ENTROPY, but we don't know the full scope of what he's running.","delivery":null,"status":200}
+{"t":1794516225451,"npc_id":"briefing_cutscene","text":"You're going in as an IT contractor hired to audit their network security.","delivery":null,"status":200}
+{"t":1794516225770,"npc_id":"briefing_cutscene","text":"Completely legitimate. Viral Dynamics actually requested the audit weeks ago. We just... made sure we got the contract.","delivery":null,"status":200}
+{"t":1794516226665,"npc_id":"briefing_cutscene","text":"Server room, computers, network infrastructure—all fair game under your cover.","delivery":null,"status":200}
+{"t":1794516226992,"npc_id":"briefing_cutscene","text":"That's where you'll find evidence of what Derek's planning. Look for encrypted files, attack infrastructure, target databases.","delivery":null,"status":200}
+{"t":1794516227297,"npc_id":"briefing_cutscene","text":"One more thing: there's someone inside named Maya Chen.","delivery":null,"status":200}
+{"t":1794516227625,"npc_id":"briefing_cutscene","text":"She contacted us anonymously. Suspected something was wrong but doesn't have the full picture.","delivery":null,"status":200}
+{"t":1794516227955,"npc_id":"briefing_cutscene","text":"Find her. She might have critical information. And protect her identity—if Derek finds out she tipped us off, she's in danger.","delivery":null,"status":200}
+{"t":1794516228293,"npc_id":"briefing_cutscene","text":"You'll have phone comms with me throughout. I'll provide guidance as needed.","delivery":null,"status":200}
+{"t":1794516228625,"npc_id":"briefing_cutscene","text":"There's a SAFETYNET drop-site terminal in their server room for submitting intercepted intelligence.","delivery":null,"status":200}
+{"t":1794516229787,"npc_id":"briefing_cutscene","text":"Everything you need looks like standard IT equipment. Stay in character. The IT department can provide you with a Kali Linux terminal, and lockpicks.","delivery":null,"status":200}
+{"t":1794516230019,"npc_id":"briefing_cutscene","text":"And document everything you find. We need complete evidence of whatever they're planning.","delivery":null,"status":200}
+{"t":1794516230358,"npc_id":"briefing_cutscene","text":"Remember—Derek doesn't know we're onto him. This is just a routine IT audit as far as he's concerned.","delivery":null,"status":200}
+{"t":1794516230627,"npc_id":"briefing_cutscene","text":"Use that advantage. Gather intelligence and evidence before making any moves.","delivery":null,"status":200}
+{"t":1794516231435,"npc_id":"briefing_cutscene","text":"The IT manager—Kevin Park—is your entry point. Build rapport with him.","delivery":null,"status":200}
+{"t":1794516231686,"npc_id":"briefing_cutscene","text":"He's not ENTROPY, just overworked and underpaid. He'll appreciate competent help and give you access.","delivery":null,"status":200}
+{"t":1794516232531,"npc_id":"briefing_cutscene","text":"Sarah O'Brien is the receptionist. Professional, friendly. Don't give her any reason to flag you.","delivery":null,"status":200}
+{"t":1794516232821,"npc_id":"briefing_cutscene","text":"And Maya Chen—the analyst who contacted us. Be careful around her. Derek might be watching who she talks to.","delivery":null,"status":503}
+{"t":1794516233122,"npc_id":"briefing_cutscene","text":"Get inside, find out what ENTROPY is planning, and report back.","delivery":null,"status":200}
+{"t":1794516233406,"npc_id":"briefing_cutscene","text":"Talk to Maya. She's your best lead. Whatever Derek's building, she'll have seen pieces of it.","delivery":null,"status":200}
+{"t":1794516233739,"npc_id":"briefing_cutscene","text":"Once you know what we're dealing with, contact me. We'll figure out how to stop it.","delivery":null,"status":200}
+{"t":1794516234150,"npc_id":"narrator","text":"Viral Dynamics Media. A weekday morning in the city centre.","delivery":null,"status":200}
+{"t":1794516234568,"npc_id":"narrator","text":"Eight floors of glass, and a mural over the door that somebody was paid a lot for. Staff drift in with coffee and lanyards.","delivery":null,"status":200}
+{"t":1794516267394,"npc_id":"agent_0x99","text":"You rang back. Good habit.","delivery":null,"status":503}
+{"t":1794516268959,"npc_id":"agent_0x99","text":"One test call before it's texts only.","delivery":null,"status":503}
+{"t":1794516270597,"npc_id":"agent_0x99","text":"A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover.","delivery":null,"status":503}
+{"t":1794516272077,"npc_id":"agent_0x99","text":"So: quiet, deniable. Message me the moment you're stuck and I'll walk you through it.","delivery":null,"status":503}
+{"t":1794516276448,"npc_id":"agent_0x99","text":"Good. Off you go.","delivery":null,"status":503}

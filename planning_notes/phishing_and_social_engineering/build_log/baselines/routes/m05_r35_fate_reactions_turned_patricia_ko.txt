@@ -1,0 +1,94 @@
+
+## R35 (phase 4 dialogue C1, D5-8): turned, with Patricia knocked out: Owen and Halloran hear it from Security, not from her.
+
+--- owen ---
+      [task: talk_to_owen]
+  Narrator: A bearded man in his late twenties at a workstation, three terminals of logs scrolling past, a staff badge on a lanyard round his neck. He swivels to face you.
+  Owen Gallagher: Alright. You're the security consultant? Owen Gallagher, sysadmin.
+  Owen Gallagher: Finally. Someone to fix our mess who isn't me.
+     (3 options)
+ > Point me at the logs. I'll take it from here.
+  Owen Gallagher: Right. Terminal's over there. Shout if you need anything.
+     (7 options)
+ > That's everything for now. Catch you later.
+  Owen Gallagher: Cool. I'll be here. I'm always here.
+  [chat closes]
+
+--- halloran ---
+      [task: talk_to_dr_halloran]
+  Narrator: A woman in her mid-forties looks up from a whiteboard dense with lattice notation.
+  Dr Ruth Halloran: You're the consultant. Ruth Halloran. I run Heisenberg.
+  Dr Ruth Halloran: Find whoever did this, and quickly. And I hope to God you're wrong about my team.
+     (3 options)
+ > I need to talk to everyone with access to Heisenberg.
+  Dr Ruth Halloran: My team didn't do this.
+  Dr Ruth Halloran: My team are brilliant, and vetted to the hilt.
+  Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure. Coercion.
+     (2 options)
+ > I'm not here to judge. Whoever did this might be a victim too.
+  Dr Ruth Halloran: Thank you. Not many in your line would say that.
+  Dr Ruth Halloran: What else?
+     (3 options)
+ > That's all for now.
+  Dr Ruth Halloran: Good luck. I mean that.
+  [chat closes]
+
+--- lisa ---
+      [task: talk_to_lisa]
+  Narrator: A woman in her early thirties by the break room counter. Coffee going cold, a collection tin at her elbow.
+  Lisa Park: Hi. You're the security person, right? Everyone's been whispering.
+  Lisa Park: Lisa Park, marketing. I don't go near the crypto stuff, but I sit by the kettle. I notice things.
+     (3 options)
+ > Who's the collection tin for?
+      [ink: heard_tin_story=true]
+  Lisa Park: Someone on the crypto team. I promised I wouldn't say who, so don't ask.
+  Lisa Park: His wife's got cancer. Stage 3. The treatment that might work is a trial in the States, and the insurer won't touch it. Hence the tin.
+  Lisa Park: He's been borrowing to cover it, I think. He's lost weight. Looks like he hasn't slept in months.
+     (3 options)
+ > That's rough. Thanks for telling me.
+  Lisa Park: He'd hate that I told you even that much. He can't stand a fuss.
+     (2 options)
+ > That's all, thanks.
+  Lisa Park: Any time. I'll be here. Apparently forever.
+  [chat closes]
+   {set {"torres_identified":true,"final_choice":"turn_double_agent","patricia_ko":true}}
+      [aim unlocked: confront_insider]
+      [mapping agent_0x99_handler: set named_before_portal=true]
+      [david_torres shown]
+      [task unlocked: call_in_after_sweep]
+
+--- owen ---
+  Owen Gallagher: Security say I never pulled that badge log. Fine by me.
+     [0] Walk me through the network.
+     [1] Anyone on the crypto team keeping odd hours?
+     [2] I'll need your help with access. Logs, badges, that kind of thing.
+     [3] Where are the security gaps?
+     [4] (Lean over his log screen, close enough for the cloner to reach his lanyard.)
+     [5] Do you keep spare cards for the offices?
+     [6] It's David. He's the one.
+     [7] That's everything for now. Catch you later.
+  [stopped: no pick]
+
+--- halloran ---
+  Dr Ruth Halloran: Security say I'm to treat David as normal on Monday. I don't know how I'll manage that.
+     [0] What exactly is Heisenberg?
+     [1] Tell me about your team.
+     [2] It was David. I'm sorry.
+     [3] That's all for now.
+  [stopped: no pick]
+
+--- lisa ---
+  Lisa Park: Someone said David's gone home early. Is that good?
+     [0] How's the office mood these days?
+     [1] Is the tin for David Torres?
+     [2] It's David. I'm sorry.
+     [3] That's all, thanks.
+  [stopped: no pick]
+   [PASS] said: "Security say I never pulled that badge log"
+   [PASS] said: "Security say I'm to treat David as normal on Monday"
+   [PASS] said: "Someone said David's gone home early"
+   [PASS] not said: "Patricia says"
+   [PASS] longest run 3 (owen) <= 9
+
+[stats] spoken/narrated lines 25, choices 8, longest run without a choice 3 (owen); runs>=6: 
+[result] all expectations met

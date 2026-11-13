@@ -1,0 +1,25 @@
+SESSION=2382
+{"ok":true,"cmd":"bootstrap","result":{"trace":["cutscene choice 1 of 3","cutscene choice 1 of 3","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 3","cutscene choice 1 of 2","c
+after bootstrap: {"active":true,"prompt":false,"step":0,"progress":"STEP 1 OF 8"} mg=null
+{"ok":true,"reason":null}
+entered main_office_area, t=0; {"active":true,"prompt":false,"step":0,"progress":"STEP 1 OF 8"}
+t=1.659s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":0,"under":false,"paused":false}
+t=3.305s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":0,"under":false,"paused":false}
+t=4.993s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":0,"under":false,"paused":false}
+t=6.677s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=8.290s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=9.926s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=11.56s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=13.17s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=14.84s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=16.51s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=18.18s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=19.80s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=21.48s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=23.15s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=24.77s tut={"active":true,"step":0} ring={"banner":false,"ringer":null,"queued":1,"under":false,"paused":false}
+t=26.33s tut={"active":true,"step":0} ring={"banner":true,"ringer":"ringing","queued":0,"under":true,"paused":false}
+RING AT t=26.33s after entering
+geometry: {"banner":{"x":520,"y":892,"w":360,"h":92},"skip":{"x":823,"y":38,"w":202,"h":57},"progress":{"x":375,"y":55,"w":136,"h":23},"panel":{"x":332,"y":0,"w":736,"h":384},"next":{"x":843,"y":310,"w":182,"h":36},"overlapsSkip":false,"overlapsProgress":false,"overlapsPanel":false,"overlapsContinue":false,"skipVisible":true}
+shot m01_tut_idle_ring_over_tutorial
+"SKIP is topmost at its corner"

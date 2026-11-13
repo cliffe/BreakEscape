@@ -1,0 +1,13 @@
+{
+  "key": "88a7c380ff44c31953e7e91bd8a1e3cd",
+  "npc": "security_guard_patrol",
+  "text": "I do know that. I also know that's what I'd say if I was you and I was lying.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "6f924f36b1907d00bac91913415a3720",
+  "npc": "narrator",
+  "text": "A lab sheet for this very game, with the concepts explained, and hints and tips.",
+  "voice": "Algenib",
+  "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "generate",
+  "generated": "2026-10-12",
+  "recorded_at": "2026-10-12T11:15:49Z"
+}

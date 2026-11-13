@@ -1,0 +1,4446 @@
+# Scenario Design Constraints in Hacktivity Cyber Security Labs
+
+There are several constraints and patterns for designing scenarios for BreakEscape.
+
+---
+
+## Scenario Validator
+
+The validator script renders your ERB template to JSON, validates it against the schema, and checks for structural issues, bad cross-references, and missing best-practice fields.
+
+### Prerequisites
+
+The `json-schema` gem is required:
+
+```bash
+gem install json-schema
+# or add to Gemfile: gem 'json-schema', then bundle install
+```
+
+### Running the Validator
+
+```bash
+# Basic validation
+ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb
+
+# Specify a custom schema path
+ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb --schema scripts/scenario-schema.json
+
+# Verbose output (includes full JSON on schema failure)
+ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb --verbose
+
+# Print the rendered JSON to stdout (useful for debugging ERB substitution)
+ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb --output-json
+
+# Ignore the known-failures list and see the raw result
+ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb --no-known-failures
+```
+
+### The exit code is the answer
+
+Every hard finding prints as `❌ ERROR: <text>` (social lints as `❌ ERROR: SOCIAL: <text>`, schema errors as `❌ ERROR: schema: <json pointer> (<room, object or NPC>): <message>`). The validator **exits 1 when any `❌` line is not covered by the known-failures list**, and 0 otherwise; warnings (`⚠️`) and suggestions never fail a run. You no longer count `❌` lines by hand. An error line is one that starts with `❌` (after indentation and a list number); a `❌` inside your own content, such as a note's text in the `-o` dump or an ink line quoted by the dialogue lint, is not counted.
+
+- **Every section prints.** A schema failure, a structure failure or an ink-check failure no longer stops the run, so the common issues, habits report and work report print in the same pass. An ink file that fails to compile still skips the checks that read its compiled JSON, and the output says so.
+- **A check that raises** (on data that failed the schema, say) prints `❌ ERROR: <check> could not run: <message>`, counts as an error, and the checks after it still run.
+- **The last line** is `Result: <n> errors (<k> known), <m> warnings`, plus `; <j> known failure(s) not checked (<stage> skipped)` when a stage did not run in full (`--skip-ink`, an ink compile failure, a check that raised).
+- **The dungeon graph** (when you leave out `--no-graph`): a generator that stops or aborts prints `❌ ERROR: ...` and fails the run; its reason is on stderr above.
+- **Social schema errors** (`#/social/...`) are fatal on every run, like any other `❌`. `--strict-social` is still accepted (CI passes it) and no longer changes the exit code.
+
+**The known-failures list** (`scripts/validator_known_failures.json`) holds the `❌` lines another track owns and has not fixed yet. Each entry names a `scenario` (the repo-relative template path), a `stage` (`ink`, `schema`, `common`, `habits`, `work` or `social`), a `match` (a substring of the line that does not depend on line numbers), the exact `count` of lines it covers, an `owner`, `added` and `reviewBy` dates, and `approved`: a dated heading in `docs/agents/VALIDATOR_DECISIONS.md` whose one `json` block restates the entry's scenario, stage, match and count. A covered line still prints, marked `(known: <owner>, since <added>)`. When the entry's stage ran in full, fewer lines than `count` print `❌ ERROR: stale known failure: ...` and more lines than `count` count the extra ones. `could not run`, `stale known failure` and `Result:` lines are never matched, nor is an ink compile failure (it stops the checks on that file's compiled JSON, so fix the ink). A `match` names one class of line, at least eight characters beyond the `❌ ERROR: `, `schema: #/` and `SOCIAL: ` prefixes. Your own scenario's lines are fixed, never listed; adding or raising an entry needs a sign-off in the decisions file, which `test/js/validator-known-failures.test.mjs` checks. Under `MERGE_BATCH=1` that test also fails on a passed `reviewBy` and on any section still marked "awaiting orchestrator sign-off".
+
+### What the Validator Checks
+
+The validator performs three phases:
+
+1. **ERB rendering** – renders the `.json.erb` template with randomised placeholder values (`random_password`, `random_pin`, `random_code`, `vm_object()`, `flags_for_vm()`)
+2. **Schema validation** – checks the rendered JSON against `scripts/scenario-schema.json`. The access, network and office-life blocks are closed: the entries of `networks` (and their `wifi`), `resources`, `policies`, `accountProfiles` and `roles` (with their `workarounds` and `frustration`), every access list (`access`, `for`), and on an NPC `creds`, `habits`, `screenHabit`, `printHabit`, `usbHabit`, `frustration`, each `needs` entry, each `workarounds` entry, `feed` and its posts, and an object's `affordance`, plus every `grant_foothold` action wherever it sits. A key the schema does not declare there is an error, `❌ ERROR: schema: <path>: unknown key '<k>'`, with `did you mean '<known>'?` when one declared key is close (a swap of two neighbouring letters counts as one edit, and a note key written without its `_`, such as `comment`, `comments`, `note` or `notes`, gets `did you mean '_comment'?`). One slip prints one schema line: a misspelt required key does not also print "required". A later check may still report what the missing key breaks, for example `"At"` for `at` in a workaround also prints that `at` is missing. These slips used to be silent and some change play: `wifi: { "PSK": ... }` leaves `psk` missing, which makes the network open. Inside these blocks a key starting with `_` (such as `_comment`) always passes, and the schema does not check its value. The maps themselves (`networks`, `resources`, `policies`, `accountProfiles`, `roles`) hold only ids, so a `_comment` directly under `roles` is an error: put the note inside an entry. An id is never a note: a room (or any map entry) whose id starts with `_` is checked like any other. Rooms, objects and NPCs themselves stay open for now: an unknown field there is a warning, with the same hint. An author note is dead data: the engine never runs it and it never reaches the browser, so a secret parked in one is kept on the server but does not belong there. Free data (an object or array global, `minigameData`, `config`, a `usePayload`) is real game state, so a `_` key there is not a note; it ships as authored and every check reads it, which is why a secret must never sit in free data. Whether a `_` key is a note, an id or free data is decided by the schema (one resolver, `BreakEscape::ScenarioSchema`), never by a list of names. If a note's value holds an action (a block with a `type` the engine runs), the validator warns that the action is dead, since a note is never executed.
+
+How the engine tells the three kinds apart: a key of a map (a node whose `additionalProperties` is a schema, or one marked `"x-id-map": true`) is an id; a node marked `"x-free-data": true` holds free data; anything else is described structure, where a `_` key is a note. If you add a new open node to the schema (an object with no declared `properties` and no `additionalProperties` schema, an array with no `items`, or a bare node with no type), it must carry exactly one mark: `"x-id-map": true` when its keys are names (globals, variables, VM names), `"x-id-map": false` when they are fixed field names, or `"x-free-data": true` when it holds game state or minigame input. A map node never carries a `^_` pattern, because a map key is an id and is validated against the map's value schema. The schema walk test (`test/unit/scenario_schema_test.rb`) fails on an open node with no mark, two marks, or a `^_` pattern on a map, so a new node cannot arrive unmarked.
+3. **Common issues** – structural checks including:
+   - Object types with no matching sprite file in `public/break_escape/assets/objects/`
+   - Containers with `contents` that are missing the required `locked` field
+   - Key locks and key items missing the required `keyPins` array
+   - Room connections using invalid directions (only `north`, `south`, `east`, `west`)
+   - Missing or non-bidirectional room connections
+   - `onRead.setVariable` / `onPickup.setVariable` referencing variables not in `globalVariables`
+   - `globalVarOnKO` / `taskOnKO` cross-references on NPCs
+   - **NPC knockout resilience** — required tasks whose only completion path is a KO-vulnerable conversation (a `#complete_task` ink tag on a person NPC) with no `taskOnKO` or `eventMapping` fallback
+   - NPC `timedConversation` using `knot` instead of `targetKnot`
+   - Phone NPC pitfalls (`targetKnot` in eventMappings, `conversationMode` on phone NPCs, etc.)
+   - NPC `los` fields, including `los.challengeOnSight` (unknown fields, a challenge on a non-person NPC, or a `player_spotted` event no `eventMapping` listens for)
+   - **Voice FX** (`voice.fx`) — unknown preset names, unrecognised custom-FX keys, and out-of-range values (e.g. `ringMod.mix` outside 0–1)
+   - Task `targetNPC`, `targetRoom`, `targetObject` cross-references
+   - `collection_group` on items without a matching task `targetGroup`, and vice-versa
+   - Music events referencing undefined NPCs or global variables
+   - Several `itemsHeld` entries sharing a `type` with no `id` to tell them apart (`#give_item` matches on `type` first, then `id`/`opens_lock`/`name`; without a distinguishing `id` the first one always wins)
+   - `vm-launcher` missing `vm` or `hacktivityMode` fields
+   - `launch-device` missing required fields
+   - **Minigame configuration** (`minigameData`) with undeclared fields or missing required fields per `scripts/minigame-data-schemas.json`
+   - **Ink speaker prefixes** that resolve to no NPC `id` / `displayName` (the engine would render the literal `Name: ...` inside another character's bubble)
+   - **Ink character hazards** — `//` inside dialogue, a standalone `*emote*` at line start, `**bold**`, unpaired `*`, unbalanced `[ ]` in a choice
+   - **`submit_flags` tasks** missing `targetFlags` / `targetCount` (the task could never complete)
+   - **`formatVersion`** — a template must never set it. Each game is stamped with the server's current format version when it is created; a template that carries `formatVersion` errors ("the server stamps formatVersion at creation; remove it"). A field a later format step has renamed is also an error, naming the new key and the format it moved to.
+   - **Recurring bugs from pass 4** (`check_recurring_bugs`; see [Common bugs and how to avoid them](#common-bugs-and-how-to-avoid-them)): `lockpick_used_in_view` catches that can never fire, NPCs outside the start room whose event mappings can fire before their room has loaded, a start-room cutscene without `waitForEvent`, an NPC-held note whose `onRead` sets a gating global, missing or legacy sprite art, one sprite sheet shared by different characters, pinned objects inside one interaction range, a timed text repeated in the ink it opens, ink `VAR`s read but never set, `#set_global` names missing from `globalVariables`, timed texts that stack (under 4 s apart), globals set but never read, and credit sections whose entries are all conditional
+4. **Recommended fields** – warnings for missing `globalVariables`, `objectives`, `observations`, NPC `position`, `currentKnot`, etc.
+5. **Suggestions** – guidance for adding VM launchers, flag stations, opening cutscenes, closing debriefs, patrol NPCs, and variety in lock types
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0`  | Validation passed (suggestions and warnings do not cause failure) |
+| `1`  | Schema validation failed or unrecoverable error |
+
+---
+
+## Scenario Structure Constraints
+
+### Basic Structure
+
+**What makes a folder playable.** A scenario lives in `scenarios/<name>/` and needs two things to be loadable:
+
+- a `scenario.json.erb` (the scenario itself). `db/seeds.rb` scans `scenarios/*`, skips any folder with no `scenario.json.erb`, and keys the `Mission` database row on the folder name, so the folder name is the mission id.
+- that seeded `Mission` row. `tools/playtest/new-game.rb <mission>` resolves `<mission>` by `BreakEscape::Mission.name` (the folder name), so a folder that has never been seeded cannot be started. Re-run the seeds after adding a folder.
+
+`mission.json` is **optional** metadata (title, labsheet links and so on); it is not required for the scenario to load, and nothing fails if it is absent.
+
+- Each scenario must have a `scenario_brief` that explains the mission
+- Each scenario must define a top-level `startRoom` field (not nested under `player`) naming the room where the player begins
+- Optionally set a top-level `startPosition` (tile coordinates) to spawn the player at a specific location within `startRoom`. If omitted the player is placed at the room centre:
+  ```json
+  "startRoom": "ward_7",
+  "startPosition": { "x": 17, "y": 9 }
+  ```
+- Some scenarios include an `endGoal` property
+- All scenarios must have a `rooms` object containing individual room definitions
+
+### Room Connections
+
+Rooms can connect in **four directions**: `north`, `south`, `east`, `west`
+
+**Connection Syntax**:
+```json
+"connections": {
+  "north": "office1",           // Single connection
+  "south": ["reception", "hall"], // Multiple connections (array)
+  "east": "serverroom",
+  "west": ["closet1", "closet2"]
+}
+```
+
+**Key Points**:
+- `connections` is **required on every room by the schema**, including a lone start room with nowhere to go. A single-room scenario still needs `"connections": {}` on that room, or schema validation fails.
+- All directions support both single connections (string) and multiple connections (array)
+- The room layout algorithm positions rooms using breadth-first traversal
+- Multiple rooms in the same direction are positioned side-by-side (N/S) or stacked (E/W)
+- All rooms align to grid boundaries for consistent door placement
+
+#### Door Validation and Locking
+
+The code in `validateDoorsByRoomOverlap()` (lines 3236-3323) shows that:
+
+1. Doors must connect exactly two rooms (line 3281)
+2. If a door connects to a locked room, the door inherits the lock properties (lines 3296-3303)
+3. Doors that don't connect exactly two rooms are removed (lines 3281-3291)
+
+#### Gate doors (`doors[].gate`)
+
+A door entry in a room's `doors` array can carry a `gate`: it opens for listed NPCs as they near, holds open for a while, then shuts and relocks. Put it on the entry that leads **into** the locked room (the validator refuses one on the entry leading out of it): that entry's `connectedRoom` is the gate's secured room. The player can't open it by clicking from outside; they follow the NPC in (tailgating) when `playerMayPassIf` lets them, or present a credential that satisfies the door's `requires` (a saved clone on an `rfid_cloner` counts), which opens it for one `holdMs` window.
+
+```json
+"doors": [{ "connectedRoom": "secure_area", "direction": "north", "requires": "cm_records_badge",
+            "gate": { "openFor": ["len"], "openRadius": 56, "holdMs": 2500, "playerMayPassIf": "courier_ready" } }]
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `openFor` | — | NPC ids (string or list) whose approach opens it |
+| `openRadius` | `56` | Pixels from the door centre at which an `openFor` NPC opens it |
+| `holdMs` | `2500` | How long it stays open after the last NPC leaves (the tailgate window) |
+| `playerMayPassIf` | none | A global. While it is false, the gate is solid for a player outside the secured room even while it stands open for the NPC, and a player within `openRadius` keeps it shut, even beside the NPC, or shuts it as soon as nobody is in the doorway |
+| `noHold` | written by the server | The `openFor` NPCs whose `holdsDoors` habit is false (see "Careful guards" below). Not written on a gate with `playerMayPassIf`; an authored one wins |
+| `sound` | the door release for an RFID door | The sound played each time the gate opens, for an NPC or for a clone. Left out, a door with an RFID lock plays `rfid_unlock` (the same strike as every RFID lock) and any other door is silent; a sound key plays that sound (any audio key the game has loaded, not only the sound manager's own list; a key that is not loaded logs a warning and plays nothing); `false` silences the gate. Heard only from the doorway's two rooms: full volume within 3 tiles of the door, fading to nothing at 12 |
+
+A guard who has been moved out of `openRadius` (pushed by the player, say) walks back to the front of his door. Two limits follow from how he finds that door: give a guard one gate per pair of rooms, and make the gate the only shut door on that leg of his route. With two gates into one room he may be sent to the one he cannot reach, and a leg blocked by an ordinary locked door further on would walk him to the gate and hold it open while he stands there.
+
+**A held guard turns back.** While the player is barred the gate never opens for the NPC. A route NPC (`behavior.patrol.multiRoom` route) near the shut gate whose route leg needs him across it waits 5 s, then gives up that crossing: he glances at the player, carries on with his route from the next segment in the room he is in, and tries the door again on his next cycle. His patrol never stops, so the tailgate window comes back once the player moves off or meets `playerMayPassIf`. Only route NPCs turn back; any other NPC simply waits. A guard standing in the doorway is never shut in, even by `closeDoor`. Design the scenario so the player can do anything that needs the guard at the open door (such as watching him key a PIN) from just outside `openRadius`, measured from the player's feet.
+
+**Solid for a player it is not open to.** An open gate's door body still blocks a player outside the secured room unless the gate is open to them (`playerMayPassIf` true, or a clone window running). So a barred player who runs at the door while the NPC is in the doorway is stopped at the door, as at a shut one, and the gate shuts as soon as the NPC is clear. Walking into it (or clicking to walk through it) stops the walk and shows the same refusal as a click, at most once every 4 s, with `door_gate_denied`. The gate never closes on a player crossing a doorway it lets them through, and a body never switches on under the player: if their permission lapses on the doorstep (the clone window runs out, or the disguise comes off), they finish the crossing or step back first.
+
+**A carried disguise (`wearable`).** The global a gate's `playerMayPassIf` names is often a disguise: the lab's courier hi-vis sets `courier_ready`. Make the disguise a wearable item and the engine does the rest:
+
+```json
+{ "type": "aes_hivis_hook1", "id": "kit_hivis_vest", "name": "Hi-vis courier vest", "takeable": false,
+  "wearable": { "costume": "courier", "global": "courier_ready", "unseenOnly": true,
+                "seenBy": { "ignore": ["ruth"] },
+                "confirmOn": "Put the courier hi-vis on now? ...", "confirmOff": "Take it off? ...",
+                "onWear": [{ "type": "hint", "title": "Hi-vis on", "message": "..." }],
+                "onRemove": [{ "type": "hint", "title": "Hi-vis off", "message": "..." }] } }
+```
+
+`costume` is a key of the scenario's `disguises`; `global` is the worn global, declared `false` in `globalVariables`. A click on the item in the tray puts it on or takes it off (after `confirmOn` / `confirmOff` when given); a droppable wearable has "Put on" or "Take off" first in its tray menu. The worn item gets an amber frame and a "(worn)" label in the tray. One item is worn at a time: putting on another takes the first off. It comes off when it leaves the inventory (a drop, `remove_item`, a plant). `unseenOnly` refuses a change, and a drop of the worn item, while a person NPC in the player's room can see (visible, not knocked out), with a toast naming who is watching; `seenBy.ignore` lists the NPCs who never count, such as the player's own team, so the player changes in a back room and not in front of the staff they are fooling. Other objects put it on or take it off with the actions `{ "type": "wear", "itemId": "<id>" }` (no confirm) and `{ "type": "take_off", "itemId": "<id>" }`; a changing locker is a `take_off`. The server records the worn item and owns the worn global: a sync cannot write it, so a server check that reads it (an aim's condition, `concludeRequires.globals`) gets a value the player cannot forge. The validator refuses any other writer of the worn global (a `set_global`, a mapping's `setGlobal`, an ink assignment or `# set_global:` tag), two wearables sharing a global, and warns about `set_costume` / `clear_costume` beside a wearable, since the costume and the worn item could then disagree. In a scenario with wearables `pp_disguise` is server-owned too, so dress the avatar only through a wearable. A mapping that copies the worn global into another global (the lab's `kp_badge_tailgated`) is still client-writable, so a server check should read the worn global itself. A `wear` or `take_off` refused under `unseenOnly` does not stop the rest of its action list, so do not follow one with actions that assume it worked. The gate itself stays a client-side control: the server opens the secured room for the guard's route, not for the costume. Test scenario: `scenarios/test_wearable`.
+
+**Careful guards (`holdsDoors`).** A gate with no `playerMayPassIf` follows its guards' `holdsDoors` habit (slice 9.1: `"awareness": "high"` sets it false, `low` and `medium` true, or set it by name in the NPC's `habits`). The server writes the careful guards into the gate's `noHold`; do not write it yourself unless you mean to override the habit. While every guard the gate opened for is careful (and, while it is shut, every guard near it), the gate treats the player as a false `playerMayPassIf` does: it will not open for her with the player within `openRadius` (she turns back after 5 s), once open it is solid for the player and shuts as soon as the player comes within the radius instead of waiting `holdMs`. This works from both sides of the door: a careful guard inside the secured room will not come out while the player waits within the radius outside (she turns back and tries again on her next cycle), so a player who loiters there keeps her in. One guard who holds doors among them is enough for it to open beside the player and linger, as any gate does. So the player cannot tailgate behind a careful guard: give the player another way in (a copied badge, a colleague who holds the door, another door), and map her bark onto `door_gate_denied` or `door_gate_guard_turned_back`. The validator warns when `holdsDoors: false` by name does nothing, and the dungeon graph's door label says who holds the gate and who does not.
+
+**Leaving.** A player inside the secured room is never blocked by the open gate and never keeps it shut, with or without cover. A click on the shut gate from inside opens it for one `holdMs` window (`door_gate_exit_opened`); a click on the open gate does nothing (they walk out). Neither asks for a credential, refuses, credits a clone or emits `door_gate_player_opened` or `door_gate_opened`, so map nothing that must mean "the NPC is at the door" on the exit event.
+
+North and south doors only: a gate on an east or west door is declined (a console warning and a validator warning) and the door behaves as an ordinary locked door. A gate keeps a player out of a room; it does not keep a secret, because the room's data reaches the browser once the NPC's route has loaded it. Anything that must not be read early stays behind a server-checked lock inside the room. Events: `door_gate_opened`, `door_gate_closed`, `door_gate_denied` (a refused click, or a bump into the open gate), `door_gate_player_opened` (credential accepted), `door_gate_exit_opened` (a player inside opened it to leave), `door_gate_guard_turned_back` (`npcId`). An NPC mapping's `closeDoor` shuts one early. See `docs/achitechture/TAILGATE_REDESIGN.md`.
+
+#### Designing Solvable Scenarios with the Grid System
+
+The grid-based room layout system provides significant flexibility for scenario design:
+
+1. **Flexible Layout Patterns**: Design scenarios using any combination of directions:
+   - **Vertical**: Stack rooms north/south for traditional layouts
+   - **Horizontal**: Connect rooms east/west for wide facilities
+   - **Mixed**: Combine directions for complex, non-linear layouts
+   - **Branching**: All directions support multiple connections
+
+2. **Room Size Variety**: Mix different room sizes for visual interest and gameplay:
+   - Use **1×1 GU closets** for small offices, storage rooms, or utility spaces
+   - Use **2×2 GU standard rooms** for open plan offices, reception areas
+   - Use **1×2 GU or 4×1 GU halls** to connect distant areas
+   - Ensure all room dimensions follow the valid size formula
+
+3. **Lock Progression**: Design logical progression through the facility:
+   - Place keys, codes, and unlock items in accessible rooms first
+   - Create puzzles that require backtracking or exploring side rooms
+   - Use east/west connections for optional areas with bonus items
+   - Layer security with multiple lock types (key → PIN → biometric)
+
+4. **Connection Planning**:
+   - Start by sketching your layout on grid paper (5-tile width increments)
+   - Ensure all rooms are reachable from the starting room
+   - Verify room dimensions before creating Tiled maps
+   - Test door alignment between connected rooms
+
+5. **Avoid Common Pitfalls**:
+   - **Invalid heights**: Heights of 7, 8, 9, 11, 12, 13 will cause issues
+   - **Room overlaps**: System validates and warns, but plan carefully
+   - **Disconnected rooms**: Ensure all rooms connect to the starting room
+   - **Asymmetric connections**: When connecting single-door to multi-door rooms, the system handles alignment automatically
+
+#### Example Layout Structures
+
+**Vertical Tower** (traditional):
+```
+        [Server Room]
+             ↑
+        [CEO Office]
+             ↑
+    [Office1] [Office2]
+         ↑       ↑
+        [Reception]
+```
+
+**Horizontal Facility** (wide):
+```
+[Closet1] ← [Office] → [Meeting] → [Server]
+                ↑
+           [Reception]
+```
+
+**Complex Multi-Direction**:
+```
+    [Storage]   [CEO]
+        ↑         ↑
+    [Closet] ← [Office] → [Server]
+                  ↑
+             [Reception]
+```
+
+**With Hallways**:
+```
+    [Office1]  [Office2]
+        ↑          ↑
+    [---- Hall ----]
+           ↑
+      [Reception]
+```
+
+These layouts demonstrate the flexibility of the new grid system for creating engaging, solvable scenarios.
+
+
+### Top-Level Optional Scenario Properties
+
+| Property | Description |
+|---------|-------------|
+| `globalVariables` | Key/value map of all game state variables. Required for Ink dialogue, event-driven logic, and objective tracking. |
+| `player` | Player sprite configuration: `id`, `displayName`, `spriteSheet`, `spriteTalk`, `spriteConfig` |
+| `narrator` | Defines a narrator voice used for cutscenes. Include `id`, optional `skipTextValidation: true`, and a `voice` object. |
+| `objectives` | Array of objective `aims`, each containing `tasks`. Drives the objectives HUD. |
+| `startItemsInInventory` | Array of items the player starts with (e.g., a phone, lockpick, workstation). |
+| `flags` | Map of VM flag arrays by VM name. Populated via ERB helper `vm_flags_json('vm_name')`. |
+| `show_scenario_brief` | When to pop up the brief: `"on_start"` (every load), `"on_resume"` (only when resuming a game with progress), `"once"` (first start only, after any opening cutscene; recorded in the save so a reload doesn't reopen it), or omit (as `"on_start"`). The brief is always in the Notepad. |
+| `disableAttacks` | `true` turns off player attacks: no punching, no Interact/Jab/Cross toggle in the HUD (Q does nothing), and no combat step in the tutorial. NPCs can't be knocked out, so the validator skips its KO-resilience check. Used by the SIS serious games. |
+| `creditsTheme` | Theme of the end-of-mission credits visualiser, from the table in `public/break_escape/js/music/credits-theme.js`. `"safetynet"` (the default when omitted) is the SAFETYNET campaign debrief: classified stamp, global threat map, agency panel, S/N shield, track title. `"cyber"` is a generic cyber security incident review for standalone exercises such as the SIS games: "INCIDENT REVIEW", the mission's display name, the first `subtitle` credit line as the setting, a review log that echoes the credits, a padlock logo, SIEM and matrix modes but no threat map or stamps, and "MUSIC: CLOSING THEME" instead of the track title. Each theme lists which visualiser modes it enables. |
+| `creditsOverlay` | Optional mission words for the `safetynet` credits overlay, which otherwise shows generic filler (rotating operation names, "ENTROPY CONTAINED ... WELL PLAYED, AGENT"). `{ "operation": "SCHRODINGER", "ticker": ["OPERATION SCHRODINGER: STOPPED", "THE ARCHITECT REMAINS AT LARGE"] }`: `operation` fills the header's OPERTN: row and stops the rotation (left out, the row shows the mission's display name in capitals); `ticker` replaces the footer ticker (an array is joined with the ██ separators). Either can be left out. |
+| `gameClock` | Optional in-game time: `{ "start": "Tue 07:30" }`. Phone message times, the command board and SIEM clocks show the start plus elapsed game time instead of the real wall clock, and board entries are stamped with it. Game time (and every scenario timer) resumes after a reload. Add `rate` and `anchors` to keep the clock in step with the story (see [The in-game clock](#the-in-game-clock-gameclock)). |
+| `music` | Dynamic music event system. See Music System section. |
+
+> **`formatVersion` is reserved.** You never write it. The server stamps each game with its current scenario-format version at creation and upgrades older saves on load, so every reader sees only the current field names. A template that sets `formatVersion` is a validator error. When a game is loaded by a server too old to read its format, that server refuses it rather than misreading it (an HTML page on the game screen, a `409 { "error": "format" }` on the JSON routes), and an open tab whose code no longer matches its server reloads once, or shows a banner and keeps saving, driven by the `X-Break-Escape-Format` response header and the client guard in `public/break_escape/js/format-guard.js`.
+
+### The in-game clock (`gameClock`)
+
+With only a `start`, the in-game clock runs at wall speed, so after 25 minutes of play a phone reads 16:55 however much story has passed. Two optional fields keep it with the story:
+
+```json
+"gameClock": {
+  "start": "Wed 16:30",
+  "rate": 6,
+  "anchors": [
+    { "condition": "globalVars.torres_scene_started === true", "time": "20:10" },
+    { "condition": "globalVars.debrief_started === true", "time": "Thu 08:00" }
+  ]
+}
+```
+
+- **`rate`**: game minutes per real minute (default `1`). At `6`, ten minutes of play is an hour of story. Only the shown time is scaled: scenario timers, `delay`s and `delayMs` stay in real time.
+- **`anchors`**: when an anchor's `condition` (globalVars syntax, `&&` only) first holds, the clock jumps forward to its `time` and runs on at `rate` from there. It never goes back: an anchor the clock has already passed is just marked reached. A `time` with no day means that time on the current game day; with a day (`"Thu 08:00"`) it is that day. Key anchors on a global set behind a scene change, so the jump happens out of sight.
+- A message keeps the time it arrived at, before or after a jump, and reached anchors are saved with the clock, so a reload shows the same times. A text preloaded as sent before the game started keeps its written gap at 1:1.
+- Pick the rate from the story's own clock: the time the opening names, the time a late scene names, and how long a typical run takes to get there. Anchors then pin the scenes whose time the dialogue states, so a slow player doesn't see 18:00 when the ink says "gone eight".
+### Available Room Types
+
+The `type` field of each room must be one of the room keys registered in `public/break_escape/js/core/game.js` (`this.load.tilemapTiledJSON('<type>', 'rooms/<file>.json')`). The key usually matches the map filename, but not always — and the match is **case-sensitive**: `room_it` is a valid type that loads `assets/rooms/room_IT.json`, so looking for a lowercase `room_it.json` finds nothing. Add a new type by registering its key in `game.js`, not by dropping a file into `assets/rooms/`. Available types:
+
+| Room Type | Description |
+|-----------|-------------|
+| `room_reception` | Reception area (standard 2×2 GU) |
+| `room_office` | Open-plan office (standard 2×2 GU) |
+| `room_ceo` | Executive office |
+| `room_meeting` | Meeting / conference room |
+| `room_break` | Break room |
+| `room_closet` | Storage closet |
+| `room_servers` | Server room |
+| `room_it` | IT department |
+| `room_archive_1x2gu` | Evidence archive / document storage room (1×2 GU) |
+| `room_library_1x2gu` | Library / reading room (1×2 GU) |
+| `room_control_1x2gu` | SCADA / industrial control room (1×2 GU) |
+| `room_battery_hall` | Industrial lithium-ion battery storage hall (4×2 GU) |
+| `room_hospital_ward` | Hospital ward (4×2 GU) |
+| `room_hospital_reception` | Hospital reception / night desk (2×2 GU) |
+| `room_hospital_office` | Hospital office — generic two-desk admin office (2×2 GU) |
+| `room_hospital_office_it` | Hospital IT department (2×2 GU) — two-desk bank, repair workbench, comms rack, locked filing cabinet |
+| `room_hospital_office_cto` | Hospital executive office (2×2 GU) — one wooden desk with visitor chairs, bookcases, small meeting table, wall safe |
+| `room_hospital_office_security` | Hospital security office (2×2 GU) — CCTV console desk, key cabinet, radio charger, lockers |
+| `room_hospital_cto_office` | Hospital executive office (1×1 GU) |
+| `room_hospital_meeting` | Hospital boardroom / meeting room (2×2 GU) |
+| `room_hospital_servers` | Hospital server room (2×2 GU) |
+| `room_hospital_hall` | Hospital corridor (2×1 GU) — clinical room_hospital tiles, baked-in south wall for a standalone through-hallway |
+| `room_hospital_hall_ward` | Hospital corridor variant (2×1 GU) — parked trolley bed, IV pump, nurse-call panel; same slots as `room_hospital_hall` |
+| `room_hospital_hall_waiting` | Hospital corridor variant (2×1 GU) — row of waiting seats; same slots as `room_hospital_hall` |
+| `room_hospital_waiting_1x1gu` | Small hospital waiting area / vestibule (1×1 GU) — seats along both side walls, side doors on row 2; no scenario slots |
+| `room_hospital_storage_1x1gu` | Small hospital store room (1×1 GU) — drugs cabinet, crash cart, boxed supplies; slots: floor `safe`, wall `notes` |
+| `room_uni_foyer` | University foyer / atrium (2×2 GU) — crest sign, heritage display, recruiter's stand, brass inlay under the spawn point; doors on all four sides. Slots: wall `plaque`, `alarm_panel`, `chart`; on the display table two `notes` (conditional); on the stand a `briefcase` and a `laptop` (conditional) |
+| `room_uni_lab` | Computer teaching lab (2×2 GU) — two benches of PCs facing a projector screen and whiteboard, lecturer's desk, photocopier; door E. Slots: wall `whiteboard`; the first two `pc` slots in table_items (the aisle-end PCs), then six decor PCs |
+| `room_uni_common` | Student common room (2×2 GU) — noticeboard, society posters, snack machine, student lockers, kitchenette, sofa and tables; door W. Slots: `notice_board`, `vending_machine`, `coffee_station`, conditional `student_locker` (a single keypad locker), conditional `laptop` on the high table |
+| `room_uni_corridor` | University corridor (2×1 GU) — recessed lockers, department noticeboard, pigeonholes, wall drop box, side-wall directory; doors on all four sides. A 2×2 room to the south covers the bottom two rows, so only y 64-128 is floor. Slots: two conditional wall `notes` (on the noticeboard, then on the drop box), `pigeonholes`, conditional `drop_box`, `uni_directory` |
+| `room_uni_library` | Library (4×1 GU, 20×6) — east half: recessed bookcases, library and returns signs, issue and returns counter, kiosk; west half: reading room with carrels, periodicals, a reading table. Doors E and N (NE corner). The east half shows two floor rows when a room sits south of it, the west half three. Slots: conditional `book` and `notes` on the returns counter |
+| `room_uni_office` | Academic's office (2×1 GU) — door card, bookcase, year planner, desk with a PC; doors W and N. Two visible floor rows. Slots: conditional `whiteboard`, conditional `notes` on the desk |
+| `room_uni_workshop` | Maker space / workshop (2×2 GU) — two wall screens, safety sign, island workbench inside a hazard line, electronics bench, parts shelving; door S. Slots: `conference_screen`, `smartscreen`, conditional `pc` on the workbench |
+| `room_uni_lecture` | Lecture theatre (4×2 GU, 20×10) — whiteboard, projector screen, demonstration bench and lectern, three tiered rows of seats in two blocks; door N (NW corner). The seat rows are solid (collision rectangles in `Object Layer 1`) with west, centre and east aisles. Slots: wall `whiteboard` |
+| `room_uni_special` | Special Collections (2×2 GU) — sign, portrait, a wall of bookcases, reading table with lamps on a rug; door S (SE corner). Slots: conditional floor `safe` |
+| `room_uni_seminar` | Seminar room (2×2 GU) — whiteboard between two windows with blinds, long table with chairs round it, flip chart, water cooler; door S (SE corner). Slots: wall `whiteboard` |
+| `room_uni_staff` | Open-plan staff office (4×2 GU, 20×10) — three face-to-face desk pods with PCs and chairs, staff kitchenette with pigeonholes, coffee table, photocopier, bookcase, filing cabinet, windows, noticeboard, "COMPUTING / STAFF ONLY" sign; door W on row 2. No scenario slots (decor only); open standing spots for staff NPCs are listed in the builder's docstring |
+| `room_zds_reception` | Zero Day Syndicate lobby, m03 (2×2 GU) — WHITEHAT sign on a walnut slat wall over a long black reception counter, founding plaque, trophy cabinet, CCTV, brochure rack, leather sofa, club chairs and glass table, planters; door N (NW corner). Slots: wall `plaque`, west-wall `uni_directory` (as-type) |
+| `room_zds_conference` | Zero Day boardroom, m03 (2×2 GU) — rug, whiteboard and wall screen between blinds, credenza, long walnut table with black leather chairs, flip chart; door E on row 2. Slots: wall `whiteboard` (as-type), conditional `notes` on the table |
+| `room_zds_office` | Zero Day consultant's office, m03 (2×2 GU) — network whiteboard, certificates, bookcase, desk with PC and family photo, side table, camp bed, lab rack; door N (NW corner). Slots: `pc` and `picture` (as-type) on the desk, conditional `notes` on the side table |
+| `room_zds_ceo` | Zero Day CEO office, m03 (2×2 GU) — walnut parquet and rug, mahogany desk, her portrait between blinds, bookcase, locked filing cabinet, drinks cabinet, leather sofa; door S (SE corner). Slots: `filing_cabinet_locked` (as-type), `pc` on the desk, conditional `exec_desk_drawer` over the desk pedestal (as-type) |
+| `room_zds_servers` | Zero Day server room, m03 (2×2 GU) — slate walls, raised floor, two rack rows, cable tray, marketplace wall screen, operator desk, ops bench, KVM cart, gas suppression; door S (SE corner). Slots: `filing_cabinet_locked` (as-type), wall `safe`, wall `whiteboard` (as-type), conditional `vm-launcher`, `workstation`, `flag-station` |
+| `room_zds_hall` | Zero Day corridor, m03 (2×1 GU, 10×6) — stone floor, threat-map screen, WHITEHAT sign, water cooler, planter, all against the back wall; doors N (NE corner), S (SW corner), W and E on row 2. No scenario slots |
+| `room_zds_hall_exec` | Zero Day executive-wing corridor, m03 (2×1 GU, 10×6) — carpet with a runner, walnut sideboard, print, clock, fire point, PRIVATE plate by the NE door; doors N (NE corner), S (SW corner), W and E on row 2. No scenario slots |
+| `room_aes_hall1` | Albion Energy Storage Battery Hall 1, m04 (4×2 GU, 20×10) — Rack Bank C: the original batrack stacks packed in solid overlapping blocks (west 3×6, east 4×4) with a walk-behind lane along the back wall and low kit against it, grey epoxy with floor trunking, drains and door wear, a yellow walkway line, hatched keep-clear borders, a marked N-S aisle (x 346-448); gas suppression, combiner cabinet, spill kit, BMS tower, ladder, cable drum; back wall PPE sign, dial thermometer, RACK BANK C plate, vent fans, status display, HV sign, H2 detector, process diagram, CCTV, beacon; duty-round terminal on the W wall. Doors W and E on row 2, S (SW corner). Slots (as-type): `aes_dial_thermometer`, `aes_status_display`, `aes_h2_detector`, `aes_process_diagram`, `aes_round_terminal` |
+| `room_aes_hall2` | Albion Battery Hall 2 / inverter room, m04 (4×2 GU, 20×10) — rack banks A and B (batrack blocks), the open BMS cabinet, a back and a front inverter row behind a yellow-hatched HV box, chiller, procedures sign. Doors W (row 2), S (SW corner). Slots (as-type): `aes_procedures_sign`, `aes_bms_bypass`, `aes_clipboard` (west wall) |
+| `room_aes_plant` | Albion inverter / plant room, m04 (2×2 GU) — green epoxy, the ESD station under an EMERGENCY SHUTDOWN plate with a red-hatched keep-clear box, switchgear, breaker panel, transformer, generator, steel bench, folding tables. Doors N (NW corner), E (row 2). Slots: `aes_esd_station` (as-type), `laptop6` and three notes (bench and tables) |
+| `room_aes_workshop` | Albion engineering workshop, m04 (2×2 GU) — concrete, pegboard, OT network diagram, OT racks, terminal bench, module test bench in a hazard line, network monitoring cart, lockers. Door N (NW corner). Slots: `pc10` (as-type:pc), `flag-station`, `kvm_cart` (as-type), notes on the parts bench, `briefcase-yellow-` (as-type) |
+| `room_aes_security` | Albion security office, m04 (2×2 GU) — charcoal carpet, camera wall over the console, key cabinet, radio charger, rota, padlocked equipment cabinet, printer desk, photocopier, tea station. Door N (NW corner). Slots (as-type): `cctv_monitors`, `filing_cabinet_locked`; notes on the console and printer desk |
+| `room_aes_ops` | Albion operations office (duty engineer), m04 (2×2 GU) — blue-grey carpet, noticeboard, kitchenette, two desks, filing cabinets, night-shift sofa. Doors N (NW corner), E (row 2), S (SW corner). Slots: `pc8`, notes on both desks, `notes4` pinned on the noticeboard |
+| `room_aes_reception` | Albion gatehouse reception, m04 (2×2 GU) — terrazzo with a bolt inlay, ALBION ENERGY STORAGE sign over the security counter, safety board, PPE station, check-in kiosk, leather sofa, water cooler. Door S (SW corner). Slots: two notes on the counter |
+| `room_aes_control` | Albion SCADA control room, m04 (2×1 GU, 10×6) — anti-static vinyl, HMI console across two desks, network diagram, alarm panel, operator chairs, printer table. Doors W and E (row 2). Slots: `screens` (as-type), two notes on the printer table |
+| `room_aes_dock` | Albion loading dock, m04 (2×2 GU) — concrete, roller shutter under LOADING BAY 1, dock plate, tyre marks, bay lines, bollards, pallets of modules (returns west, deliveries east), barrier, pallet truck. Door W (row 2). Slots: `aes_clipboard` (as-type), `notes2` and `suitcase8` by the shutter |
+| `room_hce_lobby` | HashChain Exchange lobby, m06 (2×2 GU) — pale marble with a gold hex-chain inlay, navy walls with an amber line; HASHCHAIN wordmark between sconces over a curved black reception desk, candlestick screen, visitor kiosk, bitcoin ATM, live price board, a hardware wallet in a display case, a gold coin on a pedestal, club-chair lounge on a navy rug, fig planters, brochure rack. Door N (NW corner). Slots: `notes3` on the desk |
+| `room_hce_hall` | HashChain security checkpoint, m06 (2×1 GU, 10×6) — marble, navy walls; key cabinet over a water cooler, noticeboard, fire action notice, guard's desk with monitors, STAFF ONLY plate, camera. Floor y 64-128 only (a room to the south). Doors S (SW), N (NE). Slots: `notes4` pinned on the noticeboard |
+| `room_hce_trading` | HashChain trading floor, m06 (2×2 GU) — blue-grey carpet with a lighter aisle; LED price ticker over a wall of market monitors, world clocks; two banks of steel trading desks with screens and mesh chairs, a six-screen head-trader station, photocopier and coffee point. Doors W, E (row 2), N (NE), S (SE). Slots: `pc10` (Trading Workstation), `notes3` |
+| `room_hce_office` | HashChain CTO's office (Irina), m06 (2×2 GU) — taupe carpet with a burgundy rug under the desk, pale grey walls; bookcases, elliptic-curve whiteboard, framed doctorate, filing cabinet, executive desk with two visitor chairs, reading corner, printer table, binder shelves, book trolley, journal rack. Door E (row 2). Slots: `pc11`, `notes3` (reading table), `notes1` (printer table) |
+| `room_hce_lab` | HashChain blockchain lab, m06 (2×2 GU) — grey vinyl with trunking, pale grey walls; world flow map, CHAIN ANALYSIS plate, transaction-graph whiteboard, two screens; mining rigs, node shelf, air mover; workstation desk, analysis table, IT workbench, beanbags. Door W (row 2). Slots: `pc10`, `notes3` and `notes1` at the table's ends |
+| `room_hce_servers` | HashChain server room, m06 (2×2 GU) — raised floor with cold aisles, petrol-blue walls with a cyan line; back row of racks under a cable tray, a long row of blue servers, ops bench, console desk, KVM cart, CRAC unit. Doors S (SE), N (NE). Slots: `pc8` (as-type:pc), `flag-station`, `notes3` |
+| `room_hce_vault` | HashChain data centre / custody core, m06 (2×2 GU) — darker raised floor, hatched line round a mesh custody cage holding HSMs and a hardware-wallet cabinet under CUSTODY VAULT / TWO-PERSON RULE; custody console desk at the cage door, black racks, standing terminal, EXECUTIVE SUITE plate, gas suppression, tape library, UPS. Doors E (row 2), S (SE). Slots (scenario order): `pc6`, `pc10`, `notes3` |
+| `room_hce_exec_hall` | HashChain executive wing, m06 (2×1 GU, 10×6) — smoked oak with a navy runner; gallery wall (abstract canvas, sconces, the framed press clipping), console table with an orchid, trophy cabinet, PRIVATE plate, leather bench. Doors W (row 2), N (NE). Slots (as-type): `hce_press_clipping` |
+| `room_hce_ceo` | HashChain CEO's office (Satoshi), m06 (2×2 GU) — smoked oak with an amber rug; block-height screen, framed bitcoin white paper, room_ceo's desk at the same spot with chair and two visitor chairs, display case, drinks cabinet, bar cart, leather sofa, glass table, globe, side table. Door S (SE). Slots: `briefcase11`, `safe2` (conditional), `notes3` on the side table |
+| `room_qdc_lobby` | Quantum Dynamics reception, m05 (2×2 GU) — pale stone with a violet Bloch-sphere inlay, lilac-grey walls with a violet line; QUANTUM DYNAMICS wordmark over a security reception counter, camera, 999 poster and rollout screen, sanitiser stand, stanchions, chip display case, waiting area (leather sofa, glass table, club chair), waiting-seat row, periodicals, fig. Doors N (NW), E. Slots: `notes3` on the counter |
+| `room_qdc_hall` | Quantum Dynamics main corridor, m05 (2×1 GU, 10×6) — slate carpet; QDC plate, water cooler, staff noticeboard, fire action notice, drinks machine, team poster. Doors S (SW), W, E, N (NE). Slots: `notes4` pinned on the noticeboard |
+| `room_qdc_server_hall` | Quantum Dynamics server hallway, m05 (2×1 GU, 10×6) — grey vinyl with trunking, graphite walls; cable tray, rack, UPS, boxes, tool trolley, RESTRICTED, camera. Doors W, N (NE). Slots: `qdc_it_notice1` (as-type) by the N door |
+| `room_qdc_break` | Quantum Dynamics break room, m05 (2×2 GU) — wood-effect vinyl with a kitchen strip, sage walls; kitchen counter, under-counter fridge (collection tin, kettle), wall TV, espresso machine, fridge-freezer, two cafe tables, snack machine, beanbags, sofa, foosball, recycling bins. Door E. Slots: `notes3` on the floor at the espresso machine |
+| `room_qdc_open` | Quantum Dynamics open-plan office, m05 (2×2 GU) — blue-grey carpet with a walkway S door to N door; network whiteboard, IT workbench, comms cabinet, year planner, two desk banks, photocopier, filing cabinet. Doors W, N (NE), S (SE). No slots |
+| `room_qdc_torres` | Quantum Dynamics cryptography lead's office (Torres), m05 (2×2 GU) — oak with a blue rug; bookcases, child's drawing, certificate, key-rotation whiteboard, filing cabinet, mahogany desk, visitor chairs, sideboard, book trolley, armchair, journals. Door S (SE). Slots: `office-misc-cup` on the desk, `briefcase1` by it |
+| `room_qdc_security` | Quantum Dynamics security office (Patricia), m05 (2×2 GU) — plum carpet; suspects board, SECURITY plate, vetting binders, filing cabinets (one locked), key cabinet, desk, CCTV desk, meeting table, shredder. Door W. Slots: `notes3` on the desk, `filing_cabinet_locked1` |
+| `room_qdc_lab` | Quantum Dynamics Heisenberg lab (Halloran), m05 (2×2 GU) — white anti-static tiles with hatched keep-clear boxes, white walls; cryostat, control rack, LASER warning, dewar, fume hood, lattice whiteboard, LAB RULES notice, laser bench, eyewash, glovebox, lab bench, visitor-badge hook (decor). Door E. Slots: `qdc_lab_rules1` (as-type), `notes1` on the bench |
+| `room_qdc_servers` | Quantum Dynamics server room, m05 (2×2 GU) — raised floor, graphite walls; back row of racks under a cable tray, server row, terminal desk, drop-site bench, air-con unit. Doors S (SE), N (NE). Slots: `vm-launcher`, `flag-station` |
+| `room_qdc_vault` | Quantum Dynamics key vault, m05 (2×2 GU) — dark raised floor with a red hatched two-person line, graphite walls with a red line; KEY VAULT / HEISENBERG LEADS ONLY, key safes, secure key cabinet, racks, tape library, HSM rack, tape cart, upload desk, bench, gas suppression. Door S (SE). Slots: `pc10`, `notes3` on the upload desk; `notes1`, `notes4` on the bench |
+| `room_hq_lobby` | SAFETYNET HQ lobby (the Citadel), m08 (2×2 GU) — dark granite with the SAFETYNET seal at the spawn, slate walls, walnut slats; wordmark over the reception counter (badge printer), Level Red alert screen, memorial wall with lilies, X-ray scanner and walk-through arch, waiting area, badge readers. Doors N (NW), W, E. Slots: `hq_badge_printer1`, `hq_alert_screen1` (as-type) |
+| `room_hq_director` | SAFETYNET Director's office, m08 (2×2 GU) — walnut parquet, navy rug, umber walls with walnut slats; bookcase, credenza, window, globe, big desk, safe at its end, visitor chairs. Door S (SW). Slots: `notes4` on the desk, `safe2` |
+| `room_hq_ops` | SAFETYNET operations floor, m08 (2×2 GU) — charcoal carpet with lighter walkways joining the doors, slate walls; OPERATIONS plate, world clocks, status wall, photocopier, a three-monitor desk, an analyst's desk, filing. Doors W, E, N (NW), S (SW). Slots: `hq_ops_board1` (as-type), `notes3` on the photocopier |
+| `room_hq_intel` | SAFETYNET intelligence analysis, m08 (2×1 GU, 10×6) — dark navy carpet, slate walls; console, SIEM screen, four-site tactical board, threat map, desk, cabinet. Door S (SW). Slots: `hq_tactical_board1` (as-type), `notes3` on the desk |
+| `room_hq_servers` | SAFETYNET server room, m08 (2×2 GU) — raised floor with cold aisles, graphite walls; two rack rows, air-con, tool trolley, two steel desks. Door W. Slots: `vm-launcher`, `flag-station` on the desks, `text_file` on the trolley |
+| `room_hq_archives` | SAFETYNET security archives, m08 (2×1 GU, 10×6) — sealed concrete with yellow aisle lines, olive blockwork; archivist's desk, shelves, mobile stack, reading table. Door N (NW). Slots: `text_file` on the desk, `notes1` on the floor, `notes5` on the reading table |
+| `room_hq_crypto` | SAFETYNET cryptography lab, m08 (2×2 GU) — grey anti-static tiles with a hatched box at the key cabinet, lab-grey walls; cipher whiteboard, Enigma under glass, a bare desk, CyberChef station, security container, confidential-waste console. Doors W, E, S (SW). Slots: `pc5`, `workstation` |
+| `room_hq_interview` | SAFETYNET interrogation suite, m08 (2×2 GU) — worn grey vinyl, pale blockwork with a dark red line; RECORDING lamp, evidence wall screen, one-way mirror, disposition screen, bolted table, camera on a tripod. Door N (NW). Slots: `hq_evidence_wall1`, `hq_disposition1` (as-type) |
+| `room_hq_break` | SAFETYNET staff room, m08 (2×2 GU) — wood-effect vinyl, kitchen strip, putty walls; kitchenette, coffee machine, post-it poster, three staff lockers (0x23, 0x47, 0x88), cafe tables, sofa. Door E. Slots: `notes_postit1` on the coffee machine, `notes_legalpad1` on a table, `hq_locker_a1/b1/c1` (as-type) |
+| `room_pnw_checkpoint` | Pacific Northwest Regional Grid Control security checkpoint, m07 (2×2 GU) — grey terrazzo with a fir-and-bolt inlay, pale grey walls with an evergreen line; wordmark, NERC notice, muster board, CCTV monitors, guard counter, screening lane (x-ray, arch), lockers. Door E. Slots: `pc5`, `notes_ledger1` on the counter; `pnw_evac_board1` (as-type) |
+| `room_pnw_ops` | PNW Grid operations floor, m07 (2×2 GU) — dark blue carpet, a lighter aisle along the top, a supervisor's dais; substation map, amber video wall, two rows of operator consoles, supervisor's desk. Doors W, E. Slots: `pnw_substation_map1`, `pnw_video_wall1`, `pnw_console_pos1` (as-type); `key`, `notes3` on the supervisor's desk |
+| `room_pnw_servers` | PNW Grid server hall, m07 (2×2 GU) — raised floor, teal-graphite walls; rack rows, SCADA backup rack, VM terminal and relay desks. Doors W, N, S (all west). Slots: `notes_clip1` on rack 4, `servers4`, `vm-launcher`, `flag-station` |
+| `room_pnw_scada` | PNW Grid SCADA control, m07 (2×1 GU, 10×6) — dark anti-static tiles, plum walls with a red line; mimic board, countdown, console, master desk. Door S. Slots: `scada_historian`, `notes3` on the master desk; `pnw_countdown1` (as-type) |
+| `room_pnw_genhall` | PNW Grid backup generation hall, m07 (4×2 GU, 20×10) — blue-grey epoxy with walkway lines and hatched boxes, sage blockwork; ATS-1, plant log, genset control panel, three gensets, batteries, day tank. Doors N, S (west). Slots: `pnw_ats1`, `pnw_genset_panel1` (as-type), `notes_plantlog1` |
+| `room_pnw_vault` | PNW Grid underground cable vault, m07 (2×1 GU, 10×6) — wet concrete, cable trench, board-marked walls; cable ladder with the splice, Park's trestle. Door N. Slots: `pnw_splice1` (as-type), `notes3` on the trench lid, `notes1` on the trestle |
+| `room_m09_dock` | Mountain States Records & Retention loading dock yard, m09 (2×2 GU) — night asphalt, bay lines, hatched apron at the open shutter (N, NW), brick; BAY 2 shutter down, guard hut desk NE, pallets and pallet truck W, bins E, chain-link fence S. Doors N (NW), W row 2. Slot: `notes_ledger1` on the hut desk |
+| `room_m09_front` | Records company front desk, m09 (2×2 GU) — two-tone lino, cream plaster; wordmark over the clerk's desk, a counter of two old desks, two box trolleys E, filing cabinets W. Doors N (NW), E row 2. Slots: `m09_box_taped1` under the desk, `notes_clip1` on the first trolley |
+| `room_m09_stacks` | Records warehouse floor, m09 (4×2 GU, 20×10) — sealed concrete with aisle lines, brick; two runs of client-deposit shelving (bays 10–12) with a cross aisle at x 380–430 and a clear south band for a guard's round. Doors W and E row 2, S (SW). Slots: `m09_bay_label1` on bay 12, `supply_boxes1` in front of it |
+| `room_m09_closet` | Records company server closet, m09 (1×1 GU, 5×6) — grey blockwork, anti-static tiles; rack NE, degausser SE, terminal desk SW. Door W row 2. Slot: `m09_degausser1` |
+| `room_m09_passage` | Staff passage, m09 (2×1 GU, 10×6) — cream plaster, lino with a green runner; noticeboard, hooks, rota, water cooler on the back wall. Doors S (SW), N (NE). No slots |
+| `room_m09_reading` | Archive reading room, m09 (2×1 GU, 10×6) — oak parquet, library green; reading desk with field kit, microfiche cart, wall screen, reading table on a rug. Doors N (NW), S (SE), E row 2. Slots: `notes_notebook1`, `vm-launcher`, `safetynet_flag_terminal1`, `m09_drop_screen1`, `case-file` |
+| `room_m09_restricted` | Restricted stacks, m09 (2×2 GU) — concrete, brick; binders on the back wall, the hatch counter down the east wall with a sealed strip behind it (collision), a sorting table. Doors N, S (W corners), W and E row 2. Slot: `m09_rubber_stamp1` on the counter |
+| `room_m09_cage` | Restricted cage, m09 (2×2 GU) — concrete, sage blockwork; shredder line in a hatched box, feed table, plan chest NE, ledger shelf E, degausser. Door W row 2. Slots: `shredder1`, `m09_box_open1`, `plan_chest2`, `binders1` |
+| `room_m09_office` | Records director's office, m09 (2×2 GU) — brown carpet, red rug, walnut panelling; binder shelves, certificate, credenza with kettle, desk, side tables, floor safe SE, keypad by the door. Door E row 2. Slots: `hce_phd_frame1`, `m09_deck_controller1`, `case-file`, `book1`, `notes2`, `notes4`, `safe1` |
+| `room_m09_tape` | Tape store, m09 (2×2 GU) — blue-grey blockwork, cold vinyl; reel shelves and tape cabinets in two rows, reel deck on its bench SW, side table. Doors N, S (W corners). Slots: `m09_shelf_legend1`, `m09_reel_deck1`, `notes3` |
+| `room_m09_salvage` | Salvage cage, m09 (2×1 GU, 10×6) — stained concrete, dark brick; rack, two steel desks (field kit, drop link), ALPHA crates stacked, BETA crate, printer stand, low table; cut door controller. Door S (SW). Slots: `server_rack1`, `notes_tucked1`, `vm-launcher`, `safetynet_flag_terminal1`, `notes1`, `m09_crate_beta1`, `case-file` |
+| `room_m10_forward` | Forward post, m10 (4×2 GU, 20×10) — outdoors at night: gravel, rock face behind chain-link, two vans (W), folding table, projection desk, gate trestle, sodium lamp, gate hut (SE), hatched apron at the E door. Door E. Slots: `m10_van1`, `m10_van2`, `m10_field_screen1`, `m10_plans1`, `notes_clip1`, `m10_breaching_case1`, `m09_folder1`, `m10_field_screen_dark1`, `vm-launcher`, `safetynet_flag_terminal1`, `m10_gate_hut1` |
+| `room_m10_tunnel` | Blast tunnel, m10 (2×1 GU, 10×6) — painted concrete, yellow civil-defence line, wet floor, drain; caged bulbs, guard post desk and kettle, wall ladder. Doors W, E. Slots: `m10_door_panel1`, `rota_board1`, `m10_wall_ladder1` |
+| `room_m10_security` | Security office, m10 (2×2 GU) — 1960s green and cream over grey lino; monitoring desk, handset stand, records cupboard (W wall), fitter's locker (SE). Doors W, S (SW). Slots: `alarm_panel`, `notice_board1`, `rota_board1`, `cctv_monitors1`, `phone4`, `m10_cupboard1`, `m10_locker1`, `m10_readout_side1` |
+| `room_m10_workshop` | Workshop floor, m10 (2×2 GU) — blockwork, grey epoxy; benches mid-room, west bench, tool chest and pegboard, cracker rack (SE). Doors N (NW), E. Slots: `notes2`, `notes_tucked1`, `wall_clock1`, `pc10`, `aes_clipboard1`, `m10_cracker_rack1` |
+| `room_m10_power` | Power room, m10 (2×2 GU) — old green paint, red-oxide floor; Bakelite panel, load board, bypass, shutter key switch; 1960s switchgear (W), battery bay behind a mesh rail (S). Doors W, E. Slots: `m10_load_board1`, `m10_bypass_panel1`, `aes_esd_station1`, `aes_toolbox1` |
+| `room_m10_hall` | Server hall (old command room), m10 (4×2 GU, 20×10) — slate paint, raised floor; plotting board over the old dais, release console desk, racks, sealed hatch, racks along the S wall, schedule terminal, printer table. Doors W, E. Slots: `m10_plotting_board1`, `vm-launcher`, `m10_readout1`, `safetynet_flag_terminal1`, `m10_console_controls1`, `m10_hatch1`, `aes_round_terminal1`, `pnw_portable_printer1` |
+| `room_m10_gallery` | Gallery, m10 (2×1 GU, 10×6) — steel tread-plate walkway; slit windows, lock panel, keypad face plate (E wall), floor-post chair. Doors W, E. Slots: `m10_slit_window1`, `m10_door_panel1`, `m10_keypad_plate1`, `hospital_chair_north` |
+| `room_m10_core` | Core, m10 (2×2 GU) — bare concrete; key console with his chair and an empty one, core host terminal and field console (W wall), service door (E wall), file index and readout on the back wall. Door W. Slots: `m10_wall_screen1`, `m10_readout1`, `m10_key_console1`, `safetynet_flag_terminal1`, `vm-launcher`, `m10_service_door1` |
+| `room_se_engagement` | Tarnside Assurance engagement office, lab_social_engineering (2×2 GU; copied from `room_zds_conference`) — Tarnside logo, ENGAGEMENT plate over the planning whiteboard, target board, window; meeting table on a rug, report desk with a PC (E). Doors W, E, N (NW). Slots (as-type): `whiteboard`, `qdc_suspects_board`, `pc`; conditional `notes` on the table |
+| `room_se_recon` | Recon room, lab_social_engineering (2×2 GU; copied from `room_zds_office`) — binder shelves, org-chart whiteboard, notice board, info screen under a RECON plate; two research desks with PCs (W), side table, small rack. Door E. Slots: `pc` (as-type, the top desk's `pc8`); conditional `notes` on the side table |
+| `room_se_ops` | Operations room, lab_social_engineering (2×2 GU; copied from `room_qdc_open`) — OPERATIONS plate, whiteboard, IT bench, comms cabinet, year planner, coffee station; two desk banks with PCs and a desk phone, photocopier. Door W. Slots: `pc` ×2 (as-type, `pc8` then `pc6`), `phone3` |
+| `room_se_blueteam` | Blue team room, lab_social_engineering (2×2 GU; copied from `room_aes_security`) — threat map, camera wall, SIEM board under a BLUE TEAM plate, rota; monitoring desk, side desk, tea station, DVR rack. Door S (SW); nothing below feet y 256. Slots (as-type): `security_monitor`, `siem_dashboard` |
+| `room_lw_reception` | Ledgerwell reception, lab_physical_pentest (copied from `room_reception`) |
+| `room_lw_hall` | Ledgerwell corridor, lab_physical_pentest (copied from `hall_1x2gu`) |
+| `room_lw_office` | Ledgerwell office, lab_physical_pentest (2×2 GU; same geometry and slots as `room_se_ops`) |
+| `room_lw_records` | Ledgerwell records / admin office, lab_physical_pentest (2×2 GU; copied from `room_lw_office`) — open plan with filing, binders and records signage in place of the ops decor |
+| `room_lw_briefing` | Ledgerwell kit and briefing room, lab_physical_pentest (2×2 GU; copied from `room_se_engagement`) — Ledgerwell carpet and signage, a kit bench |
+| `room_lw_kitroom` | Ledgerwell kit and briefing room on the new identity shell, lab_physical_pentest (2×2 GU; map rebuilt from `room_lw_briefing`) — oxblood carpet with a table mark, two walnut sideboards for the kit, a green baize board for the rules of engagement, hi-vis and lanyard on wall hooks, a locker bank; replaces `room_lw_briefing` in the lab |
+| `room_lw_front_desk` | Ledgerwell front desk on the new identity shell, lab_physical_pentest (10×10; map copied from `room_lw_reception`, which test_seating still uses) — oak floor with a green runner between the W and E doors, an old bank counter made of two walnut sideboards with the visitor book and a badge printer on top, staff directory board, CCTV, logo plate and a 1990s time clock on the back wall, waiting chairs, leaflet rack; replaces `room_lw_reception` in the lab |
+| `room_lw_ceo` | Ledgerwell executive office, lab_physical_pentest (copied from `room_zds_ceo`) |
+| `room_lw_records_office` | Ledgerwell records office, lab_physical_pentest (10×10; map copied from `room_lw_ceo`, which test_gate_tailgate still uses) — grey-green vinyl floor (no rug), a records counter, filing runs, ledger shelves and an archive shelf (the records cabinet) along the back and west walls, a key cabinet with the deeds key, a sign-out card index and a green safe, a central sorting table; same geometry and doors as `room_lw_ceo` so secure_area's gate and tailgate are unchanged |
+| `room_lw_store` | Ledgerwell store room, lab_physical_pentest (1×1 GU; copied from `small_room_storage_1x1gu`) |
+| `room_lw_riser` | Ledgerwell server riser, lab_physical_pentest (5×6 back-of-house shell, room_lw_concrete floor; copied from `room_lw_comms`) — the comms cupboard's inner, badge-controlled room, dressed as a server riser: a server rack and the core-switch rack reader, a wall patch panel, a UPS, an overhead cable tray, a cooling unit and a server-riser wall sign |
+| `room_aw_brightwell` | Brightwell Foods training room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — green skirting and logo plate, window, year planner, quarter's bar chart; flip chart, long table with chairs, coffee station and water cooler. No doors drawn (the shells have no connections). Slots: `kiosk` (x 238, feet 140); host spot `{x: 5.5, y: 3.5}`, start `{x: 6, y: 6.2}` (`awareness/training_room.py`) |
+| `room_aw_tarrowby` | Tarrowby Logistics depot training room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — steel-blue skirting and logo plate, yard window, shift rota board, route map, hi-vis on hooks; sheet vinyl, flip chart, long table, drinks vending, stacked chairs. Slots: `kiosk`; host spot and start as `room_aw_brightwell` |
+| `room_aw_quayholt` | Quayholt Insurance service-desk training room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — purple skirting and logo plate, window, desk-queue screen, sign-in screen, LOCK poster; flip chart, long table, a spare service-desk position with PC and phone. Slots: `kiosk`; host spot and start as `room_aw_brightwell` |
+| `room_aw_merrin_sallow` | Merrin & Sallow Architects studio meeting room, awareness shells (2×2 GU; copied from `room_uni_seminar`) — bronze skirting and logo plate, plan chest, modern print, big window; sealed concrete, fig planter, white crit table with oak chairs, banker's lamp and rolled drawings, leather sofa. Slots: `kiosk`; host spot and start as `room_aw_brightwell` |
+| `small_office_room1_1x1gu` | Small private office (1×1 GU) |
+| `small_office_room2_1x1gu` | Small private office variant 2 |
+| `small_office_room3_1x1gu` | Small private office variant 3 |
+| `small_room_1x1gu` | Generic small room (1×1 GU) |
+| `small_room_storage_1x1gu` | Small storage room (1×1 GU) |
+| `small_room_closet_east_connections_only_1x1gu` | Small closet (east connections only) |
+| `hall_1x2gu` | Vertical hallway (1×2 GU) |
+| `hall4x10` | Wide horizontal hall (4×10 tiles) |
+
+> **Wall tile convention:** Each room tile map includes 1 tile of wall on the E and W sides and 2 tiles of wall on the N side (drawn in perspective). The 2-tile north wall visually overlaps into the room above when rooms are placed adjacent — this is intentional and expected. GU dimensions are measured on total width (1 GU = 5 tiles) and interior height excluding the 2 N wall tiles (1 GU = 4 interior tiles).
+
+### Room Properties
+
+```json
+"room_id": {
+  "type": "room_office",
+  "locked": true,
+  "lockType": "key",
+  "requires": "main_office_key",
+  "keyPins": [45, 25, 55, 35],
+  "difficulty": "medium",
+  "door_sign": "Main Office",
+  "ambientSound": "server_room_ventilation",
+  "ambientVolume": 0.4,
+  "chatBackground": "assets/backgrounds/rooms/room_office.png",
+  "connections": { "north": "next_room" },
+  "npcs": [...],
+  "objects": [...]
+}
+```
+
+All room lock properties are the same as object lock properties (see Lock Types below).
+
+`chatBackground` is the image behind person-chat conversations held in this room (400x400, see the room-pov-background skill). It applies only when nothing more specific is set. In order: a `Background[...]` line in the ink wins, then an explicit `background` on the timed conversation or event mapping (`"none"` there means no image), then the `chatBackground` of the NPC's current room (it follows the NPC if it walks elsewhere; the player's room if the NPC's isn't known), then the plain frame. Phone chats and video calls ignore it. The validator warns if the file doesn't exist.
+
+In ink, `Background[room]:` switches to the conversation's own background (the NPC's `chatBackground`, else its room's). Use it to cut back inside after an exterior establishing shot, rather than naming the file or using `Background[none]`, which gives a plain black frame.
+
+A room whose NPCs stand in different places can give a list of views instead of one path. Each view covers a range of the room's width (0 = left wall, 1 = right wall), and a conversation uses the view under the NPC when it starts:
+
+```json
+"chatBackground": [
+  { "x": [0, 0.5], "image": "assets/backgrounds/rooms/sis01_major_incident_room_left_blended.png" },
+  { "x": [0.5, 1], "image": "assets/backgrounds/rooms/sis01_major_incident_room_blended.png" }
+]
+```
+
+With no position known, the first view is used.
+
+A view can also carry a `condition` (globalVars syntax, the same as lighting `variants`), so a room can change background with the story, e.g. at night. Views whose condition is false are skipped, so put the conditional views first and finish with the unconditional ones. A condition and an `x` range can be combined.
+
+```json
+"chatBackground": [
+  { "condition": "globalVars.clone_call_done === true", "image": "assets/backgrounds/rooms/m03_reception_lobby_night_blended.png" },
+  { "image": "assets/backgrounds/rooms/m03_reception_lobby_blended.png" }
+]
+```
+
+The validator warns when a condition names a global that isn't in `globalVariables`.
+
+An NPC can also have its own `chatBackground` (same path style), which wins over the room's: use it when the character is always seen in one place that the room view doesn't fit, such as a patient in a hospital bed (m02 and sis01 use a bedside view). An explicit `background` on a conversation and `Background[...]` in the ink still win over it.
+
+### Starting Inventory
+
+Use the `startItemsInInventory` array at scenario root level. Players have these items automatically at game start:
+
+```json
+"startItemsInInventory": [
+  {
+    "type": "phone",
+    "name": "Your Phone",
+    "takeable": true,
+    "phoneId": "player_phone",
+    "npcIds": ["agent_0x99"],
+    "observations": "Your secure encrypted phone"
+  },
+  {
+    "type": "workstation",
+    "name": "CyberChef Workstation",
+    "takeable": true,
+    "observations": "A crypto analysis tool"
+  }
+]
+```
+
+---
+
+## Object Reference
+
+### Object Placement and Positioning
+
+Each room type has a Tiled map template (`.tmj`) that pre-defines positions for certain object types. When the engine loads a room, it matches each object from the scenario's `objects` array against available slots in that template:
+
+- **Matched objects** are placed at the position defined in the Tiled template (correct furniture placement, on desks, shelves, etc.)
+- **Unmatched objects** — those whose `type` has no available slot left in the template — are placed at a **random position** within the room bounds (with padding from walls)
+
+This means you can place any number of objects in a room, but only objects that correspond to pre-placed items in the room template will appear in their intended position. Extra objects of the same type, or types not present in the template, will be scattered randomly. Keep this in mind when designing room contents — using object types that the room template already contains gives predictable, visually coherent results.
+
+Every object in `rooms[id].objects[]`, in NPC `itemsHeld[]`, in container `contents[]`, or in `startItemsInInventory[]` uses these common fields:
+
+### The `type` Field: Default Behaviors and Overrides
+
+The `type` field is the most important object property. By default, it controls three aspects of object behavior:
+
+1. **Interaction Behavior** — The type determines which minigame or interaction handler fires when the player clicks the object:
+   - `"type": "pc"` → triggers password minigame
+   - `"type": "alarm_panel"` → opens alarm panel minigame
+   - `"type": "network_architecture"` → launches network architecture diagram
+   - Override with `triggerOnInteract` to execute custom actions instead of the default minigame
+
+2. **Placement** — Objects are matched to pre-positioned slots in the room's Tiled template (`.tmj` file):
+   - Objects with types that exist in the template are placed at the template position
+   - Objects without template matches are placed randomly within room bounds
+   - Override with `"position": { "x": 12, "y": 8 }` to specify exact tile coordinates
+   - Override with `"position": "as-type:pc"` to use placement slots of a different type (e.g., place a laptop in a PC slot)
+
+3. **Sprite** — The type determines which sprite image is loaded from `assets/objects/`:
+   - `"type": "pc"` → loads `pc.png`, `pc1.png`, `pc2.png`, etc. (random variant)
+   - `"type": "safe"` → loads `safe.png`, `safe1.png`, etc.
+   - Override with `"sprite": "pc3"` to force a specific sprite variant
+
+**Example: Full override**
+```json
+{
+  "type": "pc",
+  "name": "Offline Workstation",
+  "takeable": false,
+  "observations": "A disconnected workstation used for data analysis.",
+  "sprite": "pc5",
+  "position": { "x": 14, "y": 6 },
+  "triggerOnInteract": [
+    { "type": "set_global", "key": "workstation_examined", "value": true }
+  ]
+}
+```
+This object uses the `pc` type but overrides all three defaults: custom sprite (`pc5`), exact position (`14, 6`), and custom interaction (sets variable instead of password minigame).
+
+**Example: Using another type's placement slots**
+```json
+{
+  "type": "laptop",
+  "name": "Engineering Laptop",
+  "takeable": false,
+  "position": "as-type:pc",
+  "observations": "A laptop containing engineering documentation."
+}
+```
+This laptop object will be placed at the next available `pc` slot in the room template, even though its type is `laptop`. Useful when the room has placement slots for PCs but not laptops, allowing you to place laptop objects at desk positions without specifying exact coordinates.
+
+### Object Field Reference
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `type` | ✅ | Object type name. Controls default minigame, placement, and sprite (see above) |
+| `sprite` | optional | Override the sprite variant (e.g. `"pc3"` to force that specific sprite instead of random selection). On a workstation PC, `"pc_desktop"` is the base that has a locked-screen look (see "Workstation screens") |
+| `position` | optional | Override template placement. Use `{ "x": 12, "y": 8 }` for exact tile coordinates, or `"as-type:pc"` to use placement slots of a different type |
+| `name` | ✅ | Display name shown in UI |
+| `takeable` | ✅ | `true` = player can pick up; `false` = stays in room |
+| `observations` | recommended | Description shown when player examines the object |
+| `observationVariants` | optional | Runtime observation overrides. Array of `{ "condition": "globalVars...", "value": "..." }` evaluated top-to-bottom; first match wins. |
+| `id` | optional | Explicit ID for cross-referencing in objectives (`targetObject`) |
+| `locked` | required for containers | Must be `true` or `false` on any container with `contents` |
+| `readable` | optional | `true` enables the "Read" interaction |
+| `text` | optional | Body text shown when the player reads the item. In the notebook (`notes` items) it renders a markdown subset: `#` headings, `**bold**`, `*italic*`, `` `code` ``, `- ` bullets, fenced code and tables (a header row, then a `\|---\|---\|` row; `:` sets alignment). Backslash-escape a literal `\|`, `*`, `` ` `` or `\\`. Everything else shows as typed (`js/utils/note-markdown.js`) |
+| `textVariants` | optional | Runtime readable-text overrides. Same format/rules as `observationVariants`; first matching condition is used. |
+| `collection_group` | optional | Tag used for objective `collect_items` task tracking |
+| `important` | optional | `true` marks item as important in inventory |
+| `isEndGoal` | optional | `true` marks item as the scenario's win condition |
+| `triggerOnInteract` | optional | Array of actions fired on interaction. Overrides default type-based minigame behavior. See "Object Interaction Actions" below. |
+| `observationDisplay` | optional | `"gameDisplay"` for a modal observation display. Omit it and a text-only object opens the examine view (see "Observation Display Mode") |
+| `onRead` | optional | `{ "setVariable": { "var_name": true } }` — sets a global variable on read |
+| `onPickup` | optional | `{ "setVariable": { "var_name": true } }` — sets a global variable on pickup |
+| `onInteract` | deprecated | Legacy interaction handler. Use `triggerOnInteract` + `observationDisplay` instead. |
+| `minigameData` | optional | Configuration object for interactive minigames. All minigame-specific configuration goes here, not at the object level. See Minigame Configuration below. |
+| `preferAvoid` | optional | `true`: click-to-move paths go round the object when there is a reasonable way round (a detour shorter than a room's width or so), and walk through it only when there isn't. For objects the player can walk through, such as a vending machine with no collision. Floor-standing props at least 40 px tall whose sprite name matches vending, kiosk, atm, photocopier, water_cooler, fridge, locker, filing, cabinet, shelf/shelves, bookcase, rack or server get it by default (`ROUTE_AROUND_PROP_PATTERN`), so most scenarios never need to set it; set `false` to let paths go through one. Wheeled props (chairs, trolleys, wheelchairs) and plants never get it by default: bumping a chair or brushing through a plant is part of the fun. Objects with solid collision are walls already, so it has no effect on them. WASD movement ignores it (`js/systems/path-avoid.js`) |
+
+Example (dynamic bedside monitor copy):
+
+```json
+{
+  "type": "vitals-monitor",
+  "name": "Bed 4 — Bedside Monitor",
+  "readable": true,
+  "observations": "Monitor alarming.",
+  "observationVariants": [
+    { "condition": "globalVars.patient_bed4_state === 'critical'", "value": "Monitor in critical alarm state." },
+    { "condition": "globalVars.patient_bed4_deceased", "value": "No detectable rhythm." }
+  ],
+  "text": "Baseline bedside readings.",
+  "textVariants": [
+    { "condition": "globalVars.patient_bed4_state === 'distressed'", "value": "Escalating abnormal readings." }
+  ]
+}
+```
+
+A display whose text follows the story (a countdown that story beats set to "04:00", "01:45", then "RELEASED") is the same mechanism keyed on one global with string values. Set the global from eventMappings (`setGlobal`) or ink (`#set_global`), and declare it in `globalVariables`:
+
+```json
+{
+  "type": "monitor", "name": "Release Timer", "readable": true,
+  "readDisplay": "gameDisplay", "addToNotes": false,
+  "observations": "RELEASE IN 04:00",
+  "observationVariants": [
+    { "condition": "globalVars.release_clock === 'released'", "value": "RELEASED" },
+    { "condition": "globalVars.release_clock === 'short'", "value": "RELEASE IN 01:45" }
+  ],
+  "text": "RELEASE IN 04:00",
+  "textVariants": [
+    { "condition": "globalVars.release_clock === 'released'", "value": "RELEASED" },
+    { "condition": "globalVars.release_clock === 'short'", "value": "RELEASE IN 01:45" }
+  ]
+}
+```
+
+The text is chosen each time it is shown (examine, read, the hover label), so it does not tick on its own or change while a read is open. Put the most advanced state first. `observationVariants` is what the examine view and the hover label show; `textVariants` is what Read shows, so set both if the object is readable. `addToNotes: false` keeps a stale copy out of the notepad. For a live ticking clock, use a scenario `timers` entry instead.
+
+### Lock Types
+
+Applies to both rooms and objects (safes, PCs, briefcases, doors, etc.):
+
+| `lockType` | `requires` value | Notes |
+|-----------|-----------------|-------|
+| `key` | a string naming this lock, matched against a key item's `opens_lock` | Also requires `keyPins` array on **both** the lock and the matching key item (e.g., `[45, 25, 55, 35]`) |
+| `pin` | 4-digit PIN string (e.g., `"2468"`) | Player enters PIN in numeric keypad mini-game |
+| `password` | Password string (e.g., `"Marketing123"`) | Player types password; `showKeyboard: true` shows on-screen keys; `maxAttempts: 3` limits tries; `postitNote` + `showPostit: true` shows a hint post-it |
+| `rfid` | a string naming this lock, matched against a keycard's `card_id` or `opens_lock` | Player must scan a keycard using the `rfid_cloner` or by carrying the card |
+| `bluetooth` | Bluetooth device MAC address | Requires `bluetooth_scanner` tool; device must be discovered |
+| `biometric` | Fingerprint owner name | Requires `fingerprint_kit`; `biometricMatchThreshold` (0.0–1.0) sets difficulty |
+| `flag` | `"vm_name:flag_id"` string | Unlocked by submitting a VM flag at a `flag-station`; supports `flagRewards` array |
+| `combination` | three dial numbers from 0 to 39, as a string (`"12-30-5"`) or an array of numbers (`[12, 30, 5]`); the schema takes both | Combination padlock: the player sets dial 1, then dial 2, then dial 3 (either arrow turns the current dial, and turning the next dial sets the one before). The server compares the numbers in order, so `"12-30-05"` matches too. Checked on the server only; the minigame is never told the answer |
+| `cryptex` | the word (e.g., `"CIPHER"`) | Letter wheels; `cryptexConfig: { "wheelCount": 6 }` (5 if unset, a whole number) must match the word's length, and `alphabets` (A to Z if unset) must hold its letters. Compared ignoring case. Works on objects and on doors (a room's `cryptexConfig` reaches the door pad before the room loads). `cryptexConfig.hintStrip` and `wornRings` still ship; never put the word in `cryptexConfig.answer` (stripped, and the validator warns) |
+
+```json
+"locked": true,
+"lockType": "key",
+"requires": "derek_office_key",
+"keyPins": [35, 55, 45, 25],
+"difficulty": "medium"
+```
+
+An NPC can carry a container (a bag, a briefcase or a folder with `contents`, locked or not) in `itemsHeld`. Give it an `id` (the validator errors without one). Once the NPC gives it to the player, or is knocked out and drops it, the server finds it through that give or knock-out record, so it opens and its contents can be taken as for any container (a locked one still needs its own key, PIN or password). Before that, the server refuses it, even with the right answer. `scenarios/test_unlock_gaps` shows a dropped bag, two combination locks, a cryptex box and a cryptex door.
+
+### Minigame Configuration
+
+Many interactive objects use minigames with configurable content and behaviour. All minigame-specific configuration is placed in a `minigameData` object, separate from the object's base properties.
+
+**Important**: Object-level fields (`id`, `type`, `name`, `interactable`, `takeable`, `locked`, etc.) remain at the top level. Minigame-specific configuration (titles, sections, lamps, racks, warranties, etc.) goes inside `minigameData`.
+
+Each minigame type has a defined schema in `scripts/minigame-data-schemas.json` that specifies which fields are required and optional. The scenario validator checks all `minigameData` against these schemas.
+
+#### Example: Claims Management System
+
+```json
+{
+  "id": "claims_management_system",
+  "type": "pc",
+  "name": "Claims Management System Terminal",
+  "takeable": false,
+  "observations": "Meridian's internal claims lifecycle terminal.",
+  "minigameData": {
+    "title": "Meridian Claims Management System",
+    "printEnabled": true,
+    "stateWrites": {
+      "policy": "cms_policy_section_reviewed",
+      "quarterly": "quarterly_reports_reviewed"
+    },
+    "sections": [
+      {
+        "id": "claim",
+        "label": "Claim Record",
+        "heading": "Albion Incident Notification",
+        "status": "Open - Pending Review",
+        "content": ["Notification filed by...", "Event classification..."]
+      }
+    ]
+  }
+}
+```
+
+#### Example: Alarm Panel
+
+```json
+{
+  "type": "alarm_panel",
+  "name": "Facility Alarm Panel",
+  "takeable": false,
+  "observations": "A wall-mounted alarm panel.",
+  "minigameData": {
+    "panelTitle": "FACILITY ALARM PANEL",
+    "footer": "STATE-REACTIVE LAMP DISPLAY — READ ONLY",
+    "lamps": [
+      {
+        "label": "THERMAL RUNAWAY",
+        "variable": "thermal_runaway_active",
+        "offClass": "ap-off",
+        "offStatus": "NORMAL",
+        "onClass": "ap-critical",
+        "onStatus": "CRITICAL ALARM",
+        "flash": true
+      }
+    ]
+  }
+}
+```
+
+#### Example: SCADA Historian
+
+```json
+{
+  "type": "scada_historian",
+  "name": "SCADA Historian Terminal",
+  "takeable": false,
+  "minigameData": {
+    "title": "ALBION ENERGY STORAGE — SCADA HISTORIAN",
+    "subtitle": "Battery Hall 1 — Temperature (°C)",
+    "injectionTimestamp": "2024-03-17T23:12:00Z",
+    "injectedValue": 28.0,
+    "racks": [
+      {
+        "id": "A1",
+        "normalBase": 32,
+        "noisePeriodMinutes": 15,
+        "noiseAmplitude": 2.5
+      }
+    ]
+  }
+}
+```
+
+#### Common Minigame Types
+
+| Object Type | Minigame | Key `minigameData` Fields |
+|-------------|----------|--------------------------|
+| `alarm_panel` | Alarm Panel | `lamps[]`, `panelTitle`, `footer` |
+| `scada_historian` | SCADA Historian | `racks[]`, `title`, `injectionTimestamp`, `injectedValue` |
+| `log_filter_terminal` | Log Filter | `logEntries[]`, `anomaly`, `threatIntel` |
+| `vpn_log_terminal` | VPN Log Viewer | `anomaly`, `logFilePath`, `threatIntel` |
+| `siem_dashboard` | SIEM Dashboard | `alertConfig`, `systemName`, `timeLimitSec` |
+| `network_architecture` | Network Architecture | `zones[]`, `nodes[]`, `attackPaths[]` |
+| `network-segmentation-map` | Network Segmentation | `zones[]`, `rules[]`, `auth` |
+| `forensic_data_platform` | Forensic Data Platform | `tabSet`, `caseRef`, `confirmedVar` |
+| `claims_management_system` | Claims Management | `sections[]`, `stateWrites`, `printEnabled` |
+| `checklist` | Warranty Checklist | `warranties[]`, `title` |
+| `coverage_decision_form` | Coverage Decision | `sections[]`, `completionActions` |
+| `sis_config_panel` | SIS Config Threshold | `rows[]`, `title`, `compareTitle` |
+| `infusion_pump` | Infusion Pump | `drug_name`, `correct_dose` |
+| `drug_library_terminal` | Drug Library | `drugLibrary`, `tamperedEntry` |
+| `ncsc_brief` | NCSC Brief | `reviewedVar`, `caseRef`, `sections[]` |
+| `ehr_terminal` | EHR Terminal | `patients[]`, `customMessage` |
+
+**Validation**: Run `ruby scripts/validate_scenario.rb` to check minigameData against schemas. The validator will report any undeclared fields or missing required fields.
+
+### Object Interaction Actions
+
+Objects can execute actions when the player interacts with them using `triggerOnInteract`. This system supports setting variables, confirming actions, unlocking objects, completing tasks, and more.
+
+**Important**: Use `triggerOnInteract` (not the deprecated `onInteract`) for all interaction-based actions.
+
+#### Basic Usage
+
+```json
+{
+  "type": "thermometer",
+  "name": "Analog Thermometer",
+  "takeable": false,
+  "observations": "The dial reads: 51°C",
+  "triggerOnInteract": [
+    { "type": "set_global", "key": "anomaly_detected", "value": true }
+  ]
+}
+```
+
+#### Confirmation Dialog
+
+Use `confirm_action` to require player confirmation before executing actions:
+
+```json
+{
+  "type": "cable",
+  "name": "Jump Server Ethernet Cable",
+  "takeable": false,
+  "observations": "The cable connecting the jump server to the SCADA network.",
+  "triggerOnInteract": [
+    {
+      "type": "confirm_action",
+      "text": "Disconnect cable JS-SCADA-LAN?",
+      "onConfirm": [
+        { "type": "set_global", "key": "jump_server_isolated", "value": true }
+      ]
+    }
+  ]
+}
+```
+
+#### Observation Display Mode
+
+Control how observation text is displayed using `observationDisplay`:
+
+```json
+{
+  "type": "screens",
+  "name": "Facility Status Board",
+  "takeable": false,
+  "observations": "A large wall-mounted display mirroring the SCADA HMI. All battery halls showing green. Temperature: 28°C. Status: NORMAL.",
+  "observationDisplay": "gameDisplay"
+}
+```
+
+**Display modes**:
+- `"gameDisplay"` - Full-screen modal dialog requiring player to click "Close" (use for critical information that must be read)
+- Default (omit field) - The **examine view** for text-only objects: the sprite at twice its size in the room (a whole-number multiple of its pixels, at least 4x), the name, then `observations` and `text`, closed with Close or Esc. It opens for a room object that is not takeable, locked, readable-with-text or otherwise actionable, and has `observations` or `text`; and for any inventory item whose click does nothing else (a single key included; the key ring, phones, notepads, readable items and tools keep their own action). An object with no `observations` or `text` still gets the old toast.
+
+#### Supported Action Types
+
+| Action Type | Fields | Description |
+|-------------|--------|-------------|
+| `set_global` | `key`, `value` | Sets a global variable |
+| `emit_event` | `event_name` | Fires a custom event |
+| `complete_task` | `taskId` | Marks an objective task complete |
+| `unlock_object` | `objectId` | Unlocks a world object |
+| `unlock_door` | `room_id` | Unlocks a door connection |
+| `give_item` | `item` | Adds an item to inventory. Give the item its own `id` and it is a **declared grant** — the server allowlists the scenario's own `give_item` actions, so it needs **no** world object (see the note below). |
+| `confirm_action` | `text`, `onConfirm` | Shows confirmation dialog, executes nested actions on confirm |
+| `tint_objects` | `roomId`, `textureKey`, `color`, `pulse` | Tints all sprites of a type in a room |
+| `show_end_screen` | `title`, `body`, `buttonText`, `outcome` | Shows scenario end screen |
+| `hint` | `message`, `title` (optional) | Shows an information toast. It lasts by the length of `message`: 300 ms per word, at least 6 s and at most 12 s (20 words or fewer give 6 s, 40 or more give 12 s), so keep a hint under 40 words. Like every information toast it is held while a conversation or a full-screen panel is open and shown when that closes |
+
+#### Conditional actions: `condition`
+
+Any action, in any list the engine runs (`triggerOnInteract`, a timer's `actions`, `onConfirm`), may carry a `condition` on the global variables. The action runs only while the condition holds, and it is read when the action is reached, so an earlier action in the same list can change the answer. Use it to make one click say one thing per state:
+
+```json
+"triggerOnInteract": [
+  { "type": "hint", "condition": "globalVars.pin_read", "message": "You have already read the PIN from here." },
+  { "type": "hint", "condition": "!globalVars.pin_read && !globalVars.guard_at_door", "message": "Nobody is at the keypad yet." },
+  { "type": "emit_event", "event_name": "player_watched_reader" }
+]
+```
+
+- **Syntax.** Terms joined by `&&` and `||` (`||` binds looser), with no parentheses. A term is `globalVars.x`, `!globalVars.x`, or `globalVars.x` compared (`===`, `!==`, `>`, `<`, `>=`, `<=`) with `true`, `false`, `null`, a number or a quoted string.
+- **It is strict.** A condition that is not a string, is empty, or has a term outside that syntax (a negated comparison such as `!globalVars.x === true`, a bare name, parentheses) never holds, so the action never runs. The validator reports these as errors, and warns about a global that is not declared in `globalVariables`.
+- **The server does not read it.** Only the page evaluates the condition. A `give_item` is still a declared grant on the server whatever its condition says (the validator warns), and a flag reward is applied by the server as well as the page, so a `condition` on a `flagRewards` entry is a validator error. Never use a condition as the thing that protects access.
+
+**Note**: The deprecated `onInteract` field (object format) is still functional but will log warnings. Migrate to `triggerOnInteract` + `observationDisplay` for new scenarios.
+
+**Declared grants (the compatible way to `give_item`)**: a `give_item` whose `item` has an `id` (or `opens_lock`) is a *declared grant*. The server reads the scenario's own `give_item` actions as its allowlist, so the grant needs **no** world object — do **not** add a hidden `active:false`/`takeable:true` twin (the old pattern): the validator now errors on a twin that shares the grant's `id` ("a declared grant needs no world object"). Put a granted container's files in the grant's own `contents`; the server serves them from the held item, and a nested password archive unlocks against it. The `give_item` must sit on a path the engine actually runs — `timers[].actions`, an object's `triggerOnInteract` / `onInteract.actions`, esd-button actions, or a nested `confirm_action.onConfirm` — **not** under `eventMappings` (never run; the validator reports it) or `flagRewards` (server-delivered, named by `item_name`/`item_type` with no `item` hash). There is no trigger check: a declared grant can be claimed from the first second, so never grant a key or lock tool this way (the validator warns). `BreakEscape::DeclaredGrants` (`lib/break_escape/declared_grants.rb`) is the single definition the server, the validator (`check_give_item_collectible`) and the dungeon-graph generator share, so all three agree on what a grant is. Full design: `docs/achitechture/DECLARED_GRANTS_PLAN.md`. The ink `#give_item:<type>:<id>` tag is a separate path (an item out of the speaking NPC's `itemsHeld`) and is unaffected.
+
+#### Item plants: `requiresItem`
+
+`requiresItem` turns an object's `triggerOnInteract` into "deploy the kit you carried here": the actions fire only while the player holds the named item (a type, an id or a name, or an array of any of those). `consumesItem: true` then removes the item from the inventory, so it is left on the target. Without the item the actions do not fire and the player gets a refusal toast.
+
+| Field | Description |
+|-------|-------------|
+| `requiresItem` | The item the player must hold: a type, id or name, or an array of them |
+| `consumesItem` | `true` removes the held item when the actions fire |
+| `requiresItemHint` | The refusal text when the item is not held. Default: "You need the right kit in hand for this." |
+| `requiresItemHintVariants` | One refusal text per state: an array of `{ "condition": "globalVars...", "value": "..." }`, first match wins, then `requiresItemHint`, then the default. Same format and rules as `observationVariants` (`&&` only: no `\|\|`, no parentheses), so put the most specific condition first |
+
+```json
+{
+  "type": "pc", "id": "staff_pc", "name": "Chris's PC", "takeable": false,
+  "requiresItem": "kit_deviceA",
+  "consumesItem": true,
+  "requiresItemHint": "You need the hardware keylogger from your kit in hand to clip it inline here.",
+  "requiresItemHintVariants": [
+    { "condition": "globalVars.kp_creds_captured", "value": "Your keylogger caught Chris's password when he unlocked his screen." },
+    { "condition": "globalVars.kp_deviceA_set && globalVars.staff_pc_screen_locked", "value": "Chris's screen is locked. Your keylogger is in place behind it." },
+    { "condition": "globalVars.kp_deviceA_set", "value": "Your keylogger is clipped inline behind this PC." },
+    { "condition": "globalVars.staff_pc_screen_locked", "value": "Chris's screen is locked. That is what the keylogger is for." }
+  ],
+  "triggerOnInteract": [
+    { "type": "set_global", "key": "kp_deviceA_set", "value": true },
+    { "type": "hint", "title": "Keylogger planted", "message": "Clipped in. Now wait for Chris's coffee run." }
+  ]
+}
+```
+
+Things to know:
+
+- **Write a variant for every state after the plant.** With `consumesItem`, the item is gone once planted, so every later click is a refusal. Without variants the player is told "you need the keylogger" about a keylogger that is already in place.
+- **A click never shows `observations` on this object.** The refusal returns before the observation code. The info label at the bottom of the screen does show `observations` and `observationVariants` when the player stands near, so an object can carry both: variants for the label, hint variants for the click.
+- **The refusal toast lasts by its length**: 300 ms per word, at least 6 s and at most 12 s.
+- **An item plant cannot sit on a sign-in PC.** A `lockType: "login"` object answers a click with its own flow (owner present, session, sign-in screen) and returns before `triggerOnInteract` and `requiresItem` are read. So a scenario that chains a captured password into a sign-in puts the plant on a separate object beside the sign-in PC (the cable behind it, a dock, a desk hub), and keeps the capture on the PC's own event, for example `workstation_owner_returned:<pc>` with `data.wasLocked === true`. `lab_physical_pentest` plants on the PC object itself only because, by that lab's own rules of engagement, nothing ever signs in at Chris's PC.
+- **The validator** warns when `requiresItemHintVariants` is authored without `requiresItem` (none of those hints would ever show), and checks its conditions like the other variant lists.
+
+#### Networks: jacks, footholds, hosts and shares
+
+A scenario can put sign-in PCs and resources on networks. The player gets onto a network by planting a rogue device (a drop box) in a jack; that gives a **foothold**, and the foothold shows what the network exposes: sign-in hosts the player can try remotely, and resources such as file shares. A foothold can also come from joining Wi-Fi at an access point or from an implant in a PC, and links let a session on one network reach another (slice 9.3b, below). Full design: `docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md` (slice 9.3a) and `docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md` (slice 9.3b); `scenarios/test_access_networks` uses every field. The server, the validator (`scripts/validate_network.rb`) and the dungeon graph read one set of rules, `BreakEscape::NetworkModel` (`lib/break_escape/network_model.rb`), so they agree.
+
+**Fields.**
+
+| Where | Field | Meaning |
+|-------|-------|---------|
+| Top level | `networks` | Network id to `{ "name": "..." }`. The name is what a foothold's view shows |
+| Top level | `networkLinks` | A list of two-item lists of network ids, `[["office_lan", "server_net"]]`. Each joins two networks, both ways. Default: no links. See **Links and the pivot** |
+| Network | `downIf` | A global name: the network is down while that global is truthy. Default: never down. See **Outages** |
+| Network | `wifi` | `{ "ssid": "...", "psk": "..." }`: the network can be joined at an access point. `psk` absent or `""` means an open network. The player never sees `ssid`. See **Wi-Fi** |
+| Top level | `resources` | Resource id to `{ kind, name, host, network, access, contents, observations }`. `contents` is for `kind: "file_share"` only; `observations` is the text of a resource with no contents. A `file_share` with no `contents` (or an empty list) is listed only: its row offers **Look** with the observations, and no desktop maps it |
+| Room | `network` | The default network for the room's objects |
+| Object | `network` | The object's own network; it wins over the room's. An object with neither is on no network |
+| Sign-in object | `host` | Its label on the network ("HB-FIN-02"). Default: its `name`. Not secret |
+| Sign-in object | `headless` | No screen or keyboard: signed in to only over the network |
+| Object | `networkJack` | This object is a jack. Optional `jackConfirm`, `plantedSprite`, `linkName`, `linkStoreIn`, `requiresItemHint` and `requiresItemHintVariants` |
+| Jack | `portSecurity` | `true`: the jack refuses every device and gives no foothold. Optional `portSecurityMessage`. See **Port security** |
+| Object | `wifiAp` | `true`: this object is a Wi-Fi access point for its network (its own or its room's), which must have a `wifi` block. Optional `linkName` |
+| Item | `rogueDevice` | A takeable item with an `id` that can be planted in a jack |
+| Action | `grant_foothold` | An implant: a foothold on a sign-in PC's network. `pc`, an optional `name` (default "Implant: <host>"), and `needsDropped` or `needsSession` with `needsHeld`. See **Implants** |
+| Policy | `remote` | `"allowed"` (the default) or `"blocked"`: whether a PC under the policy takes a remote sign-in |
+
+`networks` (so every `downIf`, SSID and Wi-Fi key), `networkLinks`, `resources`, every `network` field and an object's `linkName` never reach the browser. `wifiAp`, `portSecurity` and `portSecurityMessage` do, on the object, so the client can run the join and draw the refusal. The server sends a network's name, and the names, hosts and contents of what it exposes, only from `GET /network` and `GET /container`, and only for a foothold or session the server holds.
+
+**The jack and the device.** A jack is any room object with `"networkJack": true` and a network (its own or its room's): a wall port, a patch panel, the back of a router. It takes no `triggerOnInteract`, no `requiresItem`, no lock and no `lockType`, because its click is the plant flow: the player confirms, the server takes the device out of the inventory, and a link item ("Drop box: comms room") arrives in its place. Clicking the link item opens the network view. Clicking the jack again offers to unplug, which gives the device back and ends every remote session that went through it; a toast names the hosts whose sessions ended ("Unplugged. Your session on LW-DOOR01 ended."), and an open remote desktop closes with "The link dropped". A rogue device may be defined anywhere an item can come from (a room object, a container, `startItemsInInventory`, an NPC's `itemsHeld`, a declared grant). It must have an `id`, be takeable and not be `droppable`, and nothing may require and consume it. A foothold reaches its own network; it reaches a linked network only through a pivot (below).
+
+**What a foothold shows.** The view lists every `lockType: "login"` object on the network, whatever room it is in and whether or not the player has opened that room, then every resource on the network, each group sorted by id. A host row offers **Sign in** (username and password typed; no account tiles), **Open** when a password session is held there, or "remote sign-in off" under a `remote: "blocked"` policy. An open share (no `access`) offers **Open**; a share with an access list shows a padlock. Any other resource shows its `observations`. The view never shows account names, access lists, policies or share contents.
+
+**Headless hosts.** `"headless": true` on a sign-in object means "no screen or keyboard, managed only over the network": a door controller, a file server in a rack, a printer's admin page. A click on it shows its `observations` and nothing else; the server refuses a sign-in there that names no foothold. A headless host has no owner, takes no claim and shows no account tiles. This field is unrelated to the headless NPC records of the social engine (`emailRecord`, `Game#headless_npc_records`) and to a headless browser run.
+
+**Shares.** A file share is the network counterpart of an account profile: contents gated by an access list rather than a lock. An open share opens from the network view for a foothold on its network, and from the desktop of any session on a PC on its network. A share with an access list opens only from a desktop: every share on the PC's network that admits the session's account is added after the profiles as a folder, `Ledger-Archive (\\HB-FS01\Ledger-Archive)`. Files are taken with the usual Open, Copy and Move dialog and `transfer` field, and locked folders inside a share work as they do in a profile. A share with no `contents` (missing or `[]`) is **listed only**: the view shows it with **Look** and its `observations`, it is mapped on no desktop, and nothing can be opened or taken from it. Use one when the lesson is that the share exists and what it holds (folder names, how much), not its files; give it `contents` when the player should open it. An access list on a listed-only share does nothing, and the validator warns. Resource ids and share item ids are global: the validator refuses one equal to the id or name of a room object, a profile item or another resource, and a sign-in object inside a share. The implicit `staff` role of every account holder counts in every access list a share or host uses, so a share for `staff` maps for every account.
+
+**Events.** `network_foothold_gained` (`via` is `jack`, `wifi` or `implant`; `sourceId` the jack, access point or PC), `network_device_planted`, `network_device_refused` (`reason` `no_device` or `port_security` with `jackId`, or `usb_refused` with `pcId`), `network_device_unplugged`, `network_joined` (`apId`, `footholdId`, `networkId`, `already`; it fires on every join, a second access point of a joined network included), `network_viewed` (with `hostList`, the host ids comma-joined; it fires on every open, once for the foothold's own network, even while that network is down, and once more per further network block that is up, so a mapping that should fire once says `onceOnly`, and one whose beat needs a host tests `data.hostList`), `network_host_opened`, `network_view_closed`, `network_share_opened`; each also as `<name>:<id>` (`network_viewed:<networkId>`). `pc_signed_in` and `pc_signed_out` gain `remote` and `footholdId`, and `pc_signin_failed` gains the reason `remote_blocked`. The client publishes `<jackId>_planted` (and `<pcId>_planted` for an implant) for variants and `revealOnGlobal` (declare it in `globalVariables`); it is display state only. A join publishes `<apId>_planted` too, true only for the access point the network was first joined at (a second access point is set `false` with no change event); to react to a join at any access point, map `network_joined:<apId>`. An objective that must not be skippable is an `unlock_object` task the server checks, not a task a mapping completes (the server checks nothing for a `custom` task). Such a task is met on a jack once a foothold has been gained there; on a host by a remote sign-in as by a local one; and on an access point once the player has joined there, a second access point of a joined network included (`test_access_networks` N8 and N9). An implant meets no task: an `unlock_object` task on its PC still needs a sign-in there, and the implant does not count as one. A task a mapping completes on `network_foothold_gained` with `via: "implant"` can be skipped by a tampered client, so a beat that must not be skipped should rest on what the implant reaches, such as an `unlock_object` task on a host on that network, met by a remote sign-in through the implant.
+
+**Two authoring rules.**
+
+- **A chain that must need the foothold** puts its payoff on a headless host, or in a room with no other way in. A PC in an open room can be signed in to at the keyboard, and a protected share maps on the desktop of any PC on its network that an admitted account can sign in at. The validator prints these under "Reachable without a foothold".
+- **Remote sign-in skips doors.** A PC in a locked room on a network with a jack outside that room can be signed in to through the foothold without opening the door. Acknowledge the route by writing `"remote": "allowed"` in the PC's policy, or close it with `"blocked"`; until then the validator warns ("Doors skipped").
+
+The validator also refuses an account password in a network's or resource's `name`, `host` or `observations` (those strings go to every foothold's view). It prints each jack's reach (hosts then resources) and each network that has hosts or resources but no jack. The dungeon graph draws the device opening the jack, the jack reaching its network node, and the network exposing its hosts and open shares; a headless host has no edge from its room, and a protected share is reached from each admitted account's sign-in node. The 9.3b fields below are accepted and checked; each paragraph lists what the validator reports.
+
+**Links and the pivot.** `networkLinks` joins networks: `[["office_lan", "server_net"]]` says each can reach the other. A foothold is not a member of its network, so a jack, an access point or an implant still reaches only its own network. The player crosses a link by **pivoting**: any session at a sign-in host on a network already reached (a remote sign-in through the foothold, or a claim or sign-in at the keyboard) opens every network linked to that host's network, and a session on one of those opens the next. The foothold's view then shows, under its own rows, a block per further network headed by the network's name and the host it is reached through, with the same row controls. Signing out of the pivot host ends every remote session that depended on it and closes those desktops; a session held at the keyboard is never ended this way. A signed-in desktop maps an access-listed share on any network its PC's network reaches over links that are up, with no pivot needed, as the member of staff sees it. An NPC's station reaches a resource on a linked network too, and the `downIf` of every network on the way is a condition on its work. Errors: `networkLinks` not a list, an entry that is not a two-item list of id strings, a network linked to itself, an id with no entry in `networks`. Warnings: a network reached only over a link with no sign-in host on the way to open the pivot session (it can never be reached), and more than eight simple link paths between two networks that both carry hosts or resources (an NPC's routes keep only the first eight). Information: `Link reach`, for each linked network the networks a pivot reaches from it and its pivot hosts.
+
+**Outages.** `"downIf": "servers_offline"` on a network names a global; the network is down while that global is truthy (anything but `false`, `null`, `0`, `""` or missing: the string `"false"` is truthy). Declare the global in `globalVariables` with its starting value, `true` for a network down at the start, and have an object or mapping change it. While a network is down its hosts and resources leave every view (a foothold on that network included: its own rows go, and only a session held there shows, greyed), a remote sign-in there is refused, its shares are neither served nor mapped, and no pivot crosses into or through it. A down network nobody has reached is absent from the view and never named. A session already held over a route that goes down is kept: its network shows as a greyed block with "No route to <host>" on the row, its desktop is refused, and it opens again with no password when the route returns. A resource's own `downIf` (slice 9.2's field) withholds that resource alone in the same way. An outage is a soft gate: the global is synced from the browser, so a tampered client can clear it. That reaches nothing without a foothold, and every host still asks for its password, but a secret that must not be read early needs an access list or a session as well. Errors: a network `downIf` that is not a string. Warnings: a global not declared in `globalVariables`, and an open share with contents on a network that starts down. Information: `Outage`, each network and resource with a `downIf` and whether it starts down or up.
+
+**Wi-Fi.** A `wifi` block on a network makes it joinable at every room object with `"wifiAp": true` on that network (its own `network` or its room's); several access points may serve one network. `ssid` is required but only the dungeon graph shows it: the join prompt is headed with the access point object's `name` ("Join Wi-Fi: Guest access point"), so put the network's name in the object's `name` or on a note.
+
+```json
+"networks": {
+  "guest_wifi": { "name": "Guest Wi-Fi", "wifi": { "ssid": "Example-Guest", "psk": "<key, also on a note the player reads>" } }
+}
+```
+
+A click on an access point is the join flow: an open network (`psk` absent or `""`) joins at once; a keyed one opens the password minigame in a join mode, a key field with no attempt limit ("That key was not accepted"; a wrong key is never counted). The access point must be reachable (its room and every container above it open), as a jack must. A join gives the foothold `wifi_<networkId>`, one per network, which reaches that network and pivots like any foothold, and a link item named by the access point's `linkName` (default "Wi-Fi: <network name>") with the access point's sprite. A second access point of a joined network adds no foothold but still fires `network_joined`. A Wi-Fi foothold has no unplug and lasts the game. The key is a lock secret like a door PIN, not an account password, so a note, a document or ink may show it, and something the player can read must. Errors: a `wifi` that is not an object, one with no `ssid`, a `psk` that is not a string or is only whitespace, and a `wifiAp` with no network, on a network with no `wifi` block, on a sign-in object, on a jack, or with a lock (`locked` or a `lockType`). Warnings: a `psk` under eight characters, and a `psk` that appears in nothing the player can read.
+
+**Port security.** `"portSecurity": true` on a jack makes the switch refuse every device: the plant gives no foothold, the device stays in the inventory, and the player sees `portSecurityMessage`, or by default "This switch port only takes known machines. Unused ports like this one should be disabled." `network_device_refused` fires with `reason: "port_security"`. The refusal says nothing about the network behind the port, and there is no bypass. Errors: `portSecurity` on an object that is not a `networkJack`, `portSecurityMessage` without `portSecurity: true`, and `portSecurity` with `wifiAp`. Warning: a blank `portSecurityMessage` (the default is shown).
+
+**Implants.** A `grant_foothold` action gives a foothold on a sign-in PC's own network, as a device left inside it would. Two shapes:
+
+```json
+{ "type": "grant_foothold", "pc": "door_box", "needsDropped": "kit_stick", "name": "USB foothold: door controller" }
+{ "type": "grant_foothold", "pc": "sam_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: Sam's desk" }
+```
+
+- **Dropped** (`needsDropped`, an item id): an NPC uses a device the player left. The action runs from the NPC's beat, usually a `timers` entry, and the server grants the foothold only if its own record shows the player dropped that item. A `not_ready` answer is asked again three times, 1.5 s apart, because the timer can fire before the drop has saved; start the timer a few seconds after the drop can happen. A timer is saved as fired, so a reload during those waits never asks again. This shape rests on a beat the browser reports, so it is weaker than a plant; what it yields is a host list whose every host still asks for a password.
+- **Session** (`needsSession: true` and `needsHeld`, the device by id, type or name; prefer the id): the player plugs a device into a PC they hold a session on at the keyboard (a claim or a sign-in there, not a remote session through a foothold), and the server takes `needsHeld` from the inventory. Put the action on a separate desk-side prop's `triggerOnInteract` (a USB socket, the desk), never on the sign-in PC, which never runs its own actions, and do not set `consumesItem` on that prop. A PC whose USB policy refuses the device's `usbClass` refuses the implant with the engine's USB refusal line for that policy ("USB storage is disabled on this PC." or "USB devices are disabled on this PC."; `network_device_refused`, `reason: "usb_refused"`). A headless host takes no keyboard session, so it can only take the dropped shape. The validator does not flag a session-shape implant on a headless host; the dungeon graph marks it "(unusable: headless)".
+
+The action must sit where the server runs actions: a `timers` entry, an object's `triggerOnInteract`, `onInteract.actions`, `conditionalActions`, a minigame's `completionActions`, or a `confirm_action`'s `onConfirm`; not `eventMappings` or `flagRewards`. The foothold is `implant_<pcId>`, one per PC. `name` labels its link item (default "Implant: <host>") and is not a secret; the sprite is the device's, else the PC's. It gives the network and nothing else: no session, no desktop, and the owner's account still needs its password. It has no unplug. While the PC's `affordance.offWhen` holds, the implant relays nothing and the view says "This link is not responding: <host> is off."; it works again when the PC is back on. Errors: a `grant_foothold` on a path the server does not run, with neither or both of `needsDropped` and `needsSession`, with a `pc` that is not a sign-in object on a network, or sharing its `pc` and shape with another (give a PC one action per shape); for the session shape, a missing or unknown `needsHeld`, a `needsHeld` device with no `id`, the action on the PC it targets, and `consumesItem` on its prop. Warning: the PC's USB policy refuses the device.
+
+**In the dungeon graph.** A link is a dashed, undirected `link` line between two network nodes, so following solid arrows never crosses it from a bare foothold. A pivot is a `+` gate per sign-in host on a network a foothold reaches, fed by the network and the host's sign-in, with a `pivot` edge to each linked network. A network's `downIf` is part of its node's label ("down while servers_offline", "(down at start)"), not a gate. An access point is a lock-like node from its room (or the innermost lock above it) to its network, opened by a "Wi-Fi key" node that is fed by every text the player can read holding the key, each hung where the player finds it; a text with no place (ink, a profile) is a dashed "heard or read elsewhere" edge from the start room. No label ever prints a key: the generator shows such a label by its id or a stand-in, and stops with an error, writing no graph, if one would still print. A jack with port security is labelled "(port security: refuses the device)" and has no edge to its network. An implant is one node per PC, reached from where its action runs ("at <prop>", a dashed "timer: <global>", or an NPC beat), from its device (`held` or `dropped`) and, for the session shape, from the PC's sign-in (`session at PC`), with an edge to the PC's network; a headless PC with only the session shape is marked "(unusable: headless)". The legend explains these edges only in graphs that use them.
+
+#### Inventory holders: `holds` and `storeIn`
+
+A **holder** is an inventory item that files other held items, so the tray does not fill up with findings and sessions. The capture log is the one built in (`"type": "capture_log"`, `minigames/capture-log/`); full design: `docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md`, section 6. Fixture: `scenarios/test_capture_log`.
+
+```json
+"startItemsInInventory": [
+  { "type": "capture_log", "id": "capture_log", "name": "Capture log", "sprite": "laptop1", "takeable": true,
+    "holds": { "captures": true, "items": true },
+    "observations": "Your engagement device: every credential, session and finding you record." }
+]
+```
+
+The holder draws its `sprite`, which must be a picture in `assets/objects/` (the validator refuses one that is not). Use `laptop1` until the content plan supplies `capture_log.png`.
+
+```json
+{ "type": "give_item", "item": { "id": "cable_capture", "type": "text_file", "name": "Juice-jack capture",
+    "storeIn": "capture_log", "readable": true, "text": "..." } }
+```
+
+- `holds.captures`: the device lists the `se_captures` rows (role, address, host, the secret or the mask, the note).
+- `holds.items`: the device files every held item whose `storeIn` equals the holder's `id`. Nothing is filed by type. A `storeIn` naming a holder that is not held leaves the item in the tray, and it is filed as soon as the holder arrives; if the holder leaves, its items show in the tray again.
+- **Filing is a view, not a move.** A filed item is still an ordinary inventory item (every "does the player hold X" check is unchanged); only its tray slot is hidden. The player sees "Added to Capture log: <name>" when one arrives, and the holder's badge counts rows the player has not seen in the device yet.
+- The device lists **Sessions** (slice 9.3's link items, filed through the jack's `linkStoreIn`; the remote sessions through them; and filed items with `contents`, such as a hand-written remote session) and **Findings** (other filed items, readable texts). A row's click runs the item's own click, and the device comes back when that screen closes.
+- **Notepad or capture log, never both.** The Notepad keeps collecting texts the player reads; the capture log holds only what the player's own devices and captures produced. A readable `storeIn` item is never added to the Notepad when it is read (`addToNotes` on it is ignored, and the validator says so); the text file reader's own "Add to Notepad" button stays, so the player can still copy a finding by choice.
+- **A granted text ships in the bootstrap.** Findings are teaching text, so that is fine; a text that gives away a code belongs in the `contents` of a session-style item, which the server holds back. The validator warns when a `storeIn` text contains a PIN or password lock's code or an account password.
+- The validator also warns when a `storeIn` names no holder in the scenario, or sits on a room object that is not takeable (make it takeable, a grant or a gift).
+
+#### Capture proof: `captureProof`
+
+`GET /capture_secrets` serves a captured account's password when the saved `se_captures` holds a credential capture of that account. A browser can write `se_captures` itself, so an account whose password signs in somewhere names a **proof**: a fact the server records itself.
+
+```json
+{ "id": "hampshire", "creds": { "username": "c.hampshire", "password": "..." },
+  "captureProof": [ { "planted": "kit_deviceA", "on": "staff_pc" } ] }
+```
+
+| Proof | Holds when |
+|-------|------------|
+| `{ "planted": "<item>", "on": "<object>" }` (`on` optional) | The server saw the item leave the inventory at that object: a room object with an `id` and a `triggerOnInteract` list (the game consumes an item only there), whose `requiresItem` names the item and which consumes it (`consumesItem`, or a `remove_item` naming it in that list), in the start room or a room the player had unlocked. Or `on` names a network jack a foothold was gained from |
+| `{ "dropped": "<item>" }` | The server accepted a player drop of that item (it must be `droppable`) |
+| `{ "session": "<pc>" }` | Someone signed in at that sign-in PC, by password or by claiming the owner's open screen. It records the PC, not the account, so it is sound only where the PC admits just the proof's holder; the validator warns otherwise |
+
+- `captureProof` is a list on the account holder; **any one** proof holding is enough. Taking a planted device back does not undo its proof.
+- **Shorthand:** `"proof": { ... }` inside an NPC mapping's `addCapture` counts for the account whose username equals the capture's `address`, or, with no `address`, for the NPC carrying the mapping. A `proof` on an `add_capture` action is refused ("put it on the account holder as captureProof"), as is a shorthand that resolves to no account holder.
+- **When the rule is strict.** A scenario that declares any proof serves a password that opens something (a sign-in PC the account is admitted at, where a PC with no `access` admits every account; a password or PIN lock anywhere in the scenario whose `requires` is the password; or a share whose access list admits it) only once one of that account's proofs holds, and the validator makes a missing proof an error there. A scenario that declares none is served as before, and the validator warns on each account with a capture route and a password that opens something but no proof. A game keeps the scenario it was created with, so adding a proof changes only new games.
+- **Unique target ids.** Captures are first capture wins, so two routes writing the same `targetId` record only the first; the validator makes that an error. It finds every `add_capture` action and `addCapture` mapping by walking the whole scenario. A captured entry whose target id no route declares (a phish target, an `addCapture`, an `add_capture` or a `usePayload.targetId`) is never served, and the single landing-page secret answers only for a phish target (`social.phishTargets`, a list or a map of targets; every one is declared).
+- **Ask for the planted item by id.** The game plants the first held item whose type, id or name `requiresItem` names, so an object that asks by type (`"usb"`) can take a different device than the proof names. The validator warns when another item shares that type or name.
+- **`linkStoreIn`** on a jack files its link item in a holder; the validator warns when it names no holder item.
+
+### Workstation screens: the locked look (`pc_desktop` and `<key>_locked`)
+
+A workstation PC with an owner (the `workstation`, `screenOwner`, `locksScreenOnLeave`, `lockChance` and `autoLockMin` fields; see `docs/achitechture/NPC_NEEDS_SYSTEM.md` and `docs/achitechture/ACCESS_MODEL_PLAN.md` section 5.4) follows its screen state with no extra fields:
+
+- **Sounds.** With the office-life lock cues on (the default; `"lockCues": false` turns them off) the lock and unlock chime comes from those cues, and this swap is silent. With them off: when the owner leaves and the screen locks, or an auto lock fires, a lock sound plays; when the owner comes back to a locked screen, an unlock sound. Only while the player is in the PC's room, and never at boot, on a reload or on a knock-out. An owner who leaves the screen open makes no sound.
+- **The locked look.** The sprite swaps to a locked-screen picture when a texture named `<key>_locked` is loaded for the sprite's own texture key. Today one base has locked art: `pc_desktop` (a navy desktop PC, 36x24), whose locked look is `pc_desktop_locked` (a padlock on the screen). So to show the padlock, set `"sprite": "pc_desktop"` on the workstation. Any other PC base (`pc`, or the `pc6`, `pc8` or `pc11` a `type: "pc"` object takes from the room map) keeps its picture and still gets the sounds and the indicator dots. Locked art for another base is drawn with `scripts/room_gen/make_locked_screen.py <base> --rect ...` and preloaded under `<base>_locked` in `core/game.js`.
+- **The rule.** The padlock shows exactly when the owner is away, the screen is locked and the player holds no password session at that PC. A password session hides it until the player signs out, because a click there opens the desktop. A claimed session never hides it.
+- **Your own swap wins.** An object with `spriteVariants` is left alone, as is a PC with no owner.
+
+```json
+{ "type": "pc", "id": "staff_pc", "name": "Chris's PC", "sprite": "pc_desktop",
+  "workstation": true, "locksScreenOnLeave": true, "screenOwner": "hampshire" }
+```
+
+The owner's return carries what the screen was: `workstation_owner_returned:<id>` has `{ objectId, ownerId, wasLocked }`, where `wasLocked` is the screen's state just before the return cleared it. A mapping that should fire only when the owner had to unlock (an inline keylogger catching the unlock password) reads it as `data.wasLocked === true`:
+
+```json
+{ "eventPattern": "workstation_owner_returned:staff_pc",
+  "condition": "data.wasLocked === true && globalVars.kp_deviceA_set === true",
+  "onceOnly": true, "cooldown": 0,
+  "addCapture": { "targetId": "hampshire", "kind": "credential", "address": "c.hampshire", "host": "LW-RECEP-01" },
+  "setGlobal": { "kp_creds_captured": true } }
+```
+
+This event carries no `usePayload`, so write the capture's `address` and `host` in the mapping (neither is a secret; the server serves the password by matching the address to the NPC's `creds`). A once-only mapping is not spent while its condition is false, so returns before the plant do not use it up. For the capture to be certain, the PC must lock on every leave (`locksScreenOnLeave: true` and no `lockChance`).
+
+### Work, frustration and workarounds
+
+Access model slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`): staff whose work depends on resources and on their own PC, who get visibly frustrated when it fails, and who route round the controls that stop them. `scenarios/test_access_work` is the feature scenario; copy its shapes.
+
+#### Resources and work needs
+
+- **`resources.<id>`** (top level): `name` (a display name the browser never receives), `kind` (a free label: it picks the mutter pool, below), `access` (an access list `{ roles, people }`; absent admits everyone), `downIf` (a declared global: the resource is down while it is truthy; for the player it also leaves a foothold's view and is not served, see **Outages** under Networks) and `object` (a room object it is tied to, such as a printer). Networks (slice 9.3) own `network`, `host`, `contents` and `observations` on the same entries.
+- **`roles.<role>`** (top level) gives defaults to every NPC with that role: `workNeeds` (resource ids) and `frustration`. A role is never a grant: rights stay in access lists. An NPC with an account or a card has the implicit role `staff`, always last.
+- **`workNeeds`** on a room NPC changes its roles' union: `"x"` or `"+x"` adds, `"-x"` removes. The resolved list is the NPC's roles in authored order, `staff` last, then its own entries.
+- **A `work` plan** is a `work` need (an ordinary need under `needs`) plus a non-empty resolved list. Only an NPC with a plan has its uses judged: a met use eases frustration, a failed use counts. An account holder with the role and no `work` need has no plan and no behaviour.
+- **The station.** The NPC's `needsHome` must be an object whose affordance satisfies `work`. **A sign-in PC takes no office preset, so author `"affordance": { "satisfies": "work", "useSeconds": 5, "restores": 10 }` on it yourself.** Without `restores` a use restores nothing and the NPC works back to back with no rest between uses. A judged need never uses another person's desk (a workstation, or a plain PC with the `desk_pc` preset), only its own station or a non-desk source.
+- **`frustration`** (role or NPC, merged field by field: defaults, then the first role that sets the field, then the NPC's own): `perFail` (default 25, 1 to 100, added on each counted failure), `easePerSuccess` (default 10, 0 to 100, taken off on each met use), `breakDrain` (default 10, 0 to 50, taken off every other need on a failure, so a frustrated person leaves for coffee sooner). How long a failed need waits before the NPC tries again is office life's `needsDeferMin` on the NPC (game minutes, default 4); keep it at 0.5 or above.
+- **`workNeeds`, `frustration`, `workarounds` and `feed` are allowed only on room NPCs**: every other NPC record reaches the browser unfiltered. The server keeps them, and `resources` and `roles`, out of what the browser receives; each room NPC instead carries a `work` plan of ids, kinds and global names.
+
+#### Outages, failed uses and the kick
+
+An outage is a global: a resource's `downIf`, or a station's `affordance.offWhen` (office life's field; it marks the PC out of order). For the player, a sign-in PC on a network whose `offWhen` holds shows as "not responding" in a foothold's view, and a sign-in or desktop through a foothold is refused; a session already held there is kept and works again when the PC is back on. It also relays no pivot to a linked network and serves no share through a session there. Off is off at its keyboard too: a click on it says "This PC is off." and opens neither the sign-in screen nor a desktop, and its folders and mapped shares can be neither read nor taken from. A session held there, local or remote, is kept and works again when it is back on. Nothing changes the PC's look by itself: give it a `spriteVariants` entry on the same global if it should look off. Throw it with a switch object carrying two `confirm_action`s with opposite conditions ("Switch it off" while false, "Switch it back on" while true); two plain conditional actions on one object would flip twice.
+
+- **A failed use.** The NPC walks to its station and works; when the use completes it is judged against its plan. If a resource it needs is down, unreachable or does not admit it, the use restores nothing, `npc_use_failed:<npcId>` fires with the causes (`missing`: `[{ id, why }]`, `why` being `down`, `unreachable` or `no_access`), the NPC mutters, the other needs drain by `breakDrain`, and the need parks for `needsDeferMin`. The park is the retry wait; it wakes early when the resource's global clears, never for a door or a room load. A `no_access` failure always waits out the park.
+- **A dead station.** An NPC whose own station is off does not sit down at it: it parks `work` with `reason: "off"` and `targetId` the station (`npc_need_parked`), mutters from `station_fail`, and counts a failure. Switching the station back on wakes it after one use time.
+- **The kick.** Left alone a person who has just worked sits until the need next turns urgent, which could be minutes. So when a global the plan names, or the station's `offWhen`, turns on (or is on when the NPC appears), the NPC's `work` level drops to `urgentAt`, once per change, and it tries within about one use time. A parked need is not kicked.
+- **A check visit.** On the first failure of an outage that finds a resource with an `object` down, the NPC walks to that object once (`npc_checked:<objectId>`), stands there a few seconds and comes back. It is once per outage: thrown, cleared and thrown again with no met use between is the same outage.
+- **Frustration lives on the server.** The browser reports each failure and each met use (`POST /npc_frustration`, at most one request every two seconds); the server checks the cause holds on its own copy of the globals and paces the reports by real time, then answers the level and a `tell` (0, 1 or 2). The level is kept over a reload. At 100 the NPC is `settled`: no further failure is sent until a met use. A mapping can read `npc_frustration_changed:<npcId>` (`{ npcId, level, previous, tell }`); `data.level < data.previous` fires when it falls. `<npcId>_frustration` is an engine-owned global name: do not author a global ending in `_frustration`.
+- **Pace in real time.** A beat that needs a frustration level is earned in real seconds, so use short parks (`needsDeferMin: 0.5`), fast needs and `useSeconds: 5` in a scenario meant to show it. Stepping the needs clock outruns the server, which then refuses reports as `tooSoon`.
+
+#### What the student sees
+
+- **The icon.** Just after a failed work use (a counted failure: 4 seconds, once the failure's line has gone) the NPC's action icon shows `barrier`, a plain striped barrier; a check visit to the down resource waits until it has shown. If the outage is fixed meanwhile, the barrier ends and the check visit is dropped. While `tell` is 1 or 2 and the NPC has no job, it shows `blocked`; at `tell` 2 it pulses. While it does a workaround (walking to write the note or prop the door, asking a colleague, using a borrowed PC, and for 4 seconds after an `emit`, a workaround visit or a borrowed PC's use) it shows `workaround`, an arrow hopping the barrier. A refusal or no-access mutter with no line (`station_fail`, `work_fail_no_access`, `work_fail_fed_up`, `social_blocked`, `usb_refused`) shows the barrier as its picture; a down printer, share or email shows its own (`print`, `file`, `work`). A workaround's start line shows the workaround picture. A USB refusal gets the picture only, not the 4 second icon. All of it works with `"chatter": false`.
+- **The mutter.** One line on each counted failure, chosen at the moment of failure from the first pool with a line in this order: at `tell` 2, `work_fail_fed_up`; otherwise the cause's own pool; then `work_fail`. With no line anywhere the NPC shows the pool's picture instead. A grumble is voiced where the NPC has a voice, so mutter lines are lines to voice.
+- **The engine says nothing of its own.** Every line lives in the scenario's top-level `chatter` (any NPC may say it, so name a kind of thing and no person) or an NPC's own `chatter`; the NPC's pool adds to the scenario's. Lines follow the chatter rules (under 40 characters, one line, no `{ }`).
+
+| Pool | Said when | What it should say (the `test_access_work` default) | Picture with no line |
+|---|---|---|---|
+| `work_fail_fed_up` | any counted failure at `tell` 2 | giving up ("That's it. I've had enough.") | `blocked` |
+| `station_fail` | its own station is off (or it is locked out of it) | the PC is the problem ("This PC is useless.") | `blocked` |
+| `work_fail_no_access` | a resource does not admit it | nobody gave it access ("Still no access. Nobody listens.") | `blocked` |
+| `work_fail_<kind>` | a resource of that `kind` is down or unreachable | names the thing: `work_fail_file_share` ("Share's down again."), `work_fail_email` ("Email's not sending."), `work_fail_printer` ("Printer's jammed again.") | `file`, `work`, `print`; any other kind falls back to `work_fail`'s |
+| `work_fail` | any failure with no line in the pools above | general ("Why is nothing working?") | `work` |
+| `usb_refused` | a device is refused (USB policy, above), or the USB habit's copy is refused | ("USB's disabled. Typical.") | `blocked` |
+| `wk_writes_down`, `wk_prop_door`, `wk_borrow`, `wk_share_login` | a workaround starts (sub-slices B and H) | what the person is about to do ("I'll never remember this one.", "I'm not badging in every time.", "I'll use the spare PC.", "I'll get someone to run it.") | `work` |
+| `login_aloud` | a `share_login` reaches the colleague (sub-slice H) | the spoken hand-over ("Just use mine, it's on the note.") | `social` |
+| `social_blocked` | a social media use is blocked by policy (sub-slice C) | ("Blocked. Of course.") | `blocked` |
+
+Copy the whole set from `scenarios/test_access_work/scenario.json.erb` (its top-level `chatter`).
+
+#### Workarounds
+
+A frustrated NPC works round the outage. Each room NPC (or its role) may carry a `workarounds` list; `at` (1 to 100) is the frustration level at which one comes into force:
+
+```jsonc
+"workarounds": [
+  { "at": 50, "do": "writes_down" },
+  { "at": 90, "do": "prop_door", "door": "store_room", "prop": "store_wedge", "setGlobal": "store_door_propped" },
+  { "at": 50, "do": "emit", "event": "ellis_gave_up", "noWarning": true }
+]
+```
+
+| `do` | What the student sees | What it opens |
+|---|---|---|
+| `writes_down` | The NPC says its `wk_writes_down` line, writes at the desk for six seconds, and a yellow note appears on the monitor | The NPC's username and password on the sticky note of its own PC's sign-in screen, for the rest of the mission. Needs an account and a sign-in PC as `needsHome` |
+| `prop_door` | The NPC says its `wk_prop_door` line, walks to the prop, and the door opens with the prop shown beside it | The room behind `door`, for the rest of the mission (it is unlocked on the server and stays open after a reload) |
+| `emit` | Whatever the scenario maps to `event` (no line, no walk). A task alone is only a toast: give the student something to see in the room, such as a `setGlobal` that reveals a note or sign (X3's note by Ellis's PC), or an authored line | A scenario beat: the event fires with `{ npcId, level }` (`level` is the browser's copy, not the server's figure) |
+| `borrow_session` | The NPC says its `wk_borrow` line, gets up at once, walks to the hot desk named by `pc`, works there and walks back, leaving it signed in (unless a careful guest, below) | A claim of that NPC's session at that PC: while nobody sits there, a click opens a desktop with the PC's own contents and every profile that admits the NPC. It ends when the PC's policy auto-locks it (the server times it too, from when the NPC left), when anybody next sits there, when the player signs out of it or signs in there with a password, or on a reload. Repeats after each later failed use |
+| `share_login` | The NPC says its `wk_share_login` line, walks to the colleague named by `with` and says a `login_aloud` line beside them | Its username and password, only if the player stood in earshot (same room, within five tiles, a clear line): a toast "Overheard: <name>", an evidence note and a credential capture. Repeats after each later failed use, so a missed one comes round again |
+
+- **The hot desk (`borrow_session`).** `pc` names a sign-in PC with no owner, not `private`, not `headless`, that admits the NPC's account, is not under a policy with `autoLockMin: 0`, and authors an `affordance` that satisfies the failing need (`work`, or `social_media`). The validator errors on each. The borrowed PC is the need's first choice only while the borrow is in hand; an in-use, unreachable or unloaded hot desk is waited for, and one not reached within 60 seconds is dropped and comes round again. If the outage is the resource itself the use fails there too, is not counted a second time, and the session is still left behind (the NPC signed in before finding out). A player signed in at the hot desk is signed out when the NPC sits down ("<name> has signed in at this PC").
+- **The careful guest.** A borrower leaves the hot desk signed in only with a `screenHabit` that says so: `{ "lockChance": 0 }` (or below 1), one filled from `locksScreen: "never"` or `"sometimes"`, or one with `lockIfAwayOverSeconds`. No habit at all, `lockChance` 1 or `locksScreen: "always"` is a careful guest: it signs out, nothing opens, and the validator warns. Give the borrower's own PC its own `lockChance` if that PC should still lock: the object's field wins at its own desk, the habit decides at the hot desk.
+- **Why a share is heard only in an opened room.** The server cannot see where the player stands, so "heard" is the browser's claim. It counts only when the room the browser names is one the colleague can be in (its room, or its `needsRooms` leash) and the player has opened it (never locked, or unlocked); otherwise the answer is empty. The password comes from the server, in the answer to that one heard report, never in the run. A `share_login` needs an account on the sharer and a `with` that is another room NPC; a leashed colleague, or no `login_aloud` line, is warned.
+
+- **Each one is lasting.** It is performed once. The server hands at most one over per counted failure, in list order, and a hand-over the NPC could not make (it could not reach the place) comes back after a later failure.
+- **`tell` and "no warning".** The student should see `tell` 1 and 2 (the icon, the mutters) before a workaround happens. One with `at` at or below the NPC's `perFail` comes on the very first failure with no warning, and the validator warns; mark it `"noWarning": true` when that is the point (an `emit` that fires on the first failure, say). When the outage ends the icon fades rather than vanishing: it stays faint while the NPC is still frustrated and goes once frustration has eased to nothing.
+- **`setGlobal`** must be declared in `globalVariables`. It is set true when the workaround is done, on the server and in the browser, and again after a reload. Use it to reveal the prop (`revealOnGlobal`) or to complete a task.
+- **`prop_door` rules.** `door` and `prop` are both required. `door` is a locked room that is not behind a gate door and is not the NPC's own home room (an NPC behind a locked door is never simulated). `prop` is an object in a room connected to that door, never inside the locked room, hidden with `revealOnGlobal` on the workaround's `setGlobal`, so the NPC can walk to it while the door is shut. The room's NPCs count as met once it opens.
+- **`writes_down` rules.** The NPC needs a non-empty `creds.password`, and its `needsHome` PC must be its own (a `screenOwner` naming someone else wins). The PC must not author its own `postitNote` or set `showPostit: false`: either wins over the written note, so the workaround shows nothing new. Once written, the PC's proximity label says a sticky note is stuck to the monitor.
+- **Events.** `npc_workaround:<npcId>` with `{ npcId, index, do, phase }` (`started`, `done`, `dropped`, `ended`), `npc_mutter:<npcId>` for the start line, and `door_propped:<roomId>` with `{ roomId, npcId }`. Map a task to `door_propped:<roomId>` or to the `setGlobal`, never to `started` alone. A propped door that is opened again as its room is built (after a reload, or its far side) fires `door_opened` with `restored: true`; a mapping on `door_opened` that should run once can skip those. The browser resends a lost hand-over until the server answers, and a reload picks up any that were not finished.
+- **Keep the plan neutral.** The browser gets the scenario's event mappings, reveal props (with their `revealOnGlobal` and text) and global names from the start, before any workaround happens. Name globals and write mapping conditions and prop text so they do not say in advance who will work round what (`store_door_propped` is fine; a prop observation that says "Tom will wedge this" is not). A workaround's `setGlobal` is for display: the player's browser can write it, so never gate a task, an aim, `concludeRequires` or a carry-over export on it (the validator warns); gate on the workaround's event.
+- **Lines.** Add the `wk_writes_down`, `wk_prop_door`, `wk_borrow`, `wk_share_login` and `login_aloud` pools to the top-level `chatter` (the table above). A start line waits for the fail line before it, is never said while the player is talking to that NPC, and stays up at least six seconds.
+
+#### Lockout as a cause (sub-slice L)
+
+A sign-in PC under a policy with `maxAttempts` locks a username out at that PC after that many wrong passwords, for the rest of the mission. When the username belongs to the PC's owner, and the owner has a work plan or a `social_media` need with that PC as its `needsHome`, the lockout stops every use of that PC: work and social media alike. This is the one failure a player can start with nothing but a sign-in screen.
+
+- **Social media while locked out.** The lockout locks the account at that PC, not the person. An owner with a `social_media` need passes the PC over: it uses another source (a non-desk one such as a break room tablet, or a PC it borrows) and otherwise its own phone, where its own accounts are unaffected, and nothing is counted. With `"phone": false` and nowhere else, the attempt at the PC fails with `locked_out` and counts, as for work. The server refuses a feed post whose use it is told was at a PC where the owner is locked out, so a tampered browser cannot post from there. Until its next locked return the NPC does not know: it still sits at the PC for social media, and that use posts nothing. `test_access_social` beat F9 shows it.
+
+- **When the owner finds out.** Only when they have to type their password: on returning to a locked screen. The browser then asks the server (a `check`), but only at a PC where it has had a lockout answer, so a mission with no lockout asks nothing. The owner's first use at the desk waits for the answer; if none comes within 30 seconds of game time the use is skipped (never counted as met) and the next one waits again. A yes is recorded on the server and kept over a reload, and so is the fact that the player caused a lockout at that PC, so a reload between the lockout and the owner's return still leads to the check.
+- **While locked out**, each use at that PC fails with `locked_out`: the `station_fail` mutter, the blocked icon and frustration as for any failure. Give the owner a `borrow_session` and they hot-desk, which is what a locked-out person does. Their own PC's screen locks on every leave, whatever its `lockChance`, and the server refuses a claim of the owner's session at that PC while the lockout stands; the hot desk is left as the borrower's habit says. A lockout at a borrowed PC stops that use too: when the borrower sits down at a hot desk where this browser saw a lockout answer, it asks the server about its own username there, and if it is locked out the use fails (the `station_fail` mutter, nothing restored, no post, no session left for the player to claim). A failed borrowed use is not counted again, so the frustration stays where it was; the next borrow comes round as usual. The borrow ends with `npc_borrow_done:<npcId>` and, when it leaves a session, `npc_borrowed_session:<pcId>`, both `{ npcId, objectId, met }`. If the server is slow to answer that check, the borrower waits at the desk for at most 5 seconds of needs time and then skips the use unjudged: nothing restored, nothing counted, and both events carry `met: false` with `lapsed: true`. That is not a refusal (the borrower may not be locked out at all, and may still leave a session), so a mapping meaning "the use failed there" should test `data.met === false && !data.lapsed`. `lapsed` is absent otherwise. A `writes_down` on a lockout-prone owner gives a sticky note whose password that PC refuses once the owner is locked out.
+- **An owner whose screen never locks** never types a password, so never finds out and carries on working; only the claim of their open screen is refused.
+- **What it teaches, and its limit.** A lockout policy is a denial of service anyone at the keyboard can cause. The game's lockout is per PC, so the owner can still sign in elsewhere; a real directory lockout usually follows the account to every PC. Say so in the debrief or lab sheet if students might take the scope as realistic: the lesson is the denial of service, not the scope.
+- **What it tells the player.** When the owner comes back to the locked screen, the player who locked out a guessed username learns whether it was the owner's. The sign-in screen's own answers never say which usernames are real, and no list of locked-out accounts reaches the browser.
+- The validator lists such an owner's lockout in the work report and wants a `station_fail` (or `work_fail`) line; it also warns that a `maxAttempts` lockout lasts the mission, so a mission that needs that PC needs another route.
+
+#### The USB habit as a cause
+
+An NPC with a work plan can carry a `usbHabit`: `{ "every": 2, "setGlobal": "kim_emailed_file" }`. Every `every`th judged work use at its own station (1 to 10, default 2) copies a file to a USB stick, to take home or hand to a colleague.
+
+- **Refused.** Where the station's policy has `usb: "storage_blocked"` or `"blocked"`, that use fails with the cause `usb_refused`: a mutter from the pool of the use's first cause (the `usb_refused` pool, else `work_fail`, when the refusal is the only one; `work_fail_fed_up` at tell 2), the barrier icon, frustration as for any failure, and `npc_usb_refused:<npcId>`. The next use without a copy is met and eases, so the level rises and falls with the habit.
+- **The workaround.** `setGlobal`, a declared global, is set true when the server accepts the first refusal: the NPC emails the file to itself instead. Gate a mail, a note or an ink line on it.
+- **What the server checks.** The server counts the NPC's work uses at its station (the browser reports each met one, even at level 0, while the PC refuses the stick) and accepts a refusal only on every `every`th, saved with the game. A refusal alone never opens the shorter pace floor that a re-armed need gets: only an accepted ease does. So a tampered browser can climb no faster than an honest one.
+- **Allowed.** Where the policy allows USB storage the copy works: `npc_usb_copied:<npcId>` fires and the use goes on as normal, a hook for a mission where a lax PC is the lesson.
+- **The hint.** A reactive post with `"when": { "cause": "usb_refused", "need": "work" }` is served once a refusal is recorded, so the feed tells the player the PC is locked down. `scenarios/test_access_social` beat U1 shows it.
+- **The stick.** The NPC holds the stick it copies to: a `usb` item with an id in its `itemsHeld`, for example `{ "type": "usb", "id": "kim_usb", "name": "Kim's USB stick", "sprite": "usb_bowl1", "usbClass": "storage", "takeable": true }`. With no `contents` it holds one `work_file.txt` (a short engine default); list `text_file` items (each with an `id`, `name` and `text`, and `takeable: false`) in its `contents` to put other files on it, and unlocked folders or archives (any item with its own non-empty `contents`, for example a `zip_archive`) to nest them. Every id on the stick is unique, and each habit NPC has its own stick id. The files never ship in room data, the bootstrap or the inventory: a player who gets the stick (given, pickpocketed, or picked up after a knock-out) opens it like any container and the server serves its files then, only while the server's own give or knock-out record says it left the NPC and the inventory holds it. Once the stick has gone the habit stops: a use is a plain use, not a failure, and no new cause or mutter follows.
+- **Give the stick only after the first refusal.** A stick that leaves the NPC before its first refusal stops the habit before it acts, so `npc_usb_refused:<npc>`, the habit's `setGlobal` and any `cause: usb_refused` post never happen, and a task or line keyed on them strands. Offer the ink give from a choice, or inside a conditional block, gated on the `setGlobal` (in `test_access_social`, `+ {u1_kim_emailed_file and not u1_kim_gave_usb and not u1_kim_asked_usb} [...]`). A `*` choice comes back after a reload, so keep a once-only give once-only with a declared global. Set that global from the stick's own `onPickup` (`"onPickup": { "setVariable": { "u1_kim_gave_usb": true } }`), not in the choice: it is then set only once the stick reaches the player's tray, so a give the server refused can be asked for again. A plain ink variable set in the choice, and cleared by the hub's other choices and in `start`, hides the choice from the hub listed straight after the give, while it is on its way. The validator warns on a give of the stick (`#give_item`, or `#give_npc_inventory_items` that offers it, in the NPC's ink or a mail reply's) that is not gated on the `setGlobal` while anything waits on the refusal.
+- **A knock-out before the first refusal stops the habit too.** The knock-out also stops the NPC's work, so the refusal never comes, whoever has the stick, and the player chooses when it happens. If the mission needs the habit's beats (a required task completed on `npc_usb_refused:<npc>`, the `setGlobal` or the vent post), make the NPC `koImmune`, give it a `taskOnKO` for that task, or add an eventMapping that completes the task on the NPC's knock-out (`npc_ko:<npc>` or its `globalVarOnKO`), as for conversation tasks. The validator warns when a required task waits only on the refusal and none of these is there (unless `disableAttacks` is set). `test_access_social` accepts that warning: its U3 beat is the knock-out.
+- `usbHabit` is a room-NPC field and never reaches the browser; the plan carries `work.usb` (with `stick`, the stick's id). The validator errors on a habit NPC that holds no storage stick (a `usbClass: "hid"` device never counts), a locked stick, two habit NPCs sharing a stick id, and stick `contents` that are empty or hold anything but well-formed, uniquely identified `text_file` items and unlocked folders or archives of them; it warns on a stick that is not takeable, a takeable file on a stick, and an ungated give before the first refusal. It also errors on an `every` outside 1 to 10 or an undeclared `setGlobal`, warns on a habit with no work plan or no station, warns on a `setGlobal` that can never be set because the PC allows USB storage, and wants a `usb_refused` (or `work_fail`) line for an NPC whose PC refuses the copy. The work report names the habit on the NPC's `Work` line.
+
+#### The validator and the work report
+
+Errors: a `workNeeds` entry that names no resource, a resource `object` that names no room object, a frustration field out of range, a global ending in `_frustration`, and `workNeeds`, `frustration`, `workarounds` or `feed` on a record that is not a room NPC. Warnings: an NPC with a resource it is not admitted to (its work never succeeds, so it fails with no player action), a resource its station can never reach, a `downIf` global not declared, `needsDeferMin` under 0.5 for a `work` plan (or a `social_media` need with `"phone": false`), a work plan with no station that satisfies `work` (naming a PC the NPC owns through `screenOwner`, which should be its `needsHome`), a station with no `restores`, a cause the NPC can meet with no line in its own pool or `work_fail` (not under `"chatter": false`), a resource no NPC needs that has no `contents` and no `host`, and a workaround at or below `perFail` (it comes on the first failure with no warning; mark it `"noWarning": true` if meant) or one that needs more than five minutes of outage.
+
+For workarounds: errors for an `at` outside 1 to 100, an unknown `do`, a `setGlobal` not declared, a `pc`, `prop`, `door` or `with` that names nothing, an `emit` with no `event`, a `writes_down` for an NPC with no account, no password, no sign-in `needsHome` or a `needsHome` another NPC owns, a `prop_door` with no `door` or no `prop`, and a `prop_door` to a room that is not locked, is behind a gate door or is the NPC's own, or whose prop is inside that room or in a room not connected to it. Warnings: an NPC that can never be frustrated, a `writes_down` over an authored `postitNote` or `showPostit: false`, a workaround that opens a room holding a `flag-station` or `vm-launcher`, a `prop_door` through a door the NPC's own card and role would not open, a `prop_door` with no `setGlobal` or whose prop is not hidden with `revealOnGlobal` on it, a prop in a room the NPC's leash forbids, a workaround `setGlobal` that a server gate also reads (an `unlockCondition`, `concludeRequires.globals`, `exportGlobals`, a resource's `downIf`, a route or an `offWhen`), and a missing start pool (`wk_writes_down`, `wk_prop_door`, `wk_borrow`, `wk_share_login`; none under `"chatter": false`).
+
+The dungeon graph draws each workaround as an action node `workaround_<npc>_<index>`, with an edge to what it opens (the sign-in for `writes_down`, the door for `prop_door`), and each outage global (a resource's `downIf`, a station's `offWhen`) as a gate node `outage_<global>` with edges to the workarounds it can bring about.
+
+After the issues the validator prints the **work report**: one `Work` line per NPC with a plan (each resource admitted or not, reachable or "never reachable from its station", and the globals that take it down), and one `Workaround` line per workaround (what it opens, how many failed uses reach it, whether the student sees `tell` 1 and 2 first, the honest seconds of outage it takes, and the earliest a modified browser could bring it).
+
+#### USB policy
+
+A policy (top-level `policies`, referenced by an object's `policy` or by `defaultPolicy`) may say `usb`:
+
+| `usb` | An item with `"usbClass": "storage"` | An item with `"usbClass": "hid"` |
+|---|---|---|
+| `"allowed"` or absent | accepted | accepted |
+| `"storage_blocked"` | refused | accepted |
+| `"blocked"` | refused | refused |
+
+- **`usbClass`** goes on the item: `"storage"` for a memory stick, `"hid"` for a device that presents itself as a keyboard. An item with no `usbClass` is never refused: a hardware keylogger between the keyboard and the PC is not a USB device the policy can see.
+- **What a policy governs.** Only an object that is a workstation by its own fields (`workstation: true`, `lockChance`, `locksScreenOnLeave` or `lockType: "login"`) or that names a `policy` itself. A `defaultPolicy` never reaches a lost property tray, a shredder or a printer.
+- **The two lessons.** A device control policy that blocks storage does not stop a device that presents as a keyboard (`storage_blocked` accepts `hid`). And people route round a refusal: an NPC whose own PC refuses a dropped stick takes it to the next object that accepts its tag and does not refuse it (a kiosk nobody manages). With nowhere else, they put it down where they stand and leave it; the player can pick it up again.
+- **What the player sees.** An NPC refused a device says a line from the `usb_refused` pool ("USB's disabled. Typical."), fires `npc_use_refused:<objectId>` with `{ npcId, objectId, itemId, tag, usbClass }`, and no `npc_used` fires, so nothing mapped to the use runs. The engine has no spoken text of its own: put the pool in the scenario's top-level `chatter` (any NPC may say it) or an NPC's own. Without a line the NPC shows the `blocked` picture, and the validator warns.
+- **The player's own plant.** A `requiresItem` object under a policy that refuses every matching held item shows "USB storage is disabled on this PC." (or "USB devices are disabled on this PC." under `blocked`), fires `usb_refused:<objectId>` with `{ objectId, itemId, usbClass }`, runs no action and consumes nothing. With several matching items the first one the policy accepts is used. A sign-in PC answers a click with its own flow, so **a plant at a sign-in PC goes on a separate object beside it (a dock, a USB hub) that names the same `policy`**.
+- **How strong it is.** Device payoffs are globals the browser sets, so the policy is as strong as the payoff it guards.
+
+The validator errors on an unknown `usb`, `social` or `usbClass` value, and warns when a blocking policy governs only objects whose items have no `usbClass` (it refuses nothing), when an object no policy governs takes a device the default policy would refuse (you may have meant a refusal), and when an NPC that can be refused a device has no `usb_refused` line.
+
+#### Social media feeds
+
+An NPC with a `social_media` need checks social media about once a period of the need, and each check can put out its next post on a `social.osint` profile. A post can carry a fact the player can use: a pet's name and a year for a guessable password, who somebody trusts, when they are away. Test bed: `scenarios/test_access_social/` (beats F1 to F8 in its `PLAYTEST.md`).
+
+**Where the NPC checks it**, in this order:
+
+1. a hot desk borrowed for it (a `borrow_session` workaround, above), while the borrow is in hand;
+2. its own `needsHome`, when that is a workstation whose policy has `social: "allowed"` (or no `social`) and that is not off. No `affordance` entry is needed: the own workstation counts whatever its `satisfies` says. The NPC stays seated;
+3. any object that is not a workstation and whose `affordance.satisfies` lists `social_media` (a break room tablet), nearest first. Another person's PC, a kiosk included, is used only when borrowed;
+4. its **phone**, unless the NPC says `"phone": false`. A phone use starts where the NPC is, with no wind-up: an NPC at its desk stays at its desk and its screen stays attended, and one walking home stops, checks the phone and walks on. The NPC shows the `social` icon;
+5. its own workstation under `social: "blocked"`: the use fails. The NPC mutters a `social_blocked` line ("Blocked. Of course."), its frustration rises and its workarounds apply, exactly as for a failed work use. A `borrow_session` to a kiosk under a laxer policy is the natural workaround.
+
+`socialUse: { useSeconds, restores }` on the NPC sets the time and the amount of a use at its own PC or on its phone (defaults 20 s and 60). A use at any other object takes that object's `affordance`. With a phone the need never parks for want of a source, and a switched-off own PC sends the NPC to its phone with nothing counted.
+
+**The feed** goes on the NPC record:
+
+```json
+"feed": { "site": "friendface", "person": "jake", "posts": [
+  { "id": "jake_post_1", "text": "Biscuit turns five today! Best boy in the whole building.", "fact": "jake_pet_name", "date": "Monday" },
+  { "id": "jake_post_2", "text": "Back from Crete, three hundred emails waiting for me." }
+] }
+```
+
+`site` is a `social` site in `social.osint` and `person` a profile on it. Each post is an ordinary post block (`id`, `text`, optional `fact`, `date`, `note`) plus `deliberate` (below), which stays on the server. Posts come out in order, one per met use, so the posting pace is the need's own; the server refuses one that comes sooner than 0.9 of the need's period. When the last post is out the server says the feed is done and the browser stops asking.
+
+- **Posts and their facts are withheld together.** A feed fact (a fact named by a feed post) is an ordinary `social.intelFacts` entry with its `source` set to the post's id and its `se_intel_<id>` global declared. The server removes its entry from the scenario the browser receives and sends it with its post, so neither the post's text nor the fact's text is in the browser before the post is out. A feed fact may be granted only by its post: naming it as the `fact` of any other block, field or tool result, or in a `grant_fact` action or a call grant, is an error (those would need its text from the start). Naming it in a readiness slot (`needsIntel`) or as a phishing factor is fine.
+- **Reading.** Any `osint-workstation` whose `siteIds` include the site lists the revealed posts on the profile first, newest at the top, then the authored `posts`. Clicking one notes its fact as usual. A post made while the browser is open on that profile appears at once. The evidence note shows the fact's text exactly as written: markup in it is not formatted.
+- **The toast.** A post shows "<name> posted on <site>" once the player has opened that site in a browser before (so declare `se_osint_state`). Turn it off with `social.osint.postToasts: false`.
+- **Awareness.** An NPC whose awareness level is `high` would not overshare: a post with a `fact` warns unless it is marked `"deliberate": true`.
+- **The distracted guard.** While on the phone an NPC is distracted, and one with `los.challengeOnSight` does not challenge. The validator says such an NPC can be walked past once every period of the need. When the phone goes away the guard looks again from scratch, so a player still in view is challenged then (cooldown permitting): the phone lets the player get past, not stay.
+- **Reloads.** Revealed posts and their facts come back with the game; nothing unrevealed does.
+
+The validator errors on a feed whose site or person does not resolve, a bare list in place of `{ site, person, posts }`, a post with no id or one whose id is already a post or block id, a fact that names no `social.intelFacts` entry, a feed fact named anywhere else, an NPC's password in a post, a feed fact or a chatter line, and an NPC with the need, `"phone": false`, no workstation home and no object that satisfies it. It warns on a post or feed fact text under 12 characters, or one that occurs inside another shipped string (the server cannot tell them apart in a response), a feed with no `social_media` need, a high-awareness poster, a blocking policy with no `social_blocked` line, and the walkable guard. The work report prints one `Feed` line per NPC: the first urgent time, the period, the minute each post is expected and the server's floor. A guessable password whose pieces come from feed posts counts them as clues.
+
+### Container Objects
+
+Containers hold `contents` arrays of nested items. Every container with `contents` **must** declare `locked: true` or `locked: false`.
+
+| Type | Notes |
+|------|-------|
+| `safe` (variants: `safe1`–`safe5`) | In-room safe; common PIN or password lock |
+| `suitcase` (variants: `suitcase1`–`suitcase21`, colour variants) | Briefcase/luggage; common key lock |
+| `briefcase` (variants: `briefcase1`–`briefcase13`, colour variants) | Briefcase; common key lock |
+| `bag` (variants: `bag1`–`bag25`) | Bag/backpack |
+| `bin` / `bin1`–`bin11` | Recycling/waste bin (often `locked: false` with hidden clue items inside) |
+| `pc` (variants: `pc1`–`pc12`) | Computer terminal; supports `lockType: "password"`, `postitNote`, `showPostit`, `maxAttempts` |
+| `filing_cabinet` | Filing cabinet |
+
+#### PC-specific properties
+
+```json
+{
+  "type": "pc",
+  "name": "Derek's Computer",
+  "takeable": false,
+  "locked": true,
+  "lockType": "password",
+  "requires": "Anniversary",
+  "postitNote": "Think: important dates",
+  "showPostit": true,
+  "maxAttempts": 3,
+  "showKeyboard": true,
+  "observations": "A password-locked workstation",
+  "contents": [
+    { "type": "text_file", "name": "Access Log", "readable": true, "text": "..." }
+  ]
+}
+```
+
+### Readable / Document Objects
+
+| Type | Notes |
+|------|-------|
+| `notes` (also `notes1`–`notes5`) | Loose notes / paper; `notes2`–`notes5` use different coloured sprites — handy for colour-coding evidence tiers |
+| `text_file` | Digital file found inside a PC container |
+| `phone` | Desk phone / answerphone — supports `voice` (TTS script), `ttsVoice`, `avatar`, `sender`, `timestamp` for voicemail presentation |
+| `tablet` | Tablet device |
+| `smartscreen` | Wall-mounted display |
+
+#### Phone / voicemail object
+
+```json
+{
+  "type": "phone",
+  "id": "reception_desk_phone",
+  "name": "Reception Desk Phone",
+  "phoneId": "reception_desk_phone",
+  "takeable": false,
+  "readable": true,
+  "voice": "Hi Sarah, it's Kevin. The IT room PIN is 2468.",
+  "ttsVoice": { "name": "Charon", "style": "Nerdy Australian IT guy", "language": "en-GB" },
+  "avatar": "assets/characters/male_nerd_headshot.png",
+  "sender": "Kevin Park (IT)",
+  "timestamp": "Yesterday, 6:47 PM",
+  "observations": "The message light is blinking"
+}
+```
+
+### Key & Access Items
+
+These items are carried in the player's inventory to unlock doors, containers, or systems.
+
+| Type | Notes |
+|------|-------|
+| `key` | Physical key. Must have `opens_lock` and `keyPins` array. |
+| `keycard` | RFID keycard. Must have `opens_lock` (or `card_id`). Variants: `keycard-ceo`, `keycard-maintenance`, `keycard-security`. |
+| `id_badge` | Visitor or staff badge (narrative/inventory item). |
+| `key-ring` | Decorative key-ring item. |
+
+#### Item identity: `type`, `id`, `opens_lock`
+
+Three fields, three jobs. Keeping them apart is what stops a mapping silently never firing.
+
+| Field | Answers | Notes |
+|---|---|---|
+| `type` | *What class of thing is it?* | Shared by many items (`notes`, `lab-workstation`, `key`). Picks the sprite, and `#give_item:<type>` matches on it. `item_picked_up:<type>` is emitted with the **type**, never the id. |
+| `id` | *Which object is this?* | Unique. The `#give_item` selector, `data.itemId` on pickup events, and inventory de-duplication all use it. Give every item an `id` when its NPC or room holds more than one of a type. |
+| `opens_lock` | *Which lock does it open?* | Only on things that open something. **Many-to-one**: two spare keys to the same door share one `opens_lock` and keep distinct `id`s. Matched against a lock's `requires`. |
+
+Common mistakes the validator now catches:
+
+- `key_id` in a scenario — renamed to `opens_lock`. Both sides still read it **only** so missions started before the rename can finish; a game snapshots its `scenario_data` at creation. The fallback lives in exactly two places: `window.lockRef` (`js/utils/helpers.js`) on the client and `BreakEscape::ItemIdentity` (`lib/break_escape/item_identity.rb`) on the server. Never quiet a validator error by leaning on either.
+- Remember the server half. A key unlock is validated by Rails against the lock's `requires`, so a key that reaches the inventory without an `opens_lock` the server can see will fail at the door even though the client looked happy.
+- An `opens_lock` no lock `requires` — a typo, or an identity that belongs in `id`.
+- A key lock nothing can open.
+- An `item_picked_up:` mapping keyed on an id — the event carries the **type**. Disambiguate with `"condition": "data.itemId === '<id>'"`.
+
+
+```json
+{
+  "type": "key",
+  "name": "Derek's Office Key",
+  "takeable": true,
+  "opens_lock": "derek_office_key",
+  "keyPins": [35, 55, 45, 25],
+  "observations": "Spare key to Derek Lawson's office"
+}
+```
+
+### Security Tools
+
+Security tools enable specific mini-games and unlock mechanics. Can be placed as room objects or in NPC `itemsHeld`.
+
+| Type | Mini-game / Effect |
+|------|-------------------|
+| `lockpick` | Enables lockpicking mini-game on `lockType: "key"` locks |
+| `fingerprint_kit` | Enables fingerprint collection from objects with `hasFingerprint`; required for biometric locks |
+| `pin-cracker` / `pin-cracker-large` | Enables PIN-cracking mini-game on `lockType: "pin"` locks |
+| `bluetooth_scanner` | Enables Bluetooth scanning to discover devices for `lockType: "bluetooth"` locks |
+| `rfid_cloner` | Enables RFID cloning from keycards for `lockType: "rfid"` locks |
+| `workstation` | Opens embedded CyberChef cryptography tool (browser-based) |
+
+### Hacking / VM Objects
+
+| Type | Notes |
+|------|-------|
+| `vm-launcher` (variants: `vm-launcher-kali`, `vm-launcher-desktop`) | Opens a VM terminal (Hacktivity mode) or a simulated interface. Requires `vm` (ERB: `<%= vm_object('vm_name', fallback) %>`), `hacktivityMode`, and `id`. |
+| `flag-station` | Flag submission terminal. Accepts flags from specified VMs (`acceptsVms`), validates against `flags` array (ERB: `<%= flags_for_vm('vm_name') %>`), and fires `flagRewards` actions on success. |
+| `launch-device` | High-stakes interactive device for mission climax. Full required fields: `mode` (`"launch-abort"`), `acceptsVms`, `flags`, `flagRewards`, `onAbort`, `onLaunch`, `abortConfirmText`, `launchConfirmText`. |
+
+#### vm-launcher example
+
+```json
+{
+  "type": "vm-launcher",
+  "id": "vm_launcher_kali",
+  "name": "Kali Terminal",
+  "sprite": "vm-launcher-kali",
+  "takeable": false,
+  "observations": "A Kali Linux attack terminal",
+  "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+  "vm": <%= vm_object('intro_to_linux_security_lab', {"id":1,"ip":"192.168.100.50"}) %>
+}
+```
+
+#### flag-station example
+
+```json
+{
+  "type": "flag-station",
+  "id": "flag_station_1",
+  "name": "SAFETYNET Terminal",
+  "takeable": false,
+  "observations": "Secure terminal for submitting flags",
+  "acceptsVms": ["desktop"],
+  "flags": <%= flags_for_vm('desktop') %>,
+  "flagRewards": [
+    { "type": "set_global", "key": "linux_flag_submitted", "value": true }
+  ]
+}
+```
+
+A flag reward `{ "type": "unlock_door", "target_room": "server_room" }` (or `"room_id"`) opens that room on the server, so it survives a reload. Name the room: a reward with neither field falls back to the station's own room, which is already open. (Before F18 the station's room overrode the named one, so these rewards opened nothing.)
+
+#### launch-device example (see `scenarios/m01_first_contact/scenario.json.erb` for full reference)
+
+```json
+{
+  "type": "launch-device",
+  "name": "ENTROPY Launch Device",
+  "takeable": true,
+  "mode": "launch-abort",
+  "acceptsVms": ["desktop"],
+  "flags": ["desktop:flag_3"],
+  "flagRewards": [{ "type": "set_global", "key": "launch_code_submitted", "value": true }],
+  "onAbort": { "setGlobal": { "player_aborted_attack": true }, "emitEvent": "attack_aborted" },
+  "onLaunch": { "setGlobal": { "player_launched_attack": true }, "emitEvent": "attack_launched" },
+  "abortConfirmText": "ABORT OPERATION? This cannot be undone.",
+  "launchConfirmText": "EXECUTE OPERATION? This cannot be undone."
+}
+```
+
+### Decorative / Environment Objects
+
+These objects have no special gameplay function but improve immersion. They use `takeable: false` and `observations`.
+
+The `type` value must match a sprite filename (without extension) in `public/break_escape/assets/objects/`. Variants with an integer suffix are valid types — e.g. `notes`, `notes2`, `notes3` are all distinct sprite files and all valid `type` values.
+
+| Category | Types |
+|----------|-------|
+| Office misc | `chalkboard`, `chair-*` (many variants), `sofa1`, `laptop1`–`laptop7`, `keyboard1`–`keyboard8`, `tablet`, `smartscreen` |
+| Plants | `plant-large1`–`plant-large13`, `plant-flat-pot1`–`plant-flat-pot7`, `plant-large-displacement` |
+| Pictures / decor | `picture1`–`picture14`, `lamp-stand1`–`lamp-stand5`, `outdoor-lamp1`–`outdoor-lamp4` |
+| Server room | `servers`, `servers2`–`servers4` |
+| Loot / ambience | `office-misc-*` (pencils, pens, stapler, clock, fan, hdd, headphones, lamp, speakers, plants, etc.) |
+| Other | `book1`, `bookcase`, `spooky-candles`, `spooky-splatter`, `torch-1`, `torch-left`, `torch-right` |
+
+---
+
+## NPC System
+
+NPCs are defined in `rooms[id].npcs[]` arrays. Two NPC types exist:
+
+### Person NPCs (`npcType: "person"`)
+
+In-world characters with sprites that the player can walk up to and interact with.
+
+**Where to stand a person NPC** (user, 2026-10-11): NPCs look best roughly centred in the room, towards the top right, on clear floor (in tiles: about two-thirds across and a third to a half of the way down). Keep a clear gap from furniture, so the sprite doesn't overlap a counter or fridge, and don't put them behind a desk or counter that the room's conversation background shows across them. `position` is the sprite's centre in tiles; the feet sit about a tile lower. Check with `tools/playtest/lighting-tour.sh <mission> <out> <room>`. Story moves (patrol targets, a nurse at a bedside) take priority.
+
+```json
+{
+  "id": "kevin_park",
+  "displayName": "Kevin Park",
+  "npcType": "person",
+  "position": { "x": 4, "y": 4 },
+  "spriteSheet": "male_nerd",
+  "spriteTalk": "assets/characters/male_nerd_talk.png",
+  "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+  "storyPath": "scenarios/my_scenario/ink/npc_kevin.json",
+  "currentKnot": "start",
+  "voice": { "name": "Charon", "style": "Nerdy Australian", "language": "en-GB" },
+  "globalVarOnKO": "kevin_ko",
+  "taskOnKO": "meet_kevin",
+  "behavior": {
+    "hostile": { "chaseSpeed": 145, "attackDamage": 15, "pauseToAttack": false },
+    "patrol": { "waypoints": [{"x": 2, "y": 2}, {"x": 6, "y": 4}] },
+    "initiallyHidden": false
+  },
+  "itemsHeld": [
+    { "type": "lockpick", "name": "Lock Pick Kit", "takeable": true, "observations": "..." }
+  ]
+}
+```
+
+**Key person NPC fields:**
+
+| Field | Description |
+|-------|-------------|
+| `position` | `{ "x": tiles_from_left, "y": tiles_from_top }`. Omit only if `behavior.initiallyHidden: true`. |
+| `spriteSheet` | Character sprite name (see `public/break_escape/assets/characters/`) |
+| `spriteTalk` | Portrait image for dialogue box. Optional — defaults to `assets/characters/{spriteSheet}_talk.png`, then `{spriteSheet}_headshot.png`. Only set it for off-convention filenames. **A `_v2` walk sheet is off-convention:** a `spriteSheet` of `female_office_worker_v2` derives `female_office_worker_v2_talk.png`, which does not exist — the talk/viseme art is usually `female_office_worker_talk.png` (no `_v2`). Set `spriteTalk` (and `spriteVisemes`) explicitly for any `_v2` sheet, or the dialogue portrait silently falls back and the validator warns. |
+| `spriteVisemes` | Optional lip-sync portrait: `assets/characters/<key>_visemes.png` (one row of 128px mouth-shape cells) with `<key>_visemes.json` beside it naming each column. While TTS plays, mouth shapes follow the line's text; falls back to `spriteTalk` if absent or unloadable. See `docs/SPRITE_SYSTEM.md`. |
+| `portraitVariants` | Optional alternative portraits: `[{ "name": "ko", "ko": true, "spriteTalk": "...", "spriteVisemes": "...", "avatar": "..." }]`. The first entry whose `condition` (globalVars syntax, `&&` and `||`) and/or `ko` (NPC knocked out) holds replaces those fields in person-chat and the phone avatar; ink `# portrait:<name>` / `# portrait:base` forces one for the rest of a conversation. See `docs/SPRITE_SYSTEM.md`. |
+| `spriteStyle` | Optional look over the world sprite, for holograms and ghosts: `{ "alpha": 0.8, "glow": "#7fe8ff", "flicker": true }`. `alpha` (0.3-1) makes it see-through, `glow` adds a soft outline glow and lights the floor round the NPC (`"light": false` turns the light off, or set `{ "radius", "intensity" }`), `flicker` adds a rare flash-safe dip (off under reduced motion). The frames stay as drawn and the look holds through every animation and a knockout. m08's ATHENA uses it. See `docs/SPRITE_SYSTEM.md`. |
+| `storyPath` | Path to compiled Ink `.json` story file |
+| `currentKnot` | Starting Ink knot (usually `"start"`) |
+| `voice` | TTS voice for dialogue and barks: `{ "name": "...", "style": "...", "language": "en-GB" }`. Optional `fx` subfield applies Web Audio distortion — see Casting Voices and Voice FX below |
+| `globalVarOnKO` | Global variable name to set `true` when NPC is knocked out |
+| `taskOnKO` | Task ID to complete when NPC is knocked out |
+| `koImmune` | `true`: the player can't fight or knock out this NPC. A punch passes over it without turning it hostile or firing `npc_attacked`, so no `npc_ko`, `globalVarOnKO`, `taskOnKO` or item drop can come from it. Use it for story-critical NPCs whose KO would break the plot, instead of a KO safety-net mapping (as m08 has for `nightshade_confrontation`). The validator then counts that NPC's conversations as KO-safe, and warns if it also has `taskOnKO`/`globalVarOnKO` (never fire) or `behavior.hostile` (it would hit the player and can't be hit back). Ink can still turn it hostile with `#hostile`. For a scenario with no fighting at all, use the top-level `disableAttacks` instead. |
+| `itemsHeld` | Items dropped when NPC is knocked out. Give an item an `id` when the NPC holds more than one of the same `type` — `#give_item` matches on `type` first, then disambiguates against `id`/`opens_lock`/`name`, and with no `id` the first matching item always wins. |
+| `behavior.hostile` | Makes NPC chase and attack. Fields: `chaseSpeed`, `attackDamage`, `pauseToAttack`, and optionally `maxHP`, `attackCooldown`, `attackRange`, `fleeSpeed` and `fightStyle`. `fightStyle` gives the fight a pattern for the player to learn (`systems/fight-styles.js`): `brawler` (the default: walks up, half-second telegraph, a cross); `guarded`, for bosses (guards whenever it isn't swinging, so punches into the guard do a fifth of their damage and don't push it back; it's open during its windup, its swing, a second after it (long enough for jab, jab, cross), and while it walks in, and hits in its windup don't stop the swing); `slugger` (long telegraph, heavy cross, long recovery, never guards); `cower` (runs from the player within its room and only throws quick jabs when caught or cornered; set a `fleeSpeed` below the player's 150). m01 uses all four: Derek is `guarded`, Kevin `slugger`, Maya `cower`, Sarah `brawler`. Player controls: click and tap always move or interact; punch with F, right-click or the Punch button (presses in a row give jab, jab, cross); hold Q or the Block button to guard. A block takes a fifth of a hit from the front. Write in-game control hints to match. |
+| `behavior.patrol` | Patrol configuration (see Patrol Behaviour below) |
+| `behavior.immovable` | `true` — NPC cannot be pushed or displaced by collisions (e.g. a patient in a bed) |
+| `behavior.initiallyHidden` | `true` hides NPC at spawn — use `setVisible` in an event mapping to reveal them later |
+| `behavior.facePlayer` / `facePlayerDistance` | The NPC turns to face the player within `facePlayerDistance` pixels (default `true` and `96`); a patrolling NPC with `pauseForPlayer` also stops there |
+| `behavior.personalSpace` | `{ "enabled": true, "distance": 48, "backAwaySpeed": 30, "backAwayDistance": 5 }` — the NPC backs away when the player comes closer than `distance` pixels. Off unless `enabled` |
+| `seated` | `true` or `{ "maxDistance": 40, "chair": "exec_chair_back1", "facing": "west", "facePlayer": true, "fetch": true }`: the NPC sits on the nearest free chair within `maxDistance` px of its spawn (only chairs matching `chair`, an object id, id suffix or image name, when given), and holds it until a scripted move, hostility or a KO gets it up. On a swivel chair it turns to face a nearby player unless `facePlayer` is false. Needs NPCs sit at their PC without this field; `"fetch": false` stops them fetching a chair. Needs its atlas to have seated frames (`pixellab_pipeline.py import --sit-from`); without them it stands. See `docs/achitechture/SEATING.md` |
+
+#### Casting voices
+
+`voice.name` is a Gemini prebuilt voice; `voice.style` is a free-text prompt the TTS acts on. Nothing validates either field, so both drift easily.
+
+- **Give every speaking NPC a voice.** An NPC with no `voice` block is silent while everyone around them is not, which reads as a bug. Terminals and computer-driven phone NPCs are the legitimate exception.
+- **Don't reuse one `name` across characters who appear together.** The `style` prompt differentiates them somewhat, but two characters in adjacent rooms sharing a voice sounds like one actor doing both. Reuse is correct only for the *same* character across multiple NPC entries (a handler who appears as a briefing cutscene, a phone contact, and a debrief).
+- **Name the accent explicitly and say "consistent … throughout".** Without it the model drifts mid-line. "British" is not an instruction; "consistent Belfast accent throughout" is.
+- **Write the style as a character brief, not adjectives.** Role, age, what the night has done to them, and how they speak under pressure. `"Ward sister, twenty years on the wards. Consistent Belfast accent throughout. Exhausted, dry, unsentimental about everything except her patients. Never raises her voice."` gives the model far more to work with than `"tired nurse"`.
+- **Spread the accents.** A cast that is uniformly RP sounds like one institution's senior management, not a hospital at four in the morning. Mix regional British (Scouse, Brummie, Yorkshire, Belfast, Estuary, MLE) with international where the character's history supports it, and let a character's accent carry their biography rather than decorating it.
+
+#### Voice FX (distortion / filtering)
+
+An optional `voice.fx` field runs an NPC's TTS through a Web Audio effects chain (band-limiting, saturation, ring modulation) for disguised, radio, or robotic voices. It applies everywhere that NPC speaks — person-chat, the video-call view, phone-chat, and barks — so a character sounds consistent across every contact. Narrator and player lines are never affected (they play under different speaker ids).
+
+Set it to a **preset name** or a **custom object**:
+
+```json
+"voice": {
+  "name": "Iapetus",
+  "style": "Deliberately unplaceable, sanded-off accent. Unhurried and precise.",
+  "language": "en-GB",
+  "fx": "voice-distortion"
+}
+```
+
+Presets (defined in `TTSManager.VOICE_FX_PRESETS`, `public/break_escape/js/systems/tts-manager.js`):
+
+| Preset | Use for |
+|--------|---------|
+| `voice-distortion` | A disguised / obscured speaker — band-limited encrypted-comms voice with a light metallic edge, still intelligible. Used by Ghost in `m02_ransomed_trust`. |
+| `radio` | Clean radio / handset band with light grit, no ring mod. |
+| `robot` | Heavier robotic / vocoder-ish edge. |
+
+Custom object (every field optional; the chain is `highpass → lowpass → drive → ringMod → makeup`):
+
+```json
+"fx": { "highpass": 220, "lowpass": 3400, "drive": 6, "ringMod": { "frequency": 75, "mix": 0.10 }, "makeup": 1.6 }
+```
+
+- `highpass` / `lowpass` — band-limit the voice in Hz (a tight band = telephone/radio feel).
+- `drive` — waveshaper saturation (grit). ~0 clean, ~6 subtle, ~20 heavy.
+- `ringMod` — `{ frequency, mix }`. Metallic/masked edge; `mix` is 0–1 and is the most aggressive knob (lower it, or drop `ringMod`, to soften).
+- `makeup` — output gain to compensate for level lost to filtering/drive.
+
+Keep FX restrained on speaking characters — heavy distortion fights the voice acting and hurts intelligibility. The validator checks that a preset name is known and that a custom object's fields are the right type and in range. FX is inert when server TTS is unavailable (there is no audio to process).
+
+#### Knockout resilience — the mission must survive a KO of *any* NPC
+
+The player can attack **any** person NPC at any time, and **KO is permanent** — there is no respawn. A well-built scenario stays both *completable* and *narratively coherent* no matter who the player knocks out. `m01_first_contact` is the reference: every conversation-gated task has a knockout fallback, and every plot-relevant NPC's KO feeds the debrief. Two fields carry this:
+
+- **`taskOnKO`** — completes a task when the NPC is knocked out. The rule that actually matters: **a KO must never block mission completion.** If an NPC's conversation is the *only* way to complete a task on the **critical path** (required to finish the mission — the `missionConclusion` aim's `concludeRequires.tasksCompleted`, plus the non-optional tasks of every aim its `unlockCondition` chain depends on), it **must** have a `taskOnKO` (or `eventMapping`) fallback, or KO'ing it soft-locks the mission. It is **fine** for a KO to permanently close off a *side / lore* objective (a non-critical aim) — that can be an intended consequence of the player's choice; m01's `meet_kevin` is exactly this. **`taskOnKO` names only ONE task** — if an NPC's ink completes *two* critical tasks, wire the second one's completion through an `eventMapping` with `completeTask` on a phone/handler NPC keyed to the NPC's KO global (`global_variable_changed:<name>_ko`). See the `obtain_password_hints` wiring in `m02_ransomed_trust`. The validator reports a critical-path case as a **warning** and a side-objective case as a **suggestion**.
+- **`globalVarOnKO`** — sets a global on KO so the closing debrief and end-credits can *acknowledge* the KO rather than contradicting it (e.g. "SARAH O'BRIEN: Removed — No ENTROPY connection"). A villain or secret NPC should have its KO drive the *same* resolution state a peaceful path would (e.g. an antagonist's `globalVarOnKO` reusing the `<villain>_confronted` global). For a hidden asset, add a debrief branch for the "neutralised without being identified" case.
+
+The win condition itself (usually a `mission_complete` global set from a terminal/decision, not a conversation) should never route solely through an NPC that can be KO'd. The validator's objective-wiring check flags a KO-vulnerable **critical-path** task as a warning (a real soft-lock) and a KO-vulnerable **side-objective** task as a suggestion (acceptable if intended).
+
+#### Healing, regeneration and the chase leash
+
+- **Coffee in rooms.** A cup of coffee or tea on a room map (office-misc-cup 1–5, coffee_cups1, mugs_tray1) can be drunk once for 20 HP, then it's gone, including after a reload. A scenario object with one of those sprites heals too, unless it has a role (fingerprint, contents, lock, text, trigger, puzzle-graph field), so evidence mugs stay evidence. Set `"consumable": false` to stop a cup being drunk.
+- **Heal items.** Any object or item heals when it has `"healAmount": <n>` (`0` opts out), or `"consumable": true` for its type's default (coffee 15, energy drink 20, sandwich 25, first aid kit 40, otherwise 15). A takeable item is picked up and used from the inventory. At full health nothing is used up.
+- **Regeneration.** Out of combat (10 s since the last hit) the player gets back 1 HP every 2 s, up to half of max HP. Above that, only heal items help. Override it with a top-level `"playerRegen": { "delayMs", "tickMs", "hpPerTick", "capFraction" }`, or turn it off with `"playerRegen": false`.
+- **Leash (opt-in).** By default a hostile follows the player through doors for as long as they stay within its `aggroDistance`. With `"leash": true` in `behavior.hostile`, it gives up the chase when the player leaves its room, or goes further than `behavior.hostile.chaseRange` px (default 400) from its post, then walks back. `"chaseAcrossRooms": true` keeps only the distance limit. Use it to keep a guard at their post (m01 Sarah stays in reception).
+
+#### Patrol Behaviour
+
+The `behavior.patrol` object controls how the NPC moves around its room:
+
+```json
+"behavior": {
+  "patrol": {
+    "enabled": true,
+    "speed": 80,
+    "waypoints": [
+      { "x": 2, "y": 2, "dwellTime": 2000 },
+      { "x": 6, "y": 4, "dwellTime": 1000 },
+      { "x": 4, "y": 7 }
+    ],
+    "waypointMode": "sequential",
+    "loop": true,
+    "pauseForPlayer": false
+  }
+}
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `enabled` | `true` (auto) | Whether patrolling is active at spawn |
+| `speed` | `80` | Movement speed in pixels/second |
+| `waypoints` | — | Array of `{ x, y }` tile positions. Each may include `dwellTime` (ms) to pause at that point |
+| `waypointMode` | `"sequential"` | `"sequential"` follows waypoints in order; `"random"` picks randomly |
+| `loop` | `true` | `true` loops the route; `false` stops at the last waypoint |
+| `pauseForPlayer` | `true` | Stop and face the player when they come close |
+| `changeDirectionInterval` | `5000` | ms between random patrol target changes (random-patrol fallback only) |
+
+For multi-room routes use `"multiRoom": true` with a `"route"` array instead of `"waypoints"`. Each route entry is `{ "room": "id", "waypoints": [...] }`; the NPC walks them in order and loops, and never walks into a room that isn't loaded yet. A route waypoint takes the same `dwellTime` and may also carry an `action`, run when the NPC arrives and before it dwells or moves on:
+
+```json
+"route": [
+  { "room": "hall", "waypoints": [{ "x": 2, "y": 3 }, { "x": 1, "y": 2, "dwellTime": 1500,
+      "action": { "unlockRoom": "secure_area", "useObject": "badge_reader" } }] },
+  { "room": "secure_area", "waypoints": [{ "x": 4, "y": 6 }] }
+]
+```
+
+| Action | Description |
+|--------|-------------|
+| `unlockRoom: "room_id"` | The NPC unlocks that room on the server as itself (it needs an `eventMapping` with `unlockDoor` naming the room), loads it, waits for the path grid to include it, then carries on. A refusal retries after 5 s; the route never moves into the unloaded room. Once the room is loaded the action is only a pause. The matching `unlockDoor` mapping is required, not optional: without it the server refuses and the NPC retries forever; the validator errors on a missing one, and the engine logs one console warning |
+| `useObject: "object_id"` | The NPC turns to face that object (a scenario object id, in any loaded room). It does not trigger the object's own behaviour. Combine with `unlockRoom` for a visible reader or keypad. Emits `npc_used_object:<object_id>` `{ npcId, objectId, roomId, useMs }` as he starts and `npc_used_object_done:<object_id>` when he has finished |
+| `useMs: 2500` | With `useObject`: the NPC stands at the object that long (a PIN keyed at a reader) before `npc_used_object_done` and the rest of the action. Default 0 (done at once). Use it for a shoulder-surf window: the lab sets a global on `npc_used_object`, clears it on the done event and counts a look only while it is set. Arm the window on the keying, not on a gate opening: a gate can open again as the NPC comes back out |
+
+**The player and an NPC walking a route.** The player cannot shove an NPC that is walking a route (not hostile, not KO'd) off its line. That covers a configured patrol and any other walk the engine runs as a route: an office-life NPC walking a needs errand, and an NPC walking back home after being pushed. In open floor the player stops against it. Within 12 px of a wall, doorway, narrow corridor, desk, table or other fixed furniture the two pass through each other instead, so a walking NPC cannot body-block the player there and the player cannot body-block it. A patrol guard pausing at a waypoint still holds; an NPC that has reached the end of an errand or its walk home, or has no route, is pushed as before. Do not build a "guard blocks the corridor" beat on its body; use a gate, a locked door or a conversation trigger.
+
+#### Bark Notifications
+
+Any person NPC can display an in-world bark — a speech-bubble notification that appears briefly above the NPC and plays TTS audio if the NPC has a `voice` config.
+
+Barks are triggered via event mappings (see below). Each NPC uses its own audio channel so multiple NPCs can bark simultaneously without cutting each other off.
+
+```json
+{
+  "eventPattern": "global_variable_changed:alarm_triggered",
+  "condition": "value === true",
+  "onceOnly": true,
+  "bark": "Intruder alert!",
+  "barkDelay": 0
+}
+```
+
+- **TTS**: automatically used when the NPC has a `voice` config. No extra field needed.
+- **`barkDelay`**: milliseconds to wait after the event fires before showing the bark (default `0`). Use to stagger responses from multiple NPCs reacting to the same event so they don't all speak simultaneously.
+- **Barks wait behind a minigame** (any except phone chat) and are released when it closes (`bark-release-policy.js`). They come out first in, first out, one every 2.5 s. Before each one shows, the mapping's `condition` is run again against the original event (so a `globalVars.x` term reads the current value), and a text with `skipIfGlobal` checks that global again; a bark that no longer passes is dropped, so write conditions that say when a line has stopped being true ("next is the restore" should require `!globalVars.restore_done`). A bark with no condition is never dropped for being stale. If more than 3 are waiting, the oldest ones beyond the newest 3 are dropped, but only if the same text is in the NPC's phone thread; barks from person NPCs have no such copy and are never dropped by the cap. Drops are logged with `console.debug` ("stale" or "capped").
+- **Toasts close themselves after a reading time** (`bark-lifetime.js`): 3 s plus 300 ms a word, at least 5 s and at most 20 s; hovering one pauses it, clicking still opens the chat. At most 3 show at once and the stack stays below the objectives panel, so the oldest close early. When a minigame or conversation closes, a toast still on screen whose `condition` or `skipIfGlobal` no longer holds is closed too, so give a day-one text a `skipIfGlobal` for the night if it would read wrong after the turn.
+
+#### NPC Timed Conversations (opening cutscenes)
+
+Trigger a conversation automatically when the player loads the room:
+
+```json
+"timedConversation": {
+  "delay": 0,
+  "targetKnot": "start",
+  "background": "assets/backgrounds/hq1.png",
+  "waitForEvent": "game_loaded",
+  "skipIfGlobal": "briefing_played",
+  "setGlobalOnStart": "briefing_played"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `delay` | Milliseconds before triggering (use `0` for immediate) |
+| `targetKnot` | Ink knot to jump to |
+| `background` | Background image for person-chat overlay |
+| `waitForEvent` | Wait for this game event before starting |
+| `skipIfGlobal` | Skip if this global variable is truthy (prevents cutscene replaying on resume) |
+| `setGlobalOnStart` | Set this global variable to `true` when conversation starts |
+| `disableClose` | `true` prevents player closing the dialog (person-chat and phone; on the phone it also hides the back arrow and ignores Esc). Honoured since 2026-10-21; before that the field was read but dropped. |
+| `videoCall` | `true` opens the conversation as a video call, as an event mapping's `conversationMode: "video-call"` does: person-chat framed as a call, with the player's chosen avatar as a self-view. It works for a phone NPC too (the call is always a person-chat). `conversationMode: "video-call"` is accepted as the same thing. Absent, nothing changes. |
+| `videoLabel`, `participantTag` | With `videoCall`: the meeting-tool name on the call bar (default "SECURE VIDEO LINK") and a tag beside the peer's name (for example "External"). |
+| `ring` | `true` or an object (`onMissed`, `voicemailKnot`, `withheld`, `untilAnswered`, `callbackWhen`, `ringWhile`). The timed call rings (answer, decline, miss, callback) instead of opening at once. Phone NPCs only, not with `videoCall`. See [Voiced phone calls](#voiced-phone-calls). |
+| `voiced: true` | `phone-chat` only: the conversation opens at once as a voiced call (the older form; see "Every form, old and new"). Not needed with `ring`. |
+| `callLabel` | With `ring` or `voiced`: the caption under the caller's name, as the phone would show it ("SAFETYNET secure line"). |
+
+#### NPC Event Mappings
+
+React to game events on any NPC type:
+
+```json
+"eventMappings": [
+  {
+    "eventPattern": "global_variable_changed:derek_confronted",
+    "condition": "value === true",
+    "onceOnly": true,
+    "conversationMode": "person-chat",
+    "targetKnot": "aftermath",
+    "background": "assets/backgrounds/hq1.png"
+  }
+]
+```
+
+Common event patterns:
+- `"global_variable_changed:var_name"` — fires when a global variable changes (`condition: "value === true"`)
+- `"room_entered:room_id"` — fires when player enters a room
+- `"npc_ko:npc_id"` — fires when an NPC is knocked out
+- `"npc_attacked:npc_id"` — fires when an NPC is attacked
+- `"item_picked_up:item_type"` — fires when an item is picked up
+- `"door_unlock_attempt"` — fires on any door unlock attempt (`condition: "data.connectedRoom === 'room_id'"`)
+- `"door_unlocked"` — fires when the player unlocks a locked door (any lock type) or a flag reward's `unlock_door` action opens one. `data.connectedRoom` is the room unlocked (`condition: "data.connectedRoom === 'vault'"`); for a player unlock `data.roomId` is the room the player unlocked it from, and `data.lockType` and `data.direction` are set. No `:room_id` suffix form: filter with the condition
+- `"door_unlocked_by_npc"` — fires when an NPC's ink `#unlock_door:<room_id>` or an eventMapping's `unlockDoor` opens a door. `data.roomId` is the room unlocked, `data.npcId` who did it. It does not also fire `door_unlocked`
+- `"door_unlock_failed"` / `"door_unlock_failed:room_id"` — fires when a door refuses the player: no key (`reason: "no_key"`), a fingerprint reader refusal, an RFID reader refusing a card or clone (`"wrong_card"`, `"uid_only"`), or a card reader with nothing to present (no keycard, and no cloner or one with no saved cards: `"no_card"`), a wrong password at a password door (`"wrong_password"`, or `"wrong_password_case"` when the entry was right apart from letter case). `data.lockType` says which kind of lock
+- `"password_failed"` / `"password_failed:target_id"` — fires on every wrong password at a password keypad, door or object (`target_id` is the door's room id or the object's id). `data.caseMismatch` is true when the entry matched apart from letter case (the keypad then says passwords are case-sensitive); `data.attemptsRemaining`, `data.targetType`, `data.name`
+- `"object_interacted"` — fires when object interacted with (`condition: "data.objectType === 'vm-launcher'"`)
+- `"conversation_closed:npc_id"` — fires when a conversation closes
+- `"attack_aborted"` / `"attack_launched"` — fires from launch-device
+- `"player_spotted:npc_id"` — fires when an NPC with `los.challengeOnSight` sees the player (see [Guards who challenge on sight](#guards-who-challenge-on-sight-loschallengeonsight))
+- `"npc_caught_at_post:npc_id"` — a needs NPC walking back to its `needsHome` object from a real trip (not own-desk work) finds the player within 1.5 tiles of its desk, or with a minigame open on it. Once per return; `data.objectId`, `data.playerDistance`, `data.inMinigame`. It can fire as the NPC sets off home from the far side of its room. Map it to a bark or a conversation with a `cooldown`. The engine does not close an open minigame. `npc_left_post` also carries `data.expectedAwayMs` (a lower-bound estimate of the absence) and `data.playerNearby`. See `docs/achitechture/NPC_NEEDS_SYSTEM.md` §5.3 and §7
+- `"npc_needs_leashed:npc_id"` — the room leash or a private object removed an option this NPC would otherwise have had (`data.need`, `data.skipped`, `data.chose`, null when nothing was left). Leash fields: `needsRooms` (allow list) and `needsAvoidRooms` (deny list) on the NPC, fixed per NPC; `needsPrivateTo: [npcIds]` on a room (someone's office: other NPCs' needs neither use it nor walk through it, and go the long way round); `affordance.private: true` (+ optional `owners`) on an object (only its owners use it; anyone may still deliver to it). Scripts and route patrols ignore the leash. The validator errors on a need the leash makes impossible and warns on targets reachable only through a forbidden room. See `NPC_NEEDS_SYSTEM.md` and `scenarios/test_needs_leash`
+
+A mapping `condition` is one or more terms joined with `&&` (no `||`, no parentheses): `value`, `name`, `data.<field>` or `globalVars.<name>`, compared with `===`, `!==`, `>`, `<`, `>=`, `<=`, negated with `!`, tested bare for truth, or `.includes('…')` (on a string it tests for a substring; on a list, such as `data.endedPcIds`, it tests whether one whole id is in the list). `data.` and `globalVars.` operands can be dotted paths into nested objects, such as `data.result.maxAttemptsReached === true` on a `minigame_completed` event; a missing link along the path reads as `undefined`, so the term is simply false. The right of a comparison is a literal (`true`, a number, a quoted string) or another `data.` or `globalVars.` operand, so `data.level < data.previous` on `npc_frustration_changed` fires when a level falls; an unquoted bare word there is read as a string.
+
+**Mappings run in array order.** When several mappings on one NPC listen for the same event, they run top to bottom, and a global set by an earlier one (`setGlobal`) is already visible to the `condition` of a later one in the same dispatch. Put the mapping that records something first and the one that reacts to it second: `[{ "eventPattern": "npc_used:pc", "setGlobal": {"surfed": true} }, { "eventPattern": "npc_used:pc", "condition": "globalVars.surfed", "closeDoor": "vault" }]` closes the door; reverse the two and it doesn't.
+
+Event mapping actions (can be combined):
+
+| Action | Description |
+|--------|-------------|
+| `setGlobal: { "var": value }` | Set one or more global variables |
+| `bark: "text"` | Show a bark bubble above the NPC and play TTS audio (if NPC has `voice`). Each NPC has its own audio channel so multiple NPCs can bark simultaneously. |
+| `barkDelay: ms` | Milliseconds to wait before firing the bark (default `0`). Use to stagger responses from multiple NPCs reacting to the same event. |
+| `targetKnot: "knot_name"` | Jump to this Ink knot (person NPCs only; updates `currentKnot` so next conversation starts there; does NOT work on phone NPCs after first open) |
+| `conversationMode: "person-chat"` | Trigger a person-chat cutscene (person NPCs only). Requires `targetKnot`. `"phone-chat"` opens a phone NPC's thread at `targetKnot` (see [Forced phone calls](#forced-phone-calls-that-ring-again); add `ring` to make it ring, see [Voiced phone calls](#voiced-phone-calls)); `"video-call"` opens any NPC in person-chat as a call. |
+| `disableClose: true` | The conversation this mapping opens can't be closed by the player (no x, no Close, no Esc; on the phone no back arrow). It closes on `#exit_conversation`, by itself 2 s after a story that ends without one, or when the player takes a hit. |
+| `resume: true` | `phone-chat` only: reopen the thread from its saved story instead of jumping to `targetKnot`, so the player is back at the choice they left. With no saved story yet it rings at `targetKnot` like a first call. For re-ringing an unfinished call. |
+| `ring: true` or `{ onMissed, voicemailKnot, withheld, untilAnswered, callbackWhen, ringWhile }` | `phone-chat` on a phone NPC only: the call rings (answer, hold, decline, miss, callback or voicemail) instead of opening at once. Implies `voiced`. Needs `targetKnot`, the call's own knot (not the home knot). The mapping's `setGlobal` and other effects run when it rings, even if declined; `onceOnly` is spent then. `ringWhile` drops it quietly if its condition stops holding before pickup. Not allowed on `video-call`. See [Voiced phone calls](#voiced-phone-calls). |
+| `voiced: true` | `phone-chat` only: the conversation opens at once as a voiced call (the older form; see "Every form, old and new"). Not needed with `ring`. |
+| `callLabel` | With `ring` or `voiced`: the caption under the caller's name, as the phone would show it ("SAFETYNET secure line"). |
+| `background: "path"` | Background image for person-chat cutscene |
+| `patrolOverride: { "targetTile": {"x": n, "y": n}, "speed": n, "stopOnArrival": true }` | Override current patrol — NPC walks directly to target tile. `stopOnArrival: true` halts patrol when destination is reached. |
+| `setPatrolSpeed: number` | Change the NPC's patrol speed (pixels/second) from this point on |
+| `setDwellMultiplier: number` | Multiply all patrol waypoint dwell times (e.g. `0.3` = 30% of normal pause time) |
+| `setVisible: true/false` | Show or hide the NPC sprite in the world |
+| `sendTimedMessage: { "delay": ms, "message": "..." }` | Send a timed message from this NPC (phone NPCs) |
+| `completeTask: "task_id"` or `["id1","id2"]` | Mark a task complete |
+| `unlockTask: "task_id"` | Unlock a locked task |
+| `unlockAim: "aim_id"` | Unlock a locked objective aim |
+| `unlockDoor: "room_id"` or `["id1","id2"]` | Unlock the door to that room on the server, as this NPC, so it survives a reload (like ink `#unlock_door`, but the NPC needn't have been met or list the room in `unlockable`: the mapping is the permission). Fires `door_unlocked_by_npc`. The validator errors on a room that doesn't exist |
+| `closeDoor: "room_id"` or `["id1","id2"]` | Shut the gate door(s) into that room now (see [Gate doors](#gate-doors-doorsgate)), and keep them shut for at least the gate's `holdMs`. Never shuts on a player crossing a doorway the gate lets them through. Warns in the console if the door isn't a gate |
+| `openMinigame: "mail_terminal"` or `{ "type": "exercise-station", "minigameData": { ... }, "name": "..." }` | Open a minigame from the starter registry (see [Opening a minigame from a scenario](#opening-a-minigame-from-a-scenario)). `type` is an object type from that table, `minigameData` is what an object of that type would carry. `onceOnly`, `maxTriggers`, `cooldown`, `condition` and `delayMs` apply as for any action. It opens a moment after the event, and waits behind any minigame that is open (a conversation closing, a scripted call). A `onceOnly` mapping is saved for a reload only once the minigame closes normally, so a reload mid-exercise lets it open again. Use it instead of `conversationMode`, not with it. An unknown type warns and opens nothing; the validator errors. |
+| `onceOnly: true` | Ensure mapping only fires once |
+| `delayMs: ms` | Run the whole mapping this long after the event instead of at once (e.g. `8000` on `room_entered:` so the player can look round before a scene opens). The checks run at the event (nothing is scheduled if the condition fails then) and again when the delay is up, so a `globalVars` term that has stopped holding cancels it. One delay per mapping is pending at a time; if a minigame or conversation is open when it is up, it waits for that to close. A pending delay is not saved, so a reload before it fires leaves the mapping to fire on the next event. Not for `lockpick_used_in_view` (the pick is stopped at once regardless). |
+
+#### Guards who challenge on sight (`los.challengeOnSight`)
+
+A person NPC's `los` block sets his line of sight: `range` (pixels, default 200), `angle` (cone width in degrees, default 120, facing the way he walks or looks) and `visualize` (draw the cone). By default the cone is only used to decide whether he sees a lock being picked (`lockpick_used_in_view`). Add `challengeOnSight` and he also reacts when the player simply walks into his sight. It is off unless you add it, so no existing mission changes.
+
+Walls, closed doors and tall props block his view and clip the drawn cone (`npc-sight-occlusion.js`). Tall props are racks, shelving, bookcases, vending machines, lockers, filing and other tall cabinets (by sprite name, at least 50 px high, not hung on the back wall); give a scenario object `"blocksSight": true` or `false` to override. Sight is tested at floor level, feet to feet, so standing behind a rack hides the player and standing beside it doesn't. `"occlusion": false` in a `los` block makes that NPC see through everything, for a catch that must always fire (m02's Gary).
+
+**Torches.** `"torch": true` in an NPC's `behavior` (or `{ "condition": "globalVars.night", "color": "#fff0d8" }`) gives him a beam the way he faces, shown only in a dim room (`lighting.js`). The beam is about 51 degrees wide and plainly lit to about 100-120 px. It leaves his right hand: facing east the hand is on the near side, facing west on the far side, facing south on the viewer's left, facing north on the viewer's right. While he holds the torch his sight starts at that hand too (range, angle, walls and props, and the drawn cone), so with `los.angle` about 50 and `range` about 120 the beam shows the player what he can see and `visualize` can stay off (m07's Ray Hollis). `los.origin` overrides this: `"body"` keeps the old origin (sprite centre for range and angle, the feet for walls and the drawn cone) for a torch carrier, and `"torch"` uses the hand point on an NPC without one. A conditional torch only counts while its condition holds.
+
+```json
+"los": {
+  "enabled": true, "range": 150, "angle": 120,
+  "challengeOnSight": {
+    "cooldown": 20000,
+    "rooms": ["reception"],
+    "skipIfGlobal": "visitor_badge_shown"
+  }
+},
+"eventMappings": [
+  {
+    "eventPattern": "player_spotted:night_guard",
+    "conversationMode": "person-chat",
+    "targetKnot": "challenge_visitor",
+    "cooldown": 0
+  }
+]
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `enabled` | `true` | `false` turns a configured challenge off. `"challengeOnSight": true` is the same as `{}` (all defaults). |
+| `cooldown` | `10000` | Milliseconds before he can challenge again. |
+| `event` | `"player_spotted:<npcId>"` | Name of the event to emit. |
+| `rooms` | any | Only while the player is in one of these rooms. He must be in the player's room in any case, because the cone ignores walls. |
+| `requireGlobal` | none | Only while this global is truthy (`"alarm_raised"`), or while every global listed matches its value (`{ "alarm_level": 2 }`). |
+| `skipIfGlobal` | none | Never while this global is truthy, or while any global in a list is, e.g. once the player has shown a badge. |
+| `near` | none | Only when the player is also within `radius` px (default `64`) of a target: `{ "door": "vault" }` (a door into or out of that room), `{ "object": "<objectId>" }` or `{ "x": 5, "y": 3, "room": "lobby" }` (room tiles). He must still see the player. With `near`, `rooms` may list the room on the far side of a door. Set `event` to something distinct such as `player_in_view_near:<npcId>`; the event data adds `targetId` and `targetType` (`door`, `object` or `tile`). Nothing fires while the target's room isn't loaded. |
+
+How it fires: while the player is in his room and inside his cone, and the conditions hold, the event is emitted once, with `{ npcId, roomId, playerPosition, timestamp }`. It doesn't fire again until the player has left his sight and come back, and the cooldown has passed. Nothing is checked while a conversation or minigame is open, so the challenge conversation itself doesn't retrigger it. KO'd and hidden NPCs see nothing. With `"enabled": false` on the `los` block itself he sees his whole room. The cooldown and sighting state are per session; a reload starts them fresh, so use `onceOnly` on the mapping (saved across reloads) for a challenge that must happen only once.
+
+The event does nothing by itself: map it in `eventMappings`, on the guard (a `person-chat` knot, a `bark`) or on any other NPC (a handler text, `setGlobal`, `completeTask`). The mapping's own `cooldown`, `condition`, `onceOnly` and `maxTriggers` apply as usual; give a person-chat mapping `"cooldown": 0` so the guard's cooldown is the one that counts. The validator warns about unknown `los` and `challengeOnSight` fields, a challenge on a non-person NPC, and a challenge event that no mapping listens for.
+
+### Phone NPCs (`npcType: "phone"`)
+
+Contacts in the player's phone. Not rendered in the world — they exist only in the phone UI.
+
+```json
+{
+  "id": "agent_0x99",
+  "displayName": "Agent HaX",
+  "npcType": "phone",
+  "phoneId": "player_phone",
+  "storyPath": "scenarios/my_scenario/ink/phone_handler.json",
+  "currentKnot": "first_call",
+  "avatar": "assets/characters/agent_hax_headshot.png",
+  "voice": { "name": "Aoede", "style": "Intelligence handler", "language": "en-GB" },
+  "timedMessages": [
+    {
+      "delay": 3000,
+      "message": "Agent, I'm your handler for this op.",
+      "waitForEvent": "conversation_closed:briefing_cutscene"
+    }
+  ],
+  "eventMappings": [
+    {
+      "eventPattern": "room_entered:server_room",
+      "onceOnly": true,
+      "setGlobal": { "server_room_entered": true },
+      "sendTimedMessage": { "delay": 1000, "message": "You're in the server room." }
+    }
+  ]
+}
+```
+
+**Important phone NPC rules:**
+- Phone NPCs must **not** have `position` or `spriteSheet`
+- Phone NPCs must have `phoneId` matching a phone in `startItemsInInventory`
+- A bare `targetKnot` (no `conversationMode`) does **not** move a phone NPC's thread after the first conversation; use `setGlobal` and an Ink conditional hub choice. A `phone-chat` mapping (with or without `ring`) does open at its `targetKnot`.
+- On a phone NPC a mapping's `conversationMode` is `"phone-chat"` (the thread or call) or `"video-call"` (the contact opens in person-chat framed as a video call). `"person-chat"` is ignored on phone NPCs: it opens only for `npcType: "person"`.
+- `call` (one entry or a list) makes the contact rangeable: a Call button in its thread, and the target of `#place_call` in its ink. Fields `knot`, `when`, `unavailable`, `button`; see [Voiced phone calls](#voiced-phone-calls). Without a `call` entry (or a pending callback) a contact has no way to be called, so texts must not say "call me". A contact with `call` needs a `voice`, and a thread that shows (in the phone's `npcIds`, or with history from a `ring`, `timedMessages` or `sendTimedMessage`), or its button never appears. Not for contacts with `callId`.
+- A phone NPC with no `timedMessages` still has a thread the player can open from the contact list; it has no call button unless it has a `call` entry
+
+#### Direct messages (social theme)
+
+A phone device can be skinned as a messaging app (a "Friendface" DM client, an encrypted messenger) rather than the default Messages phone. Everything is opt-in: a phone with no `app` block renders exactly as before, so the handler phones and the m02/m07 terminals are untouched.
+
+The look belongs to the **device**, because the contact list does. Put an `app` block on the `type: "phone"` item or object:
+
+```json
+"startItemsInInventory": [
+  { "type": "phone", "id": "friendface_phone", "name": "Friendface", "takeable": true,
+    "phoneId": "friendface_dm", "npcIds": ["priya_dm", "dom_dm"],
+    "app": { "title": "Friendface", "theme": "social", "accent": "#3b5bdb", "chrome": "app" },
+    "observations": "Your Friendface account, open on your phone." }
+]
+```
+
+- `theme: "social"` is the generic DM-app look (a light bubble thread with an accent). The other value is `"terminal"` (the CRT look m02/m07 already use). A device's `app.theme` wins over the contacts' `phoneTheme`, which stays the fallback.
+- `accent` is a hex colour; the app chooses readable text over it automatically.
+- `chrome: "app"` drops the phone's signal bars and battery (a desktop or web app has none).
+- `title` replaces the "Messages" heading. `logo` (optional) names a file in `assets/logos` shown beside the title.
+- The same app can appear in the world as a `type: "phone"` **object** (a laptop or terminal on a desk) with the same `phoneId`, `npcIds` and `app`. Do not give that object a `callId`: a judged contact is reached from inside the list, not by opening the device straight into a call.
+
+Phone NPCs gain two optional fields for a DM app:
+
+```json
+{
+  "id": "priya_dm", "displayName": "Priya Nair", "npcType": "phone",
+  "phoneId": "friendface_dm", "handle": "@priya.nextdoor",
+  "profile": { "siteId": "friendface", "person": "priya" },
+  "storyPath": "scenarios/my_scenario/ink/priya_dm.json", "currentKnot": "start"
+}
+```
+
+- `handle` shows under the name in the contact list and the open thread (for example `@priya.nextdoor`).
+- `profile` adds a **View profile** link that opens the OSINT browser at that person's profile and returns to the chat on close. `siteId` is a `social.osint.sites` id and `person` a `social.people` id with a profile on that site. There is no profile link inside a judged chat (leaving would close the call).
+
+A **judged DM** (a gatekeeper the player must talk round, such as a members' club secretary) is the existing pretext-call mechanic: give the contact a `callId` that names a `social.pretextNpcs` entry, exactly as a desk phone would. Opening that contact runs the prep card and the suspicion meter. The debrief, prep and refusal wording switch to a chat vocabulary under the social theme ("Chat debrief", "The chat was reported.", "Start the chat") instead of the call wording. Override any of it per theme with a `labels` block on the pretext entry (`labels.social.debriefTitle`, `.got_it`, `.partial`, `.reported`, `.walked_away`); `outcomeLabels` still wins over both. The influence channel stays `phone`.
+
+- **Set `phoneTheme: "social"` on a judged DM contact as well as the device `app`.** The prep card and the judged chat are reached through the pretext path, not by opening the device, so they take the theme from the contact's `phoneTheme` fallback rather than the device `app`. Without it the prep card and debrief keep the default call wording. Giving every social-app contact a `phoneTheme: "social"` is the safe habit: it also covers a thread opened by a timed message with no device in hand.
+
+Fixture: `scenarios/test_dm_social/` (a plain neighbour chat with a timed follow-up, a judged guest-list chat, handles, View profile, and the same app on a desk laptop).
+
+#### Forced phone calls that ring again
+
+A call the player must finish: it opens by itself, can't be closed, and if something does close it before the end (a hit from a hostile NPC closes it, so the player can fight), it rings again at the question they left rather than starting over.
+
+```json
+"timedConversation": { "delay": 2000, "targetKnot": "forced_call", "waitForEvent": "game_loaded", "disableClose": true },
+"eventMappings": [
+  {
+    "eventPattern": "conversation_closed:agent_0x99",
+    "condition": "globalVars.call_started && !globalVars.call_done",
+    "conversationMode": "phone-chat", "targetKnot": "forced_call",
+    "resume": true, "disableClose": true, "cooldown": 0
+  }
+]
+```
+
+- The ink sets `call_started` at the top of the call knot and `call_done` on its last line (with `#exit_conversation`). Declare both as globals so the mapping's condition can read them.
+- **When it rings again** is the mapping's `eventPattern`: `conversation_closed:<id>` rings straight away; `room_exited` with `"condition": "data.roomId === 'office' && globalVars.call_started && !globalVars.call_done"` rings when the player leaves that room; any other event works the same way. Add `delayMs` for a pause before it rings.
+- `cooldown: 0` matters: the default 5 s cooldown would swallow a second close inside 5 s.
+- `resume: true` restores the saved story (it is saved after every choice), so the thread keeps what was said and the unanswered choices show again. Without it the mapping re-runs `targetKnot` from the top.
+- If the player opens the contact from the phone before it rings, the thread also reopens at the saved choice.
+- A re-ring ends whatever minigame is open, as every conversation mapping does (in the trial scenario it replaced the Mission Brief popup that follows the opening call).
+- While the call is open, texts from other contacts still arrive (they go in that contact's thread and show as a toast); clicking the toast does nothing until the call ends. A text from the caller is held until the phone closes.
+- A line in the caller's thread prefixed with another character's display name (`Director Netherton: Put her on.`) is drawn with that name over the bubble. Only registered characters' names count, so `Note: ...` stays plain text.
+- Test scenario: `scenarios/test_finale_calls_credits/`.
+- A forced call can also ring first: add `ring: true` to the mapping or timed conversation. It then shows an incoming-call banner with no Decline, answers itself after 6 s, and rings again after a hit as described under [Voiced phone calls](#voiced-phone-calls). Without `ring` it opens at once, as above.
+
+#### Voiced phone calls
+
+Phone texts are silent. A call is spoken, and the phone has a real call flow: a call can ring and be answered, declined or missed, and the player can ring a contact. Everything is opt-in. A scenario that uses none of the fields below behaves as it always did.
+
+Two fields do the work. `ring` goes on the mapping or timed conversation that offers an incoming call. `call` goes on the phone NPC and lets the player ring out. The older forms (`voiced: true` on a mapping, a timed conversation or the contact) still work and are in the table under "Every form" below. Fixture: `scenarios/test_phone_calls/` (its README lists one contact per behaviour).
+
+##### `ring`: an incoming call that rings
+
+Allowed on an event mapping with `conversationMode: "phone-chat"` on a phone NPC, and on a phone NPC's `timedConversation` that is not a video call. It implies `voiced: true`. It needs a `targetKnot`: the call's own knot, which must not be the contact's home knot (`currentKnot`, default `start`) unless the contact has `voiced: true`.
+
+```json
+{
+  "eventPattern": "global_variable_changed:flag1_submitted",
+  "condition": "value === true",
+  "onceOnly": true,
+  "delayMs": 7000,
+  "conversationMode": "phone-chat",
+  "targetKnot": "call",
+  "ring": true,
+  "callLabel": "Agent 0x47"
+}
+```
+
+`ring: true` takes every default. The object form:
+
+| Field | Default | Meaning |
+|---|---|---|
+| `onMissed` | `"callback"` | What a missed call leaves: `"callback"` (a Call back button) or `"voicemail"` (a message in the thread). Declining counts as missing. |
+| `voicemailKnot` | none | Required with `onMissed: "voicemail"`. The knot's `voice: …` lines become voice messages. |
+| `withheld` | `false` | The banner, rows and toasts say "No caller ID", with no name, avatar or caption. Once answered, the call screen and the contact list still show the contact's `displayName`, so give a withheld caller a neutral display name if the name would give it away. A withheld number can't be rung back, so it needs `onMissed: "voicemail"` unless the call is forced. |
+| `callbackWhen` | none | With `onMissed: "callback"` only. A condition — an `&&` chain of `globalVars.*` terms (each a single `globalVars.<name>`, optionally negated with `!` or compared to a literal or another `globalVars.<name>`; no `||`, and no other term, both of which the validator rejects as errors) — under which the callback this missed call leaves is still worth placing. It is re-checked when the "Call back" button is built and as the callback dials; if it no longer holds, the callback is cleared quietly, so the button never dials an out-of-date knot. Example: a dial ring that becomes stale once the state it reported has been acted on — `"ring": { "onMissed": "callback", "callbackWhen": "globalVars.esd_authorized !== true" }`. The save format is unchanged (just `knot`, `state`, `onMissed`, `callLabel`); after a reload the condition is recovered from the ring mapping by knot, so a stale callback still clears. As with `call.when`, a flag the ink sets with `~` must be declared in `globalVariables`. |
+| `ringWhile` | none | A condition in the same grammar as `callbackWhen` (an `&&` chain of `globalVars.*` terms; `||` or any non-`globalVars.` term is a validator error), re-checked while the call is queued or ringing; the call is dropped quietly once it stops holding. See "A ring whose reason goes away" under [The ringer](#the-ringer-what-the-player-sees). As with `call.when`, a flag the ink sets with `~` must be declared in `globalVariables`. |
+| `untilAnswered` | `false` | No ring timeout. The call rings until the player answers or declines. After 20 s the ringtone stops looping and the phone vibrates once every 10 s, with the banner still up. Use it for a caller who would keep trying. Pair it with a `call_answer_seconds` line (see the ink README) so a long wait gets a comment. No effect on a forced call. |
+
+A call that rings with no `untilAnswered` rings out after 20 s and counts as missed. Every other mapping field still applies: `disableClose` (a forced call: no Decline, it answers itself after 6 s), `resume`, `callLabel`, `onceOnly`, `cooldown`, `delayMs`, `condition`.
+
+A mapping with `ring` is not held back by an open minigame (an ordinary mapping waits for it to close); the ringer decides when it can ring. Side effects fire at ring time: the mapping's `setGlobal`, `completeTask` and the rest run when the call is offered, even if the player declines, and `onceOnly` is spent then too. A ring dropped by `ringWhile` puts its own `setGlobal` keys back (see [The ringer](#the-ringer-what-the-player-sees)). An effect that should wait for the call to be taken goes on a second mapping on `phone_call_answered:<npcId>`, or in the call's ink.
+
+A `ring` on a `timedConversation` works the same way. Its `setGlobalOnStart` is set at the first ring, and the delivered mark is saved, so a reload does not schedule it again.
+
+`ring` is a validator error on a video call, on a non-phone NPC, and on any `conversationMode` but `phone-chat`.
+
+##### `call`: a contact the player can ring
+
+On a phone NPC, one entry or a list tried in order:
+
+```json
+"call": {
+  "knot": "support_call",
+  "when": "globalVars.vance_is_ally && !globalVars.robert_vance_ko",
+  "unavailable": "no_answer"
+}
+```
+
+```json
+"call": [
+  { "knot": "m2_revelation_call", "when": "globalVars.flag_distcc_submitted && !globalVars.revelation_heard", "unavailable": "hidden" },
+  { "knot": "extract_call", "button": false }
+]
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `knot` | required | The knot the call opens on. A call knot (voiced, with everything it reaches). Not the home knot. |
+| `when` | always | A condition in the event-mapping grammar, using only `globalVars.` terms joined by `&&` (`value`, `name` and `data.` don't exist here). Checked as the call connects and, for button entries, to decide whether the button shows. The button is worked out again whenever a global changes while the thread is open, so it appears or goes without the player leaving the thread. For an OR, write two entries with the same knot: an `||` is a validator error, because the engine would read the whole condition as false. A flag the ink sets with `~` must be declared in `globalVariables`, or the condition never sees it. |
+| `unavailable` | `"no_answer"` | When `when` fails: `"no_answer"` (the button shows and the call rings out) or `"hidden"` (this entry gives no button). |
+| `button` | `true` | `false`: the entry never shows the header button. It is dialled only by `#place_call:<knot>` from the thread. Use it where the beat already has a hub choice, or where the condition needs more than `&&`. |
+
+The caption under the name is the call's own `callLabel` (on the ring mapping or `timedConversation`; a callback keeps the ring's), else the contact's `callLabel`. With neither, the incoming banner shows no caption, and the call screen and dialling show "Voice call". A withheld call's banner never shows one. So a contact-level `callLabel` covers the contact's rings, callbacks and placed calls at once; put one on a mapping only where that call should read differently. `call` entries take no `callLabel`.
+
+**What the button dials**, in order: a pending callback (it connects at once, skipping `when`); else the first entry with `button` not `false` whose `when` holds; else, if any such entry has `unavailable: "no_answer"`, a call that rings out; else nothing, and the button is hidden. The button sits in the open thread's header and reads "Call", or "Call back" while a callback is pending. Contacts with `callId` (judged pretext contacts) and phones opened with `disableClose` have no button.
+
+**Dialling.** The thread closes and a call screen shows "CALLING" with a ring-back tone for about 2.5 s. If `when` holds, it connects on the entry's knot, with the contact's saved story restored first, so ink variables and visit counts carry over. If not, it rings out for 6 s, shows "NO ANSWER", adds a "No answer" row and returns to the thread. There is no cooldown: ringing again reruns the knot, and the ink decides what a repeat says.
+
+**The `#place_call` tag.** In a contact's text thread, `#place_call` or `#place_call:<knot>` closes the thread and dials, as the button does. It is how a hub choice becomes a call. It has one form: the tag on its own line in the choice's body, then `-> DONE`.
+
+```ink
++ {attack_prevented and not mission_complete} [I'm done here. Bring me in.]
+    #place_call:extract_call
+    -> DONE
+```
+
+The choice prints no NPC line; the call's knot speaks first. If the call rings out, the thread comes back on its home knot and shows the hub again. A tag inside the brackets is never run and is a validator error. `<knot>` must be one of the contact's `call` entries. A bare `#place_call` dials what the button would. It does nothing inside a call, or in a `disableClose` thread. If it can't dial (a call is already on), the thread stays on its choices.
+
+A ring's `targetKnot` can also be a `call` entry (usually `"button": false`), so a hub choice can dial the beat the player missed. While that contact has a pending callback for the knot, `#place_call:<knot>` connects it as the callback (skipping `when`, `call_is_callback` true); otherwise it is an ordinary outgoing call.
+
+##### Every form, old and new
+
+| Form | What it does |
+|---|---|
+| Mapping `phone-chat` + `voiced: true` (m09, m10) | Opens at once, voiced, and closes whatever minigame is open. Unchanged. |
+| `timedConversation` + `voiced: true` | Opens at once, voiced. Unchanged. |
+| Contact `voiced: true` + `callLabel` (lab Dev) | A call through a pretext card (`callLaunch`) is voiced and opens on the home knot; the contact list opens a silent thread. Unchanged. If the contact also has a `call` block, the button uses `call.knot` and `callLaunch` the home knot. |
+| Mapping `video-call` / `timedConversation.videoCall` (m02, lab_tesseract_trials) | Person-chat framed as a call. Unchanged. `ring` is not allowed. |
+| Mapping `phone-chat`, no `voiced` | Opens a silent thread at once. Unchanged. |
+| `sendTimedMessage` / `timedMessages` | Toast and thread. Unchanged. |
+| Phone object with `voice` | A voice-message bubble. Unchanged. |
+| `ring` on a mapping or `timedConversation` | Rings: answer, hold, decline, miss, callback or voicemail. |
+| `call` on a contact | A call button in the thread, dialling, connects or no answer. |
+| `#place_call` in a text thread | The choice or line dials the contact. |
+| Id prefix on a call line (`agent_0x99: …`) | That record speaks, and the bubble and subtitle show its display name. Use it where two records share a name. |
+
+The old forms never touch the ringer: no banner, no rows, no callback. A call you want the player to be able to decline, miss or ring back is a `ring` call.
+
+##### The ringer: what the player sees
+
+An incoming call shows a banner at the top centre of the screen over everything except the pause menu: avatar, name, caption, a green Answer and a red Decline. With the player's phone open, the same fields show as a panel inside the phone instead. Esc does not answer or decline. A forced call has no Decline.
+
+**The call look.** A connected call draws a call screen (portrait, timer, End call) in the handset look. A contact with `phoneTheme: "terminal"` instead shows its call in the CRT terminal look, with no call screen (m07's Architect, a withheld caller): the last line of the call is held on screen for a short read beat before the phone closes **when the call closes itself** (`#exit_conversation` or the story's end), so a terminal call's closing narration stays readable rather than flashing by; a player hang-up (the back arrow or Esc) closes at once.
+
+The look is decided **once per phone session**, so a contact's `phoneTheme` is not a per-thread skin:
+
+- The contact's own **calls** use its `phoneTheme` (the ring, then the connected call).
+- A phone **opened directly on that contact** — a notification, a timed message that opens the thread, a call — uses its `phoneTheme`.
+- A thread **tapped from the device's contact list** keeps the **device** look, not the contact's `phoneTheme`: the look belongs to the phone session the player opened, and the list and device set it. So a terminal contact's thread, reached from a normal (non-terminal) phone's list, shows in that phone's look.
+
+A device's `app.theme` wins over a contact's `phoneTheme`, which is the fallback. A device with **no** `app.theme` takes its fallback look from the **first** contact's `phoneTheme`, so do not list a `terminal` contact first on a phone you want to render in the default look.
+
+What Answer does depends on what is on screen:
+
+| On screen | Answer |
+|---|---|
+| Nothing | The call opens after half a second. When it ends the player is back in the world. |
+| The player's phone (list or thread) | The phone closes and the call opens; when the call ends the phone reopens on the screen it was on. |
+| A workstation popup (CyberChef, a lab sheet) | The popup is hidden, the call opens, and the popup comes back as it was (recipe, input and scroll position kept). |
+| A minigame (lockpick, keypad, terminal, container, a desk phone's handset) | The call goes **on hold**. The banner shrinks to "<Name> · on hold · close this to talk" with a Hang up button. The call opens when the player closes the minigame. |
+| A conversation, or the knockout screen | Nothing rings yet: the call waits, first in, first out, and rings when it is over. |
+| The tutorial | The opening accept/skip prompt holds the call until the player accepts or skips the tutorial. While a tutorial step panel is up the call waits for at most 20 s of unpaused time from when it was offered, or until the step completes or the tutorial ends, whichever first. It then rings, with the banner moved clear of SKIP TUTORIAL and the step counter. Forced calls follow the same rule. |
+
+**A ring whose reason goes away (`ring.ringWhile`).** A trigger `condition` is checked only when the mapping fires, as everywhere else in the engine — the ringer does not re-check it, so a trigger-time guard (`!globalVars.hl_box_opened` on a ring that fires when a lid is touched) never silently drops a call later. To make a ring drop when its reason is gone, add the opt-in `ring.ringWhile`: a condition in the same grammar as `callbackWhen` — an `&&` chain of single `globalVars.<name>` terms, including `!globalVars.x` and a comparison to a literal or another `globalVars.<name>` (`||` or any non-`globalVars.` term is a validator error, since the ringer would skip it and never drop the ring). It is re-checked while the call is **queued or ringing**. If it stops holding, the call is dropped quietly: no "Missed call" row, no `phone_call_missed`, no callback or voicemail.
+
+Repeat the `ringWhile` terms in the mapping's trigger `condition` too. `ringWhile` drops the call, but the mapping still fired, so its `completeTask`, timed messages and other effects have already run (its own `setGlobal` keys are put back, below). A ring whose `ringWhile` is already false at fire time rings for no frame at all (it is dropped inside the offer) yet runs those effects. Guarding the trigger `condition` with the same terms stops the mapping firing for a call that could never ring. m04 does this: `esd_authorized !== true` is in both the `condition` and the `ringWhile`.
+
+Once the player has **answered or put the call on hold**, it is never dropped — `ringWhile` is a pre-pickup check only. A forced call (`disableClose`) is never dropped this way either. So the m04 dial ring carries `"ringWhile": "globalVars.esd_authorized !== true && globalVars.mission_complete !== true"`: it drops if the ESD goes live (or the mission ends) while HaX is still ringing, but a call the player picked up plays out. It carries the same string as `callbackWhen`, so a missed ring's Call back goes stale at the same moment.
+
+When a `ringWhile` ring is dropped quietly, the globals the mapping's **own** `setGlobal` wrote are put back to the values they had before the mapping fired (a mapping's `setGlobal` runs the moment the event fires, even before the call rings). So a latch pattern — mapping A sets `a_rang` and guards on `!a_rang`, its twin B rings on a later event with the same guard — is not left stuck: A's ring drops, `a_rang` goes back to where it was, and B can still ring. Only a key still holding the value the mapping wrote is put back, so a write of a different value by something else while the call rang stands rather than being clobbered by the restore. The restore does not emit `global_variable_changed`, so a mapping that re-fires on its own latch's change cannot loop on the drop, and the twin reads the restored value when its own event arrives rather than being woken by it. For the same reason, anything that mirrors a global's value (a sprite variant, `revealOnGlobal`, an open thread's `call.when` button) keeps showing the value from when the call was offered, so latch only a key used for gating. A dropped `onceOnly` ring does not re-fire itself, so give such a ring a twin on the later event rather than relying on the same `onceOnly` mapping firing twice. (This restore is in memory only; the save is unchanged.)
+
+**Hold.** A held call never rings again. It opens once the minigame closes and nothing else is open, and not while the player is under attack: it waits until 4 s have passed with no damage. Hang up counts as declining. A non-forced caller waits on hold for 90 s of unpaused time, then rings off: the call is missed (`phone_call_missed`), the toast reads "<Name> rang off. Call back from the thread." ("The caller rang off." if withheld, and none when a voicemail is left, because the voicemail toast replaces it) and `onMissed` applies. A forced call has no Hang up and no limit.
+
+**Hold and `minigame_failed`.** A puzzle the player closes with Esc or its close button to take a held call ends through its own failure path, which emits `minigame_failed` and may show the puzzle's failure toast. So a mapping on `minigame_failed` can fire when a player closes a puzzle to take a held call. Don't map `minigame_failed` to anything a held call can set off (a penalty, a story branch).
+
+**Several calls.** One call is on screen at a time. Further calls from any contact queue and ring in turn. A second offer from the same contact on the same knot is dropped; on a different knot it replaces the first while that is queued, ringing or held (m07's countdown taunts rely on this: the T-1 call replaces T-5 still waiting). A connected call is never replaced: the new offer queues. The replaced call leaves no row, voicemail or event, but its mapping's `setGlobal` and other effects have already run. When the player rings a contact, a queued incoming offer of that contact on the same knot is dropped. A forced call is never replaced: later offers queue behind it.
+
+**Forced calls** (`disableClose`). They can't be declined or missed. They answer themselves after 6 s of unpaused time with no damage for 4 s, over whatever is open. A hit that closes the call makes it ring again after 4 s of quiet, opening with `resume` so the unanswered choice shows. After a reload a forced call rings again 3 s after the game loads.
+
+**Sound.** A ringtone loops while it rings, with a vibrate once per cycle. Both stop on any outcome and while the game is paused. The ring timer stops under the Mission Brief too, and carries on when it closes.
+
+##### Missed calls, callback and voicemail
+
+Declining, ringing out, hanging up from hold, the 90 s hold limit, a connected call cut short and a reload all leave a "Missed call" row in the thread (unread, red in the contact list). The thread shows rows for calls it has made or taken too ("Incoming call, 1:24", "Outgoing call, 0:48", "No answer", "Voicemail"). Rows are never voiced.
+
+- **`onMissed: "callback"`** (the default). The contact gets a pending callback. The header button reads "Call back" even if the contact has no `call` block, and the Missed call row carries a Call back button. Either dials, shows CALLING for the dial, then connects on the same knot the ring would have opened, skipping `when`, with `call_is_callback` true. A bare `#place_call` dials it too. It clears when it connects, when a newer offer from the same contact starts ringing, and when its ring's `callbackWhen` no longer holds (above). A call that is only queued leaves it alone.
+- **`onMissed: "voicemail"`** with `voicemailKnot`. The knot runs silently into the thread. Lines that start `voice:` become voice-message bubbles with play buttons. The toast reads "New voicemail from <name>" ("New voicemail" if withheld). No callback. While anything of that contact is open on the phone (its thread, or a call with it), the voicemail waits: the Missed call row shows at once, and the knot runs, with its row, lines, toast and any globals it sets, when that closes. Several can wait at once; each runs once, in the order the calls were missed. So a voicemail can arrive after the same contact's next call: declined with the thread open, the contact rings again and is answered, and the voicemail runs when that call ends. A reload delivers every waiting voicemail after the load, in order, with no toast and no second Missed call row. A call missed because of a reload also leaves its voicemail with no toast, and once the mission's ending has closed the phone a voicemail still runs but shows no toast. A forced call can't be missed, so it has no voicemail.
+- **`withheld`.** For a caller whose number the player can't know (m07's Architect). Needs a voicemail, or the player has no way back to the message.
+- A story consequence for a miss goes on a mapping: `{ "eventPattern": "phone_call_declined:recruiter", "setGlobal": { "recruiter_snubbed": true } }`. A follow-up for a call the player didn't take maps both events; add `!data.reload` to the `missed` one if the text should not follow a reload.
+
+A reload turns every non-forced call that was queued, ringing, held or connected into a missed call (a row, no toast, `phone_call_missed` with `reload: true` once the game has loaded). A call that had not been answered then follows `onMissed`. One that was connected leaves a callback even with `onMissed: "voicemail"`, because the player had picked up, and a withheld one leaves nothing. A non-forced call closed some other way while connected (a knockout) is treated the same way. A story left on a call's knot by a reload goes back to the home knot. An outgoing call cut by a reload leaves no row.
+
+##### Events
+
+All carry `{ npcId, knot }` and work as `eventPattern`s:
+
+- `phone_call_answered:<npcId>`: also on auto-answer and when a callback connects. Data adds `answerSeconds` and `callback` (true for a callback). A plain outgoing call (the button or `#place_call`, not a callback) emits none, so don't map a placed call's effects to it.
+- `phone_call_declined:<npcId>`: Decline, or Hang up from hold.
+- `phone_call_missed:<npcId>`: ring-out, the caller ringing off after the hold limit, or a reload.
+
+`conversation_closed:<npcId>` fires once when a call ends, including a call placed from, or answered over, that contact's own thread. The thread is a separate conversation: when the player later leaves it, the event fires again for the same contact. So a mapping on `conversation_closed:<npcId>` for a contact with a `call` entry or a `ring` can run once per call and once per thread visit. Give it `onceOnly: true` or a `condition` that stops the later runs. The validator warns when it has neither.
+
+##### How a mission writes a call
+
+- Each call has its own knot (`call`, `support_call`, `first_call`). The home knot stays the text thread and never routes into a call knot, or a thread opened by hand would replay the call as silent texts.
+- A call ends with `#exit_conversation` on its last line or choice, then `-> DONE`. A call whose story ends without the tag hangs up 2 s after its last line. After the call the engine moves the story to the home knot. **A call never diverts to the home knot, a hub or any knot the text thread also uses**: the phone keeps running the story after `#exit_conversation` until it reaches choices, so a divert home would type the hub's lines, unvoiced, inside the call, and the call's voicing would reach into the hub. The validator warns. Only a contact with `voiced: true` (Dev's form) diverts home.
+- **"Call me" in a text means a call.** A text, hub line or bark that tells the player to call or ring a contact appears only where that contact can be called for that beat: a `call` entry, a pending callback or a hub choice with `#place_call`. Everywhere else it says "message me", "text me" or "tell me". The validator warns on a "call me" or "ring me" text for a contact with no `call` entry and no `ring`. Don't leave a hub topic out because it became a call: keep the choice and give it `#place_call:<knot>`, so the player picks the choice they know and the phone dials.
+- Drop an ink choice that fakes a call ("[Ring back.]" then "The number rings out.") once the contact has a `call` block with `unavailable: "no_answer"`: the engine does it.
+- Where two records share a display name (HaX on the phone and in person), prefix the co-speaker line with the record's id.
+- A call whose choice sets a global that opens a scene (the bring-in's debrief) still says its last line and ends with `#exit_conversation`. The scene queues behind the call and opens when it ends; the phone does not reopen. Put the hand-off line after the choice so the player hears it first.
+- The ink side (call and voicemail knots, the two engine variables, writing openings that don't repeat) is in `README_ink_best_practices.md` "Writing call and voicemail knots".
+
+##### While a call is on
+
+While a ringer call is connected or opening:
+
+- Scripted conversations (`person-chat`, `phone-chat` and `video-call` mappings and timed conversations) queue and open when the call ends, rather than closing it. A call itself queues behind a scripted beat that is on screen.
+- An auto-challenge (any `*_in_view` mapping, such as a guard who challenges on sight) is dropped, and fires again on the next sighting after the call.
+- Text toasts are held, and appear when the call ends. A click on another contact's toast would otherwise open that thread and end the call.
+- A legacy mapping that would have closed the phone waits.
+
+Only a call that goes through the ringer (`ring`, `call`, a callback) does this. A call opened by a `voiced: true` mapping still closes what is open.
+
+##### Endings and calls
+
+**`#ending_check` in a call.** Put it in the brackets of the choice that starts the ending (`+ [On my way. #ending_check]`). "Keep going" then leaves the call on the same choices. Don't use the line form in a call. On a line or after the brackets, "Keep going" drops every NPC line and every tag of that reply, `#exit_conversation` included, and the call ends 2 s after its story runs out, back on its home knot. A bring-in completes its call-in task on the "[Bring me in.]" reply, before the confirm choice: the ending check lists every optional objective still open, so a task that waited for the confirm would always be listed. The ink shape is in `README_ink_best_practices.md` "A bring-in hand-off".
+
+When a mission ends, the ringer closes: calls that are queued, ringing or held are removed with no row and no event, and new offers are refused. A call already connected finishes. This happens only when the server has agreed to conclude the mission (the credits, or the aim conclusion screen). "End the mission now" closes nothing on its own, because the conclude can still be refused (`concludeRequires`) and a refusal must leave calls ringing. So warn before a debrief or ending call and let the player finish up first.
+
+##### The call screen
+
+A voiced call (`params.voiced`, outside the `terminal` theme) draws a call screen in place of the message thread (`phone-call-ui.js`): an "ON CALL" bar with the running time, the contact's portrait large with a speaking indicator, subtitles for the current line (the previous one dimmed), the reply choices, and a red end-call button in place of the back arrow (hidden on a forced `disableClose` call). A call that came through the ringer ends with "Call ended m:ss" for a beat, and the thread gets its row. Its × and Esc end the call, there is no Cancel, and Add to Notepad is hidden while it is connected. The caption under the caller's name follows the rule under [`call`](#call-a-contact-the-player-can-ring). Write it as the phone would show it: "SAFETYNET secure line", "Unknown number", "Ledgerwell service desk". Every line still goes into the thread's history, so the notepad and a later open of the thread outside a call show it as messages.
+
+A contact on the `terminal` theme (m07's Architect) has no call screen: it rings with the normal banner, then opens in the terminal look, voiced, line by line.
+
+**Contact-level `voiced` (the lab's form)** stays exactly as it was:
+
+```json
+{ "id": "dev_service_desk", "displayName": "Dev", "npcType": "phone",
+  "voiced": true, "callLabel": "Ledgerwell service desk",
+  "voice": { "name": "...", "style": "...", "language": "en-GB" } }
+```
+
+The contact-level key only voices calls that go through `callLaunch`. Opening the same contact from the player's phone contact list is a silent text thread, because the phone app passes no `voiced` param. Use it for a contact who is only ever phoned, never texted.
+
+**Write a call as a call, a text as a text.** The player sees a call screen and hears a voice, or reads a silent thread. Ink that says "you picked up", "get off her line", "Are you safe?" / "Please be quick" or "Your handset rings" needs a voiced form; a contact configured as plain phone-chat with call wording reads as a text thread that claims to be a phone call. Short typed messages, links, "sent you" and emoji belong in a text thread, not a voiced call. `dialoguelint` flags call wording in a text knot (`call-in-text-thread`); a call knot carries `// lint: call-knot`.
+
+- Each line the contact speaks plays through TTS as it appears in the thread, as in person-chat, and the next line waits until it has finished. Clicking the thread skips the line playing. A `#delivery:` note on a call line is sent to TTS, as in person-chat.
+- A line prefixed with another character's display name (`Director Netherton: Put her on.`) or exact id is spoken in that character's `voice`, with their `voice.fx`. A character with no `voice` is read in the contact's voice. Player lines (`You: …`, `#speaker:player`) and narration are not spoken.
+- With `resume`, lines already in the thread are not spoken again; only new lines after the unanswered choice are. Lines the player never heard because the call was closed mid-way (a hit) are in the thread but not replayed.
+- Only the call itself is spoken. For a `ring` or `call` call that is the call's knot plus every knot it reaches by diverts, tunnels and choices, stopping at the contact's home knot. For an older `voiced` mapping or timed conversation, the `targetKnot` plus what it reaches, with the same stop. Lines in the home knot, and hub topics reached only from it, stay silent, even in the same open phone after the call. For the older forms a call that should end at the hub diverts to it (`-> hub`); a `ring` or `call` call must not (see "How a mission writes a call"). Voicemail knots are the exception to the walk: only their `voice:` lines are spoken, and they do not widen it.
+- The contact needs a `voice`. Lines use the same cache as person-chat (text, voice, style, language, model), and `batch_generate` voices exactly the call's lines by the same rule, not the contact's texts. Voiced lines follow the standing rule: no printed variables. Lines of the home knot and the hub are text, not voiced, and may print variables (`{player_name}`); the TTS test reads a phone contact's call, video-call and voicemail knots and what they reach, not its whole story.
+- A line with no clip on a server without a key is silent and doesn't hold up the call.
+
+##### What the validator checks for phone calls
+
+`ruby scripts/validate_scenario.rb scenarios/<name>/scenario.json.erb` runs `check_phone_calls` (`scripts/validate_phone_calls.rb`) over every phone NPC; the engine's own reading of the fields is in `public/break_escape/js/minigames/phone-chat/phone-ring-config.js`, and where it falls back with a console warning the validator reports the same thing. `dialoguelint.mjs` adds one rule for the ink (below). Tests: `test/js/validator-phone-calls.test.mjs`, `test/js/dialoguelint.test.mjs`.
+
+Errors (`❌ ERROR: phone calls:`):
+
+- `ring` on a non-phone NPC, on a video call, or on a mapping whose `conversationMode` isn't `phone-chat`; `ring` that is neither `true` nor an object; `ring` with no `targetKnot` (not an error on a contact with `voiced: true`).
+- `ring.onMissed` not `callback` or `voicemail`; `onMissed: "voicemail"` with no `voicemailKnot`; `ring.voicemailKnot` that isn't a knot in the contact's compiled ink; `withheld` or `untilAnswered` that isn't a boolean; `withheld: true` without `onMissed: "voicemail"` on a call that isn't forced; `ring.callbackWhen` that isn't a condition string, uses a term a call condition can't read, contains `||` or a non-`globalVars.` term (the callback would be cleared at once), or reads a `globalVars.<name>` nothing declares or sets (error), or is set with `onMissed` other than `callback` (warning, no effect); `ring.ringWhile` that isn't a condition string, uses a term a call condition can't read, contains `||` or a non-`globalVars.` term (the ring would never drop), or reads a `globalVars.<name>` nothing declares or sets (error), or is set on a forced call (warning, no effect).
+- A voicemail knot (or a knot it reaches) that produces no `voice:` line (warning): a lines-less voicemail on a contact the player never texts is overwritten by the intro preload.
+- A `ring` `targetKnot`, a ringing `timedConversation.targetKnot` or a `call` entry's `knot` that is the contact's home knot (unless the contact has `voiced: true`), or isn't a knot in the ink.
+- `call` that isn't an object or a list of objects; an entry with no string `knot`; `unavailable` not `no_answer` or `hidden`; `button` not a boolean; `call` on a non-phone NPC.
+- `call.when` that is not a string; `call.when` that uses `value`, `name` or `data.`, or reads `globalVars.<x>` where `x` is not declared in `globalVariables`, imported or set by anything (the condition would always see `undefined`); `call.when` containing `||` (the engine reads it as one unsupported term, so the whole condition fails; write two entries with the same knot).
+- `#place_call:<knot>` where `<knot>` is not one of the contact's `call` entries; a bare `#place_call` where the contact has no `call` entry and no ring with `onMissed: "callback"` to dial; a `#place_call` tag on a choice line (inside or after the brackets), where it never runs.
+- `call_answer_seconds` declared with a non-integer default, or `call_is_callback` with a non-boolean one.
+
+Warnings (`⚠️ WARNING: phone calls:`):
+
+- An unknown field in `ring` or a `call` entry (the engine ignores it); `untilAnswered` or `onMissed: "voicemail"` on a forced call (no effect); `untilAnswered` where the call knot never reads `call_answer_seconds`.
+- A call start knot that the home knot can reach (a thread opened by hand would replay the call as silent texts); a knot in the call that the home knot also reaches (shared, and the call would voice it); a call knot that diverts to the home knot. All three are waived for `voiced: true` contacts.
+- A `#place_call` line whose next line is not `-> DONE`.
+- A contact with `ring` or `call` and no `voice`; a `call` entry on a contact with `callId` (the button is hidden); a `call` contact not in its phone's `npcIds` and with nothing giving it history (its thread, and so its button, never appears).
+- A `conversation_closed:<npc>` mapping on a contact with a `call` entry or `ring` and neither `onceOnly` nor a `condition` (it runs once per call and again on each later thread visit).
+- A mapping `condition` on a ring or phone-chat mapping that reads `globalVars.<x>` nothing declares or sets.
+- A voiced call knot or voicemail knot that prints a variable (`{x}`) or has an inline stage direction (`*sighs*`, `(laughs)`).
+- `call_answer_seconds` or `call_is_callback` declared by a contact that has no `ring` and no `call` entry (always 0 or false).
+- **"Call me" text.** For phone contacts only: a `sendTimedMessage.message`, `timedMessages` text, bark, mapping `message` or ink line (not the bracketed choice text) that says "call me", "ring me" or "phone me", or promises a call ("call anytime", "call if", "call when", "call back", "call it in"), for a contact with no `call` entry and no `ring`. Not flagged: noun uses ("your call if", "a conference call"), the NPC's own ring ("I'll ring when") and someone else's call ("tell him to call back"). A contact with contact-level `voiced: true` is exempt. A contact whose only calls are `voiced: true` mappings is not.
+
+`node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<name>/` adds `call-in-text-thread` (warning, phone channel): call wording in a text knot ("you picked up", "on the line", "get off her line", "hangs up", "the line goes dead", "your handset rings", "rings out", "caller ID"). It doesn't fire on "ring <Name> back", "call me", "I'll ring", "on this line", or choice text in brackets. A knot marked `// lint: call-knot` directly under its `=== knot ===` line is exempt, along with every knot it reaches by divert, tunnel or thread, stopping at the home knot (`currentKnot`, default `start`) and at anything the home knot reaches; so only the call's first knot needs the mark. On marked knots the delivery checks run as they do for person-chat.
+
+#### Field guides (exposure-gated handler lab sheets)
+
+The handler (a phone NPC like Agent HaX) can hand the player optional **Field Guides** — in-universe lab sheets that teach the technique a challenge needs. The established pattern (see `m01_first_contact` and `m02_ransomed_trust`) gates each guide behind **exposure to the relevant challenge element**, then delivers it **on request** so the player is never spammed:
+
+1. **Hold the guide.** Add a `lab-workstation` item to the handler's `itemsHeld`, with an `id`, a `name`, and a `labUrl` pointing at the published lab sheet (a markdown file in the `HacktivityLabSheets` repo with `game_fragment: true` and a matching `permalink`):
+   ```json
+   { "type": "lab-workstation", "id": "m02_scanning_exploitation_field_guide",
+     "name": "SAFETYNET Field Guide: Scanning and Exploitation",
+     "takeable": true,
+     "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/m02_ransomed_trust/safetynet-field-guide-scanning-and-exploitation/" }
+   ```
+2. **Offer on exposure.** An `eventMapping` fires when the player first reaches the challenge element (e.g. `object_interacted` with `data.objectType === 'vm-launcher'` — "do they have the Kali box yet?", or `item_picked_up:lockpick`, or `room_entered:server_room`). It sets a `<x>_guide_offered` global and sends a message offering the guide.
+3. **Deliver on request.** In the handler's ink, a `support_hub` choice gated `{<x>_guide_offered and not <x>_guide_hint_given}` routes to a knot that fires `#give_item:lab-workstation:<id>` (the `id` must match an item in `itemsHeld`, or the give silently fails — the validator checks this).
+
+Keep the offer/request globals in `globalVariables` (`<x>_guide_offered`, `<x>_guide_requested`). Gate on genuine exposure, not on time — a guide should appear because the player has walked into the thing it explains.
+
+---
+
+## Objectives System
+
+Objectives structure the mission with `aims` (groups) containing `tasks` (individual goals):
+
+```json
+"objectives": [
+  {
+    "aimId": "establish_access",
+    "title": "Establish Access",
+    "description": "Get into the building",
+    "status": "active",
+    "order": 0,
+    "unlockCondition": { "aimCompleted": "previous_aim" },
+    "tasks": [
+      {
+        "taskId": "check_in",
+        "title": "Check in at reception",
+        "type": "npc_conversation",
+        "targetNPC": "sarah_martinez",
+        "status": "active",
+        "optional": true,
+        "showProgress": true,
+        "onComplete": { "unlockAim": "next_aim", "unlockTask": "another_task", "setGlobal": { "var": true } }
+      }
+    ]
+  }
+]
+```
+
+**Optional tasks.** An aim completes when every task that isn't `"optional": true` is completed or skipped; its optional tasks don't hold it open. An aim whose tasks are **all** optional (a side aim such as "Trace How They Got In (Optional)") completes only once every one of its tasks is completed or skipped, not on the first. The client (`objectives-manager.js` `checkAimCompletion`) and the server (`Game#check_aim_completion`) agree on this.
+
+### Task Types
+
+| `type` | Required fields | Notes |
+|--------|----------------|-------|
+| `npc_conversation` | `targetNPC` | Complete by talking to the specified NPC ID |
+| `enter_room` | `targetRoom` | Complete by entering the specified room ID |
+| `unlock_object` | `targetObject` | Complete when an object with that ID is unlocked. Object must have an explicit `id` field. |
+| `unlock_room` | `targetRoom` | Complete when the specified room is unlocked |
+| `collect_items` | `targetItems` or `targetGroup` or `targetItemIds` + `targetCount` | Track item collection. `targetItems` matches by `type`; `targetGroup` matches `collection_group` on items; `targetItemIds` matches by `name` or `id`. Add `showProgress: true` for a progress counter. |
+| `submit_flags` | `targetFlags`, `targetCount` | Track VM flag submissions. **Both are mandatory** — see below |
+| `manual` | — | Completed only via `completeTask` in an event mapping |
+| `custom` | — | Custom completion logic |
+
+### How SecGen and Break Escape scenarios relate
+
+A CTF mission is two coupled files: the **SecGen scenario** (`SecGen/scenarios/**/*.xml`) that builds the VMs, and the **Break Escape scenario** (`scenario.json.erb`) that wraps them in narrative. They are joined by **names** and by **order**, and both joins fail silently.
+
+- The mission's `secgen_scenario` field points at the SecGen XML; Hacktivity builds it and matches it via `sec_gen_batches.scenario`.
+- Each SecGen `<system>` has a **`system_name`**. On build, flags are extracted into `flags_by_vm = { system_name => [flag, …] }` (`mission.rb#parse_flag_hints_xml`).
+- The ERB helpers look flags up **by `system_name`**: `vm_flags_json('<system_name>')`, `flags_for_vm('<system_name>')`, and every `"<system_name>:flag_N"` reference. **If the key isn't a real `system_name`, the live flags never resolve** — `flags_by_vm[key]` is `nil`, `vm_flags_json` returns `{}`, and it only breaks in Hacktivity mode. Mission 1 works because its key `shatter_server` *is* its target's `system_name`.
+- The **console is a separate lookup**: `vm_object('<system_name>', {title:…})` attaches the player's terminal to a VM — normally the **attacker/Kali** box (where they work), *not* the flag-bearing target. Console key ≠ flag key.
+- The second argument to each helper is the **standalone/dev fallback** only; live per-build flags replace it in Hacktivity mode.
+
+**Flag ordering is deterministic.** `flag_1..flag_N` are 1-indexed by array position, and that order is the **document order of the `<generator type="flag_generator"/>` nodes in the SecGen XML** (established through `system_reader.rb` → `system.rb` → `xml_marker_generator.rb`; the only randomness picks the flag *format*, never position/count). So reordering the `flag_generator`s, or moving one between `strings_to_leak` and `strings_to_pre_leak`, renumbers the flags — re-derive the mapping and fix the `submit_flags` after any such edit. The ordering is correct but *implicit* (nothing pins a flag to a document by name); the durable fix would be explicit flag IDs keyed by name rather than position.
+
+For a fully worked example — the four-flag mapping, the attacker-vs-target split, and the file:line anchors — see `scenarios/m02_ransomed_trust/VM_INTEGRATION.md`.
+
+### Wiring VM flags — two failure modes that are silent
+
+Both of these compile, validate against the schema, and look correct in the dungeon graph. Neither shows up until someone plays to the end and finds the mission unfinishable.
+
+**1. `submit_flags` without `targetFlags` / `targetCount` can never complete.**
+
+There is nothing for a submission to match against, so the task stays open forever, its aim never completes, and any aim gated behind it is stranded. Flag IDs are `<vm_name>:flag_N`, **1-indexed** in the order the flags appear in the top-level `flags` block:
+
+```json
+{
+  "taskId": "submit_ssh_flag",
+  "type": "submit_flags",
+  "targetFlags": ["hospital_backup_server:flag_1"],
+  "targetCount": 1,
+  "currentCount": 0,
+  "showProgress": true,
+  "status": "active"
+}
+```
+
+The validator now reports a missing `targetFlags` as ❌ ERROR.
+
+**2. `flagRewards` using `emit_event` does not set a global.**
+
+The flag-station fires the raw event, but only `sudo_flag_submitted` is hard-bridged to a global variable in `systems/interactions.js`. Any Ink gated on `flag_<x>_submitted` will therefore never open, so the handler's whole VM-phase hint tree can silently go dead.
+
+Bridge it explicitly on the handler NPC, keyed off task completion:
+
+```json
+{
+  "eventPattern": "objective_task_completed:submit_ssh_flag",
+  "onceOnly": true,
+  "setGlobal": { "flag_ssh_submitted": true }
+}
+```
+
+Rule of thumb: **if an Ink `VAR` is meant to track VM progress, something must explicitly `setGlobal` it.** Declaring it in `globalVariables` is not enough.
+
+### `unlockCondition`
+
+Aims can be locked until prerequisites are met:
+
+```json
+"unlockCondition": { "aimCompleted": "survey_offices" }
+"unlockCondition": { "aimsCompleted": ["return_intel", "deactivate_the_launch"] }
+"unlockCondition": { "globalVariable": "torres_suspected", "equals": true }
+```
+
+`aimCompleted` and `aimsCompleted` are checked whenever an aim completes. They only order the aims: a locked aim also shows as soon as one of its tasks completes, makes progress or is unlocked.
+
+`globalVariable` is a story gate. The aim stays hidden, even while its tasks move, until the global holds. `equals` compares the value exactly (`"equals": "trusts"`, `"equals": 3`); leave it out, or set it to `true`, and any truthy value opens the aim. The global must be declared in `globalVariables`. When the condition is checked depends on the scenario:
+
+- **A scenario with a `social` block** (the lab games): the aim opens as soon as the global changes, and on load.
+- **Any other scenario** (m01 to m10 among them): the condition is checked only when the game loads (the server derives it from the saved globals). Setting the global in play does not open the aim. Open it at the same moment with `"unlockAim"` on the mapping that sets the global, or an `#unlock_aim:<aimId>` tag beside the ink that sets it, as m03, m05 and m07 do. The `unlockCondition` then keeps it open after a reload.
+
+---
+
+### Mission Conclusion
+
+Mark exactly **one** aim as the mission-conclusion aim with `missionConclusion: true`. When that aim is completed the server writes `mission_concluded_at` (a one-time timestamp — idempotent on repeat calls) and returns `missionConcluded: true` in the API response. The client then triggers the configured `conclusionScreen`.
+
+#### `missionConclusion`
+
+```json
+"missionConclusion": true
+```
+
+Set on the final aim. At most one aim per scenario may carry this flag. The validator errors if more than one aim has it.
+
+#### `concludeRequires`
+
+```json
+"concludeRequires": {
+  "tasksCompleted": ["submit_ssh_flag", "submit_linux_flag", "submit_sudo_flag"]
+}
+```
+
+The ending gate. The **client** decides when the story is over — it owns the debrief and the credits — and calls `POST /games/:id/conclude`. This field declares the technical work the **server** will not let the story skip. The server refuses to write `mission_concluded_at` until every listed task is completed. Listed task IDs must exist (the validator errors if they do not).
+
+**What belongs in it:** the large technical achievements only — the VM and CTF work the mission exists to teach. The reliable way to derive the list is the scenario's own dungeon graph: the flag nodes marked mandatory (`ruby scripts/generate_dungeon_graph.rb`, then the non-optional `kind: "flag"` nodes) are exactly the work no route can avoid.
+
+**What must not:** story tasks. Story progress is *scored*, not gated — `calculate_task_score` is proportional, so unfinished work already costs marks. Gating on it withholds the ending for narrative bookkeeping, and a story task with a single completion route becomes an unannounced dead end. That is precisely how a finished m02 run once sat in `in_progress` forever, credits shown, with nothing to explain why.
+
+Two supported keys:
+
+| Key | Strength | Use for |
+|---|---|---|
+| `tasksCompleted` | Server-authoritative — those task records are written only after `validate_flag_submission` checks the flag | Technical work (flag submissions) |
+| `globals` | Weaker, client-reported | Story state, never technical gating |
+
+Omit the field entirely, or declare `"concludeRequires": {}`, to trust the client outright. That is the right answer for a scenario with no large technical work — declare the empty object to say so deliberately.
+
+> **Note:** `requiresCompleted` was the previous form of this gate and is **no longer read by anything**. The validator errors if a scenario still declares it. Aim completion is unaffected: an aim still completes when its own non-optional tasks are done.
+
+#### `conclusionScreen`
+
+Defines which overlay the client shows when the conclusion is confirmed by the server, and which overlay to re-show if the player reloads the page after concluding.
+
+| `type` | Behaviour |
+|---|---|
+| `bond_visualiser` | Opens the credits, the fullscreen audio visualiser (`window.BondVisualiser.open()`). Story missions. |
+| `success` | Shows a simple success screen (`window.showSuccessScreen`, `ui/success-screen.js`): `title`, an optional short plain-text `body`, a "Return to missions" button (`buttonText` renames it) and a "Close" button. Short training episodes. |
+| `end_screen` | Shows the old blocking mission-complete card (`window.showEndScreen`). Test and demo scenarios only (`lockpick_gauntlet`, `test_simple_success`); don't use it in anything new. |
+
+```json
+"conclusionScreen": { "type": "bond_visualiser" }
+"conclusionScreen": { "type": "success", "title": "Inbox sorted", "body": "That's the payments inbox done." }
+```
+
+The `success` screen waits until no minigame has been open for a second, so it never covers a debrief or a result screen that is still up when the mission concludes. It shows once per page load: after a reload of a concluded game it appears once more, and "Close" (or Esc) dismisses it and gives the game back, as the credits do. "Return to missions" closes the game tab in Hacktivity mode and goes to `/break_escape/missions` otherwise. The playtest harness's `bootstrap` stops on it, as it does on the credits.
+
+For `bond_visualiser` the credits sequence and victory music are normally wired through the music event system (e.g. a `conversation_closed:closing_debrief_person` trigger). `conclusionScreen` is only used on page reload to re-open the visualiser without replaying the conversation chain.
+
+The validator warns if `missionConclusion: true` is present but `conclusionScreen` is absent.
+
+#### The ending convention
+
+The ending is chosen per scenario. **Story missions end in the credits** (`bond_visualiser`, rolled from a music event): the Licence to Hack missions, the SIS games and the lab games with a story. **Short training episodes**, such as the awareness shells (`scenarios/ca*`), may end on the simple success screen (`success`) instead. Either way the player is warned before the ending.
+
+For a training episode on the success screen:
+
+- **Warn before the step that ends it.** The prompt or brief for the last step says that finishing it ends the exercise, so nobody is surprised when the screen appears.
+- **Complete the conclusion task from the last step's result** (for the awareness shells, the triage `done` global through the host's `eventMappings`).
+- **`conclusionScreen` is `{ "type": "success", "title": "...", "body": "..." }`.** Keep the body to one or two plain sentences. There are no credits and no music event.
+
+For a story mission, follow all four of these in every new scenario, lab games included:
+
+1. **Warn before the point of no return.** The choice that starts the debrief or ending scene first gets a line, in the speaker's own voice, saying this closes the mission, with two options: go ahead, or "Not yet, I want to finish something", which returns to the hub (or closes the call) with the game carrying on. Mention anything obvious the player has left, such as a character still waiting to talk. m01's "Operation Shatter resolved — I'm ready for debrief" choice predates this rule; `lab_social_engineering`'s `debrief_confirm` knot (Tomasz) is the reference.
+2. **The debrief's last line completes the conclusion task** (`#complete_task`, then `#exit_conversation`), as described under "Common bugs" below.
+3. **The credits roll from a music event** carrying `credits` (and optionally `closingCard`), triggered when the debrief closes: `conversation_closed:<debrief npc>`, or `global_variable_changed:<global>` for a global set on the last line. If the debrief NPC is also an ordinary hub NPC, guard the trigger with a condition on a global the last line sets (`"condition": "globalVars.engagement_closed === true"`), because their conversation closes many times before the ending. Put any closing sentiment in `closingCard.lines`, not in a separate end card. See [Closing card and credits](#closing-card-and-credits).
+4. **`conclusionScreen` is `{ "type": "bond_visualiser" }`.** It only re-opens the credits screen when a concluded game is reloaded, as m02–m10 do. Don't use `success` in a scenario with a story, because the story's ending is the credits. Don't use `end_screen` at all: it blocks the game with its own card in place of the credits, and it reappears on every reload. Pick `"creditsTheme": "cyber"` for anything outside the SAFETYNET campaign.
+
+#### The engine's ending warning (`endingCheck`)
+
+The engine adds a second warning on top of the story's own. Before an ending fires with optional objectives still open, a dialog lists them (only ones the player can already see) and offers **End the mission now** or **Keep going** (`public/break_escape/js/systems/ending-check.js`). Every ending trigger goes through that one check:
+
+| Trigger | Where it asks | "Keep going" does |
+|---|---|---|
+| ink tag `#ending_check` inside a choice's brackets, `+ [Walk me through it. #ending_check]` | When the player clicks the choice, before it is taken | Takes nothing: ink does not move and the same choices stay on screen. |
+| ink tag `#ending_check` after the brackets, or on a line | When the tag is read | Skips the rest of that line's tags, so a `#set_global` after it never starts the debrief. The story carries on. |
+| eventMapping option `"endingCheck": true` | Before that mapping runs (so before it opens the debrief) | Does not run the mapping; holds the ending the way the credits trigger does, so the objectives panel shows an **End the mission** button and the ending runs by itself once nothing optional is open. Works whatever the trigger, with no soft-lock. |
+| the credits music event (`credits` or `closingCard`) | Before the ending track and the conclude request | Holds the ending; the objectives panel shows an **End the mission** button, and the ending runs by itself once nothing optional is open. |
+| the last required task of a `missionConclusion` aim | Before the task is posted to the server | The task stays undone; the same held ending. |
+
+Warn at the point of no return, before the debrief starts, because a debrief that plays once cannot be taken back. Use whichever route fits how the debrief opens:
+
+- **A player choice starts it** (the "bring me in" option in a hub): put `#ending_check` as the **first tag** on that choice, before its `#set_global` or `#complete_task`. "Keep going" skips the rest of the line, so the debrief never starts and the player is back in the hub. Watch for a soft-lock: if the same choice also sets the opening global with an ink `~` assignment, or the hub is gated on `not <global>`, move that `~` after the confirm (or gate the hub on a separate global), or "Keep going" cannot re-offer the choice. A bring-in on a phone call is the exception: the tag goes in the brackets of the confirm choice (see [Endings and calls](#endings-and-calls)).
+- **The debrief is the conversation itself** (a choice that diverts straight into the debrief's lines, as Ruth's "Walk me through it." does in `lab_physical_pentest`): put `#ending_check` **inside the choice's brackets**. The chat asks before the choice is taken, and "Keep going" leaves the player at the same choices. After the brackets the tag cannot stop this debrief: ink has already moved into it, and with no other tag on the line to skip the debrief carries on whatever the player answers. `dialoguelint.mjs` reports that placement (`ending-check-after-bracket`). If the NPC offers the choice in their own words instead ("There are loose ends; leave them?"), tag the player's agreeing choice `#ending_confirmed`: it records the optional objectives open now as agreed, so the credits and the conclusion aim do not ask about them.
+- **An eventMapping opens it** (on `conversation_closed`, `room_entered`, or a flag), with no player choice to tag: put `"endingCheck": true` on that mapping. The engine asks before the mapping runs. "End the mission now" opens the debrief; "Keep going" does not run the mapping and instead holds the ending — the objectives panel's **End the mission** button appears and the ending runs by itself once the last optional objective is settled. This works for any trigger, including a one-shot `global_variable_changed:<flag>`, because the held ending does not depend on the trigger firing again.
+
+The credits music event and the `missionConclusion` aim task are the safety net behind both. A player who chose **End the mission now** at a mapped point is never asked a second time at the credits (the agreed objectives are remembered, and saved as the global `__ending_confirmed`, so a reload in between does not ask again; an objective that opens later is still asked about). Missions with no mapped point fall back to the credits warning and its held-ending panel button. The dialog never appears when no optional objective is open, after "End the mission now" for the same objectives, or on a game that had already concluded when the page loaded.
+
+`mission.json` `"endingCheck": false` turns the warning off, for a mission under time pressure that is not meant for a perfect score (sis01 and sis02). It also marks the game as `timed` in `Game#score_breakdown`. The validator warns when a mission with optional tasks that concludes through a `missionConclusion` aim has neither `#ending_check` in its ink nor an `"endingCheck": true` eventMapping, and has not opted out.
+
+#### Score and `missionConclusion`
+
+By default, scores are computed as a raw formula: `(tasks_completed / total_tasks) × 70 + (aims_completed / total_aims) × 30`. The conclusion flag does **not** force the score to 100 %. A player who concludes the mission having skipped optional tasks will receive a proportional score.
+
+A mission can pick another rule with `"scoring"` in its `mission.json` (read by `Mission#scoring_mode`, applied in `Game#calculate_task_score`):
+
+| `scoring` | Before the mission concludes | Once it concludes | Used by |
+|---|---|---|---|
+| absent, or `"tasks"` | the formula above | the formula above | everything else |
+| `"partial_then_complete"` | the formula, capped at 99 | 100 | `lab_tesseract_trials`, `lab_social_engineering` |
+| `"completion"` | 0 | 100 | every Cyber Aware (`ca*`) mission |
+
+"Concludes" means the game's `mission_concluded_at` is set (the `missionConclusion` aim completed and its `concludeRequires` passed, or `POST /conclude`). Hacktivity's Finish button sets `status = 'completed'` without a conclusion, and that does not count. In the two non-default modes a Restart keeps a concluded game's 100, because `mission_concluded_at` survives the reset; the default mode drops to 0 as before. Optional tasks no longer cost marks once the mission concludes, but `concludeRequires` still decides whether it concludes at all. Hacktivity's `GameScoringJob` calls the same method, unless the listing's `scoring_method` is `flags`, which still wins. The validator errors on any other `scoring` value, and warns when a non-default mode has no `missionConclusion` aim (the score could never reach 100).
+
+---
+
+## Global Variables
+
+Declare all variables in `globalVariables` at the scenario root. Referenced in Ink stories, event conditions, and `onRead`/`onPickup`/`onInteract` handlers.
+
+```json
+"globalVariables": {
+  "briefing_played": false,
+  "derek_confronted": false,
+  "start_debrief_cutscene": false,
+  "ssh_flag_submitted": false,
+  "audit_correct_answers": 0,
+  "player_name": "Agent Zero"
+}
+```
+
+Values can be `false`, `true`, `0`, or `""`. The validator will error if any `setVariable`, `globalVarOnKO`, or event mapping references a variable not defined here.
+
+#### Title screen: `title_art` and `titleScreenName`
+
+Two optional keys dress the title screen a mission opens on. Missions that set neither look exactly as before.
+
+- **`title_art`** (in `mission.json`) is a painted backdrop: a path under `public/break_escape/assets/`, written `title_art/<name>.jpg` (also `.jpeg`, `.png` or `.webp`; letters, digits, `_` and `-` only, otherwise it is ignored). The awareness episodes use 1200 x 630 cards. **Composition rule: keep the right 40% of the picture calm.** The mission's name and the "press to continue" prompt are drawn there over a dark gradient on the right and bottom, so put the subject in the left 60% and leave the right side quiet (sky, wall, blur). A Hacktivity host can show the same file on course tiles at `/break_escape/assets/<path>`.
+- **`titleScreenName`** (a top-level string in `scenario.json.erb`, at most 80 characters, control characters are replaced by spaces) is the name the title screen shows in place of the mission's `display_name`. Blank or absent falls back to `display_name`. The awareness shells use it to show the episode's own name.
+
+### Carrying choices between missions (`exportGlobals`, `importGlobals`)
+
+A mission can read what the player chose in an earlier mission (full design: `docs/agents/CARRY_OVER_PLAN.md`).
+
+```json
+"exportGlobals": ["assets_seized", "monitoring_enabled"],            // in the source mission
+"importGlobals": [                                                   // in the reading mission
+  { "from": "m06_follow_the_money", "var": "assets_seized", "default": false },
+  { "from": "m06_follow_the_money", "completed": "m06_completed" }
+]
+```
+
+- The name in the reading mission is the source's `mNN_`/`sisNN_` prefix plus the variable (`m06_assets_seized`), or `as` when the folder has no such prefix. The `completed` form is `true` when a finished run of the source exists.
+- Values come from the player's most recent **finished** run of the source (the credits reached; a Restart of the source doesn't erase it; Hacktivity's Finish button doesn't count). They are fixed when the game is created: a Restart keeps them, a New Session looks them up again.
+- Imports are **read-only**. Declare a `VAR` in each ink that reads one; never assign it. The validator errors on any write, on an import used in `concludeRequires` or an `unlockCondition` (the mission must be finishable with every import at its default), on a source that doesn't export the variable, and on a type mismatch.
+- **Authoring rule:** the default branch (never played) is the line the mission had before, word for word, so its audio still works. Each carried-over branch makes the consequence obvious: a character names what the player did in the earlier mission.
+- These two keys are the only place that says what carries forward. mission.json has no switch for it: the old `consequences_persist` field was never read and was retired on 2026-10-17.
+- Playtests: `tools/playtest/new-game.rb <mission> --imports=none|latest|<file.json>` (default `none`, because every local playtest shares one demo player). Route drivers take `"imports": {...}`.
+
+---
+
+## Music System
+
+Dynamic music based on in-game events:
+
+```json
+"music": {
+  "events": [
+    { "trigger": "game_loaded", "condition": "!globalVars.briefing_played", "playlist": "cutscene", "fade": false },
+    { "trigger": "game_loaded", "condition": "globalVars.briefing_played === true", "playlist": "noir", "fade": false },
+    { "trigger": "conversation_closed:briefing_cutscene", "playlist": "noir", "fade": true },
+    { "trigger": "npc_hostile_state_changed", "condition": "isHostile === true", "playlist": "threat", "fade": true },
+    { "trigger": "all_hostiles_ko", "playlist": "noir", "fade": true },
+    { "trigger": "global_variable_changed:start_debrief_cutscene", "condition": "value === true",
+      "playlist": "victory", "track": "Ghost in the Wire", "autoStop": true, "disableClose": true, "fade": true,
+      "credits": [
+        { "text": "MISSION COMPLETE", "style": "title", "condition": "!globalVars.player_launched_attack" }
+      ]
+    }
+  ]
+}
+```
+
+| Trigger | Description |
+|---------|-------------|
+| `game_loaded` | Fires on game start/resume |
+| `conversation_closed:npc_id` | Fires when a conversation closes |
+| `npc_hostile_state_changed` | Fires when any NPC becomes hostile |
+| `all_hostiles_ko` | Fires when all hostile NPCs are knocked out |
+| `global_variable_changed:var_name` | Fires when a global variable changes |
+
+For silence, switch to the `silence` playlist (`{ "trigger": "...", "playlist": "silence", "fade": true }`): one silent 10-second track (`assets/music/Silence/Silence.mp3`) that loops, so the score fades out and stays out until a later event switches to another playlist. It shows as "Silence" in the music widget.
+
+### Closing card and credits
+
+An event entry with `credits` (or `closingCard`) asks the server to conclude the mission and, once it agrees, opens the credits visualiser. Everything is chosen from globals when the event fires, and every string is fixed text with no printed variables (the standing rule for voiced lines), so players differ only in which lines appear. Conditions are JavaScript over `globalVars` (`||` and parentheses work here).
+
+```json
+"closingCard": {
+  "lines": [
+    { "text": "The grid stayed up.", "condition": "globalVars.grid_saved" },
+    { "text": "The grid went dark for an hour.", "condition": "!globalVars.grid_saved" },
+    { "text": "Nobody outside the room will hear about it." }
+  ],
+  "teaser": { "enabledBy": "teaser_enabled", "lines": [{ "text": "Somewhere, a phone rings." }] }
+},
+"credits": [
+  { "text": "MISSION COMPLETE", "style": "title" },
+  { "section": "IN THIS OPERATION", "people": [
+    { "name": "AGENT HAX", "clauses": [
+      { "text": "Put on the floor by her own agent.", "condition": "globalVars.hax_ko", "style": "warning" },
+      { "text": "On the line to the end." }
+    ] }
+  ] },
+  { "section": "ELSEWHERE", "lines": [
+    { "text": "THE ARCHITECT: At large.", "condition": "!globalVars.architect_caught", "style": "warning" }
+  ] }
+]
+```
+
+- **Order on screen:** the closing card (its lines shown together), then the teaser, then the credits one line at a time.
+- **`closingCard.lines`:** the lines whose condition holds, in the order written, at most 5 (later ones that hold are dropped). A line with no condition always holds. A plain string is a line with no condition. The card stays up 2.5 s plus 1.5 s a line.
+- **`closingCard.teaser`:** shown only while the global named by `enabledBy` (default `teaser_enabled`) is truthy, so it is off unless the scenario or a carry-over sets it. Takes `lines` like the card, or a single `text`, and an optional `condition`.
+- **`section` blocks:** `people` gives one line per person, `NAME: clause`, using the first clause whose condition holds (none holds: no line for that person). Order the clauses most specific first and end with an unconditional one if the person must always appear. `lines` gives every line that holds. The heading prints only if something under it does. `headerStyle` overrides `section-header`; a clause's `style` (or the person's) defaults to `entry`.
+- Plain lines (`text`, `style`, `condition`) work as before, and can sit between blocks.
+- **`headerText`:** on the same entry, replaces the visualiser's header `MISSION COMPLETE // AUDIO INTEL` for this ending, e.g. `"headerText": "MISSION FAILED // AUDIO INTEL"` on a failure ending. Without it the header is the theme's heading or that default. A later open with no credits (a `conclusionScreen` of type `bond_visualiser`, the music widget) keeps it.
+- **`statusText`:** on the same entry, replaces the STATUS row's `MONITORING` in the visualiser's top-right panel, e.g. `"statusText": "COMPROMISED"`. Keep it to one short word. Same rules as `headerText`: without it the row shows the theme's status or `MONITORING`, and a later open with no credits keeps it.
+- Code: `public/break_escape/js/music/closing-sequence.js`; test scenario `scenarios/test_finale_calls_credits/`.
+
+---
+
+## ERB Template Helpers
+
+Scenario files are `.json.erb` templates. Available helpers:
+
+| Helper | Description |
+|--------|-------------|
+| `<%= @random_password %>` | Random 8-char alphanumeric password (changes per render) |
+| `<%= @random_pin %>` | Random 4-digit PIN string |
+| `<%= @random_code %>` | Random 8-char hex code |
+| `<%= vm_object('system_name', fallback_hash) %>` | Returns VM console data as JSON for the named SecGen `system_name` (usually the attacker/Kali box); Hacktivity context or fallback |
+| `<%= flags_for_vm('system_name', fallback_array) %>` | Returns the flag **array** as JSON for the named SecGen `system_name` (used in a flag-station's `flags:`) |
+| `<%= vm_flags_json('system_name', fallback_array) %>` | Returns the flag **map** `{ "flag_1": value, … }` for the named `system_name` (used in the top-level `flags:` block). Same lookup as `flags_for_vm`, different shape. When no VM context is present, builds the map from `fallback_array`; when context is present but the name has no flags, returns `{}` (surfacing a wrong `system_name` rather than masking it) |
+| `<%= base64_encode("text") %>` | Base64-encodes a string (for encoded notes puzzles) |
+| `<%= rot13("text") %>` | ROT13-encodes a string (for cipher puzzles) |
+
+Define custom helpers at the top of the `.erb` file inside `<% ... %>` blocks:
+
+```erb
+<%
+def rot13(text)
+  text.tr('A-Za-z', 'N-ZA-Mn-za-m')
+end
+
+def base64_encode(text)
+  Base64.strict_encode64(text)
+end
+
+client_list_message = "The IT room PIN is: 2468"
+%>
+```
+
+---
+
+## Room Layout System (Grid-Based)
+
+The game uses a **grid unit system** for room positioning that supports variable room sizes and four-direction connections.
+
+### Grid Unit System
+
+- **Base Grid Unit (GU)**: 5 tiles wide × 4 tiles tall (160px × 128px)
+- **Tile Size**: 32px × 32px
+- **Room Structure**:
+  - Top 2 rows: Visual wall (overlaps room to north)
+  - Middle rows: Stackable area (used for positioning calculations)
+  - All rooms must be multiples of grid units
+
+### Valid Room Sizes
+
+**Width**: Must be multiple of 5 tiles (5, 10, 15, 20, 25...)
+
+**Height**: Must follow formula `2 + (N × 4)` where N ≥ 1
+- **Valid heights**: 6, 10, 14, 18, 22, 26... (increments of 4 after initial 2)
+- **Invalid heights**: 7, 8, 9, 11, 12, 13...
+
+**Examples**:
+- **1×1 GU** (Closet): 5×6 tiles = 160×192px
+- **2×2 GU** (Standard): 10×10 tiles = 320×320px
+- **1×2 GU** (Hall): 5×10 tiles = 160×320px
+- **4×1 GU** (Wide Hall): 20×6 tiles = 640×192px
+
+### Room Positioning Algorithm
+
+1. The `startRoom` is positioned at grid coordinates (0,0)
+2. Rooms are positioned outward from the starting room using breadth-first traversal
+3. Rooms align to grid boundaries using `Math.floor()` for consistent rounding
+4. **North/South**: Rooms stack vertically, centered or side-by-side when multiple
+5. **East/West**: Rooms align horizontally, stacked vertically when multiple
+6. All positions are validated to detect overlaps
+
+### Door Placement Rules
+
+**North/South Doors**:
+- **Size**: 1 tile wide × 2 tiles tall
+- **Single door**: Placed in corner (NW or NE), determined by grid coordinates using `(gridX + gridY) % 2`
+- **Multiple doors**: Evenly spaced across room width with 1.5 tile inset from edges
+
+**East/West Doors**:
+- **Size**: 1 tile wide × 1 tile tall
+- **Single door**: North corner of edge, 2 tiles from top
+- **Multiple doors**: First at north corner, last 3 tiles up from south, others evenly spaced
+
+**Alignment**: Doors must align perfectly between connecting rooms. Special logic handles asymmetric connections (single door to multi-door room).
+
+### Which corner a door lands on
+
+The validator proves rooms do not overlap. It says nothing about *which side of a wall* each door ends up on — and that decides how the player enters a room, which matters when a room's art only reads well from one approach.
+
+```bash
+python3 scripts/predict_door_sides.py scenarios/my_scenario/scenario.json.erb
+```
+
+This mirrors the maths in `systems/doors.js` and prints the corner for every door, so you can check the layout before playtesting. The rules it encodes:
+
+| Case | Corner |
+|---|---|
+| **N/S single door** | Parity of `(gridX + gridY)` — room origin for a north door, the *shared bottom wall* for a south door |
+| **N/S single, neighbour has an array on the opposite side** | Parity ignored; aligns to this room's **index** in that array |
+| **E/W single door** | **Always** 2.5 tiles down from the room top. No parity, no variation |
+| **E/W multiple** | First at top, last at bottom, rest spread evenly |
+| **N/S multiple** | First at left, last at right, rest spread evenly |
+
+Two consequences worth designing around:
+
+1. **A room an even number of GU tall gets its north and south doors on the same side.** The south parity is measured on the shared bottom wall, which is an even number of grid units below the origin, so the sum's parity is unchanged. You cannot get top-left *and* bottom-right on one room by parity alone. To force a side, give the **neighbour** an array on the facing side and rely on index alignment.
+2. **To move a door to the other corner, move the room to an adjacent grid column.** Parity is positional, so inserting or resizing an upstream room by an odd number of grid units flips every door that depends on it.
+
+#### Multi-room sides only position correctly for dead ends
+
+`core/rooms.js` filters already-positioned rooms out of a connection array before placing the rest. So `"east": ["store", "corridor"]` only lays out as a vertical stack when **both** rooms are leaves reached solely through this room. If one of them is the route back to the rest of the map, it will already have been positioned by its other parent, the array collapses to a single placement, and the two rooms land on top of each other — which surfaces as a geometry overlap warning.
+
+Design rule: **the way in can never be the second element of a multi-room side.**
+
+#### Door art is generated, not authored
+
+The `doors` tilelayer inside a room's `.tmj` is **ignored** — `core/rooms.js` skips it ("using sprite-based doors") and carves the wall tiles wherever it places a door sprite. You therefore do **not** need to edit a tilemap to add a door on a wall that has never had one. Connect the rooms and the engine handles it.
+
+### Four-Direction Connections
+
+Unlike the old system (north/south only), the new system supports:
+- **North**: Connects to rooms above
+- **South**: Connects to rooms below
+- **East**: Connects to rooms on the right
+- **West**: Connects to rooms on the left
+
+Each direction supports multiple connections (arrays).
+
+## Designing Solvable Scenarios
+
+The canonical reference scenario is `scenarios/m01_first_contact/scenario.json.erb` — the most complete example, demonstrating every major system. Validate your scenario against it with the validator script.
+
+1. **Clear Progression Path**: Design a logical sequence of rooms that can be unlocked in order
+   - Ensure keys/codes for locked rooms are obtainable before they're needed
+   - Use the four-direction connection system to create interesting navigation puzzles
+
+2. **Tool Placement**: Place necessary tools early in the scenario
+   - Critical tools like `lockpick`, `fingerprint_kit`, or `bluetooth_scanner` should be available before they're needed
+   - Consider adding some tools to the initial inventory with `startItemsInInventory`
+
+3. **Clue Distribution**: Spread clues logically throughout the scenario
+   - Place hints for codes/passwords in accessible locations (bins, other NPCs)
+   - Use readable objects (`notes`, `phone` voicemails, `pc` files) to provide guidance
+
+4. **Lock Type Variety**: Use at least 3 different lock types to teach security concepts
+   - `key` + lockpicking mini-game for physical security
+   - `pin` for numeric codes found elsewhere in the scenario
+   - `password` for computer access (with optional `postitNote` hint)
+   - `rfid` for high-security doors (keycard required)
+   - `flag` for VM-based hacking challenges
+
+5. **Nested Containers**: Use containers within containers strategically
+   - Avoid unsolvable dependency loops (key A inside box requiring key B, which requires key A)
+   - Use `bin` containers with `locked: false` for discarded-clue items
+
+6. **Objectives with Task Cross-References**: Verify all cross-references:
+   - `targetNPC` IDs must exist in a room's `npcs` array
+   - `targetRoom` must be a defined room ID
+   - `targetObject` must match an object with an explicit `id` field
+   - `targetGroup` must match `collection_group` on at least one item
+
+7. **Global Variables for Ink State**: All variables referenced in Ink stories or event conditions must be declared in `globalVariables`. Use `false` as the default for boolean flags.
+
+8. **Opening + Closing Cutscenes**: Canonical pattern from m01:
+   - Opening: person NPC with `timedConversation` + `skipIfGlobal` + `setGlobalOnStart` in the start room
+   - Closing: person NPC with `behavior.initiallyHidden: true` triggered by a phone NPC Ink story using `#set_global:start_debrief_cutscene:true` + `#exit_conversation`
+   - Before that choice, warn the player they are about to end the mission and offer "Not yet"; after the debrief, roll the credits. See [The ending convention](#the-ending-convention)
+
+9. **Fingerprint Mechanics**: When using biometric locks:
+   - Ensure required fingerprints can be collected from objects with `hasFingerprint` in accessible rooms
+   - Set appropriate `biometricMatchThreshold` (higher = more difficult)
+
+10. **Dungeon Graph — Design as You Go**:
+    - Add `puzzle_graph_*` metadata to objects and NPCs as you design each room, not as a retrofit at the end
+    - Run `ruby scripts/generate_dungeon_graph.rb scenarios/my_scenario/scenario.json.erb` after each major structural change (new rooms, new locks, restructured objectives)
+    - Review all three graph tabs before writing Ink dialogue or VM tasks — the graph reveals unsolvable lock chains and aims with no gameplay grounding far earlier than playtesting would
+    - See §Dungeon Graph Metadata below for the full fields reference and design review checklist
+
+11. **Testing and Validation**:
+    - Run `ruby scripts/validate_scenario.rb scenarios/my_scenario/scenario.json.erb` before playtesting
+    - Fix all `❌ ERROR` lines before testing (the validator exits 1 while any unlisted one remains); review `⚠ WARNING` items
+    - Use `--output-json` to inspect ERB rendering if substitution looks wrong
+    - Play through to verify the scenario is solvable from start to finish
+
+---
+
+## Authoring Rules
+
+These are the mistakes that most often leave a mission unfinishable or silently broken. Each rule has one line of reason. The validator does not catch all of them yet.
+
+### Positions, objects and items
+
+- **NPC `position` is in tiles, relative to the room.** The engine does not clamp it, so `{x: 400, y: 300}` puts the NPC hundreds of tiles outside a 10x10 room and out of reach. Check every visible NPC and every patrol waypoint against the room template. Hidden cutscene and phone NPCs conventionally use 500,500.
+- **Objects hold items in `contents`, never `itemsHeld`.** `itemsHeld` is the NPC inventory field. An object that uses it opens empty and its unlock task never completes.
+- **Patrols use `patrol.waypoints`.** `patrol.route` is only for multi-room `{room, waypoints}` segments.
+- **Pin objects that have no template slot.** Without a position they land on a random spot, sometimes in a doorway.
+- **Give required items a fallback if an NPC carries them.** An NPC in a room loaded after the start has no sprite at KO time, so its `itemsHeld` never drops. Hand the item from a HaX `#give_item` on `npc_ko:<id>`, and make that handler hand the item itself, not just complete the task.
+- **Notes cannot be flag rewards.** A note given by a flag reward never reaches the inventory or the notepad. Give the note from an NPC `#give_item` or place it in a container.
+
+### Flags and tasks
+
+- **`submit_flags` targets are station-qualified.** Use `<station>:<vmid>-flagN` (for example `flag_station_dropsite:bms_jump_server-flag1`). The `vm:flag_1` reference form never matches, so the task never completes.
+- **Every `collect_items` task needs `targetCount`.** Without it the count check compares against `undefined` and never passes.
+- **Let collect tasks complete themselves.** Do not call `completeTask` on one from a mapping. The server rejects it if the pickup has not landed yet, and the real pickup is then ignored.
+- **Tasks in later aims ship `status: "active"`.** `unlockAim` only activates the first task of an aim.
+- **Do not put a task that can finish early into a late aim.** A locked aim reveals itself when any of its tasks completes.
+- **One submission point per flag.** An object with `lockType: flag` and its own `requires` opens a second submission UI and strands the drop-site task. Use a flag reward `unlock_object` instead.
+- **The `missionConclusion` aim's last task completes at the end of the debrief.** The conclusion screen opens the moment that task completes, so a task finished on a story decision puts the credits over the debrief. End the aim with a debrief task, completed on the debrief's last line.
+- **Put `#complete_task` near the top of a first-meeting knot.** A player who closes the conversation early would otherwise strand the task. The same goes for conclusion tasks.
+
+### Event mappings
+
+- **`&&` is the only operator in an eventMapping `condition`.** `||` and parentheses always evaluate false, so the handler is silently dead. Write one mapping per alternative and guard duplicates with a global.
+- **The same goes for lighting, torch, `chatBackground`, timer and text/sprite/observation variant conditions.** Their evaluator splits on `&&` only and reads the first `globalVars` name of each term, so `globalVars.a || globalVars.b` is just `globalVars.a`. Use one variant per alternative. Only music events and credits (run as JavaScript) and command-board `timeline`/`statusRows` (which take `||` but no parentheses) accept `||`. The validator flags `||` and parentheses in all of these.
+- **Use `npc_ko:<id>` to react to a KO.** `globalVarOnKO` sets its global without emitting `global_variable_changed`, so a mapping on that global never fires. Use a dedicated `<npc>_ko` global, not a story global another outcome must exclude.
+- **Scenes opened by `npc_ko:<id>` need `disableClose: true`.** A KO'd NPC cannot be talked to again and the event does not re-fire.
+- **An NPC's mappings register only after its room loads.** A `setVisible` on an event that fires earlier is lost. Reveal on `room_entered:<the NPC's own room>`, or put the mapping on an always-loaded NPC such as HaX.
+- **Hide an NPC with a `setVisible: false` mapping, not `#remove_npc`.** `#remove_npc` fails for NPCs in rooms loaded after the start.
+- **`conversation_closed:<npc>` can fire twice.** Make handlers idempotent by routing on a global. Phone chats emit it too (when the thread is left or the phone closes), but open debriefs from a person-chat or a global rather than a phone close.
+- **`item_picked_up:` carries the item type, not its id.** Match on the type and add a `data.itemId` condition.
+
+### Timers
+
+- **Timers need conditions.** The HUD clock ignores `cancelOnGlobal`, and a reload restarts any timer whose start global is true. Put `!globalVars.done && ...` as a `condition` on every timer and on its expiry action, and guard the arming mapping so it cannot re-arm after the win.
+- **Start finale clocks once the VM work is done.** Timers run on wall-clock time, VM time included.
+- **To show a toast from an event, use a timer with a `hint` action.** An event mapping has no toast action. Have the mapping set a global (`setGlobal`), start a timer on it (`startOnGlobal`, a short `delayMs`, no `showCountdown`) and give the timer a `hint` action. `lab_physical_pentest` does this for its pointers after each beat.
+- **Gate HaX timed messages near scripted conversations.** A timed message can open a phone chat over a conversation in progress.
+
+### Ink
+
+- **Never end an NPC conversation in `DONE` or `END`.** Re-talking an ended story shows "(End of conversation)". Every exit is `#exit_conversation` on its own line, then `-> hub` (or `-> after_choice`).
+- **Guard once-only decision scenes.** Use `{fate != "": -> after_choice}`, or talking again replays the scene and overwrites the outcome.
+- **Open a minigame with `# trigger_minigame:<type> key=value`.** The type is any object type in the [starter registry](#opening-a-minigame-from-a-scenario); it opens once the line has been read and the conversation comes back when the minigame closes. Ink reads `{` as logic, so the pairs are space-separated `key=value`, not JSON (or write the JSON with `\{` and `\}`).
+- **Put action tags above the line they belong to.** A tag on its own line attaches to the next line of text below it, so a tag between two lines of a knot fires with the second; it need not be the knot's first line. Don't leave one after the knot's last line with only a divert, choice or `}` below it (the validator warns). Use `#give_item:<type>:<itemId>`, with the id on the NPC's `itemsHeld` entry, and set "given" globals from an `item_picked_up:<type>` mapping, not in ink.
+- **A mapping's global doesn't reach the chat that is open.** An `eventMappings` `setGlobal` (the `item_picked_up` one above included) writes `gameState` and the cached stories, not the story of the conversation on screen, so a choice or status line guarded on that global changes only when the chat is next opened. Guard a hand-over choice on an ink-local flag as well, set in the hand-over knot before the tag: `VAR key_offered = false`, `~ key_offered = true` in the knot, and `+ {not soc_key_given and not key_offered} [Can I have the SOC key?]`. Picking the choice twice never gives a second key (the first give removes it from `itemsHeld`; the second shows a "doesn't have" or "has no items to give" warning toast), so the flag is there to keep that toast and the stale offer off the screen.
+- **An `EXTERNAL` needs an ink fallback function of the same name and arity.** The engine turns ink fallbacks on, so an unbound external runs its fallback (`=== function se_influence(delta, reason) ===`, returning a neutral value such as 0). Without a fallback it still throws, story-wide, at the first `Continue()`. The chats bind only six read-only externals and the bark path binds none, so every external must have a fallback. For state, prefer synced-global `VAR`s.
+- **`setVariable` does no arithmetic.** `"x + 1"` assigns the string. Use one boolean per item instead of a counter.
+- **First-meeting openers need their own knot that diverts.** Choices in a `{cond: ...}` block without a divert merge into the next hub and are lost after one pick.
+- **Do not preload a contact whose `start` reveals plot.** The phone runs every preloaded contact's `start` knot on first open, and `~` assignments there write real globals.
+- **Run `inkcheck.js` with an explicit knot** (`start`). The root container alone proves little.
+
+### Layout and canon
+
+- **Check door alignment.** A north/south connection between rooms of different widths can leave the doors about 320px apart. Use `tools/pass2/render.rb` and `tools/pass2/door_align.py`, and prefer single east/west connections and equal-width north/south pairs. `multi` connections cannot align middle or overflow doors.
+- **Do not park a hidden or KO'd guard in a room with a pickable lock.** Their line-of-sight cone still interrupts lockpicking.
+- **SAFETYNET has no arrest powers.** Agents detain and hand suspects to the police. The handler is displayed as "Agent HaX". Her NPC id stays `agent_0x99` in every mission (m05 uses `agent_0x99_handler`): it is the shared handler id, so don't rename it to match the display name. Other renamed NPCs do get matching ids.
+- **Use UK English** in player-facing text, including "Cyber Security" with a space.
+
+### Common bugs and how to avoid them
+
+These turned up in more than one mission during the pass-4 reviews and playtests (October 2026). Each has a rule, an example, and where it is caught: **validator** (`ruby scripts/validate_scenario.rb`), **lint** (`node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<m>/`) or **review** (the `scenario-design-review` and `npc-dialog-review` checklists, and playtests). The ink-side classes are written up in more detail in `README_ink_best_practices.md` ("Common ink bugs").
+
+Scenario file:
+
+- **A lockpick catch needs a lock to catch.** A `lockpick_used_in_view` mapping fires only for a person NPC with `conversationMode: "person-chat"`, when the player picks a key lock in that NPC's room or a door into it. *m02: Val's catch sat in a room with no pickable lock, and Bernie's had no person-chat, so neither ever fired.* (validator)
+- **An NPC outside the start room only hears events once its room has loaded.** NPCs register room by room as the player arrives (`npc-lazy-loader.js`, then `registerNPC` and `_setupEventMappings` in `npc-manager.js`), and the start room loads first. A mapping on a `global_variable_changed:*`, `item_picked_up:*`, `npc_ko:*` or `objective_*` event for an NPC in any other room never runs if the event fires before the player has been there. A missed bark harms nobody, so the validator only warns when the mapping has a lasting effect (`setGlobal`, `completeTask`, `unlockTask`/`unlockAim`, `setVisible`, `targetKnot` or a `conversationMode`, `patrolOverride`, `setPatrolSpeed`, `setDwellMultiplier`, `sendTimedMessage`); bark-only mappings pass (phone NPCs register with the room that lists them, so a phone NPC outside the start room has the same gap). Relay it: put a mapping for the same event on a start-room NPC that sets a global, and have the late NPC's `room_entered:<own room>` mapping read that global. The validator also accepts a `room_entered:<own room>` mapping whose condition reads the same global (a catch-up), a global only ever set inside that room (including by a backup-recovery console), an objective that can only be completed there, and a `room_entered` for a room only reachable through the NPC's room. If missing the effect is fine, add `"fireOnlyWhenLoaded": true` to the mapping (validator opt-out, no effect in the game). *sis01: Priya S. in the incident room had a mapping on `ico_deadline_missed`; if the player never visited, the debrief never opened. Sarah, in the start room, now relays it.* (validator)
+- **The opening cutscene waits for the game.** Give the start-room `timedConversation` `"waitForEvent": "game_loaded"`. *m04 and m05 fired theirs on the first tick, under the title screen.* (validator)
+- **A note an NPC hands over counts as read on hand-over.** Its `onRead` fires the moment it is given, or picked up after a KO. Don't let that global open an aim or decide a case the player is meant to reach by reading. *m05: Patricia's vetting file named Torres the instant she passed it across.* (validator, suggestion)
+- **Every speaking character has their own art.** Give each one a v2 sheet with `spriteTalk`, `spriteVisemes` and a headshot `avatar`, and don't give two different characters the same sheet. *m04: Vance was on the generic `hacker` sheet and the gate guard looked like the operatives; m08: Phantom and Netherton were twins.* (validator)
+- **Keep interactable things a tile apart, and NPCs out of the furniture.** The interaction range is 32 px. *m06: the rack sheet 23 px from the flag station opened the station; Satoshi against his desk could only be reached from one side; m02: Bed 4's bedhead unit kept the player 36 px from the bed.* Pinned objects are checked (validator); Tiled-slot objects and furniture aren't, so walk up to each one in a playtest (review).
+- **A bark doesn't repeat the line it opens.** A `sendTimedMessage` or `timedMessages` text shows first; if the chat then opens on the same words, the player reads them twice. *m07: "Agent 0x00. Don't look for the trace." then the same line again.* (validator)
+- **Every ink `VAR` that's read is set somewhere, and every `#set_global` is declared.** A read-only `VAR` with no same-named global is a dead condition; an undeclared `#set_global` is usually a typo. *m06: `recruitment_accepted` was read and never set; m08: `witness_heard` was set and never read (harmless, but say so).* (validator)
+- **Task, aim and item names don't give the answer away.** *m05: an item called "Torres Office Keycard" and the to-do list "Get a keycard for Torres' office" solved the whodunnit before it began; m04: the aim describing the plant-room fingerprint reader appeared in Hall 1, before the player had seen the reader.* (review)
+- **Status answers follow progress.** A sticky "Where do I stand?", "Remind me where we are" or "What's the clock?" answer must branch on the globals that change, down to the step the player is on. *m03, m04, m06 and m07 all had a recap that was right for the first half and wrong for the second.* (review, playtest)
+- **The first phone contact checks progress.** A contact first opened late in the mission must not offer its opening check-in. *m06: opened at the data centre, HaX asked how the FCA cover was holding.* (review, playtest)
+- **Credits and debrief lines match what the player did.** Check each conditional line against every route that can reach it. *m03: "the guard never logged you" and PERFECT STEALTH after the guard had challenged the player; m06: Priya's "Drew the graph" credit after one question.* (review)
+- **Space timed texts 4-6 s apart.** Two `sendTimedMessage` or `timedMessages` texts triggered by the same event, with delays under 4 s apart and conditions that can both hold, stack as toasts and the first is gone before it can be read. Space them or fold them into one message. *m04 (Vance's card and the RFID guide), m05 (two barks off one object click).* (validator warning; pairs whose conditions can't both be true, such as `x` against `!x`, or where one mapping's `setGlobal` blocks the other, aren't reported)
+- **A global that is set should be read.** A global set by `setGlobal`, `setGlobalOnStart`, `globalVarOnKO`, an `onRead`/`onPickup` `setVariable`, an ink `#set_global` or `~` assignment, that no condition, `skipIfGlobal`-style field, `global_variable_changed` mapping, credit or music condition, ink read or engine code ever mentions, is dead weight and reads as if it mattered. Use it or drop it. The mirror of "every ink `VAR` that's read is set somewhere". *m05: `mission_priority` (the opening's choice changed nothing); m08: `witness_heard`.* (validator suggestion)
+- **A credits section needs a line that always prints.** A `section-header` whose entries all carry a `condition` can come out as a bare heading if no condition holds. Add an unconditional line, use a `section` block (it drops its heading when nothing in it prints; see [Closing card and credits](#closing-card-and-credits)), or check that the conditions cover every route. *m05: the Recruiter section.* (validator suggestion; it can't prove exhaustive conditions, so a section that does cover every route is a deliberate pass)
+
+Ink (details and examples in `README_ink_best_practices.md`):
+
+- **Choices in a `{cond: ...}` block don't stop the flow.** Use `- else:` inside the block, never a second `{not cond: ...}` block after it. *m06: Dani, Priya and Satoshi greeted a first-time visitor with "Hi again".* (lint: `choice-fallthrough`)
+- **A knot a conversation parks on prints a line.** A re-talk re-enters the knot that owns the saved choices; if it prints nothing, the player gets the buttons with no fresh line, which playtesters read as a blank screen. Add a re-entry line. *m03 receptionist and Victoria, m04 Vance, m08 Netherton.* (lint: `blank-reentry`)
+- **Influence tags sit above a spoken line.** Before a divert, the tag attaches to the next knot's first line. *m06: Irina's "+ Influence" popped up on a Narrator line.* (lint: `tag-on-narrator`)
+- **Phone contacts' lines take no `Name:` prefix.** *m03, m04, m08 phone inks.* (lint: `phone-self-prefix`)
+- **A spoken goodbye gets a reply.** *m08: "[I'll leave you to it.]" closed the chat on the player's own bubble.* (lint: `exit-no-reply`)
+- **Asterisk cues stay rare and off key information.** *m07: "\*reading\* Two hundred and forty."* (lint: `stage-cue-in-info`, `stage-cue-density`)
+- **No "Not X. Y." or "She is not X. She Y." in dialogue or narration.** (lint: `not-x-but-y`)
+- **`#speaker:` tags don't pick the speaker.** Only `#speaker:player` and `#speaker:npc[:id]` do anything in person-chat; a two-part tag such as `#speaker:analyst` is ignored and the `Name:` prefix decides. Write the prefix. *m06 `#speaker:analyst`, `#speaker:trader`.* (review)
+- **Choices only quote what the player has heard.** A choice that answers or quotes a line the NPC hasn't said, or states something that didn't happen on this route, reads as a bug. *m03: "[The desk was empty when I came in. I signed myself in.]" on a route where the player never signed in; m04: Relay answered a reply nobody gave.* (review)
+- **A hub offers ten choices or fewer at once.** A knot's choice block (sticky, once-only and conditional choices all count) with more than ten crowds the screen and buries the topic that matters now. Order by relevance: topics that arrive later in the mission go first in the ink, so the newest, most relevant choices sit at the top (see m01's handler hub, `m01_phone_agent0x99.ink`, knot `support_hub`), and retire spent topics with a `not … _given` guard. *m02, m05 and m06 phone hubs reached 19-20 declared choices.* (lint: `crowded-hub`; a hub where almost every conditional choice is retired and the unconditional ones sit last, as in m01, passes)
+
+## Social-engineering: general mechanics
+
+The social-engineering systems were built for `lab_social_engineering` (the student lab) and are proved in `test_social_slice` (the engine test bed). Both are lab games: browser-only, no VMs, no combat (`"disableAttacks": true`) and fictional companies on `.example` hosts. Licence to Hack (m01–m10) uses none of them, and a scenario without a top-level `social` key is left exactly as it was: the influence service is installed only when `social.characters` has an entry, and the social lints run only when `social` exists.
+
+This section covers the general mechanics: characters and influence, the people and facts the player collects, the intel board, the OSINT browser, inbox triage, the engagement report, locked-door hints and the validator flag. The attack-shaped blocks (mail, composer, rules engine, pretext calls, landing pages) are in [Social-engineering: attack mechanics](#social-engineering-attack-mechanics). The data contract behind all of it is `planning_notes/phishing_and_social_engineering/designs/00_data_contract.md`.
+
+Validate every social scenario with:
+
+```bash
+ruby scripts/validate_scenario.rb scenarios/<s>/scenario.json.erb --strict-social --no-graph --skip-ink
+```
+
+### The `social` block
+
+Everything lives under one top-level key. `scripts/scenario-schema.json` closes every block: an unknown key fails the schema, except keys that start with `_`, which are notes. The blocks, and where each is documented:
+
+| Key | What it holds | Section |
+|---|---|---|
+| `characters` | Who has an influence value, on which channels, and what happens at each threshold | [Influence](#influence-socialcharacters-and-socialinfluencedisplay) |
+| `influenceDisplay` | Scenario default for which influence UI shows | [Influence](#influence-socialcharacters-and-socialinfluencedisplay) |
+| `people` | The staff and sender directory | [People, intel facts and concept cards](#people-intel-facts-and-concept-cards) |
+| `intelFacts` | Every fact the player can collect | [People, intel facts and concept cards](#people-intel-facts-and-concept-cards) |
+| `conceptCards` | Short teaching cards behind a "What is this?" button | [People, intel facts and concept cards](#people-intel-facts-and-concept-cards) |
+| `intelBoard` | The recon case file: targets and readiness slots | [The intel board](#the-intel-board-socialintelboard-and-socialengagement) |
+| `engagement` | Rules of engagement, plan, defender review and the report | [The intel board](#the-intel-board-socialintelboard-and-socialengagement), [The engagement report](#the-engagement-report-socialengagementreport) |
+| `osint` | Sites, pages and lookup tools for the OSINT browser | [The OSINT browser](#the-osint-browser-socialosint) |
+| `triageSets` | Inbox triage rounds | [Inbox triage](#inbox-triage-socialtriagesets) |
+| `mailClient` | Accounts, mailboxes, contacts, seeded mail, payload kit | [The mail client](#the-mail-client-socialmailclient) |
+| `templates` | Composer fragments | [The composer templates](#the-composer-templates-socialtemplates) |
+| `phishTargets` | Who can be phished and how the rules engine judges them | [Phishing targets and the rules engine](#phishing-targets-and-the-rules-engine-socialphishtargets) |
+| `pretextNpcs` | Pretext calls | [Pretext calls](#pretext-calls-socialpretextnpcs) |
+| `landingPages` | The landing-page builder | [Landing pages](#landing-pages-sociallandingpages) |
+| `awarenessEpisode` | The episode an awareness shell's kiosk runs: stages, attack and defend halves, strings | [Awareness episodes](#awareness-episodes) |
+| `exercises` | Named scene configs (`{ id, scene, config }`) that exercise stations, ink tags and event mappings open by id | [Exercise stations](#exercise-stations-socialexercises) |
+
+Each overlay opens from an object that carries only a pointer in `minigameData` (checked against `scripts/minigame-data-schemas.json`):
+
+| Object `type` | `minigameData` | Opens |
+|---|---|---|
+| `case-file` | `{ mode }`: `recon` (default), `defender`, `scope` or `plan` | the intel board in that mode |
+| `osint-workstation` | `{ siteIds?, start? }` | the OSINT browser, limited to `siteIds` (every site when absent) |
+| `triage-workstation` | `{ triageSetId, stage?, conclusionTaskId?, skin? }` | inbox triage. `skin: "awareness"` turns on the awareness behaviours (see [Inbox triage](#inbox-triage-socialtriagesets)); leave it out for the plain triage |
+| `report-workstation` | `{ requiresGlobal?, lockedMessage? }` | the engagement report; with `requiresGlobal` set and not yet true, a toast shows `lockedMessage` (default "There is nothing to write up yet.") instead |
+| `mail_terminal` | `{ accountIds, defaultAccount?, maxSends?, layout?, readOnly? }` | the mail client (attack section). `maxSends` caps the sends in one visit (after that Compose is disabled and a line says the message has gone; Close carries on). `layout: "phone"` draws the narrow layout in a phone frame on any screen. `readOnly: true` hides Compose and Contacts, so the terminal is a mailbox to read, not send from; closing it is a normal exit, never a failed run (an evidence inbox in a mission) |
+| `page-builder` | `{ landingPageId, targetId? }` | the landing-page builder (attack section) |
+| `authenticator-device` | `{ pushes, approvesAt }` or `{ choice, pushTemplate, defenderNote }`, plus `mode?`, `strings?`, `setGlobalPrefix?`, `lockUntilOutcome?` | a phone in the room that plays a stream of sign-in prompts (see [The authenticator](#the-authenticator-the-mfa-stage)) |
+| `kiosk` | `{ episodeId }` | the awareness episode runner; `episodeId` must equal `social.awarenessEpisode.id` ([Awareness episodes](#the-kiosk)) |
+| `exercise-station` | `{ scene?, exerciseId?, config?, setGlobalPrefix?, skin? }` | one of five exercise scenes (`sort-drill`, `concern-form`, `privacy-panel`, `assistant-chat`, `password-guesser`); on finishing it writes `<setGlobalPrefix>done` and emits `<scene>_completed` ([Exercise stations](#exercise-stations-socialexercises)) |
+
+Lab examples: `{"type": "case-file", "minigameData": {"mode": "scope"}}` is the Rules of Engagement sheet; the report workstation carries `{"requiresGlobal": "phish_lord_landed", "lockedMessage": "Nothing to write up yet. Finish the sending first, then come back to the report."}`. Each object type also needs its sprite, `assets/objects/<type>.png` (a missing one is a social lint error), and the lab places them on real furniture with `"position": "as-type:pc"` and similar.
+
+**One of each, per scenario (documented limits).** The social suite keeps one copy of three things, so a second one in the same scenario would share or collide with the first:
+
+- one `awarenessEpisode` (the kiosk's `episodeId` must equal its `id`; the starter reads this single block);
+- one intel board, whose picks live in the single global `se_board_state`: two `case-file` objects in one scenario open boards that share their state;
+- one engagement report, whose progress lives in `se_report_state`: a second `report-workstation` opens the same report.
+
+The OSINT browser has the same shape for what it remembers (`se_osint_state` holds the visited pages for every workstation), which is harmless but means two workstations with different `siteIds` share their visited list. Landing pages, pretext calls, triage sets and authenticator phones are all keyed by their own id, so several of those are fine.
+
+**Tasks complete on globals, never on an overlay closing.** The board, OSINT browser and report treat Close and Esc as a normal exit, so their completion event fires whether or not the player did anything (triage closed before its result is an abort). Each mechanic writes a global instead (`se_intel_<id>`, `target_ready_<id>`, `roe_signed`, `triage_pass`, `report_filed` and so on), and a start-room NPC's `eventMappings` completes the task on `global_variable_changed:<name>` with `"condition": "value === true"` and `"onceOnly": true`. In the lab that NPC is Ruth, in the start room, because an NPC in a room the player hasn't visited hears nothing (see [Common bugs](#common-bugs-and-how-to-avoid-them)).
+
+**Declare every global a mechanic writes.** The lints list them: the influence global (a number, default the character's `influence.start`) and `<character>_latched` (a string, default `""`: the ids of the thresholds latched now, comma-separated in the order they latched, such as `"wary"` or `"wary,refuses"`; ink can test it with `?`, as in `{mara_latched ? "trusts"}`), every threshold `setGlobal` target, both lockout globals, `se_intel_<id>` (default `false`) for every fact, `target_ready_<id>`, `osint_done`, the engagement block and step globals, the four triage result globals, and the object-valued state globals `se_board_state`, `se_osint_state` and `se_report_state` (default `{}`). An undeclared name still holds its value in the game but is silently not synced into ink, and a social global must not come from `importGlobals`.
+
+### Influence (`social.characters` and `social.influenceDisplay`)
+
+A social character has one influence value: a number, by default -100 to 100, held in a declared global. It moves when a phish lands or misses, and on each line of a pretext call. The player sees it as a bar with threshold marks (in the mail reading pane, on the intel board's person card, and in the header of a person or phone chat), and as a small pip above the character's walk sprite once it has moved from its start. When it crosses a threshold the engine runs that threshold's effects once: it sets a global, ends the conversation, starts a lockout, turns the NPC hostile, or shows a toast.
+
+`social.characters` is keyed by character id. That id is not an NPC id: `channels` maps it to the NPC records that are the character on each channel, so a person sprite, a phone contact and a headless email record can all be one character.
+
+| Field | Shape | What it does |
+|---|---|---|
+| `displayName` | string | Name on the bar, toasts and the lockout refusal |
+| `channels` | `{ person?, phone?, email? }` | NPC id per channel. The person NPC is the one that gets the pip |
+| `emailRecord` | `{ storyPath, displayName, ... }` | A headless NPC record for a character reached only by mail (no sprite, no room). Any NPC field is accepted |
+| `emailReplyDelay` | seconds | Wait before this character's reply arrives (default 20) |
+| `emailKnots` | `{ <accountId>: <knot> }` | Entry knot per sending account; default `on_email` (attack section) |
+| `influence` | `{ global?, min?, max?, start?, rearmMargin?, display? }` | `global` defaults to `<character>_influence`; `min` -100, `max` 100; `start` defaults to the global's declared value; `rearmMargin` 10 |
+| `thresholds[]` | `{ id, at, when?, icon?, effects[] }` | See below |
+| `mirrorToBehavior` | boolean | `true` copies every change into the person NPC's behaviour state (`behavior.influence`). Default off |
+| `syncedVars` | string[] | Validator only: the ink `VAR`s this character's stories share. Every declared global syncs whether or not it is listed |
+| `alternativeRoute` | any | Validator only: marks a permanent lockout as safe because another route exists |
+
+**Thresholds.** `at` is the value. `when` is `"below"` (the default for a negative `at`) or `"above"` (the default otherwise), and equality counts. A threshold fires once when the value reaches `at` from the other side, latches (the latch is saved in `<character>_latched`, so a reload doesn't fire it again), and re-arms only once the value is back past `at` by `rearmMargin`. Several thresholds crossed in one move fire in the order the value passes them. List `"below"` thresholds from the mildest (highest `at`) down. The ids `wary`, `refuses`, `reports` and `lockout` give the band number (1 to 4) that the pretext functions return to ink; other ids don't change the band. `icon` is one of `wary`, `refuses`, `reports`, `hostile` or `trusts`; anything else draws a question mark.
+
+| Effect `type` | Fields | What it does |
+|---|---|---|
+| `setGlobal` | `global`, `value`, `clearOnRearm?` | Writes the global. With a boolean value and `clearOnRearm: true` it is a **band flag**: recomputed on every change, set at or past `at`, cleared to its declared default once the value re-arms |
+| `endConversation` | | Closes the open chat with this character; a pretext call's `outcomes.reported.line` shows as the goodbye |
+| `lockout` | `scope`, `until`, `recoverTo?` | Refuses new contact. `scope` is `"channel"` (only the channel in use) or `"character"` (all channels). `until` is `{ "afterMinutes": N }` (real elapsed minutes), `{ "global": "<name>" }` (lifts when that global turns true) or `null` (permanent). On the lift, influence is set to `recoverTo` (default `start`) silently, and the latch and band flags clear |
+| `combatHostile` | | Opt-in: turns the person NPC hostile, as `#hostile` does |
+| `toast` | `text` | A one-line notice |
+
+The lab's service-desk contact, Dev, is the one lab character with a lockout:
+
+```json
+"dev": {
+  "displayName": "Dev",
+  "channels": { "phone": "dev_service_desk" },
+  "influence": { "global": "dev_influence", "min": -100, "max": 100, "start": 0 },
+  "thresholds": [
+    { "id": "wary", "at": -40, "icon": "wary",
+      "effects": [ { "type": "setGlobal", "global": "dev_wary", "value": true, "clearOnRearm": true } ] },
+    { "id": "refuses", "at": -50, "icon": "refuses",
+      "effects": [ { "type": "setGlobal", "global": "dev_refusing", "value": true, "clearOnRearm": true } ] },
+    { "id": "reports", "at": -70, "icon": "reports",
+      "effects": [ { "type": "setGlobal", "global": "dev_reported", "value": true },
+                   { "type": "endConversation" },
+                   { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 2 } } ] }
+  ]
+}
+```
+
+Pierce and Lord, reached only by mail, have a single `wary` threshold and `min: -40`, so a run of bad sends moves the bar but can never shut the only route to them.
+
+**Moving influence.** Ink in a social character's story can:
+
+- assign the global directly (`~ dev_influence -= 10`), since it is a synced `VAR` in every channel story;
+- use the tags `#influence:N[:reason]` (set), `#influence_gained[:N][:reason]` and `#influence_lost[:N][:reason]` (N defaults to 10) and `#report[:reason]` (a forced report: runs the `reports` threshold's effects without changing the value);
+- call `se_influence(delta, reason)`, which the engine binds only in mail replies and pretext calls.
+
+The tags behave this way only for an NPC that belongs to a `social.characters` entry; every other NPC keeps the old popup.
+
+**Use exactly one mechanism per change — do not combine them.** The three above each move the value: a direct `~ char_influence += N`, a `#influence_gained[:N]` / `#influence_lost[:N]` / `#influence:N` tag, and `se_influence(delta, reason)`. Pairing a direct `+= N` with a `#influence_gained:N` on the same line moves the value **twice**. The generic `#influence_increased` / `#influence_decreased` tags from `README_ink_best_practices.md` are a different thing: for a social character they are **popup-only** (they show a toast and never touch the value), so do not reach for them to "show" a `+=`. For a social character, prefer the `#influence_gained` / `#influence_lost` tags — they move the value and show the character's own toast in one step.
+
+**What the player sees.** `influenceDisplay` takes `{ bar?, number?, pip? }`, each `true` by default. Put it on `social.influenceDisplay` for the scenario, or on a character's `influence.display` to override key by key. `bar: false` hides the bar everywhere and takes the number with it; `number: false` keeps the bar and drops the printed value; `pip: false` turns off the world pip. Display never changes the mechanics: thresholds, effects, the pretext tells panel and the debrief still run. Neither the lab nor the slice sets these keys, so a sketch:
+
+```json
+"social": {
+  "influenceDisplay": { "number": false },
+  "characters": { "quinn": { "influence": { "start": 0, "display": { "pip": false } } } }
+}
+```
+
+*Worked example — a pip-only display.* To show a character's standing **only** as the small pip above their walk sprite (no bar, no number anywhere), turn the bar and number off and leave the pip on. The pip appears once influence has moved from `start`, so a fresh game shows nothing until the first change:
+
+```json
+"social": {
+  "characters": {
+    "quinn": {
+      "displayName": "Quinn",
+      "channels": { "person": "quinn_npc" },
+      "influence": {
+        "global": "quinn_influence", "start": 0,
+        "display": { "bar": false, "number": false, "pip": true }
+      },
+      "thresholds": [
+        { "id": "wary", "at": -30, "icon": "wary",
+          "effects": [ { "type": "setGlobal", "global": "quinn_wary", "value": true, "clearOnRearm": true } ] }
+      ]
+    }
+  }
+}
+```
+
+The bar (and with it the number) is gone from the reading pane, the person card and the chat header; the pip is the only feedback. `quinn_npc` must be a real person NPC with a walk sprite in a room, because the pip is drawn on that sprite — a phone- or mail-only character has nowhere to draw it. Declare `quinn_influence` (default `0`, matching `start`) and `quinn_wary` (default `false`) in `globalVariables`. `display` can also be set scenario-wide on `social.influenceDisplay`; the per-character block overrides it key by key.
+
+**Lockouts.** A lockout is stored in two declared globals, `<character>_lockout_until` (elapsed ms; `-1` for a global or permanent lockout; `0` none) and `<character>_lockout_channel` (`person`, `phone`, `email`, `all` or `""`), so it survives a reload with no server change. While it holds, the locked channels refuse before anything opens: talking to the person NPC or ringing the phone contact (including a pretext call) shows "<name> flagged the last attempt and won't talk to you for now — give it a while, then try again more carefully.", and a send to a character locked out on email shows "<name> will not read your mail right now." and is neither judged nor counted. Nothing ticks the timer: a timed lockout lifts the next time the player tries that channel after the wait, and a `until.global` lockout lifts as soon as that global turns true.
+
+**`mirrorToBehavior`.** Off by default, so a social character's influence never feeds the older NPC behaviour code. Set it to `true` only when a person NPC's behaviour should read the same number; the validator then requires a `channels.person` NPC that exists in a room. The legacy auto-hostile check is not applied to a mirrored value. No shipped scenario uses it.
+
+**`boostIfGlobal`** (on a `phishTargets` entry, attack section) is how another beat changes how a later phish is judged: `{ "<global>": "<factor>" }` demotes that factor from required to advisory once the global is `true`, and `strictIfGlobal` promotes one. The mail client compares with `=== true`, so the key must be a boolean flag. An influence number never trips it: read influence in the target's `on_email` ink instead. For example `"boostIfGlobal": { "reset_granted_pierce": "pretextRelevant" }` would relax relevance after a call sets `reset_granted_pierce`. No scenario uses either hook yet.
+
+Gotchas from the lab build:
+
+- **Keep `start` and the declared default equal.** The service starts from `influence.start`; the global, and every ink `VAR` for it, start from `globalVariables`. When they differ, the bar and the pip read the declared value until the first write.
+- **A fresh pretext call resets influence to `start`.** Each new call (not a reload mid-call) writes `start` with the reason `new_call`, so influence never carries from one call into the next, and the bar's "Last change" line clears. That makes a `recoverTo` on a call character's lockout dead config, which is why Dev has none. The lesson of pushing too hard is carried by the report and the lockout, which decide whether the player may call back at all.
+- **Out-of-range ink writes are clamped** and the clamped value is written back into the story, so a later `+=` in the same knot starts from the right number.
+- **A tag reason must not be a bare number.** `#influence_gained:urgency` is +10 with reason `urgency`; `#influence_gained:5` is +5.
+- **The validator checks the `recoverTo` rule:** `recoverTo` (or `start` when absent) must be at least the highest `at` of a `"below"` threshold with effects, plus `rearmMargin`, or the character comes back already wary. A lockout with no expiry needs `alternativeRoute`, so a failed attempt can't block the critical path for good.
+- **The pip needs a walk sprite.** It is drawn only for a character whose person NPC (or the character id itself) has a live sprite, and is replaced by the combat health bar if the NPC turns hostile. The lab's three characters are phone- and mail-only, so it never appears there; the slice's `quinn` shows it.
+- **`<character>_forced`** is written by the engine to remember a forced report across a reload. It doesn't need declaring.
+
+### People, intel facts and concept cards
+
+These three blocks are the shared vocabulary. The player never types anything: they collect facts by selecting things (an OSINT block, a call grant, an object), and the composer, the board and the call card offer only what they hold.
+
+**`social.people[]`** is the directory of staff and senders. Its `id` is the join key for board cards, fact subjects and blank values (a `provides` value such as `pierce_first` belongs to `pierce` because it starts `pierce_`).
+
+| Field | What reads it |
+|---|---|
+| `id` | Required. Board cards, fact `subject`, OSINT profiles, contacts |
+| `forms` `{ first, short, formal, full }` | Board card and report row name (`full`, else `first`), the evidence note title (`full`), `{firstName}` on a landing page (`first`) |
+| `name`, `role`, `address` | Board card (the address shows once the player holds the address pattern or a fact that gives it) |
+| `avatar` | A headshot key under `assets/characters/` for OSINT profiles; a missing one falls back to a default icon |
+| `kind` | Nothing reads it (see [Reserved keys](#reserved-keys-authored-but-not-read)) |
+
+**`social.intelFacts`** is a map of fact id to fact. Holding fact `<id>` is the boolean global `se_intel_<id>`, which must be declared with default `false`.
+
+| Field | What it does |
+|---|---|
+| `text` | The sentence the player reads on the board, in the evidence note and in the "Noted:" line |
+| `subject` | A `people` id, or `"company"`. Decides which board card the fact sits on |
+| `source` | The id of the one element that grants it (an OSINT block, field or tool result). The validator checks it matches |
+| `provides[]` | The values the fact offers to composer blanks and the call card: `{ type, value, label, about?, kind?, rule?, address?, attachmentKind? }`. `kind: "stale"` marks a decoy or out-of-date value. Matching to blanks is in the [composer section](#the-composer-templates-socialtemplates) |
+| `label` | Short form for the "Noted" toast (falls back to `text`) |
+| `reduceNote` | One-line "reduce this" prompt; a fact needs one to appear in the defender board |
+| `stale` | `true` shows the whole fact as stale on the board |
+
+From the lab:
+
+```json
+"pierce_trusts_jed": {
+  "text": "Melanie trusts her colleague Jed Baker, who is showing her the ropes.",
+  "subject": "pierce",
+  "source": "post_pierce_jed",
+  "provides": [ { "type": "name", "about": "sender", "value": "baker_full", "label": "Jed Baker", "kind": "distinctive" } ]
+}
+```
+
+A grant is flip-only: the first one writes the global, adds an "Evidence: <name>" note, saves, and re-checks readiness ([the intel board](#the-intel-board-socialintelboard-and-socialengagement)); a repeat does nothing. Facts are granted by OSINT blocks, by a pretext ask's `grants.intel`, or by the action `{ "type": "grant_fact", "fact": "<id>" }` in an object's `triggerOnInteract` (or any other `applyActions` list), which also toasts "Noted: <label>". Decoys are ordinary facts whose `provides` are all `kind: "stale"` (the lab's `baker_namesake`, a plumber in Leeds): the player collects them, the board files them under stale, and the composer and call card offer their values labelled "an older detail". The rules engine reads only a target's own `primedFor.distinctiveValues`, so a stale value convinces nobody unless a target lists it.
+
+**`social.conceptCards[]`** are short teaching cards, `{ id, title, text, image?, imageAlt? }`, shown behind a "What is this?" button by OSINT sites and tools (`card`) and by landing pages (`conceptCards`). Blank lines in `text` split paragraphs; `image` is a file under `assets/osint/`, decorative unless `imageAlt` is set. The host lint reads card text: any host-shaped token must end `.example`, and real brand names fail.
+
+```json
+{ "id": "tool_hunter", "title": "Hunter",
+  "text": "Hunter reports the address pattern a company uses, for example first initial then surname. ..." }
+```
+
+Gotchas:
+
+- **The ready toast assumes mail.** When a grant makes a target ready, the engine shows "You know enough to approach now — write to them from a mail terminal." A scenario that approaches its targets another way will need that line changed in the engine.
+- **One award path per fact.** The validator wants each fact granted by exactly one element (call-granted and mail-highlight facts excepted). Two blocks carrying the same fact fail.
+
+### The intel board (`social.intelBoard` and `social.engagement`)
+
+The board is one overlay with four modes, each opened by its own `case-file` object (`minigameData.mode`). It is rebuilt from globals every time it opens, holds no live state, and writes its answers as ids into the declared object global `se_board_state`. In every mode a wrong answer shows its `why` and can be changed, and a right one locks.
+
+| Mode | Lab object | The player | Reads |
+|---|---|---|---|
+| `recon` | Case File (`recon_board`) | Reviews what they have on each target and what is missing | `intelBoard`, `people`, `intelFacts`, readiness globals |
+| `scope` | Rules of Engagement (`roe_sheet`) | Sorts cards into in scope or out of scope and answers question cards | `engagement.scope`, `engagement.roe` |
+| `plan` | Planning Whiteboard (`planning_whiteboard`) | Picks the engagement's objective and how it will be measured | `engagement.plan` |
+| `defender` | SOC Board (`soc_board`) | Picks a mitigation for each exposure they exploited | `engagement.defender`, `intelFacts[].reduceNote` |
+
+**Recon: `social.intelBoard`** is `{ title?, readyToast?, people[], readinessSlots }`. `people` lists the target ids that get a card, in order; each must be a `phishTargets` id. `readinessSlots` maps each target to the rows on its card:
+
+```json
+"lord": [
+  { "label": "Her payroll system",
+    "needsIntel": ["lord_portal", "lord_intern"],
+    "goalString": "You still don't know which staff system Sofia uses. The team page and her social profile help.",
+    "doneString": "She is a new intern and uses a staff payroll portal." }
+]
+```
+
+A slot is done when every `needsIntel` fact is held and every `needsGlobal` global (booleans only) is `true`. When all of a target's slots are done the engine sets `target_ready_<id>`, and when every id in `people` is ready it sets `osint_done`. Both are set where the facts are granted, so the player never has to open the board. The flip also shows a "Ready to approach" toast. Its text comes from the ready target's channels in `social.characters` (email: "write to them from a mail terminal", phone: "call them", person: "go and talk to them in person"; a target with no character entry counts as email), or from `readyToast` when the board sets it. A card shows "Not yet identified" until the player holds a fact about that person or naming them, then their name, role and address, the facts found (stale ones apart), a "From the call" list for facts a pretext ask granted, and the influence bar when a `social.characters` entry has the same id as the target. Contacts named by held facts who aren't targets appear in a strip, company facts in their own panel, and `engagement.scopeNote` across the top.
+
+**Scope, plan and defender: `social.engagement`.** Each mode block has an `onCompleteGlobal`, set once when the block is done, and optional `steps[]` of `{ id, onCompleteGlobal, title? }`, each set when its step is done. With steps declared, every item must name one, and a step is done when all the items bound to it are answered correctly. With no steps, the block is done when every item is. An empty block or step is never done. Tasks complete on these globals.
+
+| Block | Items |
+|---|---|
+| `scope` | `intro` (or `brief`), `title`; `cards[]`: a sort card `{ id, kind: "sort", step, text, inScope, why }` or a question card `{ id, kind: "question", step, text, options[] }`. `engagement.roe` `{ inScope[], outScope[], stopContact }` is printed beside the cards |
+| `plan` | `intro`, `title`; `objectives[]` and `measures[]` (each a single-select list whose options carry `step`), with `objectivesPrompt` and `measuresPrompt`; or general `picks[]` of `{ id, step, text, options[] }` |
+| `defender` | `title`, `intro`; `factMitigations[]` of `{ intel, step?, options[] }`, one per exposed fact, which must have a `reduceNote`; optional `indicators[]` and `indicatorsIntro` (below) |
+| any of them | `items[]` of `{ kind: "confirm", id?, step, text }`: a button the player presses to finish a read-only step |
+
+Options are `{ id, text, correct, why }` (defender uses `good` instead of `correct`). The lint wants a non-empty `text` and `why` on every option, exactly one correct option per pick, and at least one `good` option per defender card. The lab's plan, abridged:
+
+```json
+"plan": {
+  "onCompleteGlobal": "plan_done",
+  "objectivesPrompt": "What is this engagement for?",
+  "steps": [ { "id": "objective", "onCompleteGlobal": "plan_objective_done" },
+             { "id": "measures",  "onCompleteGlobal": "plan_measures_done" } ],
+  "objectives": [
+    { "id": "how_far_gaps", "step": "objective", "correct": true,
+      "text": "Find how far email and a phone pretext get against Ledgerwell's staff, and report the gaps.",
+      "why": "That is what Ledgerwell asked for and what the sheet allows." },
+    { "id": "disrupt_payroll", "step": "objective", "correct": false,
+      "text": "Disrupt payroll to prove the risk.", "why": "The rules of engagement bar disruption. ..." }
+  ],
+  "measures": [ ... ]
+}
+```
+
+**Defender indicators (optional).** `engagement.defender.indicators[]` adds a second exercise below the exposures: for each indicator, would the player's own side block incoming mail on it? Each entry is `{ id, tell, text, block, why, step? }`. The card shows only when a message the player sent carries that `tell` (the record's `tells`, so one of `senderTrust`, `senderAuth`, `linkCredible` or `urgencyCalibrated`) and names that message. The player marks it **Block** or **Let through**; the mark matching `block` locks, a wrong one shows `why` and can be changed. Marks are saved in `se_board_state`. `indicatorsIntro` replaces the line above the cards.
+
+```json
+"indicators": [
+  { "id": "ind_auth", "tell": "senderAuth", "block": true, "step": "indicators",
+    "text": "The From address claims a Harrowgate domain but fails DMARC alignment.",
+    "why": "Mail claiming your own domain that fails alignment is safe to quarantine." },
+  { "id": "ind_urgent", "tell": "urgencyCalibrated", "block": false, "step": "indicators",
+    "text": "The message pushes for action today.",
+    "why": "Real mail is urgent too. Warn the reader; blocking on tone alone stops real work." }
+]
+```
+
+Indicators don't hold up `onCompleteGlobal` unless they name a declared step. Then that step waits for every indicator on show, and every `factMitigations` entry must name a step too. A step whose indicators are all hidden (nothing the player sent carries their tells) doesn't hold up the block, and its own global waits until one shows and is marked. The lint checks the entry shape, unique ids, the step binding, warns on a `tell` no send records, and warns when the scenario has no `mailClient`. The lab authors none.
+
+Gotchas:
+
+- **`needsGlobal` re-checks on the global's own change.** Readiness is evaluated after every fact grant and also on `global_variable_changed:<name>` for each global a slot names (`watchReadinessGlobals` in `systems/social-intel.js`, installed at game start), so a slot can wait on a beat other than a fact, such as a call or a finished board. A target it makes ready gets the same "Ready to approach" toast. The event comes from the shared writer, ink `#set_global` and event-mapping `setGlobal`; a value restored from a save is counted at load, without a toast. Neither shipped social scenario uses `needsGlobal`; `test_social_board_indicators` does.
+- **Ready means "has the facts", not "can act".** The lab's Sofia read "Ready to approach" before the player had the portal name, which only the service-desk call gives (playtest L4). Put a fact the player must fetch from a call or another beat into the slot if the card shouldn't read ready without it.
+- **The board fixes itself on reopen.** If the saved answers are complete but a step or block global never landed (a closed tab, a failed save), opening the board sets it. Tasks therefore still complete late rather than never.
+- **One board object per mode.** A second `defender` case-file draws a warning.
+- **Put the correct option anywhere but first.** Playtesters noticed when the right plan picks were always first.
+- **`blame` is read only by the report.** The lab's plan marks the "Which named staff fell for it" measure `blame: true`, but the board shows it as an ordinary wrong pick.
+
+### The OSINT browser (`social.osint`)
+
+An in-world browser for researching the target company (design `02`). The player reads pages, follows links, opens a document's properties panel and picks lookups from a short list. Nothing is typed: every paragraph, staff row, post, result and metadata field is a button, and selecting one either collects the fact it carries ("Noted: ..."), says "Already noted: ...", or says "Nothing here you can use." A **Case file** button opens the recon board and returns to the same page.
+
+`social.osint` is `{ profile?, title?, sites[], tools[] }`.
+
+| Site field | What it does |
+|---|---|
+| `id`, `url` | Required. `url` is the host the address bar shows exactly as written: a fictional `.example` host, ASCII |
+| `name` | The site's tab label (falls back to `title`, then the id) |
+| `type` | `company-site` (has `pages[]`), `social` (has `profiles[]`, one page per person) or `document` (has `fields[]`, its properties panel) |
+| `card` | A concept card id shown with the site |
+| `logo`, `logoAlt` | `logo` is an image under `assets/logos/`; `logoAlt` is its alt text, and a logo with alt text stands in for the site's title. Any site whose name, title, url or id matches "friend face" gets the shared FriendFace wordmark by default; set `"logo": false` to switch that off and show no logo (the title is shown instead) |
+| `pages[]` | `{ id, title, path?, url?, showIf?, blocks[] }`. `path` is appended to the site's url in the address bar (e.g. `path: "/careers"` shows `ledgerwell.example/careers`), so it is a plain URL path and may start with `/`; `url` replaces the whole address instead |
+| page id `archive` | Special: a page with the id `archive` is left out of the page navigation and shown as a small "Archive" link in the footer of the other pages of that site. Use the id on purpose (an old-pages footer), and don't use it for an ordinary page or it will vanish from the nav |
+| `profiles[]` | `{ person, name?, avatar?, handle?, bio?, showIf?, posts[], blocks[] }`; `person` is a `people` id |
+| `fields[]` | `{ id, label, value, fact? }`, the document's metadata |
+
+A **block** is `{ id, kind?, text, fact?, note?, showIf? }` plus fields for its kind: `heading` (or `h`), `link` (`to`: a page id on the same site, `site.page` or a site id), `image` (`src` relative to `assets/`, `alt`), `list` (`items[]`), `staff` (`person`, `name`, `role`, `address`), `post`, `field` (`label`, `value`); anything else is a paragraph. `fact` is the fact a selection grants, and the validator requires the fact's `source` to equal this block's `id`. `note` is an extra line shown on selection, alone when the block grants nothing. `showIf` names one global (a string; the validator rejects an array); the block, page or profile appears only while that global is truthy.
+
+A **tool** is a lookup, `{ id, label, card?, unlockedBy?, results[], emptyText? }`. It is listed once `unlockedBy` holds: `{ "visited": "<siteId>" }` or `{ "visited": "<siteId>.<pageId>" }` (the player has opened that place), or `{ "fact": "<factId>" }`. `results[]` are blocks; with none, it shows `emptyText` (default "No public results.").
+
+From the lab: the team page's staff rows grant facts, a Hunter lookup unlocks once the team page is visited, and a handle search on the PDF returns nothing on purpose.
+
+```json
+"sites": [
+  { "id": "company", "name": "Ledgerwell", "url": "ledgerwell.example", "type": "company-site",
+    "pages": [ { "id": "team", "title": "Our Team", "blocks": [
+      { "id": "row_pierce", "kind": "staff", "person": "pierce", "name": "Melanie Pierce",
+        "role": "Finance", "address": "m.pierce@ledgerwell.example", "fact": "pierce_role" } ] } ] },
+  { "id": "deck", "name": "Q3.pdf", "url": "ledgerwell.example/Q3.pdf", "type": "document", "card": "tool_exiftool",
+    "fields": [ { "id": "f_author", "label": "Author", "value": "mpierce", "fact": "username_convention" } ] }
+],
+"tools": [
+  { "id": "hunter", "label": "Hunter lookup: ledgerwell.example", "card": "tool_hunter",
+    "unlockedBy": { "visited": "company.team" },
+    "results": [ { "id": "r_pattern", "text": "Most addresses follow first-initial.surname@ledgerwell.example", "fact": "email_pattern" } ] },
+  { "id": "handle_decoy", "label": "Handle search: @mpierce_official", "card": "tool_recon",
+    "unlockedBy": { "visited": "deck" }, "results": [] }
+]
+```
+
+The workstation object chooses the sites with `minigameData.siteIds` and may name a `start` place: `company`, `company.team`, `social.pierce` or `~tools`. Without one the browser reopens where the player left it. Its state, `{ visited[], at }`, is saved in `se_osint_state` (declare it with `{}`). `profile` is `student` (the lab) or `awareness`, which hides document sites and the tools panel.
+
+Gotchas:
+
+- **Give every site a `name`.** Without one the tab shows the raw id (lab playtest P2-T).
+- **Every fact needs exactly one granting element, and its `source` must name it.** Facts that come from a call or a mail highlight are exempt.
+- **Hosts are linted.** `sites[].url`, `pages[].url`, staff `address` and fact `provides[].address` must be `.example` and ASCII, and no real brand may appear in them or in concept-card text. A `pages[].path` is a URL path, not a host, so a plain `/careers` passes; it is still checked for an accidentally embedded host (which must be ASCII and end `.example`) or a real brand.
+- **Teach that lookups can mislead.** The lab's name search returns a namesake (a decoy fact) and its handle search returns nothing. Both are deliberate, and both rely on tools being cheap to try.
+
+### Inbox triage (`social.triageSets`)
+
+The defender's seat (design `05`). The player works through a fixed inbox in four steps (Brief, Sort, Review, Result): each message gets a verdict (Trust, Report or Delete, plus Verify in awareness sets that allow it) and the red flags that justified it, chosen from chips. Feedback explains each one, and the round ends with a score and a band headline. The reading pane is the mail client's own reader, read-only, with a header panel that explains SPF, DKIM and DMARC. A `playerSent` entry replays the player's own phishing email as its target received it, which is the lab's turning point from attacker to defender.
+
+A `triage-workstation` object opens a set by `minigameData.triageSetId`. `conclusionTaskId` names the task that completes on the set's result, so a reopen can repair a save that never reached the server; `stage` overrides the set's stage.
+
+**`minigameData.skin`.** The awareness course's triage differs from the plain one in more than colour. With `"skin": "awareness"` the overlay adds the `aw-skin` class and these behaviours: Report plays a positive animation, a sound and a thank-you line; a "team kept safe" tally counts phish reported or checked another way (immediate feedback only, no denominator); the chips offered for each message put the relevant ones first; the header tells stay hidden until that message's header details are opened (the `awareness` profile does this too); and the result screen points at the learner's own inbox and security team instead of the mail client and the lab sheet. The default (no `skin`) is the plain triage, unchanged, so a mission workstation opts in explicitly. The only value is `awareness`; the validator errors on any other. An episode launches its defend round with this skin itself, so the key matters only for a room object.
+
+**The default scoring profile is `awareness`, and some features are awareness-only.** A set with no `scoringProfile` scores as `awareness` (Report and Verify never wrong, hidden header tells, a capped band when no skills were named). Set `"scoringProfile": "analyst"` for a SAFETYNET or lab-style round. The `call` and `push` message kinds and the Verify verdict (`verifyVerdict`) belong to `awareness` sets only: the validator refuses them in an `analyst` set, so a mission set cannot use a vishing call or a sign-in prompt unless it runs as `awareness`. See also [Inbox triage in a mission](docs/INBOX_TRIAGE_USAGE.md).
+
+| Set field | What it does |
+|---|---|
+| `id`, `messages[]`, `outcome` | Required |
+| `outcome` | `{ setGlobalPrefix, passPercent }`. The four result globals are `<prefix>percent`, `<prefix>reportRate`, `<prefix>pass` and `<prefix>done`. The prefix is used **verbatim**: the lab sets `"setGlobalPrefix": "triage_"`, giving `triage_pass`, `triage_done`, and so on (that is why its task keys on `triage_pass`). `{stage}` is an **optional token** inside the prefix, replaced by the effective stage only if you write it — use it when one set runs at several stages and needs distinct globals, e.g. `"triage_{stage}_"` → `triage_pre_pass` / `triage_post_pass`. |
+| `title`, `brief` | Header and the Brief step's text |
+| `stage` | `pre`, `post`, `training` or `mission` (default `mission`). A `pre` or `post` set that is already done reopens read-only |
+| `scoringProfile` | `analyst` (the lab) or `awareness` (default). Analyst marks down false flags and wrongly reported real mail |
+| `feedbackMode` | `immediate` (default) or `end` |
+| `headerPanel` | `collapsed` (default), `open` or `off` |
+| `glossary` | `closed` (default), `open` or `off`: the "What's this?" glossary in the header panel |
+| `verifyVerdict` | `true` adds Verify; awareness sets only |
+| `chipStyle`, `flagChips` | Chip wording: `technical` uses the technical labels, any other value the plain ones; `flagChips` overrides one chip's label by id |
+| `channelTells[]` | Extra chips beyond the seven factors (`lookalike_domain`, `changed_bank_details`, `reply_to_differs`, `padlock_myth` and others in `00` §2) |
+| `bands[]` | `{ min, headline }` result headlines |
+| `nudges` | Factor id to a line shown under "Weakest skill" on the result |
+| `pairedWith` | In a `training` set, offers a button to try the paired set |
+| `playerSentAuth` | `{ accounts: { <accountId>: auth }, domains: { <domainId>: auth } }`: the header results to show for the player's own mail, by the account it was sent from and the landing domain it linked. `{account_address}` and `{domain}` are the only placeholders |
+| `comparison` | The before-and-after panel on a `post` round's result (design `05` N11). Omit it to get the default, `false` to turn it off, or `{ prePrefix?, requireGlobal? }`. See [Pre and post checks](#pre-and-post-checks-the-comparison-panel) |
+
+An authored message is an email: `{ id, from, to, subject, time, body, links[], attachments[], auth, truth, unread?, forwardedBy? }`. `{{link:<id>}}` in `body` places a link; a link is `{ id, text, destination }`, where `text` is what the email shows and `destination` where it really goes. `auth` is `{ spf, dkim, dmarc, envelopeFrom?, replyTo?, summary? }`. `truth` carries the answer: `isPhish`, `flags[]` (factor or channel-tell ids), `perFlagNote` (a line per flag), `whyFine` (for real mail), `ifTrusted`, `headerNote` and `reportReply`. `perFlagNote` and `whyFine` are objects; the other notes are strings. From the lab:
+
+```json
+{ "id": "lookalike_payroll",
+  "from": { "name": "Ledgerwell Payroll", "address": "payroll@ledgerwell-hr.example" },
+  "subject": "Your payslip is ready", "time": "09:10",
+  "body": "Your March payslip is ready. Sign in to view it.\n{{link:portal}}",
+  "links": [ { "id": "portal", "text": "ledgerwell.example/payroll", "destination": "https://ledgerwell-hr.example/login" } ],
+  "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
+  "truth": { "isPhish": true, "flags": ["linkCredible"],
+    "perFlagNote": { "linkCredible": "The words say ledgerwell.example, but the link goes to ledgerwell-hr.example, a different site." },
+    "ifTrusted": "Signing in would hand over the staff portal password.",
+    "reportReply": "Thanks. This has been marked as a phish." } }
+```
+
+`whyFine` is an object, not a string: its keys are factor or channel-tell ids, plus `default`. A real message needs one (the lint errors without it, and warns when it has no `default`). A false flag on any message shows the line for that flag after "Not a flag here:", or `default` when the flag has no line of its own. The review card of a real message lists every line, keyed ones first and `default` last, as "why this one was fine":
+
+```json
+"truth": { "isPhish": false, "flags": [],
+  "whyFine": { "senderTrust": "Priya's address is the real ledgerwell.example one, and the reply-to matches.",
+               "default": "Nothing here asks you to act fast or go anywhere new." } }
+```
+
+A `playerSent` entry is `{ id, kind: "playerSent", targetId, fromMailbox?, domainFrom?, notes }`. It is replaced by the player's latest sent mail to that target that raised a sender tell (else the latest with any tell), shown with the `playerSentAuth` row for the account it came from. If the player never sent such a mail, the entry is left out of the round. `notes` holds the same note fields as `truth`.
+
+#### Messages that aren't email
+
+A message's `kind` defaults to `email`. Six other kinds are drawn in their own style in the reading pane, in place of the email's From/To block and body: a phone text thread, a voicemail card with a transcript, a printed notice with a QR code, a browser window, a call transcript and an authenticator prompt. The list row shows a small kind tag (Text, Voicemail, QR notice, Web page, Call, Sign-in prompt). They take the same `truth` and notes as an email and score the same way, with three differences:
+
+- **No header panel.** Only email has SPF, DKIM and DMARC. An `auth` block on another kind is ignored (the lint warns).
+- **Chips are the set's `channelTells` only.** The seven email factors don't apply, so the chip list is the enabled channel tells plus "Nothing looks wrong". `truth.flags` must use those tell ids; an email factor there could never be ticked, and the lint refuses it. A set holding these kinds needs `channelTells`.
+- **`call` and `push` have their own buttons.** Each one scores as an existing verdict, so the scoring table is unchanged. A call offers **Comply** (scores as Trust), **Escalate** (Report, and counts towards the report rate), **Refuse** (Delete) and **Ring back** on a number you already hold (Verify). A push offers **Approve** (Trust), **Deny** (Delete) and **Deny and report** (Report). A `call` belongs in an `awareness` set with `verifyVerdict: true`, and a `push` in an `awareness` set; the lint refuses either elsewhere. The other kinds keep Trust, Report, Delete and Verify.
+
+| `kind` | Fields it reads (beyond `id`, `time`, `truth`) | Drawn as |
+|---|---|---|
+| `sms` | `from.address` (the number; `from.name` only if the phone would know the sender), `body` (may hold `{{link:<id>}}` with `links[]`, shown inline with the hover status line), `earlier[]` (`{ text, time? }` bubbles above) | A phone with one text thread |
+| `voicemail` | `from` (the caller), `duration` (`"0:41"`), `body` as the transcript, or `transcript[]`; optional `audio: { clipId }` | A voicemail card with a static waveform and the words. `audio.clipId` names a clip for a later player and is ignored until one exists |
+| `qr` | `subject` (the notice heading), `body`, `qr: { destination, location?, caption? }` | A printed notice with a QR pattern. "Where does this code go?" shows `destination` in the status line. The pattern is decorative and encodes nothing |
+| `page` | `body`, `page: { url, padlock?, heading?, fields[]?, button?, certificate?, autofill? }` | A browser window. `certificate: { issuedTo, issuer?, note? }` adds a Certificate button on a padlocked page (who the certificate was issued to, and a line on what it does not prove, which `note` replaces); `autofill` is `"filled"` or `"none"` and adds a line saying whether the password manager filled the form in. Clicking the address shows the full URL and its host; clicking the padlock explains that it means the connection is encrypted, not who runs the site. The form fields are drawn, never typed into |
+| `call` | `callerId` and/or `from`, `transcript[]` of `{ who, text }` (`who: "you"` marks the player's own lines) | A call transcript card |
+| `push` | `push: { app, request?, account?, location?, device? }`, and `time` (an odd hour is often the tell) | An authenticator prompt |
+
+A kind with no `subject` or sender gets a stand-in for its list row (the first words of a text, "Voicemail (0:41)", the page's host, the app's name). There is no audio: a voicemail is read, not played. From the `test_social_p7_channels` fixture:
+
+```json
+{ "id": "push_odd", "kind": "push", "time": "03:12",
+  "push": { "app": "Ledgerwell Authenticator", "request": "Are you trying to sign in?",
+            "account": "you@ledgerwell.example", "location": "Unknown location, overseas" },
+  "truth": { "isPhish": true, "flags": ["unrequested_mfa_push"],
+    "perFlagNote": { "unrequested_mfa_push": "You weren't signing in at 03:12, so someone else has your password." },
+    "reportReply": "Thanks. We've reset your password and blocked that sign-in." } }
+```
+
+#### Pre and post checks: the comparison panel
+
+One set can run as a first check before training and as a follow-up after it. Give it a `{stage}` prefix (`"setGlobalPrefix": "triage_{stage}_"`) and launch it from two workstations with `minigameData.stage` set to `pre` and `post`. Each stage writes its own four globals, and each opens read-only once it is done.
+
+After a `post` round the result step adds a **Before and after** panel: the pre round's score and report rate beside this round's, with the change in points ("Score: 52% before, 81% now (+29 points)."). It reads `<pre prefix>done`, `percent` and `reportRate`. The pre prefix is the set's own prefix at `pre`, or `comparison.prePrefix` when the pre round wrote under another name (a separate check mission whose globals this one imports). Only the two headline numbers carry over; each round's own result keeps its skill breakdown.
+
+**No baseline.** Until `<pre prefix>done` is true, and `comparison.requireGlobal` is true when you name one (for example an imported `pre_check_completed`), the panel says there is no baseline and the round's result stands on its own. A reopened post round shows the panel too, worked out again from the globals as they are now.
+
+Declare or import the three pre globals the panel reads; the lint warns when they are neither, because the panel would always say "No baseline". It also warns on a `comparison` block for a set that never runs as `post`, and on a post set with a literal prefix and no `prePrefix`. `comparison: false` turns the panel off.
+
+**Scoring.** Each message is worth 100: 60 for the verdict and 40 for the flags. Analyst sets give a phish 60 for Report, 30 for Delete and 0 for Trust, and the flags `40 × (caught − false) / flags`; real mail gets 60 for Trust and 20 for Report. The round's percent is the mean.
+
+The result panel's numbers: **Phish caught** (phish given Report or Delete), **Reported rather than just deleted**, **Real mail trusted**, and in analyst sets **False alarms**, which counts real mail given Report or Delete (design `05`). A wrong chip on real mail is not a false alarm: it costs that message's flag points (a Trust with one false flag scores 80) and shows "Not a flag here" on the card, and it never reaches the count.
+
+**Saving the result.** The starter writes the four globals without announcing them, waits until the server confirms the save, and only then emits `global_variable_changed` for the names that changed (`done` last) and `inbox_triage_completed`. `<prefix>pass` is never cleared by a lower round, `percent` and `reportRate` keep the best round, and `done` is set at any score. The lab's task `triage_passed` completes on `global_variable_changed:triage_pass`.
+
+Gotchas:
+
+- **A task may fire a moment after the result screen.** It waits for the confirmed save. If the connection is down the result says it will save next time, and reopening the round re-emits the events.
+- **Closing mid-round restarts it.** Close or Esc before the Result step is an abort and nothing is saved. The Brief step says so in every set ("Closing or reloading before the end restarts this round from the first message.").
+- **`passPercent` defaults to 0.** A task on `<prefix>done` completes at any score. The validator warns when a non-zero `passPercent` sits beside a task keyed on `done`, which is usually a sign the task should key on `pass`.
+- **`playerSent` needs a sent mail with a tell.** A player who never phished that target sees a shorter round, so don't size the round's lesson around that card alone.
+- **Write the `playerSentAuth` row for every account and every landing domain** the player can send from or link to. The lint checks the list.
+- **A non-email message with no `channelTells` has nothing to tick.** Its chips are the enabled channel tells only, so a set of texts with none enabled offers just "Nothing looks wrong" (the lint warns).
+
+### The engagement report (`social.engagement.report`)
+
+The report closes the engagement (design `10`, stage 6). Its **results** step is a table read live from the records the other mechanics keep, which the player reads and confirms. Its **findings** step asks the player to pair each finding with a root cause and a control from authored lists. A wrong pick shows its `why` and can be changed; a cause marked `blame: true` is answered "That blames staff." plus its `why`, because blaming staff hides the control gap and stops people reporting. The report stores only the player's picks, as ids, in the declared object global `se_report_state`.
+
+Open it from a `report-workstation` object; give that object `minigameData.requiresGlobal` so it can't be filed before the attacks it reports on.
+
+| Field | What it does |
+|---|---|
+| `title`, `intro` | Header text |
+| `unseenNote` | The line under the results that says what the test could not see (default: whether staff reported the attempts) |
+| `labelBy` | `"name"` (default) or `"role"`: how the mail rows are labelled |
+| `steps[]` | `{ id, onCompleteGlobal }`. The report is done only when every declared step is done, so it needs at least one |
+| `onCompleteGlobal` | Set once every step is done (the lab's `report_filed`) |
+| `items[]` | `{ kind: "confirm", step, text, id? }`: the Confirm button that finishes the results step |
+| `findings[]` | `{ id, step, text, rootCauses[], controls[] }`; each option is `{ id, text, correct, blame?, why }`. A finding is done when a correct cause and a correct control are both chosen |
+
+**The results table** has three parts:
+
+- **Mail**: one row per phishing target that has metrics (sent, failed, landed, landed first time), in `phishTargets` order.
+- **Pages**: one row per landing page, from its victim record (visited, submitted, noticed), named by the domain of the page that landed; "no page sent" when none carried it.
+- **Calls**: one row per `pretextNpcs` entry, from `pretext_call_done`, `<character>_reported`, `pretext_<callId>_outcome`, `pretext_<callId>_lowest` (the lowest influence over every call) and `pretext_<callId>_reports` (failed calls). A got-it call after a failed one reads as two calls.
+
+**`labelBy: "role"`** labels each mail row with the target's own `role`, else its contact's `role`, else the name, so the table names nobody. The lab's no-blame lesson depends on it:
+
+```json
+"report": {
+  "labelBy": "role",
+  "onCompleteGlobal": "report_filed",
+  "steps": [ { "id": "results", "onCompleteGlobal": "report_results_done" },
+             { "id": "findings", "onCompleteGlobal": "report_findings_done" } ],
+  "items": [ { "kind": "confirm", "step": "results", "text": "I have read the campaign results" } ],
+  "findings": [ { "id": "spoofed_colleague", "step": "findings",
+    "text": "Finance acted on mail spoofing a colleague",
+    "rootCauses": [
+      { "id": "no_banner_dmarc_none", "correct": true, "text": "No external-sender banner, and DMARC left at p=none", "why": "..." },
+      { "id": "staff_carelessness", "correct": false, "blame": true, "text": "Finance staff were careless with a suspicious email", "why": "Blaming staff hides the control gap and stops people reporting." } ],
+    "controls": [ ... ] } ]
+}
+```
+
+with `"role": "Finance (new starter)"` and `"role": "Finance (intern)"` on the Pierce and Lord targets (the mail client still shows the contact's own role).
+
+Gotchas:
+
+- **Roles must not single anyone out.** In lab re-run R5 Lord's row read "Finance intern" (her contact's role), and she was the only intern, so the row named her. The next fix gave both Finance targets the role "Finance", and two identical rows read as one person counted twice. The lab settled on distinct roles that describe the job, not the person. The validator warns when `labelBy` is `"role"` and a target has no role anywhere.
+- **The call row reads fixed global names.** `pretext_call_done` is a lab-owned name, and `<character>_reported` must be the `reports` threshold's `setGlobal` target (Dev's is `dev_reported`). A scenario that names them differently gets an empty call row.
+- **Option `text` is required.** The report draws an option with no `text` as a blank button; the lint makes it an error.
+- **Keep the root-cause and finding wording free of names.** The lab's later rounds rewrote the `why` lines to say "the service desk" and "the intern".
+- **There is no `engagement.client`.** Nothing read it, so it left the schema; the lab keeps the client's name as the note `_client`. The board's top line comes from `engagement.scopeNote`.
+
+### Locked-door hints (`lockedHint`)
+
+An opt-in line that tells the player how to get past a locked door, whatever its lock type. It works in any scenario, not only social ones. Put it on a locked room (it applies to every door into that room, and is what the lab does), on a door entry in a room's `doors[]` (read by `doors.js`, though no scenario uses door entries yet), or on a locked object. The engine appends it to the refusal the player gets, as a following sentence:
+
+- key lock: "Requires key. <hint>" (no key, no lockpick) and the wrong-key alerts ("The selected key doesn't work with this lock. <hint>");
+- RFID/badge lock: "Requires RFID keycard. <hint>", and the empty-cloner refusal; after a wrong card or clone at the reader, the hint appears as its own "Locked" toast;
+- PIN and password pads: after the pad closes on a failed attempt ("Failed to enter correct PIN. <hint>"); closing the pad without trying shows nothing;
+- biometric lock: the hint appears as its own "Locked" toast after each refused lift;
+- gate door (`door-gates.js`): "Access denied: this door only opens for authorised staff. <hint>", at the same moment `door_gate_denied` fires;
+- any other lock type that falls through to the generic "requires ... to unlock" line.
+
+A refusal that carries a hint stays up by the length of the whole line shown (the refusal sentence plus the hint): 300 ms per word, at least 6 s and at most 12 s. Keep the hint to about 30 words, so the line fits inside 12 s. A refusal with no hint keeps its usual short duration.
+
+Combination padlocks, cryptex and the Bluetooth/BLE locks keep their own wording and do not show the hint. From the lab's Recon room:
+
+```json
+"recon_room": {
+  "locked": true, "lockType": "key", "requires": "recon_door", "keyPins": [12, 24, 36, 48],
+  "lockedHint": "Collect the key from Ruth once your plan is signed off."
+}
+```
+
+Gotchas:
+
+- **It took three layers to reach the toast.** The server's bootstrap filter keeps only listed room fields (`lockedHint` is now on that list in `app/models/break_escape/game.rb`), and `doors.js` copies it onto the door sprite. Node tests of the helper passed while the live door still said "Requires key" (lab rounds 5 and 6), so check a new door field in the browser, not only in a unit test.
+- **A player with a lockpick never sees it.** They are offered the pick instead.
+- **Write it for the player who has just been refused.** It shows on every refusal, so name where to look or whom to ask, not the answer (no PIN, no card holder's name unless the player already knows it).
+- **The validator** (`scripts/validate_social/options.rb`) errors on an empty or non-string hint and warns when the hint sits on something unlocked, where it is never shown.
+
+### Opening a minigame from a scenario
+
+Three routes open the same minigames, through one starter registry keyed by object type (`systems/minigame-registry.js`). The types are `case-file`, `osint-workstation`, `triage-workstation`, `authenticator-device`, `kiosk`, `page-builder`, `report-workstation`, `mail_terminal` and `exercise-station`. What each needs in `minigameData` is in the object table above.
+
+| Route | How | Notes |
+|---|---|---|
+| An object | `{ "type": "<type>", "minigameData": { ... } }` in a room | As before. A locked object still reaches its lock first; the report workstation's `requiresGlobal` gate still applies. |
+| An ink tag | `# trigger_minigame:<type>` or `# trigger_minigame:<type> key=value key=value` | The pairs become `minigameData`. A value is read as JSON when it parses (`maxSends=3`, `readOnly=true`, `accountIds=["a","b"]`), else it is the text, and cannot contain a space. For anything bigger name a shared entry by id (`exercise-station exerciseId=phish_sort`) or write a JSON object with ink's escapes: `# trigger_minigame:mail_terminal \{"accountIds":["a"]\}`. Plain `{` in an ink tag is read as logic, and a `|` after dialogue on the same line does not compile (inklecate: "Expected end of line"), so the pairs are separated by spaces. The engine also accepts bars, for tags built outside ink. |
+| An event mapping | `"openMinigame": "<type>"` or `{ "type", "minigameData", "name" }` | See the action table under [NPC Event Mappings](#npc-event-mappings). |
+
+An unknown type warns in the console and opens nothing (the validator errors on it, and on an `exercise-station` tag whose `exerciseId` is not in `social.exercises`).
+
+**What the ink tag does to the conversation.** In a person-chat the minigame opens after the line carrying the tag has been shown (the moment `#exit_conversation` closes a chat), so put the tag on, or just above, the line that introduces it. The chat is paused, not ended: its story is saved, and when the minigame closes normally the same conversation reopens with the same NPC and options, at the choices it showed. A close that is not a normal exit (Esc on a scene that aborts) leaves the player in the world. A phone-chat opens it about a second after the tag and returns to the thread the same way. With no chat open it opens at once. If another minigame is already open the tag is refused. If the chat is closed before its line finishes, nothing opens.
+
+```ink
+=== assistant ===
+Reed: Here it comes. # trigger_minigame:exercise-station exerciseId=assistant_demo setGlobalPrefix=ex_assistant_
+-> hub
+```
+
+`scenarios/test_exercise_station` uses all three routes.
+
+### Exercise stations (`social.exercises`)
+
+Five scenes the awareness episode runner uses can also stand alone in any mission: `sort-drill`, `concern-form`, `privacy-panel`, `assistant-chat` and `password-guesser`. An `exercise-station` object opens one:
+
+```json
+{ "type": "exercise-station", "id": "station_sort", "name": "Sort Drill", "position": { "x": 2, "y": 2 },
+  "minigameData": { "scene": "sort-drill", "exerciseId": "sort_basic", "setGlobalPrefix": "ex_sort_" } }
+```
+
+| `minigameData` key | Meaning |
+|---|---|
+| `scene` | One of the five. Optional when `exerciseId` names an entry (the entry's scene is used); if both are given they must agree. |
+| `exerciseId` | An `id` in `social.exercises[]`. |
+| `config` | An inline config instead of a named one. When both are given, the inline config wins, so a station can override a shared exercise. |
+| `setGlobalPrefix` | Prefix for the result globals. Falls back to the exercise's own `setGlobalPrefix`. With neither, finishing writes no global (the validator warns) and only the event fires. |
+| `skin` | Optional `"awareness"` to use the awareness skin. |
+
+`social.exercises` is a list of named configs: `{ "id", "scene", "config", "setGlobalPrefix"?, "description"? }`. The `config` is exactly the block the awareness episode carries for that scene: `sort-drill` = `sortDrill`, `concern-form` = `concernForm`, `privacy-panel` = `privacyPanel`, `assistant-chat` = `assistant`, `password-guesser` = `guess`. Their schemas (`socialSortDrill` and the others in `scripts/scenario-schema.json`) are shared by the episode and the exercise list, and the same lints run on both (the messages name the exercise or the object instead of the episode). The lints that only make sense inside an episode (a defend stage to host the block, the flip and debrief) do not apply to a station.
+
+**What a finished run writes.** Through the shared writer, so ink and `global_variable_changed:` mappings see them:
+
+- `<prefix>done` is set to `true` and never cleared. Declare it in `globalVariables` (`false`); an undeclared name is not saved, and the validator errors.
+- `<prefix>percent` for a scored sort drill (`scored: true`): the best percent over all rounds. Declare it too (`0`).
+- The event `<scene>_completed` (hyphens as underscores: `sort_drill_completed`, `concern_form_completed`, `privacy_panel_completed`, `assistant_chat_completed`, `password_guesser_completed`) with `{ exerciseId, scene, prefix, percent?, result }`.
+- The password guesser also writes its own `config.landedGlobal`, as in an episode.
+
+What counts as finished: Done on the sort drill, concern form and privacy panel (closing part-way records nothing); a normal close of the assistant; for the password guesser, every guess reached and the rig switched off. After a reload the globals are still true, so a door or objective that waits on them stays open; the scenes themselves can be played again. Gate a door with an event mapping on `global_variable_changed:<prefix>done` that has `unlockDoor` (this is what `test_exercise_station` does), or complete a task from it. Per the rule above, tasks complete on the global and never on the overlay closing.
+
+Two config additions came with this:
+
+- **`concernForm.kinds`**: the fact kinds, in the order the groups are shown. Each entry is an id (`"how"`) or `{ "id": "how", "label": "How it was done" }`. The heading is the `label`, else `strings.kind<Id>` (`kindHow`), else the id. Absent, it is `what`, `when`, `where`, `who`, with their usual headings, so existing forms are unchanged. A fact chip of a kind that is not listed is dropped (the validator errors).
+- **`privacyPanel.facts`**: inline fact text, `{ "<fact id>": { "text": "...", "reduceNote": "..." } }`, read before `social.intelFacts`, so a mission with no OSINT block can name its own facts. An id in both takes the inline text. Without either, the panel shows the raw id as before.
+
+The station's sprite is a copy of the kiosk's (`assets/objects/exercise-station.png`), a placeholder.
+
+### Writing the ink around the social mechanics
+
+The mechanics write globals; the characters who comment on them are ordinary ink NPCs (the lab's Ruth, Fairbairn and Tomasz have no `social.characters` entry). Most of the lab's blockers came from how a reopened conversation resumes.
+
+- **A reopened chat resumes at the knot that owns the saved choices, normally `hub`, not at `start`.** Anything placed only in `start` runs once per page load. The lab's Ruth handed over no key in-session (L1/L2 blocker B1), and Fairbairn's signing scene played only on a fresh open (R4 D1). Put stage checks in tunnels called at the top of the hub, made idempotent:
+
+  ```ink
+  === hub ===
+  -> recheck ->
+  -> keys ->
+  ```
+
+  `recheck` completes any task whose global is now set (`completeTask` ignores a done task), and `keys` gives each key once behind its own guard. Fairbairn's `scenecheck` tunnel does the same for his sign and payoff scenes.
+- **A phone hint thread resumes at the stage knot it was last on.** Ruth's phone stayed on stage 0 for the whole lab (L4 B4). Guard every stage on entry and send the hub back to the current stage; the globals only ever go forward, so it can't loop:
+
+  ```ink
+  === stage2 ===
+  { osint_done and se_intel_username_convention: -> hub }
+  ```
+
+- **Stage content belongs in ink conditions on the mechanics' globals**, not in a pile of `eventMappings`: `{ not roe_signed: ... }`, `{ phish_lord_landed and not report_filed: ... }`. Each condition is then right after a reload too. Declare every global the ink reads as a `VAR` with the same default as `globalVariables`.
+- **Lines that follow progress must track the last step.** Ruth's phone kept pointing at Tomasz after the engagement closed (R6 F2) until a closing global (`engagement_closed`) gave it a final state.
+- **A `quiet` flag that skips a repeated greeting can swallow the greeting on a reopen** (residual D9). Test the reopen after every place that sets it.
+- **Prove each beat on the path the game runs.** The lab's rounds 5 and 6 found fixes whose unit tests passed while the live path stayed broken. Each lab NPC now has a Node test that drives its compiled story through the reopen (`test/js/social-lab-ruth-keys.test.mjs`, `social-lab-fairbairn-scenes.test.mjs`, `social-lab-ruth-phone-keys.test.mjs`).
+
+### Validating: `--strict-social`
+
+Social lint errors print as `❌ ERROR: SOCIAL: <text>` and, like every `❌` line, fail the run with or without `--strict-social` (see "The exit code is the answer" above). That includes schema errors under `/social`: they are listed with the social lints, and a mistyped social key fails the run. `--strict-social` is still accepted, because CI passes it, and only adds a count line. Pass `--no-graph --skip-ink` when another session may be editing the scenario, so the run rewrites no `dungeon_graph.*` or compiled ink.
+
+What runs:
+
+- **For every scenario**: aim `unlockCondition` keys (anything other than `aimCompleted`, `aimsCompleted`, `globalVariable` and `equals` leaves the aim unlocked from the start); object ids unique across rooms; a warning when a locked object's id or name is matched first by another object; the `lockedHint` checks. They print, and fail the run, for any scenario.
+- **With a `social` key**: the closed schema; declared and not-imported globals; an ink fallback for every `EXTERNAL` in a social story; sprites for the social object types; the character lints above (`syncedVars` declared, the influence `VAR` in every channel story with a matching default, `influence.start` equal to the influence global's declared value (and to the `VAR` default when no global is declared), thresholds ordered, `min` below `max`, `clearOnRearm` only on booleans, a lockout expiry or `alternativeRoute`, the `recoverTo` rule, `influenceDisplay` keys); then one file per area under `scripts/validate_social/`: `mail.rb`, `osint.rb`, `board.rb`, `triage.rb`, `pretext.rb`, `landing.rb`, `lab.rb` and `options.rb` (`hintsByFactor`, `labelBy`, `checklistTiming`, `bodyMode`/`freeTextFlavour`, `mirrorToBehavior`).
+
+Both social scenarios pass with exit 0 today. Fix every `❌`; read every `⚠️`.
+
+### Reserved keys (authored but not read)
+
+The closed schema accepts these keys so existing data stays valid, but no engine code reads them yet. Authoring one changes nothing in the game.
+
+| Key | Where | Status |
+|---|---|---|
+| `triageSets[].chipStyle: "character"` | `05` | Accepted, drawn as `plain` |
+| `people[].kind` | `00` §1 | Not read. A note for authors (`cast` or `sender`) |
+| `characters.<id>.syncedVars`, `alternativeRoute` | `00` §8 | Read by the validator only (see [Influence](#influence-socialcharacters-and-socialinfluencedisplay)) |
+| engagement option `blame` in `scope` and `plan` | `10` | Read only by the report; the board ignores it |
+| `pretextNpcs[].tuning.feedbackMode`, `tuning.showTechniqueNames` | `06` | Read by the validator only (it checks the value is `live` or `debriefOnly`). The call always gives live feedback and names techniques live |
+| `pretextNpcs[].tells.bands` | `06` | Read by the validator only (it checks `calm`, `wary` and `refusing` are present and non-empty). No screen shows the band lines yet |
+
+### Attack mechanics
+
+These are documented in [Social-engineering: attack mechanics](#social-engineering-attack-mechanics):
+
+- [The mail client (`social.mailClient`)](#the-mail-client-socialmailclient): accounts, mailboxes, devices, contacts, seeded mail and the payload kit.
+- [The composer templates (`social.templates`)](#the-composer-templates-socialtemplates): the four-part body and its blanks.
+- [Phishing targets and the rules engine (`social.phishTargets`)](#phishing-targets-and-the-rules-engine-socialphishtargets): the factors, `hints` and `hintsByFactor`, `boostIfGlobal`.
+- [Pretext calls (`social.pretextNpcs`)](#pretext-calls-socialpretextnpcs): the call judge, asks, outcomes and tells.
+- [Landing pages (`social.landingPages`)](#landing-pages-sociallandingpages): the builder and the defender's inspection.
+
+## Social-engineering: attack mechanics
+
+These mechanics belong to the lab game (`"disableAttacks": true`, browser-only, fictional companies). They all read from a top-level `social` object and are validated with `ruby scripts/validate_scenario.rb <scenario> --strict-social --no-graph --skip-ink`; a scenario with no `social` key is untouched by them. The `social` object rejects unknown keys, so a mistyped block name fails the schema.
+
+This section covers the four attack-shaped blocks: the mail client and its phishing targets, the composer templates, the rules engine that judges a sent email, the pretext calls, and the landing-page builder. The support mechanics that feed them — influence, the intel board, inbox triage, the engagement report and the OSINT browser — are documented in the companion social-engineering section.
+
+All sub-blocks live under `social`. Example skeleton:
+
+```json
+"social": {
+  "mailClient": { "accounts": [ ... ], "payloadKit": [ ... ] },
+  "templates":  { "greet_named": { ... } },
+  "phishTargets": [ { "id": "pierce", ... } ],
+  "pretextNpcs": [ { "callId": "service_desk_call", ... } ],
+  "landingPages": [ { "id": "payroll_login", ... } ]
+}
+```
+
+### The mail client (`social.mailClient`)
+
+The in-game email app (design `01`, `00` §10a). The player composes and sends mail from it; a sent message is judged by the rules engine against the phishing target whose `address` matches the recipient. A working example is `scenarios/lab_social_engineering/scenario.json.erb`.
+
+| Field | Shape | Purpose |
+|---|---|---|
+| `accounts[]` | see below | The sending identities the player can send as. |
+| `mailboxes[]` | `{ id, owner? }` | The mailboxes (folders) the client shows. `owner`, when set, **must be a `social.people` id** (`validate_social/mail.rb` errors on anything else — an account id fails); omit it when the mailbox has no single owning person. A mailbox id must not contain a dot (ids are saved as dotted keys). |
+| `contacts[]` | see below | The address book, revealed entry by entry as intel is earned. A contact with `npc` is an ink correspondent: see "Ink-driven email". |
+| `seededMessages[]` | see below | Mail placed before play, in an inbox or Sent folder, or scheduled for later. |
+| `payloadKit[]` | `{ id, kind, label, landingPageId? }` | The attachments and links the composer can attach. |
+| `checklistTiming` | `"onSend"` \| `"withReply"` | When the send checklist appears (default `onSend`). Linted by `validate_social/options.rb`. |
+| `showRedFlagMeter` | boolean | Show the per-send red-flag meter. |
+| `bodyMode` | `"templates"` \| `"freeText"` | Body composition (default `templates`). `freeText` adds one unscored free-text box under the template parts; the templated slots still decide the result. Linted by `validate_social/options.rb`. |
+| `freeTextFlavour` | boolean | Alternate switch for the free-text box, equivalent to `bodyMode: "freeText"`. The box shows when either is set. Its text is shown in the sent message but never judged and never read by the ink (`00` §13). |
+
+**`accounts[]`** — each is a sending identity:
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | Required. |
+| `kind` | `"given"` \| `"found"` \| `"created"` | How the player comes by it. |
+| `mailbox` | string | The mailbox this account reads and sends from. |
+| `address`, `displayName` | string | The account's own address and name. |
+| `person` | string \| null | The NPC person id behind the account, or null. |
+| `spoofsFrom` | boolean | Whether the composer lets this account set an arbitrary `From` line. |
+| `unlockedBy` | string | A global that reveals a `found` or `created` account. |
+| `createMenu[]` | `{ id, address, displayName? }` | For a `created` account, the addresses it may be registered as. |
+
+**`contacts[]`** — `{ id, person, name, addresses[], role, revealedBy, character?, targetId?, accountIds[]? }`. `revealedBy` is the global that reveals the contact; `targetId` links it to a `phishTargets` entry; `character` links it to a `social.characters` entry for influence.
+
+**`seededMessages[]`** (`mail-data.js normaliseSeeded`, `mail-scheduler.js`) — pre-placed mail. `id`, `mailbox`, `folder` (`inbox`/`sent`), `from` (a string, passed through whole, or `{ name, address, avatar }`), `to`, `subject`, `body`, `time`, `unread`, `gameTime`. A message can be scheduled with `deliverAt { afterSeconds, global }` rather than appearing at the start, threaded with `thread`, sent from a named account with `fromAccount`, carry `links[]` (`{ id, linkText, destination, realDomain, ... }`), `attachments[]` (`{ id, kind, label, kitId? }`) and `highlights[]` (`{ id, text, grants }` — a span that grants an intel global when read).
+
+**`payloadKit[]`** — the attachments the composer offers. `kind` is one of `document`, `pdf`, `spreadsheet`, `archive`, `image` or `link`; any other value draws as a document. A `link` kind points at a landing page with `landingPageId`.
+
+*Worked example — a minimal mail client.* The smallest client that can send: one sending account, the mailbox it reads and sends from, and a `mail_terminal` object that lists that account in `accountIds`. The account's `mailbox` must be one of the `mailboxes[]` ids, and every id in a `mail_terminal`'s `accountIds` must be a real `accounts[]` id:
+
+```json
+"social": {
+  "mailClient": {
+    "mailboxes": [ { "id": "guest_inbox" } ],
+    "accounts": [
+      { "id": "guest", "kind": "given", "mailbox": "guest_inbox",
+        "address": "you@tarnside.example", "displayName": "You",
+        "person": null, "spoofsFrom": true }
+    ],
+    "payloadKit": [
+      { "id": "kit_cv", "kind": "document", "label": "My CV" }
+    ]
+  }
+}
+```
+
+The object that opens it, placed on a desk PC in a room:
+
+```json
+{ "type": "mail_terminal", "name": "Workstation",
+  "position": "as-type:pc",
+  "minigameData": { "accountIds": ["guest"], "defaultAccount": "guest" } }
+```
+
+The sprite `assets/objects/mail_terminal.png` must exist (a missing one is a social lint error). `mailboxes[]` here has no `owner` because the guest inbox belongs to no `social.people` person; set `owner` only to a `social.people` id. This client has no `contacts[]` or `seededMessages[]` — both are optional. A composed email still needs a `social.templates` set and at least one `social.phishTargets` entry whose `address` the player sends to (next sections).
+
+### The composer templates (`social.templates`)
+
+The composer builds an email body from four named fragments — a `from` line, a `greeting`, a `pretext` and an `ask`. These scored parts always decide the send. `social.templates` is a map keyed by template id (an id starting with `_` is ignored by the schema). Each phishing target's `templateSets` lists which template ids are offered for each part, so different targets expose different wording. When `mailClient.bodyMode` is `"freeText"` (or `freeTextFlavour` is true) the composer also shows one free-text box; its text is shown in the sent mail but is never judged and never read by the ink, so it is flavour on top of the templated parts.
+
+| Field | Type | Notes |
+|---|---|---|
+| `part` | `"from"` \| `"greeting"` \| `"pretext"` \| `"ask"` | Which slot in the body this fragment fills. |
+| `text` | string | Required. May carry `{slot}` placeholders; the built-ins `{account_name}` and `{account_address}` resolve to the sending account. |
+| `slots[]` | `{ id, type, about?, label? }` | Blanks the player fills from held intel. `type` is matched to an intel fact's `provides[].type` (`name`, `address`, `date`, `document`, …); `label` is the choice text; `about` disambiguates (e.g. `"sender"` vs `"recipient"`). |
+| `urgency` | `"low"` \| `"medium"` \| `"high"` | For a `pretext` fragment; read by the `urgencyCalibrated` factor. |
+| `implies[]` | `{ type, value }` | What the fragment claims without a slot — e.g. a `pretext` that names a document implies `{ type: "document", value: "cv" }`. |
+
+Example (from the lab):
+
+```json
+"from_own":    { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+"greet_named": { "part": "greeting", "text": "Hi {name},",
+  "slots": [ { "id": "name", "type": "name", "about": "recipient", "label": "name to greet them by" } ] },
+"pretext_apply": { "part": "pretext", "text": "I'm applying for the open role.",
+  "slots": [], "implies": [ { "type": "document", "value": "cv" } ], "urgency": "low" }
+```
+
+### Phishing targets and the rules engine (`social.phishTargets`)
+
+Each entry is a recipient the player can phish (design `04`, `00` §7; the pure judge is `systems/phish-rules.js`). When the player sends, the judge matches the recipient `address` to a target, scores the email factor by factor, and — if every required factor passes — the message "lands": the target's reply arrives and its `outcome` globals are set.
+
+The seven factors:
+
+| Factor | Passes when |
+|---|---|
+| `senderTrust` | The `From` identity is one the target acts on (`primedFor.trusts`; `"*"` trusts anyone). |
+| `senderAuth` | The sender authentication would survive — derived from `senderAuth` (SPF/DKIM alignment and `dmarcPolicy`). |
+| `addressedTo` | The greeting addresses the target an acceptable way (`addressedAs`). |
+| `pretextRelevant` | The pretext's chosen and implied slot values include at least `primedFor.minDistinct` of the target's `primedFor.distinctiveValues` (counted in `judgePretext`). It does **not** read `interests.topics` — those drive only the open gate (below). A target that requires `pretextRelevant` therefore needs at least one `distinctiveValue`; a target with none can never pass it. |
+| `attachmentPlausible` | The attached payload matches `primedFor.expectedAttachment` (missing or wrong-type otherwise). |
+| `urgencyCalibrated` | The pretext's `urgency` is at or below `urgency.advisoryMax`. |
+| `linkCredible` | The link uses the brand/host in `expectedLink` at a convincing enough tier (judged with the landing page). |
+
+A target declares which factors are mandatory and which only advise, as `requiredFactors[]` and `advisoryFactors[]`, or as a combined `factors[]` of `{ id, mode: "required" | "advisory" }`.
+
+| Field | Shape | Purpose |
+|---|---|---|
+| `id` | string | Required. |
+| `address`, `displayName`, `name`, `firstName`, `role` | string | The target's identity. The recipient `address` is the match key. |
+| `character` | string | A `social.characters` id, to tie a landing to an influence effect. |
+| `emailReplyDelay` | number | Seconds before the reply lands. |
+| `redFlagMeter` | boolean | Whether the red-flag meter is shown for this target. |
+| `subjects[]` | `{ id, text, topic }` | The subject lines the composer offers. |
+| `interests.topics[]` | string[] | Topics the target will open mail about — the `open` gate only. (It does **not** feed `pretextRelevant`, which reads `primedFor.distinctiveValues`.) |
+| `templateSets` | `{ from[], greeting[], pretext[], ask[] }` | Template ids offered per part. |
+| `primedFor` | see below | What makes a believable email for this person. |
+| `addressedAs[]` | string[] | Intel-fact ids for the accepted greetings. |
+| `requiredFactors[]` / `advisoryFactors[]` / `factors[]` | factor ids | Which factors gate a landing. |
+| `senderAuth` | `{ domainPublishesAuth, spoofAligns, dmarcPolicy, override? }` | Drives the `senderAuth` factor. `dmarcPolicy` is `none` / `quarantine` / `reject`; `override` forces `would-pass` / `would-fail`. |
+| `urgency.advisoryMax` | `"low"`/`"medium"`/`"high"` | Highest urgency that still passes `urgencyCalibrated`. |
+| `expectedLink` | `{ brandId, realDomain }` | For a target that requires `linkCredible`, the brand and real host a credible link must use. |
+| `requiresIntelToAttempt[]` | string[] | Globals that must be set before the target can be attempted. |
+| `factorStrings` | per-factor `{ pass, fail, redFlag }` | Authored feedback, keyed by factor id (plus `open`). Each entry's `pass` and `fail` are **strings** and `redFlag` is a string or `null`; an absent key or `null` takes the canonical line. `attachmentPlausible` may add **sibling** keys `missing` and `wrong-type` — each an object `{ fail, redFlag }` (a failure state, so no `pass`) that sits **beside** the top-level `pass`/`fail`/`redFlag`, not nested inside `fail`. The top-level `fail` stays a plain string. Empty strings are a lint error (omit the key, or use `null`, for the canonical line). See the worked example below. |
+| `hints[]` | string[] | A hint ladder: the engine shows `hints[priorFailures - 1]`, so the first entry is the softest rung. |
+| `hintsByFactor` | factor id → string or variants | An opt-in hint keyed to the factor that actually failed (`phish-rules.js selectFactorHint`). `senderTrust` reads `{ spoof, ownFrom, forced }`; `linkCredible` reads `{ missing, wrong }`; any other factor reads `{ spoof, forced }`. Linted by `validate_social/options.rb`. |
+| `replies.landed` | string | The reply text sent when the email lands (the judge reads `landed`). |
+| `outcome.setGlobal` | global → value, or one global name | Set on a landing; the client sets the first to `true`. |
+| `boostIfGlobal` / `strictIfGlobal` | global → factor id | Relax or tighten one factor when a global holds. Both act on a copy of the target; `boostIfGlobal` has no in-scenario use. |
+
+**`primedFor`** — `trusts[]` (sender identities the target acts on), `distinctiveValues[]` and `genericValues[]` (the facts that make the email specific), `minDistinct` (how many distinctive values `pretextRelevant` needs), `expectedAttachment` (a payload `kind`), and `story` (a plain-English description of the one believable email, for authors).
+
+`minDistinct` is **at least 1**: the schema sets `minimum: 1`, and `judgePretext` floors an absent or zero value at 1. There is no "zero distinctive values needed" setting. A target that should land with no distinctive relevance (a permissive or data-only target) must simply **not** list `pretextRelevant` among its required factors — drop it, or mark it advisory — rather than set `minDistinct: 0`.
+
+*Worked example — the `attachmentPlausible` strings in `factorStrings`.* The attachment factor is the one factor whose failure has two states. Its entry keeps the normal `pass`/`fail`/`redFlag` and adds `missing` and `wrong-type` as **sibling** objects (each a failure, so each has only `fail` and an optional `redFlag`). The top-level `fail` is the general line; the state objects override it for the two specific failures:
+
+```json
+"factorStrings": {
+  "attachmentPlausible": {
+    "pass": "The attachment is exactly what I asked for.",
+    "fail": "That file isn't what I expected.",
+    "redFlag": null,
+    "missing": { "fail": "You said you'd attach the sheet, but there's nothing here." },
+    "wrong-type": { "fail": "Why would you send me that file type?", "redFlag": "Attachment type doesn't fit the stated purpose" }
+  },
+  "open": { "pass": "✓ They would open it", "fail": "Nothing about the sender or subject made them open it." }
+}
+```
+
+The top-level `fail` stays a string: nesting `missing`/`wrong-type` **inside** `fail` is rejected by the schema (`fail of type object did not match string`). Omit a key, or set it to `null`, to take the canonical line; an empty string is a lint error.
+
+*Worked example — a data-only phishing target.* A target with no NPC behind it (no `character`, no `emailRecord`) needs only `replies.landed` and `outcome.setGlobal`, plus the `factorStrings` the lint requires. There is no `social.characters` entry and no ink story: when the email opens and lands, `mail-bridge.js` schedules a text job that delivers `replies.landed` and sets the first `outcome.setGlobal` key to `true`. A target must have exactly one outcome owner, so a data-only target must **not** also carry a `character` (that is a lint error):
+
+```json
+{
+  "id": "clerk",
+  "address": "records@ledgerwell.example",
+  "displayName": "Records desk",
+  "subjects": [ { "id": "s_request", "text": "Records request", "topic": "records" } ],
+  "interests": { "topics": ["records"] },
+  "templateSets": {
+    "from": ["from_own"], "greeting": ["greet_generic"],
+    "pretext": ["pretext_records"], "ask": ["ask_send_file"]
+  },
+  "primedFor": { "trusts": ["*"], "distinctiveValues": [], "genericValues": [] },
+  "requiredFactors": ["senderTrust", "addressedTo"],
+  "addressedAs": ["clerk_role"],
+  "factorStrings": {
+    "open": { "pass": "✓ They would open it", "fail": "Nothing made them open it." },
+    "senderTrust": { "pass": "✓ Sender looked trusted", "fail": "Who is this?", "redFlag": null },
+    "addressedTo": { "pass": "✓ Addressed by name", "fail": "This has no name on it.", "redFlag": null }
+  },
+  "replies": { "landed": "Request received, we'll action it." },
+  "outcome": { "setGlobal": { "phish_clerk_landed": true } }
+}
+```
+
+The open inbox trusts every sender (`trusts: ["*"]`), so the message opens and `senderTrust` passes without recon. `pretextRelevant` is deliberately **not** in `requiredFactors` (this target has no distinctive values to match — see the `minDistinct` note above). A task keys on the landing global `phish_clerk_landed`, not on the mail minigame closing; declare that global (default `false`). `factorStrings` must give a non-empty `pass`/`fail` for each evaluated factor and an `open` entry.
+
+### Mail reply follow-ups, highlights and found accounts
+
+These mail features (design `01` N8, N15, N16; `00` §10, §10a; packet P9) are optional and data-driven. A scenario that uses none of them behaves as before.
+
+**Reply follow-ups in a thread.** A character's `on_email` story can continue the conversation after its reply, in one of two ways, read from `mailState.threads["<character>:<accountId>"].expects`:
+
+- **"Choose a reply"** — when `on_email` ends on ink **choices**, the reading pane lists them as unscored options under the reply. Picking one writes a `kind: "quickReply"` record to the Sent folder and queues the ink continuation (the runner loads the saved thread position and picks that choice index), which delivers the next message after the character's `emailReplyDelay`.
+- **"Write your reply. This one is judged"** — when the reply knot ends with `#compose_reply:<targetId>`, the pane offers the composer instead. `<targetId>` is a `social.phishTargets` entry **of the same character** (the validator checks this); its send is judged like any other, and carries `email_in_reply_to`.
+
+A thread shows exactly one of the two, never both, and only under the newest reply. A reply knot may also queue one chaser with `#mail_later:<seconds>:<knot>` (at most one pending per thread), and a seeded message may arrive later through `deliverAt { afterSeconds } | { global }` (job kind `seed`). `social.characters.<id>.emailKnots` (`{ "<accountId>": "<knot>" }`) picks a different entry knot per sending account; the default is `on_email`.
+
+The validator requires `on_email` to call `se_influence` on both the landed and the else branch (a divert into a reply knot that calls it counts). The lab's own mail stories end each reply flat (no choices, no `#compose_reply`, no `#mail_later`); the follow-up features are for larger scenarios. A worked fixture is `scenarios/test_social_p9/`.
+
+**Highlights (`seededMessages[].highlights`).** Each highlight `{ id, text, grants? }` marks an exact substring of the message body (the validator checks the substring and that each granted fact has `source` equal to the highlight `id`, granted by exactly one highlight). In the reading pane a highlighted span is a "Save as evidence" chip: with `grants` set it calls `grantFact(grants)` (one award path, same as the OSINT browser); with no `grants` its text goes to the notepad. Any other text selection can be sent to the notepad too.
+
+**The `found` account kind.** An `accounts[]` entry with `kind: "found"` models credentials the player has obtained (via `unlockedBy`, the global `acct_<id>`). It carries the real person's `address`, `displayName` and `person`, reads from a `mailbox` seeded with that person's history (`seededMessages` with `folder: "inbox"` or `"sent"`, a Sent message naming the account in `fromAccount`), and sends with its own identity forced (a found account is not a spoofer, so its `From` is always its own and sender authentication follows its domain). The ink sees `email_account_kind: "found"`.
+
+### Ink-driven email (`contacts[].npc`)
+
+Plain email that the player answers and that answers back, written in ink the way a phone or person chat is. Nothing is judged and no `social.characters` entry is needed. Use it for a handler who emails, a colleague who chases, a reply that opens a door. Judged phishing (`phishTargets`, `on_email`, `se_influence`) is unchanged and separate. Design: `docs/agents/MAIL_PLAIN_AND_DM_DESIGN.md` (a). Working fixture: `scenarios/test_ink_email/`.
+
+**The model.** Each correspondent is a contact with an `npc` id and one ink story. That story is the email thread. A run of a knot delivers **one email** (the lines are the body, tags give the subject and attachments). When a run ends on ink choices, those choices are the player's **suggested replies**. Mail is never voiced; give the correspondent its own `emailRecord` rather than reusing a voiced person NPC (the validator warns).
+
+```json
+{ "id": "hax", "name": "Agent HaX", "addresses": ["hax@safetynet.example"], "accountIds": ["agent"],
+  "npc": "hax_mail", "replyDelaySeconds": 8,
+  "emailRecord": { "storyPath": "scenarios/x/ink/hax_mail.json", "displayName": "Agent HaX", "unlockable": ["store_room"] },
+  "timedEmails": [ { "knot": "ask_for_log", "waitForEvent": "room_entered:server_room", "delaySeconds": 2 } ] }
+```
+
+| Contact field | Meaning |
+|---|---|
+| `npc` | Makes the contact an ink correspondent: the id of the NPC whose story is the thread. Unique per contact. |
+| `emailRecord` | Defines a headless NPC record under `npc` (server `Game.headless_contact_records`, client `contactNpcRecords`): `storyPath`, `displayName`, `avatar`, `itemsHeld`, `unlockable` and any other NPC field. Omit it to use an NPC defined elsewhere (the validator warns: it shares that NPC's ink state). |
+| `replyDelaySeconds` | Seconds before a reply when the ink gives no `# reply_after` (default 20). |
+| `accountIds` | Which account the thread belongs to. An NPC-started email goes to the first one (else the first account). |
+| `timedEmails[]` | `{ knot, delaySeconds?, waitForEvent?, skipIfGlobal?, account? }`. Starts a thread on its own, once. No `waitForEvent` (or `game_loaded`) sends it from the start, after `delaySeconds`. Each fired entry is marked by the global `mail_timed_<npc>_<index>`, so a reload never repeats it. |
+| `composeKnot` | Knot Compose runs headless for the first suggestions (default `on_compose`). |
+| `targetId`, `judgedWhen` | See "Judged and plain on one contact". |
+
+Threads are keyed `npc:<npcId>:<accountId>` and never collide with `<character>:<accountId>`.
+
+**Starting a thread.** Four ways:
+
+- `timedEmails` on the contact (above).
+- An event mapping action `"sendEmail": { "npc": "hax_mail", "knot": "store_room_note", "delaySeconds": 1 }` on any NPC. `npc` defaults to the NPC that owns the mapping, so name the ink contact explicitly when the owner is a phone NPC. The mapping's `onceOnly`, `condition` and `cooldown` apply as usual.
+- The ink tag `# send_email:<npc>:<knot>[:<seconds>]` in any phone, person or mail story.
+- The player: Compose to the contact, which runs `on_compose` (or `composeKnot`) headless to its first choices. The knot must print nothing before them (the validator warns). If a thread already has pending choices, Compose shows those instead. While a sent message waits for its reply, Compose says so.
+
+`# trigger_minigame:mail_terminal accountIds=["agent"] composeTo=hax` (or `minigameData.composeTo` on a `mail_terminal` object, or an `openMinigame` mapping) opens the client with Compose already on that contact (a contact id or its `npc`). It returns to the chat on a normal close, like any ink-opened minigame.
+
+**Suggested replies: the chip and the body.** The options are written as the **start of the player's own message**, in the player's voice, and shown Outlook style as chips under the open email and in Compose to that contact. Picking a chip opens the composer with the **whole message filled in** (subject, attachments, text); the player presses Send. Ink's own choice syntax carries both halves:
+
+- The **chip** is what ink shows for the choice: the start text plus anything in `[ ]`.
+- The **body** is what ink prints when the choice is taken (the start text plus anything after `]`), followed by the player's continuation lines.
+- With no brackets, chip and first body line are the same text. `* Forwarding the alert.[] Is it ours?` gives the chip "Forwarding the alert." and the body "Forwarding the alert. Is it ours?". A label-only `* [Ask where to look]` prints nothing, so the body is the lines under it, or the label itself if there are none.
+
+Where the player's message ends and the NPC's reply begins, first rule that applies:
+
+1. **`# reply_after:<seconds>`**: the line that carries it is the first line of the reply, delivered after that many seconds. Everything before it (the choice output and any lines) is the player's message. Tags written above a line belong to it, so put `# reply_after` on its own line directly above the reply. Tags in that same group written **before** `reply_after` apply when the player sends; tags after it apply when the reply arrives.
+2. Otherwise the choice output plus the unbroken run of lines tagged `# speaker:player` right after it is the player's message; the rest is the reply, after the contact's `replyDelaySeconds`.
+3. Otherwise the choice output alone is the player's message (the old "Choose a reply" behaviour).
+
+| Tag | Where | Effect |
+|---|---|---|
+| `# subject:<text>` | any email | The subject. Without it a reply is `Re: <thread subject>`, and a thread's first email `(no subject)`. |
+| `# attach:<kitId>` | NPC email or player's part | A `payloadKit` item shown as an attachment chip. Whether the player *has* it is the choice's ink condition, not the tag. |
+| `# forward:<messageId>` | player's part | Quotes a received message (a seeded id, or a delivered `reply_...` id) under the player's lines and keeps `forwardOf` on the Sent record. The choice is refused with a line if that message is not in the inbox. |
+| `# reply_after:<s>` | player's part | See the split above. |
+| `# speaker:player` | player's part | Marks a line as the player's (rule 2). |
+| `# mail_later:<s>:<knot>` | NPC email | A chaser email from the same thread (one pending per thread). |
+| `# compose_reply:<targetId>` | NPC email | Hands the thread to the judged composer for that phish target (any target, not only the same character's). |
+| `# send_email:<npc>:<knot>[:<s>]` | any story | Starts another ink contact's thread. |
+
+Every other tag (`# set_global:name:true`, `# complete_task:`, `# give_item:`, `# unlock_door:`) is an ordinary game tag. In the player's part they apply at send; in the reply they apply on delivery. `# set_global` needs its value: `set_global:report_sent:true`. A reply that unlocks a door needs the NPC's `unlockable` list (put it on the `emailRecord`); a headless record needs no prior encounter. Gate a choice by evidence with an ordinary ink condition on a global (`* {found_jump_log} Log attached...`): the choices are regenerated from the current globals whenever the thread is opened, so the chip appears the moment the global is set, with no new email.
+
+Sends are Sent records with `kind: "plain"`, `targetId: null`. The awareness episodes' sent-record lookups skip them. Events: `mail_sent` and `mail_sent:<npcId>` (with `{ npcId, contactId, accountId, msgId }`), plus the usual `mail_delivered`. A scenario can relabel the few words the plain composer shows through `mailClient.labels` (`suggestedReplies`, `waiting`, `nothing`, `chooseAnother`, `writeYourOwn`, `backToSuggestions`, `send`, ...; defaults in `systems/mail-ink.js`). The plain composer never shows judging, red flags or the account switch.
+
+**Judged and plain on one contact.** A contact may carry both `npc` and `targetId`. The rule:
+
+- Compose to it, or the chips under its email, show the **suggested replies the ink offers**. Whatever the story offers is what appears; no choices means no chips.
+- Beside them sits **"Write your own message"**, the judged composer for that `targetId` (the contact's phishing path, unchanged). It is open whenever the contact is judged, unless `judgedWhen` names a global: then the door shows only once that global is true. Use `judgedWhen` to keep the phishing path closed until the story has earned it.
+- `# compose_reply:<targetId>` in the ink is a second, in-thread door, as before.
+- A contact with only `targetId` is judged exactly as before; a contact with only `npc` has no judged path.
+
+**Worked example.** `ink/hax_mail.ink`:
+
+```ink
+VAR found_jump_log = false
+=== ask_for_log ===
+# subject:Jump server
+You're in. Send me whatever you find on the jump server. Auth logs first.
+-> reply_options
+=== reply_options ===
+* {found_jump_log} Log attached. Logins from 10.0.4.7 at 02:13, outside the change window.
+    -> send_log
+* {not found_jump_log} Nothing yet, still looking.
+    # reply_after:6
+    Keep at it. The auth log should be on the desk in the server room.
+    -> reply_options
+= send_log
+# subject:Re: Jump server
+# attach:kit_jump_log
+# set_global:report_sent_to_hax:true
+# reply_after:8
+02:13 from 10.0.4.7. That is the contractor VPN range, and nobody signed off a change.
+# complete_task:report_findings
+# unlock_door:store_room
+I have opened the store room. The contractor laptop is on the second shelf.
+-> DONE
+=== on_compose ===
+* {found_jump_log} Log attached from the jump server.
+    -> reply_options.send_log
++ Where should I look next?
+    # reply_after:6
+    Server room first. Then tell me what you find.
+    -> DONE
+```
+
+A `timedEmails` entry with `waitForEvent: "room_entered:server_room"` sends `ask_for_log` when the player walks in. The player reads it, picks the log chip once `found_jump_log` is set, sees the subject, the `jump-auth.log` attachment and the message, presses Send, and eight seconds later HaX's reply completes `report_findings` and opens the store room.
+
+**Things to know.**
+
+- Declare every global the ink reads or writes in `globalVariables`, like any ink.
+- Give each correspondent its own story and record id. Sharing a phone NPC's id shares its ink variables and the phone's saved position.
+- Seeded mail stays static. Use `seededMessages` for mail that needs no answer and as the target of `# forward:`; use `timedEmails` with `delaySeconds: 0` for an at-start email the player can answer.
+- A reply that arrives while the client is open appends silently, otherwise a toast. A reload mid-wait keeps the Sent record, the "waiting" thread and the pending reply; nothing is delivered or applied twice.
+- `# trigger_minigame` inside an email story opens over the world on delivery; the validator warns.
+- The validator (`validate_social/mail_ink.rb`) checks the contacts, `timedEmails`/`composeKnot`/`sendEmail` knots, `# attach`, `# forward`, `# subject`, `# reply_after`, `# mail_later`, `# send_email`, `# compose_reply`, `composeTo`, judged vocabulary in a plain story and text before the first compose choice.
+
+### Pretext calls (`social.pretextNpcs`)
+
+A scripted pretext phone or chat call (design `06`; `systems/pretext-judge.js`, `person-chat-pretext.js`). The ink drives it through the `pretext_say` and `pretext_ask` externals; the judge scores each line against the character's susceptibilities and tracks an influence band across the call. State is kept in `pretext_<callId>_state`, `_outcome` and `_lowest`.
+
+| Field | Shape | Purpose |
+|---|---|---|
+| `callId` | string | Required. Names the three per-call globals. (`id` is older data only — use `callId`.) |
+| `character` | string | A `social.characters` entry, which must carry a `reports` threshold. |
+| `startKnot` | string | The ink knot the call opens on. |
+| `knows` | fact id → `{ value, accept[], grade }` | The facts the character can verify against what the player claims. |
+| `susceptibility` | technique → number | Per-technique deltas. Techniques: `urgency`, `authority_borrowed`, `reciprocity`, `shared_detail`, `candour`, `deflect`. |
+| `unverifiableCost` | number | Penalty for a claim the player cannot back up. |
+| `tuning` | see below | How the call gives feedback. |
+| `lines` | line id → line | Each: `technique`, `also[]`, `claims[]` (`{ fact, from, value?, unverifiable? }`), `blanks` (blank id → fact id), `repairs`, `doublesDown`, `extra`, `text`. |
+| `asks` | ask id → ask | Each: `pressure`, `floor`, `verification[]`, `grants { intel[], setGlobal }`. |
+| `outcomes` | `got_it` / `reported` / `walked_away` | Each `{ line, setGlobal }`. |
+| `tells` | see below | Feedback strings. |
+| `hints[]`, `defenderNotes`, `brief` | — | `brief` is `{ scope, ethics, objectives[] }` (or top-level `scope`/`ethics`). |
+
+**`tuning`** — `tellDetail` (`full`/`category`/`none`), `matchCreditCapPerLine`, `maxRefusals`, `feedbackMode` (`live`/`debriefOnly`), `showTechniqueNames` (`live`/`debriefOnly`). Only the validator reads the last two (see [Reserved keys](#reserved-keys-authored-but-not-read)): the call behaves as `live` whatever they say.
+
+**`tells`** — the keys `techniques`, `repair`, `ask` and `bands` are reserved; every other key is a fact id from `knows`. A fact's tell is `{ pass, fail, failCategory?, unknown? }`; `ask` is `{ accepted, pending, refused }`; `bands` is `{ calm, wary, refusing }`, read by the validator only (see [Reserved keys](#reserved-keys-authored-but-not-read)).
+
+A **blank** feeds its value to the ink through two VARs named for the *fact* it fills (the `blanks` map is blank id → fact id): `pretext_<factId>_name` (the label, for choice text) and `pretext_<factId>_value` (the value id, for fixed reactions), as in design `06` §5.
+
+### Landing pages (`social.landingPages`)
+
+The credential-harvest page the player builds, inspected by a defender afterwards (`systems/landing-page-model.js`, `landing-page-render.js`). One record per buildable page. The page renders with no form controls and makes no network request; the player never types the link address. Brands are invented and checked against a real-brand denylist, and every host is a fictional `.example` address. These safety rules are enforced by `validate_social/landing.rb`.
+
+| Field | Shape | Purpose |
+|---|---|---|
+| `id` | string | Required. |
+| `title` | string | — |
+| `profile` | `"student"` \| `"awareness"` \| `"mission"` | The difficulty tier the page is built at. |
+| `tellCounter` | boolean | Show the running count of tells. |
+| `linkText` | string | The address the mail client shows for the link (authored; host-linted like a `.example` address). |
+| `pretext` | `{ brandId, purposeId, facts[] }` | The brand, purpose and intel facts the page leans on. |
+| `targets` | target id → `{ linkThreshold, minDomainTier, brandGate? }` | Required. Per-target strictness, keyed by a `phishTargets` id whose required factors include `linkCredible`. The lab uses exactly one. |
+| `brands[]` | see below | Required. The brand(s) the page can impersonate. |
+| `purposes[]`, `logos[]` | `{ id, label }` | The purpose and logo options offered. |
+| `wordings[]` | `{ id, match, slips?, text }` | Body wordings; `match` marks the on-pretext one, `slips` a wording with spelling tells. |
+| `fields[]`, `extraSensitiveFields[]` | string[] | The form fields shown, and those that count as over-asking. |
+| `points` | `{ brand, purpose, logo, wording, form, padlock, domain[] }` | The scoring weights. |
+| `strings` | key → string | Feedback overrides. Values use only `{firstName}`, `{shown}`, `{real}` and `{linkText}`. |
+| `conceptCards[]` | string[] | `social.conceptCards` ids the builder surfaces. |
+| `capture` | `{ address, note }` | The fictional `.example` address "captured", and an authored note that holds no password value. |
+
+**`brands[]`** — `{ id, name, look, realDomain, realFields[], decoyWords[], domains[] }`. `name` is an invented brand (denylist-checked); `look` is `generic` or `parody`; `realDomain` is the genuine `.example` host; `decoyWords[]` are allowlisted domain labels. Each entry in `domains[]` is `{ id, domain, browserDomain?, trick, tier, minProfile? }`: `domain` is shown as typed (ASCII, unless `trick` is `homograph`, when it uses a `\u` escape); `browserDomain` is the punycode `xn--` form shown as a teaching contrast and must equal the encoding of `domain`; `tier` ranks how convincing the look-alike is, checked against each target's `minDomainTier`.
+
+## Awareness episodes
+
+The awareness product is a set of short attack-then-defend episodes for non-technical staff. It is a separate product line from the lab (`lab_social_engineering`) and from SAFETYNET: browser-only, no VM, `"disableAttacks": true`, fictional companies only, and a neutral corporate skin (`"ui_theme": "general"` in `mission.json`). An episode reuses the mechanics documented above (the OSINT browser, the mail client, the phishing rules engine, inbox triage, pretext calls, the landing-page builder) and adds one block, `social.awarenessEpisode`, one object, the `kiosk`, and a small amount of scenery around them. Design: `planning_notes/phishing_and_social_engineering/designs/11_awareness_product_episodes.md`; the contract: `00_data_contract.md` §11.
+
+Everything here is checked by `ruby scripts/validate_scenario.rb scenarios/<id>/scenario.json.erb --strict-social --no-graph --skip-ink` (`scripts/validate_social/awareness.rb`). Examples to copy from, all of which exit 0:
+
+| Shell | Kind | What it shows |
+|---|---|---|
+| `scenarios/ca01_invoice_fraud` | full | The attack (OSINT, one mail, the flip), the defend round and the debrief; two aims |
+| `scenarios/ca01_invoice_fraud_defend` | defend-only | The same defend set with no attack; the `_defend` id and its doubled prefix |
+| `scenarios/ca_pre_finance_ab`, `ca_post_finance_ab` | check pair | Ten-message forms, `exportGlobals` and `importGlobals`, the comparison panel |
+| `scenarios/ca03_helpdesk_reset` | full, call attack | `attack.callId`, the `mfa` stage, the role swap (`defend.calls`) |
+| `scenarios/ca05_signin_pages` | full, page attack | The `build` stage and `attack.landingPageId` |
+| `scenarios/test_social_episode` | fixture | The smallest full shell that validates. Stub content, `collection: "testing"` |
+
+### Three kinds of shell
+
+| Kind | `variant` | `stages` | Id | Attack block |
+|---|---|---|---|---|
+| Full episode | `full` | `brief, osint, write, flip, defend, debrief` (with `build` and `mfa` optional, see [Stages](#stages)) | any, not ending `_defend` | Required |
+| Defend-only | `defendOnly` | `brief, defend, debrief` exactly | the full episode's id plus `_defend` | Not read |
+| Check mission | optional | `["check"]` | any | None |
+
+A defend-only shell is the full episode without the attack: the same defend set, so the measurement is the same, but the learner loses the "I wrote that" moment. Every full episode has one. A check mission is a ten-message spot-the-phish form taken before and after the training, and only one of those forms is in each mission ([Check missions](#check-missions-and-how-their-results-carry-over)).
+
+### Building a shell
+
+A shell is one scenario folder (`scenarios/<id>/` with `scenario.json.erb`, `mission.json` and an `ink/` folder for the host) holding one training room. Do these in order. The numbered pieces are what `test_social_episode` is made of.
+
+**1. `mission.json`.** `display_name`, `description`, `difficulty_level: 1`, `secgen_scenario: null`, `ui_theme: "general"` and `collection`: `training` for a real shell, `testing` for a fixture. Real shells also carry `estimated_duration_minutes` and a `cybok` block.
+
+**2. Top level.** `scenario_id` equal to the folder name, `scenario_name`, `scenario_brief`, `endGoal`, `version`, `"disableAttacks": true`, `startRoom`, a `player` (any existing sprite sheet).
+
+**3. Globals.** The shell declares every global its mechanics write; `id` below is `awarenessEpisode.id`.
+
+```json
+"globalVariables": {
+  "episode_e1_stub_state": {},
+  "se_awareness_records": [],
+  "episode_e1_stub_defend_percent": 0,
+  "episode_e1_stub_defend_reportRate": 0,
+  "episode_e1_stub_defend_done": false,
+  "episode_e1_stub_complete": false,
+  "se_osint_state": {},
+  "se_intel_supplier_contact": false,
+  "phish_supplier_contact_landed": false,
+  "phish_supplier_contact_attempts": 0
+}
+```
+
+The first six lines are the shell's own. The last four belong to the attack (`se_osint_state`, `se_intel_<fact id>` once per fact, `phish_<target>_landed` and `_attempts`; see [The attack data](#the-attack-data)). The lint errors if `episode_<id>_state` or `se_awareness_records` is missing or not empty, and if the done global is undeclared (also in `concludeRequires` and in the host's mapping). It does not notice a missing `percent`, `reportRate` or `pass`; declare all four as every shell does. `se_awareness_records` is `[]`: the store writes an array. `{}` is accepted because older shells declared it that way, and the reader treats it as empty. A defend-only or check shell declares only the first six (check shells declare `triage_<stage>_*` instead of the `episode_..._defend_*` four). Something should read `phish_<target>_landed`, or the validator suggests dropping it; E1 uses it in the host's ink (the attack aim's task now completes on `phish_<target>_attempts`, not on `_landed`, see [The conclusion aim](#4-the-conclusion-aim)).
+
+**4. The conclusion aim.** One aim with `missionConclusion: true`, whose `concludeRequires.globals` lists the defend set's done global, a task for the host to complete, and a `success` ending ([Mission Conclusion](#mission-conclusion)):
+
+```json
+{ "aimId": "finish_episode_aim", "title": "Finish the episode", "description": "Run the episode at the kiosk.",
+  "status": "active", "order": 0,
+  "missionConclusion": true,
+  "concludeRequires": { "globals": ["episode_e1_stub_defend_done"] },
+  "conclusionScreen": { "type": "success", "title": "Episode done", "body": "You have finished this exercise." },
+  "tasks": [ { "taskId": "finish_episode", "title": "Finish the episode", "type": "custom", "status": "active" } ] }
+```
+
+The validator errors when no aim (or more than one) has `missionConclusion`, when `concludeRequires.globals` leaves out the done global (it gates the ending on a finished round, not on the declared defaults), and warns when `conclusionScreen` is missing. A training episode ends on the `success` screen, not the credits. A full episode may have a first aim for the attack. The score is defence only (design 11 §4.1), so that aim's task must complete when the write stage finishes whatever the result, never on the attack landing: its host mapping fires on `phish_<target>_attempts` with `value > 0` (written on every send), or on a call attack on `pretext_<callId>_outcome` with any non-empty outcome, not on `phish_<target>_landed`. Title the task for the act of sending ("Send your email …"), not for landing it. Only the conclusion aim carries `missionConclusion`.
+
+**5. The room, the host and the kiosk.** One `room_office` with a host NPC and one kiosk:
+
+```json
+"rooms": { "ep_room": { "type": "room_office", "door_sign": "Training Room", "connections": {},
+  "npcs": [ { "id": "ep_host", "displayName": "Host", "npcType": "person", "position": { "x": 3, "y": 3 },
+    "spriteSheet": "female_blowse_v2", "spriteTalk": "assets/characters/female_blowse_talk.png",
+    "storyPath": "scenarios/ink/generic-npc.json", "currentKnot": "start",
+    "eventMappings": [ { "eventPattern": "global_variable_changed:episode_e1_stub_defend_done",
+      "condition": "value === true", "onceOnly": true, "completeTask": "finish_episode" } ] } ],
+  "objects": [ { "type": "kiosk", "id": "ep_kiosk", "name": "Training Kiosk", "position": { "x": 6, "y": 2 },
+    "takeable": false, "interactable": true, "active": true, "locked": false,
+    "observations": "A training kiosk. It runs the episode.",
+    "minigameData": { "episodeId": "e1_stub" } } ] } }
+```
+
+The host is not decoration. A global cannot complete a task by itself, and `eventMappings` live on NPC records, so the host's mapping on the done global is what completes `conclusionTaskId`. The validator errors if no NPC carries it. A real shell gives the host a character, a sprite and one ink file (a welcome line that changes once the done global is true, resting in a hub as in m03; see `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink`), and adds a block for the shell in `scripts/ink_runtime_check/missions.json` so `reopencheck.mjs` covers it. `scenarios/ink/generic-npc.json` will do for a throwaway fixture.
+
+**6. The defend set** (`social.triageSets[]`), described under [Attack and defend](#attack-and-defend).
+
+**7. The attack data**, full episodes only: a `people` entry, an `intelFacts` entry, an OSINT site, composer templates, a mail account, a contact, a phishing target. Each is documented in its own section; the smallest working set is in [The attack data](#the-attack-data).
+
+**8. The episode block** (`social.awarenessEpisode`), below.
+
+**9. Validate.** Fix every error. Read each warning.
+
+### The kiosk
+
+```json
+{ "type": "kiosk", "id": "ep_kiosk", "minigameData": { "episodeId": "e1_stub" }, ... }
+```
+
+The only object type that opens an episode. `minigameData` is `{ episodeId }` and nothing else, and the id must equal `social.awarenessEpisode.id`. If the two differ the player gets "This kiosk has no exercise to run." and nothing opens; the validator catches it as an error. A shell has exactly one kiosk (a second could start a second runner on the same state), and a kiosk with no `awarenessEpisode` block is an error. Its sprite is `assets/objects/kiosk.png`. It opens the `episode-runner` overlay (`systems/episode-starter.js`), which shows the step strip and runs the stages in order. Close and Esc are a normal exit, not a failure, and the overlay takes the keyboard while open (Space and E do nothing).
+
+**Progress.** The runner keeps its place in the declared global `episode_<id>_state`: `{ v, variant, stage, done[], sent, defend }`, ids and numbers only. Reopening the kiosk resumes at the stage the learner left, after a reload too. `sent` holds what the write stage produced (the sent record's id, the template ids, or the call's id and outcome, never message text) until the flip has been shown, then is cleared. A child tool that closes without finishing (mail closed with nothing sent, triage closed before the result) leaves the stage where it was.
+
+### The `awarenessEpisode` block
+
+`social.awarenessEpisode` is closed by the schema (`socialAwarenessEpisode`): unknown keys fail it, except keys starting with `_`.
+
+| Field | Shape | Notes |
+|---|---|---|
+| `id` | string | Required. Names everything else: the kiosk pointer, `episode_<id>_state`, the defend prefix. A defend-only id is the full id plus `_defend` |
+| `stages` | string[] | Required. See [Stages](#stages) |
+| `defend` | object | Required: `{ setId, stage?, reportAlwaysVisible?, callsFrom?, calls? }`. See [Attack and defend](#attack-and-defend) |
+| `variant` | `full` \| `defendOnly` | Required, except on a check mission (`stages: ["check"]`) |
+| `conclusionTaskId` | string | Required by the lint. The conclusion aim's task that the host NPC's mapping completes. Passed to the triage starter, which on a reopen of a finished round re-emits the done event if that task is not yet complete (a tab closed before the sync was confirmed) |
+| `attack` | object | Full episodes. See [Attack and defend](#attack-and-defend) |
+| `mfa` | `{ pushes[], approvesAt, mode? }` | With the `mfa` stage. See [The authenticator](#the-authenticator-the-mfa-stage) |
+| `strings` | object | The learner-facing lines. See [Strings](#strings) |
+| `brand` | `{ name, logoText, accent }` | The neutral skin's wordmark, drawn in CSS from `logoText` (else `name`), and the accent colour (`#` plus 3 to 8 hex digits; the schema rejects anything else). No image |
+| `scopeNote` | string | Shown under the brief ("Authorised exercise at ..., a fictional company. In scope: ...") |
+| `facilitated` | boolean | A workshop run. See [Facilitated mode](#facilitated-mode) |
+| `debrief` | `{ mondayCard, noBlameLine }` | `mondayCard: "slot:customer_report_route"` asks the debrief for the "How to report here" box (see [The debrief's deployment lines](#the-debriefs-deployment-lines)). Any other value is only linted (a warning); `noBlameLine` is not read |
+| `role`, `company`, `durationTargetMin` | | Accepted, and not read by any code. They are notes for the author |
+
+### Stages
+
+`stages` is the ordered list of what the runner does. Ids are a closed list. Each stage ends in a normal exit, and the runner then moves to the next stage not yet in `state.done`.
+
+| Stage | What happens | Needs |
+|---|---|---|
+| `brief` | The runner's own panel: `strings.brief`, the `scopeNote`, then Start | `strings.brief` |
+| `osint` | Opens the OSINT browser limited to `attack.siteIds` | `attack.siteIds` |
+| `build` | Opens the landing-page builder on `attack.landingPageId`, aimed at `attack.target`. The learner builds the page the message links to | `attack.landingPageId`: a `social.landingPages` id whose `targets` has an entry for `attack.target` |
+| `write` | Mail: opens the mail client with `accountIds`, `defaultAccount`, `maxSends: 1` and `layout`; or, with `attack.callId`, a pretext call (the write-as-call rule below). Done when something was sent, or the call has ended | `attack.accountIds`, or `attack.callId` |
+| `mfa` | Opens the mock authenticator: a stream of unrequested sign-in prompts and the target's approval. Unscored | `awarenessEpisode.mfa` |
+| `flip` | Shows what the learner just made from the other side: the sent email, the built page or the call | See below |
+| `defend` | Opens the triage round on `defend.setId` with the awareness skin; records the result | `defend.setId` |
+| `debrief` | A card per item missed, the concept and voice panels if authored, the team line, the rule of thumb, the Monday card, the "How to report here" box, the no-blame line, then Finish | `strings`; `social.awareness` for the deployment lines |
+| `check` | A check mission's only stage: the triage round at `defend.stage`, ending on its own result screen | `defend.stage` |
+
+**Order.** A full episode is `brief, osint, write, flip, defend, debrief`, with two optional insertions: `build` straight after `osint`, and `mfa` straight after `write` or straight after `flip`. Both may be present, giving six valid lists. The lint rejects any other order. A defend-only episode is exactly `brief, defend, debrief`, and the runner drops any attack stage from one whatever is authored. `mfa` and `build` never appear in a defend-only or check shell.
+
+**The write-as-call rule.** `write` normally launches the mail client. If `attack.callId` is set (a `social.pretextNpcs` `callId`), `write` launches that pretext call instead, and the mail fields (`accountIds`, `defaultAccount`, `maxMessages`) are not needed. The stage id stays `write`. The call's own chat takes over and never returns to the runner, so the runner watches the `pretext_<callId>_outcome` global and reopens itself once the call has ended and been closed. It holds the call and its outcome for the flip. The globals `pretext_<callId>_outcome`, `_lowest`, `_reports`, `_state` and the character's influence globals must be declared as they are in the lab ([Pretext calls](#pretext-calls-socialpretextnpcs)).
+
+**The flip.** It rebuilds the learner's own work as the target would see it:
+
+- *Mail:* the sent message, drawn read-only with the tells it raised, each as its library sentence. It needs the defend set to carry `playerSentAuth.accounts.<accountId>` for every account in `attack.accountIds` (see [Inbox triage](#inbox-triage-socialtriagesets)). Nothing lints this. Without the row, or if the send raised no tell, the flip falls back to `strings.flipMissed`.
+- *Page* (when the episode has a `build` stage and the page was built): the built address, padlock, fields and the page's tells.
+- *Call* (when the call landed, outcome `got_it`): the learner's own lines rebuilt from the session log, with the claims they made, and the call spec's `defenderNotes`. A call that did not land shows `flipMissed`.
+- Nothing sent at all shows `strings.flipNoSend`.
+
+### Attack and defend
+
+**`attack`** (read only by a full episode):
+
+| Field | Notes |
+|---|---|
+| `target` | A `social.phishTargets` id. Required for a mail attack. A call attack may leave it out |
+| `siteIds` | `social.osint.sites` ids for the OSINT stage. Not empty |
+| `accountIds`, `defaultAccount` | `social.mailClient.accounts` ids for the write stage (mail attacks). `defaultAccount` must be in `accountIds` |
+| `callId` | A `social.pretextNpcs` `callId`: the write stage is a call ([Stages](#stages)) |
+| `landingPageId` | For the `build` stage |
+| `layout` | `phone` puts the mail client's narrow layout in a phone frame on any viewport (E6) |
+| `maxMessages` | Must be `1` on a mail attack (lint). The runner always passes `maxSends: 1` to the mail client: after one send, Compose is disabled and a line says the message has gone. Close carries on |
+| `scored` | Must be `false` (lint). The write stage is never scored; only the defend round is |
+| `showRedFlagMeter` | Accepted, not read. The meter comes from `mailClient.showRedFlagMeter` and the target's `redFlagMeter` |
+
+The lint warns if the target's `emailReplyDelay` is outside 5 to 8 seconds (the default, 20, is too long to wait in a 13 minute episode).
+
+(Note, 2026-10-27: awareness full episodes are now described as about 15 minutes, E6 and E7 about 16. The 5 to 8 second advice stands.)
+
+**`defend`**:
+
+| Field | Notes |
+|---|---|
+| `setId` | A `social.triageSets` id. The set must use `scoringProfile: "awareness"` and `outcome.passPercent: 0` |
+| `stage` | `pre` or `post` on a check mission, `null` or absent otherwise. It is passed to the triage starter as its `stage` |
+| `calls`, `callsFrom` | The role swap, below |
+| `reportAlwaysVisible` | Accepted, not read |
+
+The defend set is an ordinary triage set ([Inbox triage](#inbox-triage-socialtriagesets)) with these rules from the lint:
+
+- **Size:** 5 to 8 messages (counting `defend.calls`), or exactly 10 on a check mission. Mix phish and genuine mail, and make one genuine message awkward (E1 has one with a "confirmed by phone" note) so that reporting everything is not the whole lesson. `verifyVerdict: true` adds Verify.
+- **Prefix:** `outcome.setGlobalPrefix` must be `episode_<id>_defend_`, so the done global is `episode_<id>_defend_done`. Because a defend-only id already ends in `_defend`, its prefix reads `episode_<id>_defend_defend_`. That is deliberate and the runner builds it the same way. Check missions use `triage_{stage}_`.
+- **Leave the set's own `stage` out** in a full or defend-only episode. The runner passes `defend.stage`, which is `null` there.
+- **Feedback:** `immediate` suits an episode, `end` a check.
+- **No-blame wording.** Every note says what gave the message away or why it was fine. Nothing says the learner fell for it.
+
+The `awareness` scoring profile gives a phish 60 for Report or Verify, 30 for Delete and 0 for Trust; real mail gets 60 for Trust, Report or Verify and 30 for Delete. The reasons are worth 40: on a phish `40 × caught / authored flags` with no penalty for extra chips, and a full 40 on real mail. So reporting is never wrong. Tells that cross from the attack to the defend half are channel tells (`changed_bank_details`, `secrecy_or_bypass`) and email factors, listed in `00` §2. A good send stores the factor tells it raised (`senderTrust`, `urgencyCalibrated`), and the defend set uses those same ids.
+
+#### The attack data
+
+A full episode needs, under `social`, the pieces below. They are the same blocks the lab uses, so the field lists are in the sections linked beside each. This is the smallest set that validates (`test_social_episode`):
+
+```json
+"people": [ { "id": "supplier_contact", "kind": "cast", "address": "pat@halden-supply.example", "forms": { "full": "Pat Halden" } } ],
+"intelFacts": { "supplier_contact": { "text": "Pat Halden handles Halden Supply's accounts.", "subject": "supplier_contact",
+  "source": "ep_staff", "provides": [ { "type": "name", "about": "recipient", "value": "pat", "label": "Pat", "kind": "generic" } ] } },
+"osint": { "profile": "awareness", "sites": [ { "id": "supplier_site", "url": "halden-supply.example", "type": "company-site",
+  "pages": [ { "id": "team", "title": "Our team", "url": "halden-supply.example/team", "blocks": [
+    { "id": "ep_staff", "kind": "staff", "person": "supplier_contact", "name": "Pat Halden",
+      "address": "pat@halden-supply.example", "fact": "supplier_contact" } ] } ] } ] },
+"templates": {
+  "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+  "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
+  "pretext_invoice": { "part": "pretext", "text": "I'm checking the status of an invoice.", "slots": [], "urgency": "low" },
+  "pretext_account": { "part": "pretext", "text": "I'm updating our account records.", "slots": [], "urgency": "low" },
+  "ask_confirm": { "part": "ask", "text": "Could you confirm it is due this week?", "slots": [] } },
+"mailClient": {
+  "accounts": [ { "id": "analyst", "address": "analyst@brightwell.example", "displayName": "Analyst", "kind": "given",
+    "person": null, "mailbox": "analyst", "spoofsFrom": true } ],
+  "mailboxes": [ { "id": "analyst" } ],
+  "contacts": [ { "id": "supplier_contact", "person": "supplier_contact", "name": "Pat Halden",
+    "addresses": ["pat@halden-supply.example"], "role": "Accounts",
+    "revealedBy": "se_intel_supplier_contact", "targetId": "supplier_contact" } ],
+  "seededMessages": [], "checklistTiming": "onSend", "showRedFlagMeter": true },
+"phishTargets": [ { "id": "supplier_contact", "address": "pat@halden-supply.example", "displayName": "Pat Halden",
+  "subjects": [ { "id": "s_invoice", "text": "Invoice query", "topic": "finance" }, { "id": "s_canteen", "text": "Canteen menu", "topic": "catering" } ],
+  "interests": { "topics": ["finance"] }, "emailReplyDelay": 6,
+  "templateSets": { "from": ["from_own"], "greeting": ["greet_generic"], "pretext": ["pretext_invoice", "pretext_account"], "ask": ["ask_confirm"] },
+  "requiredFactors": ["senderTrust", "pretextRelevant"], "advisoryFactors": ["senderAuth"],
+  "replies": { "landed": "Thanks, I'll check that invoice." },
+  "factorStrings": { "senderTrust": { "pass": "The request comes from a known contact", "redFlag": null } },
+  "outcome": { "setGlobal": { "phish_supplier_contact_landed": true } } } ]
+```
+
+The contact's `revealedBy` is the fact's `se_intel_` global, so the learner finds Pat in OSINT before Pat can be written to. The `source` of the fact is the OSINT block that grants it. E1 (`ca01_invoice_fraud`) is the full-size example: two OSINT sites, four facts, a spoofed sender, a named reply, and an `analyst` account that can spoof From.
+
+#### The defend set, minimally
+
+```json
+"triageSets": [ { "id": "e1_stub_inbox", "title": "Payments inbox", "brief": "Decide what each message is.",
+  "scoringProfile": "awareness", "feedbackMode": "immediate", "headerPanel": "collapsed", "glossary": "closed",
+  "channelTells": ["lookalike_domain", "changed_bank_details"],
+  "outcome": { "setGlobalPrefix": "episode_e1_stub_defend_", "passPercent": 0 },
+  "messages": [ ... five messages: at least two phish and one genuine ... ] } ]
+```
+
+A phish message is `{ id, from, to, subject, time, body, auth, truth: { isPhish: true, flags: [...], perFlagNote, ifTrusted, reportReply } }`; a genuine one has `truth: { isPhish: false, flags: [], whyFine: { default: "..." } }`. The shapes are in [Inbox triage](#inbox-triage-socialtriagesets).
+
+#### The block, filled in
+
+```json
+"awarenessEpisode": {
+  "id": "e1_stub", "role": "finance", "company": "brightwell_foods", "variant": "full", "durationTargetMin": 13,
+  "brand": { "name": "Brightwell Foods", "logoText": "BRIGHTWELL", "accent": "#2f6f5e" },
+  "scopeNote": "Authorised exercise at fictional Brightwell Foods. In scope: this inbox.",
+  "stages": ["brief", "osint", "write", "flip", "defend", "debrief"],
+  "conclusionTaskId": "finish_episode",
+  "attack": { "target": "supplier_contact", "siteIds": ["supplier_site"], "accountIds": ["analyst"],
+              "defaultAccount": "analyst", "maxMessages": 1, "scored": false },
+  "defend": { "setId": "e1_stub_inbox", "stage": null },
+  "strings": { "brief": "Stub brief.", "flipHeading": "Now you are the target", "flipIntro": "This is the message you sent.",
+    "flipDefenderLine": "Here is what a careful reader would notice.", "flipNoSend": "You did not send a message this time.",
+    "noBlameLine": "Anyone can miss one of these.", "mondayCard": "Next time, check bank changes by phone.",
+    "defendOnly": "This version skips the attack." }
+}
+```
+
+### Strings
+
+`strings` holds every learner-facing line, as data. Every string is shown as plain text (HTML in one renders as text). All have a built-in default in the views except `brief`, and the stage panels' own button labels and instructions (Open the browser, Write one message..., Pause) are fixed English in the runner, apart from the defend intro below. Write them in the voice of the fictional company's training lead.
+
+| Key | Where it shows | Default |
+|---|---|---|
+| `brief` | The brief panel's text | None, and no lint asks for one, but the panel is empty without it. Say who they are, where, what happens and which part is scored |
+| `flipHeading` | The flip's heading | "Your message, from the other side" |
+| `flipIntro` | Above the replayed email | "This is the message you just wrote, as the person who receives it would see it." |
+| `flipPageIntro` | Above a built page | "This is the page you built, as the person who follows the link would see it." |
+| `flipCallIntro` | Above a call | "This is your call from the other end of the line. Here is what would have caught it." |
+| `flipDefenderLine` | Under the replay, in the target's voice: why it worked on them | "People who fall for messages like this are not stupid. This one was built to look right." |
+| `flipNoSend` | When nothing was sent | "You did not send a message this time, so there is nothing to flip. On to the next step." |
+| `flipMissed` | When something was sent but there is nothing to replay (no tell raised, no auth row, the call did not land) | "Your attempt did not land this time, so there is nothing to show from the other side. The defence is the same either way. On to the next step." |
+| `continue` | The flip's Continue button | "Continue" |
+| `defendIntro` | The defend stage's panel line, replacing the runner's fixed one, which talks about an inbox | A line that fits the set: messages, pages or calls, and defend-only or not |
+| `noBlameLine` | The last line of the debrief | "Nobody here is being marked down for a miss. These messages are built to look right." |
+| `mondayCard` | The "one thing to do on Monday" card | "What to do on Monday: if something looks wrong, report it through your organisation's usual route. Reporting is never wrong." |
+| `defendOnly` | The debrief's opening paragraph on a defend-only run, in place of anything about the learner's own message | "You went straight to the inbox this time. Each message below shows what to look for and why." |
+| `conceptPanel`, `voicePanel` | Optional debrief panels between the cards and the Monday card. A string, or `{ heading, text }`; a blank line starts a new paragraph. `voicePanel` is for copied voices (E4, E7) and stays at concept level | No panel. Headings default to "How it works" and "A voice is not proof" |
+| `facilitator` | See [Facilitated mode](#facilitated-mode) | |
+
+The lint errors on a `conceptPanel` or `voicePanel` with no text, and on a `facilitator` key that is neither a stage id nor `pause`.
+
+The debrief and flip copy never blames. "Nobody is marked down" and "built to look right" are the register; "you fell for it" is not.
+
+### The debrief's deployment lines
+
+Three debrief lines belong to the organisation running the training, not to the episode, so they sit in `social.awareness` rather than in `strings`. The host page can set the same keys in `window.breakEscapeConfig.awareness`, and a key set there wins over the scenario's, so one deployment can name its own route in every episode without editing the shells. Nothing on the server fills `breakEscapeConfig.awareness` yet.
+
+```json
+"social": { "awareness": {
+  "reportRoute": { "heading": "How to report here", "text": "Use the Report button in Outlook, or ring the IT service desk on 4000." },
+  "ruleOfThumb": "Stop. Check on a route you already hold. Report.",
+  "teamSize": 12 } }
+```
+
+| Key | What it does | Unset |
+|---|---|---|
+| `reportRoute` | The organisation's own route to report a suspicious email, call or text, in a box straight under the Monday card. A string, or `{ heading, text }` (heading default "How to report here"). It shows whenever it is set | An episode whose `debrief.mondayCard` is `"slot:customer_report_route"` (every shell) shows a generic line instead: find out today how your organisation wants these reported, ask IT or security, and until then tell IT or your manager. Never put a real organisation's route in a shell unless the deployment is that organisation's |
+| `ruleOfThumb` | One short habit, the same in every debrief of a deployment, in a box above the Monday card (aria label "The habit to keep"; a `{ heading, text }` heading is shown) | Nothing is shown |
+| `teamSize` | Whole number, 2 or more: the people on the learner's team, named in the team line ("...kept 2 phish away from the 12 people on your team.") | The line says "the rest of your team" |
+
+Each text is plain, trimmed and capped at 600 characters; a blank line starts a new paragraph. The lint warns on a blank `reportRoute` or `ruleOfThumb` and on one over 600 characters, and errors on a `teamSize` that is not a whole number of at least 2.
+
+A host can set the same keys per game through `BreakEscape.configuration.awareness_settings`, a callable `->(game) { { report_heading:, report_text:, report_route_name:, rule_of_thumb:, team_size: } or nil }` resolved on each play-page load. The engine whitelists the keys, strips control characters, caps text (heading 80, route name 120, others 600), bounds `teamSize` to 2 to 100000, and writes only the keys that have a value to `window.breakEscapeConfig.awareness`, which wins over `social.awareness` key by key. A hook that raises is logged and ignored.
+
+A blank line in `report_text` starts a new paragraph in the debrief's "How to report here" box, so a host can hand back a route of several steps. The host may compose that text however it likes, for example from its own list of pre-canned options with blanks the organiser fills in, but the engine sees only the strings it is sent and never the parts they were built from.
+
+`report_route_name` is an optional short phrase (a configured route only; carried on `reportRoute` as `routeName`) that completes the Report verdict's "At work, that means: ..." line, for example "use the Report button in Outlook". The debrief prefers it over the route heading, falls back to the heading when it is absent, and shows the line only when a route is configured.
+
+**The team line** ("Your reports and checks this round kept 2 phish away from the rest of your team.") counts the phish the learner Reported or checked by another route (Verify, Ring back, Escalate, Deny and report). Deleting a phish protects only the learner, so it does not count. The line shows only when the count is at least one and never gives a denominator, so it cannot read as a list of misses. The count is kept in `episode_<id>_state.defend.teamProtected`, so a reopened debrief shows it too. During the round the triage overlay shows the same count live ("Phish stopped for the team: 2"), with immediate feedback only, since under end-of-round feedback a count that rises only on a phish would give the answers away.
+
+**The report sting.** With the awareness skin, a Report verdict (including a call's Escalate and a push's Deny and report) plays the `ui_confirm` sound, pops the locked verdict once and shows "Thanks for reporting. That warns everyone else."
+
+### Facilitated mode
+
+`"facilitated": true` makes an episode a workshop run on a shared screen. The runner adds a group prompt to each stage from `strings.facilitator[<stage id>]`, hides the per-learner score (the percent, the headline and each card's score) on the shared debrief, and stops on a pause panel after every stage but the last (`strings.facilitator.pause`, else "Stop here and talk it over as a group before the next step.") until Continue. The pause is held in memory only, so a reopen from the kiosk goes straight to the stage. `strings.facilitator` is `{ brief, osint, build, write, mfa, flip, defend, debrief, check, pause }`, any subset; the lint warns about a stage in `stages` with no line when `facilitated` is true. The triage round itself is still done individually. The measurement is recorded as usual.
+
+### Check missions and how their results carry over
+
+A check mission is the measurement half of the product: ten messages from the role's inbox, taken before the training (`pre`) and again after it (`post`), with a before-and-after panel at the end of the second. Each role has a matched pair of forms, A and B, and two orderings, so half of a group sees A first (the `ab` missions) and half B first (`ba`). The shipped set is `ca_pre_<role>_ab`, `_ba` and `ca_post_<role>_ab`, `_ba`.
+
+A check mission has `stages: ["check"]`, `variant` optional, `defend.stage` `pre` or `post`, no `attack`, and its set:
+
+- carries `stage` equal to `defend.stage`, has **ten** messages, `feedbackMode: "end"`, `scoringProfile: "awareness"` and `outcome: { setGlobalPrefix: "triage_{stage}_", passPercent: 0 }`;
+- has no `pairedWith` partner in the same game (the lint errors). The two forms are in two missions, so balance them by hand: the same number of messages and phish, the same factor counts, the same difficulty.
+
+**The pre mission** declares `triage_pre_percent`, `triage_pre_reportRate`, `triage_pre_done` and `triage_pre_pass`, and exports three of them:
+
+```json
+"exportGlobals": ["triage_pre_percent", "triage_pre_reportRate", "triage_pre_done"]
+```
+
+Its conclusion aim completes on `triage_pre_done`, because the carry-over reads only concluded runs: a game that ends without a finished round exports nothing.
+
+**The post mission** imports them under the same names, and imports the "pre was finished" flag:
+
+```json
+"importGlobals": [
+  { "from": "ca_pre_finance_ab", "var": "triage_pre_percent",    "as": "triage_pre_percent",    "default": 0 },
+  { "from": "ca_pre_finance_ab", "var": "triage_pre_reportRate", "as": "triage_pre_reportRate", "default": 0 },
+  { "from": "ca_pre_finance_ab", "var": "triage_pre_done",       "as": "triage_pre_done",       "default": false },
+  { "from": "ca_pre_finance_ab", "completed": "pre_check_completed" }
+]
+```
+
+and its set carries `"comparison": { "requireGlobal": "pre_check_completed" }`. Rules the lint enforces: each `as` equals the name (the folder has no `mNN_` prefix, so without `as` the name would be wrong); all four come from the same pre mission; the post mission declares `triage_post_*` and **does not also declare** the names it imports (the import declares them, and a second declaration is a collision).
+
+**What the learner sees.** After the post round, the result adds "Before and after": the pre round's score and report rate beside this round's. If the pre check was never finished, the panel says there is no baseline and the round stands on its own. The platform does not order missions or stop someone opening the post check first; the organiser sequences them, and the carry-over uses the learner's most recent concluded run of the pre mission. Only the two headline numbers carry over; per-item answers are in `se_awareness_records` ([The measurement global](#the-measurement-global)). See [Pre and post checks](#pre-and-post-checks-the-comparison-panel) for the panel itself.
+
+### The role swap
+
+In E3 the learner first phones a helpdesk as a locked-out manager, then sits in the helpdesk agent's seat and takes calls. The calls the learner takes are authored in `defend.calls[]`, and the facts they used in the attack are the facts they now check. The runner converts each entry into a `call` message ahead of the set's own messages and runs the merged set through the same triage starter, so scoring and the done global are unchanged.
+
+```json
+"defend": { "setId": "e3_service_desk_queue", "callsFrom": "quayholt_helpdesk_reset", "calls": [
+  { "id": "e3_call_gordon_impostor", "genuine": false,
+    "callerId": "Says he's Gordon McLeish, Claims (mobile, not on file)",
+    "claims": [ { "fact": "who", "value": "gordon_full", "label": "Gordon McLeish" },
+                { "fact": "team", "value": "claims", "label": "Claims" } ],
+    "tells": ["vish_callback_pressure", "borrowed_authority"],
+    "transcript": [ { "who": "Caller", "text": "Hello, Gordon McLeish, Claims Manager. I'm locked out..." },
+                    { "who": "you", "text": "Sorry to hear that. Can you confirm your staff number?" } ],
+    "notes": { "perFlagNote": { "vish_callback_pressure": "..." }, "ifTrusted": "...", "reportReply": "..." } } ] }
+```
+
+| Field | Notes |
+|---|---|
+| `id` | Unique among the calls and not the id of any message in the set |
+| `genuine` | Required boolean. The merged message gets `truth.isPhish = !genuine` |
+| `callerId` | What the card calls the caller. Say what they claim ("Says he's ...") |
+| `claims[]` | `{ fact, value, label? }`: what the caller asserts, shown on the card as "What the caller claims". `fact` is a `knows` id of the pretext call the learner attacked; `value` is that id's value; `label` is what the card shows. A `label` wins; otherwise the card uses the `provides` label of the `social.intelFacts` entry that carries the value; otherwise the raw value shows |
+| `tells` | Channel tell ids; become `truth.flags`. Each must be in the set's `channelTells` (E3: `vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass`, `unrequested_mfa_push`). Genuine calls have `[]` |
+| `transcript[]` | `{ who, text }`. `who: "you"` (lower case) marks the learner's own lines; any other `who` is the caller |
+| `notes` | The same note fields as `truth`: `perFlagNote`, `whyFine`, `ifTrusted`, `reportReply`, copied into the message's `truth` |
+
+How the lint treats them: the set must be an `awareness` set with `verifyVerdict: true` (a call card has four buttons: Comply, Escalate, Refuse, Ring back); there must be at least one genuine and at least one impostor call (otherwise refusing everyone, or complying with everyone, would win; make one genuine call awkward); and each claim's `fact` must be a `knows` id of one pretext call. `callsFrom` names that call (a `callId`); left out, a claim may match any `pretextNpcs` entry's `knows`. A genuine caller's claim should hold the value the record holds (a warning otherwise), and a claim with neither `label` nor an intelFacts label warns.
+
+**A defend-only shell** has no attack, so it usually has no `pretextNpcs` for the claims to resolve against. Then `callsFrom` is not read, each claim must carry its own `label` (an error otherwise), and `fact` is only checked to be present.
+
+**Scoring** is the existing call row, unchanged: Comply scores as Trust, Escalate as Report (and counts towards the report rate), Refuse as Delete and Ring back as Verify. Refusing a genuine caller therefore scores as Delete, and the review card says what the safe route was. The attack-to-defend tell map is `name_drop_director` to `borrowed_authority`, `cant_callback` to `vish_callback_pressure`, `skip_verification` to `secrecy_or_bypass`, and the push stream to `unrequested_mfa_push`. A `push` item in the same set (an unrequested sign-in prompt) is the push stream's defend half.
+
+### The authenticator (the `mfa` stage)
+
+E3's second attack beat shows MFA fatigue: the learner already has the password, and watches the target's phone as unrequested sign-in prompts keep arriving until the target taps Approve. It is a demonstration, not scored, and it records nothing. Add `mfa` to `stages` straight after `write` or straight after `flip`, and author the stream:
+
+```json
+"mfa": { "mode": "attacker", "approvesAt": "06:50", "pushes": [
+  { "at": "06:31", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example",
+    "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" },
+  { "at": "06:38", "app": "Quayholt SSO", "account": "gordon.mcleish@quayholt.example",
+    "location": "Rotterdam, Netherlands", "device": "Chrome on Windows" } ] }
+```
+
+- `pushes[]`: `app` is required. `at` is `"HH:MM"` (00:00 to 23:59) or a number of minutes; do not mix the two, and give `approvesAt` in the same form. `account`, `location`, `device` and `id` are optional.
+- `approvesAt`: when the target taps Approve. It must not be before the first push. On a tie the approval plays after the pushes that share its time.
+- `mode`: `attacker`, the only value.
+- The lint errors if `stages` has `mfa` and there is no `mfa` block, and warns about the reverse. It warns if there is only one push (fatigue is a run of prompts).
+- The overlay plays the pushes in time order on a phone, then the approval. A "Send another push" button lets the learner add their own; it counts towards the overlay's `sent` and nothing else. Esc and Close are normal exits.
+
+The defend half is a `push` message in the defend set ([Messages that aren't email](#messages-that-arent-email)), with the tell `unrequested_mfa_push`.
+
+#### The `authenticator-device` room object
+
+The same phone can sit in a room, outside any episode: an object of `type: "authenticator-device"` whose `minigameData` holds the stream itself, either the scripted `{ pushes, approvesAt }` or the learner-decision `{ choice, pushTemplate, defenderNote }` (the decision shape is checked by the same lint as `awarenessEpisode.mfa`).
+
+| `minigameData` key | What it does |
+|---|---|
+| `pushes`, `approvesAt` | The scripted stream (see above) |
+| `choice`, `pushTemplate`, `defenderNote` | The decision shape: the learner picks when and how many prompts, then watches them play |
+| `mode` | `attacker`, the only value |
+| `strings` | Wording overrides: `intro`, `approved`, `send`, `confirm`, `wordmark` and `request`; a key you leave out keeps its default |
+| `setGlobalPrefix` | On a normal close, writes `<prefix>approved` (never cleared once true) and `<prefix>sent` (the best count so far). Declare both in `globalVariables` |
+| `lockUntilOutcome` | Decision shape only. Default `true`: before the outcome shows, Close and Esc take the player back to the choices, so the beat cannot be skipped by habit (the episode wants this). `false` lets Close and Esc leave at any time, which a phone in a mission room should use so it is never a trap |
+
+### The measurement global
+
+Each finished defend or check round writes one block into `se_awareness_records`, an array in the game's global state:
+
+```json
+{ "v": 1, "key": "episode:e1_payments_inbox", "setId": "e1_payments_inbox", "form": "e1_payments_inbox",
+  "stage": "episode", "episodeId": "e1_invoice_fraud", "variant": "full", "at": "2026-10-22T09:41:07.000Z",
+  "percent": 80, "reportRate": 0.5,
+  "disc": { "phish": 2, "genuine": 3, "hits": 2, "falseAlarms": 1, "hitRate": 1, "falseAlarmRate": 0.333, "index": 0.667 },
+  "items": [ { "itemId": "e1_lookalike_bank", "verdict": "report", "action": "",
+               "chips": ["changed_bank_details"], "score": 100, "ms": 14210, "phish": true } ] }
+```
+
+- `key` is `<stage>:<setId>`. `stage` is `pre` or `post` for a check, `episode` otherwise. `form` is the set id, so the A and B forms can be told apart.
+- **The first answer is the one kept.** A key already in the array is never overwritten; a replay of the same set writes nothing. Nothing is written for a round closed before the result, or for the read-only reopen of a round that was already done.
+- `reportRate` is the share of the phish that were reported, 0 to 1. `items` has an entry per message: the learner's `verdict` (`trust`, `report`, `delete` or `verify`), the `action` when the button used differs from the verdict (a call's `escalate` or `comply`; otherwise empty), the chips ticked, the score (0 to 100), the time taken in milliseconds and `phish` (true for a phish, false for a genuine item). **No free text is stored**: ids, numbers, booleans and a timestamp. A ten-item block is well under 4 KB.
+- `disc` is the **discrimination figure, for organisers only** (the learner never sees it). `reportRate` and `percent` cannot tell a careful learner from one who reports everything, because Report scores on a genuine item too. `disc` can:
+
+  | Field | Meaning |
+  |---|---|
+  | `phish`, `genuine` | How many of each the round had |
+  | `hits` | Phish caught: Report, Delete or Verify (a call's Escalate is Report, Ring back Verify) |
+  | `falseAlarms` | Genuine items Reported or Deleted. Verify on a genuine item is the careful move and is not counted |
+  | `hitRate` | `hits / phish`, 0 to 1 (3 decimal places), or `null` with no phish |
+  | `falseAlarmRate` | `falseAlarms / genuine`, 0 to 1, or `null` with no genuine item |
+  | `index` | `hitRate - falseAlarmRate` (Youden's J), -1 to 1: 1 is perfect, 0 is no better than treating every item alike (reporting everything scores 0), `null` when either rate is `null` |
+
+  A block from a result without the `phish` marks (written before this field existed) has `disc: null`. With 4 to 10 items a round, one learner's figure is noisy: compare cohorts or pre against post, using the counts rather than averaging the rates. The figure is per round, so a pre and post pair give a before and after, and the per-role check forms mean it measures that role's channels only. `toXapi` adds it to the round statement as the extension `.../awareness/discrimination`.
+- It is written through the shared writer without deferring, because nothing listens on it. It is not exported between missions. Nothing reads the records back in the game yet, and there is no organiser view: they ride along in the saved state (`player_state.globalVariables.se_awareness_records` on the game row), where an organiser report or export would read them. `systems/awareness-measure.js` also holds `readBlocks(globals)` and `toXapi(block, actor)`, which maps a block to xAPI statements (one per item and one for the round; the caller supplies the actor).
+
+Declare it `[]` ([Building a shell](#building-a-shell), step 3).
+
+### Names an episode derives
+
+None of these is authored apart from the declaration in `globalVariables`.
+
+| Name | Meaning |
+|---|---|
+| `episode_<id>_state` | The runner's progress. Object, `{}` |
+| `episode_<id>_defend_`, then `percent`, `reportRate`, `pass`, `done` | The defend set's four result globals. Defend-only: `episode_<id>_defend_defend_...` |
+| `triage_<stage>_`, then the same four | A check mission's result globals |
+| `se_awareness_records` | The measurement array |
+| `pretext_<callId>_outcome`, `_state` | A call attack's progress, watched by the runner |
+| `landing_<pageId>_built`, `_domain`, `se_landing_pages` | A page attack's builder state, read by the flip |
+
+### Mail client episode options
+
+The runner opens the mail client with three extra parameters, which the client honours whenever they are present: `maxSends` (after that many sends this session Compose is disabled, and a line says the message has gone; Close carries on), `layout: "phone"` (the narrow layout in a phone frame on any viewport) and, on a reopen, `sentIds`. The close result carries `sentIds`, this session's sent record ids oldest first, only in this mode. A plain mail terminal passes none of them and behaves as before.
+
+## Dungeon Graph Metadata
+
+Break Escape uses a metadata layer on scenario objects to let the dungeon graph generator (`scripts/generate_dungeon_graph.rb`) produce an interactive HTML visualisation of the puzzle dependency graph — showing which items, clues, and tasks unlock which locks, rooms, and objectives.
+
+**Adding this metadata and reviewing the generated graph is a required part of the scenario design process, not an optional finishing step.** The graph exposes dependency loops, soft-locked progression, and aims that aren't grounded in player actions before you invest time playtesting. Design the metadata alongside your room and lock layout, then regenerate and review the graph whenever you add or restructure puzzles.
+
+These fields have **no effect on gameplay** but are read by the graph generator.
+
+### Fields Reference
+
+| Field | Applies to | Type | Description |
+|-------|-----------|------|-------------|
+| `puzzle_graph_unlocks` | any object, NPC item, task | `string` or `[string]` | The lock ID or room ID this item/task unlocks in the graph. May name `lock_<object_name>` synthetic nodes or real room IDs. |
+| `puzzle_graph_role` | any object, NPC item | `string` | Node type override. Valid values: `"key"` (key/item node), `"clue"` (clue note), `"tool"` (security tool), `"lock"` (treat a non-`locked` object as a lock barrier — gets `lock_` prefix), `"vm"` (VM challenge node), `"item"` (generic item). |
+| `puzzle_graph_optional` | any object, NPC item | `boolean` | `true` renders the dependency edge as dashed (optional path, not required for completion). |
+| `puzzle_graph_and_with` | any object, NPC item | `string` | AND-gate: this item must be combined with the named item to unlock the target (rendered as a combined edge with a `+` gate node). |
+| `puzzle_graph_reveals` | notes, text_file | `string` | Designer annotation describing what this clue reveals. Not used in graph rendering but useful as inline documentation. |
+| `puzzle_graph_note` | any object | `string` | Free-form designer annotation (e.g. multi-step decode logic). No effect on graph output. |
+| `puzzle_graph_aim` | any object | `string` | Aim ID (`aimId` from `objectives`) that this object is a barrier or milestone for. Draws a bridge edge in the **Integrated Graph** tab only, connecting the puzzle node to the story aim. Use `puzzle_graph_role: "lock"` together with this field to represent non-`locked` barriers. |
+| `puzzle_graph_links` | any object | `[{from, to, dashed?}]` | Explicit cross-object edges added after all nodes are built. Use when referencing nodes that don't yet exist at walk time (e.g. NPC action nodes or aim nodes in later rooms). `from`/`to` are node IDs or display names. |
+| `puzzle_graph_actions` | NPC (`npcs[]`) | `[{id, label, unlocks_aim?}]` | NPC conversation/interaction milestones. Each entry creates an **action node** in the graph connected to the NPC. `unlocks_aim` draws a bridge edge to a story aim in the **Integrated Graph**. Use to represent "talk to NPC" as a first-class puzzle step. |
+
+### When to Add `puzzle_graph_unlocks`
+
+Add `puzzle_graph_unlocks` anywhere a player must find/use an item to unlock something:
+
+- **Clue notes inside locked containers** — the note that reveals a PIN or password
+- **Keys held by NPCs** — items in `itemsHeld` that are needed to open a lock
+- **Readable text files on PCs** — files whose content provides an access code
+- **`submit_flags` tasks** — connect flag submission to its narrative consequence
+- **Items in `startItemsInInventory`** — if a starting item is the key to the first lock
+
+### Lock ID Convention
+
+Lock IDs follow the pattern `lock_<object_name>` (e.g., `lock_derek_personal_safe`, `lock_server_room`). These match the synthetic nodes generated by the dungeon graph script. Room IDs (e.g., `server_room`) are used directly as targets when an item unlocks room access rather than a specific object.
+
+### Examples
+
+#### Clue note inside a locked safe
+
+```json
+{
+  "type": "notes",
+  "name": "IT Room Access Code",
+  "takeable": true,
+  "readable": true,
+  "text": "IT room code: 1234",
+  "puzzle_graph_unlocks": "lock_it_room_door",
+  "puzzle_graph_role": "clue"
+}
+```
+
+#### NPC-held key with AND-gate
+
+```json
+{
+  "type": "key",
+  "name": "Server Room Keycard",
+  "takeable": true,
+  "puzzle_graph_unlocks": "lock_server_room_door",
+  "puzzle_graph_role": "key",
+  "puzzle_graph_and_with": "server_room_pin_code"
+}
+```
+
+#### Optional path (dashed edge in graph)
+
+```json
+{
+  "type": "notes",
+  "name": "Backup Access Instructions",
+  "takeable": true,
+  "readable": true,
+  "puzzle_graph_unlocks": "lock_archive_terminal",
+  "puzzle_graph_optional": true
+}
+```
+
+#### `submit_flags` task linking to narrative consequence
+
+```json
+{
+  "taskId": "submit_ssh_flag",
+  "type": "submit_flags",
+  "title": "Submit SSH flag",
+  "puzzle_graph_unlocks": "entropy_archive_unlocked"
+}
+```
+
+#### NPC conversation as a puzzle step (`puzzle_graph_actions`)
+
+Use `puzzle_graph_actions` on a person NPC to represent talking to them as a required step that gates a story aim:
+
+```json
+{
+  "id": "ravi_anand",
+  "displayName": "Ravi Anand",
+  "npcType": "person",
+  "taskOnKO": "brief_ravi",
+  "puzzle_graph_actions": [
+    { "id": "brief_ravi", "label": "Brief Ravi on findings", "unlocks_aim": "investigate_attack" }
+  ],
+  "itemsHeld": [
+    {
+      "type": "keycard",
+      "name": "Ravi's RFID Access Card",
+      "takeable": true,
+      "puzzle_graph_unlocks": "ward_7"
+    },
+    {
+      "type": "notes",
+      "name": "IT Security Authorisation Code",
+      "takeable": false,
+      "puzzle_graph_unlocks": "dual_auth_panel",
+      "puzzle_graph_and_with": "Clinical Engineering Authorisation Code"
+    }
+  ]
+}
+```
+
+#### Non-locked barrier mapped to a story aim (`puzzle_graph_role: "lock"` + `puzzle_graph_aim`)
+
+When a device or terminal is a narrative barrier (not a JSON `locked` object) and you want it to appear as a lock gate tied to an aim:
+
+```json
+{
+  "type": "vm-launcher-desktop",
+  "name": "Network Isolation Panel",
+  "puzzle_graph_role": "lock",
+  "puzzle_graph_aim": "restore_operations"
+}
+```
+
+#### Explicit cross-object edges (`puzzle_graph_links`)
+
+Use when two nodes need an edge but the target node doesn't exist at the time the object is processed (e.g. linking a VM dashboard to a later NPC action node):
+
+```json
+{
+  "type": "siem_dashboard",
+  "name": "SIEM Console",
+  "puzzle_graph_role": "vm",
+  "puzzle_graph_links": [
+    { "from": "siem_console", "to": "action_brief_ravi" },
+    { "from": "siem_console", "to": "it_security_authorisation_code", "dashed": true }
+  ]
+}
+```
+
+### Generating the Graph
+
+```bash
+ruby scripts/generate_dungeon_graph.rb scenarios/my_scenario/scenario.json.erb
+# Output: scenarios/my_scenario/dungeon_graph.html (open in browser)
+```
+
+Related tooling:
+
+```bash
+python3 scripts/predict_door_sides.py scenarios/my_scenario/scenario.json.erb
+# Prints the corner each door lands on -- see Which corner a door lands on
+```
+
+The output is a three-tab HTML page:
+- **Puzzle Graph** — objects, locks, rooms, and their dependencies
+- **Story Graph** — objectives, aims, and task completion edges  
+- **Integrated Graph** — both layers combined with a highlighted critical path
+
+### Graph Design Review
+
+Generate and review the graph at each major design stage — before writing Ink dialogue, before creating VM tasks, and after any structural change to rooms or lock chains.
+
+**Completability checks (Puzzle Graph tab)**
+
+- Every room that is locked has an incoming edge from a reachable key or clue. If a lock node has no incoming edges, the player has no way to open it.
+- There are no circular dependencies — a key is not inside a locked container that requires the same key to open.
+- Every clue note or text file that reveals a code has an outgoing `puzzle_graph_unlocks` edge. Orphaned clue nodes that don't point anywhere indicate the item serves no puzzle purpose.
+- Optional paths (dashed edges) do not carry any required lock. If removing an optional path would make a lock unreachable, it should be a required edge instead.
+
+**Aim/narrative alignment checks (Story Graph and Integrated Graph tabs)**
+
+- Every objective aim has at least one incoming bridge edge from a puzzle action or puzzle item. An aim with no connections is not grounded in gameplay — the player has no in-world activity that maps to it.
+- The critical path (highlighted in the Integrated Graph) reflects the intended experience arc. If a late-game aim appears early in the critical path, the narrative sequence is out of order.
+- Aims marked as `status: "locked"` have their unlock condition represented as a dependency in the graph. If an aim unlocks automatically with no in-world trigger, consider whether a `puzzle_graph_actions` node or event mapping is missing.
+- Conversation milestones (NPCs the player must talk to) are represented as `puzzle_graph_actions` nodes. If a key NPC briefing is not visible in the graph, add the action node so the dependency is explicit.
+
+**Lock type variety check**
+
+- Scan the Puzzle Graph for lock node labels (`Password Lock`, `PIN Lock`, `Key Lock`, `RFID Lock`, etc.). A scenario where every lock is the same type offers limited educational coverage of access-control concepts. Aim for at least three distinct lock types per scenario.
+
+**Signs the metadata needs more work**
+
+- The Puzzle Graph is mostly empty while the scenario has many locks — most clues and keys are missing `puzzle_graph_unlocks` annotations.
+- The Story Graph shows aims but the Integrated Graph has no bridge edges between the two layers — `puzzle_graph_aim` and `puzzle_graph_actions` fields are absent.
+- Room nodes appear in isolation with no edges — they are disconnected areas not reachable from the critical path.
+
+### Validator Behaviour
+
+The scenario validator (`scripts/validate_scenario.rb`) will:
+- Emit a `💡 SUGGESTION` for each clue item inside a locked container that is missing `puzzle_graph_unlocks`
+- Emit a `💡 SUGGESTION` for each `submit_flags` task without `puzzle_graph_unlocks`
+- Emit a `⚠ WARNING` if a `puzzle_graph_unlocks` target is not a recognised room ID, object ID, or `lock_*` ID
+- Emit a `✅ GOOD PRACTICE` confirmation when the scenario has any `puzzle_graph_*` metadata
+- Emit a `💡 SUGGESTION` to add metadata when none is found at all

@@ -1,0 +1,13 @@
+{
+  "key": "0a4961fe5525b00ba9d7036f2744c48a",
+  "npc": "sidhu_selvarajan",
+  "text": "What can I do for you?",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

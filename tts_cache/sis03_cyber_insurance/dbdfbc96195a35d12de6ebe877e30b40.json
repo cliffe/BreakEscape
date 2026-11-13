@@ -1,0 +1,13 @@
+{
+  "key": "dbdfbc96195a35d12de6ebe877e30b40",
+  "npc": "eleanor_vance",
+  "text": "The PIN is a policy reference code embedded in the CMS terminal — look in the Policy Info section. It's formatted as a notation: UW-CAB-REF followed by four digits.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:32:45Z"
+}

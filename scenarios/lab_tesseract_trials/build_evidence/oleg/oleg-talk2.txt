@@ -1,0 +1,10 @@
+  Dr Oleg Illiashenko / Yes?
+  CHOICES(1): Your name on that staff list. What happened to it?;I fixed your name. It reads properly in CyberChef now.;I'll leave you to it.
+  > What happened to it
+  Dr Oleg Illiashenko / Same bytes, wrong table. My name is saved as UTF-8, two bytes for every Cyrillic letter.
+  Dr Oleg Illiashenko / Then some program reads those bytes with a one-byte table, Windows-1251, and every letter becomes two wrong ones.
+  Dr Oleg Illiashenko / Nothing is lost. You only have to read the bytes the way they were written. Here, I wrote it down. Again.
+  CHOICES(2): I fixed your name. It reads properly in CyberChef now.;I'll leave you to it.
+  > leave you to it
+  Dr Oleg Illiashenko / Close the door properly on your way out. It sticks.
+[closed: None]

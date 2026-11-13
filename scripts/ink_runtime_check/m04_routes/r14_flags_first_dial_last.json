@@ -1,0 +1,90 @@
+{
+"steps": [
+{
+"note": "R14 (puzzle chains R2-1/R2-2): the four flags in first, with no paper evidence and no dial. map_the_attack completes on the flags alone, so attack_mechanism_known is set. 'Where do I stand?' must name the dial (it holds the ESD), before and after Voltage is dealt with, never 'Stay by the button', and never ask for the break-in on paper."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"attack_mechanism_known": true,
+"vance_spoken": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Where do I stand",
+"Right",
+"Nothing right now"
+]
+},
+{
+"said": [
+"dial thermometer on the Rack Bank C wall"
+],
+"notSaid": [
+"on paper",
+"Stay by the button"
+]
+},
+{
+"note": "Plant room reached, Voltage dealt with; the dial still unread."
+},
+{
+"set": {
+"plant_room_entered": true,
+"voltage_neutralised": true,
+"voltage_captured": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Where do I stand",
+"Right",
+"Nothing right now"
+]
+},
+{
+"said": [
+"dial thermometer on the Rack Bank C wall"
+],
+"notSaid": [
+"Stay by the button",
+"on paper"
+]
+},
+{
+"note": "The dial is read now: HaX's 61 degrees call. With the attack mapped and Voltage down, 'the last piece' is true."
+},
+{
+"set": {
+"anomaly_detected": true,
+"esd_authorized": true
+}
+},
+{
+"talk": "phone",
+"knot": "on_anomaly_confirmed",
+"picks": [
+"last piece"
+]
+},
+{
+"said": [
+"It was. Grid control can see the difference now."
+]
+}
+]
+}

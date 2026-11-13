@@ -1,0 +1,81 @@
+{
+  "npc_id": "security_guard",
+  "card_id": "master_keycard",
+  "card": {
+    "card_id": "master_keycard",
+    "name": "Master keycard",
+    "rfid_protocol": "MIFARE_Classic_Custom_Keys",
+    "timestamp": 1731460000000,
+    "rfid_data": {
+      "cardId": "master_keycard",
+      "uid": "DEADBEEF",
+      "sectors": {
+        "0": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "1": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "2": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "3": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "4": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "5": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "6": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "7": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "8": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "9": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "10": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "11": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "12": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "13": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "14": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        },
+        "15": {
+          "keyA": "FFFFFFFFFFFF",
+          "keyB": "A0A1A2A3A4A5"
+        }
+      },
+      "masterKeyKnown": true
+    }
+  }
+}

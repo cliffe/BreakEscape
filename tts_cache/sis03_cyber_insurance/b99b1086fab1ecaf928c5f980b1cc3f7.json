@@ -1,0 +1,13 @@
+{
+  "key": "b99b1086fab1ecaf928c5f980b1cc3f7",
+  "npc": "eleanor_vance",
+  "text": "The safety standard, IEC 61511, separately requires the SIS to be independent of the control system. Both depend on segmentation. That's why it's in our warranty.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:30:21Z"
+}

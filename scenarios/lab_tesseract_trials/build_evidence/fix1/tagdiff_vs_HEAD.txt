@@ -1,0 +1,185 @@
+== scenarios/lab_tesseract_trials/ink/closing_debrief.ink [modified]
+  structure: 32 difference(s)
+  var:
+    + L14  VAR ghost_greeted = false
+  knot:
+    + L50  sent_cost
+  tag:
+    + L46  [opening_sent] #set_global:report_read_claimed:read
+  divert:
+    + L38  [opening_sent] -> sent_cost
+    - (old L38)  [opening_sent] -> pixel
+    - (old L42)  [opening_sent] -> pixel
+    + L44  [opening_sent] -> sent_cost
+    + L48  [opening_sent] -> sent_cost
+    + L52  [sent_cost] -> pixel
+  choice:
+    - (old L35)  [opening_sent] + -> pixel
+    - (old L39)  [opening_sent] + -> pixel
+    + L41  [opening_sent] + -> sent_cost
+    + L45  [opening_sent] + -> sent_cost
+    - (old L105)  [questions] + -> questions_more
+    - (old L108)  [questions] + -> questions
+    - (old L118)  [questions_more] + -> questions
+    + L124  [questions] * -> questions_more
+    + L127  [questions] * -> questions
+    + L134  [questions_more] * -> questions
+  choicecount:
+    - (old L105)  [questions] * x0, + x3
+    - (old L115)  [questions_more] * x0, + x2
+    + L124  [questions] * x2, + x1
+    + L134  [questions_more] * x1, + x1
+  condition:
+    + L35  [opening_sent] late_warning
+    - (old L48)  [opening_double] late_warning
+    - (old L79)  [why_you] ending == "refused" or ending == "blown"
+    + L87  [why_you] ending == "refused"
+    + L90  [why_you] ending == "blown"
+    + L91  [why_you] warned_out_of_band
+    + L93  [why_you] else
+    + L97  [why_you] ghost_greeted
+    + L99  [why_you] else
+  prose: 43 -> 48 lines, ~9 changed (4 old unmatched, 9 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_cliffe.ink [modified]
+  structure: unchanged
+  prose: 27 -> 27 lines, ~17 changed (17 old unmatched, 17 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_jordan.ink [modified]
+  structure: unchanged
+  prose: 11 -> 11 lines, ~7 changed (7 old unmatched, 7 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_megan.ink [modified]
+  structure: 1 difference(s)
+  condition:
+    + L28  [hub] corridor_open
+  prose: 21 -> 22 lines, ~16 changed (15 old unmatched, 16 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_sidhu.ink [modified]
+  structure: 8 difference(s)
+  var:
+    + L10  VAR checked_report = false
+  assign:
+    + L73  [signed_now] checked_report = true
+  choice:
+    - (old L38)  [hub] + {relay_opened and not decision_made} -> signed_now
+    + L43  [hub] + {relay_opened and not decision_made and not checked_report} -> signed_now
+  condition:
+    + L29  [start] fn07_had
+    + L31  [start] else
+    - (old L33)  [hub] relay_opened and not decision_made
+    + L38  [hub] relay_opened and not decision_made and not checked_report
+  prose: 22 -> 24 lines, ~19 changed (17 old unmatched, 19 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/npc_tom.ink [modified]
+  structure: 6 difference(s)
+  var:
+    + L10  VAR told_keys = false
+  assign:
+    + L43  [hub] told_keys = true
+  condition:
+    - (old L40)  [hub] asked_terminal
+    + L42  [hub] not told_keys
+    + L45  [hub] asked_terminal and not guest_terminal_open
+    + L47  [hub] asked_terminal and not corridor_open
+  prose: 25 -> 28 lines, ~23 changed (20 old unmatched, 23 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/opening_briefing.ink [modified]
+  structure: 16 difference(s)
+  knot:
+    + L33  ghost_known
+  divert:
+    + L24  [cover] -> ghost_known
+    - (old L26)  [cover] -> ghost
+    + L31  [ghost] -> ghost_known
+    - (old L32)  [ghost] -> why_me
+    - (old L34)  [ghost] -> cliffe
+    + L36  [ghost_known] -> why_me
+    + L38  [ghost_known] -> cliffe
+  choice:
+    + L22  [cover] + -> ghost_known
+    - (old L24)  [cover] + -> ghost
+    - (old L31)  [ghost] + -> why_me
+    - (old L33)  [ghost] + -> cliffe
+    + L35  [ghost_known] + -> why_me
+    + L37  [ghost_known] + -> cliffe
+  choicecount:
+    - (old L31)  [ghost] * x0, + x2
+    + L35  [ghost_known] * x0, + x2
+  prose: 27 -> 28 lines, ~5 changed (4 old unmatched, 5 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/phone_agent_0x99.ink [modified]
+  structure: 14 difference(s)
+  var:
+    + L52  VAR parked = false
+  assign:
+    + L61  [hub] parked = false
+    + L84  [hub] parked = true
+    + L171  [send_report] parked = true
+    + L181  [warn_in_band] parked = true
+    + L187  [refusal_report] parked = true
+    + L193  [debrief] parked = true
+  call:
+    - (old L87)  [field_note_waiting] return (fn11_offered and not fn11_sent) or (fn10_offered and not fn10_sent and not fn10_had) or (fn08_offered and not fn08_sent) or (fn09_offered and not fn09_sent) or (fn07_offered and not fn07_sent and not fn07_had) or (fn06_offered and not fn06_sent) or (fn05_offered and not fn05_sent) or (fn04_offered and not fn04_sent)
+    + L90  [field_note_waiting] return (fn11_offered and not fn11_sent) or (fn10_offered and not fn10_sent and not fn10_had) or (fn09_offered and not fn09_sent) or (fn08_offered and not fn08_sent) or (fn07_offered and not fn07_sent and not fn07_had) or (fn06_offered and not fn06_sent) or (fn05_offered and not fn05_sent) or (fn04_offered and not fn04_sent)
+  condition:
+    - (old L56)  [hub] decision_made
+    - (old L59)  [hub] ghost_offer_made
+    + L60  [hub] parked
+    - (old L61)  [hub] else
+    + L62  [hub] ghost_offer_made and not decision_made
+  prose: 60 -> 59 lines, ~5 changed (5 old unmatched, 4 new unmatched); You: lines 0 -> 0
+== scenarios/lab_tesseract_trials/ink/phone_ghost.ink [modified]
+  structure: 48 difference(s)
+  var:
+    + L27  VAR ghost_offer_heard = false
+    + L45  VAR parked = false
+  stitch:
+    + L95  [waiting] waiting_choices
+  tag:
+    - (old L82)  [waiting] #exit_conversation
+    + L100  [waiting.waiting_choices] #exit_conversation
+    + L160  [offer_terms] #set_global:ghost_offer_heard:true
+  assign:
+    + L76  [waiting] parked = false
+    + L99  [waiting.waiting_choices] parked = true
+    + L159  [offer_terms] ghost_offer_heard = true
+    + L175  [offer_hub] parked = true
+    + L186  [the_offer_again] parked = false
+    + L195  [the_offer_again] parked = true
+    + L214  [refuse] parked = true
+    + L222  [closed] parked = false
+    + L227  [closed] parked = true
+  divert:
+    + L77  [waiting] -> waiting_choices
+    - (old L80)  [waiting] -> who_reply
+    - (old L83)  [waiting] -> waiting
+    + L93  [waiting] -> waiting_choices
+    + L97  [waiting.waiting_choices] -> who_reply
+    + L102  [waiting.waiting_choices] -> waiting
+    - (old L155)  [offer_hub] -> offer_hub
+  choice:
+    - (old L79)  [waiting] + -> who_reply
+    - (old L81)  [waiting] + -> waiting
+    + L96  [waiting.waiting_choices] * -> who_reply
+    + L98  [waiting.waiting_choices] + -> waiting
+    - (old L147)  [offer_hub] + -> offer_hub
+  choicecount:
+    - (old L79)  [waiting] * x0, + x2
+    + L96  [waiting.waiting_choices] * x1, + x1
+    - (old L141)  [offer_hub] * x0, + x5
+    + L167  [offer_hub] * x0, + x4
+  condition:
+    - (old L46)  [route] ghost_offer_made
+    - (old L47)  [route] relay_opened
+    + L56  [route] ghost_offer_heard
+    + L57  [route] relay_opened or ghost_offer_made
+    + L75  [waiting] parked
+    - (old L95)  [the_offer_call] ghost_offer_made
+    - (old L100)  [the_offer] ghost_offer_made
+    + L114  [the_offer_call] ghost_offer_heard
+    + L119  [the_offer] ghost_offer_heard
+    - (old L148)  [offer_hub] megan_choice == "warned"
+    - (old L150)  [offer_hub] else
+    + L155  [offer_terms] else
+    + L161  [offer_terms] megan_choice != "warned"
+    + L185  [the_offer_again] parked
+    + L187  [the_offer_again] else
+    + L221  [closed] parked
+    + L223  [closed] else
+  prose: 51 -> 54 lines, ~15 changed (12 old unmatched, 15 new unmatched); You: lines 0 -> 0
+
+125 structural differences

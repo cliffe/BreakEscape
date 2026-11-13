@@ -1,0 +1,25 @@
+{
+  "scenario": "test_gate_tailgate",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "door_staff_room",
+      "label": "Staff Only<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "staff_room",
+      "label": "Staff Only",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_staff_room",
+      "to": "staff_room",
+      "soft": false
+    }
+  ]
+}

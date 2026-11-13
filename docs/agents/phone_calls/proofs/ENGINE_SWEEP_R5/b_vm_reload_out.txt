@@ -1,0 +1,20 @@
+game 2386 (b_vm_reload)
+"opened the_architect"
+thread open: "PhoneChatMinigame phone-chat" theme=null
+ringing inside the open thread: {"npc":"the_architect","state":"ringing","knot":"taunt_t30"}
+shot b_vm_reload_ringing_in_thread
+"declined in thread"
+after decline: ringer=null mg="PhoneChatMinigame phone-chat" rows=["Missed call: No caller ID"] vm bubbles=[] events={"ev":["phone_call_declined:the_architect"],"toasts":[]}
+slot before reload (voicemail held): {"forced":[],"voicemails":[{"knot":"taunt_t30_vm","withheld":true}]}
+shot b_vm_reload_thread_after_decline
+toasts on screen just after load: []
+  +2s toasts on screen: []
+  +4s toasts on screen: []
+  +6s toasts on screen: []
+after reload: rows=["Missed call: No caller ID","Voicemail"] slot=null events={"ev":[],"toasts":[]}
+history: ["call:Missed call: No caller ID","narrator:A carrier tone on a channel that should not have o","call:Voicemail","npc:voice: You let it ring. Sensible. Don't look for t","npc:voice: There is a decision in front of you tonight","npc:voice: Let it hurt afterwards, not during. I expec"]
+"opened the_architect"
+voice bubbles: ["Transcript:\nYou let it ring. Sensible. Don't look for the trace.","Transcript:\nThere is a decision in front of you tonight. Make it however you like. I only want to see it made.","Transcript:\nLet it hurt afterwards, not during. I expect you've been told that."]
+thread: "☎ | Missed call: No caller ID | A carrier tone on a channel that should not have one. Nobody on it. He calls when he chooses. | ☎ | Voicemail | Transcript: | You let it ring. Sensible. Don't look for the trace. | Transcript: | There is a decision in front of you tonight. Make it however you like. I only want to see it made. | Transcript: | Let it hurt afterwards, not during. I expect you've been told that. | A carrier tone on a channel that should not have one. Nobody on it. He calls when he chooses."
+shot b_vm_reload_after_reload_thread
+architect /tts: 

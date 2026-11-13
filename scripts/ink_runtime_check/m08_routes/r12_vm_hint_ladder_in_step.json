@@ -1,0 +1,33 @@
+{
+"steps": [
+{ "note": "R12 (puzzle chains C1, F1): HaX's VM ladder shows only the current step. No box topic before the server room; the box topic from entering it until flag 1; the flag-2 topic between flags 1 and 2 (after a page reload); then credentials, then the mail, each gone once its flag is in. Probe p3, inverted." },
+{ "talk": "briefing" },
+{ "set": { "briefing_played": true } },
+{ "talk": "netherton", "picks": ["I'm ready"] },
+{ "read": "password_sticky_note" },
+{ "pickup": "printed_server_badge" },
+{ "talk": "phone", "picks": ["Nothing right now"] },
+{ "notSaid": ["What am I looking at", "Where do I look", "I've got credentials"] },
+{ "enter": "server_room" },
+{ "expect": { "server_room_entered": true } },
+{ "event": "object_interacted", "data": { "objectType": "vm-launcher" } },
+{ "talk": "phone", "picks": ["What am I looking at", "Nothing right now"] },
+{ "said": ["Get that working and it's your first flag"] },
+{ "notSaid": ["That's your first flag", "Where do I look", "I've got credentials"] },
+{ "flag": 1 },
+{ "talk": "phone", "reload": "page", "picks": ["Where do I look", "Nothing right now"] },
+{ "said": ["Read the history, not just the files", "Git secrets guide's yours"] },
+{ "notSaid": ["What am I looking at", "I've got credentials"] },
+{ "flag": 2 },
+{ "talk": "phone", "picks": ["I've got credentials", "Nothing right now"] },
+{ "said": ["Log in properly with them"] },
+{ "notSaid": ["Where do I look", "What am I looking at", "The mail's real"] },
+{ "flag": 3 },
+{ "talk": "phone", "picks": ["The mail's real", "Nothing right now"] },
+{ "said": ["You need root"] },
+{ "notSaid": ["I've got credentials", "Where do I look"] },
+{ "flag": 4 },
+{ "talk": "phone", "picks": ["Nothing right now"] },
+{ "notSaid": ["The mail's real", "I've got credentials", "Where do I look", "What am I looking at"] }
+]
+}

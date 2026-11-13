@@ -1,0 +1,13 @@
+{
+  "key": "7dc1e859565f9e148f91b197c1769d97",
+  "npc": "gary_phone",
+  "text": "Read it like a shelf mark, not a number. Vigenère. Every letter's shifted by the next letter of the bay's word.",
+  "voice": "Charon",
+  "style": "Hospital IT systems administrator, mid-thirties, running on vending machine coffee. Consistent Birmingham / Black Country accent throughout. Flat, tired, self-deprecating -- a man who has been right for six months and got nothing for it. Anger sits under the surface, not on top of it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:23:55Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "6a5347622122d6091d04ac5b1a9b3acc",
+  "npc": "tom_shaw",
+  "text": "Pop it out into its own tab with the little arrow by the cross, top of the laptop. Then you can have the clue and the recipe side by side.",
+  "voice": "Fenrir",
+  "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

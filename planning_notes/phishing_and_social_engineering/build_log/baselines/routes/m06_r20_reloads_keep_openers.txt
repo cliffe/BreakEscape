@@ -1,0 +1,225 @@
+
+## R20 (scenario design R1: M1, m3, m12): page reloads no longer replay first meetings. Irina keeps her trust (the badge loan works after the reload) and greets the player as known; Dani and Priya say hello again; Kemal doesn't re-narrate; Satoshi, deferred for the keys, opens with 'Back again.' after a reload.
+   {set {"briefing_played":true}}
+   {room security_checkpoint}
+
+--- guard ---
+  Narrator: A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.
+  Checkpoint Guard: Evening. Floor's restricted. Who are you?
+     (4 options)
+ > Financial Conduct Authority. Routine supervisory visit.
+  Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
+     (3 options)
+ > Dr Volkova. The CTO.
+      [set_variable guard_waved_through=true]
+  Checkpoint Guard: Dr Volkova. You're on the list. She's on the floor.
+      [unlock_door trading_floor]
+  Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
+  [chat closes]
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+
+--- irina ---
+      [task: meet_irina]
+  Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
+  Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Officer.
+  Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
+     (3 options)
+ > Thirty-seven papers and nearly three thousand citations. I've read some of your work.
+  Dr. Irina Volkova: You read my work? Most people from your side see "cryptographer" and hear "hacker".
+  Dr. Irina Volkova: I built this exchange on sound principles. Zero-knowledge proofs, homomorphic encryption. Things I can defend.
+  Dr. Irina Volkova: My research is about financial privacy. Governments should not be able to read every transaction a person makes.
+  Dr. Irina Volkova: I would call that a privacy position. Your office calls it something else.
+     (2 options)
+ > Financial surveillance worries me too. I understand the principle.
+  Dr. Irina Volkova: Then we have that much in common.
+  Dr. Irina Volkova: Go on.
+     (5 options)
+ > That's all for now.
+  Dr. Irina Volkova: Find me if you need anything else.
+  [chat closes]
+      [engine: Irina's first close -> exchange_infiltrated=true]
+      [HaX text: Their analysts sit east of the floor. If anyone has drawn the money, it's them.]
+   [PASS] irina_trust = 35 (expected 35)
+   [PASS] exchange_infiltrated = true (expected true)
+
+--- irina ---
+   (after a reload: variables kept, visit counts and position reset)
+  Dr. Irina Volkova: Back again. What do you need?
+     (5 options)
+ > Tell me about your door access.
+  Dr. Irina Volkova: Badges. Trading floor for staff, this one for my office, executive badges for the top floor.
+  Dr. Irina Volkova: *taps the lanyard at her collar* Four years round my neck. The badges are the one part of our security I'd defend.
+  Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords. Exactly backwards.
+  Dr. Irina Volkova: Go on.
+     (5 options)
+ > I need to check your office reader. Can I borrow your badge?
+      [give keycard:m06_cto_badge]
+  Dr. Irina Volkova: *unclips it* Bring it back. And don't tell facilities I handed it over; they'll write a memo about it.
+  Dr. Irina Volkova: West door. Try not to judge the whiteboard.
+  Dr. Irina Volkova: What else?
+     (3 options)
+ > That's all for now.
+  Dr. Irina Volkova: Find me if you need anything else.
+  [chat closes]
+   [PASS] said: "Back again. What do you need?"
+   [PASS] not said: "You must be the FCA"
+   [PASS] irina_badge_obtained = true (expected true)
+
+--- trader ---
+  Narrator: A young trader watches six price charts at once, placing the occasional order without appearing to look at it.
+  Dani Okonkwo: You're the regulator, yeah? FCA?
+  Dani Okonkwo: Don't worry, we're legit. Mostly.
+     (3 options)
+ > It's a standard audit. Nothing to worry about, if everything's compliant.
+  Dani Okonkwo: Course. Yeah. Shout if you need me.
+     [0] How much goes through here in a day?
+     [1] Why is so much of this in Monero?
+     [2] What's Dr Volkova like to work for?
+     [3] That's all, thanks.
+  [stopped: no pick]
+
+--- trader ---
+   (after a reload: variables kept, visit counts and position reset)
+  Dani Okonkwo: Hi again. What's up?
+     [0] How much goes through here in a day?
+     [1] Why is so much of this in Monero?
+     [2] What's Dr Volkova like to work for?
+     [3] That's all, thanks.
+  [stopped: no pick]
+   [PASS] said: "Hi again. What's up?"
+   [PASS] not said: "You're the regulator, yeah?"
+   {room blockchain_lab}
+
+--- analyst ---
+  Narrator: An analyst is bent over a wall-sized monitor, dragging nodes around a transaction graph and muttering at it.
+  Priya Raghavan: *doesn't look up* If you're here about the flagged transactions, talk to Irina.
+  Priya Raghavan: I just draw the pictures. She decides what they mean.
+     (3 options)
+ > I'll find Dr Volkova, then.
+  Priya Raghavan: Cheers.
+  [chat closes]
+
+--- analyst ---
+   (after a reload: variables kept, visit counts and position reset)
+  Priya Raghavan: Need something?
+     [0] How does the forensics side of this work?
+     [1] Has anything in the flow looked wrong to you?
+     [2] Does any of this worry you?
+     [3] How would you follow money through a mixer?
+     [4] Thanks for your time.
+  [stopped: no pick]
+   [PASS] said: "Need something?"
+   [PASS] not said: "doesn't look up"
+   {set {"found_blockchain_evidence":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"found_architects_fund":true}}
+
+--- irina ---
+  Dr. Irina Volkova: Yes?
+     (6 options)
+ > Satoshi's wing. You've a badge for it.
+  Narrator: You show her the authorisation line on the fund page, and nothing else.
+  Dr. Irina Volkova: Satoshi's Ghost. He signs the money with that name. He thinks it's funny.
+  Dr. Irina Volkova: *quietly* You're not from the FCA. ...No. Don't tell me yet.
+      [give keycard:executive_access_badge]
+  Dr. Irina Volkova: I put the readers in on his floor. Facilities lent me a spare to do it and never asked for it back. Here.
+  Dr. Irina Volkova: His wing is east of the data centre. He'll be at his desk; he always is.
+  Dr. Irina Volkova: Go on.
+     (5 options)
+ > That's all for now.
+  Dr. Irina Volkova: Find me if you need anything else.
+  [chat closes]
+   {room server_room}
+   {room data_center}
+      [engine: room_entered:data_center mapping -> at_console=true]
+   {room executive_wing}
+      [HaX text: Hold on. You haven't got the vault account yet, and without its keys you can't touch that wallet tonight. He'll keep.]
+      [engine: room_entered:executive_wing mapping -> at_console=false]
+
+--- minder @on_sighted ---
+  Narrator: The man by the corner office turns, sees you, and steps squarely into your path.
+  Kemal Aydin: The FCA does not come up here.
+     (2 options)
+ > Wrong floor. I'll go.
+  Kemal Aydin: Yes. You will.
+  [chat closes]
+
+--- minder @on_sighted ---
+   (after a reload: variables kept, visit counts and position reset)
+  Kemal Aydin: I told you once. This floor is closed.
+     (2 options)
+ > The FCA. Mr Nakamoto's compliance file has my name on it.
+      [set_variable minder_passed=true]
+  Kemal Aydin: It does tonight, then.
+  Kemal Aydin: Thirty years I guarded banks for men in good suits. Then I guarded this one for a man in a hood. The paperwork is always the same.
+      [unlock_door satoshi_office]
+  Kemal Aydin: There. It is open. I will be outside the door.
+  [chat closes]
+   [PASS] said: "I told you once. This floor is closed."
+   [PASS] not said: "steps squarely into your path"
+   {room satoshi_office}
+
+--- satoshi ---
+      [task: confront_satoshi]
+      [set_variable satoshi_confronted=true]
+      [set_variable satoshi_spoken=true]
+  Narrator: A man in his early forties leans on the front of an executive desk. The Bitcoin whitepaper hangs framed behind him, level with his own head.
+  Satoshi Nakamoto II: Your paperwork was good. I had you checked anyway. Old habit.
+  Satoshi Nakamoto II: Kemal let you in, so you must have been convincing.
+  Satoshi Nakamoto II: SAFETYNET, right? So you've worked out what this place is for.
+     (4 options)
+ > Or should I call you Satoshi's Ghost? You signed the fund with it.
+  Narrator: For the first time since you walked in, he stops smiling.
+  Satoshi Nakamoto II: Nobody says that name in this building.
+  Satoshi Nakamoto II: Yes. Satoshi's Ghost. The Crypto Anarchists answer to me, and The Architect's money answers to my signature.
+  Satoshi Nakamoto II: "Nakamoto the Second" is for the brochure. The Ghost is who pays for things.
+  Satoshi Nakamoto II: You found the allocation.
+  Satoshi Nakamoto II: Three hundred and fifty to six hundred, across every operation. The cells' own estimates. Yes.
+  Satoshi Nakamoto II: Here's my question. How many die keeping the current system running?
+     (2 options)
+ > You worked out how many would die, and went ahead.
+  Satoshi Nakamoto II: We costed it so it stays small. That's what a number is for.
+  Satoshi Nakamoto II: The Architect calls them lessons. I just pay the invoices.
+  Satoshi Nakamoto II: Whoever controls the money controls the people. We'd like nobody to.
+     (3 options)
+ > You're a criminal with a manifesto.
+  Satoshi Nakamoto II: By whose law? The one your agency reads my mail under?
+  Satoshi Nakamoto II: I don't accept it. You knew that walking in.
+  Satoshi Nakamoto II: You won't agree. You work for the people who'd lose the most if I'm right.
+  Satoshi Nakamoto II: So. You've found the network. What are you going to do with it?
+  Satoshi Nakamoto II: Let's talk about my money.
+  Satoshi Nakamoto II: Twelve point eight million, signed and waiting.
+  Satoshi Nakamoto II: You could freeze it. Very decisive. Tonight's money stops, and everyone hears about it.
+  Satoshi Nakamoto II: Or you let it run and watch who comes to collect. Patient of you, and the money keeps moving.
+     (3 options)
+ > Not yet. I'll be back with the recovery keys.
+      [set_variable asset_decision_deferred=true]
+  Satoshi Nakamoto II: The vault account. Of course. Go on. I'm not going anywhere. The money is, in three days.
+  [chat closes]
+   [PASS] satoshi_confronted = true (expected true)
+   [PASS] satoshi_spoken = true (expected true)
+   [PASS] assets_decided = false (expected false)
+   {set {"flag4_submitted":true,"found_wallet_keys":true}}
+
+--- satoshi ---
+   (after a reload: variables kept, visit counts and position reset)
+  Satoshi Nakamoto II: Back again.
+  Satoshi Nakamoto II: You found the keys. So, which is it?
+     (3 options)
+ > I'm freezing it. The $12.8 million goes into a wallet we hold, tonight.
+      [set_variable assets_seized=true]
+      [set_variable assets_decided=true]
+      [task: decide_asset_strategy]
+  Narrator: On your phone, the transfer clears. The balances will never reach the cells.
+  Narrator: He watches it land, and smiles as if he'd sent it himself.
+  Satoshi Nakamoto II: Twelve point eight million, gone on one agent's say-so. No court, no hearing.
+  Satoshi Nakamoto II: That's the state I've been warning people about. You just proved it for me.
+     [0] Whatever hadn't gone out stays put.
+     [1] Better that than paying for the projection.
+  [stopped: no pick]
+   [PASS] said: "Back again."
+   [PASS] not said: "leans against the front of an executive desk"
+   [PASS] not said: "Your paperwork was good"
+   [PASS] longest run 8 (satoshi) <= 9
+
+[stats] spoken/narrated lines 78, choices 19, longest run without a choice 8 (satoshi); runs>=6: irina:6, satoshi:7, satoshi:8
+[result] all expectations met

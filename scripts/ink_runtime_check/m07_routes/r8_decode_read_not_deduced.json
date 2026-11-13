@@ -1,0 +1,120 @@
+{
+ "steps": [
+  {
+   "note": "R8 (r2, A2; was probe p2): commit Meltdown, read the decode and never make the deduction. Debrief and credits must not say the correction went unread."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Meltdown"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "expect": {
+    "found_coordination_traffic": true,
+    "projection_revised": false,
+    "decode_read_open": true
+   }
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
+    "Nothing on the record",
+    "I made the call",
+    0
+   ]
+  },
+  {
+   "said": [
+    "Their own schedule was in your hands tonight. The Austin row said nine days. Nobody put it next to the brief.",
+    "It was in your hands. Nine days, in their own table.",
+    "That answer will stand up in a review room. You also had their schedule in your hands tonight, and you didn't put it next to the brief."
+   ],
+   "notSaid": [
+    "Two copies. Nobody read them.",
+    "Good. That answer will stand up",
+    "Above expectations"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "Their schedule was read; the Austin row was never put against the brief"
+   ],
+   "creditsNotSaid": [
+    "neither was read",
+    "CORRECTION FOUND"
+   ]
+  },
+  {
+   "note": "Run-length guard (Phase 4 dialogue C1, D7-1): no conversation, the debrief included, runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

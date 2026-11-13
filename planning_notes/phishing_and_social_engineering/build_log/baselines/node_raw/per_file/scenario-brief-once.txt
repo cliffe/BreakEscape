@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: "once": shown on a first start, not once the save says it was shown
+ok 1 - "once": shown on a first start, not once the save says it was shown
+  ---
+  duration_ms: 0.790118
+  ...
+# Subtest: other modes are unchanged
+ok 2 - other modes are unchanged
+  ---
+  duration_ms: 0.154548
+  ...
+# Subtest: recording sends one sync_state with the flag, and only once
+ok 3 - recording sends one sync_state with the flag, and only once
+  ---
+  duration_ms: 1.045415
+  ...
+# Subtest: recording offline only marks the page state
+ok 4 - recording offline only marks the page state
+  ---
+  duration_ms: 0.197805
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 154.30341

@@ -1,0 +1,28 @@
+game 2366 (m08_audit)
+"opened agent_0x99"
+hub: {"choices":["1. I can name the leak.","2. What does the Director need from me?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."],"header":null}
+dialling: {"bar":"CALLING"}
+shot m08_audit_call1
+call 1: {"subs":["AGENT HAX: Two questions, the ones he'd ask. When was the plan opened?"],"choices":["1. 10:15 UTC.","2. 10:32 UTC.","3. 10:38 UTC.","4. 11:25 UTC.","5. Let me read it again."]}
+after call: mg="PhoneChatMinigame phone-chat" rows=["Outgoing call, 0:07"] mole=false
+thread: {"choices":["1. I can name the leak.","2. What does the Director need from me?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."]}
+shot m08_audit_hub_after_wrong1
+"no contact agent_0x99"
+hub: {"choices":["1. I can name the leak.","2. What does the Director need from me?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."],"header":null}
+dialling: {"bar":"CALLING"}
+call 2 (redial): {"subs":["AGENT HAX: Again, then. When was the plan opened?"],"choices":["1. 10:15 UTC.","2. 10:32 UTC.","3. 10:38 UTC.","4. 11:25 UTC.","5. Let me read it again."]}
+who: {"subs":["Agent HaX: Again, then. When was the plan opened?","YOU: 10:38 UTC.","AGENT HAX: Who was behind the lab door at 10:38, and still inside?"],"choices":["1. Vector.","2. Nightshade.","3. Phantom.","4. None of them.","5. Let me read it again."]}
+shot m08_audit_who
+after call: mg="PhoneChatMinigame phone-chat" rows=["Outgoing call, 0:07","Outgoing call, 0:12"] mole=false
+thread: {"choices":["1. I can name the leak.","2. What does the Director need from me?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."]}
+shot m08_audit_hub_after_wrong2
+"no contact agent_0x99"
+hub: {"choices":["1. I can name the leak.","2. What does the Director need from me?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."],"header":null}
+dialling: {"bar":"CALLING"}
+call 3: {"subs":["AGENT HAX: Again, then. When was the plan opened?"],"choices":["1. 10:15 UTC.","2. 10:32 UTC.","3. 10:38 UTC.","4. 11:25 UTC.","5. Let me read it again."]}
+after call: mg="PhoneChatMinigame phone-chat" rows=["Outgoing call, 0:07","Outgoing call, 0:12","Outgoing call, 0:15"] mole=true
+shot m08_audit_right
+thread: {"choices":["1. It's really Nightshade.","2. Why isn't he in the interrogation room yet?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."]}
+task: ["completed"]
+handler /tts: "Two questions, the ones he'd ask. When was the plan opened?" "That's a door moving or the file closing. When did it open? Read it again and call me back." "Again, then. When was the plan opened?" "Who was behind the lab door at 10:38, and still inside?" "Read the door against the minute, not the man. Who was still inside at 10:38? Call me back." "Again, then. When was the plan opened?" "Who was behind the lab door at 10:38, and still inside?" "In at 10:15, out at 11:43. Vector was gone by 10:32, and Phantom was on a plane." "Nightshade. I trained with him." "I'll put it in front of the Director myself. He won't take it from you tonight." "You finish the chain." 
+["minigame_completed@30.4","conversation_closed:agent_0x99@30.4","minigame_completed@54.8","conversation_closed:agent_0x99@54.8","global_variable_changed:mole_identified@76.4","global_variable_changed:mole_identified@76.4","objective_task_completed:name_the_mole@76.5","minigame_completed@82.7","conversation_closed:agent_0x99@82.7"]

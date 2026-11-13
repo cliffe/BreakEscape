@@ -1,0 +1,16 @@
+{ "steps": [
+ { "note": "R31 (Phase 4 dialogue C2, D7C2-17): no team is ever committed; the player logs in (flag 3 arms the cascade) and first opens the Architect's thread after T-5 has played. He says 'You covered nothing at all'. The player is offered 'I didn't make one. I'll carry that too.' and not 'I made a call', and the close does not ask whether they believe in 'yours'." },
+ { "talk": "briefing", "picks": ["Understood. Talk to me"] },
+ { "talk": "phone", "picks": [] },
+ { "enter": "operations_floor" },
+ { "advance": 12 },
+ { "enter": "server_room" },
+ { "flag": 1 }, { "flag": 2 }, { "enter": "scada_control" }, { "flag": 3 },
+ { "advance": 11 },
+ { "expect": { "team_assignment": "", "architect_t5_played": true, "architect_t1_played": false } },
+ { "said": ["Five minutes, Agent 0x00."] },
+ { "talk": "architect", "knot": "start", "picks": ["I didn't make one"] },
+ { "said": ["You covered nothing at all.", "[choice] I didn't make one. I'll carry that too.", "Noted.", "You'll have to name all three, eventually, to somebody with a tablet."], "notSaid": ["[choice] I made a call. I'll carry it.", "Do you believe in yours enough to name them?"] },
+ { "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice." },
+ { "maxRun": 9 }
+]}

@@ -1,0 +1,13 @@
+{
+  "key": "db845fe6818e367f55b04585c25fc5a4",
+  "npc": "eleanor_vance",
+  "text": "It is. W-07 is a material breach with clear causality. This is the strongest basis for any coverage reduction.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:21:02Z"
+}

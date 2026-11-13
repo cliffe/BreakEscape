@@ -1,0 +1,13 @@
+{
+  "key": "def775943ae38098b0d7f634a3a2b185",
+  "npc": "dr_sharma",
+  "text": "You isolated with both sign-offs, Ravi's and David's. That's HC-007 doing its job.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

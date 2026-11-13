@@ -1,0 +1,138 @@
+{
+  "scenario_brief": "Test scenario demonstrating Ink-based objective control. Talk to NPCs to complete, unlock, and progress objectives through dialogue.",
+  "endGoal": "Complete all objectives by talking to the NPCs",
+  "version": "1.0",
+  "startRoom": "lobby",
+  "startItemsInInventory": [],
+  "objectives": [
+    {
+      "aimId": "meet_contacts",
+      "title": "Meet Your Contacts",
+      "description": "Talk to the NPCs in the lobby to get started",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "talk_to_alice",
+          "title": "Talk to Alice",
+          "type": "npc_conversation",
+          "targetNPC": "alice",
+          "status": "active",
+          "onComplete": {
+            "unlockTask": "talk_to_bob"
+          }
+        },
+        {
+          "taskId": "talk_to_bob",
+          "title": "Talk to Bob",
+          "type": "npc_conversation",
+          "targetNPC": "bob",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "aimId": "secret_mission",
+      "title": "The Secret Mission",
+      "description": "A hidden aim that gets unlocked via Ink dialogue",
+      "status": "locked",
+      "order": 1,
+      "tasks": [
+        {
+          "taskId": "secret_task_1",
+          "title": "Complete the first secret task",
+          "type": "npc_conversation",
+          "targetNPC": "alice",
+          "status": "locked"
+        },
+        {
+          "taskId": "secret_task_2",
+          "title": "Complete the second secret task",
+          "type": "npc_conversation",
+          "targetNPC": "bob",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "aimId": "finale",
+      "title": "Mission Complete",
+      "description": "Finish up with your contacts",
+      "status": "locked",
+      "order": 2,
+      "tasks": [
+        {
+          "taskId": "final_debrief",
+          "title": "Get the final debrief",
+          "type": "npc_conversation",
+          "targetNPC": "alice",
+          "status": "locked"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "alice_talked": false,
+    "bob_talked": false,
+    "secret_unlocked": false,
+    "secret_revealed": false
+  },
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "connections": {},
+      "objects": [],
+      "npcs": [
+        {
+          "id": "alice",
+          "displayName": "Alice",
+          "npcType": "person",
+          "position": { "x": 3, "y": 5 },
+          "spriteSheet": "hacker",
+          "spriteTalk": "assets/characters/hacker-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/test_objectives_ink/alice.json",
+          "currentKnot": "start",
+          "avatar": "assets/npc/avatars/npc_alice.png",
+          "externalVariables": {},
+          "persistentVariables": {
+            "alice_talked": false,
+            "secret_revealed": false
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "objective_aim_completed:secret_mission",
+              "targetKnot": "final_debrief",
+              "conversationMode": "person-chat",
+              "cooldown": 0,
+              "onceOnly": true,
+              "_comment": "Triggers final debrief when secret_mission aim is completed"
+            }
+          ]
+        },
+        {
+          "id": "bob",
+          "displayName": "Bob",
+          "npcType": "person",
+          "position": { "x": 8, "y": 5 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/test_objectives_ink/bob.json",
+          "currentKnot": "start",
+          "avatar": "assets/npc/avatars/npc_bob.png",
+          "externalVariables": {},
+          "persistentVariables": {
+            "bob_talked": false
+          }
+        }
+      ]
+    }
+  }
+}

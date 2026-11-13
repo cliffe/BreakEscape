@@ -1,0 +1,13 @@
+{
+  "key": "f2f430d59b5cd55cf7150116457d8de5",
+  "npc": "sarah_mitchell",
+  "text": "Right. Amy goes to him now. I wish I'd known that sooner.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

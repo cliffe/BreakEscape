@@ -1,0 +1,13 @@
+{
+  "key": "f6f6b0c1474193325fa11c4944fdd41d",
+  "npc": "maya_chen",
+  "text": "The tip. To SAFETYNET. About Operation Shatter.",
+  "voice": "Leda",
+  "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

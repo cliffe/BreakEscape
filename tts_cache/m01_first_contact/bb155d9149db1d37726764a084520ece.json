@@ -1,0 +1,13 @@
+{
+  "key": "bb155d9149db1d37726764a084520ece",
+  "npc": "narrator",
+  "text": "You call in SAFETYNET backup. Derek doesn't resist—he's too confident that he's already won something.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

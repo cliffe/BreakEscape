@@ -1,0 +1,13 @@
+{
+  "key": "db02bceb0a9e61adb24d94c4354e7049",
+  "npc": "eleanor_vance",
+  "text": "The c.ellison account still had its default password. The leaver process locked his domain account and missed the local one on the jump server.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:23:48Z"
+}

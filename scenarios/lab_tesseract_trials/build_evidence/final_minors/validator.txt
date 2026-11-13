@@ -1,0 +1,101 @@
+Validating scenario: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scenarios/lab_tesseract_trials/scenario.json.erb
+Using schema: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scripts/scenario-schema.json
+
+Checking scenario directory structure...
+✓ Directory structure is valid
+
+Loaded 582 valid item types from assets/objects/
+
+Rendering ERB template...
+✓ ERB rendered successfully
+
+Checking JSON structure...
+✓ JSON structure is valid
+
+Checking for unknown fields...
+⚠️ Found 1 unknown field(s):
+
+1. ⚠️ WARNING: Top-level field 'validSprites' is not recognized in the schema — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct.
+
+Checking ink files...
+✓ All ink files valid
+
+DIALOGUE LINT (scripts/ink_runtime_check/dialoguelint.mjs; advisory, does not affect the result)
+✓ No dialogue lint findings
+
+Checking objective task wiring...
+⚠️ Found 1 objective wiring warning(s):
+
+1. ⚠️ WARNING: NPC 'agent_0x99' (room 'foyer') has 2 eventMappings for 'objective_task_completed:open_pigeonholes' (indices 10, 11), of which onceOnly handler(s) at index 10, 11 can pass at the same time as another handler on the same pair (including two with identical conditions). Each onceOnly handler now fires independently the first time its own condition is met — if these are meant to be mutually exclusive alternatives, make their conditions disjoint; if they are kept apart by globals that can never be true together, declare those in the scenario's top-level "mutuallyExclusiveGlobals"; if firing together is intended, ignore this warning.
+
+
+Checking room layout geometry...
+Checking door alignment...
+[DEPRECATION NOTICE] json-schema support for MultiJSON is deprecated and will be removed in a future version. To stop using MultiJSON, add `JSON::Validator.use_multi_json = false` to your application's initialization code.
+✓ Room layout geometry OK — no world-space overlaps
+
+✓ Door alignment OK
+
+Validating against schema...
+Checking for common issues...
+Checking recommended fields...
+✓ Schema validation passed!
+⚠️ Found 39 issue(s) and suggestion(s):
+
+1. ⚠️ WARNING: objectives/the_offer concludeRequires.tasksCompleted names non-flag task(s): open_relay_terminal. A hard block should cover the large technical achievements only. Leave story tasks out of the gate: they are already scored proportionally, and a story task with one completion route becomes an unannounced dead end here, with no way for the player to know why the credits never came.
+2. 💡 SUGGESTION: 'rooms/foyer/objects[5]/contents[0] (phone)' is a clue item inside locked container 'CryptoSecure Lockbox' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+3. 💡 SUGGESTION: 'rooms/foyer/objects[5]/contents[1] (notes)' is a clue item inside locked container 'CryptoSecure Lockbox' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+4. ⚠️ WARNING: 'rooms/foyer/npcs[2]/eventMappings[0]' is a phone NPC event mapping with no visible effect (no setGlobal, sendTimedMessage, completeTask, unlockTask, or unlockAim). Use 'sendTimedMessage' to notify the player, and 'setGlobal' to flag that a new hub option is available. Example: { "eventPattern": "...", "onceOnly": true, "setGlobal": { "flag_var": true }, "sendTimedMessage": { "delay": 1000, "message": "..." } }
+5. 💡 SUGGESTION: 'rooms/teaching_lab/objects[1]/contents[0] (text_file)' is a clue item inside locked container 'Keyholder Guest Terminal' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+6. 💡 SUGGESTION: 'rooms/common_room/objects[0]/contents[0] (notes)' is a clue item inside locked container 'Candidate Locker 4' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+7. 💡 SUGGESTION: 'rooms/corridor/objects[1]/contents[0] (text_file)' is a clue item inside locked container 'Pigeonholes' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+8. 💡 SUGGESTION: 'rooms/corridor/objects[1]/contents[1] (text_file)' is a clue item inside locked container 'Pigeonholes' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+9. 💡 SUGGESTION: 'rooms/corridor/objects[1]/contents[2] (text_file)' is a clue item inside locked container 'Pigeonholes' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+10. 💡 SUGGESTION: 'rooms/corridor/objects[1]/contents[3] (text_file)' is a clue item inside locked container 'Pigeonholes' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+11. 💡 SUGGESTION: 'rooms/corridor/objects[2]/contents[0] (notes)' is a clue item inside locked container 'CryptoSecure Drop Box' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+12. 💡 SUGGESTION: 'rooms/special_collections/objects[0]/contents[0] (text_file)' is a clue item inside locked container 'Special Collections Safe' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+13. 💡 SUGGESTION: 'rooms/special_collections/objects[0]/contents[1] (notes5)' is a clue item inside locked container 'Special Collections Safe' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+14. 💡 SUGGESTION: 'rooms/special_collections/objects[0]/contents[2] (text_file)' is a clue item inside locked container 'Special Collections Safe' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+15. 💡 SUGGESTION: 'rooms/workshop/objects[0]/contents[0] (text_file)' is a clue item inside locked container 'Relay Terminal' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+16. 💡 SUGGESTION: 'rooms/workshop/objects[0]/contents[1] (text_file)' is a clue item inside locked container 'Relay Terminal' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+17. 💡 SUGGESTION: 'rooms/workshop/objects[0]/contents[2] (text_file)' is a clue item inside locked container 'Relay Terminal' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+18. 💡 SUGGESTION: 'rooms/workshop/objects[0]/contents[3] (text_file)' is a clue item inside locked container 'Relay Terminal' but has no 'puzzle_graph_unlocks'. Add puzzle_graph_unlocks: '<lock_or_room_id>' to connect this clue to the dungeon graph (scripts/generate_dungeon_graph.rb)
+19. ⚠️ WARNING: 'rooms/foyer/npcs[3]/eventMappings[0]' is a person-chat cutscene without 'onceOnly: true'. Cutscenes typically should only trigger once. Add 'onceOnly: true' unless you want the cutscene to repeat
+20. ⚠️ WARNING: 'rooms/foyer/npcs[3]/eventMappings[1]' is a person-chat cutscene without 'onceOnly: true'. Cutscenes typically should only trigger once. Add 'onceOnly: true' unless you want the cutscene to repeat
+21. ⚠️ WARNING: 2 items all point to the same unlock target 'cryptosecure_drop_box' — multiple solution paths exist. Sources: [rooms/corridor/objects[1], rooms/corridor/objects[3]]. If one path is intentionally optional, add puzzle_graph_optional: true to that item. Otherwise this may allow players to bypass a challenge.
+22. ⚠️ WARNING: 2 items all point to the same unlock target 'pigeonholes' — multiple solution paths exist. Sources: [rooms/special_collections/objects[0], rooms/seminar_room/objects[0]]. If one path is intentionally optional, add puzzle_graph_optional: true to that item. Otherwise this may allow players to bypass a challenge.
+23. ✅ GOOD PRACTICE: Scenario uses event-driven cutscene architecture with 2 person-chat cutscene(s). Ensure corresponding phone NPCs use #set_global tags to trigger these cutscenes
+24. ✅ GOOD PRACTICE: Scenario uses timedConversation.skipIfGlobal — the opening briefing will not replay when the player resumes the scenario.
+25. ✅ GOOD PRACTICE: Scenario uses the music system — dynamic music changes based on in-game events significantly enhance immersion.
+26. 💡 SUGGESTION: Consider adding VM launcher terminals (type: 'vm-launcher') for hacking challenges. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+27. 💡 SUGGESTION: Consider adding flag station terminals (type: 'flag-station') for VM flag submission. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+28. 💡 SUGGESTION: Consider adding patrol waypoints to at least one person NPC for dynamic movement. Add behavior.patrol.waypoints array with {x, y} coordinates, or behavior.patrol.route for multi-room patrols. See scenarios/m01_first_contact/scenario.json.erb for NPCs with hostile behavior and movement.
+29. 💡 SUGGESTION: Consider adding timedMessages to phone contacts for narrative delivery — timed messages drive the story forward at key moments. Phone NPCs without timed messages: rooms/foyer/npcs[2] (Keyholder). See scenarios/m01_first_contact/scenario.json.erb (agent_0x99) for example
+30. 💡 SUGGESTION: Consider adding RFID locks (lockType: 'rfid') for high-security areas. Requires an rfid_cloner tool and an NPC or item with a card_id. See scenarios/m01_first_contact/scenario.json.erb (server_room) for example
+31. 💡 SUGGESTION: Consider adding security tools (lockpick, fingerprint_kit, pin-cracker, bluetooth_scanner, rfid_cloner) for interactive gameplay. In m01, a lockpick is held by kevin_park and obtained by defeating him, enabling key-locked doors. See scenarios/m01_first_contact/scenario.json.erb for examples
+32. 💡 SUGGESTION: Consider adding at least one hostile NPC (behavior: { hostile: true }) to create physical danger and tension. In m01, sarah_martinez, derek_lawson, and kevin_park are all hostile. See scenarios/m01_first_contact/scenario.json.erb for examples
+33. ✅ GOOD PRACTICE: Scenario uses puzzle_graph_* metadata — run 'ruby scripts/generate_dungeon_graph.rb scenarios/my_scenario/scenario.json.erb' to generate an interactive puzzle dependency graph.
+34. 💡 SUGGESTION: 'rooms/foyer/npcs[0]/itemsHeld[0]' (Comms Discipline) sets 'comms_had' in onPickup, and 'comms_had' drives a mapping, condition or objective. An NPC's note fires onPickup the moment it is handed over or picked up after a KO (npc-game-bridge.js), so 'comms_had' means "received", not "read" (m05 vetting files). Fine if that's the intent; otherwise gate on a later step.
+35. 💡 SUGGESTION: 'rooms/foyer/npcs[1]/itemsHeld[3]' (Field Note 7: Hashes) sets 'fn07_had' in onPickup, and 'fn07_had' drives a mapping, condition or objective. An NPC's note fires onPickup the moment it is handed over or picked up after a KO (npc-game-bridge.js), so 'fn07_had' means "received", not "read" (m05 vetting files). Fine if that's the intent; otherwise gate on a later step.
+36. 💡 SUGGESTION: 'rooms/foyer/npcs[1]/itemsHeld[6]' (Field Note 10: Signatures) sets 'fn10_had' in onPickup, and 'fn10_had' drives a mapping, condition or objective. An NPC's note fires onPickup the moment it is handed over or picked up after a KO (npc-game-bridge.js), so 'fn10_had' means "received", not "read" (m05 vetting files). Fine if that's the intent; otherwise gate on a later step.
+37. 💡 SUGGESTION: 'rooms/foyer/npcs[1]/itemsHeld[8]' (Comms Discipline) sets 'comms_had' in onPickup, and 'comms_had' drives a mapping, condition or objective. An NPC's note fires onPickup the moment it is handed over or picked up after a KO (npc-game-bridge.js), so 'comms_had' means "received", not "read" (m05 vetting files). Fine if that's the intent; otherwise gate on a later step.
+38. 💡 SUGGESTION: 'rooms/seminar_room/npcs[0]/itemsHeld[0]' (Field Note 7: Hashes) sets 'fn07_had' in onPickup, and 'fn07_had' drives a mapping, condition or objective. An NPC's note fires onPickup the moment it is handed over or picked up after a KO (npc-game-bridge.js), so 'fn07_had' means "received", not "read" (m05 vetting files). Fine if that's the intent; otherwise gate on a later step.
+39. 💡 SUGGESTION: 'rooms/seminar_room/npcs[0]/itemsHeld[1]' (Field Note 10: Signatures) sets 'fn10_had' in onPickup, and 'fn10_had' drives a mapping, condition or objective. An NPC's note fires onPickup the moment it is handed over or picked up after a KO (npc-game-bridge.js), so 'fn10_had' means "received", not "read" (m05 vetting files). Fine if that's the intent; otherwise gate on a later step.
+
+⚠️ Found 1 missing recommended field(s):
+
+1. Missing recommended field: 'rooms/foyer/npcs[2]/currentKnot' - specifies starting dialogue knot
+
+Generating dungeon graph...
+Written: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scenarios/lab_tesseract_trials/dungeon_graph.html
+Written: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scenarios/lab_tesseract_trials/dungeon_graph.json
+Written: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scenarios/lab_tesseract_trials/dungeon_graph.md
+Puzzle     — Nodes: 41  Edges: 52
+Story      — Nodes: 6  Edges: 4
+Integrated — Nodes: 47  Edges: 67
+Rooms      — Nodes: 11  Edges: 10
+Contents   — Nodes: 94  Edges: 93
+Critical path (4 hops): Freshers' Week → The Trials: Bits and Bytes → The Trials: Secrets and Keys → The Keyholder → The Offer
+✓ Dungeon graph: /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/scenarios/lab_tesseract_trials/dungeon_graph.html
+
+✓ Validation complete!

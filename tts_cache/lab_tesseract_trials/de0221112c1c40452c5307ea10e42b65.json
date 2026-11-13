@@ -1,0 +1,13 @@
+{
+  "key": "de0221112c1c40452c5307ea10e42b65",
+  "npc": "cliffe_schreuders",
+  "text": "Here you go. The answers to life, the universe and everything.",
+  "voice": "Orus",
+  "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "generate",
+  "generated": "2026-10-12",
+  "recorded_at": "2026-10-12T11:15:39Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "9ac4370070fd59f4d9971404958397e5",
+  "npc": "sarah_mitchell",
+  "text": "That alarm from Bed 4. Come and talk to me about it.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-10-11",
+  "recorded_at": "2026-10-11T16:25:34Z"
+}

@@ -1,0 +1,60 @@
+TAP version 13
+# Subtest: identical text has no differences
+ok 1 - identical text has no differences
+  ---
+  duration_ms: 4.350221
+  ...
+# Subtest: prose-only edits are ignored but counted
+ok 2 - prose-only edits are ignored but counted
+  ---
+  duration_ms: 0.729239
+  ...
+# Subtest: a tag change is reported with its new line number
+ok 3 - a tag change is reported with its new line number
+  ---
+  duration_ms: 1.291362
+  ...
+# Subtest: whitespace inside a tag is normalised
+ok 4 - whitespace inside a tag is normalised
+  ---
+  duration_ms: 0.457846
+  ...
+# Subtest: choice condition, divert target and sticky/once changes are structural
+ok 5 - choice condition, divert target and sticky/once changes are structural
+  ---
+  duration_ms: 1.742205
+  ...
+# Subtest: declarations, assignments, knots, stitches and includes are compared
+ok 6 - declarations, assignments, knots, stitches and includes are compared
+  ---
+  duration_ms: 1.722953
+  ...
+# Subtest: inline and multi-line conditional conditions are compared
+ok 7 - inline and multi-line conditional conditions are compared
+  ---
+  duration_ms: 0.583327
+  ...
+# Subtest: removed tags and deleted lines are reported as removals
+ok 8 - removed tags and deleted lines are reported as removals
+  ---
+  duration_ms: 0.378669
+  ...
+# Subtest: CLI: identical files report STRUCTURE UNCHANGED, exit 0
+ok 9 - CLI: identical files report STRUCTURE UNCHANGED, exit 0
+  ---
+  duration_ms: 115.670247
+  ...
+# Subtest: CLI: --old exits 1 and --json is parseable
+ok 10 - CLI: --old exits 1 and --json is parseable
+  ---
+  duration_ms: 337.180053
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 684.574968

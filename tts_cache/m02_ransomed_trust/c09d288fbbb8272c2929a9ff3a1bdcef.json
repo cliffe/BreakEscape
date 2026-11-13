@@ -1,0 +1,13 @@
+{
+  "key": "c09d288fbbb8272c2929a9ff3a1bdcef",
+  "npc": "ward_nurse",
+  "text": "So I stand here. That's the whole plan. I watch this bed with my own eyes, and Priya runs everybody else on paper.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

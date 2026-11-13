@@ -1,0 +1,11 @@
+=== captions
+game 2296 (captions)
+ring banner: "Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline"
+shot captions_ring_banner
+answered ring caption: "SAFETYNET secure line"
+shot captions_ring_call
+"opened agent_0x99_handler"
+hub: {"choices":["1. I'm going in. Soft or hard?","2. The Architect signed off on the casualty projection.","3. About that flag.","4. Where do I stand?","5. Nothing right now."]}
+hub dialling caption: null {"bar":null}
+shot captions_hub_dialling
+GATE FAILED: wait_screen !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0 40

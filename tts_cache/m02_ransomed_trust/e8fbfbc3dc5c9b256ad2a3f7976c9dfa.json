@@ -1,0 +1,13 @@
+{
+  "key": "e8fbfbc3dc5c9b256ad2a3f7976c9dfa",
+  "npc": "night_security_supervisor",
+  "text": "Good. Otherwise I'd have sat here another six hours being helpful, and that's far more tiring than this.",
+  "voice": "Enceladus",
+  "style": "Night security supervisor, fifties, eleven years on the same post. Consistent Estuary English -- flat Home Counties, quiet, unhurried. Courteous to the point of being soothing. When cornered the warmth switches off completely and what is underneath is calm, articulate and entirely unrepentant.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

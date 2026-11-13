@@ -1,0 +1,266 @@
+/* The network view (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md 4.3), the remote line on a
+   remote desktop, and the remote sign-in screen's Captured sign-ins (4.4). */
+
+.network-view {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #10161c;
+    border: 4px solid #444;
+    padding: 12px;
+    color: #e8eef2;
+    font-size: 18px;
+    min-height: 220px;
+    /* Pixel fonts have no italic or bold cut: never let the browser fake one */
+    font-style: normal;
+    font-synthesis: none;
+}
+
+.network-view * {
+    font-style: normal;
+}
+
+.network-view-header {
+    border-bottom: 2px solid #2d3a44;
+    padding-bottom: 8px;
+}
+
+.network-view-title {
+    margin: 0 0 4px 0;
+    font-size: 22px;
+    color: #9ee6ff;
+}
+
+.network-view-observations {
+    margin: 0;
+    color: #b8c4cc;
+}
+
+.network-view-message {
+    margin: 6px 0 0 0;
+    padding: 4px 8px;
+    background: #3a2a10;
+    border: 2px solid #8a6420;
+    color: #ffe0a0;
+}
+
+.network-view-stale {
+    margin: 6px 0 0 0;
+    color: #9aa6ae;
+}
+
+.network-view-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.network-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    background: #18222b;
+    border: 2px solid #2d3a44;
+}
+
+.network-row-icon {
+    /* Pixel art at a whole-number scale: each kind's picture at twice (the printer three
+       times) its own size, centred in one 72px column so the names line up */
+    width: 72px;
+    height: 48px;
+    object-fit: none;
+    image-rendering: pixelated;
+    flex: 0 0 72px;
+}
+
+.network-row[data-kind="pc"] .network-row-icon {
+    object-fit: fill;
+    width: 72px;   /* pc_desktop.png 36 x 24, x2 */
+    height: 48px;
+}
+
+.network-row[data-kind="file_share"] .network-row-icon {
+    object-fit: fill;
+    width: 52px;   /* m09_folder1.png 26 x 18, x2 */
+    height: 36px;
+    margin: 0 10px;
+    flex-basis: 52px;
+}
+
+.network-row[data-kind="printer"] .network-row-icon {
+    object-fit: fill;
+    width: 48px;   /* npc-print.png 16 x 16, x3 */
+    height: 48px;
+    margin: 0 12px;
+    flex-basis: 48px;
+}
+
+.network-row-group {
+    margin: 6px 0 0 0;
+    color: #9ee6ff;
+    font-size: 16px;
+    text-transform: none;
+}
+
+.network-row-note {
+    color: #ffe0a0;
+    font-size: 16px;
+}
+
+.network-row-label {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.network-row-name {
+    color: #b8c4cc;
+    font-size: 16px;
+}
+
+.network-row-control {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.network-row-off {
+    color: #b8c4cc;
+    font-size: 16px;
+}
+
+/* A padlock badge, the size of the other rows' buttons */
+.network-row-locked {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 8px;
+    background: #2a2016;
+    border: 2px solid #8a6420;
+    color: #ffe0a0;
+    font-size: 18px;
+}
+
+.network-row-padlock {
+    width: 32px;   /* padlock_32.png at its own size */
+    height: 32px;
+    image-rendering: pixelated;
+}
+
+.network-row-empty,
+.network-view-loading,
+.network-view-error {
+    color: #b8c4cc;
+    padding: 8px;
+}
+
+.network-view-notice {
+    min-height: 22px;
+    color: #ffe680;
+}
+
+.network-view-notice:empty {
+    display: none;
+}
+
+/* The network blocks (slice 9.3b, 5.1): a further network, or one with no route (5.2).
+   Pixel-art rule: 2px solid square borders, flat fills, no radius, shadow or gradient. */
+.network-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 2px solid #2d3a44;
+    background: #131b22;
+}
+
+.network-block-title {
+    /* a heading bar across the block, so each network (and a pivot's "through") stands out */
+    margin: -8px -8px 2px -8px;
+    padding: 4px 8px;
+    font-size: 20px;
+    color: #9ee6ff;
+    background: #1d2a36;
+    border-bottom: 2px solid #2d3a44;
+}
+
+/* No route: the block and its rows are greyed, and the icon is drawn grey */
+.network-block-down {
+    border-color: #3a3f44;
+    background: #15181b;
+}
+
+.network-block-down .network-block-title {
+    color: #868d93;
+}
+
+.network-row-down {
+    background: #1b1e21;
+    border-color: #33383c;
+    color: #868d93;
+}
+
+.network-row-down .network-row-name,
+.network-row-down .network-row-off {
+    color: #868d93;
+    /* No synthesised slant on the pixel font in a greyed row */
+    font-style: normal;
+}
+
+.network-row-down .network-row-icon {
+    filter: grayscale(1) brightness(0.7);
+}
+
+/* A remote desktop's header (4.4) */
+.desktop-remote-line {
+    color: #9ee6ff;
+    font-size: 16px;
+    margin: 2px 0;
+}
+
+/* The remote sign-in screen (4.4) */
+.signin-remote {
+    font-size: 16px;
+    color: #9ee6ff;
+    text-shadow: 1px 1px 0 #000;
+    position: relative;
+    z-index: 2;
+}
+
+.signin-captured {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 16px;
+}
+
+.signin-captured-title {
+    width: 100%;
+    color: #ffe680;
+}
+
+.signin-captured-item {
+    background: #23313b;
+    color: #fff;
+    border: 2px solid #4b6070;
+    padding: 2px 8px;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.signin-captured-empty {
+    color: #b8c4cc;
+}

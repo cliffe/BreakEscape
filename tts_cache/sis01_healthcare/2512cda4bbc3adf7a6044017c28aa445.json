@@ -1,0 +1,13 @@
+{
+  "key": "2512cda4bbc3adf7a6044017c28aa445",
+  "npc": "dr_sharma",
+  "text": "Tape will come back clean, but not for three to five days, and only up to Friday night. That's the most certain way back, and the slowest.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

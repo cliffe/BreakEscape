@@ -1,0 +1,13 @@
+{
+  "key": "08eb8ba75b605ece7c60dc8f3bb0f203",
+  "npc": "priya_s",
+  "text": "When you isolated them, you cut the historian's enterprise leg as well. Ops lost the dispatch feed for a day. That was the price of closing the second way in.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:20:30Z"
+}

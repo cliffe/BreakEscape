@@ -1,0 +1,13 @@
+game 2226 (look)
+list (inventory phone): {"terminal":false,"appTheme":null,"view":"contact-list"}
+shot look_list
+"opened the_architect"
+his thread from the list: {"terminal":false,"appTheme":null,"view":"conversation"}
+shot look_thread_from_list
+closed: mg=null
+"terminal"
+phone opened directly on his thread (bark path params): {"terminal":true,"params_theme":"terminal","appTheme":"terminal","view":"conversation"}
+shot look_thread_direct
+fire T-20, answer: in-call look
+in call: {"terminal":true,"params_theme":"terminal","appTheme":"terminal","view":"conversation"}
+shot look_in_call

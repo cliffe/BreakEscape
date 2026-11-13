@@ -1,0 +1,13 @@
+{
+  "key": "ee8426ecee2483c21dfcfb7d24a558f7",
+  "npc": "narrator",
+  "text": "You seal the bag over his mouth and nose and squeeze, timed to his chest. The dusky colour eases. The alarm drops to a slow, steady beep.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

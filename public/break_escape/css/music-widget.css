@@ -1,0 +1,319 @@
+/* ─── Music Widget ───────────────────────────────────────────────────────── */
+/* Matches the existing pixel-art aesthetic: 2px borders, no border-radius   */
+
+/* ── Anchor (fixed top-right, replaces Spotify button) ─────────────────── */
+
+#music-widget-btn-anchor {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 1010;
+}
+
+/* ── Speaker button ─────────────────────────────────────────────────────── */
+
+#music-widget-btn {
+  width: 58px;
+  height: 58px;
+  background: rgba(20, 20, 20, 0.7);
+  border: 2px solid #444444;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+  user-select: none;
+}
+
+#music-widget-btn:hover {
+  border-color: #00aaff;
+  box-shadow: 0 0 10px rgba(0, 170, 255, 0.4);
+}
+
+#music-widget-btn:active {
+  transform: translateY(1px);
+}
+
+#music-widget-btn.panel-open {
+  border-color: #00aaff;
+  box-shadow: 0 0 10px rgba(0, 170, 255, 0.4);
+}
+
+.music-btn-icon {
+  display: block;
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+
+
+/* ── Panel — drops downward from top-right ──────────────────────────────── */
+
+#music-widget-panel {
+  display: none;
+  position: fixed;
+  top: 82px;      /* just below the button */
+  right: 14px;
+  width: 300px;
+  background: #1a1a1a;
+  border: 2px solid #00aaff;
+  z-index: 9999;
+  font-family: 'Pixelify Sans', monospace, sans-serif;
+  font-size: 13px;
+  color: #cccccc;
+}
+
+#music-widget-panel.visible {
+  display: block;
+}
+
+/* ── Panel Header ───────────────────────────────────────────────────────── */
+
+.mw-header {
+  background: #111;
+  border-bottom: 2px solid #00aaff;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mw-header-title {
+  color: #00aaff;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.mw-close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.mw-close-btn:hover { color: #ffffff; }
+
+/* ── Now playing ────────────────────────────────────────────────────────── */
+
+.mw-now-playing {
+  padding: 10px 10px 6px;
+  border-bottom: 2px solid #333;
+}
+
+.mw-np-label {
+  font-size: 10px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.mw-track-title {
+  color: #ffffff;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.mw-track-count {
+  font-size: 10px;
+  color: #666;
+  margin-top: 3px;
+}
+
+.mw-status-pill {
+  display: inline-block;
+  font-size: 9px;
+  color: #00aaff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+.mw-status-pill.passive {
+  color: #666;
+}
+
+/* ── Controls row ───────────────────────────────────────────────────────── */
+
+.mw-controls {
+  padding: 8px 10px;
+  display: flex;
+  gap: 6px;
+  border-bottom: 2px solid #333;
+}
+
+.mw-btn {
+  flex: 1;
+  background: #222;
+  border: 2px solid #444;
+  color: #ccc;
+  cursor: pointer;
+  padding: 5px 4px;
+  font-size: 12px;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.mw-btn:hover {
+  border-color: #00aaff;
+  color: #00aaff;
+}
+
+.mw-btn:active {
+  background: #111;
+}
+
+.mw-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: #333;
+  color: #555;
+}
+
+/* ── Playlist selector ──────────────────────────────────────────────────── */
+
+.mw-section {
+  padding: 8px 10px;
+  border-bottom: 2px solid #333;
+}
+
+.mw-section-label {
+  font-size: 10px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+}
+
+.mw-select {
+  width: 100%;
+  background: #222;
+  border: 2px solid #444;
+  color: #ccc;
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.mw-select:focus {
+  outline: none;
+  border-color: #00aaff;
+}
+
+/* ── Volume sliders ─────────────────────────────────────────────────────── */
+
+.mw-volumes {
+  padding: 8px 10px 10px;
+}
+
+.mw-vol-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+/* Password-manager extensions (LastPass, 1Password, etc.) inject icon-root divs into
+   every <input> they find, including range sliders.  Hide them inside this widget. */
+.mw-vol-row [data-lastpass-icon-root],
+.mw-vol-row [data-1p-ignore],
+.mw-vol-row [data-dashlane-rid] {
+  display: none !important;
+}
+
+.mw-vol-row:last-child {
+  margin-bottom: 0;
+}
+
+.mw-vol-label {
+  font-size: 10px;
+  color: #888;
+  width: 52px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.mw-vol-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #333;
+  border: 2px solid #444;
+  cursor: pointer;
+}
+
+.mw-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #00aaff;
+  border: none;
+  cursor: pointer;
+}
+
+.mw-vol-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #00aaff;
+  border: none;
+  cursor: pointer;
+}
+
+.mw-vol-value {
+  font-size: 10px;
+  color: #666;
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Non-leader notice ──────────────────────────────────────────────────── */
+
+.mw-passive-notice {
+  padding: 8px 10px;
+  background: #111;
+  border-bottom: 2px solid #333;
+  font-size: 10px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mw-passiv-text {
+  flex: 1;
+}
+
+.mw-takeover-btn {
+  background: none;
+  border: 2px solid #555;
+  color: #888;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: inherit;
+  padding: 3px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mw-takeover-btn:hover {
+  border-color: #00aaff;
+  color: #00aaff;
+}

@@ -1,0 +1,41 @@
+{
+  "_comment": "hintsByFactor lint fixture (validator-social-options.test.mjs). hbf_ok is clean; the others each break one rule.",
+  "scenario_brief": "hintsByFactor fixture",
+  "startRoom": "office",
+  "rooms": { "office": { "type": "room_office", "connections": {}, "objects": [] } },
+  "social": {
+    "phishTargets": [
+      {
+        "id": "hbf_ok",
+        "requiredFactors": ["senderTrust", "addressedTo"],
+        "expectedLink": { "brandId": "brand", "realDomain": "portal.example" },
+        "hintsByFactor": {
+          "senderTrust": { "spoof": "Set the From line.", "ownFrom": "You are still yourself.", "forced": "Switch account." },
+          "addressedTo": "Greet her by name.",
+          "linkCredible": { "missing": "Attach a page." }
+        }
+      },
+      {
+        "id": "hbf_factors_list",
+        "factors": [ { "id": "pretextRelevant", "mode": "required" }, { "id": "attachmentPlausible", "mode": "advisory" } ],
+        "hintsByFactor": { "pretextRelevant": "Mention the invoice.", "attachmentPlausible": "Attach a spreadsheet." }
+      },
+      {
+        "id": "hbf_typo",
+        "requiredFactors": ["senderTrust"],
+        "hintsByFactor": { "senderTrsut": "A typo in the factor id.", "senderTrust": { "spoof": "ok", "owned": "unknown variant" } }
+      },
+      { "id": "hbf_not_object", "requiredFactors": ["senderTrust"], "hintsByFactor": "Not a map." },
+      {
+        "id": "hbf_bad_values",
+        "requiredFactors": ["senderTrust", "pretextRelevant", "linkCredible"],
+        "hintsByFactor": { "senderTrust": "", "pretextRelevant": 5, "linkCredible": { "wrong": "" } }
+      },
+      {
+        "id": "hbf_no_spoof",
+        "requiredFactors": ["senderTrust", "urgencyCalibrated"],
+        "hintsByFactor": { "senderTrust": { "forced": "Switch account." }, "urgencyCalibrated": "Calm down." }
+      }
+    ]
+  }
+}

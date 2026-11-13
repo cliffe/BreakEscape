@@ -1,0 +1,366 @@
+{
+ "steps": [
+  {
+   "note": "R40 (struggling run A, D1/M2/M7): the fight line, HaX's controls text, a Restart (game_loaded) with Torres still hostile, then the way back: 'Send Security'. Torres is hidden (and stays hidden on room entry), the fate is the hand-over with torres_called_in, the sweep text follows, and the debrief and credits say he was walked out. Before the fight, 'Which do you recommend?' weighs the two without choosing."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "find out who sold",
+    "damage so far",
+    "Who's this going to",
+    "What's the mission",
+    "And the third",
+    "my cover",
+    "Who else will I meet",
+    "I'm ready",
+    "Methodically",
+    "Any last advice"
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "talk": "patricia",
+   "picks": [
+    "Fill me in",
+    "Who has access",
+    "without tipping",
+    "Where should I start"
+   ]
+  },
+  {
+   "read": "security_incident_log"
+  },
+  {
+   "talk": "owen",
+   "picks": [
+    "What can you tell me",
+    "That's useful",
+    "Lean over",
+    "Sorry. Habit",
+    "23:47. Whose",
+    "That's everything"
+   ]
+  },
+  {
+   "enter": "server_hallway"
+  },
+  {
+   "read": "it_access_notice"
+  },
+  {
+   "event": "door_unlock_attempt",
+   "data": {
+    "connectedRoom": "server_room"
+   }
+  },
+  {
+   "talk": "owen",
+   "picks": [
+    "wants a password",
+    "Patricia's log: a crypto badge",
+    "That's everything"
+   ]
+  },
+  {
+   "talk": "halloran",
+   "picks": [
+    "I need to talk to everyone",
+    "I'm not here to judge",
+    "Your spare badge",
+    "That's all for now"
+   ]
+  },
+  {
+   "talk": "patricia_phone",
+   "picks": [
+    "I know who it is",
+    "David Torres",
+    "front door",
+    "Just checking in"
+   ]
+  },
+  {
+   "expect": {
+    "torres_suspected": true
+   }
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "set": {
+    "flag1_submitted": true
+   }
+  },
+  {
+   "set": {
+    "flag2_submitted": true
+   }
+  },
+  {
+   "set": {
+    "flag3_submitted": true
+   }
+  },
+  {
+   "set": {
+    "flag4_submitted": true
+   }
+  },
+  {
+   "talk": "owen",
+   "picks": [
+    "David Torres' office",
+    "That's everything"
+   ]
+  },
+  {
+   "enter": "torres_office"
+  },
+  {
+   "read": "personal_journal"
+  },
+  {
+   "event": "fingerprint_collected:david_torres",
+   "data": {
+    "identified": true
+   }
+  },
+  {
+   "event": "door_unlock_attempt",
+   "data": {
+    "connectedRoom": "data_center"
+   }
+  },
+  {
+   "enter": "data_center"
+  },
+  {
+   "talk": "patricia_phone",
+   "picks": [
+    "I know who it is",
+    "David Torres",
+    [
+     "His own journal",
+     "Money. His wife"
+    ],
+    [
+     "staging manifest. Badge 4471",
+     "Staged by: D. Torres",
+     "upload schedule. He's"
+    ],
+    "On my way"
+   ]
+  },
+  {
+   "expect": {
+    "torres_identified": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Soft or hard?",
+    "Which do you recommend?"
+   ]
+  },
+  {
+   "said": [
+    "I won't choose for you",
+    "Hard is certain tonight",
+    "Q switches to fists. Can't take him? Get out of his reach, then call me"
+   ],
+   "notSaid": [
+    "I'm not going to answer that"
+   ]
+  },
+  {
+   "talk": "torres",
+   "picks": [
+    "It's over, David",
+    "They lied to you",
+    "You knew people would die",
+    "Drop the philosophy"
+   ]
+  },
+  {
+   "said": [
+    "He's coming for you. Q switches to fists (again for a harder punch)",
+    "Press Q till the open hand shows"
+   ]
+  },
+  {
+   "expect": {
+    "torres_hostile": true,
+    "final_choice": ""
+   }
+  },
+  {
+   "note": "A Restart after a lost fight now resets Torres calm (engine 7.1d): game_loaded alone sends nothing. A plain reload with him still hostile restores him with restored: true when his room loads, and that sends the reminder (post-engine follow-ups, 2026-10-16)."
+  },
+  {
+   "event": "game_loaded"
+  },
+  {
+   "notSaid": [
+    "still at that terminal"
+   ]
+  },
+  {
+   "expect": {
+    "torres_hostile": false
+   }
+  },
+  {
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "david_torres",
+    "isHostile": true,
+    "restored": true
+   }
+  },
+  {
+   "expect": {
+    "torres_hostile": true
+   }
+  },
+  {
+   "said": [
+    "Torres is still at that terminal, still angry."
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Where do I stand?",
+    "Right."
+   ]
+  },
+  {
+   "said": [
+    "Torres went for you at that terminal. He's past talking",
+    "send Security"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I can't take him. Send Security."
+   ]
+  },
+  {
+   "said": [
+    "Calling Patricia. Two guards",
+    "ninety-nine per cent first",
+    "Whatever deal there was",
+    "Sweep the vault before you go",
+    "[david_torres hidden]"
+   ]
+  },
+  {
+   "expect": {
+    "final_choice": "arrest",
+    "torres_called_in": true,
+    "torres_hostile": false,
+    "torres_arrested": true,
+    "elena_treatment_funded": false
+   }
+  },
+  {
+   "enter": "data_center"
+  },
+  {
+   "said": [
+    "[david_torres hidden]"
+   ],
+   "notSaid": [
+    "[david_torres shown]"
+   ]
+  },
+  {
+   "event": "game_loaded"
+  },
+  {
+   "notSaid": [
+    "still at that terminal"
+   ]
+  },
+  {
+   "music": "global_variable_changed:final_choice",
+   "value": "arrest",
+   "expect": "end"
+  },
+  {
+   "tasks": {
+    "call_in_after_sweep": "unlocked",
+    "make_critical_choice": "completed"
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in",
+    "Bring me in",
+    "On my way"
+   ]
+  },
+  {
+   "expect": {
+    "mission_complete": true
+   }
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "said": [
+    "stopped at ninety-nine per cent, when the data-centre breaker went",
+    "You backed off and I called it in. Patricia's guards walked him out"
+   ]
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "WALKED OUT BY SECURITY",
+    "Nobody else on staff hurt"
+   ],
+   "notSaid": [
+    "HANDED TO THE POLICE \u2014 said nothing",
+    "Nobody on staff hurt",
+    "AT A COST"
+   ]
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

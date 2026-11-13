@@ -1,0 +1,23 @@
+{
+"steps": [
+{"note": "R32 (Phase 8 final check F1): Relay turned hostile and still on her feet after the shutdown. 'Bring me in' says why it waits (a hostile operative would cut the debrief); the player can back out, or, once Relay is down, the call-in proceeds. A second pass checks the 'well clear' way out for a player who got away from her instead."},
+{"set": {"briefing_played": true, "guard_admitted": true, "vance_met": true, "vance_spoken": true, "vance_provided_keycard": true, "vance_card_cloned": true, "vance_is_ally": true, "anomaly_detected": true, "crew_warned": true}},
+{"talk": "relay", "picks": ["Say nothing", "hard way"]},
+{"expect": {"relay_engaged": true, "operative_relay_defeated": false}},
+{"set": {"server_room_reached": true, "flag_network_scan_submitted": true, "flag_ftp_intel_submitted": true, "flag_distcc_exploit_submitted": true, "flag_privesc_submitted": true, "all_flags_in": true, "attack_mechanism_known": true, "crew_hint_texted": true, "plant_room_entered": true, "operative_static_defeated": true}},
+{"ko": "voltage"},
+{"set": {"esd_authorized": true, "attack_prevented": true}},
+{"talk": "phone", "picks": ["Bring me in", "Understood"]},
+{"said": ["Not with Relay still on you. Lose her or put her down, then call."], "notSaid": ["Car's at the loading dock"]},
+{"expect": {"mission_complete": false}},
+{"ko": "operative_relay"},
+{"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
+{"said": ["Car's at the loading dock. Two minutes."], "notSaid": ["Not with Relay"]},
+{"expect": {"mission_complete": true}},
+{"note": "Second pass: Relay hostile and up, the player says they're clear of her."},
+{"set": {"operative_relay_defeated": false, "mission_complete": false}},
+{"talk": "phone", "reload": "page", "picks": ["Bring me in", "well clear", "Bring me in", "On my way"]},
+{"said": ["Not with Relay still on you", "Car's at the loading dock. Two minutes."]},
+{"expect": {"mission_complete": true}}
+]
+}

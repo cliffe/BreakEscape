@@ -1,0 +1,20 @@
+{
+ "globals": {
+  "briefing_played": true,
+  "team_assigned": true,
+  "team_assignment": "fracture",
+  "hurt_line_said": true
+ },
+ "steps": [
+  {"note": "R33 (fix-check N4): talking to Park again in the same room after '(Back off.)' counts as the return. The second visit warns ('Second time. There isn't a third.') and the way out says 'Next time he swings.' A third in-place talk without the projection is the swing. Elena's password line and the Listener Capture give the capitals (N1; the capture text is in the scenario, checked by grep)."},
+  {"enter": "generator_room"},
+  {"enter": "cable_vault"},
+  {"talk": "park", "picks": ["Nothing. I was never here."]},
+  {"expect": {"park_resolved": "evaded"}},
+  {"talk": "park", "picks": ["Back off. Next time he swings"]},
+  {"said": ["Second time. There isn't a third.", "[choice] Nothing. I was never here. (Back off. Next time he swings.)"]},
+  {"talk": "park"},
+  {"said": ["I said there wasn't a third."]},
+  {"expect": {"park_resolved": "ko"}}
+ ]
+}

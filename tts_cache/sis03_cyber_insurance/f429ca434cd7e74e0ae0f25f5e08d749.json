@@ -1,0 +1,13 @@
+{
+  "key": "f429ca434cd7e74e0ae0f25f5e08d749",
+  "npc": "eleanor_vance",
+  "text": "Albion has forty-eight hours to either accept our offer or refer to arbitration. We're prepared for both. The claim goes into the casualty reports. The underwriting team reviews what we should have done differently.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:28:54Z"
+}

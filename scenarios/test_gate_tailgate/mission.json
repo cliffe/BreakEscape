@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Gate door and tailgate",
+  "description": "Throwaway engine test for gated doors: a facilities worker on a multi-room round opens a staff-only door, closes it behind a visitor who is not allowed through, and reopens it next lap. Generic office, nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 4,
+  "test_type": "gate_doors",
+  "test_objective": "Verify door gates (open for the NPC, hold, shut, never trap), multi-room route with unlockRoom/useObject/dwellTime, sight challenge near the door with closeDoor, playerMayPassIf via a visitor lanyard, clone-as-entry with the RFID cloner, and reopening without a room reload"
+}

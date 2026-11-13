@@ -1,0 +1,13 @@
+{
+  "key": "5f2613106ecc6166b723b9de4d17f545",
+  "npc": "kevin_park",
+  "text": "So what do I do? Do I just go back to my desk and pretend everything's normal?",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

@@ -1,0 +1,97 @@
+{
+  "_note": "Fixture for social-phish-rules.test.mjs: the 00 section 1 / 10a / 10 data and the 04 targets and appendix, copied by hand (tests never read live mission content).",
+  "people": [
+    { "id": "pierce", "kind": "cast", "address": "m.pierce@ledgerwell.example", "forms": { "first": "Melanie", "short": "Mel", "formal": "Ms Pierce", "full": "Melanie Pierce" } },
+    { "id": "baker", "kind": "cast", "address": "j.baker@ledgerwell.example", "forms": { "first": "Jed", "full": "Jed Baker" } },
+    { "id": "hampshire", "kind": "cast", "address": "careers@ledgerwell.example", "forms": { "full": "Chris Hampshire" } },
+    { "id": "lord", "kind": "cast", "address": "s.lord@ledgerwell.example", "forms": { "first": "Sofia", "full": "Sofia Lord" } },
+    { "id": "portal", "kind": "sender", "address": "payroll-notices@ledgerwell.example", "forms": { "full": "Ledgerwell Payroll Portal" } },
+    { "id": "leeds_baker", "kind": "outside", "address": "j.baker@leedsplumbing.example", "forms": { "full": "J. Baker" } }
+  ],
+  "accounts": [
+    { "id": "guest", "address": "guest@workstation.example", "displayName": "Operator", "kind": "given", "person": null, "mailbox": "guest", "spoofsFrom": true },
+    { "id": "freemail", "address": "tarnside.test@freemail.example", "displayName": "T. Test", "kind": "created", "person": null, "mailbox": "freemail", "spoofsFrom": false },
+    { "id": "jed_pc", "address": "j.baker@ledgerwell.example", "displayName": "Jed Baker", "kind": "found", "person": "baker", "mailbox": "jed", "spoofsFrom": false }
+  ],
+  "payloadKit": [
+    { "id": "kit_balance_sheet", "label": "Q3 balance sheet", "kind": "spreadsheet" },
+    { "id": "kit_invoice", "label": "Supplier invoice", "kind": "pdf" },
+    { "id": "kit_cv", "label": "CV", "kind": "document" },
+    { "id": "kit_payroll_page", "label": "Payroll page", "kind": "link", "landingPageId": "payroll_login" }
+  ],
+  "templates": {
+    "from_named": { "part": "from", "text": "{sender_name} <{sender_address}>", "slots": [ { "id": "sender_name", "type": "name", "about": "sender" }, { "id": "sender_address", "type": "address" } ] },
+    "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+    "greet_named": { "part": "greeting", "text": "Hi {name},", "slots": [ { "id": "name", "type": "name", "about": "recipient" } ] },
+    "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
+    "pretext_sheet": { "part": "pretext", "text": "Here is {document} you wanted {when}.", "urgency": "low", "slots": [ { "id": "document", "type": "document" }, { "id": "when", "type": "date" } ] },
+    "pretext_generic": { "part": "pretext", "text": "Please see attached.", "urgency": "low", "slots": [] },
+    "pretext_invoice": { "part": "pretext", "text": "Your supplier invoice is overdue.", "urgency": "high", "slots": [] },
+    "pretext_apply": { "part": "pretext", "text": "I'm applying for the open role.", "urgency": "low", "slots": [], "implies": [ { "type": "document", "value": "cv" } ] },
+    "pretext_enquiry": { "part": "pretext", "text": "I'd like to ask about your accounting services.", "urgency": "low", "slots": [] },
+    "pretext_payslip": { "part": "pretext", "text": "Your {portal} payslip is ready to view (released {when}).", "urgency": "medium", "slots": [ { "id": "portal", "type": "portal" }, { "id": "when", "type": "date", "about": "release" } ] },
+    "pretext_password": { "part": "pretext", "text": "Your password expires {expiry}.", "urgency": "high", "slots": [ { "id": "expiry", "type": "date" } ] },
+    "ask_open_attached": { "part": "ask", "text": "Can you open the attached file and check it before Friday?", "urgency": "low", "slots": [] },
+    "ask_confirm": { "part": "ask", "text": "Can you confirm you have received this?", "urgency": "low", "slots": [] },
+    "ask_open_link": { "part": "ask", "text": "Please sign in at the link below to view it.", "urgency": "medium", "slots": [] },
+    "ask_review_cv": { "part": "ask", "text": "Could you review my CV when you have a moment?", "urgency": "low", "slots": [] }
+  },
+  "targets": {
+    "pierce": {
+      "id": "pierce", "character": "pierce", "address": "m.pierce@ledgerwell.example", "displayName": "Melanie Pierce",
+      "subjects": [ { "id": "s_quick", "text": "Quick one", "topic": "general" }, { "id": "s_review", "text": "For your review", "topic": "finance" } ],
+      "interests": { "topics": ["finance"] },
+      "addressedAs": ["pierce_first", "pierce_short", "pierce_formal"],
+      "senderAuth": { "domainPublishesAuth": true, "spoofAligns": false, "dmarcPolicy": "none" },
+      "urgency": { "advisoryMax": "medium" },
+      "primedFor": { "distinctiveValues": ["balance_sheet"], "genericValues": ["finance", "friday"], "minDistinct": 1, "expectedAttachment": "spreadsheet", "trusts": ["baker"] },
+      "requiredFactors": ["senderTrust", "addressedTo", "pretextRelevant", "attachmentPlausible"],
+      "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
+      "factorStrings": {
+        "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it." },
+        "senderTrust": { "pass": "✓ From someone she trusts", "fail": "Who is this? I don't recognise the address.", "redFlag": null },
+        "addressedTo": { "pass": "✓ Addressed her by name", "fail": "This doesn't even have my name on it.", "redFlag": null },
+        "pretextRelevant": { "pass": "✓ Relevant to her", "fail": "I'm not expecting anything like this.", "redFlag": null },
+        "senderAuth": { "pass": "✓ Sender authentication would pass", "fail": "The spoofed j.baker@ address fails the domain's alignment check. Ledgerwell publishes its DMARC policy as p=none, so a receiver would still deliver it.", "redFlag": null },
+        "attachmentPlausible": { "pass": "✓ The attachment fits", "missing": { "fail": "You said you'd attach it, but there's nothing here.", "redFlag": null }, "wrong-type": { "fail": "Why would you send me that file type?", "redFlag": null } }
+      },
+      "hints": ["Think about who Melanie trusts.", "What does she expect to receive, and when?", "Re-read Jed's note on the company site about the Friday balance sheet.", "This account can only send as itself."]
+    },
+    "hampshire": {
+      "id": "hampshire", "address": "careers@ledgerwell.example", "displayName": "Chris Hampshire",
+      "subjects": [ { "id": "s_application", "text": "Application", "topic": "recruitment" }, { "id": "s_hello", "text": "Hello", "topic": "general" } ],
+      "interests": { "topics": ["recruitment"] },
+      "emailReplyDelay": 15,
+      "primedFor": { "distinctiveValues": ["cv"], "minDistinct": 1, "expectedAttachment": "document", "trusts": ["*"] },
+      "requiredFactors": ["senderTrust", "pretextRelevant", "attachmentPlausible"],
+      "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
+      "factorStrings": {
+        "senderTrust": { "pass": "✓ An open inbox accepts any sender", "fail": "I don't recognise who this is from.", "redFlag": null },
+        "pretextRelevant": { "pass": "✓ Reads like an application", "fail": "This isn't about the role. I only handle applications.", "redFlag": null },
+        "senderAuth": { "pass": "✓ Sent as your own address, so there is nothing to spoof and nothing to fail.", "redFlag": null },
+        "attachmentPlausible": { "pass": "✓ The CV is attached", "missing": { "fail": "You mention a CV, but there's nothing attached.", "redFlag": null }, "wrong-type": { "fail": "That isn't a file type I can open as a CV.", "redFlag": null } }
+      },
+      "replies": { "landed": "Thanks, I'll get to this CV before Friday." },
+      "hints": ["An open inbox trusts anyone who looks like an applicant.", "What does the careers page ask applicants to send?"],
+      "outcome": { "setGlobal": { "phish_hampshire_landed": true } }
+    },
+    "lord": {
+      "id": "lord", "character": "lord", "address": "s.lord@ledgerwell.example", "displayName": "Sofia Lord",
+      "subjects": [ { "id": "s_notice", "text": "Your notice", "topic": "payroll" }, { "id": "s_account", "text": "Account notice", "topic": "it" } ],
+      "interests": { "topics": ["payroll"] },
+      "addressedAs": ["lord_first"],
+      "senderAuth": { "domainPublishesAuth": true, "spoofAligns": false, "dmarcPolicy": "none" },
+      "urgency": { "advisoryMax": "low" },
+      "primedFor": { "distinctiveValues": ["staff_portal_name", "mon_6th"], "minDistinct": 2, "trusts": ["portal"] },
+      "requiredFactors": ["senderTrust", "addressedTo", "pretextRelevant", "linkCredible"],
+      "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
+      "expectedLink": { "brandId": "ledgerwell", "realDomain": "ledgerwell.example" },
+      "hints": ["a", "b", "c", "d", "e"]
+    }
+  },
+  "linkInfo": {
+    "good": { "kitId": "kit_payroll_page", "pageId": "payroll_login", "domainId": "d_word", "domain": "ledgerwell-payroll.example", "credibility": 87, "gatesPassed": true, "meetsThreshold": true },
+    "below": { "kitId": "kit_payroll_page", "pageId": "payroll_login", "domainId": "d_unrelated", "domain": "quick-pay.example", "credibility": 40, "gatesPassed": true, "meetsThreshold": false },
+    "missing": { "kitId": "kit_payroll_page", "state": "missing" }
+  }
+}

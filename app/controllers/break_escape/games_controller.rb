@@ -1,0 +1,3615 @@
+require 'open3'
+
+module BreakEscape
+  class GamesController < ApplicationController
+    helper PlayerPreferencesHelper
+
+    # Phaser.js creates blob-URL web workers (physics, audio) and uses eval
+    # internally. Fonts are loaded via direct <link> tags (no JS loader) so
+    # no CDN script allowlist is needed beyond self/https.
+    #
+    # unsafe-inline is included as a fallback for standalone mode (no nonce
+    # generator configured). When the host app (e.g. Hacktivity) provides a
+    # nonce, modern browsers see 'nonce-xxx' in the header and automatically
+    # ignore unsafe-inline — so there is no security regression in mounted mode.
+    content_security_policy do |policy|
+      policy.default_src :self, :https
+      policy.font_src    :self, :https, :data
+      policy.img_src     :self, :https, :data, :blob
+      policy.object_src  :none
+      policy.script_src  :self, :https, :unsafe_eval, :unsafe_inline, :blob
+      policy.style_src   :self, :https, :unsafe_inline
+      policy.connect_src :self, :https, "wss:"
+      policy.media_src   :self, :https, :data, :blob
+      policy.worker_src  :self, :blob
+    end
+
+    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
+                                        :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear]
+    # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
+    # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
+    before_action :require_game_in_host_event, only: [:show]
+    # Review R2 n1: runs before set_game, whose params[:id] parses the whole JSON body, so the
+    # cap limits parse cost as well as report cost. Reads only the Content-Length header.
+    prepend_before_action :refuse_oversized_body, only: [:npc_frustration, :clone_card]
+    # Step 7: re-prepend the format header after the prepend above, so it is restored to the front
+    # of this controller's callback chain (a later prepend goes in front). A Rails test asserts
+    # set_format_header is the first before callback of every engine controller except the static one.
+    prepend_before_action :set_format_header
+
+
+    # Actions that read-modify-write @game.player_state and then save! need a
+    # row lock, or two concurrent requests for the same game (e.g. a single
+    # client event that fires several completeTask calls without awaiting
+    # each other) can race: both load the same pre-update player_state, and
+    # whichever save! commits last silently overwrites the other's change.
+    #
+    # FUTURE IMPROVEMENT (not yet needed — no evidence of lock contention):
+    # complete_task and submit_flag are the only two of these actions whose
+    # writes depend on reading *multiple* player_state keys to decide what to
+    # write (check_aim_completion / check_mission_conclusion evaluate every
+    # task in an aim, and gate tasks that can belong to a different aim, before
+    # deciding whether to flip a status or bump objectives_completed/score).
+    # That's exactly the kind of compound, conditional read-then-write that
+    # can't be expressed as a single atomic per-path SQL update — Postgres's
+    # own row-level MVCC can't help you if the *decision* of what to write
+    # requires Ruby-side business logic across several keys.
+    #
+    # The other actions here (container, sync_state, update_room, unlock,
+    # update_task_progress, reset, new_session) only set or append to a single
+    # independent JSON path each time (currentRoom, a note, an unlocked room
+    # id, a task's progress counter, etc.) — two concurrent writers touching
+    # *different* paths don't need to be serialized at all. If this lock ever
+    # shows up as real contention, those actions are the candidates to move to
+    # atomic per-path writes (e.g. Postgres jsonb_set in a single UPDATE) and
+    # drop from this list, narrowing the locked surface down to just
+    # complete_task/submit_flag. Doing so means bypassing/reimplementing the
+    # ActiveRecord callbacks these actions currently get for free via a normal
+    # save! (e.g. after_commit :fire_completion_callback relies on
+    # previous_changes, which raw update_all doesn't populate), and writing
+    # parallel SQL for the SQLite test adapter (no jsonb_set there) — so treat
+    # this as a scoped, deliberate optimization to reach for if lock
+    # contention is actually observed, not a default to prefer today.
+    # inventory and room are on this list because they were found off it, the
+    # expensive way. One ink line can fire #complete_task, #complete_task and
+    # #give_item together, which the client sends as three parallel POSTs. The
+    # two task writes took the lock; the unlocked inventory add read
+    # player_state before them and saved after, discarding both. Game 1022 lost
+    # seven tasks that way -- including talk_to_gary, an ending gate at the
+    # time, so the mission could never conclude -- while every request
+    # returned 200.
+    #
+    # The signature is a game whose tasks_completed counter exceeds the number
+    # of entries in objectivesState.tasks: the counter is its own column and
+    # survives the partial write, the JSON blob does not. Note this is not the
+    # SQLite BusyException that was blamed for the same symptom earlier. Moving
+    # to Postgres removed the error, not the race: the losing writer now
+    # succeeds silently, so a client-side retry never fires.
+    #
+    # room is here for the same reason -- track_npc_encounters appends to
+    # encounteredNPCs and saves, and npc_conversation tasks validate against
+    # that list, so losing an entry rejects a legitimate completion.
+    #
+    # login, logout and clone_card write sessions, sign-in failures and card copies
+    # (access model, section 6), so they take the lock like unlock. network_plant and
+    # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
+    around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
+                                          :login, :logout, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
+                                          :npc_frustration, :npc_workaround, :feed_post, :wear]
+
+    # GET /games/new?mission_id=:id
+    # Show VM set selection page for VM-required missions
+    def new
+      @mission = Mission.find(params[:mission_id])
+      authorize @mission, :create_game? if defined?(Pundit)
+
+      if @mission.requires_vms?
+        @available_vm_sets = @mission.valid_vm_sets_for_user(current_player)
+        @existing_games = Game.where(player: current_player, mission: @mission)
+      end
+    end
+
+    # POST /games
+    # Create a new game instance for a mission
+    def create
+      @mission = Mission.find(params[:mission_id])
+      authorize @mission, :create_game? if defined?(Pundit)
+
+      # Build initial player_state with VM/flag context
+      initial_player_state = {}
+
+      # Hacktivity mode with VM set
+      if params[:vm_set_id].present? && defined?(::VmSet)
+        vm_set = ::VmSet.find_by(id: params[:vm_set_id])
+        return render json: { error: 'VM set not found' }, status: :not_found unless vm_set
+
+        # Validate VM set belongs to user and matches mission
+        if BreakEscape::Mission.hacktivity_mode?
+          unless @mission.valid_vm_sets_for_user(current_user).include?(vm_set)
+            return render json: { error: 'Invalid VM set for this mission' }, status: :forbidden
+          end
+          initial_player_state['vm_set_id'] = vm_set.id
+        else
+          # Standalone mode - vm_set_id shouldn't be used
+          Rails.logger.warn "[BreakEscape] vm_set_id provided but not in Hacktivity mode, ignoring"
+        end
+      end
+
+      # Standalone mode with VM IPs JSON
+      if params[:vm_ips_json].present?
+        begin
+          vm_ips = JSON.parse(params[:vm_ips_json])
+          initial_player_state['vm_ips'] = vm_ips if vm_ips.is_a?(Hash)
+        rescue JSON::ParserError => e
+          Rails.logger.warn "[BreakEscape] Invalid vm_ips_json: #{e.message}"
+        end
+      end
+
+      # Standalone mode with XML flag hints
+      if params[:flag_hints_xml].present?
+        flags_by_vm = Mission.parse_flag_hints_xml(params[:flag_hints_xml])
+        initial_player_state['flags_by_vm'] = flags_by_vm
+        # Also store flat list for backward compatibility
+        initial_player_state['standalone_flags'] = flags_by_vm.values.flatten.uniq
+      # Legacy: comma-separated flags (backward compatibility)
+      elsif params[:standalone_flags].present?
+        flags = if params[:standalone_flags].is_a?(Array)
+                  params[:standalone_flags]
+        else
+                  params[:standalone_flags].split(',').map(&:strip).reject(&:blank?)
+        end
+        initial_player_state['standalone_flags'] = flags
+      end
+
+      # CRITICAL: Set player_state BEFORE save! so callbacks can read vm_set_id
+      # Callback order is:
+      # 1. before_create :generate_scenario_data_with_context (reads player_state['vm_set_id'])
+      # 2. before_create :initialize_player_state (adds default fields)
+      @game = Game.new(
+        player: current_player,
+        mission: @mission
+      )
+      @game.player_state = initial_player_state
+      @game.save!
+
+      # Check if player's sprite is valid for this scenario
+      player_pref = current_player_preference || create_default_preference
+
+      if !player_pref.sprite_selected?
+        # No sprite selected - MUST configure
+        flash[:alert] = 'Please select your character before starting.'
+        redirect_to configuration_path(game_id: @game.id)
+      elsif !player_pref.sprite_valid_for_scenario?(@game.scenario_data)
+        # Sprite selected but invalid for this scenario
+        flash[:alert] = 'Your selected character is not available for this mission. Please choose another.'
+        redirect_to configuration_path(game_id: @game.id)
+      else
+        # All good - start game
+        redirect_to game_page_path_for(@game)
+      end
+    end
+
+    def show
+      authorize @game if defined?(Pundit)
+      @mission = @game.mission
+
+      # Load player preference data for the in-game modal
+      @player_preference = current_player_preference || create_default_preference
+      @player_preference.scenario_context = @game.scenario_data
+      @avatar_menu = @player_preference.avatar_menu
+
+      # Guard: player must have selected a valid sprite before entering the game
+      if !@player_preference.sprite_selected?
+        flash[:alert] = 'Please select your character before starting.'
+        redirect_to configuration_path(game_id: @game.id) and return
+      elsif !@player_preference.sprite_valid_for_scenario?(@game.scenario_data)
+        flash[:alert] = 'Your selected character is not available for this mission. Please choose another.'
+        redirect_to configuration_path(game_id: @game.id) and return
+      end
+
+      @shell_links = shell_links_for(@game)
+
+      # All game sessions for this player + mission, ordered oldest first
+      @mission_sessions = Game.where(player: current_player, mission: @mission)
+                              .order(:created_at)
+                              .pluck(:id)
+
+      # Debug logging
+      Rails.logger.info "[BreakEscape] Loading game#show for player: #{current_player.class.name}##{current_player.id}"
+      Rails.logger.info "[BreakEscape] Player preference: #{@player_preference.inspect}"
+      Rails.logger.info "[BreakEscape] Selected sprite: #{@player_preference.selected_sprite.inspect}"
+    end
+
+    # POST /games/:id/reset
+    # Resets the game session to the initial state, preserving mission context
+    #
+    # Wrapped in with_game_lock (see around_action above): reset_player_state!
+    # overwrites player_state wholesale, so it must not race with any other
+    # in-flight write to the same game. It doesn't read multiple keys to
+    # decide what to write, so it's a candidate to drop the lock if this ever
+    # moves to atomic per-path writes — see the FUTURE IMPROVEMENT note above.
+    def reset
+      authorize @game if defined?(Pundit)
+      @game.reset_player_state!
+      render json: { success: true }
+    rescue Pundit::NotAuthorizedError
+      raise
+    rescue => e
+      Rails.logger.error "[BreakEscape] reset error: #{e.message}"
+      render json: { success: false, error: e.message }, status: :internal_server_error
+    end
+
+    # POST /games/:id/new_session
+    # Creates a fresh game record for the same mission, preserving VM context
+    #
+    # Wrapped in with_game_lock (see around_action above): the abandon-the-old-
+    # game update below must not race with another write still in flight
+    # against @game. It's a single status field flip, not a cross-key
+    # decision, so it's a candidate to drop the lock if this ever moves to
+    # atomic per-path writes — see the FUTURE IMPROVEMENT note above. (The new
+    # Game record created afterward needs no locking — it doesn't exist yet.)
+    def new_session
+      authorize @game if defined?(Pundit)
+
+      preserved_keys = %w[vm_set_id vm_ips flags_by_vm standalone_flags]
+      initial_state = @game.player_state.is_a?(Hash) ? @game.player_state.slice(*preserved_keys) : {}
+
+      # Abandon the current game before creating a new one.
+      # The unique partial index allows only one in_progress game per player+mission.
+      @game.update!(status: 'abandoned') if @game.status == 'in_progress'
+
+      callback = BreakEscape.configuration&.can_continue_in_slot
+      slot = @game.game_slot if @game.respond_to?(:game_slot)
+      inherit_slot = slot && callback && callback.call(current_player, slot)
+
+      new_game = Game.new(player: current_player, mission: @game.mission)
+      new_game.player_state = initial_state
+      new_game.game_slot = slot if inherit_slot && new_game.respond_to?(:game_slot=)
+      new_game.save!
+
+      render json: { success: true, redirect_url: game_page_path_for(new_game, skip_resume: 1) }
+    rescue Pundit::NotAuthorizedError
+      raise
+    rescue => e
+      Rails.logger.error "[BreakEscape] new_session error: #{e.message}"
+      render json: { success: false, error: e.message }, status: :internal_server_error
+    end
+
+    # GET /games/:id/scenario
+    # Returns filtered scenario JSON for this game instance
+    # Uses filtered_scenario_for_bootstrap for lazy-loading support
+    def scenario
+      authorize @game if defined?(Pundit)
+
+      # One locked, read-only-when-idle bootstrap step before any saved* block is
+      # read, so the client sees the repaired inventory and migrated record
+      # (SYNC_DELTAS_PLAN 2.4). It takes no lock unless a repair is actually due.
+      @game.prepare_bootstrap_state!
+
+      begin
+        # Use filtered bootstrap scenario and remove 'requires' fields for security
+        filtered = @game.filtered_scenario_for_bootstrap
+
+        # Remove 'requires' fields recursively for security
+        filter_requires_recursive(filtered)
+
+        # Step 2b (plan item 3): author notes ("_"-prefixed properties) never ship. Strip them from
+        # the bootstrap copy here, after this route's own filtering and before any player-state key
+        # (objectivesState, savedGlobalVariables, captures, savedCurrentRoom, ...) is attached, so a
+        # "_"-prefixed saved global is kept. Free data (object/array globals, minigameData) holds no
+        # notes and ships as authored. The secret-keeping filters above still visit notes.
+        BreakEscape::AuthorNotes.strip_notes!(filtered, BreakEscape::ScenarioSchema.root)
+
+        # Step 7: the tab learns its format here. set_game already ran ensure_current_format!, so the
+        # stored data is at current; read it as an Integer (never data['formatVersion'] directly).
+        filtered['formatVersion'] = BreakEscape::FormatUpgrade.version_of(@game.scenario_data)
+
+        # Include objectives state for page reload recovery
+        # This allows the client to restore completed/progress state
+        # Aims the client opened by unlockCondition are derived here, since
+        # the server never recorded them (see Game#objectives_state_for_client).
+        if @game.player_state['objectivesState'].present?
+          filtered['objectivesState'] = @game.objectives_state_for_client
+        end
+
+        # show_scenario_brief "once": the brief has been shown, don't reopen it
+        brief_shown = @game.player_state.dig('scenarioBriefShown') == true
+        filtered['scenarioBriefShown'] = true if brief_shown
+
+        # Include submitted flags for flag station minigame
+        if @game.player_state['submitted_flags'].present?
+          filtered['submittedFlags'] = @game.player_state['submitted_flags']
+        end
+
+        # The worn item (Wearables), so the tray frame comes back after a reload
+        filtered['wornItem'] = @game.worn_record if @game.worn_record
+
+        # Include saved global variables so the client can restore them on session resume.
+        # These are merged over the scenario defaults in game.js, allowing flags like
+        # `briefing_played` to persist across page reloads.
+        if @game.player_state['globalVariables'].present?
+          filtered['savedGlobalVariables'] = @game.player_state['globalVariables']
+        end
+
+        # The server-owned capture record (sync deltas R2, 6a): shipped as `captures`. The client
+        # (core/game.js) mirrors it into its se_captures global for the readers; it no longer rides
+        # savedGlobalVariables. The entries carry no secret: GET /capture_secrets serves those once
+        # earned (main's authored path).
+        captures = @game.captures_for_client
+        filtered['captures'] = captures if captures.any?
+
+        # The saved current room, so the first sync after a load does not resend
+        # currentRoom unless the page starts the player somewhere else (R1,
+        # SYNC_DELTAS_PLAN 3.2). One short string; the old client ignores it.
+        if @game.player_state['currentRoom'].is_a?(String)
+          filtered['savedCurrentRoom'] = @game.player_state['currentRoom']
+        end
+
+        # Include saved notes (with player observations) for session resume.
+        if @game.player_state['notes'].present?
+          filtered['savedNotes'] = @game.player_state['notes']
+        end
+
+        # Lifted fingerprints (best quality per owner) so the reader still has
+        # them after a reload.
+        if @game.player_state['biometricSamples'].present?
+          filtered['savedBiometricSamples'] = @game.player_state['biometricSamples']
+        end
+
+        # NPC-local ink variables (met_x, first_meeting, ...) so intros and
+        # one-shot lines don't replay after a reload.
+        if @game.player_state['npcInkVariables'].present?
+          filtered['savedNpcInkVariables'] = @game.player_state['npcInkVariables']
+        end
+
+        # onceOnly / maxTriggers eventMapping handlers that already fired, so
+        # one-shot cutscenes and messages don't replay after a reload.
+        if @game.player_state['triggeredEvents'].present?
+          filtered['savedTriggeredEvents'] = @game.player_state['triggeredEvents']
+        end
+
+        # Timed texts still counting down at the last sync, and NPC-level timed
+        # texts already delivered, so a reload neither loses nor repeats them.
+        if @game.player_state['timedMessages'].present?
+          filtered['savedTimedMessages'] = @game.player_state['timedMessages']
+        end
+
+        # Game clock and scenario timers, so a reload resumes them (D14).
+        if @game.player_state['scenarioClock'].present?
+          filtered['savedScenarioClock'] = @game.player_state['scenarioClock']
+        end
+
+        # Command board: its config (rooms are stripped above) so the client records its
+        # entries from game start, and the entries recorded so far ([{ id, t }]).
+        board_config = @game.command_board_config
+        unless board_config.nil?
+          filtered['commandBoard'] = board_config
+          filtered['savedCommandBoardLog'] = @game.player_state['commandBoardLog'] if @game.player_state['commandBoardLog'].present?
+        end
+
+        # NPCs shown or hidden by setVisible, so a reveal survives a reload (N2).
+        if @game.player_state['npcVisibility'].present?
+          filtered['savedNpcVisibility'] = @game.player_state['npcVisibility']
+        end
+
+        # NPCs turned hostile or knocked out, so they stay that way after a reload (E-B).
+        if @game.player_state['npcHostility'].present?
+          filtered['savedNpcHostility'] = @game.player_state['npcHostility']
+        end
+
+        # The player's HP, so a reload mid-fight isn't a free full heal (m05 E6).
+        # A save at 0 HP (a knockout) isn't sent: the player wakes at full.
+        saved_hp = @game.player_state['playerHealth']
+        if saved_hp.is_a?(Hash) && saved_hp['hp'].is_a?(Numeric) && saved_hp['hp'].positive?
+          filtered['savedPlayerHealth'] = saved_hp
+        end
+
+        # Phone threads (texts, read state, story position) per phone contact.
+        if @game.player_state['phoneState'].present?
+          filtered['savedPhoneState'] = @game.player_state['phoneState']
+        end
+
+        # Mail client state (mailboxes, pending reply jobs, threads, drafts,
+        # metrics; 00 §10a). Absent for a mission that never used mail.
+        if @game.player_state['mailState'].present?
+          filtered['savedMailState'] = @game.player_state['mailState']
+        end
+
+        # Include current inventory from player_state for page reload recovery
+        # This allows the client to restore inventory state on reload
+        # Sign-in sessions and the PCs signed in to (access model 5.3), so a password
+        # session survives a reload and pc-sessions.js can report the end of any claimed
+        # one. The server ends the claimed ones itself, here, so the end does not rest on
+        # the client's POST /logout.
+        filtered['sessions'] = @game.sessions_for_client
+        filtered['signedInPcs'] = @game.signed_in_pcs
+        # Footholds held and every jack one was gained from (slice 9.3a, section 6)
+        filtered['footholds'] = @game.footholds_for_client
+        filtered['gainedFootholds'] = @game.gained_footholds
+        # Frustration per NPC (slice 9.2, 5.4): level, tell, settled and each need's hold
+        filtered['npcFrustration'] = @game.npc_frustration_for_client
+        # Feed posts revealed so far, with their facts (slice 9.2 C, 9.4)
+        filtered['feedPosts'] = @game.feed_posts_for_client
+        # Sub-slice L review R1 M1: the sign-in PCs where the player caused a lockout (ids only),
+        # so a reload keeps the client's "lockout seen" mark (6.6)
+        filtered['lockoutPcs'] = @game.lockout_pcs_for_client
+        @game.end_claimed_sessions!
+        # Sub-slice H (9.4): a reload ends every guest session too
+        @game.end_guest_sessions!
+
+        if @game.player_state['inventory'].present? && @game.player_state['inventory'].is_a?(Array)
+          filtered['playerInventory'] = client_inventory
+
+          # Remove startItemsInInventory from scenario to prevent duplicates
+          # Since we're sending the actual inventory, we don't need the starting items
+          filtered.delete('startItemsInInventory')
+        end
+
+        render json: filtered
+      rescue => e
+        Rails.logger.error "[BreakEscape] scenario error: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
+        render_error("Failed to generate scenario: #{e.message}", :internal_server_error)
+      end
+    end
+
+    # GET /games/:id/scenario_map
+    # Returns minimal scenario metadata for navigation (no room contents)
+    def scenario_map
+      authorize @game if defined?(Pundit)
+
+      begin
+        # Check if scenario_data exists
+        unless @game.scenario_data.present?
+          Rails.logger.error "[BreakEscape] scenario_map: Game #{@game.id} has no scenario_data"
+          return render_error('Scenario data not available', :internal_server_error)
+        end
+
+        # Return minimal room/connection metadata without contents
+        layout = {}
+        rooms = @game.scenario_data['rooms'] || {}
+
+        Rails.logger.debug "[BreakEscape] scenario_map: Processing #{rooms.keys.length rescue 0} rooms"
+
+        rooms.each do |room_id, room_data|
+          next unless room_data.is_a?(Hash)
+
+          begin
+            layout[room_id] = {
+              type: room_data['type'],
+              connections: room_data['connections'] || {},
+              locked: room_data['locked'] || false,
+              lockType: room_data['lockType'],
+              hasNPCs: (room_data['npcs']&.length || 0) > 0,
+              accessible: @game.room_unlocked?(room_id)
+            }
+          rescue => e
+            Rails.logger.error "[BreakEscape] Error processing room #{room_id}: #{e.message}"
+            # Skip this room and continue
+            next
+          end
+        end
+
+        render json: {
+          startRoom: @game.scenario_data['startRoom'],
+          currentRoom: @game.player_state['currentRoom'],
+          rooms: layout
+        }
+      rescue => e
+        Rails.logger.error "[BreakEscape] scenario_map error: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
+        render_error("Failed to generate scenario map: #{e.message}", :internal_server_error)
+      end
+    end
+
+    # GET /games/:id/room/:room_id
+    # Returns room data for a specific room (lazy-loading support)
+    def room
+      authorize @game if defined?(Pundit)
+
+      begin
+        room_id = params[:room_id]
+        return render_error('Missing room_id parameter', :bad_request) unless room_id.present?
+
+        # Check if scenario_data exists
+        unless @game.scenario_data.present?
+          Rails.logger.error "[BreakEscape] room: Game #{@game.id} has no scenario_data"
+          return render_error('Scenario data not available', :internal_server_error)
+        end
+
+        # Check if room exists in scenario FIRST (before accessibility check)
+        unless @game.scenario_data['rooms']&.key?(room_id)
+          return render_error("Room not found: #{room_id}", :not_found)
+        end
+
+        # Check if room is accessible (starting room OR in unlockedRooms)
+        is_start_room = @game.scenario_data['startRoom'] == room_id
+        is_unlocked = @game.player_state['unlockedRooms']&.include?(room_id)
+
+        # An awareness episode's world room (social.awarenessEpisode.world.room) is
+        # open from the start; works for games already in progress, as it is read
+        # from scenario_data on every request.
+        is_world_room = @game.awareness_world_room?(room_id)
+
+        unless is_start_room || is_unlocked || is_world_room
+          return render_error("Room not accessible: #{room_id}", :forbidden)
+        end
+
+        # Auto-add room to unlockedRooms when accessed
+        # This ensures items in the room can be collected
+        if !is_unlocked
+          @game.player_state['unlockedRooms'] ||= []
+          @game.player_state['unlockedRooms'] << room_id unless @game.player_state['unlockedRooms'].include?(room_id)
+          @game.save!
+          Rails.logger.info "[BreakEscape] Auto-unlocked room #{room_id} on access"
+        end
+
+        # Get and filter room data
+        room_data = @game.filtered_room_data(room_id)
+        return render_error("Room not found: #{room_id}", :not_found) unless room_data
+
+        # Annotate flag-stations and launch-devices with whether all their flags are submitted
+        annotate_station_submission_status!(room_data, room_id)
+
+        # Track NPC encounters BEFORE sending response
+        npc_count = room_data['npcs']&.length || 0
+        Rails.logger.info "[BreakEscape] 📦 Loading room: #{room_id} (NPCs: #{npc_count})"
+        track_npc_encounters(room_id, room_data)
+
+        Rails.logger.debug "[BreakEscape] Serving room data for: #{room_id}"
+
+        render json: { room_id: room_id, room: room_data }
+      rescue => e
+        Rails.logger.error "[BreakEscape] room error: #{e.message}\n#{e.backtrace.first(10).join("\n")}"
+        render_error("Failed to load room: #{e.message}", :internal_server_error)
+      end
+    end
+
+    # GET /games/:id/container/:container_id
+    # Returns container contents after unlock (lazy-loaded)
+    #
+    # Wrapped in with_game_lock (see around_action above), and it MUST STAY LOCKED:
+    # this action writes player_state. A sign-in desktop served at the keyboard
+    # (no foothold parameter) clears its session's foothold (networks slice 9.3a,
+    # 4.4), and that write must not interleave with an unplug of the same foothold,
+    # which deletes the sessions it carried. The lock is also a read barrier: without
+    # it, this request could race a concurrent unlock or inventory write and serve a
+    # stale "not unlocked yet" response from before that write committed.
+    def container
+      authorize @game if defined?(Pundit)
+
+      # Reload game to get latest player_state (in case inventory was updated)
+      @game.reload
+
+      container_id = params[:container_id]
+      return render_error('Missing container_id parameter', :bad_request) unless container_id.present?
+
+      # Access model (section 6): a sign-in PC is opened by a session, never by
+      # unlockedObjects, and a folder under a sign-in PC or in a profile needs a session
+      # that admits it, with it and every container above it unlocked.
+      located = @game.login_scope_of(container_id)
+      if located && located[:scope] && located[:scope][:type] == 'resource'
+        # A share, or a folder in one (networks slice 9.3a, 4.5): refused exactly as an
+        # invented id is, so a browser with no foothold or session cannot tell it exists.
+        # Judged before the sign-in branch, so a sign-in object an author put in a share
+        # is refused as an invented id too, not as an unreachable PC.
+        return render_error("Container not found: #{container_id}", :not_found) unless @game.session_admits?(located[:scope])
+        # Past that, such an object is still no desktop: only a room's sign-in PC is one
+        if BreakEscape::Game.login_pc?(located[:object])
+          return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
+        end
+        unless @game.path_unlocked?(located[:path] + [located[:object]])
+          return render_error("Container not unlocked: #{container_id}", :forbidden)
+        end
+
+        return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
+      elsif located && BreakEscape::Game.login_pc?(located[:object])
+        return render_login_desktop(container_id)
+      elsif located && located[:scope]
+        unless @game.session_admits?(located[:scope]) && @game.path_unlocked?(located[:path] + [located[:object]])
+          return render_error("Container not unlocked: #{container_id}", :forbidden)
+        end
+
+        return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
+      end
+
+      # Find container in scenario data
+      container_data = find_container_in_scenario(container_id)
+      return render_error("Container not found: #{container_id}", :not_found) unless container_data
+
+      # Check if container is unlocked (check multiple possible identifiers)
+      is_unlocked = check_container_unlocked(container_id, container_data)
+
+      unless is_unlocked
+        return render_error("Container not unlocked: #{container_id}", :forbidden)
+      end
+
+      # Return filtered contents
+      contents = filter_container_contents(container_data)
+
+      Rails.logger.info "[BreakEscape] Serving container contents for: #{container_id} - returning #{contents.length} items"
+      Rails.logger.debug "[BreakEscape] Container contents: #{contents.map { |c| "#{c['type']}/#{c['id']}/#{c['name']}" }.join(', ')}"
+
+      render json: {
+        container_id: container_id,
+        contents: contents
+      }
+    end
+
+    # GET /games/:id/ink?npc=helper1
+    # Returns NPC script (JIT compiled if needed)
+    def ink
+      authorize @game if defined?(Pundit)
+
+      npc_id = params[:npc]
+      return render_error('Missing npc parameter', :bad_request) unless npc_id.present?
+
+      Rails.logger.debug "[BreakEscape] Loading ink for NPC: #{npc_id}"
+
+      # Find NPC in scenario data
+      npc = find_npc_in_scenario(npc_id)
+      return render_error("NPC not found in scenario: #{npc_id}", :not_found) unless npc
+
+      Rails.logger.debug "[BreakEscape] Found NPC: #{npc['id']} with storyPath: #{npc['storyPath']}"
+
+      # Check if storyPath is set
+      unless npc['storyPath'].present?
+        Rails.logger.warn "[BreakEscape] NPC #{npc['id']} has no storyPath defined"
+        return render_error("NPC #{npc['id']} has no storyPath defined", :bad_request)
+      end
+
+      # Resolve ink file path and compile if needed
+      ink_json_path = resolve_and_compile_ink(npc['storyPath'])
+      unless ink_json_path && File.exist?(ink_json_path)
+        Rails.logger.error "[BreakEscape] Ink file not found for #{npc['storyPath']} (resolved to #{ink_json_path})"
+        return render_error("Ink script not found for #{npc['storyPath']}", :not_found)
+      end
+
+      Rails.logger.debug "[BreakEscape] Serving ink from: #{ink_json_path}"
+
+      # Serve compiled JSON, read without following a symlink swapped in since the lookup
+      text = InkStoryFile.read(ink_json_path)
+      return render_error("Ink script not found for #{npc['storyPath']}", :not_found) unless text
+
+      render json: JSON.parse(text)
+    rescue JSON::ParserError
+      render_error('Invalid JSON in compiled ink', :internal_server_error)
+    end
+
+    # POST /games/:id/tts
+    # Generate TTS audio for NPC dialogue line
+    def tts
+      authorize @game if defined?(Pundit)
+
+      npc_id = params[:npc_id]
+      text = params[:text]
+
+      return render_error('Missing npc_id or text', :bad_request) unless npc_id.present? && text.present?
+      return render_error('Text must be a string', :bad_request) unless text.is_a?(String) && npc_id.is_a?(String)
+      return render_error('Text too long', :bad_request) if text.length > 1000
+
+      # Find NPC in scenario
+      npc = find_npc_in_scenario(npc_id)
+      return render_error("NPC not found: #{npc_id}", :not_found) unless npc
+
+      # Get voice config — NPCs use 'voice' (Hash), room objects use 'ttsVoice'
+      voice_config = npc['voice'].is_a?(Hash) ? npc['voice'] : npc['ttsVoice']
+      return render_error("No voice configured for NPC: #{npc_id}", :bad_request) unless voice_config
+
+      # The request only chooses a line of the scenario (anti-abuse): `line` is
+      # that line's own text, and it alone is voiced, keyed, recorded and looked
+      # up from here on, so characters the key ignores (lookalike letters,
+      # zero-width or bidi marks) can't add words to a clip or replace the clip
+      # every player hears. An NPC voices only its own lines (TtsLineResolver).
+      resolved = TtsLineResolver.new(
+        scenario_name: @game.mission&.name,
+        scenario_data: tts_scenario_data,
+        story_file: method(:resolve_and_compile_ink),
+        player_name: tts_player_name
+      ).resolve(npc_id, npc, text)
+      return render_error(resolved.error, resolved.status) unless resolved.line
+
+      text = resolved.line
+
+      # The line's #delivery: note (person-chat sends one when the line's tags carry
+      # it). The client's note only chooses: the note keyed, voiced and recorded is
+      # the one the scenario's ink gives this line for this speaker. With no such
+      # note the line is voiced untagged, never refused (TtsLineExtractor#delivery_for).
+      delivery = ink_delivery_note(npc_id, text, params[:delivery])
+
+      # Voice from the scenario as it is now, so games started before a voice was
+      # restyled still hit the regenerated cache. The snapshot is the fallback.
+      snapshot_voice = voice_config
+      voice_config = @game.mission&.current_voice_configs&.dig(npc_id) || snapshot_voice
+      scenario_name = @game.mission&.name
+
+      # A clip on the current model, else one from the previous model (missions
+      # not yet regenerated), else generate. Old clips are served before
+      # generating so an un-migrated mission plays as it did, with no delay.
+      # A line with a delivery note has its own clip (the note is in its key).
+      # Previous-model clips never had notes, so for a tagged line they, and the
+      # untagged clip, are a stand-in: served at once on a server that can't
+      # generate, and after a failed generation (quota, error) on one that can.
+      tts_service = TtsService.new
+      key_args = [text, voice_config['name'], voice_config['style'], voice_config['language']]
+      current_clip = tts_service.cache_path(tts_service.cache_key_for(*key_args, *[delivery].compact), scenario_name)
+      mp3_path = current_clip if File.exist?(current_clip)
+      stand_in = lambda do
+        # For an untagged line the current clip is the plain clip, already checked
+        plain_clip = delivery && tts_service.cache_path(tts_service.cache_key_for(*key_args), scenario_name)
+        plain_clip && File.exist?(plain_clip) ? plain_clip : legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
+      end
+      mp3_path ||= stand_in.call unless delivery && tts_service.enabled?
+      return send_file(mp3_path, type: 'audio/mpeg', disposition: 'inline') if mp3_path
+
+      # A cap on cache misses (paid generations) per game; cache hits above are
+      # not counted. A server without a key counts its misses too: it answers
+      # them with no audio either way.
+      unless TtsGenerationLimit.allow?(@game.id)
+        Rails.logger.warn "[TTS] Generation limit reached for game #{@game.id} (#{npc_id})"
+        fallback = delivery && stand_in.call
+        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
+
+        response.set_header('Retry-After', TtsGenerationLimit.retry_after(@game.id).to_s)
+        return render json: { error: 'Too many voice clips generated for this game; audio is unavailable for now' },
+                      status: :too_many_requests
+      end
+
+      begin
+        generate_options = { scenario_name: scenario_name, npc_id: npc_id }
+        generate_options[:delivery] = delivery if delivery
+        mp3_path = tts_service.generate(
+          text,
+          voice_config['name'],
+          voice_config['style'],
+          voice_config['language'],
+          **generate_options
+        )
+      rescue TtsService::QuotaExhaustedError => e
+        # Out of quota is a temporary condition, not a server fault. 429 tells the
+        # client to back off; it already treats any non-OK TTS reply as "no audio".
+        # A tagged line plays its untagged clip instead, if there is one.
+        Rails.logger.warn "[TTS] Quota exhausted for #{npc_id}: #{e.message}"
+        fallback = delivery && stand_in.call
+        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
+
+        response.set_header('Retry-After', e.retry_after.to_s) if e.retry_after
+        return render json: {
+          error: 'Text-to-speech quota exhausted; audio is unavailable for now',
+          retry_after: e.retry_after
+        }.compact, status: :too_many_requests
+      end
+      unless mp3_path && File.exist?(mp3_path)
+        fallback = delivery && tts_service.enabled? && stand_in.call
+        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
+
+        if tts_service.enabled?
+          return render_error('TTS generation failed', :internal_server_error)
+        else
+          return render_error('TTS not configured (missing GEMINI_API_KEY) and no cached audio available', :service_unavailable)
+        end
+      end
+
+      send_file mp3_path, type: 'audio/mpeg', disposition: 'inline'
+    end
+
+    # PUT /games/:id/sync_state
+    # Periodic state sync from the client (state-sync.js), sending only what
+    # changed since the last sync the server confirmed.
+    #
+    # Not on set_game / with_game_lock: those load the whole row twice,
+    # scenario_data (60-150 KB) included, for every sync. This takes the same
+    # row lock with one narrow load (SYNC_STATE_COLUMNS) and saves at most
+    # once, and only when a merge changed something.
+    #
+    # Ordering: each request carries clientTs, which only increases within a
+    # page. A request no newer than the stored lastSyncClientTs is stale (e.g.
+    # the old page's unload flush landing after the new page has synced): only
+    # the merges that can only grow and are safe to repeat are applied, and
+    # the answer is { stale: true } so the client sends the rest again.
+    # Requests without clientTs (clients from before this change) are applied
+    # as before.
+    def sync_state
+      stale = false
+      refusal = nil
+      format_refusal = nil
+      # Sections a merge refused over a cap (the saved copy stands). Reported
+      # as notSaved so the client does not mark them confirmed and resends them.
+      @not_saved = []
+      Game.transaction do
+        @game = Game.lock.select(*SYNC_STATE_COLUMNS).find(params[:id])
+        authorize @game if defined?(Pundit)
+
+        # Step 7: refuse a game stored above current (or with an unreadable formatVersion) before any
+        # merge, under the same row lock, so a tab on newer code than its server writes nothing to
+        # player_state. sync_state never upgrades: a version below current is synced as today and
+        # upgraded on the next load. The narrow sync load has no scenario_data, so pluck the version.
+        format_refusal = sync_format_refusal
+        if format_refusal
+          raise ActiveRecord::Rollback
+        end
+
+        stale = stale_sync_request?
+        # 6b review m1: fingerprint the phish evidence before the merge, only when something is
+        # waiting on it, so the capture step can tell whether this request advanced that evidence
+        # and skip the scenario load otherwise. A forged, never-provable unproven entry no longer
+        # forces the scenario load on every later evidence-carrying sync.
+        # Branch review R1 n2: gate on phish_gated_unproven_captures?, not unproven_captures?. An
+        # entry unproven only because a part 3 proof (a captureProof) has not yet held can never be
+        # advanced by a sync_state request (part 3 proofs arrive through other routes), so it needs
+        # no fingerprint; walking the whole mailbox to produce one a sync can never move is wasted.
+        @phish_fp_before = (!stale && @game.phish_gated_unproven_captures?) ? @game.phish_evidence_fingerprint : nil
+        refusal = merge_last_write_wins_sections unless stale
+        raise ActiveRecord::Rollback if refusal
+
+        merge_grow_only_sections
+        # Server-owned capture record (sync deltas R2, 6a). Runs on a stale request too (a
+        # capture is grow-only and safe to repeat): it intercepts the current client's
+        # se_captures global and records params[:captures], taking every field from the
+        # scenario, so the client never owns the record.
+        apply_capture_sync_step(stale: stale)
+        # validate: false because the validations here are player and mission
+        # presence (twice each: belongs_to is required and validates :player /
+        # :mission repeat it), which load both rows on every save, and the
+        # status inclusion. This update can't change player, mission or status
+        # (mission_id and status aren't even loaded), so none of them can turn
+        # false. Saved only if a merge changed something: jsonb dirty tracking
+        # compares parsed values, so a merge that rebuilds equal data is not a
+        # change.
+        @game.save!(validate: false) if @game.changed?
+      end
+
+      if format_refusal
+        current = BreakEscape::FormatUpgrade.current
+        message =
+          if format_refusal.is_a?(BreakEscape::FormatUpgrade::TooNew)
+            "This game was saved by a newer version of Break Escape (format #{format_refusal.stored}; this server reads up to #{current})"
+          else
+            "This game's saved format cannot be read"
+          end
+        render json: { error: 'format', message: message, current: current }, status: :conflict
+      elsif refusal
+        render json: { success: false, message: refusal }, status: :forbidden
+      elsif stale
+        body = { success: true, stale: true }
+        add_capture_answer_fields(body)
+        render json: body
+      else
+        body = { success: true }
+        body[:notSaved] = @not_saved if @not_saved.any?
+        body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
+        add_capture_answer_fields(body)
+        render json: body
+      end
+    end
+
+    # The se_captures interception and record (sync deltas R2, 6a), inside the sync_state row
+    # lock. The incoming entries are params[:captures] plus the values of the current client's
+    # params[:globalVariables]['se_captures'] (which merge_global_variables! drops, so it is
+    # never stored as a global). Each is recorded through record_capture!, which takes every
+    # stored field from the scenario. Loads the scenario only when there is something to record
+    # or a legacy global to migrate (the narrow sync_state load has no scenario_data).
+    def apply_capture_sync_step(stale: false)
+      incoming = incoming_capture_entries
+      @capture_answers = {}
+      @capture_refused = {}
+      @capture_incoming_any = incoming.any?
+      # 6b: a request that carries globalVariables or mailState can complete an unproven entry's
+      # part 2 evidence, so the step runs (and loads the scenario) to stamp it, even with no new
+      # capture. A stale request's mail is not merged and confirms nothing, so it never stamps.
+      # 6b review m1: only when this request actually advanced the phish evidence. The merge has
+      # already run, so compare the post-merge fingerprint (counting the request's own sent
+      # messages, so a mail section refused over a cap still counts) with the pre-merge one. When
+      # they match, no new evidence arrived and the scenario load is skipped, so a forged,
+      # never-provable unproven entry does not force the load on every later sync.
+      mail_incoming = params[:mailState].respond_to?(:to_unsafe_h) ? params[:mailState].to_unsafe_h : nil
+      # Branch review R1 m1: parse the incoming mail (incoming_sent_messages re-sanitises the whole
+      # body) only when extra_sent can be used: when this request can advance the phish evidence
+      # (an unproven phish-gated entry, so @phish_fp_before is set), or carries a new capture, or
+      # has a legacy global to migrate and then stamp. The common sync (no incoming, nothing
+      # unproven and phish-gated, no legacy) now skips the second mail walk.
+      extra_sent = (!stale && (incoming.any? || !@phish_fp_before.nil? || @game.legacy_captures?)) ?
+        @game.incoming_sent_messages(mail_incoming) : []
+      needs_stamp = false
+      if !stale && !@phish_fp_before.nil?
+        needs_stamp = @game.phish_evidence_fingerprint(extra_sent: extra_sent) != @phish_fp_before
+      end
+      return if incoming.empty? && !@game.legacy_captures? && !needs_stamp
+
+      scenario = @game.stored_scenario_data
+      @game.migrate_legacy_captures!(scenario: scenario) if @game.legacy_captures?
+
+      incoming.first(BreakEscape::CaptureProofs::MAX_CAPTURES_PER_SYNC).each do |entry|
+        target_id = entry.is_a?(Hash) ? entry['targetId'] : nil
+        result = @game.record_capture!(entry, scenario: scenario)
+        case result[:result]
+        when :recorded, :already
+          stored = result[:entry]
+          tid = (stored && stored['targetId']) || target_id
+          @capture_answers[tid] = client_capture_entry(stored) if tid
+        when :refused
+          @capture_refused[target_id] = result[:reason] if target_id
+        end
+      end
+      # Entries beyond the per-sync cap are refused, unless the same target id was already
+      # recorded or answered within the cap (review 6a-server N2): a duplicate id is stored
+      # first-wins, so answering and refusing the one id would send both a captures entry and a
+      # capturesRefused entry for it. Skip the refusal when the id already has an answer.
+      incoming.drop(BreakEscape::CaptureProofs::MAX_CAPTURES_PER_SYNC).each do |entry|
+        target_id = entry.is_a?(Hash) ? entry['targetId'] : nil
+        next unless target_id
+        next if @capture_answers.key?(target_id)
+
+        @capture_refused[target_id] = 'invalid'
+      end
+
+      # 6b: stamp proven: true on any unproven entry whose evidence now holds, counting the
+      # request's own sent messages (the capture and its landed phish mail ride one sync; a mail
+      # section refused over a cap still proves the capture). Non-stale only: a stale request's
+      # mail is not merged. The answers rebuild below from the stamped record.
+      return if stale
+
+      # extra_sent was computed above (reused from the needs_stamp fingerprint check).
+      @game.stamp_proven_captures!(scenario: scenario, extra_sent: extra_sent)
+    end
+
+    # params[:captures] (an array) plus each value of the old tab's
+    # params[:globalVariables]['se_captures'] map, as plain hashes.
+    def incoming_capture_entries
+      entries = []
+      caps = params[:captures]
+      Array(caps).each do |cap|
+        entries << (cap.respond_to?(:to_unsafe_h) ? cap.to_unsafe_h : cap) if cap.is_a?(ActionController::Parameters) || cap.is_a?(Hash)
+      end
+
+      globals = params[:globalVariables]
+      globals = globals.to_unsafe_h if globals.respond_to?(:to_unsafe_h)
+      legacy = globals.is_a?(Hash) ? globals['se_captures'] : nil
+      legacy.each_value { |entry| entries << entry if entry.is_a?(Hash) } if legacy.is_a?(Hash)
+      entries
+    end
+
+    # One stored entry as the client reads it: the safe fields only, never proven or a secret.
+    def client_capture_entry(entry)
+      return nil unless entry.is_a?(Hash)
+
+      out = { 'targetId' => entry['targetId'], 'kind' => entry['kind'] || 'credential' }
+      %w[roleLabel address host note at].each { |k| out[k] = entry[k] if entry.key?(k) && !entry[k].nil? }
+      out
+    end
+
+    # Add captures / capturesRefused to a sync answer, only when the body carried captures.
+    def add_capture_answer_fields(body)
+      return unless @capture_incoming_any
+
+      body[:captures] = @capture_answers if @capture_answers.present?
+      body[:capturesRefused] = @capture_refused if @capture_refused.present?
+    end
+
+    # POST /games/:id/update_room
+    # Update dynamic room state (items added/removed, NPCs moved, object state changes)
+    #
+    # Wrapped in with_game_lock (see around_action above): writes are scoped
+    # to a single room_id's entry under player_state['room_states'], an
+    # independent path rather than a cross-key decision, so it's a candidate
+    # to drop the lock if this ever moves to atomic per-path writes — see the
+    # FUTURE IMPROVEMENT note above.
+    def update_room
+      authorize @game if defined?(Pundit)
+
+      room_id = params[:roomId]
+      action_type = params[:actionType]  # Renamed from 'action' to avoid Rails conflict
+      data = params[:data]
+
+      unless room_id.present? && action_type.present?
+        return render json: { success: false, message: 'Missing roomId or actionType' }, status: :bad_request
+      end
+
+      # Validate room is accessible
+      unless @game.room_unlocked?(room_id)
+        return render json: { success: false, message: 'Room not accessible' }, status: :forbidden
+      end
+
+      success = case action_type
+      when 'add_object'
+        # Validate item data (data is ActionController::Parameters)
+        unless data.present? && (data[:type].present? || data['type'].present?)
+          return render json: { success: false, message: 'Invalid item data' }, status: :bad_request
+        end
+
+        source_data = {
+          'npc_id' => params[:sourceNpcId],
+          'source_type' => params[:sourceType]
+        }.compact
+
+        # Use strong parameters instead of to_unsafe_h
+        @game.add_item_to_room!(room_id, item_add_params, source_data)
+
+      when 'remove_object'
+        item_id = data[:id] || data['id'] || data[:itemId] || data['itemId']
+        unless item_id.present?
+          return render json: { success: false, message: 'Missing item id' }, status: :bad_request
+        end
+
+        @game.remove_item_from_room!(room_id, item_id)
+
+      when 'update_object_state'
+        object_id = data[:objectId] || data['objectId']
+        state_changes = data[:stateChanges] || data['stateChanges']
+
+        unless object_id.present? && state_changes.present?
+          return render json: { success: false, message: 'Invalid object state data' }, status: :bad_request
+        end
+
+        # Use strong parameters instead of to_unsafe_h
+        @game.update_object_state!(room_id, object_id, object_state_params)
+
+      when 'update_npc_state'
+        npc_id = data[:npcId] || data['npcId']
+        state_changes = data[:stateChanges] || data['stateChanges']
+
+        unless npc_id.present? && state_changes.present?
+          return render json: { success: false, message: 'Invalid NPC state data' }, status: :bad_request
+        end
+
+        # Use strong parameters instead of to_unsafe_h
+        @game.update_npc_state!(room_id, npc_id, npc_state_params)
+
+      # No 'move_npc' action: nothing in the game called it, and a client could name any NPC
+      # and any room next to an unlocked one, so the NPC was served there and recorded as met
+      # (friendface phone code review round 5, M1). An unknown action answers 400 below.
+      when 'remove_npc_from_scene'
+        npc_id = data[:npcId] || data['npcId']
+
+        unless npc_id.present?
+          return render json: { success: false, message: 'Missing npcId' }, status: :bad_request
+        end
+
+        @game.remove_npc_from_scene!(room_id, npc_id)
+
+      else
+        return render json: { success: false, message: "Unknown action: #{action_type}" }, status: :bad_request
+      end
+
+      if success
+        render json: { success: true }
+      else
+        render json: { success: false, message: 'Failed to update room state' }, status: :unprocessable_entity
+      end
+    end
+
+    # POST /games/:id/unlock
+    # Validate unlock attempt
+    #
+    # Wrapped in with_game_lock (see around_action above): a successful unlock
+    # appends to unlockedRooms/unlockedObjects, an independent path rather
+    # than a cross-key decision, so it's a candidate to drop the lock if this
+    # ever moves to atomic per-path writes — see the FUTURE IMPROVEMENT note
+    # above.
+    def unlock
+      authorize @game if defined?(Pundit)
+
+      target_type = params[:targetType]
+      target_id = params[:targetId]
+      attempt = params[:attempt]
+      method = params[:method]
+      # Every card id the client holds, for an rfid lock with an access list (4.1).
+      card_ids = params.key?(:card_ids) ? Array(params[:card_ids]).map(&:to_s) : nil
+
+      is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
+
+      unless is_valid
+        # Under a session the player holds at a PC that is off, or over a route that is down
+        # (review R3 m1): say why, so the pad counts no attempt. Nil where that would tell the
+        # player something new; those answer as any wrong code.
+        refusal = @game.unlock_session_refusal(target_type, target_id)
+        if refusal
+          return render json: { success: false, reason: refusal[:reason], message: refusal[:message] }, status: :forbidden
+        end
+
+        body = { success: false, message: 'Invalid attempt' }
+        # A carried PIN cracker reads the keypad's response: send its pips,
+        # worked out against the real PIN, which the client never holds.
+        if method == 'pin'
+          feedback = @game.pin_cracker_feedback(target_type, target_id, attempt)
+          body[:feedback] = feedback if feedback
+        end
+        # Right apart from letter case: the keypad says passwords are case-sensitive
+        if method == 'password' && @game.password_case_mismatch?(target_type, target_id, attempt)
+          body[:caseMismatch] = true
+        end
+        # A held card that would pass but for being a UID-only copy (access model 4.2)
+        if method == 'rfid' && card_ids && @game.uid_only_refusal?(target_type, target_id, card_ids)
+          body[:reason] = 'uid_only'
+        end
+        return render json: body, status: :unprocessable_entity
+      end
+
+      # An access-list rfid unlock says which held card passed: the player's own keycard by
+      # id, a copy only as viaCopy (UX devices R1)
+      rfid_card_answer = method == 'rfid' && card_ids ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
+
+      # Use transaction to ensure atomic update
+      ActiveRecord::Base.transaction do
+        if target_type == 'door'
+          room_data = serve_opened_room(target_id)
+
+          door_answer = {
+            success: true,
+            type: 'door',
+            roomData: room_data
+          }
+          door_answer.merge!(rfid_card_answer) if rfid_card_answer
+          render json: door_answer
+        else
+          # Object/container unlock
+          @game.unlock_object!(target_id)
+
+          # Find the unlocked object and return its contents if it's a container
+          object_data = find_object_in_scenario(target_id)
+          response = {
+            success: true,
+            type: 'object'
+          }
+          response.merge!(rfid_card_answer) if rfid_card_answer
+
+          # If object has contents, include them in response, filtered as
+          # GET /container filters them (M7): a nested lock's requires and a
+          # nested locked container's contents never leave the server.
+          if object_data && object_data['contents'].present?
+            response[:hasContents] = true
+            response[:contents] = filter_container_contents(object_data)
+          end
+
+          # If this was a flag-unlock: submit to Hacktivity, process rewards, complete linked task
+          if method == 'flag' && attempt.present?
+            # Submit flag to Hacktivity and mark in submitted_flags (ignore if already submitted)
+            @game.submit_flag(attempt)
+
+            rewards = find_flag_rewards(attempt)
+            unless rewards.empty?
+              reward_results = process_flag_rewards(attempt, rewards)
+              response[:rewards] = reward_results
+            end
+
+            # Complete any task declared on the flag-locked object
+            completed_tasks = []
+            if object_data && (task_id = object_data['completesTask'])
+              # Use the flag ref directly ("vm:flag_N") as the submitted identifier —
+              # avoids collision with station-position-based flag_ids ("vm-flagN").
+              flag_ref    = object_data['requires'] || ''
+              task_result = @game.complete_task!(task_id, { submittedFlags: [flag_ref] })
+              completed_tasks << task_id if task_result[:success]
+            end
+            response[:completedTasks] = completed_tasks
+            response[:updatedTasks]   = []
+          end
+
+          render json: response
+        end
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      render json: {
+        success: false,
+        message: "Failed to save unlock: #{e.message}"
+      }, status: :unprocessable_entity
+    end
+
+    # POST /games/:id/inventory
+    # Update inventory
+    def inventory
+      authorize @game if defined?(Pundit)
+
+      action_type = params[:action_type] || params[:actionType]
+      item = params[:item]
+
+      Rails.logger.info "[BreakEscape] inventory endpoint: action=#{action_type}, item=#{item.inspect}"
+
+      begin
+        case action_type
+        when 'add'
+          # Validate item exists and is collectible
+          source_npc_id = (params[:source_npc_id] || params[:sourceNpcId]).presence&.to_s
+          # An add from a sign-in desktop names its PC and Copy or Move (access model 5.1)
+          source_pc_id = (params[:source_pc_id] || params[:sourcePcId]).presence&.to_s
+          # An add from a share opened in the network view names the share (slice 9.3a, section 5)
+          source_resource_id = (params[:source_resource_id] || params[:sourceResourceId]).presence&.to_s
+          transfer = params[:transfer].presence&.to_s
+          # A device planted in a jack is in no room and no home (slice 9.3a, 4.1). Checked
+          # here only for an add that names an id or a name: identity matches a bare type
+          # against any item of that type. The item the add resolves to is checked below.
+          client_item = item.to_unsafe_h
+          if (client_item['id'].present? || client_item['name'].present?) && @game.planted_device?(client_item)
+            return render json: { success: false, message: BreakEscape::NetworkAccess::DEVICE_IN_USE },
+                         status: :unprocessable_entity
+          end
+          # Already held and no giver named: nothing to add, so nothing to validate.
+          # A reload used to re-send every held item like this, and re-validating an
+          # NPC gift with no source NPC took the first NPC copy holding it in room
+          # order, one the player may not have met (m10 F3: "NPC not encountered:
+          # nightshade_lock"). A give that names its NPC still validates, so the
+          # gift record for that NPC is kept.
+          if source_npc_id.blank? && source_pc_id.blank? && source_resource_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
+            Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
+            return render json: { success: true, already: true }
+          end
+          validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
+                                                                          source_resource_id: source_resource_id)
+          if validation_error
+            Rails.logger.warn "[BreakEscape] inventory validation failed: #{validation_error}"
+            return render json: { success: false, message: validation_error },
+                         status: :unprocessable_entity
+          end
+          if @collectible_item.is_a?(Hash) && @game.planted_device?(@collectible_item)
+            return render json: { success: false, message: BreakEscape::NetworkAccess::DEVICE_IN_USE },
+                         status: :unprocessable_entity
+          end
+
+          Rails.logger.info "[BreakEscape] Adding item to inventory: #{item['type']} / #{item['name']}"
+          # Store the server's copy, never the client's fields (M6): the key and
+          # lockpick checks read opens_lock, scenarioData and type from it.
+          @game.add_inventory_item!(canonical_inventory_item(item.to_unsafe_h))
+          # Remember what an NPC has handed over, so a reload does not restore it
+          # to that NPC's itemsHeld (a later KO would drop a duplicate).
+          if @collectible_location && @collectible_location[:type] == 'npc'
+            @game.record_npc_gift!(@collectible_location[:npc_id], item.to_unsafe_h)
+          end
+          # Copy: the file stays on the PC and in its profile (access model 5.1)
+          @game.record_copied_item!(@collectible_item['id']) if (source_pc_id || source_resource_id) && @collectible_transfer == 'copy'
+          Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
+          # No client reads the inventory echo from this answer (sync deltas P2); the
+          # tray is reconciled by PUT /sync_state and the network delta answers.
+          render json: { success: true }
+
+        when 'remove'
+          # A plant (engine plan section 6): the client names the object the device was used
+          # on, and the server records it when that object takes the item, before removing.
+          used_on = params[:used_on] || params[:usedOn]
+          @game.record_planted_item!(item['id'], used_on) if used_on.present?
+          @game.remove_inventory_item!(item['id'])
+          render json: { success: true }
+
+        when 'update_saved_cards'
+          # The RFID cloner's saved cards (kept for one release while old tabs still send
+          # it; SYNC_DELTAS_PLAN 5.4). A filtered merge now: only a recorded card is kept.
+          cards = Array(params[:saved_cards]).map { |c| c.respond_to?(:to_unsafe_h) ? c.to_unsafe_h : c }
+          if @game.update_cloner_saved_cards!(cards)
+            render json: { success: true }
+          else
+            render json: { success: false, message: 'No RFID cloner in inventory, or invalid card data' },
+                   status: :unprocessable_entity
+          end
+
+        when 'remove_saved_card'
+          # Remove one display card from the cloner's list (SYNC_DELTAS_PLAN P1). The copy
+          # itself stands; the list is a display convenience.
+          @game.remove_saved_card!(params[:card_id].to_s)
+          render json: { success: true }
+
+        else
+          render json: { success: false, message: 'Invalid action' }, status: :bad_request
+        end
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.error "[BreakEscape] Inventory save failed: #{e.message}"
+        render json: { success: false, message: "Failed to save inventory: #{e.message}" },
+               status: :unprocessable_entity
+      rescue => e
+        Rails.logger.error "[BreakEscape] Inventory error: #{e.class} - #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
+        render json: { success: false, message: "Inventory error: #{e.message}" },
+               status: :internal_server_error
+      end
+    end
+
+    # ==========================================
+    # Access model: sign-in, sessions and card copies (ACCESS_MODEL_PLAN.md section 6)
+    # ==========================================
+
+    # POST /games/:id/login
+    # Sign in at a sign-in PC with a username and password (pc_id, username, password),
+    # or claim the owner's unlocked session (pc_id, claim: "owner", and the workstation
+    # globals, which are only logged). The checks and answers are Game#attempt_login! and
+    # Game#claim_login_session!.
+    def login
+      authorize @game if defined?(Pundit)
+
+      pc_id = params[:pc_id].to_s
+      return render json: { success: false, message: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
+
+      # A remote sign-in names the foothold it goes through (networks slice 9.3a, section 5)
+      foothold = params[:foothold].presence&.to_s
+      result =
+        if params.key?(:claim)
+          # The model refuses a claim that carries a foothold (an unlocked screen is
+          # physical), so it is passed on rather than checked here: one place of truth.
+          if params[:claim].to_s == 'owner'
+            @game.claim_login_session!(pc_id, claim_globals, foothold: foothold)
+          elsif params[:claim].to_s == 'guest'
+            # Slice 9.2 sub-slice H: a session an NPC left open at a borrowed PC
+            @game.claim_guest_session!(pc_id, foothold: foothold)
+          else
+            { status: :unprocessable_entity, body: { success: false, message: BreakEscape::Game::LOGIN_CLAIM_REFUSED } }
+          end
+        else
+          @game.attempt_login!(pc_id, params[:username], params[:password], foothold: foothold)
+        end
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/logout
+    # End the session at a sign-in PC (pc_id). No checks.
+    def logout
+      authorize @game if defined?(Pundit)
+
+      pc_id = params[:pc_id].to_s
+      return render json: { success: false, message: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
+
+      # Ending a session can break a pivot; the model ends the onward sessions and returns
+      # their ids (networks slice 9.3b, 5.1) for pc-sessions.js.
+      ended = @game.logout_session!(pc_id)
+      render json: { success: true, endedPcIds: Array(ended) }
+    end
+
+    # GET /games/:id/login_accounts?pc_id=
+    # The account tiles for a reachable sign-in PC's loginPicker (5.3), refreshed each
+    # time the sign-in screen opens.
+    def login_accounts
+      authorize @game if defined?(Pundit)
+      # The answer can carry a written-down password (slice 9.1, 5.3): never cached.
+      response.headers['Cache-Control'] = 'no-store'
+
+      info = @game.find_login_pc(params[:pc_id].to_s)
+      return render_error("Sign-in PC not found: #{params[:pc_id]}", :not_found) unless info
+      # A headless host has no screen and no tiles (networks slice 9.3a, section 5)
+      unless @game.login_pc_reachable?(info) && !BreakEscape::NetworkModel.headless?(info[:object])
+        return render_error("PC not reachable: #{params[:pc_id]}", :forbidden)
+      end
+      # The sign-in screen at a switched-off PC's keyboard is not shown (q72). The route is
+      # judged at the keyboard whatever foothold value it carries (review R3 nit 3): the PC is
+      # physically reachable here, so saying it is off tells nothing new.
+      if @game.host_service_off?(info[:object])
+        return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
+      end
+
+      answer = { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
+      # A written-down note is seen at the PC's own keyboard only: a request that names a
+      # foothold (a remote sign-in, slice 9.3a 4.4 and 13.1) never gets it
+      note = params[:foothold].present? ? nil : @game.login_postit_for(info[:object])
+      answer[:postitNote] = note if note
+      render json: answer
+    end
+
+    # POST /games/:id/clone_card
+    # Record a copy the card copier saved (npc_id or object_id, and card_id): only the
+    # source's own card, and only while an rfid_cloner is held (4.2).
+    def clone_card
+      authorize @game if defined?(Pundit)
+
+      # The display card the copy saves to the cloner's list (SYNC_DELTAS_PLAN P1): stored
+      # only for a copy the server records, and only its rfid_data is read from the client.
+      # Capped at 8 KB before parsing (refuse_oversized_body, clone_card).
+      card = params[:card].respond_to?(:to_unsafe_h) ? params[:card].to_unsafe_h : nil
+      result = @game.record_card_clone!(
+        card_id: params[:card_id].to_s,
+        npc_id: params[:npc_id].presence&.to_s,
+        object_id: params[:object_id].presence&.to_s,
+        held_card: ActiveModel::Type::Boolean.new.cast(params[:held_card]) == true,
+        card: card
+      )
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/npc_frustration (slice 9.2, ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1):
+    # { reports: [{ npc_id, event, need, object_id, missing, rearmed }] }, one answer each
+    # An honest batch (20 reports, a few causes each) is a few kilobytes; a larger body is
+    # refused before the body is parsed (review R1 M1, R2 n1: refuse_oversized_npc_frustration).
+    NPC_FRUSTRATION_MAX_BYTES = 64 * 1024
+
+    def npc_frustration
+      authorize @game if defined?(Pundit)
+      raw = params[:reports]
+      reports = raw.is_a?(Array) ? raw.map { |r| r.respond_to?(:to_unsafe_h) ? r.to_unsafe_h : r } : raw
+      result = @game.report_npc_uses!(reports)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/npc_workaround (slice 9.2, ACCESS_MODEL_SLICE_9_2_PLAN.md 6 and 9.1):
+    # { npc_id, index, hand, dropped, cut } from the workaround runner. 403 for a hand-over the server
+    # never made (or already spent other than as done), 425 before the dwell.
+    def npc_workaround
+      authorize @game if defined?(Pundit)
+      # Review R2 N3: only true (or "true") is a drop; {} or [1] is not
+      dropped = [true, 'true'].include?(params[:dropped])
+      ActiveRecord::Base.transaction do
+        # Sub-slice H: a share_login reports `heard` (true or "true" only) and the room it was heard in
+        heard = [true, 'true'].include?(params[:heard])
+        room_id = params[:room_id].is_a?(String) ? params[:room_id] : nil
+        # q43 review R1 M1: a borrow cut short after the sit (true or "true" only)
+        cut = [true, 'true'].include?(params[:cut])
+        result = @game.complete_npc_workaround!(npc_id: params[:npc_id], index: params[:index], hand: params[:hand],
+                                                dropped: dropped, heard: heard, room_id: room_id, cut: cut)
+        body = result[:body]
+        body = body.merge('roomData' => serve_opened_room(result[:open_room])) if result[:status] == :ok && result[:open_room]
+        render json: body, status: result[:status]
+      end
+    end
+
+    # POST /games/:id/feed_post (slice 9.2 C, ACCESS_MODEL_SLICE_9_2_PLAN.md 8.3 and 9.1):
+    # { npc_id, object_id }, sent after a met social media use; object_id is where the use was,
+    # null for the NPC's phone (user decision q33). The NPC's next post and its fact, or
+    # { post: null, done } when none is left, it is too soon or the source is refused.
+    def feed_post
+      authorize @game if defined?(Pundit)
+      source = params[:object_id]
+      source = false unless source.nil? || source.is_a?(String) # any other shape is refused
+      result = @game.reveal_feed_post!(params[:npc_id].is_a?(String) ? params[:npc_id] : nil, source)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/friendface_phone: open a Friendface phone the player holds (q35,
+    # FRIENDFACE_PHONE_ITEM_PLAN.md section 4). npc_id a string: that NPC's phone; null: the
+    # player's own. Read only; refused unless the server's inventory holds that phone.
+    def friendface_phone
+      authorize @game if defined?(Pundit)
+      npc_id = params[:npc_id]
+      npc_id = false unless npc_id.nil? || npc_id.is_a?(String) # any other shape is refused
+      # Review R3 n5: the revealed posts come back only when asked for (tests); the game never reads them
+      result = @game.open_friendface_phone(npc_id, with_posts: params[:posts].to_s == '1')
+      render json: result[:body], status: result[:status]
+    end
+
+    # ==========================================
+    # Objectives System
+    # ==========================================
+
+    # GET /games/:id/objectives
+    # Returns current objectives and their state
+    def objectives
+      authorize @game if defined?(Pundit)
+
+      render json: @game.objectives_state
+    end
+
+    # ==========================================
+    # Networks (docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md, section 5). The checks
+    # and answers are in Game's NetworkAccess concern.
+    # ==========================================
+
+    # GET /games/:id/network?foothold=
+    # The network view for every held foothold, or the one named.
+    def network
+      authorize @game if defined?(Pundit)
+
+      result = @game.network_view(params[:foothold].presence&.to_s)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/plant (jack_id, optional device_id)
+    def network_plant
+      authorize @game if defined?(Pundit)
+
+      jack_id = params[:jack_id].to_s
+      return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
+
+      result = @game.plant_device!(jack_id, params[:device_id].presence&.to_s, delta: inventory_delta_opt_in?)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/wear (item_id, worn) -- put a held wearable item on or take it off
+    # (docs/achitechture/WEARABLE_BUILD_LOG.md). The server checks the item is held and
+    # wearable, keeps one item worn at a time and writes the worn global itself; sync_state
+    # cannot. worn defaults to true; worn false with no item_id takes off whatever is worn.
+    def wear
+      authorize @game if defined?(Pundit)
+
+      worn = params.key?(:worn) ? ActiveModel::Type::Boolean.new.cast(params[:worn]) : true
+      item_id = params[:item_id].presence&.to_s
+      if worn && item_id.nil?
+        return render json: { success: false, message: 'Missing item_id' }, status: :bad_request
+      end
+
+      result = @game.wear!(item_id, worn)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/join (ap_id, optional key) -- join an in-game Wi-Fi network
+    # through an access point (slice 9.3b sub-slice W, 5.3). The key is compared on the
+    # server; an open network sends no key.
+    def network_join
+      authorize @game if defined?(Pundit)
+
+      ap_id = params[:ap_id].to_s
+      return render json: { success: false, error: 'Missing ap_id' }, status: :bad_request if ap_id.empty?
+
+      result = @game.join_network!(ap_id, params[:key].presence&.to_s, delta: inventory_delta_opt_in?)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/unplug (jack_id)
+    def network_unplug
+      authorize @game if defined?(Pundit)
+
+      jack_id = params[:jack_id].to_s
+      return render json: { success: false, error: 'Missing jack_id' }, status: :bad_request if jack_id.empty?
+
+      result = @game.unplug_device!(jack_id, delta: inventory_delta_opt_in?)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/implant (pc_id, shape = 'dropped' | 'session', optional path)
+    # A device in a PC (not a jack) grants a foothold: a dropped device an NPC uses, or a
+    # BadUSB the player plugs into a PC they hold a session on (slice 9.3b sub-slice I, 5.5).
+    def network_implant
+      authorize @game if defined?(Pundit)
+
+      pc_id = params[:pc_id].to_s
+      return render json: { success: false, error: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
+
+      shape = params[:shape].presence&.to_s
+      return render json: { success: false, error: 'Missing shape' }, status: :bad_request unless %w[dropped session].include?(shape)
+
+      result = @game.implant_foothold!(pc_id, shape, params[:path].presence&.to_s, delta: inventory_delta_opt_in?)
+      render json: result[:body], status: result[:status]
+    end
+
+    # GET /games/:id/capture_secrets
+    # The authored secret for each SE credential capture the server sees was earned.
+    # filtered_scenario_for_bootstrap strips the secret from the bootstrap, so the browser
+    # holds it only once the capture has landed (the captures view fetches it then). Gated
+    # on the server's own persisted se_captures record and on social.captures.revealSecret;
+    # see Game#capture_secrets_for_client.
+    def capture_secrets
+      authorize @game if defined?(Pundit)
+
+      body = { secrets: @game.capture_secrets_for_client }
+      # The usernames on captures of account holders, for the remote sign-in screen's
+      # Captured sign-ins list (networks slice 9.3a, 4.4). That screen exists only in a
+      # scenario with networks, so a scenario without them gets the first slice's answer.
+      body[:accounts] = @game.account_capture_usernames if @game.network_scenario?
+      render json: body
+    end
+
+    # POST /games/:id/objectives/unlock
+    # Record an aim or task the client unlocked from an ink tag or an
+    # eventMapping (params: kind = 'aim' | 'task', objective_id). Only reveals; never
+    # completes anything, so it needs no validation beyond the id existing.
+    def unlock_objective
+      authorize @game if defined?(Pundit)
+
+      if @game.unlock_objective!(params[:kind].to_s, params[:objective_id].to_s)
+        render json: { success: true }
+      else
+        render json: { success: false, error: 'Unknown objective' }, status: :unprocessable_entity
+      end
+    end
+
+    # POST /games/:id/objectives/tasks/:task_id
+    # Complete a specific task
+    #
+    # Wrapped in with_game_lock (see around_action above) and MUST STAY LOCKED
+    # even if the other actions in that list are ever narrowed to atomic
+    # per-path writes: complete_task! calls check_aim_completion /
+    # check_mission_conclusion, which read every task in an aim (and gate
+    # tasks that can belong to a *different* aim) before deciding whether to
+    # flip an aim's status or bump objectives_completed/score. That's a
+    # cross-key decision, not an independent field write, and it's exactly
+    # the logic that produced both the >100% score bug and the mission stuck
+    # in 'abandoned' with all real objectives complete — see the FUTURE
+    # IMPROVEMENT note above for why this can't become a single atomic SQL
+    # statement without moving that decision logic into the database.
+    def complete_task
+      authorize @game if defined?(Pundit)
+
+      task_id = params[:task_id]
+
+      unless task_id.present?
+        return render json: { success: false, error: 'Missing task_id' }, status: :bad_request
+      end
+
+      # For submit_flags tasks, accept submittedFlags from request body for validation
+      # For collect_items tasks, accept currentCount from client (avoids inventory async race)
+      validation_data = params[:validation_data] || {}
+      if params[:submittedFlags].present?
+        validation_data[:submittedFlags] = params[:submittedFlags]
+      end
+      if params[:currentCount].present?
+        validation_data[:currentCount] = params[:currentCount].to_i
+      end
+
+      result = @game.complete_task!(task_id, validation_data)
+
+      if result[:success]
+        Rails.logger.info "[BreakEscape] Task completed: #{task_id}"
+        if (cb = BreakEscape.configuration&.on_task_complete)
+          begin
+            cb.call(@game)
+          rescue => e
+            Rails.logger.error "[BreakEscape] on_task_complete hook raised: #{e.class}: #{e.message}"
+          end
+        end
+        render json: result
+      else
+        Rails.logger.warn "[BreakEscape] Task completion failed: #{task_id} - #{result[:error]}"
+        render json: result, status: :unprocessable_entity
+      end
+    end
+
+    # POST /games/:id/objectives/tasks/:task_id/skip
+    # Mark a task skipped (a scenario skipTask eventMapping or #skip_task ink
+    # tag): the story closed it off. Not counted as completed. Locked like
+    # complete_task, because it can complete the task's aim (see skip_task!).
+    def skip_task
+      authorize @game if defined?(Pundit)
+
+      task_id = params[:task_id]
+      return render json: { success: false, error: 'Missing task_id' }, status: :bad_request unless task_id.present?
+
+      result = @game.skip_task!(task_id)
+      if result[:success]
+        Rails.logger.info "[BreakEscape] Task skipped: #{task_id}"
+        # A new skip can complete the aim (and change the score), so the host
+        # rescores as it does after a completion
+        if !result.key?(:message) && (cb = BreakEscape.configuration&.on_task_complete)
+          begin
+            cb.call(@game)
+          rescue => e
+            Rails.logger.error "[BreakEscape] on_task_complete hook raised: #{e.class}: #{e.message}"
+          end
+        end
+        render json: result
+      else
+        render json: result, status: :unprocessable_entity
+      end
+    end
+
+    # PUT /games/:id/objectives/tasks/:task_id
+    # Update task progress (for collect_items and submit_flags tasks)
+    #
+    # Wrapped in with_game_lock (see around_action above): unlike complete_task
+    # right above it, update_task_progress! only writes this one task's own
+    # progress/submittedFlags — it never calls check_aim_completion, so it's a
+    # candidate to drop the lock if this ever moves to atomic per-path writes
+    # — see the FUTURE IMPROVEMENT note above. Don't confuse this with
+    # complete_task's lock requirement; they look similar but touch very
+    # different logic.
+    def update_task_progress
+      authorize @game if defined?(Pundit)
+
+      task_id = params[:task_id]
+      progress = params[:progress].to_i
+      submitted_flags = params[:submittedFlags]
+
+      unless task_id.present?
+        return render json: { success: false, error: 'Missing task_id' }, status: :bad_request
+      end
+
+      result = @game.update_task_progress!(task_id, progress, submitted_flags)
+
+      Rails.logger.debug "[BreakEscape] Task progress updated: #{task_id} = #{progress}, submittedFlags: #{submitted_flags&.length || 0}"
+      render json: result
+    end
+
+    # ==========================================
+    # VM/Flag Integration
+    # ==========================================
+
+    # POST /games/:id/flags
+    # Submit a CTF flag for validation
+    #
+    # Wrapped in with_game_lock (see around_action above) and MUST STAY LOCKED
+    # even if the other actions in that list are ever narrowed to atomic
+    # per-path writes: this calls @game.process_flag_task_completions!, which
+    # — like complete_task! above — calls check_aim_completion for every
+    # matching task and can trigger check_mission_conclusion. Same cross-key
+    # aggregation logic, same reasoning as complete_task; see the FUTURE
+    # IMPROVEMENT note above.
+    # The client has reached the end of the story and wants the credits.
+    #
+    # The client is the authority on the narrative being over; the server is the
+    # authority on whether the scenario's declared technical work was done. See
+    # Game#conclude_mission!. A refusal is not an error — it is the answer
+    # "not yet", with the outstanding requirements named so the client can tell
+    # the player what is left rather than rolling credits that do not count.
+    def conclude_mission
+      authorize @game if defined?(Pundit)
+
+      result = with_game_lock { @game.conclude_mission! }
+
+      render json: {
+        success: result[:concluded],
+        alreadyConcluded: result[:already],
+        missing: result[:missing],
+        missionConcludedAt: @game.mission_concluded_at,
+        status: @game.status,
+        score: @game.score
+      }
+    end
+
+    def submit_flag
+      authorize @game if defined?(Pundit)
+
+      flag_key = params[:flag]
+      station_id = params[:stationId]
+
+      unless flag_key.present?
+        return render json: { success: false, message: 'No flag provided' }, status: :bad_request
+      end
+
+      # Development-only convenience: allow test:flag:1, test:flag:2, ... as
+      # stand-ins for this station's real flags, so one playtest trace runs
+      # unchanged in BOTH environments — a standalone game whose flags came from
+      # flag-hint XML, and a Hacktivity game whose flags come from the real VM
+      # build. In neither case does the client ever see the flag values (see
+      # Game#filter_requires_and_contents_recursive).
+      #
+      # This is an ALIAS, not a bypass. It resolves to the real flag value and then
+      # every downstream check runs untouched: station-ownership, already-submitted,
+      # scenario validation, Hacktivity scoring, rewards and task completion. Real
+      # flags continue to work exactly as before, in every environment.
+      resolved_key, alias_used = resolve_test_flag_alias(flag_key, station_id)
+      flag_key = resolved_key
+
+      # hintOnlyFlags: flags listed on a station that should be validated but NOT submitted —
+      # used when a flag is "used elsewhere" (e.g. archive key or launch code) and the station
+      # just wants to tell the player that without consuming the flag or scoring it in Hacktivity.
+      if station_id.present?
+        hint_message = find_hint_only_message(flag_key, station_id)
+        if hint_message
+          valid_flags = @game.send(:extract_valid_flags_from_scenario)
+          if valid_flags.any? { |f| f.downcase == flag_key.downcase }
+            return render json: {
+              success: true,
+              hint: true,
+              message: 'Flag recognised',
+              flag: flag_key,
+              flagId: nil,
+              vmId: nil,
+              rewards: [{ 'type' => 'hint', 'message' => hint_message }],
+              completedTasks: [],
+              updatedTasks: []
+            }
+          end
+        end
+      end
+
+      # If the client reports which station the player is at, ensure the submitted flag
+      # belongs to that station. This prevents a flag valid for one station being accepted
+      # by a different station (e.g. the launch device accepting drop-site flags).
+      # Strategy: find which station actually owns this flag value, then verify it matches
+      # the station the player is interacting with.
+      if station_id.present?
+        owning_station = find_flag_station_for_flag(flag_key)
+        owning_id = owning_station ? (owning_station['id'] || owning_station['name']) : nil
+        Rails.logger.info "[FlagDebug] station_id=#{station_id.inspect} flag=#{flag_key.inspect} owning_id=#{owning_id.inspect} owning_type=#{owning_station&.dig('type').inspect}"
+        if owning_station
+          unless owning_id == station_id
+            Rails.logger.info "[FlagDebug] REJECTED: owning #{owning_id.inspect} != submitted #{station_id.inspect}"
+            # R9: say which station takes it, but only one the player has already
+            # found (its room is unlocked), so a refusal never leaks a device
+            # they haven't met yet.
+            return render json: {
+              success: false,
+              message: 'Incorrect flag',
+              reason: 'wrong_station',
+              ownerStationName: discovered_station_name(owning_station),
+              debug: { owning_id: owning_id, station_id: station_id }
+            }, status: :unprocessable_entity
+          end
+        else
+          Rails.logger.info "[FlagDebug] No owning station found for flag — will proceed to submit_flag validation"
+        end
+      end
+
+      result = @game.submit_flag(flag_key)
+
+      if result[:success]
+        # Find flag-station and generate flag identifier
+        flag_station = find_flag_station_for_flag(flag_key)
+        flag_id = generate_flag_identifier(flag_key, flag_station)
+        flag_ids = generate_flag_identifiers(flag_key, flag_station)
+        vm_id = flag_station&.dig('acceptsVms', 0)
+
+        # Find rewards for this flag in scenario
+        rewards = find_flag_rewards(flag_key)
+
+        # Process rewards (must run before task completions to minimise partial-state window)
+        reward_results = process_flag_rewards(flag_key, rewards)
+
+        # Server-side task/aim completion — runs after rewards so the final save!
+        # captures all accumulated in-memory state changes
+        task_outcomes = flag_ids.any? \
+          ? @game.process_flag_task_completions!(flag_ids)
+          : { completed_tasks: [], updated_tasks: [] }
+
+        # Notify the host app so it can route this through its own flag-scoring pipeline
+        # (e.g. FlagService in Hacktivity). Runs after task state is saved so the host
+        # sees a consistent game state. Errors are logged and swallowed — a scoring
+        # failure must not roll back the player's flag submission.
+        # Skip when the flag was already counted in Hacktivity (backward compat for
+        # flags previously consumed by the wrong station under the old buggy code).
+        if (cb = BreakEscape.configuration&.on_flag_submit) && !result[:already_in_hacktivity]
+          begin
+            cb.call(@game, flag_key, vm_id)
+          rescue => e
+            Rails.logger.error "[BreakEscape] on_flag_submit callback error: #{e.class} #{e.message}"
+          end
+        end
+
+        Rails.logger.info "[BreakEscape] Flag submitted: #{flag_key}, flagId: #{flag_id}, " \
+                          "completedTasks: #{task_outcomes[:completed_tasks]}, rewards: #{reward_results.length}"
+
+        render json: {
+          success:        true,
+          message:        result[:message],
+          # Surfaced so a playtest report can never silently claim a VM step was
+          # completed with a real flag when a dev stand-in was used.
+          testFlagAlias:  alias_used,
+          flag:           flag_key,
+          flagId:         flag_id,
+          vmId:           vm_id,
+          rewards:        reward_results,
+          completedTasks: task_outcomes[:completed_tasks],
+          updatedTasks:   task_outcomes[:updated_tasks]
+        }
+      else
+        render json: result.merge(reason: result[:reason] || 'invalid'), status: :unprocessable_entity
+      end
+    end
+
+    # GET /games/:id/vm_panel?vm_title=:title
+    # Redirects to the Hacktivity individual VM show page for the named VM in this game's VmSet,
+    # with ?embedded=1 so Hacktivity's application layout hides navigation and footer.
+    def vm_panel
+      Rails.logger.info "[BreakEscape] vm_panel: player=#{current_player.class}##{current_player&.id} " \
+                        "game_player=#{@game.player_type}##{@game.player_id} " \
+                        "status=#{@game.status} vm_set_id=#{@game.vm_set_id}"
+      authorize @game if defined?(Pundit)
+      return head :not_found unless BreakEscape::Mission.hacktivity_mode? && @game.vm_set_id
+
+      vm_set = defined?(::VmSet) ? ::VmSet.find_by(id: @game.vm_set_id) : nil
+      return head :not_found unless vm_set
+
+      # Nil-guard sec_gen_batch in case it was deleted by an admin after assignment.
+      return head :not_found unless vm_set.sec_gen_batch
+      batch = vm_set.sec_gen_batch
+      event = batch.event
+      # Nil-guard event — Event may have been hard-deleted by an admin.
+      return head :not_found unless event
+
+      vm = params[:vm_title].present? ? vm_set.vms.find_by(title: params[:vm_title])
+                                      : vm_set.vms.first
+      return head :not_found unless vm
+
+      # Race guard: only unlock console if the game is still in_progress.
+      return head :not_found unless @game.reload.status == 'in_progress'
+
+      # Gate: verify the player has reached the room containing this terminal in-game.
+      # Admins and account managers bypass this check.
+      unless current_player.admin? || current_player.account_manager?
+        launcher_room_id = find_vm_launcher_room(@game.scenario_data, vm.title)
+        if launcher_room_id && !@game.room_unlocked?(launcher_room_id)
+          Rails.logger.warn "[BreakEscape] vm_panel blocked: #{current_player.id} " \
+                            "attempted VM #{vm.title} without unlocking #{launcher_room_id}"
+          return head :forbidden
+        end
+      end
+
+      # Player has reached this VM terminal legitimately in-game. Unlock console access.
+      vm.update_column(:enable_console, true)
+
+      redirect_to Rails.application.routes.url_helpers.event_sec_gen_batch_vm_set_vm_path(
+        event,
+        batch,
+        vm_set,
+        vm,
+        embedded: 1
+      )
+    end
+
+    # GET /games/:id/vm_set_panel
+    # Redirects to the Hacktivity VmSet#show page for this game's assigned VM set,
+    # with ?embedded=1 so Hacktivity hides navigation and footer.
+    def vm_set_panel
+      return head :not_found unless BreakEscape::Mission.hacktivity_mode? && @game.vm_set_id
+
+      vm_set = defined?(::VmSet) ? ::VmSet.find_by(id: @game.vm_set_id) : nil
+      return head :not_found unless vm_set&.sec_gen_batch&.event
+
+      return head :not_found unless @game.reload.status == 'in_progress'
+
+      batch = vm_set.sec_gen_batch
+      event = batch.event
+
+      redirect_to Rails.application.routes.url_helpers.event_sec_gen_batch_vm_set_path(
+        event,
+        batch,
+        vm_set,
+        embedded: 1
+      )
+    end
+
+    private
+
+    # A network route answers the `added`/`removed` inventory delta (sync deltas P2) only when
+    # the request opts in with `delta: true`; an old open tab that still reads the whole-inventory
+    # echo gets the old shape until the next release removes it (4.4).
+    def inventory_delta_opt_in?
+      ActiveModel::Type::Boolean.new.cast(params[:delta]) == true
+    end
+
+    # Pre-parse body caps per action, read from Content-Length alone so an oversized
+    # body is refused before it is parsed (SYNC_DELTAS_PLAN 2.5). npc_frustration
+    # keeps its limit; clone_card gets 8 KB (a saved card is at most 4 KB,
+    # Game::MAX_SAVED_CARD_BYTES). PUT /sync_state keeps its own after-parse caps.
+    CLONE_CARD_MAX_BODY_BYTES = 8 * 1024
+    OVERSIZED_BODY_LIMITS = {
+      'npc_frustration' => NPC_FRUSTRATION_MAX_BYTES,
+      'clone_card' => CLONE_CARD_MAX_BODY_BYTES
+    }.freeze
+
+    def refuse_oversized_body
+      limit = OVERSIZED_BODY_LIMITS[action_name]
+      return unless limit && request.content_length.to_i > limit
+
+      render json: { error: 'request too large' }, status: :payload_too_large
+    end
+
+    def find_vm_launcher_room(scenario_data, vm_title)
+      # Returns the room_id containing a vm-launcher object for vm_title, or nil if not found.
+      # If nil is returned (non-standard scenario structure), the gate is skipped.
+      (scenario_data['rooms'] || {}).each do |room_id, room_data|
+        (room_data['objects'] || []).each do |obj|
+          return room_id if obj['type'] == 'vm-launcher' && obj.dig('vm', 'title') == vm_title
+        end
+      end
+      nil
+    end
+
+    def set_game
+      @game = Game.find(params[:id])
+      # Step 7: bring the stored game up to the current format at load, under its row lock. A game
+      # stored above current, or with an unreadable formatVersion, is refused before any other work.
+      @game.ensure_current_format!
+    rescue BreakEscape::FormatUpgrade::TooNew, BreakEscape::FormatUpgrade::Unreadable => e
+      render_format_refusal(e)
+    end
+
+    # Step 7. One body for every format refusal. show (the only HTML route through set_game) renders
+    # a styled page; every JSON route answers 409 with { error: "format", message, current }.
+    def render_format_refusal(error)
+      current = BreakEscape::FormatUpgrade.current
+      message =
+        if error.is_a?(BreakEscape::FormatUpgrade::TooNew)
+          "This game was saved by a newer version of Break Escape (format #{error.stored}; this server reads up to #{current})"
+        else
+          "This game's saved format cannot be read"
+        end
+
+      if action_name == 'show'
+        @format_message = message
+        render template: 'break_escape/games/format_refusal', status: :conflict, layout: false
+      else
+        render json: { error: 'format', message: message, current: current }, status: :conflict
+      end
+    end
+
+    # Only when the route names an event (the host's alias route): the game's mission listing must be in it.
+    def require_game_in_host_event
+      # the route's own segment, never a query string (/break_escape/games/37?event_id=1 is the old address)
+      event_id = request.path_parameters[:event_id]
+      return if event_id.blank?
+
+      slot = @game.try(:game_slot)
+      # the host's event param may carry a slug after the id (1-break-escape)
+      return if slot && slot.event_id.to_s == event_id.to_s[/\A\d+/]
+
+      raise ActiveRecord::RecordNotFound, "Game #{@game.id} is not in event #{event_id}"
+    end
+
+    # What sync_state reads or writes. scenario_data is left out (it is fetched
+    # only for the rare paths that need it). Reading an attribute not listed
+    # here raises ActiveModel::MissingAttributeError; reload_persistence_test
+    # saves every section on this load to catch that. player_type / player_id
+    # are for the policy, updated_at for the save. The after_commit completion
+    # checks read saved_changes only, and nothing here changes their columns.
+    SYNC_STATE_COLUMNS = %i[id player_type player_id player_state updated_at].freeze
+
+    # A stale clientTs this much older than the stored one is accepted and
+    # resets it. Wall-clock time is enough because a reload happens on one
+    # machine, but a clock set back during a reload would otherwise make every
+    # sync from the new page stale until it passed the old value.
+    SYNC_STALE_RESET_MS = 10.minutes.in_milliseconds
+
+    # Step 7. Judge the stored formatVersion under the sync row lock. Returns a FormatUpgrade::TooNew
+    # (stored above current) or Unreadable (a bad value) to refuse the sync, or nil to proceed.
+    #
+    # At current 0 (step 7) the subsystem is inert and this returns at once, reading no scenario_data:
+    # with no format steps, a real game's stored version is only ever 0 (nothing is stamped), so none
+    # can be too-new, and a hand-crafted too-new or unreadable game is already refused at load time by
+    # set_game (ensure_current_format!), so its client never reaches a sync. This also keeps a plain
+    # sync off scenario_data entirely (the sync-deltas rule: the narrow sync load carries no
+    # scenario_data), which capture_proofs_test's query counter pins.
+    #
+    # Once current is non-zero the value is read with jsonb_typeof plus ->> rather than the whole
+    # column (one scalar, not the materialised scenario_data). This rebuilds the Ruby value exactly as
+    # set_game sees it once the adapter decodes the full jsonb column, no matter how a given adapter
+    # maps a bare jsonb expression. A JSON string scalar (for example "1") stays a Ruby String here,
+    # so version_of refuses it as Unreadable on this path just as set_game does; a JSON integer
+    # becomes an Integer, a fractional number a Float (Unreadable), JSON null or a missing key is 0.
+    def sync_format_refusal
+      current = BreakEscape::FormatUpgrade.current
+      return nil if current.zero?
+
+      type, text = Game.where(id: @game.id).pick(
+        Arel.sql("jsonb_typeof(scenario_data -> 'formatVersion')"),
+        Arel.sql("scenario_data ->> 'formatVersion'")
+      )
+      value =
+        case type
+        when 'number' then text =~ /\A-?\d+\z/ ? text.to_i : Float(text)
+        when 'string' then text
+        when 'true' then true
+        when 'false' then false
+        when 'null', nil then nil
+        else type # object / array: a non-Integer, so version_of raises Unreadable
+        end
+      stored = BreakEscape::FormatUpgrade.version_of({ 'formatVersion' => value })
+      return BreakEscape::FormatUpgrade::TooNew.new(stored, current) if stored > current
+
+      nil
+    rescue BreakEscape::FormatUpgrade::Unreadable => e
+      e
+    end
+
+    # True when the request carries a clientTs no newer than the newest one
+    # accepted. Otherwise records it (so every accepted request with clientTs
+    # is a write, which under the change-only client means a request that has
+    # something to save anyway).
+    def stale_sync_request?
+      client_ts = params[:clientTs]
+      return false unless client_ts.is_a?(Numeric)
+
+      client_ts = client_ts.to_i
+      stored = @game.player_state['lastSyncClientTs']
+      return true if stored.is_a?(Numeric) && client_ts <= stored && stored - client_ts <= SYNC_STALE_RESET_MS
+
+      @game.player_state['lastSyncClientTs'] = client_ts
+      false
+    end
+
+    # Sections where the last write wins: a stale request would put older
+    # values over newer ones, so they are skipped for it. npcVisibility and
+    # phoneState are here too: visibility is latest-wins per NPC (it can be
+    # set back to hidden), and a phone entry replaces the saved one whole, so
+    # an older thread would drop newer texts. npcHostility and playerHealth
+    # likewise. Returns a refusal message, or nil.
+    def merge_last_write_wins_sections
+      if params[:currentRoom]
+        room = params[:currentRoom]
+        unless Array(@game.player_state['unlockedRooms']).include?(room) ||
+               Game.where(id: @game.id).pick(Arel.sql("scenario_data->>'startRoom'")) == room
+          return "Cannot enter locked room: #{room}"
+        end
+
+        @game.player_state['currentRoom'] = room
+      end
+
+      if params[:globalVariables].respond_to?(:to_unsafe_h)
+        @game.merge_global_variables!(params[:globalVariables].to_unsafe_h)
+      end
+
+      if params[:npcInkVariables].respond_to?(:to_unsafe_h)
+        @game.merge_npc_ink_variables!(params[:npcInkVariables].to_unsafe_h)
+      end
+
+      if params[:timedMessages].respond_to?(:to_unsafe_h)
+        @game.replace_timed_messages!(params[:timedMessages].to_unsafe_h)
+      end
+
+      if params[:phoneState].respond_to?(:to_unsafe_h) &&
+         @game.merge_phone_state!(params[:phoneState].to_unsafe_h) == false
+        @not_saved << 'phoneState'
+      end
+
+      # mailState: each key replaces the saved message, thread or list whole, so
+      # an older copy would undo a read mark or bring back a delivered job (00 §10a)
+      if params[:mailState].respond_to?(:to_unsafe_h)
+        if @game.merge_mail_state!(params[:mailState].to_unsafe_h) == false
+          @not_saved << 'mailState'
+        elsif @game.mail_trimmed_keys.any?
+          # A successful save still trimmed read mail to fit the 1 MB cap: report
+          # the dropped keys so the client drops them too, instead of holding
+          # them as confirmed and losing them silently on reload (P1-D).
+          @mail_trimmed = @game.mail_trimmed_keys
+        end
+      end
+
+      if params[:npcVisibility].respond_to?(:to_unsafe_h)
+        @game.merge_npc_visibility!(params[:npcVisibility].to_unsafe_h)
+      end
+
+      # Hostility is latest-wins per NPC (a KO is kept by the merge itself)
+      if params[:npcHostility].respond_to?(:to_unsafe_h)
+        @game.merge_npc_hostility!(params[:npcHostility].to_unsafe_h)
+      end
+
+      # The player's HP (m05 E6): latest wins, so a stale flush can't undo a hit
+      if params[:playerHealth].respond_to?(:to_unsafe_h)
+        @game.merge_player_health!(params[:playerHealth].to_unsafe_h)
+      end
+
+      # Notes merge by id, so an edit overwrites the saved copy and a new note
+      # is added
+      if params[:notes].present?
+        existing = @game.player_state['notes'] ||= []
+        params[:notes].map(&:to_unsafe_h).each do |note|
+          idx = existing.index { |n| n['id'].to_s == note['id'].to_s }
+          if idx
+            existing[idx] = note
+          else
+            existing << note
+          end
+        end
+      end
+      nil
+    end
+
+    # Merges that only grow and are safe to repeat, so a stale request still
+    # applies them: fired-handler counts keep the larger, the clock keeps the
+    # later time and the union of fired / cancelled timers, the command board
+    # keeps each entry's earliest time, fingerprints keep the better sample
+    # per owner, and scenarioBriefShown is only ever set.
+    def merge_grow_only_sections
+      # show_scenario_brief "once": the client showed the Mission Brief popup.
+      # Only ever set, never cleared (a reset starts a fresh player_state).
+      if ActiveModel::Type::Boolean.new.cast(params[:scenarioBriefShown]) == true
+        @game.player_state['scenarioBriefShown'] = true
+      end
+
+      if params[:triggeredEvents].respond_to?(:to_unsafe_h)
+        @game.merge_triggered_events!(params[:triggeredEvents].to_unsafe_h)
+      end
+
+      if params[:scenarioClock].respond_to?(:to_unsafe_h)
+        @game.merge_scenario_clock!(params[:scenarioClock].to_unsafe_h)
+      end
+
+      if params[:commandBoardLog].is_a?(Array)
+        @game.merge_command_board_log!(params[:commandBoardLog].map { |e| e.respond_to?(:to_unsafe_h) ? e.to_unsafe_h : e })
+      end
+
+      if params[:biometricSamples].is_a?(Array)
+        scenario = @game.stored_scenario_data
+        @game.merge_biometric_samples!(params[:biometricSamples], scenario: scenario)
+      end
+    end
+
+    # Serializes all player_state read-modify-write actions for a single game
+    # behind a row lock (SELECT ... FOR UPDATE on Postgres; whole-DB write
+    # lock on SQLite). A second concurrent request blocks here until the
+    # first transaction commits, then with_lock reloads @game's attributes
+    # so it operates on the post-commit state instead of a stale copy.
+    def with_game_lock
+      @game.with_lock { yield }
+    end
+
+    # The inventory as the browser may see it: a filtered deep copy, so a held lock (a start
+    # item such as a padlocked case or a cryptex) never ships its answer (unlock gaps R1 m3).
+    # One filter for every inventory echo (code review R2 M2): Game#client_inventory, which
+    # the network routes use too.
+    def client_inventory
+      @game.client_inventory
+    end
+
+    def filter_requires_recursive(obj)
+      case obj
+      when Hash
+        # Remove 'requires' for exploitable lock types (key/pin/password)
+        # Keep it for biometric/bluetooth/rfid since they reference collectible items, not answers
+        # - biometric: requires fingerprint owner name (e.g., "Mrs Moo")
+        # - bluetooth: requires device MAC/name (e.g., "00:11:22:33:44:55")
+        # - rfid: requires card IDs (e.g., ["master_keycard"])
+        lock_type = obj['lockType']
+        BreakEscape::Game.set_pin_length!(obj) # PIN pad length, before the PIN goes
+        BreakEscape::Game.strip_lock_answers!(obj) # combination and cryptex answers
+        BreakEscape::Game.strip_puzzle_graph_keys!(obj) # generator-only authoring fields
+        # A declared grant's contents are served from the held item, never shipped
+        BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
+        if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
+          obj.delete('requires')
+        end
+
+        # Recursively filter nested structures
+        obj.each_value { |value| filter_requires_recursive(value) }
+      when Array
+        obj.each { |item| filter_requires_recursive(item) }
+      end
+    end
+
+    # The tail of a door unlock (slice 9.2, 9.1): unlock the room, compose its filtered data and
+    # record its NPCs as encountered, so NPCs in a room a workaround propped open are known at
+    # once. Called by the door unlock and by a done prop_door.
+    def serve_opened_room(room_id)
+      @game.unlock_room!(room_id)
+      room_data = @game.filtered_room_data(room_id)
+      # Track NPC encounters when unlocking a door (room data is cached by client)
+      # This ensures NPCs are tracked even if loadRoom() uses cached data
+      track_npc_encounters(room_id, room_data)
+      room_data
+    end
+
+    def track_npc_encounters(room_id, room_data)
+      return unless room_data['npcs'].present?
+
+      begin
+        npc_ids = room_data['npcs'].map { |npc| npc['id'] }
+
+        # Ensure player_state is a hash
+        unless @game.player_state.is_a?(Hash)
+          Rails.logger.error "[BreakEscape] player_state is not a Hash: #{@game.player_state.class}"
+          @game.player_state = {}
+        end
+
+        # Ensure encounteredNPCs is an array
+        @game.player_state['encounteredNPCs'] ||= []
+
+        # Handle case where encounteredNPCs might not be an array (legacy data)
+        unless @game.player_state['encounteredNPCs'].is_a?(Array)
+          Rails.logger.warn "[BreakEscape] encounteredNPCs is not an Array: #{@game.player_state['encounteredNPCs'].class}, resetting"
+          @game.player_state['encounteredNPCs'] = []
+        end
+
+        new_npcs = npc_ids - @game.player_state['encounteredNPCs']
+        return if new_npcs.empty?
+
+        # Log detailed information about each new NPC encountered
+        new_npcs.each do |npc_id|
+          npc_data = room_data['npcs'].find { |npc| npc['id'] == npc_id }
+          if npc_data
+            display_name = npc_data['displayName'] || npc_id
+            npc_type = npc_data['npcType'] || 'unknown'
+            Rails.logger.info "[BreakEscape] 🎭 NPC ENCOUNTERED: #{display_name} (#{npc_id}) - Type: #{npc_type} - Room: #{room_id}"
+          else
+            Rails.logger.info "[BreakEscape] 🎭 NPC ENCOUNTERED: #{npc_id} - Room: #{room_id}"
+          end
+        end
+
+        @game.player_state['encounteredNPCs'] = (@game.player_state['encounteredNPCs'] + new_npcs).uniq
+        # slice 9.2: metAt for an NPC that can fail. Its own rescue, so a resolver fault never
+        # costs the encounter record (review R1 m4).
+        begin
+          @game.note_npcs_met!(new_npcs)
+        rescue => e
+          Rails.logger.error "[BreakEscape] note_npcs_met! failed: #{e.message}"
+        end
+        @game.save!
+        # Code review R5 m1: the payload was composed before these NPCs were met, so a KO'd one
+        # (an old save with a KO and no met record) is listed now, on this load
+        room_data['npcs'] = @game.with_ko_drop_pending(room_data['npcs'], only: new_npcs)
+
+        total_encountered = @game.player_state['encounteredNPCs'].length
+        Rails.logger.info "[BreakEscape] ✅ Tracked #{new_npcs.length} new NPC encounter(s) in room #{room_id}. Total NPCs encountered: #{total_encountered}"
+      rescue => e
+        Rails.logger.error "[BreakEscape] Error tracking NPC encounters: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
+        # Continue without tracking to avoid breaking room loading
+      end
+    end
+
+    def find_container_in_scenario(container_id)
+      @game.scenario_data['rooms'].each do |room_id, room_data|
+        # Search objects for container
+        container = find_container_recursive(room_data['objects'], container_id)
+        return container if container
+
+        # Search nested contents (never under a sign-in PC: see find_container_recursive)
+        room_data['objects']&.each do |obj|
+          next if BreakEscape::Game.login_pc?(obj)
+
+          container = search_nested_contents(obj['contents'], container_id)
+          return container if container
+        end
+      end
+      # A declared grant the player holds (Game#held_grant_items), after the rooms so a
+      # game whose snapshot still has the old twin answers from it as before.
+      find_container_recursive(@game.held_grant_items, container_id) ||
+        # A habit NPC's USB stick the player holds (2026-11-12): taken from itemsHeld, so in no
+        # room; its files come from the scenario (or the default), never from the browser
+        find_container_recursive(@game.held_usb_sticks, container_id) ||
+        # A container an NPC carried, released by a give or KO record (unlock gaps build)
+        find_container_recursive(@game.released_npc_containers, container_id)
+    end
+
+    def find_container_recursive(objects, container_id)
+      return nil unless objects
+
+      objects.each do |obj|
+        # A sign-in PC and everything under it are served only through the scope branch
+        # of the container action (a session decides), never here: a name shared with an
+        # unscoped object would otherwise reach them through unlockedObjects.
+        next if BreakEscape::Game.login_pc?(obj)
+
+        # Check if this object matches
+        if obj['id'] == container_id || (obj['name'] && obj['name'] == container_id)
+          return obj if obj['contents'].present?
+        end
+
+        # Recursively search nested contents
+        nested = find_container_recursive(obj['contents'], container_id)
+        return nested if nested
+      end
+      nil
+    end
+
+    def find_object_in_scenario(object_id)
+      # Search all rooms for the object, recursing into nested container contents so a locked
+      # archive inside a pc/desktop container resolves and its contents are returned on unlock.
+      @game.scenario_data['rooms'].each do |_room_id, room_data|
+        (room_data['objects'] || []).each do |obj|
+          found = find_object_in_object(obj, object_id)
+          return found if found
+        end
+      end
+      # Then account profiles (access model 5.1); callers check the session first
+      # (/unlock check 1, the container action's scope branch).
+      @game.account_profiles.each_value do |profile|
+        Array(profile['contents']).each do |item|
+          found = item.is_a?(Hash) && find_object_in_object(item, object_id)
+          return found if found
+        end
+      end
+      # Then a resource's items (networks slice 9.3a, 4.5); /unlock check 1 has already
+      # required a foothold or session the share admits.
+      found = @game.find_resource_item(object_id)
+      return found if found
+      # Then a declared grant the player holds, as find_container_in_scenario.
+      @game.held_grant_items.each do |grant_item|
+        found = find_object_in_object(grant_item, object_id)
+        return found if found
+      end
+      # Then a habit NPC's USB stick the player holds, as find_container_in_scenario.
+      @game.held_usb_sticks.each do |stick|
+        found = find_object_in_object(stick, object_id)
+        return found if found
+      end
+      # Then a container an NPC carried that a give or KO released, as Game#find_scenario_object.
+      @game.released_npc_containers.each do |container|
+        found = find_object_in_object(container, object_id)
+        return found if found
+      end
+      nil
+    end
+
+    def find_object_in_object(obj, object_id)
+      return obj if obj['id'] == object_id || obj['name'] == object_id
+      if obj['contents'].is_a?(Array)
+        obj['contents'].each do |child|
+          found = find_object_in_object(child, object_id)
+          return found if found
+        end
+      end
+      nil
+    end
+
+    def search_nested_contents(contents, container_id)
+      return nil unless contents
+
+      contents.each do |item|
+        next if BreakEscape::Game.login_pc?(item)
+
+        return item if (item['id'] == container_id || item['name'] == container_id) && item['contents'].present?
+        nested = search_nested_contents(item['contents'], container_id)
+        return nested if nested
+      end
+      nil
+    end
+
+    def check_container_unlocked(container_id, container_data)
+      unlocked_list = @game.player_state['unlockedObjects'] || []
+
+      # Only match by ID — never by name or type, which are non-unique and could
+      # grant access to all containers sharing a type/name string.
+      unlocked_list.include?(container_id) ||
+      unlocked_list.include?(container_data['id'])
+    end
+
+    # GET /container for a sign-in PC (section 6): a session is held (403 no_session),
+    # and the request is allowed for how the player is getting there (403 unreachable):
+    # through the foothold it names, or at the keyboard (networks slice 9.3a, 4.4, judged
+    # by Game#desktop_request_allowed?). The answer is its own contents, then each profile
+    # admitted for the session's identity, then the mapped shares, through
+    # filter_container_contents. Served at the keyboard, the session's foothold is cleared.
+    # The answer carries the session as GET /scenario gives it (remote, footholdId and
+    # host only on a remote one), so the client learns at once that a keyboard fetch made
+    # a remote session local (review R1, m3).
+    def render_login_desktop(container_id)
+      info = @game.find_login_pc(container_id)
+      return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden unless info
+
+      pc = info[:object]
+      npc = @game.session_identity(pc['id'])
+      return render json: { error: "Not signed in: #{container_id}", reason: 'no_session' }, status: :forbidden unless npc
+
+      foothold = params[:foothold].presence&.to_s
+      refusal = @game.desktop_refusal(info, foothold)
+      if refusal == 'off'
+        # At the keyboard of a switched-off PC (q72): the session is kept, the desktop refused
+        return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
+      elsif refusal == 'not_responding'
+        return render json: { error: BreakEscape::NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' }, status: :forbidden
+      elsif refusal
+        return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
+      end
+
+      @game.settle_session_at_keyboard!(pc['id']) if foothold.nil?
+
+      contents = filter_container_contents('contents' => @game.login_desktop_contents(pc, npc))
+      render json: { container_id: container_id, contents: contents, session: @game.session_for_client(pc['id']) }
+    end
+
+    # The workstation globals a claim carries (<id>_screen_locked, <id>_owner_away),
+    # for the log only.
+    def claim_globals
+      raw = params[:globals]
+      return raw.to_unsafe_h if raw.respond_to?(:to_unsafe_h)
+
+      { 'screen_locked' => params[:screen_locked], 'owner_away' => params[:owner_away] }.compact
+    end
+
+    def filter_container_contents(container_data)
+      contents = container_data['contents']&.map do |item|
+        item_copy = item.deep_dup
+        @game.send(:filter_requires_and_contents_recursive, item_copy)
+        item_copy
+      end || []
+
+      # Filter out items that are already in the player's inventory
+      inventory = @game.player_state['inventory'] || []
+      Rails.logger.debug "[BreakEscape] Filtering container contents. Inventory has #{inventory.length} items"
+      Rails.logger.debug "[BreakEscape] Container has #{contents.length} items before filtering"
+
+      # A file copied from a sign-in desktop stays listed while held (access model 5.1)
+      copied = @game.copied_item_ids
+      filtered_contents = contents.reject do |item|
+        # A device planted in a jack is not in its crate (slice 9.3a, 4.1)
+        next true if @game.planted_device?(item)
+        next false if item['id'].present? && copied.include?(item['id'].to_s)
+
+        in_inventory = item_in_inventory?(item, inventory)
+        if in_inventory
+          Rails.logger.debug "[BreakEscape] Filtering out item: #{item['type']} / #{item['id']} / #{item['name']} (already in inventory)"
+        end
+        in_inventory
+      end
+
+      Rails.logger.debug "[BreakEscape] Container has #{filtered_contents.length} items after filtering"
+
+      # Step 2b (plan item 3): author notes never ship. Strip them from the returned contents copy
+      # (each item is already a deep_dup), with the Node of a contents list.
+      BreakEscape::AuthorNotes.strip_notes!(
+        filtered_contents, BreakEscape::ScenarioSchema.at('#/definitions/item/properties/contents')
+      )
+      filtered_contents
+    end
+
+    # Check if an item is already in the player's inventory (see ItemIdentity.held_in?)
+    def item_in_inventory?(item, inventory)
+      BreakEscape::ItemIdentity.held_in?(item, inventory)
+    end
+
+    # Items that are always allowed in inventory (core game mechanics)
+    ALWAYS_ALLOWED_ITEMS = %w[notepad].freeze
+
+    # Cups of coffee or tea standing in a room are Tiled map decor, not scenario
+    # objects, so they are never "found in the scenario". The client picks one up
+    # with decor: true and its map object id, to drink later from the inventory
+    # (consumables.js DRINKABLE_CUPS: keep the two lists in step).
+    DECOR_CUP_TYPES = %w[
+      office-misc-cup office-misc-cup2 office-misc-cup3 office-misc-cup4
+      office-misc-cup5 coffee_cups1 mugs_tray1
+    ].freeze
+
+    # Fields a client-built inventory item (notepad, decor cup) must not carry:
+    # lock references the key check reads, the lockType/PIN-cracker fields, the
+    # flag-station list, the card fields, and the authored-behaviour fields a
+    # client must not invent (a forged droppable would pass the player_drop check
+    # in Game#add_item_to_room!, a forged needsTag would feed an NPC need, a forged
+    # wearable would let POST wear put on a costume the scenario never offered).
+    # Single source with the model's FORGEABLE_LOCK_FIELDS, via
+    # ItemIdentity::FORGEABLE_ITEM_FIELDS, plus the whole scenarioData, which a
+    # client-built item has no business carrying (code review R1, m1).
+    # The clientAdded marker (ItemIdentity::CLIENT_ADDED_MARKER) is server-only: only
+    # Game#add_item_to_room! stamps it. A client must not set it on an item it builds
+    # (an always-allowed item reaches the non-Hash branch below with just this filter),
+    # so a security marker is never client-writable (code review R2, m2).
+    # phoneOf names whose Friendface phone an item is; only the scenario sets it
+    # (q35 review R1 m1).
+    CLIENT_ITEM_FORBIDDEN_FIELDS = (
+      BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS +
+      %w[scenarioData phoneOf] +
+      [BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER]
+    ).freeze
+
+    # What the inventory stores for an add that validate_item_collectible passed.
+    # A scenario item is stored as the server's own copy, filtered exactly as the
+    # client received it, so nothing in the client's hash can add a lock
+    # reference, a lockpick type or a flag list. A held container the player
+    # has unlocked is stored unlocked, as the client would have sent it.
+    def canonical_inventory_item(client_item)
+      source = @collectible_item
+      unless source.is_a?(Hash)
+        return client_item.except(*CLIENT_ITEM_FORBIDDEN_FIELDS)
+      end
+
+      copy = source.deep_dup
+      # A declared grant's contents stay on the server, served from the held grant
+      # (an unlocked grant would otherwise keep them through the filter below).
+      if @collectible_location.is_a?(Hash) && @collectible_location[:type] == 'grant' && copy.key?('contents')
+        copy.delete('contents')
+        copy['hasContents'] = true
+      end
+      if copy['locked'] && copy['id'].present? && @game.object_unlocked?(copy['id'])
+        copy['locked'] = false
+      end
+      @game.send(:filter_requires_and_contents_recursive, copy)
+      copy
+    end
+
+    def validate_item_collectible(item, source_npc_id = nil, source_pc_id: nil, transfer: nil, source_resource_id: nil)
+      @collectible_location = nil
+      @collectible_item = nil
+      @collectible_transfer = nil
+      item_type = item['type']
+      # A key is addressed by the lock it opens; everything else by its id.
+      item_id = BreakEscape::ItemIdentity.identity_candidates(item).first
+      item_name = item['name']
+
+      Rails.logger.info "[BreakEscape] validate_item_collectible: type=#{item_type}, id=#{item_id}, name=#{item_name}"
+
+      # From a sign-in desktop: only that PC's session decides (access model, section 6)
+      return validate_login_item_collectible(item_type, item_id, item_name, source_pc_id, transfer) if source_pc_id.present?
+
+      # From a share opened in the network view: only the rule of 4.5 decides (networks
+      # slice 9.3a, section 5); a refusal reads as an invented item
+      if source_resource_id.present?
+        found = @game.resource_item_for_add(source_resource_id, item_type, item_id, item_name, transfer)
+        return found[:error] if found[:error]
+
+        @collectible_location = found[:location]
+        @collectible_item = found[:item]
+        @collectible_transfer = found[:transfer]
+        return nil
+      end
+
+      # Always allow core game items like notepad
+      if ALWAYS_ALLOWED_ITEMS.include?(item_type)
+        Rails.logger.info "[BreakEscape] Item is always allowed: #{item_type}"
+        return nil
+      end
+
+      # A room-map cup picked up as decor has no scenario entry to check
+      if item['decor'] == true && DECOR_CUP_TYPES.include?(item_type) && item['id'].present?
+        Rails.logger.info "[BreakEscape] Item is a room-map decor cup: #{item_type} / #{item['id']}"
+        return nil
+      end
+
+      # Check if this is a starting item first (if so, skip all other checks)
+      starting_item = @game.scenario_data['startItemsInInventory']&.find do |start_item|
+        start_item['type'] == item_type && (start_item['id'] == item_id || start_item['name'] == item_name)
+      end
+
+      if starting_item
+        @collectible_item = starting_item
+        Rails.logger.info "[BreakEscape] Item is a starting item, skipping room/container checks"
+        return nil # Starting items are always valid
+      end
+
+      # A declared grant (DeclaredGrants: an identified give_item the scenario runs
+      # from a timer or an interaction). The scenario declaring it is the permission:
+      # the reward is in no room, so no room, container or takeable check applies.
+      # Decided here on the full identity rule, so a name-only claim for a granted
+      # item never falls through to another object. An NPC give keeps the NPC rule.
+      # NOTE: no trigger check; a declared grant can be claimed at any time (plan §1.4).
+      if source_npc_id.blank?
+        grant = @game.declared_grants.find do |g|
+          BreakEscape::ItemIdentity.addressed_by?(g['item'], item_type, item_id, item_name)
+        end
+        if grant
+          @collectible_location = { type: 'grant', path: grant['path'] }
+          @collectible_item = grant['item']
+          Rails.logger.info "[BreakEscape] Item is a declared grant: #{item_type} at #{grant['path']}"
+          return nil
+        end
+      end
+
+      # Search for item, prioritizing accessible locations (not locked containers/rooms)
+      found_item_info = find_accessible_item(item_type, item_id, item_name, source_npc_id)
+
+      unless found_item_info
+        error_msg = "Item not found in scenario: #{item_type}"
+        Rails.logger.warn "[BreakEscape] #{error_msg}"
+        return error_msg
+      end
+
+      found_item = found_item_info[:item]
+      location = found_item_info[:location]
+      @collectible_location = location
+      @collectible_item = found_item
+
+      # Check if item is takeable
+      unless found_item['takeable']
+        error_msg = "Item is not takeable: #{found_item['name']}"
+        Rails.logger.warn "[BreakEscape] #{error_msg}"
+        return error_msg
+      end
+
+      # Check access based on location type
+      if location[:type] == 'container'
+        container_id = location[:container_id]
+        unless @game.player_state['unlockedObjects'].include?(container_id)
+          error_msg = "Container not unlocked: #{container_id}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
+        end
+      elsif location[:type] == 'room'
+        room_id = location[:room_id]
+        room_info = @game.scenario_data['rooms'][room_id]
+        if room_info && room_info['locked'] && !@game.player_state['unlockedRooms'].include?(room_id)
+          error_msg = "Room not unlocked: #{room_id}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
+        end
+        # Review R2 M1: an NPC's Friendface phone lies in a room only as a stored NPC drop. A save
+        # made before add_item_to_room! checked the drop can hold one taken from a live NPC that
+        # never offered it, so the pickup asks the same question
+        owner = found_item['phoneOf']
+        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && owner.is_a?(String) &&
+           !@game.npc_room_drop_allowed?(owner, found_item)
+          error_msg = "NPC does not give this item: #{owner}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
+        end
+      elsif location[:type] == 'npc'
+        npc_id = location[:npc_id]
+        unless @game.player_state['encounteredNPCs']&.include?(npc_id)
+          # A headless email record (00 S8) is never in a room, so walking in never
+          # marks it encountered. A give from it only fires from its own on_email ink,
+          # which the mail runner (P1-J) runs on delivery, so that delivery IS first
+          # contact: encounter it here (the runner records the same on the client).
+          if headless_email_record?(npc_id)
+            @game.encounter_npc!(npc_id)
+          else
+            error_msg = "NPC not encountered: #{npc_id}"
+            Rails.logger.warn "[BreakEscape] #{error_msg}"
+            return error_msg
+          end
+        end
+        # q35 review R1 M1: an NPC's Friendface phone changes what the server decides for that
+        # NPC, so it is handed over only when the scenario offers that give (a KO drop is a room
+        # location and stays allowed). Specific to this item; other held items keep the old rule.
+        # Code review R5 n2: an NPC the server holds as KO'd (npc_defeated?, the claim rule) gives
+        # its phone too, so a KO drop the server refused (its KO sync had not landed) can still be
+        # picked up from the local sprite once the KO has reached the server.
+        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && !@game.friendface_phone_offered?(npc_id) &&
+           !@game.npc_defeated?(npc_id)
+          error_msg = "NPC does not give this item: #{npc_id}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
+        end
+      elsif location[:type] == 'flag_station'
+        # A flag station's item is its reward for a flag: collectible only once
+        # one of the flags whose give_item reward hands over this item has been
+        # submitted. (Submitting the flag adds it server-side already; this
+        # path is a re-collect, e.g. after the item was used up or removed.)
+        flag_station_id = location[:flag_station_id]
+        unless flag_station_item_earned?(location[:station], found_item)
+          error_msg = "Flag not submitted for this reward: #{flag_station_id}"
+          Rails.logger.warn "[BreakEscape] #{error_msg}"
+          return error_msg
+        end
+      end
+
+      Rails.logger.info "[BreakEscape] Item collection valid: #{item_type}"
+      nil # No error
+    end
+
+    # An inventory add from a sign-in desktop (section 6, POST /inventory with
+    # source_pc_id): 1. the PC is a sign-in PC with a session; 2. the item is in its own
+    # contents or a profile; 3. that session admits the item's scope; 4. every container
+    # above it is unlocked; 5. it is takeable; 6. its transfer allows Copy or Move.
+    def validate_login_item_collectible(item_type, item_id, item_name, source_pc_id, transfer)
+      info = @game.find_login_pc(source_pc_id)
+      return "Not a sign-in PC: #{source_pc_id}" unless info
+
+      pc = info[:object]
+      return "Not signed in: #{source_pc_id}" unless @game.session_identity(pc['id'])
+
+      found = @game.find_login_item(pc) { |obj| BreakEscape::ItemIdentity.addressed_by?(obj, item_type, item_id, item_name) }
+      return "Item not found on this PC: #{item_type}" unless found
+
+      scope = found[:scope]
+      return "Not available to this session: #{item_type}" unless @game.scope_admitted_by_session?(scope, pc['id'])
+
+      locked = found[:path].find { |container| container['locked'] && !@game.object_unlocked?(container['id']) }
+      return "Container not unlocked: #{locked['id']}" if locked
+
+      file = found[:object]
+      return "Item is not takeable: #{file['name']}" unless file['takeable']
+
+      choice = transfer.presence || 'move'
+      return "Invalid transfer: #{choice}" unless %w[copy move].include?(choice)
+
+      allowed = file['transfer'].presence || 'both'
+      return "This file can only be #{allowed == 'copy' ? 'copied' : 'moved'}" unless allowed == 'both' || allowed == choice
+
+      path_ids = found[:path].map { |container| container['id'] }
+      @collectible_location =
+        if scope[:type] == 'login_pc'
+          { type: 'login_pc', pc_id: pc['id'], path: path_ids }
+        elsif scope[:type] == 'resource'
+          # A share mapped on this desktop (networks slice 9.3a, 4.5)
+          { type: 'resource', resource_id: scope[:id], pc_id: pc['id'], path: path_ids }
+        else
+          { type: 'profile', profile_id: scope[:id], path: path_ids }
+        end
+      @collectible_item = file
+      @collectible_transfer = choice
+      nil
+    end
+
+    # Has the player submitted a flag whose give_item reward on this station hands
+    # over held_item? Rewards are paired with flags as find_flag_rewards pairs
+    # them (hash keyed by flag; array with the station's single `requires`; array
+    # indexed by `flags`), and the reward names its item as process_item_reward
+    # resolves it. Flags compare without regard to case, as submission does.
+    def flag_station_item_earned?(station, held_item)
+      return false unless station.is_a?(Hash) && held_item.is_a?(Hash)
+
+      rewards = station['flagRewards']
+      pairs = case rewards
+      when Hash
+                rewards.map { |flag, reward| [flag, reward] }
+      when Array
+                if station['requires']
+                  rewards.map { |reward| [station['requires'], reward] }
+                else
+                  flags = Array(station['flags'])
+                  rewards.each_with_index.map { |reward, i| [flags[i], reward] }
+                end
+      else
+                []
+      end
+
+      earned = (Array(@game.player_state['flag_rewards_claimed']) + Array(@game.player_state['submitted_flags']))
+               .map { |f| f.to_s.downcase }.reject(&:empty?)
+      return false if earned.empty?
+
+      held = Array(station['itemsHeld'])
+      pairs.any? do |flag_ref, reward|
+        next false unless reward.is_a?(Hash) && reward['type'] == 'give_item'
+
+        given = held.find { |i| i['type'] == reward['item_type'] || i['name'] == reward['item_name'] }
+        next false unless given == held_item
+
+        value = resolve_flag_value(flag_ref)
+        value.present? && earned.include?(value.downcase)
+      end
+    end
+
+    # A headless email record (social.characters.*.emailRecord, 00 S8): a scenario
+    # NPC with no room. A room NPC with the same id wins, so it is not treated as
+    # headless (Game.scenario_npc_records drops the clashing record the same way).
+    def headless_email_record?(npc_id)
+      return false unless npc_id.present?
+      return false unless BreakEscape::Game.headless_npc_records(@game.scenario_data).any? { |record| record['id'] == npc_id }
+      # A room NPC with the same id wins and is encountered the ordinary way.
+      rooms = @game.scenario_data['rooms']
+      in_a_room = rooms.is_a?(Hash) && rooms.each_value.any? do |room|
+        room.is_a?(Hash) && room['npcs'].is_a?(Array) && room['npcs'].any? { |n| n.is_a?(Hash) && n['id'] == npc_id }
+      end
+      !in_a_room
+    end
+
+    # Locate the scenario definition of an item the client wants to add.
+    #
+    # Matching is by id first (id, or the lock a key opens); the name is only
+    # consulted for scenario items that carry no identity of their own. Two items
+    # that share a name but have different ids are different items (E18).
+    #
+    # source_npc_id is set when the add is an NPC give. That NPC's itemsHeld is
+    # searched before any container or room object, so a give is never resolved to
+    # a same-named copy in a locked cabinet.
+    def find_accessible_item(item_type, item_id, item_name, source_npc_id = nil)
+      matches = ->(obj) { BreakEscape::ItemIdentity.addressed_by?(obj, item_type, item_id, item_name) }
+      npc_location = lambda do |npc, room_id, held_item|
+        { item: held_item, location: { type: 'npc', npc_id: npc['id'], room_id: room_id } }
+      end
+
+      # Priority 0: Dynamically-added items (e.g., dropped by defeated NPCs).
+      # These were already security-validated by add_item_to_room! so they are always allowed.
+      @game.player_state['room_states']&.each do |room_id, room_state|
+        room_state['objects_added']&.each do |added_obj|
+          next unless added_obj['type'] == item_type
+          next unless added_obj['opens_lock'] == item_id || added_obj['key_id'] == item_id || added_obj['id'] == item_id ||
+                      added_obj['name'] == item_name || added_obj['name'] == item_id ||
+                      item_id.nil?
+          return { item: added_obj, location: { type: 'room', room_id: room_id } }
+        end
+      end
+
+      # Priority 0.5: the NPC the item is being given by, when the client says so.
+      if source_npc_id.present?
+        @game.scenario_data['rooms'].each do |room_id, room_data|
+          room_data['npcs']&.each do |npc|
+            next unless npc['id'] == source_npc_id
+
+            npc['itemsHeld']&.each do |held_item|
+              return npc_location.call(npc, room_id, held_item) if matches.call(held_item)
+            end
+          end
+        end
+
+        # A headless record (00 S8) gives from no room. A room NPC with the same id
+        # wins, as in Game.scenario_npc_records.
+        in_a_room = @game.scenario_data['rooms'].each_value.any? do |room_data|
+          room_data['npcs']&.any? { |npc| npc['id'] == source_npc_id }
+        end
+        unless in_a_room
+          headless = BreakEscape::Game.headless_npc_records(@game.scenario_data).find { |npc| npc['id'] == source_npc_id }
+          headless&.dig('itemsHeld')&.each do |held_item|
+            return npc_location.call(headless, nil, held_item) if matches.call(held_item)
+          end
+        end
+      end
+
+      # Priority 1: Items in unlocked rooms (most accessible)
+      @game.scenario_data['rooms'].each do |room_id, room_data|
+        if room_data['locked'] == false || @game.player_state['unlockedRooms'].include?(room_id)
+          room_data['objects']&.each do |obj|
+            if matches.call(obj)
+              return { item: obj, location: { type: 'room', room_id: room_id } }
+            end
+          end
+        end
+      end
+
+      # Priority 2: Items in any room (including locked ones - will validate in main method)
+      @game.scenario_data['rooms'].each do |room_id, room_data|
+        room_data['objects']&.each do |obj|
+          if matches.call(obj)
+            return { item: obj, location: { type: 'room', room_id: room_id } }
+          end
+
+          # Search nested contents in room objects. A sign-in PC's contents are reached
+          # only through its session (source_pc_id above), never here.
+          (BreakEscape::Game.login_pc?(obj) ? nil : obj['contents'])&.each do |content|
+            if matches.call(content)
+              return { item: content, location: { type: 'container', container_id: obj['id'] || obj['name'] } }
+            end
+          end
+
+          # Search flag-station itemsHeld (flag reward items)
+          if obj['type'] == 'flag-station' && obj['itemsHeld'].present?
+            obj['itemsHeld'].each do |held_item|
+              if matches.call(held_item)
+                return { item: held_item, location: { type: 'flag_station', flag_station_id: obj['id'] || obj['name'], room_id: room_id, station: obj } }
+              end
+            end
+          end
+        end
+
+        # Priority 3: Items held by NPCs in this room
+        room_data['npcs']&.each do |npc|
+          next unless npc['itemsHeld'].present?
+
+          npc['itemsHeld'].each do |held_item|
+            return npc_location.call(npc, room_id, held_item) if matches.call(held_item)
+          end
+        end
+      end
+
+      # An item inside a container an NPC carried, once a give or KO released the container
+      # (unlock gaps build): taken as from any container, so the container must be unlocked.
+      @game.released_npc_containers.each do |container|
+        Array(container['contents']).each do |content|
+          next unless content.is_a?(Hash)
+          return { item: content, location: { type: 'container', container_id: container['id'] } } if matches.call(content)
+        end
+      end
+
+      nil
+    end
+
+    def find_item_in_scenario(item_type, item_id, item_name = nil)
+      # First check startItemsInInventory (items the player begins with)
+      @game.scenario_data['startItemsInInventory']&.each do |item|
+        if item['type'] == item_type && (item['opens_lock'] == item_id || item['key_id'] == item_id || item['id'] == item_id || item['name'] == item_name || item['name'] == item_id)
+          return item
+        end
+      end
+
+      # Then search room objects
+      @game.scenario_data['rooms'].each do |room_id, room_data|
+        # Search room objects
+        room_data['objects']&.each do |obj|
+          if obj['type'] == item_type && (obj['opens_lock'] == item_id || obj['key_id'] == item_id || obj['id'] == item_id || obj['name'] == item_name || obj['name'] == item_id)
+            return obj
+          end
+
+          # Search nested contents
+          obj['contents']&.each do |content|
+            if content['type'] == item_type && (content['opens_lock'] == item_id || content['key_id'] == item_id || content['id'] == item_id || content['name'] == item_name || content['name'] == item_id)
+              return content
+            end
+          end
+        end
+      end
+      nil
+    end
+
+    def find_item_container(item_type, item_id)
+      @game.scenario_data['rooms'].each do |room_id, room_data|
+        room_data['objects']&.each do |obj|
+          obj['contents']&.each do |content|
+            if content['type'] == item_type && (content['id'] == item_id || content['name'] == item_id)
+              return { id: obj['id'] || obj['name'], locked: obj['locked'] }
+            end
+          end
+        end
+      end
+      nil
+    end
+
+    def find_item_room(item_type, item_id)
+      @game.scenario_data['rooms'].each do |room_id, room_data|
+        room_data['objects']&.each do |obj|
+          if obj['type'] == item_type && (obj['id'] == item_id || obj['name'] == item_id)
+            return { id: room_id, locked: room_data['locked'] }
+          end
+        end
+      end
+      nil
+    end
+
+    def find_npc_holding_item(item_type, item_id)
+      @game.scenario_data['rooms'].each do |room_id, room_data|
+        room_data['npcs']&.each do |npc|
+          next unless npc['itemsHeld'].present?
+
+          # itemsHeld is array of full item objects (same structure as room objects)
+          npc['itemsHeld'].each do |held_item|
+            # Match by type (required) and optionally by id/name
+            if held_item['type'] == item_type
+              # If item_id provided, verify it matches
+              if item_id.present?
+                item_matches = (held_item['id'] == item_id) ||
+                              (held_item['name'] == item_id) ||
+                              (item_id == item_type) # Fallback if no id field
+                next unless item_matches
+              end
+
+              return {
+                id: npc['id'],
+                npc: npc,
+                item: held_item,
+                type: 'npc'
+              }
+            end
+          end
+        end
+      end
+      nil
+    end
+
+    # A clip from the previous TTS model, tried under the current voice and then
+    # under the voice the game started with.
+    def legacy_tts_clip(tts_service, text, voice_configs, scenario_name)
+      voice_configs.uniq.each do |config|
+        path = tts_service.legacy_cached_path(text, config['name'], config['style'], config['language'],
+                                              scenario_name: scenario_name)
+        if path
+          Rails.logger.info "[TTS] Serving previous-model clip for: #{text.truncate(60)}"
+          return path
+        end
+      end
+      nil
+    end
+
+    def find_npc_in_scenario(npc_id)
+      npc = TtsLineResolver.find_npc(@game.scenario_data, npc_id)
+      return npc if npc
+
+      available_npcs = []
+      @game.scenario_data['rooms']&.each do |room_id, room_data|
+        room_data['npcs']&.each { |n| available_npcs << "#{n['id']} (#{room_id})" }
+      end
+
+      # Log available NPCs for debugging
+      if available_npcs.any?
+        Rails.logger.debug "[BreakEscape] Available NPCs: #{available_npcs.join(', ')}"
+      else
+        Rails.logger.warn "[BreakEscape] No NPCs found in scenario data"
+      end
+
+      nil
+    end
+
+    # The game's scenario for the /tts line checks: rooms in the template's order,
+    # which the jsonb column does not keep (TtsLineResolver.in_template_order).
+    def tts_scenario_data
+      @tts_scenario_data ||= TtsLineResolver.in_template_order(@game.scenario_data, @game.mission&.template_room_order)
+    end
+
+    # The player name the server holds for this game: the only value a
+    # player_name() line is voiced with (TtsService::PLAYER_NAME_DEFAULT says
+    # why it is the client's fallback today).
+    def tts_player_name
+      TtsService::PLAYER_NAME_DEFAULT
+    end
+
+    # The #delivery: note the scenario's ink gives the line npc_id speaks as text,
+    # chosen by the note the client sent (TtsLineExtractor#delivery_for), or nil.
+    # The client's string itself never reaches the voice prompt, the key or the
+    # sidecar. A note the ink doesn't give the line (a tag the server's walker
+    # can't place: README_ink_best_practices.md, "Voiced lines hold only spoken words") is dropped,
+    # so the line plays untagged rather than not at all.
+    def ink_delivery_note(npc_id, text, client_note)
+      return nil if client_note.blank?
+      # Bigger than any note the client can send (deliveryFromTags caps at 200)
+      return nil unless client_note.is_a?(String) && client_note.length <= 1000
+
+      wanted = TtsService.clean_delivery(client_note)
+      scenario_name = @game.mission&.name
+      return nil unless wanted && scenario_name
+
+      note = TtsLineExtractor.cached(scenario_name, tts_scenario_data).delivery_for(npc_id, text, wanted)
+      Rails.logger.warn "[TTS] Delivery note not in the ink for #{npc_id}, voicing untagged: #{text.truncate(60)}" unless note
+      note
+    rescue StandardError => e
+      Rails.logger.warn "[TTS] Delivery check failed for #{npc_id}: #{e.class}: #{e.message}"
+      nil
+    end
+
+    # The compiled story for a storyPath, compiling a newer .ink first
+    # (InkStoryFile, the lookup TtsLineResolver uses too)
+    def resolve_and_compile_ink(story_path)
+      InkStoryFile.find(story_path)
+    end
+
+    def render_error(message, status)
+      render json: { error: message }, status: status
+    end
+
+    # Strong parameters for room state sync (SECURITY)
+    #
+    # Only identity and placement come from the client. The lock-relevant fields
+    # (opens_lock, key_id, keyPins and the like) are NOT permitted: a legitimate
+    # drop (NPC or player_drop) rebuilds the item from the server's own scenario
+    # copy in Game#add_item_to_room!, and an unsourced add has its lock fields
+    # stripped there (Game#strip_forgeable_lock_fields). Permitting them here would
+    # let a tampered client forge a key for any key lock.
+    def item_add_params
+      params.require(:data).permit(
+        :id, :type, :name, :texture, :x, :y, :takeable, :interactable,
+        position: [:x, :y],
+        scenarioData: [
+          :type, :name, :takeable, :id, :observations, :active, :visible, :interactable
+        ]
+      ).to_h
+    end
+
+    def object_state_params
+      # Only allow safe state changes (not 'locked' which bypasses puzzles)
+      params.require(:data).require(:stateChanges).permit(
+        :opened, :on, :brightness, :screen_state
+      ).to_h
+    end
+
+    def npc_state_params
+      # Only allow KO status, HP and visibility changes (validated further in model).
+      # isVisible was sent by setNPCVisible but dropped here, so the update was rejected.
+      params.require(:data).require(:stateChanges).permit(
+        :isKO, :currentHP, :isVisible
+      ).to_h
+    end
+
+    # ==========================================
+    # Flag Reward Helpers
+    # ==========================================
+
+    def find_flag_rewards(flag_key)
+      rewards = []
+
+      # Reuse find_flag_station_for_flag so the fallback path (flags_by_vm) is handled
+      # consistently and flagRewards are always resolved from the correct scenario station.
+      obj = find_flag_station_for_flag(flag_key)
+      return rewards unless obj
+
+      return rewards unless obj['flagRewards']
+
+      flag_station_id = obj['id'] || obj['name']
+
+      # Find the room_id for this station (used by unlock_door rewards as fallback)
+      room_id = nil
+      @game.scenario_data['rooms']&.each do |rid, room|
+        if room['objects']&.any? { |o| (o['id'] || o['name']) == flag_station_id && o['type'] == 'flag-station' }
+          room_id = rid
+          break
+        end
+      end
+
+      # Support both hash structure (preferred) and array structure (legacy)
+      if obj['flagRewards'].is_a?(Hash)
+        # Hash structure: { "flag{key}": { "type": "unlock_door", ... } }
+        reward_key = obj['flagRewards'].keys.find { |k| k.downcase == flag_key.downcase }
+        reward = obj['flagRewards'][reward_key] if reward_key
+        if reward
+          rewards << reward.merge('flag_station_id' => flag_station_id, 'room_id' => reward['room_id'] || room_id)
+        end
+      elsif obj['flagRewards'].is_a?(Array)
+        if obj['requires']
+          # Flag-locked object (safe/container with lockType: 'flag' and a single requires flag).
+          # All rewards apply when the lock flag matches — no index lookup needed.
+          obj['flagRewards'].each do |r|
+            rewards << r.merge('flag_station_id' => flag_station_id, 'room_id' => r['room_id'] || room_id)
+          end
+        else
+          # Array structure: rewards[i] corresponds to flags[i]
+          flag_index = obj['flags']&.find_index { |ref| resolve_flag_value(ref)&.downcase == flag_key.downcase }
+          if flag_index && obj['flagRewards'][flag_index]
+            rewards << obj['flagRewards'][flag_index].merge(
+              'flag_station_id' => flag_station_id,
+              'room_id' => obj['flagRewards'][flag_index]['room_id'] || room_id
+            )
+          end
+        end
+      end
+
+      rewards
+    end
+
+    def process_flag_rewards(flag_key, rewards)
+      results = []
+
+      rewards.each do |reward|
+        # Skip if already claimed
+        if @game.player_state['flag_rewards_claimed']&.include?(flag_key)
+          results << { type: 'skipped', reason: 'Already claimed' }
+          next
+        end
+
+        # Process each reward type
+        case reward['type']
+        when 'give_item'
+          results << process_item_reward(reward, flag_key)
+
+        when 'unlock_door'
+          results << process_door_unlock_reward(reward, flag_key)
+
+        when 'emit_event'
+          results << process_event_reward(reward, flag_key)
+
+        when 'set_global', 'unlock_object', 'hint'
+          # Client-side-only rewards — forward as-is so processRewardEvents() can handle them
+          results << reward
+
+        else
+          results << { type: 'unknown', data: reward }
+        end
+
+        # R1: an optional in-world `label` the station shows instead of the
+        # generic "Event triggered" / "Door unlocked: <room id>" line. Forwarded
+        # rewards above already carry it.
+        last = results.last
+        if reward['label'].present? && last.is_a?(Hash) && !last.key?('label') && !last.key?(:label)
+          results[-1] = last.merge(label: reward['label'])
+        end
+      end
+
+      # Mark rewards as claimed
+      @game.player_state['flag_rewards_claimed'] ||= []
+      @game.player_state['flag_rewards_claimed'] << flag_key
+      @game.save!
+
+      results
+    end
+
+    def process_item_reward(reward, flag_key)
+      # Find the flag-station object to pull item from its itemsHeld
+      flag_station = find_flag_station_by_id(reward['flag_station_id'])
+
+      return { type: 'error', message: 'Flag station not found' } unless flag_station
+
+      # Get item from itemsHeld (similar to NPC item giving)
+      item = flag_station['itemsHeld']&.find { |i| i['type'] == reward['item_type'] || i['name'] == reward['item_name'] }
+
+      return { type: 'error', message: 'Item not found in flag station' } unless item
+
+      # Add to player inventory
+      @game.add_inventory_item!(item)
+
+      { type: 'give_item', item: item, success: true }
+    end
+
+    def process_door_unlock_reward(reward, flag_key)
+      # The reward's own target wins; room_id falls back to the station's room only
+      # when the reward names none (find_flag_rewards). F18: the station's room used
+      # to overwrite the target, so the reward opened the wrong room.
+      room_id = reward['target_room'] || reward['room_id']
+
+      return { type: 'error', message: 'No room_id specified' } unless room_id
+
+      # Unlock the door (same as NPC door unlock)
+      @game.unlock_room!(room_id)
+
+      { type: 'unlock_door', room_id: room_id, success: true }
+    end
+
+    def process_event_reward(reward, flag_key)
+      # Emit event (NPC can listen and trigger conversations)
+      event_name = reward['event_name'] || "flag_submitted:#{flag_key}"
+
+      # Store event in player_state for client to emit
+      @game.player_state['pending_events'] ||= []
+      @game.player_state['pending_events'] << {
+        'name' => event_name,
+        'data' => { 'flag' => flag_key, 'timestamp' => Time.current.to_i }
+      }
+      @game.save!
+
+      { type: 'emit_event', event_name: event_name, success: true }
+    end
+
+    # Annotate flag-station and launch-device objects in room data with `flagsAllSubmitted`,
+    # derived from the server's submitted_flags list. Mutates room_data in place.
+    def annotate_station_submission_status!(room_data, room_id = nil)
+      submitted_list = @game.player_state['submitted_flags'] || []
+      submitted = Set.new(submitted_list.map(&:downcase))
+      # Submitted flags as the player typed them, keyed by lower-case value
+      submitted_as_typed = submitted_list.each_with_object({}) { |f, h| h[f.downcase] ||= f }
+      station_types = %w[flag-station launch-device]
+
+      # The client copy has its flag lists stripped to a count (see
+      # filter_requires_and_contents_recursive), so a station's own flags are read
+      # from the unfiltered room. Keyed by station id so each annotation below
+      # lists only THAT station's flags (the link panel's "Submitted Flags" showed
+      # every machine's: m09 Tomb Beta listed the catalogue server's).
+      raw_flags_by_station = {}
+      collect = lambda do |obj|
+        return unless obj.is_a?(Hash) && station_types.include?(obj['type'])
+        raw_flags_by_station[(obj['id'] || obj['name']).to_s] = Array(obj['flags'])
+      end
+      raw_room = room_id ? @game.room_data(room_id) : nil
+      if raw_room
+        raw_room['objects']&.each { |obj| collect.call(obj) }
+        raw_room['npcs']&.each { |npc| npc['itemsHeld']&.each { |item| collect.call(item) } }
+      end
+
+      annotate = lambda do |obj|
+        return unless obj.is_a?(Hash) && station_types.include?(obj['type'])
+        flags = Array(obj['flags'])
+        obj['flagsAllSubmitted'] = flags.any? && flags.all? do |ref|
+          resolved = resolve_flag_value(ref)&.downcase
+          resolved && submitted.include?(resolved)
+        end
+        # Only this station's flags, in the order it lists them
+        own = raw_flags_by_station[(obj['id'] || obj['name']).to_s]
+        if own
+          obj['submittedFlags'] = own.filter_map do |ref|
+            resolved = resolve_flag_value(ref)&.downcase
+            resolved && submitted_as_typed[resolved]
+          end
+        end
+      end
+
+      room_data['objects']&.each { |obj| annotate.call(obj) }
+      room_data['npcs']&.each do |npc|
+        npc['itemsHeld']&.each { |item| annotate.call(item) }
+      end
+    end
+
+    def find_flag_station_by_id(flag_station_id)
+      flag_station_types = %w[flag-station launch-device]
+      @game.scenario_data['rooms']&.each do |_room_id, room|
+        room['objects']&.each do |obj|
+          return obj if (obj['id'] || obj['name']) == flag_station_id && flag_station_types.include?(obj['type'])
+        end
+
+        # Also search items held by NPCs (e.g. launch-device carried by an NPC)
+        room['npcs']&.each do |npc|
+          npc['itemsHeld']&.each do |item|
+            return item if (item['id'] || item['name']) == flag_station_id && flag_station_types.include?(item['type'])
+          end
+        end
+      end
+
+      # Also search player inventory (takeable flag-stations/launch-devices end up here).
+      # A forged clientAdded item typed flag-station/launch-device must never stand in for
+      # a real station, even on a name match (code review R2, B1 sweep).
+      @game.player_state['inventory']&.each do |item|
+        next if BreakEscape::ItemIdentity.client_forged?(item)
+
+        return item if (item['id'] || item['name']) == flag_station_id && flag_station_types.include?(item['type'])
+      end
+
+      nil
+    end
+
+    # Find the flag-station that contains the submitted flag.
+    #
+    # Primary: searches flag-station objects embedded in scenario rooms (exact flag match).
+    #
+    # Fallback: when flags live in player_state['flags_by_vm'] rather than the scenario
+    # objects (happens when the ERB rendered with fallback values because the VM title in
+    # flags_by_vm didn't match the identifier used in flags_for_vm()), we:
+    #   1. Find which VM owns the flag.
+    #   2. Look for a scenario flag-station whose acceptsVms includes that VM name.
+    #   3. If no exact acceptsVms match, use the first available flag-station
+    #      (unambiguous for single-station scenarios).
+    #   4. Return the scenario station with 'flags' overlaid with the real values so
+    #      generate_flag_identifier and find_flag_rewards both use the correct station
+    #      metadata (acceptsVms, flagRewards) and the correct flag index.
+    # Resolve a flag value that may be a reference ("vm_name:flag_n") or a literal.
+    # Delegates to game.resolve_flag_ref for references; returns the string as-is otherwise.
+    # Is the flag{N} testing alias available? Never in production — this is the
+    # single gate, so keep it a plain environment check with no override.
+    def test_flag_aliases_enabled?
+      !Rails.env.production?
+    end
+
+    # Translate a flag{N} stand-in into the real flag value for the station being
+    # submitted to. Returns [flag_key, alias_used].
+    #
+    # N is 1-based and indexes the station's own ordered `flags` array, so
+    # flag{1} is "the first flag this station expects" — which is how the
+    # walkthroughs number them. Falls back to the scenario's overall flag order
+    # when the client did not say which station it is at.
+    #
+    # Anything that is not exactly flag{<digits>} is returned untouched, so real
+    # flag values (including any genuinely named flag{...}) are unaffected.
+    def resolve_test_flag_alias(flag_key, station_id)
+      return [flag_key, false] unless test_flag_aliases_enabled?
+
+      # Deliberately NOT flag{N}: SecGen flag-hint XML routinely uses flag{1},
+      # flag{2}, ... as the ACTUAL flag values, so a positional reading of that
+      # form would hijack real flags and silently submit the wrong one.
+      # `test:flag:N` cannot collide with any real flag.
+      match = flag_key.to_s.strip.match(/\Atest:flag:(\d+)\z/i)
+      return [flag_key, false] unless match
+
+      # Belt and braces: if this somehow IS a real flag value, it is itself.
+      real_flags = @game.send(:extract_valid_flags_from_scenario)
+      if real_flags.any? { |f| f.to_s.casecmp?(flag_key.to_s.strip) }
+        return [flag_key, false]
+      end
+
+      index = match[1].to_i
+      return [flag_key, false] if index < 1
+
+      candidates = test_flag_candidates(station_id)
+      real = candidates[index - 1]
+
+      if real.blank?
+        Rails.logger.warn "[BreakEscape][TestFlag] #{flag_key} has no match " \
+                          "(station=#{station_id.inspect}, #{candidates.length} flag(s) available)"
+        return [flag_key, false]
+      end
+
+      Rails.logger.warn "[BreakEscape][TestFlag] DEV ALIAS: #{flag_key} -> real flag " \
+                        "##{index} for station=#{station_id.inspect}. Not available in production."
+      [real, true]
+    end
+
+    # Ordered, resolved flag values a flag{N} alias can refer to.
+    def test_flag_candidates(station_id)
+      station = station_id.present? ? find_flag_station_by_id(station_id) : nil
+      refs = station && station['flags'].is_a?(Array) ? station['flags'] : nil
+
+      values =
+        if refs
+          refs.map { |ref| resolve_flag_value(ref) }
+        else
+          # No station context: fall back to every flag the scenario knows, in
+          # declaration order.
+          @game.send(:extract_valid_flags_from_scenario)
+        end
+
+      values.compact.reject(&:blank?)
+    end
+
+    def resolve_flag_value(ref_or_value)
+      return nil unless ref_or_value.is_a?(String)
+      return @game.resolve_flag_ref(ref_or_value) if ref_or_value.match?(/\A[^:]+:flag_\d+\z/)
+      ref_or_value
+    end
+
+    # Check whether a flag matches a hintOnlyFlags entry on the station identified by station_id.
+    # Returns the hint message string if matched, nil otherwise.
+    # The owning station's name for a wrong-station refusal, or nil when the
+    # player hasn't found it yet. "Found" means the room it stands in (or the
+    # room of the NPC carrying it) is unlocked; a station whose room can't be
+    # located is not named.
+    def discovered_station_name(station)
+      return nil unless station.is_a?(Hash)
+
+      name = station['name'].presence
+      return nil unless name
+
+      station_id = station['id'] || station['name']
+      @game.scenario_data['rooms']&.each do |room_id, room|
+        in_room = room['objects']&.any? { |o| (o['id'] || o['name']) == station_id } ||
+                  room['npcs']&.any? { |npc| npc['itemsHeld']&.any? { |i| (i['id'] || i['name']) == station_id } }
+        next unless in_room
+
+        return @game.room_unlocked?(room_id) ? name : nil
+      end
+      nil
+    end
+
+    def find_hint_only_message(flag_key, station_id)
+      @game.scenario_data['rooms']&.each do |_room_id, room|
+        room['objects']&.each do |obj|
+          next unless obj['type'] == 'flag-station'
+          next unless (obj['id'] || obj['name']) == station_id
+          next unless obj['hintOnlyFlags'].is_a?(Hash)
+
+          obj['hintOnlyFlags'].each do |flag_ref, hint_message|
+            resolved = resolve_flag_value(flag_ref)
+            return hint_message if resolved&.downcase == flag_key.downcase
+          end
+        end
+      end
+      nil
+    end
+
+    def find_flag_station_for_flag(flag_key)
+      # Primary: flag-station objects, NPC-held flag devices, and flag-locked objects.
+      # Flags arrays may contain references ("vm:flag_n") or literal values — resolve both.
+      @game.scenario_data['rooms']&.each do |_room_id, room|
+        room['objects']&.each do |obj|
+          next unless obj['type'] == 'flag-station' || obj['type'] == 'launch-device'
+          next unless obj['flags']&.any? { |ref| resolve_flag_value(ref)&.downcase == flag_key.downcase }
+
+          return obj
+        end
+
+        # Also search flag-locked containers (e.g. saes with lockType: 'flag').
+        # These "own" their required flag so it can't be submitted elsewhere.
+        room['objects']&.each do |obj|
+          next unless obj['lockType'] == 'flag' && obj['requires']
+          next unless resolve_flag_value(obj['requires'])&.downcase == flag_key.downcase
+
+          return obj
+        end
+
+        # Also search flag-station/launch-device items held by NPCs
+        room['npcs']&.each do |npc|
+          npc['itemsHeld']&.each do |held_item|
+            next unless held_item['type'] == 'flag-station' || held_item['type'] == 'launch-device'
+            next unless held_item['flags']&.any? { |ref| resolve_flag_value(ref)&.downcase == flag_key.downcase }
+
+            return held_item
+          end
+        end
+      end
+
+      # Fallback: flag lives in player_state flags_by_vm (resolve_flag_value returned nil,
+      # meaning scenario_data['flags'] is not populated for this game).
+      # Use the flag's index in flags_by_vm to determine which station references flag_N,
+      # so that multiple stations accepting the same VM are distinguished correctly.
+      flags_by_vm = @game.player_state['flags_by_vm']
+      return nil unless flags_by_vm.is_a?(Hash)
+
+      flag_station_types = %w[flag-station launch-device]
+
+      flags_by_vm.each do |vm_name, vm_flags|
+        next unless vm_flags.is_a?(Array)
+        flag_index = vm_flags.find_index { |f| f.downcase == flag_key.downcase }
+        next unless flag_index
+
+        # Determine the reference string this flag would appear as in a station's flags array
+        flag_ref = "#{vm_name}:flag_#{flag_index + 1}"
+
+        # Search all station-type objects (room objects + NPC itemsHeld) for one that
+        # explicitly references this flag_N
+        @game.scenario_data['rooms']&.each do |_room_id, room|
+          room['objects']&.each do |obj|
+            next unless flag_station_types.include?(obj['type'])
+            next unless Array(obj['acceptsVms']).include?(vm_name)
+            return obj.merge('flags' => vm_flags) if Array(obj['flags']).include?(flag_ref)
+          end
+
+          room['npcs']&.each do |npc|
+            npc['itemsHeld']&.each do |item|
+              next unless flag_station_types.include?(item['type'])
+              next unless Array(item['acceptsVms']).include?(vm_name)
+              return item.merge('flags' => vm_flags) if Array(item['flags']).include?(flag_ref)
+            end
+          end
+        end
+
+        # No explicit reference match — fall back to first station accepting this VM
+        @game.scenario_data['rooms']&.each do |_room_id, room|
+          room['objects']&.each do |obj|
+            next unless obj['type'] == 'flag-station' || obj['type'] == 'launch-device'
+            return obj.merge('flags' => vm_flags) if Array(obj['acceptsVms']).include?(vm_name)
+          end
+        end
+
+        # No flag-station in scenario at all — minimal synthetic fallback
+        return { 'acceptsVms' => [vm_name], 'flags' => vm_flags }
+      end
+
+      nil
+    end
+
+    # Generate a flag identifier in the format: {vmId}-flag{index}
+    # Example: "desktop-flag1", "kali-flag2"
+    #
+    # This is the LEGACY, unqualified form. It numbers flags from 1 within the
+    # station's own flags array, so two stations accepting the same VM collide
+    # (m01's launch device and drop site both produce "shatter_server-flag1").
+    # Kept as-is because it is what every cached scenario_data already holds and
+    # what the client shows; see generate_flag_identifiers for the qualified form.
+    def generate_flag_identifier(flag_key, flag_station)
+      return nil unless flag_station
+
+      # Find flag index in flags array (0-based); entries may be references or literals
+      flag_index = flag_station['flags']&.find_index { |ref| resolve_flag_value(ref)&.downcase == flag_key.downcase }
+      return nil unless flag_index
+
+      # Get VM ID (use first VM if multiple)
+      vm_id = flag_station['acceptsVms']&.first
+      return nil unless vm_id
+
+      # Generate identifier: "desktop-flag1" (1-indexed for display)
+      "#{vm_id}-flag#{flag_index + 1}"
+    end
+
+    # The candidate identifiers a submission at this station can satisfy, most
+    # specific first:
+    #
+    #   "flag_station_dropsite:hospital_backup_server-flag1"  station-qualified
+    #   "hospital_backup_server-flag1"                        legacy, unqualified
+    #
+    # A submit_flags task matches on EITHER. A qualified target can only be
+    # produced by its own station, so a scenario that opts in gets strict
+    # station binding; one that does not opt in behaves exactly as before.
+    #
+    # station_key is the station id, falling back to its name when it has no id
+    # (m01's ENTROPY Launch Device is name-only).
+    def generate_flag_identifiers(flag_key, flag_station)
+      legacy = generate_flag_identifier(flag_key, flag_station)
+      return [] unless legacy
+
+      station_key = flag_station['id'].presence || flag_station['name'].presence
+      station_key ? ["#{station_key}:#{legacy}", legacy] : [legacy]
+    end
+
+    # Get current player's preference record
+    def current_player_preference
+      if current_player.respond_to?(:break_escape_preference)
+        current_player.break_escape_preference
+      elsif current_player.respond_to?(:preference)
+        # Reload association to ensure fresh data
+        current_player.reload.preference
+      end
+    end
+
+    # Create default preference for player
+    def create_default_preference
+      if current_player.respond_to?(:ensure_break_escape_preference!)
+        current_player.ensure_break_escape_preference!
+        current_player.break_escape_preference
+      elsif current_player.respond_to?(:ensure_preference!)
+        current_player.ensure_preference!
+        current_player.preference
+      else
+        # Fallback: find-or-create so repeated calls and race conditions are safe
+        begin
+          PlayerPreference.find_or_create_by!(player: current_player)
+        rescue ActiveRecord::RecordNotUnique
+          PlayerPreference.find_by!(player: current_player)
+        end
+      end
+    end
+  end
+end

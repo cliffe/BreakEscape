@@ -1,0 +1,35 @@
+{
+ "imports": {
+  "m02_completed": true
+ },
+ "steps": [
+  {
+   "note": "R32: m02 finished on the offline keys without saving Mr Pryce (or with no restore chosen, which m02's debrief also tells as the offline route)."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Remind me what their deal",
+    "Which cells buy",
+    "Walk me through St. Catherine's",
+    "Then we take the supplier"
+   ]
+  },
+  {
+   "said": [
+    "You worked St. Catherine's last month",
+    "The recovery call was yours, and you know what it cost",
+    "Eleven and a half hours, and six people died"
+   ],
+   "notSaid": [
+    "You paid the ransom and had the wards back",
+    "You took Ghost's keys",
+    "You ran the combined restore",
+    "bagged Mr Pryce by hand"
+   ]
+  },
+  {
+   "maxRun": 8
+  }
+ ]
+}

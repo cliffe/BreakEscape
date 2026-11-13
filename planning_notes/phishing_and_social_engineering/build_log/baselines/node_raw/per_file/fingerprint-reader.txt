@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: identified lifts use the display name, others the source surface
+ok 1 - identified lifts use the display name, others the source surface
+  ---
+  duration_ms: 0.761721
+  ...
+# Subtest: an unidentified label never contains the raw owner
+ok 2 - an unidentified label never contains the raw owner
+  ---
+  duration_ms: 0.171634
+  ...
+# Subtest: outcome messages
+ok 3 - outcome messages
+  ---
+  duration_ms: 0.136913
+  ...
+# Subtest: failure reasons and percent rounding
+ok 4 - failure reasons and percent rounding
+  ---
+  duration_ms: 0.062316
+  ...
+# Subtest: field notes cover the three patterns
+ok 5 - field notes cover the three patterns
+  ---
+  duration_ms: 0.62738
+  ...
+# Subtest: a wrong-person reply names an identified owner and quotes the door sign
+ok 6 - a wrong-person reply names an identified owner and quotes the door sign
+  ---
+  duration_ms: 0.130832
+  ...
+# Subtest: every answer has a heading and a symbol
+ok 7 - every answer has a heading and a symbol
+  ---
+  duration_ms: 0.091357
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 163.506597

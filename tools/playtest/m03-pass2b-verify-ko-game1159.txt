@@ -1,0 +1,13 @@
+created         2026-09-30 16:25:55 UTC
+last write      2026-09-30 16:30:07 UTC
+played for      251s of wall clock
+current room    "reception_lobby"
+unlocked rooms  4: reception_lobby, main_hallway, conference_room_01, server_room
+unlocked objs   0: 
+inventory       7: Your Phone, RFID Cloner, Lock Pick Kit, Notepad, Staff Access Badge, Executive Keycard (Nightshade's copy), Zero Day Transaction Log
+NPCs met        7: briefing_cutscene, director_netherton, agent_nightshade, receptionist_npc, agent_0x99, closing_debrief, victoria_sterling
+flags submitted 4: flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_1_fd97ee}, flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_2_7ab12d}, flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_3_fd7cbd}, flag{m03_ghost_in_the_machine_ghost_in_machine_vm_network_4_d3650c}
+globals set     16: briefing_played, flag_distcc_submitted, flag_ftp_submitted, flag_http_submitted, flag_scan_submitted, james_fate, knows_m2_connection, mission_phase, netexploit_guide_offered, night_confrontation_ready, player_approach, receptionist_ko, time_of_day, victoria_choice_made, victoria_fate, victoria_ko
+
+VERDICT: progress recorded — 3 rooms beyond the first, 0 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.

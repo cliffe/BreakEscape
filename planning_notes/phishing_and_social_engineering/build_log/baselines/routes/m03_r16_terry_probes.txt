@@ -1,0 +1,62 @@
+
+## R16 (cycle 4 review; pass 2 blind fixes 2): three Terry probes. (a) met by day, then shows the cloned executive card at night; (b) caught at Sterling's door with a pick before he has challenged the player: he turns hostile at once, and talking to him afterwards gets the hostile line; (c) met by day, and Ffion has told him 'notebook'.
+   {set {"briefing_played":true,"badge_received":true,"victoria_card_cloned":true}}
+
+--- terry ---
+  Terry Mott: Afternoon. Executive wing's staff only, I'm afraid. Visitors stay in reception and the conference area.
+  Terry Mott: If Ms. Sterling wanted you back here, she'd have told me. She hasn't.
+     (2 options)
+ > When do you knock off?
+  Terry Mott: Knock off? Not till six tomorrow morning. Double shift. Afternoons in here, then the night rounds.
+  Terry Mott: Why?
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true}}
+
+## (a) reopen at night: recognition, then the executive card
+
+--- terry ---
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: You. The three o'clock. Building's shut, and you're a long way from the conference room.
+  Terry Mott: Go on, then. Why are you here?
+     (4 options)
+ > I work here -- research, second floor. Forgot something at my desk.
+  Terry Mott: You don't work here. You were in reception at three with a visitor badge.
+  Terry Mott: You got ID? Key card?
+     (3 options)
+ > Hold up the cloned executive card. This do you?
+  Terry Mott: A visitor badge at three and her card at eleven.
+  Terry Mott: Either she's taken a shine to you or I'm in trouble. Don't be long.
+     (4 options)
+ > I'll let you get on.
+  Terry Mott: I've got your face now. Don't make me use it.
+  [chat closes]
+
+## (b) a fresh night: caught picking before any challenge (#hostile), then the player talks to him
+   {set {"player_warned":false,"guard_suspicious":false,"day_greeted":false,"asked_knock_off":false}}
+
+--- terry @on_lockpick_detected ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: A torch beam lands on your hands, and on the pick in them.
+  Terry Mott: Picks. Right. We're done talking.
+  [chat closes]
+
+--- terry ---
+   (after a reload: variables kept, visit counts and position reset)
+  Terry Mott: Not another word. I'm calling the police.
+  [chat closes]
+
+## (c) met by day; Ffion said notebook
+   {set {"player_warned":false,"guard_suspicious":false,"day_greeted":true,"ffion_night_story":"notebook","guard_detection_count":0,"guard_hostile":false,"excuse_given":false}}
+
+--- terry @start ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: Ffion said there'd be someone about. Notebook, was it? Should've known it'd be you. Conference room's the other end of the building.
+  Terry Mott: So what are you doing in my corridor?
+     (5 options)
+ > Wrong turn. I'll find it.
+  Terry Mott: Then you've taken the scenic route. Through the executive wing.
+  Terry Mott: Back the way you came. And if I see you in here again, I won't be asking.
+  [chat closes]
+
+[stats] spoken/narrated lines 20, choices 5, longest run without a choice 3 (terry); runs>=6: 

@@ -1,0 +1,103 @@
+
+## R7 (round 2): the cover held, then a late reveal on the hub's evidence choice. No crew offer while he isn't an ally; after the reveal he offers it, states the 'half an hour' cost (attack not mapped yet), and sounds it. Then whichever clock fires first: the attack is mapped 20 minutes after the alarm, the alarm clock vents bank B at 30 (the normal clock would have at 34).
+   {set {"briefing_played":true,"guard_admitted":true}}
+
+--- vance ---
+      [task: meet_robert_vance]
+      [set_global vance_spoken=true]
+  A grid-safety audit at four in the morning. You regulator lot keep strange hours.
+     (3 options)
+ > Just doing the job, Mr Vance.
+  Right. I run a tight ship here, on a tighter budget.
+  Tick your boxes and let's be quick about it. I've a plant to keep running.
+     (2 options)
+ > Tell me about the recent maintenance work.
+  Maintenance? OptiGrid came in on the ninth, control-system upgrades.
+  Cards worked, they quoted an order number. I've still not found the order.
+     (2 options)
+ > Any other contractors in lately?
+  Just OptiGrid this month. Budget cuts, essential work only.
+  Which is why an audit at this hour is the last thing I need. We do what we can with what we've got.
+  Auditors get escorted, not carded. When the shift settles I'll walk you round myself.
+  The workshop's on the contractors' cards. The plant room's high-voltage, authorised persons only.
+     (4 options)
+ > (Use the cloner.) Lean in over the site map, close enough to read his lanyard.
+  Narrator: You lean over the site map on his desk while he talks, close enough for the cloner on your hip to reach his lanyard.
+      [RFID minigame: card saved]
+  Narrator: He keeps talking.
+  Narrator: The cloner buzzes once against your hip. Old prox. It didn't even have to work for it.
+     (3 options)
+ > Thank you. I'll start on the staff records.
+  Anything else, I'm at the ops desk. Watching the screens.
+  [chat closes]
+   {set {"anomaly_detected":true}}
+
+--- vance ---
+  Robert Vance: Something else?
+     [0] I'm not an auditor. Your Hall 1 dial reads 61. Your screen says 28.
+     [1] A few more questions about the facility.
+     [2] That's all for now.
+  [stopped: no pick]
+   [PASS] not said: "Is anyone working"
+
+--- vance @initial_meeting ---
+   (after a reload: variables kept, visit counts and position reset)
+  Robert Vance: Something else?
+     (3 options)
+ > I'm not an auditor. Your Hall 1 dial reads 61. Your screen says 28.
+  Narrator: You drop the cover and tell him who you work for. ENTROPY operatives are inside his facility, and his battery storage is the target.
+  ...What?
+  ENTROPY. Here. In my plant.
+     (2 options)
+ > Deadly serious. At least three of them, and your battery systems are the target.
+  My God. Two hundred and forty thousand people on this grid.
+  How long have we got?
+     (2 options)
+ > I can stop it, but I need your help.
+  Tell me what you need. Anything.
+  You'll have the halls. And I know the SCADA side better than they do.
+  I'll have the access logs and the monitoring up from here.
+  Come back to the ops desk when you need me. I'm on comms while you move.
+ > I'm going.
+  Robert Vance: Go. I'll be on the desk.
+  [chat closes]
+   [PASS] vance_is_ally = true (expected true)
+
+--- vance ---
+  Robert Vance: What do you need?
+     (3 options)
+ > Is anyone working in the halls tonight?
+  Robert Vance: Nine. The module-swap crew, behind the inverter wall in Hall 2, till six. Your contractor wanted the halls clear from midnight. I said no.
+  Robert Vance: I can sound the evacuation from this desk. Klaxon and strobes in every hall.
+  Robert Vance: Whoever's in my plant room hears it too. He'll not wait for morning. Half an hour, maybe, and you've not finished in the workshop.
+     (2 options)
+ > Sound it. Get them out.
+      [set_global crew_warned=true]
+  Robert Vance: Sounding it now.
+  Narrator: Somewhere past the walls a klaxon starts, and the strobes in the corridor go white.
+  Robert Vance: They're moving. Nine of them, out through the Hall 2 fire doors.
+  Robert Vance: Go on.
+      [engine: early alarm -> crew_warned_early, clock_started]
+      [clock: h2_advisory_alarm started at 0 min]
+      [clock: racks_vent_alarm started at 0 min]
+     (2 options)
+ > Stay on the ops desk. I'll call if I need the engineering side.
+  Robert Vance: I'm not going anywhere. Call the moment you're moving.
+  [chat closes]
+   [PASS] said: "half an hour, maybe"
+   [PASS] crew_warned = true (expected true)
+   [PASS] crew_warned_early = true (expected true)
+   {advance 20 min}
+   {set {"server_room_reached":true,"plant_reader_seen":true,"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"evidence_maintenance_logs_found":true,"attack_mechanism_known":true}}
+      [clock: h2_advisory started at 20 min]
+      [clock: racks_vent started at 20 min]
+   {advance 11 min}
+      [clock 24 min: h2_advisory_alarm skipped (condition)]
+      [clock 28 min: h2_advisory FIRES {"hydrogen_alarm":true,"urgency_stage":3}]
+      [clock 30 min: racks_vent_alarm FIRES {"racks_vented":true,"casualties_occurred":true,"vented_by_alarm_clock":true,"urgency_stage":4}]
+   [PASS] racks_vented = true (expected true)
+   [PASS] vented_by_alarm_clock = true (expected true)
+   [PASS] crew_lost = false (expected false)
+
+[stats] spoken/narrated lines 34, choices 12, longest run without a choice 4 (vance); runs>=6: 
+[result] all expectations met

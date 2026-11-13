@@ -1,0 +1,88 @@
+CHANGED opening_briefing.ink
+   - Agent HaX: Ghost never saw your face. You saw theirs, near enough: a hood on a screen.
+   + Agent HaX: Ghost never saw your face. You never saw theirs.
+CHANGED closing_debrief.ink
+   - Agent HaX: At four, someone went through the field HQ. The kit we couldn't carry, the cover it took years to build. All of it. We won't be going back.
+   + Agent HaX: At four, someone went through the field HQ. Everything we couldn't carry is theirs now. We won't be going back.
+CHANGED closing_debrief.ink
+   - Agent HaX: Ghost withdrew the studentship this morning. They had what they wanted, and it was never you.
+   + Agent HaX: Ghost withdrew the studentship last night. They had what they wanted, and it was never you.
+CHANGED closing_debrief.ink
+   - Agent HaX: Ghost withdrew the studentship this morning anyway. They don't keep anyone a handler sent. Today, take that as a compliment.
+   + Agent HaX: Ghost withdrew the studentship last night anyway. They don't keep anyone a handler sent. Today, take that as a compliment.
+CHANGED closing_debrief.ink
+   - Agent HaX: The scoreboard was enough. The phone call was one call too many.
+   + Agent HaX: The scoreboard was enough. The message on your phone was one too many.
+CHANGED closing_debrief.ink
+   - Agent HaX: Megan Oyelaran took a CryptoSecure summer placement. We'll keep an eye on her. You could have.
+   + Agent HaX: Megan Oyelaran took a CryptoSecure summer placement. We'll keep an eye on her. You could have warned her.
+CHANGED closing_debrief.ink
+   - Agent HaX: We're replacing it. That's all the answer you get.
+   + Agent HaX: Assume they were. That's all the answer you get.
+CHANGED closing_debrief.ink
+   - Agent HaX: Term starts Monday. Go to your lectures. You never know who's watching.
+   + Agent HaX: Term starts Monday. Go to your lectures. Dr Shaw takes a register.
+REMOVED npc_tom.ink
+   - Dr Tom Shaw: Turn remote images off. Everyone should.
+REMOVED npc_tom.ink
+   - Dr Tom Shaw: You're past all that now, mind. Good.
+CHANGED npc_sidhu.ink
+   - Dr Sidhu Selvarajan: Come in, come in. Sidhu Selvarajan. You must be one of the new first-years.
+   + Dr Sidhu Selvarajan: Come in, come in. I'm Sidhu. You must be one of the new first-years.
+CHANGED npc_sidhu.ink
+   - Dr Sidhu Selvarajan: You were looking at my whiteboard. It is from my blockchain lecture. A toy ledger, four blocks.
+   + Dr Sidhu Selvarajan: That's my whiteboard. It's from my blockchain lecture. A toy ledger, four blocks.
+CHANGED npc_sidhu.ink
+   - Dr Sidhu Selvarajan: Each block keeps the hash of the block before it. That is the chain.
+   + Dr Sidhu Selvarajan: Each block keeps the hash of the block before it. That's the chain.
+CHANGED npc_sidhu.ink
+   - Dr Sidhu Selvarajan: A hash is a fingerprint. Any amount of input, a fixed-length output, and you cannot run it backwards.
+   + Dr Sidhu Selvarajan: For noticing change. Any input, a short fingerprint out, and you cannot run it backwards.
+CHANGED npc_sidhu.ink
+   - Dr Sidhu Selvarajan: Same input, same hash. One byte different, even a new line you cannot see, and it is a completely different hash.
+   + Dr Sidhu Selvarajan: Change one byte, even a new line you can't see, and you get a different fingerprint entirely. That's all my ledger is doing.
+CHANGED npc_sidhu.ink
+   - Dr Sidhu Selvarajan: So you can check that nothing has changed without keeping the thing itself. That is the start of how good systems store passwords.
+   + Dr Sidhu Selvarajan: Good systems store passwords that way too, with salt and a slow hash. But that is another lecture.
+REMOVED npc_sidhu.ink
+   - Dr Sidhu Selvarajan: They add salt and a slow hash, but that is another lecture.
+CHANGED npc_cliffe.ink
+   - Dr Z. Cliffe Schreuders: {&Still here. Coffee's still terrible.|Mm?|Committee's still looking for me.}
+   + Dr Z. Cliffe Schreuders: {&Still here. Coffee's still terrible.|Yeah?|Committee's still looking for me.}
+CHANGED npc_megan.ink
+   - Megan Oyelaran: Still on Trial III. Don't tell me how. I want to get it myself.
+   + Megan Oyelaran: Still on the third one. Don't tell me how. I want to get it myself.
+CHANGED npc_megan.ink
+   - Megan Oyelaran: Go on, then.
+   + Megan Oyelaran: Alright?
+CHANGED npc_megan.ink
+   - Megan Oyelaran: It resets if you walk off and come back, mind.
+   + Megan Oyelaran: It resets if you walk off and come back, though.
+CHANGED npc_jordan.ink
+   - Jordan Pike: Nice one. Lockbox is right there.
+   + Jordan Pike: Nice one. Tell your mates.
+CHANGED phone_ghost.ink
+   - Congratulations. You passed. All of them.
+   + You passed. All of them. I'd rather hoped you would.
+CHANGED phone_ghost.ink
+   - St Catherine's had forty-one cameras. I switched off the recorders, not the cameras. I watched you all night.
+   + St Catherine's had forty-one cameras. I switched off the recorders, not the cameras. Your screens said no signal. Mine didn't.
+CHANGED phone_ghost.ink
+   - You still walk like you're expecting a door to be locked. Your CCTV screens said no signal. Mine didn't.
+   + I watched you all night. You still walk like you're expecting a door to be locked.
+CHANGED phone_ghost.ink
+   - I told you at St Catherine's: no name. That hasn't changed. You can call me what your handler does: Ghost.
+   + No name at St Catherine's, and no name now. The handle is Ghost. It's all you get.
+CHANGED phone_ghost.ink
+   - The last time I made you an offer, there was a ward in the next room. This one's simpler.
+   + The last time I made you an offer, there was a ward forty feet away. This one's simpler.
+CHANGED phone_ghost.ink
+   - You warned the Oyelaran girl. Sentimental. It cost me a candidate, so it costs you nothing. Yet.
+   + You warned the Oyelaran girl. Sentimental. One candidate in two hundred and twelve, so I'll let it pass.
+CHANGED phone_ghost.ink
+   - Say no to me and you're the second this week. Miss Oyelaran was the first.
+   + Say no to me and you'll be the second this week.
+CHANGED phone_ghost.ink
+   - Say no and you're the candidate who walked away. So is Miss Oyelaran. I don't keep one without the other.
+   + Say no and you walk away, and Miss Oyelaran walks with you. I don't keep one without the other.
+{'changed': 27, 'added': 0, 'removed': 3}

@@ -1,0 +1,10 @@
+Make portrait for Pieter Vos
+A tall, lean Dutch man in his mid-fifties from Rotterdam, with pale, slightly weathered skin, a long narrow face with sharp cheekbones, clean-shaven, and close-cropped fair hair gone ash-grey, a broker who sells early access to stolen secrets. Cold pale blue eyes and a detached, practical, appraising look, as if pricing the person in front of him. He wears an expensive tailored camel-brown wool overcoat, open, over a black merino roll-neck jumper, dark grey wool trousers, a black leather belt and a thin gold watch; his hands are in the coat's pockets. Standing alone against an empty plain mid-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images. Reframed with reframe_portrait.py --flip. Approved by the user as pieter_vos_concept_1 (wip/), adopted as the PixelLab pipeline concept.

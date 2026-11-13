@@ -1,0 +1,13 @@
+{
+  "key": "f63d4121dcd1fdc85b7326cf855b62f5",
+  "npc": "ravi_anand",
+  "text": "And there's a VPN login I don't like. The log terminal's over there.",
+  "voice": "Puck",
+  "style": "British Indian IT security manager in his mid-thirties, exhausted after a night shift, matter-of-fact. Speak with a consistent Leeds, with a light British Indian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

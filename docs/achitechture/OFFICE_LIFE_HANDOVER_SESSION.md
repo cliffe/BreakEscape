@@ -1,0 +1,167 @@
+# Office life: handover to a dedicated session
+
+Written 2026-11-06, after slice 5. This session owns the office-life NPC work from here on: the remaining
+slices and the `test_needs_sims` showcase. Another Claude session keeps working on `lab_physical_pentest`,
+m07, server code and the review rounds in the same tree. Read `AGENTS.md` and `CLAUDE.md` first; they hold the
+standing rules. This file adds only what is specific to office life.
+
+## 1. What the user wants
+
+In the user's words (2026-11-05): the Sims-style scenario should "build some behaviour that we can reuse to
+bring NPCs to life, especially behaviour for office spaces and tasks. Interacting with PCs, printers, coffee
+machines, etc." `scenarios/test_needs_sims` is the showcase and test bed. Keep it neutral, with no security
+story. The security payoff (opportunity windows, things left behind) shows up in `lab_physical_pentest` and,
+later, in the awareness course.
+
+User design inputs that every slice must honour:
+
+- **Social compatibility (slices 8 and 10).** Not every pair of NPCs chats. If the others don't trust someone
+  (the user's example is Derek in m01), nobody joins him at the water cooler. Avoidance applies both ways.
+  Design in plan section 7.3: `needsCompany: {groups, avoids}`, plus a `requireGlobal` hook.
+- **Room leash, fixed per NPC (built in slice 2a).** Some NPCs are confined to certain rooms. For example,
+  Derek must not walk into Maya's private office for a glass of water. Answer to OQ24: "Some NPCs (fixed per
+  NPC)".
+- **Presets apply only to objects the scenario declares (built in slice 4).** A preset never makes undeclared
+  map furniture usable, and an object's own fields always override the preset.
+- **Every feature gets tested properly:** unit tests, an addition to the showcase, and live browser proof on
+  the real code path. Memory note: `new-features-need-full-tests`.
+
+## 2. State of the slices
+
+The plan is `docs/achitechture/OFFICE_LIFE_PLAN.md`. It went through three review rounds and an amendment
+review, and every finding is folded in. The user chose slices 1, 2, 2a, 3, 4, 5, 7, 8, 10 and 11. Build them
+in order, one at a time: they all touch `npc-needs.js`.
+
+| Slice | What | Plan section | State |
+|---|---|---|---|
+| 0 | Own-desk work doesn't count as leaving the post | 2.11 | Built |
+| 1 | Tick-cost hygiene | 2.0 | Built (5b1749a05) |
+| 2 | Caught at the desk (`npc_caught_at_post`, `expectedAwayMs`) | 2.11 | Built (b670d2fcd, b6b579e39); reload reset e74fb409d |
+| 2a | Room leash, private objects | 7.2 | Built (42575dda0, a80dbb358, 02f304b7c); leash proven live, game 630 |
+| 3 | What the player sees: icons, carried items, typing bob, use sounds | 2.12 | Built (845dadb4c, 804e8dfde) |
+| 4 | Affordance presets by object type | 2.1 | Built (aab2943c1); live games 599 and 601 |
+| fix | Walk home stops yielding after 3 s; seat found from the home cell; icon anchored to the head | NPC_NEEDS_SYSTEM.md | Built (8d3520267, 80c2a8dd5) |
+| 5 | Workstation indicators (away-open white dot that breathes, away-locked steady blue dot) | 2.3 | Built (b820a5d24, b2577fac1, b14016be1, fb3383de6); lab game 636 scores 100 |
+| 7 | Carry outcomes and reveal slots | 2.2 Part A | Built (fcb8817a4, 3ff1efa29, f97960f2e); live game 643; leash (game 645) and lab (game 646, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S7.md`) |
+| 3b | Icon set (16x16 `npc-*`) and pressing-need thought bubbles (`showPressingNeeds`) | 9 | Built (59f291e82, d19e81840, 8ffa8502d); sims game 649, leash game 656, lab game 658 (score 100) |
+| 8 | Speech bubbles and social pairing, with compatibility | 2.4, 7.3 | Built (0af49071a, 224a177c2, 3a51f2aac, 40d8c3ea3); sims games 665, 667; leash (game 668) and lab (game 669, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S8.md`) |
+| 10 | Queues at shared machines, and chatter | 2.5, 7.3 | Built (367a27627, 963f790ef, 1bcdc550c, 3da2015f6, 4f16579b2, 33a7a8643); sims games 675, 676, 679; leash (game 681) and lab (game 680, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S10.md`) |
+| 11 | Left behind (scoped: `leftBehindChance`; piles wait for slice 9, which wasn't chosen), queue-aware `expectedAwayMs` | 2.10 | Built (5e3fd1e89, 5cccaf6ea); sims game 684; leash (game 686) and lab (game 685, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S11.md`) |
+| 14 | Avoidance at a distance, balking (`maxQueue`) and parked needs, face bubble | 10 | Built (b7606efd0, efe347968, e4408c2f9, 5e7dec2c7, b546cb3c8, a6f5fbc1f, 3f5350d40); sims games 689, 690, 691; leash (game 692) and lab (game 693, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S14.md`) |
+| 15 | Voiced chatter (server `/tts` accepts chatter pools), bag and cooldown, speech lock, picture chat, ink exchanges heard once | 11 | Built (c6288e3be, c4949a517, d6dc1f5b1, 5222d2d3f, da3387e92); sims game 694; leash (game 698) and lab (game 788, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S15.md`) |
+| 21 | Idle motion: the chair roll mostly along x, out and back, held while busy; a rare seeded swivel (`swivelChance` 0.05); listening turns towards a colleague speaking within four tiles (per-tick speakers list); `npc_swivelled` | 12.7 | Built (9779363f6, showcase cbfe37bea); sims games 896, 897; leash (game 899) and lab (game 900, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S21.md`) |
+| 16 | Lock-screen habits (`screenHabit`) and cues: an object `autoLockSeconds`, `workstation_screen_changed`, lock and wake flash or glyph, chimes, `lockCues` | 12.2 | Built (aebba3ab5, a3cd35e6d, ea3ec20a2, f84c777de); sims games 904, 906, 912; leash (game 914) and lab (game 915, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S16.md`) |
+| 18a | Coffee off: `affordance.offWhen` takes a source out; walkers and queuers turn back with `off`, grumble from `grumble_off` (else `grumble`, else the need's picture) and take the kitchen or park; switching back on wakes parked needs; the `TURN_BACK` table with `rang_out`; a wall socket with a neutral hint title | 12.4 | Built (84babc54c, 9589e5bfd); sims game 918; leash (game 919) and lab (game 920, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S18A.md`) |
+| 18b-i | The magnet (cake): a droppable held item becomes a social/hunger source where it is dropped; `magnet_placed` / `magnet_unreachable`, sight, temptation in a 30-point band with the quiet look, servings taken at `using` start with a `gone` turn-back ("Missed it."), `perPerson`, pickup and reload; the declared spot is cut | 12.4 | Built (91227f828, 60f41190f, fix 2643c23f3); sims games 930, 938, 939, 948, 949, 950; leash (game 951) and lab (game 952, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S18B1.md`) |
+| 18b-ii | Word of mouth: a knower back in its own room (idle, walking home or at its desk) tells once per magnet every NPC within `newsRadius` there that does not know and is not avoided either way; the line from the magnet's `announce` pool ignores the cooldown and waits up to 30 s for the speech lock, then a `news` picture; nobody to tell is no announce; learning by sight or word wakes parked needs (`_wakeParkedFor`); `npc_told`, `npc_announced` | 12.4 | Built (94c190820, 20d779678, fix e4a035212); sims games 954, 955; leash (game 956) and lab (game 957, score 100) regressions done 2026-11-07 (`HANDOVER_OFFICE_S18B2.md`) |
+| 19 | Desk-phone calls: `desk_phone_ring:<id>` rings a `phoneOwner` object; the owner at its post answers after one ring as a call overlay (`s.call`), an away owner misses it, from ring 2 the nearest `answersPhones` colleague walks to a side cell and takes half a call (`answered` / `rang_out` turn-backs, `desk_phone_hung_up` when the player chats to the speaker); the speaker's own `phoneCalls` knot (heard once), else the `phone` / `phone_message` pool, else pictures; amber ring flash or phone1 glyph, rattle, `desk_phone_ring` heard in the room and at 0.4 through an open door | 12.5 | Built (c95a2fcb2, 108a0b557, ba7975873, a6f2d927e, 7dfc15b06); sims games 963-966; leash (game 967) and lab (game 968, score 100) regressions done 2026-11-07 (`HANDOVER_OFFICE_S19.md`) |
+| 22 | Printer power: `revealOutput` (and the `needs.print` producer) may list printers in preference order; a print goes to the first that is on (`offWhen`) with a slot; the errand follows the paper (a longer `expectedAwayMs`); none on: `print_blocked`, `npc_print_blocked:<npcId>`, a `grumble_printer_off` line or the `blocked` picture; `npc_print_fetched` gains `producerId`; showcase kitchen copier and two wall sockets | 12.12 | Built (f650c1a5f, 9da18dfc9, e787ce25b, 9053df59e, 9600031e4); sims game 973; leash (game 974) and lab (game 975, score 100) regressions done 2026-11-07 (`HANDOVER_OFFICE_S22.md`) |
+| 23 | Magnet on a table: a magnet dropped within a tile of a usable table lands on its top (nearest table, slides past objects, drawn over it), eaters stand at its front edge or ends, never behind; a reload re-raises it (the server keeps only position x and y) and every drop now saves its top-left, so reloads no longer drift | 12.13 | Built (dce9f463c, 2d6295ef5, ff5fd7a41, fdbc431a1, 6cfc8e18e); sims games 979, 982, 985; leash (game 987) pass; lab game 989 score 100 (USB 13 s, game 988 score 40, both after seat box slice 7 moved the accounts PCs) 2026-11-07 (`HANDOVER_OFFICE_S23.md`) |
+| 20 | Room tone, all behind `"roomTone": true`: the four-step bed order (own authored loop, profile bed, open-door neighbour, nothing), crossfades that turn back, a bed at spawn (`refreshAmbient()`), typing loop by worker count (capped at three), ducking under heard lines, calls and person-chat, background spots, `startSound` / `outputSound`; without it only an unloaded key now fades out over 400 ms instead of cutting (sis01 `ward_7`, `it_security_office`) | 12.6 | Built (881c13d1a, 8ad1c6e4e, 8006044a0, 83f3b58e9); sims games 995, 996; sis01 game 999; leash (game 1000) pass; lab game 1001 score 100 (USB 12 s, creds 63 s); open for the user: the shipped `fadeAmbientTo` start-volume spike and a possible tick at the office and kitchen loop seams; a listen on a machine with audio is still needed (`HANDOVER_OFFICE_S20.md`) |
+| 17 | Print and forget: `revealOutput` for need uses only, `onUse.chance` rolled at job start, `printHabit` (reserved, fetched or forgotten), the fetch errand whose leg back is the return (`job.errand` only), `npc_print_uncollected` / `_gone` / `_fetched`, the `needs.print` lever from Tom's open PC and the Print Queue note, recycling the oldest forgotten slot | 12.3 | Built (351fb11fe, 6e253b502, da3a984db); sims games 923, 924; leash (game 925) and lab (game 926, score 100) regressions done 2026-11-06 (`HANDOVER_OFFICE_S17.md`) |
+
+Not chosen: 6 (traits), 9 (routines), 12 (schedules), 13 (consumables). Don't build them unless the user asks.
+
+Per-slice handover notes, all marked done, record the gotchas: `HANDOVER_OFFICE_S2A.md`, `_S3.md`, `_S4.md`.
+The live-proof tables are in `scenarios/test_needs_sims/README.md`. Behaviour reference:
+`docs/achitechture/NPC_NEEDS_SYSTEM.md`. Seating: `docs/achitechture/SEATING.md`.
+
+Tests at handover: node suite 387 of 387 files; Rails 943 runs, 0 failures, 1 skip.
+
+## 3. Files: who owns what
+
+The two sessions share one working tree and the `:3001` server.
+
+**This session (office life):**
+
+- `public/break_escape/js/systems/npc-needs*.js`, `npc-office-visuals.js`, `npc-action-icons.js`,
+  `workstation-state.js`, `room-hearing.js`, `office-presets.js`
+- `public/break_escape/js/data/office-presets.json`
+- the needs-related parts of `seating.js`, and the workstation-indicator part of `lighting.js`
+- `scenarios/test_needs_sims`, `scenarios/test_needs_leash`
+- office-life docs: the plan, the handovers, `NPC_NEEDS_SYSTEM.md`, and `SEATING.md` where you change seating
+
+**The other session:** `scenarios/lab_physical_pentest`, m07 and other missions, server code, room maps and
+props, and the review rounds.
+
+Don't edit lab files. If a slice needs something in the lab (expansion step 9 needs slices 7 and 11), write it
+up in the slice's report. The other session makes the lab change.
+
+Other engine files outside this list (`npc-behavior.js`, `rooms.js`, `game.js` and so on) are shared. Change
+them only as far as a slice needs, and name them in the slice report.
+
+## 4. The lab regression after every slice
+
+Every slice changes how the lab's NPCs behave. On the accounts floor, staff sit at their PCs, take coffee
+breaks and leave their screens open or locked, and that is what opens the keylogger and USB windows. End every
+slice with one lab run:
+
+- Recipe: the "Expansion build — run 2" section and the later entries in
+  `scenarios/lab_physical_pentest/IMPROVEMENT_LOOP_LOG.md`. A Haiku agent runs it well.
+- Pass: `verify-run.rb` reports score 100. Len's route unlocks secure_area and the player tailgates in.
+  There are no "No path found" or "Failed to escape wall" warnings for staff, and no console errors (call
+  `drain` before stopping).
+- If the lab is broken for a reason outside your slice (the other session may be mid-edit), say so and don't
+  chase it.
+
+Add one line per slice to the "Office-life slices" note at the end of the lab's `IMPROVEMENT_LOOP_LOG.md`: the
+commits, the lab game id and the score. That is how the other session picks up your changes.
+
+## 5. Brief template that has worked
+
+Each slice goes to one fresh agent: `general-purpose` with `model: "opus"`. Engine design work stays on Opus.
+Give it the following:
+
+1. Read `AGENTS.md`, the slice's plan sections, the Built lines, `NPC_NEEDS_SYSTEM.md` and the previous
+   slice's handover.
+2. Scope: this slice only. If the plan leaves a real design choice open, stop and report it rather than guess.
+3. Requirements: unit tests, a neutral addition to the showcase, live proof headless on `:3001` with
+   screenshots in the session scratchpad, then the regressions (`test_needs_leash` and the lab).
+4. Any new static import in an engine module must be added to every JS test-harness copy list, or
+   `bin/test-js` fails with ERR_MODULE_NOT_FOUND. The five lighting harness lists are the usual ones.
+5. Start every playtest with `bootstrap {"tutorial":"decline","resume":"new"}`. Without it, a tutorial modal
+   blocks every `__test` action (`dismissBlockingUi()` reports `ambiguous-blocking-ui` and clicks nothing).
+6. Commit only your own files, with explicit paths (`git commit -m "..." -- <paths>`), after checking
+   `git diff --cached --stat`. Never `git stash`, `git checkout --`, `git reset` or a whole-index commit.
+   Commit before tests and live checks.
+7. Never run `db:create`, `schema:load`, `migrate`, `reset`, `drop`, `setup`, or `db/seeds.rb`. The dev
+   database is shared and has no backup. If a new scenario needs registering, report it.
+8. Use `:3001` as it is: never restart it, and never touch `:3000`. Stop the browsers you start, by their
+   own PIDs.
+9. No paid art. Never rescale pixel art. Don't touch `test_seating`.
+10. UK English, no attribution lines.
+11. At about 150k tokens or 80 tool calls, write `HANDOVER_OFFICE_S<n>.md`, commit it and stop. Most slices
+    needed two agents, so plan for a finisher.
+
+Use a Sonnet agent to finish live checks once the code is committed. Use Haiku for the lab regression run.
+
+## 6. Machine load
+
+Live tests are sensitive to timing. On 2026-11-06 three stray headless browsers pushed the load average to
+about 30. Playtests ran at 1.3 fps and the leash test timed out, which looked like a failure but wasn't.
+
+- Keep at most two headless browsers running at once, across both sessions.
+- Check `uptime` before a timing-sensitive check. Above about 12, wait and retry.
+- If headless browsers from earlier agents are left running, ask the user before killing anything you didn't
+  start.
+
+## 7. Open findings
+
+- **Closed (slice 7, game 643): a carry heading south.** Amara carried a printout on `walk-down-right`;
+  the item draws in front of her body.
+- **Minor: "leashed" vs "private_skipped".** `leashed` now fires only when a room rule removed a target.
+  Passing over another owner's object logs `private_skipped` and fires no event. Mappings that care about a
+  use should listen for that use, filtered by `data.npcId`. Event-mapping conditions support `&&` but not
+  `||`.
+- **Minor: event mappings when several NPCs share a use.** `onUse` fires for any finished use of an object by
+  that NPC, whether the job was a need or a carry (sims README, engine findings 3–4).
+- **Minor: "Cannot update door pathfinding - room X not initialized".** It logs about 9 times as rooms load
+  in the lab, with no visible effect. It isn't in the office-life files, so leave it unless a slice runs into
+  it.
+- **Accounts floor pick-one menus.** Where an NPC's home is its PC tile, the tap menu offers both while the
+  owner is seated. The other session accepted this, because the player uses a PC while its owner is away.
+
+## 8. First step
+
+Build slice 7 (plan 2.2 Part A: carry outcomes and reveal slots), then 8, 10 and 11. After each slice, report
+to the user in the format of `AGENTS.md` "Reporting progress by stage".

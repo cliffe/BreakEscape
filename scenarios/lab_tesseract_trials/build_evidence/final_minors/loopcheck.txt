@@ -1,0 +1,153 @@
+== phone_agent_0x99 hub 
+✅ phone_agent_0x99.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_agent_0x99 hub ghost_offer_made=true
+✅ phone_agent_0x99.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_agent_0x99 hub decision_made=true ending=refused
+✅ phone_agent_0x99.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_agent_0x99 hub megan_file_read=true lockbox_open=true
+✅ phone_agent_0x99.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_ghost waiting 
+✅ phone_ghost.json @ waiting  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_ghost the_offer_again ghost_offer_made=true
+✅ phone_ghost.json @ the_offer_again  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_ghost route relay_opened=true
+✅ phone_ghost.json @ route  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_ghost route decision_made=true
+✅ phone_ghost.json @ route  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_tom hub locker_open=true
+✅ npc_tom.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_sidhu hub relay_opened=true
+✅ npc_sidhu.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_sidhu hub decision_made=true
+✅ npc_sidhu.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_cliffe workshop_hub relay_opened=true
+✅ npc_cliffe.json @ workshop_hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_cliffe workshop_hub decision_made=true ending=double
+✅ npc_cliffe.json @ workshop_hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_cliffe common_room 
+✅ npc_cliffe.json @ common_room  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_jordan hub 
+✅ npc_jordan.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_megan hub megan_file_read=true lockbox_open=true
+✅ npc_megan.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=sent
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=double warned_out_of_band=true
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=refused
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=blown megan_choice=warned
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== opening_briefing start 
+✅ opening_briefing.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=sent late_warning=true
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=sent ghost_greeted=false
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=blown warned_out_of_band=true
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=double ghost_greeted=true
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_ghost route relay_opened=true ghost_offer_made=true
+✅ phone_ghost.json @ route  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_ghost the_offer_again ghost_offer_made=true ghost_offer_heard=true
+✅ phone_ghost.json @ the_offer_again  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_ghost closed decision_made=true
+✅ phone_ghost.json @ closed  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_megan hub megan_choice=warned
+✅ npc_megan.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_tom hub asked_terminal=true
+✅ npc_tom.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_ghost send_says_go relay_opened=true ghost_offer_made=true ghost_offer_heard=true
+✅ phone_ghost.json @ send_says_go  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_ghost refuse relay_opened=true megan_choice=warned
+✅ phone_ghost.json @ refuse  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== opening_briefing start 
+✅ opening_briefing.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_agent_0x99 hub ghost_greeted=true lockbox_open=true
+✅ phone_agent_0x99.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== phone_agent_0x99 hub megan_file_read=true
+✅ phone_agent_0x99.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_megan hub megan_choice=protected
+✅ npc_megan.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=sent ghost_greeted=true
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=double ghost_greeted=false warned_out_of_band=true
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=blown
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== closing_debrief start ending=refused warned_out_of_band=true
+✅ closing_debrief.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_sidhu start relay_opened=true
+✅ npc_sidhu.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_sidhu hub decision_made=true
+✅ npc_sidhu.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_tom start locker_open=true
+✅ npc_tom.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_tom hub asked_terminal=true guest_terminal_open=true
+✅ npc_tom.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_megan start megan_file_read=true lockbox_open=true
+✅ npc_megan.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_cliffe workshop decision_made=true ending=sent
+✅ npc_cliffe.json @ workshop  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_cliffe common_room 
+✅ npc_cliffe.json @ common_room  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_oleg start 
+✅ npc_oleg.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_oleg start staff_list_read=true
+✅ npc_oleg.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_oleg hub staff_list_read=true
+✅ npc_oleg.json @ hub  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0
+== npc_oleg start lookalike_seen=true staff_list_read=true
+✅ npc_oleg.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)
+exit 0

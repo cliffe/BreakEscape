@@ -1,0 +1,10 @@
+{
+  "scenario": "ca_post_mobile_ab",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

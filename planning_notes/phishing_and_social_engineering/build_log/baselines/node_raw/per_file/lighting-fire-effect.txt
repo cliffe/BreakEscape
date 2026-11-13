@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the flash counter itself: 5 Hz counts 5, 2 Hz counts 2, a tiny fast wobble 0
+ok 1 - the flash counter itself: 5 Hz counts 5, 2 Hz counts 2, a tiny fast wobble 0
+  ---
+  duration_ms: 10.306748
+  ...
+# Subtest: the fire glow flickers within a warm, bright range
+ok 2 - the fire glow flickers within a warm, bright range
+  ---
+  duration_ms: 1.455145
+  ...
+# Subtest: flash-safe: the glow never makes more than three flashes a second
+ok 3 - flash-safe: the glow never makes more than three flashes a second
+  ---
+  duration_ms: 3.896618
+  ...
+# Subtest: the quick wobble alone stays under a 10% swing
+ok 4 - the quick wobble alone stays under a 10% swing
+  ---
+  duration_ms: 0.920531
+  ...
+# Subtest: a flame tongue rises and fades once per cycle; reduced motion freezes it
+ok 5 - a flame tongue rises and fades once per cycle; reduced motion freezes it
+  ---
+  duration_ms: 0.581469
+  ...
+# Subtest: only an emitter with a fire state gets flame tongues; flames sets how many
+ok 6 - only an emitter with a fire state gets flame tongues; flames sets how many
+  ---
+  duration_ms: 0.339188
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 99.588819

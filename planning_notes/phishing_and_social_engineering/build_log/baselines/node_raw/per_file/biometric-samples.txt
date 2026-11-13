@@ -1,0 +1,55 @@
+TAP version 13
+# Subtest: ownerSlug lowercases and collapses non-alphanumerics
+ok 1 - ownerSlug lowercases and collapses non-alphanumerics
+  ---
+  duration_ms: 0.807117
+  ...
+# Subtest: displayNameForOwner order: fingerprintOwnerName, NPC (Map or object), humanised id, as is
+ok 2 - displayNameForOwner order: fingerprintOwnerName, NPC (Map or object), humanised id, as is
+  ---
+  duration_ms: 0.269914
+  ...
+# Subtest: normaliseSample fills the current shape and converts legacy samples
+ok 3 - normaliseSample fills the current shape and converts legacy samples
+  ---
+  duration_ms: 0.200559
+  ...
+# Subtest: ratingForQuality bands
+ok 4 - ratingForQuality bands
+  ---
+  duration_ms: 0.606372
+  ...
+# Subtest: addBiometricSample merges by owner: best quality, OR identified, earliest date
+ok 5 - addBiometricSample merges by owner: best quality, OR identified, earliest date
+  ---
+  duration_ms: 0.28167
+  ...
+# Subtest: addBiometricSample refreshes the UI and syncs
+ok 6 - addBiometricSample refreshes the UI and syncs
+  ---
+  duration_ms: 0.067609
+  ...
+# Subtest: restoreBiometricSamples merges saved samples without syncing
+ok 7 - restoreBiometricSamples merges saved samples without syncing
+  ---
+  duration_ms: 0.212279
+  ...
+# Subtest: bestLiftFromObject finds the best lift from a surface
+ok 8 - bestLiftFromObject finds the best lift from a surface
+  ---
+  duration_ms: 0.159097
+  ...
+# Subtest: window globals are exposed
+ok 9 - window globals are exposed
+  ---
+  duration_ms: 0.060107
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 290.906552

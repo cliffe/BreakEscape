@@ -1,0 +1,13 @@
+{
+  "key": "789dcbec36b44e6df5544b400629519d",
+  "npc": "thandiwe_moyo",
+  "text": "That's everything cleared, thanks. When it's money and it's in a hurry, ring her on the number you already have, or ask Yasmin.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:43Z"
+}

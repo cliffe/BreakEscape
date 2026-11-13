@@ -1,0 +1,79 @@
+{
+ "imports": {
+  "m03_victoria_fate": "ko",
+  "m03_danny_fate": "protected",
+  "m03_danny_ko": true
+ },
+ "steps": [
+  {
+   "note": "R39: Sterling knocked out (victoria_fate \"ko\"); Danny protected, then knocked out (danny_ko). The KO line outranks his fate, as in m03's own debrief."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Go ahead",
+    "I've got what I need",
+    "So this is the attack",
+    "Got it. I'm on my way"
+   ]
+  },
+  {
+   "said": [
+    "The Zero Day job left us one line",
+    "Well, it's winter, and this is the site.",
+    "You put Victoria Sterling in a hospital bed"
+   ],
+   "notSaid": [
+    "You turned Victoria Sterling, and she gave us the window",
+    "You had Victoria Sterling taken into custody",
+    "You let Victoria Sterling walk out of WhiteHat"
+   ]
+  },
+  {
+   "note": "Skip to the debrief: shutdown engaged, Voltage taken, Vance an ally (as r1, set directly)."
+  },
+  {
+   "set": {
+    "briefing_played": true,
+    "attack_prevented": true,
+    "esd_authorized": true,
+    "voltage_neutralised": true,
+    "voltage_captured": true,
+    "vance_spoken": true,
+    "vance_is_ally": true,
+    "vance_trust_level": 80,
+    "crew_warned": true,
+    "mission_complete": true
+   }
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "Shutdown engaged",
+    "What did we get",
+    "how did they get in",
+    "And the network",
+    "goes in the report",
+    "The Architect",
+    "I'm in",
+    "Full public",
+    "honour"
+   ]
+  },
+  {
+   "said": [
+    "He's calling it Task Force Null. Your name's on his list.",
+    "The task force has a file open already, and Danny Foster's statement is in it.",
+    "You knocked him out at WhiteHat. He talked once he came round"
+   ],
+   "notSaid": [
+    "You gave him a way in at WhiteHat, and he hasn't stopped talking since",
+    "You named him in full at WhiteHat",
+    "The task force has a file open already. Danny Foster isn't in it"
+   ]
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

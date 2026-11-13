@@ -1,0 +1,148 @@
+Room room_aes_hall1: 640x320 px (20x10 tiles; about 12 m wide, 6 m deep). Camera near the south wall looking north.
+Items left to right within each zone; desk/counter contents are listed under their table.
+Names are sprite names: look at the render to see what each one is.
+
+VIEW: only x=144..464 of the back wall (6 m of it), as in the strips.
+  The room runs on out of sight to the left and right: tell Gemini the back wall carries on past that edge of the frame, with no side wall or corner there.
+
+## back wall (hung on it)
+  aes_vent_fan1  x=186..208 y=26..48
+  aes_status_display1  x=228..254 y=34..54
+  aes_hv_danger1  x=272..298 y=23..50
+  aes_gas_detector2  x=386..404 y=31..58
+  aes_vent_fan1  x=410..432 y=26..48
+
+## against the back wall (standing on the floor)
+  aes_drum1  x=156..173 y=62..86
+  ?(collision; look at the render)  x=158..171 y=66..76
+  aes_ppe_cabinet1  x=178..196 y=60..88
+  ?(collision; look at the render)  x=180..194 y=68..78
+  aes_air_mover1  x=268..291 y=61..88
+  ?(collision; look at the render)  x=270..289 y=68..78
+
+## second row (may stand out on the floor in front of the back wall: check the render and tour shot for floor between it and the wall)
+  ?(collision; look at the render)  x=110..298 y=62..150  [feet ~1.5 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=140..172 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=172..204 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=204..236 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=236..268 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=268..300 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+
+## behind the camera (leave out)
+  aes_cable_drum1  x=420..447 y=280..304  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=422..445 y=284..294  [feet ~4.2 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid centre
+  ?(collision; look at the render)  x=306..339 y=182..192  [feet ~2.2 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid left
+  ?(collision; look at the render)  x=110..298 y=134..150  [feet ~1.5 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=110..298 y=170..186  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near centre
+  batrack  x=236..268 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=236..268 y=166..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=268..300 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=268..300 y=166..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  aes_junction_box1  x=304..341 y=150..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  aes_cabinet_dark1  x=306..324 y=218..244  [feet ~3.2 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=308..322 y=224..234  [feet ~3.0 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near left
+  ?(collision; look at the render)  x=110..298 y=206..222  [feet ~2.8 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=140..172 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=140..172 y=166..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=172..204 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=172..204 y=166..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=204..236 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=204..236 y=166..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+
+## out of sight to the left (outside the span: leave out)
+  aes_round_terminal1  x=12..30 y=152..176
+  fire_extinguisher1  x=14..30 y=108..136
+  aes_ppe_sign1  x=38..58 y=25..52
+  aes_suppression1  x=64..105 y=175..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=66..103 y=218..228  [feet ~2.9 m out from the back wall; a rough guide, confirm in the render]
+  aes_dial_thermometer1  x=66..90 y=33..56
+  aes_bank_c_sign1  x=104..155 y=23..34
+  aes_spill_cabinet1  x=106..129 y=60..86
+  ?(collision; look at the render)  x=108..127 y=66..76
+  batrack  x=108..140 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=108..140 y=166..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=108..140 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  aes_combiner2  x=132..152 y=60..86
+  ?(collision; look at the render)  x=134..150 y=66..76
+
+## out of sight to the right (outside the span: leave out)
+  batrack  x=456..488 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=456..488 y=166..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=456..488 y=206..278  [feet ~3.9 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=456..488 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=458..582 y=134..150  [feet ~1.5 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=458..582 y=170..186  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=458..582 y=206..222  [feet ~2.8 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=458..582 y=22..150  [feet ~1.5 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=458..582 y=246..262  [feet ~3.6 m out from the back wall; a rough guide, confirm in the render]
+  aes_process_diagram1  x=470..516 y=22..52
+  batrack  x=488..520 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=488..520 y=166..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=488..520 y=206..278  [feet ~3.9 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=488..520 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=520..552 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=520..552 y=166..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=520..552 y=206..278  [feet ~3.9 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=520..552 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  aes_spill_kit1  x=528..548 y=61..88
+  ?(collision; look at the render)  x=530..546 y=68..78
+  batrack  x=552..584 y=130..202  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=552..584 y=166..238  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=552..584 y=206..278  [feet ~3.9 m out from the back wall; a rough guide, confirm in the render]
+  batrack  x=552..584 y=94..166  [feet ~1.8 m out from the back wall; a rough guide, confirm in the render]
+  aes_cctv1  x=556..579 y=14..32
+  aes_beacon1  x=586..606 y=23..44
+  aes_bms_tower1  x=586..605 y=168..196  [feet ~2.3 m out from the back wall; a rough guide, confirm in the render]
+  aes_ladder1  x=586..608 y=207..236  [feet ~3.1 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=588..603 y=176..186  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=588..606 y=216..226  [feet ~2.9 m out from the back wall; a rough guide, confirm in the render]
+  aes_bollard1  x=594..604 y=276..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=596..602 y=280..290  [feet ~4.1 m out from the back wall; a rough guide, confirm in the render]
+  aes_emergency_phone1  x=610..628 y=117..140
+
+## lighting config (the mood to draw; compare it when reusing another mission's background)
+  { "ambient": "#b0b8c8", "emitters": { "rack_status_panel": { "color": "#5dff8a", "radius": 20, "intensity": 0.8, "above": true }, "hydrogen_detector": [ { "condition": "globalVars.attack_prevented === true", "color": "#ffb347", "radius": 12, "intensity": 0.5, "above": true }, { "color": "#ff7a10", "radius": 22, "intensity": 0.75, "above": true } ], "aes_round_terminal": { "color": "#9fd4ff", "radius": 12, "intensity": 0.5, "effect": "screen", "above": true }, "aes_bms_tower": { "color": "#7dffa0", "radius": 10, "intensity": 0.5, "above": true }, "aes_beacon": [ { "condition": "globalVars.attac
+  mission mood (scenarios/m04_critical_failure/LIGHTING_PLAN.md):
+    ## 1. Mood and where it comes from
+    Kind of game: SAFETYNET spy thriller. The lighting sets a night shift at a grid battery plant and tightens as the crisis builds. It never carries information a 
+    - **Night.** "It's tonight, and it's this hall" (`ink/m04_opening_briefing.ink:232`); the night crew in Hall 2 "till six" (`ink/m04_npc_robert_vance.ink:448`); 
+    | main_entrance | gate guard | on | scenario night | A manned gatehouse; papers on the desks. |
+
+## doors (scenario connections; the render does not draw doors)
+  {'west': 'scada_control_room', 'south': 'engineering_workshop', 'east': 'battery_hall_2'}
+  north = a door in the back wall (a single one sits in a back-wall corner);
+  east/west = doors in the side walls (position along the wall: see the in-game tour shot);
+  south = behind the camera.
+  Door art painted into the map's walls (render and strip) is not reliable: trust the connections and the tour shot.
+
+## scenario sprite overrides (the render shows the map sprite, the game shows these)
+  none
+
+## EMPTY in this mission: conditional slots no scenario object claims
+  NPCs drawn as static props (e.g. patients in beds) can still fill these: check the NPC list and the tour shot.
+  none
+
+## NPCs in this room (spriteSheet; static ones are drawn as props, not people)
+  operative_cipher: operative_cipher  at (12, 7) tiles: 60% across, feet 80% of the way from the back wall. Back-wall items behind them: x~352..416
+      suggested --span 144 464 (puts them about 75% across the view)
+  In the chat the speaking NPC stands at about 83% of the background's width, so what the map
+  shows around them belongs at about 55-90% across (see 'Behind the NPC' in the skill).
+
+## slot audit: which map slot each scenario object takes
+  ok       thermometer "Analogue Thermometer — Rack Bank C Wall" -> aes_dial_thermometer1 (items) at 66,56
+  ok       tablet "Battery Rack Status Panels (Digital)" -> aes_status_display1 (items) at 228,54
+  ok       tablet "H₂ Gas Detector Panel" -> aes_gas_detector2 (items) at 386,58
+  ok       notes "BESS Process Diagram" -> aes_process_diagram1 (items) at 470,52
+  ok       pc "Duty Round Panel" -> aes_round_terminal1 (items) at 12,176
+
+## where this background will show
+  !! conversations in this room set their own background, which wins over chatBackground:
+     assets/backgrounds/background1.png  (grep it in the scenario to see which scenes)

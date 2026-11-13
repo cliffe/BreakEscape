@@ -1,0 +1,13 @@
+{
+  "key": "acf87e35e120c6ae7aa6ab3d7c525adf",
+  "npc": "receptionist",
+  "text": "The readers are down, and the permissions system's behind that ransom screen with everything else.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

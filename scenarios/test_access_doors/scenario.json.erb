@@ -1,0 +1,368 @@
+{
+  "scenario_brief": "TEST: Access model doors\n\nA test floor for card doors with access lists (ACCESS_MODEL_PLAN.md, step 7). Five beats, each with a sign. D1: the visitor room (off the IT lobby) wants the visitor card on the front desk. D2: copy Dana's badge in conversation; the finance office and its cabinet open for finance staff. D3: borrow Ian's spare badge, copy it from your inventory; the server room opens for IT staff. D4: copy Priya's DESFire badge; the CCTV room takes a UID-only copy, the evidence store does not. D5: copy Gary's plant room card, which Imran carries too; the plant room opens for Imran only. Take the card copier from the lobby table first (after D1).",
+  "endGoal": "Test only: run the five door beats.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_access_doors",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "globalVariables": {
+    "d4_cctv_open": false,
+    "d4_evidence_refused": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "door_beats",
+      "title": "Run the door beats",
+      "description": "Test only. Each task ticks when its beat's lock opens (D4: when both of its doors have answered).",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "d1_fallback", "title": "D1: open the visitor room with the visitor card", "type": "custom", "status": "active" },
+        { "taskId": "d2_copy_in_conversation", "title": "D2: open the finance office and its cabinet with a copy of Dana's badge", "type": "custom", "status": "active" },
+        { "taskId": "d3_copy_from_keycard", "title": "D3: open the server room after copying Ian's spare badge", "type": "custom", "status": "active" },
+        { "taskId": "d4_uid_only", "title": "D4: CCTV room opens, evidence store refuses the UID-only copy", "type": "custom", "status": "active" },
+        { "taskId": "d5_shared_card", "title": "D5: open the plant room with a copy of Gary's card", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "north": "finance_lobby", "east": "it_lobby", "south": "security_lobby", "west": "plant_lobby" },
+      "objects": [
+        {
+          "type": "rfid_cloner",
+          "id": "card_copier",
+          "name": "Card copier",
+          "position": { "x": 2, "y": 4 },
+          "takeable": true,
+          "observations": "A handheld card copier. It reads a card and saves a copy it can play back at a reader."
+        },
+        {
+          "type": "keycard",
+          "id": "visitor_card",
+          "name": "Visitor card 07",
+          "card_id": "VISITOR-07",
+          "position": { "x": 7, "y": 4 },
+          "takeable": true,
+          "observations": "A visitor card from the front desk, numbered 07."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Five beats. D1 first: try the visitor room door (north side of the IT lobby, east) holding nothing, then pick up the visitor card and try again.\nThen take the card copier from the table for D2 to D5. Each beat room has its own sign.",
+          "observations": "A sign on a stand by the front desk."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "sam",
+          "displayName": "Sam Okafor",
+          "npcType": "person",
+          "position": { "x": 5, "y": 4 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_doors/ink/sam.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "eventMappings": [
+            { "eventPattern": "door_unlocked", "condition": "data.connectedRoom === 'visitor_room'", "onceOnly": true, "completeTask": "d1_fallback" },
+            { "eventPattern": "item_unlocked", "condition": "data.itemId === 'finance_cabinet'", "onceOnly": true, "completeTask": "d2_copy_in_conversation" },
+            { "eventPattern": "door_unlocked", "condition": "data.connectedRoom === 'server_room'", "onceOnly": true, "completeTask": "d3_copy_from_keycard" },
+            { "eventPattern": "door_unlocked", "condition": "data.connectedRoom === 'cctv_room' && !globalVars.d4_cctv_open", "onceOnly": true, "setGlobal": { "d4_cctv_open": true } },
+            { "eventPattern": "door_unlock_failed", "condition": "data.connectedRoom === 'evidence_store' && data.reason === 'uid_only' && !globalVars.d4_evidence_refused", "onceOnly": true, "setGlobal": { "d4_evidence_refused": true } },
+            { "eventPattern": "global_variable_changed:d4_cctv_open", "condition": "globalVars.d4_cctv_open && globalVars.d4_evidence_refused", "onceOnly": true, "completeTask": "d4_uid_only" },
+            { "eventPattern": "global_variable_changed:d4_evidence_refused", "condition": "globalVars.d4_cctv_open && globalVars.d4_evidence_refused", "onceOnly": true, "completeTask": "d4_uid_only" },
+            { "eventPattern": "door_unlocked", "condition": "data.connectedRoom === 'plant_room'", "onceOnly": true, "completeTask": "d5_shared_card" }
+          ]
+        }
+      ]
+    },
+
+    "finance_lobby": {
+      "type": "room_office",
+      "door_sign": "Finance",
+      "connections": { "south": "lobby", "north": "finance_office" },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_d2",
+          "name": "Sign: D2 Copy in conversation",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "D2. With the card copier, try the finance office door (north): it should say Access denied.\nAsk Dana to scan her badge and save the copy. The door then opens for finance staff, and so does the cabinet inside.",
+          "observations": "A sign by the finance office door."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "dana",
+          "displayName": "Dana Reyes",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_doors/ink/dana.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "finance",
+          "creds": {
+            "card": { "name": "Dana Reyes's badge", "card_id": "FIN-DANA-01", "rfid_protocol": "EM4100" }
+          }
+        }
+      ]
+    },
+
+    "finance_office": {
+      "type": "room_ceo",
+      "door_sign": "Finance office",
+      "connections": { "south": "finance_lobby" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "roles": ["finance"] },
+      "objects": [
+        {
+          "type": "filing_cabinet",
+          "id": "finance_cabinet",
+          "name": "Finance cabinet",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "rfid",
+          "access": { "roles": ["finance"] },
+          "observations": "A filing cabinet with a card reader on the top drawer.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "finance_ledger_note",
+              "name": "Ledger summary",
+              "takeable": true,
+              "readable": true,
+              "text": "D2 cabinet opened. Quarterly ledger summary: nothing to see here, it's a test.",
+              "observations": "A one-page summary from the cabinet."
+            }
+          ]
+        }
+      ]
+    },
+
+    "it_lobby": {
+      "type": "room_it",
+      "door_sign": "IT",
+      "connections": { "west": "lobby", "north": "visitor_room", "east": "server_room" },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_d1",
+          "name": "Sign: D1 Fallback",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "D1. The visitor room door (north) wants the visitor card. Holding nothing it says Requires RFID keycard.\nPick up the visitor card from the lobby and it opens.",
+          "observations": "A sign by the visitor room door."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_d3",
+          "name": "Sign: D3 Copy from a held keycard",
+          "position": { "x": 7, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "D3. Ask Ian for his spare badge. Click it in your inventory to open the card copier, and save the copy.\nThe server room door (east) opens for IT staff.",
+          "observations": "A sign by the server room door."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ian",
+          "displayName": "Ian Shaw",
+          "npcType": "person",
+          "position": { "x": 3, "y": 7 },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_doors/ink/ian.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": {
+            "card": { "name": "Ian Shaw's badge", "card_id": "IT-IAN-01", "rfid_protocol": "EM4100" }
+          },
+          "itemsHeld": [
+            {
+              "type": "keycard",
+              "id": "ian_spare_badge",
+              "name": "Ian's spare badge",
+              "card_id": "IT-IAN-01",
+              "identity": "ian",
+              "takeable": true,
+              "observations": "Ian Shaw's spare badge. Same card number as his own."
+            }
+          ]
+        }
+      ]
+    },
+
+    "visitor_room": {
+      "type": "room_meeting",
+      "door_sign": "Visitor room",
+      "connections": { "south": "it_lobby" },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": ["VISITOR-07"],
+      "objects": []
+    },
+
+    "server_room": {
+      "type": "room_servers",
+      "door_sign": "Server room",
+      "connections": { "west": "it_lobby" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "roles": ["it"] },
+      "objects": []
+    },
+
+    "security_lobby": {
+      "type": "room_office",
+      "door_sign": "Security",
+      "connections": { "north": "lobby", "south": "cctv_room", "east": "evidence_store" },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_d4",
+          "name": "Sign: D4 UID-only copy",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "D4. Ask Priya to scan her DESFire badge and save the copy (UID only).\nThe CCTV room (south) takes a UID-only copy and opens. The evidence store (east) says Reader requires full authentication and stays shut.",
+          "observations": "A sign between the two doors."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "priya",
+          "displayName": "Priya Nair",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_doors/ink/priya.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "security",
+          "creds": {
+            "card": { "name": "Priya Nair's badge", "card_id": "SEC-PRIYA-01", "rfid_protocol": "MIFARE_DESFire" }
+          }
+        }
+      ]
+    },
+
+    "cctv_room": {
+      "type": "room_closet",
+      "door_sign": "CCTV",
+      "connections": { "north": "security_lobby" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "roles": ["security"] },
+      "acceptsUIDOnly": true,
+      "objects": []
+    },
+
+    "evidence_store": {
+      "type": "room_office",
+      "door_sign": "Evidence store",
+      "connections": { "west": "security_lobby" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "roles": ["security"] },
+      "objects": []
+    },
+
+    "plant_lobby": {
+      "type": "room_break",
+      "door_sign": "Plant",
+      "connections": { "east": "lobby", "west": "plant_room" },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_d5",
+          "name": "Sign: D5 Shared card",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "D5. Gary and Imran carry the same plant room card. Only Gary will let you scan it.\nThe plant room (west) admits Imran alone, and a copy of Gary's card opens it.",
+          "observations": "A sign by the plant room door."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "gary",
+          "displayName": "Gary Whitlock",
+          "npcType": "person",
+          "position": { "x": 4, "y": 5 },
+          "spriteSheet": "gary_whitlock",
+          "spriteVisemes": "assets/characters/gary_whitlock_visemes.png",
+          "storyPath": "scenarios/test_access_doors/ink/gary.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "facilities",
+          "creds": {
+            "card": { "name": "Plant room card (Gary Whitlock)", "card_id": "PLANT-SHARED-01", "rfid_protocol": "EM4100" }
+          }
+        },
+        {
+          "id": "imran",
+          "displayName": "Imran Siddiqui",
+          "npcType": "person",
+          "position": { "x": 7, "y": 5 },
+          "spriteSheet": "imran_siddiqui",
+          "spriteTalk": "assets/characters/imran_siddiqui_talk.png",
+          "spriteVisemes": "assets/characters/imran_siddiqui_visemes.png",
+          "storyPath": "scenarios/test_access_doors/ink/imran.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "maintenance",
+          "creds": {
+            "card": { "name": "Plant room card (Imran Siddiqui)", "card_id": "PLANT-SHARED-01", "rfid_protocol": "EM4100" }
+          }
+        }
+      ]
+    },
+
+    "plant_room": {
+      "type": "room_servers",
+      "door_sign": "Plant room",
+      "connections": { "east": "plant_lobby" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "people": ["imran"] },
+      "objects": []
+    }
+  }
+}

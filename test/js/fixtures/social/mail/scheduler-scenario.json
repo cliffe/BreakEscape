@@ -1,0 +1,32 @@
+{
+  "rooms": {},
+  "social": {
+    "characters": { "pierce": { "emailReplyDelay": 15 } },
+    "mailClient": {
+      "accounts": [
+        { "id": "guest", "address": "guest@workstation.example", "displayName": "Guest", "kind": "given", "mailbox": "guest" },
+        { "id": "freemail", "address": "jed.ldgw@freemail.example", "displayName": "Jed", "kind": "created", "mailbox": "freemail" }
+      ],
+      "mailboxes": [ { "id": "guest" }, { "id": "freemail" } ],
+      "contacts": [
+        { "id": "hampshire", "person": "hampshire", "name": "Chris Hampshire", "addresses": ["careers@ledgerwell.example"], "targetId": "hampshire" }
+      ],
+      "seededMessages": [
+        { "id": "welcome", "mailbox": "guest", "from": { "name": "IT", "address": "it@ledgerwell.example" },
+          "to": "guest@workstation.example", "subject": "Your new laptop", "body": "Welcome.", "time": "08:05", "unread": true },
+        { "id": "newsletter", "mailbox": "guest", "from": { "name": "Comms", "address": "comms@ledgerwell.example" },
+          "to": "guest@workstation.example", "subject": "This week", "body": "News.", "time": "08:10", "unread": false },
+        { "id": "reminder", "mailbox": "guest", "from": { "name": "IT", "address": "it@ledgerwell.example" },
+          "to": "guest@workstation.example", "subject": "Reminder", "body": "Change your password.", "time": "08:30", "unread": true,
+          "deliverAt": { "afterSeconds": 60 } },
+        { "id": "thanks", "mailbox": "guest", "from": { "name": "Careers", "address": "careers@ledgerwell.example" },
+          "to": "guest@workstation.example", "subject": "Thanks", "body": "We got your CV.", "time": "09:00", "unread": true,
+          "deliverAt": { "global": "phish_hampshire_landed" } }
+      ]
+    },
+    "phishTargets": [
+      { "id": "hampshire", "address": "careers@ledgerwell.example", "emailReplyDelay": 15,
+        "outcome": { "setGlobal": "phish_hampshire_landed" } }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "key": "ff2fc3d9eb8f9d22b346d3db1c62f3ca",
+  "npc": "tom_shaw",
+  "text": "Someone's put a terminal in my lab I never ordered. Half a mind to break into it myself.",
+  "voice": "Fenrir",
+  "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

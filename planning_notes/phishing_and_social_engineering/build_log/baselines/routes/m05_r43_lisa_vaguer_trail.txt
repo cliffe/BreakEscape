@@ -1,0 +1,329 @@
+
+## R43 (round 2, 2026-10-17, user: Lisa vaguer). Lisa's tin is for 'someone on the crypto team' and she won't name him. The David topics stay shut until the player has the vetting files or a suspicion; then she confirms it. With the log, Halloran asked and the files in hand, HaX ties Lisa's tin to the files without naming anyone or giving the front-door method.
+
+--- briefing ---
+      [task: receive_mission_briefing]
+  Narrator: A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open.
+  Director Magnus Netherton: Agent 0x00. This one is close to home in a way I dislike. Someone inside a Home Office contractor is handing ENTROPY the crown jewels.
+  Director Magnus Netherton: I have brought Nightshade in because catching a mole is precisely his trade. Learn from him. HaX will run you on the ground.
+  Director Magnus Netherton: Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how.
+     (2 options)
+ > Then we find out who sold.
+  Director Magnus Netherton: Quite.
+  Agent 0x47 'Nightshade': Insiders are hard to catch because they never have to break in. They're already trusted.
+  Agent 0x47 'Nightshade': So you hunt the pattern. Access a little too broad, hours a little too odd.
+  Agent 0x47 'Nightshade': And the calm of someone who's decided the rules don't apply to them. Find whose behaviour stopped matching their story.
+  Director Magnus Netherton: Sound advice. HaX -- the detail.
+  Agent HaX: Quantum Dynamics Corporation, on a science park outside Cambridge. Quantum-safe cryptography, under contract to the Home Office.
+  Agent HaX: Someone on the inside is stealing it.
+     (3 options)
+ > What's the damage so far?
+      [ink: handler_trust=55]
+  Agent HaX: Project Heisenberg. Quantum-safe key material for the national emergency dispatch network. The system that routes nine-nine-nine calls.
+  Agent HaX: Seventy-three per cent of the package is already staged to go. The rest goes out within four hours unless we stop it.
+     (3 options)
+ > Who's this going to?
+      [ink: knows_full_stakes=true]
+  Agent HaX: No foreign buyer. ENTROPY's Insider Threat Initiative is taking it and keeping it.
+  Agent HaX: Hold the keys during a rotation window and you can force the network onto a degraded routing path.
+  Agent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.
+  Agent HaX: Early modelling: thirty to forty-five excess civilian deaths in the first rollout wave.
+  Agent HaX: Cardiac arrests. Strokes. Structure fires. The calls where minutes decide it.
+     (2 options)
+ > What's the mission?
+  Agent HaX: Three things, then.
+  Agent HaX: One. Find the insider. QDC's security chief has it down to eight people in the cryptography division.
+  Agent HaX: Their access is real, so nothing will look like a break-in.
+  Agent HaX: Look at the edges. A badge at an odd hour. Money that doesn't add up. Someone who's changed.
+  Agent HaX: And don't take anyone's hunch for proof. Patricia's included.
+  Agent HaX: Two. Build the case. Enough for the police to act on when we pass it over anonymously, or enough to turn them.
+     (2 options)
+ > And the third?
+  Agent HaX: Three. Stop the final upload. The rotation windows are in that last part, and they stay in the building.
+     (2 options)
+ > What's my cover?
+  Agent HaX: You're going in as an external security consultant.
+  Agent HaX: Your kit goes in with you. Picks, the cloner, and the print kit you brought back from Albion. Auditors carry odd bags; nobody looks.
+  Agent HaX: Still no PIN cracker. The lab isn't finished with it.
+  Agent HaX: Chief Security Officer Patricia Morgan is expecting you. Ex-military police, fifteen years at the National Crime Agency. She called us in.
+  Agent HaX: She'll get you in. The CEO would rather none of it was happening, and wants it kept quiet.
+     (2 options)
+ > Who else will I meet?
+  Agent HaX: Dr Ruth Halloran leads the cryptography team. Brilliant scientist, protective of her people.
+  Agent HaX: Owen Gallagher, IT. He holds the spare cards and the server-room password, and he logs who gets them.
+  Agent HaX: Lisa Park in marketing notices things. Office gossip, mostly. Some of it useful.
+     (2 options)
+ > I'm ready.
+  Agent HaX: Last thing. How are you going to play it?
+     (3 options)
+ > Methodically. Document everything, interview everyone.
+      [ink: player_approach="cautious"]
+  Agent HaX: Good. Write it all down. The police will want every page.
+  Agent HaX: Thirty to forty-five lives ride on that upload. Keep the number with you.
+  Agent HaX: Just watch the clock while you're at it.
+  Agent HaX: I'm on the phone throughout. Call with what you find. Flags go in the drop-site.
+     (2 options)
+ > Any last advice?
+  Agent HaX: Don't decide the insider's story until you've seen all of it.
+  Agent HaX: Good luck, Agent.
+  Agent HaX: Quantum Dynamics. Wednesday afternoon, half past four.
+  Agent HaX: The final upload goes tonight. You have four hours.
+      [task: receive_mission_briefing]
+  Agent HaX: Patricia Morgan's expecting you. Go.
+  [end]
+   [text agent_0x99_handler +3000ms] You're in. Patricia Morgan's office is off reception, on the east side. Start with her. The clock's running.
+   {set {"briefing_played":true}}
+
+--- lisa ---
+      [task: talk_to_lisa]
+  Narrator: A woman in her early thirties by the break room counter. Coffee going cold, a collection tin at her elbow.
+  Lisa Park: Hi. You're the security person, right? Everyone's been whispering.
+  Lisa Park: Lisa Park, marketing. I don't go near the crypto stuff, but I sit by the kettle. I notice things.
+     (3 options)
+ > Who's the collection tin for?
+      [ink: heard_tin_story=true]
+  Lisa Park: Someone on the crypto team. I promised I wouldn't say who, so don't ask.
+  Lisa Park: His wife's got cancer. Stage 3. The treatment that might work is a trial in the States, and the insurer won't touch it. Hence the tin.
+  Lisa Park: He's been borrowing to cover it, I think. He's lost weight. Looks like he hasn't slept in months.
+     (3 options)
+ > Which one of them is it?
+  Lisa Park: I said don't ask. Patricia keeps files on that whole team. That's her job, not mine.
+     (2 options)
+ > That's all, thanks.
+  Lisa Park: Any time. I'll be here. Apparently forever.
+  [chat closes]
+   [PASS] said: "Someone on the crypto team"
+   [PASS] said: "I said don't ask"
+   [PASS] said: "Patricia keeps files"
+   [PASS] not said: "David"
+   [PASS] not said: "Torres"
+   [PASS] not said: "Elena"
+   [PASS] heard_tin_story = true (expected true)
+
+--- lisa ---
+  Lisa Park: Anything else? I've got nowhere to be.
+     (2 options)
+ > How's the office mood these days?
+  Lisa Park: Tense. The crypto team keep looking at each other like it's a game of Cluedo.
+  Lisa Park: Go on.
+ > That's all, thanks.
+  Lisa Park: Any time. I'll be here. Apparently forever.
+  [chat closes]
+   [PASS] not said: "[choice] Is the tin for David Torres"
+   [PASS] not said: "[choice] Tell me more about David"
+   [PASS] not said: "[choice] Is David all right"
+
+--- patricia ---
+      [task: meet_handler]
+  Narrator: A woman in her early fifties looks up from a wall of access logs. Military bearing, and a mug of tea gone cold by the keyboard.
+  Patricia Morgan: You'll be the consultant. Patricia Morgan, Chief Security Officer. Thanks for coming at short notice.
+     (3 options)
+ > Fill me in. What have you found so far?
+  Patricia Morgan: Data leaving the building. Four point two terabytes over six weeks.
+  Patricia Morgan: Project Heisenberg. Quantum-safe key material for the national emergency dispatch rollout.
+  Patricia Morgan: If ENTROPY gets the rest of it, people die waiting for ambulances that come too late.
+     (2 options)
+ > Who has access to the data?
+  Patricia Morgan: Eight people with developed vetting in the cryptography division.
+  Patricia Morgan: Dr Ruth Halloran leads the team. Five senior researchers, two junior engineers.
+  Patricia Morgan: All vetted. All trusted. One of them shouldn't be.
+     (2 options)
+ > Can you get me in front of them without tipping anyone off?
+  Patricia Morgan: Already done. As far as the building knows, you're a routine security audit.
+      [kit: Visitor Badge]
+  Patricia Morgan: Here. Visitor badge. It gets you through the front of the building and nowhere that matters.
+  Patricia Morgan: Owen Gallagher in IT holds the spare cards. Dr Halloran's badge opens the server side. I can lean on either of them if you need me to.
+  Patricia Morgan: My log of what's been flagged is on the desk, by your hand. Read it before you go. The who starts in there.
+     (2 options)
+ > Where should I start?
+  Patricia Morgan: People. Someone in this building has noticed something and not said it. Then the servers.
+  Patricia Morgan: When you think you have a name, bring me the why and the proof. Both.
+  [chat closes]
+      [mapping patricia_phone: set patricia_phone_available=true]
+   [text patricia_phone +2500ms] Patricia. This is my mobile. Ring me if anything changes; don't walk it back through reception.
+      [reads: Security Incident Log]
+
+--- owen ---
+      [task: talk_to_owen]
+  Narrator: A bearded man in his late twenties at a workstation, three terminals of logs scrolling past, a staff badge on a lanyard round his neck. He swivels to face you.
+  Owen Gallagher: Alright. You're the security consultant? Owen Gallagher, sysadmin.
+  Owen Gallagher: Finally. Someone to fix our mess who isn't me.
+     (3 options)
+ > What can you tell me about the data leaving the building?
+  Owen Gallagher: Someone's been pushing huge files out between two and four in the morning.
+  Owen Gallagher: I thought it was remote work at first. It's too tidy for that. Same hours, same encrypted channel, same research share.
+     (2 options)
+ > That's useful. Thanks.
+  Owen Gallagher: No bother.
+     (8 options)
+ > (Lean over his log screen, close enough for the cloner to reach his lanyard.)
+  Narrator: You lean in while he scrolls the logs.
+      [RFID minigame: card saved]
+      [mapping agent_0x99_handler: set server_badge_obtained=true]
+  Narrator: He keeps scrolling.
+  Narrator: The cloner buzzes once against your hip.
+  Owen Gallagher: Did your bag just beep? ...You read my badge. Fair. I did half of Finance on last year's pen test.
+     (2 options)
+ > Sorry. Habit.
+  Owen Gallagher: Don't be. Just don't try it on Security.
+  Owen Gallagher: What else?
+     (7 options)
+ > Patricia's log has a crypto badge in the server hallway at 23:47. Whose?
+      [kit: Server Hallway Badge Log]
+      [mapping agent_0x99_handler: set door_log_held=true]
+  Owen Gallagher: Reader logs. Every after-hours swipe for three weeks, every door. Give us a sec... there.
+  Owen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.
+  Owen Gallagher: Mind, a spare only tells you which card. The front door's on there too, and that one tells you who was actually in the building.
+  Narrator: He prints the log and hands it over. It goes into your notes, every door on one sheet.
+  Owen Gallagher: Go on. I'm half listening.
+     (6 options)
+ > That's everything for now. Catch you later.
+  Owen Gallagher: Cool. I'll be here. I'm always here.
+  [chat closes]
+
+--- halloran ---
+      [task: talk_to_dr_halloran]
+  Narrator: A woman in her mid-forties looks up from a whiteboard dense with lattice notation.
+  Dr Ruth Halloran: You're the consultant. Ruth Halloran. I run Heisenberg.
+  Dr Ruth Halloran: Find whoever did this, and quickly. And I hope to God you're wrong about my team.
+     (3 options)
+ > I need to talk to everyone with access to Heisenberg.
+  Dr Ruth Halloran: My team didn't do this.
+  Dr Ruth Halloran: My team are brilliant, and vetted to the hilt.
+  Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure. Coercion.
+     (2 options)
+ > I'm not here to judge. Whoever did this might be a victim too.
+  Dr Ruth Halloran: Thank you. Not many in your line would say that.
+  Dr Ruth Halloran: What else?
+     (4 options)
+ > Your spare badge has been through the server hallway at night. Four times.
+      [ink: found_halloran_alibi=true]
+      [ink: halloran_questioned=true]
+  Dr Ruth Halloran: My spare? It's the visitor spare, signed out through me. I haven't signed it out in months.
+  Dr Ruth Halloran: The twenty-third I was in Zurich, giving a paper to two hundred people. The lanyard's on my monitor.
+  Dr Ruth Halloran: Who's in here after hours? Amara some evenings, gone by ten. Ben, for his test runs. David, some nights; he says it's quieter than his office.
+  Dr Ruth Halloran: Any of them could have walked out with it. I never thought to count.
+     (3 options)
+ > That's all for now.
+  Dr Ruth Halloran: Good luck. I mean that.
+  [chat closes]
+
+--- patricia ---
+  Patricia Morgan: What now?
+     (6 options)
+ > I need your help with something.
+  Patricia Morgan: What do you need?
+     (3 options)
+ > I need the vetting files on the cryptography team.
+      [ink: found_vetting_file=true]
+      [mapping agent_0x99_handler: set case_motive=true]
+      [kit: Vetting Aftercare File: D. Torres]
+      [kit: Vetting Aftercare File: R. Halloran]
+  Narrator: She hands you two folders from the cabinet: vetting aftercare files, one on Ruth Halloran, one on David Torres.
+  Patricia Morgan: Those are the two I'd have pulled anyway. That's as far as vetting lets me go.
+  Patricia Morgan: Read them properly. Nobody's file is as tidy as it looks. Then come back with a name and a reason.
+  Patricia Morgan: Yes?
+     (6 options)
+ > That's everything for now. I'll keep you posted.
+  Patricia Morgan: Do. I don't like surprises.
+  [chat closes]
+   [PASS] found_vetting_file = true (expected true)
+   [PASS] torres_suspected = false (expected false)
+   [PASS] door_log_hinted = false (expected false)
+
+## Fixes round 3 (2026-10-17, blind B finding 9): the first ask with the files gives the gentle rung; 'One file fits' waits for a second ask, with both files in the notes.
+
+--- phone ---
+  Agent. Four hours to the final upload window.
+  Patricia Morgan runs security. She called us in, and she can open doors for you. Keep her in the picture.
+  Someone in that building is feeding ENTROPY the keys to the 999 dispatch network. Find them before half past eight tonight.
+     (3 options)
+ > I'll get to work.
+     (2 options)
+ > Where do I stand?
+  Get to the server-room door, off the server hallway. The notice beside it says who holds the password.
+  You've got the files. Read both against what the team have told you about each other, then go back to the badge log.
+ > Right.
+     (2 options)
+ > Nothing right now.
+  Line's open. Call when you have something.
+  [chat closes]
+   [PASS] said: "Read both against what the team have told you"
+   [PASS] not said: "One file fits"
+   [PASS] not said: "front door just before it"
+   [PASS] not said: "Torres"
+   [PASS] found_halloran_vetting = true (expected true)
+
+--- phone ---
+     (2 options)
+ > Where do I stand?
+  Get to the server-room door, off the server hallway. The notice beside it says who holds the password.
+  You've got the files. Lisa's tin is for someone on that team with a sick wife and no cover.
+  One file fits. Find that name on the badge log.
+ > Right.
+     (2 options)
+ > Nothing right now.
+  Line's open. Call when you have something.
+  [chat closes]
+   [PASS] said: "Lisa's tin is for someone on that team with a sick wife"
+   [PASS] said: "One file fits. Find that name on the badge log"
+   [PASS] not said: "front door just before it"
+   [PASS] not said: "Torres"
+   [PASS] door_log_hinted = false (expected false)
+
+--- lisa ---
+  Lisa Park: What else?
+     (2 options)
+ > Is the tin for David Torres?
+  Lisa Park: Yes. It's David. His wife's called Elena.
+  Lisa Park: I didn't tell you that. You didn't get it from me.
+  Lisa Park: Anything else? I've got nowhere to be.
+     (3 options)
+ > Tell me more about David.
+  Lisa Park: David's lovely. Always polite. Remembers everyone's birthday.
+  Lisa Park: Two kids, Sofia and Miguel. He used to talk about them non-stop.
+  Lisa Park: Now he barely talks at all.
+  Lisa Park: I saw him crying in the car park last month. I pretended I hadn't. Still feel awful.
+  Lisa Park: And someone keeps ringing his desk phone. He takes it in the stairwell.
+  Lisa Park: Go on.
+     (2 options)
+ > Is David all right? At home, I mean?
+  Lisa Park: His wife, Elena, came to the Christmas party two years ago. Lovely woman. Now she's ill. Properly ill.
+  Lisa Park: He told me what the treatment costs once, after a glass of wine. Three hundred and eighty thousand dollars.
+  Lisa Park: The tin's on about two grand. I can't even think about the rest.
+  Lisa Park: What else?
+ > That's all, thanks.
+  Lisa Park: Any time. I'll be here. Apparently forever.
+  [chat closes]
+   [PASS] said: "Yes. It's David. His wife's called Elena"
+   [PASS] said: "Two kids, Sofia and Miguel"
+
+## Without the tin story: the files alone open 'What can you tell me about David Torres?', and she names the tin then.
+   {set {"heard_tin_story":false}}
+
+--- lisa ---
+   (after a wipe: synced globals only, ink locals lost)
+      [task: talk_to_lisa]
+  Narrator: A woman in her early thirties by the break room counter. Coffee going cold, a collection tin at her elbow.
+  Lisa Park: Hi. You're the security person, right? Everyone's been whispering.
+  Lisa Park: Lisa Park, marketing. I don't go near the crypto stuff, but I sit by the kettle. I notice things.
+     (3 options)
+ > Sorry, I'm short on time. Cleared staff first.
+  Lisa Park: No, totally. Good luck with it.
+  [chat closes]
+
+--- lisa ---
+  Lisa Park: Anything else? I've got nowhere to be.
+     (4 options)
+ > What can you tell me about David Torres?
+  Lisa Park: David? Keep this to yourself, yeah? The collection tin's for him.
+  Lisa Park: His wife Elena's got cancer. A trial in the States, and the insurer won't touch it.
+  Lisa Park: Go on.
+     (5 options)
+ > That's all, thanks.
+  Lisa Park: Any time. I'll be here. Apparently forever.
+  [chat closes]
+   [PASS] said: "The collection tin's for him"
+
+[stats] spoken/narrated lines 141, choices 46, longest run without a choice 7 (briefing); runs>=6: briefing:7, briefing:6, lisa:6
+[result] all expectations met

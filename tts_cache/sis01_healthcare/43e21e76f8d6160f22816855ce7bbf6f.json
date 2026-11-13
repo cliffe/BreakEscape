@@ -1,0 +1,13 @@
+{
+  "key": "43e21e76f8d6160f22816855ce7bbf6f",
+  "npc": "dr_sharma",
+  "text": "Something would have. A change at quarter to seven on a Monday evening, outside any change window, with no pharmacist's sign-off.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

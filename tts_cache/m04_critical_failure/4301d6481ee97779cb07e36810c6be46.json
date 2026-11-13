@@ -1,0 +1,13 @@
+{
+  "key": "4301d6481ee97779cb07e36810c6be46",
+  "npc": "operative_cipher",
+  "text": "...You're lying.",
+  "voice": "Fenrir",
+  "style": "ENTROPY operative posing as a maintenance contractor, late twenties. Speak with a consistent Dutch-accented English (Rotterdam) throughout, fluent with slightly clipped consonants -- do not shift to any other accent. Mid-to-high pitch; fast, sharp pace. Jumpy and aggressive, covering nerves with bluster.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:54:35Z"
+}

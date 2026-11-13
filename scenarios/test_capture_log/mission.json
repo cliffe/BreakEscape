@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Capture log and capture proofs",
+  "description": "One office proving the capture log device and capture proofs (engine plan section 6): the holder files granted findings and a remote session item by storeIn, lists captures with their secrets, and returns to itself after a file is read; an account password is served only once its proof holds (a keylogger planted on a consumesItem desk, a QR card dropped and collected by an NPC, a session on an owner's open screen, a drop box planted through a confirm and remove_item), and a password that opens nothing is served at once.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 10,
+  "test_type": "capture_log",
+  "test_objective": "Prove filing by storeIn, the three sections, new marks and the badge, the return to the device after a reader or a session desktop closes, plantedItems from a consumesItem remove and a confirm remove_item with used_on, droppedItems from an accepted player drop, the session proof by an owner claim, the shorthand proof, and that /capture_secrets withholds a password until its proof holds."
+}

@@ -1,0 +1,13 @@
+{
+  "key": "a92be304609a26ebcf837f92c18d633d",
+  "npc": "sarah_mitchell",
+  "text": "Anything on a pump with that library. On this ward this morning, that's her morphine.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

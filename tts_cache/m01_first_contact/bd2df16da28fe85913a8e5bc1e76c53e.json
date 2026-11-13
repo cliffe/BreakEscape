@@ -1,0 +1,13 @@
+{
+  "key": "bd2df16da28fe85913a8e5bc1e76c53e",
+  "npc": "derek_lawson",
+  "text": "Hospitals overwhelmed by false closure alerts. Emergency lines jammed with spoofed calls—people who can't reach real help in time. Crowd crush and secondary crashes as everyone reacts at once. Heart attacks from sheer panic. It compounds.",
+  "voice": "Algieba",
+  "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

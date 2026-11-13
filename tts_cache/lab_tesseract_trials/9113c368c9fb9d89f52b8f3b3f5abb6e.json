@@ -1,0 +1,13 @@
+{
+  "key": "9113c368c9fb9d89f52b8f3b3f5abb6e",
+  "npc": "closing_debrief_person",
+  "text": "You told me on the line Ghost said was listening. They heard. That was the end of it.",
+  "voice": "Aoede",
+  "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

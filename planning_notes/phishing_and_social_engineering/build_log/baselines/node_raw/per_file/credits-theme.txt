@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: theme selection: creditsTheme picks a theme, anything else gets safetynet
+ok 1 - theme selection: creditsTheme picks a theme, anything else gets safetynet
+  ---
+  duration_ms: 0.6363
+  ...
+# Subtest: per-theme mode lists: safetynet has every mode, cyber drops the threat map
+ok 2 - per-theme mode lists: safetynet has every mode, cyber drops the threat map
+  ---
+  duration_ms: 0.43287
+  ...
+# Subtest: safetynet keeps the overlay as built and names the track
+ok 3 - safetynet keeps the overlay as built and names the track
+  ---
+  duration_ms: 0.125569
+  ...
+# Subtest: cyber theme uses the mission name and credits setting, with no spy framing
+ok 4 - cyber theme uses the mission name and credits setting, with no spy framing
+  ---
+  duration_ms: 0.430337
+  ...
+# Subtest: cyber theme copes with no credits and no mission name
+ok 5 - cyber theme copes with no credits and no mission name
+  ---
+  duration_ms: 0.071539
+  ...
+# Subtest: schema enum lists exactly the themes in the table
+ok 6 - schema enum lists exactly the themes in the table
+  ---
+  duration_ms: 0.632662
+  ...
+# Subtest: creditsOverlay: optional operation name and ticker, defaults untouched
+ok 7 - creditsOverlay: optional operation name and ticker, defaults untouched
+  ---
+  duration_ms: 0.152888
+  ...
+# Subtest: creditsOverlay: operation falls back to the mission display name
+ok 8 - creditsOverlay: operation falls back to the mission display name
+  ---
+  duration_ms: 0.34379
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 70.635574

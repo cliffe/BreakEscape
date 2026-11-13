@@ -1,0 +1,13 @@
+{
+  "key": "9fbb273b6a48e07ee55740bd6f54db36",
+  "npc": "narrator",
+  "text": "He pulls a lanyard out from under his collar.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

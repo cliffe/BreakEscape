@@ -1,0 +1,15 @@
+TAP version 13
+# Subtest: collisions are warned with file:line; own-line or directly-above sync notes, read-only and sole-owner VARs are not
+ok 1 - collisions are warned with file:line; own-line or directly-above sync notes, read-only and sole-owner VARs are not
+  ---
+  duration_ms: 303.110962
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 472.366596

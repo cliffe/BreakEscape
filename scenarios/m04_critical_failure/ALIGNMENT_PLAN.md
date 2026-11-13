@@ -1,0 +1,355 @@
+# m04 Critical Failure — Alignment & Advancement Plan
+
+> Renamed 2026-10-01: Robert Chen → Robert Vance (the character was renamed in pass 1; his ids now match). Ids `chen_*` → `vance_*`: globals `chen_trust_level`, `chen_is_ally`, `chen_provided_keycard`, `chen_phone_available`, `chen_knows_truth` → `vance_*`; every `chen_*` ink knot and VAR → `vance_*`; ERB `chen_warning_email` → `vance_warning_email`. NPC ids (`robert_vance`, `robert_vance_phone`) were already right. The puzzle structure described here is superseded by `PUZZLE_CHAINS_PLAN.md` (pass 3).
+
+> Produced by the mission-alignment-plan skill. 2026-08-21.
+> **Status: all phases (1a–6) implemented and verified.** Two external blockers remain: a SecGen build to confirm flag order, and a HacktivityLabSheets rebuild so two field guides resolve. Neither is a code change to this mission.
+> Validator: **0 ❌, 0 room overlaps, 0 objective-wiring warnings, 0 ink warnings.** Ink runtime: **10/10 files clean** under both harnesses. Story critical path: **4 hops** (was 0).
+> Measured against **m01_first_contact — the gold standard**, with **m02_ransomed_trust as an advanced draft** (a useful second reference, not the bar). Where the two disagree, m01 wins. Structure/conventions matched to `scenarios/m03_ghost_in_the_machine/ALIGNMENT_PLAN.md`.
+>
+> ⚠️ Several rubric rows below cite m02 as the anchor because it was drafted before this distinction was made. The m02 citations are still valid *examples* of the pattern (m01 does the same thing in each case — cutscene termination, hub stickiness, progress-gated handler hub), but **verify against m01 first** when implementing.
+> Review status: **1 round, reviewer corrections applied.** Findings from the adversarial review are folded in below; the ink scope, the row-2 diagnosis, the room-overlap evidence and the phase order all changed as a result.
+>
+> Note: `ruby scripts/validate_scenario.rb` regenerates `dungeon_graph.{md,html}` as a side effect; `git status scenarios/m04_critical_failure/` afterwards showed no changes — the committed graph was already current.
+
+## Progress (updated 2026-10-01)
+
+Status: Phases 1a-6 implemented (2026-08-21) and reworked in pass 2 (`90964705`). Played to `status=completed` in the browser.
+
+- Done: all phases. Commits: `92c35ef5` (alignment), `b7a65f12` (design-review fixes, Chen renamed Vance), `616779c7` (ink and dialogue review), `169610f2` (walkthrough regenerated).
+- Changed by pass 2: the four flag tasks used the reference form (`bms_jump_server:flag_N`), which the engine never completes; they now read `flag_station_dropsite:bms_jump_server-flag1..4`. Knocking Voltage out left `esd_authorized` unset, so the fight ending could not shut the plant down; it now keys on `npc_ko:voltage`.
+- Also changed: hall 1 moved east of the control room because the SCADA doorway opened onto a wall; a new aim, `take_back_the_plant`, holds the tasks that can finish early; the escaped Voltage is hidden with `setVisible`; HaX relays copies of the Level 2 and Master keycards in case the KO drop fails in a later-loaded room; conversations return to resting hubs instead of ending.
+- Open (external, as in the header): a SecGen build to confirm the `bms_jump_server` flag order (the VM is published; the order is inferred from the XML), and a HacktivityLabSheets rebuild so the `distcc-exploitation` and `rfid-cloning` guides resolve.
+- Latest playtest (regression, 2026-10-01, `tools/playtest/m04-regress-report.md`): game 1193 completed the critical path with four flags; game 1197 covered the arrest stance, ESD before mapping and the locked-aim reveal. No regressions. The fight stance was not run in that pass.
+
+## Executive summary
+
+The **battery-storage setting is authoritative** — `scenario.json.erb` and all 12 ink scripts were converted to Albion Energy Storage on 2026-06-11/12 (`1a0d54d6`, `939a01b1`), while `mission.json`, `IMPLEMENTATION_STATUS.md` and the entire nine-stage planning set still describe the December-2025 water-treatment draft; every m04 ink file contains zero occurrences of "chlorine/water treatment/dosing".
+
+But **m04's ink layer is not playable at all**. Running every compiled script through the shipped `inkjs` runtime (all six engine-bound externals, full DFS choice-tree enumeration from each NPC's declared `currentKnot`) shows **9 of 10 ink files fail at runtime**; the only clean file is the security guard, which the scenario cannot reach because its `currentKnot` names a knot that does not exist. This is a rewrite of the ink layer, not a patch. On top of that the four `submit_flags` tasks can never complete, two event-driven task types are dead, there is no Agent HaX `support_hub` (the handler errors on the *first* call), there are no field guides or SecGen scenario at all, four rooms overlap in world space, and the moral spine (Voltage's "no casualties unless SAFETYNET interferes" ideology, the capture-vs-disable choice) is written on the pre-escalation soft canon — plus **Robert Chen and Cascade are both canon Critical Mass ENTROPY members**, which m04 uses as an innocent ally and a Social Fabric contact respectively.
+
+### Ink runtime baseline (measured, not inferred)
+
+| File @ declared entry knot | Result |
+|---|---|
+| `m04_npc_robert_chen @ initial_meeting` | 601/601 paths `ran out of content` |
+| `m04_opening_briefing @ start` | 601/601 error |
+| `m04_closing_debrief @ start` | 96/96 error |
+| `m04_phone_agent0x99 @ first_call` | 18/18 error — **fails on the first call, not on re-entry** |
+| `m04_npc_voltage @ start` | 14/14 error; and `currentKnot` itself is wrong (see row 4) |
+| `m04_phone_robert_chen @ start` | runaway, >2000 continues, 0 choices |
+| `m04_npc_operative_{cipher,relay,static} @ start` | runaway, 0 choices |
+| `m04_npc_security_guard @ security_guard_entry` | 11/11 clean ✅ — unreachable via the declared `currentKnot:"start"` |
+
+## Current-state assessment
+
+| # | Dimension | Current state | Severity | Target end-state | Anchor |
+|---|---|---|---|---|---|
+| 1 | **Canon & stakes** | Written on the pre-August-2026 canon. Voltage gets a sympathetic ideology monologue (`ink/m04_npc_voltage.ink:191-223`, "ENTROPY isn't about ideology… harsh lessons"); the marked blueprints read *"Clean operation. No casualties unless SAFETYNET interferes"* (`scenario.json.erb:1013`); the debrief closes on *"Attack prevented. No casualties."* (`ink/m04_closing_debrief.ink:176`). Stakes are abstract — "240,000 people lose power". No named victim, no on-screen life. **Canon collisions:** m04's innocent ally **Robert Chen** *is* canon Critical Mass operative "Waterworks" (`critical_mass.md:87`); **Cascade** is canon Critical Mass (`critical_mass.md:35`) but m04 makes her Social Fabric (`scenario.json.erb:966`, `:1070`); canon's Critical Mass leader is **"Blackout" / Dr James Mercer** (`critical_mass.md:25`), not the invented "Voltage". Handler is "Agent 0x99 'Haxolottle'" where m01/m02 use **"Agent HaX"**. | **Major** | Voltage is a fanatic who priced the deaths and accepted them, and the player takes a stance rather than debating; a named, on-screen human cost (site crew / a hospital or care home on the affected feed) with a hydrogen-explosion body count; Chen renamed; Cascade re-seated in Critical Mass or renamed; Voltage's relationship to Blackout stated; handler renamed to Agent HaX. | `story_design/universe_bible/02_organisations/entropy/philosophy.md:17-42`; m01 Derek `ink/…derek…ink:120,141,217`; m02 `ink/m02_opening_briefing.ink:35,127` |
+| 2 | **Aims & objective staging** | Three aims, **no `unlockCondition` anywhere**. *Not* a hard soft-lock: `objectives-manager.js:548-553` auto-reveals a locked parent aim as soon as any child task completes, and `completeTask` (`:497-499`) skips only `completed`/`completing`, so an ink `#complete_task` tag completes a `locked` task fine. (Same finding as `m03_ghost_in_the_machine/ALIGNMENT_PLAN.md:17`.) The real defects are (a) a **forward-signposting dead zone** — every task except `enter_facility` is `status:"locked"` and `objectives-panel.js:130` hides locked tasks, so the panel shows three headings and one task all mission, with tasks popping in only *as they complete*; and (b) exactly two **event-driven** task types that require `status:"active"`: `enter_room` — so `locate_compromised_systems` can never complete (`handleRoomEntered` early-returns on non-active tasks, `objectives-manager.js:484`) — and `submit_flags`, all four of which are separately dead for lack of `targetFlags` (row 8). Titles leak answers ("Confirm the falsified SCADA telemetry **against the analog thermometer**" `:146`; "**Trigger Emergency Shutdown**…" `:243`). `missionConclusion` + `requiresCompleted:["disable_attack_vectors"]` + `bond_visualiser` are present and correctly formed (`:231-233`). | **Major** (uncompletable `enter_room`/`submit_flags` tasks + signposting dead zone; not a soft-lock) | 4–6 ordered aims chained with `unlockCondition:{aimCompleted:…}`; tasks `active` **inside** locked aims (m02's spoiler-safe reveal); action-oriented titles that name the goal, not the solution; conclusion gate broadened past the single ESD task. | m02 `scenario.json.erb:234-239, 284-289, 441-457` |
+| 3 | **Agent HaX support hub** | **No `support_hub`.** `=== start === -> first_call` (`ink/m04_phone_agent0x99.ink:27-28`) and every branch ends `#exit_conversation` → `-> start` → `first_call` again. The three genuinely useful knots — `event_server_room_entered:160`, `event_attack_mechanism_identified:223`, `player_guidance_request:373` — are **orphaned**: no `eventMapping` in the scenario uses `targetKnot`, so nothing routes to them. Worse than "breaks on re-entry": **all 18 enumerated paths from `first_call` error out**, so the handler is broken from the first call onward. Five gating VARs are absent from `globalVariables` and can never sync — `operatives_defeated`, `attack_mechanism_known`, `server_room_reached`, `attack_partially_triggered`, `player_health_low`. Note the near-miss trap: `attack_mechanism_understood` **is** declared (`scenario.json.erb:1097`) while the ink reads `attack_mechanism_known`. Zero field guides, zero `#give_item`. | **Blocker** (handler unusable from the first call) | m02's `support_hub`: sticky `+` options gated `{progress_global and not X_discussed}`, an always-on fallback, and a `-> DONE`/hub terminator; exposure-gated field guides (`{x_guide_offered and not x_guide_hint_given}` → `#give_item:lab-workstation:<key>`); all gating VARs declared in `globalVariables`. | `scenarios/m02_ransomed_trust/ink/m02_phone_agent0x99.ink:101-175` |
+| 4 | **Ink / dialogue craft** | Textbook CYOA-in-ink. Combat is *narrated in ink* with `// [Combat mechanics execute]` comments and branches on flags nothing sets. **Verified with inkjs:** `cipher_combat_resolution` (`:91-103`), `relay_combat_resolution` (`:79-91`), `static_combat_resolution` (`:91-103`) each fall through to `-> …_combat_sequence` → infinite loop (3000 continues, 0 choices). **Every** Voltage path — all 14 enumerated — dies with `RUNTIME ERROR: ran out of content` at `voltage_combat_with_leverage:253-269` / `voltage_no_leverage_combat:271-287`. **`m04_npc_robert_chen.ink` — the largest file in the mission, 36 knots, gating aim 1 — is 100% broken: 601/601 paths error.** Its bug is *not* the `-> start` tail pattern (Chen has 5 `#exit_conversation` and zero `-> start`); its knots simply run off the end with no terminator at all, so the fix is per-knot terminators, not a search-and-replace. **Three** NPC/knot mismatches, not two: `m04_npc_security_guard.ink` has no `start` knot (first knot `security_guard_entry:21`) yet declares `currentKnot:"start"` (`scenario.json.erb:332`); `voltage` declares `currentKnot:"confrontation_start"` (`:939`) where the ink knot is `voltage_confrontation_start` (`ink/m04_npc_voltage.ink:32`) — `ChoosePathString` throws `Failed to find content at path` and `person-chat-minigame.js:436-437` calls `goToKnot` with no try/catch, so the climactic NPC is mute before any content error is reached; `robert_chen_phone` declares `currentKnot:"available_after_ally"` (`:378`), no such knot. The guard also declares `EXTERNAL chen_trust_level()` (`:13`) which the engine does not bind — note the engine *does* bind six externals (`player_name`, `current_mission_id`, `npc_location`, `mission_phase`, `operational_stress_level`, `equipment_status`), so do not delete working `EXTERNAL` declarations while fixing this one. 121 `You:` echo lines across the scripts — the explicitly documented anti-pattern. **Zero `Narrator:` lines** in all 12 files (m02 has ~86). `#complete_task:opening_briefing` (`:326`) names a task that doesn't exist. Every script ends `#exit_conversation` + `-> start`, which the README calls out and which produces the "ran out of content" errors on re-entry. | **Blocker** | No combat in ink — hostility via the engine hostile/LOS/KO model, ink reserved for pre-fight barks, surrender/interrogation and post-KO beats; every conversation a hub with sticky options and a real terminator; brackets *are* the spoken line (delete the 121 echoes); narrator lines carrying the hall's heat, smell and noise; knot names in the scenario verified against the ink. | `README_ink_best_practices.md:171-292, 407-412, 738-800` |
+| 5 | **Moral choices & consequences** | The two marquee choices don't pay off. `voltage_escaped` is **declared but never assigned** anywhere — the escape credit line (`scenario.json.erb:106`) is unreachable; the escape branches instead write `~ voltage_captured = false` (`ink/m04_npc_voltage.ink:384,398,411`), which syncs back (`npc-conversation-state.js:266-269`) and would **clobber** a true set by `globalVarOnKO:"voltage_captured"` (`scenario.json.erb:943`). Because every dialogue path errors, the only working outcome is KO ⇒ captured. `disclosure_choice` is set in the debrief (`ink/m04_closing_debrief.ink:206,237,270`), is declared in `globalVariables` (`:1127`) and does branch text at `closing_debrief.ink:303-309` — but it reaches **no** credits condition and **no** `bond_visualiser` input, so it never leaves the conversation. An orphan `"voltage_choice": ""` (`scenario.json.erb:1128`) is referenced by nothing. `chen_trust_level`, `handler_confidence`, `voltage_leverage`, `attack_vectors_disabled`, `operatives_defeated` are all read but never written or never synced. No failure state exists: the "CATASTROPHIC FAILURE" credit (`:98`) is dead content because the debrief only fires on `mission_complete`, set solely by the ESD. | **Major** | One `voltage_fate` (captured / escaped / ko) with an explicit escape route via the loading dock; `disclosure_choice` surfaced in credits and the `bond_visualiser`; a real partial-failure outcome (racks vent, casualties, mission continues) rather than binary win; KO/no-KO and evidence-collected branches acknowledged in the debrief. | m02 `DECISION_WEIGHT_PLAN.md`; m01 branch-aware debrief |
+| 6 | **Music** | Genuinely event-driven already: 7 events, cutscene → noir → threat on `npc_hostile_state_changed` → `all_hostiles_ko` → spy-action on `attack_prevented` → victory with 12 branch-conditioned credit lines (`scenario.json.erb:53-114`). One of those conditions, `voltage_escaped`, is genuinely unreachable. (`chen_is_ally` is assigned in Chen's ink and *is* declared in `globalVariables` (`:1088`), so the sync would carry it — whether it survives depends on whether the runtime crash aborts `syncGlobalVariablesFromStory`, which is untested; treat it as at-risk, not dead.) | **Minor** | Keep the block; add a cue on the falsified-telemetry reveal (`anomaly_detected`) and on the hydrogen-advisory beat; fix the dead credit conditions once row 5 lands; add a partial-failure credit set. | m01/m02 music blocks |
+| 7 | **Rooms & layout** | Types are valid and the theme fits (`room_battery_hall`, `room_control_1x2gu`, `room_it`). But the validator reports **4 world-space overlaps**: `operations_office`↔`plant_room`, `operations_office`↔`loading_dock`, `security_office`↔`plant_room`, `battery_hall_1`↔`engineering_workshop`. The validator computes world-space rectangles from tilemap sizes and places these at (0,2)/(0,3)/(1,2)/(0,4)/(2,3)/(4,2) — the fourth clash is `battery_hall_1` (2,3) vs `engineering_workshop` (4,2). **`predict_door_sides.py` is not corroborating evidence here**: it uses a different layout model, its grid shows no two rooms sharing a cell, and it emits no overlap check at all. The validator is the only authority on overlaps; keep the predictor for door-side composition only. `engineering_workshop` being reachable two ways (scada east / hall-1 south) is the likely structural cause. Relay's patrol route sits in a 14×10 hall — evade-able; Cipher and Voltage are static. | **Major** | Zero validator overlaps; door composition clean per §"Which corner a door lands on"; keep at least one bypass lane around each hostile. Likely fix: drop one of the workshop's two connections and re-hang `plant_room`/`loading_dock` off `battery_hall_2` or the south spine. | `README_scenario_design.md:1299-1391`; validator overlap check |
+| 8 | **Mechanics, coverage & field guides** | Lock spread is decent and thematically right (3 × RFID at easy/medium/hard, 2 × lockpick `keyPins`, base64 CyberChef card, ESD minigame with `authVar`). But: **4 ❌ INVALID** — every `submit_flags` task lacks `targetFlags`/`targetCount` (`:174,186,192,206`) so all four can never complete; the four `flagRewards` use `emit_event` (`:609-630`) instead of `setGlobal` (and `apply-actions.js:4` documents that `flagRewards` take the shared action-descriptor format, so `setGlobal` can go straight in there — no round-trip through handler eventMappings needed), so `flag_*_submitted` stay false forever and the walkthrough's end-state table is wrong. **No `scenarios/m04_critical_failure/secgen/` directory** — `mission.json:5` names `vulnerability_analysis` with nothing behind it (m01 and m02 both ship `secgen/*.xml`). **No `lab_sheet/` directory and no `lab-workstation` items at all.** `mission.json` CyBOK still lists *"Water treatment systems"* and duplicates the `CPS` KA twice. | **Blocker** | Four `targetFlags:["vulnerability_analysis:flag_1..4"]` + `targetCount`; `flagRewards` → handler `eventMappings` with `setGlobal`; a real `secgen/m04_critical_failure.xml` (or repoint to `labs/introducing_attacks/8_vulnerability_analysis.xml` as `lab_vulnerability_analysis` does); a `lab_sheet/` set mapping to sheets that **exist** in HLS `_labs/safetynet/`: `reconnaissance-and-network-mapping`, `vulnerability-analysis-and-attack-surface`, `scanning-and-exploitation`, `distcc-exploitation`, `privilege-escalation`, `lockpicking`, `rfid-cloning`, `encoding-and-decoding-with-cyberchef`. | `README_scenario_design.md:1120-1157`; m02 `scenario.json.erb:618-670`, `secgen/m02_ransomed_trust.xml`, `lab_sheet/` |
+| 9 | **NPC KO resilience** | Partly there: Cipher and Relay have `globalVarOnKO` + `taskOnKO`; Voltage has both. Gaps: **Robert Chen** has `globalVarOnKO:"robert_chen_ko"` but no `taskOnKO` — validator flags `meet_robert_chen` as stranded, and because `chen_is_ally` is only settable in his ink (`ink/m04_npc_robert_chen.ink:358,517,576,611`), a KO also kills the Chen phone line and the `chen_is_ally` credit. Nothing in the debrief or HaX acknowledges any KO. Security guard KO sets a global no one reads. | **Major** | `taskOnKO` (or a handler `eventMapping` bridge) for `meet_robert_chen`; a KO bridge that resolves `chen_is_ally`/`chen_fate` so the phone line and credits stay coherent; debrief branches for each KO; dropped keycards (Level 2 / Master) verified recoverable post-KO — **assigned to Phase 1b**, since Cipher holds Level 2 and Relay holds Master on the critical path and this is the mission's most likely soft-lock. | m01 `scenario.json.erb:555-556, 1272-1273`; validator's own KO advisory |
+| 10 | **Opening + closing bookends** | Opening cutscene with `timedConversation` + `skipIfGlobal:"briefing_played"` + `setGlobalOnStart` ✅ (`:315-321`). Closing is a **phone** NPC on `global_variable_changed:mission_complete` with `conversationMode:"phone-chat"` (`:399-424`), not m01/m02's hidden-person cutscene with an HQ background — the validator suggests the person pattern. `#complete_task:report_to_0x99` fires on the **first line** of the debrief (`ink/m04_closing_debrief.ink:28`), so with the other two aim-3 tasks done the `bond_visualiser` fires *before* the debrief plays. Debrief assumes total success — no failure, KO or disclosure branching. Briefing and debrief both end `-> start` into exhausted once-only choices → runtime error on re-entry. | **Major** | Debrief promoted to an event-driven hidden-person cutscene with an HQ background; `#complete_task:report_to_0x99` moved to the **final** knot; branches for attack-prevented / partial-failure / each KO / each `voltage_fate` / each `disclosure_choice`; both bookends terminated properly. | m01 `closing_debrief_person`; m02 closing debrief + `bond_visualiser` |
+
+## Target end-state
+
+An m02-grade m04: a mission that actually runs end-to-end without an ink runtime error, whose objectives panel tells the player what to do next through a chain of unlocking aims with spoiler-safe reveals; a progress-gated Agent HaX `support_hub` handing out field guides that resolve to real HacktivityLabSheets pages; combat owned entirely by the engine's hostile/KO model, with ink doing barks, surrender and interrogation instead of narrating fights; four VM flags that complete and bridge to globals behind a SecGen scenario that exists; a room graph with no world-space overlaps; every critical NPC KO-survivable; and a moral spine on the hard canon — Voltage a fanatic who costed the deaths, a named human being at risk on the affected feed, an escape branch that can actually happen, and a disclosure choice that shows up in the ending.
+
+## Phased plan
+
+> **Order changed after review.** The original draft rebuilt Voltage's ink in Phase 1 around a `voltage_fate` design not settled until Phase 4, and edited the briefing and Voltage files before Phase 0's naming decisions landed — writing the same prose twice. The canon/moral rewrite now precedes the HaX hub (whose gating VARs depend on beats the rewrite creates), and Phase 1 is split into a prose-free mechanical pass plus an independent rooms pass.
+
+### Phase 0 — Canon, naming & outcome lock (design only, no code)
+Resolve the Open Decisions with the user; they change dialogue wholesale. **Must now also settle** `voltage_fate`'s value set, the escape route, and the partial-failure specification (pulled up from the old Phase 4), because Phase 1a stubs the confrontation against them.
+Deliverable: a canon paragraph pinned into `mission.json` and the briefing (setting, cell leadership, Chen's new name, Cascade's cell, how dark the stakes go, whether m04 has a player lose state).
+**Acceptance:** decisions written down. **Verify:** design sign-off.
+
+### Phase 1a — Mechanical blockers, no prose ✅ IMPLEMENTED 2026-08-21
+
+> **Status: complete.** Validator went from 4 ❌ to **0 ❌**; ink runtime went from **9 of 10 files broken** to **10 of 10 clean** under both the DFS enumeration and a new long-loop stress test. Corrections learned during implementation are folded into the task list below.
+>
+> **Two plan claims were wrong and are corrected here:**
+> 1. **`flagRewards` do NOT need converting from `emit_event` to `setGlobal`.** m02 — the gold standard — uses `emit_event` in `flagRewards` too (`m02 scenario.json.erb:1753-1773`), and in *both* missions nothing consumes those events. m04's `flag_*_submitted` globals are likewise read by nothing. The only real defect was the missing `targetFlags`, which is fixed. (Also: the action type is `set_global`, snake_case — `apply-actions.js:4` — not `setGlobal`.)
+> 2. **Reading an engine-owned global in ink is safe; only *assigning* it clobbers.** `npc-conversation-state.js:239-283` syncs all globals *in* at open and only writes *changed* values back at close. So declaring `VAR voltage_captured = false` to read KO state is correct; the bug was purely the `~ voltage_captured = false` assignments.
+>
+> **The termination convention is `-> hub` for conversations and `-> END` for cutscenes** (`README_ink_best_practices.md:459-509`; m02 briefing `:227-229`, m02 debrief `:809-811`). Not `-> DONE`. Note `scripts/compile-ink.sh` warns on any `END`; that heuristic does not distinguish cutscenes and can be ignored for them — m02 trips it too.
+Files: all 10 ink scripts (**including `ink/m04_npc_robert_chen.ink`**, omitted from the draft) and `scenario.json.erb`.
+
+**Root cause, found during implementation and not in the original diagnosis:** almost every failure was the *same* bug — a knot reachable more than once whose choices were all once-only (`*`). On the second or later arrival the choice list was empty, flow ran off the end, and ink raised "ran out of content". It hit `chen_provides_access` (4 inbound), `initial_meeting` (5 inbound), `early_reveal_opportunity`, `chen_suggests_server_room`, HaX's `player_guidance_request`, `guidance_call_end` and `tactical_suggestions`. The fix is sticky (`+`) choices plus an always-available fallback, per the hub convention. A plain DFS does **not** reliably catch this — it caps out before re-entering a hub enough times — which is why a long-loop stress test was added to the verification plan.
+
+1. **Terminate every knot.** Not a `-> start` search-and-replace: Chen's 601 failing paths come from knots running off the end with no terminator at all, while the briefing/debrief/HaX fail differently. Every terminal knot in all 10 files returns to a hub; hub options become sticky `+`. **Termination convention** (`README_ink_best_practices.md:459-509`): a `hub` knot that always loops back, with the exit as `+ [Player line]` / `#exit_conversation` on its own line / NPC response / `-> hub`. Not `-> DONE`, and explicitly **not `-> END`** — `scripts/compile-ink.sh` warns on `END` as a violation of the hub-return convention, and `:784` forbids pairing `#exit_conversation` with `-> END`.
+2. **Fix all three knot/NPC mismatches.** Add `=== start ===` to `m04_npc_security_guard.ink` (or repoint `currentKnot` to `security_guard_entry`); repoint `voltage.currentKnot` from `confrontation_start` to `voltage_confrontation_start`; repoint `robert_chen_phone.currentKnot` to **`chen_phone_support_start`** (`ink/m04_phone_robert_chen.ink:28`) — *not* to `start`, which runs away >2000 continues; fix that runaway too. Drop the unbound `EXTERNAL chen_trust_level()` only — the engine does bind six other externals, leave those.
+3. **Delete CYOA combat.** Remove `*_combat_sequence` / `*_combat_resolution` / `*_victory` and the `#player_defeated` tag from all three operatives; replace with a short detection bark and a post-KO knot. Wire the orphaned `cipher_surrender:138` interrogation as the *reward* for a stealth/non-lethal approach. The engine genuinely covers the fight — all four hostiles have proper `behavior.hostile` blocks with `chaseSpeed`/`attackDamage`/`pauseToAttack` (`scenario.json.erb:737, 853, 941, 957`).
+4. **Stub Voltage and Chen to runnable** against the Phase 0 outcome spec — no final prose; the real writing happens once, in Phase 3.
+5. **Flag tasks.** Add `targetFlags:["vulnerability_analysis:flag_1".."flag_4"]`, `targetCount:1`, `currentCount`, `showProgress` to the four `submit_flags` tasks; convert the four `emit_event` `flagRewards` to `setGlobal` in place (`apply-actions.js:4`). Re-point the HaX `submit_distcc_exploit_flag` mapping accordingly.
+6. **Remove the dead `#complete_task:opening_briefing`** (or add the task); delete or repurpose the orphan `voltage_choice` global (`:1128`).
+
+**Acceptance:** validator shows 0 ❌; **every one of the 10 ink files** runs to a choice-or-clean-end under the inkjs harness with no "ran out of content" and no runaway (baseline: 9 of 10 fail); all four flag tasks complete. **Verify:** `validate-scenario`, `bin/inklecate`, re-run the inkjs path enumeration.
+
+**Result (2026-08-21):**
+
+| Check | Before | After |
+|---|---|---|
+| Validator ❌ INVALID | 4 | **0** |
+| Ink files clean at runtime | 1 of 10 (and unreachable) | **10 of 10** |
+| Ink compile | 10/10 | 10/10 |
+| Validator ink warnings | 2 | 1 (`Capture Voltage:` prefix — Phase 4) |
+| Objective-wiring warnings | 1 (Chen KO strands `meet_robert_chen`) | **0** |
+| Room overlap warnings | 4 | 4 (Phase 1b) |
+
+Also done, opportunistically, because each was a one-line mechanical fix the validator explicitly called for:
+- `taskOnKO: "meet_robert_chen"` added to Chen (row 9 gap, cleared the wiring warning).
+- Top-level `narrator` voice block added — required once the operative scripts gained `Narrator:` lines (m01 pattern, `scenario.json.erb:39-47`).
+- `#complete_task:report_to_0x99` moved from the debrief's **first** line to its **final** knot, so the `bond_visualiser` no longer fires over the top of the debrief. (Listed under Phase 5 in this plan, but it is one line and load-bearing.)
+- `EXTERNAL current_time()` removed from Chen — declared, unbound by the engine, never called.
+
+Deliberately **not** done in 1a (still Phase 3): Voltage's and Chen's prose, the canon reframe, and the real `voltage_fate` model. Four Voltage outcome knots are now unreachable by design and marked `PHASE 3 TODO` in-file — their prose is retained for the rewrite.
+
+### Phase 1b — Rooms (independent; unblocks the walkthrough) ✅ IMPLEMENTED 2026-08-21
+
+> **Status: complete.** Validator now reports `✓ Room layout geometry OK — no world-space overlaps` (was 4). All connections bidirectional; Rooms graph 9 nodes / 8 edges (a clean tree, no redundant edge).
+>
+> **Two structural changes, both of which also tightened the lock chain** — the overlaps turned out to be a symptom of a design problem, not just geometry:
+> - `engineering_workshop` had a **second door from `scada_control_room` that bypassed Cipher entirely**. It now hangs only off `battery_hall_1`, so the Level 2 keycard is a real gate. This was also the direct cause of the workshop being claimed at two grid positions.
+> - `plant_room` hung off `battery_hall_1`, so it sat adjacent to the hall **before the player had ever met Relay**. It now hangs off `battery_hall_2`, which is what makes the Master keycard a genuine gate — and satisfies this plan's own constraint that `plant_room` must not be reachable before `battery_hall_2`.
+> - `loading_dock` moved to the east side of `plant_room` (Voltage's escape route).
+>
+> Resulting spine: `main_entrance → operations_office → scada_control_room → battery_hall_1 (Cipher) → {engineering_workshop [Level 2], battery_hall_2 (Relay) [Level 1] → plant_room [Master] → loading_dock}`, with `security_office` off the operations office. Documented in the `ROOM LAYOUT` header block of `scenario.json.erb`.
+>
+> **Keycard recovery: no soft-lock, verified by reading the engine.** `npc-hostile.js:249-290` (`dropNPCItems`) drops a defeated NPC's entire `itemsHeld` at its own position, with a deliberately small 8px scatter and no physics launch specifically so items cannot land inside walls. Cipher's Level 2 and Relay's Master are both in `itemsHeld`, so both survive any KO ordering. Level 1 is separately redundant (Chen **or** the spare in `security_equipment_locker`), so it survives a Chen KO too.
+>
+> **Correction to this plan's Phase 5 acceptance criterion:** `predict_door_sides.py` must not be used to check overlaps — it uses a different layout model and emits no overlap check. It is useful only for door-side composition, which it now reports as clean.
+Fix the 4 validator overlaps: remove one of `engineering_workshop`'s two connections, re-hang `plant_room`/`loading_dock`, keep an evade lane past Relay's patrol. Preserve the lock chain — `engineering_workshop` (Level-2, from Cipher) and `plant_room` (Master, from Relay) gate the critical path, and `plant_room` must not become reachable before `battery_hall_2`.
+**Also verify here:** KO each of Cipher and Relay in both orders and confirm the dropped Level-2 and Master keycards are recoverable. This is the mission's most likely soft-lock and the draft plan named it in two places without assigning it to any phase.
+**Acceptance:** validator reports zero overlaps; both keycards recoverable in every KO ordering. **Verify:** `validate-scenario` (overlaps), `predict_door_sides.py` (door composition only), `walkthrough-scenario`.
+
+### Phase 2 — Aim staging & the objectives dead zone ✅ IMPLEMENTED 2026-08-21
+
+> **Status: complete.** Story graph went from **3 nodes / 0 edges / critical path 0 hops** to **5 nodes / 4 edges / 4 hops**:
+> `Get Inside Albion Energy Storage → Confirm the Telemetry Is Lying → Reach the Engineering Workshop → Map the Attack on the OT Network → Stop the Thermal Runaway`
+>
+> Five aims chained with `unlockCondition: { aimCompleted: … }`, every task `active` **inside** its locked aim (the m01 spoiler-safe shape, `m01 scenario.json.erb:198-256`). This clears the dead zone and fixes `locate_compromised_systems`, which as a `locked` `enter_room` task could never fire.
+>
+> **The aim order now follows the room spine**, which the original three aims did not: Cipher is in `battery_hall_1` and holds the Level 2 card, so "deal with Cipher" and "get into the workshop" belong in the *same* aim, before the flag work. Relay gates the plant room, so she sits in the final aim with Voltage and the ESD.
+>
+> Leaky titles rewritten — "Confirm the falsified SCADA telemetry **against the analog thermometer**" → "Verify the rack temperatures independently"; "**Trigger Emergency Shutdown** to stop the thermal runaway" → "Force the shutdown before the racks go".
+>
+> **Conclusion gate deliberately conservative for now:** `requiresCompleted: ["identify_scada_anomalies", "disable_attack_vectors"]`. This already stops the ESD beeline (you must independently confirm the thermal hazard, which is also the button's `authVar`) and is satisfiable by **both** the clean and the partial-failure ending. `confront_voltage` is **not** in the gate yet — it must only be added once Phase 3's stance menu guarantees the task completes on *every* branch including the escape, or the escape ending becomes unreachable. `requiresCompleted` is server-validated (`objectives-manager.js:506-522`), so an unsatisfiable gate fails where the local validator cannot see it.
+File: `scenario.json.erb` objectives block (`:116-256`).
+
+1. Split into ~5 ordered aims (e.g. `act1_get_inside` → `act1_confirm_the_lie` → `act2_get_on_the_ot_network` → `act2_clear_the_halls` → `act3_stop_the_runaway`), each `locked` with `unlockCondition:{aimCompleted:…}`, tasks `active` inside.
+2. Flip every within-aim task from `locked` to `active` — this alone fixes `locate_compromised_systems`.
+3. Rewrite titles to name the goal, not the answer ("Verify the rack temperatures independently", not "…against the analog thermometer").
+4. Broaden `requiresCompleted` beyond `disable_attack_vectors` to the real critical path (`identify_scada_anomalies`, the distcc flag, `confront_voltage`). Keep `missionConclusion` + `conclusionScreen:{type:"bond_visualiser"}`. **Caution:** `requiresCompleted` is server-validated — `objectives-manager.js:506-522` shows the client surfacing a server rejection — so an over-broad gate fails at a layer no local check covers. It must also stay satisfiable under the Phase 0 partial-failure spec; test both the clean and the partial ending against it.
+
+**Acceptance:** Story Aims graph shows unlock edges; the panel always has a live next step; the finale can't be reached by an ESD beeline; both endings satisfy the gate. **Verify:** `break-escape-dungeon-graph`, `scenario-design-review`.
+
+### Phase 3 — Canon & moral reframe (the substantive rewrite) ✅ IMPLEMENTED 2026-08-21
+
+> **Status: complete.** Validator: 0 ❌, 0 overlaps, **0 ink warnings** (was 1), 0 wiring warnings. Ink runtime 10/10 clean under both harnesses. Note the Phase 2 box above says `confront_voltage` is *not* in the conclusion gate — that was true when written; Phase 3 has since added it (see below).
+>
+> **Renames were far lower-risk than the plan feared.** `#speaker:` tags use NPC **ids**, not display names, so only `displayName` and the `Name:` prefixes needed changing. Robert Chen → **Robert Vance** (the prop email's "-Robert" sign-off survives untouched — the reason for that surname); Agent 0x99 / "Haxolottle" → **Agent HaX**; the Social Fabric contact → **Loom**, with "Cascade **Valley** Power Station" deliberately preserved as a place name. Zero new speaker-prefix warnings after recompile, confirming every prefix still resolves.
+>
+> **The ESD gate needed a derived global.** `authVar` takes a single global compared `=== true` (`esd-pushbutton-minigame.js:58-61`) — it cannot express an AND. The button now reads `esd_authorized`, which two handler `eventMappings` set once *both* `anomaly_detected` and `voltage_neutralised` are true (whichever lands second fires it); `voltage_neutralised` is derived from either fate. Conditions support `globalVars.X` and `&&` (`npc-manager.js:14-75`), so this needed no engine change.
+>
+> **Stance menu, m01 shape.** `confrontation_choice` offers Fight / Arrest / Go-for-the-button, each setting one outcome and diverging, with `#hostile` handing the fight to the engine. **Verified by enumeration: all 56 terminal paths fire `#complete_task:confront_voltage`**, and `taskOnKO` covers a silent KO — which is what made it safe to tighten `requiresCompleted` to `["identify_scada_anomalies", "confront_voltage", "disable_attack_vectors"]`.
+>
+> **Timers.** `h2_advisory` (T+22m — tints the `batrack` sprites red and pulses, `urgency_stage: 3`) and `racks_vent` (T+40m — sets `racks_vented` / `casualties_occurred`, `urgency_stage: 4`). Both `startOnGlobal: anomaly_detected`, `cancelOnGlobal: attack_prevented`, so the clock starts when the player *knows*. **No `show_end_screen`** — the run always reaches the debrief and the `bond_visualiser`.
+>
+> **Three vectors collapsed** across all five files that promised them; `physical_bypass_disabled` and `scada_script_neutralized` deleted (zero writers, zero readers — nothing lost).
+>
+> **Human cost landed.** Voltage states the figure himself — eleven on site, nine of them the Hall 2 night crew, forty-odd on the feed (oxygen concentrators, dialysis, home ventilators) — and calls it acceptable, signed by Blackout and countersigned by him. The blueprint prop's *"Clean operation. No casualties unless SAFETYNET interferes"* is replaced by that signed model. The debrief no longer closes on "No casualties"; it branches on `racks_vented`.
+>
+> **Credits branch and are reachable.** Added COSTLY SUCCESS, the Bank B loss, the casualty line, all three `disclosure_choice` outcomes (previously set but consumed nowhere) and a Blackout-still-at-large line. The credits evaluator uses `new Function`, so `&&` and string comparison are safe.
+>
+> **Left for Phase 5:** `attack_trigger_secured` and `attack_vectors_disabled` still have readers in gated ink branches that can no longer be true. Harmless — all paths verified clean — but prune them with the `You:`-echo pass.
+
+#### Original Phase 3 task list
+
+Files: `ink/m04_npc_voltage.ink`, `ink/m04_opening_briefing.ink`, `ink/m04_closing_debrief.ink`, `ink/m04_npc_robert_chen.ink`, `scenario.json.erb`, `mission.json`. This is where Voltage's and Chen's prose is written — **once**, with fates already decided in Phase 0 and the files already runnable from Phase 1a.
+
+1. **Reframe Voltage.** Cut the both-sides ideology exchange (`:191-223`) to a stance-taking beat: he states the projected deaths from a hydrogen event and calls it acceptable. Delete "No casualties unless SAFETYNET interferes" from the blueprints note (`scenario.json.erb:1013`) and "No casualties." from the debrief (`ink/m04_closing_debrief.ink:176`).
+2. **Land the human cost.** Name specific lives on the affected feed and on the site (a night crew in Hall 2, a ward or care home on the grid) so the 240,000 has a face — the m01/m02 bar.
+3. **Names.** Rename Robert Chen (collides with Critical Mass "Waterworks"); resolve Cascade (canon Critical Mass, m04 uses her as Social Fabric); state Voltage's position relative to canon leader **Blackout / Dr James Mercer**; rename the handler to **Agent HaX** across ink + scenario and re-check every speaker prefix.
+4. **Make the choices pay — with split variable ownership.** Do *not* use a single `voltage_fate` written by both ink and the KO bridge; that is the exact pattern that broke `voltage_captured` (see Risks). Use an **ink-owned `voltage_dialogue_outcome`** plus an **engine-owned `voltage_fate`** resolved by a handler `eventMapping` that reads both. Add a real loading-dock escape route; feed `disclosure_choice` into credits and the `bond_visualiser`; add the partial-failure outcome so the "CATASTROPHIC FAILURE" credit is reachable.
+5. **Hostility — nothing in m04 is actually hostile.** The four `behavior.hostile` blocks (`scenario.json.erb:737, 853, 941, 957`) are **inert config**: they set `chaseSpeed`/`attackDamage`/`pauseToAttack` but not `startHostile`, which `npc-behavior.js:331` defaults to `false`, and m04's ink contains **zero `#hostile` tags**. So no operative ever becomes hostile — the "combat" was entirely the narrated CYOA text Phase 1a deletes. Hostility otherwise arises generically (an NPC turns hostile when attacked or accused), which m04 does not arrange either.
+   `startHostile` **is** supported by the engine (`npc-behavior.js:298, 331`) but is used by **no scenario in the repo** — so it is available and untested. Decide per operative whether they start hostile (ENTROPY operatives who spot an intruder mid-sabotage plausibly do) or turn hostile off a `#hostile` tag at the end of a detection bark. The latter is the lower-risk option and keeps stealth/surrender routes meaningful.
+   Related: `#player_defeated` has no handler anywhere in `public/break_escape/js/`; deleting it in Phase 1a removes a placeholder, not a mechanism. m04's `mission.json` billing as "First mission featuring combat encounters" should be re-checked against whatever hostility model is chosen.
+6. **Live clock.** `urgency_stage` is declared and never changes and there is no timer — either drive it off progress beats (H₂ readings, HaX texts, rack panel `observationVariants`) or drop the claim from the docs.
+
+**Acceptance:** no ending grants a fanatic absolution; escape reachable; lose state resolved either way; no invented-canon contradictions. **Verify:** `npc-dialog-review` + canon cross-read against `philosophy.md:17-42` and `critical_mass.md`.
+
+### Phase 4 — Agent HaX hub + field guides + SecGen ✅ IMPLEMENTED 2026-08-21
+
+> **Status: complete.** Hub, field guides and the SecGen scenario are all in.
+> Validator: 0 ❌, 0 overlaps, 0 ink warnings. Ink runtime clean, including the hub stress-tested across 8 different global states.
+>
+> **Hub rebuilt on the m01 pattern** (`m01_phone_agent0x99.ink:101-129`): progress-gated advice, six exposure-gated field guides (`{X_guide_offered and not X_guide_hint_given}` → `#give_item:lab-workstation:<key>`), and an always-available fallback so it can never run dry. The three previously orphaned event knots are now reachable. All five missing gating VARs declared, and the `attack_mechanism_understood` / `attack_mechanism_known` name clash resolved in favour of the ink name (used in three files); the orphan global is deleted.
+>
+> **Guides are exposure-gated by `eventMappings`, not time** — RFID on entering `battery_hall_1`, lockpicking on `security_office`, recon + attack-surface on `engineering_workshop`, distcc on submitting the HTTP flag, CyberChef on finding the go-bag card. All six `#give_item` keys cross-checked against the handler's `itemsHeld` (exact match), and all six `labUrl`s point at sheets that exist in `HacktivityLabSheets/_labs/safetynet/`.
+>
+> **Two bugs I introduced and caught by testing, worth recording:**
+> 1. `event_server_room_entered` had once-only choices while the hub re-offered it — **the exact starved-knot pattern documented in `README_ink_best_practices.md`**, reproduced in new code within an hour of writing that doc. Fixed with a retire flag plus sticky choices. It only showed up when the hub was tested *with guides offered*; the default-state test passed. **Test hubs under realistic mid-mission global state, not just from a cold start.**
+> 2. All six `#give_item` tags were placed *after* their dialogue line, so they would have fired on the wrong `story.Continue()`. The validator caught this; the correct order is tag → dialogue.
+>
+> **Cross-repo release note:** `distcc-exploitation` and `rfid-cloning` are present in `_labs/safetynet/` with valid `permalink` front matter and `game_fragment: true`, but are absent from the local `_site/labs/safetynet/`. That build is stale (both sheets were added for m03) — **HacktivityLabSheets must be rebuilt and deployed before release**, or those two guides 404.
+
+#### SecGen — authored, adapted from m01 (⚠️ flag order needs a build to confirm)
+
+`flags_by_vm` is keyed by the SecGen **`<system_name>`**, not the scenario filename (`app/models/break_escape/mission.rb:129-139`, which parses `//system/challenge/flag` out of the generated `flag_hints.xml`). m01 — the gold standard — follows this exactly: `<system_name>shatter_server</system_name>` ↔ `targetFlags: ["shatter_server:flag_1"]`. (m02 does **not**: its `acceptsVms` says `hospital_backup_server` while its SecGen XML declares `server` — another reason m02 is an advanced draft, not the bar.)
+
+This invalidated the `vulnerability_analysis:flag_N` prefix wired in Phase 1a. That prefix was a *lab category*, not a machine.
+
+**Done:** `secgen/m04_critical_failure.xml`, structured from `m01_first_contact/secgen/m01_first_contact.xml` and using the vulnerability blocks proven in `SecGen/scenarios/labs/introducing_attacks/8_vulnerability_analysis.xml`. System named **`bms_jump_server`** — the name the dialogue already uses ("the BMS jump server"). Four flag sources, declared in the order the tasks expect:
+
+| # | Module | Verified reads `strings_to_leak` | Task |
+|---|---|---|---|
+| 1 | `parameterised_website` (falsified rack status page) | ✅ | `submit_network_scan_flag` |
+| 2 | `proftpd_133c_backdoor` (OptiGrid transfer channel) | ✅ | `submit_ftp_intel_flag` |
+| 3 | `sudoedit` CVE-2023-22809 (was sudo_baron; swapped in pass 2, Debian 12 conflict) | ✅ | `submit_privesc_flag` |
+| 4 | `distcc_exec` CVE-2004-2687 | ✅ | `submit_distcc_exploit_flag` |
+
+Every `module_path` and every `read_fact` was checked against the module metadata in the SecGen checkout before use — none are invented. XML confirmed well-formed.
+
+Wiring updated to match: `acceptsVms`, all four `targetFlags`, `flags_for_vm(...)`, `vm_object(...)` and the launcher id now all say `bms_jump_server`; `mission.json` `secgen_scenario` → `m04_critical_failure`. Task 3 was renamed `submit_http_analysis_flag` → `submit_privesc_flag` (with its eventMapping) because flag 3 is the sudo escalation, not an HTTP step — the old id would have been a lie. Flag task titles rewritten to describe what each flag actually is.
+
+**⚠️ Two things a SecGen build must confirm — I could not verify them from the repo:**
+1. **Flag order and count.** SecGen emits flags at build time; the mapping above is inferred from declaration order. If a build yields a different order, fix `targetFlags` in `scenario.json.erb` — do not renumber the XML.
+2. **`vm_object('bms_jump_server', …)`.** That helper resolves by VM *title* in the hacktivity `vm_context`. m01 passes its `secgen_scenario` name there rather than a system name, so the convention is genuinely ambiguous; I used the system name for consistency with `acceptsVms`. Check against a real `vm_context`.
+
+Until a build happens, the four flag tasks remain unverified — well-formed and now consistently named, but unproven.
+
+#### Original Phase 4 task list
+Files: `ink/m04_phone_agent0x99.ink`, `scenario.json.erb` (agent `itemsHeld`, `eventMappings`), new `lab_sheet/`, new `secgen/m04_critical_failure.xml`, `mission.json`; plus HacktivityLabSheets. Runs after the rewrite because its gating VARs hang off beats Phase 3 creates.
+
+1. Build `support_hub` on the m02 model; fold `event_server_room_entered`, `event_attack_mechanism_identified` and `player_guidance_request` into gated options; declare **all five** missing gating VARs in `globalVariables` (`operatives_defeated`, `attack_mechanism_known`, `server_room_reached`, `attack_partially_triggered`, `player_health_low`) plus the guide `_offered`/`_hint_given` pairs, and drive `operatives_defeated` from the three `globalVarOnKO`s via handler mappings. Watch the near-miss: `attack_mechanism_understood` is already declared (`:1097`) while the ink reads `attack_mechanism_known` — pick one name. Fix the `Capture Voltage:` pseudo-prefix (`:288`).
+2. Add `lab-workstation` field guides in HaX's `itemsHeld` with `labUrl`s to real sheets, exposure-gated and offered at the right beats (RFID door → `rfid-cloning`; VM launch → `reconnaissance-and-network-mapping` + `vulnerability-analysis-and-attack-surface`; distcc → `distcc-exploitation`; go-bag card → `encoding-and-decoding-with-cyberchef`; lockers → `lockpicking`). All eight named sheets confirmed present in `HacktivityLabSheets/_labs/safetynet/`.
+3. **Cross-repo dependency:** `distcc-exploitation` and `rfid-cloning` are absent from the local `_site/labs/safetynet/`. Since `HacktivityLabSheets/.gitignore:2` ignores `_site/`, that proves only that the local build is stale — verify against the live site or a fresh build before treating it as a publishing task.
+4. Create the SecGen scenario (four flags, 192.168.100.10, nmap → FTP/HTTP enum → distcc CVE-2004-2687 → sudoedit CVE-2023-22809), or repoint `mission.json` at the shipped lab XML.
+
+**Acceptance:** every hub option contextual and re-enterable; each guide item resolves on the live HLS site; `secgen_scenario` points at something real. **Verify:** `npc-dialog-review`; check each `labUrl` against the built/live site.
+
+### Phase 5 — Ink craft pass + bookends ✅ IMPLEMENTED 2026-08-21
+
+> **Status: complete.** Validator 0 ❌ / 0 overlaps / 0 ink warnings; all 10 ink files clean under both harnesses.
+>
+> **98 `You:` echoes removed — by promotion, not deletion.** The bracket was usually a *menu label* ("Ask what makes it dangerous") while the `You:` line underneath was the actual spoken line ("What makes this cell more dangerous?"). Folding the spoken line up into the bracket fixed **both** documented anti-patterns at once — the echo *and* the menu-label choice — and kept the better-written text. 7 `You:` lines remain and are correct: they are the player genuinely speaking several lines inside a knot (Chen's reveal, Voltage's stance lines), which is not the echo pattern.
+>
+> **⚠️ The "zero Narrator lines" item was benchmarked against the wrong mission and is dropped.** The plan cited m02's ~86 narrator lines. **m01 — the gold standard — uses `Narrator:` in exactly one file, 8 lines** (`m01_derek_confrontation.ink`). m04 already has **37 across five files**, so it is comfortably past the m01 bar; bulk-adding more would have overshot the house style. No narrator lines were added beyond the one that replaced a stage-direction choice.
+>
+> **Closing debrief promoted to a hidden-person cutscene**, exactly on m01's `closing_debrief_person` pattern: `npcType: person`, `behavior.initiallyHidden`, an `eventMapping` on `global_variable_changed:mission_complete` with `conversationMode: person-chat`, `background: assets/backgrounds/hq1.png` (confirmed present), `onceOnly` and `disableClose`. The validator's "consider adding an event-driven closing debrief cutscene" suggestion is now a ✅ GOOD PRACTICE.
+>
+> **Two music cues added** on real story beats: `anomaly_detected` (the telemetry is confirmed false — the mission turns, and the clock starts) → threat, and `hydrogen_alarm` (bank B venting) → spy-action.
+>
+> **Dead branches pruned.** `attack_trigger_secured` and `attack_vectors_disabled` are gone from both the globals and the ink. Their only writers sat in knots orphaned by the Phase 3 rewrite, so the three reader branches were permanently false. Removing them let **13 unreachable knots** go from `m04_npc_voltage.ink` (426 → 385 lines), including the whole legacy capture/trigger/escape outcome machinery the Phase 1a notes had marked `PHASE 3 TODO`.
+>
+> **Invariant re-verified after pruning:** all **56** terminal Voltage paths still fire `#complete_task:confront_voltage`, so the conclusion gate stays satisfiable.
+
+
+1. Delete all 121 `You:` echo lines, folding the spoken content into the brackets. Add `Narrator:` lines for the hall (heat, the H₂ panel, ventilation noise, PPE) — currently zero across 12 files.
+2. Promote the closing debrief to a hidden-person cutscene with an HQ background; move `#complete_task:report_to_0x99` to the last knot.
+3. Add the two new music cues.
+
+*(Rooms moved to Phase 1b — they are independent of the ink and unblock the walkthrough earlier.)*
+
+**Acceptance:** no `You:` echoes remain; debrief plays before the `bond_visualiser`. **Verify:** `scenario-design-review`, `npc-dialog-review`, `walkthrough-scenario`.
+
+### Phase 6 — Docs, artefacts, full verification ✅ IMPLEMENTED 2026-08-21
+
+> **Status: complete.**
+> - `IMPLEMENTATION_STATUS.md` — rewritten (357 → 77 lines). Opens with an explicit corrections
+>   block: the false "water treatment", the "90% complete / 0 errors" claim (9 of 10 ink files were
+>   broken at runtime), and the two non-existent `terminal_*` ink files it listed as done.
+> - `TESTING_WALKTHROUGH.md` — rewritten against the current 5-aim design, room spine, stance menu,
+>   ESD gate and timer paths, with the VM-flags-unverified caveat called out inline.
+> - `SOLUTION_GUIDE.md` — rewritten (542 → 63 lines); the old three-vector / chlorine guide replaced
+>   by an accurate summary that points at the walkthrough rather than duplicating it (one source of
+>   truth, less drift).
+> - `mission.json` — battery-storage description with the human stakes; de-duplicated the two `CPS`
+>   CyBOK entries; dropped the "Water treatment systems" keywords.
+> - The 10 planning-stage docs under `planning_notes/.../m04_critical_failure/` carry a **SUPERSEDED**
+>   banner rather than a rewrite — they are historical, and re-authoring ~9,000 lines is not warranted.
+> - `dungeon_graph.{md,html}` regenerated by the validator.
+>
+> The only remaining "water/chlorine" strings in the mission tree are the deliberate *corrections*
+> in the three rewritten docs. `SecGen` verification and the HacktivityLabSheets rebuild remain the
+> two external blockers, tracked under Phase 4 and in `IMPLEMENTATION_STATUS.md`.
+
+
+1. Rewrite `mission.json` (battery description, de-duplicate the two `CPS` entries, drop "Water treatment systems"). Rewrite or archive `IMPLEMENTATION_STATUS.md` — it claims 90% complete, 0 errors, and lists `m04_terminal_attack_trigger.ink` / `m04_terminal_scada_display.ink` which **do not exist on disk** and were deliberately replaced by display objects (`TESTING_WALKTHROUGH.md:12`). De-water `SOLUTION_GUIDE.md` (8 stale hits). Add a header to the nine planning-stage docs marking them superseded.
+2. Regenerate `dungeon_graph.{md,html}`; refresh `TESTING_WALKTHROUGH.md` (its end-state table asserts `flag_*_submitted:true` and "Aim 2 unlocks", neither of which happens today).
+3. Consider adding m02-parity docs: `OBJECTIVES.md`, `NPC.md`.
+
+**Acceptance:** no doc contradicts the shipped scenario. **Verify:** `break-escape-dungeon-graph`, `walkthrough-scenario`, final `validate-scenario` + `scenario-design-review`.
+
+## Canon & lore alignment
+
+- **Setting — battery storage is authoritative.** `scenario.json.erb` header (`:5-34`) and all ink were rewritten 2026-06 from `sis02_energy` assets; the water-treatment framing survives only in `mission.json:3`, `IMPLEMENTATION_STATUS.md`, `SOLUTION_GUIDE.md`, `planning_notes/.../m04_critical_failure/**` (all dated 2025-12) and `planning_notes/overall_story_plan/season_1_arc.md:345`. Update the season arc too, or m04 will re-diverge.
+- **Escalated doctrine** (`philosophy.md:17-42`, added Aug 2026): "the zero-casualty claim is a lie the organisation finds useful"; "let them take a stance, not negotiate an ideology". Both of m04's soft-canon lines (`scenario.json.erb:1013`, `closing_debrief.ink:176`) contradict this directly.
+- **`critical_mass.md` is itself pre-escalation** (last touched 2025-11-17; "they don't want mass casualties", "terrorist safety protocols"). Under the new bible that file's moral-limits material now reads as ENTROPY's cover story — worth an explicit note when it's used, and a candidate for its own escalation pass.
+- **Name collisions:** Robert Chen = canon "Waterworks", Critical Mass (`critical_mass.md:87`). Cascade = canon Critical Mass systems theorist (`:35`), not Social Fabric (`scenario.json.erb:966,1070`). Cell leader is Blackout / James Mercer (`:25`), not Voltage.
+- **Continuity to keep:** OptiGrid Solutions as the cell's cover is canon-perfect (`critical_mass.md:17`); the cross-cell Social Fabric coordination and The Architect thread match `season_1_arc.md`; the debrief's roll-call of missions 1–4 is a good m02-style callback.
+
+## Decisions taken (2026-08-21)
+
+1. **Stakes — named deaths + partial-failure ending.** The hydrogen event kills named on-site crew and people on the dropped feed, and m04 permits a partial-failure ending where some of that happens. This makes the currently-dead "CATASTROPHIC FAILURE" credit reachable and settles the Phase 0 partial-failure spec.
+2. **Antagonist — Voltage stays, as Blackout's lieutenant.** State his position under canon leader Blackout / Dr James Mercer explicitly. The existing confrontation survives; Blackout is held for a later mission.
+3. **Handler — rename to Agent HaX everywhere.** m03 uses the same name and will need the same rename; sequence the two so they stay in step.
+4. **Hostility — engine `startHostile` exists but is unused repo-wide** (see Phase 3.5). Per-operative choice between `startHostile` and a `#hostile` tag on detection is still open, folded into Open Decision 10. Phase 1a implemented the `#hostile`-on-detection option as the lower-risk default; it is a one-line change per operative if you prefer `startHostile`.
+5. **A partial-failure ending still concludes the mission.** It satisfies `requiresCompleted` and reaches the `bond_visualiser` — the racks vent, there are casualties, and the mission *ends*, rather than branching to a separate failure screen. This makes the currently-dead "CATASTROPHIC FAILURE" credit reachable and keeps one ending path to maintain. Shapes Phase 2.4 (the conclusion gate must be satisfiable by both the clean and the partial ending) and Phase 3.4.
+6. **Robert Chen is renamed → *Robert Vance*.** Clears the canon collision with Critical Mass operative "Waterworks" (`critical_mass.md:87`). Keeps the first name so the existing warning-email prop and the "-Robert" sign-off survive untouched; "Vance" is plain, English, and reads as a site engineer rather than a codename. Applies to `displayName` (×2 NPCs), every `Robert Chen:` prefix, the phone contact, and the `chen_*` variables — the variable names may stay `chen_*` to avoid a risky bulk rename, but the *displayed* name must be consistent. **My judgement, easily overridden** — say the word if you want a different surname.
+7. **Voltage holds the live trigger and gates the ending.** He and the ESD button share the plant room, and today the player can walk past him, press the button and finish — `requiresCompleted` only lists `disable_attack_vectors`. He now must be dealt with first: pressing ESD while he is conscious means he fires the trigger. This makes the climax mandatory and gives the partial-failure ending a cause. Directly mirrors m01, where Derek holds "a launch device to remotely activate Operation Shatter" (`m01_derek_confrontation.ink:263-270`).
+8. **Stance menu is three options: Fight / Arrest / Go for the button.** Confirmed with the user; *expose* and *recruit* are dropped (a fanatic who priced the deaths does not get recruited, and disclosure is already the debrief's own choice). "Go for the button" is what lets him reach the loading dock and is the only writer of `voltage_escaped`.
+9. **Scale note:** m04's consequences are deliberately larger than sis02's single-facility evacuation — 240,000 on the grid, the night crew in the hall, and whoever is on the dropped feed. Failure text should carry that.
+10. **Failure comes from the engine's timer system, and never ends the run.** Use the `timers` block — the machinery already exists and `sis02_energy` is the worked example (`sis02_energy/scenario.json.erb:387-450`): `startOnGlobal`, `delayMs`, `cancelOnGlobal`, `condition`, `setGlobal`, `showCountdown`, `onceOnly`, plus `actions` (`tint_objects` for visual escalation).
+   **Deliberate divergence from sis02:** its `h2_evacuation` timer fires `show_end_screen` with `outcome: "failure"` and a "Return to Missions" button — a hard stop. m04 must **not** do that. Per the decision above, failure is *avoidable and player-caused* but the mission still reaches an ending: the timer sets a partial-failure global (racks vent, named casualties), and the run continues to the debrief and `bond_visualiser`. Reserve `show_end_screen` for nothing here.
+9. **Three attack vectors collapse to one honest ESD.** The briefing, HaX, Chen, Cipher and Relay all promise three vectors, but `physical_bypass_disabled`, `scada_script_neutralized`, `attack_vectors_disabled` and `attack_trigger_secured` have **zero writers** anywhere in the scenario or the ten ink files — it is one button wearing a trenchcoat. Rewrite the dialogue to talk about the hardwired shutdown as the single answer and delete the four dead globals. The ESD is already the dramatically correct object: the one thing ENTROPY could not reach from SCADA.
+10. **The ESD-vs-chase fork unlocks the final confrontation stage, m01-style.** Not a separate escape mechanic. Follow `m01_derek_confrontation.ink`: `start` gates on evidence (`{not entropy_reveal_read: -> insufficient_evidence}`), and a `confrontation_choice` knot then offers sticky stance options that each set one `final_choice` variable and diverge (`#hostile` for the fight, others for arrest/recruit/expose/surrender). m04's equivalent gates on the thermal evidence, then offers *go for the button* vs *go for Voltage* — the button saves the grid and lets him reach the loading dock; going for him risks the clock. The dock already holds his escape plan and the abandoned go-bag, so the props pay off.
+11. **Cascade stays canon Critical Mass; m04's Social Fabric contact is renamed → *Loom*.** Canon puts Cascade in Critical Mass (`critical_mass.md:35`), and m04 only needs *a* Social Fabric name for the coordination log. Renaming m04's contact is a one-line change to `scenario.json.erb:966,1070`; moving Cascade between cells would contradict the bible. "Loom" fits Social Fabric's textile-flavoured naming.
+
+## Open decisions for the user
+
+1. **Setting — keep battery storage?** (Recommended: yes; it's the newest work and the only version the ink supports. Water treatment would mean rewriting 3,500 lines.)
+2. ~~**How dark?**~~ — decided: named deaths + partial-failure ending.
+3. ~~**Robert Chen's new name**~~ — decided: **Robert Vance**.
+4. ~~**Voltage vs Blackout**~~ — decided: Voltage is a field lieutenant under Blackout.
+5. ~~**Cascade**~~ — decided: Cascade stays Critical Mass; m04's Social Fabric contact becomes **Loom**.
+6. ~~**Handler name**~~ — decided: rename to Agent HaX (and sequence m03's rename alongside).
+7. ~~**Capture-vs-kill framing**~~ — *(still open, but now narrower: the m01 pattern gives Voltage a stance menu including non-lethal options, so lethal force can be one option among several rather than the framing.)* Original question:  — the briefing currently says "I've authorized you for lethal force" (`opening_briefing.ink:151`). Keep lethal authorisation under the hard canon, or hold SAFETYNET to non-lethal takedowns as in m01/m02?
+8. ~~**Urgency**~~ — decided: build a real clock with the engine's existing `timers` block, modelled on `sis02_energy` (no engine patch needed — the system already ships). `urgency_stage` is driven by timer stages.
+9. **SecGen** — author `secgen/m04_critical_failure.xml` with `<system_name>vulnerability_analysis</system_name>` (keeps the existing `targetFlags` correct), or repoint `mission.json` at `labs/introducing_attacks/8_vulnerability_analysis.xml` (**and change all four `targetFlags` + `acceptsVms` to `linux_server`**)? See the blocking finding under Phase 4 — the flag prefix must equal the SecGen `<system_name>`, and the four flag tasks cannot complete until this is settled.
+10. *(Hostility model per operative — Phase 1a shipped the `#hostile`-on-detection default; still switchable to `startHostile`.)* Original question:  `startHostile: true` (untested repo-wide; ENTROPY operatives caught mid-sabotage plausibly attack on sight), or a `#hostile` tag fired at the end of a detection bark (lower risk, preserves stealth and surrender routes)? Cipher, Relay, Static and Voltage can differ. *(Blocks Phase 3.5.)*
+11. ~~**`voltage_fate` value set**~~ — decided: an m01-style stance menu setting one `final_choice`/`voltage_fate` variable; escape happens when the player commits to the button instead of the chase.
+12. ~~**Does a partial-failure ending still conclude the mission**~~ — decided: **yes**, it satisfies `requiresCompleted` and reaches the `bond_visualiser`.
+
+## Risks & regressions to guard
+
+- **Speaker-prefix desync.** Renaming Agent 0x99 → Agent HaX and Robert Chen touches 100+ prefixes and 10 `#speaker:` tags; the validator only warns on unmatched prefixes, so a partial rename renders as literal text or misattributes to the player. Recompile and re-validate every file.
+- **Two-way global sync clobbering.** `npc-conversation-state.js:245-269` syncs by name in both directions. Any ink VAR sharing a name with a `globalVarOnKO` (today: `voltage_captured`) can overwrite engine state. Give ink-owned and engine-owned variables distinct names.
+- **Flag-ID indexing.** `targetFlags` are 1-indexed to the `flags` block order (`:603-608`); a mismatch silently blocks completion. Verify against the rendered JSON, not the ERB.
+- **Do not "fix" the dead zone by unlocking aims without unlock edges.** Making all aims `active` would trade a dead zone for a spoiler leak; the m02 shape (locked aim + active tasks + `unlockCondition`) is the target.
+- **`requiresCompleted` is server-validated** (`objectives-manager.js:506-522`). An over-broad conclusion gate fails at a layer the local validator never inspects, and must remain satisfiable under the partial-failure ending.
+- **Do not repoint `robert_chen_phone` to `start`.** That knot runs away (>2000 continues, 0 choices) — the fix swaps a crash for a hang. Target `chen_phone_support_start`.
+- **Removing ink combat is safe for the fight, not for losing.** The four hostiles have real `behavior.hostile` blocks so the engine covers the encounter, but no player-defeat handler exists; deleting `#player_defeated` must not be mistaken for having addressed the lose state.
+- **Conclusion firing early.** Moving `#complete_task:report_to_0x99` is load-bearing; if aim 3's other tasks are done, completing it first triggers `bond_visualiser` over the debrief.
+- **Room re-hang breaks the lock chain.** `engineering_workshop` (Level-2, from Cipher) and `plant_room` (Master, from Relay) gate the critical path; re-routing doors must preserve that order and must not make `plant_room` reachable before `battery_hall_2`.
+- **KO'd NPCs holding critical keys.** Cipher (Level 2) and Relay (Master) are single points of failure; confirm dropped items are recoverable in every KO ordering.
+- **Cross-repo labUrl drift.** `distcc-exploitation` and `rfid-cloning` must be built on HLS before release.
+- **Validator side effect.** Running the validator rewrites `dungeon_graph.{md,html}` — expect them in every diff.
+
+## Verification plan
+
+1. `validate-scenario` after Phases 1a, 1b, 2, 5 — target 0 ❌ and 0 room-overlap warnings (baseline today: 4 ❌, 4 overlap ⚠️, 1 KO advisory, 4 ink prefix suggestions). The validator is the **only** authority on world-space overlaps.
+2. **inkjs path enumeration** — `require('public/break_escape/assets/vendor/ink.js')` under node, bind **all six** engine externals (`player_name`, `current_mission_id`, `npc_location`, `mission_phase`, `operational_stress_level`, `equipment_status`), full DFS choice-tree walk from each NPC's declared `currentKnot`. Run after Phases 1a, 3, 5. Assert no "ran out of content", no runaway, and every terminal knot reachable. This is the check the existing docs never ran, and it is what exposed that 9 of 10 files are broken. **Run it against all 10 files, not a sample** — the draft plan missed `m04_npc_robert_chen.ink` entirely by spot-checking.
+3. **Long-loop stress test** (`loopcheck.js`) — drives each conversation 200 steps under six choice strategies (first / last / round-robin / three random) and fails on an empty choice list, a runaway, or a runtime error. **This is the check that matters most for this mission** and it is not optional: the dominant bug class here is a re-enterable knot whose once-only (`*`) choices empty out on a later visit, and the DFS in step 2 caps out before reaching that state. Run after any change to a hub knot. Note it flags a legitimate `-> END` cutscene ending as "DEAD-END" — expected for the briefing, debrief, guard and Voltage.
+4. `bin/inklecate` compile of all 10 files (currently clean — compile success is *not* evidence of runtime health here; all 10 compiled cleanly while 9 were broken at runtime). Ignore `compile-ink.sh`'s `END detected` warning for cutscenes — m02 trips it too.
+4. `break-escape-dungeon-graph` after Phases 2, 6 — Story Aims graph should gain unlock edges (currently Story: 3 nodes / **0 edges**, critical path **0 hops**).
+5. `predict_door_sides.py` after any room change — **door-side composition only**; it uses a different layout model from the validator and performs no overlap check.
+6. `npc-dialog-review` after Phases 3, 4, 5 — hub gating, prefix rendering, choice consequence, no `You:` echoes.
+7. `walkthrough-scenario` after Phases 1b and 6 — re-trace the critical path plus KO-of-Chen, KO-of-guard, KO of Cipher and Relay in both orders (keycard recovery), and each `voltage_fate`; diff against the 2026-06-12 baseline in `TESTING_WALKTHROUGH.md`.
+8. `scenario-design-review` as the final gate, including the canon cross-read.

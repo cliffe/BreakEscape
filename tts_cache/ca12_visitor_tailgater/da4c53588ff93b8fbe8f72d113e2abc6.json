@@ -1,0 +1,13 @@
+{
+  "key": "da4c53588ff93b8fbe8f72d113e2abc6",
+  "npc": "delphine_reception",
+  "text": "Right you are, leave it with me and I'll let them know.",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:18Z"
+}

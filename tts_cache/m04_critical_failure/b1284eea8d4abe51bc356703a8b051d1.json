@@ -1,0 +1,13 @@
+{
+  "key": "b1284eea8d4abe51bc356703a8b051d1",
+  "npc": "security_guard",
+  "text": "Alright, sign in here. Mr Vance said there was an audit today. He's not happy about it, fair warning.",
+  "voice": "Schedar",
+  "style": "Site security guard on the early shift, mid-fifties. Speak with a consistent West Country (Bristol) accent throughout -- do not shift to any other accent. Low, even pitch; unhurried pace. Polite and a little grumpy about the hour, then firmly by-the-book once pushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:39:37Z"
+}

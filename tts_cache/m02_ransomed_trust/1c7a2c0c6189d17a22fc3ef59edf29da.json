@@ -1,0 +1,13 @@
+{
+  "key": "1c7a2c0c6189d17a22fc3ef59edf29da",
+  "npc": "ghost",
+  "text": "But I won't make this particular offer from behind text. You can look at me while I make it.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:27:09Z"
+}

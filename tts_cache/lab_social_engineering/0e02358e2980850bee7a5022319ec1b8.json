@@ -1,0 +1,13 @@
+{
+  "key": "0e02358e2980850bee7a5022319ec1b8",
+  "npc": "ruth",
+  "text": "Case file's full, but you haven't read the Q3 PDF's properties. Check the author field. Then Operations is yours.",
+  "voice": "Sulafat",
+  "style": "Engagement lead at a British penetration-testing consultancy, late forties, Black British of Nigerian (Yoruba) heritage, raised in London. Speak with a consistent London English accent with a light Lagos lilt throughout — do not shift to any other accent. Warm mid-range pitch; measured but brisk pace. A good boss briefing a junior consultant: friendly, practical, no fuss.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:34:46Z"
+}

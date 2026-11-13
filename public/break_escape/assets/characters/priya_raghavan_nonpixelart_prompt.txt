@@ -1,0 +1,10 @@
+Make portrait for Priya Raghavan
+A British-Indian woman of about 35 with medium brown skin, warm dark eyes, long thick black hair in a loose side plait falling over her shoulder to her waist, round black-framed glasses and a small gold nose stud, mouth closed, a blockchain forensics analyst from Leeds who loves the work and has something on her screen she wants to show you. She wears a chunky teal knitted jumper with the sleeves pushed up to the elbow, a black smartwatch, a lanyard with a blank white card, dark navy trousers and a tan-brown leather belt, and holds a tablet tucked against her hip with one arm, the screen facing away. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is priya_raghavan_concept_2_raw.png.

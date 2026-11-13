@@ -1,0 +1,629 @@
+/**
+ * RFID Minigame CSS
+ * RFID Flipper-inspired RFID reader/cloner interface (Pixel Art Style)
+ */
+
+/* Container */
+.rfid-minigame-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+}
+
+.rfid-minigame-game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* The card copier (pixel-art UI rule): square corners, a 2px dark outline and a hard
+   2px bevel drawn with unblurred inset shadows; no rounded outline, no soft shadow */
+.flipper-zero-frame {
+    width: 400px;
+    height: 550px;
+    background: #FF8200;
+    border: 2px solid #1a0d00;
+    box-shadow: inset 2px 2px 0 #ffb366, inset -2px -2px 0 #b35a00;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    font-family: 'GNF', monospace;
+}
+
+/* Header */
+.flipper-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #b35a00;
+}
+
+.flipper-logo {
+    font-size: 20px;
+    color: white;
+    letter-spacing: 2px;
+    font-family: 'GNF', monospace;
+}
+
+.flipper-battery {
+    font-size: 16px;
+    color: white;
+    font-family: 'GNF', monospace;
+}
+
+/* Screen */
+.flipper-screen {
+    flex: 1;
+    background: #333;
+    border: 2px solid #1a0d00;
+    padding: 15px;
+    color: white;
+    font-size: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    font-family: 'GNF', monospace;
+}
+
+/* Breadcrumb */
+.flipper-breadcrumb {
+    font-size: 14px;
+    color: #FFA500;
+    margin-bottom: 15px;
+    font-family: 'GNF', monospace;
+}
+
+/* Menu */
+.flipper-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.flipper-menu-item {
+    padding: 8px 10px;
+    background: #3d3d3d;
+    border: 2px solid #6a6a6a;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+}
+
+.flipper-menu-item:hover {
+    background: #4d4d4d;
+    border-color: #FFA500;
+}
+
+/* Info Text */
+.flipper-info {
+    color: white;
+    margin: 10px 0;
+    text-align: center;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+}
+
+.flipper-info-dim {
+    color: #888;
+    margin: 10px 0;
+    text-align: center;
+    font-size: 14px;
+    font-family: 'GNF', monospace;
+}
+
+/* Card List */
+.flipper-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Card Name */
+.flipper-card-name {
+    font-size: 20px;
+    color: #FFA500;
+    margin: 10px 0;
+    text-align: center;
+    font-family: 'GNF', monospace;
+}
+
+/* Card Data */
+.flipper-card-data {
+    background: #222;
+    border: 2px solid #1a1a1a;
+    padding: 15px;
+    margin: 15px 0;
+    font-size: 15px;
+    line-height: 1.8;
+    font-family: 'GNF', monospace;
+}
+
+.flipper-card-data div {
+    margin: 5px 0;
+}
+
+/* Buttons */
+.flipper-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 15px;
+}
+
+.flipper-button {
+    flex: 1;
+    padding: 12px;
+    background: #FF8200;
+    color: white;
+    border: 2px solid #1a0d00;
+    box-shadow: inset -2px -2px 0 #b35a00;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'GNF', monospace;
+}
+
+.flipper-button:hover {
+    background: #FFA500;
+}
+
+.flipper-button-secondary {
+    background: #555;
+    box-shadow: inset -2px -2px 0 #333;
+}
+
+.flipper-button-secondary:hover {
+    background: #777;
+}
+
+.flipper-button-back {
+    margin-top: auto;
+    align-self: center;
+    padding: 4px 14px;
+    color: #fff;
+    background: #555;
+    border: 2px solid #1a1a1a;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+}
+
+.flipper-button-back:hover {
+    background: #6a6a6a;
+}
+
+.flipper-button-back + .flipper-button-back {
+    margin-top: 8px;
+}
+
+/* NFC Waves */
+.rfid-nfc-waves-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 30px 0;
+}
+
+.rfid-nfc-icon {
+    font-size: 48px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.rfid-nfc-waves {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.rfid-nfc-wave {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #FF8200;
+    animation: wave 1.5s steps(5) infinite;
+}
+
+@keyframes wave {
+    0% {
+        width: 20px;
+        height: 20px;
+        opacity: 1;
+    }
+    100% {
+        width: 100px;
+        height: 100px;
+        opacity: 0;
+    }
+}
+
+/* Progress Bar */
+.rfid-progress-container {
+    width: 100%;
+    height: 20px;
+    background: #222;
+    border: 2px solid #1a1a1a;
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.rfid-progress-bar {
+    height: 100%;
+    background: #FF8200;
+    transition: width 0.1s steps(2);
+}
+
+/* Emulation */
+.rfid-emulate-icon {
+    text-align: center;
+    margin: 12px 0;
+    line-height: 0;
+    animation: pulse 1.5s steps(2) infinite;
+}
+
+.flipper-emulating {
+    color: #00FF00;
+    text-align: center;
+    margin: 15px 0;
+    animation: blink 1s steps(2) infinite;
+    font-family: 'GNF', monospace;
+}
+
+@keyframes blink {
+    0%, 50%, 100% {
+        opacity: 1;
+    }
+    25%, 75% {
+        opacity: 0.5;
+    }
+}
+
+/* Success/Error Messages */
+.flipper-success,
+.flipper-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.flipper-success-icon,
+.flipper-error-icon {
+    font-size: 72px;
+    margin-bottom: 20px;
+}
+
+.flipper-success-icon {
+    color: #00FF00;
+}
+
+.flipper-error-icon {
+    color: #FF0000;
+}
+
+.flipper-success-message,
+.flipper-error-message {
+    font-size: 20px;
+    font-family: 'GNF', monospace;
+}
+
+.flipper-success-message {
+    color: #00FF00;
+}
+
+.flipper-error-message {
+    color: #FF0000;
+}
+
+/* Under a refusal (rfid-minigame.js _showDenial): it clears on a tap or after 3 s */
+.flipper-error-hint {
+    margin-top: 12px;
+    font-size: 14px;
+    font-family: 'GNF', monospace;
+    color: #FFA500;
+    text-align: center;
+    cursor: pointer;
+}
+
+/* Scrollbar */
+.flipper-screen::-webkit-scrollbar {
+    width: 8px;
+}
+
+.flipper-screen::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-left: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+.flipper-screen::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border: 2px solid #333;
+}
+
+.flipper-screen::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.flipper-card-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.flipper-card-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-left: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+.flipper-card-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border: 2px solid #333;
+}
+
+.flipper-card-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Protocol-Specific Displays */
+.flipper-protocol-header {
+    background: #3a3a3a;
+    border: 2px solid #5a5a5a;
+    padding: 12px;
+    margin-bottom: 15px;
+}
+
+.protocol-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.protocol-icon {
+    font-size: 20px;
+}
+
+.protocol-name {
+    font-size: 16px;
+    color: white;
+    font-family: 'GNF', monospace;
+}
+
+.protocol-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: #AAA;
+    font-family: 'GNF', monospace;
+}
+
+.security-badge {
+    padding: 3px 8px;
+    border: 2px solid #1a1a1a;
+    font-size: 13px;
+    font-family: 'GNF', monospace;
+}
+
+.security-badge.security-low {
+    background: #FF6B6B;
+    color: white;
+}
+
+.security-badge.security-medium {
+    background: #4ECDC4;
+    color: white;
+}
+
+.security-badge.security-high {
+    background: #95E1D3;
+    color: #333;
+}
+
+.flipper-menu-item-dim {
+    opacity: 0.5;
+}
+
+.flipper-menu-item-dim:hover {
+    background: #333;
+    opacity: 0.7;
+}
+
+/* Attack Progress */
+#attack-status {
+    font-size: 14px;
+    margin-top: 10px;
+    color: #FFA500;
+    font-family: 'GNF', monospace;
+}
+
+#attack-percentage {
+    font-size: 18px;
+    color: white;
+    font-family: 'GNF', monospace;
+}
+
+#attack-progress-bar {
+    transition: width 0.5s steps(4);
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+    .flipper-zero-frame {
+        width: 90%;
+        height: 80vh;
+        min-height: 500px;
+    }
+}
+
+/* Keyless MIFARE read screen: compact so the "Crack keys first" button stays on screen */
+.flipper-card-data-compact {
+    padding: 8px 12px;
+    margin: 8px 0;
+    line-height: 1.4;
+}
+
+.flipper-card-data-compact div {
+    margin: 2px 0;
+}
+
+.flipper-crack-hint {
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+/* Under a refusal or notice: why it happened (rfid-minigame.js _showDenial) */
+.flipper-error-detail {
+    margin-top: 10px;
+    max-width: 90%;
+    font-size: 14px;
+    line-height: 1.3;
+    font-family: 'GNF', monospace;
+    color: #ddd;
+    text-align: center;
+}
+
+/* "Nothing happened" rather than "refused": amber, no cross */
+.flipper-notice .flipper-error-icon {
+    font-size: 56px;
+    color: #FFA500;
+}
+
+.flipper-notice .flipper-error-message {
+    color: #FFA500;
+}
+
+/* Whether the card's data is encrypted (getReadProfile in rfid-protocols.js) */
+.rfid-crypto-line {
+    margin: 8px 0;
+    padding: 4px 8px;
+    text-align: center;
+    font-size: 14px;
+    font-family: 'GNF', monospace;
+    border: 2px solid currentColor;
+}
+
+.rfid-crypto-open {
+    color: #00FF00;
+}
+
+.rfid-crypto-locked {
+    color: #FFA500;
+}
+
+/* MIFARE Classic 1K: 16 sectors, lit when the key is known */
+.rfid-sector-grid {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    margin: 6px 0;
+}
+
+.rfid-sector {
+    width: 12px;
+    height: 12px;
+    background: #222;
+    border: 2px solid #FFA500;
+    box-sizing: border-box;
+}
+
+.rfid-sector-open {
+    background: #00FF00;
+    border-color: #00FF00;
+}
+
+/* Pixel icons (rfid-ui.js pixelIcon): whole pixels, never smoothed */
+.px-icon {
+    display: inline-block;
+    vertical-align: middle;
+    image-rendering: pixelated;
+    flex: none;
+}
+
+.flipper-battery {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rfid-nfc-icon {
+    line-height: 0;
+}
+
+.flipper-protocol-line,
+.rfid-crypto-line,
+.flipper-crack-hint,
+.flipper-reader-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.protocol-icon,
+.px-icon-holder {
+    line-height: 0;
+}
+
+/* The copier at a reader (rfid-ui.js showDoorScreen) */
+.flipper-reader-head {
+    justify-content: flex-start;
+    color: #fff;
+    font-size: 16px;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #222;
+    border: 2px solid #1a1a1a;
+}
+
+.flipper-section-head {
+    color: #FFA500;
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+.flipper-door-list {
+    max-height: none;
+    margin-top: 4px;
+}
+
+.flipper-success-icon .px-icon,
+.flipper-error-icon .px-icon {
+    display: block;
+    margin: 0 auto;
+}
+
+/* Back: the pixel arrow, then the word */
+.flipper-button-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}

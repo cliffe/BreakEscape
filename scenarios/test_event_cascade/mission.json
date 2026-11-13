@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Event-Driven NPC Cascades",
+  "description": "Tests coordinated multi-NPC reactions to global variable changes and event-driven state transitions.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 3,
+  "test_type": "phase_1_event_cascades",
+  "test_objective": "Verify event broadcasts trigger coordinated responses across multiple NPCs with proper conditions and exclusions"
+}

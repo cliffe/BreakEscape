@@ -1,0 +1,311 @@
+{
+ "steps": [
+  {
+   "note": "R1 (pass 5 alignment round 1): commit Fracture; Hollis challenges on sight and is talked round; flag 1, the decode read, HaX's deduction (a wrong operation first, then Austin and the dormancy); the HUD shows the redirect window; the redirect with the window open; T-10 opens on its own timer with the window open; door before login; debrief and credits."
+  },
+  {
+   "music": "game_loaded",
+   "expect": "cutscene"
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "How do we know",
+    "Understood. Talk to me",
+    "I've made the call",
+    "Fracture"
+   ]
+  },
+  {
+   "said": [
+    "contingency board since Thursday",
+    "Frozen or watched"
+   ]
+  },
+  {
+   "expect": {
+    "team_assigned": true,
+    "team_assignment": "fracture"
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "said": [
+    "HaX here, Agent.",
+    "It'd take something new to move it"
+   ],
+   "notSaid": [
+    "I'm not reopening it"
+   ]
+  },
+  {
+   "note": "Hollis's sight challenge: the spotted event opens his chat at start."
+  },
+  {
+   "event": "player_spotted:ray_hollis"
+  },
+  {
+   "said": [
+    "[opens ray_hollis @start (person-chat)]"
+   ]
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "talk": "hollis",
+   "picks": [
+    "You renewed Mercer",
+    "Nobody ever does",
+    "Your badge. Server zone. Then you go"
+   ]
+  },
+  {
+   "expect": {
+    "hollis_resolved": "talked",
+    "badge_obtained": true
+   }
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "advance": 5
+  },
+  {
+   "flag": 1
+  },
+  {
+   "said": [
+    "Read it against the threat desk summary"
+   ],
+   "notSaid": [
+    "Austin row"
+   ]
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "expect": {
+    "found_coordination_traffic": true,
+    "projection_revised": false
+   }
+  },
+  {
+   "said": [
+    "If a row in there doesn't match"
+   ],
+   "notSaid": [
+    "briefed low on purpose"
+   ]
+  },
+  {
+   "hud": null
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Meltdown"
+   ]
+  },
+  {
+   "said": [
+    "That isn't what I'm reading"
+   ]
+  },
+  {
+   "expect": {
+    "projection_revised": false
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan Horse",
+    "Dormancy"
+   ]
+  },
+  {
+   "said": [
+    "briefed low on purpose",
+    "grounds to move the team"
+   ]
+  },
+  {
+   "expect": {
+    "projection_revised": true,
+    "revision_found_open": true,
+    "verdict_sent": true
+   }
+  },
+  {
+   "hud": "redirect_window_display"
+  },
+  {
+   "advance": 25
+  },
+  {
+   "note": "30 minutes after the commit: T-10 on its own timer, window still open."
+  },
+  {
+   "expect": {
+    "architect_t10_played": true,
+    "redirect_window_closed": false
+   }
+  },
+  {
+   "said": [
+    "Ten minutes before your team is too committed to move"
+   ]
+  },
+  {
+   "talk": "architect",
+   "picks": [
+    "Then I'll be in this one"
+   ]
+  },
+  {
+   "said": [
+    "You've found the discrepancy",
+    "You still have a door open"
+   ],
+   "notSaid": [
+    "The door closed behind you"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I want the team moved",
+    "Move them"
+   ]
+  },
+  {
+   "said": [
+    "The window stays open until you log in as their operator, or the timer on screen runs out"
+   ]
+  },
+  {
+   "expect": {
+    "team_redirected": true,
+    "team_assignment": "trojan_horse"
+   }
+  },
+  {
+   "hud": null
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "expect": {
+    "cascade_armed": true,
+    "redirect_window_closed": true,
+    "logged_in_before_door": false
+   }
+  },
+  {
+   "hud": "cascade_zero"
+  },
+  {
+   "advance": 4
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "music": "room_entered:scada_control",
+   "expect": null
+  },
+  {
+   "talk": "phone",
+   "reload": "page",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "expect": {
+    "debrief_requested": true
+   }
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    1,
+    0,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    0,
+    "Nothing on the record",
+    "I want the numbers",
+    1
+   ]
+  },
+  {
+   "said": [
+    "Three doors they left open, and you went through all of them before the clock did",
+    "That is the order that kept it clean",
+    "You changed your mind under a countdown",
+    "dispatch and health-record keys",
+    "Above expectations"
+   ],
+   "notSaid": [
+    "You knew. You found it"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "ATTACK HOST:",
+    "stopped with time on it",
+    "redirected mid-flight"
+   ],
+   "creditsNotSaid": [
+    "ORDER: logged in",
+    "CORRECTION FOUND"
+   ]
+  },
+  {
+   "credits": true
+  },
+  {
+   "note": "Run-length guard (Phase 4 dialogue C1, D7-1): no conversation, the debrief included, runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

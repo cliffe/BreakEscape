@@ -1,0 +1,22 @@
+SESSION=2156
+{"ok":true,"cmd":"bootstrap","result":{"trace":["cutscene choice 1 of 3","cutscene choice 1 of 3","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 3","cutscene choice 1 of 2","c
+{"ok":true,"reason":null}
+banner: {"banner":"Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline","ringer":"ringing","queued":0}
+"declined"
+"opened agent_0x99"
+"header: ☎Call back"
+called back 4.941442828 s after decline
+t+1s: {"inCall":true,"tourRows":1}
+t+2s: {"inCall":true,"tourRows":1}
+t+3s: {"inCall":true,"tourRows":1}
+t+4s: {"inCall":true,"tourRows":1}
+t+5s: {"inCall":true,"tourRows":1}
+t+6s: {"inCall":true,"tourRows":1}
+t+7s: {"inCall":true,"tourRows":1}
+t+8s: {"inCall":true,"tourRows":1}
+shot quick_cb_midcall
+call screen: {"subs":["Agent HaX: You rang back. Good habit.","Agent HaX: One test call before it's texts only.","AGENT HAX: A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover.","AGENT HAX: So: quiet, deniable. Message me the moment you're stuck and I'll walk you through it."],"choices":["1. Understood. Texts it is.","2. What if I need you fast?"]}
+thread: ["npc: Agent, I'm your handler for this op. Message me if you need any guidan","call: Missed call","npc: Texting from here, then. Now get a feel for the place. 🦎 Check the de","npc: You rang back. Good habit.","npc: One test call before it's texts only.","npc: A contractor on the phone is nothing. A contractor overheard talking t","npc: So: quiet, deniable. Message me the moment you're stuck and I'll walk ","player: Understood. Texts it is.","npc: Good. Off you go.","call: Outgoing call, 0:13"]
+tour rows=1
+["phone_call_declined:agent_0x99@43.2","phone_call_answered:agent_0x99@50.7","conversation_closed:agent_0x99@64.1"]
+shot quick_cb_end

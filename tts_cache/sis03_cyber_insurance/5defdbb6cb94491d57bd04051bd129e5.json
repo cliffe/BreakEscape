@@ -1,0 +1,13 @@
+{
+  "key": "5defdbb6cb94491d57bd04051bd129e5",
+  "npc": "eleanor_vance",
+  "text": "But the mechanism also fails if we enforce it too rigidly, in a way that makes insurance unaffordable or unavailable for organisations facing legitimate trade-offs.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:28:45Z"
+}

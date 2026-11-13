@@ -1,0 +1,14 @@
+game            1165  (mission 49)
+created         2026-09-30 20:16:44 UTC
+last write      2026-09-30 20:34:16 UTC
+played for      1052s of wall clock
+current room    "reception_lobby"
+unlocked rooms  10: reception_lobby, patricia_office, main_corridor, open_office_area, torres_office, server_hallway, server_room, data_center, break_room, research_lab
+unlocked objs   1: torres_briefcase
+inventory       16: Your Phone, Notepad, Visitor Badge, Security Incident Log, Cloned Staff Badge, Torres Office Keycard, Lockpick Set, Server Password Sticky Note, Personal Journal, Medical Bills, Upload Schedule, Data Package Manifest, Sealed TalentStack Envelope, Noticeboard Flyer, TalentStack Leaflet, Vetting Aftercare File: D. Torres
+NPCs met        11: opening_briefing, director_netherton, agent_nightshade, agent_0x99_handler, recruiter, closing_debrief_trigger, patricia_morgan, kevin_park, david_torres, lisa_park, dr_chen
+flags submitted 4: flag{m05_insider_trading_qdc_research_server_1_0fb9f6}, flag{m05_insider_trading_qdc_research_server_2_9dbdb1}, flag{m05_insider_trading_qdc_research_server_3_2b19de}, flag{m05_insider_trading_qdc_research_server_4_8883c1}
+globals set     37: architect_approval_confirmed, bludit_guide_offered, bludit_server_discovered, briefing_played, case_exfil, case_motive, case_ready_notified, confront_stance, debrief_played, final_choice, flag1_submitted, flag2_submitted, flag3_submitted, flag4_submitted, flags_nag_sent, found_incident_log, found_manifest, found_medical_bills, found_pamphlet, found_pipeline_list, found_torres_journal, found_upload_schedule, found_vetting_file, knows_full_stakes, knows_insider_profile, lockpick_obtained, lockpicking_guide_offered, mission_priority, office_card_obtained, player_approach, player_name, recon_guide_offered, recruiter_contacted_player, server_badge_obtained, torres_arrested, torres_identified, torres_ko
+
+VERDICT: progress recorded — 9 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.

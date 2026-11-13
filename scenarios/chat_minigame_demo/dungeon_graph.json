@@ -1,0 +1,10 @@
+{
+  "scenario": "chat_minigame_demo",
+  "start_room": "demo_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

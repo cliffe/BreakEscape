@@ -1,0 +1,95 @@
+
+## R23 (scenario design R2, n2): the lowest-trust path. A brusque opener left unrepaired, the pitch refused, time given, then 'I need an answer' again: she still refuses, and the player can back out instead of being left with detention only. Her hub stays open, so the turn route survives.
+   {set {"briefing_played":true}}
+   {room security_checkpoint}
+
+--- guard ---
+  Narrator: A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.
+  Checkpoint Guard: Evening. Floor's restricted. Who are you?
+     (4 options)
+ > Financial Conduct Authority. Routine supervisory visit.
+  Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
+     (3 options)
+ > Dr Volkova. The CTO.
+      [set_variable guard_waved_through=true]
+  Checkpoint Guard: Dr Volkova. You're on the list. She's on the floor.
+      [unlock_door trading_floor]
+  Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
+  [chat closes]
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+
+--- irina ---
+      [task: meet_irina]
+  Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
+  Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Officer.
+  Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
+     (3 options)
+ > Let's be quick. I need your servers, your logs and your wallets.
+      [set_variable irina_suspicious=true]
+  Dr. Irina Volkova: Eager, aren't you?
+  Dr. Irina Volkova: Supervisors start with paperwork. Customer checks, anti-laundering. You went straight for the machines.
+  Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are compliant. Our monitoring meets the thresholds.
+  Dr. Irina Volkova: Unless you are looking for something that isn't on a checklist.
+  Dr. Irina Volkova: Go on.
+     (6 options)
+ > That's all for now.
+  Dr. Irina Volkova: Fine.
+  [chat closes]
+      [engine: Irina's first chat closed with her still suspicious -> cover_strained=true]
+      [HaX text: Volkova didn't buy you...]
+      [engine: Irina's first close -> exchange_infiltrated=true]
+      [HaX text: Their analysts sit east of the floor. If anyone has drawn the money, it's them.]
+   {set {"found_blockchain_evidence":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"found_architects_fund":true}}
+
+--- irina ---
+  Dr. Irina Volkova: What else?
+     (8 options)
+ > I'm not from the FCA. I'm SAFETYNET, and your exchange banks ENTROPY.
+  Narrator: You put your SAFETYNET credentials on the desk.
+  Narrator: Then the fund allocation, open at the casualty line.
+  Dr. Irina Volkova: *reads it twice* I wrote the mixer so nobody could see where money went. Not so nobody could see this.
+     (3 options)
+ > You built it believing in it. They turned it. Help us take it apart.
+  Dr. Irina Volkova: I won't turn on Satoshi because a stranger put a badge on my desk.
+  Dr. Irina Volkova: Financial privacy is a right. If people abuse it, that is on them.
+     (2 options)
+ > Think about it. I'll come back before anyone else does.
+  Dr. Irina Volkova: You're giving me time. Nobody in this building has ever done that.
+  [chat closes]
+   [PASS] given_time = true (expected true)
+   [PASS] irina_recruited = false (expected false)
+   [PASS] irina_arrested = false (expected false)
+
+--- irina ---
+  Dr. Irina Volkova: Yes?
+     (8 options)
+ > I need an answer, Dr Volkova.
+  Dr. Irina Volkova: I said I'd think. I'm thinking. It's slower than you'd like.
+     (2 options)
+ > Then I'll leave you to it. For now.
+  Dr. Irina Volkova: Don't take too long. He notices when I'm quiet.
+  [chat closes]
+   [PASS] said: "Then I'll leave you to it. For now."
+   [PASS] said: "Then you're complicit"
+   [PASS] said: "For now."
+   [PASS] irina_recruited = false (expected false)
+   [PASS] irina_arrested = false (expected false)
+   [PASS] irina_fate_decided = false (expected false)
+
+--- irina ---
+  Dr. Irina Volkova: Go on.
+     [0] I need an answer, Dr Volkova.
+     [1] Satoshi's wing. You've a badge for it.
+     [2] (Let the cloner read her badge while she talks.)
+     [3] I'll need to test your password strength. What do people here actually use?
+     [4] Let's start again, properly. Walk me through your anti-laundering procedures.
+     [5] Tell me about your door access.
+     [6] What's the post-quantum work on your second screen?
+     [7] That's all for now.
+  [stopped: no pick]
+   [PASS] said: "I need an answer, Dr Volkova."
+   [PASS] longest run 5 (irina) <= 9
+
+[stats] spoken/narrated lines 25, choices 9, longest run without a choice 5 (irina); runs>=6: 
+[result] all expectations met

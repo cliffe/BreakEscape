@@ -1,0 +1,13 @@
+{
+  "key": "a0c34df48df635db13f49de270304228",
+  "npc": "dr_sharma",
+  "text": "The ICO report missed the seventy-two hours. The ICO will look at the delay as well as the breach.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

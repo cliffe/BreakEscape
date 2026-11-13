@@ -1,0 +1,13 @@
+{
+  "key": "a12c817b3a4913b1e9df450856fa57a6",
+  "npc": "patricia_morgan",
+  "text": "I've waited three weeks to do something. All right. I'll suspend her access and keep her in the lab until the police can talk to her.",
+  "voice": "Kore",
+  "style": "Chief Security Officer, early fifties, ex-military. Speak with a consistent South Wales (Cardiff) accent throughout — do not shift to any other accent. Firm, low-to-mid pitch; brisk, economical pace. Direct, dry and steady under pressure; her warmth shows only in what she chooses to notice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:22:33Z"
+}

@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Access model awareness and habits",
+  "description": "Test of NPC awareness and habits (access model slice 9.1): a level from a role, a careless and a careful owner, a careful owner who writes the password on a sticky note, a PC field and a policy that beat a careless habit, a password worked out from clues, a password reused from a locker, and an owner who only sometimes locks. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 30,
+  "test_type": "access_model",
+  "test_objective": "Prove the locksScreen fill (never, sometimes, always) and that the PC's own field and a policy beat it, the claim check reading the owner's screenHabit, the writesDown sticky note (its picture, its text only from /login_accounts, hasPostit on pc_signin_shown), a backed guessable password and a backed reused one, and the seeded sometimes sequence across a reload"
+}

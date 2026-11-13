@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Needs (Sims-style office)",
+  "description": "Demo and test of the NPC needs system: five office staff get hungry, thirsty, tired and bored, queue for coffee, go back to their own desks, and tidy or open items the player drops. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 6,
+  "test_type": "npc_needs",
+  "test_objective": "Watch every needs feature happen within a few minutes: six need types, contention for one coffee station, return to own desk, carry and use of dropped items, conversation freeze, yield to player, npc_used events on a whiteboard and the objectives list"
+}

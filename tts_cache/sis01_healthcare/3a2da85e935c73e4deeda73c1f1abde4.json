@@ -1,0 +1,13 @@
+{
+  "key": "3a2da85e935c73e4deeda73c1f1abde4",
+  "npc": "dr_sharma",
+  "text": "Leaving the network connected was a risk decision too. Nobody wrote down who owned it, or what it might cost.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

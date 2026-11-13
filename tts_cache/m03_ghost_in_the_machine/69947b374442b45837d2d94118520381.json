@@ -1,0 +1,13 @@
+{
+  "key": "69947b374442b45837d2d94118520381",
+  "npc": "narrator",
+  "text": "You leave him with the photo, the open folder, and the phone. Whatever he does with the three of them, he does alone.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:38:29Z"
+}

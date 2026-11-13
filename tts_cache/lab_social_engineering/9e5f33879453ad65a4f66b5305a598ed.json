@@ -1,0 +1,13 @@
+{
+  "key": "9e5f33879453ad65a4f66b5305a598ed",
+  "npc": "ruth",
+  "text": "Sofia checked the sender, the portal's name and the date. All three were right. Her own service desk handed us every one. That's your finding.",
+  "voice": "Sulafat",
+  "style": "Engagement lead at a British penetration-testing consultancy, late forties, Black British of Nigerian (Yoruba) heritage, raised in London. Speak with a consistent London English accent with a light Lagos lilt throughout — do not shift to any other accent. Warm mid-range pitch; measured but brisk pace. A good boss briefing a junior consultant: friendly, practical, no fuss.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:35:52Z"
+}

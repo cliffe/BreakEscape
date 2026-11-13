@@ -1,0 +1,42 @@
+{
+  "scenario": "test_ink_email",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "door_store_room",
+      "label": "Store Room<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "store_room",
+      "label": "Store Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Operations Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_store_room",
+      "to": "store_room",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "server_room",
+      "soft": false
+    }
+  ]
+}

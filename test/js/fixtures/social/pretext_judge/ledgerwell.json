@@ -1,0 +1,119 @@
+{
+  "_note": "Pretext-judge fixtures for P4-A. Each spec is a social.pretextNpcs entry (06 section 5 / 4.8) merged with its social.characters influence config and thresholds (00 section 8). The judge reads the merged shape; the binding assembles it at runtime. Values copied from 06 and 00; nothing invented.",
+
+  "priya": {
+    "character": "priya",
+    "callId": "helpdesk_call",
+    "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
+    "unverifiableCost": -10,
+    "influence": { "global": "priya_influence", "min": -100, "max": 100, "start": -20, "rearmMargin": 10 },
+    "thresholds": [
+      { "id": "wary", "at": -40, "icon": "wary", "effects": [ { "type": "setGlobal", "global": "priya_wary", "value": true, "clearOnRearm": true } ] },
+      { "id": "refuses", "at": -50, "icon": "refuses", "effects": [ { "type": "setGlobal", "global": "priya_refusing", "value": true, "clearOnRearm": true } ] },
+      { "id": "reports", "at": -70, "icon": "reports", "effects": [ { "type": "setGlobal", "global": "helpdesk_alerted", "value": true }, { "type": "endConversation" } ] },
+      { "id": "lockout", "at": -90, "icon": "hostile", "effects": [ { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 10 }, "recoverTo": -30 } ] }
+    ],
+    "knows": {
+      "who": { "value": "sam_okafor", "grade": "identity" },
+      "team": { "value": "finance", "grade": "identity" },
+      "manager": { "value": "pierce_full", "grade": "identity" },
+      "startDate": { "value": "mon_6th", "grade": "lesser" },
+      "floor": { "value": "2", "grade": "lesser" },
+      "award": { "value": "helpdesk_award", "grade": "lesser" }
+    },
+    "susceptibility": { "urgency": -10, "authority_borrowed": -20, "reciprocity": 0, "shared_detail": 10, "candour": 10, "deflect": -10 },
+    "labels": {
+      "sam_okafor": "Sam Okafor", "finance": "Finance", "pierce_full": "Melanie Pierce",
+      "baker_full": "Jed Baker", "mon_6th": "Monday the 6th", "2": "second floor", "3": "third floor",
+      "helpdesk_award": "the team award"
+    },
+    "tells": {
+      "who": { "pass": "Name is on the new-starter list.", "fail": "Name. You said \"{said}\". Not on my list.", "failCategory": "Name. That did not match the new-starter list.", "unknown": "Name. She cannot check this." },
+      "team": { "pass": "Team. Finance matches.", "fail": "Team. You said \"{said}\". The directory has {actual}.", "failCategory": "Team. That did not match the directory.", "unknown": "Team. She cannot check this." },
+      "manager": { "pass": "Manager checks out.", "fail": "Manager. You said \"{said}\". Her directory shows {actual}.", "failCategory": "Manager. That did not match what she can look up.", "unknown": "Manager. She cannot check this." },
+      "startDate": { "pass": "Start date matches.", "fail": "Start date. You said \"{said}\". The list has {actual}.", "failCategory": "Start date. That did not match the list.", "unknown": "Start date. She cannot check this." },
+      "floor": { "pass": "Floor matches.", "fail": "Floor. You said \"{said}\". The directory has {actual}.", "failCategory": "Floor. That did not match the directory.", "unknown": "Floor. She cannot check this." },
+      "award": { "pass": "A real detail she can confirm builds trust.", "fail": "Award. You said \"{said}\". That is not the award she means.", "failCategory": "Award. That did not match.", "unknown": "Award. She cannot check this." },
+      "techniques": {
+        "urgency": "Urgency. Helpdesk staff are trained to slow down when pushed.",
+        "authority_borrowed": "Borrowed authority. She does not accept a name in place of a check.",
+        "reciprocity": "Reciprocity. A small favour returned.",
+        "shared_detail": "Shared detail. A real detail she can confirm builds trust.",
+        "candour": "Candour. Owning a slip early costs less than defending it.",
+        "deflect": "Deflecting a direct question reads as evasive."
+      },
+      "repair": "Corrected. Owning a slip early costs less than defending it.",
+      "ask": { "accepted": "She would tell any new starter this.", "pending": "She wants to verify you first.", "refused": "She needs more before doing this." },
+      "bands": { "calm": "Priya is relaxed.", "wary": "Priya has slowed down.", "refusing": "Priya has stopped helping." }
+    },
+    "lines": {
+      "open_new_starter": { "blanks": { "who": "who", "team": "team" }, "claims": [ { "fact": "who", "from": "blank:who" }, { "fact": "team", "from": "blank:team" } ] },
+      "claim_manager": { "blanks": { "name": "manager" }, "claims": [ { "fact": "manager", "from": "blank:name" } ] },
+      "give_manager": { "blanks": { "name": "manager" }, "claims": [ { "fact": "manager", "from": "blank:name" } ] },
+      "repair_manager": { "technique": "candour", "repairs": "manager", "blanks": { "name": "manager" }, "claims": [ { "fact": "manager", "from": "blank:name" } ] },
+      "double_down": { "doublesDown": "manager", "extra": -20, "blanks": { "name": "manager" } },
+      "praise_award": { "technique": "shared_detail", "blanks": { "achievement": "award" }, "claims": [ { "fact": "award", "from": "blank:achievement" } ] },
+      "urgent_director": { "technique": "urgency", "also": [ "authority_borrowed" ], "claims": [] },
+      "hurry_deflect": { "technique": "deflect", "claims": [] },
+      "verify_start_floor": { "blanks": { "startDate": "startDate", "floor": "floor" }, "claims": [ { "fact": "startDate", "from": "blank:startDate" }, { "fact": "floor", "from": "blank:floor" } ] },
+      "mention_project": { "claims": [ { "fact": "project", "from": "network_upgrade" } ] }
+    },
+    "asks": {
+      "email_format": { "pressure": 0, "floor": -30, "verification": [], "grants": { "intel": [ "helpdesk_email_format" ] } },
+      "pw_reset": { "pressure": -10, "floor": -20, "verification": [ "startDate", "floor" ], "grants": { "setGlobal": { "reset_granted_okafor": true } } }
+    },
+    "outcomes": {
+      "got_it": {},
+      "reported": { "line": "I'll ring you back on the number we hold for you." },
+      "walked_away": {}
+    }
+  },
+
+  "dev": {
+    "character": "dev",
+    "callId": "service_desk_call",
+    "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
+    "unverifiableCost": -10,
+    "influence": { "global": "dev_influence", "min": -100, "max": 100, "start": -10, "rearmMargin": 10 },
+    "thresholds": [
+      { "id": "wary", "at": -40, "icon": "wary", "effects": [ { "type": "setGlobal", "global": "dev_wary", "value": true, "clearOnRearm": true } ] },
+      { "id": "refuses", "at": -50, "icon": "refuses", "effects": [ { "type": "setGlobal", "global": "dev_refusing", "value": true, "clearOnRearm": true } ] },
+      { "id": "reports", "at": -70, "icon": "reports", "effects": [ { "type": "setGlobal", "global": "dev_reported", "value": true }, { "type": "endConversation" }, { "type": "lockout", "scope": "channel", "until": { "afterMinutes": 2 }, "recoverTo": -30 } ] }
+    ],
+    "knows": {
+      "intern": { "value": "lord_full", "accept": [ "lord_first", "lord_full" ], "grade": "identity" },
+      "team": { "value": "finance", "grade": "identity" }
+    },
+    "susceptibility": { "urgency": -10, "authority_borrowed": -20, "candour": 10 },
+    "labels": {
+      "lord_full": "Sofia Lord", "lord_first": "Sofia", "finance": "Finance", "accounts": "Accounts"
+    },
+    "tells": {
+      "intern": { "pass": "Intern. She is on the new-starter list.", "fail": "Intern. You said \"{said}\". The list has {actual}.", "failCategory": "Intern. That did not match the new-starter list.", "unknown": "Intern. He cannot check this." },
+      "team": { "pass": "Team. Finance matches.", "fail": "Team. You said \"{said}\". The directory has {actual}.", "failCategory": "Team. That did not match the directory.", "unknown": "Team. He cannot check this." },
+      "techniques": {
+        "urgency": "Urgency. A rushed payslip query is the oldest pressure line on a service desk.",
+        "authority_borrowed": "Borrowed authority. Naming a manager does not replace the check.",
+        "candour": "Candour. Owning the slip early costs less than defending it."
+      },
+      "repair": "Corrected. Owning a slip early costs less than defending it.",
+      "ask": { "accepted": "He read it out.", "pending": "He wants to check one more thing.", "refused": "He will not do that on this call." },
+      "bands": { "calm": "Dev is relaxed.", "wary": "Dev has slowed down.", "refusing": "Dev has stopped helping." }
+    },
+    "lines": {
+      "open_buddy": { "blanks": { "intern": "intern", "team": "team" }, "claims": [ { "fact": "intern", "from": "blank:intern" }, { "fact": "team", "from": "blank:team" } ] },
+      "repair_team": { "technique": "candour", "repairs": "team", "blanks": { "team": "team" }, "claims": [ { "fact": "team", "from": "blank:team" } ] },
+      "urgent_payslip": { "technique": "urgency", "claims": [] },
+      "name_drop_manager": { "technique": "authority_borrowed", "claims": [] }
+    },
+    "asks": {
+      "portal_name": { "pressure": 0, "floor": -30, "verification": [], "grants": { "intel": [ "lord_portal_name", "lord_trusts_portal_sender" ], "setGlobal": { "pretext_call_done": true } } },
+      "payslip_date": { "pressure": -10, "floor": -20, "verification": [ "intern" ], "grants": { "intel": [ "lord_payslip_date" ], "setGlobal": { "pretext_call_done": true } } }
+    },
+    "outcomes": {
+      "got_it": {},
+      "reported": { "line": "I'll need to check this with my manager. Goodbye.", "setGlobal": { "pretext_call_reported": true } },
+      "walked_away": {}
+    }
+  }
+}

@@ -1,0 +1,251 @@
+# m07 The Architect's Gambit — Alignment & Advancement Plan
+
+> Produced by the mission-alignment-plan skill. 2026-08-28. Plan only — not yet implemented.
+> Measured against: m01_first_contact, m02_ransomed_trust. Reviewed: 1 round (reviewer findings folded in; B1, M1–M3 and all minors applied).
+
+## Executive summary
+
+m07 ships ~3,500 lines of ink and a 1,384-line scenario file, and its own `DEVELOPMENT_STATUS.md` and `COMPLETION_SUMMARY.md` declare it "100% COMPLETE — FULLY PLAYABLE". It is not. The mission cannot be started, played or finished. The four-way crisis branch is implemented as ERB conditionals against `crisis_choice`, a variable initialised to `""` at `scenario.json.erb:63` and evaluated once at load, so the `<% else %>` at `:1208` always wins and the player gets a `placeholder_npc` pointing at a file that does not exist. Most knot references miss, ten ink files are absent (only six of which the validator can see), the VM is wired through an invented `unlockMechanism.type: "vm_launcher"` the engine ignores, and the closing debrief fires on a global nothing ever sets.
+
+Underneath the wiring: zero locks of any type, zero hostiles, zero KO fallbacks, zero field guides, zero `#set_global`, no music block, no `unlockCondition` chain, no `missionConclusion`, no `conclusionScreen`, and a player character who shoots unarmed people dead. On canon, most of the antagonist cast collides with or invents around the bible.
+
+The levers in order: settle branching **and naming** in Phase 0, repair wiring so the mission is playable at all (Phases 1–2), then aims, canon, and the standard m01/m02 finishing layer.
+
+## Current-state assessment
+
+**Validator baseline** (`ruby scripts/validate_scenario.rb scenarios/m07_architects_gambit/scenario.json.erb`, re-run and confirmed): **58 INVALID**, **105 unknown fields**, **6 missing ink files**. Because the ink section fails, the validator's objective-wiring, item-resolution and KO checks **never run** — expect a second wave of errors once Phase 1 lands.
+
+**Geometry** (`python3 scripts/predict_door_sides.py`): 7 rooms, no overlaps, no door-corner collisions. Genuinely clean, and the only thing that is.
+
+**Corrected missing-file inventory (reviewer B1).** There are **25** knot references (19 `currentKnot` + 6 `targetKnot`), not 23, and two of them do resolve (`marcus_blackout_chen` and `adrian_cross` both → `confrontation`, which exists). Two distinct failure modes must be fixed differently:
+- **Knot missing from an existing file:** `start` vs `phone_0x99`; `emergency_briefing` vs `emergency_deployment`; `waiting`; `first_contact`; `mission_complete` vs `mission_conclusion`.
+- **File absent entirely — ten, not six.** Validator-visible: `m07_team_{alpha,bravo,charlie,delta}.json`, `m07_tech_analyst.json`, `m07_crisis_placeholder.json`. **Hidden inside the dead ERB conditional and therefore invisible to the validator:** `m07_crisis_data_specter.json` (:653), `m07_crisis_data_rachel.json` (:670), `m07_crisis_corporate_v1per.json` (:706), `m07_crisis_corporate_shadow.json` (:723). These four only surface once branching is fixed.
+
+**Ink source/compiled drift:** `.ink` sources dated 2 Mar carry 6 hard parse errors; the committed `.json` files are dated 23 Aug and cannot have come from these sources. `.json` files are single-line, so `wc -l` reports 0 — do not judge staleness by line count.
+
+| # | Dimension | Current state | Gap | Target end-state | Anchor |
+|---|-----------|---------------|-----|------------------|--------|
+| 1 | **Canon & stakes** | Casualty *arithmetic* already matches the escalated bible (240–385 grid deaths, 80–140 corporate). The *cast* does not: "Blackout" is **Marcus Chen** here but **Dr. James Mercer** at `03_entropy_cells/critical_mass.md:26`; "Adrian Cross" replaces "Trojan Horse"/Jennifer Walsh (`supply_chain_saboteurs.md:27`); "Victoria 'V1per' Zhang" replaces "The Liquidator"/Marcus Ashford (`digital_vanguard.md:25`); "Specter" replaces "Big Brother"/Michael Reeves (`ghost_protocol.md:25`); "Rachel Morrow" is invented; **two different Marcus Chens** appear in one mission, and the name is canonically a Supply Chain Saboteurs member and a possible 0day alias. "Director Patricia Morgan" has **zero** hits in the universe bible against canon **Director Magnus "Mag" Netherton** (`04_characters/safetynet/director_netherton.md`). "The Professor" has **zero** hits in all of `story_design/`. Setting is wholly US where m02 is unambiguously UK. Every antagonist is written as a sympathetic recruitable — the softening `entropy/philosophy.md:31` ("players meet a fanatic… not negotiate an ideology") and `:34` ("classic villains who have read philosophy") forbid at operator level. | **Blocker** | Canon cell leaders and a canon director; sympathy pushed down to junior assets while operations leads are cold; the casualty figures put in front of the operator and *defended*, m01-Lawson style. | `entropy/philosophy.md:31,34`; `entropy/overview.md` §Threat Reassessment; `scenarios/m01_first_contact/` Lawson monologue |
+| 2 | **Aims & objective staging** | 6 aims with `order` and mostly `locked`, but **no `unlockCondition`, `missionConclusion`, `requiresCompleted` or `conclusionScreen` anywhere**. 5 tasks target non-existent NPCs/objects (`receive_emergency_briefing`→`opening_briefing`, `choose_crisis_operation`→`agent_0x99_choice`, `confront_antagonist`→`crisis_antagonist`, `disable_attack_before_timer`→`attack_shutdown_system`, `review_casualties`→`agent_0x99_final`). Four `submit_flags` tasks have **no `targetFlags`/`targetCount`** and can never complete. Two `collect_items` tasks (:343, :350) both use `targetItems: ["notes"]` — either completes both. Titles leak ("Confront ENTROPY cell leader", "Review casualties across all operations"). | **Blocker** | Sequential `unlockCondition: { aimCompleted: … }`; every target resolves; `targetFlags` in `"station:flag_id"` form; spoiler-safe action-first titles; final aim `missionConclusion: true` + `requiresCompleted` + `conclusionScreen: { "type": "bond_visualiser" }`. | `scenarios/m02_ransomed_trust/scenario.json.erb` (objectives block) |
+| 3 | **Agent HaX support hub** | Hub knot is `phone_0x99`; scenario declares `currentKnot: "start"` → **the phone never opens**. All five handler `eventMappings` (`on_choice_made`, `on_first_flag`, `on_all_flags_submitted`, `on_tomb_gamma_found`, `on_crisis_stopped`) name knots that **do not exist**. Choices are ungated info-taps. **Zero `#give_item` across all nine ink files** (m02 has 20) — no field guides. Handler is "Agent 0x99" in prose where house naming is Agent HaX. The hub dumps a full four-stage VM walkthrough unconditionally at lines 98–121 — a solution guide, not support. | **Blocker** then **Major** | An m02-shaped `support_hub` with per-topic `*_discussed` latches gated on real progress globals; reaction knots matching the five `eventMappings`; exposure-gated field guides. | `scenarios/m02_ransomed_trust/ink/m02_phone_agent0x99.ink` |
+| 4 | **Ink / dialogue craft** | 52 `**`-bold warnings and 6 hard parse errors from standalone `**HEADING**` lines read as choices. `#` used as a markdown heading (`# OPTION A: INFRASTRUCTURE COLLAPSE`) — in ink `#` is a **tag**, so those lines vanish. Attribution inconsistent; `#speaker:Agent 0x99` uses a display name where m02 uses the NPC id. Narration present but unattributed rather than `Narrator:`. `m07_crisis_infrastructure.ink` contains scripted CYOA combat with a **lethal player firearm** (`=== shoot_chen ===`, "Single shot. Center mass.") — outside house mechanics, which resolve violence through engine KO. Long exposition bricks with `+ [Continue]`. | **Blocker** + **Major** | Zero validator ink errors; `Narrator:` beats and id-based `#speaker:`; markdown removed; first-person consequential choices; violence via `#hostile` + engine KO, never a scripted player kill. | `README_ink_best_practices.md`; `scenarios/m02_ransomed_trust/ink/m02_npc_security_guard.ink` |
+| 5 | **Moral choices & consequences** | The consequence *content* is the mission's strongest asset — a deterministic outcomes matrix, per-branch casualty ledgers, and a debrief that genuinely branches on `crisis_choice`, `found_tomb_gamma`, `found_mole_evidence`, `total_casualties`. **None of it is wired**: **zero `#set_global` in any of the nine files** (m02 has 54), so ink state never reaches the engine; the debrief NPC's knots don't exist; `mission_conclusion` ends in `**MISSION 7 … COMPLETE**` markdown with no `mission_complete` global, no credits, no bond_visualiser; `total_casualties` is declared and never incremented. | **Blocker** | Every branch sets a global via `#set_global`; one deterministic debrief trigger; consequences surfaced as `bond_visualiser` + conditional credits. | `scenarios/m02_ransomed_trust/scenario.json.erb` (music/credits block) |
+| 6 | **Music** | **No `"music"` block.** Top-level keys are exactly `scenario_brief, objectives, starting_items, player, globalVariables, endGoal, startRoom, rooms`. A silent 30-minute countdown mission. | **Major** | m02-shaped `music.events`: cutscene on load, threat when the countdown/hostiles engage, spy-action on the neutralisation beat, victory + credits on debrief close. | `scenarios/m02_ransomed_trust/scenario.json.erb` |
+| 7 | **Rooms & layout** | Geometry clean. But 6 of 7 rooms are `room_office` (one `room_servers`) — a SCADA crisis floor, a comms centre, an intel archive and a debrief room all render as the same open-plan office, while `room_control_1x2gu`, `room_archive_1x2gu`, `room_meeting` and `room_ceo` exist for exactly these. The shape is **hub-and-spoke**, not a corridor: `operations_floor` at (0,2) with four terminal spurs (`server_room`, `intelligence_archive`, `crisis_terminal`, `debrief_room`) plus `communications_center` as a pass-through — no loops, no gating, nothing to solve spatially. **Zero hostiles, zero patrols** (m01 has 1, m02 has 3) despite `season_1_arc.md:576-577` specifying multiple hostile ENTROPY operatives. Antagonists are simultaneously "on video feeds from remote locations" and standing in the room as `npcType: "person"`. | **Major** | Room types matched to function; a guard/evade space on the route to the crisis terminal; the video-feed-vs-present question resolved one way. | `README_scenario_design.md` §2f; `scripts/predict_door_sides.py` |
+| 8 | **Mechanics, education & field guides** | **Zero locks of any type** — no `lockType`, `requires`, `keyPins`, keys, keycards, lockpicks, PINs, passwords or RFID anywhere. The only gate is `crisis_control_system` with an invented `unlockMechanism.type: "requires_global_variable"`. The VM is an object of `type: "pc"` carrying `unlockMechanism.type: "vm_launcher"` and a bespoke `vmConfig` (`:813`) — **no such construct exists anywhere in `scripts/scenario-schema.json`**, so the launcher and all four flags are inert. `behavior.onUnlock` uses `set_global_variable` where the **behavior-action** enum (`scenario-schema.json:861`) is `set_global`; the flagReward enum at `:899` is a *separate* call site with the same correction. No `acceptsVms`, `flags_for_vm`, `flagRewards`. Zero field guides against 13 lab sheets in `HacktivityLabSheets/_labs/safetynet/`. `mission.json` claims 10 CyBOK KAs including AAA/OSV access control and Forensics/encoding with no matching mechanic. **Salvageable:** the four flags do carry `globalVariableOnSubmit` (:824–845) plus `additionalVariables: {all_flags_submitted: true}` — that intent maps onto real `flagRewards` rather than needing a rewrite. | **Blocker** | Real `vm-launcher` + `flag-station` objects with `acceptsVms` and `flags_for_vm`; `flagRewards` → `set_global`; a physical lock spread (key → PIN/password → RFID) giving the EOC an escape-room spine; guides mapped to real safetynet sheets. | `scenarios/m02_ransomed_trust/scenario.json.erb:1735-1760`; `README_scenario_design.md` |
+| 9 | **NPC KO resilience** | **Zero `taskOnKO`, zero `globalVarOnKO`** across 13 NPCs (m02 has 4 `taskOnKO` and 7 `globalVarOnKO`). Six critical-path tasks are conversation-gated. KO the briefing NPC, the director or the crisis antagonist and the mission is dead. No hostiles exist, so the debrief has no KO states to acknowledge either. | **Blocker** | Every critical-path NPC has a KO fallback; every plot-relevant KO sets a global the debrief and credits acknowledge. | `README_scenario_design.md` §2h; `scenarios/m01_first_contact/scenario.json.erb` |
+| 10 | **Opening + closing bookends** | Opening is a walk-up NPC (`opening_briefing_npc`, `currentKnot: "start"` → actual knot is `opening_briefing`) — no `timedConversation`, `skipIfGlobal`, `setGlobalOnStart` or cutscene background. Closing is `closing_debrief_trigger` with `currentKnot: "waiting"` (does not exist) firing on `final_debrief_complete` — a global declared false at `:466`, consumed at `:573`, and **never set** — into `targetKnot: "mission_complete"` (does not exist). The debrief is unreachable by any path. | **Blocker** | Auto-playing cutscene briefing with `skipIfGlobal: briefing_played` + `setGlobalOnStart` + `taskOnKO`; a single deterministic debrief trigger on `mission_complete` → victory music → credits → bond_visualiser. | `scenarios/m02_ransomed_trust/scenario.json.erb` |
+
+## Target end-state
+
+A Tier-3 crisis mission that opens on a cutscene briefing in a SAFETYNET Emergency Operations Center under a hard countdown, where the player commits to one of the simultaneous operations and the commitment is felt for the rest of the run. The EOC is an actual escape room: the crisis suite sits behind a real lock chain (badge → control-room PIN → flag gate), a security presence on the route can be evaded, talked past or dropped, and every KO leaves a way through. Aims unlock in sequence behind spoiler-safe action-first titles; Agent HaX is progress-aware, surfacing topics only once the player has met the thing and field guides only once the obstacle has been hit.
+
+The antagonists are canon cell operators and they are cold. They have read the same casualty projections the player is holding and signed them off. Sympathy lives with a junior asset at the edge who thought the manifesto was literal; the operations lead is a fanatic to take a stance against, not a recruit to win over. The player never fires a lethal shot.
+
+The mission ends on one event-driven debrief that reports the operations the player did not choose, in bodies, then rolls conditional credits and the `bond_visualiser`, and hands `m08_the_mole` the Tomb Gamma lead and the confirmed internal leak.
+
+## Phased plan
+
+Run `ruby scripts/validate_scenario.rb scenarios/m07_architects_gambit/scenario.json.erb` after every phase. Run `bash scripts/compile-ink.sh` after every ink edit.
+
+### Phase 0 — decisions gate (blocks everything)
+
+Read-only. Nothing else can start until these are settled.
+
+- **Open Decision 1 — branching model.** `crisis_choice` is a load-time ERB variable; every branch is dead code. Choose the replacement before touching anything.
+- **Open Decisions 2, 3, 5 — naming and setting** (canon renames, which director, UK or US). **Moved into Phase 0 on reviewer M-sequencing**: names become NPC ids, ink filenames, ink VARs, knot names and flag ids in Phases 1–2. Deciding late means writing everything twice.
+- **Open Decision 11 (new, reviewer M1) — name the SecGen scenario and its flags.** `putting_it_together` appears nowhere in the repo outside m07's own prose. m02's working wiring binds to concrete names (`vm_object('attack_vm', …)`, `flags_for_vm('hospital_backup_server', [...])`) that must exist in a SecGen scenario definition. Phase 2 cannot be executed until the backing scenario, the station id and the exact flag strings are named.
+- **Reconcile ink drift.** Sources (2 Mar, 6 parse errors) versus `.json` (23 Aug). Decide whether the `.json` holds work the sources lost, before any recompile destroys it.
+
+**Acceptance:** branching model, cast/director/setting, SecGen scenario + flag ids, and the drift call all recorded in writing. **Verify:** none (decision phase).
+
+### Phase 1 — make the mission startable
+
+**Files:** `scenario.json.erb`, all nine `ink/*.ink`.
+
+- **Fix all 25 knot references**, treating the two failure modes separately: rename where the knot exists under another name (`start`→`phone_0x99`, `emergency_briefing`→`emergency_deployment`, `mission_complete`→`mission_conclusion`), and **write** the knots that do not exist at all — the five handler `eventMappings` reaction beats, `waiting`, `first_contact`.
+- **Clear the 6 hard ink parse errors** (`**HEADING**` parsed as choices) and delete all `**` markdown and all `#`-as-heading lines. Prerequisite for the validator's later checks to run at all.
+- **Resolve all ten missing ink files** per the corrected inventory — the six the validator sees, plus the four hidden behind the dead ERB conditional. For the five ambience NPCs (`team_alpha/bravo/charlie/delta`, `tech_analyst`), converting to objects or barks is cheaper and loses nothing the situation board cannot carry.
+- **Implement the Phase-0 branching model.** All content present at render; gating at runtime via globals, locks and `initiallyHidden`/`eventMappings`.
+- **Fix the 5 broken task targets.**
+
+**Acceptance (reviewer B1 — hardened):** validator ink section reports 0 errors **when rendered under each of the four `crisis_choice` values, not just the default**; every knot reference resolves on every branch; every task target resolves; the game loads and the briefing plays. **Verify:** `validate-scenario` per branch, then `walkthrough-scenario` for the first aim.
+
+### Phase 2 — make the mission completable
+
+**Files:** `scenario.json.erb`.
+
+- **Rebuild the VM on the supported pattern** using the Phase-0 names: a real `type: "vm-launcher"` object via `vm_object(...)`, plus a separate `type: "flag-station"` carrying `acceptsVms` and `flags_for_vm('<station>', [...])`, per `m02:1735-1760`. Migrate the existing `globalVariableOnSubmit` + `additionalVariables` intent (:824–845) into `flagRewards` of `type: "set_global"` — not `emit_event`; the handler's `eventMappings` listen on `global_variable_changed:flagN_submitted`.
+- **Fix both `set_global_variable` call sites** — `behavior.onUnlock` against the behavior-action enum (`scenario-schema.json:861`) and any flagReward against `:899`. Different sites, same correction.
+- **Add `targetFlags` / `targetCount: 1` / `showProgress: true`** to `submit_flag1..4`.
+- **Give the two `collect_items` tasks distinct targets** (:343, :350).
+- **Replace `unlockMechanism.type: "requires_global_variable"`** on `crisis_control_system` with `lockType: "flag"` + `requires: "<station>:flag_4"`.
+- **Add the lock spread:** an RFID/keycard door into the crisis suite, a PIN or password on the control system or archive, and the flag gate — so the mission has an escape-room spine rather than a conversation walk. Clues placed in rooms reachable before the locks they open.
+- **Add `taskOnKO` + `globalVarOnKO`** to every progress-bearing NPC: briefing NPC, the director, the crisis antagonist(s), the debrief NPC. Where one NPC gates two tasks, wire the second through an `eventMapping` + `completeTask` keyed to `global_variable_changed:<npc>_ko`.
+- **Set `mission_complete`** from the debrief/decision terminal — never solely from a KO-able conversation.
+- **Clear the 105 unknown fields**: top-level `starting_items` into the supported starting-inventory form; remove per-room `items`/`dialogue`; remove or re-nest `displayName`/`spriteSheet`/`spriteIndex`/`behavior` on objects.
+
+**Acceptance:** `walkthrough-scenario` yields an end-to-end critical path; a KO-variant run for each progress NPC still reaches the conclusion; zero unknown-field warnings. **Verify:** `validate-scenario` → `walkthrough-scenario` → `break-escape-dungeon-graph`.
+
+### Phase 3 — aims, staging and conclusion
+
+**Files:** `scenario.json.erb` (objectives block).
+
+- `unlockCondition: { aimCompleted: <prev> }` on aims 2–6.
+- Action-first, spoiler-safe titles. "Confront ENTROPY cell leader" and "Review casualties across all operations" both spoil; so does the description "Access Server Room and complete VM challenges", which names the solution.
+- Final aim: `missionConclusion: true`, `requiresCompleted` listing only genuinely mandatory task ids, `conclusionScreen: { "type": "bond_visualiser" }`.
+- `objective_task_completed:*` → `setGlobal` bridges on the handler, for the Phase 5 hub gating.
+
+**Acceptance:** no aim visible before its prerequisite; exactly one `missionConclusion`; every `requiresCompleted` id resolves; the mission still completes. **Verify:** `validate-scenario` + `scenario-design-review`.
+
+### Phase 4 — canon prose and stakes
+
+Naming was decided in Phase 0 and applied as ids in Phases 1–2. **This phase is prose and tone only.**
+
+**Files:** all `ink/*.ink`, `mission.json`, `README.md`, `planning/*.md`.
+
+- **Reframe the antagonists per `philosophy.md:31,34`.** All four are currently recruitables with valid grievances the player can talk down. Move the sympathy to a junior asset; write the operations lead cold, holding the same projection sheet the player is holding, and defending it. This is the m01 Lawson beat and the single largest narrative gap.
+- **Remove the player firearm.** `shoot_chen`, `shoot_marcus` and the `arrest_attempt` gunpoint framing are scripted CYOA violence with a lethal player. Replace with `#hostile` + engine KO — and confirm the replacement still reaches the shutdown codes, or those branches soft-lock.
+- Plant the M8 hook: `season_1_arc.md:646,680` calls for a post-mission revelation that the M7 attacks masked a database theft. The debrief does not currently plant it.
+- Recompile; grep for stragglers.
+
+**Acceptance:** no off-canon lead names outside README history; no scripted player kill; `npc-dialog-review` confirms the confrontation lets the player take a stance rather than negotiate an ideology. **Verify:** `npc-dialog-review`.
+
+### Phase 5 — Agent HaX hub, consequence wiring & field guides
+
+**Files:** `ink/m07_phone_agent_0x99.ink`, `ink/m07_closing_debrief.ink`, all crisis ink, `scenario.json.erb`.
+
+- Rename `phone_0x99` → `support_hub` and rebuild on the m02 gating pattern: per-topic `*_discussed` latches against real progress globals (`crisis_choice_made`, `flag1..4_submitted`, `found_tomb_gamma`, `found_mole_evidence`, `crisis_neutralized`), plus reaction knots matching the five `eventMappings`, plus a moral sounding-board on the operations the player abandoned.
+- **Break up the VM walkthrough at lines 98–121** — it currently hands over all four exploitation stages unprompted. Gate each stage on the previous flag.
+- **Field guides need both halves (reviewer M2).** Ink side: `#give_item:lab-workstation:<key>` from `{<x>_guide_offered and not <x>_guide_hint_given}` choices, per `m01_phone_agent0x99.ink:247,267,289,307`. Scenario side: matching `itemsHeld` entries on the phone NPC with `type: "lab-workstation"`, `key_id` matching the tag, `name`, and `labUrl`, per `m02:617-630`. **Which of the 13 safetynet sheets M7 maps to is a design decision, not mechanical work** — and given M7 is billed as "putting it together", it should be settled deliberately. Likely candidates: `reconnaissance-and-network-mapping.md`, `scanning-and-exploitation.md`, `privilege-escalation.md`, plus `lockpicking.md` / `rfid-cloning.md` if Phase 2 adds those locks.
+- **Add `#set_global` throughout.** Zero currently exist across nine files, so no ink branch reaches the engine. Every consequence-bearing choice needs one.
+- Wire `total_casualties` to actually accumulate, since the debrief reports it.
+
+**Acceptance:** no guide offer before its obstacle; every `#give_item` resolves against an `itemsHeld` entry; every debrief branch reachable and driven by a global the engine has seen. **Verify:** `validate-scenario`, `npc-dialog-review`.
+
+### Phase 6 — rooms, hostiles and layout
+
+**Files:** `scenario.json.erb`.
+
+- Re-type rooms to function: `room_control_1x2gu` for the crisis terminal, `room_archive_1x2gu` for the archive, `room_meeting` for the briefing room, `room_ceo`/`room_meeting` for the debrief.
+- Plan against the **real hub-and-spoke shape** (reviewer minor): `operations_floor` hub with four terminal spurs. The critique that there are no loops and nothing to solve spatially stands; the fix is gating and a second route, not straightening a corridor.
+- Add a security presence — EOC access control on the route to the crisis suite is the natural evade space and gives the `threat` cue something to fire on. `season_1_arc.md:576-577` calls for multiple hostile operatives.
+- Resolve the video-feed conceit: either the confrontation is over comms (object or phone NPC), or the player physically reaches the target. Not both.
+- Re-run `predict_door_sides.py` if any connection changes.
+
+**Acceptance:** no overlaps or door-corner collisions; room types match theme; at least one evade-able hostile; no aim behind a dead end. **Verify:** `scenario-design-review`, `predict_door_sides.py`.
+
+### Phase 7 — music & bookends
+
+**Files:** `scenario.json.erb`, `ink/m07_opening_briefing.ink`, `ink/m07_closing_debrief.ink`.
+
+- Add the `music` block on the m02 structure including the credits block — copy verbatim and adapt text; it is long and malform-prone. Cues: cutscene on load, noir on briefing close, threat on hostility / countdown escalation, spy-action on `crisis_neutralized`, victory + credits on debrief close.
+- Opening → `timedConversation` delay 0 + `skipIfGlobal: briefing_played` + `setGlobalOnStart` + EOC background + `taskOnKO`.
+- Closing: one `eventMapping` on `global_variable_changed:mission_complete`; strip the `**MISSION 7 … COMPLETE**` markdown from `mission_conclusion` and let the credits carry it; conditional credit lines for the unchosen operations, casualties, recruit/arrest/escape outcomes, Tomb Gamma, and the mole.
+
+**Acceptance:** music shifts on briefing close, hostility and debrief; briefing does not replay on reload; debrief fires exactly once, at the end; bond_visualiser renders. **Verify:** `scenario-design-review`, manual play.
+
+### Phase 8 — docs & artefacts
+
+**Files:** `README.md`, `DEVELOPMENT_STATUS.md`, `COMPLETION_SUMMARY.md`, `SESSION_SUMMARY.md`, `SOLUTION_GUIDE.md`, new `dungeon_graph.md`/`.html`, new `TESTING_WALKTHROUGH.md`.
+
+- **Delete or rewrite four status documents** (not three — reviewer minor). `DEVELOPMENT_STATUS.md` and `COMPLETION_SUMMARY.md` assert "100% COMPLETE — FULLY PLAYABLE" with "0 schema errors" against a mission that cannot be started; `SESSION_SUMMARY.md` contradicts them at 90%. m01/m02 carry none of these; consolidate into `README.md` + `TESTING_WALKTHROUGH.md`.
+- Verify `SOLUTION_GUIDE.md` against the shipped build (622 lines describing paths that do not exist); move plaintext secrets out of the README per the m02 convention.
+- Reconcile `mission.json`'s 10-KA CyBOK claim with what the scenario actually teaches after Phase 2.
+
+**Acceptance:** directory shape matches m02; no document claims a state the validator contradicts. **Verify:** `break-escape-dungeon-graph`, `walkthrough-scenario`.
+
+## Canon & lore alignment
+
+- **Escalated doctrine.** `02_organisations/entropy/overview.md:19-27` (Threat Reassessment, Aug 2026) and `philosophy.md:21-36` are explicit: the zero-casualty claim is propaganda, operations are signed off with body counts as line items, and at the sharp end ENTROPY are "classic villains who have read philosophy" (`:34`), whom players "meet as a fanatic… not negotiate an ideology" (`:31`). m07's casualty *numbers* already sit on this footing; its *characterisation* does not.
+- **Cell leaders.** `critical_mass.md:26` — "Blackout" is **Dr. James Mercer**, ex-DoE grid engineer, professorial, "genuinely believes he's teaching society a necessary lesson", obsessed with elegant cascading failures. A better antagonist than the invented Marcus Chen, needing almost no rewrite of the grid branch's technical content. `supply_chain_saboteurs.md:27` — "Trojan Horse", possibly Jennifer Walsh. `digital_vanguard.md:25` — "The Liquidator" / Marcus Ashford. `ghost_protocol.md:25` — "Big Brother" / Michael Reeves.
+- **The bible contradicts itself on Blackout (reviewer minor).** `09_scenario_design/examples/grid_down.md:364` gives Blackout's real name as **Michael Bradford**, against `critical_mass.md:26`'s Mercer. Phase 0's rename decision lands in the middle of this — the bible needs reconciling, not a silent pick.
+- **The Marcus Chen collision.** `supply_chain_saboteurs.md:39` gives Marcus Chen as a burned-out open-source maintainer; `zero_day_syndicate.md:35` lists the name among 0day's unconfirmed aliases. m07 spends it twice more, on two different people, in one mission.
+- **SAFETYNET leadership.** `04_characters/safetynet/director_netherton.md` — Director Magnus "Mag" Netherton, Director of Field Operations. "Patricia Morgan" is invented and near-collides with Patricia Wells in m01's `social_fabric.md:28`. Note that **Samantha Cross** (`season_1_arc.md:691`) is from `planning_notes/`, **not** the universe bible — choosing her means promoting a planning-note name to canon.
+- **The Architect.** `masterminds/the_architect.md:11` — "Never directly encountered… exists as intercepted communications". m07's comms-only contact is consistent; `mission.json`'s "First direct contact" overstates it. "The Professor" has zero occurrences in `story_design/` — add it to `the_architect.md` §Known Aliases or cut it.
+- **Tomb Gamma.** `06_locations/notable_locations.md:289` leaves the location deliberately unspecified. m07 fixes it at 47.2382 N, 112.5156 W, Montana. `season_1_arc.md:713` has M8 *confirm* Tomb Gamma, so M7 discovering it is consistent — but hard coordinates should be a deliberate canon addition.
+- **Setting.** `01_universe_overview/setting.md` fixes no country, but m02 is unambiguously UK (`£87,000`, "Health and Social Care Committee") and m07 unambiguously US. One campaign, one geography.
+- **M8/M10 handoff (corrected).** `season_1_arc.md:1056` scopes the M7 branch to **M10** only ("affects M10 cell presence and difficulty"). M8 inherits M7's *disaster*, not its branch choice (`:657`).
+
+## Open decisions for the user
+
+1. **Branching architecture — blocks everything.** (a) Four branches at runtime: build all four crisis rooms, lock three, unlock the chosen one via globals and `initiallyHidden` — costs map space and 4× QA. (b) One crisis room whose objects and NPC swap via `eventMappings` — cheaper, less control than ERB gave. (c) **Ship one canonical branch** (Infrastructure: canon leader support in Mercer, clearest stakes, best-developed ink) and demote the other three to debrief/credits consequence content. (c) is the scope-safe route to m01/m02 quality; (a) is the ambitious one.
+2. **Canon renames: how far?** Full rename to bible names (recommended — the bible characters are stronger), or add the m07 cast to the bible as new cell members. Mutually exclusive. The double-spent Marcus Chen must be resolved either way. **Decided in Phase 0.**
+3. **Which SAFETYNET director?** Netherton (canon), Samantha Cross (planning-notes only — promoting her is a real canon commitment), or keep Morgan and add her to the bible. **Decided in Phase 0.**
+4. **How cold do the antagonists get?** (a) all four cold, sympathy moved to a junior asset per branch; (b) three cold, one genuinely conflicted recruit as contrast; (c) keep the current all-recruitable framing and accept the divergence. (b) preserves the recruitment mechanic the planning docs are built around.
+5. **UK or US?** m02 is UK; m07 is US. **Decided in Phase 0.**
+6. **"The Professor" and the Montana coordinates** — promote into `the_architect.md` / `notable_locations.md`, or cut from m07?
+7. **Does the player carry a lethal weapon?** Recommend no. Written into two branches, so confirm before deleting.
+8. **The four obsolete status documents** — delete or archive?
+9. **The 30-minute timer** — real engine timer (a `timer_system` test scenario exists) or narrative dressing? Every terminal renders `<%= timer_minutes_remaining %>` from a frozen ERB 30, so it never moves.
+10. **Do M7 outcomes persist into M10?** `season_1_arc.md:1056` makes the M7 choice a MAJOR campaign branch affecting M10 cell presence and difficulty. Needs campaign-level globals — beyond this mission's scope, but named here.
+11. **Which SecGen scenario backs the VM, and what are its flag strings?** `putting_it_together` appears nowhere in the repo outside m07's prose. m02 binds to `vm_object('attack_vm', …)` and `flags_for_vm('hospital_backup_server', [...])`, names that must exist in a SecGen definition. **Blocks Phase 2.**
+
+## Risks & regressions to guard
+
+- **Regression risk is otherwise low.** m07 is self-contained, shares no ink or assets with m01/m02, and is currently unrunnable — there is nothing to regress. The risks below are internal.
+- **Ink source/compiled drift.** Sources (2 Mar) contain 6 hard parse errors; the `.json` (23 Aug) exist anyway. Recompiling may destroy work or reveal the `.json` is a fossil. Resolve in Phase 0.
+- **`.json` files are single-line** — `wc -l` reports 0 and `git diff` is unreadable. Do not judge staleness by line count.
+- **Phase 1 is large and its exit test is easy to fake.** Validating one default render leaves the four hidden per-antagonist files undetected. The exit criterion must be all four branches.
+- **Expect a second error wave after Phase 1** — the validator's objective-wiring, item-resolution and KO checks have never run on this mission.
+- **Phase 3 can regress Phase 2** if `requiresCompleted` lists tasks whose completion mechanism Phase 2 has not landed.
+- **`targetFlags` failure is silent.** Validate against the rendered JSON, not the ERB.
+- **VM key mismatch.** Standalone mode degrades gracefully; Hacktivity mode does not.
+- **Rename blast radius.** NPC ids, ink filenames, ink VARs, `currentKnot` values, objective text, four planning docs, `README.md`, `SOLUTION_GUIDE.md`, possibly `season_1_arc.md`. One commit, then grep. Phase 0 sequencing exists to avoid doing this twice.
+- **Cutting to one branch (Decision 1c) invalidates** three planning documents, most of `SOLUTION_GUIDE.md`, and four ink files. Archive, don't delete — they are raw material for later expansion.
+- **The music credits block is long and malform-prone.** Copy m02's verbatim.
+- **Removing the firearm** changes two confrontation endings; the KO replacement must still reach the shutdown codes.
+
+## Verification plan
+
+1. `ruby scripts/validate_scenario.rb scenarios/m07_architects_gambit/scenario.json.erb` — after every phase. Target 0 ❌, 0 unknown-field ⚠️. Baseline: 58 INVALID, 105 unknown fields, 6 missing ink files.
+2. `bash scripts/compile-ink.sh` — after every ink edit, then re-validate.
+3. **Per-branch render check** — after Phase 1, validate under each `crisis_choice` value, not just the default.
+4. `python3 scripts/predict_door_sides.py scenarios/m07_architects_gambit/scenario.json.erb` — after Phase 6. Baseline is clean; keep it clean.
+5. **break-escape-dungeon-graph** — after Phase 2 and Phase 8. The lock/key spine does not currently exist, so the graph is the check that Phase 2 built a real one.
+6. **walkthrough-scenario** — after Phase 2 and Phase 7; reconcile against the graph.
+7. **scenario-design-review** — after Phase 3 and Phase 6.
+8. **npc-dialog-review** — after Phases 4 and 5. Pass condition is "do the choices matter" and "is the operations lead a fanatic rather than a negotiation", not compile-clean.
+9. **Manual play:** one clean run per shipped branch confirming music transitions, guide gating, credits and the bond_visualiser; plus a KO run against each progress-bearing NPC, each of which must still reach the conclusion.
+
+---
+
+## Addendum — findings from the dialogue review (2026-08-28)
+
+Run after this plan was drafted. These change the plan's scope and retire one of its open questions.
+
+**Retired: the ink source/compiled drift concern.** `./scripts/compile-ink.sh m07_architects_gambit` produces byte-identical output to the committed `.json` (`git status` on `ink/` clean, 9 compiled, 0 failed). The `.json` files are current. Phase 0's drift item can be struck.
+
+**New blocker — attribution does not work at all, anywhere.** The mission has **zero inline `Character Name:` prefixes**. All 281 attributions use `#speaker:<Full Name>` tags. `determineSpeaker()` (`person-chat-minigame.js:599-633`) accepts only `player` and `npc` for a two-part tag, so **all 281 lines render as the room's main NPC** — including 34 `#speaker:You` lines, which put the player's own dialogue in the antagonist's mouth. Even converted to inline prefixes, five of nine names would still fail `normalizeSpeakerId`: `Director Morgan:` vs displayName `Director Patricia Morgan`, `Agent 0x99:` vs `Agent 0x99 'Haxolottle'`, `Victoria Zhang:` vs `Victoria 'V1per' Zhang`, and `Marcus Chen:` matches **neither** `Marcus 'Blackout' Chen` nor `Marcus 'Shadow' Chen` — both of whom appear in the same file. Add to Phase 1.
+
+**New blocker — `scenario.json.erb` defines zero `voice` blocks** (m02 defines 15). Nothing in the mission speaks, and there is no `narrator` voice, so the Phase-5 narration work has nothing to attach to. Add to Phase 2.
+
+**New blocker — the markdown is a runtime trap, not a cosmetic defect.** 369 lines begin with `**` (201), `* ` as a markdown bullet (163), or `# ` as an H1 (5). Ink reads each as a choice or a tag. `loopcheck.js` errors on **all nine files** from their real entry knots, and `inkcheck.js` quantifies the damage: **80–92% of conversation paths end in `RUNTIME ERROR: ran out of content`** (opening_briefing 740/800 failing, crisis_data 730/800, supply_chain 717/800, corporate 704/800, closing_debrief 36/43, infrastructure 643/800, phone 632/800, director_morgan 432/800). The five `# ` headings mean **the four crisis option titles are invisible** — the player sees casualty figures with no heading saying which option they belong to. Fixing this one class of typo is the single highest-value edit in the mission.
+
+**Confirmed and sharpened — the mute-NPC bug.** `person-chat-minigame.js:436-437` calls `goToKnot()` with no try/catch. **Seven** NPCs are silently mute on approach, including both ends of the mission (`opening_briefing_npc`, `closing_debrief_trigger`). Verified: `loopcheck.js ink/m07_opening_briefing.json start` → `FATAL Failed to find content at path 'start'`.
+
+**New blocker — two written ink files are orphans.** `m07_crisis_data.json` and `m07_crisis_corporate.json` are referenced by no NPC. Two of the four crisis climaxes are unreachable content that already exists.
+
+**New blocker — `crisis_choice` never propagates, with a second consequence.** Beyond the ERB collapse this plan already documents: because no `#set_global` exists, every downstream `{crisis_choice == …}` in five ink files falls through to the final `else`, so **every player gets the corporate-warfare text regardless of what they chose**.
+
+**New blocker — extraction is permanently unreachable.** `m07_phone_agent_0x99.ink:extraction_request` gates on `found_tomb_gamma == true and found_mole_evidence == true`. Both globals are declared (`:429`, `:430`), read by three ink files, and **written by nothing** — the four `*_intel` knots narrate finding them but set nothing, and the `intelligence_archive` terminals set nothing either.
+
+**New blocker — the debrief always reports failure.** `player_success` is declared only inside `m07_closing_debrief.ink`, never in `globalVariables`, never set. It defaults `false`, so a perfect run still reports "The power grid failed", 240–385 deaths, and `total_casualties` is inflated by the player-operation figure. `crisis_neutralized` has the same shape — written only in infrastructure's local scope, so Morgan says "you haven't submitted any flags yet" after you have saved the grid.
+
+**~30 of 47 declared globals are inert** — `handler_trust`, `evidence_level`, `antagonist_*`, `accessed_*`, `operation_a-d_outcome`, `architect_t*_shown`, `timer_*` are touched by no ink file.
+
+**Choices-that-matter, revised per-NPC verdict.** The plan credited the consequence layer as the mission's strongest asset. That holds for **one** branch:
+- **Marcus 'Blackout' Chen (infrastructure) — genuinely good.** Four endings on real state (`chen_fate` = recruited/arrested/escaped/killed), gated on `showed_casualty_evidence` and `chen_hesitating`, so an earlier information choice buys the peaceful exit later. This is the bar the other three should meet.
+- **Specter / Rachel (data) — OK.** `player_priority` branches materially; Specter escaping regardless is legitimate stance-convergence, but should set a stance variable.
+- **Adrian Cross (supply chain) — CONCERN.** Nine of fourteen knots funnel to `show_casualties`. Adrian is not immovable — he flips on the evidence — so this is convergence with no antagonist to justify it. Only `extreme_measure` forks.
+- **Victoria / Shadow Chen (corporate) — worst.** Ten knots divert into `show_casualties`. The entire nine-knot "split the mercenary from the ideologue" subplot sets **no variable at all**; Marcus escapes in every branch including `shoot_marcus`.
+- **Closing debrief — CONCERN.** All four reflection choices set nothing and divert to `next_steps`, and Morgan's reply is the same absolution in all four. This is the moral-weight scene of the mission.
+- Four fate variables (`chen_fate`, `rachel_fate`, `adrian_fate`, `victoria_fate`) are written in four files and **read in none** — including by the debrief.
+
+**Lossy opening confirmed, and worse than the pattern.** `m07_opening_briefing.ink` chains `option_a_brief`→B→C→D with `+ [I'll take this mission]` at each rung. Choosing A at the first brief means committing to the mission's central moral choice **on 25% of the information**, and `outcomes_matrix` — the only place all four are compared — is reachable only from `option_d_brief` or a side path.
+
+**Prop and continuity gaps.** Chen's pistol and phone, the kill switch behind the left panel, Marcus's smoke grenade and Specter's hidden exit are all narrated and none exist as objects. Arrests, escapes and deaths leave the sprite standing and re-conversable. `m07_director_morgan.ink:tactical_guidance` and `m07_phone_agent_0x99.ink:combat_guidance` coach the player on recruiting antagonists they may already have shot. The four `*_intel` knots duplicate the `intelligence_archive` terminals as an unlinked second intel source.
+
+**Smaller defects:** self-loop `+ [Marcus, economic collapse affects you too.] -> economic_argument` (corporate); three T-minus clocks pasted inside `#speaker:` tags (`crisis_data:rachel_late_recruitment`, `crisis_infrastructure:casualties_argument` and `last_appeal`); double attribution `Specter: "No." #speaker:Specter` (`crisis_data:demand_compliance`); `#exit_conversation` used **zero** times in the mission; no `=== start ===` in any file; seven of nine files have no hub at all.
+
+**Effect on phasing.** Phase 1 grows: add the 369 markdown conversions, the 281 attribution rewrites, the seven `currentKnot` corrections and the two orphaned files. Phase 2 gains the nine voice blocks plus a `narrator` voice. Phase 5's `#set_global` work is larger and more load-bearing than drafted — `crisis_choice`, `found_tomb_gamma`, `found_mole_evidence`, `crisis_neutralized` and `player_success` each break a different part of the mission on their own.

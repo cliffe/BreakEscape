@@ -1,0 +1,9 @@
+GLOBALS: {"ok":true,"cmd":"eval","result":{"ending":"sent","dm":true,"warned":false,"greeted":false}}
+GHOST THREAD: {"ok":true,"cmd":"eval","result":["Special Collections. Fourteen left. The key to the next one is somewhere a careful man keeps his accounts.","Hybrid encryption. Nine candidates got this far. It's how we locked forty companies. Hospitals pay fastest.","Opened. Thank you, Candidate. That was the last Trial. The studentship is withdrawn: anyone a handler can send, a handler can recall."]}
+BACKGROUND: {"ok":true,"cmd":"eval","result":["assets/backgrounds/hq3.png","http://127.0.0.1:3001/break_escape/assets/backgrounds/hq3.png"]}
+Agent HaX: I opened your report at the field HQ at eleven minutes past six. At twelve minutes past, my phone told a server in Rotterdam where it was.
+Agent HaX: We were all out before midnight. Nobody's hurt.
+Agent HaX: At four, someone went through the field HQ. The kit we couldn't carry, the cover it took years to build. All of it. We won't be going back.
+Agent HaX: Did you read it before you sent it?
+CREDITS: {"ok":true,"cmd":"eval","result":[]}
+DONE

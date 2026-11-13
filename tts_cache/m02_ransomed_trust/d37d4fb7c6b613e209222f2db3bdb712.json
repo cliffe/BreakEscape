@@ -1,0 +1,13 @@
+{
+  "key": "d37d4fb7c6b613e209222f2db3bdb712",
+  "npc": "narrator",
+  "text": "The monitor would have logged that every thirty seconds and flagged any drift. Tonight the next reading waits for a nurse to get back down the row.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

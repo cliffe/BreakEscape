@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: takeable consumables have a default per type; healAmount overrides it
+ok 1 - takeable consumables have a default per type; healAmount overrides it
+  ---
+  duration_ms: 4.101182
+  ...
+# Subtest: in the inventory (takeable is set false there) the type default still applies
+ok 2 - in the inventory (takeable is set false there) the type default still applies
+  ---
+  duration_ms: 0.347309
+  ...
+# Subtest: a world object that is not takeable is never a consumable by type alone
+ok 3 - a world object that is not takeable is never a consumable by type alone
+  ---
+  duration_ms: 0.361544
+  ...
+# Subtest: when interacting consumes: in the inventory, or a non-takeable opted-in world object
+ok 4 - when interacting consumes: in the inventory, or a non-takeable opted-in world object
+  ---
+  duration_ms: 0.459234
+  ...
+# Subtest: using one heals, toasts and uses it up
+ok 5 - using one heals, toasts and uses it up
+  ---
+  duration_ms: 3.430291
+  ...
+# Subtest: the toast shows what was actually healed near full health
+ok 6 - the toast shows what was actually healed near full health
+  ---
+  duration_ms: 0.520829
+  ...
+# Subtest: at full health nothing is used up
+ok 7 - at full health nothing is used up
+  ---
+  duration_ms: 0.526585
+  ...
+# Subtest: wiring: interactions.js consumes before anything else handles the object
+ok 8 - wiring: interactions.js consumes before anything else handles the object
+  ---
+  duration_ms: 1.532408
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 338.441706

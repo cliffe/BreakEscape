@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: decoy row: IP lookup shows its own IP with no match, not the attacker
+ok 1 - decoy row: IP lookup shows its own IP with no match, not the attacker
+  ---
+  duration_ms: 2.885981
+  ...
+# Subtest: decoy row: account view is its own account, built from the log
+ok 2 - decoy row: account view is its own account, built from the log
+  ---
+  duration_ms: 1.028321
+  ...
+# Subtest: anomaly row: real intel and account history, progress fires
+ok 3 - anomaly row: real intel and account history, progress fires
+  ---
+  duration_ms: 1.332757
+  ...
+# Subtest: only one Session Detail card, including after a filter change
+ok 4 - only one Session Detail card, including after a filter change
+  ---
+  duration_ms: 1.836313
+  ...
+# Subtest: flagging a non-anomalous row gives feedback and does not complete
+ok 5 - flagging a non-anomalous row gives feedback and does not complete
+  ---
+  duration_ms: 1.018845
+  ...
+# Subtest: m.blake prior (UK) row is not the anomaly; the RO row flags and completes
+ok 6 - m.blake prior (UK) row is not the anomaly; the RO row flags and completes
+  ---
+  duration_ms: 1.391574
+  ...
+# Subtest: ics_rdp config (sis02 shape): anomaly row keeps intel, other rows get no match
+ok 7 - ics_rdp config (sis02 shape): anomaly row keeps intel, other rows get no match
+  ---
+  duration_ms: 0.663711
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 106.414676

@@ -1,0 +1,2885 @@
+{
+  "scenario_brief": "TEST: Access model slice 9.2, work and the USB policy\n\nA test floor for ACCESS_MODEL_SLICE_9_2_PLAN.md: the USB policy (U1 to U3) work, outages and frustration (W1 to W7, through the halls west of the lobby) and workarounds (X1 to X4, Hall D; the hot desk H1 to H3, Hall C; the shared login H4, east of Priya's room). Each beat has a sign and its own room. Nothing to solve.",
+  "endGoal": "Test only: run the slice 9.2 beats.",
+  "startRoom": "lobby",
+  "startPosition": {
+    "x": 6,
+    "y": 6
+  },
+  "npcNeedsSeed": "test_access_work",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+  "officePresets": true,
+  "chatter": {
+    "usb_refused": [
+      "USB's disabled. Typical.",
+      "Blocked again. Brilliant."
+    ],
+    "work_fail_fed_up": [
+      "That's it. I've had enough."
+    ],
+    "station_fail": [
+      "This PC is useless."
+    ],
+    "work_fail_no_access": [
+      "Still no access. Nobody listens."
+    ],
+    "work_fail_file_share": [
+      "Share's down again."
+    ],
+    "work_fail_email": [
+      "Email's not sending."
+    ],
+    "work_fail_printer": [
+      "Printer's jammed again."
+    ],
+    "work_fail": [
+      "Why is nothing working?"
+    ],
+    "wk_writes_down": [
+      "I'll never remember this one."
+    ],
+    "wk_prop_door": [
+      "I'm not badging in every time."
+    ],
+    "wk_borrow": [
+      "I'll use the spare PC."
+    ],
+    "wk_share_login": [
+      "I'll get someone to run it."
+    ],
+    "login_aloud": [
+      "Just use mine, it's on the note."
+    ]
+  },
+  "policies": {
+    "managed": {
+      "autoLockMin": 5,
+      "maxAttempts": null,
+      "usb": "storage_blocked",
+      "social": "allowed"
+    },
+    "locked_down": {
+      "autoLockMin": 5,
+      "maxAttempts": null,
+      "usb": "blocked",
+      "social": "allowed"
+    },
+    "lax": {
+      "autoLockMin": null,
+      "maxAttempts": null,
+      "usb": "allowed",
+      "social": "allowed"
+    },
+    "strict": {
+      "autoLockMin": 5,
+      "maxAttempts": 3,
+      "usb": "storage_blocked",
+      "social": "allowed"
+    }
+  },
+  "defaultPolicy": "managed",
+  "globalVariables": {
+    "u2_dock_planted": false,
+    "finance_share_down": false,
+    "printer_jammed": false,
+    "printer_w7_jammed": false,
+    "intranet_down": false,
+    "ian_pc_unplugged": false,
+    "ian_was_off": false,
+    "rota_down": false,
+    "stores_down": false,
+    "store_door_propped": false,
+    "ellis_out_of_office": false,
+    "crm_down": false
+  },
+  "objectives": [
+    {
+      "aimId": "usb_beats",
+      "title": "Run the USB policy beats",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "u1_refused",
+          "title": "U1: Lena's PC refuses the storage stick",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_kiosk",
+          "title": "U1: Lena takes the stick to the kiosk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u1_hid",
+          "title": "U1: Lena's PC takes the keyboard-type device",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u2_refused",
+          "title": "U2: Priya's PC refuses the stick and she puts it down",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u2_dock",
+          "title": "U2: the dock refuses your stick",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "u3_tray",
+          "title": "U3: Kofi leaves the stick in the tray, no refusal",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "work_beats",
+      "title": "Run the work beats",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        {
+          "taskId": "w1_met",
+          "title": "W1: Amy works, and her use is met",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "w2_failed",
+          "title": "W2: Dana fails while the share is down",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "w2_fed_up",
+          "title": "W2: Dana is fed up (level 100)",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "w3_eased",
+          "title": "W3: the share is back and Dana's frustration eases",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "w4_checked",
+          "title": "W4: Omar walks to the printer to look",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "w4_cupboard",
+          "title": "W4: the cupboard opens with the code from Omar's desktop",
+          "type": "unlock_object",
+          "targetObject": "copy_cupboard",
+          "status": "active"
+        },
+        {
+          "taskId": "w5_settled",
+          "title": "W5: Kai, with no access, settles at 100",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "w6_off",
+          "title": "W6: Ian's PC is dead and he parks, at his desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "w6_back",
+          "title": "W6: the PC is back and Ian's use is met",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "w7_failed",
+          "title": "W7: Nia fails at once when the printer jams",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "workaround_beats",
+      "title": "Run the workaround beats",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 2,
+      "tasks": [
+        {
+          "taskId": "x1_wrote_down",
+          "title": "X1: Mei writes her password down",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "x1_nook",
+          "title": "X1: the records nook opens with the code from Mei's desktop",
+          "type": "unlock_room",
+          "targetRoom": "records_nook",
+          "status": "active"
+        },
+        {
+          "taskId": "x2_started",
+          "title": "X2: Tom sets off to prop the stores door",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "x2_propped",
+          "title": "X2: the stores door is propped open",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "x3_gave_up",
+          "title": "X3: Ellis gives up, with no warning",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "hot_desk_beats",
+      "title": "Run the hot desk and shared login beats",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 3,
+      "tasks": [
+        {
+          "taskId": "h1_borrowed",
+          "title": "H1: Ian works at the hot desk and leaves it signed in",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "h1_cabinet",
+          "title": "H1: the comms cabinet opens",
+          "type": "unlock_object",
+          "targetObject": "comms_cabinet",
+          "status": "active"
+        },
+        {
+          "taskId": "h3_failed_there",
+          "title": "H3: Rosa's use fails at the hot desk too",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "h4_overheard",
+          "title": "H4: Sam's login is overheard",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "lockout_beats",
+      "title": "Run the lockout beat",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 4,
+      "tasks": [
+        {
+          "taskId": "l1_locked_out",
+          "title": "L1: Jake cannot sign in, and his work fails",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l1_hot_desk",
+          "title": "L1: Jake works at the hot desk and leaves it signed in",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l1_claimed",
+          "title": "L1: you claim Jake's session at the hot desk",
+          "type": "custom",
+          "status": "active"
+        },
+        {
+          "taskId": "l1_leo_locked_out",
+          "title": "L1: Leo is locked out at his PC and carries on",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": {
+        "north": "usb_room",
+        "east": "vault_room",
+        "south": "post_room",
+        "west": "hall_a"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": {
+            "x": 4,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Slice 9.2 test floor. USB policy: Lena north (U1), Priya east (U2), Kofi south (U3).\nThe USB devices are on the floor here, one per beat, each named for its beat.\nWork beats W1 to W7: through the halls to the west. Each room has its own sign.\nWorkaround beats X1 to X4: Hall D, west of Hall C.\nHot desk beats H1 to H3: Hall C. H4: east of Priya's room. Lockout beat L1: east of H4.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "usb",
+          "id": "kit_usb",
+          "name": "USB stick for Lena (storage)",
+          "sprite": "usb_bowl1",
+          "position": {
+            "x": 2,
+            "y": 5
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "droppable": true,
+          "needsTag": "dev_usb",
+          "usbClass": "storage",
+          "observations": "A plain USB memory stick (storage)."
+        },
+        {
+          "type": "usb",
+          "id": "kit_badusb",
+          "name": "Keyboard-type USB device for Lena",
+          "sprite": "usb_bowl1",
+          "position": {
+            "x": 3,
+            "y": 5
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "droppable": true,
+          "needsTag": "dev_badusb",
+          "usbClass": "hid",
+          "observations": "Looks like a memory stick, but it presents itself to a PC as a keyboard (hid)."
+        },
+        {
+          "type": "usb",
+          "id": "vault_usb",
+          "name": "USB stick for Priya (storage)",
+          "sprite": "usb_bowl1",
+          "position": {
+            "x": 4,
+            "y": 5
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "droppable": true,
+          "needsTag": "vault_usb",
+          "usbClass": "storage",
+          "observations": "A plain USB memory stick (storage)."
+        },
+        {
+          "type": "usb",
+          "id": "vault_usb_2",
+          "name": "Spare USB stick for the dock (storage)",
+          "sprite": "usb_bowl1",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "droppable": true,
+          "needsTag": "vault_usb_spare",
+          "usbClass": "storage",
+          "observations": "A plain USB memory stick (storage)."
+        },
+        {
+          "type": "usb",
+          "id": "post_usb",
+          "name": "USB stick for Kofi (storage)",
+          "sprite": "usb_bowl1",
+          "position": {
+            "x": 6,
+            "y": 5
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "droppable": true,
+          "needsTag": "post_usb",
+          "usbClass": "storage",
+          "observations": "A plain USB memory stick (storage)."
+        }
+      ],
+      "npcs": []
+    },
+    "usb_room": {
+      "type": "room_office",
+      "door_sign": "U1 Lena",
+      "connections": {
+        "south": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_u1",
+          "name": "Sign: U1 Storage refused, then the kiosk",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "U1. Drop Lena's storage stick here (click it in your inventory, Drop here). Lena takes it to her PC, which refuses storage: she mutters and takes it to the kiosk, which takes it.\nThen drop the keyboard-type device: her PC takes it.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "lena_pc",
+          "name": "Lena's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "policy": "managed",
+          "affordance": {
+            "accepts": [
+              "dev_usb",
+              "dev_badusb"
+            ],
+            "useSeconds": 5,
+            "satisfies": []
+          },
+          "observations": "Lena's PC, under the managed policy: USB storage is disabled."
+        },
+        {
+          "type": "pc3",
+          "id": "kiosk_pc",
+          "name": "Kiosk PC",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "policy": "lax",
+          "affordance": {
+            "accepts": [
+              "dev_usb"
+            ],
+            "useSeconds": 5,
+            "satisfies": []
+          },
+          "observations": "A kiosk PC that nobody manages. It takes anything."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "lena",
+          "displayName": "Lena Fox",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "lena_pc",
+          "interests": {
+            "dev_usb": {
+              "weight": 2
+            },
+            "dev_badusb": {
+              "weight": 2
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_use_refused:lena_pc",
+              "onceOnly": true,
+              "completeTask": "u1_refused",
+              "condition": "data.usbClass === 'storage'"
+            },
+            {
+              "eventPattern": "npc_used:kiosk_pc",
+              "onceOnly": true,
+              "completeTask": "u1_kiosk",
+              "condition": "data.npcId === 'lena' && data.tag === 'dev_usb'"
+            },
+            {
+              "eventPattern": "npc_used:lena_pc",
+              "onceOnly": true,
+              "completeTask": "u1_hid",
+              "condition": "data.npcId === 'lena' && data.tag === 'dev_badusb'"
+            }
+          ]
+        }
+      ]
+    },
+    "vault_room": {
+      "type": "room_office",
+      "door_sign": "U2 Priya",
+      "connections": {
+        "west": "lobby",
+        "east": "open_office"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_u2",
+          "name": "Sign: U2 Refused outright, and your own plant",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "U2. Drop Priya's storage stick here: Priya's PC refuses every USB device and nothing else takes it, so she puts it down by her PC.\nThen, holding the spare stick, click the USB dock: USB devices are disabled on this PC, and you keep the stick.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "priya_pc",
+          "name": "Priya's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "policy": "locked_down",
+          "affordance": {
+            "accepts": [
+              "vault_usb"
+            ],
+            "useSeconds": 5,
+            "satisfies": []
+          },
+          "observations": "Priya's PC, under the locked-down policy: every USB device is disabled."
+        },
+        {
+          "type": "usb_bowl1",
+          "id": "priya_dock",
+          "name": "USB dock",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "policy": "locked_down",
+          "requiresItem": "usb",
+          "requiresItemHint": "You need a USB device to plug in here.",
+          "triggerOnInteract": [
+            {
+              "type": "set_global",
+              "key": "u2_dock_planted",
+              "value": true
+            }
+          ],
+          "observations": "A USB dock wired to Priya's PC. Same policy as the PC."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "priya",
+          "displayName": "Priya Nair",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "priya_pc",
+          "interests": {
+            "vault_usb": {
+              "weight": 2
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_use_refused:priya_pc",
+              "onceOnly": true,
+              "completeTask": "u2_refused"
+            },
+            {
+              "eventPattern": "usb_refused:priya_dock",
+              "onceOnly": true,
+              "completeTask": "u2_dock"
+            }
+          ]
+        }
+      ]
+    },
+    "post_room": {
+      "type": "room_office",
+      "door_sign": "U3 Kofi",
+      "connections": {
+        "north": "lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_u3",
+          "name": "Sign: U3 A default policy does not reach a tray",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "U3. Drop Kofi's storage stick here: Kofi puts it in the lost property tray. No refusal and no mutter, although the floor's default policy blocks storage: a tray is not a PC.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "bin1",
+          "id": "lost_property_tray",
+          "name": "Lost property tray",
+          "position": {
+            "x": 6,
+            "y": 3
+          },
+          "takeable": false,
+          "affordance": {
+            "accepts": [
+              "post_usb"
+            ],
+            "useSeconds": 3
+          },
+          "observations": "A tray for lost property. Not a PC; no policy."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "kofi",
+          "displayName": "Kofi Mensah",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "interests": {
+            "post_usb": {
+              "weight": 2
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used:lost_property_tray",
+              "onceOnly": true,
+              "completeTask": "u3_tray",
+              "condition": "data.npcId === 'kofi'"
+            }
+          ]
+        }
+      ]
+    },
+    "hall_a": {
+      "type": "room_office",
+      "door_sign": "Hall A",
+      "connections": {
+        "east": "lobby",
+        "north": "ok_room",
+        "south": "starter_room",
+        "west": "hall_b"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_hall_a",
+          "name": "Sign: Hall A",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Hall A. North: W1 Amy. South: W5 Kai. West: Hall B.\nNever step the needs clock while an outage holds.",
+          "observations": "A beat sign on a stand."
+        }
+      ],
+      "npcs": []
+    },
+    "hall_b": {
+      "type": "room_office",
+      "door_sign": "Hall B",
+      "connections": {
+        "east": "hall_a",
+        "north": "share_room",
+        "south": "print_room",
+        "west": "hall_c"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_hall_b",
+          "name": "Sign: Hall B",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Hall B. North: W2 and W3 Dana. South: W4 Omar (the copy room beyond). West: Hall C.",
+          "observations": "A beat sign on a stand."
+        }
+      ],
+      "npcs": []
+    },
+    "hall_c": {
+      "type": "room_office",
+      "door_sign": "Hall C (hot desk)",
+      "connections": {
+        "east": "hall_b",
+        "north": "cable_room",
+        "south": "slow_room",
+        "west": "hall_d"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_hall_c",
+          "name": "Sign: Hall C",
+          "position": {
+            "x": 4,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Hall C. North: W6 Ian. South: W7 Nia. West: Hall D (X1 to X4).\nH1 to H3: the hot desk, the comms cabinet, Rosa's desk and her breaker are here.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_h1",
+          "name": "Sign: H1 to H3 The hot desk",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H1. Unplug Ian's PC (W6 socket) and wait for his third failure: he walks here and works at the hot desk, then leaves it signed in. A click then opens his desktop; his note gives the cabinet code.\nH2. The drawer here holds a temporary account's password: sign in at the hot desk as that account and leave the desktop open, then unplug Ian's PC again. When he sits down your session ends.\nH3. Throw Rosa's breaker: at her third failure she tries the hot desk too, fails there as well, and still leaves a session.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "hot_desk",
+          "name": "Hot desk",
+          "position": {
+            "x": 6,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "managed",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "A shared hot desk PC: anybody can sign in here."
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "comms_cabinet",
+          "name": "Comms cabinet",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "6203",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "h1_done_note",
+              "name": "Note: H1 done",
+              "takeable": true,
+              "readable": true,
+              "text": "H1 done: a borrowed session at the hot desk led to this cabinet."
+            }
+          ],
+          "observations": "A comms cabinet with a keypad."
+        },
+        {
+          "type": "filing_cabinet",
+          "id": "hall_c_drawer",
+          "name": "Drawer",
+          "position": {
+            "x": 4,
+            "y": 7
+          },
+          "takeable": false,
+          "interactable": true,
+          "locked": false,
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "temp_password_note",
+              "name": "Note: temp login",
+              "takeable": true,
+              "readable": true,
+              "text": "Temp account for the hot desk: ptemp / Tern-Temp-12. Change it after the audit."
+            }
+          ],
+          "observations": "An unlocked drawer."
+        },
+        {
+          "type": "pc",
+          "id": "rosa_pc",
+          "name": "Rosa's PC",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "lockChance": 1,
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "Rosa's PC: a sign-in PC."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "rosa_breaker",
+          "name": "Rosa's share breaker",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.finance_share_down",
+              "text": "Switch the finance share off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "finance_share_down",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.finance_share_down",
+              "text": "Switch the finance share back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "finance_share_down",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "The switch for the finance share. Click it to switch it off, and again to switch it back on."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "rosa",
+          "displayName": "Rosa Lane",
+          "npcType": "person",
+          "position": {
+            "x": 2,
+            "y": 5
+          },
+          "spriteSheet": "male_telecom_v2",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "needsHome": "rosa_pc",
+          "role": [
+            "finance",
+            "staff"
+          ],
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "rlane",
+            "password": "Robin-Rosa-38"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "hot_desk"
+            }
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_borrowed_session:hot_desk",
+              "condition": "data.npcId === 'rosa' && data.met === false && !data.lapsed",
+              "onceOnly": true,
+              "completeTask": "h3_failed_there"
+            }
+          ]
+        }
+      ]
+    },
+    "ok_room": {
+      "type": "room_office",
+      "door_sign": "W1 Amy",
+      "connections": {
+        "south": "hall_a"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_w1",
+          "name": "Sign: W1 Work that succeeds",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "W1. Amy works at her desk about every 15 seconds and every use is met: no line, no icon.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "amy_pc",
+          "name": "Amy's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "Amy's PC: a sign-in PC."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "amy",
+          "displayName": "Amy Cole",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "amy_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "acole",
+            "password": "Aster-Amy-55"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_used:amy_pc",
+              "onceOnly": true,
+              "completeTask": "w1_met",
+              "condition": "data.met === true"
+            }
+          ]
+        }
+      ]
+    },
+    "share_room": {
+      "type": "room_office",
+      "door_sign": "W2 Dana",
+      "connections": {
+        "south": "hall_b"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_w2",
+          "name": "Sign: W2 and W3 An outage, then recovery",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "W2. Throw the breaker: within one use Dana fails and names the share. The blocked icon stays up, pulses after her second failure, and her third line is fed up.\nW3. Reset the breaker: her uses are met again and her frustration eases by 10 each time.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "dana_pc",
+          "name": "Dana's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "Dana's PC: a sign-in PC."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "share_breaker",
+          "name": "Share breaker",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.finance_share_down",
+              "text": "Switch the finance share off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "finance_share_down",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.finance_share_down",
+              "text": "Switch the finance share back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "finance_share_down",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "The breaker for the finance share. Click it to switch it off, and again to switch it back on."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "dana_coffee",
+          "name": "Coffee station",
+          "position": {
+            "x": 8,
+            "y": 4
+          },
+          "takeable": false,
+          "observations": "A coffee station."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "dana",
+          "displayName": "Dana Reyes",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "dana_pc",
+          "role": [
+            "finance",
+            "staff"
+          ],
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "dreyes",
+            "password": "Ledger-Dana-31"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "caffeine": {
+              "decayPerMin": 4,
+              "urgentAt": 30,
+              "initial": 70
+            }
+          },
+          "frustration": {
+            "perFail": 34
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_use_failed:dana",
+              "onceOnly": true,
+              "completeTask": "w2_failed"
+            },
+            {
+              "eventPattern": "npc_frustration_changed:dana",
+              "onceOnly": true,
+              "completeTask": "w2_fed_up",
+              "condition": "data.level >= 100"
+            },
+            {
+              "eventPattern": "npc_frustration_changed:dana",
+              "onceOnly": true,
+              "completeTask": "w3_eased",
+              "condition": "data.level < data.previous"
+            }
+          ]
+        }
+      ]
+    },
+    "print_room": {
+      "type": "room_office",
+      "door_sign": "W4 Omar",
+      "connections": {
+        "north": "hall_b",
+        "south": "copy_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_w4",
+          "name": "Sign: W4 The printer, and a chain",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "W4. Jam the printer in the copy room (south). Omar fails, walks to look at the printer once, and comes back. While he is away, click his PC.\nTo re-arm: reset the lever, wait for one met use, jam it again.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "omar_pc",
+          "name": "Omar's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "Omar's PC: a sign-in PC.",
+          "lockChance": 0
+        }
+      ],
+      "npcs": [
+        {
+          "id": "omar",
+          "displayName": "Omar Haddad",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "omar_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "ohaddad",
+            "password": "Oriole-Omar-64"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "workNeeds": [
+            "+printer"
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_checked:office_printer",
+              "onceOnly": true,
+              "completeTask": "w4_checked",
+              "condition": "data.npcId === 'omar'"
+            }
+          ]
+        }
+      ]
+    },
+    "copy_room": {
+      "type": "room_office",
+      "door_sign": "Copy room",
+      "connections": {
+        "north": "print_room"
+      },
+      "objects": [
+        {
+          "type": "photocopier1",
+          "id": "office_printer",
+          "name": "Printer",
+          "position": {
+            "x": 4,
+            "y": 3
+          },
+          "takeable": false,
+          "observations": "The copy room printer."
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "printer_lever",
+          "name": "Printer jam lever",
+          "position": {
+            "x": 6,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.printer_jammed",
+              "text": "Jam the printer?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "printer_jammed",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.printer_jammed",
+              "text": "Clear the printer jam?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "printer_jammed",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "Printer jam lever. Click it to switch it off, and again to switch it back on."
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "copy_cupboard",
+          "name": "Supplies cupboard",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "4718",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "w4_done_note",
+              "name": "Note: W4 done",
+              "takeable": true,
+              "readable": true,
+              "text": "W4 done: the chain from a printer jam to an open cupboard works."
+            }
+          ],
+          "observations": "A supplies cupboard with a keypad."
+        }
+      ],
+      "npcs": []
+    },
+    "starter_room": {
+      "type": "room_office",
+      "door_sign": "W5 Kai",
+      "connections": {
+        "north": "hall_a"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_w5",
+          "name": "Sign: W5 No access, and silence",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "W5. Kai needs the finance share and is not admitted to it. He fails from his first use with no player action, and at level 100 the server says settled: no more reports for him.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "kai_pc",
+          "name": "Kai's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "Kai's PC: a sign-in PC."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "kai",
+          "displayName": "Kai Brennan",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "kai_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "kbrennan",
+            "password": "Kestrel-Kai-88"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "workNeeds": [
+            "+finance_share"
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_frustration_changed:kai",
+              "onceOnly": true,
+              "completeTask": "w5_settled",
+              "condition": "data.level >= 100"
+            }
+          ]
+        }
+      ]
+    },
+    "cable_room": {
+      "type": "room_office",
+      "door_sign": "W6 Ian",
+      "connections": {
+        "south": "hall_c",
+        "north": "temp_office"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_w6",
+          "name": "Sign: W6 A PC out of order",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "W6. Switch off the wall socket: Ian's PC dies. He does not sit at a dead PC or walk to Pat's or the spare one: he parks at his desk and says so. Plug it back in: after one use time he works again.\nH1/H2: after his third failure Ian borrows the hot desk in Hall C (south) and leaves it signed in.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "ian_pc",
+          "name": "Ian's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5,
+            "offWhen": "ian_pc_unplugged"
+          },
+          "observations": "Ian's PC: a sign-in PC.",
+          "lockChance": 1
+        },
+        {
+          "type": "pc",
+          "id": "pat_pc",
+          "name": "Pat's PC",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5,
+            "private": true
+          },
+          "observations": "Pat's PC: a sign-in PC.",
+          "screenOwner": "temp_user"
+        },
+        {
+          "type": "pc",
+          "id": "spare_pc",
+          "name": "Spare PC",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "A plain PC nobody owns."
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "ian_socket",
+          "name": "Wall socket",
+          "position": {
+            "x": 3,
+            "y": 6
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.ian_pc_unplugged",
+              "text": "Switch off the socket under Ian's desk?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "ian_pc_unplugged",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.ian_pc_unplugged",
+              "text": "Switch the socket back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "ian_pc_unplugged",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "Wall socket. Click it to switch it off, and again to switch it back on."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ian",
+          "displayName": "Ian Shaw",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "ian_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "ishaw",
+            "password": "Ibis-Ian-27"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_need_parked:ian",
+              "condition": "data.reason === 'off' && data.targetId === 'ian_pc'",
+              "onceOnly": true,
+              "completeTask": "w6_off",
+              "setGlobal": {
+                "ian_was_off": true
+              }
+            },
+            {
+              "eventPattern": "npc_used:ian_pc",
+              "onceOnly": true,
+              "completeTask": "w6_back",
+              "condition": "data.met === true && globalVars.ian_was_off"
+            },
+            {
+              "eventPattern": "npc_borrowed_session:hot_desk",
+              "condition": "data.npcId === 'ian' && data.met === true",
+              "onceOnly": true,
+              "completeTask": "h1_borrowed"
+            }
+          ],
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "hot_desk"
+            }
+          ]
+        }
+      ]
+    },
+    "temp_office": {
+      "type": "room_office",
+      "door_sign": "Temp office",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "9137",
+      "connections": {
+        "south": "cable_room"
+      },
+      "objects": [],
+      "npcs": [
+        {
+          "id": "temp_user",
+          "displayName": "Pat Temp",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_spy_v2",
+          "spriteTalk": "assets/characters/male_spy_talk.png",
+          "spriteVisemes": "assets/characters/male_spy_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "role": "staff",
+          "creds": {
+            "username": "ptemp",
+            "password": "Tern-Temp-12"
+          }
+        }
+      ]
+    },
+    "slow_room": {
+      "type": "room_office",
+      "door_sign": "W7 Nia",
+      "connections": {
+        "north": "hall_c"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_w7",
+          "name": "Sign: W7 The outage bites at once",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "W7. Nia works once soon after you arrive; wait for it. Then jam the printer with the lever here: within about one use time she tries to work, fails and names the printer, without waiting for her need to run down.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "nia_pc",
+          "name": "Nia's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "Nia's PC: a sign-in PC."
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "printer_lever_2",
+          "name": "Printer jam lever",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.printer_w7_jammed",
+              "text": "Jam the slow room printer?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "printer_w7_jammed",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.printer_w7_jammed",
+              "text": "Clear the slow room printer jam?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "printer_w7_jammed",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "Printer jam lever. Click it to switch it off, and again to switch it back on."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "nia",
+          "displayName": "Nia Patel",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "nia_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "npatel",
+            "password": "Nightjar-Nia-41"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 1,
+              "urgentAt": 50,
+              "initial": 51
+            }
+          },
+          "workNeeds": [
+            "+printer_w7"
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_use_failed:nia",
+              "onceOnly": true,
+              "completeTask": "w7_failed"
+            }
+          ]
+        }
+      ]
+    },
+    "hall_d": {
+      "type": "room_office",
+      "door_sign": "Hall D",
+      "connections": {
+        "east": "hall_c",
+        "north": "note_room",
+        "south": "store_lobby",
+        "west": "event_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_hall_d",
+          "name": "Sign: Hall D",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Hall D. North: X1 Mei. South: X2 and X4 Tom. West: X3 Ellis.\nNever step the needs clock while an outage holds.",
+          "observations": "A beat sign on a stand."
+        }
+      ],
+      "npcs": []
+    },
+    "note_room": {
+      "type": "room_office",
+      "door_sign": "X1 Mei",
+      "connections": {
+        "south": "hall_d",
+        "north": "records_nook"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_x1",
+          "name": "Sign: X1 The sticky note, and a second link",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "X1. Click Mei's PC first: the sign-in screen shows no note. Switch the rota system off. She fails three times: the icon appears after the first and pulses after the second. At the third she says she will never remember it and writes at her desk; a yellow note appears on her monitor.\nWhen she next goes for hot water, click her PC: the note is on the sign-in screen. Her desktop has the code for the records nook (north).",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "mei_pc",
+          "name": "Mei's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "Mei's PC: a sign-in PC. It locks whenever she leaves.",
+          "lockChance": 1
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "rota_switch",
+          "name": "Rota switch",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.rota_down",
+              "text": "Switch the rota system off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "rota_down",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.rota_down",
+              "text": "Switch the rota system back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "rota_down",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "The switch for the staff rota system. Click it to switch it off, and again to switch it back on."
+        },
+        {
+          "type": "hot_water_boiler1",
+          "id": "mei_boiler",
+          "name": "Hot water boiler",
+          "position": {
+            "x": 8,
+            "y": 4
+          },
+          "takeable": false,
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 8,
+            "capacity": 1,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1
+            }
+          },
+          "observations": "A hot water boiler for tea. Mei walks over here now and then, away from her PC."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "mei",
+          "displayName": "Mei Lin",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "mei_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "mlin",
+            "password": "Magpie-Mei-73"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "thirst": {
+              "decayPerMin": 10,
+              "urgentAt": 30,
+              "initial": 60
+            }
+          },
+          "workNeeds": [
+            "+rota"
+          ],
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "writes_down"
+            }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_workaround:mei",
+              "onceOnly": true,
+              "completeTask": "x1_wrote_down",
+              "condition": "data.do === 'writes_down' && data.phase === 'done'"
+            }
+          ]
+        }
+      ]
+    },
+    "records_nook": {
+      "type": "room_office",
+      "door_sign": "Records nook",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "5826",
+      "connections": {
+        "south": "note_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "x1_done_note",
+          "name": "Note: X1 done",
+          "position": {
+            "x": 5,
+            "y": 4
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "X1 done: from an outage to a written-down password, to a desktop, to this room."
+        }
+      ],
+      "npcs": []
+    },
+    "store_lobby": {
+      "type": "room_office",
+      "door_sign": "X2 Tom",
+      "connections": {
+        "north": "hall_d",
+        "south": "store_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_x2",
+          "name": "Sign: X2 and X4 The propped door",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "X2. Switch the stores system off. Tom fails three times; at the third he walks to the stores door (south), wedges it open with the fire extinguisher and goes back. Walk in: Una is inside.\nX4. Reload while he is walking, and again after the door is open.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "tom_pc",
+          "name": "Tom's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "Tom's PC, for the stores system."
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "stores_switch",
+          "name": "Stores switch",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.stores_down",
+              "text": "Switch the stores system off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "stores_down",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.stores_down",
+              "text": "Switch the stores system back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "stores_down",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "The switch for the stores system. Click it to switch it off, and again to switch it back on."
+        },
+        {
+          "type": "fire_extinguisher1",
+          "id": "store_wedge",
+          "name": "Fire extinguisher",
+          "position": {
+            "x": 3,
+            "y": 7
+          },
+          "takeable": false,
+          "revealOnGlobal": "store_door_propped",
+          "observations": "A fire extinguisher, wedging the stores door open."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "tom",
+          "displayName": "Tom Fletcher",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "tom_pc",
+          "role": [
+            "facilities",
+            "staff"
+          ],
+          "needsDeferMin": 0.5,
+          "creds": {
+            "card": {
+              "name": "Tom Fletcher's badge",
+              "card_id": "FAC-TOM-01",
+              "rfid_protocol": "EM4100"
+            }
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "workNeeds": [
+            "+stores"
+          ],
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "prop_door",
+              "door": "store_room",
+              "prop": "store_wedge",
+              "setGlobal": "store_door_propped"
+            }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "npc_workaround:tom",
+              "onceOnly": true,
+              "completeTask": "x2_started",
+              "condition": "data.phase === 'started'"
+            },
+            {
+              "eventPattern": "door_propped:store_room",
+              "onceOnly": true,
+              "completeTask": "x2_propped"
+            }
+          ]
+        }
+      ]
+    },
+    "store_room": {
+      "type": "room_office",
+      "door_sign": "Stores",
+      "locked": true,
+      "lockType": "rfid",
+      "access": {
+        "roles": [
+          "facilities"
+        ]
+      },
+      "connections": {
+        "north": "store_lobby"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "x2_done_note",
+          "name": "Note: X2 done",
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "takeable": true,
+          "readable": true,
+          "text": "X2 done: a frustrated colleague propped the door you could not open."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "una",
+          "displayName": "Una Walsh",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          }
+        }
+      ]
+    },
+    "event_room": {
+      "type": "room_office",
+      "door_sign": "X3 Ellis",
+      "connections": {
+        "east": "hall_d"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_x3",
+          "name": "Sign: X3 An event, with no warning by design",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "X3. Switch the intranet off. Ellis fails once and gives up at once: no icon or pulse comes first. This one has no warning by design.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "ellis_pc",
+          "name": "Ellis's PC",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "Ellis's PC: a sign-in PC."
+        },
+        {
+          "type": "notes1",
+          "id": "ellis_ooo_note",
+          "name": "Ellis's note",
+          "position": {
+            "x": 6,
+            "y": 4
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "revealOnGlobal": "ellis_out_of_office",
+          "text": "Intranet down again. I have given up on it for today. Ellis",
+          "observations": "A note left by Ellis's PC."
+        },
+        {
+          "type": "ups_cabinet1",
+          "id": "intranet_switch",
+          "name": "Intranet switch",
+          "position": {
+            "x": 8,
+            "y": 3
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.intranet_down",
+              "text": "Switch the intranet off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "intranet_down",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.intranet_down",
+              "text": "Switch the intranet back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "intranet_down",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "The switch for the intranet. Click it to switch it off, and again to switch it back on."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ellis",
+          "displayName": "Ellis Ward",
+          "npcType": "person",
+          "position": {
+            "x": 5,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "ellis_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "eward",
+            "password": "Egret-Ellis-19"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "workNeeds": [
+            "+intranet"
+          ],
+          "frustration": {
+            "perFail": 50
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "emit",
+              "event": "ellis_gave_up",
+              "setGlobal": "ellis_out_of_office",
+              "noWarning": true
+            }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "ellis_gave_up",
+              "onceOnly": true,
+              "completeTask": "x3_gave_up"
+            }
+          ]
+        }
+      ]
+    },
+    "open_office": {
+      "type": "room_office",
+      "door_sign": "H4 Sam",
+      "connections": {
+        "west": "vault_room",
+        "east": "lock_room"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_h4",
+          "name": "Sign: H4 Said out loud",
+          "position": {
+            "x": 2,
+            "y": 3
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "H4. Switch the CRM off and leave the room: at Sam's third failure he walks over to Ruth and says his login out loud, and nobody hears. Come back and stand by Ruth's desk: at his next failure you overhear it, and it goes in your notes. The password then signs in at the hot desk in Hall C.\nEast: L1, the lockout chain.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "sam_pc",
+          "name": "Sam's PC",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "lockChance": 1,
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          },
+          "observations": "Sam's PC: a sign-in PC."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "crm_switch",
+          "name": "CRM switch",
+          "position": {
+            "x": 5,
+            "y": 7
+          },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.crm_down",
+              "text": "Switch the CRM off?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "crm_down",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.crm_down",
+              "text": "Switch the CRM back on?",
+              "onConfirm": [
+                {
+                  "type": "set_global",
+                  "key": "crm_down",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "observations": "The switch for the CRM. Click it to switch it off, and again to switch it back on."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "sam",
+          "displayName": "Sam Okafor",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 5
+          },
+          "spriteSheet": "male_spy_v2",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "spriteTalk": "assets/characters/male_spy_talk.png",
+          "spriteVisemes": "assets/characters/male_spy_visemes.png",
+          "needsHome": "sam_pc",
+          "role": "staff",
+          "workNeeds": [
+            "+crm"
+          ],
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "sokafor",
+            "password": "Swift-Sam-64"
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "share_login",
+              "with": "ruth"
+            }
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_overheard_login:sam",
+              "onceOnly": true,
+              "completeTask": "h4_overheard"
+            }
+          ]
+        },
+        {
+          "id": "ruth",
+          "displayName": "Ruth Adeyemi",
+          "npcType": "person",
+          "position": {
+            "x": 8,
+            "y": 5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png"
+        }
+      ]
+    },
+    "lock_room": {
+      "type": "room_office",
+      "door_sign": "L1 Jake",
+      "connections": {
+        "west": "open_office"
+      },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_l1",
+          "name": "Sign: L1 The lockout chain",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "L1. Wait for Jake to go to the fridge: his screen locks behind him. Click his PC and type three wrong passwords on his tile. The PC's policy locks his account out there. When he comes back he cannot sign in: his work fails, and at his third failure he goes to the hot desk by the door and leaves his session open there for you.\nLeo's screen never locks. Lock him out the same way (claim his open screen while he is away, Switch user, three wrong passwords on his tile): he never has to type his password, so he carries on working, but his open screen can no longer be claimed.",
+          "observations": "A beat sign on a stand."
+        },
+        {
+          "type": "pc",
+          "id": "jake_pc",
+          "name": "Jake's PC",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "strict",
+          "lockChance": 1,
+          "observations": "Jake's PC: a sign-in PC under the strict policy (three tries).",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          }
+        },
+        {
+          "type": "pc",
+          "id": "hot_desk_2",
+          "name": "Hot desk",
+          "position": {
+            "x": 5,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "managed",
+          "observations": "A shared hot desk PC: anybody can sign in here.",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          }
+        },
+        {
+          "type": "pc",
+          "id": "leo_pc",
+          "name": "Leo's PC",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "policy": "strict",
+          "lockChance": 0,
+          "observations": "Leo's PC: a sign-in PC under the strict policy. He never locks it.",
+          "affordance": {
+            "satisfies": "work",
+            "restores": 10,
+            "useSeconds": 5
+          }
+        },
+        {
+          "type": "qdc_fridge1",
+          "id": "lock_fridge",
+          "name": "Fridge",
+          "position": {
+            "x": 8,
+            "y": 6
+          },
+          "takeable": false,
+          "observations": "The office fridge."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "jake",
+          "displayName": "Jake Brooks",
+          "position": {
+            "x": 3,
+            "y": 5
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "npcType": "person",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "jake_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "jbrooks",
+            "password": "Jackdaw-Jake-72"
+          },
+          "screenHabit": {
+            "lockChance": 0
+          },
+          "workarounds": [
+            {
+              "at": 50,
+              "do": "borrow_session",
+              "pc": "hot_desk_2"
+            }
+          ],
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "hunger": {
+              "decayPerMin": 20,
+              "urgentAt": 40,
+              "initial": 60
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "npc_use_failed:jake",
+              "condition": "data.station === true",
+              "onceOnly": true,
+              "completeTask": "l1_locked_out"
+            },
+            {
+              "eventPattern": "npc_borrowed_session:hot_desk_2",
+              "condition": "data.npcId === 'jake'",
+              "onceOnly": true,
+              "completeTask": "l1_hot_desk"
+            },
+            {
+              "eventPattern": "pc_signed_in:hot_desk_2",
+              "condition": "data.via === 'claim' && data.npcId === 'jake'",
+              "onceOnly": true,
+              "completeTask": "l1_claimed"
+            }
+          ]
+        },
+        {
+          "id": "leo",
+          "displayName": "Leo Marsh",
+          "position": {
+            "x": 7,
+            "y": 5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "npcType": "person",
+          "storyPath": "scenarios/test_access_work/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96
+          },
+          "needsHome": "leo_pc",
+          "role": "staff",
+          "needsDeferMin": 0.5,
+          "creds": {
+            "username": "lmarsh",
+            "password": "Linnet-Leo-19"
+          },
+          "needs": {
+            "work": {
+              "decayPerMin": 40,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "hunger": {
+              "decayPerMin": 20,
+              "urgentAt": 40,
+              "initial": 90
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "pc_signin_failed:leo_pc",
+              "condition": "data.reason === 'locked_out'",
+              "onceOnly": true,
+              "completeTask": "l1_leo_locked_out"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "resources": {
+    "email": {
+      "name": "Email",
+      "kind": "email"
+    },
+    "finance_share": {
+      "name": "Finance share",
+      "kind": "file_share",
+      "access": {
+        "roles": [
+          "finance"
+        ]
+      },
+      "downIf": "finance_share_down"
+    },
+    "printer": {
+      "name": "Copy room printer",
+      "kind": "printer",
+      "object": "office_printer",
+      "downIf": "printer_jammed"
+    },
+    "printer_w7": {
+      "name": "Slow room printer",
+      "kind": "printer",
+      "downIf": "printer_w7_jammed"
+    },
+    "intranet": {
+      "name": "Staff intranet",
+      "kind": "intranet",
+      "downIf": "intranet_down"
+    },
+    "rota": {
+      "name": "Rota system",
+      "kind": "rota",
+      "downIf": "rota_down"
+    },
+    "stores": {
+      "name": "Stores system",
+      "kind": "stores",
+      "downIf": "stores_down"
+    },
+    "crm": {
+      "name": "CRM",
+      "kind": "crm",
+      "downIf": "crm_down"
+    }
+  },
+  "roles": {
+    "staff": {
+      "workNeeds": [
+        "email"
+      ],
+      "frustration": {
+        "perFail": 20
+      }
+    },
+    "finance": {
+      "workNeeds": [
+        "finance_share"
+      ]
+    }
+  },
+  "accountProfiles": {
+    "omar_files": {
+      "for": {
+        "people": [
+          "omar"
+        ]
+      },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "omar_cupboard_note",
+          "name": "Cupboard.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "Copy room supplies cupboard: the code is 4718. Do not write it on the door again.",
+          "observations": "A note on Omar's desktop."
+        }
+      ]
+    },
+    "mei_files": {
+      "for": {
+        "people": [
+          "mei"
+        ]
+      },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "mei_nook_note",
+          "name": "Nook.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "Records nook door: 5826. Do not tell the temps.",
+          "observations": "A note on Mei's desktop."
+        }
+      ]
+    },
+    "ian_files": {
+      "for": {
+        "people": [
+          "ian"
+        ]
+      },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "ian_cabinet_note",
+          "name": "Cabinet.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "Comms cabinet in Hall C: 6203. Do not leave it on the hot desk.",
+          "observations": "A note on Ian's desktop."
+        }
+      ]
+    }
+  }
+}

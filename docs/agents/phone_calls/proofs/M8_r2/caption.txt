@@ -1,0 +1,5 @@
+game 2173 (caption)
+"opened agent_0x99"
+call screen text: "OBJECTIVES | ◆ | Establish Access | ○ | Check in at reception | ✓ | Access the main office area | ◆ | Survey the Scene | * required | ○ | Collect pieces of office intelligence (0/4) | ○ | Find the IT room access code* | Block | Punch | × | 85% | CALLING | Agent HaX | SAFETYNET secure line"
+label elements: ["phone-messages-container phone-call-mode=85%\nCALLING\nAgent HaX\nSAFETYNET secure l","call-caption=SAFETYNET secure line"]
+shot caption_call

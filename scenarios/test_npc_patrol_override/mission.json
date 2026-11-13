@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: NPC Patrol Override (Emergency Movement)",
+  "description": "Tests the patrolOverride action that allows NPCs to interrupt patrol and move directly to a target with increased speed.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 2,
+  "test_type": "phase_2_patrol_override",
+  "test_objective": "Verify patrol interrupt, direct movement, and speed increase on emergency trigger"
+}

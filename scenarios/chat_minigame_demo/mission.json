@@ -1,0 +1,6 @@
+{
+  "display_name": "Demo: Chat Minigames",
+  "description": "A one-room sandbox that demonstrates all three chat minigame types — person-chat (in-room full-screen portrait), phone-chat (texting UI in both LCD and terminal themes), and video-call (person-chat framed as a secure call with a self-view picture-in-picture). Talk to Vega, open both phones in your inventory, and read the Video Console.",
+  "difficulty_level": 1,
+  "collection": "testing"
+}

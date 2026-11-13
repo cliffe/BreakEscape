@@ -1,0 +1,73 @@
+{
+ "steps": [
+  {
+   "note": "R37 (carry-over, 2026-10-17): a finished m06 run that left the fund running under watch and left the safe shut. The Director names the watch; HaX's teacher line is the original."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Fracture"
+   ]
+  },
+  {
+   "said": [
+    "You left it running so we could see where it went",
+    "We watched the payout reach every cell on our map."
+   ],
+   "notSaid": [
+    "You froze it before the payout",
+    "Frozen or watched, the advances had already been paid"
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "fracture"
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "set": {
+    "architect_echo_heard": true
+   }
+  },
+  {
+   "talk": "phone",
+   "knot": "hub",
+   "picks": [
+    "He used your line"
+   ]
+  },
+  {
+   "said": [
+    "Somebody taught it to me, a long time ago"
+   ],
+   "notSaid": [
+    "You opened Satoshi's safe, so you've read the name"
+   ]
+  },
+  {
+   "expect": {
+    "m06_assets_seized": false,
+    "m06_monitoring_enabled": true,
+    "m06_architect_identity_found": false,
+    "m06_completed": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ],
+ "imports": {
+  "m06_assets_seized": false,
+  "m06_monitoring_enabled": true,
+  "m06_architect_identity_found": false,
+  "m06_completed": true
+ }
+}

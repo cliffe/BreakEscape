@@ -1,0 +1,315 @@
+TAP version 13
+# 🎯 Event triggered: room_entered:server_room for NPC: val {}
+# ✅ Event room_entered:server_room conditions passed, triggering NPC reaction
+# 📍 Updated val current knot to: server_room_challenge
+# 🔍 Event config for room_entered:server_room: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'server_room_challenge',
+#   fullConfig: {
+#     handlerIndex: 1,
+#     once: true,
+#     knot: 'server_room_challenge',
+#     conversationMode: 'person-chat',
+#     cooldown: 0
+#   }
+# }
+# 👤 Handling person-chat for event on NPC val
+# 🔍 Event jump check: {
+#   targetNpcId: 'val',
+#   currentConvNPCId: undefined,
+#   isConversationActive: false,
+#   activeMinigame: 'none',
+#   isPersonChatActive: false,
+#   hasJumpToKnot: false
+# }
+# ℹ️ Not jumping: isConversationActive=false, isPersonChatActive=false
+# 👤 Starting new person-chat conversation for NPC val
+# ⏳ Waiting 500ms before starting person-chat cutscene for val
+# ✅ Starting person-chat minigame for val
+# [NPCManager] Event 'room_entered:server_room' triggered for NPC 'val' → person-chat conversation
+# 🎯 Event triggered: room_entered:server_room for NPC: val {}
+# ⏭️ Skipping room_entered:server_room for val: once-only handler already fired {}
+# 📋 Restored 1 fired onceOnly/maxTriggers handler(s)
+# 🎯 Event triggered: room_entered:server_room for NPC: val {}
+# ⏭️ Skipping room_entered:server_room for val: once-only handler already fired {}
+# 🎯 Event triggered: room_entered:server_room for NPC: val {}
+# ✅ Event room_entered:server_room conditions passed, triggering NPC reaction
+# 📍 Updated val current knot to: server_room_challenge
+# 🔍 Event config for room_entered:server_room: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'server_room_challenge',
+#   fullConfig: {
+#     handlerIndex: 1,
+#     once: true,
+#     knot: 'server_room_challenge',
+#     conversationMode: 'person-chat',
+#     cooldown: 0
+#   }
+# }
+# 👤 Handling person-chat for event on NPC val
+# 🔍 Event jump check: {
+#   targetNpcId: 'val',
+#   currentConvNPCId: undefined,
+#   isConversationActive: false,
+#   activeMinigame: 'none',
+#   isPersonChatActive: false,
+#   hasJumpToKnot: false
+# }
+# ℹ️ Not jumping: isConversationActive=false, isPersonChatActive=false
+# 👤 Starting new person-chat conversation for NPC val
+# ⏳ Waiting 500ms before starting person-chat cutscene for val
+# ✅ Starting person-chat minigame for val
+# [NPCManager] Event 'room_entered:server_room' triggered for NPC 'val' → person-chat conversation
+# 📋 Restored 0 fired onceOnly/maxTriggers handler(s)
+# 🎯 Event triggered: room_entered:server_room for NPC: val {}
+# ✅ Event room_entered:server_room conditions passed, triggering NPC reaction
+# 📍 Updated val current knot to: server_room_challenge
+# 🔍 Event config for room_entered:server_room: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'server_room_challenge',
+#   fullConfig: {
+#     handlerIndex: 1,
+#     once: true,
+#     knot: 'server_room_challenge',
+#     conversationMode: 'person-chat',
+#     cooldown: 0
+#   }
+# }
+# 👤 Handling person-chat for event on NPC val
+# 🔍 Event jump check: {
+#   targetNpcId: 'val',
+#   currentConvNPCId: undefined,
+#   isConversationActive: false,
+#   activeMinigame: 'none',
+#   isPersonChatActive: false,
+#   hasJumpToKnot: false
+# }
+# ℹ️ Not jumping: isConversationActive=false, isPersonChatActive=false
+# 👤 Starting new person-chat conversation for NPC val
+# ⏳ Waiting 500ms before starting person-chat cutscene for val
+# ✅ Starting person-chat minigame for val
+# [NPCManager] Event 'room_entered:server_room' triggered for NPC 'val' → person-chat conversation
+# 🎯 Event triggered: room_entered:server_room for NPC: val {}
+# ✅ Event room_entered:server_room conditions passed, triggering NPC reaction
+# 📍 Updated val current knot to: server_room_challenge
+# 🔍 Event config for room_entered:server_room: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'server_room_challenge',
+#   fullConfig: {
+#     handlerIndex: 1,
+#     once: true,
+#     knot: 'server_room_challenge',
+#     conversationMode: 'person-chat',
+#     cooldown: 0
+#   }
+# }
+# 👤 Handling person-chat for event on NPC val
+# 🔍 Event jump check: {
+#   targetNpcId: 'val',
+#   currentConvNPCId: undefined,
+#   isConversationActive: false,
+#   activeMinigame: 'none',
+#   isPersonChatActive: false,
+#   hasJumpToKnot: false
+# }
+# ℹ️ Not jumping: isConversationActive=false, isPersonChatActive=false
+# 👤 Starting new person-chat conversation for NPC val
+# ⏳ Waiting 500ms before starting person-chat cutscene for val
+# ✅ Starting person-chat minigame for val
+# [NPCManager] Event 'room_entered:server_room' triggered for NPC 'val' → person-chat conversation
+# 🎯 Event triggered: item_picked_up:badge for NPC: val {}
+# ✅ Event item_picked_up:badge conditions passed, triggering NPC reaction
+# 🌐 Event setGlobal: badge_seen = true
+# 🔍 Event config for item_picked_up:badge: {
+#   conversationMode: undefined,
+#   npcType: 'person',
+#   knot: undefined,
+#   fullConfig: {
+#     handlerIndex: 2,
+#     once: true,
+#     cooldown: 0,
+#     setGlobal: { badge_seen: true }
+#   }
+# }
+# [NPCManager] Event 'item_picked_up:badge' triggered for NPC 'val' → knot 'undefined'
+# 🎯 Event triggered: room_entered:lobby for NPC: val {}
+# ✅ Event room_entered:lobby conditions passed, triggering NPC reaction
+# 🌐 Event setGlobal: x = 1
+# 🔍 Event config for room_entered:lobby: {
+#   conversationMode: undefined,
+#   npcType: 'person',
+#   knot: undefined,
+#   fullConfig: { handlerIndex: 0, cooldown: 0, setGlobal: { x: 1 } }
+# }
+# [NPCManager] Event 'room_entered:lobby' triggered for NPC 'val' → knot 'undefined'
+# 📋 Restored 3 fired onceOnly/maxTriggers handler(s)
+# 📋 Restored 1 fired onceOnly/maxTriggers handler(s)
+# 🎯 Event triggered: room_entered:server_room for NPC: val {}
+# ✅ Event room_entered:server_room conditions passed, triggering NPC reaction
+# 🌐 Event setGlobal: val_scene_seen = true
+# 📍 Updated val current knot to: server_room_challenge
+# 🔍 Event config for room_entered:server_room: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'server_room_challenge',
+#   fullConfig: {
+#     handlerIndex: 1,
+#     once: true,
+#     knot: 'server_room_challenge',
+#     conversationMode: 'person-chat',
+#     cooldown: 0,
+#     setGlobal: { val_scene_seen: true }
+#   }
+# }
+# 💤 val is knocked out - skipping person-chat for room_entered:server_room
+# 🎯 Event triggered: npc_ko:val for NPC: val { npcId: 'val' }
+# ✅ Event npc_ko:val conditions passed, triggering NPC reaction
+# 📍 Updated val current knot to: fight_outcome
+# 🔍 Event config for npc_ko:val: {
+#   conversationMode: 'person-chat',
+#   npcType: 'person',
+#   knot: 'fight_outcome',
+#   fullConfig: {
+#     handlerIndex: 1,
+#     once: true,
+#     knot: 'fight_outcome',
+#     conversationMode: 'person-chat',
+#     cooldown: 0
+#   }
+# }
+# 👤 Handling person-chat for event on NPC val
+# 🔍 Event jump check: {
+#   targetNpcId: 'val',
+#   currentConvNPCId: undefined,
+#   isConversationActive: false,
+#   activeMinigame: 'none',
+#   isPersonChatActive: false,
+#   hasJumpToKnot: false
+# }
+# ℹ️ Not jumping: isConversationActive=false, isPersonChatActive=false
+# 👤 Starting new person-chat conversation for NPC val
+# ⏳ Waiting 500ms before starting person-chat cutscene for val
+# ✅ Starting person-chat minigame for val
+# [NPCManager] Event 'npc_ko:val' triggered for NPC 'val' → person-chat conversation
+# 🎯 Event triggered: item_picked_up:keycard for NPC: hax {}
+# ✅ Event item_picked_up:keycard conditions passed, triggering NPC reaction
+# [NPCManager] Scheduled timed message from hax at 608000ms: Got the card?
+# 📨 Scheduled timed message for hax: "Got the card?" (delay: 8000ms, targetKnot: default)
+# 🔍 Event config for item_picked_up:keycard: {
+#   conversationMode: undefined,
+#   npcType: 'phone',
+#   knot: undefined,
+#   fullConfig: {
+#     handlerIndex: 0,
+#     cooldown: 0,
+#     sendTimedMessage: { delay: 8000, message: 'Got the card?' }
+#   }
+# }
+# [NPCManager] Event 'item_picked_up:keycard' triggered for NPC 'hax' → knot 'undefined'
+# [NPCManager] Delivered timed message from hax: Got the card?
+# [NPCManager] Scheduled timed message from val at 3000ms: Welcome.
+# 🎯 Event triggered: global_variable_changed:network_isolated for NPC: val { value: true }
+# ✅ Event global_variable_changed:network_isolated conditions passed, triggering NPC reaction
+# 🔍 Event config for global_variable_changed:network_isolated: {
+#   conversationMode: undefined,
+#   npcType: 'person',
+#   knot: undefined,
+#   fullConfig: {
+#     handlerIndex: 0,
+#     knot: undefined,
+#     bark: undefined,
+#     once: undefined,
+#     cooldown: undefined,
+#     condition: undefined,
+#     delayMs: 0,
+#     maxTriggers: undefined,
+#     conversationMode: undefined,
+#     changeStoryPath: undefined,
+#     sendTimedMessage: undefined,
+#     setGlobal: undefined,
+#     completeTask: undefined,
+#     skipTask: [ 'ravi_signoff', 'david_safety_case' ],
+#     unlockTask: undefined,
+#     unlockAim: undefined,
+#     emitEvent: null,
+#     emitEventData: {},
+#     disableClose: false,
+#     background: null,
+#     setVisible: undefined,
+#     patrolOverride: null,
+#     setPatrolSpeed: undefined,
+#     setDwellMultiplier: undefined,
+#     navigateToPlayer: false
+#   }
+# }
+# [NPCManager] Event 'global_variable_changed:network_isolated' triggered for NPC 'val' → knot 'undefined'
+# ⏭️ Event skipTask: ravi_signoff
+# ⏭️ Event skipTask: david_safety_case
+# Subtest: a completed onceOnly scene is saved and does not fire again after a reload
+ok 1 - a completed onceOnly scene is saved and does not fire again after a reload
+  ---
+  duration_ms: 8.666169
+  ...
+# Subtest: a onceOnly scene interrupted by a reload fires again
+ok 2 - a onceOnly scene interrupted by a reload fires again
+  ---
+  duration_ms: 1.744626
+  ...
+# Subtest: a closing conversation with another NPC does not save the scene
+ok 3 - a closing conversation with another NPC does not save the scene
+  ---
+  duration_ms: 0.765019
+  ...
+# Subtest: a onceOnly handler that opens no conversation is saved as soon as it fires
+ok 4 - a onceOnly handler that opens no conversation is saved as soon as it fires
+  ---
+  duration_ms: 0.544152
+  ...
+# Subtest: handlers without onceOnly or maxTriggers are not exported
+ok 5 - handlers without onceOnly or maxTriggers are not exported
+  ---
+  duration_ms: 0.381737
+  ...
+# Subtest: restore keeps the larger count and ignores junk
+ok 6 - restore keeps the larger count and ignores junk
+  ---
+  duration_ms: 0.241279
+  ...
+# Subtest: a KO'd NPC does not open its scene, but the handler's other actions run
+ok 7 - a KO'd NPC does not open its scene, but the handler's other actions run
+  ---
+  duration_ms: 0.778064
+  ...
+# Subtest: the NPC's own KO event still opens its scene (m01 Derek, m05 Torres)
+ok 8 - the NPC's own KO event still opens its scene (m01 Derek, m05 Torres)
+  ---
+  duration_ms: 0.676617
+  ...
+# Subtest: a mapping's sendTimedMessage arrives its delay after the event, mid-mission
+ok 9 - a mapping's sendTimedMessage arrives its delay after the event, mid-mission
+  ---
+  duration_ms: 1.418915
+  ...
+# Subtest: NPC timedMessages with a plain delay still count from game start
+ok 10 - NPC timedMessages with a plain delay still count from game start
+  ---
+  duration_ms: 0.230366
+  ...
+# Subtest: a skipTask mapping skips each listed task in turn
+ok 11 - a skipTask mapping skips each listed task in turn
+  ---
+  duration_ms: 10.866903
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 160.348725

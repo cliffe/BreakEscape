@@ -1,0 +1,12 @@
+Make portrait for Terry Mott
+A Black British night security guard of Caribbean heritage aged about fifty-five from Essex, dark brown skin, a weathered, patient, world-weary face with heavy-lidded eyes and deep lines, a bushy salt-and-pepper moustache, short greying hair receding at the temples, broad shoulders and a solid middle; dry and quietly watchful, a man who has seen every excuse. Wearing a dark navy zip-up fleece jacket with plain shoulder epaulettes and no lettering, half unzipped over a pale blue shirt collar with no tie, a black two-way radio clipped high on the chest of the fleece, a plain ID card on a lanyard, dark grey work trousers with a black belt and a short black aluminium flashlight clipped to the belt.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Made by a Gemini edit of candidate B (ethnicity changed at the user's request, 2026-10-12); B was already flipped, so no further flip.
+# No lettering asked for on purpose: the flip mirrors text (candidate A's SECURITY patch came out backwards).
+# No reference image (old portrait male_security_guard_talk.png is pixel art, a police-style peaked cap). Canon: voice style "contract security guard in his fifties ... Estuary English (Essex) ... tired, dry and procedural; not stupid"; m03_npc_terry_mott.ink "A torch beam swings round", "The guard reaches for his radio", "Double shift tonight. On till six", "nobody talks to me after nine, which suits me".

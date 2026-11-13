@@ -1,0 +1,13 @@
+{
+  "key": "aa29172554fdf9f82be5e393910fe1a9",
+  "npc": "patrol_nurse",
+  "text": "Quick, I'm mid-round.",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

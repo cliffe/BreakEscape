@@ -1,0 +1,13 @@
+{
+  "key": "c4809919747403540fdb8b85d6cd1d6a",
+  "npc": "jun_watanabe",
+  "text": "Lovely, first check saved. There's a matching one after the training, and you'll see how the two stack up.",
+  "voice": "Puck",
+  "style": "Tarrowby's HR assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_pre_mobile_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:20Z"
+}

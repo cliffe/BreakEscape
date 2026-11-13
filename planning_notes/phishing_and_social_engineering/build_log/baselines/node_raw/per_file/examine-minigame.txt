@@ -1,0 +1,237 @@
+TAP version 13
+# OBJECT INTERACTION {
+#   name: 'pin-cracker',
+#   id: 'inventory_tool',
+#   scenarioData: {
+#     type: 'pin-cracker',
+#     id: 'tool',
+#     name: 'Odd Device',
+#     observations: 'Matte casing.',
+#     takeable: false
+#   }
+# }
+# OBJECT INTERACTION {
+#   name: 'mug',
+#   id: 'inventory_mug1',
+#   scenarioData: { type: 'mug', id: 'mug1', name: 'Mug', takeable: false }
+# }
+# OBJECT INTERACTION {
+#   name: 'phone',
+#   id: 'inventory_p',
+#   scenarioData: {
+#     type: 'phone',
+#     id: 'p',
+#     name: 'Phone',
+#     npcIds: [ 'ghost' ],
+#     phoneId: 'g',
+#     takeable: false
+#   }
+# }
+# Phone object detected: {
+#   type: 'phone',
+#   text: undefined,
+#   voice: undefined,
+#   npcIds: [ 'ghost' ]
+# }
+# Phone has npcIds, opening phone-chat directly { npcIds: [ 'ghost' ] }
+# OBJECT INTERACTION {
+#   name: 'notepad',
+#   id: 'inventory_n',
+#   scenarioData: { type: 'notepad', id: 'n', name: 'Notepad', takeable: false }
+# }
+# OBJECT INTERACTION {
+#   name: 'lanyard',
+#   id: 'inventory_l',
+#   scenarioData: {
+#     type: 'lanyard',
+#     id: 'l',
+#     name: 'Lanyard',
+#     readable: true,
+#     readDisplay: 'gameDisplay',
+#     addToNotes: false,
+#     text: "ST. CATHERINE'S",
+#     observations: 'Green ribbon.',
+#     takeable: false
+#   }
+# }
+# OBJECT INTERACTION {
+#   name: 'lockpick',
+#   id: 'inventory_lp',
+#   scenarioData: { type: 'lockpick', id: 'lp', name: 'Lockpick Set', takeable: false }
+# }
+# LOCKPICK ALREADY IN INVENTORY
+# OBJECT INTERACTION {
+#   name: 'key_ring',
+#   id: 'inventory_k',
+#   scenarioData: {
+#     type: 'key_ring',
+#     id: 'k',
+#     name: 'Office Key',
+#     observations: 'Brass.',
+#     takeable: false
+#   }
+# }
+# OBJECT INTERACTION {
+#   name: 'dirty_mugs',
+#   id: 'itsec_cold_coffee',
+#   scenarioData: {
+#     type: 'dirty_mugs',
+#     id: 'itsec_cold_coffee',
+#     name: 'Cold Coffee',
+#     takeable: false,
+#     observations: 'Three mugs of cold coffee on the workbench.'
+#   }
+# }
+# OBJECT INTERACTION {
+#   name: 'mug',
+#   id: 'mug2',
+#   scenarioData: {
+#     type: 'mug',
+#     id: 'mug2',
+#     name: 'Mug',
+#     takeable: true,
+#     observations: 'A mug.'
+#   }
+# }
+# ATTEMPTING TO ADD TAKEABLE ITEM { type: 'mug', name: 'Mug', identifier: 'mug2' }
+# OBJECT INTERACTION {
+#   name: 'sign',
+#   id: 's1',
+#   scenarioData: {
+#     type: 'sign',
+#     id: 's1',
+#     name: 'Plaque',
+#     takeable: false,
+#     observations: 'Brass.',
+#     observationDisplay: 'gameDisplay'
+#   }
+# }
+# OBJECT INTERACTION {
+#   name: 'notice',
+#   id: 's2',
+#   scenarioData: {
+#     type: 'notice',
+#     id: 's2',
+#     name: 'Notice',
+#     takeable: false,
+#     readable: true,
+#     text: 'Wash your hands.'
+#   }
+# }
+# OBJECT INTERACTION {
+#   name: 'safe',
+#   id: 's3',
+#   scenarioData: {
+#     type: 'safe',
+#     id: 's3',
+#     name: 'Safe',
+#     takeable: false,
+#     locked: true,
+#     lockType: 'pin',
+#     observations: 'Heavy.'
+#   }
+# }
+# ITEM LOCKED {
+#   type: 'safe',
+#   id: 's3',
+#   name: 'Safe',
+#   takeable: false,
+#   locked: true,
+#   lockType: 'pin',
+#   observations: 'Heavy.'
+# }
+# OBJECT INTERACTION {
+#   name: 'plant',
+#   id: 'p1',
+#   scenarioData: { type: 'plant', id: 'p1', name: 'Plant', takeable: false }
+# }
+# OBJECT INTERACTION {
+#   name: 'key',
+#   id: 'inventory_office_key',
+#   scenarioData: {
+#     type: 'key',
+#     id: 'office_key',
+#     name: 'Office Key',
+#     takeable: true,
+#     observations: 'A brass key.'
+#   }
+# }
+# Subtest: size: twice the room display scale, whole-number multiple, at least 4x
+ok 1 - size: twice the room display scale, whole-number multiple, at least 4x
+  ---
+  duration_ms: 1.18457
+  ...
+# Subtest: room display scale: canvas CSS width over game width, times camera zoom
+ok 2 - room display scale: canvas CSS width over game width, times camera zoom
+  ---
+  duration_ms: 0.127808
+  ...
+# Subtest: image source: inventory <img> uses its own file and natural size
+ok 3 - image source: inventory <img> uses its own file and natural size
+  ---
+  duration_ms: 0.102824
+  ...
+# Subtest: image source: room sprite reads its current frame
+ok 4 - image source: room sprite reads its current frame
+  ---
+  duration_ms: 0.084731
+  ...
+# Subtest: routing: a no-action inventory item opens examine
+ok 5 - routing: a no-action inventory item opens examine
+  ---
+  duration_ms: 2.163603
+  ...
+# Subtest: routing: an inventory item with no text still opens examine
+ok 6 - routing: an inventory item with no text still opens examine
+  ---
+  duration_ms: 0.313576
+  ...
+# Subtest: routing: an action item keeps its action (phone, notepad, readable lanyard, lockpick, key)
+ok 7 - routing: an action item keeps its action (phone, notepad, readable lanyard, lockpick, key)
+  ---
+  duration_ms: 0.794149
+  ...
+# Subtest: routing: a text-only room object opens examine (sis01 cold coffee)
+ok 8 - routing: a text-only room object opens examine (sis01 cold coffee)
+  ---
+  duration_ms: 0.285324
+  ...
+# Subtest: routing: a takeable room object is picked up, not examined
+ok 9 - routing: a takeable room object is picked up, not examined
+  ---
+  duration_ms: 0.266827
+  ...
+# Subtest: routing: room objects with their own display keep it
+ok 10 - routing: room objects with their own display keep it
+  ---
+  duration_ms: 0.49751
+  ...
+# Subtest: routing: a room object with no text at all keeps the plain notification
+ok 11 - routing: a room object with no text at all keeps the plain notification
+  ---
+  duration_ms: 0.11852
+  ...
+# Subtest: shouldExamine rules
+ok 12 - shouldExamine rules
+  ---
+  duration_ms: 0.089769
+  ...
+# Subtest: a forced (disableClose) minigame is never replaced by examine
+ok 13 - a forced (disableClose) minigame is never replaced by examine
+  ---
+  duration_ms: 0.070363
+  ...
+# Subtest: routing: a single key clicked in the inventory opens examine, not "Already in inventory"
+ok 14 - routing: a single key clicked in the inventory opens examine, not "Already in inventory"
+  ---
+  duration_ms: 0.183869
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 100.6341

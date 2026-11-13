@@ -1,0 +1,13 @@
+{
+  "key": "4bfade59aabf2d59cd4e0501a25ce779",
+  "npc": "jordan_pike",
+  "text": "Hey! Honestly, no pressure, but you look like a Keyholder. Here, leaflet. It's in your notepad now. Nobody applies, you get found.",
+  "voice": "Puck",
+  "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

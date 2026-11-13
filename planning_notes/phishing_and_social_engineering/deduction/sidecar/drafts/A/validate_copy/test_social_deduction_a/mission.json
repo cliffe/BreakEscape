@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: deduction A (Open evening)",
+  "description": "Fixture for the deduction board in the Eldritch Hacker skin: five guests at an open evening, three profiles, a favour, a camera sighting and a warned close before the sanctum. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

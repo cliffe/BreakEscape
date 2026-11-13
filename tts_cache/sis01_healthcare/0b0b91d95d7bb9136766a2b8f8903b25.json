@@ -1,0 +1,13 @@
+{
+  "key": "0b0b91d95d7bb9136766a2b8f8903b25",
+  "npc": "dr_sharma",
+  "text": "That's one. The other was a phishing email on a finance PC, the same morning.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

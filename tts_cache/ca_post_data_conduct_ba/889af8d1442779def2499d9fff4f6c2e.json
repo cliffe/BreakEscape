@@ -1,0 +1,13 @@
+{
+  "key": "889af8d1442779def2499d9fff4f6c2e",
+  "npc": "yusuf_demir",
+  "text": "Back again. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+  "voice": "Alnilam",
+  "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_post_data_conduct_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:52Z"
+}

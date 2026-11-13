@@ -1,0 +1,13 @@
+{
+  "key": "c352ca886ef0ce9580c36287d4a6f20a",
+  "npc": "anjali_rao",
+  "text": "Start at the kiosk. Write the email first, then switch sides and play the colleague who clicked, sorting what turns up.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:25Z"
+}

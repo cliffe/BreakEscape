@@ -1,0 +1,20 @@
+TAP version 13
+# Subtest: a clean source raises nothing
+ok 1 - a clean source raises nothing
+  ---
+  duration_ms: 323.110978
+  ...
+# Subtest: the reader: every broken declaration and every write to an import is reported
+ok 2 - the reader: every broken declaration and every write to an import is reported
+  ---
+  duration_ms: 327.877811
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 800.845624

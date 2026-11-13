@@ -1,0 +1,13 @@
+Make portrait for Gary Whitlock
+A white British man in his late thirties, an exhausted and stressed hospital IT systems administrator who has been at his desk since half past ten at night. Wearing a rumpled dark-blue polo shirt with the sleeves and collar a bit crumpled, and an NHS staff ID card on a lanyard round his neck. Short messy mid-brown hair, a few days of stubble, tired shadowed eyes with dark circles. He looks like a real overworked sysadmin and a tired working dad, NOT a hacker, NO hoodie.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Background was solid mid-grey; use --bg-color ~90,90,90.
+
+# Saved 2026-10-12 from tmp/pixellab/gary_whitlock/concept.png (the concept the pipeline used)

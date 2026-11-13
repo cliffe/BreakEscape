@@ -1,0 +1,283 @@
+{
+  "_about": "E9 passwords defend fragment (awareness, Tarrowby Logistics). Tarrowby Logistics and everyone in it are fictional; every web address ends .example. triageSets holds only the episode set e9_lock_it_down (E9's measurable content feeds the general_v2 check pair, built by 10_CHECK_FORMS.md's own generator, not this fragment; see E09_passwords.md section 14). Copy triageSets and the awarenessEpisode keys into the E9 shells: the wiring agent builds the full erb, the generator (gen_e8_e17_shells.py) builds the defend-only shell. Brand roster and cast: ../BRAND_SET.md (Tarrowby Logistics). Rows 1 to 3 are ordinary triageSet messages (push and email). Rows 4 to 8 are ENG-09a `choice` cards. ENG-09a (choice kind) is on main; ENG-08's choice schema and the scenario-local mfa_number_relay tell must be accepted by the validator before the shells validate; the full variant also needs ENG-02 (the guess attack half).",
+
+  "_brandAdditions": {
+    "_use": "For BRAND_SET.md (Tarrowby Logistics additions from E9). Fuller P11 entry is in e9/BRAND_ADDITIONS.md. E9 adds no cast: Colin Mather (attack target, warehouse manager) and Nilesh Solanki (host, IT service desk analyst) are both built Tarrowby cast. It adds two new fictional .example names and confirms one reused brand.",
+    "newNames": "RiverReach Angling (riverreachangling.example): a fictional hobby angling forum Colin once used, breached, whose password he reused at work; used only in the attack half (attack.json fact tarrowby_mather_forum and the guess reuseStep). Pennington Rangers: a fictional amateur football club Colin supports (attack.json fact tarrowby_mather_team). Bramble: Colin's dog (attack.json fact tarrowby_mather_pet). 'RiverReach', 'riverreachangling', 'Pennington' and 'Bramble' each returned zero repo hits outside the E9 implementation briefs on 2026-10-29. Pre-ship: web-search 'RiverReach Angling' and 'Pennington Rangers' against real businesses and clubs with the usual check.",
+    "fuelr": "Fuelr (fuelr.example) is reused from E6 as the new supplier portal in defend rows 5 and 6. Note: E6 only ever used the scam look-alike fuelr-rewards.example (an unused leftover brand); fuelr.example is Fuelr's legitimate domain, introduced here for the genuine portal sign-up. Keep Fuelr on the pre-ship web-search list (BRAND_SET already lists it)."
+  },
+
+  "triageSets": [
+    {
+      "labels": {
+        "teamBadgeTitle": "Risky sign-in prompts you reported or checked this round rather than going along with",
+        "teamBadge": "Risks reported or checked for the team: {n}",
+        "phishCaughtLabel": "Risks spotted"
+      },
+      "bands": [
+        {
+          "min": 85,
+          "headline": "Well done: you spotted the risks and knew why"
+        },
+        {
+          "min": 60,
+          "headline": "Getting there: a few risks slipped past"
+        },
+        {
+          "min": 0,
+          "headline": "Worth practising: here's where to look first"
+        }
+      ],
+      "criticalWhat": {
+        "push": "approving a sign-in you didn't start",
+        "email": "doing what a fake 'IT' message asked"
+      },
+      "reportReply": "Thanks. We'll look at the account and reset whatever needs it.",
+      "resultCopy": {
+        "noFlags": "Next time, tick what looks off. The review cards show what each risk was.",
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "criticalLead": "let someone into the account",
+        "reportedPct": "Reported {pct}% of the risks"
+      },
+      "id": "e9_lock_it_down",
+      "_prefix": "Prefix for the full episode (id e9_passwords). The defend-only shell (id e9_passwords_defend) sets episode_e9_passwords_defend_defend_ instead. No stage on purpose, as in E1/E6: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
+      "_localTells": "mfa_number_relay is an account-takeover/MFA sign scored only by E9 today (the shipped E3 push defend set does not carry it, it is not in the shared CHANNEL_TELLS, and no general_v2 check item scores it), so it stays scenario-local: declared in channelTells with a flagChips label, a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and a factorStrings.mfa_number_relay.redFlag sentence on the one card that flags it (e9_fake_it_number). Do not append it to the shared CHANNEL_TELLS / SKILL_NAMES. Promote it only if a second set uses it or a 10 check item scores it. unrequested_mfa_push and secrecy_or_bypass are shared-library tells and need no label.",
+      "title": "Your Tarrowby account under attack",
+      "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. Approve a prompt only if you started it; otherwise deny and report. No clock, and no real password is typed. Reporting when you're unsure is always fine.",
+      "scoringProfile": "awareness",
+      "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 5 },
+      "verifyVerdict": true,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["unrequested_mfa_push", "mfa_number_relay", "secrecy_or_bypass"],
+      "flagChips": {
+        "mfa_number_relay": "A message asking you to type or read back a sign-in number or code"
+      },
+      "genuineCopy": {
+        "binnedLeadOne": "One prompt you started was denied",
+        "binnedLeadMany": "{n} prompts you started were denied",
+        "costBoth": "Reporting when you're unsure is never wrong, but a report on your own prompt takes a colleague's time to check, and a denied one means you are locked out until you try again.",
+        "costReport": "Reporting when you're unsure is never wrong, but a report on your own prompt takes a colleague's time to check, and you wait.",
+        "costBin": "Denying a prompt you started has a cost: you are locked out until you try again.",
+        "whyBothHalves": "Both halves matter: denying a prompt you didn't start stops the attack, and approving the ones you did keeps you working."
+      },
+      "skillNames": {
+        "mfa_number_relay": "Sign-in number requests",
+        "unrequested_mfa_push": "Sign-in approval requests"
+      },
+      "outcome": { "setGlobalPrefix": "episode_e9_passwords_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e9_push_own",
+          "_note": "Row 1. Genuine: a sign-in prompt the learner started, from where they are, right after signing in on the real depot sign-in. Approve is right (awareness real: trust = 60, full marks; Verify or Report still score full). The genuine half of the mirror pair with row 2. Built from the E3/E8 push shape.",
+          "kind": "push",
+          "time": "08:12",
+          "push": {
+            "app": "Tarrowby Sign-in",
+            "request": "Are you trying to sign in?",
+            "account": "you@tarrowby.example",
+            "location": "Leeds, UK",
+            "device": "your own phone"
+          },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "This prompt is on your own phone, from Leeds, at a normal hour. If you have just signed in yourself, a prompt like this is the normal second step, so Approve it. Denying it or reporting it is no error, it just means signing in again."
+            }
+          }
+        },
+        {
+          "id": "e9_push_unstarted",
+          "_note": "Row 2. Phish: a prompt the learner did not start, from a device and place that are not theirs, in the middle of the night. Deny and report (push deny_report scores as Report = 60, full). Mirror of row 1 (same app and account), so 'a prompt arrived' is not itself the tell. unrequested_mfa_push is a shared-library tell. Approving is a critical miss (push).",
+          "kind": "push",
+          "time": "02:40",
+          "push": {
+            "app": "Tarrowby Sign-in",
+            "request": "Are you trying to sign in?",
+            "account": "you@tarrowby.example",
+            "location": "Unknown location, outside the UK",
+            "device": "Windows PC"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["unrequested_mfa_push"],
+            "perFlagNote": {
+              "unrequested_mfa_push": "A sign-in prompt at 02:40, from a Windows PC outside the UK that is not yours, while you were asleep, means someone has your password and is hoping you will tap Approve. Deny it and report it; the service desk changes the password."
+            },
+            "ifTrusted": "Approving would let the sender into your Tarrowby account, with your access, from a computer you've never used.",
+            "reportReply": "Thanks. We've reset your password and blocked that sign-in. Denying the prompt is what stopped them."
+          }
+        },
+        {
+          "id": "e9_fake_it_number",
+          "_note": "Row 3. Phish: the fake 'IT' message that leans on the flood, asking you to read back the number on your screen or tap Approve 'to make them stop'. The scored tell is mfa_number_relay (scenario-local, labelled in flagChips) plus the shared secrecy_or_bypass. Freemail sender, so auth passes; the tells are the ask (mfa_number_relay) and the outside sender address (senderTrust), not the headers. email kind, so trusting it is a critical miss.",
+          "from": { "name": "Tarrowby IT Service Desk", "address": "tarrowby.itdesk@mailboxly.example" },
+          "to": "you@tarrowby.example",
+          "subject": "We can stop those sign-in prompts for you",
+          "time": "02:46",
+          "body": "Hello,\nWe can see failed sign-ins on your account and we know the prompts are a nuisance. To stop them, read back the six-digit number on your screen in a reply, or just tap Approve on the next prompt and we'll close it off.\nTarrowby IT Service Desk",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailboxly.example", "replyTo": "tarrowby.itdesk@mailboxly.example" },
+          "factorStrings": {
+            "mfa_number_relay": { "redFlag": "A message asking you to type or read back a sign-in number or code" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["mfa_number_relay", "senderTrust"],
+            "perFlagNote": {
+              "senderTrust": "The address is an outside mailbox (mailboxly.example), not a Tarrowby one, so it only borrows the service desk's name.",
+              "mfa_number_relay": "No genuine IT team asks you to type a number, read back a code or approve a prompt. The number is on the attacker's screen; reading it back, or approving, hands them the account."
+            },
+            "ifTrusted": "Reading back the number, or approving, lets the sender straight into your account.",
+            "reportReply": "Thanks. That wasn't IT: we never ask you to read back a number or approve a prompt. We've reset the password and the prompts have stopped."
+          }
+        },
+        {
+          "id": "e9_passphrase",
+          "_note": "Row 4. ENG-09a choice card. isPhish true is the scoring vehicle only: the safe option (words) maps to report (phish report = 60, full), the unsafe option (complex) maps to trust (phish trust = 0, the miss), and truth.correct is 'report'. truth.flags is [] (a choice card scores no tells). Option labels describe the pattern, not a bare credential; the example words are game words (the same three the attack-half passphrase demo uses). LO2.",
+          "kind": "choice",
+          "subject": "Which password is stronger?",
+          "choice": {
+            "prompt": "Which of these makes the stronger password?",
+            "options": [
+              { "id": "complex", "label": "Your company's name with a capital, a year and a symbol on the end (for example Tarrowby2026!)", "verdict": "trust" },
+              { "id": "words", "label": "Three random words strung together (for example otter-ladder-crimson)", "verdict": "report" }
+            ],
+            "note": "These are made up for the exercise; no real password is typed or stored. Never use a training example as your real password."
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": [],
+            "correct": "report",
+            "reportReply": "Length and unpredictability beat complexity rules. The company name plus a year plus a symbol is near the top of every guess list, exactly the pattern a guesser tries first. Another random word adds far more than a capital or a symbol does.",
+            "ifTrusted": "A company-name-plus-year-plus-symbol password is one of the first things a guesser tries; the symbol on the end barely slows it down."
+          }
+        },
+        {
+          "id": "e9_signup_password",
+          "_note": "Row 5. ENG-09a choice card. The new Fuelr supplier portal (fuelr.example, reused from E6) asks you to set a password. Safe option (unique, from the manager) maps to report; unsafe (reuse your usual one) maps to trust. The attack-half reuse rig is the mirror: reusing your usual password is exactly what opened Colin's account. LO1.",
+          "kind": "choice",
+          "subject": "A password for the new Fuelr portal",
+          "choice": {
+            "prompt": "The new Fuelr supplier portal asks you to set a password. What do you use?",
+            "options": [
+              { "id": "unique", "label": "A new password made up by your password manager when you sign up", "verdict": "report" },
+              { "id": "reuse", "label": "Your usual password, the one you already use for other sign-ins", "verdict": "trust" }
+            ],
+            "note": "No real password is typed; the password manager fills it in for you."
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": [],
+            "correct": "report",
+            "reportReply": "A unique generated password means a breach of Fuelr can't open anything else. Let the manager make and remember it; you never have to type or recall it.",
+            "ifTrusted": "Reusing your usual password is the one habit that turns a breach of any site you used into a break-in everywhere you used the same one."
+          }
+        },
+        {
+          "id": "e9_security_answer",
+          "_note": "Row 6. ENG-09a choice card. The same Fuelr sign-up asks a security question ('mother's maiden name'). Safe option (made-up, kept in the manager) maps to report; unsafe (your true answer) maps to trust. Split from row 5 so each choice card holds one decision. LO3.",
+          "kind": "choice",
+          "subject": "A security question on the Fuelr sign-up",
+          "choice": {
+            "prompt": "Fuelr asks for your mother's maiden name as a security question. What do you give it?",
+            "options": [
+              { "id": "true", "label": "Your real mother's maiden name, so it is easy to remember", "verdict": "trust" },
+              { "id": "madeup", "label": "A made-up answer saved in your password manager", "verdict": "report" }
+            ],
+            "note": "The made-up answer is stored with the login, so you never have to remember it."
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": [],
+            "correct": "report",
+            "reportReply": "A true security answer can be found online or guessed from what you've posted, so a made-up one kept in the manager is safer. Treat the answer like another password.",
+            "ifTrusted": "A real maiden name is the sort of thing a guesser can look up or work out from public posts, the same way they build a guess list in the first place."
+          }
+        },
+        {
+          "id": "e9_signin_ladder",
+          "_note": "Row 7. ENG-09a choice card, three options. Only the passkey maps to report (full); the app and the text code both map to trust (a miss), so choosing either scores zero. LO4. Refresh as NCSC advice moves (passkeys became consumers' first choice in April 2026). Cut this row or row 8 to reach six if needed; keep rows 1 and 2, one password card and the fake-IT card.",
+          "kind": "choice",
+          "subject": "How to sign in to this service",
+          "choice": {
+            "prompt": "This service offers three ways to sign in. Pick the strongest it offers.",
+            "options": [
+              { "id": "app", "label": "The authenticator app, matching the number it shows", "verdict": "trust" },
+              { "id": "passkey", "label": "A passkey (fingerprint, face or PIN, tied to the real site)", "verdict": "report" },
+              { "id": "sms", "label": "A one-time code sent by text message", "verdict": "trust" }
+            ],
+            "note": "Turn on the strongest the service offers; any of these beats a password on its own."
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": [],
+            "correct": "report",
+            "reportReply": "A passkey only works on the real site, so it can't be phished or relayed the way the fake 'IT' message tried. The app with number matching is next best; a text code is a last resort, still better than a password alone.",
+            "ifTrusted": "The app and the text code are both worth having, but they can be phished or relayed. Where a passkey is offered, it is the one to choose."
+          }
+        },
+        {
+          "id": "e9_shared_pc",
+          "_note": "Row 8. ENG-09a choice card. A depot PC with its password on a sticky note, readable from the loading bay. Safe option (ask for your own account or the service desk) maps to report; unsafe (use the note) maps to trust. Remaps the old warehouse scene. LO6.",
+          "kind": "choice",
+          "subject": "A password on a sticky note",
+          "choice": {
+            "prompt": "A depot PC has its password on a sticky note on the monitor, readable from the loading bay. You need to use it. What do you do?",
+            "options": [
+              { "id": "use_note", "label": "Use the password on the note, just this once, because the job is urgent", "verdict": "trust" },
+              { "id": "ask", "label": "Ask the service desk for your own account", "verdict": "report" }
+            ],
+            "note": "Finding a password on a note is common; the fix is the service desk's job, but you can ask for it."
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": [],
+            "correct": "report",
+            "reportReply": "A shared login means nobody knows who did what, the password spreads to anyone who walks past, and leavers keep access. Don't use a found password; ask the service desk for your own account.",
+            "ifTrusted": "Signing in on someone else's password, even to get a job done, leaves a record in their name and keeps a login going that anyone in the bay can read."
+          }
+        }
+      ]
+    }
+  ],
+
+  "awarenessEpisode": {
+    "role": "general_staff",
+    "company": "tarrowby_logistics",
+    "brand": { "name": "Tarrowby Logistics", "logoText": "TARROWBY", "accent": "#3b5b8c" },
+    "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: a guess list built from one colleague's public details, and your own sign-in choices. No real password is ever typed or stored; the guesses and codes are made up.",
+    "defend": { "setId": "e9_lock_it_down", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "teamLine": "By reporting or checking {n} of these rather than going along with them, you kept a risk away from the rest of your team.",
+      "weakestTells": "The risks most often missed: {names} ({counts} each).",
+      "weakestTell": "The risk most often missed: {names} ({counts}).",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier, in the depot office. First you're on the red team: look at what a colleague has put online (click a line to note it), build a guess list from it, and watch how fast a reused password opens his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored.",
+      "flipHeading": "Now it's your phone.",
+      "flipGuessIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone.",
+      "flipIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone, buzzing with sign-in prompts you didn't start, and a message from 'IT' telling you how to make them stop.",
+      "flipDefenderLine": "Someone has a password of yours, from a breach of a site you forgot you used, and they're leaning on your phone because they can't get past it. The number any 'IT' message asks you to read back is on their screen, not IT's, so deny what you didn't start and report it.",
+      "flipNoSend": "Nothing of the colleague's is here to replay, but the lesson is the same: a reused password is what opens an account. Next, you lock your own account down.",
+      "flipMissed": "The guesser didn't land this time, but a reused password is still what opens an account. Next, you lock your own account down.",
+      "flipMissedHeading": "Nothing landed this time",
+      "flipLandedNoTells": "It opened on a reused password with nothing clever at all. Next, you lock your own account down.",
+      "allPhishRight": "Every risk was caught, with every reason named.",
+      "noBlameLine": "Reusing a password is ordinary and common; this is how most accounts are broken into, not a sign anyone was careless. A miss here just shows what to change tonight.",
+      "mondayCard": "On Monday, three things at home: turn on 2-step verification, or a passkey, for your personal email first; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and switch on a password manager, starting with your email. Report anything at work using the route in the box below.",
+      "defendOnly": "Everything here follows one reused password doing the rounds. Anything you were caught out by is shown below, with what to do instead.",
+      "conceptPanel": [
+        { "heading": "How passwords get stolen", "text": "Most passwords aren't cracked by genius. They're guessed from the obvious first (123456, a team, a pet, the company name and a year), reused from a breach of another site, phished through a fake sign-in page, or simply handed over. A different password for every account, kept in a manager, is the one habit that blunts all of those at once." },
+        { "heading": "The sign-in ladder", "text": "Turn on a second step beyond the password wherever you can. A passkey is best: it only works on the real site, so it can't be phished or relayed. An authenticator app with number matching is next. A text code is a last resort, but still far better than a password alone." },
+        { "heading": "Browsers, notes and managers", "text": "A password manager makes and remembers a different password for every account and fills it in only on the right site. Your browser's own manager is fine for personal accounts on your own devices; at work, use what the organisation provides. Never leave a password on a note on a shared desk, monitor or keyboard." },
+        { "heading": "What a passkey is", "text": "A passkey replaces the password with a secret kept on your device or in your manager, unlocked the way you unlock your phone. Because it is tied to the real website, it can't be typed into a fake page, reused on another site, or leaked in someone else's breach." }
+      ]
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e9_passwords_defend), which has no osint, guess or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (the flip strings are never shown). The conceptPanel array is carried over, so all four concept cards show in the defend-only debrief (ENG-09b).",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down. No real password is ever typed here.",
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: your own sign-in prompts and password choices. No real password is ever typed or stored."
+    }
+  }
+}

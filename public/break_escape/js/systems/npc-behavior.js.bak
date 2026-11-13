@@ -1,0 +1,673 @@
+/**
+ * NPC Behavior System - Core Behavior Management
+ *
+ * Manages all NPC behaviors including:
+ * - Face Player: Turn to face player when nearby
+ * - Patrol: Random movement within area (using EasyStar.js pathfinding)
+ * - Personal Space: Back away if player too close
+ * - Hostile: Red tint, future chase/flee behaviors
+ *
+ * Architecture:
+ * - NPCBehaviorManager: Singleton manager for all NPC behaviors
+ * - NPCBehavior: Individual behavior instance per NPC
+ * - NPCPathfindingManager: Manages EasyStar pathfinding per room
+ *
+ * Lifecycle:
+ * - Manager initialized once in game.js create()
+ * - Behaviors registered per-room when sprites created
+ * - Updated every frame (throttled to 50ms)
+ * - Rooms never unload, so no cleanup needed
+ *
+ * @module npc-behavior
+ */
+
+import { TILE_SIZE } from '../utils/constants.js?v=8';
+import { NPCPathfindingManager } from './npc-pathfinding.js?v=1';
+
+/**
+ * NPCBehaviorManager - Manages all NPC behaviors
+ *
+ * Initialized once in game.js create() phase
+ * Updated every frame in game.js update() phase
+ *
+ * IMPORTANT: Rooms never unload, so no lifecycle management needed.
+ * Behaviors persist for entire game session once registered.
+ */
+export class NPCBehaviorManager {
+    constructor(scene, npcManager) {
+        this.scene = scene;              // Phaser scene reference
+        this.npcManager = npcManager;    // NPC Manager reference
+        this.behaviors = new Map();      // Map<npcId, NPCBehavior>
+        this.updateInterval = 50;        // Update behaviors every 50ms
+        this.lastUpdate = 0;
+        
+        // Initialize pathfinding manager for NPC patrol routes
+        this.pathfindingManager = new NPCPathfindingManager(scene);
+
+        console.log('✅ NPCBehaviorManager initialized');
+    }
+    
+    /**
+     * Get pathfinding manager (used by NPCBehavior instances)
+     */
+    getPathfindingManager() {
+        return this.pathfindingManager;
+    }
+
+    /**
+     * Register a behavior instance for an NPC sprite
+     * Called when NPC sprite is created in createNPCSpritesForRoom()
+     *
+     * No unregister needed - rooms never unload, sprites persist
+     */
+    registerBehavior(npcId, sprite, config) {
+        try {
+            const behavior = new NPCBehavior(npcId, sprite, config, this.scene, this.pathfindingManager);
+            this.behaviors.set(npcId, behavior);
+            console.log(`🤖 Behavior registered for ${npcId}`);
+        } catch (error) {
+            console.error(`❌ Failed to register behavior for ${npcId}:`, error);
+        }
+    }
+
+    /**
+     * Main update loop (called from game.js update())
+     */
+    update(time, delta) {
+        // Throttle updates to every 50ms for performance
+        if (time - this.lastUpdate < this.updateInterval) {
+            return;
+        }
+        this.lastUpdate = time;
+
+        // Get player position once for all behaviors
+        const player = window.player;
+        if (!player) {
+            return; // No player yet
+        }
+        const playerPos = { x: player.x, y: player.y };
+
+        for (const [npcId, behavior] of this.behaviors) {
+            behavior.update(time, delta, playerPos);
+        }
+    }
+
+    /**
+     * Update behavior config (called from Ink tag handlers)
+     */
+    setBehaviorState(npcId, property, value) {
+        const behavior = this.behaviors.get(npcId);
+        if (behavior) {
+            behavior.setState(property, value);
+        }
+    }
+
+    /**
+     * Get behavior instance for an NPC
+     */
+    getBehavior(npcId) {
+        return this.behaviors.get(npcId) || null;
+    }
+}
+
+/**
+ * NPCBehavior - Individual NPC behavior instance
+ */
+class NPCBehavior {
+    constructor(npcId, sprite, config, scene, pathfindingManager) {
+        this.npcId = npcId;
+        this.sprite = sprite;
+        this.scene = scene;
+        this.pathfindingManager = pathfindingManager;  // Reference to pathfinding manager
+
+        // Validate sprite reference
+        if (!this.sprite || !this.sprite.body) {
+            throw new Error(`❌ Invalid sprite provided for NPC ${npcId}`);
+        }
+
+        // Get NPC data and validate room ID
+        const npcData = window.npcManager?.npcs?.get(npcId);
+        if (!npcData || !npcData.roomId) {
+            console.warn(`⚠️ NPC ${npcId} has no room assignment, using default`);
+            this.roomId = 'unknown';
+        } else {
+            this.roomId = npcData.roomId;
+        }
+
+        // Verify sprite reference matches stored sprite
+        if (npcData && npcData._sprite && npcData._sprite !== this.sprite) {
+            console.warn(`⚠️ Sprite reference mismatch for ${npcId}`);
+        }
+
+        this.config = this.parseConfig(config || {});
+
+        // State
+        this.currentState = 'idle';
+        this.direction = 'down';          // Current facing direction
+        this.hostile = this.config.hostile.defaultState;
+        this.influence = 0;
+
+        // Patrol state
+        this.patrolTarget = null;
+        this.currentPath = [];           // Current path from EasyStar pathfinding
+        this.pathIndex = 0;              // Current position in path
+        this.lastPatrolChange = 0;
+        this.lastPosition = { x: this.sprite.x, y: this.sprite.y };
+        this.collisionRotationAngle = 0;  // Clockwise rotation angle when blocked (0-360)
+        this.wasBlockedLastFrame = false; // Track block state for smooth transitions
+
+        // Personal space state
+        this.backingAway = false;
+
+        // Animation tracking
+        this.lastAnimationKey = null;
+        this.isMoving = false;
+
+        // Apply initial hostile visual if needed
+        if (this.hostile) {
+            this.setHostile(true);
+        }
+
+        console.log(`✅ Behavior initialized for ${npcId} in room ${this.roomId}`);
+    }
+
+    parseConfig(config) {
+        // Parse and apply defaults to config
+        const merged = {
+            facePlayer: config.facePlayer !== undefined ? config.facePlayer : true,
+            facePlayerDistance: config.facePlayerDistance || 96,
+            patrol: {
+                enabled: config.patrol?.enabled || false,
+                speed: config.patrol?.speed || 100,
+                changeDirectionInterval: config.patrol?.changeDirectionInterval || 3000,
+                bounds: config.patrol?.bounds || null
+            },
+            personalSpace: {
+                enabled: config.personalSpace?.enabled || false,
+                distance: config.personalSpace?.distance || 48,
+                backAwaySpeed: config.personalSpace?.backAwaySpeed || 30,
+                backAwayDistance: config.personalSpace?.backAwayDistance || 5
+            },
+            hostile: {
+                defaultState: config.hostile?.defaultState || false,
+                influenceThreshold: config.hostile?.influenceThreshold || -50,
+                chaseSpeed: config.hostile?.chaseSpeed || 200,
+                fleeSpeed: config.hostile?.fleeSpeed || 180,
+                aggroDistance: config.hostile?.aggroDistance || 160
+            }
+        };
+
+        // Pre-calculate squared distances for performance
+        merged.facePlayerDistanceSq = merged.facePlayerDistance ** 2;
+        merged.personalSpace.distanceSq = merged.personalSpace.distance ** 2;
+        merged.hostile.aggroDistanceSq = merged.hostile.aggroDistance ** 2;
+
+        // Validate patrol bounds include starting position
+        if (merged.patrol.enabled && merged.patrol.bounds) {
+            const bounds = merged.patrol.bounds;
+            const spriteX = this.sprite.x;
+            const spriteY = this.sprite.y;
+
+            // Get room offset for bounds calculation
+            const roomData = window.rooms ? window.rooms[this.roomId] : null;
+            const roomWorldX = roomData?.worldX || 0;
+            const roomWorldY = roomData?.worldY || 0;
+
+            // Convert bounds to world coordinates
+            const worldBounds = {
+                x: roomWorldX + bounds.x,
+                y: roomWorldY + bounds.y,
+                width: bounds.width,
+                height: bounds.height
+            };
+
+            const inBoundsX = spriteX >= worldBounds.x && spriteX <= (worldBounds.x + worldBounds.width);
+            const inBoundsY = spriteY >= worldBounds.y && spriteY <= (worldBounds.y + worldBounds.height);
+
+            if (!inBoundsX || !inBoundsY) {
+                console.warn(`⚠️ NPC ${this.npcId} starting position (${spriteX}, ${spriteY}) is outside patrol bounds. Expanding bounds...`);
+
+                // Auto-expand bounds to include starting position
+                const newX = Math.min(worldBounds.x, spriteX);
+                const newY = Math.min(worldBounds.y, spriteY);
+                const newMaxX = Math.max(worldBounds.x + worldBounds.width, spriteX);
+                const newMaxY = Math.max(worldBounds.y + worldBounds.height, spriteY);
+
+                // Store bounds in world coordinates for easier calculation
+                merged.patrol.worldBounds = {
+                    x: newX,
+                    y: newY,
+                    width: newMaxX - newX,
+                    height: newMaxY - newY
+                };
+
+                console.log(`✅ Patrol bounds expanded to include starting position`);
+            } else {
+                // Store bounds in world coordinates
+                merged.patrol.worldBounds = worldBounds;
+            }
+        }
+
+        return merged;
+    }
+
+    update(time, delta, playerPos) {
+        try {
+            // Validate sprite
+            if (!this.sprite || !this.sprite.body || this.sprite.destroyed) {
+                console.warn(`⚠️ Invalid sprite for ${this.npcId}, skipping update`);
+                return;
+            }
+
+            // Main behavior update logic
+            // 1. Determine highest priority state
+            const state = this.determineState(playerPos);
+
+            // 2. Execute state behavior
+            this.executeState(state, time, delta, playerPos);
+
+            // 3. CRITICAL: Update depth after any movement
+            // This ensures correct Y-sorting with player and other NPCs
+            this.updateDepth();
+
+        } catch (error) {
+            console.error(`❌ Behavior update error for ${this.npcId}:`, error);
+        }
+    }
+
+    determineState(playerPos) {
+        if (!playerPos) {
+            return 'idle';
+        }
+
+        // Calculate distance to player
+        const dx = playerPos.x - this.sprite.x;
+        const dy = playerPos.y - this.sprite.y;
+        const distanceSq = dx * dx + dy * dy;
+
+        // Priority 5: Chase (hostile + close) - stub for now
+        if (this.hostile && distanceSq < this.config.hostile.aggroDistanceSq) {
+            // TODO: Implement chase behavior in future
+            // return 'chase';
+        }
+
+        // Priority 4: Flee (hostile + far) - stub for now
+        if (this.hostile) {
+            // TODO: Implement flee behavior in future
+            // return 'flee';
+        }
+
+        // Priority 3: Maintain Personal Space
+        if (this.config.personalSpace.enabled && distanceSq < this.config.personalSpace.distanceSq) {
+            return 'maintain_space';
+        }
+
+        // Priority 2: Patrol
+        if (this.config.patrol.enabled) {
+            // Check if player is in interaction range - if so, face player instead
+            if (distanceSq < this.config.facePlayerDistanceSq && this.config.facePlayer) {
+                return 'face_player';
+            }
+            return 'patrol';
+        }
+
+        // Priority 1: Face Player
+        if (this.config.facePlayer && distanceSq < this.config.facePlayerDistanceSq) {
+            return 'face_player';
+        }
+
+        // Priority 0: Idle
+        return 'idle';
+    }
+
+    executeState(state, time, delta, playerPos) {
+        this.currentState = state;
+
+        switch (state) {
+            case 'idle':
+                this.sprite.body.setVelocity(0, 0);
+                this.playAnimation('idle', this.direction);
+                this.isMoving = false;
+                break;
+
+            case 'face_player':
+                this.facePlayer(playerPos);
+                this.sprite.body.setVelocity(0, 0);
+                this.isMoving = false;
+                break;
+
+            case 'patrol':
+                this.updatePatrol(time, delta);
+                break;
+
+            case 'maintain_space':
+                this.maintainPersonalSpace(playerPos, delta);
+                break;
+
+            case 'chase':
+                // Stub for future implementation
+                this.updateHostileBehavior(playerPos, delta);
+                break;
+
+            case 'flee':
+                // Stub for future implementation
+                this.updateHostileBehavior(playerPos, delta);
+                break;
+        }
+    }
+
+    facePlayer(playerPos) {
+        if (!this.config.facePlayer || !playerPos) return;
+
+        const dx = playerPos.x - this.sprite.x;
+        const dy = playerPos.y - this.sprite.y;
+
+        // Calculate direction (8-way)
+        this.direction = this.calculateDirection(dx, dy);
+
+        // Play idle animation facing player
+        this.playAnimation('idle', this.direction);
+    }
+
+    updatePatrol(time, delta) {
+        if (!this.config.patrol.enabled) return;
+
+        // Time to change direction?
+        if (!this.patrolTarget ||
+            time - this.lastPatrolChange > this.config.patrol.changeDirectionInterval) {
+            this.chooseRandomPatrolDirection();
+            this.lastPatrolChange = time;
+            this.collisionRotationAngle = 0;  // Reset rotation when choosing new target
+        }
+
+        if (!this.patrolTarget) return;
+
+        // Calculate vector to target
+        const dx = this.patrolTarget.x - this.sprite.x;
+        const dy = this.patrolTarget.y - this.sprite.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Reached target?
+        if (distance < 8) {
+            this.chooseRandomPatrolDirection();
+            return;
+        }
+
+        // Check if stuck (blocked by collision)
+        const isBlocked = this.sprite.body.blocked.none === false;
+
+        if (isBlocked) {
+            // Increment rotation by 45 degrees clockwise
+            this.collisionRotationAngle = (this.collisionRotationAngle + 45) % 360;
+            
+            // Calculate new direction by rotating the target vector
+            const angle = Math.atan2(dy, dx);
+            const rotationRadians = (this.collisionRotationAngle * Math.PI) / 180;
+            const newAngle = angle + rotationRadians;
+            
+            const rotatedDx = Math.cos(newAngle);
+            const rotatedDy = Math.sin(newAngle);
+            
+            // Try moving in the rotated direction
+            const rotatedVelocityX = rotatedDx * this.config.patrol.speed;
+            const rotatedVelocityY = rotatedDy * this.config.patrol.speed;
+            this.sprite.body.setVelocity(rotatedVelocityX, rotatedVelocityY);
+            
+            // Update direction based on rotated vector
+            this.direction = this.calculateDirection(rotatedDx, rotatedDy);
+            this.playAnimation('walk', this.direction);
+            this.isMoving = true;
+            
+            console.log(`� [${this.npcId}] Rotating around obstacle (${this.collisionRotationAngle}°) - direction: ${this.direction}`);
+            this.wasBlockedLastFrame = true;
+        } else {
+            // Not blocked - move toward target normally
+            if (this.wasBlockedLastFrame) {
+                // Just cleared the obstacle, reset rotation
+                this.collisionRotationAngle = 0;
+                console.log(`✓ [${this.npcId}] Cleared obstacle, resuming patrol`);
+            }
+            
+            const velocityX = (dx / distance) * this.config.patrol.speed;
+            const velocityY = (dy / distance) * this.config.patrol.speed;
+            this.sprite.body.setVelocity(velocityX, velocityY);
+
+            // Update direction and animation
+            this.direction = this.calculateDirection(dx, dy);
+            console.log(`🚶 [${this.npcId}] Patrol moving - direction: ${this.direction}, velocity: (${velocityX.toFixed(0)}, ${velocityY.toFixed(0)})`);
+            this.playAnimation('walk', this.direction);
+            this.isMoving = true;
+            
+            this.wasBlockedLastFrame = false;
+        }
+    }
+
+    chooseRandomPatrolDirection() {
+        const bounds = this.config.patrol.worldBounds;
+
+        if (!bounds) {
+            console.warn(`⚠️ No patrol bounds for ${this.npcId}`);
+            return;
+        }
+
+        // Get current patrol angle from current position
+        const currentDx = this.sprite.x - this.patrolCenter.x;
+        const currentDy = this.sprite.y - this.patrolCenter.y;
+        const currentAngle = Math.atan2(currentDy, currentDx);
+
+        // Choose new angle: rotate by -180 to +180 degrees from current direction
+        const rotationAmount = (Math.random() - 0.5) * Math.PI; // -90 to +90 degrees (180 degree range)
+        this.patrolAngle = currentAngle + rotationAmount;
+
+        // Calculate target position in circular motion at patrol radius
+        const targetX = this.patrolCenter.x + Math.cos(this.patrolAngle) * this.patrolRadius;
+        const targetY = this.patrolCenter.y + Math.sin(this.patrolAngle) * this.patrolRadius;
+
+        // Clamp target to patrol bounds
+        this.patrolTarget = {
+            x: Math.max(bounds.x, Math.min(bounds.x + bounds.width, targetX)),
+            y: Math.max(bounds.y, Math.min(bounds.y + bounds.height, targetY))
+        };
+
+        // Update patrol center to current position for next rotation
+        this.patrolCenter = {
+            x: this.sprite.x,
+            y: this.sprite.y
+        };
+
+        console.log(`🚶 ${this.npcId} patrol target: (${Math.round(this.patrolTarget.x)}, ${Math.round(this.patrolTarget.y)}) angle: ${(this.patrolAngle * 180 / Math.PI).toFixed(0)}°`);
+    }
+
+    maintainPersonalSpace(playerPos, delta) {
+        if (!this.config.personalSpace.enabled || !playerPos) {
+            return false;
+        }
+
+        const dx = this.sprite.x - playerPos.x;  // Away from player
+        const dy = this.sprite.y - playerPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance === 0) return false; // Avoid division by zero
+
+        // Back away slowly in small increments (5px at a time)
+        const backAwayDist = this.config.personalSpace.backAwayDistance;
+        const targetX = this.sprite.x + (dx / distance) * backAwayDist;
+        const targetY = this.sprite.y + (dy / distance) * backAwayDist;
+
+        // Try to move to target position
+        const oldX = this.sprite.x;
+        const oldY = this.sprite.y;
+        this.sprite.setPosition(targetX, targetY);
+
+        // If position didn't change, we're blocked by a wall
+        if (this.sprite.x === oldX && this.sprite.y === oldY) {
+            // Can't back away - just face player
+            this.facePlayer(playerPos);
+            return true; // Still in personal space violation
+        }
+
+        // Successfully backed away - face player while backing
+        this.direction = this.calculateDirection(-dx, -dy);  // Negative = face player
+        this.playAnimation('idle', this.direction);  // Use idle, not walk
+
+        this.isMoving = false;  // Not "walking", just adjusting position
+        this.backingAway = true;
+
+        return true; // Personal space behavior active
+    }
+
+    updateHostileBehavior(playerPos, delta) {
+        if (!this.hostile || !playerPos) return false;
+
+        // Stub for future chase/flee implementation
+        console.log(`[${this.npcId}] Hostile mode active (influence: ${this.influence})`);
+
+        return false; // Not actively chasing/fleeing yet
+    }
+
+    calculateDirection(dx, dy) {
+        const absVX = Math.abs(dx);
+        const absVY = Math.abs(dy);
+
+        // Threshold: if one axis is > 2x the other, consider it pure cardinal
+        if (absVX > absVY * 2) {
+            return dx > 0 ? 'right' : 'left';
+        }
+
+        if (absVY > absVX * 2) {
+            return dy > 0 ? 'down' : 'up';
+        }
+
+        // Diagonal
+        if (dy > 0) {
+            return dx > 0 ? 'down-right' : 'down-left';
+        } else {
+            return dx > 0 ? 'up-right' : 'up-left';
+        }
+    }
+
+    playAnimation(state, direction) {
+        // Map left directions to right with flipX
+        let animDirection = direction;
+        let flipX = false;
+
+        if (direction.includes('left')) {
+            animDirection = direction.replace('left', 'right');
+            flipX = true;
+        }
+
+        const animKey = `npc-${this.npcId}-${state}-${animDirection}`;
+
+        // Only change animation if different
+        if (this.lastAnimationKey !== animKey) {
+            // Use scene.anims to check if animation exists in the global animation manager
+            if (this.scene?.anims?.exists(animKey)) {
+                this.sprite.play(animKey, true);
+                this.lastAnimationKey = animKey;
+            } else {
+                // Fallback: use idle animation if walk doesn't exist
+                if (state === 'walk') {
+                    const idleKey = `npc-${this.npcId}-idle-${animDirection}`;
+                    if (this.scene?.anims?.exists(idleKey)) {
+                        this.sprite.play(idleKey, true);
+                        this.lastAnimationKey = idleKey;
+                        console.warn(`⚠️ [${this.npcId}] Walk animation missing, using idle: ${idleKey}`);
+                    } else {
+                        console.error(`❌ [${this.npcId}] BOTH animations missing! Walk: ${animKey}, Idle: ${idleKey}`);
+                    }
+                }
+            }
+        }
+
+        // Set flipX for left-facing directions
+        this.sprite.setFlipX(flipX);
+    }
+
+    updateDepth() {
+        if (!this.sprite || !this.sprite.body) return;
+
+        // Calculate depth based on bottom Y position (same as player)
+        const spriteBottomY = this.sprite.y + (this.sprite.displayHeight / 2);
+        const depth = spriteBottomY + 0.5; // World Y + sprite layer offset
+
+        // Always update depth - no caching
+        // Depth determines Y-sorting, must update every frame for moving NPCs
+        this.sprite.setDepth(depth);
+    }
+
+    setState(property, value) {
+        switch (property) {
+            case 'hostile':
+                this.setHostile(value);
+                break;
+
+            case 'influence':
+                this.setInfluence(value);
+                break;
+
+            case 'patrol':
+                this.config.patrol.enabled = value;
+                console.log(`🚶 ${this.npcId} patrol ${value ? 'enabled' : 'disabled'}`);
+                break;
+
+            case 'personalSpaceDistance':
+                this.config.personalSpace.distance = value;
+                this.config.personalSpace.distanceSq = value ** 2;
+                console.log(`↔️ ${this.npcId} personal space: ${value}px`);
+                break;
+
+            default:
+                console.warn(`⚠️ Unknown behavior property: ${property}`);
+        }
+    }
+
+    setHostile(hostile) {
+        if (this.hostile === hostile) return; // No change
+
+        this.hostile = hostile;
+
+        // Emit event for other systems to react
+        if (window.eventDispatcher) {
+            window.eventDispatcher.emit('npc_hostile_changed', {
+                npcId: this.npcId,
+                hostile: hostile
+            });
+        }
+
+        if (hostile) {
+            // Red tint (0xff0000 with 50% strength)
+            this.sprite.setTint(0xff6666);
+            console.log(`🔴 ${this.npcId} is now hostile`);
+        } else {
+            // Clear tint
+            this.sprite.clearTint();
+            console.log(`✅ ${this.npcId} is no longer hostile`);
+        }
+    }
+
+    setInfluence(influence) {
+        this.influence = influence;
+
+        // Check if influence change should trigger hostile state
+        const threshold = this.config.hostile.influenceThreshold;
+
+        // Auto-trigger hostile if influence drops below threshold
+        if (influence < threshold && !this.hostile) {
+            this.setHostile(true);
+            console.log(`⚠️ ${this.npcId} became hostile due to low influence (${influence} < ${threshold})`);
+        }
+        // Auto-disable hostile if influence recovers
+        else if (influence >= threshold && this.hostile) {
+            this.setHostile(false);
+            console.log(`✅ ${this.npcId} no longer hostile (influence: ${influence})`);
+        }
+
+        console.log(`💯 ${this.npcId} influence: ${influence}`);
+    }
+}
+
+// Export for module imports
+export default {
+    NPCBehaviorManager,
+    NPCBehavior
+};

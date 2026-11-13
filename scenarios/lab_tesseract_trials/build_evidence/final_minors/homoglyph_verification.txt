@@ -1,0 +1,7 @@
+To Hex real: 6f 6c 65 67 2e 69 6c 6c 69 61 73 68 65 6e 6b 6f
+To Hex fake: 6f 6c d0 b5 67 2e 69 6c 6c 69 61 73 68 65 6e 6b 6f
+SHA2-256 real: 4f3e98dbe99fa3f25c993b0e2ed609d031e3275a9be0f1021efb1bca514aef52
+SHA2-256 fake: 54558c7c7cf1a5411db30d1b89ee25b308bd5df02d6ac8ec84d13289b94bd988
+PASS lookalike names differ in bytes (d0 b5 in one) and in SHA-256
+--- rendered seed 5:
+PASS lookalike names differ in bytes (d0 b5 in one) and in SHA-256

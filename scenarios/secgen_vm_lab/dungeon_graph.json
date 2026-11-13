@@ -1,0 +1,53 @@
+{
+  "scenario": "secgen_vm_lab",
+  "start_room": "lab_entrance",
+  "nodes": [
+    {
+      "id": "door_server_room",
+      "label": "Server Room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lab_entrance",
+      "label": "Lab Entrance",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lab_workstation",
+      "label": "Lab Workstation",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "flag_room",
+      "label": "Flag Room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "lab_entrance",
+      "to": "lab_workstation",
+      "soft": false
+    },
+    {
+      "from": "lab_workstation",
+      "to": "flag_room",
+      "soft": false
+    }
+  ]
+}

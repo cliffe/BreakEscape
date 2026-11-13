@@ -1,0 +1,60 @@
+{
+  "people": [
+    { "id": "pierce", "forms": { "full": "Chris Pierce", "first": "Chris" } },
+    { "id": "lord", "forms": { "full": "Sofia Lord", "first": "Sofia" } },
+    { "id": "hampshire", "forms": { "full": "Jo Hampshire", "first": "Jo" } }
+  ],
+  "mailClient": {
+    "contacts": [
+      { "id": "c_pierce", "person": "pierce", "name": "Chris Pierce", "targetId": "pierce", "addresses": ["chris.pierce@ledgerwell.example"] },
+      { "id": "c_lord", "person": "lord", "name": "Sofia Lord", "targetId": "lord", "addresses": ["sofia.lord@ledgerwell.example"] }
+    ]
+  },
+  "phishTargets": [
+    { "id": "pierce", "character": "pierce" },
+    { "id": "lord", "character": "lord" }
+  ],
+  "landingPages": [
+    { "id": "payroll_login", "linkText": "ledgerwell.example/payroll" }
+  ],
+  "pretextNpcs": [
+    { "callId": "service_desk_call", "character": "dev" }
+  ],
+  "engagement": {
+    "report": {
+      "onCompleteGlobal": "report_filed",
+      "steps": [
+        { "id": "results", "onCompleteGlobal": "report_results_done" },
+        { "id": "findings", "onCompleteGlobal": "report_findings_done" }
+      ],
+      "items": [
+        { "kind": "confirm", "step": "results", "text": "I have read the campaign results" }
+      ],
+      "findings": [
+        {
+          "id": "spoofed_colleague", "step": "findings",
+          "text": "Finance acted on mail spoofing a colleague",
+          "rootCauses": [
+            { "id": "no_banner_dmarc_none", "correct": true, "why": "No external-sender banner and DMARC at p=none let the spoof through." },
+            { "id": "staff_carelessness", "correct": false, "blame": true, "why": "Blames people; the control gap is the cause." }
+          ],
+          "controls": [
+            { "id": "banner_dmarc_enforce", "correct": true, "why": "An external banner plus DMARC enforcement stops the spoof." },
+            { "id": "more_training", "correct": false, "why": "Training alone does not close the technical gap." }
+          ]
+        },
+        {
+          "id": "desk_leak", "step": "findings",
+          "text": "The service desk gave out the portal name and payslip date",
+          "rootCauses": [
+            { "id": "no_verification_script", "correct": true, "why": "There was no call-back verification step." },
+            { "id": "desk_should_know", "correct": false, "blame": true, "why": "Blames the agent; the missing process is the cause." }
+          ],
+          "controls": [
+            { "id": "callback_on_file", "correct": true, "why": "Call back on a number held on file before disclosing anything." }
+          ]
+        }
+      ]
+    }
+  }
+}

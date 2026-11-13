@@ -1,0 +1,13 @@
+game 2270 (file_held)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+  room: "restricted_stacks"
+  read-out toast tapped at 1s
+declined: {"t":50.4,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+  callback: {"knot":"call","callLabel":null}
+"dial"
+callback: {"bar":"ON CALL 0:02","subs":["AGENT 0X47 'NIGHTSHADE': Agent 0x00. I'd ask how the leave was, but HaX would tell me to get off her line.","AGENT 0X47 'NIGHTSHADE': So you've found my file. Never mind the boy in it. Look at the handwriting."],"choices":["1. Why help me?","2. HaX is on this line."],"end":true}
+shot file_held_file_arm
+chose: "1. Why help me?"
+chose: "1. Noted."
+chose: "1. (Close.)"
+/tts requests: ["nightshade_phone","Agent 0x00. I'd ask how the leave was, but HaX would tell me"] ["nightshade_phone","So you've found my file. Never mind the boy in it. Look at t"] ["nightshade_phone","I'd rather be useful than watched. Tonight I get to be both."] ["nightshade_phone","Every lock is a promise somebody made years ago. Most of the"] 

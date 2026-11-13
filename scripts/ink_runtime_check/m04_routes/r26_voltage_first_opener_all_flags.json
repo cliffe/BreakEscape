@@ -1,0 +1,106 @@
+{
+"steps": [
+{
+"note": "R26 (phase 4 dialogue C3, D7-1/D7-21): the Voltage-first debrief opener with every optional flag set (print, Cipher walked, go-bag card, directive and coordination log, both stances, guard KO'd), crew lost, Voltage taken. The new player beat follows the people knot, the proof line is folded, Bank B is recapped (news on this opener), and no run without a choice exceeds 9."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_spoken": true,
+"vance_provided_keycard": true,
+"vance_card_cloned": true,
+"relay_card_cloned": true,
+"vance_is_ally": true,
+"vance_trust_level": 90,
+"anomaly_detected": true,
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"attack_mechanism_known": true,
+"voltage_print_on_bypass": true,
+"cipher_walked": true,
+"lore_safehouse_address_found": true,
+"lore_architect_directive_found": true,
+"lore_cross_cell_coordination_found": true,
+"promised_voltage_alive": true,
+"asked_the_number": true,
+"security_guard_ko": true,
+"voltage_six_cities": true
+}
+},
+{
+"advance": 15
+},
+{
+"expect": {
+"crew_lost": true
+}
+},
+{
+"set": {
+"plant_room_entered": true,
+"operative_static_defeated": true
+}
+},
+{
+"ko": "voltage"
+},
+{
+"set": {
+"esd_authorized": true,
+"attack_prevented": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"talk": "debrief",
+"picks": [
+"Voltage is",
+"Tell me we came out",
+"how did they get in",
+"And the network",
+"goes in the report",
+"The Architect",
+"What would Task Force",
+"Full public",
+"sorry about your people"
+]
+},
+{
+"maxRun": 9
+},
+{
+"said": [
+"In custody. Nobody else in that building",
+"Nine. Tell me we came out with something.",
+"That's the proof we've chased since Zero Day.",
+"Bank B went before you got to the button",
+"Hold on to that when the names come out tomorrow",
+"Keep the OptiGrid print kit",
+"I'm sorry about your people, Mr Vance.",
+"You did it to Relay too"
+],
+"notSaid": [
+"Good. Nobody else",
+"the proof we've been chasing",
+"won't be zero",
+"Keep the crew's",
+"Netherton can live with that"
+]
+}
+]
+}

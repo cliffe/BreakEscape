@@ -1,0 +1,13 @@
+{
+  "key": "09858867036ef4b7f750b1ae54e9bfee",
+  "npc": "dr_sharma",
+  "text": "You told Helen to keep paying open as a fallback. It wouldn't have been faster, it funds the next attack, and they keep the records either way.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

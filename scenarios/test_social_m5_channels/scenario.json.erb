@@ -1,0 +1,720 @@
+{
+  "scenario_id": "test_social_m5_channels",
+  "scenario_name": "Test: social M5 channels",
+  "scenario_brief": "Test fixture for the M5 browser proofs. Two plain chats (one with display.bar false), a mail contact who can be locked out, and a locked takeable mail terminal. Not a mission.",
+  "endGoal": "None. Fixture only.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "m5_room",
+  "player": {
+    "id": "player",
+    "displayName": "Operator",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "fixture",
+      "title": "Fixture",
+      "description": "Nothing to complete.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "gwen_landed",
+          "title": "Land a message on Gwen",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "pat_influence": 0,
+    "pat_latched": "",
+    "pat_wary": false,
+    "pat_lockout_until": 0,
+    "pat_lockout_channel": "",
+    "sam_influence": 0,
+    "sam_latched": "",
+    "sam_wary": false,
+    "sam_lockout_until": 0,
+    "sam_lockout_channel": "",
+    "gwen_influence": 0,
+    "gwen_latched": "",
+    "gwen_wary": false,
+    "gwen_lockout_until": 0,
+    "gwen_lockout_channel": "",
+    "pat_reported": false,
+    "gwen_reported": false,
+    "phish_gwen_landed": false,
+    "terminal_unlocked": false,
+    "phish_gwen_attempts": 0,
+    "pat_call_done": false,
+    "pat_call_reported": false,
+    "pretext_pat_floor_call_state": {},
+    "pretext_pat_floor_call_outcome": "",
+    "pretext_pat_floor_call_lowest": 0,
+    "pretext_pat_floor_call_reports": 0,
+    "pat_refusing": false,
+    "sam_call_done": false,
+    "sam_call_reported": false,
+    "pretext_sam_floor_call_state": {},
+    "pretext_sam_floor_call_outcome": "",
+    "pretext_sam_floor_call_lowest": 0,
+    "pretext_sam_floor_call_reports": 0,
+    "sam_refusing": false,
+    "sam_reported": false
+  },
+  "social": {
+    "people": [
+      {
+        "id": "gwen",
+        "kind": "cast",
+        "address": "g.harlow@fixture.example",
+        "forms": {
+          "first": "Gwen",
+          "full": "Gwen Harlow"
+        }
+      }
+    ],
+    "characters": {
+      "pat": {
+        "displayName": "Pat",
+        "channels": {
+          "person": "pat_desk"
+        },
+        "influence": {
+          "global": "pat_influence",
+          "min": -100,
+          "max": 100,
+          "start": 0,
+          "display": {
+            "bar": false,
+            "number": false,
+            "pip": true
+          }
+        },
+        "syncedVars": [
+          "pat_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "wary",
+            "at": -30,
+            "icon": "wary",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "pat_wary",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "reports",
+            "at": -70,
+            "icon": "reports",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "pat_reported",
+                "value": true
+              },
+              {
+                "type": "endConversation"
+              },
+              {
+                "type": "lockout",
+                "scope": "channel",
+                "until": {
+                  "afterMinutes": 1
+                },
+                "recoverTo": -10
+              }
+            ]
+          }
+        ]
+      },
+      "sam": {
+        "displayName": "Sam",
+        "channels": {
+          "person": "sam_desk"
+        },
+        "influence": {
+          "global": "sam_influence",
+          "min": -100,
+          "max": 100,
+          "start": 0
+        },
+        "syncedVars": [
+          "sam_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "wary",
+            "at": -30,
+            "icon": "wary",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "sam_wary",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "reports",
+            "at": -70,
+            "icon": "reports",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "sam_reported",
+                "value": true
+              },
+              {
+                "type": "endConversation"
+              }
+            ]
+          }
+        ]
+      },
+      "gwen": {
+        "displayName": "Gwen Harlow",
+        "channels": {
+          "email": "gwen_mail"
+        },
+        "emailRecord": {
+          "storyPath": "scenarios/test_social_m5_channels/ink/gwen_mail.json",
+          "displayName": "Gwen Harlow"
+        },
+        "emailReplyDelay": 15,
+        "influence": {
+          "global": "gwen_influence",
+          "min": -100,
+          "max": 100,
+          "start": 0
+        },
+        "syncedVars": [
+          "gwen_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "wary",
+            "at": -30,
+            "icon": "wary",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "gwen_wary",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "reports",
+            "at": -70,
+            "icon": "reports",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "gwen_reported",
+                "value": true
+              },
+              {
+                "type": "endConversation"
+              },
+              {
+                "type": "lockout",
+                "scope": "channel",
+                "until": {
+                  "afterMinutes": 1
+                },
+                "recoverTo": -10
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "templates": {
+      "from_own": {
+        "part": "from",
+        "text": "{account_name} <{account_address}>",
+        "slots": []
+      },
+      "greet_generic": {
+        "part": "greeting",
+        "text": "Hello,",
+        "slots": []
+      },
+      "pretext_hello": {
+        "part": "pretext",
+        "text": "I wanted to introduce myself.",
+        "slots": [],
+        "urgency": "low"
+      },
+      "ask_reply": {
+        "part": "ask",
+        "text": "Could you reply when you have a moment?",
+        "slots": [],
+        "urgency": "low"
+      },
+      "pretext_intro": {
+        "part": "pretext",
+        "text": "I am following up on a conversation we had.",
+        "slots": [],
+        "urgency": "low"
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "guest",
+          "address": "guest@workstation.example",
+          "displayName": "Operator",
+          "kind": "given",
+          "person": null,
+          "mailbox": "guest",
+          "spoofsFrom": false
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "guest"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "gwen",
+          "person": "gwen",
+          "character": "gwen",
+          "name": "Gwen Harlow",
+          "addresses": [
+            "g.harlow@fixture.example"
+          ],
+          "role": "Fixture",
+          "targetId": "gwen"
+        }
+      ],
+      "seededMessages": [
+        {
+          "id": "welcome",
+          "mailbox": "guest",
+          "from": {
+            "name": "IT",
+            "address": "it@fixture.example",
+            "avatar": "npc_helper"
+          },
+          "to": "guest@workstation.example",
+          "subject": "Your laptop",
+          "body": "Hello,\n\nYour account is ready.\n\nIT",
+          "time": "08:05",
+          "unread": true,
+          "folder": "inbox"
+        }
+      ],
+      "payloadKit": [],
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "freeTextFlavour": false,
+      "showRedFlagMeter": false
+    },
+    "phishTargets": [
+      {
+        "id": "gwen",
+        "character": "gwen",
+        "address": "g.harlow@fixture.example",
+        "displayName": "Gwen Harlow",
+        "subjects": [
+          {
+            "id": "s_hello",
+            "text": "Hello",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "general"
+          ]
+        },
+        "templateSets": {
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_generic"
+          ],
+          "pretext": [
+            "pretext_hello",
+            "pretext_intro"
+          ],
+          "ask": [
+            "ask_reply"
+          ]
+        },
+        "redFlagMeter": false,
+        "primedFor": {
+          "trusts": [
+            "*"
+          ],
+          "story": "anyone who writes politely"
+        },
+        "requiredFactors": [
+          "senderTrust"
+        ],
+        "advisoryFactors": [],
+        "factorStrings": {
+          "senderTrust": {
+            "pass": "✓ She will read mail from anyone",
+            "fail": "I don't know who this is.",
+            "redFlag": null
+          }
+        },
+        "replies": {
+          "landed": "Thanks, I'll take a look."
+        },
+        "hints": [
+          "Try writing to her."
+        ]
+      }
+    ],
+    "pretextNpcs": [
+      {
+        "character": "pat",
+        "callId": "pat_floor_call",
+        "tuning": {
+          "matchCreditCapPerLine": 10,
+          "maxRefusals": 2,
+          "feedbackMode": "live",
+          "tellDetail": "full",
+          "showTechniqueNames": "live"
+        },
+        "susceptibility": {
+          "urgency": -10,
+          "authority_borrowed": -20
+        },
+        "unverifiableCost": -10,
+        "knows": {
+          "person": {
+            "value": "teague_full",
+            "accept": [
+              "teague_first",
+              "teague_formal",
+              "teague_full"
+            ],
+            "grade": "identity"
+          }
+        },
+        "lines": {
+          "open_floor": {
+            "blanks": {
+              "person": "person"
+            },
+            "claims": [
+              {
+                "fact": "person",
+                "from": "blank:person"
+              }
+            ]
+          },
+          "press_floor": {
+            "technique": "urgency",
+            "claims": []
+          },
+          "name_floor": {
+            "technique": "authority_borrowed",
+            "claims": []
+          }
+        },
+        "asks": {
+          "desk_location": {
+            "pressure": 0,
+            "floor": -30,
+            "verification": [],
+            "grants": {
+              "setGlobal": {
+                "pat_call_done": true
+              },
+              "intel": [
+                "desk_location"
+              ]
+            }
+          },
+          "shift_pattern": {
+            "pressure": -10,
+            "floor": -20,
+            "verification": [
+              "person"
+            ],
+            "grants": {
+              "setGlobal": {
+                "pat_call_done": true
+              },
+              "intel": [
+                "shift_pattern"
+              ]
+            }
+          }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": {
+            "line": "I think I'd better check with the office manager first.",
+            "setGlobal": {
+              "pat_call_reported": true
+            }
+          },
+          "walked_away": {}
+        },
+        "tells": {
+          "person": {
+            "pass": "Person. Morgan is on the floor plan.",
+            "fail": "Person. You said \"{said}\". The plan has {actual}.",
+            "failCategory": "Person. That did not match the floor plan.",
+            "unknown": "Person. She cannot check this."
+          },
+          "techniques": {
+            "urgency": "Urgency. A rushed ask on the floor is a classic pressure line.",
+            "authority_borrowed": "Borrowed authority. Naming a manager does not replace knowing who you are."
+          },
+          "ask": {
+            "accepted": "She pointed it out.",
+            "pending": "She wants to know who you are first.",
+            "refused": "She will not say."
+          },
+          "bands": {
+            "calm": "Pat is happy to help.",
+            "wary": "Pat has gone quiet.",
+            "refusing": "Pat has stopped helping."
+          }
+        },
+        "hints": [
+          "Know who you are asking after before you approach.",
+          "The company team page names the Finance staff.",
+          "Morgan Teague is the person the floor plan names."
+        ],
+        "defenderNotes": {
+          "shift_pattern": "Checking a stranger's identity before helping defeats a floor approach."
+        }
+      },
+      {
+        "character": "sam",
+        "callId": "sam_floor_call",
+        "tuning": {
+          "matchCreditCapPerLine": 10,
+          "maxRefusals": 2,
+          "feedbackMode": "live",
+          "tellDetail": "full",
+          "showTechniqueNames": "live"
+        },
+        "susceptibility": {
+          "urgency": -10,
+          "authority_borrowed": -20
+        },
+        "unverifiableCost": -10,
+        "knows": {
+          "person": {
+            "value": "teague_full",
+            "accept": [
+              "teague_first",
+              "teague_formal",
+              "teague_full"
+            ],
+            "grade": "identity"
+          }
+        },
+        "lines": {
+          "open_floor": {
+            "blanks": {
+              "person": "person"
+            },
+            "claims": [
+              {
+                "fact": "person",
+                "from": "blank:person"
+              }
+            ]
+          },
+          "press_floor": {
+            "technique": "urgency",
+            "claims": []
+          },
+          "name_floor": {
+            "technique": "authority_borrowed",
+            "claims": []
+          }
+        },
+        "asks": {
+          "desk_location": {
+            "pressure": 0,
+            "floor": -30,
+            "verification": [],
+            "grants": {
+              "setGlobal": {
+                "sam_call_done": true
+              },
+              "intel": [
+                "desk_location"
+              ]
+            }
+          },
+          "shift_pattern": {
+            "pressure": -10,
+            "floor": -20,
+            "verification": [
+              "person"
+            ],
+            "grants": {
+              "setGlobal": {
+                "sam_call_done": true
+              },
+              "intel": [
+                "shift_pattern"
+              ]
+            }
+          }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": {
+            "line": "I think I'd better check with the office manager first.",
+            "setGlobal": {
+              "sam_call_reported": true
+            }
+          },
+          "walked_away": {}
+        },
+        "tells": {
+          "person": {
+            "pass": "Person. Morgan is on the floor plan.",
+            "fail": "Person. You said \"{said}\". The plan has {actual}.",
+            "failCategory": "Person. That did not match the floor plan.",
+            "unknown": "Person. She cannot check this."
+          },
+          "techniques": {
+            "urgency": "Urgency. A rushed ask on the floor is a classic pressure line.",
+            "authority_borrowed": "Borrowed authority. Naming a manager does not replace knowing who you are."
+          },
+          "ask": {
+            "accepted": "She pointed it out.",
+            "pending": "She wants to know who you are first.",
+            "refused": "She will not say."
+          },
+          "bands": {
+            "calm": "Sam is happy to help.",
+            "wary": "Sam has gone quiet.",
+            "refusing": "Sam has stopped helping."
+          }
+        },
+        "hints": [
+          "Know who you are asking after before you approach.",
+          "The company team page names the Finance staff.",
+          "Morgan Teague is the person the floor plan names."
+        ],
+        "defenderNotes": {
+          "shift_pattern": "Checking a stranger's identity before helping defeats a floor approach."
+        }
+      }
+    ]
+  },
+  "rooms": {
+    "m5_room": {
+      "type": "room_office",
+      "door_sign": "M5 Fixture",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "pat_desk",
+          "displayName": "Pat",
+          "npcType": "person",
+          "position": {
+            "x": 1,
+            "y": 4
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_social_m5_channels/ink/pat_desk.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:phish_gwen_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "gwen_landed"
+            }
+          ],
+          "callId": "pat_floor_call"
+        },
+        {
+          "id": "sam_desk",
+          "displayName": "Sam",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_social_m5_channels/ink/sam_desk.json",
+          "currentKnot": "start",
+          "callId": "sam_floor_call"
+        }
+      ],
+      "objects": [
+        {
+          "type": "mail_terminal",
+          "id": "m5_mail_terminal",
+          "name": "Mail Terminal",
+          "sprite": "mail_terminal",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A workstation signed in to the Operator mailbox.",
+          "minigameData": {
+            "accountIds": [
+              "guest"
+            ]
+          }
+        },
+        {
+          "type": "mail_terminal",
+          "id": "m5_locked_terminal",
+          "name": "Locked Laptop",
+          "sprite": "mail_terminal",
+          "position": {
+            "x": 8,
+            "y": 2
+          },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "2468",
+          "observations": "A laptop with a PIN on its lock screen.",
+          "minigameData": {
+            "accountIds": [
+              "guest"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

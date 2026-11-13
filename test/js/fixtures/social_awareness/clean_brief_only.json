@@ -1,0 +1,136 @@
+{
+  "scenario_id": "test_social_brief_only",
+  "scenario_name": "Test: awareness brief-only shell",
+  "scenario_brief": "Fixture for the brief-only episode and its validator.",
+  "endGoal": "None. Fixture only.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "ep_room",
+  "player": {
+    "id": "player",
+    "displayName": "Operator",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "finish_episode_aim",
+      "title": "Finish the episode",
+      "description": "Run the episode at the kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_b1_stub_done"
+        ]
+      },
+      "tasks": [
+        {
+          "taskId": "finish_episode",
+          "title": "Finish the episode",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "se_awareness_records": {},
+    "episode_b1_stub_state": {},
+    "episode_b1_stub_done": false
+  },
+  "social": {
+    "awarenessEpisode": {
+      "id": "b1_stub",
+      "role": "finance",
+      "company": "brightwell_foods",
+      "brand": {
+        "name": "Brightwell Foods",
+        "logoText": "BRIGHTWELL",
+        "accent": "#2f6f5e"
+      },
+      "variant": "brief",
+      "durationTargetMin": 5,
+      "scopeNote": "Authorised exercise at fictional Brightwell Foods. In scope: this inbox.",
+      "stages": [
+        "brief"
+      ],
+      "conclusionTaskId": "finish_episode",
+      "strings": {
+        "briefCards": [
+          {
+            "heading": "How this works",
+            "text": "First paragraph.\n\nSecond paragraph."
+          },
+          {
+            "text": "A card with no heading."
+          },
+          {
+            "heading": "What we record",
+            "text": "Nothing about you is scored here."
+          }
+        ],
+        "briefDone": "Got it",
+        "alreadySeen": "You have seen this already."
+      },
+      "doneGlobal": "episode_b1_stub_done",
+      "oncePerLearner": true
+    }
+  },
+  "rooms": {
+    "ep_room": {
+      "type": "room_office",
+      "door_sign": "Training Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "ep_host",
+          "displayName": "Host",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_b1_stub_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_episode"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "ep_kiosk",
+          "name": "Training Kiosk",
+          "position": {
+            "x": 6,
+            "y": 2
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A training kiosk. It runs the episode.",
+          "minigameData": {
+            "episodeId": "b1_stub"
+          }
+        }
+      ]
+    }
+  },
+  "_comment": "Clean brief-only shell (ENG-10): one kiosk, a host NPC mapped on the done global, no triage set. Stub content, not a mission."
+}

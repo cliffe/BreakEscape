@@ -1,0 +1,13 @@
+{
+  "key": "fa549c2d9786bdc9fc995bbc35dc2061",
+  "npc": "narrator",
+  "text": "The guard's torch swings your way again.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:36:02Z"
+}

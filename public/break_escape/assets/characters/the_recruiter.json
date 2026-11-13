@@ -1,0 +1,705 @@
+{
+  "frames": {
+    "breathing-idle_east_frame_000": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_east_frame_001": {
+      "frame": {
+        "x": 82,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_east_frame_002": {
+      "frame": {
+        "x": 164,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_east_frame_003": {
+      "frame": {
+        "x": 246,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north-east_frame_000": {
+      "frame": {
+        "x": 164,
+        "y": 82,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north-east_frame_001": {
+      "frame": {
+        "x": 246,
+        "y": 82,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north-east_frame_002": {
+      "frame": {
+        "x": 328,
+        "y": 82,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north-east_frame_003": {
+      "frame": {
+        "x": 410,
+        "y": 82,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north-west_frame_000": {
+      "frame": {
+        "x": 0,
+        "y": 164,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north-west_frame_001": {
+      "frame": {
+        "x": 82,
+        "y": 164,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north-west_frame_002": {
+      "frame": {
+        "x": 164,
+        "y": 164,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north-west_frame_003": {
+      "frame": {
+        "x": 246,
+        "y": 164,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north_frame_000": {
+      "frame": {
+        "x": 328,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north_frame_001": {
+      "frame": {
+        "x": 410,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north_frame_002": {
+      "frame": {
+        "x": 0,
+        "y": 82,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_north_frame_003": {
+      "frame": {
+        "x": 82,
+        "y": 82,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south-east_frame_000": {
+      "frame": {
+        "x": 164,
+        "y": 246,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south-east_frame_001": {
+      "frame": {
+        "x": 246,
+        "y": 246,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south-east_frame_002": {
+      "frame": {
+        "x": 328,
+        "y": 246,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south-east_frame_003": {
+      "frame": {
+        "x": 410,
+        "y": 246,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south-west_frame_000": {
+      "frame": {
+        "x": 0,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south-west_frame_001": {
+      "frame": {
+        "x": 82,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south-west_frame_002": {
+      "frame": {
+        "x": 164,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south-west_frame_003": {
+      "frame": {
+        "x": 246,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south_frame_000": {
+      "frame": {
+        "x": 328,
+        "y": 164,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south_frame_001": {
+      "frame": {
+        "x": 410,
+        "y": 164,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south_frame_002": {
+      "frame": {
+        "x": 0,
+        "y": 246,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_south_frame_003": {
+      "frame": {
+        "x": 82,
+        "y": 246,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_west_frame_000": {
+      "frame": {
+        "x": 328,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_west_frame_001": {
+      "frame": {
+        "x": 410,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_west_frame_002": {
+      "frame": {
+        "x": 0,
+        "y": 410,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "breathing-idle_west_frame_003": {
+      "frame": {
+        "x": 82,
+        "y": 410,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    }
+  },
+  "meta": {
+    "app": "PixelLab to Phaser Converter",
+    "version": "1.0",
+    "image": "the_recruiter.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 490,
+      "h": 490
+    },
+    "scale": "1"
+  },
+  "animations": {
+    "breathing-idle_east": [
+      "breathing-idle_east_frame_000",
+      "breathing-idle_east_frame_001",
+      "breathing-idle_east_frame_002",
+      "breathing-idle_east_frame_003"
+    ],
+    "breathing-idle_north": [
+      "breathing-idle_north_frame_000",
+      "breathing-idle_north_frame_001",
+      "breathing-idle_north_frame_002",
+      "breathing-idle_north_frame_003"
+    ],
+    "breathing-idle_north-east": [
+      "breathing-idle_north-east_frame_000",
+      "breathing-idle_north-east_frame_001",
+      "breathing-idle_north-east_frame_002",
+      "breathing-idle_north-east_frame_003"
+    ],
+    "breathing-idle_north-west": [
+      "breathing-idle_north-west_frame_000",
+      "breathing-idle_north-west_frame_001",
+      "breathing-idle_north-west_frame_002",
+      "breathing-idle_north-west_frame_003"
+    ],
+    "breathing-idle_south": [
+      "breathing-idle_south_frame_000",
+      "breathing-idle_south_frame_001",
+      "breathing-idle_south_frame_002",
+      "breathing-idle_south_frame_003"
+    ],
+    "breathing-idle_south-east": [
+      "breathing-idle_south-east_frame_000",
+      "breathing-idle_south-east_frame_001",
+      "breathing-idle_south-east_frame_002",
+      "breathing-idle_south-east_frame_003"
+    ],
+    "breathing-idle_south-west": [
+      "breathing-idle_south-west_frame_000",
+      "breathing-idle_south-west_frame_001",
+      "breathing-idle_south-west_frame_002",
+      "breathing-idle_south-west_frame_003"
+    ],
+    "breathing-idle_west": [
+      "breathing-idle_west_frame_000",
+      "breathing-idle_west_frame_001",
+      "breathing-idle_west_frame_002",
+      "breathing-idle_west_frame_003"
+    ]
+  }
+}

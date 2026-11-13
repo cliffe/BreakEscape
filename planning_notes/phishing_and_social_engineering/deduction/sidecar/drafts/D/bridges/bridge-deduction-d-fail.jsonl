@@ -1,0 +1,48 @@
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
+{"cmd": "note", "message": "bridge-deduction-d-fail (deduction-d-fail:test_social_deduction_d): a fresh game; facts granted from the console (exercised, not earned); stops brought forward with the door objects; KO Volkov; a wrong call on Chen; the loss ends in honest credits. Sidecar DRAFT outline."}
+{"cmd": "eval", "fn": "async () => { /* F0 grant all 18 facts from the console and install the toast spy */ window.__toasts = window.__toasts || []; if (!window.__toastSpy) { window.__toastSpy = true; const orig = window.gameAlert; window.gameAlert = (...a) => { window.__toasts.push({ t: Date.now(), a }); return orig ? orig(...a) : undefined; }; } const facts = Object.keys(window.gameScenario.social.intelFacts); for (const f of facts) window.deductionRuntime.grantFact(f, { source: 'console' }); await new Promise(r => setTimeout(r, 800)); const G = window.gameState.globalVariables; return facts.length === 18 && facts.every(f => G['se_intel_' + f] === true);  }"}
+{"cmd": "moveToNear", "id": "d_door1"}
+{"cmd": "interact", "id": "d_door1"}
+{"cmd": "eval", "fn": "async () => { /* click Confirm in the gameConfirm modal (notifications.js: default labels Confirm / Cancel) */ await new Promise(r => setTimeout(r, 300)); const btn = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Confirm'); if (!btn) return false; btn.click(); return true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "d_stop_1", "expected": true, "timeoutMs": 10000}
+{"cmd": "enter", "room": "d_car2"}
+{"cmd": "moveToNear", "id": "d_door2"}
+{"cmd": "interact", "id": "d_door2"}
+{"cmd": "eval", "fn": "async () => { /* click Confirm in the gameConfirm modal (notifications.js: default labels Confirm / Cancel) */ await new Promise(r => setTimeout(r, 300)); const btn = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Confirm'); if (!btn) return false; btn.click(); return true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "d_stop_2", "expected": true, "timeoutMs": 10000}
+{"cmd": "enter", "room": "d_car3"}
+{"cmd": "moveToNear", "id": "d_door3"}
+{"cmd": "interact", "id": "d_door3"}
+{"cmd": "eval", "fn": "async () => { /* click Confirm in the gameConfirm modal (notifications.js: default labels Confirm / Cancel) */ await new Promise(r => setTimeout(r, 300)); const btn = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Confirm'); if (!btn) return false; btn.click(); return true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "d_stop_3", "expected": true, "timeoutMs": 10000}
+{"cmd": "eval", "fn": "async () => { /* F1 every fact was already held, so stops 1 to 3 faded nothing (tamper picks the first fact not held) */ await new Promise(r => setTimeout(r, 1000)); const G = window.gameState.globalVariables; return window.deductionRuntime.getState().state.faded.length === 0 && ['d_sato_pass','d_chen_charm','d_devries_sim'].every(f => G['deduction_faded_' + f] === false);  }"}
+{"cmd": "enter", "room": "d_car4"}
+{"cmd": "moveToNear", "id": "ded_d_volkov"}
+{"cmd": "note", "message": "F2 punch Volkov: the first-punch warning carries the strict suffix. debugKO skips the swing, so if it does not emit npc_attacked:ded_d_volkov with wasFriendly, land one real punch first (attack key) and record which path ran"}
+{"cmd": "debugKO", "id": "ded_d_volkov"}
+{"cmd": "eval", "fn": "async () => { /* F2 KO under 'final': a ko verdict recorded at once, Volkov's mark locked guilty, no outcome shown (reveal end), the first-punch toast with 'A wrong one loses the mission.', the brass key on the floor */ await new Promise(r => setTimeout(r, 800)); const st = window.deductionRuntime.getState().state; const G = window.gameState.globalVariables; const T = JSON.stringify(window.__toasts);\n  return st.verdicts.ded_d_volkov && st.verdicts.ded_d_volkov.kind === 'ko' && G.deduction_verdict_ded_d_volkov === 'guilty' && G.deduction_outcome_ded_d_volkov === ''\n    && st.marks.ded_d_volkov && st.marks.ded_d_volkov.mark === 'guilty' && T.includes('Knocking out a suspect counts as accusing them.') && T.includes('A wrong one loses the mission.') && !/Right call|Wrong call/.test(T);  }"}
+{"cmd": "eval", "fn": "async () => { /* F2 marks: KO'd Volkov's mark cannot change */ const r = window.deductionRuntime.setMark('ded_d_volkov', 'clear', {}); return window.deductionRuntime.getState().state.marks.ded_d_volkov.mark === 'guilty';  }"}
+{"cmd": "moveToNear", "id": "d_door4"}
+{"cmd": "interact", "id": "d_door4"}
+{"cmd": "eval", "fn": "async () => { /* click Confirm in the gameConfirm modal (notifications.js: default labels Confirm / Cancel) */ await new Promise(r => setTimeout(r, 300)); const btn = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Confirm'); if (!btn) return false; btn.click(); return true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "d_last_stop", "expected": true, "timeoutMs": 10000}
+{"cmd": "enter", "room": "d_car5"}
+{"cmd": "eval", "fn": "async () => { /* F3 marks with Chen marked guilty (wrong: her charm is held) and the rest right */ const R = window.deductionRuntime; R.setMark('ded_d_sato', 'guilty', { profile: 'courier' }); R.setMark('ded_d_chen', 'guilty', { profile: 'courier' }); R.setMark('ded_d_devries', 'guilty', { profile: 'devotee' }); R.setMark('ded_d_mensah', 'clear', {}); return true;  }"}
+{"cmd": "moveToNear", "id": "d_board_call"}
+{"cmd": "interact", "id": "d_board_call"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "mg", "action": "clickText", "args": ["Make the call"]}
+{"cmd": "mg", "action": "clickText", "args": ["Confirm the call"]}
+{"cmd": "eval", "fn": "async () => { /* F3 no retry panel (retry 0); the debrief shows straight away: Chen wrong_guilty, 'You already held what settled it' naming the ward charm, no-blame line 'rule misread'; Volkov's ko verdict judged right_guilty at the call */ await new Promise(r => setTimeout(r, 1000)); const mg = window.MinigameFramework.currentMinigame; const t = mg.container.textContent; const st = window.deductionRuntime.getState().state;\n  return !/Try again once/.test(t) && mg.getTestState().board.view === 'debrief' && st.verdicts.ded_d_chen.outcome === 'wrong_guilty' && st.verdicts.ded_d_volkov.outcome === 'right_guilty' && st.verdicts.ded_d_volkov.kind === 'ko'\n    && /You already held what settled it/.test(t) && /ward charm/i.test(t) && mg.getTestState().board.debrief.noBlame === 'rule_misread';  }"}
+{"cmd": "eval", "fn": "async () => { /* F3 MISSION COMPLETE check 1/3: the conclusion screen opened (or opens) under CASE CLOSED; nothing says MISSION COMPLETE */ const h = document.querySelector('.bv-title-block h1'); const tk = document.querySelector('.bv-ticker-inner'); return !/MISSION COMPLETE/.test(document.body.textContent) && (!h || /CASE CLOSED/.test(h.textContent)) && (!tk || !/MISSION COMPLETE/.test(tk.textContent));  }"}
+{"cmd": "mg", "action": "clickText", "args": ["Finish"]}
+{"cmd": "waitFor", "kind": "global", "name": "d_ending", "expected": true, "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* F4 Finish: mission_failed 'wrong_call'; d_case_solved skipped; d_case_closed completed; the loss credits: header MISSION FAILED, non-victory playlist, title THE RITUAL COMPLETED, Chen's wrong-name line; MISSION COMPLETE nowhere (check 2/3) */ await new Promise(r => setTimeout(r, 4000)); const om = window.objectivesManager; const G = window.gameState.globalVariables; const h = document.querySelector('.bv-title-block h1'); const tk = document.querySelector('.bv-ticker-inner'); const body = document.body.textContent;\n  return G.mission_failed === 'wrong_call' && om.taskIndex.d_case_solved.status === 'skipped' && om.taskIndex.d_case_closed.status === 'completed'\n    && !!h && /MISSION FAILED/.test(h.textContent) && /THE RITUAL COMPLETED/.test(body) && /Mei Chen was named, and she had done nothing/.test(body)\n    && (window.MusicController && window.MusicController.currentPlaylist) !== 'victory'\n    && !!tk && /CASE CLOSED/.test(tk.textContent) && !/MISSION COMPLETE/.test(body);  }"}
+{"cmd": "sync"}
+{"cmd": "note", "message": "F5 reload after the end"}
+{"cmd": "sync"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady() === true", "timeoutMs": 60000}
+{"cmd": "eval", "fn": "async () => { /* F5 MISSION COMPLETE check 3/3: the visualiser reopens under CASE CLOSED with the neutral ticker and no credits list (AP-2: the loss credits are not replayed); no end card; the board is read-only */ await new Promise(r => setTimeout(r, 3000)); const h = document.querySelector('.bv-title-block h1'); const tk = document.querySelector('.bv-ticker-inner'); const body = document.body.textContent; const R = window.deductionRuntime; R.setMark('ded_d_mensah', 'guilty', { profile: 'keyholder' });\n  return !!h && /CASE CLOSED/.test(h.textContent) && !!tk && /NIGHT TRAIN/.test(tk.textContent) && !/MISSION COMPLETE/.test(body) && !document.querySelector('.scenario-end-screen') && R.getState().state.marks.ded_d_mensah.mark === 'clear';  }"}
+{"cmd": "note", "message": "verify-run.rb: concluded, score 65 % ((1/2 x 70) + 30)"}
+{"cmd": "quit"}

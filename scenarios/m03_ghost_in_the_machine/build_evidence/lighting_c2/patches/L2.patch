@@ -1,0 +1,16 @@
+--- a/public/break_escape/js/systems/lighting.js	2026-10-12 18:10:57.483648903 +0100
++++ b/public/break_escape/js/systems/lighting.js	2026-10-12 18:16:51.843379796 +0100
+@@ -905,6 +905,13 @@
+     }
+     // Spill goes on after every fill, since it is meant to cross the doorway.
+     for (const state of visible) this.stampDoorSpill(state, stamp);
++    // Phaser 3.60: a batch whose last stamp is a MULTIPLY one (an emitter's floorTint)
++    // is lost at endDraw and the whole map comes out white (every room unlit). Ending
++    // on an ADD stamp avoids it; a black ADD adds nothing.
++    stampOpts.tint = 0x000000;
++    stampOpts.alpha = 1;
++    stampOpts.scale = 1;
++    rt.stamp(BLOCK_TEX, null, 0, 0, stampOpts);
+     rt.endDraw();
+   }
+ 

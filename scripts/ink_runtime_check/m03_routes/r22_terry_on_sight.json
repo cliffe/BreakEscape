@@ -1,0 +1,16 @@
+{"steps":[
+{"note":"R22 (pass 2 blind fixes 2, user 2026-10-12): Terry at night. (a) first sighting (player_spotted:terry_mott -> on_sighted) leads into his challenge; the Sterling-files story and the enrolment forms get the player waved on (guard_waved_on, which stops later sightings). (b) a fresh night: Ffion said notebook, 'Wrong turn' gets the player ordered out; a second sighting is the police threat; 'hear me out' -> 'I'm going' orders them out again; a third sighting is a fight (#hostile). (c) day: a sighting does nothing (on_sighted hands back)."},
+{"set":{"briefing_played":true,"victoria_card_cloned":true,"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"note":"(a) first sighting"},
+{"talk":"terry","knot":"on_sighted","picks":["Sterling asked me","enrolment forms","let you get on"]},
+{"note":"(b) fresh night, Ffion said notebook"},
+{"set":{"ffion_night_story":"notebook","guard_waved_on":false,"player_warned":false,"excuse_given":false,"guard_suspicious":false,"idle_quiet":false}},
+{"talk":"terry","reload":true,"knot":"on_sighted","picks":["Wrong turn"]},
+{"set":{"player_warned":true,"excuse_given":true,"ordered_out":true,"guard_hostile":false,"idle_quiet":false}},
+{"talk":"terry","reload":true,"knot":"on_sighted","picks":["Wait, wait","I'm going"]},
+{"set":{"ordered_out":true,"guard_hostile":true}},
+{"talk":"terry","reload":true,"knot":"on_sighted","picks":[]},
+{"note":"(c) by day a sighting hands straight back (challengeOnSight is gated to night anyway)"},
+{"set":{"mission_phase":"act1_meeting","clone_call_done":false,"guard_hostile":false,"ordered_out":false,"player_warned":false,"excuse_given":false}},
+{"talk":"terry","reload":true,"knot":"on_sighted","picks":["Nod to the guard","Sorry"]}
+]}

@@ -1,0 +1,19 @@
+{"steps":[
+{"note":"R31 (struggling run A, S4, S5, S8): the briefing's 'two payments we've traced so far'; before the checklist is read, the recap and the password tips point at the checkpoint noticeboard; the fund ladder's first rung names the pool config."},
+{"talk":"briefing","picks":["Which payments","How do I get in","I'm ready"]},
+{"said":["Two payments we've traced so far"]},
+{"set":{"briefing_played":true}},
+{"room":"security_checkpoint"},
+{"talk":"guard","picks":["Financial Conduct Authority","Dr Volkova"]},
+{"room":"trading_floor"},
+{"talk":"phone","picks":["Remind me where we are","Any tips on their passwords","Got it","I'm good for now"]},
+{"said":["There's an IT checklist on the checkpoint noticeboard","The IT checklist on the checkpoint noticeboard has the rule"]},
+{"set":{"server_passphrase_known":true}},
+{"talk":"phone","picks":["Remind me where we are","I'm good for now"]},
+{"notSaid":["There's an IT checklist on the checkpoint noticeboard"]},
+{"set":{"found_blockchain_evidence":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true}},
+{"room":"server_room"},
+{"room":"data_center"},
+{"talk":"phone","picks":["Which cold slot is the fund","I'm good for now"]},
+{"said":["The pool config has both numbers"]}
+]}

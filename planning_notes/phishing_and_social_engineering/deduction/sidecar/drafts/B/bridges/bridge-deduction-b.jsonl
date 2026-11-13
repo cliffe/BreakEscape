@@ -1,0 +1,144 @@
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
+{"cmd": "note", "message": "bridge-deduction-b: fixture B end to end on test_social_deduction_b (fresh game), naming the right person. DRAFT outline from the sidecar; P10-K-B finalises selectors and the board's getTestState shape (§6.8)."}
+{"cmd": "eval", "fn": "async () => { /* B0 baseline: every deduction global declared with its default, the runtime installed, nothing held, no verdicts, case open */ window.__toasts = window.__toasts || []; if (!window.__toastSpy) { const orig = window.gameAlert; window.gameAlert = (...a) => { window.__toasts.push(a); return orig ? orig(...a) : undefined; }; window.__toastSpy = true; } const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState();\n  const sus = ['ded_b_okoro','ded_b_lindqvist','ded_b_haddad','ded_b_morgan']; const facts = ['b_okoro_access','b_lindqvist_access','b_haddad_access','b_morgan_access','b_okoro_device','b_lindqvist_device','b_haddad_device','b_morgan_device','b_okoro_grievance','b_lindqvist_grievance','b_haddad_grievance','b_morgan_grievance'];\n  return !!R && !!S && G.deduction_closed === false && JSON.stringify(G.scenario_triggers_fired) === '{}'\n    && sus.every(s => G['deduction_verdict_' + s] === '' && G['deduction_outcome_' + s] === '')\n    && facts.every(f => G['se_intel_' + f] === false) && G.b_heard_alarm === false && G.ded_b_tomas_influence === 0\n    && S.state.closed === false && Object.keys(S.state.verdicts || {}).length === 0 && Object.values(S.decidable || {}).every(v => v === false); }"}
+{"cmd": "moveToNear", "id": "b_board"}
+{"cmd": "interact", "id": "b_board"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* B0 board: four cards, every cell Hidden, six count lines '2 in this case, 0 found', the light stakes line plus briefText, no Make the call */ const mg = window.MinigameFramework.currentMinigame; const b = mg.getTestState().board; const txt = mg.container.textContent;\n  const cells = b.suspects.flatMap(s => s.slots.flatMap(y => y.cells));\n  return b.mode === 'deduction' && b.suspects.length === 4 && cells.length === 12 && cells.every(c => c.state === 'hidden')\n    && (txt.match(/2 in this case, 0 found/g) || []).length === 6\n    && /Name the wrong people, or miss someone, and the report will say so\\./.test(txt)\n    && !/Make the call/.test(txt) && !/\\b(token|quest card|elder sign|the insider)\\b/i.test(txt); }"}
+{"cmd": "mg", "action": "clickText", "args": ["Close"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "note", "message": "B1 Tomás"}
+{"cmd": "moveToNear", "id": "ded_b_tomas"}
+{"cmd": "interact", "id": "ded_b_tomas"}
+{"cmd": "waitFor", "kind": "minigame", "id": "person-chat", "timeoutMs": 30000}
+{"cmd": "mg", "action": "chooseMatching", "args": ["unhappy on nights"]}
+{"cmd": "eval", "fn": "async () => { /* B1 Q1 free: Okoro's grievance held, influence still 0 */ const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState(); return G.se_intel_b_okoro_grievance === true && G.ded_b_tomas_influence === 0; }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["own gadgets"]}
+{"cmd": "eval", "fn": "async () => { /* B1 Q2: Okoro's device held, then -15 */ const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState(); return G.se_intel_b_okoro_device === true && G.ded_b_tomas_influence === -15 && G.ded_b_tomas_wary === false; }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["Anything odd last night"]}
+{"cmd": "eval", "fn": "async () => { /* B1 Q3: the alarm, b_heard_alarm true, no clue granted, then -30 and wary */ const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState(); return G.b_heard_alarm === true && G.ded_b_tomas_influence === -30 && G.ded_b_tomas_wary === true && G.se_intel_b_lindqvist_grievance === false; }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["complaining about pay"]}
+{"cmd": "eval", "fn": "async () => { /* B1 Q4 while wary: the vague line, no grant, no cost */ const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState(); const d = window.__test.minigame.getState(); return G.se_intel_b_lindqvist_grievance === false && G.ded_b_tomas_influence === -30 && /Money is nobody's business/.test(JSON.stringify(d)); }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["Thanks for the coffee"]}
+{"cmd": "eval", "fn": "async () => { /* B1 kind word: +20 once (to -10), wary cleared on rearm, and the choice is not offered again */ const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState(); const d = window.__test.minigame.getState(); const choices = JSON.stringify(d.choices || d); return G.ded_b_tomas_influence === -10 && G.ded_b_tomas_wary === false && !/Thanks for the coffee/.test(choices) && !/Anything odd last night/.test(choices); }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["let you get on"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "note", "message": "B2 Lindqvist"}
+{"cmd": "moveToNear", "id": "ded_b_lindqvist"}
+{"cmd": "interact", "id": "ded_b_lindqvist"}
+{"cmd": "waitFor", "kind": "minigame", "id": "person-chat", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* B2 the alarm choice is offered now that b_heard_alarm is true (it was hidden before B1 Q3) */ const d = window.__test.minigame.getState(); return /Tomás heard the server room alarm/.test(JSON.stringify(d.choices || d)); }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["overtime's been a sore point"]}
+{"cmd": "eval", "fn": "async () => { /* B2 the complaint copy is handed over with no combat: in the notepad, t_b_complaint_copy fired, Lindqvist's grievance held; both grievance copies are now seen (Okoro from B1, Lindqvist here), so Haddad and Morgan clear by count elimination with their own grievance cells still hidden: one nudge toast each, none for Okoro or Lindqvist */ await new Promise(r => setTimeout(r, 500)); const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState();\n  const nudges = (window.__toasts || []).filter(a => /You have enough to decide about/.test(a[0] || ''));\n  return G.se_intel_b_lindqvist_grievance === true && G.scenario_triggers_fired.t_b_complaint_copy === true && window.__test.getState().globals.b_heard_alarm === true\n    && S.decidable.ded_b_haddad === true && S.decidable.ded_b_morgan === true && S.decidable.ded_b_okoro === false && S.decidable.ded_b_lindqvist === false\n    && nudges.some(a => /Samira Haddad/.test(a[0])) && nudges.some(a => /Gwen Morgan/.test(a[0])) && nudges.length === 2; }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["Tomás heard the server room alarm"]}
+{"cmd": "eval", "fn": "async () => { /* B2 he gives the code */ const d = window.__test.minigame.getState(); return /4417/.test(JSON.stringify(d)); }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["get back to it"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "moveToNear", "id": "ded_b_tomas"}
+{"cmd": "interact", "id": "ded_b_tomas"}
+{"cmd": "waitFor", "kind": "minigame", "id": "person-chat", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* B2 Tomás's pay topic is gone (its clue is held) */ const d = window.__test.minigame.getState(); return !/complaining about pay/.test(JSON.stringify(d.choices || d)); }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["let you get on"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "note", "message": "B3 Nair's opening call and the HR cabinet"}
+{"cmd": "eval", "fn": "async () => { /* open the phone and Nair's thread (outline) */ const ph = window.inventory.items.find(i => i.scenarioData && i.scenarioData.phoneId === 'player_phone'); if (!ph) return false; window.handleObjectInteraction(ph); return true; }"}
+{"cmd": "waitFor", "kind": "minigame", "id": "phone-chat", "timeoutMs": 30000}
+{"cmd": "mg", "action": "clickText", "args": ["Priya Nair"]}
+{"cmd": "eval", "fn": "async () => { /* B3 the opening call says the cabinet code, ungated */ const d = window.__test.minigame.getState(); return /cabinet code is 7310/.test(JSON.stringify(d)); }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["call you back"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "moveToNear", "id": "hr_cabinet"}
+{"cmd": "interact", "id": "hr_cabinet"}
+{"cmd": "waitFor", "kind": "minigame", "id": null, "timeoutMs": 30000}
+{"cmd": "mg", "action": "pressKey", "args": ["7"]}
+{"cmd": "mg", "action": "pressKey", "args": ["3"]}
+{"cmd": "mg", "action": "pressKey", "args": ["1"]}
+{"cmd": "mg", "action": "pressKey", "args": ["0"]}
+{"cmd": "mg", "action": "pressKey", "args": ["Enter"]}
+{"cmd": "mg", "action": "take", "args": ["HR Summary: Night Shift"]}
+{"cmd": "eval", "fn": "async () => { /* B3 hr_summary taken: t_b_hr_summary fired, the four grievance facts held, Haddad's and Morgan's grievance cells now show */ await new Promise(r => setTimeout(r, 500)); const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState(); return G.scenario_triggers_fired.t_b_hr_summary === true && ['okoro','lindqvist','haddad','morgan'].every(n => G['se_intel_b_' + n + '_grievance'] === true); }"}
+{"cmd": "mg", "action": "close"}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "note", "message": "B4 marks"}
+{"cmd": "moveToNear", "id": "b_board"}
+{"cmd": "interact", "id": "b_board"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* B4 mark Haddad clear with a reason, Okoro guilty with profile insider (through the runtime the board calls) */ const R = window.deductionRuntime;\n  R.setMark('ded_b_haddad', 'clear', { because: ['b_haddad_grievance'] }); R.setMark('ded_b_okoro', 'guilty', { profile: 'insider' });\n  const st = window.gameState.globalVariables.deduction_state; return st.marks.ded_b_haddad.mark === 'clear' && st.marks.ded_b_haddad.because[0] === 'b_haddad_grievance' && st.marks.ded_b_okoro.profile === 'insider'; }"}
+{"cmd": "mg", "action": "clickText", "args": ["Close"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "sync"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady() === true", "timeoutMs": 60000}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume", "autoBrief": true}
+{"cmd": "eval", "fn": "async () => { /* B4 after reload: the marks survive, the runtime is installed once, nothing re-toasts */ const st = window.gameState.globalVariables.deduction_state; return !!window.deductionRuntime && st.marks.ded_b_haddad.mark === 'clear' && st.marks.ded_b_okoro.mark === 'guilty' && st.closed === false; }"}
+{"cmd": "note", "message": "B5 server room: door, log filter, DHCP printout"}
+{"cmd": "moveToNear", "id": "b_server"}
+{"cmd": "eval", "fn": "async () => { /* B5 open the PIN door with Lindqvist's code (outline: P10-K-B drives the keypad as the door bridges do) */ return true; }"}
+{"cmd": "mg", "action": "pressKey", "args": ["4"]}
+{"cmd": "mg", "action": "pressKey", "args": ["4"]}
+{"cmd": "mg", "action": "pressKey", "args": ["1"]}
+{"cmd": "mg", "action": "pressKey", "args": ["7"]}
+{"cmd": "mg", "action": "pressKey", "args": ["Enter"]}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => (window.gameState.unlockedRooms || []).includes('b_server')", "timeoutMs": 20000}
+{"cmd": "moveToNear", "id": "badge_log_terminal"}
+{"cmd": "interact", "id": "badge_log_terminal"}
+{"cmd": "waitFor", "kind": "minigame", "id": "log-filter", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* B5 flag the held-open door event (the anomaly row) and confirm; completionActions set b_badge_log_done */ const mg = window.MinigameFramework.currentMinigame; const row = [...mg.container.querySelectorAll('tr, [data-row]')].find(r => /HELD OPEN/.test(r.textContent)); if (!row) return false; row.click(); return true; }"}
+{"cmd": "mg", "action": "clickText", "args": ["FLAG EVENT"]}
+{"cmd": "mg", "action": "clickText", "args": ["CONFIRM"]}
+{"cmd": "waitFor", "kind": "global", "name": "b_badge_log_done", "expected": true, "timeoutMs": 20000}
+{"cmd": "mg", "action": "close"}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "moveToNear", "id": "dhcp_printout"}
+{"cmd": "interact", "id": "dhcp_printout"}
+{"cmd": "eval", "fn": "async () => { /* B5 all twelve facts held, every suspect decidable, the truth matches the solution, no minigame left open by triggerOnInteract */ await new Promise(r => setTimeout(r, 500)); const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState(); const facts = ['b_okoro_access','b_lindqvist_access','b_haddad_access','b_morgan_access','b_okoro_device','b_lindqvist_device','b_haddad_device','b_morgan_device','b_okoro_grievance','b_lindqvist_grievance','b_haddad_grievance','b_morgan_grievance'];\n  return facts.every(f => G['se_intel_' + f] === true) && Object.values(S.decidable).every(v => v === true)\n    && S.truth.ded_b_okoro === 'guilty' && ['ded_b_lindqvist','ded_b_haddad','ded_b_morgan'].every(s => S.truth[s] === 'clear') && !window.__test.getState().activeMinigame; }"}
+{"cmd": "note", "message": "B6 report: Not yet first"}
+{"cmd": "eval", "fn": "async () => { /* open the phone and Nair's thread (outline) */ const ph = window.inventory.items.find(i => i.scenarioData && i.scenarioData.phoneId === 'player_phone'); if (!ph) return false; window.handleObjectInteraction(ph); return true; }"}
+{"cmd": "waitFor", "kind": "minigame", "id": "phone-chat", "timeoutMs": 30000}
+{"cmd": "mg", "action": "clickText", "args": ["Priya Nair"]}
+{"cmd": "mg", "action": "chooseMatching", "args": ["ready to give you names"]}
+{"cmd": "mg", "action": "chooseMatching", "args": ["^Not yet"]}
+{"cmd": "eval", "fn": "async () => { /* B6 Not yet from the report hub: case still open */ const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState(); return G.deduction_closed === false && S.state.closed === false; }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["call you back"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* open the phone and Nair's thread (outline) */ const ph = window.inventory.items.find(i => i.scenarioData && i.scenarioData.phoneId === 'player_phone'); if (!ph) return false; window.handleObjectInteraction(ph); return true; }"}
+{"cmd": "waitFor", "kind": "minigame", "id": "phone-chat", "timeoutMs": 30000}
+{"cmd": "mg", "action": "clickText", "args": ["Priya Nair"]}
+{"cmd": "mg", "action": "chooseMatching", "args": ["ready to give you names"]}
+{"cmd": "mg", "action": "chooseMatching", "args": ["Name Okoro"]}
+{"cmd": "eval", "fn": "async () => { /* B6 Okoro's report verdict recorded, not graded (when: final) */ const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState(); return G.deduction_verdict_ded_b_okoro === 'guilty' && G.deduction_outcome_ded_b_okoro === '' && S.state.verdicts.ded_b_okoro.kind === 'report'; }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["That's everyone"]}
+{"cmd": "mg", "action": "chooseMatching", "args": ["^Not yet"]}
+{"cmd": "eval", "fn": "async () => { /* B6 Not yet at the warned step: still open */ const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState(); return G.deduction_closed === false; }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["ready to give you names"]}
+{"cmd": "eval", "fn": "async () => { /* B6 Okoro's name is no longer offered */ const d = window.__test.minigame.getState(); return !/Name Okoro/.test(JSON.stringify(d.choices || d)); }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["That's everyone"]}
+{"cmd": "mg", "action": "chooseMatching", "args": ["Yes, send it"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* B6 debrief after the phone closed: Okoro right_guilty with the Insider why line; the other three Not named and innocent, each failing a clause; Your note lines shown */ const mg = window.MinigameFramework.currentMinigame; const d = mg.getTestState().board.debrief; const txt = mg.container.textContent; const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState();\n  const card = id => d.cards.find(c => c.id === id);\n  return G.deduction_closed === true && G.deduction_outcome_ded_b_okoro === 'right_guilty'\n    && ['ded_b_lindqvist','ded_b_haddad','ded_b_morgan'].every(s => G['deduction_outcome_' + s] === 'right_clear' && card(s).verdictKind === 'none')\n    && /Why: Insider: yes/.test(card('ded_b_okoro').text) && /Insider: no, no personal device/.test(card('ded_b_lindqvist').text)\n    && /Not named/.test(txt) && /Your note/.test(txt) && !/You failed to/i.test(txt); }"}
+{"cmd": "mg", "action": "clickText", "args": ["Finish"]}
+{"cmd": "waitFor", "kind": "task", "id": "b_case_closed", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* B6 Finish: b_case_solved and b_case_closed completed, b_insider_named true, b_wrong_name false, the success screen says Case closed */ await new Promise(r => setTimeout(r, 1000)); const om = window.objectivesManager; const G = window.__test.getState().globals; const R = window.deductionRuntime; const S = R && R.getState();\n  return om.taskIndex.b_case_solved.status === 'completed' && om.taskIndex.b_case_closed.status === 'completed' && G.b_insider_named === true && G.b_wrong_name === false\n    && /Case closed/.test(document.body.textContent) && S.state.debriefSeen === true && S.state.debriefPending === false; }"}
+{"cmd": "dismiss", "label": null}
+{"cmd": "note", "message": "B7 reload after the end"}
+{"cmd": "sync"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady() === true", "timeoutMs": 60000}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume", "autoBrief": true}
+{"cmd": "eval", "fn": "async () => { /* B7 the conclusion replays; nothing re-runs */ const st = window.gameState.globalVariables.deduction_state; return st.closed === true && st.debriefSeen === true && st.ran.includes('close'); }"}
+{"cmd": "dismiss", "label": null}
+{"cmd": "moveToNear", "id": "b_board"}
+{"cmd": "interact", "id": "b_board"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* B7 the board shows View the debrief and no mark can change */ const mg = window.MinigameFramework.currentMinigame; const before = JSON.stringify(window.gameState.globalVariables.deduction_state.marks);\n  window.deductionRuntime.setMark('ded_b_morgan', 'guilty', { profile: 'insider' });\n  return /View the debrief/.test(mg.container.textContent) && JSON.stringify(window.gameState.globalVariables.deduction_state.marks) === before; }"}
+{"cmd": "note", "message": "B8 keys"}
+{"cmd": "eval", "fn": "async () => { /* B8 Space and E are inert while the board is open (no movement, no interaction) */ const p = window.player; const x = p.x, y = p.y; await window.__test.pressKey(' '); await window.__test.pressKey('e'); return window.__test.getState().activeMinigame && p.x === x && p.y === y; }"}
+{"cmd": "eval", "fn": "async () => { /* B8 Tab reaches every control (focus order covers every button in the board) */ const mg = window.MinigameFramework.currentMinigame; const btns = [...mg.container.querySelectorAll('button, [tabindex=\"0\"]')].filter(b => !b.disabled); const seen = new Set(); for (let i = 0; i < btns.length + 2; i++) { await window.__test.pressKey('Tab'); seen.add(document.activeElement); } return btns.every(b => seen.has(b)); }"}
+{"cmd": "note", "message": "B8 esc"}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* B8 Esc closes with no minigame_failed */ const t = window.__test; const l = t.peekLog(200); let i = -1; l.forEach((e, j) => { if (e.kind === 'note' && e.message === 'B8 esc') i = j; }); return !l.slice(i + 1).some(e => e.kind === 'event' && e.event === 'minigame_failed') && !t.getState().activeMinigame; }"}
+{"cmd": "sync"}
+{"cmd": "drain"}
+{"cmd": "quit"}

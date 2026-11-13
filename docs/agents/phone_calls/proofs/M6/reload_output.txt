@@ -1,0 +1,8 @@
+game 2024 (reload)
+connected: {"cur":{"npc":"the_architect","state":"connected","knot":"taunt_t30","opened":true},"q":0,"banner":null,"bimg":null}
+shot reload_connected
+reload mid-call
+"opened the_architect"
+after reload rows: ["Missed call: No caller ID"]
+callback button: null
+shot reload_after_reload

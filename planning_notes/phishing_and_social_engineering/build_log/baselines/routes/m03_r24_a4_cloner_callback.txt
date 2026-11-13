@@ -1,0 +1,248 @@
+
+## R24 (A4 fix pass, S8): Sterling sees the cloner's light during the read (victoria_suspicious >= 5) and calls it back at night, once per deflection; then a player she never caught (no line); then (e) a page reload between afternoon and night, which must keep the deflection and the 'keen' goodbye (both synced globals).
+   {set {"briefing_played":true,"victoria_test_answer":"hedged","victoria_suspicious":5}}
+
+## (a) flattery
+
+--- victoria @clone_check_2 ---
+  Victoria Sterling: You ask questions like someone taking notes. I like that in staff. I watch for it in guests.
+  Narrator: Her eyes drop to your pocket, where the cloner's light shows through the cloth. Then back to the board.
+  Narrator: Against your leg, the cloner is still working. A few seconds more.
+     (3 options)
+ > Skills are cheap. Knowing where to sell them isn't.
+  Victoria Sterling: Exactly. Which is why my researchers are paid like surgeons.
+  Narrator: The cloner buzzes once against your leg. Card read. Now run Darkside on it.
+      [RFID minigame: card saved]
+  Narrator: You step back from the whiteboard, easing the distance open again.
+  Victoria Sterling: That's enough philosophy for one afternoon. The programme starts next month. I'll know by Friday whether you're on it.
+     (3 options)
+ > Let me think it over.
+  Victoria Sterling: Do. The good ones always want a night on it.
+  Victoria Sterling: Have a look round on your way out. Reception, the main hallway. Not the executive wing; the guard gets territorial.
+  Narrator: Her phone buzzes. She glances at it, then at the door, and the meeting is over.
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true,"night_confrontation_ready":true,"usb_seen":true}}
+
+--- victoria @nighttime_confrontation ---
+  Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She has been waiting for you.
+  Victoria Sterling: You came back after hours. Recruits don't do that.
+  Victoria Sterling: You were rude this afternoon. I put it down to nerves. Nerves don't come back at eleven at night.
+  Victoria Sterling: Your pocket lit up this afternoon, and you chose that moment to flatter me. I enjoyed the flattery. I should have looked at the pocket.
+  Victoria Sterling: So let's not perform the part where I'm surprised. Who are you with?
+     (3 options)
+ > SAFETYNET. And I've read your approvals.
+  Victoria Sterling: Then you've read more than my accountant. He'll be disappointed.
+  Victoria Sterling: Let me spare us the scene you're braced for. You want the confession. The tears for the ward.
+  Victoria Sterling: I read what that ward cost, down to the number. It changed nothing I believe.
+  Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
+     (2 options)
+ > You could have walked away from that sale.
+  Victoria Sterling: I did walk away. With twenty-five thousand.
+  Narrator: She settles the bag on her shoulder.
+  Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office -- all of it is rented. All of it replaceable.
+  Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.
+     (3 options)
+ > You're not walking out of here. Bag down, hands where I can see them.
+  Narrator: You put yourself between Victoria and the door. She measures the distance, the odds, and lets the bag drop.
+  Victoria Sterling: *quietly* You understand this stops nothing. I'm a desk. They'll have it filled by Monday.
+  Victoria Sterling: The evidence is real. The name is real. And none of it reaches the Architect. Enjoy the paperwork.
+  [chat closes]
+
+## (b) the network diagram
+   {set {"mission_phase":"act1_meeting","clone_call_done":false,"night_confrontation_ready":false,"victoria_card_cloned":false,"rfid_clone_complete":false,"cloner_glimpsed":false,"victoria_fate":"","victoria_suspicious":5}}
+
+--- victoria @clone_check_2 ---
+   (after a reload: variables kept, visit counts and position reset)
+  Victoria Sterling: You ask questions like someone taking notes. I like that in staff. I watch for it in guests.
+  Narrator: Her eyes drop to your pocket, where the cloner's light shows through the cloth. Then back to the board.
+  Narrator: Against your leg, the cloner is still working. A few seconds more.
+     (3 options)
+ > This lab can't have been cheap to build.
+  Narrator: Your eyes stay on the network diagram.
+  Victoria Sterling: It paid for itself in a quarter. Universities teach them to write it up. I teach them what it's worth.
+  Narrator: The cloner buzzes once against your leg. Card read. Now run Darkside on it.
+      [RFID minigame: card saved]
+  Narrator: You step back from the whiteboard, easing the distance open again.
+  Victoria Sterling: That's enough philosophy for one afternoon. The programme starts next month. I'll know by Friday whether you're on it.
+     (3 options)
+ > Let me think it over.
+  Victoria Sterling: Do. The good ones always want a night on it.
+  Victoria Sterling: Have a look round on your way out. Reception, the main hallway. Not the executive wing; the guard gets territorial.
+  Narrator: Her phone buzzes. She glances at it, then at the door, and the meeting is over.
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true,"night_confrontation_ready":true}}
+
+--- victoria @nighttime_confrontation ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She has been waiting for you.
+  Victoria Sterling: You came back after hours. Recruits don't do that.
+  Victoria Sterling: You were rude this afternoon. I put it down to nerves. Nerves don't come back at eleven at night.
+  Victoria Sterling: Your pocket lit up this afternoon, and my network diagram suddenly fascinated you. I checked my card was still in my bag. It was. That's the trick, isn't it?
+  Victoria Sterling: So let's not perform the part where I'm surprised. Who are you with?
+     (3 options)
+ > SAFETYNET. And I've read your approvals.
+  Victoria Sterling: Then you've read more than my accountant. He'll be disappointed.
+  Victoria Sterling: Let me spare us the scene you're braced for. You want the confession. The tears for the ward.
+  Victoria Sterling: I read what that ward cost, down to the number. It changed nothing I believe.
+  Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
+     (2 options)
+ > You could have walked away from that sale.
+  Victoria Sterling: I did walk away. With twenty-five thousand.
+  Narrator: She settles the bag on her shoulder.
+  Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office -- all of it is rented. All of it replaceable.
+  Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.
+     (3 options)
+ > You're not walking out of here. Bag down, hands where I can see them.
+  Narrator: You put yourself between Victoria and the door. She measures the distance, the odds, and lets the bag drop.
+  Victoria Sterling: *quietly* You understand this stops nothing. I'm a desk. They'll have it filled by Monday.
+  Victoria Sterling: The evidence is real. The name is real. And none of it reaches the Architect. Enjoy the paperwork.
+  [chat closes]
+
+## (c) certificates
+   {set {"mission_phase":"act1_meeting","clone_call_done":false,"night_confrontation_ready":false,"victoria_card_cloned":false,"rfid_clone_complete":false,"cloner_glimpsed":false,"victoria_fate":"","victoria_suspicious":5}}
+
+--- victoria @clone_check_2 ---
+   (after a reload: variables kept, visit counts and position reset)
+  Victoria Sterling: You ask questions like someone taking notes. I like that in staff. I watch for it in guests.
+  Narrator: Her eyes drop to your pocket, where the cloner's light shows through the cloth. Then back to the board.
+  Narrator: Against your leg, the cloner is still working. A few seconds more.
+     (3 options)
+ > Do you offer any formal certifications?
+  Victoria Sterling: Certificates are for people who want permission. My students don't ask.
+  Narrator: The cloner buzzes once against your leg. Card read. Now run Darkside on it.
+      [RFID minigame: card saved]
+  Narrator: You step back from the whiteboard, easing the distance open again.
+  Victoria Sterling: That's enough philosophy for one afternoon. The programme starts next month. I'll know by Friday whether you're on it.
+     (3 options)
+ > Let me think it over.
+  Victoria Sterling: Do. The good ones always want a night on it.
+  Victoria Sterling: Have a look round on your way out. Reception, the main hallway. Not the executive wing; the guard gets territorial.
+  Narrator: Her phone buzzes. She glances at it, then at the door, and the meeting is over.
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true,"night_confrontation_ready":true}}
+
+--- victoria @nighttime_confrontation ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She has been waiting for you.
+  Victoria Sterling: You came back after hours. Recruits don't do that.
+  Victoria Sterling: You were rude this afternoon. I put it down to nerves. Nerves don't come back at eleven at night.
+  Victoria Sterling: Your pocket lit up this afternoon, and you asked me about certificates. Nobody cares about certificates. You wanted me looking anywhere else.
+  Victoria Sterling: So let's not perform the part where I'm surprised. Who are you with?
+     (3 options)
+ > SAFETYNET. And I've read your approvals.
+  Victoria Sterling: Then you've read more than my accountant. He'll be disappointed.
+  Victoria Sterling: Let me spare us the scene you're braced for. You want the confession. The tears for the ward.
+  Victoria Sterling: I read what that ward cost, down to the number. It changed nothing I believe.
+  Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
+     (2 options)
+ > You could have walked away from that sale.
+  Victoria Sterling: I did walk away. With twenty-five thousand.
+  Narrator: She settles the bag on her shoulder.
+  Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office -- all of it is rented. All of it replaceable.
+  Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.
+     (3 options)
+ > You're not walking out of here. Bag down, hands where I can see them.
+  Narrator: You put yourself between Victoria and the door. She measures the distance, the odds, and lets the bag drop.
+  Victoria Sterling: *quietly* You understand this stops nothing. I'm a desk. They'll have it filled by Monday.
+  Victoria Sterling: The evidence is real. The name is real. And none of it reaches the Architect. Enjoy the paperwork.
+  [chat closes]
+
+## (d) she never looked: no callback
+   {set {"mission_phase":"act1_meeting","clone_call_done":false,"night_confrontation_ready":false,"victoria_card_cloned":false,"rfid_clone_complete":false,"cloner_glimpsed":false,"victoria_fate":"","victoria_suspicious":0}}
+
+--- victoria @clone_check_2 ---
+   (after a reload: variables kept, visit counts and position reset)
+  Victoria Sterling: You ask questions like someone taking notes. I like that in staff. I watch for it in guests.
+  Narrator: Against your leg, the cloner is still working. A few seconds more.
+     (3 options)
+ > Skills are cheap. Knowing where to sell them isn't.
+  Victoria Sterling: Exactly. Which is why my researchers are paid like surgeons.
+  Narrator: The cloner buzzes once against your leg. Card read. Now run Darkside on it.
+      [RFID minigame: card saved]
+  Narrator: You step back from the whiteboard, easing the distance open again.
+  Victoria Sterling: That's enough philosophy for one afternoon. The programme starts next month. I'll know by Friday whether you're on it.
+     (3 options)
+ > Let me think it over.
+  Victoria Sterling: Do. The good ones always want a night on it.
+  Victoria Sterling: Have a look round on your way out. Reception, the main hallway. Not the executive wing; the guard gets territorial.
+  Narrator: Her phone buzzes. She glances at it, then at the door, and the meeting is over.
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true,"night_confrontation_ready":true}}
+
+--- victoria @nighttime_confrontation ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She has been waiting for you.
+  Victoria Sterling: You came back after hours. Recruits don't do that.
+  Victoria Sterling: You were rude this afternoon. I put it down to nerves. Nerves don't come back at eleven at night.
+  Victoria Sterling: So let's not perform the part where I'm surprised. Who are you with?
+     (3 options)
+ > SAFETYNET. And I've read your approvals.
+  Victoria Sterling: Then you've read more than my accountant. He'll be disappointed.
+  Victoria Sterling: Let me spare us the scene you're braced for. You want the confession. The tears for the ward.
+  Victoria Sterling: I read what that ward cost, down to the number. It changed nothing I believe.
+  Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
+     (2 options)
+ > You could have walked away from that sale.
+  Victoria Sterling: I did walk away. With twenty-five thousand.
+  Narrator: She settles the bag on her shoulder.
+  Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office -- all of it is rented. All of it replaceable.
+  Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.
+     (3 options)
+ > You're not walking out of here. Bag down, hands where I can see them.
+  Narrator: You put yourself between Victoria and the door. She measures the distance, the odds, and lets the bag drop.
+  Victoria Sterling: *quietly* You understand this stops nothing. I'm a desk. They'll have it filled by Monday.
+  Victoria Sterling: The evidence is real. The name is real. And none of it reaches the Architect. Enjoy the paperwork.
+  [chat closes]
+
+## (e) the diagram, a 'keen' goodbye after a 'sold' answer, then a page reload before the night (ink locals lost)
+   {set {"mission_phase":"act1_meeting","clone_call_done":false,"night_confrontation_ready":false,"victoria_card_cloned":false,"rfid_clone_complete":false,"cloner_glimpsed":false,"cloner_deflection":"","afternoon_goodbye":"","victoria_fate":"","victoria_suspicious":5,"victoria_influence":20,"victoria_test_answer":"sold"}}
+
+--- victoria @clone_check_2 ---
+   (after a reload: variables kept, visit counts and position reset)
+  Victoria Sterling: You ask questions like someone taking notes. I like that in staff. I watch for it in guests.
+  Narrator: Her eyes drop to your pocket, where the cloner's light shows through the cloth. Then back to the board.
+  Narrator: Against your leg, the cloner is still working. A few seconds more.
+     (3 options)
+ > This lab can't have been cheap to build.
+  Narrator: Your eyes stay on the network diagram.
+  Victoria Sterling: It paid for itself in a quarter. Universities teach them to write it up. I teach them what it's worth.
+  Narrator: The cloner buzzes once against your leg. Card read. Now run Darkside on it.
+      [RFID minigame: card saved]
+  Narrator: You step back from the whiteboard, easing the distance open again.
+  Victoria Sterling: That's enough philosophy for one afternoon. The programme starts next month. I'll know by Friday whether you're on it.
+     (3 options)
+ > This is exactly the kind of work I've been looking for.
+  Victoria Sterling: Good. I'll have the enrolment details sent over.
+  Victoria Sterling: Have a look round on your way out. Reception, the main hallway. Not the executive wing; the guard gets territorial.
+  Narrator: Her phone buzzes. She glances at it, then at the door, and the meeting is over.
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true,"night_confrontation_ready":true}}
+
+--- victoria @nighttime_confrontation ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She has been waiting for you.
+  Victoria Sterling: You came back after hours. Recruits don't do that.
+  Victoria Sterling: You told me you'd take the forty. You said it very quickly. The ones who mean it take longer.
+  Victoria Sterling: And you told me this was exactly the work you'd been looking for. I believed you. That's the part I mind.
+  Victoria Sterling: Your pocket lit up this afternoon, and my network diagram suddenly fascinated you. I checked my card was still in my bag. It was. That's the trick, isn't it?
+  Victoria Sterling: So let's not perform the part where I'm surprised. Who are you with?
+     (3 options)
+ > SAFETYNET. And I've read your approvals.
+  Victoria Sterling: Then you've read more than my accountant. He'll be disappointed.
+  Victoria Sterling: Let me spare us the scene you're braced for. You want the confession. The tears for the ward.
+  Victoria Sterling: I read what that ward cost, down to the number. It changed nothing I believe.
+  Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
+     (2 options)
+ > You could have walked away from that sale.
+  Victoria Sterling: I did walk away. With twenty-five thousand.
+  Narrator: She settles the bag on her shoulder.
+  Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office -- all of it is rented. All of it replaceable.
+  Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.
+     (3 options)
+ > You're not walking out of here. Bag down, hands where I can see them.
+  Narrator: You put yourself between Victoria and the door. She measures the distance, the odds, and lets the bag drop.
+  Victoria Sterling: *quietly* You understand this stops nothing. I'm a desk. They'll have it filled by Monday.
+  Victoria Sterling: The evidence is real. The name is real. And none of it reaches the Architect. Enjoy the paperwork.
+  [chat closes]
+
+[stats] spoken/narrated lines 131, choices 25, longest run without a choice 6 (victoria); runs>=6: victoria:6

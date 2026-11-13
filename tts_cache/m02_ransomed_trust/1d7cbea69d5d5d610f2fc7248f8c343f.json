@@ -1,0 +1,13 @@
+{
+  "key": "1d7cbea69d5d5d610f2fc7248f8c343f",
+  "npc": "narrator",
+  "text": "You seal the bag over Mr Pryce's mouth and nose and squeeze, in time with his chest. Raval clears the circuit. The alarm slows to a steady beep.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

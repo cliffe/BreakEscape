@@ -1,0 +1,13 @@
+{
+  "key": "90bc89f6ad8b7524562554f5b45fb7c9",
+  "npc": "dr_hartley",
+  "text": "I speak for patients' confidentiality. When their records are at risk, I want to know who's telling them, and when.",
+  "voice": "Gacrux",
+  "style": "Consultant and Caldicott Guardian in her late fifties, cautious, precise, slightly formal. Speak with a consistent Edinburgh, Scottish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

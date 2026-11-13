@@ -1,0 +1,9 @@
+game 2368
+after_call dev_service_desk start ffe4c083298313e1ba992cea82fe9f1417dc39622bf0ed7770e70862de3754c1
+after_call ruth_phone start 52c50b7abf11dcb86ee03289cd2dbb23de26a55987e00bfb49c9964561c1e49d
+after_reload dev_service_desk start ffe4c083298313e1ba992cea82fe9f1417dc39622bf0ed7770e70862de3754c1
+after_reload ruth_phone start 52c50b7abf11dcb86ee03289cd2dbb23de26a55987e00bfb49c9964561c1e49d
+200 dev_service_desk | Service desk, Dev speaking. What can I do for you? | null
+200 dev_service_desk | Look, I'm not doing anything else on this call without checking who you are. | null
+200 dev_service_desk | Ah, I can't give that out over the phone, sorry. Not without a check. | null
+200 dev_service_desk | Sorry, I'm going to stop you there. I'll run this past my manager first. | null

@@ -1,0 +1,13 @@
+{
+  "key": "f8e9d612289215334acbc219e26ae7ec",
+  "npc": "derek_lawson",
+  "text": "Fear is the first step to wisdom. You're doing my work for me.",
+  "voice": "Algieba",
+  "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

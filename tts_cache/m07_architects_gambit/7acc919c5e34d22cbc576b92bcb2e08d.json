@@ -1,0 +1,13 @@
+{
+  "key": "7acc919c5e34d22cbc576b92bcb2e08d",
+  "npc": "closing_debrief",
+  "text": "So carry it accurately, which is harder than carrying it heavily. The choice was yours. The menu was his.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:05:15Z"
+}

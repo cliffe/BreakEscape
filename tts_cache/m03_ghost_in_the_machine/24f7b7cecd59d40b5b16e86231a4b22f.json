@@ -1,0 +1,13 @@
+{
+  "key": "24f7b7cecd59d40b5b16e86231a4b22f",
+  "npc": "narrator",
+  "text": "He reaches for his phone with a hand that isn't quite steady, and for the first time all night he looks like a man who might sleep.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:38:17Z"
+}

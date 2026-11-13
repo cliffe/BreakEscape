@@ -1,0 +1,10 @@
+Make portrait for Dr Adrian Tesseract
+A lean, upright man of about 64 with a lined, clean-shaven face, light skin with a faint olive cast, short silver-grey hair neatly combed back and receding a little at the temples, and thin rimless rectangular glasses, a former chief strategist of an intelligence service who taught a generation of its agents and now quietly runs the network that opposes it. Calm, attentive pale grey eyes and a level, courteous, faintly appraising look, the composure of a patient lecturer who has already worked out the ending. He wears a well-cut but unshowy charcoal suit jacket, unbuttoned, over a crisp white shirt buttoned to the collar with no tie, charcoal suit trousers and a plain black belt, and a plain steel wristwatch; his hands are loosely clasped in front of him at waist height. Standing alone against an empty plain backdrop, no room or furniture behind him. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-21, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is adrian_tesseract_concept_1_raw.png. Approved by the user 2026-10-22 and adopted as adrian_tesseract (was wip/adrian_tesseract_concept_1.png).

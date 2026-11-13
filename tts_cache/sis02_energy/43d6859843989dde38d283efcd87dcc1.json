@@ -1,0 +1,13 @@
+{
+  "key": "43d6859843989dde38d283efcd87dcc1",
+  "npc": "priya_s",
+  "text": "You backed the dial over the screen. Right call, and for the right reason.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:17:46Z"
+}

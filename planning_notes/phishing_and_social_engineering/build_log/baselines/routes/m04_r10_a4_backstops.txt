@@ -1,0 +1,43 @@
+
+## R10 (round 2): the A4 reload backstops. After the shutdown nothing fires. After 'Bring me in', a page reload before the debrief's first line: the re-emit backstop fires on the next room entry. After the debrief's first line, a reload: the hear-the-debrief backstop completes report_to_0x99 on the next room entry.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_provided_keycard":true,"vance_card_cloned":true,"server_room_reached":true,"plant_reader_seen":true,"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"evidence_maintenance_logs_found":true,"attack_mechanism_known":true,"vance_is_ally":true,"anomaly_detected":true,"voltage_captured":true,"voltage_neutralised":true,"esd_authorized":true,"attack_prevented":true,"operative_static_defeated":true,"vance_spoken":true}}
+      [engine: attack mapped -> clock_started]
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+   [no room_entered backstop would fire]
+   [PASS] backstops firing: [] (expected [])
+
+--- phone ---
+     (4 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  Voltage's operation log is still on the plant-room bench, for one.
+  And there's a go-bag at the dock nobody's opened.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] How do I get through the plant-room reader?
+     [1] Where do I stand?
+     [2] Nothing right now.
+  [stopped: no pick]
+   [PASS] mission_complete = true (expected true)
+   [PASS] debrief_started = false (expected false)
+   [backstop would fire on next room entry: re-emit -> setGlobal { "mission_complete": true }]
+   [PASS] backstops firing: [re-emit] (expected [re-emit])
+
+--- debrief ---
+      [set_global debrief_started=true]
+  Agent, report.
+     [0] Shutdown engaged before the racks went. Banks isolated, hall intact.
+     [1] Voltage is in custody.
+  [stopped: no pick]
+   [PASS] debrief_started = true (expected true)
+   [backstop would fire on next room entry: hear -> completeTask "report_to_0x99"]
+   [PASS] backstops firing: [hear] (expected [hear])
+
+[stats] spoken/narrated lines 6, choices 3, longest run without a choice 3 (phone); runs>=6: 
+[result] all expectations met

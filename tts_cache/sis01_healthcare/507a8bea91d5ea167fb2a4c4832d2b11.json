@@ -1,0 +1,13 @@
+{
+  "key": "507a8bea91d5ea167fb2a4c4832d2b11",
+  "npc": "sarah_mitchell",
+  "text": "I'm escalating him. Amy's going on one-to-one until outreach arrive.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}
