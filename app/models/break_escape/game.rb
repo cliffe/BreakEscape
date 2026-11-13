@@ -955,7 +955,7 @@ module BreakEscape
     public :npc_ko_claimable?
 
     # Ids of the scenario's room NPCs that are not koImmune and not phone NPCs. Reads scenario_data when it is
-    # loaded; sync_state's narrow load leaves it out, so there two jsonpath lists are read,
+    # loaded; sync_state's narrow load leaves it out, so there the room NPC stubs are read (narrow_room_npc_stubs),
     # as scenario_npc_ids does. Bounded by the scenario.
     def ko_claimable_room_npc_ids
       if has_attribute?(:scenario_data)
@@ -975,12 +975,29 @@ module BreakEscape
         return ids
       end
 
-      all, immune = self.class.where(id: id).pick(
-        Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"),
-        Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*] ? (@.koImmune == true || @.npcType == \"phone\").id')")
-      )
-      parse = ->(list) { Array(list.is_a?(String) ? JSON.parse(list) : list).select { |i| i.is_a?(String) } }
-      Set.new(parse.call(all)) - Set.new(parse.call(immune))
+      narrow_room_npc_stubs.each_with_object(Set.new) do |npc, ids|
+        next unless npc['id'].is_a?(String) && npc['koImmune'] != true && npc['npcType'] != 'phone'
+
+        ids << npc['id']
+      end
+    end
+
+    # The scenario's room NPCs as { 'id', 'koImmune', 'npcType' } stubs, read without loading
+    # scenario_data (sync_state's narrow load). jsonb_each / jsonb_array_elements /
+    # jsonb_build_object only, so it runs on PostgreSQL 9.5 (jsonpath needs 12). Bounded by the scenario.
+    NARROW_ROOM_NPC_STUBS_SQL = <<~SQL.squish
+      SELECT jsonb_build_object('id', n.npc -> 'id', 'koImmune', n.npc -> 'koImmune', 'npcType', n.npc -> 'npcType')
+      FROM break_escape_games g
+      CROSS JOIN LATERAL jsonb_each(CASE WHEN jsonb_typeof(g.scenario_data -> 'rooms') = 'object'
+                                         THEN g.scenario_data -> 'rooms' ELSE '{}'::jsonb END) AS r(room_id, room)
+      CROSS JOIN LATERAL jsonb_array_elements(CASE WHEN jsonb_typeof(r.room) = 'object' AND jsonb_typeof(r.room -> 'npcs') = 'array'
+                                                   THEN r.room -> 'npcs' ELSE '[]'::jsonb END) AS n(npc)
+      WHERE g.id = ? AND jsonb_typeof(n.npc) = 'object'
+    SQL
+
+    def narrow_room_npc_stubs
+      sql = self.class.sanitize_sql_array([NARROW_ROOM_NPC_STUBS_SQL, id])
+      self.class.connection.select_values(sql).map { |v| v.is_a?(String) ? JSON.parse(v) : v }
     end
 
     # Review R3 m2: a held item (by id) that has already left the NPC: dropped into any room
@@ -4308,17 +4325,12 @@ module BreakEscape
         # sync_state's narrow load leaves scenario_data out; read just the ids:
         # room NPCs, and the headless records' ids (social.characters.*.channels.email
         # where the character has an emailRecord; see headless_npc_records)
-        found = self.class.where(id: id).pick(
-          Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"),
-          Arel.sql("jsonb_path_query_array(scenario_data, " \
-                   "'$.social.characters.* ? (@.emailRecord.type() == \"object\").channels.email')"),
-          # ink-email contacts with their own emailRecord (headless_contact_records)
-          Arel.sql("jsonb_path_query_array(scenario_data, " \
-                   "'$.social.mailClient.contacts[*] ? (@.emailRecord.type() == \"object\").npc')")
-        )
-        Array(found).each do |list|
-          list = JSON.parse(list) if list.is_a?(String)
-          Array(list).each { |npc_id| ids << npc_id if npc_id.is_a?(String) && !npc_id.empty? }
+        # (9.5-safe: no jsonpath; see narrow_room_npc_stubs)
+        narrow_room_npc_stubs.each { |npc| ids << npc['id'] if npc['id'].is_a?(String) && !npc['id'].empty? }
+        social = self.class.where(id: id).pick(Arel.sql("scenario_data -> 'social'"))
+        social = JSON.parse(social) if social.is_a?(String)
+        self.class.headless_npc_records('social' => social).each do |rec|
+          ids << rec['id'] if rec['id'].is_a?(String) && !rec['id'].empty?
         end
       end
       (player_state['room_states'] || {}).each_value do |state|
