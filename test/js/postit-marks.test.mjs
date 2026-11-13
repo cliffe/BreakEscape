@@ -1,5 +1,5 @@
 // Slice 9.1 step 2 (docs/achitechture/ACCESS_MODEL_SLICE_9_1_PLAN.md 5.3): systems/postit-marks.js
-// draws the notes_postit1 picture at a sign-in PC's top-left corner when its screen shows a
+// draws the notes_postit1 picture at a sign-in PC's bottom-left corner when its screen shows a
 // note (hasPostit, or an authored postitNote that is shown), on sign-in PCs only.
 // Run with: node test/js/postit-marks.test.mjs
 import test from 'node:test';
@@ -57,7 +57,7 @@ test('wantsPostit: sign-in PCs with hasPostit or a shown authored note only', ()
     assert.equal(wantsPostit(null), false);
 });
 
-test('a sign-in PC with hasPostit gets one picture at the top-left offset and the stated depth; a second syncRoom adds none', () => {
+test('a sign-in PC with hasPostit gets one picture at the bottom-left and the stated depth; a second syncRoom adds none', () => {
     const { sc, sprites, marks } = world([login('omar_pc', { hasPostit: true })]);
     marks.syncRoom('office');
     assert.equal(sc.images.length, 1);
@@ -65,7 +65,9 @@ test('a sign-in PC with hasPostit gets one picture at the top-left offset and th
     assert.equal(img.key, POSTIT_TEXTURE);
     const s = sprites.omar_pc;
     assert.equal(img.x, Math.round(s.x + POSTIT_INSET + POSTIT_SIZE / 2));
-    assert.equal(img.y, Math.round(s.y + POSTIT_INSET + POSTIT_SIZE / 2));
+    // UX feedback slice 2a (main-11): the note's bottom edge is level with the sprite's bottom
+    const edge = img.y + POSTIT_SIZE / 2;
+    assert.ok(edge <= s.y + s.displayHeight && edge >= s.y + s.displayHeight - 0.5, 'the bottom edge is the sprite bottom (to the half pixel)');
     assert.ok(img.x < s.x + s.displayWidth / 2, 'on the left half, clear of the indicator dot at the top-right');
     assert.equal(img.depth, s.depth + POSTIT_DEPTH_OFFSET);
     assert.ok(img.depth < s.depth + 0.01, 'below an indicator drawn at the object depth + 0.01');
@@ -150,4 +152,16 @@ test('label passes a non-string observation through unchanged, marked or not', (
     assert.equal(marks.label('plain_pc', 42), 42);
     assert.equal(marks.label('plain_pc', undefined), undefined);
     assert.equal(marks.label('plain_pc', "Mei's PC"), "Mei's PC (a sticky note on the monitor)");
+});
+
+test('slice 2a (main-11): the mark sits on the sprite bottom for any origin', () => {
+    for (const [originX, originY] of [[0, 0], [0.5, 0.5], [0.5, 1]]) {
+        const sprite = { x: 100, y: 200, displayWidth: 32, displayHeight: 48, originX, originY };
+        const { x, y } = postitPosition(sprite);
+        const bottom = sprite.y - sprite.displayHeight * originY + sprite.displayHeight;
+        const left = sprite.x - sprite.displayWidth * originX;
+        const edge = y + POSTIT_SIZE / 2;
+        assert.ok(edge <= bottom && edge >= bottom - 0.5, `origin ${originX},${originY}: edge ${edge}, bottom ${bottom}`);
+        assert.equal(x, Math.round(left + POSTIT_INSET + POSTIT_SIZE / 2));
+    }
 });

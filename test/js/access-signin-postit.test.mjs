@@ -122,3 +122,22 @@ test('the remote sign-in branch, if present, makes no /login_accounts request', 
     assert.ok(firstLoginAccounts < 0 || (branchEnd >= 0 && branchEnd < firstLoginAccounts),
         'the remote branch returns before asking /login_accounts');
 });
+
+// UX feedback slice 2a (main-01, main-12): on the sign-in screen the note is stuck on the
+// bezel's lower-left, overhanging its left edge, as on the desktop. It sat off centre: it is
+// the bezel's next sibling and a :nth-child(2) rule gave it a 140px left margin.
+test('slice 2a: the sign-in post-it CSS pins the note to the bezel lower-left, never centred or offset by position', () => {
+    const css = readFileSync(join(js, '../css/password-minigame.css'), 'utf8');
+    const rule = (sel) => {
+        const at = css.indexOf(`\n${sel} {`);
+        assert.ok(at >= 0, `${sel} rule present`);
+        return css.slice(at, css.indexOf('}', at));
+    };
+    const note = rule('.password-minigame-area .postit-note');
+    assert.match(note, /align-self:\s*flex-start/, 'at the left of the column');
+    assert.match(note, /left:\s*-\d+px/, 'overhangs the bezel left edge');
+    assert.match(note, /margin:\s*-\d+px\s+0\s+0\s+0/, 'pulled up over the bezel frame');
+    assert.match(note, /top:\s*auto/, 'no inherited top offset');
+    assert.doesNotMatch(note, /translateX|margin-left:\s*auto|align-self:\s*center/, 'no centring');
+    assert.doesNotMatch(css, /\.password-minigame-area \.postit-note:nth-child/, 'no nth-child margin moves it across');
+});
