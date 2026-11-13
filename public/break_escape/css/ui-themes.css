@@ -515,7 +515,8 @@
    not as the avatar's portrait ring or the inventory's thin slot frames. The
    64px hand overhangs the 44px opening; its transparent margin takes it. */
 [data-ui-theme] #combat-buttons {
-  --combat-strip-height: 108px;
+  /* the strip grows by a classic scrollbar's height (--tray-scrollbar, inventory.js) */
+  --combat-strip-height: calc(108px + var(--tray-scrollbar, 0px));
   --combat-button-size: 68px;
 }
 
@@ -566,10 +567,11 @@
 }
 
 /* The portrait group is taller than the old 80px strip, so the strip and
-   the things stacked above it move up together */
+   the things stacked above it move up together, also by the height a classic
+   (desktop) scrollbar adds to the strip (UX slice 4 R2 m2) */
 [data-ui-theme] #inventory-container { height: 108px; }
-[data-ui-theme] #hud-info-label { bottom: 148px; }
-[data-ui-theme] #npc-bark-container { bottom: 108px; }
+[data-ui-theme] #hud-info-label { bottom: calc(148px + var(--tray-scrollbar, 0px)); }
+[data-ui-theme] #npc-bark-container { bottom: calc(108px + var(--tray-scrollbar, 0px)); }
 
 /* Health, inside the portrait group (health-ui.js moves it there) */
 [data-ui-theme] #player-hud-buttons #health-ui-container {
