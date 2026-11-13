@@ -732,7 +732,7 @@ export class NpcWorldBubbles {
                 if (!r || !(r.width > 0) || !(r.height > 0)) continue;
                 let cs = null;
                 try { cs = win().getComputedStyle?.(el); } catch (e) { cs = null; }
-                if (cs && (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0)) continue;
+                if (cs && (cs.display === 'none' || cs.visibility === 'hidden' || (cs.opacity !== '' && Number(cs.opacity) === 0))) continue;
                 if (r.width * r.height > 0.5 * c.width * c.height) continue;
                 rects.push({ left: r.left - c.left, top: r.top - c.top, width: r.width, height: r.height });
             }
