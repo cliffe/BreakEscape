@@ -50,15 +50,20 @@ Findings from the live runs, fixed: the jam and walk-in mappings first sat on Ru
 
 ## Lines that need TTS (not generated)
 
-- Kieran, ink (`ink/kieran.ink`): the greeting, the three hub openers, the two "where does the post go" lines, the two "door is wedged open" lines, the goodbye.
-- Scenario chatter, spoken by Kieran: `work_fail_printer` (two lines), `work_fail_fed_up` (one), `wk_prop_door` (one).
+Current list after the R1 fixes:
+
+- Kieran, ink (`ink/kieran.ink`): the greeting, the three hub openers, the two "where does the post go" lines (the second reworded in R1), the courier line (new in R1), the two "door is wedged open" lines (both reworded in R1), the goodbye.
+- Kieran's own chatter (moved onto his NPC record in R1): `work_fail_printer` (two lines), `work_fail_fed_up` (one), `wk_prop_door` (one). Wording unchanged.
+- Dev (`ink/dev.ink`): the two courier lines (both reworded in R1).
+- Ruth on the phone (`ink/ruth_phone.ink`): the "anywhere else worth a look" hint (reworded in R1).
+- Ruth's debrief (`ink/ruth_debrief.ink`): the document-disposal line (reworded in R1) and the propped-door line (new in R1).
 - Kieran needs visemes from talk runs (`male_nerd_visemes.png` is the generic sheet in use now).
 
 ## Left out
 
-- No debrief line in Ruth's ink and no Tomasz control-voice line about the propped door (both would add voiced lines; the credits line, the capture and the prop's readable carry the lesson).
+- No Tomasz control-voice line about the propped door. (Ruth's debrief line was added in R1.)
 - Kieran uses a generic sprite (`male_nerd_v2`), not his own key; the lab's POV backgrounds and lab sheet stay deferred.
-- Cloning Kieran's badge in conversation was not tested; his card opens P1 by role, so a clone would also open it.
+- Kieran's badge cannot be cloned in conversation (corrected in R1 fixes, m9): the client reads only an NPC's `rfidCard`, and Kieran has `creds.card` and no `clone_keycard` tag in his ink. His card opens P1 by role, so a pocketed or issued staff card still opens it. The wedge test pins this.
 
 ## Suite results
 
@@ -68,3 +73,33 @@ Under the shared test lock:
 - `MERGE_BATCH=1 bin/test-js -j 3`: 598 files passed, 0 failed (run from 76aa2fda1).
 
 Later commits change only the wedge's position, the voice-style and ink-comment wording, and this log. The lab validator and the new test file were rerun on each.
+
+## Review R1 fixes
+
+Review: `LAB_WEDGE_REVIEW_R1.md` (B 0, M 2, m 10). Commits 6f27be98a and 2c1c71429.
+
+| Finding | Fix |
+|---|---|
+| M1 jam never clears | A `ruth_phone` mapping on `global_variable_changed:lw_post_door_propped` (onceOnly, condition the global is true) sets `lw_post_printer_jammed` false. The door stays open (`prop_door` is a lasting workaround). The readable now says the printer works again and the door is still wedged; Kieran's ink says the same. |
+| M2 lesson readable | Proved live: `__test.interact('post_door_wedge')` from the hall floor opens the readable (player in `hall`, shot r1-05). The capture note already carries the controls too. |
+| m1 Ruth and Dev | Ruth's hint names the floor printer first and calls the post room a badge door; Dev hands a courier to Kieran instead of "go on through". |
+| m2 debrief | The disposal line no longer names the post room; a `kp_propped_door` line added (and to the passage's opening condition, with its VAR). |
+| m3 toast and title | Toast "Post room door: The post room door is standing open. Worth a look."; task "Optional: find a badge door that staff no longer use properly". The lesson stays on the extinguisher. |
+| m4 bark pools | Moved from the scenario `chatter` to Kieran's own `chatter`; "twenty times" now only in the `wk_prop_door` bark. |
+| m5 courier choice | `+ { courier_ready and not lw_post_door_propped and not let_courier_in } [Parcel for the post room. Can you let me in?]`: Kieran buzzes the player through (`#unlock_door:P1`, `unlockable: ["P1"]` on his record). Best effort under the cheat policy (ink-gated); P1 holds only optional findings. |
+| m6 jam trigger | Wedge test asserts the single onceOnly `room_entered:hall` mapping and its setGlobal. The ERB comment says the two hall mappings firing together is intended. |
+| m7 withheld checks | Both tests hide every resource's name, host and observations, and every id except `lw_post_printer` (excluded by id). The printer's display name is renamed "Post and print room printer", because the coffee chatter line "Post-room printer's jammed again." contained the old name. |
+| m8 extinguisher | `hall_extinguisher` (plain, not interactable) stands on the same spot from the start; the readable one is revealed exactly over it. The validator warns that the two are 0 px apart: intended, the plain one cannot be clicked. No door leaf is drawn: logged in `docs/IDEAS_BACKLOG.md`. |
+| m9 badge clone | Not on offer (see "Left out"); the wedge test pins it. |
+| m10 reload | Proved live on the lab (below). |
+
+Tests: `lab_physical_pentest_wedge_test.rb` now 6 runs (added: the jam mapping; the clear mapping plus a real workaround run and `AccessWork.cause_holds?` false once cleared; Kieran's own pools, `unlockable`, the unlock tag, no clone, the shared extinguisher spot). The secrets and network tests changed as above.
+
+Live proof (keyless :3066 from this worktree, 1400x1000, scrollbars shown, `setFPS(20)` with fixed steps on, new games via `swap-scenario-game.rb`):
+
+- Game 2997, normal start: jam on the hall entry; two fails, the bark, `door_propped:P1` at 49 s; `lw_post_printer_jammed` false at once. In the 301 s after the wedge: 0 Kieran mutters, 0 failed uses, a successful laptop use every 25 s, his frustration falling 50 to 0. (The readable was left open during the watch; the world kept running, as the use events show.) Nudge toast shown. The lesson read from the hall.
+- Same game reloaded (resume): the player resumes in the briefing room; in the hall the extinguisher shows, the P1 doorway draws open, no toast refires, Kieran stays at his desk for 70 s with no mutters; the walk-in into P1 then credits `opt_propped` and `kp_propped_door`.
+- Game 2996: courier choice shown with `courier_ready` set directly, "Door unlocked: Post & Print Room", the server holds P1 unlocked, the player walks in.
+- Shots, session scratchpad `ux-shots/lab-wedge-r1fix/`: r1-01 to r1-12. Scripts `lwr1/wedge_r1.mjs`, `lwr1/reload_r1.mjs`, `lwr1/courier_r1.mjs`.
+
+R1 suite results: see below.
