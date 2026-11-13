@@ -2,6 +2,8 @@
 
 /* ── Wrapper ──────────────────────────────────────────────────────────────── */
 .cryptex-wrapper {
+    font-synthesis: none;
+    font-weight: normal;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -30,8 +32,8 @@
 .cryptex-header h2 {
     font-family: var(--ui-heading-font, 'Press Start 2P'), monospace;
     margin: 0 0 8px;
-    font-size: 18px;
-    font-weight: bold;
+    font-size: 16px;   /* Press Start 2P on its 8px grid */
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
     color: #ffffff;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -68,7 +70,7 @@
     color: #8899bb;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
     min-height: 12px;
 }
 
@@ -114,11 +116,13 @@
 }
 
 .cryptex-wheel-display {
-    /* VT323 (self-hosted) at 64px for the letter wheels: the user asked for a different
-       pixel face here (slice 7 R1); whole size, no synthetic bold */
-    font-size: 64px;
+    /* Press Start 2P at 48px for the letter wheels, a whole multiple of its 8px grid. The
+       user asked for a different face from the combination's, but VT323, GNF and Pixelify
+       Sans draw grey edge pixels at every size from 16 to 96px in Chrome; only Press Start
+       2P at a multiple of 8 draws on grid (slice 7 R2 m1). Brass on navy sets it apart. */
+    font-size: 48px;
     font-weight: normal;
-    color: #ffffff;
+    color: #e8c070;
     background: #0f1826;
     border: 2px solid #334466;
     padding: 10px 20px;
@@ -127,7 +131,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'VT323', monospace;
+    font-family: 'Press Start 2P', monospace;
+    line-height: 48px;
     letter-spacing: 0;
     flex-shrink: 0;
     transition: border-color 0.2s, color 0.2s;
@@ -140,7 +145,6 @@
 
 .cryptex-wheel-display.worn {
     opacity: 0.3;
-    font-style: italic;
 }
 
 /* ── Hint strip ───────────────────────────────────────────────────────── */
@@ -159,7 +163,7 @@
 
 .hint-char {
     font-size: 18px;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
     color: #f5a623;
     font-family: 'VT323', 'GNF', monospace;
     letter-spacing: 0.05em;
@@ -194,12 +198,12 @@
 
 .cryptex-status-message.wrong {
     color: #ff8888;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
 }
 
 .cryptex-status-message.success {
     color: #88ee88;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
 }
 
 /* ── Footer with buttons ──────────────────────────────────────────────── */
@@ -277,7 +281,7 @@
 
 .cryptex-wrapper.opened .cryptex-header p {
     color: #88ee88;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
 }
 
 /* Short screens (a 412px-high landscape phone): tighter rows so the frame wraps the

@@ -2,6 +2,8 @@
 
 /* ── Wrapper ──────────────────────────────────────────────────────────────── */
 .combination-wrapper {
+    font-synthesis: none;
+    font-weight: normal;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -30,8 +32,8 @@
 .combination-header h2 {
     font-family: var(--ui-heading-font, 'Press Start 2P'), monospace;
     margin: 0 0 8px;
-    font-size: 18px;
-    font-weight: bold;
+    font-size: 16px;   /* Press Start 2P on its 8px grid */
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
     color: #ffffff;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -40,7 +42,7 @@
 .combination-direction-indicator {
     font-size: 18px;
     color: #f5a623;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
     letter-spacing: 0.04em;
     text-transform: uppercase;
     min-height: 20px;
@@ -79,7 +81,7 @@
     color: #8899bb;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
 }
 
 /* ── Dial buttons and display ─────────────────────────────────────────────── */
@@ -196,7 +198,7 @@
 
 .combination-status-message.wrong {
     color: #ff8888;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
 }
 
 .combination-status-message.set {
@@ -205,7 +207,7 @@
 
 .combination-status-message.success {
     color: #88ee88;
-    font-weight: bold;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
 }
 
 /* ── Footer with buttons ──────────────────────────────────────────────────── */
