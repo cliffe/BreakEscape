@@ -878,3 +878,19 @@ test('the joined count leaves out a powered-down host (R1 n3)', async () => {
     await settle();
     assert.equal(document.querySelector('.network-view-status').textContent, 'Joined. Reaches 1 host.');
 });
+
+// UI slice 6 review R3 nit 1: a locked host's badge and Sign in sit side by side where the row
+// is wide, and stack where it is not
+test('R3 n1: a locked host row marks its control so badge and button can sit side by side', async () => {
+    const hosts = HOSTS.map(h => h.id === 'lena_pc' ? { ...h, session: { ...h.session, locked: true } } : h);
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const lena = row('data-host-id', 'lena_pc').querySelector('.network-row-control');
+    assert.ok(lena.classList.contains('network-row-control-locked'));
+    assert.ok(lena.querySelector('.network-row-locked') && lena.querySelector('[data-action="sign-in"]'));
+    assert.ok(!row('data-host-id', 'sam_pc').querySelector('.network-row-control').classList.contains('network-row-control-locked'));
+    const rule = cssText.match(/\.network-row-control-locked \{[^}]*\}/)[0];
+    assert.match(rule, /flex-direction:\s*row/);
+    assert.match(rule, /flex-wrap:\s*wrap/, 'it wraps (stacks) where it does not fit');
+});

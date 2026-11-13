@@ -543,12 +543,14 @@
     left: 0;
     bottom: 38px;
     z-index: 6;
-    width: 300px;
+    width: 340px;   /* wide enough for "Remote through <link>" on one line */
     max-width: 100%;
     max-height: calc(100% - 38px);
     box-sizing: border-box;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: auto;   /* only if even the fixed parts do not fit; Places scrolls first */
+    display: flex;
+    flex-direction: column;
     background: #1c2833;
     border: 2px solid #5a6a78;
     color: #dde6ee;
@@ -594,6 +596,57 @@
 
 .pc-monitor .pc-start-section {
     border-bottom: 2px solid #3a4a58;
+}
+
+/* The account, This PC and the actions never scroll or shrink: Lock, Switch user and Sign out
+   are always on show. Only the Places list scrolls, under a "More below" strip (R3 M1). */
+.pc-monitor .pc-start-account,
+.pc-monitor .pc-start-section,
+.pc-monitor .pc-start-actions {
+    flex: 0 0 auto;
+}
+
+/* Places takes what is left and shrinks only down to its heading and 40px of list */
+.pc-monitor .pc-start-section.pc-start-places {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.pc-monitor .pc-start-places-list {
+    flex: 1 1 auto;
+    min-height: 40px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* "More below" on the Places heading's line, right-aligned, while the list runs on: a stepped
+   arrow and the shared words, the desktop's cue. It sits in the heading's empty space, so it
+   costs the panel no height and hides no entry. */
+.pc-monitor .pc-start-more {
+    position: absolute;
+    top: 4px;
+    right: 22px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #9ee6ff;
+    line-height: 18px;
+    pointer-events: none;
+}
+
+.pc-monitor .pc-start-more[hidden] {
+    display: none;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps, as the desktop's cue */
+.pc-monitor .pc-start-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #9ee6ff;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
 }
 
 .pc-monitor .pc-start-heading {
@@ -650,6 +703,7 @@
     width: 340px;
 }
 
+.pc-monitor .pc-start-compact .pc-start-pcname,
 .pc-monitor[data-short] .pc-start-pcname {
     display: none;
 }

@@ -1451,7 +1451,9 @@ export class PasswordMinigame extends MinigameScene {
         const remoteLine = s.remote
             ? `<div class="signin-remote">Remote sign-in${s.remote.linkName ? ` through ${escapeHtml(displayDashes(s.remote.linkName))}` : ''}</div>`
             : '';
-        const capturedHtml = s.remote ? `
+        // A locked screen has its account already (the held session's), so the Captured sign-ins
+        // strip would only crowd the password field out of view (UI slice 6 review R3 m1)
+        const capturedHtml = s.remote && s.current?.locked !== true ? `
                         <div class="signin-captured" id="signin-captured">${this.capturedListHtml()}</div>` : '';
 
         const inMonitor = !!this.pcMonitor;

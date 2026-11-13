@@ -284,7 +284,7 @@ const CAPTURES = {
     dev: { targetId: 'dev', kind: 'foothold', at: 4 }
 };
 
-function openRemote(captured = [], { loading = false } = {}) {
+function openRemote(captured = [], { loading = false, current = null, preselect } = {}) {
     ended = []; signIns = []; alerts = [];
     document.body.innerHTML = '<div id="mg"></div>';
     window.MinigameFramework = { currentMinigame: null, endMinigame: (success, result) => ended.push([success, result]) };
@@ -293,7 +293,8 @@ function openRemote(captured = [], { loading = false } = {}) {
     };
     const mg = new PasswordMinigame(document.getElementById('mg'), {
         title: "Lena's PC", type: 'item',
-        signIn: { pcId: 'lena_pc', pcName: "Lena's PC (HB-FIN-02)", picker: false, tiles: [], current: null,
+        signIn: { pcId: 'lena_pc', pcName: "Lena's PC (HB-FIN-02)", picker: false, tiles: [], current,
+            ...(preselect ? { preselect } : {}),
             remote: { footholdId: 'jack_comms_port', linkName: 'Drop box: comms room' }, captured,
             ...(loading ? { capturedLoading: true } : {}) },
         postitNote: '', showPostit: false
@@ -1261,4 +1262,26 @@ test('R4 n4: showScreenMessage has no duration option, and no caller passes one'
     const src = readFileSync(join(js, 'minigames/password/password-minigame.js'), 'utf8');
     assert.match(src, /showScreenMessage\(text, \{ kind = 'error', closeAfterMs = 0 \} = \{\}\)/);
     assert.doesNotMatch(src, /showScreenMessage\([^;]*duration/);
+});
+
+// UI slice 6 review R3 minor 1: the locked remote sign-in screen scrolled by 21 px at 1400x1000
+// and clipped the remote line; with the account already chosen it has no use for the Captured
+// sign-ins strip, so it leaves it out.
+test('R3 m1: a locked remote sign-in screen keeps the remote line, banner and form, and drops the Captured strip', () => {
+    const captured = capturedSignIns(CAPTURES, { lena: 'lfox', ian: 'ishaw' }, { lena: 'Ledger-Lena-9' });
+    const mg = openRemote(captured, { current: { username: 'lfox', displayName: 'Lena Fox', locked: true }, preselect: 'lfox' });
+    assert.match(q('.signin-remote').textContent, /Remote sign-in through Drop box: comms room/, 'the remote line stays');
+    assert.match(q('.signin-current-locked').textContent, /Locked: Lena Fox/);
+    assert.equal(q('#signin-captured'), null, 'no Captured sign-ins strip on a locked screen');
+    assert.equal(document.querySelectorAll('.signin-captured-tile').length, 0);
+    assert.ok(q('#password-field'), 'the password field is there');
+    assert.equal(q('#signin-username').value, 'lfox', 'the held account is filled in');
+    mg.cleanup?.();
+});
+
+test('R3 m1: an unlocked remote screen still shows its Captured sign-ins', () => {
+    const captured = capturedSignIns(CAPTURES, { lena: 'lfox', ian: 'ishaw' }, { lena: 'Ledger-Lena-9' });
+    const mg = openRemote(captured, { current: { username: 'ishaw', displayName: 'Ian Shaw' } });
+    assert.ok(q('#signin-captured'), 'the strip stays when nothing is locked');
+    mg.cleanup?.();
 });

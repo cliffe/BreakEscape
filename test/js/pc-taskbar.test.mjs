@@ -528,3 +528,78 @@ test('R1 nit 1: Tab out of the panel closes it; moving between its entries does 
     startBtn().focus();
     assert.equal(panelOpen(), true, 'Start is part of the menu');
 });
+
+// UI slice 6 review R3 major 1: on a remote desktop the start panel overflowed and hid Switch
+// user and Sign out. Only the Places list scrolls now; the actions sit outside it.
+const R3_CSS = readFileSync(join(here, '../../public/break_escape/css/pc-monitor.css'), 'utf8');
+
+test('R3 M1: the Places list is the only scroller; Lock, Switch user and Sign out sit outside it', () => {
+    const model = pcTaskbarModel({ pcData: { lockType: 'login', name: 'Door controller', host: 'HB-DOOR-01' },
+        session: { username: 'ishaw', displayName: 'Ian Shaw', via: 'password', remote: true }, lockSupported: true });
+    const holder = document.createElement('div');
+    holder.innerHTML = taskbarMod.pcStartPanelHtml(model);
+    const panel = holder.querySelector('.pc-start-panel');
+    const list = panel.querySelector('.pc-start-places-list');
+    assert.ok(list.classList.contains('pixel-scroll'), 'the list takes the shared pixel scrollbar');
+    assert.ok(list.querySelector('[data-place="desktop"]'), 'Desktop is in the list');
+    assert.equal(list.querySelectorAll('[data-action]').length, 0, 'no action inside the scroller');
+    const actions = [...panel.querySelectorAll('.pc-start-actions [data-action]')].map(b => b.dataset.action);
+    assert.deepEqual(actions, ['lock', 'switch', 'signout']);
+    assert.equal(list.closest('.pc-start-actions'), null);
+    const more = panel.querySelector('.pc-start-more');
+    assert.ok(more.hidden, 'the cue starts hidden');
+    assert.equal(more.textContent.trim(), 'More below', 'the shared words');
+    assert.equal(more.closest('.pc-start-actions'), null);
+    // CSS: the panel is a flex column; the fixed parts never shrink; only the list scrolls
+    const rule = (sel) => R3_CSS.match(new RegExp(sel.replace(/[.[\]]/g, '\\$&') + ' \\{[^}]*\\}'))?.[0] || '';
+    assert.match(rule('.pc-monitor .pc-start-panel'), /display:\s*flex;[\s\S]*flex-direction:\s*column/);
+    assert.match(R3_CSS.match(/\.pc-monitor \.pc-start-account,\s*\.pc-monitor \.pc-start-section,\s*\.pc-monitor \.pc-start-actions \{[^}]*\}/)[0], /flex:\s*0 0 auto/);
+    assert.match(rule('.pc-monitor .pc-start-places-list'), /overflow-y:\s*auto/);
+    assert.doesNotMatch(R3_CSS.match(/\.pc-monitor \.pc-start-more \{[^}]*\}/)[0], /gradient|shadow|radius/);
+});
+
+test('R3 M1: updatePlacesCue shows "More below" only while the list runs on', () => {
+    const more = { hidden: true };
+    const list = (scrollHeight, clientHeight, scrollTop = 0) => ({ scrollHeight, clientHeight, scrollTop });
+    assert.equal(taskbarMod.updatePlacesCue(list(72, 40), more), true);
+    assert.equal(more.hidden, false);
+    assert.equal(taskbarMod.updatePlacesCue(list(72, 40, 32), more), false, 'scrolled to the end');
+    assert.equal(more.hidden, true);
+    assert.equal(taskbarMod.updatePlacesCue(list(41, 40), more), false, 'a pixel or two of rounding is not more below');
+    assert.equal(taskbarMod.updatePlacesCue(null, more), false);
+});
+
+test('R3 M1: a cramped Places list makes the panel compact (x1 picture, no PC name line)', () => {
+    const list = (scrollHeight, clientHeight) => ({ scrollHeight, clientHeight });
+    assert.equal(taskbarMod.placesNeedRoom(list(72, 40)), true, 'three rows in 40 px');
+    assert.equal(taskbarMod.placesNeedRoom(list(72, 72)), false, 'all rows on show');
+    assert.equal(taskbarMod.placesNeedRoom(list(72, 72), { rows: 3 }), false);
+    assert.equal(taskbarMod.placesNeedRoom(list(200, 80)), false, 'already three rows: it just scrolls');
+    assert.equal(taskbarMod.placesNeedRoom(null), false);
+    assert.match(R3_CSS, /\.pc-monitor \.pc-start-compact \.pc-start-pcname/);
+});
+
+test('R3 M1: opening the panel measures the list; compact is set and cleared by what fits', () => {
+    const model = pcTaskbarModel({ pcData: { lockType: 'login', name: 'Door controller', host: 'HB-DOOR-01' },
+        session: { username: 'ishaw', displayName: 'Ian Shaw', via: 'password', remote: true }, lockSupported: true });
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const bar = taskbarMod.mountPcTaskbar(root, model);
+    const list = bar.panel.querySelector('.pc-start-places-list');
+    const more = bar.panel.querySelector('.pc-start-more');
+    const size = (sh, ch) => { Object.defineProperty(list, 'scrollHeight', { value: sh, configurable: true }); Object.defineProperty(list, 'clientHeight', { value: ch, configurable: true }); };
+    size(72, 40);
+    bar.open();
+    assert.ok(bar.panel.classList.contains('pc-start-compact'), 'cramped: compact');
+    bar.close();
+    size(72, 72);
+    bar.open();
+    assert.ok(!bar.panel.classList.contains('pc-start-compact'), 'room: back to the full picture');
+    assert.equal(more.hidden, true);
+    bar.close();
+    size(120, 48);
+    bar.open();
+    assert.equal(more.hidden, false, 'more below shows');
+    bar.destroy();
+    root.remove();
+});

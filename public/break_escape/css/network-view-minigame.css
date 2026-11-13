@@ -261,6 +261,15 @@
     gap: 4px;
 }
 
+/* A locked host's badge and Sign in button sit side by side where the row is wide enough and
+   stack (badge over button) where it is not, as in a narrow column (UI slice 6 review R3 n1) */
+.network-row-control-locked {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+}
+
 /* "Session kept: <name>": a held session that comes back with the host or the route. It is
    never split inside the name in a narrow column (code review R3 m2) */
 .network-row-kept {

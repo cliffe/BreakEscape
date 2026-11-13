@@ -438,7 +438,7 @@ export class NetworkViewMinigame extends MinigameScene {
                 <li class="network-row network-row-host${down}" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
                     <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
                     ${this.labelHtml(row.host || row.id, row.name || '', ds)}
-                    ${control === null ? this.downControlHtml(ds) : `<span class="network-row-control">${control}</span>`}
+                    ${control === null ? this.downControlHtml(ds) : `<span class="network-row-control${action === 'locked' ? ' network-row-control-locked' : ''}">${control}</span>`}
                 </li>`;
         }
         const icon = KIND_ICONS[row.kind] || KIND_ICONS.file_share;

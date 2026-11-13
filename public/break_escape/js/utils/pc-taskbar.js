@@ -23,6 +23,7 @@
  */
 import { escapeHtml } from './escape-html.js';
 import { displayDashes } from './display-dashes.js';
+import { MORE_BELOW_TEXT } from './more-below.js';
 import { applyHeadshotBox, npcRecordFor, headshotSourceFor, SILHOUETTE_URL } from './npc-headshot.js';
 
 const ICONS = '/break_escape/assets/icons';
@@ -185,9 +186,34 @@ export function pcStartPanelHtml(model, { shareIcon = PC_PLACE_SHARE_ICON } = {}
             <span class="pc-start-heading">This PC</span>${lines}${remote}
         </div>
         <div class="pc-start-section pc-start-places">
-            <span class="pc-start-heading">Places</span>${places}
+            <span class="pc-start-heading">Places</span>
+            <div class="pc-start-places-list pixel-scroll">${places}
+            </div>
+            <div class="pc-start-more" hidden aria-hidden="true"><span class="pc-start-more-arrow"></span><span>${MORE_BELOW_TEXT}</span></div>
         </div>${actions}
     </div>`;
+}
+
+/**
+ * Show the panel's "More below" strip while the Places list runs past its bottom edge (R3 M1:
+ * only Places scrolls, the account, This PC and the actions stay on show). A pixel or two of
+ * rounding is not more below. -> whether there is more below
+ */
+export function updatePlacesCue(list, more) {
+    if (!list || !more) return false;
+    const below = (list.scrollHeight - list.clientHeight - list.scrollTop) > 2;
+    more.hidden = !below;
+    return below;
+}
+
+/**
+ * Whether the Places list is cut short while it shows less than `rows` rows (R3 M1 follow-up):
+ * the panel then goes compact (x1 picture, no PC name line) to give the list room before it
+ * has to scroll. `rowHeight` is the entry height in CSS px.
+ */
+export function placesNeedRoom(list, { rows = 3, rowHeight = 24 } = {}) {
+    if (!list) return false;
+    return list.scrollHeight - list.clientHeight > 2 && list.clientHeight < rows * rowHeight;
 }
 
 // ── Headshots (cached in memory, never synced) ───────────────────────────────
@@ -297,7 +323,7 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
     const start = taskbar.querySelector('.pc-start-btn');
 
     // The panel's picture at x2, or x1 on a short screen so the panel fits without scrolling
-    const panelScale = () => (root.closest?.('.pc-monitor')?.hasAttribute?.('data-short') ? 1 : 2);
+    const panelScale = () => (root.closest?.('.pc-monitor')?.hasAttribute?.('data-short') || panel.classList?.contains?.('pc-start-compact') ? 1 : 2);
     const panelPicture = () => {
         const box = panel.querySelector('.pc-start-headshot');
         if (!box || !model?.account) return;
@@ -310,6 +336,13 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
         panelPicture();
     }
 
+    const placesList = panel.querySelector('.pc-start-places-list');
+    const placesMore = panel.querySelector('.pc-start-more');
+    const refreshCue = () => updatePlacesCue(placesList, placesMore);
+    placesList?.addEventListener?.('scroll', refreshCue);
+    const win = doc.defaultView;
+    win?.addEventListener?.('resize', refreshCue);
+    doc.fonts?.ready?.then?.(refreshCue);
     const items = () => [...panel.querySelectorAll('[role="menuitem"]')];
     let open = false;
     const onKey = (e) => {
@@ -342,8 +375,15 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
     function show() {
         if (open) return;
         open = true;
+        panel.classList?.remove?.('pc-start-compact');
         panelPicture();
         panel.hidden = false;
+        // Places cramped by the x2 picture and the PC's name line: drop to the x1 picture
+        if (placesNeedRoom(placesList)) {
+            panel.classList?.add?.('pc-start-compact');
+            panelPicture();
+        }
+        refreshCue();
         start.setAttribute('aria-expanded', 'true');
         start.classList.add('pc-start-open');
         doc.addEventListener('keydown', onKey, true);
@@ -408,6 +448,6 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
         open: show,
         close,
         isOpen: () => open,
-        destroy: () => { close(); clearTimeout(noticeTimer); }
+        destroy: () => { close(); clearTimeout(noticeTimer); win?.removeEventListener?.('resize', refreshCue); }
     };
 }

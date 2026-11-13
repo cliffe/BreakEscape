@@ -224,3 +224,39 @@ plus `sis01_healthcare` and docs): clean, no conflicts, merge commit only.
 
 Files: `network-view-minigame.js`, `unlock-system.js`, `pc-taskbar.js`, `container-minigame.js`,
 `text-file-minigame.js`, `css/pc-monitor.css`, tests `network-view`, `pc-taskbar`, `pc-monitor-frame`.
+
+## 2026-11-13: review round 3 fixes
+
+Findings from `UX_SLICE6_REVIEW_R3.md`. Live proof on a keyless server (port 3471), headless
+browser with scrollbars shown, at 390x844, 800x600, 915x412 and 1400x1000, on `door_box` and
+Lena's PC (`test_access_networks`) and `store_controller` (`lab_physical_pentest`).
+
+- Major 1, remote start panel scrolled and hid Switch user and Sign out: the panel is now a flex
+  column. The account, This PC and the actions never shrink; only the Places list scrolls
+  (`.pc-start-places-list`, pixel scrollbar). While it runs on, "More below" (stepped arrow plus
+  the shared words) shows on the Places heading's line, so it costs no height and hides no entry.
+  The panel is 340 px wide at every size (was 300, 340 only on a short screen), so "Remote through
+  <link>" is one line. When Places would still be cut short (under three rows), opening the panel
+  goes compact: x1 picture and no PC name line (the bezel title shows the name), as a short screen
+  already does. Panel `scrollHeight - clientHeight` is 0 at all four sizes on all three remote
+  hosts and on Sam's local panel (it was 54 on `door_box` and Lena's PC, 6 on
+  `store_controller`, at 1400x1000). Lock, Switch user and Sign out lie inside the panel and the
+  screen in every run. Places scrolls only at 915x412 with three entries (18 px, cue shown).
+- Minor 1, locked remote sign-in screen scrolled 21 px: a locked screen leaves out the Captured
+  sign-ins strip (the account is already chosen). The remote line, Locked banner, username and
+  password field all show. Area overflow is 0 at all four sizes on all three hosts (it was 21 at
+  1400x1000).
+- Nit 1, locked row stacked badge over Sign in: a locked host's control lays out in a wrapping
+  row. Side by side at 1400x1000 on `door_box` and Lena's PC (row 54 px tall, was 98); stacked
+  where it does not fit (390, 800, 915, and `store_controller` at 1400, whose two-line name leaves
+  no room).
+- Nit 2 (focus ring is the browser's `outline: auto`): left, not from this slice, for the
+  pixel-art sweep.
+
+Tests: new "R3 M1" tests in `pc-taskbar` (panel structure and CSS pins, `updatePlacesCue`,
+`placesNeedRoom`, compact set and cleared on open), "R3 n1" in `network-view`, "R3 m1" (two) in
+`password-signin-mode`. Counts: `pc-taskbar` 26, `pc-sessions` 43, `pc-monitor-frame` 49,
+`network-view` 46, `workstation-state` 55, `password-signin-mode` 66, all pass.
+
+Files: `css/pc-monitor.css`, `css/network-view-minigame.css`, `utils/pc-taskbar.js`,
+`network-view-minigame.js`, `password-minigame.js`, tests as above.
