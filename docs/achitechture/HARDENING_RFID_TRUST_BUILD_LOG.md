@@ -173,3 +173,7 @@ sprites). Scenario has no automated-test references.
 
 Complete. Fix, tests and proof done; R1 follow-up (opens_lock live proofs, minor 2
 scenario fix) done; committed on build/hard-rfid.
+
+## R2 follow-up (2026-11-13)
+
+The Level 4 restructure in e58ff2474 left the level uncompletable: no guard ink offers a UID-only clone (review R2, blocker 1). d3695f006 restores scenarios/test-rfid-multiprotocol/scenario.json.erb to its 2f5471209 text, so this branch changes no scenario. The UID-only teaching level is filed in docs/IDEAS_BACKLOG.md.
