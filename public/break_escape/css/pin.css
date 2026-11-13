@@ -1,9 +1,9 @@
 /* PIN Minigame Styles */
 
 .pin-minigame-container {
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    background: #1a1a2e;
     border: 2px solid #0f3460;
-    box-shadow: 0 0 30px rgba(15, 52, 96, 0.3);
+    box-shadow: none;
 }
 
 .pin-minigame-game-container {
@@ -60,33 +60,25 @@
     text-align: center;
     letter-spacing: 8px;
     min-width: 200px;
-    box-shadow: 
-        0 0 20px rgba(0, 255, 65, 0.3),
-        inset 0 0 10px rgba(0, 0, 0, 0.8);
+    box-shadow: none;
     transition: all 0.3s ease;
 }
 
 .pin-minigame-display.has-input {
-    box-shadow: 
-        0 0 25px rgba(0, 255, 65, 0.5),
-        inset 0 0 15px rgba(0, 0, 0, 0.9);
+    box-shadow: none;
 }
 
 .pin-minigame-display.success {
     color: #00ff00;
     border-color: #00ff00;
-    box-shadow: 
-        0 0 30px rgba(0, 255, 0, 0.7),
-        inset 0 0 20px rgba(0, 0, 0, 0.9);
+    box-shadow: none;
     animation: successPulse 0.5s ease-in-out;
 }
 
 .pin-minigame-display.locked {
     color: #ff4444;
     border-color: #ff4444;
-    box-shadow: 
-        0 0 30px rgba(255, 68, 68, 0.7),
-        inset 0 0 20px rgba(0, 0, 0, 0.9);
+    box-shadow: none;
     animation: errorShake 0.5s ease-in-out;
 }
 
@@ -172,7 +164,7 @@
 }
 
 .pin-minigame-key {
-    background: linear-gradient(145deg, #2c3e50, #34495e);
+    background: #2c3e50;
     color: #ecf0f1;
     border: 2px solid #0f3460;
     /* border-radius: 8px; */
@@ -186,26 +178,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 
-        0 4px 8px rgba(0, 0, 0, 0.3),
-        inset 0 2px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.1);
 }
 
 .pin-minigame-key:hover {
-    background: linear-gradient(145deg, #34495e, #2c3e50);
+    background: #34495e;
     border-color: #00ff41;
-    box-shadow: 
-        0 6px 12px rgba(0, 0, 0, 0.4),
-        0 0 15px rgba(0, 255, 65, 0.3),
-        inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
 }
 
 .pin-minigame-key:active {
     transform: translateY(0);
-    box-shadow: 
-        0 2px 4px rgba(0, 0, 0, 0.3),
-        inset 0 2px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.1);
 }
 
 .pin-minigame-key:disabled {
@@ -215,42 +200,34 @@
 }
 
 .pin-minigame-key:disabled:hover {
-    background: linear-gradient(145deg, #2c3e50, #34495e);
+    background: #2c3e50;
     border-color: #0f3460;
-    box-shadow: 
-        0 4px 8px rgba(0, 0, 0, 0.3),
-        inset 0 2px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Special key styles */
 .pin-minigame-backspace {
-    background: linear-gradient(145deg, #e74c3c, #c0392b);
+    background: #e74c3c;
     border-color: #c0392b;
     font-size: 20px;
 }
 
 .pin-minigame-backspace:hover {
-    background: linear-gradient(145deg, #c0392b, #a93226);
+    background: #c0392b;
     border-color: #ff4444;
-    box-shadow: 
-        0 6px 12px rgba(0, 0, 0, 0.4),
-        0 0 15px rgba(255, 68, 68, 0.3),
-        inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2);
 }
 
 .pin-minigame-enter {
-    background: linear-gradient(145deg, #27ae60, #2ecc71);
+    background: #27ae60;
     border-color: #27ae60;
     font-size: 12px;
 }
 
 .pin-minigame-enter:hover {
-    background: linear-gradient(145deg, #2ecc71, #27ae60);
+    background: #2ecc71;
     border-color: #00ff41;
-    box-shadow: 
-        0 6px 12px rgba(0, 0, 0, 0.4),
-        0 0 15px rgba(0, 255, 65, 0.3),
-        inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* Attempts Log */
@@ -392,7 +369,7 @@
     width: 48px;
     height: 52px;
     margin-right: 8px;
-    filter: drop-shadow(0 0 5px rgba(0, 255, 65, 0.5));
+    filter: none;
     transition: all 0.3s ease;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
@@ -400,7 +377,7 @@
 }
 
 .pin-minigame-cracker-icon:hover {
-    filter: drop-shadow(0 0 10px rgba(0, 255, 65, 0.8));
+    filter: none;
     transform: scale(1.1);
 }
 
@@ -422,24 +399,20 @@
 .pin-minigame-light {
     width: 12px;
     height: 12px;
-    border-radius: 50%;
+    border-radius: 0;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.5);   /* pixel-art: hard rim, no blur (slice 7) */
 }
 
 .pin-minigame-light-green {
     background: #00ff00;
-    box-shadow: 
-        0 0 5px rgba(0, 0, 0, 0.5),
-        0 0 10px rgba(0, 255, 0, 0.6);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(0, 255, 0, 0.6);
     animation: lightPulse 2s ease-in-out infinite;
 }
 
 .pin-minigame-light-amber {
     background: #ffaa00;
-    box-shadow: 
-        0 0 5px rgba(0, 0, 0, 0.5),
-        0 0 10px rgba(255, 170, 0, 0.6);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 170, 0, 0.6);
     animation: lightPulse 2s ease-in-out infinite 0.5s;
 }
 
