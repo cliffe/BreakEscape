@@ -141,3 +141,8 @@ Live proof (keyless :3066 from this worktree, 1400x1000, scrollbars shown, `setF
 - Ruth on the phone (`ink/ruth_phone.ink`): the paper hint (reworded in R2), the door pointer before the wedge and after it (two lines, new in R2).
 - Ruth's debrief (`ink/ruth_debrief.ink`): the document-disposal line (reworded in R2), the propped-door line (R1).
 - Kieran still needs visemes from talk runs.
+
+R2 suite results, under the shared test lock, run from b91cda9a9 (the later commits change only PLAYTEST.md and this log):
+
+- `RBENV_VERSION=2.7.8 bin/rails test`: 2392 runs, 42773 assertions, 0 failures, 0 errors, 1 skip.
+- `MERGE_BATCH=1 bin/test-js -j 3`: 599 files passed, 0 failed (598 plus the new validator test).
