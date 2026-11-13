@@ -31,7 +31,7 @@ globalThis.Phaser = { AUTO: 0, Scale: { NONE: 0, CENTER_BOTH: 0, FIT: 0 }, Blend
 const NPCS = [{ id: 'tom', needsHome: 'tom_pc' }, { id: 'amara', needsHome: 'amara_pc' }];
 globalThis.window = { gameState: { globalVariables: {} }, npcManager: { npcs: new Map(NPCS.map(n => [n.id, n])) } };
 const { LightingSystem, workstationIndicators, flashShape, FLASH_MS, FLASH_REDUCED_MS, screenAnchor, SCREEN_ANCHORS,
-  indicatorDotPx, indicatorDotOrigin, indicatorDotPixels } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
+  indicatorDotPx, indicatorDotOrigin, indicatorDotPixels, indicatorMarkPixels, indicatorBreathe, INDICATOR_RING, INDICATOR_BREATHE_FLOOR } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
 
 function fakeImage() {
   const img = {};
@@ -109,6 +109,40 @@ test('UX slice 15 R1 (m2): the dot is a crisp whole-pixel mark, 4 px locked and 
   const fn = src.slice(src.indexOf('indicatorDotTexture(n) {'), src.indexOf('createLightTexture() {'));
   assert.match(fn, /FilterMode\.NEAREST/);
   assert.doesNotMatch(fn, /createRadialGradient|LINEAR/);
+});
+
+test('UX slice 15 R2 (m1): each mark has a 1 px dark ring, and the open mark breathes no lower than 0.8', () => {
+  // Locked: a 4 px dot in a 6 px mark; the ring steps round the cut corners
+  assert.deepEqual(indicatorMarkPixels(4), [
+    [0, 0, 2, 2, 0, 0],
+    [0, 2, 1, 1, 2, 0],
+    [2, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 2],
+    [0, 2, 1, 1, 2, 0],
+    [0, 0, 2, 2, 0, 0],
+  ]);
+  // Open: a 6 px dot in an 8 px mark, the dot one pixel in, every dot pixel ringed
+  const m = indicatorMarkPixels(6);
+  assert.equal(m.length, 8);
+  assert.ok(m.every(r => r.length === 8));
+  const dot = indicatorDotPixels(6);
+  for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) assert.equal(m[y + 1][x + 1] === 1, dot[y][x] === 1);
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+    if (m[y][x] !== 1) continue;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) assert.notEqual(m[y + dy][x + dx], 0, 'no dot pixel touches a clear one');
+  }
+  assert.equal(INDICATOR_RING, 0x1a1c2c);
+  // The breathe stays between 0.8 and 1 over a whole cycle
+  let lo = 1, hi = 0;
+  for (let t = 0; t < 5000; t += 10) { const k = indicatorBreathe(t, 0.3); lo = Math.min(lo, k); hi = Math.max(hi, k); }
+  assert.ok(lo >= INDICATOR_BREATHE_FLOOR - 1e-9 && INDICATOR_BREATHE_FLOOR >= 0.8, `trough ${lo}`);
+  assert.ok(hi <= 1 + 1e-9 && hi > 0.99);
+  // The texture is drawn from the ringed mark, (n + 2) px square, the ring in its own dark colour
+  const src = readFileSync(join(js, 'systems/lighting.js'), 'utf8');
+  const fn = src.slice(src.indexOf('indicatorDotTexture(n) {'), src.indexOf('createLightTexture() {'));
+  assert.match(fn, /createCanvas\(key, n \+ 2, n \+ 2\)/);
+  assert.match(fn, /indicatorMarkPixels\(n\)/);
+  assert.match(fn, /INDICATOR_RING_CSS/);
 });
 
 test('workstationIndicators: locked first, then open; both above, centred on the PC sprite', () => {

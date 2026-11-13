@@ -113,7 +113,18 @@ const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'bre
 // The indicator mark itself is a crisp whole-pixel sprite (UX slice 15 R1, m2: the pixel-art
 // rule bans a soft glow as a UI mark), white so it takes the variant's tint, NEAREST filtered.
 // The soft light it casts on the light map stays.
-const INDICATOR_DOT_TEX = 'be_indicator_dot_';
+const INDICATOR_DOT_TEX = 'be_indicator_dot_ring_';
+// A 1 px dark ring round the mark, so it reads on a bright or blue screen (UX slice 15 R2, m1:
+// the blue mark on pc7 and pc11 was 1.2:1). The open mark breathes no lower than this, as the
+// trough washed out on light screens.
+export const INDICATOR_RING = 0x1a1c2c;
+const INDICATOR_RING_CSS = '#1a1c2c';
+export const INDICATOR_BREATHE_FLOOR = 0.8;
+
+/** The open indicator's breathe level at `time` ms: between INDICATOR_BREATHE_FLOOR and 1. */
+export function indicatorBreathe(time, phase = 0) {
+  return INDICATOR_BREATHE_FLOOR + (1 - INDICATOR_BREATHE_FLOOR) * (0.5 + 0.5 * Math.sin(time / 700 + phase));
+}
 
 /** Pixel size of an indicator's mark: its `dotPx`, else from its radius (10 -> 4, 14 -> 6), even. */
 export function indicatorDotPx(def) {
@@ -138,6 +149,27 @@ export function indicatorDotPixels(n) {
     for (let x = 0; x < n; x++) {
       const corner = n >= 4 && (x === 0 || x === n - 1) && (y === 0 || y === n - 1);
       row.push(corner ? 0 : 1);
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+/**
+ * Pixels of the n px indicator mark with its ring, (n + 2) px square, row by row: 1 the dot
+ * (indicatorDotPixels, one pixel in), 2 the ring (every clear pixel beside a dot pixel, by
+ * edge, so the ring steps round the dot's cut corners), 0 clear.
+ */
+export function indicatorMarkPixels(n) {
+  const dot = indicatorDotPixels(n);
+  const on = (x, y) => x >= 0 && y >= 0 && x < n && y < n && dot[y][x] === 1;
+  const rows = [];
+  for (let y = 0; y < n + 2; y++) {
+    const row = [];
+    for (let x = 0; x < n + 2; x++) {
+      const dx = x - 1, dy = y - 1;
+      if (on(dx, dy)) row.push(1);
+      else row.push(on(dx - 1, dy) || on(dx + 1, dy) || on(dx, dy - 1) || on(dx, dy + 1) ? 2 : 0);
     }
     rows.push(row);
   }
@@ -487,14 +519,20 @@ export class LightingSystem {
     scene.scale.on('resize', () => this.resizeLightMap());
   }
 
-  /** The n x n indicator mark texture (indicatorDotPixels), made once, NEAREST filtered. */
+  /**
+   * The indicator mark texture for an n px dot (indicatorMarkPixels: the dot in white, so it
+   * takes the variant's tint, inside a 1 px dark ring), (n + 2) px square, made once, NEAREST
+   * filtered. The tint multiplies the ring too, which keeps it dark under any colour.
+   */
   indicatorDotTexture(n) {
     const key = INDICATOR_DOT_TEX + n;
     if (!this.scene.textures.exists(key)) {
-      const tex = this.scene.textures.createCanvas(key, n, n);
+      const tex = this.scene.textures.createCanvas(key, n + 2, n + 2);
       const ctx = tex.getContext();
-      ctx.fillStyle = '#ffffff';
-      indicatorDotPixels(n).forEach((row, y) => row.forEach((on, x) => { if (on) ctx.fillRect(x, y, 1, 1); }));
+      const fills = { 1: '#ffffff', 2: INDICATOR_RING_CSS };
+      indicatorMarkPixels(n).forEach((row, y) => row.forEach((v, x) => {
+        if (fills[v]) { ctx.fillStyle = fills[v]; ctx.fillRect(x, y, 1, 1); }
+      }));
       tex.refresh();
       tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
@@ -1273,7 +1311,7 @@ export class LightingSystem {
             ? (Math.sin(time / 159 + e.phase) > 0 ? 1 : 0.1)
             : 0.7 + 0.3 * (Math.sin(time / 140 + e.phase) > 0.6 ? 1 : 0);
           else if (def.effect === 'pulse') k = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(time / 300 + e.phase));
-          else if (def.effect === 'breathe') k = 0.75 + 0.25 * Math.sin(time / 700 + e.phase);
+          else if (def.effect === 'breathe') k = e.indicator ? indicatorBreathe(time, e.phase) : 0.75 + 0.25 * Math.sin(time / 700 + e.phase);
         }
         let glowColor = def.color;
         if (def.effect === 'fire') {
@@ -1302,8 +1340,10 @@ export class LightingSystem {
         // Indicator records (workstation dots) are small and must read across a lit room: full
         // strength, where other `above` glows are held at 0.6.
         const fade = e.indicator ? 1 : (def.ransom || def.above) ? 0.6 : glowFade;
-        // An indicator mark sits at whole pixels, its top-left from the anchor point
-        const at = e.indicator ? indicatorDotOrigin(x, y, e.dotPx || indicatorDotPx(def)) : { x, y };
+        // An indicator mark sits at whole pixels, its top-left from the anchor point, one
+        // pixel up and left for the ring round the dot
+        const dotAt = e.indicator ? indicatorDotOrigin(x, y, e.dotPx || indicatorDotPx(def)) : null;
+        const at = dotAt ? { x: dotAt.x - 1, y: dotAt.y - 1 } : { x, y };
         e.glow.setPosition(at.x, at.y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
           .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)) * (obj.behindWallK ?? 1));
         // Keep an `above` glow's hue in a lit room (reds stayed red, not pink): multiply
