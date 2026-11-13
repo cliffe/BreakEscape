@@ -4274,7 +4274,7 @@
         "awareness": { "type": "string", "enum": ["low", "medium", "high"], "description": "Slice 9.1: this person's security awareness. A preset that fills habits the author leaves out (low: locksScreen never, holdsDoors true; medium: locksScreen sometimes, holdsDoors true; high: locksScreen always, holdsDoors false). Room NPCs only. Never sent to the browser." },
         "habits": {
           "type": "object",
-          "description": "Slice 9.1: habits set by name, which override the awareness preset. Room NPCs only. Never sent to the browser.",
+          "description": "Slice 9.1: habits set by name, which override the awareness preset. Room NPCs only. Only habits.screen and habits.print are sent to the browser; every other habit (password, usb, awareness habits) stays on the server.",
           "properties": {
             "locksScreen": { "type": "string", "enum": ["never", "sometimes", "always"], "description": "Fills this NPC's habits.screen (lockChance 0, 0.5 or 1) when habits.screen is not authored. A PC's own lockChance or locksScreenOnLeave still wins." },
             "writesDown": { "type": "boolean", "description": "true: the account's username and password are on a sticky note on the owner's own sign-in PC, read on its sign-in screen at the desk. Never set by a preset." },
