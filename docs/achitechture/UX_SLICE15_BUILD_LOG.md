@@ -91,11 +91,20 @@ Keyless headless server on :3362 from this worktree, 1400x1000 with scrollbars s
 
 - Desk gap (feet at 62, 164, the review's spot): the cake lands at (60.5, 164.5), depth 205.7, with nothing drawn over it; at 3x it shows whole in front of the desk edge.
 - Whole-office sweep (1144 walkable foot cells, 16x16 item, the review's measure: a prop at least 24 px wide drawn above the item covering half its box or more): 180 drops are still drawn over, against 255 with the R1 aim and 228 before slice 15. 0 land outside the room, 0 on an unwalkable cell, 0 at the raw aim. 700 land at the aim, 318 at the feet, 126 one cell to the side.
-- All 180 remaining are foot cells where the player's own feet are behind the same prop (the walk-behind effect: standing on a desk top or behind a chair, the bookcase, the activity board, the copier or the coffee machine), so the item is hidden exactly as the player is, and none of the four candidates is clear. By prop: desks 97, chairs 23, bookcase 16, activity board 16, copier 9, coffee machine 6, PCs 11, laptop 2. A wider search would find a clear cell for most of them (15 at one cell, diagonally; 69 at two; 52 at three; 44 none within three), at the cost of a drop landing away from the player. Left for the orchestrator to rule on.
+- All 180 remaining are foot cells where the player's own feet are behind the same prop (the walk-behind effect: standing on a desk top or behind a chair, the bookcase, the activity board, the copier or the coffee machine), so the item is hidden exactly as the player is, and none of the four candidates is clear. By prop: desks 97, chairs 23, bookcase 16, activity board 16, copier 9, coffee machine 6, PCs 11, laptop 2. A wider search would find a clear cell for most of them (15 at one cell, diagonally; 69 at two; 52 at three; 44 none within three), at the cost of a drop landing away from the player. Ruled on below.
 - Dots: on pc6 (Tom's), pc8 (Amara's) and pc11 (Sanjay's) the locked dot sits on the middle of the monitor screen as a crisp stepped square at 3x (NPCs and their overlays hidden for the shots). On pc6's bright cyan screen the blue dot has less contrast than on the other two.
 - Confirms: coffee and copier sockets, the rack power and both wall sockets show their named labels in the skinned dialog; the rack with the network up shows the "Server rack power: The server rack is on." hint and no dialog.
 
 Shots and per-run JSON: session scratchpad `ux-shots/slice15-r1fix/`.
+
+### R1 ruling: wider drop search
+
+Orchestrator ruling on the 180: widen the search to two cells and accept what is still hidden as the walk-behind case (the player is hidden by the same prop, the intended convention). Commit 79cf24039.
+
+- `dropPoint` now tries, after the aim, the feet and the two side cells, the four diagonal cells, then the 16 cells two steps out (`dropRingOffsets`). Within each ring: in front (south) before level before behind, then nearer, then further south, then the side the player faces (`facing`, from `player.direction`; left first when neither). Every guard stays: each candidate is its own walkable cell, inside the room and clear; nothing clear falls back to the snapped feet, else the raw feet, never the raw aim.
+- Tests: `item-drop.test.mjs` 22 pass (two new: the ring order with and without a facing side; a diagonal, a cell two steps out, the facing side, a diagonal outside the room skipped). Every test file importing item-drop or one of its importers (87 files): 1543 pass, 0 fail.
+- Live: new game 2577 (test_needs_sims, office) on :3362, same server settings, stopped by its PID. The sweep (no facing, so left first) over 1144 walkable foot cells: 96 drops still drawn over, down from 180. 709 land at the aim, 200 at the feet (including the walk-behind fallbacks), 124 one cell to the side, 35 on a diagonal, 76 two steps out; 0 outside the room, 0 on an unwalkable cell, 0 at the raw aim. The desk-gap drop (feet at 62, 164) still lands at (60.5, 164.5) with nothing drawn over it.
+- Residual 96, all with the player's own feet behind the same prop (walk-behind, accepted): desks 76, activity board 6, bookcase 4, Tom's PC 3, chair 3, copier 2, laptop 2.
 
 ### Note for slice 16
 
@@ -103,4 +112,4 @@ Shots and per-run JSON: session scratchpad `ux-shots/slice15-r1fix/`.
 
 ## Handover
 
-Done. Commits: 294ec3b9b (dot, labels, drop, tests), 4fba8919c (sockets and wedge), e6ffd6cfa (wedge nudge), ef884d740 (this log), 9e190b1a9 (R1 fixes), and the R1 section of this log.
+Done. Commits: 294ec3b9b (dot, labels, drop, tests), 4fba8919c (sockets and wedge), e6ffd6cfa (wedge nudge), ef884d740 (this log), 9e190b1a9 (R1 fixes), 0ab221f91 (the R1 section of this log), 79cf24039 (wider drop search), and the ruling section of this log.
