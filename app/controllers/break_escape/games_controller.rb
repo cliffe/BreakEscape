@@ -1645,7 +1645,12 @@ module BreakEscape
 
       if result[:success]
         Rails.logger.info "[BreakEscape] Task completed: #{task_id}"
-        if (cb = BreakEscape.configuration&.on_task_complete)
+        # Fire the host rescore hook only on a real first completion, not on
+        # the idempotent "Already completed" re-post (which the conclude-race
+        # fallback makes on the same beat). skip_task below guards the hook the
+        # same way: the already-settled branch is the only success path that
+        # sets :message.
+        if !result.key?(:message) && (cb = BreakEscape.configuration&.on_task_complete)
           begin
             cb.call(@game)
           rescue => e

@@ -53,6 +53,14 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
 
 ## Harness notes for this scenario
 
+- **The capture cards (UX slice 2b0)** in the lobby, `capture_note_lena` and `capture_note_ian`,
+  record a credential capture each. Once the drop box is in the comms room, the remote sign-in
+  screen offers them as account tiles with headshots
+  (`.signin-captured-tile[data-target-id="lena"]`), and Other user (`.signin-other`) for typing.
+  A tile chooses the account and fills only the username: this scenario does not reveal
+  captured secrets, so the password is still typed from its earned source (P5 the letter,
+  P8 the handover note). Ian's tile is refused on Lena's PC. A run that skips the cards sees
+  the typed form, as before.
 - **The jack's prompts are `gameConfirm` dialogs, not minigames.** Answer the plant confirm with
   `{"cmd":"dismiss","label":"Plug it in"}` (or `"Cancel"`), and the planted jack's prompt with
   `{"cmd":"dismiss","label":"Unplug it"}` or `"Leave it"`. `mg clickSelector` cannot see them.

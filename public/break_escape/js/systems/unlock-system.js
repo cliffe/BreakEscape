@@ -347,22 +347,28 @@ async function remoteCapturedSignIns() {
     try {
         const { readCaptures } = await import('./captures.js');
         captures = readCaptures(window.gameState?.globalVariables);
-    } catch (e) { return []; }
-    if (!captures || Object.keys(captures).length === 0) return [];
+    } catch (e) { return { list: [], failed: false }; }
+    if (!captures || Object.keys(captures).length === 0) return { list: [], failed: false };
     const api = window.ApiClient || window.APIClient;
     let answer = null;
     try {
         try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
         answer = api?.get ? await api.get('/capture_secrets') : null;
     } catch (e) {
+        // Captures held but not loaded: the screen says so rather than "none yet" (2b0 R2 n1)
         console.warn('Could not load the captured sign-ins', e);
-        return [];
+        return { list: [], failed: true };
     }
     const accounts = answer && typeof answer.accounts === 'object' && answer.accounts ? answer.accounts : {};
     const secrets = answer && typeof answer.secrets === 'object' && answer.secrets ? answer.secrets : {};
     const list = window.capturedSignIns;
-    return typeof list === 'function' ? list(captures, accounts, secrets) : [];
+    return { list: typeof list === 'function' ? list(captures, accounts, secrets) : [], failed: false };
 }
+
+// The longest a remote sign-in screen shows only "Checking..." (2b0 R2 m1): the sync wait
+// before /capture_secrets can retry for about 8 s and the fetch has no timeout of its own, so
+// after this the typed form shows as for an empty list, and a late list adds its tiles.
+export const REMOTE_CAPTURES_WAIT_MS = 3000;
 
 // A switched-off PC at its own keyboard (user decision q72)
 export const PC_OFF_TEXT = 'This PC is off.';
@@ -688,10 +694,15 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             if ((!landing || landing.landing === 'none') && switching && signedIn) openLoginDesktop(lockable);
         }
     });
-    const captured = await remoteCapturedSignIns();
-    if (scene && framework.currentMinigame === scene && typeof scene.setCapturedSignIns === 'function') {
-        scene.setCapturedSignIns(captured);
-    }
+    const stillOpen = () => !!scene && framework.currentMinigame === scene && typeof scene.setCapturedSignIns === 'function';
+    let answered = false;
+    const cap = setTimeout(() => {
+        if (!answered && stillOpen()) scene.setCapturedSignIns([], { pending: true });
+    }, REMOTE_CAPTURES_WAIT_MS);
+    const { list, failed } = await remoteCapturedSignIns();
+    answered = true;
+    clearTimeout(cap);
+    if (stillOpen()) scene.setCapturedSignIns(list, { failed });
 }
 
 export function handleUnlock(lockable, type) {

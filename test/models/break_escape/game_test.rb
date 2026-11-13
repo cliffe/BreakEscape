@@ -502,6 +502,9 @@ module BreakEscape
         { 'type' => 'key', 'opens_lock' => 'door_key_lock', 'name' => 'Door Key' },
         { 'type' => 'key', 'opens_lock' => 'safe_key_lock', 'name' => 'Safe Key' },
         { 'type' => 'key', 'opens_lock' => 'case_key_lock', 'name' => 'Case Key' },
+        # The rfid locks require the 'badge' card; a requires-only rfid lock now needs the
+        # player to actually hold it (card_id or opens_lock), not just claim the method.
+        { 'type' => 'keycard', 'opens_lock' => 'badge', 'name' => 'Badge', 'rfid_protocol' => 'EM4100' },
         { 'type' => 'lockpick', 'name' => 'Lock Pick Kit' }
       ]
     end
