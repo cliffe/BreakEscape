@@ -616,6 +616,113 @@ The too-new refusal test returned 200 with `@game.ensure_current_format!` remove
      decoded value; `reload_persistence_test`'s query-count test was updated for the extra scalar read.
   4. The PostToolUse formatter reindents Ruby after an Edit; every diff here was checked.
 
+## Step 7 phase 2. The client, the deferred tests, the tools (build/harden-7)
+
+Date: 2026-11-13. Built on the phase-1 server side already on the branch. Phase 2 is the client
+fetch guard, the bootstrap-refusal handling, the two Rails tests phase 1 deferred, the sweep tool,
+the swap-tool `--format-version` support, the README note, and the live proofs.
+
+### What changed (phase 2)
+
+- **`public/break_escape/js/format-guard.js` (new).** Wraps `window.fetch`. It is the first import of
+  `main.js`, so it installs before any module can keep a `fetch` reference. For each response it reads
+  `X-Break-Escape-Format` (ignored when absent or not a run of digits) and compares it with the version
+  the tab holds (`held`, null until the bootstrap is read, set by `setHeldFormatVersion`). A mismatch,
+  or a `409 { error: "format" }` body (read from a clone, `current` as the version), flushes the pending
+  sync (`syncConfirmed({ attempts: 1 })`, awaited up to 3 s) and reloads once per `be-format-reload:
+  <gameId>:<held>:<n>` session key; a second mismatch on the same pair, or storage throwing, shows a
+  pixel-art banner (2px border, pixel font, `textContent`) and saving carries on. A refusal banner adds
+  "Progress cannot be saved on this server." The keepalive flush (`init.keepalive`) is not inspected.
+  `showBootstrapRefusal(url, deps)` fetches the bootstrap once and shows a `409 format` message in
+  `#loading`.
+- **`main.js`.** `import './format-guard.js';` as the first import.
+- **`core/game.js`.** Imports `setHeldFormatVersion` and `showBootstrapRefusal`. On
+  `filecomplete-json-gameScenarioJSON` it sets the held version from `scenario.formatVersion`; a new
+  `loaderror` listener on the `gameScenarioJSON` key calls `showBootstrapRefusal`.
+- **`tools/format/upgrade_games.rb` (new).** `bin/rails runner` sweep. `--dry-run` reports counts per
+  stored version and, per step, how many games would change, and writes nothing; a real run is refused
+  in development. Each real upgrade goes through `Game#ensure_current_format!` under its row lock.
+- **`tools/playtest/swap-scenario-game.rb`.** Stamps `formatVersion` (current, or `--format-version N`
+  for the refusal proof) on the swapped data, since the swap updates an existing row and `before_create`
+  does not run.
+- **`README_scenario_design.md`.** A note that `formatVersion` is server-stamped and never authored, the
+  validator error, and the refusal/reload behaviour.
+
+### Tests (phase 2)
+
+- **`test/js/format-guard.test.mjs` (new, 9).** The jsdom wrapper: held 0 and header 0 do nothing;
+  header absent does nothing; held null is not compared; header 1 against 0 flushes the sync and reloads
+  once, a repeat on the pair shows the banner without reloading and saving continues, a new pair reloads
+  again; storage throwing shows the banner and never reloads; a keepalive mismatch does nothing; a
+  `409 format` (no header) reloads once then banners with the message and the not-saved line; another 409
+  error, a non-JSON 409 and an unparseable body all do nothing and the caller keeps its response;
+  `showBootstrapRefusal` shows the message in `#loading` on a `409 format` and nothing otherwise.
+- **`test/js/format-guard-sites.test.mjs` (new, 5).** The static scan: no module-level or property fetch
+  capture; no `XMLHttpRequest`/`navigator.sendBeacon`; the only engine-route `load.json` is the
+  `gameScenarioJSON` bootstrap in `core/game.js`; `format-guard.js` is main.js's first import. The capture
+  regex was checked against bad and good forms (`const f = fetch` and `this._fetch = window.fetch` match;
+  `deps.fetch ?? (... ? fetch : null)` and `const realFetch = ... : fetch` do not).
+- **`test/controllers/break_escape/format_deployed_scenarios_test.rb` (new, 7).** For m01_first_contact,
+  sis01_healthcare, sis02_energy and lab_social_engineering: a no-op step (current 1 via a fixture list)
+  stamps and never re-prepares, on both a prepared and a raw unprepared render, adding only
+  `formatVersion`; a renaming step re-prepares once; the alias rule (no retired key outside `ALIASES`;
+  a fixture retired key is caught and names the scenario and key).
+- **`test/controllers/break_escape/upgrade_games_tool_test.rb` (new, 2).** `--dry-run` over games at 0 and
+  at current reports both and writes nothing; a real run is refused in development.
+
+### Results (phase 2)
+
+- `node test/js/format-guard.test.mjs`: 9 pass. `node test/js/format-guard-sites.test.mjs`: 5 pass.
+- `bin/rails test test/controllers/break_escape/format_deployed_scenarios_test.rb`: 7 runs, 0 failures.
+- `bin/rails test test/controllers/break_escape/upgrade_games_tool_test.rb`: 2 runs, 0 failures.
+- Unaffected main.js-source node tests spot-checked green: canvas-fonts, capture-client, test-bridge-parses.
+- `bin/rails runner tools/format/upgrade_games.rb --dry-run` live on the dev DB: 1946 games at version 0,
+  current 0, would upgrade 0, nothing written.
+- Test-lock/congestion rule: targeted files only (the four new test files plus the three spot-checks);
+  no change to any Rails controller or model, so no existing Rails test is affected. The orchestrator runs
+  the full suites and the validator sweep at the merge batch.
+
+### Must-fail / regression proofs
+
+- The static-scan capture regex was shown to match the forbidden forms and not the call-time ones (inline
+  node check). The jsdom wrapper tests fail by construction without the guard logic.
+
+### Commits (phase 2)
+
+- `3dd665c5a` client guard + node tests (format-guard.js, main.js, core/game.js, the two .mjs tests).
+- `5f5bbde66` deferred re-prepare and alias-rule Rails tests.
+- `21a334aac` sweep tool + dry-run test.
+- `2591bf6c2` swap-scenario-game.rb `--format-version`.
+- `a486adf7c` README note.
+- (this log section's commit).
+
+### Skill wording proposals (for the orchestrator, not applied to any skill)
+
+Phase 2 touches the client load path and adds a validator rule. The following one-line additions are
+proposed for the orchestrator to apply to the named skills (builders do not edit `.claude/skills/*`):
+
+1. **validate-scenario** and **scenario-design-review**: add that the validator errors on a template that
+   sets `formatVersion` ("the server stamps it at creation") and on any field a later format step renamed
+   (the error names the new key and the format).
+2. **playtest-scenario**: note that a page reload during play can be the format guard (a game upgraded
+   under an open tab), not a crash; a "This game has been updated" banner is expected after a format bump,
+   not a bug.
+3. **mission-room-dressing** / any UI skill: the format-refusal page and the guard banner follow the
+   pixel-art UI rule (2px border, pixel font); keep them that way if touched.
+4. **walkthrough-scenario**: when a walkthrough is run against a server older than the game's saved format,
+   the game is refused with a 409/HTML format message rather than loading; this is expected, not a failure.
+5. A general note for any skill that creates games by swapping (`swap-scenario-game.rb`): the swap now
+   stamps `formatVersion`; `--format-version N` is for the refusal proof only and must never be used to
+   fake an "old" game.
+6. **bump-version** / release skills: a release can run `tools/format/upgrade_games.rb --dry-run` to see how
+   many stored games a format step would upgrade; load time remains the guarantee.
+
+### Live proofs
+
+Status recorded in the handover below. The two keyless servers are the branch on port 3280 and a base
+worktree at the merge base on port 3281 (sharing the development database; never any db: task). Any game
+stamped 900 by the dev switch or `--format-version 900` is recorded here as unusable and set back to 0.
+
 
 
 - **Done:** (1) schema resolver and notes helper + unit tests (732f41433); (2) **phase A** (afe5b6ca3): schema marks, eager enumerator, schema-walk test; (3) **phase A continued:** validator migration, `_`-skip audit, action-in-a-note warning, README line; (4) **phase B1:** every granting/deriving walker skips notes and visits free data, `CaptureModel.each_capture_writer`'s `notes:` keyword, schema-walk parts 3 and 6, the corpus before/after proof (identical), and the implant/plant Rails route tests with a revert proof (see "Phase B1"); (5) **phase B2, this session:** `strip_notes!` at every client payload builder, the route audit, the boot initializer, the Rails note/capture/boot tests (each with a revert proof), the part-6 ruling recorded, README item 8, and the live proof on port 3270. See "Phase B2" above. **Step 2b is complete.**
