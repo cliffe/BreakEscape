@@ -497,7 +497,7 @@ does. `test_needs_leash` game 899 and the lab game 900 are in the plan's 12.7 Bu
 
 ### Slice 16 re-run: lock-screen habits and cues (2026-11-06, keyless :3001, headless)
 
-How to watch it: Amara locks only for a longer trip (`screenHabit.lockIfAwayOverSeconds` 20: the office coffee stays open, a kitchen run
+How to watch it: Amara locks only for a longer trip (`habits.screen.lockIfAwayOverSeconds` 20: the office coffee stays open, a kitchen run
 or a queue place locks); Sanjay never locks on leaving (`lockChance` 0) but his PC locks itself 20 s after he goes (`autoLockSeconds`);
 Tom's object `lockChance` 0.5 still wins over any habit. Each lock plays a flash at the screen indicator (lighting on) or a padlock glyph
 (lighting off) and a soft two-note chime in the same room; each return plays the wake flash and the rising chime. Tasks `hear_screen_lock`
@@ -558,14 +558,14 @@ covered by the node test.
 ### Slice 17 re-run: print and forget, and the print-job lever (2026-11-06, keyless :3001, headless)
 
 How to watch it: Tom now prints at his PC (`onUse.tom_pc.revealOutput` with `chance` 0.4) and owns what he prints
-(`printHabit`: fetch 30 to 120 s later, or forget about half of them). His printouts are his: Amara's printout interest leaves them
+(`habits.print`: fetch 30 to 120 s later, or forget about half of them). His printouts are his: Amara's printout interest leaves them
 on the tray. Two levers do not wait for chance. **Read the Print Queue note** (on the desk south of the copier): a job prints as Tom
 at once and he never fetches it; it is still on the tray two and a half minutes later (task `see_uncollected`). **Use Tom's open
 screen** while he is away: a print job goes to the copier, due 5 to 10 s later, so he usually comes back by way of the copier,
 picks the printout up, carries it to his desk and puts it down (task `send_print_job`). Stay at his desk or in his PC's examine
 view and he catches you on the way back. A fetch is one more leave, so Tom's screen window opens more often. The pool has five
 slots now (`copier_out_d` and `e` read in place); when it is full, a print recycles the oldest forgotten slot, read-in-place ones
-first, so the takeable `copier_out_a` is the last to go. Sanjay has no `printHabit`, so Amara still delivers his prints
+first, so the takeable `copier_out_a` is the last to go. Sanjay has no `habits.print`, so Amara still delivers his prints
 (`see_printout`).
 
 Evidence is in the session scratchpad `s17/`: `note-read-923.png`, `tray-forgotten-2min-923.png` (the forgotten printout on the
