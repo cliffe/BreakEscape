@@ -137,7 +137,7 @@ export class RFIDMinigame extends MinigameScene {
             this.animations.showTapFailure();
             const name = card.scenarioData?.name || 'This card';
             this._showDenial('Card cancelled', () => this.ui.showTapInterface(), 'revoked',
-                `${name} has been deactivated — the reader rejects it.`);
+                `${name} has been deactivated. The reader rejects it.`);
             return;
         }
 
@@ -363,7 +363,7 @@ export class RFIDMinigame extends MinigameScene {
                 });
             }
             this._showDenial('Card cancelled', () => this.ui.showSavedCards(), 'revoked',
-                `The clone of ${savedCard.name || 'that card'} no longer works — the card has been deactivated.`);
+                `The clone of ${savedCard.name || 'that card'} no longer works. The card has been deactivated.`);
             return;
         }
 
