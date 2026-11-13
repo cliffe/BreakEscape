@@ -28,7 +28,27 @@ const escapeWithBreaks = (value) => escapeHtml(value).replace(/&lt;br\s*\/?&gt;/
  *   The final state should have no variable (acts as default).
  */
 
+// A round lamp drawn as a stepped octagon: corners cut in two 4px steps, square edges only,
+// so it reads as pixel art (critique A42; an SVG circle is anti-aliased)
+export function steppedLampPoints(cx, cy, r) {
+    const s = 4;
+    const p = [
+        [-r + 2 * s, -r], [r - 2 * s, -r], [r - 2 * s, -r + s], [r - s, -r + s], [r - s, -r + 2 * s], [r, -r + 2 * s],
+        [r, r - 2 * s], [r - s, r - 2 * s], [r - s, r - s], [r - 2 * s, r - s], [r - 2 * s, r],
+        [-r + 2 * s, r], [-r + 2 * s, r - s], [-r + s, r - s], [-r + s, r - 2 * s], [-r, r - 2 * s],
+        [-r, -r + 2 * s], [-r + s, -r + 2 * s], [-r + s, -r + s], [-r + 2 * s, -r + s]
+    ];
+    return p.map(([x, y]) => `${cx + x},${cy + y}`).join(' ');
+}
+
 export class AlarmPanelMinigame extends MinigameScene {
+    // The X sits inside the panel's frame, not out in the window's corner (critique A43)
+    static closeInsideFrame = true;
+
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.ap-panel-wrap') || this.gameContainer;
+    }
+
     constructor(container, params = {}) {
         const md = params.lockable?.scenarioData?.minigameData || {};
         super(container, { ...params, showCancel: true, cancelText: 'Close Panel', title: 'Facility Alarm Panel' });
@@ -74,7 +94,7 @@ export class AlarmPanelMinigame extends MinigameScene {
                 : (lamp.offStatus || '');
             return `
   <g class="ap-lamp-row" data-index="${i}">
-    <circle id="ap-lamp-${i}" cx="${CX}" cy="${cy}" r="${R}" class="ap-off"/>
+    <polygon id="ap-lamp-${i}" points="${steppedLampPoints(CX, cy, R + 2)}" shape-rendering="crispEdges" class="ap-off"/>
     <text class="ap-label"  x="${CX + R + 14}" y="${cy - 7}">${escapeHtml(displayDashes(lamp.label))}</text>
     <text class="ap-status" id="ap-status-${i}" x="${CX + R + 14}" y="${cy + 11}">${escapeHtml(displayDashes(initialStatus))}</text>
     <line class="ap-row-sep" x1="0" y1="${sepY}" x2="${SVG_W}" y2="${sepY}"/>

@@ -360,10 +360,12 @@
 
 /* Samples List */
 .biometrics-samples-list-container {
-    flex: 1;
+    /* Never squeezed to nothing by the sections around it: at least two sample rows show,
+       and the panel scrolls for the rest (critique A18) */
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    min-height: 0;
+    min-height: 160px;
     transition: all 0.3s ease;
     max-height: 300px;
     overflow: hidden;
@@ -371,6 +373,7 @@
 
 .biometrics-minigame-container:not(.expanded) .biometrics-samples-list-container {
     max-height: 0;
+    min-height: 0;
     opacity: 0;
 }
 
@@ -541,7 +544,15 @@
 
 .instruction-text {
     color: #aaa;
+    padding-top: 6px;
 }
+
+.biometrics-scanner-instructions summary {
+    cursor: pointer;
+    color: #e74c3c;
+}
+
+.biometrics-scanner-instructions summary:focus-visible { outline: 2px solid #fff; }
 
 .instruction-text strong {
     color: #e74c3c;
@@ -566,8 +577,9 @@
         font-size: 14px;
     }
     
+    /* The chips stay inline and wrap, as at every other size (critique A19) */
     .biometrics-categories {
-        flex-direction: column;
+        flex-wrap: wrap;
         gap: 5px;
     }
     
@@ -870,14 +882,25 @@
     image-rendering: pixelated;
 }
 
+/* The lamp sits left of the heading, clear of the X in the bezel's top-right corner, and
+   is a stepped octagon in every state so it reads as a lamp, not a checkbox (critique A24).
+   The row keeps the X's width free on its right. */
+.fpr-head-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 44px;
+}
+
 .fpr-led {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 14px;
-    height: 14px;
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    box-sizing: border-box;
     background: #3a4a40;
     border: 2px solid #c8f5d2;
+    clip-path: polygon(4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px), 0 4px, 2px 4px, 2px 2px, 4px 2px);
 }
 
 .fpr-led[data-state="scanning"] { background: #ffffff; }
