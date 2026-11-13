@@ -91,7 +91,6 @@
 
 .ncsc-envelope-name {
     font-size: 24px;
-    font-weight: bold;
     color: #e6edf3;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -110,7 +109,6 @@
     display: inline-block;
     border-radius: 0;
     font-size: 19px;
-    font-weight: bold;
     letter-spacing: 0.06em;
     padding: 5px 14px;
     text-transform: uppercase;
@@ -150,7 +148,6 @@
     color: #ffffff;
     font-family: inherit;
     font-size: 20px;
-    font-weight: bold;
     letter-spacing: 0.06em;
     padding: 10px 28px;
     cursor: pointer;
@@ -182,7 +179,6 @@
 
 .ncsc-brief-title {
     font-size: 22px;
-    font-weight: bold;
     color: #58a6ff;
     letter-spacing: 0.07em;
     text-transform: uppercase;
@@ -206,7 +202,6 @@
 
 .ncsc-section-title {
     font-size: 19px;
-    font-weight: bold;
     color: #58a6ff;
     text-transform: uppercase;
     letter-spacing: 0.07em;
@@ -224,7 +219,6 @@
     display: inline-block;
     border-radius: 0;
     font-size: 18px;
-    font-weight: bold;
     letter-spacing: 0.04em;
     padding: 2px 8px;
     text-transform: uppercase;
@@ -271,7 +265,6 @@
 }
 
 .ncsc-note-title {
-    font-weight: bold;
     font-size: 19px;
     color: #58a6ff;
     text-transform: uppercase;
@@ -298,7 +291,6 @@
 }
 
 .ncsc-legal-gap-title {
-    font-weight: bold;
     color: #f85149;
     font-size: 19px;
     text-transform: uppercase;
@@ -329,7 +321,6 @@
 }
 
 .ncsc-coverage-note-title {
-    font-weight: bold;
     color: #f0c040;
     font-size: 19px;
     text-transform: uppercase;

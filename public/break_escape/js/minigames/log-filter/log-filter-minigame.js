@@ -31,6 +31,13 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
 export class LogFilterMinigame extends MinigameScene {
+    // The X sits inside the console frame, in the padded header bar
+    static closeInsideFrame = true;
+
+    closeAnchor() {
+        return this._dom?.wrap || this.gameContainer;
+    }
+
 
     // ── Column schemas ─────────────────────────────────────────────────────
 
@@ -270,7 +277,12 @@ export class LogFilterMinigame extends MinigameScene {
     // ── Top-level layout ───────────────────────────────────────────────────
 
     _renderLayout() {
-        const c = this.container;
+        // The scene draws inside the framework's game area, so the shell's X stays (critique B
+        // LF1, X5): the header holds only the title, the X closes
+        if (this.headerElement) this.headerElement.style.display = 'none';
+        this.container.classList.add('lf-minigame-container');
+        const c = this.gameContainer;
+        c.classList.add('lf-game-container');
         c.innerHTML = '';
 
         // Outer wrapper
@@ -282,11 +294,7 @@ export class LogFilterMinigame extends MinigameScene {
         const header = this._el('div', 'lf-header');
         const titleEl = this._el('div', 'lf-header-title');
         titleEl.textContent = displayDashes(this._title);
-        const closeBtn = this._el('button', 'lf-close-btn');
-        closeBtn.textContent = '[CLOSE]';
-        closeBtn.addEventListener('click', () => this.complete(false));
         header.appendChild(titleEl);
-        header.appendChild(closeBtn);
         wrap.appendChild(header);
 
         // Tab bar

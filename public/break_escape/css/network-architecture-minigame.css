@@ -31,10 +31,10 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    /* The right padding keeps the legend clear of the X (30px wide, 4px inside the frame's
-       top-right corner) with an 8px gap (slice 7 R5 m6) */
-    padding: 8px 46px 8px 14px;
-    min-height: 38px;
+    /* The right padding keeps the legend clear of the X (38px with its border, 4px inside
+       the frame's top-right corner) with an 8px gap (slice 7 R5 m6, critique B X4) */
+    padding: 8px 54px 8px 14px;
+    min-height: 46px;
     box-sizing: border-box;
     background: #0a0f1e;
     border-bottom: 2px solid #1e3a5a;
@@ -47,7 +47,7 @@
     font-size: 8px;
     color: #e2e8f0;
     letter-spacing: 0.5px;
-    line-height: 1.4;
+    line-height: 16px;
 }
 
 /* ── Legend ────────────────────────────────────────────── */
@@ -114,6 +114,7 @@
 .nad-zone-label {
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     fill: #64748b;
     letter-spacing: 0.3px;
     pointer-events: none;
@@ -253,7 +254,7 @@
     font-size: 8px;
     color: #e2e8f0;
     margin-bottom: 6px;
-    line-height: 1.5;
+    line-height: 16px;
 }
 
 .nad-detail-desc {
@@ -271,6 +272,7 @@
 .nad-detail-vuln-badge {
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     color: #f59e0b;
     display: block;
     margin-bottom: 4px;
@@ -285,6 +287,7 @@
 .nad-detail-paths-title {
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     color: #64748b;
     margin-bottom: 6px;
     letter-spacing: 0.3px;
@@ -303,7 +306,6 @@
 
 .nad-path-label {
     color: #ef4444;
-    font-weight: bold;
 }
 
 .nad-path-claim {

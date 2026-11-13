@@ -283,7 +283,8 @@
     background: #1d2e4d;
     color: #e5edff;
     font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
+    font-size: 16px;
+    line-height: 24px;
     padding: 10px 16px;
     min-width: 132px;
     cursor: pointer;

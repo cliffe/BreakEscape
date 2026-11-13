@@ -116,7 +116,8 @@
     border-bottom: 3px solid #6a7178;
     color: #1a1a1a;
     font-family: 'Press Start 2P', monospace;
-    font-size: 8px;   /* on its 8px grid (slice 7 R5 M2) */
+    font-size: 8px;
+    line-height: 16px;   /* on its 8px grid (slice 7 R5 M2) */
     padding: 10px 4px;
     cursor: pointer;
     border-radius: 0;
@@ -165,7 +166,8 @@
     border: 2px solid #00c853;
     padding: 14px 8px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 8px;   /* on its 8px grid (slice 7 R5 M2) */
+    font-size: 8px;
+    line-height: 16px;   /* on its 8px grid (slice 7 R5 M2) */
     cursor: pointer;
     border-radius: 0;
     letter-spacing: 1px;
@@ -216,7 +218,7 @@
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     margin-bottom: 16px;
-    line-height: 1.6;
+    line-height: 16px;
     letter-spacing: 0.5px;
 }
 
@@ -224,6 +226,7 @@
     color: #cccccc;
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
+    line-height: 16px;
     margin-bottom: 8px;
 }
 
@@ -256,7 +259,7 @@
     border-radius: 0;
     border: 2px solid;
     letter-spacing: 0.5px;
-    line-height: 1.4;
+    line-height: 16px;
     transition: opacity 0.15s;
 }
 
@@ -291,6 +294,7 @@
 .ip-no-charts-icon {
     font-family: 'Press Start 2P', monospace;
     font-size: 32px;
+    line-height: 40px;
     color: #f59e0b;
     margin-bottom: 20px;
     border: 2px solid #f59e0b;
@@ -306,7 +310,7 @@
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;   /* Press Start 2P on its 8px grid (slice 7 R2 n3) */
     margin-bottom: 16px;
-    line-height: 1.6;
+    line-height: 16px;
 }
 
 .ip-no-charts-sub {
