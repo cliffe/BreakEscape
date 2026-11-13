@@ -715,7 +715,8 @@ test('slice 2a: a share from a local desktop closes back to that desktop (parent
     await settle();
     assert.equal(current().shareFolder, true);
     assert.equal(current().parentLockable, desk);
-    document.querySelector('#minigame-cancel').click();
+    // The X closes it (slice 7: no Cancel beside the X)
+    document.querySelector('#minigame-close').click();
     await settle();
     assert.equal(current().loginPcId, 'sam_pc', 'back on the local desktop');
     assert.equal(current().desktopMode, true);
@@ -728,7 +729,7 @@ test('slice 2a: a share from a remote desktop closes back to the remote desktop'
     icon('Ledger-Archive').click();
     await settle();
     assert.equal(current().shareFolder, true);
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click();
     await settle();
     assert.equal(current().loginPcId, 'lena_pc');
     assert.ok(current().remote, 'the remote desktop again');
@@ -741,7 +742,7 @@ test('slice 2a: a share opened from the network view is a folder window too, and
     await settle();
     assert.equal(current().shareFolder, true);
     assert.ok(document.querySelector('.share-folder-window'));
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click();
     assert.deepEqual(landings, [['share', 'close', {}]]);
 });
 
