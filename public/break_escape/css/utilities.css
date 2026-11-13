@@ -331,10 +331,14 @@
    a flat track, no radius and no arrow buttons. Add the class to the element that scrolls and
    set the colours with the four variables. Firefox cannot draw a border on the thumb, so it gets
    the colours only; Chrome ignores the ::-webkit-scrollbar rules once scrollbar-color is set,
-   so the Firefox properties sit behind a feature check.
+   so the Firefox properties sit behind a feature check. The class resets both properties to
+   auto, as they are inherited and some minigames set them (code review R3 n2); an element that
+   adopts the class drops its own scrollbar-color and scrollbar-width rules.
    ─────────────────────────────────────────────────────────────────────────── */
 
 .pixel-scroll {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
     --pixel-scroll-track: #10161c;
     --pixel-scroll-thumb: #2d3a44;
     --pixel-scroll-edge: #6f8a9c;

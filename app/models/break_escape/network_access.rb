@@ -260,7 +260,7 @@ module BreakEscape
         'via' => 'jack', 'network' => jack[:network], 'source' => jack_id, 'device' => copy, 'seq' => seq,
         'name' => jack[:object]['linkName'].presence ||
                   distinct_link_name(default_link_name(LINK_DEVICE_WORDS[copy.is_a?(Hash) ? 'drop_box' : 'jack'], room_display_name(jack[:room_id])),
-                                     jack_id, room_objects_where(jack[:room_id]) { |obj| NetworkModel.jack?(obj) })
+                                     jack_id, link_peer_jacks(jack[:room_id]))
       }
       player_state['gainedFootholds'] = gained_footholds
       player_state['gainedFootholds'] << jack_id if first
@@ -568,6 +568,14 @@ module BreakEscape
       twins = peers.select { |obj| readable_object_name(obj, obj['id']) == source_name }
       index = twins.index { |obj| obj['id'].to_s == source_id.to_s }.to_i
       index.zero? ? named : "#{named} #{index + 1}"
+    end
+
+    # The jacks in a room that can hold a link (code review R3 m1): a port-security jack is
+    # refused before any record is written, so it never needs telling apart. Port security is
+    # scenario data, so the choice stays deterministic. A future port-security bypass should
+    # count those jacks again.
+    def link_peer_jacks(room_id)
+      room_objects_where(room_id) { |obj| NetworkModel.jack?(obj) && port_security_refusal(obj).nil? }
     end
 
     # A room's objects (and their contents, as network_object_in walks them) that the block

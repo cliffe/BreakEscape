@@ -609,6 +609,30 @@ test('viewSubtitle adds what the title lacks, for every foothold kind', () => {
     assert.equal(viewSubtitle({ via: 'jack', name: 'On X', network: { name: 'X' } }), '', 'one equal to the title is dropped');
 });
 
+// Code review R3 m1: a name the server suffixed with its source says where already
+test('title and subtitle never both name the source', () => {
+    const net = { id: 'office_lan', name: 'Harbour office LAN' };
+    const cases = [
+        [{ via: 'jack', name: 'Drop box: Comms room, Spare wall port', network: net, source: { name: 'Spare wall port', room: 'Comms room' } },
+            'On Harbour office LAN'],
+        [{ via: 'implant', name: "Keystroke injector: Desks, Sam's PC", network: net, source: { name: "Sam's PC", room: 'Desks' } },
+            'On Harbour office LAN'],
+        [{ via: 'jack', name: 'Drop box: Workshop, Bench switch 2', network: net, source: { name: 'Bench switch', room: 'Workshop' } },
+            'On Harbour office LAN'],
+        [{ via: 'jack', name: 'Drop box: Comms room', network: net, source: { name: 'Spare wall port', room: 'Comms room' } },
+            'On Harbour office LAN, at Spare wall port'],
+        [{ via: 'jack', name: 'Drop box: Workshop, Bench switch extra', network: net, source: { name: 'Bench switch', room: 'Workshop' } },
+            'On Harbour office LAN, at Bench switch']
+    ];
+    for (const [v, want] of cases) {
+        const sub = viewSubtitle(v);
+        assert.equal(sub, want, v.name);
+        const inTitle = v.name.includes(`, ${v.source.name}`);
+        const inSub = sub.includes(v.source.name);
+        assert.ok(!(inTitle && inSub) || v.name.endsWith(' extra'), `${v.name}: the source is named once`);
+    }
+});
+
 test('the header shows the subtitle under the title', async () => {
     setup();
     answer.footholds[0].source = { name: 'Spare wall port', room: 'Comms room' };
@@ -754,6 +778,27 @@ test('rows lay out in two columns when there is room; headings and locked shares
     assert.match(ruleBody('.network-row-hostname') || '', /white-space:\s*nowrap/);
     assert.match(ruleBody('.network-row-host .network-row-label') || '', /min-width:\s*min-content/);
     assert.match(ruleBody('.network-row-control') || '', /flex:\s*0 1 auto/);
+    // The open button breaks before the bracket, never inside the name (code review R3 n1)
+    const open = row('data-host-id', 'lena_pc').querySelector('[data-action="open"]');
+    assert.equal(open.textContent, 'Open (Lena Fox)');
+    assert.equal(open.querySelector('.network-row-who').textContent, '(Lena Fox)');
+    assert.match(ruleBody('.network-row-who') || '', /white-space:\s*nowrap/);
+});
+
+// Code review R3 m2: in a narrow column a down row keeps "Session kept: Ian Shaw" whole and
+// its host and "(down)" on one line
+test('a down row keeps the kept name and the host with its tag on one line', async () => {
+    assert.match(ruleBody('.network-row-kept') || '', /white-space:\s*nowrap/);
+    assert.match(ruleBody('.network-row-title') || '', /white-space:\s*nowrap/);
+    withBlocks([{ id: 'server_net', name: 'Server network', via: { hostId: 'lena_pc', host: 'HB-FIN-02' }, route: 'down',
+        hosts: [{ ...SERVER_ROW, heldAs: 'Ian Shaw' }] }]);
+    links.open('jack_comms_port');
+    await settle();
+    const kept = document.querySelector('.network-block-down .network-row-kept');
+    assert.equal(kept.textContent, 'Session kept: Ian Shaw', 'the whole note is one nowrap span');
+    const title = kept.closest('.network-row').querySelector('.network-row-title');
+    assert.ok(title.querySelector('.network-row-hostname'), 'the host sits in the nowrap title');
+    assert.equal(title.querySelector('.network-row-tag').textContent, '(down)', 'and its tag beside it');
 });
 
 // The shared pixel-art scrollbar (code review R2 m2): square thumb, 2px border, no radius, and
@@ -774,6 +819,12 @@ test('the shared .pixel-scroll rule draws a pixel-art scrollbar', () => {
     const block = util.slice(util.indexOf('.pixel-scroll {'));
     assert.doesNotMatch(block, /border-radius:\s*[1-9]/, 'no radius');
     assert.doesNotMatch(block.replace(/\/\*[\s\S]*?\*\//g, ''), /gradient|box-shadow/);
+    // The class resets the inherited Firefox properties, so Chrome keeps the art under a parent
+    // that sets them (code review R3 n2); the guarded block after it still wins in Firefox
+    const base = utilRule('.pixel-scroll') || '';
+    assert.match(base, /scrollbar-color:\s*auto;/);
+    assert.match(base, /scrollbar-width:\s*auto;/);
+    assert.ok(util.indexOf('.pixel-scroll {') < util.indexOf('@supports not selector(::-webkit-scrollbar)'));
     // The game layout loads utilities.css
     const layout = readFileSync(join(here, '../../app/views/break_escape/games/show.html.erb'), 'utf8');
     assert.match(layout, /css\/utilities\.css/);

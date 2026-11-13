@@ -116,6 +116,15 @@ export function downState(item, { inDownBlock = false } = {}) {
     return NOT_DOWN;
 }
 
+/** Whether a link name ends with ", <source>" or ", <source> <n>", as distinct_link_name writes it. */
+function nameEndsWithSource(name, source) {
+    if (typeof name !== 'string' || typeof source !== 'string' || !source) return false;
+    const tail = `, ${source}`;
+    if (name.endsWith(tail)) return true;
+    const cut = name.lastIndexOf(tail);
+    return cut >= 0 && /^ \d+$/.test(name.slice(cut + tail.length));
+}
+
 /**
  * The header's subtitle (UX feedback slice 1): what the link's name lacks, never the name
  * again. A physical link: "On <network>, at <source object>". A Wi-Fi link: "Access point:
@@ -131,7 +140,9 @@ export function viewSubtitle(view) {
     } else {
         const parts = [];
         if (v.network?.name) parts.push(`On ${v.network.name}`);
-        if (src.name) parts.push(`at ${src.name}`);
+        // A name the server suffixed with its source ("Drop box: Desks, Sam's PC", or "... 2"
+        // for a twin) already says where: no "at <source>" (code review R3 m1)
+        if (src.name && !nameEndsWithSource(v.name, src.name)) parts.push(`at ${src.name}`);
         text = parts.join(', ');
     }
     return text && text !== v.name ? text : '';
@@ -402,7 +413,7 @@ export class NetworkViewMinigame extends MinigameScene {
                 control = null;
             } else if (action === 'open') {
                 const who = row.session.displayName || row.session.username || 'session';
-                control = `<button type="button" class="minigame-button network-row-action" data-action="open">Open (${escapeHtml(who)})</button>`;
+                control = `<button type="button" class="minigame-button network-row-action" data-action="open">Open <span class="network-row-who">(${escapeHtml(who)})</span></button>`;
             } else {
                 control = '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
             }

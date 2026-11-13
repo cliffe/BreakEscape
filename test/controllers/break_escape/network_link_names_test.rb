@@ -173,6 +173,22 @@ module BreakEscape
       assert_equal 'Drop box: Workshop, Spare bench port', link_name('jack_bench_port_b')
     end
 
+    # Code review R3 m1: a port-security jack is refused before any record is written, so it
+    # never needs telling apart and adds no suffix to the jack beside it
+    test 'a jack beside a port-security jack keeps the plain room name' do
+      build_network_game({}, two_jack_scenario('name' => 'Secure port', 'portSecurity' => true))
+      take_drop_box
+      body = plant('bench_port')
+      assert_response :success, body.inspect
+      assert_equal 'Drop box: Workshop', link_name('jack_bench_port')
+      assert_equal 'Drop box: Workshop', state['footholds']['jack_bench_port']['name']
+      unplug('bench_port')
+      assert_response :success, response.body
+      plant('bench_port_b')
+      assert_response :unprocessable_entity
+      assert_nil state['footholds']['jack_bench_port_b'], 'the secure port writes no record'
+    end
+
     test 'one jack in a room keeps the plain room name' do
       build_network_game({}, names_scenario)
       take_drop_box

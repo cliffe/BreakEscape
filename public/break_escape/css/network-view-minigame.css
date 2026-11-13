@@ -261,10 +261,22 @@
     gap: 4px;
 }
 
-/* "Session kept: <name>": a held session that comes back with the host or the route */
+/* "Session kept: <name>": a held session that comes back with the host or the route. It is
+   never split inside the name in a narrow column (code review R3 m2) */
 .network-row-kept {
     color: #ffe0a0;
     font-size: 16px;
+    white-space: nowrap;
+}
+
+/* A host and its down tag share one line: "SV-FS02 (down)" (code review R3 m2) */
+.network-row-title {
+    white-space: nowrap;
+}
+
+/* "Open (Sam Okafor)" breaks before the bracket, never inside the name (code review R3 n1) */
+.network-row-who {
+    white-space: nowrap;
 }
 
 .network-row-off {
