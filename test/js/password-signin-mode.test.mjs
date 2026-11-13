@@ -431,6 +431,49 @@ test('2b0 R1 M2: with no captures the typed form appears once the list arrives, 
     assert.ok(q('#signin-form').compareDocumentPosition(q('#signin-captured')) & 4, 'the line moves below the form');
 });
 
+test('2b0 R2 m1: at the wait cap the typed form shows and takes focus once; the late tiles never take it', () => {
+    const mg = openRemote([], { loading: true });
+    const fields = () => [q('#signin-username'), q('#password-field')];
+    assert.ok(!fields().includes(document.activeElement), 'no focus while waiting');
+    mg.setCapturedSignIns([], { pending: true });
+    assert.equal(mg.signInState.other, true);
+    assert.ok(visible(q('#signin-form')) && visible(q('#signin-username-row')));
+    assert.equal(document.activeElement, q('#signin-username'), 'focus once, as for an empty list');
+    assert.equal(q('.signin-captured-title').textContent, 'Captured sign-ins: still checking.');
+    assert.equal(mg.getTestState().signIn.capturedNote, 'pending');
+    // The player moves to Password with Username still empty (a full redraw would pull focus
+    // back to Username); then the list arrives
+    q('#password-field').focus();
+    let focusCalls = 0;
+    for (const el of fields()) { const f = el.focus.bind(el); el.focus = () => { focusCalls++; f(); }; }
+    mg.setCapturedSignIns(capturedSignIns(CAPTURES, { lena: 'lfox' }, {}));
+    assert.equal(focusCalls, 0, 'the late list moves no focus');
+    assert.equal(document.activeElement, q('#password-field'));
+    assert.equal(mg.signInState.other, true, 'the player keeps the typed form');
+    assert.deepEqual([...document.querySelectorAll('.signin-captured-tile')].map(b => b.querySelector('.signin-username').textContent), ['lfox']);
+    assert.equal(q('#signin-captured').dataset.state, 'tiles');
+    assert.equal(mg.getTestState().signIn.capturedNote, null);
+});
+
+test('2b0 R2 m1: a player who left the form before the late list gets the tiles', () => {
+    const mg = openRemote([], { loading: true });
+    mg.setCapturedSignIns([], { pending: true });
+    q('#signin-username').blur();
+    mg.setCapturedSignIns(capturedSignIns(CAPTURES, { lena: 'lfox' }, {}));
+    assert.equal(mg.signInState.other, false);
+    assert.equal(visible(q('#signin-form')), false);
+    assert.notEqual(document.activeElement, q('#signin-username'));
+});
+
+test('2b0 R2 n1: a failed /capture_secrets says the captures could not be loaded', () => {
+    const mg = openRemote([], { loading: true });
+    mg.setCapturedSignIns([], { failed: true });
+    assert.equal(q('.signin-captured-title').textContent, 'Captured sign-ins could not be loaded.');
+    assert.equal(mg.signInState.other, true);
+    assert.equal(document.activeElement, q('#signin-username'));
+    assert.equal(mg.getTestState().signIn.capturedNote, 'failed');
+});
+
 test('9.3a: the captured list fills in after the screen has opened (review R1 minor 1)', () => {
     const mg = openRemote([], { loading: true });
     assert.match(q('#signin-captured').textContent, /Checking/);

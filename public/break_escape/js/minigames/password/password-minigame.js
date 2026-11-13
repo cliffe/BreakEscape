@@ -459,7 +459,8 @@ export class PasswordMinigame extends MinigameScene {
                     ...(this.signIn.remote ? {
                         remote: { footholdId: this.signIn.remote.footholdId ?? null },
                         captured: (this.signIn.captured || []).map(c => ({ targetId: c.targetId, label: c.label, username: c.username, fillsPassword: !!c.password })),
-                        capturedLoading: !!this.signIn.capturedLoading
+                        capturedLoading: !!this.signIn.capturedLoading,
+                        capturedNote: this.signIn.capturedNote || null
                     } : {})
                 },
                 // clickText('<display name>') or clickText('Other user') first; then the visible
@@ -1627,7 +1628,7 @@ export class PasswordMinigame extends MinigameScene {
         });
     }
 
-    renderSignInForm() {
+    renderSignInForm({ quiet = false } = {}) {
         const st = this.signInState;
         const chosen = st.other || st.selected !== null;
         const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
@@ -1656,10 +1657,11 @@ export class PasswordMinigame extends MinigameScene {
             this.setSignInMessage(this.signInLoading() ? '' : (st.message || 'Choose an account.'));
         }
         const focus = st.other && !this.usernameField.value ? this.usernameField : this.passwordField;
-        if (chosen && focus && typeof focus.focus === 'function') focus.focus();
+        // quiet: a late Captured sign-ins list redraws without moving focus or scrolling (2b0 R2 m1)
+        if (!quiet && chosen && focus && typeof focus.focus === 'function') focus.focus();
         // Once an account is chosen, the form down to its message line (Submit, the attempts
         // left) scrolls into view in a short window (UX slice 2a R2 M2)
-        if (chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
+        if (!quiet && chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
     }
 
     /**
@@ -1708,9 +1710,12 @@ export class PasswordMinigame extends MinigameScene {
                                 </button>
                             </div>`
             : (s.capturedLoading ? '<div class="signin-captured-empty">Checking...</div>' : null);
-        // None: one line below the form, as before the tiles (R1 m1)
+        // None: one line below the form, as before the tiles (R1 m1). Still on its way after
+        // the wait cap, or failed, the line says so rather than "none yet" (2b0 R2 m1, n1).
+        const noneLine = s.capturedNote === 'pending' ? 'Captured sign-ins: still checking.'
+            : (s.capturedNote === 'failed' ? 'Captured sign-ins could not be loaded.' : 'Captured sign-ins: none yet.');
         if (body === null) return `
-                            <div class="signin-captured-title">Captured sign-ins: none yet.</div>`;
+                            <div class="signin-captured-title">${noneLine}</div>`;
         return `
                             <div class="signin-captured-title">Captured sign-ins</div>${body}`;
     }
@@ -1731,10 +1736,14 @@ export class PasswordMinigame extends MinigameScene {
      * The Captured sign-ins arrive after the screen has opened (GET /capture_secrets), so
      * the view or desktop that opened it is replaced at once (review R1 minor 1).
      */
-    setCapturedSignIns(list) {
+    setCapturedSignIns(list, { pending = false, failed = false } = {}) {
         if (!this.signIn?.remote) return false;
+        // A list after the wait cap's empty one (2b0 R2 m1): the form already had its focus
+        // once, so the redraw adds the tiles without taking focus or scrolling
+        const late = this.signIn.capturedNote === 'pending';
         this.signIn.captured = Array.isArray(list) ? list : [];
         this.signIn.capturedLoading = false;
+        this.signIn.capturedNote = pending ? 'pending' : (failed ? 'failed' : null);
         const block = this.gameContainer?.querySelector('#signin-captured');
         if (!block) return false;
         block.innerHTML = this.capturedListHtml();
@@ -1748,7 +1757,7 @@ export class PasswordMinigame extends MinigameScene {
         const typing = !!st.other && !!(this.usernameField?.value || this.passwordField?.value
             || (active && (active === this.usernameField || active === this.passwordField)));
         if (st.selected === null && !typing) st.other = this.signIn.captured.length === 0;
-        this.renderSignInForm();
+        this.renderSignInForm({ quiet: late });
         return true;
     }
 
