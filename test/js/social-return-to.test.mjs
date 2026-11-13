@@ -69,9 +69,11 @@ function press(key, extra = {}) {
 const playerSrc = read('core/player.js');
 const pauseSrc = playerSrc.match(/export function pauseKeyboardInput\(\) \{[\s\S]*?\n\}/)[0];
 const resumeSrc = playerSrc.match(/export function resumeKeyboardInput\(\) \{[\s\S]*?\n\}/)[0];
+const clearSrc = playerSrc.match(/function clearKeyboardMovement\(\) \{[\s\S]*?\n\}/)[0];
 const world = new Function('log', `
     let keyboardPaused = false; let isKeyboardMoving = false;
     const keyboardInput = {}; const console = { log() {} };
+    ${clearSrc}
     ${pauseSrc.replace('export ', '')}
     ${resumeSrc.replace('export ', '')}
     return {

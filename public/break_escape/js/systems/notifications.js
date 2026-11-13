@@ -463,6 +463,8 @@ export function gameDisplay(message, title = '', options = {}) {
 }
 
 // Show an in-game confirmation modal. Returns a Promise that resolves true (confirm) or false (cancel).
+// No close X: the two named buttons answer it, and Esc picks the cancel choice. Callers name both
+// buttons for what they do ("Switch off" and "Leave it"), never a bare Confirm or Cancel.
 // The message and both button labels are plain text (textContent) by default, newlines kept, so
 // author-written scenario text (an interactionWarning, a confirm action's text) is never markup.
 // options.html === true: all three were built as HTML on purpose, author text already escaped.
@@ -475,7 +477,6 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         if (plainText) {
             overlay.innerHTML = `
             <div class="game-confirm-dialog">
-                <button class="game-modal-close" aria-label="Cancel">&times;</button>
                 <div class="game-confirm-message" style="white-space: pre-wrap;"></div>
                 <div class="game-confirm-buttons">
                     <button class="game-confirm-btn game-confirm-ok"></button>
@@ -489,7 +490,6 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         } else {
             overlay.innerHTML = `
             <div class="game-confirm-dialog">
-                <button class="game-modal-close" aria-label="Cancel">&times;</button>
                 <div class="game-confirm-message">${displayDashes(message).replace(/\n/g, '<br>')}</div>
                 <div class="game-confirm-buttons">
                     <button class="game-confirm-btn game-confirm-ok">${confirmLabel}</button>
@@ -498,20 +498,101 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
             </div>`;
         }
 
-        // Esc and the X both cancel (resolve false), same as the Cancel button.
-        const unregister = registerModal(() => finish(false));
+        // A confirm has no X (UX q99): its two named buttons are the only way to answer, and
+        // Esc means the cancel button's choice (resolve false), the safe one.
+        const okBtn = overlay.querySelector('.game-confirm-ok');
+        const cancelBtn = overlay.querySelector('.game-confirm-cancel');
+        const previousFocus = document.activeElement;
+        let done = false;
+        // Keys already down when the dialog opened (an arrow the player was walking with):
+        // their keydowns are swallowed until the key comes up, so a held arrow can't move
+        // focus to the yes button (UX slice 16 R2 M1).
+        const staleKeys = new Set(heldKeys);
+        const onKeyUp = (e) => { staleKeys.delete(e.key); };
+        let unregister = () => {};
         const finish = (result) => {
+            if (done) return;
+            done = true;
+            openConfirms--;
+            countText(message, -1);
+            if (typeof window.removeEventListener === 'function') window.removeEventListener('keyup', onKeyUp, true);
             unregister();
             overlay.remove();
+            // Give focus back to whatever had it (the game canvas, a minigame field).
+            try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
             resolve(result);
         };
 
-        overlay.querySelector('.game-confirm-ok').addEventListener('click', () => finish(true));
-        overlay.querySelector('.game-confirm-cancel').addEventListener('click', () => finish(false));
-        overlay.querySelector('.game-modal-close').addEventListener('click', () => finish(false));
+        okBtn.addEventListener('click', () => finish(true));
+        cancelBtn.addEventListener('click', () => finish(false));
 
+        // Keyboard (UX slice 16 R1 m10): Enter or Space presses the focused button, Tab and the
+        // arrows move between the two, and none of these keys reach the game underneath.
+        // A repeat (a held key) or a key held since before the dialog opened does nothing: a
+        // held arrow flipped focus on every repeat and left it on yes (R2 M1).
+        overlay.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (e.repeat || staleKeys.has(key)) {
+                if (key === 'Enter' || key === ' ' || key === 'Tab' || String(key).startsWith('Arrow')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                return;
+            }
+            if (key === 'Enter' || key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!e.repeat && (e.target === okBtn || e.target === cancelBtn)) e.target.click();
+            } else if (key === 'Tab' || key === 'ArrowLeft' || key === 'ArrowRight' ||
+                       key === 'ArrowUp' || key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopPropagation();
+                (document.activeElement === okBtn ? cancelBtn : okBtn).focus();
+            }
+        });
+
+        // A click on the dimmed backdrop keeps focus on the buttons (R2 m2): without this the
+        // click moved focus to body, Enter did nothing and Tab walked the HUD.
+        overlay.addEventListener('mousedown', (e) => {
+            if (!e.target.closest || !e.target.closest('.game-confirm-btn')) e.preventDefault();
+        });
+        if (typeof window.addEventListener === 'function') window.addEventListener('keyup', onKeyUp, true);
+
+        // Count and register only once the dialog is wired, so a throw while building it
+        // can't leave the open count stuck (R2 m3).
+        unregister = registerModal(() => finish(false));
+        openConfirms++;
+        countText(message, 1);
         document.body.appendChild(overlay);
+        // Focus the safe choice, so a stray Enter or Space never says yes.
+        try { cancelBtn.focus(); } catch (e) { /* best effort */ }
     });
+}
+
+// How many gameConfirm dialogs are open. The interaction warning and confirm_action read it
+// (window.gameConfirmOpen) so a second copy of a confirm never opens over the first.
+// gameConfirmOpen(text) asks whether a confirm with that exact message is open, so
+// confirm_action drops only a second copy of the same confirm, not a different one (R2 m3).
+let openConfirms = 0;
+const openTexts = new Map();
+function countText(message, delta) {
+    const key = String(message);
+    const n = (openTexts.get(key) || 0) + delta;
+    if (n > 0) openTexts.set(key, n); else openTexts.delete(key);
+}
+export function gameConfirmOpen(text) {
+    if (text === undefined) return openConfirms > 0;
+    return openTexts.has(String(text));
+}
+
+// Keys down right now, for the confirm's held-key guard. Capture phase on window, so a
+// handler that stops propagation can't hide a key; a blur forgets them all (the keyup goes
+// to another window).
+const heldKeys = new Set();
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('keydown', (e) => { if (e.key) heldKeys.add(e.key); }, true);
+    window.addEventListener('keyup', (e) => { heldKeys.delete(e.key); }, true);
+    window.addEventListener('blur', () => heldKeys.clear());
 }
 
 // Export for global access
@@ -519,3 +600,4 @@ window.showNotification = showNotification;
 window.gameAlert = gameAlert;
 window.gameDisplay = gameDisplay;
 window.gameConfirm = gameConfirm;
+window.gameConfirmOpen = gameConfirmOpen;

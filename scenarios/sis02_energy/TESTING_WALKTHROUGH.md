@@ -297,12 +297,12 @@ These two tasks can be done in any order. Marcus's dialogue recommends cable fir
 
 ### Step 19 — Pull the Jump Server Ethernet Cable
 
-Return to the Engineering Workshop. Find the `jump_server_cable` (notes object). Read/interact with it — this represents physically disconnecting the cable.
+Return to the Engineering Workshop. Find the `jump_server_cable` (notes object). Interact with it: a confirm asks "Disconnect cable JS-SCADA-LAN?" with two buttons, "Disconnect" and "Leave it". Choose "Disconnect"; this represents physically disconnecting the cable.
 
 The text describes the amber LED going dark and the RDP session terminating.
 
 **Verify**:
-- `jump_server_isolated` = `true` (set by `onRead`)
+- `jump_server_isolated` = `true` (set by the confirm's "Disconnect" button)
 - Marcus eventMapping fires — **timed message** (1.5 second delay): *"Good — that kills the RDP pathway. But they may have a secondary channel via the historian Modbus proxy. Call Tom at CastleTech and get the enterprise side locked down."*
 - Task `pull_ethernet_cable` complete (via Helen's eventMapping on `jump_server_isolated`)
 - **Alarm panel**: JUMP SERVER lamp changes to AMBER — ISOLATED

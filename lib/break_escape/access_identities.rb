@@ -179,6 +179,8 @@ module BreakEscape
       out
     end
 
+    # The PC's own setting beats its owner's habit (q89): a habit is read only when the PC sets
+    # neither lockChance nor locksScreenOnLeave (test/unit/pc_screen_lock_precedence_test.rb).
     # Does every leave lock this screen? decideLocked's order (workstation-state.js) without
     # the policy: the PC's numeric lockChance, else its locksScreenOnLeave key, else the
     # owner's screenHabit (slice 9.1, 5.2). A habit that is not an object, or no habit, locks;

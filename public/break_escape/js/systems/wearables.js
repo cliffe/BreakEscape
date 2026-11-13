@@ -108,6 +108,11 @@ export function changeRefusal(data, change = 'change', w = win()) {
 // Every text this module shows (watcher names, the item name, the server's message, confirmOn
 // and confirmOff) is author or server text: shown as plain text, never as markup.
 
+// The confirm's two named buttons (UX q99: a confirm has no X, so both buttons say what they do;
+// Esc means the second, the safe choice).
+export const PUT_ON_LABELS = Object.freeze(['Put it on', 'Leave it off']);
+export const TAKE_OFF_LABELS = Object.freeze(['Take it off', 'Keep it on']);
+
 function defaults(deps = {}) {
     const w = deps.window ?? win();
     return {
@@ -118,7 +123,8 @@ function defaults(deps = {}) {
             const { writeGlobal } = await import('./global-writer.js');
             writeGlobal(k, v, { emitAlways: false, openChat: false });
         }),
-        confirm: deps.confirm ?? ((text) => (w.gameConfirm ? w.gameConfirm(text, 'Confirm', 'Cancel') : Promise.resolve(true))),
+        confirm: deps.confirm ?? ((text, labels = PUT_ON_LABELS) => (w.gameConfirm
+            ? w.gameConfirm(text, labels[0], labels[1]) : Promise.resolve(true))),
         alert: deps.alert ?? ((msg, title) => w.gameAlert?.(msg, 'warning', title || '', 4000)),
         applyActions: deps.applyActions ?? ((acts) => w.applyActions?.(acts, { source: 'wearable' })),
         refresh: deps.refresh ?? (() => w.refreshInventoryTray?.())
@@ -217,7 +223,7 @@ async function putOnNow(itemId, opts, d) {
     };
     if (refused()) return false;
     if (opts.confirm && spec.confirmOn) {
-        if (!(await d.confirm(spec.confirmOn))) return false;
+        if (!(await d.confirm(spec.confirmOn, PUT_ON_LABELS))) return false;
         // Someone may have walked in while the confirm was up
         if (refused()) return false;
     }
@@ -287,7 +293,7 @@ async function takeOffNow(itemId, opts, d) {
     };
     if (refused()) return false;
     if (opts.confirm && spec?.confirmOff) {
-        if (!(await d.confirm(spec.confirmOff))) return false;
+        if (!(await d.confirm(spec.confirmOff, TAKE_OFF_LABELS))) return false;
         if (refused()) return false;
     }
     let body;

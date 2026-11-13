@@ -2833,6 +2833,8 @@ end
 # interactionWarning (systems/interactions.js): an author-defined "are you sure?" any
 # object may carry, shown before the object's normal interaction. Validate its shape
 # wherever it appears (walk the whole document, so nested contents/itemsHeld are covered).
+CONFIRM_LABEL_MAX = 16
+
 def check_interaction_warnings(json_data)
   issues = []
   # The apply-actions.js action vocabulary (its case labels) plus the extra names the
@@ -2887,6 +2889,15 @@ def check_interaction_warnings(json_data)
             issues << "⚠️ WARNING: '#{wp}' has unrecognised key(s): #{extra.join(', ')}."
           end
         end
+      end
+      # A confirm's button label stays on one line (notifications.css nowrap), and at phone
+      # width a button holds about 18 characters before the frame cuts it (UX slice 16 R1 m9).
+      %w[confirmLabel cancelLabel proceedLabel declineLabel].each do |lk|
+        label = node[lk]
+        next unless label.is_a?(String) && label.strip.length > CONFIRM_LABEL_MAX
+        issues << "⚠️ WARNING: '#{path}/#{lk}' is #{label.strip.length} characters (\"#{label.strip}\"). " \
+                  "A confirm button label of more than #{CONFIRM_LABEL_MAX} characters is cut off at phone width; " \
+                  "shorten it (\"Switch off\", \"Leave it\")."
       end
       # A minigame's own data is its own format: the EHR terminal's medication rows carry a
       # string 'interactionWarning' that the object-level warning code never reads.

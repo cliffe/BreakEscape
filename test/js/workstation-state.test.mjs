@@ -216,6 +216,9 @@ test('slice 16 precedence: object lockChance and locksScreenOnLeave win over the
     assert.equal(decideLocked({ id: 'p', lockChance: 1 }, 'ann', 1, () => 0.9, never, 0), true, 'object lockChance wins');
     assert.equal(decideLocked({ id: 'p', locksScreenOnLeave: true }, 'ann', 1, () => 0.9, never, 0), true, 'object locksScreenOnLeave wins');
     assert.equal(decideLocked({ id: 'p', locksScreenOnLeave: false }, 'ann', 1, () => 0.9, { lockChance: 1 }, 0), false);
+    // q89 (2026-11-13): the PC's setting beats its owner's habit, both ways round
+    assert.equal(decideLocked({ id: 'p', lockChance: 0 }, 'ann', 1, () => 0.9, { lockChance: 1 }, null), false, 'an open PC ignores a habit that always locks');
+    assert.equal(decideLocked({ id: 'p', lockChance: 0, locksScreenOnLeave: true }, 'ann', 1, () => 0.9, { lockChance: 1 }, null), false, 'lockChance beats locksScreenOnLeave');
     assert.equal(decideLocked({ id: 'p', workstation: true }, 'ann', 1, () => 0.9, never, 0), false, 'workstation: true defers to the habit');
     assert.equal(decideLocked({ id: 'p', workstation: true }, 'ann', 1, () => 0.9, null, 0), true, 'no habit: the default locks');
     assert.equal(habitOf('ann', [{ id: 'ann', screenHabit: never }]), never);

@@ -13,7 +13,8 @@ export class MinigameScene {
 
     // The X closes a minigame (and Esc), so the shell draws no Cancel button beside it
     // (UX slice 7 R1, the user's screenshot notes). A scene whose bottom button is not a
-    // second close opts back in: the notes reader (Continue) and conversations (End Conversation). The .minigame-controls row is drawn
+    // second close opts back in: the notes reader (Continue). Conversations no longer keep
+    // End Conversation (UX q100): the X and Esc end them. The .minigame-controls row is drawn
     // only when it has something to hold: the kept Cancel, or a scene's own footer button
     // (Add to Notepad) added through ensureControlsRow(). A scene with neither has no row.
     static keepsCancelButton = false;

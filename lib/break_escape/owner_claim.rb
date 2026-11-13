@@ -220,6 +220,7 @@ module BreakEscape
       texts.empty? ? nil : texts.join("\n")
     end
 
+    # The PC's own setting beats its owner's habit (q89), as in decideLocked.
     # decideLocked (workstation-state.js) with expectedAwayMs null, as for a knock-out: can this
     # leave find the PC open? The PC's numeric lockChance below 1 (0 opens, between 0 and 1 the
     # roll can), else its locksScreenOnLeave key set to false, else the owner's screenHabit with
