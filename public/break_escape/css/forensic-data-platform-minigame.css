@@ -41,7 +41,7 @@
 }
 
 .fdp-title {
-    font-size: 18px;
+    font-size: 22px;
     font-weight: bold;
     color: #58a6ff;
     letter-spacing: 0.08em;
@@ -49,7 +49,7 @@
 }
 
 .fdp-case {
-    font-size: 15px;
+    font-size: 19px;
     color: #6e7681;
     letter-spacing: 0.04em;
     font-style: italic;
@@ -76,7 +76,7 @@
     border-radius: 0;
     color: #8b949e;
     font-family: inherit;
-    font-size: 15px;
+    font-size: 19px;
     font-weight: bold;
     letter-spacing: 0.05em;
     padding: 5px 12px;
@@ -115,7 +115,7 @@
     flex: 1;
     overflow-y: auto;
     padding: 16px 20px;
-    font-size: 17px;
+    font-size: 21px;
     line-height: 1.65;
     color: #c9d1d9;
     scrollbar-width: thin;
@@ -125,7 +125,7 @@
 /* ── Typography within panel ─────────────────────────────────────────────────── */
 
 .fdp-panel h3 {
-    font-size: 15px;
+    font-size: 19px;
     font-weight: bold;
     color: #58a6ff;
     text-transform: uppercase;
@@ -184,7 +184,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 22px;
     font-weight: bold;
     color: #58a6ff;
     margin-top: 1px;
@@ -206,13 +206,13 @@
 .fdp-timeline-label {
     font-weight: bold;
     color: #e6edf3;
-    font-size: 17px;
+    font-size: 21px;
     line-height: 1.4;
 }
 
 .fdp-timeline-desc {
     color: #8b949e;
-    font-size: 16px;
+    font-size: 20px;
     margin-top: 3px;
     line-height: 1.6;
 }
@@ -222,7 +222,7 @@
 .fdp-log-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 16px;
+    font-size: 20px;
     margin-bottom: 12px;
 }
 
@@ -230,7 +230,7 @@
     text-align: left;
     color: #8b949e;
     font-weight: bold;
-    font-size: 18px;
+    font-size: 22px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 6px 10px;
@@ -263,7 +263,7 @@
 .fdp-setpoint-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 15px;
+    font-size: 19px;
     margin-bottom: 12px;
 }
 
@@ -300,13 +300,13 @@
     border-radius: 0;
     padding: 10px 14px;
     margin: 12px 0;
-    font-size: 17px;
+    font-size: 21px;
 }
 
 .fdp-evidence-gap-title {
     font-weight: bold;
     color: #f85149;
-    font-size: 18px;
+    font-size: 22px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 6px;
@@ -329,13 +329,13 @@
     border-radius: 0;
     padding: 8px 14px;
     margin: 10px 0;
-    font-size: 15px;
+    font-size: 19px;
 }
 
 .fdp-session-record-title {
     font-weight: bold;
     color: #f0c040;
-    font-size: 18px;
+    font-size: 22px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 4px;
@@ -354,7 +354,7 @@
     border-radius: 0;
     padding: 8px 14px;
     margin: 10px 0;
-    font-size: 15px;
+    font-size: 19px;
     color: #79c0ff;
     line-height: 1.6;
 }
@@ -371,14 +371,14 @@
     border-radius: 0;
     padding: 14px 16px;
     margin: 10px 0;
-    font-size: 15px;
+    font-size: 19px;
     font-style: italic;
     color: #c9d1d9;
     line-height: 1.75;
 }
 
 .fdp-doc-source {
-    font-size: 18px;
+    font-size: 22px;
     color: #6e7681;
     margin-top: 8px;
     font-style: normal;
@@ -409,7 +409,7 @@
 
 .fdp-minigame-container .minigame-button {
     font-family: 'VT323', monospace;
-    font-size: 14px;
+    font-size: 18px;
     letter-spacing: 0.05em;
     background: #161b22;
     border: 2px solid #30363d;
@@ -442,7 +442,7 @@
     border-radius: 0;
     color: #484f58;
     font-family: inherit;
-    font-size: 16px;
+    font-size: 20px;
     font-weight: bold;
     letter-spacing: 0.06em;
     padding: 9px 16px;
@@ -476,14 +476,14 @@
 }
 
 .fdp-confirm-hint {
-    font-size: 15px;
+    font-size: 19px;
     color: #6e7681;
     text-align: center;
     letter-spacing: 0.03em;
 }
 
 .fdp-confirm-success {
-    font-size: 15px;
+    font-size: 19px;
     color: #3fb950;
     font-weight: bold;
     text-align: center;

@@ -34,7 +34,7 @@
     background: #3a2800;
     border-bottom: 2px solid #f0c040;
     color: #f0c040;
-    font-size: 15px;
+    font-size: 19px;
     font-weight: bold;
     letter-spacing: 0.1em;
     text-align: center;
@@ -72,7 +72,7 @@
 }
 
 .ncsc-envelope-name {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: bold;
     color: #e6edf3;
     letter-spacing: 0.06em;
@@ -80,7 +80,7 @@
 }
 
 .ncsc-envelope-ref {
-    font-size: 16px;
+    font-size: 20px;
     color: #6e7681;
     letter-spacing: 0.03em;
     font-style: italic;
@@ -91,7 +91,7 @@
 .ncsc-status-badge {
     display: inline-block;
     border-radius: 0;
-    font-size: 15px;
+    font-size: 19px;
     font-weight: bold;
     letter-spacing: 0.06em;
     padding: 5px 14px;
@@ -113,7 +113,7 @@
 /* ── Sealed / ready message text ─────────────────────────────────────────────── */
 
 .ncsc-sealed-message {
-    font-size: 17px;
+    font-size: 21px;
     color: #8b949e;
     max-width: 420px;
     line-height: 1.65;
@@ -131,7 +131,7 @@
     border-radius: 0;
     color: #ffffff;
     font-family: inherit;
-    font-size: 16px;
+    font-size: 20px;
     font-weight: bold;
     letter-spacing: 0.06em;
     padding: 10px 28px;
@@ -152,7 +152,7 @@
 
 .ncsc-brief-content {
     padding: 16px 20px 20px;
-    font-size: 17px;
+    font-size: 21px;
     line-height: 1.65;
 }
 
@@ -163,7 +163,7 @@
 }
 
 .ncsc-brief-title {
-    font-size: 18px;
+    font-size: 22px;
     font-weight: bold;
     color: #58a6ff;
     letter-spacing: 0.07em;
@@ -172,7 +172,7 @@
 }
 
 .ncsc-brief-meta {
-    font-size: 15px;
+    font-size: 19px;
     color: #6e7681;
     font-style: italic;
     line-height: 1.6;
@@ -187,7 +187,7 @@
 }
 
 .ncsc-section-title {
-    font-size: 15px;
+    font-size: 19px;
     font-weight: bold;
     color: #58a6ff;
     text-transform: uppercase;
@@ -205,7 +205,7 @@
 .ncsc-badge {
     display: inline-block;
     border-radius: 0;
-    font-size: 14px;
+    font-size: 18px;
     font-weight: bold;
     letter-spacing: 0.04em;
     padding: 2px 8px;
@@ -230,7 +230,7 @@
     margin: 0 0 8px 18px;
     padding: 0;
     color: #8b949e;
-    font-size: 16px;
+    font-size: 20px;
     line-height: 1.7;
 }
 
@@ -247,14 +247,14 @@
     border-radius: 0;
     padding: 9px 13px;
     margin-top: 10px;
-    font-size: 16px;
+    font-size: 20px;
     color: #79c0ff;
     line-height: 1.6;
 }
 
 .ncsc-note-title {
     font-weight: bold;
-    font-size: 15px;
+    font-size: 19px;
     color: #58a6ff;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -275,14 +275,14 @@
     border-radius: 0;
     padding: 10px 14px;
     margin-bottom: 18px;
-    font-size: 17px;
+    font-size: 21px;
     line-height: 1.65;
 }
 
 .ncsc-legal-gap-title {
     font-weight: bold;
     color: #f85149;
-    font-size: 15px;
+    font-size: 19px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 7px;
@@ -306,14 +306,14 @@
     border-radius: 0;
     padding: 10px 14px;
     margin-bottom: 4px;
-    font-size: 17px;
+    font-size: 21px;
     line-height: 1.65;
 }
 
 .ncsc-coverage-note-title {
     font-weight: bold;
     color: #f0c040;
-    font-size: 15px;
+    font-size: 19px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 7px;
