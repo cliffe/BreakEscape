@@ -142,7 +142,7 @@ module BreakEscape
       assert_response :success, body.inspect
       link = body['inventory'].find { |i| i['type'] == 'network_link' }
       assert_equal 'capture_log', link['storeIn']
-      assert_equal 'Network drop box: Bench switch', link['name']
+      assert_equal 'Drop box: Workshop', link['name'], 'the server default: device word and room (o-link-names)'
       %w[contents hasContents droppable].each { |field| refute link.key?(field) }
     end
 

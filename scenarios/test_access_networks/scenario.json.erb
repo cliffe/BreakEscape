@@ -402,7 +402,6 @@
           "networkJack": true,
           "jackConfirm": "Plug the drop box into this port?",
           "plantedSprite": "pi_cluster1",
-          "linkName": "Drop box: comms room",
           "requiresItemHint": "A spare network port. Something small could be plugged in here.",
           "observations": "A spare network port on the wall, with a patch cable tucked beside it.",
           "observationVariants": [
@@ -590,7 +589,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "P11. Unplug the box from the comms room, then plug it in here. The link item is named for this switch.\nIts view lists the bench PC, one open share and nothing from the office.",
+          "text": "P11. Unplug the box from the comms room, then plug it in here. The link item is named for this room.\nIts view lists the bench PC, one open share and nothing from the office.",
           "observations": "A sign by the bench."
         },
         {
@@ -729,7 +728,7 @@
               "type": "confirm_action",
               "text": "Plug the keystroke injector into Sam's PC? It only types into a PC you are signed in at, and it is used up once it runs.",
               "onConfirm": [
-                { "type": "grant_foothold", "pc": "sam_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: Sam's desk" }
+                { "type": "grant_foothold", "pc": "sam_pc", "needsSession": true, "needsHeld": "kit_badusb" }
               ]
             }
           ]
@@ -810,7 +809,7 @@
               "type": "confirm_action",
               "text": "Plug the keystroke injector into the kiosk? It only types into a PC you are signed in at, and it is used up once it runs.",
               "onConfirm": [
-                { "type": "grant_foothold", "pc": "kiosk_pc", "needsSession": true, "needsHeld": "kit_badusb", "name": "BadUSB: kiosk" }
+                { "type": "grant_foothold", "pc": "kiosk_pc", "needsSession": true, "needsHeld": "kit_badusb" }
               ]
             }
           ]
@@ -882,7 +881,7 @@
           "takeable": false,
           "observations": "A USB port on the door controller. If a stick were left in it, the controller would read it.",
           "triggerOnInteract": [
-            { "type": "grant_foothold", "pc": "door_box", "needsDropped": "kit_stick", "name": "USB foothold: door controller" }
+            { "type": "grant_foothold", "pc": "door_box", "needsDropped": "kit_stick" }
           ]
         }
       ]

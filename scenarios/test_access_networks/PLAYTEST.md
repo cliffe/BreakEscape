@@ -87,7 +87,7 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
 3. `interact` `comms_port`: the confirm "Plug the drop box into this port?". Answer `Cancel`: the
    box is still in the inventory and no request was sent.
 4. `interact` again and answer `Plug it in`. Expect: the box leaves the inventory, the link item
-   "Drop box: comms room" arrives (no `POST /inventory` in the responses), the port shows
+   "Drop box: Comms room" arrives (no `POST /inventory` in the responses), the port shows
    `pi_cluster1`, `comms_port_planted` is true, task `p2_plant` completes, and the one-line toast
    names the network. `window.__test.access.footholds()` lists `jack_comms_port`.
    - Server: `footholds` has `jack_comms_port` on `office_lan`; `gainedFootholds` has
@@ -158,7 +158,7 @@ Server: `copiedItems` has `inbox_letter`.
 From the view, `HB-FIN-02` (the finance door still locked). No tiles. Sam's right password:
 "This account can't sign in on this PC". A wrong password for Lena: 4 attempts left. Lena's
 password from the letter opens her desktop, its header naming her and "Remote session through
-Drop box: comms room", with the finance share mapped. Open the finance share and read the
+Drop box: Comms room", with the finance share mapped. Open the finance share and read the
 handover note: closing the reader shows the finance share again, and closing the share shows
 Lena's desktop. Click the locked folder and close the PIN pad without a PIN: the share shows again
 (4.3, a lock left without opening anything). Open the locked folder with the PIN from the note;
@@ -210,8 +210,8 @@ Server, after the unplug: no `footholds`, no `sessions.door_box`, `sessions.lena
 
 ### P11 The other network
 
-Unplug, then plant at `bench_port` in the workshop. The link item is "Network drop box: Bench
-switch". Its view lists only the workshop share, which opens. Nothing of the office network. Task
+Unplug, then plant at `bench_port` in the workshop. The link item is "Drop box:
+Workshop" (the server default "<device>: <room>"). Its view lists only the workshop share, which opens. Nothing of the office network. Task
 `p11_other_network` completes.
 
 Server: `footholds.jack_bench_port` on `workshop_lan` only.
@@ -246,7 +246,7 @@ Server: no `implant_kiosk_pc` foothold; `kit_badusb` still held.
 Sign in at `sam_pc` (keyboard, the sticky note), then use the "USB socket by Sam's PC"
 (`sam_dock`) with the keystroke injector held, and answer the confirm "Plug the keystroke injector
 into Sam's PC?" with `{"cmd":"dismiss","label":"Confirm"}`. The server grants `implant_sam_pc` on `office_lan`,
-removes the injector, and the link item "BadUSB: Sam's desk" arrives. The implant's view lists the
+removes the injector, and the link item "Keystroke injector: Desks" arrives. The implant's view lists the
 office network's hosts and shares; it opens no account on its own. Task `n12_badusb_implant`
 completes.
 

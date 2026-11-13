@@ -325,3 +325,60 @@
 .session-overlay-btn:active {
     transform: scale(0.96);
 }
+/* ─── Pixel-art scrollbar ────────────────────────────────────────────────────
+   Shared rule for any scrolling game UI (code review UX slice 1 R2 m2), after the per-minigame
+   rules in biometrics-minigame.css and bluetooth-scanner.css: a square thumb with a 2px border,
+   a flat track, no radius and no arrow buttons. Add the class to the element that scrolls and
+   set the colours with the four variables. Firefox cannot draw a border on the thumb, so it gets
+   the colours only; Chrome ignores the ::-webkit-scrollbar rules once scrollbar-color is set,
+   so the Firefox properties sit behind a feature check. The class resets both properties to
+   auto, as they are inherited and some minigames set them (code review R3 n2); an element that
+   adopts the class drops its own scrollbar-color and scrollbar-width rules.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.pixel-scroll {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+    --pixel-scroll-track: #10161c;
+    --pixel-scroll-thumb: #2d3a44;
+    --pixel-scroll-edge: #6f8a9c;
+    --pixel-scroll-hover: #9ee6ff;
+}
+
+.pixel-scroll::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+.pixel-scroll::-webkit-scrollbar-track {
+    background: var(--pixel-scroll-track);
+    border-left: 2px solid var(--pixel-scroll-thumb);
+    border-radius: 0;
+}
+
+.pixel-scroll::-webkit-scrollbar-thumb {
+    background: var(--pixel-scroll-thumb);
+    border: 2px solid var(--pixel-scroll-edge);
+    border-radius: 0;
+}
+
+.pixel-scroll::-webkit-scrollbar-thumb:hover {
+    border-color: var(--pixel-scroll-hover);
+}
+
+.pixel-scroll::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.pixel-scroll::-webkit-scrollbar-corner {
+    background: var(--pixel-scroll-track);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .pixel-scroll {
+        scrollbar-width: auto;
+        scrollbar-color: var(--pixel-scroll-edge) var(--pixel-scroll-track);
+    }
+}

@@ -36,7 +36,8 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { NetworkViewMinigame, displayOrder, viewObservations, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText } =
+const { NetworkViewMinigame, displayOrder, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText,
+    downState, viewSubtitle, joinedStatus, DOWN_TAG, POWERED_DOWN_TAG, NO_ROUTE_TEXT, OWN_HEADING, MORE_BELOW_TEXT } =
     await imp('minigames/network-view/network-view-minigame.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 
@@ -152,7 +153,8 @@ test('a not-responding host row shows the text and no control, and its test stat
     await settle();
     const lena = row('data-host-id', 'lena_pc');
     assert.equal(lena.querySelector('[data-action]'), null, 'nothing to click');
-    assert.match(lena.textContent, new RegExp(NOT_RESPONDING_TEXT));
+    assert.match(lena.textContent, /\(powered down\)/);
+    assert.doesNotMatch(lena.textContent, new RegExp(NOT_RESPONDING_TEXT), 'the tag alone says it (R1 n1)');
     const st = window.MinigameFramework.currentMinigame.getTestState();
     assert.equal(st.rows.find(r => r.id === 'lena_pc').action, 'not_responding');
 });
@@ -166,7 +168,7 @@ test('a not-responding row names a session that is kept there (review R1 nit 6)'
     links.open('jack_comms_port');
     await settle();
     const lena = row('data-host-id', 'lena_pc');
-    assert.match(lena.textContent, /still signed in as <b>Lena<\/b>/, 'the name is shown as text');
+    assert.match(lena.textContent, /Session kept: <b>Lena<\/b>/, 'the name is shown as text');
     assert.equal(lena.querySelector('b'), null, 'and never as markup');
 });
 
@@ -177,10 +179,11 @@ test('the view lists each row with its action and the row attributes, from GET /
     assert.deepEqual(requests, [['network', 'jack_comms_port']]);
     const text = document.querySelector('.network-view-title').textContent;
     assert.equal(text, 'Drop box: comms room');
-    // UX access R2: the own network is the first block's heading
-    assert.equal(document.querySelector('.network-block-own .network-block-title').textContent, 'Harbour office LAN');
-    // The view is open: the item's "Open it to see what it reaches." is dropped (UX access R1 finding 10)
-    assert.equal(document.querySelector('.network-view-observations').textContent, 'Your Network drop box on Spare wall port.');
+    // The subtitle names the network, so the own block is headed "Reachable" (code review R2 m1)
+    assert.equal(document.querySelector('.network-block-own .network-block-title').textContent, OWN_HEADING);
+    // The inventory line repeated the subtitle: no view shows it (code review R1 m1)
+    assert.equal(document.querySelector('.network-view-observations'), null);
+    assert.doesNotMatch(document.querySelector('.network-view').textContent, /Your Network drop box/);
     // Display order: computers by host name, then shares, then printers, under group headings
     assert.deepEqual([...document.querySelectorAll('[data-host-id], [data-resource-id]')].map(el => el.dataset.hostId || el.dataset.resourceId),
         ['sam_pc', 'door_box', 'lena_pc', 'kiosk_pc', 'ledger_archive', 'scanned_inbox', 'print_queue']);
@@ -256,7 +259,9 @@ test('a down block is greyed with "No route" and offers no control', async () =>
     await settle();
     const block = document.querySelector('.network-block-down');
     assert.ok(block, 'a down block is drawn');
-    assert.match(block.textContent, /No route to SV-FS02/);
+    assert.match(block.querySelector('.network-block-title').textContent, /Server network \(down\)/);
+    assert.match(block.textContent, /SV-FS02 \(down\)/, 'the row carries the down tag');
+    assert.match(block.querySelector('.network-row-off').textContent, /^No route$/);
     assert.equal(block.querySelector('[data-action]'), null, 'a down row has no control');
     assert.deepEqual(named('network_viewed:server_net'), [], 'a down block emits no network_viewed');
 });
@@ -285,8 +290,9 @@ test('a session held on the own network shows greyed while the own network is do
     await settle();
     const block = document.querySelector('.network-block-down');
     assert.ok(block, 'the own network down block is drawn');
-    assert.match(block.querySelector('.network-block-title').textContent, /Harbour office LAN \(no route\)/);
-    assert.match(block.textContent, /No route to HB-FIN-02/);
+    assert.match(block.querySelector('.network-block-title').textContent, /Harbour office LAN \(down\)/);
+    assert.match(block.textContent, /HB-FIN-02 \(down\)/);
+    assert.match(block.textContent, /No route/);
     assert.equal(document.querySelector('[data-action]'), null, 'nothing to click');
     assert.doesNotMatch(document.querySelector('.network-view').textContent, /Nothing answers on this network/);
     assert.deepEqual(view().getTestState().networks.map(b => [b.id, b.route]), [['office_lan', 'down']]);
@@ -335,7 +341,7 @@ test('a row whose screen does not start leaves the view open, and its Close then
     row('data-host-id', 'lena_pc').querySelector('[data-action]').click();
     assert.equal(view()._sceneType, 'network-view');
     assert.equal(view().exitReason, 'close');
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click();
     await settle();
     assert.deepEqual(named('network_view_closed'), [{ footholdId: 'jack_comms_port', reason: 'closed' }]);
 });
@@ -400,7 +406,7 @@ test('the view\'s own Close ends the trip: network_view_closed once, reason clos
     let returned = null;
     links.open('jack_comms_port', { returnTo: (r) => { returned = r; } });
     await settle();
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click();
     await settle();
     assert.deepEqual(named('network_view_closed'), [{ footholdId: 'jack_comms_port', reason: 'closed' }]);
     assert.deepEqual(returned, { reason: 'closed' });
@@ -444,14 +450,14 @@ test('a stale view shows the "may be out of date" line and refetches once when t
     await new Promise(r => setTimeout(r, 30));
     await settle();
     assert.equal(requests.filter(r => r[0] === 'network').length, 1);
-    assert.ok(view().gameContainer.querySelector('.network-view-stale'), 'the line shows');
-    assert.equal(view().gameContainer.querySelector('.network-view-stale').textContent, STALE_TEXT);
+    assert.ok(document.querySelector('.network-view-stale'), 'the line shows');
+    assert.equal(document.querySelector('.network-view-stale').textContent, STALE_TEXT);
 
     land(true);
     await view().refetched;
     await settle();
     assert.equal(requests.filter(r => r[0] === 'network').length, 2, 'fetched once more');
-    assert.equal(view().gameContainer.querySelector('.network-view-stale'), null, 'the fresh view drops the line');
+    assert.equal(document.querySelector('.network-view-stale'), null, 'the fresh view drops the line');
     assert.equal(syncs, 1, 'the refetch sends no second sync: the globals have landed');
     delete links.viewSyncWaitMs;
     delete window.stateSync;
@@ -466,7 +472,7 @@ test('a stale view closed before the sync lands does not refetch', async () => {
     await new Promise(r => setTimeout(r, 30));
     await settle();
     const m = view();
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click();
     await settle();
     land(true);
     await m.refetched;
@@ -499,8 +505,343 @@ test('displayOrder: computers, shares, printers, other; each by name with number
     assert.deepEqual(displayOrder(null), []);
 });
 
-test('viewObservations drops only the trailing "Open it to see what it reaches."', () => {
-    assert.equal(viewObservations('Your implant on HB-FIN-02. Open it to see what it reaches.'), 'Your implant on HB-FIN-02.');
-    assert.equal(viewObservations('A custom note.'), 'A custom note.');
-    assert.equal(viewObservations(undefined), '');
+
+
+// ---- UX feedback round slice 1: down language, borders, headers, the joined Wi-Fi view ----
+
+const cssText = readFileSync(join(here, '../../public/break_escape/css/network-view-minigame.css'), 'utf8');
+// The body of the first rule whose selector list is exactly `sel`
+const ruleBody = (sel) => {
+    const re = new RegExp(`(^|})\\s*${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`, 'm');
+    return (cssText.match(re) || [])[2] ?? null;
+};
+
+test('downState: one tag and reason per state; remote sign-in off is not down', () => {
+    assert.deepEqual(downState({ id: 'net', route: 'down' }), { down: true, tag: DOWN_TAG, reason: NO_ROUTE_TEXT, kept: null });
+    assert.deepEqual(downState({ id: 'pc', kind: 'pc', heldAs: 'Ian Shaw' }, { inDownBlock: true }),
+        { down: true, tag: '(down)', reason: 'No route', kept: 'Ian Shaw' });
+    assert.deepEqual(downState({ id: 'pc', kind: 'pc', responding: false, heldAs: 'Lena Fox' }),
+        { down: true, tag: POWERED_DOWN_TAG, reason: null, kept: 'Lena Fox' });
+    assert.equal(POWERED_DOWN_TAG, '(powered down)');
+    assert.deepEqual(downState({ id: 'pc', kind: 'pc', remoteSignIn: false }), { down: false, tag: null, reason: REMOTE_OFF_TEXT, kept: null });
+    assert.equal(REMOTE_OFF_TEXT, 'Remote sign-in off');
+    assert.deepEqual(downState({ id: 'implant_x', via: 'implant', responding: false, sourceHost: 'HB-X' }),
+        { down: true, tag: '(down)', reason: linkOffText('HB-X'), kept: null });
+    assert.equal(downState({ id: 'pc', kind: 'pc', remoteSignIn: true }).down, false);
+    assert.equal(downState({ id: 'jack_x', via: 'jack' }).down, false);
+    assert.equal(downState({ id: 'net', route: 'up', via: null }).down, false);
+});
+
+test('a powered-down row is tagged and greyed; a remote sign-in off row is readable, with no tag', async () => {
+    const hosts = HOSTS.map(h => (h.id === 'lena_pc'
+        ? { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, responding: false, heldAs: 'Lena Fox' }
+        : h));
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const lena = row('data-host-id', 'lena_pc');
+    assert.ok(lena.classList.contains('network-row-down'));
+    assert.equal(lena.querySelector('.network-row-tag').textContent, '(powered down)');
+    assert.equal(lena.querySelector('.network-row-off'), null, 'no "Powered down" beside the tag (R1 n1)');
+    assert.equal(lena.querySelector('.network-row-kept').textContent, 'Session kept: Lena Fox');
+    const kiosk = row('data-host-id', 'kiosk_pc');
+    assert.ok(!kiosk.classList.contains('network-row-down'), 'remote sign-in off stays readable');
+    assert.equal(kiosk.querySelector('.network-row-tag'), null);
+    assert.equal(kiosk.querySelector('.network-row-off').textContent, 'Remote sign-in off');
+});
+
+test('a down block row names the session kept there', async () => {
+    withBlocks([{ id: 'server_net', name: 'Server network', via: { hostId: 'lena_pc', host: 'HB-FIN-02' }, route: 'down',
+        hosts: [{ ...SERVER_ROW, heldAs: 'Ian Shaw' }] }]);
+    links.open('jack_comms_port');
+    await settle();
+    assert.equal(document.querySelector('.network-block-down .network-row-kept').textContent, 'Session kept: Ian Shaw');
+});
+
+test('a link whose PC is off carries "(down)" on its title', async () => {
+    setup({ hosts: [] });
+    answer.footholds[0].responding = false;
+    answer.footholds[0].sourceHost = 'HB-DESK-01';
+    links.open('jack_comms_port');
+    await settle();
+    assert.match(document.querySelector('.network-view-title').textContent, /Drop box: comms room \(down\)/);
+});
+
+test('no reason or tag is in italics: no markup and no italic style', async () => {
+    withBlocks([{ id: 'server_net', name: 'Server network', via: null, route: 'down', hosts: [{ ...SERVER_ROW }] }]);
+    links.open('jack_comms_port');
+    await settle();
+    assert.equal(document.querySelector('.network-view i, .network-view em'), null);
+    assert.doesNotMatch(cssText, /font-style:\s*italic|oblique/);
+    assert.match(ruleBody('.network-view *') || '', /font-style:\s*normal/);
+});
+
+test('rows have no border, and the outer frame border is 2px', () => {
+    const rowRule = ruleBody('.network-row');
+    assert.ok(rowRule, 'the row rule exists');
+    assert.doesNotMatch(rowRule, /border/, 'a row has no border');
+    assert.match(rowRule, /background:/, 'a row has its own fill');
+    assert.doesNotMatch(ruleBody('.network-row-down') || '', /border/);
+    assert.match(ruleBody('.network-view-frame') || '', /border:\s*2px solid/);
+    assert.doesNotMatch(ruleBody('.network-view-frame') || '', /min-height:\s*[1-9]/, 'the panel is as tall as its rows');
+    assert.match(ruleBody('.network-view-rows') || '', /gap:\s*4px/);
+    assert.match(ruleBody('.network-block') || '', /border:\s*2px solid/, 'the block keeps its 2px frame');
+    assert.doesNotMatch(cssText.replace(/\/\*[\s\S]*?\*\//g, ''), /border[^;]*\b[134]px/, 'no border that is not 2px');
+});
+
+test('viewSubtitle adds what the title lacks, for every foothold kind', () => {
+    const net = { id: 'office_lan', name: 'Harbour office LAN' };
+    const kinds = [
+        [{ via: 'jack', name: 'Drop box: Comms room', network: net, source: { name: 'Spare wall port', room: 'Comms room' } },
+            'On Harbour office LAN, at Spare wall port'],
+        [{ via: 'implant', name: 'Keystroke injector: Desks', network: net, source: { name: "Sam's PC", room: 'Desks' } },
+            "On Harbour office LAN, at Sam's PC"],
+        [{ via: 'implant', name: 'USB stick: Store', network: net, source: { name: 'Door controller', room: 'Store' } },
+            'On Harbour office LAN, at Door controller'],
+        [{ via: 'wifi', name: 'Wi-Fi: Guest Wi-Fi', network: { id: 'guest_wifi', name: 'Guest Wi-Fi' }, source: { name: 'Guest access point', room: 'Lobby' } },
+            'Access point: Guest access point, Lobby']
+    ];
+    for (const [v, want] of kinds) {
+        const sub = viewSubtitle(v);
+        assert.equal(sub, want);
+        assert.notEqual(sub, v.name, `${v.via}: the subtitle never repeats the title`);
+    }
+    assert.equal(viewSubtitle({ via: 'jack', name: 'On X', network: { name: 'X' } }), '', 'one equal to the title is dropped');
+});
+
+// Code review R3 m1: a name the server suffixed with its source says where already
+test('title and subtitle never both name the source', () => {
+    const net = { id: 'office_lan', name: 'Harbour office LAN' };
+    const cases = [
+        [{ via: 'jack', name: 'Drop box: Comms room, Spare wall port', network: net, source: { name: 'Spare wall port', room: 'Comms room' } },
+            'On Harbour office LAN'],
+        [{ via: 'implant', name: "Keystroke injector: Desks, Sam's PC", network: net, source: { name: "Sam's PC", room: 'Desks' } },
+            'On Harbour office LAN'],
+        [{ via: 'jack', name: 'Drop box: Workshop, Bench switch 2', network: net, source: { name: 'Bench switch', room: 'Workshop' } },
+            'On Harbour office LAN'],
+        [{ via: 'jack', name: 'Drop box: Comms room', network: net, source: { name: 'Spare wall port', room: 'Comms room' } },
+            'On Harbour office LAN, at Spare wall port'],
+        [{ via: 'jack', name: 'Drop box: Workshop, Bench switch extra', network: net, source: { name: 'Bench switch', room: 'Workshop' } },
+            'On Harbour office LAN, at Bench switch']
+    ];
+    for (const [v, want] of cases) {
+        const sub = viewSubtitle(v);
+        assert.equal(sub, want, v.name);
+        const inTitle = v.name.includes(`, ${v.source.name}`);
+        const inSub = sub.includes(v.source.name);
+        assert.ok(!(inTitle && inSub) || v.name.endsWith(' extra'), `${v.name}: the source is named once`);
+    }
+});
+
+test('the header shows the subtitle under the title', async () => {
+    setup();
+    answer.footholds[0].source = { name: 'Spare wall port', room: 'Comms room' };
+    links.open('jack_comms_port');
+    await settle();
+    assert.equal(document.querySelector('.network-view-subtitle').textContent, 'On Harbour office LAN, at Spare wall port');
+    assert.equal(view().getTestState().subtitle, 'On Harbour office LAN, at Spare wall port');
+    assert.equal(document.querySelector('.network-view-status'), null, 'a jack link has no joined line');
+});
+
+test('a joined Wi-Fi view: icon by the title, "Joined. Reaches <n> hosts." and not the stale line', async () => {
+    const wifi = { id: 'wifi_guest_wifi', via: 'wifi', name: 'Wi-Fi: Guest Wi-Fi', itemId: 'netlink_wifi_guest_wifi',
+        sourceId: 'guest_ap', network: { id: 'guest_wifi', name: 'Guest Wi-Fi' } };
+    setup();
+    links.load([wifi], ['guest_ap']);
+    window.inventory.items = [{ scenarioData: { id: 'netlink_wifi_guest_wifi', type: 'network_link',
+        observations: 'Your Wi-Fi link to Guest Wi-Fi. Open it to see what it reaches.' } }];
+    answer = { footholds: [{ ...wifi, source: { name: 'Guest access point', room: 'Lobby' },
+        hosts: [{ id: 'guest_notice', kind: 'file_share', name: 'Guest-Notice', host: 'HB-GUEST-01', open: true }] }] };
+    links.open('wifi_guest_wifi');
+    await settle();
+    assert.ok(document.querySelector('.network-view-title .network-view-title-icon'), 'the Wi-Fi icon is by the title');
+    assert.equal(document.querySelector('.network-view-status').textContent, 'Joined. Reaches 1 host.');
+    assert.equal(document.querySelector('.network-view-observations'), null, 'the observations line is replaced');
+    assert.doesNotMatch(document.querySelector('.network-view').textContent, /Open it to see what it reaches/);
+    assert.equal(document.querySelector('.network-view-subtitle').textContent, 'Access point: Guest access point, Lobby');
+    assert.deepEqual([...document.querySelectorAll('.network-row-group')].map(el => el.textContent), ['File shares'],
+        'the same group headings as the jack view, even for one kind');
+    // The title names the network, so the own block does not again (R1 n2)
+    assert.equal(document.querySelector('.network-block-own .network-block-title').textContent, OWN_HEADING);
+    assert.equal(OWN_HEADING, 'Reachable');
+    // The load state and the status line are two fields (R1 m3)
+    assert.equal(view().getTestState().status, 'ready');
+    assert.equal(view().getTestState().statusLine, 'Joined. Reaches 1 host.');
+    assert.equal(joinedStatus(3), 'Joined. Reaches 3 hosts.');
+});
+
+
+// ---- Code review R1 fixes ----
+
+const headerLines = () => [...document.querySelectorAll('.network-view-header-body > *')].map(el => el.textContent.trim()).filter(Boolean);
+
+test('no header line repeats another, for the jack and both implant views (R1 m1)', async () => {
+    for (const [via, name, sourceName] of [['jack', 'Drop box: comms room', 'Spare wall port'],
+        ['implant', 'Keystroke injector: Desks', "Sam's PC"], ['implant', 'USB stick: Store', 'Door controller']]) {
+        setup();
+        Object.assign(answer.footholds[0], { via, name, source: { name: sourceName, room: 'Desks' } });
+        window.inventory.items[0].scenarioData.observations = `Your implant on HB-DESK-01. Open it to see what it reaches.`;
+        links.open('jack_comms_port');
+        await settle();
+        const lines = headerLines();
+        assert.equal(lines[0], name);
+        assert.equal(new Set(lines).size, lines.length, `${name}: ${lines.join(' | ')}`);
+        for (const a of lines) for (const b of lines) if (a !== b) assert.ok(!b.includes(a), `${name}: "${a}" is inside "${b}"`);
+        // Nor does the heading under the header (code review R2 m1): it never names the network again
+        const heading = document.querySelector('.network-block-title').textContent.trim();
+        assert.equal(heading, OWN_HEADING);
+        for (const line of lines) {
+            assert.ok(!line.includes(heading) && !heading.includes(line), `${name}: heading "${heading}" repeats "${line}"`);
+        }
+        assert.ok(!heading.includes(officeNet.name), `${name}: the heading does not name the network`);
+        assert.equal(document.querySelector('.network-view-observations'), null);
+        assert.equal(view().getTestState().status, 'ready', 'the load state, not the status line (R1 m3)');
+        assert.equal(view().getTestState().statusLine, '');
+    }
+});
+
+test('the view closes with the X or Esc only: no Close button, the X inside the frame (R1 m4)', async () => {
+    setup();
+    links.open('jack_comms_port');
+    await settle();
+    assert.equal(document.querySelector('#minigame-cancel'), null, 'no framework Close button');
+    assert.equal(document.querySelector('.minigame-controls'), null);
+    const frame = document.querySelector('.network-view-frame');
+    assert.ok(frame, 'the frame exists');
+    const x = document.querySelector('#minigame-close');
+    // The X is in the header, and the header is outside the scroll area, so the list's
+    // scrollbar never runs under the X (code review R2 m2)
+    const header = document.querySelector('.network-view-header');
+    assert.equal(x.parentNode, header, 'the X is in the header');
+    assert.equal(header.parentNode, frame, 'the header is inside the frame');
+    const list = view().gameContainer;
+    assert.equal(list.parentNode, frame);
+    assert.ok(!list.contains(header) && !list.contains(x), 'neither the header nor the X is in the scroll area');
+    assert.deepEqual([...frame.children].map(el => el.className.split(' ')[0]),
+        ['network-view-header', list.className.split(' ')[0], 'network-view-more'], 'header, list, More below');
+    assert.ok(list.classList.contains('pixel-scroll'), 'the list scrolls with the pixel-art scrollbar');
+    assert.ok(header.querySelector('.network-view-title'), 'the title is in the header');
+    assert.ok(frame.contains(document.querySelector('.network-view')), 'the frame wraps the list');
+    assert.doesNotMatch(ruleBody('.network-view-header') || '', /sticky|margin:\s*-/, 'no sticky header, no negative margin');
+    const xRule = ruleBody('.network-view-minigame .network-view-frame .minigame-close-button') || '';
+    assert.match(xRule, /position:\s*absolute/);
+    assert.match(xRule, /top:\s*[2-9]px/, 'clear of the 2px border at the top');
+    assert.match(xRule, /right:\s*[2-9]px/, 'and at the right');
+    assert.match(ruleBody('.network-view-frame') || '', /position:\s*relative/, 'placed against the frame, at every size');
+    assert.match(ruleBody('.network-view-frame') || '', /max-height:\s*calc\(100% - /, 'never taller than the screen');
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+    await settle();
+    assert.deepEqual(named('network_view_closed'), [{ footholdId: 'jack_comms_port', reason: 'closed' }], 'Esc still closes');
+});
+
+test('"More below" shows while the list overflows the frame and hides at the end (R1 m2)', async () => {
+    setup();
+    links.open('jack_comms_port');
+    await settle();
+    const m = view();
+    const game = m.gameContainer;
+    const more = document.querySelector('.network-view-frame > .network-view-more');
+    assert.ok(more, 'the cue is in the frame, outside the scrolling list');
+    assert.equal(more.textContent.trim(), MORE_BELOW_TEXT);
+    assert.ok(more.querySelector('.network-view-more-arrow'), 'with the stepped arrow');
+    assert.equal(more.hidden, true, 'hidden when the list fits (jsdom lays out nothing)');
+    let top = 0;
+    Object.defineProperty(game, 'scrollHeight', { configurable: true, get: () => 900 });
+    Object.defineProperty(game, 'clientHeight', { configurable: true, get: () => 400 });
+    Object.defineProperty(game, 'scrollTop', { configurable: true, get: () => top, set: (v) => { top = v; } });
+    game.dispatchEvent(new window.Event('scroll'));
+    assert.equal(more.hidden, false, 'shown while more rows are below');
+    assert.equal(m.getTestState().moreBelow, true);
+    top = 250;
+    game.dispatchEvent(new window.Event('scroll'));
+    assert.equal(more.hidden, false, 'still shown part way down');
+    top = 500;
+    game.dispatchEvent(new window.Event('scroll'));
+    assert.equal(more.hidden, true, 'hidden at the end');
+    assert.equal(m.getTestState().moreBelow, false);
+    // A re-render (a refetch) looks again
+    top = 0;
+    m.render();
+    assert.equal(more.hidden, false);
+});
+
+test('rows lay out in two columns when there is room; headings and locked shares span (R1 m2)', async () => {
+    assert.match(ruleBody('.network-view-rows') || '', /grid-template-columns:\s*repeat\(auto-fill, minmax\(\d+px, 1fr\)\)/);
+    setup();
+    links.open('jack_comms_port');
+    await settle();
+    assert.ok(row('data-resource-id', 'ledger_archive').classList.contains('network-row-wide'), 'a locked share and its note span');
+    assert.ok(!row('data-resource-id', 'scanned_inbox').classList.contains('network-row-wide'));
+    // A PC row's host label stays on one line too, and the button shrinks instead (code review R2 m3)
+    assert.equal(row('data-host-id', 'lena_pc').querySelector('.network-row-title strong').className, 'network-row-hostname');
+    assert.equal(row('data-host-id', 'lena_pc').querySelector('.network-row-title strong').textContent, 'HB-FIN-02');
+    assert.match(ruleBody('.network-row-hostname') || '', /white-space:\s*nowrap/);
+    assert.match(ruleBody('.network-row-host .network-row-label') || '', /min-width:\s*min-content/);
+    assert.match(ruleBody('.network-row-control') || '', /flex:\s*0 1 auto/);
+    // The open button breaks before the bracket, never inside the name (code review R3 n1)
+    const open = row('data-host-id', 'lena_pc').querySelector('[data-action="open"]');
+    assert.equal(open.textContent, 'Open (Lena Fox)');
+    assert.equal(open.querySelector('.network-row-who').textContent, '(Lena Fox)');
+    assert.match(ruleBody('.network-row-who') || '', /white-space:\s*nowrap/);
+});
+
+// Code review R3 m2: in a narrow column a down row keeps "Session kept: Ian Shaw" whole and
+// its host and "(down)" on one line
+test('a down row keeps the kept name and the host with its tag on one line', async () => {
+    assert.match(ruleBody('.network-row-kept') || '', /white-space:\s*nowrap/);
+    assert.match(ruleBody('.network-row-title') || '', /white-space:\s*nowrap/);
+    // When the two do not fit side by side, the control drops under the label, never over it
+    assert.match(ruleBody('.network-row-down') || '', /flex-wrap:\s*wrap/);
+    assert.match(ruleBody('.network-row-down .network-row-control') || '', /margin-left:\s*auto/);
+    withBlocks([{ id: 'server_net', name: 'Server network', via: { hostId: 'lena_pc', host: 'HB-FIN-02' }, route: 'down',
+        hosts: [{ ...SERVER_ROW, heldAs: 'Ian Shaw' }] }]);
+    links.open('jack_comms_port');
+    await settle();
+    const kept = document.querySelector('.network-block-down .network-row-kept');
+    assert.equal(kept.textContent, 'Session kept: Ian Shaw', 'the whole note is one nowrap span');
+    const title = kept.closest('.network-row').querySelector('.network-row-title');
+    assert.ok(title.querySelector('.network-row-hostname'), 'the host sits in the nowrap title');
+    assert.equal(title.querySelector('.network-row-tag').textContent, '(down)', 'and its tag beside it');
+});
+
+// The shared pixel-art scrollbar (code review R2 m2): square thumb, 2px border, no radius, and
+// the Firefox properties behind a feature check, so Chrome keeps the ::-webkit-scrollbar art
+test('the shared .pixel-scroll rule draws a pixel-art scrollbar', () => {
+    const util = readFileSync(join(here, '../../public/break_escape/css/utilities.css'), 'utf8');
+    const utilRule = (sel) => {
+        const re = new RegExp(`(^|})\\s*${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`, 'm');
+        return (util.match(re) || [])[2] ?? null;
+    };
+    const thumb = utilRule('.pixel-scroll::-webkit-scrollbar-thumb') || '';
+    assert.match(thumb, /border:\s*2px solid/);
+    assert.match(thumb, /border-radius:\s*0;/);
+    assert.match(utilRule('.pixel-scroll::-webkit-scrollbar-track') || '', /border-radius:\s*0;/);
+    assert.match(utilRule('.pixel-scroll::-webkit-scrollbar-button') || '', /display:\s*none/);
+    const ff = util.slice(util.indexOf('@supports not selector(::-webkit-scrollbar)'));
+    assert.match(ff, /\.pixel-scroll\s*\{[^}]*scrollbar-color:[^}]*scrollbar-width:|\.pixel-scroll\s*\{[^}]*scrollbar-width:[^}]*scrollbar-color:/);
+    const block = util.slice(util.indexOf('.pixel-scroll {'));
+    assert.doesNotMatch(block, /border-radius:\s*[1-9]/, 'no radius');
+    assert.doesNotMatch(block.replace(/\/\*[\s\S]*?\*\//g, ''), /gradient|box-shadow/);
+    // The class resets the inherited Firefox properties, so Chrome keeps the art under a parent
+    // that sets them (code review R3 n2); the guarded block after it still wins in Firefox
+    const base = utilRule('.pixel-scroll') || '';
+    assert.match(base, /scrollbar-color:\s*auto;/);
+    assert.match(base, /scrollbar-width:\s*auto;/);
+    assert.ok(util.indexOf('.pixel-scroll {') < util.indexOf('@supports not selector(::-webkit-scrollbar)'));
+    // The game layout loads utilities.css
+    const layout = readFileSync(join(here, '../../app/views/break_escape/games/show.html.erb'), 'utf8');
+    assert.match(layout, /css\/utilities\.css/);
+});
+
+test('the joined count leaves out a powered-down host (R1 n3)', async () => {
+    const wifi = { id: 'wifi_guest_wifi', via: 'wifi', name: 'Wi-Fi: Guest Wi-Fi', itemId: 'netlink_wifi_guest_wifi',
+        sourceId: 'guest_ap', network: { id: 'guest_wifi', name: 'Guest Wi-Fi' } };
+    setup();
+    links.load([wifi], ['guest_ap']);
+    answer = { footholds: [{ ...wifi, hosts: [
+        { id: 'guest_notice', kind: 'file_share', name: 'Guest-Notice', host: 'HB-GUEST-01', open: true },
+        { id: 'guest_pc', kind: 'pc', name: 'Guest PC', host: 'HB-GUEST-02', remoteSignIn: true, responding: false }] }] };
+    links.open('wifi_guest_wifi');
+    await settle();
+    assert.equal(document.querySelector('.network-view-status').textContent, 'Joined. Reaches 1 host.');
 });
