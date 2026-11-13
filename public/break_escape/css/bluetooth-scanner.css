@@ -78,9 +78,41 @@
     flex-shrink: 0;
 }
 
+/* On a short screen the Instructions give way before the device list does (slice 7 R3 m2):
+   the list keeps its header and one whole device card (72px card, 8px padding top and
+   bottom, 2px border: 92px; header and its gap: 57px), and the Instructions shrink and
+   scroll inside their own box, or fold away when even one line would not fit. */
 .bluetooth-scanner-minigame-game-container > .bluetooth-device-list-container {
     flex: 1 1 auto;
-    min-height: 96px;
+    min-height: 149px;
+}
+
+.bluetooth-scanner-minigame-game-container > .bluetooth-device-list-container > .bluetooth-device-list {
+    min-height: 72px;   /* content box: with its padding and border, 92px */
+}
+
+.bluetooth-scanner-minigame-game-container > .bluetooth-scanner-instructions {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.bluetooth-scanner-instructions::-webkit-scrollbar {
+    width: 8px;
+}
+
+.bluetooth-scanner-instructions::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.bluetooth-scanner-instructions::-webkit-scrollbar-thumb {
+    background: #00bcd4;
+}
+
+@media (max-height: 480px) {
+    .bluetooth-scanner-minigame-game-container > .bluetooth-scanner-instructions {
+        display: none;
+    }
 }
 
 .bluetooth-scanner-minigame-container.expanded .bluetooth-scanner-controls {
