@@ -140,33 +140,95 @@ test('the chin button and the note: the CSS stacks the label on compact frames, 
     assert.match(rule('.pc-postit-label'), /white-space:\s*nowrap/, 'one line on a full frame');
 });
 
-test('update() sizes the note by the chin\'s measured width: a 19-character word leaves the button uncovered, narrow and compact', () => {
+test('update() lays the note out at the chin\'s measured width and sizes the chin by the larger of note and button, with the stale fallback in place (UI quick R2 M1)', () => {
     // jsdom has no layout, so the page's measurements are stubbed: the chin's buttons are
-    // 125px wide (the stacked label), the light is hidden (a phone) or 6px (a short frame)
+    // 90, 125 or 170px wide, the light is hidden (a phone) or 6px (a short frame), the button
+    // is 44px tall, and the note's height FOLLOWS the width it is given (style.maxWidth), as a
+    // real note's does. The mount's first update() ran before these stubs, so the fallback
+    // reserve is what the first pass of the next update() would use without a carried room.
     for (const [w, h, ledW] of [[390, 844, 0], [360, 740, 0], [915, 412, 6]]) {
-        const restore = sizeWindow(w, h);
-        try {
-            document.body.innerHTML = '<div id="mg"><div class="minigame-game-container"></div></div>';
-            const container = document.getElementById('mg');
-            const scene = { gameContainer: container.querySelector('.minigame-game-container'), container };
-            const word = 'Abcdefghijklmnopqrs';
-            const parts = mountPcMonitor(scene, { name: 'PC', postitHtml: `<span class="keep-whole">${word}</span>`, pcId: `long_${w}` });
-            const ctl = parts.controls;
-            const led = parts.chin.querySelector('.pc-monitor-led');
-            Object.defineProperty(ctl, 'offsetWidth', { configurable: true, get: () => 125 });
-            Object.defineProperty(led, 'offsetWidth', { configurable: true, get: () => ledW });
-            Object.defineProperty(parts.postit, 'offsetHeight', { configurable: true, get: () => 60 });
-            parts.update();
-            const m = parts.metrics;
-            const room = 125 + (ledW ? ledW + 8 : 0) + m.bezel.side + 8;
-            const noteRight = m.postit.left + m.postit.maxWidth;
-            assert.equal(parts.postit.style.maxWidth, `${m.postit.maxWidth}px`);
-            assert.ok(noteRight <= m.width - room, `${w}x${h}: the note's right edge (${noteRight}) stops before the button (${m.width - room})`);
-            assert.ok(noteRight <= m.width, `${w}x${h}: and inside the bezel`);
-            parts.destroy();
-        } finally {
-            restore();
+        for (const btnW of [90, 125, 170]) {
+            const restore = sizeWindow(w, h);
+            try {
+                document.body.innerHTML = '<div id="mg"><div class="minigame-game-container"></div></div>';
+                const container = document.getElementById('mg');
+                const scene = { gameContainer: container.querySelector('.minigame-game-container'), container };
+                const word = 'Abcdefghijklmnopqrs';
+                const parts = mountPcMonitor(scene, { name: 'PC', postitHtml: `<span class="keep-whole">${word}</span>`, pcId: `long_${w}_${btnW}` });
+                const noteAt = (maxWidth) => 20 * Math.ceil(1200 / Math.max(1, maxWidth));
+                Object.defineProperty(parts.controls, 'offsetWidth', { configurable: true, get: () => btnW });
+                Object.defineProperty(parts.controls, 'offsetHeight', { configurable: true, get: () => 44 });
+                Object.defineProperty(parts.chin.querySelector('.pc-monitor-led'), 'offsetWidth', { configurable: true, get: () => ledW });
+                Object.defineProperty(parts.postit, 'offsetHeight', { configurable: true, get: () => noteAt(parseFloat(parts.postit.style.maxWidth) || 0) });
+                parts.update();
+                let m = parts.metrics;
+                const room = btnW + (ledW ? ledW + 8 : 0) + m.bezel.side + 8;
+                const noteRight = m.postit.left + m.postit.maxWidth;
+                const tag = `${w}x${h} button ${btnW}`;
+                assert.equal(parts.postit.style.maxWidth, `${m.postit.maxWidth}px`);
+                assert.ok(noteRight <= Math.max(m.width - room, m.postit.left + 96), `${tag}: the note's right edge (${noteRight}) stops before the button (${m.width - room})`);
+                assert.ok(noteRight <= m.width, `${tag}: and inside the bezel`);
+                // The chin follows the note at the width it is drawn at now, and the button
+                const noteNow = noteAt(m.postit.maxWidth);
+                const want = Math.max(44, noteNow + PC_POSTIT_GAP + PC_POSTIT_CLEAR);
+                assert.equal(m.bezel.chin, want, `${tag}: chin ${m.bezel.chin} equals max(button, note ${noteNow} + padding) after one update()`);
+                // Calling it again changes nothing
+                parts.update();
+                assert.equal(parts.metrics.bezel.chin, want, `${tag}: a second update() keeps the chin`);
+                assert.equal(parts.metrics.postit.maxWidth, m.postit.maxWidth);
+                parts.destroy();
+            } finally {
+                restore();
+            }
         }
+    }
+});
+
+test('the chin button and the share window carry the chin label (UI quick R2 m2)', async () => {
+    const restore = sizeWindow(915, 412);
+    try {
+        window.inventory = { items: [] };
+        window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+        window.playUISound = () => {};
+        resetPostitHeights();
+        document.body.innerHTML = '<div id="mg"></div>';
+        const parentLockable = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', postitNote: 'Sam: sokafor / x', showPostit: true } };
+        const share = new ContainerMinigame(document.getElementById('mg'), {
+            title: 'Payroll', containerItem: { scenarioData: { id: 'payroll_share', type: 'network_share', name: '\\\\fs01\\payroll', locked: false }, parentLockable }, contents: []
+        });
+        window.MinigameFramework.currentMinigame = share;
+        await share.init();
+        const btn = document.querySelector('.pc-monitor-controls #minigame-notebook-postit');
+        assert.ok(btn, 'the share window has the chin button');
+        assert.equal(btn.textContent.replace(/\s+/g, ' ').trim(), 'Add Postit to notepad');
+        share.cleanup?.();
+    } finally {
+        restore();
+        resetPostitHeights();
+    }
+});
+
+test('a PC sign-in ended through cleanup() (as endMinigame does) releases the chin and frame-snap ResizeObservers (UI quick R2 m1)', async () => {
+    const live = new Set();
+    const Real = window.ResizeObserver, RealG = globalThis.ResizeObserver;
+    class Counting { constructor() {} observe() { live.add(this); } disconnect() { live.delete(this); } unobserve() {} }
+    window.ResizeObserver = globalThis.ResizeObserver = Counting;
+    const restore = sizeWindow(915, 412);
+    try {
+        for (let i = 0; i < 3; i++) {
+            const mg = await signInScreen();
+            assert.ok(live.size >= 1, 'observers are live while the sign-in is open');
+            mg.cleanup();
+            assert.equal(live.size, 0, `open ${i + 1}: cleanup() released it`);
+        }
+        const d = await desktop();
+        assert.ok(live.size >= 1);
+        d.cleanup();
+        assert.equal(live.size, 0, 'the desktop releases it too');
+    } finally {
+        restore();
+        if (Real) window.ResizeObserver = Real; else delete window.ResizeObserver;
+        if (RealG) globalThis.ResizeObserver = RealG; else delete globalThis.ResizeObserver;
     }
 });
 

@@ -54,12 +54,12 @@ export const PC_POSTIT_GAP = 4;
 
 /**
  * The fallback for the chin's right part kept clear of the note (the page measures it, see
- * update()): the "Add Postit to notepad" button (212px
- * wide in the full bezel, 204px in the compact one, measured in a browser), the power light,
- * the padding to the bezel's edge and a gap to the note. A narrow frame (a phone) hides the
- * light, which gives that room back.
+ * update(), and keeps the measurement for the next pass): the "Add Postit to notepad" button
+ * (212px wide on one line in the full bezel; stacked on two lines in a compact or narrow
+ * frame, 125px, measured in a browser), the power light, the padding to the bezel's edge and
+ * a gap to the note. A narrow frame (a phone) hides the light, which gives that room back.
  */
-export const PC_CHIN_BUTTON_ROOM = Object.freeze({ full: 254, compact: 238, narrow: 222 });
+export const PC_CHIN_BUTTON_ROOM = Object.freeze({ full: 254, compact: 159, narrow: 145 });
 
 /** The narrowest the note's column gets when the chin is short of room (the note wraps instead). */
 export const PC_POSTIT_MIN_WIDTH = 96;
@@ -359,26 +359,33 @@ export function mountPcMonitor(scene, { name = '', postitHtml = '', pcId = null,
         const side = parts.metrics?.bezel?.side ?? 0;
         return w + ledW + side + 8;
     };
+    // The last measured room, carried into the next update()'s first pass so the note is laid
+    // out at its real width from the start (0 until something is laid out: the fallback stands in)
+    let lastRoom = 0;
     const update = () => {
         const space = pcViewSpace(container, view);
         const sizeKey = `${Math.floor(space.width)}x${Math.floor(space.height)}`;
         let noteH = keptPostitHeight(pcId, sizeKey);
-        let chinRoom = 0;
-        let m = apply(pcMonitorMetrics(space.width, space.height, { postitHeight: noteH }));
+        let chinRoom = lastRoom;
+        let m = apply(pcMonitorMetrics(space.width, space.height, { postitHeight: noteH, chinRoom }));
         if (parts.postit) {
             // The note's width follows the frame, and the frame its height: settle in a few
             // steps. The note's own measurement wins over the kept one (R2 m1: a height taken
-            // before the pixel font arrived may be a line too tall); within this update the
-            // larger measurement stays, so the loop cannot swing between two heights.
+            // before the pixel font arrived may be a line too tall); at one room the larger
+            // measurement stays, so the loop cannot swing between two heights. A new room
+            // changes the note's width, so a height taken at the old room is dropped.
             let measured = 0;
+            let measuredRoom = chinRoom;
             for (let i = 0; i < 4; i++) {
                 const h = Math.ceil(parts.postit.offsetHeight || 0);
                 if (!(h > 0)) break;
-                measured = Math.max(measured, h);
-                const room = measureChinRoom();
+                const room = measureChinRoom() || chinRoom;
+                measured = measuredRoom === chinRoom ? Math.max(measured, h) : h;
+                measuredRoom = chinRoom;
                 if (measured === noteH && room === chinRoom) break;
                 noteH = measured;
                 chinRoom = room;
+                lastRoom = room;
                 m = apply(pcMonitorMetrics(space.width, space.height, { postitHeight: noteH, chinRoom }));
             }
             keepPostitHeight(pcId, sizeKey, noteH);

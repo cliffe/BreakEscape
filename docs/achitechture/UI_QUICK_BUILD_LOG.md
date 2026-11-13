@@ -53,3 +53,56 @@ ui-quick-fix1/probe.mjs, shots in ui-quick-fix1/shots). Notes: the authored shor
 0 at every one of the 15 combinations (1400x1000, 800x600, 915x412, 390x844, 360x740). The note stays inside
 the bezel, the button inside the chin, and no text overflows the note in any of them. At 360x740 the
 19-character word breaks across two lines rather than covering the button.
+
+## 2026-11-13: review round 2 fixes
+
+Source: docs/achitechture/UI_QUICK_REVIEW_R2.md.
+
+- Major 1 (chin sized from a measurement at the stale fallback width): fixed in `utils/pc-monitor.js`.
+  - `update()` keeps the last measured chin room (`lastRoom`) and uses it in its first `pcMonitorMetrics`
+    call, so the note is laid out at its real width from the first pass.
+  - The loop no longer ratchets across rooms: a height taken at a different room (so a different note width)
+    is dropped; the larger of two measurements is kept only at one room.
+  - `PC_CHIN_BUTTON_ROOM` is now 254 full (one-line button, 212px), 159 compact and 145 narrow (stacked
+    button, 125px wide measured in a browser), and its comment says so.
+  - The chin is now always max(button 44, note + 6): see the table below.
+- Minor 1 (observer leak): `PasswordMinigame.cleanup()` now calls `stopFrameSnap()` and `pcMonitor.destroy()`.
+  Both are idempotent. The first form of the test showed a second leak the review had not named: the frame-snap
+  ResizeObserver and MutationObserver of the sign-in were also released only in `complete()`. The container and the
+  text-file reader already destroy the monitor in `cleanup()`. Live, with a counting wrapper on ResizeObserver,
+  three opens each ended through `endMinigame(false)`: sign-in 5 live while open, back to the baseline 2 after,
+  three times; desktop 4 to 2; share window 4 to 2 (closing a share returns to its desktop, which is a second
+  endMinigame). 0 leaked.
+- Minor 2 (test repeats the formula): replaced. The `update()` test now stubs a note height that follows the
+  width it is given (`style.maxWidth`), a button of 90, 125 or 170px (so the real room is below, at and above
+  the fallback) and a 44px button height, at 390x844, 360x740 and 915x412, and asserts after one `update()` that the
+  chin equals max(button, note + 6) and that a second `update()` changes nothing. Run against the old
+  `pc-monitor.js` it fails. A new test opens the share window and asserts the chin label (R1 m2 leftover), and a
+  third ends a sign-in and a desktop through `cleanup()` and counts live observers (0 left).
+- Minor 3 (optional, a lone letter when a word is just wider than the note): deferred by the orchestrator. Rare and
+  cosmetic; fixing it would need hyphenation rules. Not changed. With the real room now used from the first pass the
+  19-character word was not re-probed; the three notes below kept every word whole.
+
+Live proof (test_access_networks, keyless server :3444, scrollbars shown, probe in the scratch folder
+ui-quick-fix2/probe.mjs, shots in ui-quick-fix2/shots). Notes: m01's real PC note, a three-line note and cybok's
+`Y3lib2syMDI1Cg==`, through the served note (sign-in) and the PC's scenario note (desktop and share window), at
+1400x1000, 800x600, 915x412, 390x844 and 360x740: 45 combinations. Chin height minus (note height + 6) is 0
+in every one (a one-line note sits on the 44px minimum chin), overlap of note and button is 0, the note is inside
+the bezel, the button inside the chin, no word breaks, and the sign-in does not scroll (915x412: 0px with the
+three-line note, a 440x392 frame).
+
+| Size | m01 note: chin / note | three-line: chin / note | cybok: chin / note |
+|---|---|---|---|
+| 1400x1000 | 90 / 84 | 110 / 104 | 50 / 44 |
+| 800x600 | 90 / 84 | 110 / 104 | 50 / 44 |
+| 915x412 | 58 / 52 | 94 / 88 | 44 / 34 |
+| 390x844 | 76 / 70 | 130 / 124 | 44 / 34 |
+| 360x740 | 94 / 88 | 166 / 160 | 44 / 34 |
+
+The m01 note at 360x740 was 184 / 88 in review R2 and is 94 / 88 now; at 390x844 130 / 70 became 76 / 70.
+
+Tests: pc-monitor-frame 46/46; escaping-shared-helpers 21, password-signin-mode 55, container-shares 43,
+phone-intro-once-and-notepad-raw 12, access-remote-signin 15, access-signin-postit 8, engine-fixes-pass4b 10,
+container-transfer-dialog 14, keypad-title 6, lock-scope-refusal 12, engine-fixes-round6 9, minigame-title-escape 24,
+minigame-controls-layout 11, password-join-mode 6, password-minigame-submit 2, password-case-hint 5, unlock-r1-ux 11:
+all pass. Full suites are left to the orchestrator's merge batch.
