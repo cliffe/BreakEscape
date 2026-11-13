@@ -10,6 +10,7 @@ import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '..
 import { aimX, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
+import { preloadPixelFont } from '../utils/pixel-text.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu, openHandIcon, jabHandIcon, talkIcon } from '../ui/interaction-menu.js';
 import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
 import { introduceScenario } from '../utils/helpers.js';
@@ -93,6 +94,9 @@ function watchGameClockAnchors(clock) {
 export function preload() {
     // Show loading text
     document.getElementById('loading').style.display = 'block';
+
+    // GNF as a bitmap font for text drawn in the canvas (utils/pixel-text.js, q105)
+    preloadPixelFont(this);
 
     // Desk footprint data for maps that opt in to footprint collision boxes
     // (deskBoxes = footprint; systems/desk-footprints.js, rooms.js applyTableBody)
