@@ -221,6 +221,11 @@ test('UX slice 15 R3 (m1): an indicator mark draws above every glow, dark room o
   assert.equal(mark, LIGHT_DEPTH + 2);
   assert.ok(mark > screenDark && mark > screenLit && mark > phoneLed, 'the mark is above each glow');
   assert.equal(emitterGlowDepth(true, false, objDepth), mark, 'the mark keeps its depth whether or not the room is dark');
+  // The open mark's trough: 0.8 left pc5 at 2.96:1 in the rendered lit office
+  assert.equal(INDICATOR_BREATHE_FLOOR, 0.85);
+  let lo = 1;
+  for (let t = 0; t < 4400; t += 5) lo = Math.min(lo, indicatorBreathe(t));
+  assert.ok(lo >= 0.85 - 1e-9, `trough ${lo}`);
   // The render pass sets each glow's depth through this helper
   const src = readFileSync(join(js, 'systems/lighting.js'), 'utf8');
   assert.match(src, /e\.glow\.setPosition\(at\.x, at\.y\)\.setDepth\(emitterGlowDepth\(e\.indicator, above, obj\.depth\)\)/);

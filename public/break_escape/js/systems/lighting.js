@@ -120,10 +120,11 @@ const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'bre
 const INDICATOR_DOT_TEX = 'be_indicator_dot_ring_';
 // A 1 px dark ring round the mark, so it reads on a bright or blue screen (UX slice 15 R2, m1:
 // the blue mark on pc7 and pc11 was 1.2:1). The open mark breathes no lower than this, as the
-// trough washed out on light screens.
+// trough washed out on light screens. 0.85 since UX slice 15 R3 (m1): measured on the rendered
+// lit office, the open mark on pc5 fell to 2.96:1 at 0.8 and is 3.0 at 0.81.
 export const INDICATOR_RING = 0x1a1c2c;
 const INDICATOR_RING_CSS = '#1a1c2c';
-export const INDICATOR_BREATHE_FLOOR = 0.8;
+export const INDICATOR_BREATHE_FLOOR = 0.85;
 
 /** The open indicator's breathe level at `time` ms: between INDICATOR_BREATHE_FLOOR and 1. */
 export function indicatorBreathe(time, phase = 0) {
