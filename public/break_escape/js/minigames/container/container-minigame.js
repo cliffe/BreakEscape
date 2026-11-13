@@ -1291,7 +1291,8 @@ export class ContainerMinigame extends MinigameScene {
         const choices = transferChoices(item, held);
         const host = this.gameContainer.querySelector('.desktop-background, .share-folder-window') || this.gameContainer;
         const dialog = document.createElement('div');
-        dialog.className = 'desktop-transfer-dialog';
+        // In the monitor it scrolls inside the screen if it must, never cut off (R3 live check)
+        dialog.className = this.pcMonitor ? 'desktop-transfer-dialog pixel-scroll' : 'desktop-transfer-dialog';
         dialog.setAttribute('role', 'dialog');
         dialog.innerHTML = `
             <div class="desktop-window-titlebar">
@@ -1300,7 +1301,7 @@ export class ContainerMinigame extends MinigameScene {
             <div class="desktop-window-body">
                 <p>${held ? 'You already have this file.' : 'What do you want to do with this file?'}</p>
                 <div class="desktop-window-buttons">
-                    ${choices.map(c => `<button type="button" class="minigame-button desktop-transfer-btn" data-choice="${c}">${TRANSFER_LABELS[c]}</button>`).join('')}
+                    ${choices.map(c => `<button type="button" class="${this.pcMonitor ? 'pc-os-btn' : 'minigame-button'} desktop-transfer-btn" data-choice="${c}">${TRANSFER_LABELS[c]}</button>`).join('')}
                 </div>
             </div>`;
         host.appendChild(dialog);

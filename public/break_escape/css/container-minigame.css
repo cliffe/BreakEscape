@@ -625,6 +625,51 @@
     padding: 6px 8px;
 }
 
+/* The Copy / Move dialog on a PC monitor's screen (UX slice 2c R3): centred without a
+   transform (no half pixels), never taller than its window (it ran past the screen's top and
+   bottom at x2), GNF at 16px in the title bar as the share window's, the PC's thin buttons,
+   and no see-through shadow */
+.pc-monitor .desktop-transfer-dialog {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin: auto;
+    width: fit-content;
+    height: fit-content;
+    max-height: calc(100% - 8px);
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    transform: none;
+    box-shadow: none;
+}
+
+.pc-monitor .desktop-transfer-dialog .desktop-window-titlebar {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+.pc-monitor .desktop-transfer-dialog .desktop-window-body {
+    padding: 6px 8px;
+}
+
+.pc-monitor .desktop-transfer-dialog .desktop-window-body p {
+    margin: 0 0 6px 0;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+.pc-monitor .desktop-transfer-dialog .desktop-window-buttons {
+    gap: 4px;
+}
+
+.pc-monitor .desktop-transfer-dialog button.pc-os-btn.desktop-transfer-btn {
+    width: 100%;
+}
+
 /* A claimed open session (access model 5.4): the player is on someone else's screen */
 .desktop-claim-line {
     display: inline-block;
