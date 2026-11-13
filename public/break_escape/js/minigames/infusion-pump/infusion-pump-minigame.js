@@ -28,6 +28,8 @@ const KP_BTN_W = Math.floor((PMP_IW - KP_GAP * 2) / 3);  // ~158
 // Confirm button
 const CONF_Y  = KP_Y0 + 4 * (KP_BTN_H + KP_GAP) + 3;  // ~416
 const CONF_H  = 54;
+// A press that moves further than this (canvas pixels) before release is a swipe, not a tap
+const TAP_SLOP = 12;
 
 export class InfusionPumpMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
@@ -120,6 +122,36 @@ export class InfusionPumpMinigame extends MinigameScene {
         return box.scrollHeight - box.clientHeight - box.scrollTop > 2;
     }
 
+    // A pump button acts on a tap: released over the button it was pressed on, without a drag
+    // and without the box having scrolled in between (slice 7 R3 M1). Now that a swipe on the
+    // canvas scrolls the box, acting on pointerdown would press whichever key a swipe starts on.
+    static isTap(distance, scrollMoved) {
+        return distance <= TAP_SLOP && Math.abs(scrollMoved) <= 2;
+    }
+
+    _boxScrollTop() {
+        return this.gameContainer?.querySelector?.('#ip-phaser-container')?.scrollTop || 0;
+    }
+
+    _armTap(obj) {
+        obj.on('pointerdown', () => { obj._tapArmed = true; obj._tapScroll = this._boxScrollTop(); });
+        obj.on('pointerout', () => { obj._tapArmed = false; });
+        obj.on('pointerup', (pointer) => {
+            const armed = obj._tapArmed;
+            obj._tapArmed = false;
+            if (!armed) return;
+            const distance = typeof pointer?.getDistance === 'function' ? pointer.getDistance() : 0;
+            if (InfusionPumpMinigame.isTap(distance, this._boxScrollTop() - obj._tapScroll)) obj.emit('tap', pointer);
+        });
+        return obj;
+    }
+
+    _onTap(obj, fn) {
+        this._armTap(obj);
+        obj.on('tap', fn);
+        return obj;
+    }
+
     _updateMoreBelow() {
         const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
         const cue = this.gameContainer?.querySelector?.('#ip-more-below');
@@ -145,6 +177,20 @@ export class InfusionPumpMinigame extends MinigameScene {
             cue.addEventListener('click', () => {
                 box.scrollTo({ top: box.scrollHeight, behavior: 'auto' });
             });
+            // Phaser also listens on the window and maps a press anywhere onto the canvas, so a
+            // press on the cue would reach the key under it: keep the cue's presses to itself
+            for (const type of ['mousedown', 'mouseup', 'touchstart', 'touchend', 'pointerdown', 'pointerup']) {
+                cue.addEventListener(type, (e) => e.stopPropagation());
+            }
+        }
+        // With touch capture off, a tap on the canvas is followed by the browser's
+        // compatibility mouse events, which Phaser would read as a second press. Cancelling
+        // touchend stops them; a swipe has already scrolled by then, so panning is unaffected.
+        const canvas = box?.querySelector?.('canvas');
+        if (canvas) {
+            this._canvasTouchEnd = (e) => { if (e.cancelable) e.preventDefault(); };
+            this._touchCanvas = canvas;
+            canvas.addEventListener('touchend', this._canvasTouchEnd, { passive: false });
         }
         fit();
     }
@@ -157,6 +203,9 @@ export class InfusionPumpMinigame extends MinigameScene {
         const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
         if (box && this._onBoxScroll) box.removeEventListener('scroll', this._onBoxScroll);
         this._onBoxScroll = null;
+        if (this._touchCanvas && this._canvasTouchEnd) this._touchCanvas.removeEventListener('touchend', this._canvasTouchEnd);
+        this._touchCanvas = null;
+        this._canvasTouchEnd = null;
     }
 
     init() {
@@ -470,13 +519,13 @@ export class InfusionPumpMinigame extends MinigameScene {
                 .setInteractive({ useHandCursor: true })
                 .on('pointerover',  () => btn.setFillStyle(fillHover))
                 .on('pointerout',   () => btn.setFillStyle(this.confirmed ? fillNorm : fillNorm))
-                .on('pointerdown',  () => {
-                    btn.setFillStyle(fillDown);
-                    if (k === 'DEL') this.handleBackspace();
-                    else if (k === '.') this.handleDecimal();
-                    else this.handleDigit(k);
-                })
+                .on('pointerdown',  () => btn.setFillStyle(fillDown))
                 .on('pointerup',    () => btn.setFillStyle(fillNorm));
+            this._onTap(btn, () => {
+                if (k === 'DEL') this.handleBackspace();
+                else if (k === '.') this.handleDecimal();
+                else this.handleDigit(k);
+            });
 
             // Key label
             const label = isBack ? 'DEL' : k;   // pixel font has no erase glyph (slice 7)
@@ -497,8 +546,8 @@ export class InfusionPumpMinigame extends MinigameScene {
             .setInteractive({ useHandCursor: true })
             .on('pointerover',  () => this._confirmBtn.setFillStyle(0x2a5a2a))
             .on('pointerout',   () => this._confirmBtn.setFillStyle(0x1a4a1a))
-            .on('pointerdown',  () => this.handleConfirm())
             .on('pointerup',    () => this._confirmBtn.setFillStyle(0x1a4a1a));
+        this._onTap(this._confirmBtn, () => this.handleConfirm());
 
         scene.add.text(cx, cy, 'CONFIRM', {
             fontFamily: "'Press Start 2P', monospace",
@@ -707,7 +756,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         const BTN_FILL = 0x1c2430, BTN_HOVER = 0x2c3848, BTN_EDGE = 0x8fa3b8, BTN_TEXT = '#dde6f0';
         const confirmBtn = scene.add.rectangle(mx, my + 88, mw - 40, 38, BTN_FILL)
             .setStrokeStyle(2, BTN_EDGE).setInteractive({ useHandCursor: true }).setDepth(102)
-            .on('pointerdown', () => this._confirmLibraryOverride())
+            .on('tap', () => this._confirmLibraryOverride())
             .on('pointerover',  () => confirmBtn.setFillStyle(BTN_HOVER))
             .on('pointerout',   () => confirmBtn.setFillStyle(BTN_FILL));
         const confirmTxt = scene.add.text(mx, my + 88, this.sd.hold_label || 'CONFIRM OVERRIDE \u2014 USE PAPER MAR', {
@@ -716,9 +765,11 @@ export class InfusionPumpMinigame extends MinigameScene {
 
         const cancelBtn = scene.add.rectangle(mx, my + 138, mw - 40, 38, BTN_FILL)
             .setStrokeStyle(2, BTN_EDGE).setInteractive({ useHandCursor: true }).setDepth(102)
-            .on('pointerdown', () => this._dismissModal())
+            .on('tap', () => this._dismissModal())
             .on('pointerover',  () => cancelBtn.setFillStyle(BTN_HOVER))
             .on('pointerout',   () => cancelBtn.setFillStyle(BTN_FILL));
+        this._armTap(confirmBtn);
+        this._armTap(cancelBtn);
         const cancelTxt = scene.add.text(mx, my + 138, this.sd.reenter_label || 'CANCEL \u2014 RE-ENTER', {
             fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: BTN_TEXT
         }).setOrigin(0.5).setDepth(103);
@@ -801,7 +852,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         // "CORRECT — ADMINISTER" button
         const correctBtn = scene.add.rectangle(mx, my + 82, mw - 40, 38, 0x1a4a1a)
             .setStrokeStyle(2, 0x00c853).setInteractive({ useHandCursor: true }).setDepth(102)
-            .on('pointerdown', () => this._confirmWrongDose())
+            .on('tap', () => this._confirmWrongDose())
             .on('pointerover',  () => correctBtn.setFillStyle(0x2a5a2a))
             .on('pointerout',   () => correctBtn.setFillStyle(0x1a4a1a));
         const correctTxt = scene.add.text(mx, my + 82, 'CORRECT \u2014 ADMINISTER', {
@@ -813,9 +864,11 @@ export class InfusionPumpMinigame extends MinigameScene {
         // "INCORRECT — RE-ENTER" button
         const wrongBtn = scene.add.rectangle(mx, my + 130, mw - 40, 38, 0x4a1a1a)
             .setStrokeStyle(2, 0xd32f2f).setInteractive({ useHandCursor: true }).setDepth(102)
-            .on('pointerdown', () => this._dismissModal())
+            .on('tap', () => this._dismissModal())
             .on('pointerover',  () => wrongBtn.setFillStyle(0x5a2a2a))
             .on('pointerout',   () => wrongBtn.setFillStyle(0x4a1a1a));
+        this._armTap(correctBtn);
+        this._armTap(wrongBtn);
         const wrongTxt = scene.add.text(mx, my + 130, 'INCORRECT \u2014 RE-ENTER', {
             fontFamily: "'Press Start 2P', monospace",
             fontSize: '8px',

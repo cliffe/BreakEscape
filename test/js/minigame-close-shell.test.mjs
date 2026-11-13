@@ -168,3 +168,87 @@ test('the pump zooms its pixel canvas by the largest whole number that fits, nev
     assert.equal(z(0, 0), 1);
     assert.equal(z(NaN, 500), 1);
 });
+
+// Slice 7 R3 M1: the pump's box scrolls on a swipe, so its buttons act on a tap only
+function pumpWithBox(scrollTop = 0) {
+    const root = fresh();
+    root.innerHTML = '<div class="ip-scroll-frame"><div id="ip-phaser-container"><canvas></canvas></div>'
+        + '<button id="ip-more-below" hidden>MORE BELOW</button></div>';
+    const mg = Object.create(InfusionPumpMinigame.prototype);
+    mg.gameContainer = root;
+    const box = root.querySelector('#ip-phaser-container');
+    let st = scrollTop;
+    Object.defineProperty(box, 'scrollTop', { get: () => st, set: (v) => { st = v; }, configurable: true });
+    return { mg, box, root };
+}
+
+function fakeButton() {
+    const handlers = {};
+    return {
+        on(type, fn) { (handlers[type] ||= []).push(fn); return this; },
+        emit(type, ...args) { for (const fn of handlers[type] || []) fn(...args); return true; }
+    };
+}
+
+const pointer = (distance) => ({ getDistance: () => distance });
+
+test('the pump shows More below until the box is scrolled to its end', () => {
+    const box = (sh, ch, st) => ({ scrollHeight: sh, clientHeight: ch, scrollTop: st });
+    assert.equal(InfusionPumpMinigame.hasMoreBelow(box(510, 372, 0)), true);
+    assert.equal(InfusionPumpMinigame.hasMoreBelow(box(510, 372, 100)), true);
+    assert.equal(InfusionPumpMinigame.hasMoreBelow(box(510, 372, 138)), false, 'at the end');
+    assert.equal(InfusionPumpMinigame.hasMoreBelow(box(510, 372, 137)), false, 'within 2px of the end');
+    assert.equal(InfusionPumpMinigame.hasMoreBelow(box(510, 600, 0)), false, 'nothing to scroll');
+    assert.equal(InfusionPumpMinigame.hasMoreBelow(null), false);
+});
+
+test('a pump button acts on a tap, not on a swipe or a press that scrolled the box', () => {
+    const { mg, box } = pumpWithBox(0);
+    const btn = fakeButton();
+    let taps = 0;
+    mg._onTap(btn, () => { taps += 1; });
+
+    btn.emit('pointerdown'); btn.emit('pointerup', pointer(3));
+    assert.equal(taps, 1, 'a still press and release is a tap');
+
+    btn.emit('pointerdown'); btn.emit('pointerup', pointer(40));
+    assert.equal(taps, 1, 'a drag is not a tap');
+
+    btn.emit('pointerdown'); box.scrollTop = 120; btn.emit('pointerup', pointer(0));
+    assert.equal(taps, 1, 'the box scrolled between press and release');
+
+    btn.emit('pointerdown'); btn.emit('pointerout'); btn.emit('pointerup', pointer(0));
+    assert.equal(taps, 1, 'released after leaving the button');
+
+    btn.emit('pointerup', pointer(0));
+    assert.equal(taps, 1, 'a release with no press on this button');
+
+    btn.emit('pointerdown'); btn.emit('pointerup', pointer(0));
+    assert.equal(taps, 2);
+});
+
+test('the pump keeps presses on More below to itself, scrolls to the end on a click, and cancels canvas touchend', () => {
+    const { mg, box, root } = pumpWithBox(0);
+    Object.defineProperty(box, 'scrollHeight', { value: 510, configurable: true });
+    Object.defineProperty(box, 'clientHeight', { value: 372, configurable: true });
+    box.scrollTo = ({ top }) => { box.scrollTop = Math.min(top, 138); };
+    mg._fitZoom = () => mg._updateMoreBelow();
+    const seen = [];
+    for (const type of ['mousedown', 'touchstart', 'pointerdown']) window.addEventListener(type, () => seen.push(type));
+    mg._watchZoom();
+    const cue = root.querySelector('#ip-more-below');
+    assert.equal(cue.hidden, false, 'More below shows at the top');
+    for (const type of ['mousedown', 'touchstart', 'pointerdown']) cue.dispatchEvent(new window.Event(type, { bubbles: true }));
+    assert.deepEqual(seen, [], 'no press on the cue reaches the window, where Phaser listens');
+    cue.click();
+    assert.equal(box.scrollTop, 138);
+    box.dispatchEvent(new window.Event('scroll'));
+    assert.equal(cue.hidden, true, 'hidden at the end');
+    const end = new window.Event('touchend', { bubbles: true, cancelable: true });
+    root.querySelector('canvas').dispatchEvent(end);
+    assert.equal(end.defaultPrevented, true, 'no compatibility mouse events after a tap');
+    mg._unwatchZoom();
+    const end2 = new window.Event('touchend', { bubbles: true, cancelable: true });
+    root.querySelector('canvas').dispatchEvent(end2);
+    assert.equal(end2.defaultPrevented, false, 'the listener goes with the pump');
+});
