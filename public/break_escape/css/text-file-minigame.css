@@ -48,7 +48,7 @@
       2px 10px,
       0px 10px
     );
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 0 rgba(0, 0, 0, 0.15);
     overflow: hidden;
 }
 
@@ -58,8 +58,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    background: linear-gradient(to bottom, #f6f6f6 0%, #e8e8e8 100%);
-    border-bottom: 1px solid #d1d5db;
+    background: #f6f6f6;
+    border-bottom: 2px solid #d1d5db;
     min-height: 28px;
 }
 
@@ -91,14 +91,14 @@
 
 .window-control:hover {
     transform: scale(1.1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
 }
 
 .window-title {
     font-size: 13px;
     font-weight: 500;
     color: #333333;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'GNF', monospace;
     flex: 1;
     text-align: center;
     margin: 0 20px;
@@ -188,19 +188,19 @@
     font-size: 18px;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .action-btn:hover {
     background: #f3f4f6;
     border-color: #9ca3af;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-btn:active {
     background: #e5e7eb;
     transform: translateY(1px);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* File Content Display */
@@ -232,7 +232,7 @@
     margin: 0;
     padding: 16px 20px 80px;
     background: #fff3cd;
-    border-top: 1px solid #ffeaa7;
+    border-top: 2px solid #ffeaa7;
 }
 
 .file-observations h4 {
@@ -305,7 +305,7 @@
     }
     
     .text-file-window-header {
-        border-radius: 8px 8px 0 0;
+        border-radius: 0;
         padding: 6px 10px;
         min-height: 24px;
     }
@@ -376,7 +376,7 @@
     }
     
     .text-file-window-header {
-        background: linear-gradient(to bottom, #374151 0%, #1f2937 100%);
+        background: #374151;
         border-bottom-color: #374151;
     }
     
