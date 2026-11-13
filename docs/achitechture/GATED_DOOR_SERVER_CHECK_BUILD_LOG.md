@@ -801,3 +801,75 @@ credit firing) is proven by case 1.
 
 Logs: `tools/playtest/lpp-hivis-3456-session.jsonl`, `tgt-3457-session.jsonl`,
 `lpp-novest-3464-session.jsonl`, `m01-reload-3458-session.jsonl`.
+
+## Fix: SYNC SIZE regression (ordinary sync read scenario_data) + awareness sanity (2026-11-13)
+
+Commits `2bb7f6960` (fix + Rails tests), `b009d08dd` (node harness).
+
+### The regression (NOT pre-existing; introduced on this branch by Chunk B)
+
+`reload_persistence_test.rb:834` ("the save reads neither scenario_data nor the player and
+mission rows") expects an ordinary sync (`globalVariables` only, no `currentRoom`) to issue 2
+game SELECTs (the narrow `FOR UPDATE` load + the `formatVersion` jsonb pluck), never the full
+`scenario_data` blob. It got 3. The earlier fixer called it pre-existing; it is not. `build/hard-8c`
+(which contains main `fc4b4d8a5`) ran this test green. **Culprit: Chunk B commit `0a64c271f`**, which
+added `server_credit_global_names` to the `merge_global_variables!` read-only list (`game.rb:797`).
+On a fresh game the `serverCreditGlobals` memo is absent, so that method fell back to
+`self.class.where(id: id).pick(:scenario_data)` -- a full blob read on every game's first global
+sync. `server_completed_only_task_ids` (Chunk C) had the identical fallback (not on the sync path,
+but fixed for symmetry).
+
+### The fix
+
+- **Seed at creation.** `initialize_player_state` now derives `serverCreditGlobals` and
+  `serverCompletedOnly` from `scenario_data` (loaded at creation) and memoises them into
+  `player_state`, as `worn_global_names` does. The narrow sync row then reads the memo from
+  `player_state` and never reloads `scenario_data`.
+- **Sync-path readers never read `scenario_data`.** `server_credit_global_names` /
+  `server_completed_only_task_ids` drop the `.pick(:scenario_data)` fallback: memo present -> use it;
+  else scenario_data already loaded in-request (creation, show, the credit paths that call
+  `ensure_scenario_data_loaded!` first) -> derive and memoise; else (narrow sync row, no memo) -> `[]`.
+- **Absent-memo failure direction (checked).** An absent memo returns `[]`, which is the safe
+  direction: a game stored before this change has a `scenario_data` snapshot (per-game column, taken
+  at creation) that predates the `creditOnPass` scenario edits, so it credits no global at all; `[]`
+  is correct and a client still cannot write a credit global that does not exist for that game. A
+  game created by this code always has the memo. So A+B+C+D+E ship together (the deployment gate):
+  no game can have `creditOnPass` in its snapshot yet lack the memo.
+- SYNC SIZE: both memos are small, bounded, server-written only, derived once, never re-sent by the
+  client and never grow per sync.
+
+Tests added to `reload_persistence_test.rb`: creation seeds both memos; and an ordinary sync does no
+full `scenario_data` read even with the memo deleted (the pre-change path).
+
+### Node harness regression (also introduced on this branch, by `eb1230fef`)
+
+`test/js/sync-request-sizes.test.mjs` case 2 ("first sync in a different room ...") failed: `eb1230fef`
+changed `state-sync.js:392` to read `window.currentPlayerRoom` and updated `state-sync.test.mjs`, but
+left this test's `loadedGame()` helper setting only the legacy `window.currentRoom`, so `buildChanges`
+saw no room. Harness now sets `currentPlayerRoom: 'lobby'` to match the real page; the committed
+`buildchanges_room_only` fixture is unchanged.
+
+### Tests (no full suites)
+
+- Rails (0 failures): `reload_persistence_test` (71 runs, incl. the 2 new), `games_controller_test`,
+  `gated_door_credit`/`gated_route_room`/`gated_server_completed_task` (model + controller),
+  `lab_gated_door`, `lab_gated_migration`, `enter_room_validation`, `captures_sync`, `wearable`
+  (the batch: 167 runs, 658 assertions).
+- Node (5 files pass): `state-sync`, `sync-delta-proof`, `sync-request-sizes`, `global-sync-declared`,
+  `social-state-sync-confirmed`.
+
+### Awareness sanity: ca12_visitor_tailgater (live, keyless :3650, headless, setFPS(20), fixed steps on)
+
+Game 3481. Entered the world through the real `utils/world-play.js` `enterWorld({room:'lobby'})`
+(start room `training_room`, world room `lobby`), then fired the real client `window.stateSync.sync()`.
+Server log read back per request:
+
+- The `currentRoom: "lobby"` sync returned **200**; server saved `currentRoom="lobby"`.
+- The ordinary sync after it (`globalVariables` only, no `currentRoom`) returned **200** and read
+  **no** `scenario_data` -- only the narrow load + the `formatVersion` jsonb pluck.
+- A forged `currentRoom: "__forged_nowhere__"` returned **403** (that path loads `scenario_data` to
+  check start/awareness, then refuses).
+
+`may_sync_current_room?` probed directly with `lobby` absent from `unlockedRooms` (in-memory, not
+saved): `lobby` -> true (the awareness lazy-read branch), start room -> true, forged -> false. So the
+awareness world room is accepted via the lazy scenario read and a genuine forge is still refused.
