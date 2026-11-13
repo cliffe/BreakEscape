@@ -2,8 +2,8 @@
 // Owen, opens the conversation, and plays through one informational, replayable hub topic in full voice ("Walk me through
 // the network"), then stops at the next menu without advancing the story. Owen is voiced (#speaker:owen_gallagher).
 // This topic is a non-gating ASK (it does not clone the badge, hand the password, or name a suspect), so it is replayable.
-// NOTE (film pass): UNVALIDATED - written from the ink hub shape, not yet run. Confirm the intro->hub path and that Owen's
-// lines have cached audio (watchTts) on the first run, and adjust the `steps` regexes if the menu labels differ.
+// VALIDATED (film pass 2026-11-13, game 86): Owen's opening menu is the hub directly; the "Walk me through the network."
+// topic plays three voiced lines (audio/mpeg 200s) and returns to the hub menu. One step is enough.
 // Entry state: LIVE game 86 (playtest01, m05, set 924, all four flags in); no new game. Replayable (informational topic).
 // Record (LIVE mode, see run-take.sh):
 //   LIVE_URL=https://localhost:3000/hacktivities/61/play/mission/86 STORAGE_STATE=<playtest01 login.mjs state> \
@@ -31,9 +31,11 @@ export default async (page, bridge, mark) => {
   await bridge.waitForMinigame('person-chat', { timeoutMs: 10000 }).catch(() => {});
   mark('chat-open', { ok: r && r.ok });
   await sleep(1200);
-  // Intro menu (network / access / logs) drops into the hub; then pick the network walk-through, a voiced, non-gating topic.
+  // Owen's opening menu IS the hub (confirmed on the film pass: no separate intro->hub step). Each ASK topic is
+  // sticky ({not topic_X}), so pick an informational, non-gating topic that is still available and plays in full
+  // voice: "Where are the security gaps?" (ask_security) - two to three voiced lines, then back to the hub menu.
   await playThrough(page, bridge, mark, vw, {
-    steps: [/data leaving the building|Walk me through the network|network/i, /Walk me through the network|network/i],
+    steps: [/Where are the security gaps|security gaps|gaps/i],
     dwellMs: 1600, settleMs: 900, timeoutMs: 120000,
   });
   mark('linger-end', { tts: seen.length });
