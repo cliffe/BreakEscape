@@ -105,6 +105,20 @@
     overflow-x: hidden;
 }
 
+/* A big window: the lock is zoomed by a whole number (the minigame sets the box's max-width to
+   600px times the zoom) and centred in the frame instead of sitting in its top third (A09) */
+@media (min-width: 769px) and (min-height: 561px) {
+    .minigame-game-container:has(> #phaser-game-container) {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .minigame-game-container:has(> #phaser-game-container) > #phaser-game-container {
+        margin: auto;
+        flex: 0 0 auto;
+    }
+}
+
 /* Short screens (915x412): the 400px lock fits whole with a 4px margin, and the game area
    scrolls inside the frame, with the local pixel-art scrollbar, to reach the feedback strip
    below it, instead of running off the window (slice 7 R5, from the final audit) */

@@ -529,6 +529,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             requestAnimationFrame(wireLockAudio);
             this.scene = this.game.scene.getScene('LockpickingScene');
             console.log('Phaser game created, scene:', this.scene);
+            this._watchLockZoom();
         } catch (error) {
             console.error('Error creating Phaser game:', error);
             this.keyInsertion.updateFeedback('Error loading Phaser game: ' + error.message);
@@ -536,6 +537,52 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     }
     
     
+    // The largest whole-number zoom at which the 600x400 lock fits the room it has (A09): 1 when
+    // the window is small or the lock is cropped for a phone, 2 or more on a big window
+    static wholeZoom(availW, availH, baseW = 600, baseH = 400) {
+        const z = Math.floor(Math.min(availW / baseW, availH / baseH));
+        return Number.isFinite(z) && z > 1 ? z : 1;
+    }
+
+    // Room for the canvas: the game area's width, and its height less the strips around the
+    // canvas (item info, feedback)
+    _lockRoom() {
+        const area = this.gameContainer;
+        const box = area?.querySelector?.('#phaser-game-container');
+        if (!area || !box) return null;
+        let others = 0;
+        for (const el of area.children) {
+            if (el === box) continue;
+            const cs = window.getComputedStyle(el);
+            others += el.offsetHeight + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
+        }
+        const ar = window.getComputedStyle(area);
+        const padX = (parseFloat(ar.paddingLeft) || 0) + (parseFloat(ar.paddingRight) || 0);
+        const padY = (parseFloat(ar.paddingTop) || 0) + (parseFloat(ar.paddingBottom) || 0);
+        return { w: area.clientWidth - padX, h: area.clientHeight - padY - others - 8 };
+    }
+
+    _fitLockZoom() {
+        const game = this.game;
+        const box = this.gameContainer?.querySelector?.('#phaser-game-container');
+        if (!game?.scale || !box || window.innerWidth <= 768) return;
+        const room = this._lockRoom();
+        if (!room) return;
+        const z = LockpickingMinigamePhaser.wholeZoom(room.w, room.h);
+        if (game.scale.zoom !== z) game.scale.setZoom(z);
+        box.style.maxWidth = (600 * z) + 'px';
+        box.classList.toggle('lockpicking-zoomed', z > 1);
+    }
+
+    _watchLockZoom() {
+        if (window.innerWidth <= 768) return;
+        const fit = () => this._fitLockZoom();
+        this._lockZoomOnResize = fit;
+        window.addEventListener('resize', fit);
+        requestAnimationFrame(fit);
+        setTimeout(fit, 300);
+    }
+
     startWithKeySelection(inventoryKeys = null, correctKeyId = null) {
         // Start the minigame with key selection instead of a default key
         // inventoryKeys: array of keys from inventory (optional)
@@ -607,6 +654,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     
     complete(success) {
         if (this.game) {
+            if (this._lockZoomOnResize) window.removeEventListener('resize', this._lockZoomOnResize);
             this.game.destroy(true);
             this.game = null;
         }

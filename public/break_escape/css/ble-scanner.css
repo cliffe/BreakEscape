@@ -249,10 +249,34 @@
     min-height: 48px;
 }
 
-.ble-device-list::-webkit-scrollbar { width: 6px; }
-.ble-device-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-.ble-device-list::-webkit-scrollbar-thumb { background: #00bcd4; }
-.ble-device-list::-webkit-scrollbar-thumb:hover { background: #4caf50; }
+/* "More below": a flat strip under the list while it runs on past its bottom edge, the network
+   view's cue (A23) */
+.ble-device-more {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 2px 8px;
+    background: #1d2a36;
+    border: 2px solid #2d3a44;
+    border-top: 0;
+    color: #9ee6ff;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+.ble-device-more[hidden] {
+    display: none;
+}
+
+.ble-device-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #9ee6ff;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
 
 /* Device rows */
 .ble-device {
@@ -301,26 +325,24 @@
 
 .ble-save-btn {
     background: transparent;
-    border: 2px solid #555;
-    color: #555;
+    border: 2px solid #00bcd4;
+    color: #00bcd4;
     font-size: 13px;
     padding: 1px 4px;
     cursor: pointer;
     line-height: 1;
     font-family: inherit;
-    opacity: 0.5;
-    transition: opacity 0.2s ease, border-color 0.2s ease;
 }
 
 .ble-save-btn:hover {
-    opacity: 1;
-    border-color: #00bcd4;
+    background: rgba(0, 188, 212, 0.25);
+    color: #ffffff;
 }
 
 .ble-save-btn--saved {
-    opacity: 1;
+    background: #00bcd4;
     border-color: #00bcd4;
-    color: #00bcd4;
+    color: #0d1324;
 }
 
 /* Signal bars — identical geometry to bluetooth scanner */

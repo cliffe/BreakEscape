@@ -257,3 +257,36 @@ test('title hint on its grid with a line height (A37); text-file toolbar readabl
     assert.equal(t['line-height'], '16px');
     assert.equal(rule(css('text-file-minigame.css'), '.action-btn', 'max-width: 768px')['font-size'], '16px');
 });
+
+test('lockpicking zooms by a whole number on a big window and centres (A09)', () => {
+    const js = src('minigames/lockpicking/lockpicking-game-phaser.js');
+    assert.match(js, /static wholeZoom\(/);
+    assert.match(js, /this\._watchLockZoom\(\)/);
+    assert.match(js, /removeEventListener\('resize', this\._lockZoomOnResize\)/);
+    // the pure part, pulled out of the source (the module needs Phaser): whole numbers only,
+    // never below 1, limited by the tighter side
+    const body = js.match(/static wholeZoom\(([^)]*)\) \{([\s\S]*?)\n    \}/);
+    const z = new Function(body[1], body[2]);
+    assert.equal(z(1300, 900), 2);
+    assert.equal(z(1300, 790), 1);
+    assert.equal(z(1900, 1300), 3);
+    assert.equal(z(500, 900), 1);
+    assert.equal(z(NaN, 900), 1);
+    const c = css('lockpicking.css');
+    const r = rules(c, '.minigame-game-container:has(> #phaser-game-container) > #phaser-game-container', 'min-width: 769px');
+    assert.ok(r.some(d => d.margin === 'auto'));
+});
+
+test('BLE scanner list uses the pixel scrollbar, a More below cue and an accent SAVE (A23)', () => {
+    const js = src('minigames/ble-scanner/ble-scanner-minigame.js');
+    assert.match(js, /class="ble-device-list pixel-scroll"/);
+    assert.match(js, /id="ble-device-more" hidden/);
+    assert.match(js, /static hasMoreBelow\(box\)/);
+    const c = css('ble-scanner.css');
+    assert.doesNotMatch(c, /::-webkit-scrollbar/);
+    const s = rule(c, '.ble-save-btn');
+    assert.equal(s.border, '2px solid #00bcd4');
+    assert.equal(s.color, '#00bcd4');
+    assert.equal(s.opacity, undefined);
+    assert.ok(rules(c, '.ble-device-more').length);
+});
