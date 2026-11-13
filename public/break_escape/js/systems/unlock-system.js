@@ -17,6 +17,7 @@ import { playUISound } from './ui-sounds.js';
 import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalTitle } from '../utils/locked-hint.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
 import { catchLockpickInView } from './lockpick-catch.js';
+import { unlockWithRouteRoomRetry } from '../utils/lock-scope-refusal.js';
 
 // Helper function to notify server of unlock and get room/container data
 export async function notifyServerUnlock(lockable, type, method) {
@@ -30,42 +31,18 @@ export async function notifyServerUnlock(lockable, type, method) {
             const targetId = unlockTargetId(lockable, type);
 
             console.log(`Notifying server of ${method} unlock:`, { type, targetId });
-            serverResponse = await apiClient.unlock(type, targetId, null, method);
+            // Shared object-unlock POST with the GATED_DOOR §3.6 route-room retry (one sync, one
+            // re-post on a room_not_reachable retryable body; never for a door).
+            serverResponse = await unlockWithRouteRoomRetry(type, targetId, null, method);
 
             // Populate container contents if returned
-            if (serverResponse.hasContents && serverResponse.contents && lockable.scenarioData) {
+            if (serverResponse && serverResponse.hasContents && serverResponse.contents && lockable.scenarioData) {
                 lockable.scenarioData.contents = serverResponse.contents;
             }
         } catch (error) {
-            // Object unlock in a served-but-unearned route room (GATED_DOOR §3.6): the server
-            // refuses with 403 { reason: 'room_not_reachable', retryable: true } during the short
-            // window before the viaPass currentRoom sync promotes the room. This path owns its own
-            // one-shot retry: flush one state sync (so the room promotes), then re-post once. Fires
-            // only on that reason-and-flag body, and never for a door (a door into a route room is
-            // the split itself, never gated by §3.6).
-            const body = error && error.body;
-            const canRetry = type !== 'door' && body &&
-                body.reason === 'room_not_reachable' && body.retryable === true;
-            if (canRetry) {
-                // Awaited for its ordering, never for its success: a rejecting (or absent) sync
-                // still proceeds to the one re-post (§3.6, same tolerance as the pre-flush).
-                try {
-                    await Promise.resolve(window.stateSync?.sync?.()).catch(() => false);
-                } catch (syncError) { /* a synchronous throw must not swallow the re-post */ }
-                try {
-                    const targetId = unlockTargetId(lockable, type);
-                    serverResponse = await apiClient.unlock(type, targetId, null, method);
-                    if (serverResponse && serverResponse.hasContents && serverResponse.contents && lockable.scenarioData) {
-                        lockable.scenarioData.contents = serverResponse.contents;
-                    }
-                } catch (retryError) {
-                    // Still refused after the re-post (the room never promoted, i.e. a forge):
-                    // surface it as the normal refusal, exactly as before this retry existed.
-                    console.error(`Failed to notify server of ${method} unlock (after retry):`, retryError);
-                }
-            } else {
-                console.error(`Failed to notify server of ${method} unlock:`, error);
-            }
+            // Non-retryable refusal, or still refused after the one re-post (the room never
+            // promoted, i.e. a forge): surface as the normal refusal, exactly as before.
+            console.error(`Failed to notify server of ${method} unlock:`, error);
         }
     }
 

@@ -383,15 +383,20 @@ in `unlockedRooms`. All of these paths run in the `unlock`/feedback flow on a fu
   container there within the same batch, before the promoting `currentRoom` sync lands, hits the
   valid-path `room_not_reachable` refusal. The server marks it **retryable** (`success: false`,
   `reason: room_not_reachable`, `retryable: true`, `status: :forbidden`). The object-unlock path owns
-  its own retry, in its own client system. Every object unlock funnels through `notifyServerUnlock`
-  (`unlock-system.js:22-45`), whose `apiClient.unlock` POST throws on a 403 with the refusal body on
-  `error.body` (`api-client.js:47-57` sets `err.status` and `err.body`), caught today at
-  `unlock-system.js:39-41`. That catch recognises a `room_not_reachable` retryable body, awaits one
-  `window.stateSync.sync()` (which promotes the room via viaPass) **wrapped so a rejecting sync still
-  proceeds to the one re-post**, then re-posts the same `apiClient.unlock` once; on a successful re-post
-  it returns the server's answer and the unlock completes, so no hard error reaches the player in the
-  short pre-promotion window. The retry fires only on this reason-and-flag body, so every other refusal,
-  and every door unlock (`type === 'door'`, never gated by §3.6), is unchanged. This is the **same
+  its own retry, in its own client system. Object unlocks reach the server through two client routes:
+  `notifyServerUnlock` (`unlock-system.js`, the key/lockpick/biometric/bluetooth/rfid null-attempt
+  methods) and the five minigames that POST their own code directly (pin, password, combination,
+  cryptex, flag). **All of them funnel through one shared helper, `unlockWithRouteRoomRetry`**
+  (`utils/lock-scope-refusal.js`): `apiClient.unlock` throws on a 403 with the refusal body on
+  `error.body` (`api-client.js:47-57` sets `err.status` and `err.body`), and the helper recognises a
+  `room_not_reachable` retryable body, awaits one `window.stateSync.sync()` (which promotes the room
+  via viaPass) **wrapped so a rejecting sync still proceeds to the one re-post**, then re-posts the same
+  `apiClient.unlock` once; on a successful re-post the unlock completes, so no hard error reaches the
+  player in the short pre-promotion window. (Chunk A built the retry inline in `notifyServerUnlock`
+  only; Chunk B extracted the shared helper and routed the five minigames through it, closing the
+  review R1 MAJOR 2 gap where those paths bypassed the retry.) The retry fires only on this
+  reason-and-flag body, so every other refusal, and every door unlock (`type === 'door'`, never gated
+  by §3.6), is unchanged. This is the **same
   rule** the `enter_room` completion follows in its own system (§8.3): one sync, one re-post, bounded,
   then surface. The two refusals are handled in two different client systems (`unlock-system.js` for
   the object unlock, `objectives-manager.js` for the completion); they do not share one code path, they

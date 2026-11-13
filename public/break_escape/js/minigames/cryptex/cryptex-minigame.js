@@ -1,5 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 export class CryptexMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
@@ -306,8 +306,9 @@ export class CryptexMinigame extends MinigameScene {
 
             console.log('Validating cryptex with server:', { targetType, targetId, answer: answerStr });
 
-            const apiClient = window.ApiClient || window.APIClient;
-            const response = await apiClient.unlock(targetType, targetId, answerStr, 'cryptex');
+            // Through the shared object-unlock retry so a correct answer on a route-room object is
+            // not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, answerStr, 'cryptex');
 
             if (response.success && response.hasContents && response.contents && lockable.scenarioData) {
                 lockable.scenarioData.contents = response.contents;

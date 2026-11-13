@@ -1163,7 +1163,13 @@ module BreakEscape
             room_data = @game.filtered_room_data(target_id)
             track_npc_encounters(target_id, room_data)
           else
+            # Credential path (GATED_DOOR §3.3b): capture "not yet earned" before serve_opened_room's
+            # unlock_room! adds the room, then credit viaCredential on the server possession result
+            # (never a client boolean). This also deletes the room from npcRouteRooms, closing the
+            # Chunk A interim where a credential unlock left the room in both lists.
+            credit_credential = @game.split_gated_door?(target_id) && !@game.room_unlocked?(target_id)
             room_data = serve_opened_room(target_id)
+            @game.credit_via_credential!(target_id, method, card_ids) if credit_credential
           end
 
           door_answer = {
@@ -2128,7 +2134,8 @@ module BreakEscape
         room = params[:currentRoom]
         # Accept currentRoom for a gated route room the player is slipping into (GATED_DOOR
         # §3.3a), so the avatar and the saved room agree (no snap-back) and the no-vest slip-in
-        # works. This is acceptance only; the viaPass promotion/credit is Chunk B.
+        # works. Acceptance is never promotion: the viaPass credit below runs only when the
+        # gate's server-owned playerMayPassIf is true.
         unless Array(@game.player_state['unlockedRooms']).include?(room) ||
                Array(@game.player_state['npcRouteRooms']).include?(room) ||
                Game.where(id: @game.id).pick(Arel.sql("scenario_data->>'startRoom'")) == room
@@ -2136,6 +2143,11 @@ module BreakEscape
         end
 
         @game.player_state['currentRoom'] = room
+        # viaPass credit (GATED_DOOR §3.3a): if this room is a served-but-unearned route room and
+        # the gate's server-owned pass global is true, promote it and apply the viaPass credit. A
+        # no-op (and no scenario read) on an ordinary room; the honest no-vest slip-in fails the
+        # pass check and stays a route room. Runs inside the sync_state row-lock transaction.
+        @game.credit_via_pass_on_sync!(room)
       end
 
       if params[:globalVariables].respond_to?(:to_unsafe_h)

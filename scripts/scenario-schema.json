@@ -792,6 +792,15 @@
     }
   },
   "definitions": {
+    "gateCreditBlock": {
+      "type": "object",
+      "description": "One gate creditOnPass path (GATED_DOOR §3.4): globals the server sets and a task it completes at promotion. setGlobal names must be declared globals listed as server-credit globals; completeTask must name an existing, server-completed-only task.",
+      "properties": {
+        "setGlobal": { "type": "object", "description": "Globals set by the server on this path: { <global name>: <value> }" },
+        "completeTask": { "type": "string", "description": "A task id the server completes on this path" }
+      },
+      "additionalProperties": false
+    },
     "socialInfluenceDisplay": {
       "type": "object",
       "description": "Which influence UI shows (README AA): each key defaults to true; bar false also hides the number. Linted by validate_social.rb influence_display_lint",
@@ -4080,6 +4089,15 @@
                   "holdMs": { "type": "number", "minimum": 0, "description": "ms it stays open after the last NPC leaves (default 2500)" },
                   "playerMayPassIf": { "type": "string", "description": "A global. While false, the open gate is solid for a player outside the secured room, and one within openRadius keeps it shut (or shuts it as soon as nobody is in the doorway)" },
                   "noHold": { "type": "array", "items": { "type": "string" }, "description": "Written by the loader (slice 9.1): the openFor NPCs whose holdsDoors habit is false. While every guard the gate opened for (or, shut, every guard near it) is listed, it bars the player as a false playerMayPassIf does. Not written on a gate with playerMayPassIf; an authored noHold wins and is never changed" },
+                  "creditOnPass": {
+                    "type": "object",
+                    "description": "Server-owned credit for passing a split gated door (GATED_DOOR_SERVER_CHECK_PLAN.md §3.4). One block per provable path: viaPass (the gate's server-owned playerMayPassIf is true, credited on the currentRoom sync) and viaCredential (the player holds the room's requires card, credited on the rfid/key unlock). The server applies the matching block at promotion: it sets the named globals (which become read-only to sync_state, so a tampered client cannot forge the finding) and completes the named task (which must be server-completed-only). Only meaningful on a gate that splits (a server-owned playerMayPassIf or an obtainable requires card).",
+                    "properties": {
+                      "viaPass": { "$ref": "#/definitions/gateCreditBlock" },
+                      "viaCredential": { "$ref": "#/definitions/gateCreditBlock" }
+                    },
+                    "additionalProperties": false
+                  },
                   "sound": {
                     "oneOf": [
                       { "type": "string" },

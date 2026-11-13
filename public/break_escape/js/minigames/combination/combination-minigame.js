@@ -1,5 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 export class CombinationMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
@@ -331,8 +331,9 @@ export class CombinationMinigame extends MinigameScene {
             const combinationStr = this.dials.join('-');
             console.log('Validating combination with server:', { targetType, targetId, combination: combinationStr });
 
-            const apiClient = window.ApiClient || window.APIClient;
-            const response = await apiClient.unlock(targetType, targetId, combinationStr, 'combination');
+            // Through the shared object-unlock retry so a correct combination on a route-room
+            // object is not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, combinationStr, 'combination');
 
             if (response.success && response.hasContents && response.contents && lockable.scenarioData) {
                 lockable.scenarioData.contents = response.contents;

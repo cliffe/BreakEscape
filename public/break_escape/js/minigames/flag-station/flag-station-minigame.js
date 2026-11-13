@@ -10,7 +10,7 @@ import { applyActions } from '../../systems/apply-actions.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { flagRefusalLine, flagRejectReason } from '../../utils/flag-wording.js';
 import { escapeHtml } from '../../utils/escape-html.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 export class FlagStationMinigame extends MinigameScene {
     static REWARD_ICONS = {
@@ -567,7 +567,9 @@ export class FlagStationMinigame extends MinigameScene {
         this.showResult(resultEl, 'loading', 'Validating...');
 
         try {
-            const response = await apiClient.unlock(targetType, targetId, flagValue, 'flag');
+            // Through the shared object-unlock retry so a correct flag on a route-room object is
+            // not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, flagValue, 'flag');
 
             if (response.success) {
                 if (window.playUISound) window.playUISound('confirm');

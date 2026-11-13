@@ -163,11 +163,11 @@ module BreakEscape
     end
 
     # True when `name` is a global a client sync_state cannot write: a worn-costume global,
-    # an imported global, or a named server-owned global. The same union the viaPass check
-    # uses (§3.3a). serverCreditGlobals join this set in Chunk B.
+    # an imported global, a server-credit global (creditOnPass, §3.4), or a named server-owned
+    # global. The same union the viaPass check uses (§3.3a).
     def server_owned_global_name?(name)
       return false if name.blank?
-      (worn_global_names + imported_global_names +
+      (worn_global_names + imported_global_names + server_credit_global_names +
        self.class::SERVER_OWNED_GLOBAL_NAMES).include?(name.to_s)
     end
 
@@ -250,6 +250,153 @@ module BreakEscape
       return true if type == 'rfid_cloner'
       contents = obj['contents']
       contents.is_a?(Array) && contents.any? { |item| object_subtree_rfid_cloner?(item) }
+    end
+
+    # --- Gated-door credit, server-owned (GATED_DOOR_SERVER_CHECK_PLAN.md §3.3, §3.4) ---
+
+    # The distinct global names any gate credits through creditOnPass.*.setGlobal (§3.4). Derived
+    # once from the scenario and memoised in player_state, as worn_global_names does, so the read
+    # path never saves. sync_state loads the narrow row without scenario_data, so that is read on
+    # its own there. Unioned into the read-only list in merge_global_variables! and into
+    # server_owned_global_name?, so a client sync_state can never write one.
+    def server_credit_global_names
+      return [] unless player_state.is_a?(Hash)
+
+      names = player_state['serverCreditGlobals']
+      return names.grep(String) if names.is_a?(Array)
+
+      data = has_attribute?(:scenario_data) ? scenario_data : self.class.where(id: id).pick(:scenario_data)
+      player_state['serverCreditGlobals'] = self.class.credit_global_names_in(data)
+    end
+
+    # Walk every door gate's creditOnPass block and collect the setGlobal names, sorted/unique.
+    def self.credit_global_names_in(data)
+      return [] unless data.is_a?(Hash)
+      rooms = data['rooms']
+      return [] unless rooms.is_a?(Hash)
+
+      names = []
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+          next unless credit.is_a?(Hash)
+          credit.each_value do |block|
+            set = block.is_a?(Hash) ? block['setGlobal'] : nil
+            names.concat(set.keys.map(&:to_s)) if set.is_a?(Hash)
+          end
+        end
+      end
+      names.uniq.sort
+    end
+
+    # Make the record whole for a credit about to fire on the sync path, which loads the narrow
+    # SYNC_STATE_COLUMNS (§3.3a). The viaPass credit runs the whole complete_task! tree, which
+    # reads scenario_data and reads/writes the stat columns (tasks_completed, score,
+    # mission_concluded_at) and whose save! validates mission and status, none of which are on the
+    # narrow row. Load every column the row is missing except player_state (the in-flight sync
+    # merge, which a reload would clobber) in one query, set each on the record and clear its dirty
+    # state, so the follow-up save! writes only the columns the credit genuinely changed
+    # (player_state and the stats) and never rewrites the large, unchanged scenario_data column.
+    # A no-op on a full load (the unlock/credential path), where nothing is missing.
+    def ensure_scenario_data_loaded!
+      missing = self.class.column_names.reject { |c| c == 'player_state' || has_attribute?(c) }
+      return if missing.empty?
+
+      values = self.class.where(id: id).pick(*missing)
+      values = [values] if missing.size == 1
+      missing.each_with_index do |col, i|
+        write_attribute(col, values[i])
+        clear_attribute_change(col)
+      end
+      nil
+    end
+
+    # Apply a gate's creditOnPass block for the path that passed (§3.4): set its globals through
+    # write_server_globals! (bypassing the sync read-only check, the teeth) and complete its task.
+    # Returns true when a block existed and was applied.
+    def apply_credit_on_pass!(room_id, path_key)
+      gate = gate_for_connected_room(room_id)
+      return false unless gate.is_a?(Hash)
+      credit = gate['creditOnPass']
+      return false unless credit.is_a?(Hash)
+      block = credit[path_key.to_s]
+      return false unless block.is_a?(Hash)
+
+      set_globals = block['setGlobal']
+      write_server_globals!(set_globals) if set_globals.is_a?(Hash) && set_globals.any?
+
+      task_id = block['completeTask']
+      complete_task!(task_id) if task_id.present?
+      true
+    end
+
+    # Promote a route room to earned (§3.3): unlock it, remove it from npcRouteRooms (keep the two
+    # lists disjoint, or "in npcRouteRooms means unearned" misfires after promotion), and apply the
+    # path's creditOnPass. Callers gate on !room_unlocked?, so a room earned by one path is never
+    # re-credited by the other. Saves (unlock_room! and complete_task! each save; the final save!
+    # here covers a credit block that sets a global but completes no task).
+    def promote_route_room!(room_id, path_key)
+      unlock_room!(room_id)
+      remove_npc_route_room!(room_id)
+      apply_credit_on_pass!(room_id, path_key)
+      save! if changed?
+      true
+    end
+
+    def remove_npc_route_room!(room_id)
+      list = player_state['npcRouteRooms']
+      return unless list.is_a?(Array) && list.include?(room_id)
+      list.delete(room_id)
+    end
+
+    # viaPass credit on the currentRoom sync (§3.3a). The cheap player_state gate runs first, so a
+    # sync whose currentRoom is not a served-but-unearned route room reads no scenario. Only once
+    # that holds is scenario_data loaded (dirty cleared, so no scenario_data write) to read the
+    # gate: promote only when the gate's playerMayPassIf is a server-owned global and true. On a
+    # fail (the honest no-vest slip-in) nothing is credited and the room stays a route room.
+    def credit_via_pass_on_sync!(room_id)
+      return false if room_id.blank?
+      # Cheap player_state gate first (no scenario read, so the common sync pays nothing): a route
+      # room is never the start room, so unlockedRooms membership is the only "already earned" test
+      # needed here, and room_unlocked? -> start_room? would raise on the narrow sync row.
+      return false unless in_npc_route_room?(room_id) &&
+                          !Array(player_state['unlockedRooms']).include?(room_id)
+
+      ensure_scenario_data_loaded!
+      gate = gate_for_connected_room(room_id)
+      return false unless gate.is_a?(Hash)
+
+      pass_global = gate['playerMayPassIf']
+      return false unless pass_global.present? && server_owned_global_name?(pass_global)
+      return false unless global_variable_value(pass_global)
+
+      promote_route_room!(room_id, 'viaPass')
+    end
+
+    # viaCredential credit in the unlock door branch (§3.3b). Credited only when the server
+    # possession check passes: a held keycard or a live clone whose id is in the door's requires
+    # (rfid), or a held key (key). validate_unlock already refused a non-holder, so this re-asserts
+    # the same server result at the credit site, never a client-sent boolean. Callers pass the room
+    # unlocked by serve_opened_room and gate on it not having been unlocked before; this removes it
+    # from npcRouteRooms (closing the Chunk A dual-list interim) and applies the viaCredential block.
+    def credit_via_credential!(room_id, method, card_ids)
+      return false if room_id.blank?
+
+      lock = room_data(room_id)
+      return false unless lock.is_a?(Hash)
+
+      passes = case method.to_s
+      when 'rfid' then rfid_lock_passes?(lock, card_ids)
+      when 'key'  then lock['requires'].present? && has_key_in_inventory?(lock['requires'])
+      else false
+      end
+      return false unless passes
+
+      remove_npc_route_room!(room_id)
+      applied = apply_credit_on_pass!(room_id, 'viaCredential')
+      save! if changed?
+      applied
     end
 
     # Object management
@@ -448,9 +595,10 @@ module BreakEscape
       # through record_capture! in the sync_state capture step, so the client's write (an old
       # tab's whole map, or a stray key) is dropped whenever it appears.
       variables = variables.reject { |key, _| SERVER_OWNED_GLOBAL_NAMES.include?(key.to_s) }
-      # Imported globals and the worn globals with pp_disguise (Wearables: only POST wear
-      # writes them)
-      read_only = imported_global_names + wearable_read_only_globals
+      # Imported globals, the worn globals with pp_disguise (Wearables: only POST wear writes
+      # them), and the gated-door credit globals (GATED_DOOR §3.4: only the server's creditOnPass
+      # write sets them, so a tampered client cannot forge a tailgate/clone finding).
+      read_only = imported_global_names + wearable_read_only_globals + server_credit_global_names
       variables.each do |key, value|
         if key.to_s == REVOKED_CARDS_GLOBAL
           # Grow-only union (the left-card consequence, apply-actions.js revoke_card, only ever
