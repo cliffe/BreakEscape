@@ -27,7 +27,7 @@ Sync: nothing new in player_state. The labels are scenario data; the conversatio
 - New `test/unit/pc_screen_lock_precedence_test.rb` (4 runs): `AccessIdentities.screen_always_locks?` and `OwnerClaim.open_without_estimate?`, the PC field winning both ways round, lockChance over locksScreenOnLeave, and the habit and default when the PC sets neither.
 - Related files run alone: minigame-close-shell 16, minigame-pixel-art 48, minigame-title-escape 23, interaction-warning 13, network-links 66, wearable-hooks 4, toast-click-through 2: all pass.
 - Full Rails suite (on 1136b61ed, under the lock): 2390 runs, 42539 assertions, 0 failures, 0 errors, 1 skip.
-- Full JS suite (`MERGE_BATCH=1 bin/test-js -j 3`): see the report.
+- Full JS suite (`MERGE_BATCH=1 bin/test-js -j 3`, under the lock, after every code commit): 599 files passed, 0 failed.
 - Validator `--no-graph` on test_capture_log, test_wearable, test_remove_item: 0 ❌, exit 0 each.
 
 ## Live proof
