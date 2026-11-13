@@ -170,6 +170,18 @@ body:has([data-minigame="phone-chat"]) #notification-container {
 
 .game-confirm-buttons .game-confirm-btn {
     white-space: nowrap;
+    /* Backstop for a label too long for the dialog: it is cut at the frame, never drawn past
+       it (the validator warns at over 16 characters) */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: clip;
+}
+
+/* At phone width a wrapped pair is two full-width rows of the same size, confirm on top */
+@media (max-width: 480px) {
+    .game-confirm-buttons .game-confirm-btn {
+        flex: 1 1 100%;
+    }
 }
 
 .game-confirm-btn {
@@ -181,6 +193,16 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     border: 2px solid;
     background: transparent;
     transition: background 0.15s, color 0.15s;
+}
+
+/* The confirm focuses its safe button on open (UX slice 16 R1 m10): a square 2px ring, not the
+   browser's rounded one */
+.game-confirm-btn:focus {
+    outline: none;
+}
+.game-confirm-btn:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
 }
 
 .game-confirm-ok {

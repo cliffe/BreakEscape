@@ -500,18 +500,53 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
 
         // A confirm has no X (UX q99): its two named buttons are the only way to answer, and
         // Esc means the cancel button's choice (resolve false), the safe one.
+        const okBtn = overlay.querySelector('.game-confirm-ok');
+        const cancelBtn = overlay.querySelector('.game-confirm-cancel');
+        const previousFocus = document.activeElement;
+        let done = false;
         const unregister = registerModal(() => finish(false));
+        openConfirms++;
         const finish = (result) => {
+            if (done) return;
+            done = true;
+            openConfirms--;
             unregister();
             overlay.remove();
+            // Give focus back to whatever had it (the game canvas, a minigame field).
+            try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
             resolve(result);
         };
 
-        overlay.querySelector('.game-confirm-ok').addEventListener('click', () => finish(true));
-        overlay.querySelector('.game-confirm-cancel').addEventListener('click', () => finish(false));
+        okBtn.addEventListener('click', () => finish(true));
+        cancelBtn.addEventListener('click', () => finish(false));
+
+        // Keyboard (UX slice 16 R1 m10): Enter or Space presses the focused button, Tab and the
+        // arrows move between the two, and none of these keys reach the game underneath.
+        overlay.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (key === 'Enter' || key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!e.repeat && (e.target === okBtn || e.target === cancelBtn)) e.target.click();
+            } else if (key === 'Tab' || key === 'ArrowLeft' || key === 'ArrowRight' ||
+                       key === 'ArrowUp' || key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopPropagation();
+                (document.activeElement === okBtn ? cancelBtn : okBtn).focus();
+            }
+        });
 
         document.body.appendChild(overlay);
+        // Focus the safe choice, so a stray Enter or Space never says yes.
+        try { cancelBtn.focus(); } catch (e) { /* best effort */ }
     });
+}
+
+// How many gameConfirm dialogs are open. The interaction warning and confirm_action read it
+// (window.gameConfirmOpen) so a second copy of a confirm never opens over the first.
+let openConfirms = 0;
+export function gameConfirmOpen() {
+    return openConfirms > 0;
 }
 
 // Export for global access
@@ -519,3 +554,4 @@ window.showNotification = showNotification;
 window.gameAlert = gameAlert;
 window.gameDisplay = gameDisplay;
 window.gameConfirm = gameConfirm;
+window.gameConfirmOpen = gameConfirmOpen;

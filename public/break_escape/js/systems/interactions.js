@@ -766,6 +766,8 @@ export function maybeInteractionWarning(sprite) {
     // Busy-guard (commit 1dd843566): never open over a chat or minigame the player is in.
     // Drop the interaction rather than barge over the open minigame and steal its input.
     if (window.MinigameFramework?.currentMinigame) return true;
+    // A confirm is already open (this warning, asked again): never stack a second copy.
+    if (window.gameConfirmOpen?.()) return true;
     if (!window.gameConfirm) return false; // no dialog available: don't block the object
 
     const text = typeof w.text === 'string' ? w.text : '';

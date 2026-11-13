@@ -410,6 +410,9 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                     console.warn('[applyActions] gameConfirm not available');
                     break;
                 }
+                // A confirm is already open: drop this one, so the same switch pressed twice
+                // never stacks two dialogs and runs onConfirm twice (UX slice 16 R1 M1).
+                if (window.gameConfirmOpen?.()) break;
                 const { text, onConfirm } = action;
                 const label = (v, fallback) => (typeof v === 'string' && v.trim() ? v : fallback);
                 window.gameConfirm(text, label(action.confirmLabel, 'Confirm'),
