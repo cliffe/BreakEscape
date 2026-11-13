@@ -11,14 +11,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '../../public/break_escape/js/systems/bark-release-policy.js');
 const dir = mkdtempSync(join(tmpdir(), 'bark-release-'));
 writeFileSync(join(dir, 'policy.mjs'), readFileSync(src, 'utf8'));
-const { releaseHeldBarks, HELD_BARK_GAP_MS, HELD_BARK_CAP, HELD_BARK_VOICE_CAP_MS } =
+const { releaseHeldBarks, HELD_BARK_GAP_MS, HELD_BARK_CAP, HELD_BARK_VOICE_CAP_MS, HELD_BARK_VOICE_PAUSE_MS } =
   await import(pathToFileURL(join(dir, 'policy.mjs')).href);
 
 // npc-barks.js with its imports stubbed, except the real policy (gap and voice cap shortened
 // through globals so the tests run on real timers in milliseconds).
 writeFileSync(join(dir, 'npc-barks.mjs'), `
 import { releaseHeldBarks as realRelease } from './policy.mjs';
-const releaseHeldBarks = (q, o) => realRelease(q, { ...o, gapMs: globalThis.__gapMs, voiceCapMs: globalThis.__capMs });
+const releaseHeldBarks = (q, o) => realRelease(q, { ...o, gapMs: globalThis.__gapMs, voiceCapMs: globalThis.__capMs, pauseMs: globalThis.__pauseMs });
 const ASSETS_PATH = '', overlayDepth = () => 0, displayDashes = (s) => s;
 const workstationPopupOpen = () => false, phoneThreadOpenFor = () => false, openPhoneThread = () => null, threadTextKey = () => '';
 const barkLifetimeMs = () => 0, barksToTrim = () => 0, BARK_RESUME_MIN_MS = 0, inventoryBlockedByForcedMinigame = () => false;
@@ -157,7 +157,7 @@ test('a voiced last bark keeps the release going: a bark that joins during its v
   const opts = {
     shouldHold: () => false,
     render: (p) => { order.push(`show ${p.text}`); return p.text === 'ravi' ? { voiceEnd: voice.p } : undefined; },
-    sleep: (ms) => wait(ms === 5 ? 5 : 1000), gapMs: 5, voiceCapMs: 1000, log: () => {}
+    sleep: (ms) => wait(ms === 1000 ? 1000 : ms), gapMs: 5, voiceCapMs: 1000, pauseMs: 5, log: () => {}
   };
   const run = releaseHeldBarks(q, opts);
   await wait(10);
@@ -170,15 +170,41 @@ test('a voiced last bark keeps the release going: a bark that joins during its v
   assert.deepEqual(order, ['show ravi', 'helen due', 'ravi voice ends', 'show helen']);
 });
 
-test('the wait after a voice is the longer of the voice and the gap', async () => {
-  const order = [];
-  const q = [bark('a'), bark('b')];
-  await releaseHeldBarks(q, {
+test('the next bark waits for max(voice end + pause, shown + gap): the gap wins after a short voice', async () => {
+  const t = {};
+  const t0 = Date.now();
+  await releaseHeldBarks([bark('a'), bark('b')], {
     shouldHold: () => false,
-    render: (p) => { order.push(`show ${p.text}`); return { voiceEnd: wait(5).then(() => { order.push(`end ${p.text}`); return true; }) }; },
-    sleep: (ms) => wait(ms), gapMs: 30, voiceCapMs: 1000, log: () => {}
+    render: (p) => { t[`show ${p.text}`] = Date.now() - t0; return { voiceEnd: wait(5).then(() => { t[`end ${p.text}`] = Date.now() - t0; return true; }) }; },
+    sleep: (ms) => wait(ms), gapMs: 120, voiceCapMs: 1000, pauseMs: 20, log: () => {}
   });
-  assert.deepEqual(order, ['show a', 'end a', 'show b', 'end b']);
+  assert.ok(t['show b'] - t['show a'] >= 115, `gap kept: ${JSON.stringify(t)}`);
+  assert.ok(t['show b'] > t['end a']);
+});
+
+test('after a long voice the next bark waits HELD_BARK_VOICE_PAUSE_MS (300 ms) past its end', async () => {
+  assert.equal(HELD_BARK_VOICE_PAUSE_MS, 300);
+  const t = {};
+  const t0 = Date.now();
+  await releaseHeldBarks([bark('a'), bark('b')], {
+    shouldHold: () => false,
+    // a voice longer than the gap; pauseMs left at its default
+    render: (p) => { t[`show ${p.text}`] = Date.now() - t0; return p.text === 'a' ? { voiceEnd: wait(60).then(() => { t['end a'] = Date.now() - t0; return true; }) } : undefined; },
+    sleep: (ms) => wait(ms), gapMs: 20, voiceCapMs: 5000, log: () => {}
+  });
+  const pause = t['show b'] - t['end a'];
+  assert.ok(pause >= 295 && pause < 600, `pause after the voice: ${pause} ms`);
+});
+
+test('the pause also follows the last spoken bark before the release ends', async () => {
+  let endAt = 0;
+  const t0 = Date.now();
+  await releaseHeldBarks([bark('a')], {
+    shouldHold: () => false,
+    render: () => ({ voiceEnd: wait(30).then(() => { endAt = Date.now() - t0; return true; }) }),
+    sleep: (ms) => wait(ms), gapMs: 5, voiceCapMs: 5000, pauseMs: 80, log: () => {}
+  });
+  assert.ok(Date.now() - t0 - endAt >= 75, 'still busy for the pause');
 });
 
 test('no voice (TTS 503, no audio): the last bark ends the release at once, as before', async () => {
@@ -265,7 +291,7 @@ test('stale and capped rules still apply to barks released after a voice', async
 // ---- the same through NPCBarkSystem.showBark / drainDeferredBarks ----
 
 function barkSystem() {
-  globalThis.__gapMs = 5; globalThis.__capMs = 2000;
+  globalThis.__gapMs = 5; globalThis.__capMs = 2000; globalThis.__pauseMs = 10;
   const sys = new NPCBarkSystem(null);
   sys.container = { querySelectorAll: () => [] };
   sys.events = [];

@@ -174,7 +174,7 @@ export default class NPCBarkSystem {
     // the oldest ones that also sit in a phone thread. Drops are logged with console.debug.
     // A bark arriving mid-release joins the end of the line, so it can't jump the queue.
     // The release lasts until the last held bark's voice ends (isDrainingDeferred), so a
-    // bark due while that voice plays waits for it instead of talking over it.
+    // bark due while that voice plays waits for it (and 0.3 s more) instead of talking over it.
     if (this._shouldDefer(payload) || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) {
       console.log('💬 conversation/minigame open — deferring bark:', payload.text || payload.message);
       this.deferredBarkQueue.push(payload);
