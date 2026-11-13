@@ -52,6 +52,9 @@ export const PC_BEZEL = Object.freeze({
 export const PC_POSTIT_INSET = Object.freeze({ full: 24, compact: 12 });
 export const PC_POSTIT_GAP = 4;
 
+/** The chin's right part kept clear of the note: Add to Notepad, the power light and the padding. */
+export const PC_CHIN_BUTTON_ROOM = 190;
+
 /** The room left between the note's bottom and the bezel's outline. */
 export const PC_POSTIT_CLEAR = 2;
 
@@ -105,10 +108,12 @@ export function pcMonitorMetrics(viewW, viewH, { postitHeight = 0 } = {}) {
     // The screen's bottom edge on the frame: the bezel's 2px outline, the strip, the rim,
     // the screen and the rim again
     const screenBottom = 3 * PC_FRAME_EDGE + bezel.top + height;
+    // As wide as the chin allows left of Add to Notepad (about 190px with the light and the
+    // padding), so the note takes fewer lines and the chin stays low
     const postit = {
         left: bezel.side + inset,
         top: screenBottom + PC_POSTIT_GAP,
-        maxWidth: Math.max(120, Math.min(340, Math.floor(outerW * 0.45)))
+        maxWidth: Math.max(120, Math.min(340, outerW - (bezel.side + inset) - PC_CHIN_BUTTON_ROOM))
     };
     const uiScale = Math.max(1, Math.floor(Math.min(width / PC_UI_BASE.width, height / PC_UI_BASE.height)));
     return { compact, narrow, short, uiScale, bezel, screen: { width, height }, width: outerW, height: outerH, left, top, postit };
