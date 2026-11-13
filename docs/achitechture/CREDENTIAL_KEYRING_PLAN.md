@@ -553,6 +553,18 @@ Each decision goes on the picks page with its evidence. Proposed evidence is lis
 - Credential items keep an existing type and icon.
 - The option-2 inline item shape is not accepted.
 
-## Appendix A. Handover
+## Appendix A. Handover (2026-11-13, after review round 2)
 
-Not needed yet.
+For the next agent continuing the plan's review loop. Remove this appendix when the loop ends.
+
+- **Done.** Round 0 draft (commit 8585b394b). Round 1: server B1 M2 m2 n2, UX B1 M11 m12 n5; plan rewritten as a standalone document (commit 60159ca52). Round 2 reviews written: `CREDENTIAL_KEYRING_PLAN_REVIEW_R2_SERVER.md` (B0 M2 m4 n3) and `CREDENTIAL_KEYRING_PLAN_REVIEW_R2_UX.md` (B2 M8 m12 n5), committed with this note. The plan text above is still the round 1 rewrite: no round 2 finding is applied yet.
+- **Next step.** Read both round 2 reviews, check each finding in code (withdraw any that the code disproves, with a one-line reason in your report), then rewrite the plan as a standalone document with no references to reviews, and commit. Then run round 3 (server review on the opus48 agent type, UX review on opus55, both fresh, as in rounds 1 and 2), rewrite, and continue to at most round 5, stopping at the first round from 3 on with 0 B and 0 M.
+- **Round 2 points to settle** (the review files have the evidence):
+  - Server M1: relay sessions do extend reach today (`reach_session_hosts`, `network_access.rb:1115`, counts every session). Either exclude relay sessions from the walk or drop the claim and redo the cheat table.
+  - Server M2: `credential` is client-writable on an always-allowed item; add it to `ItemIdentity::FORGEABLE_ITEM_FIELDS` and a validator error for a `held` credential item of an always-allowed type.
+  - Server minors: `session_for_client` must carry the route fields; `credentialEndGlobals` also needs filling when a sync arrives before the bootstrap; `host_row` must not offer a relay session the view cannot open; `desktop_request_allowed?` needs explicit relay and `from` branches.
+  - UX B1: K0's "headless: 403" plus close-on-403 breaks remote sign-in to headless hosts (P8 HB-DOOR-01, `lab_physical_pentest` LW-DOOR01). Headless hosts must keep today's typed remote screen with no tiles request, or the answer must be `loginAccounts: []` rather than 403.
+  - UX B2: a `notes` item never gets a tray slot (`inventory.js:946`); choose a type that does for the assist code.
+  - UX M1 to M8: K0's added PCs need a real room, the `nla` policy declared, P3's host list updated and P5b's tag claim fixed (implicit `staff` role); K0 does change `lab_physical_pentest` remote screens (correct section 9.2 and give D1 that evidence); `test_access_keyring` lacks accounts and reach for R1, R5 and R10; ink cannot fire a declared grant, so the code comes from Jake's `itemsHeld` by `#give_item` and the invite is best-effort; relay mode needs its sign-in screen, Switch user, Sign out and displacement defined; an invite ended on the server must reach the client (end the open desktop); the toast must not name a view D4 (c) never builds; list every change from the explainer in section 1.
+- **Files touched:** `docs/achitechture/CREDENTIAL_KEYRING_PLAN.md` and the four review files beside it. Branch `plan/keyring` in worktree `.claude/worktrees/p-keyring-plan`.
+- **Gotchas:** HB-DOOR-01 in `test_access_networks` is headless (no screen); the capture log is carried only by `test_capture_log`; PUT /sync_state loads no `scenario_data`; commit with explicit paths, UK English, no em or en dashes, no model names in repo files.
