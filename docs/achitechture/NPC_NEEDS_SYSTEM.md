@@ -627,16 +627,27 @@ during the walk home (exists). Player-facing behaviour:
   conversation state is untouched), one line per bubble (`exchangeLineMs`, at most 6 s), each in its
   speaker's voice through `systems/npc-needs-chatter.js` (`window.npcChatterVoice`; plays only in the
   player's room, volume falls with distance, muted when barks are muted, `log` records every line).
-  The pair's overlap is extended by the knot, capped at 60 s. At the end the global `heard_<knot>` is
-  set (saved, so once per game survives a reload) and `npc_exchange_heard:<knot>` fires. A meeting
-  interrupted mid-exchange leaves it unplayed. Afterwards the same meeting carries on with barks,
-  then pictures.
+  The pair's overlap is held for the lines left (moved on by lines that wait for the speech lock),
+  capped at 60 s from the start (`EXCHANGE_MAX_MS`); the front of a queue in an exchange does not run
+  out its queue wait until the exchange ends or reaches that cap. An exchange counts as heard when it
+  plays to the end, or when it is cut (the pair breaks up: a use or queue that ends, a player
+  conversation, a knock-out) after the player overheard at least one of its lines. Heard: the global
+  `heard_<knot>` is set (saved, so once per game survives a reload) and `npc_exchange_heard:<knot>`
+  fires with `complete` true (played to the end) or false (a heard cut); it is never played again,
+  so the lines after a heard cut are lost. Cut before any line reached the player: unplayed, and a
+  later meeting in earshot plays it from the start. A hush from an earlier bark in the same chat is
+  cleared when an exchange starts. A task that needs the whole exchange binds with `condition:
+  "data.complete === true"`; put anything the player must learn in the first line. The validator
+  warns when a knot's lines add up to more than 60 s (the last lines would never play). Afterwards
+  the same meeting carries on with barks, then pictures.
 - **Order.** Each turn: unheard exchange (with audience), then a bark (if lines, off cooldown, lock
   free), then a picture. `_grumble` (5.8) uses the same bag, cooldown and lock, and shows `avoid`
   otherwise.
 - **Dark rooms.** `playerHears` now needs the NPC's room lit (`roomLevel >= 0.5`), so `overheard`,
   `npc_overheard` (slice 8 and 14) and exchanges do not fire in a dark room.
-- **Decision log.** `exchange_started` (`knot`, `with`) and `exchange_heard` (`knot`).
+- **Decision log.** `exchange_started` (`knot`, `with`), `exchange_cut` (`knot`, `reason`
+  (`pair_ended`), `line`, `of`, `heardLines`, `heard`) and `exchange_heard` (`knot`,
+  `complete`).
 - **Not saved:** bags, cooldowns, the lock. Saved: `heard_<knot>`.
 
 ### 5.7 Queues at shared machines (office life slice 10, `OFFICE_LIFE_PLAN.md` 2.5, 7.3)
@@ -924,7 +935,8 @@ events.
 - `npc_overheard:<speakerId>` with the same payload, only when `overheard` is true.
 - Slice 15: `npc_chatted` also carries `picture` (an icon name, with `line: null`) for picture chat
   and `exchange` (the knot) for an exchange line. `npc_exchange_heard:<knot>` `{ knot, ownerId, npcIds,
-  objectId }` fires when an exchange finishes, once per game (global `heard_<knot>`).
+  objectId, complete }` fires once per game (global `heard_<knot>`) when an exchange plays to the end
+  (`complete: true`) or is cut after the player overheard a line (`complete: false`; 5.6a).
 - `npc_turned_back:<npcId>` `{ npcId, need, targetId, reason, avoidedId?, playerNearby, playerDistance }`
   when an NPC gives up a source it was walking to or queued for (5.8).
 - `npc_need_parked:<npcId>` `{ npcId, need, reason, targetId, avoidedId?, untilMs }` when a need parks (5.8).

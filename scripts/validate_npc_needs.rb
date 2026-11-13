@@ -788,7 +788,18 @@ module ValidateNpcNeeds
   # speaker it names ("Name: line", by id or displayName) must be an NPC in the scenario (error) with
   # a voice (warning), and should be the owner or the `with` NPC (the engine plays only the pair's
   # lines). No { } in the knot's text (rule 2). heard_<knot> is set when it ends: declare it.
+  # A knot longer than EXCHANGE_MAX_MS outlives its hold, so its last lines never play (warning).
   REPO_ROOT = File.expand_path('..', __dir__)
+  # Line timing, as npc-needs.js exchangeLineMs and _startExchange (keep in step with the engine)
+  EXCHANGE_MAX_MS = 60_000
+  EXCHANGE_LINE_MAX_MS = 6000
+  CHAT_BASE_MS = 2500
+  CHAT_PER_CHAR_MS = 50
+  CHAT_GAP_MS = 500
+
+  def self.exchange_line_ms(text)
+    [EXCHANGE_LINE_MAX_MS, CHAT_BASE_MS + (CHAT_PER_CHAR_MS * text.to_s.length)].min
+  end
 
   def self.ink_knot_texts(story_path, knot)
     path = File.join(REPO_ROOT, story_path.to_s)
@@ -853,6 +864,14 @@ module ValidateNpcNeeds
           next
         end
         issues << "❌ ERROR: #{where}: knot '#{e['knot']}' has no lines." if texts.empty?
+        # The engine times each line's text without its "Name:" prefix, plus the gap after it
+        total_ms = texts.sum do |t|
+          m = /\A([^:\n]+?):\s+(\S.*)\z/m.match(t)
+          exchange_line_ms(m ? m[2] : t) + CHAT_GAP_MS
+        end
+        if total_ms > EXCHANGE_MAX_MS
+          issues << "⚠️ WARNING: #{where}: knot '#{e['knot']}' runs about #{(total_ms / 1000.0).round(1)} s, over the #{EXCHANGE_MAX_MS / 1000} s an exchange can hold the pair; the last lines will never be heard. Split the knot."
+        end
         texts.each do |t|
           m = /\A([^:\n]+?):\s+(\S.*)\z/m.match(t)
           speaker = m ? by_name[m[1].strip.downcase] : n
