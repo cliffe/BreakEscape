@@ -11,12 +11,15 @@
  *                 subtitle that adds what the name lacks (viewSubtitle), a Wi-Fi link's status
  *                 line ("Joined. Reaches <n> hosts."), and an optional one-line message. Title,
  *                 subtitle and status never repeat each other, so the link item's inventory
- *                 line is not shown (code review R1 m1). Its own network is the first block's
- *                 heading; a Wi-Fi view, whose title names the network, heads it "Reachable".
- *   frame         the panel's 2px frame holds the X (top right, inside the border) and the
- *                 list; a long list scrolls inside the frame, with a "More below" strip pinned
- *                 to its bottom edge until the end is reached (R1 m2, m4). The view closes with
- *                 the X or Esc only: no Close button under it.
+ *                 line is not shown (code review R1 m1). The own network's block is headed
+ *                 "Reachable" on every view, since the subtitle already names the network
+ *                 (code review R2 m1); a further network's block keeps its name.
+ *   frame         the panel's 2px frame is a column: the header (holding the X, top right,
+ *                 inside the border), the scrolling list, and a "More below" strip pinned to
+ *                 the bottom edge until the end is reached (R1 m2, m4). The header is outside
+ *                 the scroll area, so the list's scrollbar (pixel art, .pixel-scroll) starts
+ *                 under it and never meets the X (R2 m2). The view closes with the X or Esc
+ *                 only: no Close button under it.
  *   down states   one helper, downState, for every kind (slice 1): "(down)" with "No route" for
  *                 a network with no route and its rows, "(powered down)" alone for a host whose
  *                 own service is off (R1 n1: the tag says it), "(down)" on the title when an
@@ -58,8 +61,9 @@ export const NO_ROUTE_TEXT = 'No route';
 export const DOWN_TAG = '(down)';
 export const POWERED_DOWN_TAG = '(powered down)';
 export const sessionKeptText = (name) => `Session kept: ${name}`;
-// The own block's heading on a Wi-Fi view, whose title already names the network (R1 n2)
-export const WIFI_OWN_HEADING = 'Reachable';
+// The own block's heading on every view: the subtitle (or a Wi-Fi title) already names the
+// network (R1 n2, code review R2 m1)
+export const OWN_HEADING = 'Reachable';
 export const MORE_BELOW_TEXT = 'More below';
 // Shown when the view was fetched before the latest globals reached the server (review R2 m3)
 export const STALE_TEXT = 'Still updating, so this may be out of date.';
@@ -208,10 +212,11 @@ export class NetworkViewMinigame extends MinigameScene {
     }
 
     /**
-     * The panel's frame (code review R1 m2, m4): one 2px border round the X, the scrolling
-     * list (the framework's game area) and the "More below" strip, so the X sits inside the
-     * frame at every size and the bottom border is never scrolled away. Render replaces only
-     * the game area's contents.
+     * The panel's frame (code review R1 m2, m4; R2 m2): one 2px border round a column of the
+     * header (which holds the X), the scrolling list (the framework's game area) and the
+     * "More below" strip. The X sits inside the frame at every size, the bottom border is
+     * never scrolled away, and the list's scrollbar runs only beside the list. Render fills
+     * the header and the game area.
      */
     buildFrame() {
         const game = this.gameContainer;
@@ -219,8 +224,15 @@ export class NetworkViewMinigame extends MinigameScene {
         const frame = document.createElement('div');
         frame.className = 'network-view-frame';
         game.parentNode.insertBefore(frame, game);
+        const header = document.createElement('div');
+        header.className = 'network-view-header';
+        const headerBody = document.createElement('div');
+        headerBody.className = 'network-view-header-body';
+        header.appendChild(headerBody);
         const close = this.container.querySelector('.minigame-close-button');
-        if (close) frame.appendChild(close);
+        if (close) header.appendChild(close);
+        frame.appendChild(header);
+        game.classList?.add('pixel-scroll');
         frame.appendChild(game);
         const more = document.createElement('div');
         more.className = 'network-view-more';
@@ -229,6 +241,7 @@ export class NetworkViewMinigame extends MinigameScene {
         more.innerHTML = `<span class="network-view-more-arrow"></span><span>${MORE_BELOW_TEXT}</span>`;
         frame.appendChild(more);
         this.frameElement = frame;
+        this.headerElement = headerBody;
         this.moreElement = more;
         this.addEventListener(game, 'scroll', () => this.updateScrollCue());
         if (typeof window !== 'undefined') this.addEventListener(window, 'resize', () => this.updateScrollCue());
@@ -370,7 +383,7 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** A row's label: its name, the down tag after it, and the line under it. */
     labelHtml(title, sub, ds) {
-        return `<span class="network-row-label"><span class="network-row-title"><strong>${escapeHtml(title)}</strong>${ds?.tag ? ` ${this.tagHtml(ds)}` : ''}</span>
+        return `<span class="network-row-label"><span class="network-row-title"><strong class="network-row-hostname">${escapeHtml(title)}</strong>${ds?.tag ? ` ${this.tagHtml(ds)}` : ''}</span>
                         <span class="network-row-name">${escapeHtml(sub)}</span></span>`;
     }
 
@@ -434,21 +447,25 @@ export class NetworkViewMinigame extends MinigameScene {
         // lacks; a Wi-Fi link shows the icon and, once joined, a status line. The inventory
         // line ("Your drop box on ...") repeated the subtitle, so no view shows it (R1 m1).
         const title = v.name || 'Your link';
-        const ownName = v.via === 'wifi' ? WIFI_OWN_HEADING : (v.network?.name || '');
+        const ownName = OWN_HEADING;
         const linkDown = downState(v);
         const subtitle = viewSubtitle(v);
         const status = this.statusLine();
         const rows = this.rows();
         const icon = v.via === 'wifi' ? `<img class="network-view-title-icon" src="${WIFI_ICON}" alt="">` : '';
-        this.gameContainer.innerHTML = `
-            <div class="network-view${v.via ? ` network-view-${escapeHtml(v.via)}` : ''}">
-                <div class="network-view-header">
+        const headerHtml = `
                     <h4 class="network-view-title">${icon}<span>${escapeHtml(title)}</span>${linkDown.tag ? ` ${this.tagHtml(linkDown)}` : ''}</h4>
                     ${subtitle ? `<p class="network-view-subtitle">${escapeHtml(subtitle)}</p>` : ''}
                     ${status ? `<p class="network-view-status">${escapeHtml(status)}</p>` : ''}
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
-                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}
-                </div>
+                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}`;
+        // The header sits above the scroll area (R2 m2); with no frame (no DOM parent) it
+        // heads the list as before
+        const inList = !this.headerElement;
+        if (this.headerElement) this.headerElement.innerHTML = headerHtml;
+        this.gameContainer.innerHTML = `
+            <div class="network-view${v.via ? ` network-view-${escapeHtml(v.via)}` : ''}">
+                ${inList ? `<div class="network-view-header">${headerHtml}</div>` : ''}
                 ${(v.responding !== false && !rows.length && this.ownDownBlock()) ? '' : `<div class="network-block network-block-own">
                     ${ownName ? `<h5 class="network-block-title">${escapeHtml(ownName)}</h5>` : ''}
                     <ul class="network-view-rows">
