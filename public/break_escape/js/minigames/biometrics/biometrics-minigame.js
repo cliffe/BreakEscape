@@ -107,7 +107,7 @@ export class BiometricsMinigame extends MinigameScene {
                 <span>Collected Samples</span>
                 <div class="samples-count">0 samples</div>
             </div>
-            <div class="biometrics-samples-list" id="biometrics-samples-list"></div>
+            <div class="biometrics-samples-list pixel-scroll" id="biometrics-samples-list"></div>
         `;
         
         // Field notes: the three pattern types, drawn by the same generator as the prints
@@ -133,11 +133,13 @@ export class BiometricsMinigame extends MinigameScene {
         this.addEventListener(fieldNotes, 'toggle', () => this.drawFieldNotes());
         
         // Create instructions
-        const instructionsContainer = document.createElement('div');
+        // A closed "How to use" disclosure, like Field notes, so the samples list keeps the
+        // panel's height (critique A18: the list had none left at 800x600 and below)
+        const instructionsContainer = document.createElement('details');
         instructionsContainer.className = 'biometrics-scanner-instructions';
         instructionsContainer.innerHTML = `
+            <summary>How to use the kit</summary>
             <div class="instruction-text">
-                <strong>Instructions:</strong><br>
                 • Use "Search Room" to highlight surfaces that carry prints<br>
                 • Click a highlighted surface to dust it and lift the print<br>
                 • Present a lift to a fingerprint reader to try to unlock it<br>

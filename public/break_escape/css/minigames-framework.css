@@ -3,15 +3,24 @@
 .minigame-container {
     position: fixed;
     top: 0px;
+    left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;   /* the visible height on phones, where 100vh runs under the browser bar */
+    /* UI shell build (critique B X1, X2): a scene's own border sits inside the window, never
+       4px past it; a frame taller or wider than the window starts at the top-left edge
+       (`safe` centring) instead of spilling past both edges; and the shell scrolls, with
+       the shared pixel-art scrollbar (base-minigame.js adds .pixel-scroll), so nothing is
+       out of reach. */
+    box-sizing: border-box;
+    overflow: auto;
     background: rgba(0, 0, 0, 0.95);
     /* Raised so minigames appear above other UI (inventory, NPC barks, HUD, etc.) */
     z-index: 1500;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: safe center;
+    align-items: safe center;
     font-family: 'GNF', monospace;
     color: white;
     box-shadow: none;   /* pixel-art UI: no soft shadow (slice 7) */
@@ -144,6 +153,16 @@
     min-height: 0;
 }
 
+/* A frame never grows past the shell: it scrolls inside itself (scenes that hold more than
+   a short window can show set their own overflow) rather than spill out of the window.
+   :where() gives it no specificity, so a scene's own max-width (the PIN plate's 600px) or
+   box-sizing still wins. */
+:where(.minigame-container > .minigame-game-container) {
+    max-width: 100%;
+    max-height: 100%;
+    box-sizing: border-box;
+}
+
 .minigame-message-container {
     position: absolute;
     top: 0;
@@ -155,10 +174,14 @@
 }
 
 .minigame-success-message {
+    /* At the top edge, not the middle of the window, where it covered the keypad's 4-6 row
+       and other controls (critique A10). Scenes with a message line of their own use it. */
     position: fixed;
-    top: 50%;
+    top: 16px;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
     background: rgba(46, 204, 113, 0.9);
     color: white;
     padding: 20px;
@@ -170,10 +193,14 @@
 }
 
 .minigame-failure-message {
+    /* At the top edge, not the middle of the window, where it covered the keypad's 4-6 row
+       and other controls (critique A10). Scenes with a message line of their own use it. */
     position: fixed;
-    top: 50%;
+    top: 16px;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
     background: rgba(231, 76, 60, 0.9);
     color: white;
     padding: 20px;
@@ -202,8 +229,11 @@
     flex-shrink: 0;
 }
 
-/* The framed tool windows (container, combination, cryptex) scroll inside their frame when
-   a short screen cannot hold their content, so the frame always wraps it (slice 7 R1) */
+/* The framed tool windows (container, combination, cryptex, flag station, VM launcher) scroll
+   inside their frame when a short screen cannot hold their content, so the frame always
+   wraps it (slice 7 R1; the flag station and VM launcher from critique A29) */
+.minigame-container[data-minigame="flag-station"] > .minigame-game-container,
+.minigame-container[data-minigame="vm-launcher"] > .minigame-game-container,
 .minigame-container[data-minigame="container"] > .minigame-game-container,
 .minigame-container[data-minigame="combination"] > .minigame-game-container,
 .minigame-container[data-minigame="cryptex"] > .minigame-game-container {
@@ -234,6 +264,14 @@
    full height (code review R2 n1: the SIEM alert list showed half a row less) */
 .minigame-controls-overlay .minigame-game-container {
     min-height: auto;
+}
+
+/* A full-window console's game area fills the window exactly. Its 20px top and bottom margins
+   used to spill evenly off both edges of the centred shell; now the shell centres safely and
+   scrolls (UI shell build), they would push the console 20px down and past the bottom. */
+.minigame-controls-overlay > .minigame-game-container {
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .minigame-button {
@@ -288,7 +326,10 @@
     border: 2px solid #00ff00 !important;
 }
 
-/* Close button for minigames */
+/* Close button for minigames. The shell scrolls, so the X is fixed to the window: it stays
+   reachable whichever way the shell is scrolled (UI shell review M1, M2). The shell's own
+   scrollbar width comes in as --minigame-shell-bar (base-minigame.js) so the X sits left of
+   it. A scene that moves its X into a frame (a parent other than the shell) keeps absolute. */
 .minigame-close-button {
     position: absolute;
     top: 15px;
@@ -306,6 +347,11 @@
     align-items: center;
     justify-content: center;
     transition: background-color 0.3s ease;
+}
+
+.minigame-container > .minigame-close-button {
+    position: fixed;
+    right: calc(15px + var(--minigame-shell-bar, 0px));
 }
 
 /* A conversation's only exit on a phone is its X (UX q100): keep the drawn size but give it

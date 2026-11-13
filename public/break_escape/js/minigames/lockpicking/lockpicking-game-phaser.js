@@ -502,17 +502,18 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             const isPortrait = window.innerHeight > window.innerWidth;
 
             if (isPortrait) {
-                // Portrait: use a canvas window that closely matches the lock area so the
-                // canvas can fill more of the screen height.  Camera is scrolled in create()
-                // so that game-world x=80..480, y=20..360 maps onto this 400x340 canvas.
-                config.width = 400;
+                // Portrait: a canvas window over the lock and its labels (tension wrench,
+                // pins, SHEAR LINE), which span about x=0..580; Scale.FIT shrinks it to the
+                // screen. The old 400px window over x=80..480 cut the lock's right side and
+                // the labels (critique A07). Camera is scrolled in create().
+                config.width = 580;
                 config.height = 340;
-                this._portraitCameraOffset = { x: 80, y: 20 };
+                this._portraitCameraOffset = { x: 0, y: 20 };
             } else {
-                // Landscape: crop to lock area horizontally (x=80..590, y=30..370)
-                config.width = 510;
+                // Landscape: crop to the lock and its labels (x=0..580, y=30..370)
+                config.width = 580;
                 config.height = 340;
-                this._portraitCameraOffset = { x: 80, y: 30 };
+                this._portraitCameraOffset = { x: 0, y: 30 };
             }
 
             config.scale = {
@@ -528,6 +529,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             requestAnimationFrame(wireLockAudio);
             this.scene = this.game.scene.getScene('LockpickingScene');
             console.log('Phaser game created, scene:', this.scene);
+            this._watchLockZoom();
         } catch (error) {
             console.error('Error creating Phaser game:', error);
             this.keyInsertion.updateFeedback('Error loading Phaser game: ' + error.message);
@@ -535,6 +537,63 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     }
     
     
+    // The largest whole-number zoom at which the 600x400 lock fits the room it has (A09): 1 when
+    // the window is small or the lock is cropped for a phone, 2 or more on a big window
+    static wholeZoom(availW, availH, baseW = 600, baseH = 400) {
+        const z = Math.floor(Math.min(availW / baseW, availH / baseH));
+        return Number.isFinite(z) && z > 1 ? z : 1;
+    }
+
+    // Room for the canvas: the game area's width, and its height less the strips around the
+    // canvas (item info, feedback)
+    _lockRoom() {
+        const area = this.gameContainer;
+        const box = area?.querySelector?.('#phaser-game-container');
+        if (!area || !box) return null;
+        let others = 0;
+        for (const el of area.children) {
+            if (el === box) continue;
+            const cs = window.getComputedStyle(el);
+            others += el.offsetHeight + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
+        }
+        const ar = window.getComputedStyle(area);
+        const padX = (parseFloat(ar.paddingLeft) || 0) + (parseFloat(ar.paddingRight) || 0);
+        const padY = (parseFloat(ar.paddingTop) || 0) + (parseFloat(ar.paddingBottom) || 0);
+        return { w: area.clientWidth - padX, h: area.clientHeight - padY - others - 8 };
+    }
+
+    _fitLockZoom() {
+        const game = this.game;
+        const box = this.gameContainer?.querySelector?.('#phaser-game-container');
+        if (!game?.scale || !box || window.innerWidth <= 768) return;
+        const room = this._lockRoom();
+        if (!room) return;
+        const z = LockpickingMinigamePhaser.wholeZoom(room.w, room.h);
+        if (game.scale.zoom !== z) game.scale.setZoom(z);
+        box.style.maxWidth = (600 * z) + 'px';
+        box.classList.toggle('lockpicking-zoomed', z > 1);
+    }
+
+    // Phaser rereads the canvas's page position only on its resize interval, so a scroll of the
+    // game area or the shell leaves the pointer mapped to the old place for up to half a second
+    // (UI shell review m1). Reread it on the scroll itself.
+    _watchLockScroll() {
+        const update = () => { try { this.game?.scale?.updateBounds?.(); } catch (e) { /* game gone */ } };
+        this._lockScrollUpdate = update;
+        this._lockScrollEls = [this.gameContainer, this.container].filter(Boolean);
+        this._lockScrollEls.forEach((el) => el.addEventListener('scroll', update, { passive: true }));
+    }
+
+    _watchLockZoom() {
+        this._watchLockScroll();
+        if (window.innerWidth <= 768) return;
+        const fit = () => this._fitLockZoom();
+        this._lockZoomOnResize = fit;
+        window.addEventListener('resize', fit);
+        requestAnimationFrame(fit);
+        setTimeout(fit, 300);
+    }
+
     startWithKeySelection(inventoryKeys = null, correctKeyId = null) {
         // Start the minigame with key selection instead of a default key
         // inventoryKeys: array of keys from inventory (optional)
@@ -606,6 +665,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     
     complete(success) {
         if (this.game) {
+            if (this._lockZoomOnResize) window.removeEventListener('resize', this._lockZoomOnResize);
+            this._lockScrollEls?.forEach((el) => el.removeEventListener("scroll", this._lockScrollUpdate));
             this.game.destroy(true);
             this.game = null;
         }

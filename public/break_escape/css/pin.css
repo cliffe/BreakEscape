@@ -317,15 +317,16 @@
 }
 
 .pin-minigame-attempt.correct {
-    background: rgba(0, 255, 0, 0.3);
-    border: 2px solid rgba(0, 255, 0, 0.3);
-    color: #00ff00;
+    background: #2c3e50;
+    border: 2px solid #00ff41;
+    color: #00ff41;
 }
 
 .pin-minigame-attempt.incorrect {
-    background: rgba(255, 68, 68, 0.3);
-    border: 2px solid rgba(255, 68, 68, 0.3);
-    color: #ff4444;
+    /* A solid dark row with a red edge reads on the slate plate (critique A11) */
+    background: #2c3e50;
+    border: 2px solid #ff6b6b;
+    color: #ff8a8a;
 }
 
 .pin-minigame-attempt-number {
@@ -347,7 +348,7 @@
 
 .pin-minigame-attempt-empty {
     text-align: center;
-    color: #666;
+    color: #c9d1d9;
     font-style: normal;
     padding: 20px;
 }
@@ -570,4 +571,31 @@
     .pin-minigame-interface > .pin-minigame-keypad { grid-column: 2; grid-row: 1 / span 6; width: 260px; }
     .pin-minigame-key { min-height: 36px; padding: 6px; }
     .pin-minigame-attempts-log { max-height: 60px; }
+}
+
+/* The keypad's message line under the display (critique A10): a wrong code is reported here,
+   in the display's green-on-black LCD look, instead of over the keys. It keeps the height of
+   two lines (24px each, plus its 2px padding and borders) when empty, so a wrong code that
+   wraps ("Incorrect PIN. 2 attempts remaining.") does not push the keys down (review m2). */
+.pin-minigame-message {
+    min-height: 56px;
+    max-width: 320px;
+    margin: -12px auto 0;
+    font-family: 'VT323', monospace;
+    font-size: 24px;
+    line-height: 24px;
+    text-align: center;
+    color: #00ff41;
+    background: #000;
+    border: 2px solid #000;
+    padding: 2px 8px;
+}
+
+.pin-minigame-message:empty {
+    background: transparent;
+    border-color: transparent;
+}
+
+.pin-minigame-message.wrong {
+    color: #ff8a8a;
 }

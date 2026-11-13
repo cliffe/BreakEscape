@@ -23,12 +23,19 @@
     flex: 0 0 auto;
 }
 
+/* The kit's frame is the window here: it is capped to the screen and scrolls inside, so its
+   title is never centred up past the top edge (critique A15). The game area around it is not
+   capped (the shell's frame cap would centre the kit over both edges). */
+.minigame-container > .dusting-game-container { max-height: none; margin: auto 0; }
+
 .dusting-root {
     align-self: center;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
     width: min(960px, 96vw);
     background: var(--d-bg);
     border: 2px solid var(--d-accent);
-    box-shadow: 0 0 18px rgba(0, 255, 65, 0.25);
+    box-shadow: none;   /* pixel-art UI: no soft glow */
     color: var(--d-text);
     font-family: 'VT323', 'GNF', monospace;
     font-size: 20px;
@@ -36,19 +43,20 @@
     box-sizing: border-box;
 }
 
-.dusting-title { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
-.dusting-title h2 { font-family: 'Press Start 2P', monospace; font-size: 14px; margin: 0; color: var(--d-accent); font-weight: normal; }
+/* padding-right keeps the title clear of the X in the frame's corner (critique A14) */
+.dusting-title { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; padding-right: 44px; }
+.dusting-title h2 { font-family: 'Press Start 2P', monospace; font-size: 16px; line-height: 24px; margin: 0; color: var(--d-accent); font-weight: normal; }
 .dusting-object { color: var(--d-dim); }
 
 .dusting-steps { list-style: none; display: flex; gap: 4px; margin: 0 0 10px; padding: 0; flex-wrap: wrap; }
 .dusting-steps li {
-    flex: 1 1 90px; text-align: center; padding: 4px 6px; border: 1px solid var(--d-line);
+    flex: 1 1 90px; text-align: center; padding: 4px 6px; border: 2px solid var(--d-line);
     color: var(--d-dim); font-size: 18px; background: var(--d-panel);
 }
 .dusting-steps li.done { color: var(--d-text); border-color: #2f6b43; }
 .dusting-steps li.done::after { content: ' \2713'; }
 .dusting-steps li.active { color: #000; background: var(--d-accent); border-color: var(--d-accent); }
-.dusting-step-num { font-family: 'Press Start 2P', monospace; font-size: 10px; margin-right: 4px; }
+.dusting-step-num { font-family: 'Press Start 2P', monospace; font-size: 8px; margin-right: 4px; }
 
 .dusting-main { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
 .dusting-stage { flex: 0 0 auto; }
@@ -58,7 +66,7 @@
 }
 .dusting-canvas:focus-visible { border-color: var(--d-accent); box-shadow: 0 0 0 2px var(--d-accent); }
 .dusting-panel { flex: 1 1 280px; min-width: 260px; }
-.dusting-panel h3 { font-family: 'Press Start 2P', monospace; font-size: 12px; margin: 0 0 10px; color: var(--d-accent); font-weight: normal; line-height: 1.5; }
+.dusting-panel h3 { font-family: 'Press Start 2P', monospace; font-size: 8px; margin: 0 0 10px; color: var(--d-accent); font-weight: normal; line-height: 16px; }
 .dusting-panel p { margin: 0 0 8px; line-height: 1.2; }
 .dusting-note, .dusting-dim { color: var(--d-dim); }
 /* A long item text (m08's base64 USB stick) made the panel taller than a
@@ -117,11 +125,29 @@
 .dusting-ref { display: flex; flex-direction: column; gap: 4px; padding: 6px; max-width: 100%; }
 .dusting-ref-canvas { image-rendering: pixelated; display: block; background: #f2f0ea; }
 
-.dusting-forensic { margin: 10px 0 4px; color: var(--d-dim); font-size: 18px; line-height: 1.15; border-top: 1px solid var(--d-line); padding-top: 8px; }
+.dusting-forensic { margin: 10px 0 4px; color: var(--d-dim); font-size: 18px; line-height: 1.15; border-top: 2px solid var(--d-line); padding-top: 8px; }
 .dusting-status { min-height: 1.2em; color: var(--d-text); font-size: 18px; }
 .dusting-options { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 18px; color: var(--d-dim); }
 .dusting-options label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; cursor: pointer; }
 .dusting-options input { width: 20px; height: 20px; accent-color: var(--d-accent); }
+/* Pixel checkboxes (critique A17): a 2px square box, a filled square when ticked */
+.dusting-options input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 0;
+    border: 2px solid var(--d-accent);
+    background: var(--d-bg);
+    vertical-align: -2px;
+    font-size: 16px;   /* whole-pixel (the browser default is 13.33px) */
+    cursor: pointer;
+}
+.dusting-options input[type="checkbox"]:checked {
+    background: var(--d-accent);
+    box-shadow: inset 0 0 0 2px var(--d-bg);
+}
 
 /* High contrast: white on black, thick borders */
 .dusting-hc { --d-bg: #000; --d-panel: #000; --d-line: #fff; --d-text: #fff; --d-dim: #e0e0e0; border-color: #fff; box-shadow: none; }

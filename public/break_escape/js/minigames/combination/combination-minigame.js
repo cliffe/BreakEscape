@@ -221,6 +221,13 @@ export class CombinationMinigame extends MinigameScene {
     _refreshDials(opened = false) {
         for (let i = 0; i < 3; i++) this._updateDialDisplay(i, opened);
         this._updateDirectionIndicator(opened);
+        // When the next dial takes over, bring it on screen: on a phone the dials stack and
+        // the frame scrolls (critique A01)
+        if (!opened && this._shownActive !== this.activeDial) {
+            this._shownActive = this.activeDial;
+            const group = this.gameContainer.querySelector(`#comb-dial-${this.activeDial}`);
+            try { group?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }); } catch { /* old browser */ }
+        }
     }
 
     _updateDialDisplay(dialIndex, opened = false) {
