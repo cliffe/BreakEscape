@@ -870,7 +870,7 @@ test('R3 m1: the chosen account line carries that NPC\'s headshot in the monitor
     }
 });
 
-test('R3 M1: a remote sign-in\'s Captured sign-ins is a solid note with the PC\'s buttons', async () => {
+test('R3 M1 / UX 2b0: a remote sign-in\'s Captured sign-ins is a solid note with the shared account tiles', async () => {
     const restore = sizeWindow(800, 600);
     try {
         document.body.innerHTML = '<div id="mg"></div>';
@@ -884,15 +884,18 @@ test('R3 M1: a remote sign-in\'s Captured sign-ins is a solid note with the PC\'
         window.MinigameFramework.currentMinigame = mg;
         mg.init();
         assert.ok(document.querySelector('.pc-monitor .signin-captured'), 'in the monitor');
-        const item = document.querySelector('.signin-captured-item');
-        assert.ok(item.classList.contains('pc-os-btn'), 'the PC\'s button look');
+        // UX slice 2b0: the captures are the shared account tiles, inside the monitor's screen
+        assert.ok(document.querySelector('.pc-screen-area .signin-captured .signin-tile.signin-captured-tile'), 'a captured account tile');
         mg.setCapturedSignIns([{ label: 'Lena Fox', username: 'lfox', targetId: 'hb_fin_02' }]);
-        assert.ok(document.querySelector('.signin-captured-item').classList.contains('pc-os-btn'), 'and after the list arrives');
+        assert.ok(document.querySelector('.pc-screen-area .signin-captured .signin-captured-tile'), 'and after the list arrives');
+        assert.equal(document.querySelectorAll('.signin-captured-item').length, 0, 'no text buttons');
         const unsheet = withSheets('network-view-minigame.css', 'password-minigame.css', 'pc-monitor.css');
         try {
             const cs = window.getComputedStyle(document.querySelector('.signin-captured'));
             assert.doesNotMatch(cs.backgroundColor, /rgba\(/, 'no see-through fill');
             assert.equal(cs.borderTopWidth, '2px');
+            const tile = window.getComputedStyle(document.querySelector('.signin-captured-tile'));
+            assert.equal(tile.borderTopWidth, '2px', 'the tile\'s 2px edge, as at the keyboard');
             const label = window.getComputedStyle(document.querySelector('.signin-field-row label'));
             assert.equal(label.borderTopWidth, '2px', 'the labels are bordered as the other slabs');
         } finally {

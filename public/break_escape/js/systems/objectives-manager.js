@@ -571,7 +571,48 @@ export class ObjectivesManager {
    * ("NPC not encountered") comes back with success:false and no transient
    * flag, and is returned on the first attempt without retrying.
    */
+  /**
+   * Flush pending client state (globals among it) to the server before a
+   * task-completion or skip POST. A global named in a mission's
+   * concludeRequires.globals, set on the same beat as the task, reaches the
+   * server only with the state sync; without this flush the completion POST can
+   * land first, and the server warns "Not Yet..." over an ending that concludes a
+   * moment later (the conclude race). Mirrors concludeMission() in
+   * music/scenario-music-events.js, which already does this before POST .../conclude.
+   *
+   * StateSync.sync() sends buildChanges() -- deltas only, and no request at all
+   * when nothing changed -- so this never grows the synced state (SYNC SIZE RULE).
+   * It never rejects. Called twice: the second is a no-op if the first saved, a
+   * resend if the first was answered stale.
+   */
+  async flushPendingGlobals() {
+    await window.stateSync?.sync?.();
+    await window.stateSync?.sync?.();
+  }
+
+  /**
+   * Does this scenario gate any mission conclusion on a global variable
+   * (`concludeRequires.globals`)? Only such scenarios can hit the conclude race,
+   * so only they pay for the pre-flush before the completion/skip POST; every
+   * other scenario keeps its original timing. Computed once and cached.
+   */
+  scenarioGatesOnGlobals() {
+    if (this._gatesOnGlobals === undefined) {
+      this._gatesOnGlobals = this.aims.some(aim =>
+        Array.isArray(aim.concludeRequires?.globals) && aim.concludeRequires.globals.length > 0);
+    }
+    return this._gatesOnGlobals;
+  }
+
   async serverCompleteTaskWithRetry(taskId, attempts = 4) {
+    // Order the pending global sync before the completion POST (the conclude race).
+    // Only scenarios that gate a conclusion on a global need this, and one sync
+    // round-trip carries the global; scenarios with no global gate keep their
+    // original timing. The warning fallback below re-flushes and re-posts if a
+    // tight residual race still slips through.
+    if (this.scenarioGatesOnGlobals()) {
+      await window.stateSync?.sync?.();
+    }
     let last = { success: false, error: 'No attempt made' };
     for (let i = 0; i < attempts; i++) {
       last = await this.serverCompleteTask(taskId);
@@ -658,10 +699,21 @@ export class ObjectivesManager {
         const aim = this.aimIndex[task.aimId];
         this.handleMissionConcluded(aim);
       } else if (response.warning) {
-        // Gate blocked conclusion — inform the player but keep the task completed
-        console.warn(`⚠️ Mission conclusion blocked: ${response.warning}`);
-        if (window.gameAlert) {
-          window.gameAlert(response.warning, 'warning', 'Not Yet…');
+        // Conclude race fallback (second line of defence). The gate is blocked
+        // because a concludeRequires global had not reached the server when this
+        // completion landed. Flush the globals and re-post: the server's
+        // idempotent re-completion re-evaluates the gate and concludes if it is now
+        // met. Only a gate that is STILL unmet after that reaches the player, so the
+        // warning is never merely dropped.
+        await this.flushPendingGlobals();
+        const retry = await this.serverCompleteTask(taskId);
+        if (retry.missionConcluded) {
+          this.handleMissionConcluded(this.aimIndex[task.aimId]);
+        } else if (retry.warning) {
+          console.warn(`⚠️ Mission conclusion blocked: ${retry.warning}`);
+          if (window.gameAlert) {
+            window.gameAlert(retry.warning, 'warning', 'Not Yet…');
+          }
         }
       }
     } catch (error) {
@@ -745,6 +797,13 @@ export class ObjectivesManager {
 
     const gameId = window.breakEscapeConfig?.gameId;
     if (gameId) {
+      // Order the pending global sync before the skip POST: skip_task! also
+      // re-checks mission conclusions server-side (the conclude race). Only
+      // scenarios that gate a conclusion on a global pay for it; one sync
+      // round-trip carries the global.
+      if (this.scenarioGatesOnGlobals()) {
+        await window.stateSync?.sync?.();
+      }
       try {
         const response = await fetch(`/break_escape/games/${gameId}/objectives/tasks/${taskId}/skip`, {
           method: 'POST',

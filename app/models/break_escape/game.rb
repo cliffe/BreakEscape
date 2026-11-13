@@ -2537,42 +2537,65 @@ module BreakEscape
       end
     end
 
-    # An rfid lock (section 6, /unlock check 2). Without access: today's trusted rule.
-    # With access and card_ids: the first held card that passes opens it. With access
-    # and no card_ids: only a lock that also has requires keeps the trusted rule.
-    # A trusted `requires` path (no access list, or an access list opened by its requires
-    # with no card_ids sent) still refuses when the required card the player holds has been
-    # cancelled (the left-card consequence): honest play uses a live card, so this only turns
-    # away a revoked one. The access-list card path is already filtered through held_rfid_cards.
+    # An rfid lock (section 6, /unlock check 2). Without access: the player must provably hold
+    # a card or clone whose id is named in `requires` (rfid_requires_held?), so a POST with no
+    # card can no longer open it. With access and card_ids: the first held card that passes
+    # opens it. With access and no card_ids (a mixed lock opened by its requires card, which the
+    # client sends with no card_ids): the same requires-held check.
     def rfid_lock_passes?(lock, card_ids)
-      unless self.class.acl_lock?(lock)
-        return !rfid_requires_revoked?(lock)
-      end
+      return rfid_requires_held?(lock) unless self.class.acl_lock?(lock)
 
       ids = self.class.normalise_card_ids(card_ids)
-      return Array(lock['requires']).any? && !rfid_requires_revoked?(lock) if ids.nil?
+      return rfid_requires_held?(lock) if ids.nil?
 
       !rfid_passing_card_id(lock, ids).nil?
     end
 
-    # True when a lock's `requires` is satisfied only by a card the player holds that has been
-    # revoked: every held required card is cancelled and none is live. Used for the trusted
-    # requires paths, where the server does not otherwise resolve the card. Leaves the trust rule
-    # untouched when the server sees no held required card (a clone made before this session, say):
-    # that path is unchanged, so no honest unlock is newly refused.
-    def rfid_requires_revoked?(lock)
-      req = Array(lock['requires']).map(&:to_s)
+    # True when the player provably holds, in server state, a non-revoked card whose id is named
+    # in the lock's `requires`. A keycard in the inventory counts when its card_id OR its
+    # opens_lock/key_id (ItemIdentity.lock_ref) is a required id, mirroring the client's
+    # getCardId; a recorded clone (serverClones) counts while an rfid_cloner is held. A UID-only
+    # clone counts only at a lock with acceptsUIDOnly (the rule rfid_passing_card_id applies to
+    # the access-list path). A revoked id never counts (the left-card consequence, 3.3b), so a
+    # cancelled card or a clone of one is refused. Honest play always holds the required keycard
+    # or a recorded clone of it; a card the server cannot see would be refused, but no scenario
+    # reaches a requires-only lock that way (phantom ids are opened by an NPC unlockDoor mapping).
+    def rfid_requires_held?(lock)
+      req = Array(lock['requires']).map(&:to_s).reject(&:empty?)
       return false if req.empty?
 
       revoked = revoked_card_ids
-      return false if (req & revoked).empty?
+      # A physical keycard is never UID-only, so a live one in requires always passes.
+      return true if ((req & held_keycard_ref_ids) - revoked).any?
 
-      held = held_keycard_ids
-      held += server_clones.keys.map(&:to_s) if rfid_cloner_held?
-      held_req = req & held
-      return false if held_req.empty?
+      return false unless rfid_cloner_held?
 
-      (held_req - revoked).empty?
+      accepts_uid = lock['acceptsUIDOnly'] == true
+      server_clones.any? do |card_id, record|
+        cid = card_id.to_s
+        next false unless req.include?(cid) && !revoked.include?(cid)
+
+        uid_only = record.is_a?(Hash) && record['uidOnly'] == true
+        !uid_only || accepts_uid
+      end
+    end
+
+    # Inventory keycard ids resolved as the client resolves a card's id (card_id, else
+    # opens_lock/key_id via ItemIdentity.lock_ref), so a requires lock whose keycard carries only
+    # opens_lock and no card_id (m01, m02, m05, sis02) is matched the same way client-side.
+    # held_keycard_ids is kept card_id-only because the access list resolves an NPC's identity by
+    # card_id; only the requires path needs the lock_ref fallback.
+    def held_keycard_ref_ids
+      Array(player_state['inventory']).filter_map do |item|
+        next if BreakEscape::ItemIdentity.client_forged?(item)
+
+        data = item['scenarioData'] || item
+        next unless (item['type'] || data['type']) == 'keycard'
+
+        cid = item['card_id'].presence || data['card_id'].presence
+        cid ||= BreakEscape::ItemIdentity.lock_ref(data) || BreakEscape::ItemIdentity.lock_ref(item)
+        cid&.to_s
+      end.uniq
     end
 
     # The first of these held card ids that opens an access-list rfid lock, or nil.
@@ -3657,7 +3680,24 @@ module BreakEscape
 
       # Check if already completed
       if player_state.dig('objectivesState', 'tasks', task_id, 'status') == 'completed'
-        return { success: true, taskId: task_id, message: 'Already completed' }
+        # Idempotent re-post. The task is done, but a concludeRequires global can
+        # reach the server only after the first completion raced ahead of its state
+        # sync (the conclude race). Re-evaluate the gate so a client retry, after
+        # flushing the globals, still concludes the mission instead of leaving it
+        # stranded with "Already completed". No-op once the mission has concluded.
+        was_not_concluded_before = mission_concluded_at.nil?
+        recheck_pending_mission_conclusions!
+        save! if changed?
+        mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
+        response = { success: true, taskId: task_id, message: 'Already completed',
+                     missionConcluded: mission_just_concluded }
+        if mission_concluded_at.nil?
+          aim = scenario_data['objectives']&.find { |a| a['aimId'] == task['aimId'] }
+          if aim && aim['missionConclusion'] && unmet_conclude_requirements(aim).any?
+            response[:warning] = 'Complete required objectives first to conclude the mission.'
+          end
+        end
+        return response
       end
 
       # Validate based on task type
@@ -3715,7 +3755,7 @@ module BreakEscape
 
       # Capture before any completion side-effects so we can report whether this
       # save is the one that first triggers mission conclusion.
-      was_concluded_before = mission_concluded_at.nil?
+      was_not_concluded_before = mission_concluded_at.nil?
 
       # Mark task complete
       player_state['objectivesState']['tasks'][task_id] = {
@@ -3741,7 +3781,7 @@ module BreakEscape
 
       save!
 
-      mission_just_concluded = was_concluded_before && mission_concluded_at.present?
+      mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
       response = { success: true, taskId: task_id, missionConcluded: mission_just_concluded }
       response[:warning] = 'Complete required objectives first to conclude the mission.' if conclusion_result == false
       response
@@ -3764,7 +3804,7 @@ module BreakEscape
       current = player_state.dig('objectivesState', 'tasks', task_id, 'status')
       return { success: true, taskId: task_id, status: current, message: "Already #{current}" } if %w[completed skipped].include?(current)
 
-      was_concluded_before = mission_concluded_at.nil?
+      was_not_concluded_before = mission_concluded_at.nil?
 
       entry = player_state['objectivesState']['tasks'][task_id] ||= {}
       entry['status'] = 'skipped'
@@ -3776,7 +3816,7 @@ module BreakEscape
 
       save!
 
-      mission_just_concluded = was_concluded_before && mission_concluded_at.present?
+      mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
       response = { success: true, taskId: task_id, status: 'skipped', missionConcluded: mission_just_concluded }
       response[:warning] = 'Complete required objectives first to conclude the mission.' if conclusion_result == false
       response
