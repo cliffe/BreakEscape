@@ -119,8 +119,11 @@ real routes): existing "a locked start item is stored without its answer and shi
 proved the no-leak property; new "a locked start item opens with the right answer and is refused
 with a wrong one" drives POST /unlock (cryptex and combination), GET /container and GET /scenario:
 the item opens only with the right answer, serves its contents through both the unlock reply and the
-container route, and neither the answer nor any client payload carries it. Full file green (21 runs,
-161 assertions). Related tests re-run green: `npc_container_unlock_test.rb`,
+container route, and neither the answer nor any client payload carries it. Full file green (14 runs,
+118 assertions). The start-items source is possession-independent: a locked start item the player has
+dropped or given away can still be opened by someone who knows its answer. The answer stays
+server-enforced, so this is within the cheat policy, but confiscating such an item does not hide its
+contents. Related tests re-run green: `npc_container_unlock_test.rb`,
 `unlock_response_filter_test.rb`, `access_model_desktop_test.rb`, `game_test.rb` (138 runs together).
 
 Browser proof (PASS): no shipped scenario holds a locked start item, so one was added to the small

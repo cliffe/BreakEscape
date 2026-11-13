@@ -2985,8 +2985,9 @@ def check_revoke_card_globals(json_data)
   (revoked_ids.uniq & granted.keys).sort.each do |cid|
     issues << "⚠️ WARNING: #{granted[cid]}: card_id '#{cid}' is handed to the player (give_item or a " \
               "start item) and is also cancelled by a 'revoke_card' action. revoked_card_ids is " \
-              "grow-only, so once this id is revoked it stays refused for the rest of the game. If you " \
-              "re-issue the card after revoking it, give the new card a fresh card_id."
+              "grow-only, so once this id is revoked it stays refused for the rest of the game. That is " \
+              "fine for a card given and later cancelled. If the player is meant to get a working card " \
+              "back after the revoke, give the re-issued card a fresh card_id."
   end
   issues
 end
