@@ -33,6 +33,51 @@ Tests:
 - `test/js/workstation-state.test.mjs` — new test: `autoLockMin 0` locks the hot desk on the
   leave, opens no guest session, emits `workstation_auto_locked`, next click is the sign-in screen.
 
+### Follow-up (train 31 live check)
+
+The merge-train live check found the Item 1 outright-lock branch never ran in real play. It lived in
+`onGuestLeft` (`workstation-state.js`), fired only by `npc_guest_left:<pcId>`, which
+`npc-workarounds.js` emits only when `borrow_body` answers `guest: true`. The Item 1 server fix makes
+an `autoLockMin 0` hot desk answer `guest: false`, so `npc_guest_left` never reaches the client and
+that branch was dead (it ran only when fired by hand in the old test). Two follow-ups, both fixed:
+
+1. Real event. The outright lock now lives in a new `onBorrowedSession`, wired in `install()` to
+   `npc_borrowed_session:<pcId>` — the event `npc-needs.js` emits (keyed by the PC) when a leave-open
+   borrow ends, before any server round trip. For a no-owner PC under `autoLockMin 0` it locks the
+   screen outright (delete any guest record, set `data.screenLocked = true`, publish the globals,
+   emit `workstation_auto_locked` and `workstation_screen_changed` how `auto`). A policy above 0 (or
+   none) returns early and leaves the open session to the guest flow (`onGuestLeft`, driven by the
+   server's `guest: true`). The dead `autoLockMin 0` branch is removed from `onGuestLeft`. The real
+   event cannot reach both paths: the server answers `guest: false` for `autoLockMin 0`, so no
+   `npc_guest_left` is sent there.
+2. Bridge state. The outright-lock paths set globals and emitted but never set `data.screenLocked`,
+   so `__test.access.workstation(pc).screenLocked` read `null` on a no-owner PC (the bridge reader is
+   correct; the field was simply unset). `onBorrowedSession` and `guestClaimRefused` now set it, as
+   `_autoLock` does, so the bridge reports the real locked state.
+
+Tests:
+- `test/js/workstation-state.test.mjs` — the `slice 16 m4` test now drives the real event
+  (`npc_borrowed_session`, not `npc_guest_left`) and also asserts `data.screenLocked === true` (the
+  bridge field); a new test asserts a policy above 0 does not lock outright on the borrow-leave. Fails
+  without the fix (`npc_borrowed_session` has no handler). 46 tests pass.
+- `test/js/test-bridge-access.test.mjs` — new test: `workstation('hot_desk').screenLocked` reports
+  `true` after a no-owner outright lock (`autoLockMin 0`), not `null`. 15 tests pass.
+- Re-ran every importer of the two changed modules (`screen-states`, `npc-lockout`, `lab-ux-ui`,
+  `crypto-workstation-persist`, `office-presets`, `npc-sprite-style`, `playtest-verify-run-access`,
+  six `lighting-*`): all green.
+
+Browser proof (keyless `:3640`, game 3250, `test_access_work` with the hot desk temporarily under an
+`autoLockMin 0` policy, reverted uncommitted). Rosa's work routes through the `finance_share` network
+(`offWhen: finance_share_down`); throwing her breaker makes the route down, her use fails, frustration
+rises 20 -> 40 -> 60, and at the frustration-50 workaround she borrows the hot desk and leaves it
+open. The real `npc_borrowed_session:hot_desk` reaches `onBorrowedSession`: the bridge then reads
+`screenLocked: true`, `guest: null` (no claimable session), `hot_desk_screen_locked`/`_owner_away`
+globals true, `workstation_auto_locked` and `workstation_screen_changed` (how `auto`, locked) fired,
+and no `npc_guest_left` was sent. Script `scratchpad/hard-fixes2/hotdesk-lock-proof.mjs` (PROOF PASS).
+Note: Ian's documented hot-desk borrow (H1, a station `offWhen` outage) does not fire in the driven
+keyless standalone because the computed work plan routes his work through an un-gated `email` source,
+so Rosa's network-route outage was used instead; both borrow the hot desk and leave it open.
+
 ## Item 5 — grant_foothold_actions skips `_` note keys
 
 Status: already implemented (step 2b), confirmed, no change needed.
