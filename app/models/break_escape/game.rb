@@ -3642,10 +3642,10 @@ module BreakEscape
         # sync (the conclude race). Re-evaluate the gate so a client retry, after
         # flushing the globals, still concludes the mission instead of leaving it
         # stranded with "Already completed". No-op once the mission has concluded.
-        was_concluded_before = mission_concluded_at.nil?
+        was_not_concluded_before = mission_concluded_at.nil?
         recheck_pending_mission_conclusions!
         save! if changed?
-        mission_just_concluded = was_concluded_before && mission_concluded_at.present?
+        mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
         response = { success: true, taskId: task_id, message: 'Already completed',
                      missionConcluded: mission_just_concluded }
         if mission_concluded_at.nil?
@@ -3712,7 +3712,7 @@ module BreakEscape
 
       # Capture before any completion side-effects so we can report whether this
       # save is the one that first triggers mission conclusion.
-      was_concluded_before = mission_concluded_at.nil?
+      was_not_concluded_before = mission_concluded_at.nil?
 
       # Mark task complete
       player_state['objectivesState']['tasks'][task_id] = {
@@ -3738,7 +3738,7 @@ module BreakEscape
 
       save!
 
-      mission_just_concluded = was_concluded_before && mission_concluded_at.present?
+      mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
       response = { success: true, taskId: task_id, missionConcluded: mission_just_concluded }
       response[:warning] = 'Complete required objectives first to conclude the mission.' if conclusion_result == false
       response
@@ -3761,7 +3761,7 @@ module BreakEscape
       current = player_state.dig('objectivesState', 'tasks', task_id, 'status')
       return { success: true, taskId: task_id, status: current, message: "Already #{current}" } if %w[completed skipped].include?(current)
 
-      was_concluded_before = mission_concluded_at.nil?
+      was_not_concluded_before = mission_concluded_at.nil?
 
       entry = player_state['objectivesState']['tasks'][task_id] ||= {}
       entry['status'] = 'skipped'
@@ -3773,7 +3773,7 @@ module BreakEscape
 
       save!
 
-      mission_just_concluded = was_concluded_before && mission_concluded_at.present?
+      mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
       response = { success: true, taskId: task_id, status: 'skipped', missionConcluded: mission_just_concluded }
       response[:warning] = 'Complete required objectives first to conclude the mission.' if conclusion_result == false
       response

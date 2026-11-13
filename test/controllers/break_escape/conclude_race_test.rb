@@ -110,5 +110,85 @@ module BreakEscape
       assert_not_nil game.mission_concluded_at
       assert_equal 'completed', game.status
     end
+
+    # m2: a re-post while the global is still false must not conclude -- it returns
+    # the warning, same as the first race completion. The client's fallback re-post
+    # only concludes once the flush has carried the global.
+    test 'a re-post with the global still false does not conclude and warns' do
+      game = create_game
+
+      post complete_task_game_url(game, task_id: 'final_task'), as: :json
+      assert_response :success
+      assert JSON.parse(@response.body)['warning'].present?
+
+      # The global never reached the server (the flush failed / offline).
+      post complete_task_game_url(game, task_id: 'final_task'), as: :json
+      assert_response :success
+      json = JSON.parse(@response.body)
+
+      assert_equal true, json['success']
+      assert_equal 'Already completed', json['message']
+      assert_not json['missionConcluded'], 'the re-post does not conclude while the gate is unmet'
+      assert json['warning'].present?, 'the still-unmet gate still warns'
+
+      game.reload
+      assert_nil game.mission_concluded_at
+    end
+
+    # m2: a second re-post after the mission has already concluded is a pure no-op
+    # -- missionConcluded is false (this POST did not just conclude it), no warning,
+    # and no second save or award.
+    test 'a re-post after conclusion is idempotent' do
+      game = create_game
+
+      post complete_task_game_url(game, task_id: 'final_task'), as: :json
+      game.reload
+      game.player_state['globalVariables']['gate_global'] = true
+      game.save!
+
+      # The fallback re-post concludes the mission.
+      post complete_task_game_url(game, task_id: 'final_task'), as: :json
+      assert_equal true, JSON.parse(@response.body)['missionConcluded']
+      game.reload
+      concluded_at = game.mission_concluded_at
+      score_after  = game.score
+
+      # A further re-post after conclusion changes nothing.
+      post complete_task_game_url(game, task_id: 'final_task'), as: :json
+      assert_response :success
+      json = JSON.parse(@response.body)
+
+      assert_equal true, json['success']
+      assert_equal 'Already completed', json['message']
+      assert_not json['missionConcluded'], 'the already-concluded re-post does not re-announce a conclusion'
+      assert_nil json['warning'], 'no warning once the mission has concluded'
+
+      game.reload
+      assert_equal concluded_at, game.mission_concluded_at, 'conclusion time is unchanged'
+      assert_equal score_after, game.score, 'no second award'
+    end
+
+    # M1: the host rescore hook (on_task_complete) fires once for the genuine first
+    # completion, never again on the idempotent re-post the conclude-race fallback
+    # makes on the same beat.
+    test 'the on_task_complete hook does not fire a second time on the idempotent re-post' do
+      game = create_game
+      calls = 0
+      previous = BreakEscape.configuration.on_task_complete
+      BreakEscape.configuration.on_task_complete = ->(_g) { calls += 1 }
+
+      begin
+        post complete_task_game_url(game, task_id: 'final_task'), as: :json
+        assert_response :success
+        assert_equal 1, calls, 'the hook fires once on the real completion'
+
+        # The conclude-race fallback re-post (already completed): must not re-fire.
+        post complete_task_game_url(game, task_id: 'final_task'), as: :json
+        assert_response :success
+        assert_equal 1, calls, 'the idempotent re-post does not fire the hook again'
+      ensure
+        BreakEscape.configuration.on_task_complete = previous
+      end
+    end
   end
 end

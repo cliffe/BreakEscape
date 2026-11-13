@@ -590,9 +590,29 @@ export class ObjectivesManager {
     await window.stateSync?.sync?.();
   }
 
+  /**
+   * Does this scenario gate any mission conclusion on a global variable
+   * (`concludeRequires.globals`)? Only such scenarios can hit the conclude race,
+   * so only they pay for the pre-flush before the completion/skip POST; every
+   * other scenario keeps its original timing. Computed once and cached.
+   */
+  scenarioGatesOnGlobals() {
+    if (this._gatesOnGlobals === undefined) {
+      this._gatesOnGlobals = this.aims.some(aim =>
+        Array.isArray(aim.concludeRequires?.globals) && aim.concludeRequires.globals.length > 0);
+    }
+    return this._gatesOnGlobals;
+  }
+
   async serverCompleteTaskWithRetry(taskId, attempts = 4) {
     // Order the pending global sync before the completion POST (the conclude race).
-    await this.flushPendingGlobals();
+    // Only scenarios that gate a conclusion on a global need this, and one sync
+    // round-trip carries the global; scenarios with no global gate keep their
+    // original timing. The warning fallback below re-flushes and re-posts if a
+    // tight residual race still slips through.
+    if (this.scenarioGatesOnGlobals()) {
+      await window.stateSync?.sync?.();
+    }
     let last = { success: false, error: 'No attempt made' };
     for (let i = 0; i < attempts; i++) {
       last = await this.serverCompleteTask(taskId);
@@ -778,8 +798,12 @@ export class ObjectivesManager {
     const gameId = window.breakEscapeConfig?.gameId;
     if (gameId) {
       // Order the pending global sync before the skip POST: skip_task! also
-      // re-checks mission conclusions server-side (the conclude race).
-      await this.flushPendingGlobals();
+      // re-checks mission conclusions server-side (the conclude race). Only
+      // scenarios that gate a conclusion on a global pay for it; one sync
+      // round-trip carries the global.
+      if (this.scenarioGatesOnGlobals()) {
+        await window.stateSync?.sync?.();
+      }
       try {
         const response = await fetch(`/break_escape/games/${gameId}/objectives/tasks/${taskId}/skip`, {
           method: 'POST',
