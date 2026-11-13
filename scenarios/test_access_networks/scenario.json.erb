@@ -520,6 +520,8 @@
               "type": "confirm_action",
               "condition": "!globalVars.servers_offline",
               "text": "Flip the breaker? The whole server network goes down.",
+              "confirmLabel": "Flip it",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 { "type": "set_global", "key": "servers_offline", "value": true },
                 { "type": "set_global", "key": "n7_armed", "value": true },
@@ -543,9 +545,21 @@
           "position": { "x": 7, "y": 6 },
           "takeable": false,
           "observations": "The power switch that restores the server network after the breaker trips.",
+          "_comment": "UX slice 15 R1 (m3, R4e): a named confirm, as every physical switch, only while the breaker has the rack off; with the rack on it says so.",
           "triggerOnInteract": [
-            { "type": "set_global", "key": "servers_offline", "value": false },
-            { "type": "complete_task", "taskId": "n6_repair" }
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.servers_offline",
+              "text": "Switch the server rack back on?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "servers_offline", "value": false },
+                { "type": "complete_task", "taskId": "n6_repair" },
+                { "type": "hint", "title": "Server rack power", "message": "The rack powers up. The server network is back." }
+              ]
+            },
+            { "type": "hint", "condition": "!globalVars.servers_offline", "title": "Server rack power", "message": "The server rack is on." }
           ]
         },
         {
@@ -644,12 +658,16 @@
               "type": "confirm_action",
               "condition": "globalVars.bench_pc_off",
               "text": "Switch the bench PC on?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
               "onConfirm": [ { "type": "set_global", "key": "bench_pc_off", "value": false } ]
             },
             {
               "type": "confirm_action",
               "condition": "!globalVars.bench_pc_off",
               "text": "Switch the bench PC off?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
               "onConfirm": [ { "type": "set_global", "key": "bench_pc_off", "value": true } ]
             }
           ],
@@ -728,6 +746,8 @@
             {
               "type": "confirm_action",
               "text": "Plug the keystroke injector into Sam's PC? It only types into a PC you are signed in at, and it is used up once it runs.",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 { "type": "grant_foothold", "pc": "sam_pc", "needsSession": true, "needsHeld": "kit_badusb" }
               ]
@@ -809,6 +829,8 @@
             {
               "type": "confirm_action",
               "text": "Plug the keystroke injector into the kiosk? It only types into a PC you are signed in at, and it is used up once it runs.",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
               "onConfirm": [
                 { "type": "grant_foothold", "pc": "kiosk_pc", "needsSession": true, "needsHeld": "kit_badusb" }
               ]

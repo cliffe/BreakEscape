@@ -210,11 +210,17 @@ export function npcYieldTarget(npc, objectsUnderTap, deps) {
  * @param {number} deps.range - INTERACTION_RANGE
  * @param {function(number, number, number=): ?{x:number,y:number}} [deps.findCell] - pathfinder's nearest walkable cell
  * @param {function({x:number,y:number}, object): boolean} [deps.wallClear] - no wall between the point and the object
+ * @param {function({x:number,y:number}, object): boolean} [deps.sameRoom] - feet at the point stand in the object's
+ *   room (interaction-walls.js sameRoomFrom). An object in the strip two rooms share (a drop in a doorway) is
+ *   only used from its own room's side: a stand point across the line ended the walk in the other room, where
+ *   the use is refused (UX slice 15 R2, M1).
  * @returns {?{x:number,y:number}} a feet target, or null when the player stands on the object
  */
 export function objectStandPoint(obj, player, deps) {
     const range = deps.range;
     const wallClear = deps.wallClear || (() => true);
+    const sameRoom = deps.sameRoom || (() => true);
+    const usable = (p) => wallClear(p, obj) && sameRoom(p, obj);
     const dx = obj.x - player.x;
     const dy = obj.y - player.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
@@ -232,7 +238,7 @@ export function objectStandPoint(obj, player, deps) {
     const aimed = findCell(target.x, target.y);
     // Return the cell that was checked, not the raw aim: the raw aim can lie inside a desk,
     // and the walk's last leg heads for it and stops short (code review R3 m1)
-    if (aimed && reachAfter(aimed) <= range - 4 && wallClear(aimed, obj)) return aimed;
+    if (aimed && reachAfter(aimed) <= range - 4 && usable(aimed)) return aimed;
     let best = aimed, bestReach = aimed ? reachAfter(aimed) : Infinity, bestWalk = aimed ? walk(aimed) : Infinity;
     for (let a = 0; a < 16; a++) {
         const ang = (a / 16) * Math.PI * 2;
@@ -240,12 +246,32 @@ export function objectStandPoint(obj, player, deps) {
             const c = findCell(obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
             if (!c) continue;
             const ra = reachAfter(c), wk = walk(c);
-            const ok = ra <= range - 4 && wallClear(c, obj);
-            const bestOk = bestReach <= range - 4 && wallClear(best, obj);
+            const ok = ra <= range - 4 && usable(c);
+            const bestOk = bestReach <= range - 4 && usable(best);
             if ((ok && (!bestOk || wk < bestWalk)) || (!ok && !bestOk && ra < bestReach)) {
                 best = c; bestReach = ra; bestWalk = wk;
             }
         }
+    }
+    if (best && bestReach <= range - 4 && usable(best)) return best;
+    // Nothing usable with the margin. Only for a `sameRoom` rule: an object at the foot of
+    // its room's floor, in the strip over the next room's back wall, is in reach of only a
+    // narrow band of feet points on its own side (the arrival check, interactions.js
+    // isObjectInInteractionRange, is the plain centre distance within the range). Look north
+    // of it for a usable point within the range itself, nearest walk first (UX slice 15 R2, M1).
+    if (deps.sameRoom) {
+        let edge = null, edgeWalk = Infinity;
+        for (let a = 0; a < 16; a++) {
+            const ang = (a / 16) * Math.PI * 2;
+            if (Math.sin(ang) >= 0) continue;    // only points north of the object
+            for (const r of [20, 24, 28, 30, 31]) {
+                const c = findCell(obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
+                if (!c || reachAfter(c) > range - 1 || !usable(c)) continue;
+                const wk = walk(c);
+                if (wk < edgeWalk) { edge = c; edgeWalk = wk; }
+            }
+        }
+        if (edge) return edge;
     }
     return best || target;
 }

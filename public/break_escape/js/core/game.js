@@ -2962,7 +2962,9 @@ function walkToObjectThenUse(obj) {
     const target = objectStandPoint(obj, player, {
         range: INTERACTION_RANGE,
         findCell: pfm?.findNearestWalkableWorldCell ? (x, y, r) => pfm.findNearestWalkableWorldCell(x, y, r) : null,
-        wallClear: (p, o) => wallClearFrom(p, o)
+        wallClear: (p, o) => wallClearFrom(p, o),
+        // Stand on the object's own side of a shared strip (UX slice 15 R2, M1)
+        sameRoom: (p, o) => sameRoomFrom({ x: p.x, y: p.y, half: playerFeet(player)?.half, isPlayer: true }, o)
     });
     if (!target) return;
     // A far object of another room (a wall row two rooms share, a doorway) is only walked

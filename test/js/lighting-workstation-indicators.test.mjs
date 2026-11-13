@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -30,18 +30,20 @@ writeFileSync(join(dir, 'npc-los.mjs'), readFileSync(join(js, 'systems/npc-los.j
 globalThis.Phaser = { AUTO: 0, Scale: { NONE: 0, CENTER_BOTH: 0, FIT: 0 }, BlendModes: { ADD: 1, MULTIPLY: 2 }, Math: { Clamp: (v, a, b) => Math.max(a, Math.min(b, v)), DegToRad: (d) => d * Math.PI / 180, Vector2: class { constructor() { this.x = 0; this.y = 0; } } } };
 const NPCS = [{ id: 'tom', needsHome: 'tom_pc' }, { id: 'amara', needsHome: 'amara_pc' }];
 globalThis.window = { gameState: { globalVariables: {} }, npcManager: { npcs: new Map(NPCS.map(n => [n.id, n])) } };
-const { LightingSystem, workstationIndicators, flashShape, FLASH_MS, FLASH_REDUCED_MS } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
+const { LightingSystem, workstationIndicators, flashShape, FLASH_MS, FLASH_REDUCED_MS, screenAnchor, SCREEN_ANCHORS,
+  indicatorDotPx, indicatorDotOrigin, indicatorDotPixels, indicatorMarkPixels, indicatorBreathe, INDICATOR_RING, INDICATOR_BREATHE_FLOOR, emitterGlowDepth } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
 
 function fakeImage() {
   const img = {};
-  for (const m of ['setBlendMode', 'setVisible', 'setDepth', 'setTint', 'setScale', 'setPosition', 'setAlpha']) img[m] = () => img;
+  for (const m of ['setBlendMode', 'setVisible', 'setDepth', 'setTint', 'setScale', 'setPosition', 'setAlpha', 'setOrigin']) img[m] = () => img;
+  img.setTexture = (k) => { img.textureKey = k; return img; };
   img.destroy = () => {};
   return img;
 }
 
 function stateWith(emitters = {}) {
   const sys = Object.create(LightingSystem.prototype);
-  sys.scene = { add: { image: () => fakeImage() } };
+  sys.scene = { add: { image: (x, y, k) => { const i = fakeImage(); i.textureKey = k; return i; } }, textures: { exists: () => true } };
   sys.config = {};
   const state = { roomId: 'office', emitters: [] };
   sys.configureRoom(state, { map: { widthInPixels: 320, heightInPixels: 256 }, position: { x: 0, y: 0 } }, { emitters, panels: false });
@@ -60,13 +62,98 @@ test('workstationIndicators: none for a plain object or an ownerless workstation
   assert.deepEqual(workstationIndicators(undefined, NPCS), []);
 });
 
-test('workstationIndicators: locked first, then open; both above, at the top-right corner', () => {
+test('UX slice 15 R1 (m1): the dot sits on the screen of each listed PC picture, scaled to its display size', () => {
+    // Every listed picture exists, and every pc picture the room builder can pick is listed
+  const objects = join(js, '../assets/objects');
+  const files = readdirSync(objects);
+  for (const k of Object.keys(SCREEN_ANCHORS)) assert.ok(files.includes(`${k}.png`), `${k}.png exists`);
+  for (const f of files.filter(f => /^pc\d*\.png$/.test(f))) assert.ok(SCREEN_ANCHORS[f.slice(0, -4)], `${f} has an anchor`);
+  // The three office PCs (measured screen boxes): pc6 32x30, pc8 34x22, pc11 31x21
+  assert.deepEqual(screenAnchor('pc6', { width: 32, height: 30, sourceWidth: 32, sourceHeight: 30 }), { offsetX: -2.5, offsetY: -6 });
+  assert.deepEqual(screenAnchor('pc8', { width: 34, height: 22, sourceWidth: 34, sourceHeight: 22 }), { offsetX: -6.5, offsetY: -4.5 });
+  assert.deepEqual(screenAnchor('pc11', { width: 31, height: 21, sourceWidth: 31, sourceHeight: 21 }), { offsetX: -4.5, offsetY: -3.5 });
+  // Each anchor lands inside its picture's top half (the monitor), never past the edges
+  for (const [k, [ax, ay]] of Object.entries(SCREEN_ANCHORS)) {
+    assert.ok(ay < 0, `${k}: above the sprite centre`);
+    assert.ok(Math.abs(ax) < 10, `${k}: within the monitor's width`);
+  }
+  // Scaled with the display size, mirrored when flipped; the locked picture shares the base's
+  assert.deepEqual(screenAnchor('pc8', { width: 68, height: 44, sourceWidth: 34, sourceHeight: 22 }), { offsetX: -13, offsetY: -9 });
+  assert.deepEqual(screenAnchor('pc8', { width: 34, height: 22, sourceWidth: 34, sourceHeight: 22, flipX: true }), { offsetX: 6.5, offsetY: -4.5 });
+  assert.deepEqual(screenAnchor('pc8_locked', { width: 34, height: 22, sourceWidth: 34, sourceHeight: 22 }), { offsetX: -6.5, offsetY: -4.5 });
+  // Unknown picture: the sprite centre
+  assert.deepEqual(screenAnchor('laptop1', { width: 24, height: 18 }), { offsetX: 0, offsetY: 0 });
+  assert.deepEqual(screenAnchor(undefined), { offsetX: 0, offsetY: 0 });
+  // workstationIndicators reads it from size.key
+  const v = workstationIndicators({ id: 'tom_pc', lockChance: 0.5 }, NPCS, { key: 'pc6', width: 32, height: 30, sourceWidth: 32, sourceHeight: 30 });
+  assert.ok(v.every(d => d.offsetX === -2.5 && d.offsetY === -6));
+});
+
+test('UX slice 15 R1 (m2): the dot is a crisp whole-pixel mark, 4 px locked and 6 px open', () => {
+  const [locked, open] = workstationIndicators({ id: 'tom_pc', lockChance: 0.5 }, NPCS);
+  assert.equal(indicatorDotPx(locked), 4);
+  assert.equal(indicatorDotPx(open), 6);
+  assert.equal(indicatorDotPx({ radius: 10 }), 4, 'an authored indicator with no dotPx sizes from its radius');
+  assert.equal(indicatorDotPx({ radius: 14 }), 6);
+  const px = indicatorDotPixels(6);
+  assert.equal(px.length, 6);
+  assert.deepEqual(px[0], [0, 1, 1, 1, 1, 0], 'stepped corners');
+  assert.deepEqual(px[2], [1, 1, 1, 1, 1, 1]);
+  for (const [x, y] of [[100.5, 93.5], [37.25, 12.75], [10, 10]]) {
+    const o = indicatorDotOrigin(x, y, 4);
+    assert.ok(Number.isInteger(o.x) && Number.isInteger(o.y), 'whole pixels');
+    assert.ok(Math.abs(o.x + 2 - x) <= 0.5 && Math.abs(o.y + 2 - y) <= 0.5, 'centred on the anchor');
+  }
+  // The renderer makes the texture NEAREST filtered, never the soft light texture
+  const src = readFileSync(join(js, 'systems/lighting.js'), 'utf8');
+  const fn = src.slice(src.indexOf('indicatorDotTexture(n) {'), src.indexOf('createLightTexture() {'));
+  assert.match(fn, /FilterMode\.NEAREST/);
+  assert.doesNotMatch(fn, /createRadialGradient|LINEAR/);
+});
+
+test('UX slice 15 R2 (m1): each mark has a 1 px dark ring, and the open mark breathes no lower than 0.8', () => {
+  // Locked: a 4 px dot in a 6 px mark; the ring steps round the cut corners
+  assert.deepEqual(indicatorMarkPixels(4), [
+    [0, 0, 2, 2, 0, 0],
+    [0, 2, 1, 1, 2, 0],
+    [2, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 2],
+    [0, 2, 1, 1, 2, 0],
+    [0, 0, 2, 2, 0, 0],
+  ]);
+  // Open: a 6 px dot in an 8 px mark, the dot one pixel in, every dot pixel ringed
+  const m = indicatorMarkPixels(6);
+  assert.equal(m.length, 8);
+  assert.ok(m.every(r => r.length === 8));
+  const dot = indicatorDotPixels(6);
+  for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) assert.equal(m[y + 1][x + 1] === 1, dot[y][x] === 1);
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+    if (m[y][x] !== 1) continue;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) assert.notEqual(m[y + dy][x + dx], 0, 'no dot pixel touches a clear one');
+  }
+  assert.equal(INDICATOR_RING, 0x1a1c2c);
+  // The breathe stays between 0.8 and 1 over a whole cycle
+  let lo = 1, hi = 0;
+  for (let t = 0; t < 5000; t += 10) { const k = indicatorBreathe(t, 0.3); lo = Math.min(lo, k); hi = Math.max(hi, k); }
+  assert.ok(lo >= INDICATOR_BREATHE_FLOOR - 1e-9 && INDICATOR_BREATHE_FLOOR >= 0.8, `trough ${lo}`);
+  assert.ok(hi <= 1 + 1e-9 && hi > 0.99);
+  // The texture is drawn from the ringed mark, (n + 2) px square, the ring in its own dark colour
+  const src = readFileSync(join(js, 'systems/lighting.js'), 'utf8');
+  const fn = src.slice(src.indexOf('indicatorDotTexture(n) {'), src.indexOf('createLightTexture() {'));
+  assert.match(fn, /createCanvas\(key, n \+ 2, n \+ 2\)/);
+  assert.match(fn, /indicatorMarkPixels\(n\)/);
+  assert.match(fn, /INDICATOR_RING_CSS/);
+});
+
+test('workstationIndicators: locked first, then open; both above, centred on the PC sprite', () => {
   const v = workstationIndicators({ id: 'tom_pc', lockChance: 0.5 }, NPCS, { width: 32, height: 40 });
   assert.equal(v.length, 2);
   assert.equal(v[0].condition, 'globalVars.tom_pc_screen_locked');
   assert.equal(v[1].condition, 'globalVars.tom_pc_owner_away');
   assert.ok(v.every(d => d.above === true));
-  assert.ok(v[0].offsetX > 0 && v[0].offsetY < 0, 'right of and above the centre');
+  assert.ok(v.every(d => d.offsetX === 0 && d.offsetY === 0), 'no known picture: centred on the sprite (main3-21, Q11)');
+  const wide = workstationIndicators({ id: 'tom_pc', lockChance: 0.5 }, NPCS, { width: 96, height: 20 });
+  assert.ok(wide.every(d => d.offsetX === 0 && d.offsetY === 0), 'centred whatever the display size');
   assert.equal(v[0].effect, null, 'locked is steady');
   assert.equal(v[1].effect, 'breathe', 'open breathes');
   assert.ok(v[1].radius > v[0].radius, 'they differ in size too, for reduced motion');
@@ -120,6 +207,45 @@ test('the indicator follows the globals; the screen record resolves the same in 
   assert.ok(seen[0], 'the screen glows');
   assert.ok(seen.every(d => d === seen[0]), 'the screen glow is the same definition throughout');
   assert.equal(seen[0].effect, 'screen');
+});
+
+test('UX slice 15 R3 (m1): an indicator mark draws above every glow, dark room or lit', async () => {
+  const { LIGHT_DEPTH } = await import(pathToFileURL(join(dir, 'constants.mjs')).href);
+  const objDepth = 5000;
+  const screenDark = emitterGlowDepth(false, true, objDepth);   // a screen glow in a dark room
+  const screenLit = emitterGlowDepth(false, false, objDepth);   // a screen glow in a lit room
+  const phoneLed = emitterGlowDepth(false, true, objDepth);     // an `above` variant
+  const mark = emitterGlowDepth(true, true, objDepth);
+  assert.equal(screenDark, LIGHT_DEPTH + 1);
+  assert.equal(screenLit, objDepth + 0.01);
+  assert.equal(mark, LIGHT_DEPTH + 2);
+  assert.ok(mark > screenDark && mark > screenLit && mark > phoneLed, 'the mark is above each glow');
+  assert.equal(emitterGlowDepth(true, false, objDepth), mark, 'the mark keeps its depth whether or not the room is dark');
+  // The open mark's trough: 0.8 left pc5 at 2.96:1 in the rendered lit office
+  assert.equal(INDICATOR_BREATHE_FLOOR, 0.85);
+  let lo = 1;
+  for (let t = 0; t < 4400; t += 5) lo = Math.min(lo, indicatorBreathe(t));
+  assert.ok(lo >= 0.85 - 1e-9, `trough ${lo}`);
+  // The render pass sets each glow's depth through this helper
+  const src = readFileSync(join(js, 'systems/lighting.js'), 'utf8');
+  assert.match(src, /e\.glow\.setPosition\(at\.x, at\.y\)\.setDepth\(emitterGlowDepth\(e\.indicator, above, obj\.depth\)\)/);
+});
+
+test('UX slice 15 R2 final (m1): the locked mark is filled a lighter blue than the light it casts', () => {
+  const { sys, state } = stateWith();
+  sys.buildEmitters(state, [obj({ id: 'tom_pc', lockChance: 0.5 }, 'pc5')]);
+  const ind = state.emitters[1];
+  const tints = [];
+  const orig = ind.glow.setTint;
+  ind.glow.setTint = (c) => { tints.push(c); return orig.call(ind.glow, c); };
+  setGlobals({ tom_pc_owner_away: true, tom_pc_screen_locked: true });
+  sys.resolveEmitters(state);
+  assert.equal(ind.def.color, 0x3d8bff, 'the light stays the same blue');
+  assert.equal(ind.def.dotColor, 0x7ab4ff);
+  assert.equal(tints.at(-1), 0x7ab4ff, 'the mark takes dotColor');
+  setGlobals({ tom_pc_owner_away: true, tom_pc_screen_locked: false });
+  sys.resolveEmitters(state);
+  assert.equal(tints.at(-1), 0xfff1c8, 'the open mark, with no dotColor, takes its colour');
 });
 
 test('clusterEmitters does not damp an indicator; neighbouring screens still share a glow', () => {
@@ -181,7 +307,7 @@ test('a workstation whose art has no glow still gets its dot', () => {
 
 function trackedImage(log) {
   const img = { visible: false, destroyed: false };
-  for (const m of ['setBlendMode', 'setDepth', 'setTint', 'setPosition']) img[m] = () => img;
+  for (const m of ['setBlendMode', 'setDepth', 'setTint', 'setPosition', 'setOrigin', 'setTexture']) img[m] = () => img;
   img.setVisible = (v) => { img.visible = v; return img; };
   img.setScale = (k) => { img.scale = k; return img; };
   img.setAlpha = (a) => { img.alpha = a; return img; };
@@ -193,7 +319,7 @@ function trackedImage(log) {
 function flashRig(reduced = false) {
   const images = [];
   const sys = Object.create(LightingSystem.prototype);
-  sys.scene = { add: { image: () => trackedImage(images) } };
+  sys.scene = { add: { image: () => trackedImage(images) }, textures: { exists: () => true } };
   sys.config = {};
   sys.flashes = new Map();
   sys.reducedMotion = reduced;

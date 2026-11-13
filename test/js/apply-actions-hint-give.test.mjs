@@ -210,3 +210,31 @@ test('two confirms with opposite conditions toggle: one prompt per click, even a
     delete g.worn;
     delete window.gameConfirm; delete window.gameAlert;
 });
+
+test('confirm_action: passes its named labels, and Confirm or Cancel when they are missing (UX slice 15)', async () => {
+    const calls = [];
+    window.gameConfirm = (text, ok, cancel) => { calls.push([text, ok, cancel]); return Promise.resolve(false); };
+    await quietly(() => applyActions([
+        { type: 'confirm_action', text: 'Switch off the wall socket?', confirmLabel: 'Switch off', cancelLabel: 'Leave it', onConfirm: [] },
+        { type: 'confirm_action', text: 'Plain?', onConfirm: [] },
+        { type: 'confirm_action', text: 'Blank labels?', confirmLabel: '  ', cancelLabel: 7, onConfirm: [] }
+    ]));
+    assert.deepEqual(calls, [
+        ['Switch off the wall socket?', 'Switch off', 'Leave it'],
+        ['Plain?', 'Confirm', 'Cancel'],
+        ['Blank labels?', 'Confirm', 'Cancel']
+    ]);
+    delete window.gameConfirm;
+});
+
+test('confirm_action: confirming runs onConfirm', async () => {
+    const seen = [];
+    window.gameConfirm = (text, ok, cancel) => { seen.push(ok); return Promise.resolve(true); };
+    window.gameState.globalVariables = {};
+    await quietly(() => applyActions([
+        { type: 'confirm_action', text: 'Go?', confirmLabel: 'Flip it', onConfirm: [{ type: 'confirm_action', text: 'Again?', onConfirm: [] }] }
+    ]));
+    await new Promise(r => setTimeout(r, 0));
+    assert.deepEqual(seen, ['Flip it', 'Confirm']);
+    delete window.gameConfirm;
+});
