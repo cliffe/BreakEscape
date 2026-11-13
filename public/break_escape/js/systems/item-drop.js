@@ -167,15 +167,42 @@ export function dropSpotClear(p, size, { roomRect = null, bodies = [], props = [
 const insideRect = (p, r) => !r || (p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h);
 
 /**
+ * The wider drop candidates, as [dx, dy] in cells from the feet (y grows south), after the
+ * aim, the feet and the two side cells (UX slice 15 R1 ruling): first the four diagonals,
+ * then the 16 cells two steps out. Within each ring: in front (south) before level before
+ * behind, then nearer, then further south, then the side the player faces (`facing` containing 'left' or
+ * 'right'; with neither, left first).
+ */
+export function dropRingOffsets(facing = null) {
+    const side = /left/.test(facing || '') ? -1 : /right/.test(facing || '') ? 1 : -1;
+    const rank = ([dx, dy]) => [dy > 0 ? 0 : dy === 0 ? 1 : 2, dx * dx + dy * dy, -dy, dx * side > 0 ? 0 : dx === 0 ? 1 : 2];
+    const byRank = (a, b) => {
+        const ra = rank(a), rb = rank(b);
+        for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
+        return 0;
+    };
+    const ring1 = [[-1, 1], [1, 1], [-1, -1], [1, -1]].sort(byRank);
+    const ring2 = [];
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) === 2) ring2.push([dx, dy]);
+    }
+    return [...ring1, ...ring2.sort(byRank)];
+}
+
+/**
  * Where the drop lands, so that it always shows (R15; UX slice 15 R1, M1, m4, n3).
  * Candidates in order: the aim (one cell below the feet, so the item draws in front of
- * the player), the feet, then one cell left and right of the feet. Each is its own
- * pathfinding cell (no wider snap: a wider search lands on a desk top or in the next
- * room), and the first that is walkable, inside the room and clear (dropSpotClear) wins.
- * When none is, the feet: snapped to a walkable cell in the room, else the raw feet,
- * never the raw aim (which can be inside a wall or a desk's strip).
+ * the player), the feet, then one cell left and right of the feet; then the cells one step
+ * diagonally, then the ring two steps out (DROP_RING_OFFSETS: in front before behind, then
+ * nearer, then the side the player faces). Each is its own pathfinding cell (no wider
+ * snap: a wider snap lands on a desk top or in the next room), and the first that is
+ * walkable, inside the room and clear (dropSpotClear) wins. When none is, the player is
+ * standing behind the same prop (the walk-behind convention) and the drop stays with
+ * them: the feet snapped to a walkable cell in the room, else the raw feet, never the raw
+ * aim (which can be inside a wall or a desk's strip).
  *
- * `opts`: { size: {w, h}, roomRect, bodies, props } (dropClearance gathers them).
+ * `opts`: { size: {w, h}, roomRect, bodies, props, facing } (dropClearance gathers the
+ * middle four; `facing` is the player's direction, e.g. 'left', 'down-right').
  * With no pathfinder, candidates count as walkable.
  */
 export function dropPoint(playerFeet, pathfindingManager, opts = {}) {
@@ -188,7 +215,8 @@ export function dropPoint(playerFeet, pathfindingManager, opts = {}) {
         { x: feet.x, y: feet.y + DROP_AHEAD_PX },
         feet,
         { x: feet.x - step, y: feet.y },
-        { x: feet.x + step, y: feet.y }
+        { x: feet.x + step, y: feet.y },
+        ...dropRingOffsets(opts.facing).map(([dx, dy]) => ({ x: feet.x + dx * step, y: feet.y + dy * step }))
     ];
     const snap = typeof pm?.findNearestWalkableWorldCell === 'function'
         ? (p, r) => pm.findNearestWalkableWorldCell(p.x, p.y, r)
@@ -315,7 +343,7 @@ export function dropInventoryItem(sprite) {
     const firstTexture = loaded ? textureKey
         : (scene.textures.exists(DROPPED_ITEM_TEXTURE) ? DROPPED_ITEM_TEXTURE : '__DEFAULT');
     // A first spot for the stand-in; place() picks again with the item's own size
-    const at0 = dropPoint(feet, w.pathfindingManager, { size: { w: TILE / 2, h: TILE / 2 }, ...dropClearance(scene, room, null, player) });
+    const at0 = dropPoint(feet, w.pathfindingManager, { size: { w: TILE / 2, h: TILE / 2 }, facing: player.direction, ...dropClearance(scene, room, null, player) });
 
     if (!w.removeFromInventory?.(sprite)) {
         console.warn('[drop] item was not in the inventory');
@@ -363,7 +391,7 @@ export function dropInventoryItem(sprite) {
             snap = snapToTable(feet, tables, size, roomObstacles(room, obj), usable);
         }
         // On the floor: the first clear spot for this size (dropPoint), so it shows
-        const spot = snap ? null : dropPoint(feet, w.pathfindingManager, { size, ...dropClearance(scene, room, obj, player) });
+        const spot = snap ? null : dropPoint(feet, w.pathfindingManager, { size, facing: player.direction, ...dropClearance(scene, room, obj, player) });
         // Whole-pixel top-left, so the saved position reloads to the same place
         const left = snap ? snap.left : Math.round(spot.x - size.w / 2);
         const top = snap ? snap.top : Math.round(spot.y - size.h / 2);

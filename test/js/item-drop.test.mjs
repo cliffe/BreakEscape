@@ -346,6 +346,40 @@ test('UX slice 15 R1 (M1): the side cells are tried when the aim and the feet ar
     assert.deepEqual(at, { x: 52, y: 156 }, 'one cell left of the feet');
 });
 
+test('UX slice 15 R1 ruling: the wider rings run front before behind, nearer first, facing side first', async () => {
+    const { dropRingOffsets } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const none = dropRingOffsets();
+    assert.equal(none.length, 20, 'four diagonals and the 16 cells two steps out');
+    assert.deepEqual(none.slice(0, 4), [[-1, 1], [1, 1], [-1, -1], [1, -1]], 'diagonals: front first, left first with no facing');
+    assert.deepEqual(none[4], [0, 2], 'two steps: straight in front first');
+    assert.deepEqual(none.slice(-1)[0][1], -2, 'two steps behind last');
+    const right = dropRingOffsets('right');
+    assert.deepEqual(right.slice(0, 2), [[1, 1], [-1, 1]], 'facing right: front-right first');
+    assert.deepEqual(right.slice(4, 7), [[0, 2], [1, 2], [-1, 2]]);
+    assert.deepEqual(dropRingOffsets('down-left').slice(0, 2), [[-1, 1], [1, 1]]);
+});
+
+test('UX slice 15 R1 ruling: a diagonal cell, then a cell two steps out, when the first four are blocked', async () => {
+    const { dropPoint } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const size = { w: 16, h: 16 };
+    const roomRect = { x: 0, y: 0, w: 320, h: 320 };
+    // Feet at (60, 156) = cell (7, 19). Aim (7, 20), feet, left (6, 19), right (8, 19) unwalkable
+    const firstFour = (cx, cy) => (cx === 7 && (cy === 19 || cy === 20)) || ((cx === 6 || cx === 8) && cy === 19);
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(firstFour), { size, roomRect }), { x: 52, y: 164 }, 'front-left diagonal');
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(firstFour), { size, roomRect, facing: 'right' }), { x: 68, y: 164 }, 'front-right when facing right');
+    // Everything within one cell unwalkable: straight in front, two steps
+    const ring1 = (cx, cy) => Math.abs(cx - 7) <= 1 && Math.abs(cy - 19) <= 1;
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(ring1), { size, roomRect }), { x: 60, y: 172 });
+    // ... and with the three cells two steps in front covered by a prop drawn over them,
+    // the facing side's front cell two steps out (2, 1)
+    const pot = { x: 44, y: 164, w: 32, h: 16, depth: 999 };
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(ring1), { size, roomRect, props: [pot], facing: 'right' }), { x: 76, y: 164 });
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(ring1), { size, roomRect, props: [pot], facing: 'left' }), { x: 44, y: 164 });
+    // A diagonal outside the room is skipped
+    const inRoom = { x: 56, y: 0, w: 264, h: 320 };
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(firstFour), { size: { w: 8, h: 8 }, roomRect: inRoom }), { x: 68, y: 164 });
+});
+
 test('UX slice 15 R1 (m4, n3): nothing clear falls back to the feet, never the raw aim, and stays in the room', async () => {
     const { dropPoint } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
     const size = { w: 16, h: 16 };
