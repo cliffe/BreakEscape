@@ -37,7 +37,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { NetworkViewMinigame, displayOrder, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText,
+const { NetworkViewMinigame, displayOrder, hostAction, resourceAction, shareLockable, REMOTE_OFF_TEXT, SHARE_LOCKED_TEXT, HOST_LOCKED_LABEL, SHARE_LOCKED_LABEL, lockBadgeLabel, NOT_RESPONDING_TEXT, STALE_TEXT, linkOffText,
     downState, viewSubtitle, joinedStatus, DOWN_TAG, POWERED_DOWN_TAG, NO_ROUTE_TEXT, OWN_HEADING, MORE_BELOW_TEXT } =
     await imp('minigames/network-view/network-view-minigame.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
@@ -201,7 +201,7 @@ test('the view lists each row with its action and the row attributes, from GET /
         ['sam_pc', 'door_box', 'lena_pc', 'kiosk_pc', 'ledger_archive', 'scanned_inbox', 'print_queue']);
     assert.deepEqual([...document.querySelectorAll('.network-row-group')].map(el => el.textContent),
         ['Computers', 'File shares', 'Printers and devices']);
-    assert.match(row('data-resource-id', 'ledger_archive').querySelector('.network-row-locked').textContent, /Locked/);
+    assert.match(row('data-resource-id', 'ledger_archive').querySelector('.network-row-locked').textContent, /Needs account/);
     assert.equal(row('data-host-id', 'door_box').querySelector('[data-action]').dataset.action, 'sign-in');
     assert.equal(row('data-host-id', 'kiosk_pc').querySelector('[data-action]'), null);
     assert.match(row('data-host-id', 'kiosk_pc').textContent, new RegExp(REMOTE_OFF_TEXT));
@@ -233,6 +233,25 @@ test('a locked remote session shows a Locked badge and a Sign in control, not Op
     lena.querySelector('[data-action="sign-in"]').click();
     assert.equal(signIns.length, before + 1, 'Sign in opens the remote sign-in screen');
     assert.equal(signIns[signIns.length - 1][0], 'lena_pc');
+});
+
+// A locked session and a share that needs an account are two different reasons: two labels, one badge look
+test('the padlock badge says Locked for a locked session and Needs account for a share', async () => {
+    assert.equal(HOST_LOCKED_LABEL, 'Locked');
+    assert.equal(SHARE_LOCKED_LABEL, 'Needs account');
+    assert.equal(lockBadgeLabel('host'), 'Locked');
+    assert.equal(lockBadgeLabel('share'), 'Needs account');
+    assert.notEqual(lockBadgeLabel('host'), lockBadgeLabel('share'));
+    const hosts = HOSTS.map(h => h.id === 'lena_pc' ? { ...h, session: { ...h.session, locked: true } } : h);
+    setup({ hosts });
+    links.open('jack_comms_port');
+    await settle();
+    const host = row('data-host-id', 'lena_pc').querySelector('.network-row-locked');
+    const share = row('data-resource-id', 'ledger_archive').querySelector('.network-row-locked');
+    assert.equal(host.textContent.trim(), 'Locked');
+    assert.equal(share.textContent.trim(), 'Needs account');
+    assert.equal(host.className, share.className, 'the same badge look');
+    assert.equal(host.querySelector('img').getAttribute('src'), share.querySelector('img').getAttribute('src'));
 });
 
 test('network_viewed carries the network, the host ids and hostList; it fires on every open', async () => {

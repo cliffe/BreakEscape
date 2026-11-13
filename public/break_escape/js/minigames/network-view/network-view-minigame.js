@@ -70,6 +70,22 @@ export { MORE_BELOW_TEXT };
 export const STALE_TEXT = 'Still updating, so this may be out of date.';
 // An implant whose own PC is off (review R3 M1): the link is listed and reaches nothing
 export const linkOffText = (host) => `This link is not responding: ${host || 'its PC'} is off.`;
+// Two different reasons for a padlock badge, so two plain words: a held session that was locked
+// (its owner returns with the password), and a share that needs an account the player has not
+// signed in with. Both keep the same badge look.
+export const HOST_LOCKED_LABEL = 'Locked';
+export const SHARE_LOCKED_LABEL = 'Needs account';
+
+/** The padlock badge's label for a row: a locked session ('host') or a share needing an account. */
+export function lockBadgeLabel(kind) {
+    return kind === 'share' ? SHARE_LOCKED_LABEL : HOST_LOCKED_LABEL;
+}
+
+/** The padlock badge, the same look for either label. */
+function lockBadgeHtml(kind) {
+    return `<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> ${lockBadgeLabel(kind)}</span>`;
+}
+
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
 const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
 const WIFI_ICON = '/break_escape/assets/icons/wifi.png';
@@ -424,7 +440,7 @@ export class NetworkViewMinigame extends MinigameScene {
                 // the Open button; the server refuses the open until the password is re-entered.
                 // The row also offers Sign in (the remote sign-in screen with the held account
                 // pre-chosen), so a locked remote session is never stranded (review R2 blocker 1).
-                control = '<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> Locked</span>'
+                control = lockBadgeHtml('host')
                     + '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
             } else if (action === 'open') {
                 const who = row.session.displayName || row.session.username || 'session';
@@ -449,7 +465,7 @@ export class NetworkViewMinigame extends MinigameScene {
             // A locked share: a padlock badge where other rows have a button, and the reason
             // under the share's name as a plain line (not three lines of italics)
             control = action === 'locked'
-                ? '<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> Locked</span>'
+                ? lockBadgeHtml('share')
                 : '<button type="button" class="minigame-button network-row-action" data-action="open">Open</button>';
         } else {
             control = '<button type="button" class="minigame-button network-row-action" data-action="observe">Look</button>';
