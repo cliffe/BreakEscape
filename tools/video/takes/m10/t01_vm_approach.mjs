@@ -45,8 +45,18 @@ async function monitorState(page) {
 
 export async function setup(page, bridge) {
   await clearScreen(page, bridge, () => {});
-  // Dismiss any auto-opened conversation/minigame from the completed-game reload.
-  for (let i = 0; i < 4 && (await bridge.getState()).activeMinigame; i++) { await bridge.minigame.close().catch(() => {}); await sleep(500); }
+  // A fresh (non-concluded) m10 game opens in Director Netherton's briefing person-chat. It is a cutscene,
+  // so minigame.close() does not dismiss it: drive it to close (continue through voiced lines, pick the
+  // first option at any menu) so main-world input is re-enabled before the approach. Caps at 60 iters.
+  for (let i = 0; i < 60; i++) {
+    const s = await bridge.getState();
+    if (!s.activeMinigame && !s.dialogue) break;
+    const d = s.dialogue;
+    if (d && d.awaitingChoice && (d.choices || []).length) { await bridge.minigame.chooseIndex(1).catch(() => {}); }
+    else if (d && d.canContinue) { await bridge.minigame.continue_().catch(() => {}); }
+    else { await bridge.minigame.close().catch(() => {}); }
+    await sleep(600);
+  }
   const here = (await bridge.getState()).player;
   if (!here || here.room !== 'forward_post') await goRoom(page, bridge, 'forward_post');
   // The launcher's reported x/y is its sprite corner, not where a player stands to use it: find the standing point once
