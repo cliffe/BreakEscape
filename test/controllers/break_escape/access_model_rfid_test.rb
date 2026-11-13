@@ -465,6 +465,57 @@ module BreakEscape
       assert door('mixed', card_ids: ['VISITOR-07'])['success'], 'the re-picked keycard still opens the rfid door'
     end
 
+    # ---- POST /unlock, a revoked card (the left-card consequence, §3.3b) --------------
+
+    # A cancelled keycard no longer opens an access-list door, though the identity it carries
+    # still admits. The cancellation lives in the revoked_card_ids global, which the client syncs.
+    test 'a revoked keycard no longer opens an access-list door' do
+      build('inventory' => [keycard_item('jake_spare')],
+            'globalVariables' => { 'revoked_card_ids' => [JAKE_CARD_ID] })
+      assert_refused door('records', card_ids: [JAKE_CARD_ID])
+      refute_includes @game.reload.player_state['unlockedRooms'], 'records'
+    end
+
+    # A saved clone of a cancelled card is dead too, even while the copier is held.
+    test 'a revoked card\'s saved clone no longer opens an access-list door' do
+      build('inventory' => [CLONER.dup], 'globalVariables' => { 'revoked_card_ids' => [JAKE_CARD_ID] })
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      assert_refused door('records', card_ids: [JAKE_CARD_ID])
+    end
+
+    # Cheat policy q78: access honest play reached must not be refused. A revoked id in the list
+    # must not block a live card that also admits the door.
+    test 'a revoked card in the list does not block a live card that also admits' do
+      build('inventory' => [keycard_item('jake_spare'), keycard_item('visitor_badge')],
+            'globalVariables' => { 'revoked_card_ids' => ['VISITOR-07'] })
+      body = door('records', card_ids: ['VISITOR-07', JAKE_CARD_ID])
+      assert_response :success, body.inspect
+      assert_equal JAKE_CARD_ID, body['cardId']
+    end
+
+    # A requires-only rfid door (the trusted path, no access list): the server still refuses a
+    # held-but-revoked required card, whether or not the client sends card_ids.
+    test 'a revoked card is refused at a requires-only rfid door' do
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['badge_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true,
+                                      'lockType' => 'rfid', 'requires' => ['VISITOR-07'] }
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'],
+                                                 'inventory' => [keycard_item('visitor_badge')],
+                                                 'globalVariables' => { 'revoked_card_ids' => ['VISITOR-07'] } })
+      assert_refused door('badge_door')
+      assert_refused door('badge_door', card_ids: ['VISITOR-07'])
+      refute_includes @game.reload.player_state['unlockedRooms'], 'badge_door'
+    end
+
+    # A mixed door (requires VISITOR-07 or the it role): the revoked requires card is refused.
+    test 'a revoked requires card is refused at a mixed door' do
+      build('inventory' => [keycard_item('visitor_badge')],
+            'globalVariables' => { 'revoked_card_ids' => ['VISITOR-07'] })
+      assert_refused door('mixed', card_ids: ['VISITOR-07'])
+    end
+
     private
 
     def stored_cards

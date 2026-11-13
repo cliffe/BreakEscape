@@ -2,6 +2,26 @@ module BreakEscape
   class ApplicationController < ActionController::Base
     protect_from_forgery with: :exception
 
+    # Step 7. Every engine response carries the server's current scenario format, so an open tab on
+    # newer or older code than its server can tell. Prepended, so it runs before every other
+    # callback and the header survives every early exit: a before_action that renders or redirects,
+    # a rescue_from handler, or an action's own error answer (an after_action would be skipped on
+    # each of those). StaticFilesController skips it so a cached asset never carries a stale version.
+    prepend_before_action :set_format_header
+
+    # Step 7. A CSRF failure (protect_from_forgery with: :exception) raises before the action, and an
+    # exception that leaves the controller would lose the header set on its response. Answer locally,
+    # for a JSON request only (its body or its Accept header), so the response is the controller's own
+    # and keeps the header. Any other request (an engine HTML form post) re-raises, so the host's own
+    # error handling and styled 422 page are unchanged.
+    rescue_from ActionController::InvalidAuthenticityToken do |exception|
+      if request.content_mime_type&.json? || request.format.json?
+        render json: { error: 'invalid_authenticity_token' }, status: :unprocessable_entity
+      else
+        raise exception
+      end
+    end
+
     # Include Pundit if available
     include Pundit::Authorization if defined?(Pundit)
 
@@ -36,6 +56,11 @@ module BreakEscape
     helper_method :game_page_path_for
 
     private
+
+    # Step 7. The current scenario format, as a constant-per-process header on every engine response.
+    def set_format_header
+      response.set_header('X-Break-Escape-Format', BreakEscape::FormatUpgrade.current.to_s)
+    end
 
     # the host's path for this game, or nil (no hook, no answer, a hook that fails, or not a local path)
     def host_game_page_path(game)

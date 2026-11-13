@@ -496,7 +496,7 @@ export default class NPCBarkSystem {
   _dropStaleVisibleBarks() {
     if (!this.container) return;
     for (const el of this.container.querySelectorAll('.npc-bark')) {
-      if (typeof el._stillValid !== 'function') continue;
+      if (el._removing || typeof el._stillValid !== 'function') continue;
       let valid = true;
       try { valid = el._stillValid(); } catch (e) { valid = true; }
       if (!valid) {

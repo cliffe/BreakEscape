@@ -19,6 +19,7 @@ require 'erb'
 args = ARGV.dup
 start_room = nil
 unlock_all = false
+format_override = nil # --format-version N: stamp this version instead of current (refusal proof)
 rest = []
 until args.empty?
   a = args.shift
@@ -26,11 +27,13 @@ until args.empty?
   when '--start-room' then start_room = args.shift or abort '--start-room needs a room id'
   when /\A--start-room=(.+)\z/ then start_room = Regexp.last_match(1)
   when '--unlock-all' then unlock_all = true
+  when '--format-version' then format_override = Integer(args.shift || abort('--format-version needs an integer'))
+  when /\A--format-version=(-?\d+)\z/ then format_override = Integer(Regexp.last_match(1))
   else rest << a
   end
 end
 host_name, scen_arg = rest
-abort 'usage: swap-scenario-game.rb <host_mission> <scenario_dir> [--start-room ROOM_ID] [--unlock-all]' unless host_name && scen_arg
+abort 'usage: swap-scenario-game.rb <host_mission> <scenario_dir> [--start-room ROOM_ID] [--unlock-all] [--format-version N]' unless host_name && scen_arg
 
 missions_before = BreakEscape::Mission.count
 host = BreakEscape::Mission.find_by(name: host_name) or abort "no mission '#{host_name}'"
@@ -49,6 +52,14 @@ end
 rooms = sd['rooms'] || {}
 abort "--start-room: no room '#{start_room}' in #{dir}. Rooms: #{rooms.keys.join(', ')}" if start_room && !rooms.key?(start_room)
 sd['startRoom'] = start_room if start_room
+
+# Stamp the format version on the swapped data, the way a created game is stamped. The first
+# g.save! below is a create and runs before_create :stamp_format_version, which stamps current;
+# this override survives only because the second g.save! overwrites scenario_data with sd (which
+# carries it here). --format-version forces a version for the refusal proof only (900, far from
+# any real format); normally it is current.
+stamped_version = format_override.nil? ? BreakEscape::FormatUpgrade.current : format_override
+sd['formatVersion'] = stamped_version
 
 g = BreakEscape::Game.new(player: BreakEscape::DemoUser.first || BreakEscape::DemoUser.create!(username: 'playtest'),
                           mission: host)
@@ -70,5 +81,5 @@ g.save!
 missions_after = BreakEscape::Mission.count
 abort "Mission count changed (#{missions_before} -> #{missions_after}): this script must not create missions" if missions_after != missions_before
 puts "swapped game #{g.id}: host #{host.name}, scenario #{dir} (#{rooms.size} rooms, start #{g.player_state['currentRoom']}" \
-     "#{unlock_all ? ', all rooms unlocked' : ''}); missions #{missions_before} before and after"
+     "#{unlock_all ? ', all rooms unlocked' : ''}, formatVersion #{g.scenario_data['formatVersion']}); missions #{missions_before} before and after"
 puts "GAME_ID=#{g.id}"

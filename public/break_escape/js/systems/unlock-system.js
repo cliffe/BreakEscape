@@ -125,11 +125,16 @@ export function hasRfidAccessList(lockRequirements) {
 export function heldRfidCardIds() {
     const items = (window.inventory && window.inventory.items) || [];
     const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
+    // A cancelled card_id (the left-card consequence, §3.3b) is left out, so the UI never
+    // offers it and the server is never asked to open an access-list door with it. The server
+    // refuses it anyway (Game#held_rfid_cards), but the two must agree, as evaluateRfidCredential
+    // already drops a revoked card from the requires path.
+    const revoked = (id) => (typeof window !== 'undefined' && window.isCardRevoked) ? window.isCardRevoked(id) : false;
     const ids = [];
     const add = (cardData) => {
         if (!cardData) return;
         const id = getCardId(cardData);
-        if (id != null && id !== '' && !ids.includes(String(id))) ids.push(String(id));
+        if (id != null && id !== '' && !revoked(id) && !ids.includes(String(id))) ids.push(String(id));
     };
     items.forEach(item => {
         if (item && item.scenarioData && item.scenarioData.type === 'keycard') add(item.scenarioData);

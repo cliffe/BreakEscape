@@ -33,6 +33,10 @@ module BreakEscape
     # Review R2 n1: runs before set_game, whose params[:id] parses the whole JSON body, so the
     # cap limits parse cost as well as report cost. Reads only the Content-Length header.
     prepend_before_action :refuse_oversized_body, only: [:npc_frustration, :clone_card]
+    # Step 7: re-prepend the format header after the prepend above, so it is restored to the front
+    # of this controller's callback chain (a later prepend goes in front). A Rails test asserts
+    # set_format_header is the first before callback of every engine controller except the static one.
+    prepend_before_action :set_format_header
 
 
     # Actions that read-modify-write @game.player_state and then save! need a
@@ -296,6 +300,10 @@ module BreakEscape
         # "_"-prefixed saved global is kept. Free data (object/array globals, minigameData) holds no
         # notes and ships as authored. The secret-keeping filters above still visit notes.
         BreakEscape::AuthorNotes.strip_notes!(filtered, BreakEscape::ScenarioSchema.root)
+
+        # Step 7: the tab learns its format here. set_game already ran ensure_current_format!, so the
+        # stored data is at current; read it as an Integer (never data['formatVersion'] directly).
+        filtered['formatVersion'] = BreakEscape::FormatUpgrade.version_of(@game.scenario_data)
 
         # Include objectives state for page reload recovery
         # This allows the client to restore completed/progress state
@@ -803,12 +811,22 @@ module BreakEscape
     def sync_state
       stale = false
       refusal = nil
+      format_refusal = nil
       # Sections a merge refused over a cap (the saved copy stands). Reported
       # as notSaved so the client does not mark them confirmed and resends them.
       @not_saved = []
       Game.transaction do
         @game = Game.lock.select(*SYNC_STATE_COLUMNS).find(params[:id])
         authorize @game if defined?(Pundit)
+
+        # Step 7: refuse a game stored above current (or with an unreadable formatVersion) before any
+        # merge, under the same row lock, so a tab on newer code than its server writes nothing to
+        # player_state. sync_state never upgrades: a version below current is synced as today and
+        # upgraded on the next load. The narrow sync load has no scenario_data, so pluck the version.
+        format_refusal = sync_format_refusal
+        if format_refusal
+          raise ActiveRecord::Rollback
+        end
 
         stale = stale_sync_request?
         # 6b review m1: fingerprint the phish evidence before the merge, only when something is
@@ -840,7 +858,16 @@ module BreakEscape
         @game.save!(validate: false) if @game.changed?
       end
 
-      if refusal
+      if format_refusal
+        current = BreakEscape::FormatUpgrade.current
+        message =
+          if format_refusal.is_a?(BreakEscape::FormatUpgrade::TooNew)
+            "This game was saved by a newer version of Break Escape (format #{format_refusal.stored}; this server reads up to #{current})"
+          else
+            "This game's saved format cannot be read"
+          end
+        render json: { error: 'format', message: message, current: current }, status: :conflict
+      elsif refusal
         render json: { success: false, message: refusal }, status: :forbidden
       elsif stale
         body = { success: true, stale: true }
@@ -1939,6 +1966,30 @@ module BreakEscape
 
     def set_game
       @game = Game.find(params[:id])
+      # Step 7: bring the stored game up to the current format at load, under its row lock. A game
+      # stored above current, or with an unreadable formatVersion, is refused before any other work.
+      @game.ensure_current_format!
+    rescue BreakEscape::FormatUpgrade::TooNew, BreakEscape::FormatUpgrade::Unreadable => e
+      render_format_refusal(e)
+    end
+
+    # Step 7. One body for every format refusal. show (the only HTML route through set_game) renders
+    # a styled page; every JSON route answers 409 with { error: "format", message, current }.
+    def render_format_refusal(error)
+      current = BreakEscape::FormatUpgrade.current
+      message =
+        if error.is_a?(BreakEscape::FormatUpgrade::TooNew)
+          "This game was saved by a newer version of Break Escape (format #{error.stored}; this server reads up to #{current})"
+        else
+          "This game's saved format cannot be read"
+        end
+
+      if action_name == 'show'
+        @format_message = message
+        render template: 'break_escape/games/format_refusal', status: :conflict, layout: false
+      else
+        render json: { error: 'format', message: message, current: current }, status: :conflict
+      end
     end
 
     # Only when the route names an event (the host's alias route): the game's mission listing must be in it.
@@ -1967,6 +2018,47 @@ module BreakEscape
     # machine, but a clock set back during a reload would otherwise make every
     # sync from the new page stale until it passed the old value.
     SYNC_STALE_RESET_MS = 10.minutes.in_milliseconds
+
+    # Step 7. Judge the stored formatVersion under the sync row lock. Returns a FormatUpgrade::TooNew
+    # (stored above current) or Unreadable (a bad value) to refuse the sync, or nil to proceed.
+    #
+    # At current 0 (step 7) the subsystem is inert and this returns at once, reading no scenario_data:
+    # with no format steps, a real game's stored version is only ever 0 (nothing is stamped), so none
+    # can be too-new, and a hand-crafted too-new or unreadable game is already refused at load time by
+    # set_game (ensure_current_format!), so its client never reaches a sync. This also keeps a plain
+    # sync off scenario_data entirely (the sync-deltas rule: the narrow sync load carries no
+    # scenario_data), which capture_proofs_test's query counter pins.
+    #
+    # Once current is non-zero the value is read with jsonb_typeof plus ->> rather than the whole
+    # column (one scalar, not the materialised scenario_data). This rebuilds the Ruby value exactly as
+    # set_game sees it once the adapter decodes the full jsonb column, no matter how a given adapter
+    # maps a bare jsonb expression. A JSON string scalar (for example "1") stays a Ruby String here,
+    # so version_of refuses it as Unreadable on this path just as set_game does; a JSON integer
+    # becomes an Integer, a fractional number a Float (Unreadable), JSON null or a missing key is 0.
+    def sync_format_refusal
+      current = BreakEscape::FormatUpgrade.current
+      return nil if current.zero?
+
+      type, text = Game.where(id: @game.id).pick(
+        Arel.sql("jsonb_typeof(scenario_data -> 'formatVersion')"),
+        Arel.sql("scenario_data ->> 'formatVersion'")
+      )
+      value =
+        case type
+        when 'number' then text =~ /\A-?\d+\z/ ? text.to_i : Float(text)
+        when 'string' then text
+        when 'true' then true
+        when 'false' then false
+        when 'null', nil then nil
+        else type # object / array: a non-Integer, so version_of raises Unreadable
+        end
+      stored = BreakEscape::FormatUpgrade.version_of({ 'formatVersion' => value })
+      return BreakEscape::FormatUpgrade::TooNew.new(stored, current) if stored > current
+
+      nil
+    rescue BreakEscape::FormatUpgrade::Unreadable => e
+      e
+    end
 
     # True when the request carries a clientTs no newer than the newest one
     # accepted. Otherwise records it (so every accepted request with clientTs

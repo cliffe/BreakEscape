@@ -1,3 +1,6 @@
+// The format guard wraps window.fetch and must run before any other module keeps a
+// reference to fetch, so it is the first import (format-guard-sites.test.mjs enforces this).
+import './format-guard.js';
 import { GAME_CONFIG } from './utils/constants.js';
 import { preload, create, update } from './core/game.js';
 import { initializeNotifications } from './systems/notifications.js';

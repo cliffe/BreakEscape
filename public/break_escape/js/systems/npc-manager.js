@@ -244,6 +244,7 @@ export default class NPCManager {
     this._timedMessageSeq = 0; // ids for mapping texts (see exportTimedMessages)
     this._savedPhoneState = new Map(); // npcId -> saved phone thread, applied when the NPC registers
     this._delayedMappings = new Map(); // npcId -> Map(eventKey -> timer id) for mappings with delayMs
+    this._delayedBarkSeq = 0;          // key counter for barkDelay timers kept in _delayedMappings
     this._scriptedCall = null;        // the scripted conversation starting or open: { npcId, minigame }
     this._scriptedCallQueue = [];     // scripted conversations that arrived while one was starting or open
     this._scriptedCallTimer = null;   // retry timer for the queue
@@ -1077,7 +1078,7 @@ export default class NPCManager {
     this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
   }
 
-  /** Cancel an NPC's pending delayMs mappings. */
+  /** Cancel an NPC's pending delayMs mappings and barkDelay barks. */
   _cancelDelayedMappings(npcId) {
     const pending = this._delayedMappings.get(npcId);
     if (!pending) return;
@@ -1157,6 +1158,7 @@ export default class NPCManager {
         cooldown: mapping.cooldown,
         condition: mapping.condition,
         delayMs: Number(mapping.delayMs) > 0 ? Number(mapping.delayMs) : 0,  // fire this long after the event, re-checking then
+        barkDelay: Number(mapping.barkDelay) > 0 ? Number(mapping.barkDelay) : 0,  // ms: the bark alone waits this long (_delayBark)
         maxTriggers: mapping.maxTriggers,  // Add max trigger limit
         conversationMode: mapping.conversationMode,  // Add conversation mode (e.g., 'person-chat')
         changeStoryPath: mapping.changeStoryPath,  // Change the NPC's story file
@@ -1285,6 +1287,53 @@ export default class NPCManager {
     const followUp = eventData.answerFollowUpTaken ? null : (eventData.answerFollowUp || null);
     if (followUp) eventData.answerFollowUpTaken = npcId;
     return { followUp };
+  }
+
+  /**
+   * Show a mapping's bark `barkDelay` ms after its event (staggered reactions). The
+   * mapping's onceOnly, cooldown and actions have already run at the event; only the
+   * bark waits. When the delay is up the bark is dropped if its condition (stillValid)
+   * no longer holds, or the NPC is knocked out, has changed room (walking out counts)
+   * or been hidden. Otherwise showBark takes it as usual, so an open minigame or
+   * conversation, including one with this NPC, holds it until it closes. show() is
+   * handed a stillValid that repeats the condition, knocked-out and hidden checks, so a
+   * held bark is also dropped on release (bark-release-policy.js) if its NPC was knocked
+   * out or hidden while it was held. The room check runs only when the delay ends: NPCs
+   * keep walking behind a minigame, and a patroller that crosses rooms during a long
+   * hold keeps its bark. Timers live with the NPC's delayMs timers, so _cancelDelayedMappings
+   * (NPC re-registered or removed, manager destroyed) cancels them too.
+   */
+  _delayBark(npcId, delayMs, show, stillValid) {
+    if (!(delayMs > 0)) { show(stillValid); return; }
+    const where = () => {
+      const npc = this.getNPC(npcId);
+      const room = window.npcBehaviorManager?.getBehavior?.(npcId)?.roomId ?? npc?.roomId ?? null;
+      return { room, hidden: npc?.isVisible === false };
+    };
+    const before = where();
+    if (!this._delayedMappings.has(npcId)) this._delayedMappings.set(npcId, new Map());
+    const pending = this._delayedMappings.get(npcId);
+    const key = `bark:${++this._delayedBarkSeq}`;
+    // Why the bark should not show now, or null. Run when the delay ends (with the room
+    // check) and again, through stillValid, when a held bark is released (without it).
+    const lapse = (checkRoom) => {
+      const now = where();
+      if (typeof stillValid === 'function' && !stillValid()) return 'condition no longer holds';
+      if (window.npcHostileSystem?.isNPCKO?.(npcId)) return 'NPC knocked out';
+      if (checkRoom && now.room !== before.room) return `NPC left ${before.room}`;
+      if (now.hidden && !before.hidden) return 'NPC hidden';
+      return null;
+    };
+    pending.set(key, setTimeout(() => {
+      pending.delete(key);
+      const reason = lapse(true);
+      if (reason) { console.log(`⏭️ Delayed bark for ${npcId} dropped: ${reason}`); return; }
+      show(() => {
+        const why = lapse(false);
+        if (why) console.log(`⏭️ Held delayed bark for ${npcId} is stale: ${why}`);
+        return !why;
+      });
+    }, delayMs));
   }
 
   // Handle when a mapped event fires
@@ -1883,11 +1932,12 @@ export default class NPCManager {
     // If bark text is provided, show it directly
     if (this.barkSystem && (config.bark || config.message)) {
       const barkText = config.bark || config.message;
-      const barkDelay = config.barkDelay || 0;
+      // A delayed bark is not an answer in view: the sender keeps its own notification
+      const delayed = Number(config.barkDelay) > 0;
       const hasText = typeof barkText === 'string' && barkText.trim() !== '';
-      const answered = (!(barkDelay > 0) && hasText) ? this._markAnsweredInView(npcId, eventData) : null;
+      const answered = (!delayed && hasText) ? this._markAnsweredInView(npcId, eventData) : null;
 
-      const fireBark = () => {
+      const fireBark = (stillValid) => {
         // Add bark message to conversation history (marked as bark)
         this.addMessage(npcId, 'npc', barkText, {
           eventPattern,
@@ -1906,17 +1956,13 @@ export default class NPCManager {
           startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
           phoneId: npc.phoneId,
           useTTS: npc.npcType === 'person' && !!npc.voice,
-          stillValid: this._barkStillValid(npcId, config, eventData),
+          stillValid,
           eventPattern,
           followUp: answered?.followUp || null
         });
       };
 
-      if (barkDelay > 0) {
-        setTimeout(fireBark, barkDelay);
-      } else {
-        fireBark();
-      }
+      this._delayBark(npcId, config.barkDelay, fireBark, this._barkStillValid(npcId, config, eventData));
     }
     // Otherwise, if we have a knot, load the Ink story and get the text
     else if (this.barkSystem && config.knot && npc.storyPath) {
@@ -1924,10 +1970,15 @@ export default class NPCManager {
 
       // Load the Ink story and navigate to the knot. The event is marked answered only once the
       // knot has given text, and only while this call has not yet returned (story already
-      // loaded): marked any later, the sender has already shown its own notification (R2 m4)
+      // loaded): marked any later, the sender has already shown its own notification (R2 m4).
+      // A delayed bark never marks it (with no delay _delayBark shows at once, in time).
+      const stillValid = this._barkStillValid(npcId, config, eventData);
       let inTime = true;
-      const onText = () => (inTime ? this._markAnsweredInView(npcId, eventData) : null);
-      this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, this._barkStillValid(npcId, config, eventData), onText);
+      const onText = Number(config.barkDelay) > 0
+        ? null
+        : () => (inTime ? this._markAnsweredInView(npcId, eventData) : null);
+      this._delayBark(npcId, config.barkDelay,
+        (valid) => this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, valid, onText), stillValid);
       inTime = false;
     }
     

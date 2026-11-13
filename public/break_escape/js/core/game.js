@@ -3,6 +3,7 @@
 import { initializeRooms, calculateWorldBounds, calculateRoomPositions, createRoom, revealRoom, updatePlayerRoom, rooms } from './rooms.js';
 import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward, startHoldWalk, stopHoldWalk, player, isMoving as playerIsMoving } from './player.js';
 import { resumeSpawnFor } from './resume-spawn.js';
+import { setHeldFormatVersion, showBootstrapRefusal } from '../format-guard.js';
 import { initializeInventory, processInitialInventoryItems, registerTrayRule, refreshInventoryTray } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
@@ -1610,7 +1611,22 @@ export function preload() {
     // Queue the scenario's character atlases as soon as its JSON arrives. Files added
     // while the loader is running join the same pass, so create() waits for them.
     this.load.once('filecomplete-json-gameScenarioJSON', (key, type, scenario) => {
-        queueCharacterAtlases(this, collectCharacterSprites(scenario || this.cache.json.get('gameScenarioJSON')));
+        const loaded = scenario || this.cache.json.get('gameScenarioJSON');
+        // The version the tab holds: the bootstrap carries formatVersion (server step 7).
+        // The format guard compares it against the header on every later engine response.
+        try { setHeldFormatVersion(loaded?.formatVersion); } catch (e) { /* guard is best-effort */ }
+        queueCharacterAtlases(this, collectCharacterSprites(loaded));
+    });
+
+    // The bootstrap is an XHR load the fetch guard never sees, so its format refusal is
+    // handled here: on a load error for the scenario key, fetch the same URL once, and
+    // when the answer is a 409 { error: "format" } show its message in #loading and stop
+    // the boot. Any other failure keeps today's behaviour (Phaser shows nothing).
+    this.load.once('loaderror', (file) => {
+        if (!file || file.key !== 'gameScenarioJSON') return;
+        if (!window.breakEscapeConfig?.apiBasePath) return;
+        const url = `${window.location.origin}${window.breakEscapeConfig.apiBasePath}/scenario`;
+        try { showBootstrapRefusal(url); } catch (e) { /* refusal display is best-effort */ }
     });
 
     // Load scenario from Rails API endpoint if available, otherwise try URL parameter
