@@ -5,28 +5,24 @@ import { currentClockText } from '../../systems/game-clock.js';
 
 // Canvas dimensions for the Phaser scene
 // 784 wide so the canvas fits an 800px window at zoom 1 (slice 7 R2 M2)
-const W = 784;  // canvas width
-const H = 510;  // canvas height
+const W = 784;  // canvas width (side by side)
+const H = 510;  // canvas height (side by side)
+// Narrower than W: the MAR record stacks above the pump in one column this wide, which fits a
+// 390px phone even with a 15px scrollbar beside it (critique B IP1)
+export const STACK_W = 368;
 
-// Layout constants
+// Layout constants (side by side)
 const RX_X = 8;   const RX_Y = 8;   const RX_W = 290; const RX_H = 494;  // prescription panel
 const PMP_X = 302; const PMP_Y = 8;  const PMP_W = 474; const PMP_H = 494; // pump bezel
 
-// Pump inner area (12px padding inside bezel)
-const PMP_IX = PMP_X + 12;  // 314
-const PMP_IW = PMP_W - 24;  // 486
-
-// Screen rect (inside pump)
-const SCR_X = PMP_IX; const SCR_Y = PMP_Y + 12; const SCR_W = PMP_IW; const SCR_H = 155;
+// Screen height inside the pump (side by side)
+const SCR_H = 155;
 
 // Keypad rows
-const KP_Y0 = SCR_Y + SCR_H + 8;  // ~183
 const KP_BTN_H = 50;
 const KP_GAP   = 5;
-const KP_BTN_W = Math.floor((PMP_IW - KP_GAP * 2) / 3);  // ~158
 
 // Confirm button
-const CONF_Y  = KP_Y0 + 4 * (KP_BTN_H + KP_GAP) + 3;  // ~416
 const CONF_H  = 54;
 // A press that moves further than this (canvas pixels) before release is a swipe, not a tap
 const TAP_SLOP = 12;
@@ -106,11 +102,64 @@ export class InfusionPumpMinigame extends MinigameScene {
         return Number.isFinite(z) && z >= 1 ? z : 1;
     }
 
+    // Side by side when the box is at least as wide as the side-by-side canvas; otherwise the
+    // MAR record stacks above the pump (critique B IP1), so nothing runs off the right edge.
+    static isStacked(boxWidth) {
+        return Number.isFinite(boxWidth) && boxWidth > 0 && boxWidth < W;
+    }
+
+    // Panel rectangles for either layout. Stacked heights start at 0: the scene measures its
+    // text and fills them in (_buildPrescriptionPanel, _buildScreen, _buildPumpDevice).
+    static layoutFor(stacked) {
+        if (!stacked) {
+            return { stacked: false, w: W, h: H,
+                rx: { x: RX_X, y: RX_Y, w: RX_W, h: RX_H },
+                pmp: { x: PMP_X, y: PMP_Y, w: PMP_W, h: PMP_H } };
+        }
+        return { stacked: true, w: STACK_W, h: 0,
+            rx: { x: 8, y: 8, w: STACK_W - 16, h: 0 },
+            pmp: { x: 8, y: 0, w: STACK_W - 16, h: 0 } };
+    }
+
+    // Pump inner area (12px inside the bezel), screen, keypad and Confirm, from the pump's
+    // rectangle and the screen's height
+    static pumpGeometry(pmp, scrH = SCR_H) {
+        const ix = pmp.x + 12;
+        const iw = pmp.w - 24;
+        const scr = { x: ix, y: pmp.y + 12, w: iw, h: scrH };
+        const kpY0 = scr.y + scr.h + 8;
+        const btnW = Math.floor((iw - KP_GAP * 2) / 3);
+        const confY = kpY0 + 4 * (KP_BTN_H + KP_GAP) + 3;
+        return { ix, iw, scr, kpY0, btnW, confY };
+    }
+
+    _boxWidth() {
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        const bw = box?.getBoundingClientRect?.().width;
+        return bw > 0 ? bw : (typeof window !== 'undefined' ? window.innerWidth : W);
+    }
+
+    // The window crossed the stacking width (a phone turned round): rebuild the scene in the
+    // other layout. The rate typed so far is kept; an open pop-up closes.
+    _relayout(stacked) {
+        const game = this.phaserGame;
+        if (!game?.scale || !this.scene || this.confirmed || this._relayingOut) return;
+        this._relayingOut = true;
+        this._destroyModal();
+        this._modalVisible = false;
+        this._L = InfusionPumpMinigame.layoutFor(stacked);
+        game.scale.resize(this._L.w, this._L.h || H);
+        this.scene.scene.restart();
+    }
+
     _fitZoom() {
         const game = this.phaserGame;
         const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
         if (!game?.scale || !box) return;
-        const z = InfusionPumpMinigame.wholeZoom(box.clientWidth, box.clientHeight);
+        const stacked = InfusionPumpMinigame.isStacked(box.getBoundingClientRect().width);
+        if (this._L && stacked !== this._L.stacked) { this._relayout(stacked); return; }
+        const L = this._L || InfusionPumpMinigame.layoutFor(false);
+        const z = InfusionPumpMinigame.wholeZoom(box.clientWidth, box.clientHeight, L.w, L.h);
         if (game.scale.zoom !== z) game.scale.setZoom(z);
         // Phaser may set its own touch-action on the canvas; the box must pan on a swipe
         const canvas = box.querySelector('canvas');
@@ -308,21 +357,29 @@ export class InfusionPumpMinigame extends MinigameScene {
             constructor() { super({ key: 'InfusionPumpScene' }); }
             create() {
                 self.scene = this;
+                self._stopCursor();
                 self._buildPrescriptionPanel(this);
                 self._buildPumpDevice(this);
+                // A stacked layout knows its height only once its text is measured
+                if (self._L.stacked) this.scale.resize(self._L.w, self._L.h);
                 self._startCursor();
+                self._updateDisplay();
                 // The canvas exists now: pick its whole-number zoom, then put the X
                 // inside its top-right corner
-                self._watchZoom();
+                const rebuilt = self._relayingOut;
+                self._relayingOut = false;
+                if (rebuilt) self._fitZoom();
+                else self._watchZoom();
             }
         }
 
+        this._L = InfusionPumpMinigame.layoutFor(InfusionPumpMinigame.isStacked(this._boxWidth()));
         try {
             this.phaserGame = new Phaser.Game({
                 type: Phaser.AUTO,
                 parent: 'ip-phaser-container',
-                width: W,
-                height: H,
+                width: this._L.w,
+                height: this._L.h || H,
                 backgroundColor: '#0d1324',
                 // Hard pixels, never smoothed (slice 7 R1 M3), and only ever zoomed by a whole
                 // number (R2 M2): a fractional FIT scale drops rows of the pixel text
@@ -356,17 +413,18 @@ export class InfusionPumpMinigame extends MinigameScene {
     // ── Prescription panel (left) ─────────────────────────────────────────────
 
     _buildPrescriptionPanel(scene) {
+        const L = this._L;
+        const { x: RX_X, y: RX_Y, w: RX_W } = L.rx;
+        // Cream background, drawn under everything once the panel's height is known
+        const bg = scene.add.graphics().setDepth(-1);
         const gfx = scene.add.graphics();
-
-        // Cream background
-        gfx.fillStyle(0xf5f0e8);
-        gfx.fillRect(RX_X, RX_Y, RX_W, RX_H);
-        gfx.lineStyle(2, 0xc8b880);
-        gfx.strokeRect(RX_X, RX_Y, RX_W, RX_H);
 
         const cx = RX_X + RX_W / 2;  // 153
         const x0 = RX_X + 10;         // left margin for labels
         const x1 = RX_X + 96;         // left margin for values (labels are 8px a letter)
+        // Stacked, the X sits in the record's top-right corner: the centred header wraps
+        // short of it (the X is 30px, 4px in from the canvas edge, and the text keeps 10px clear)
+        const headerW = L.stacked ? 2 * (L.w - 44 - cx) : RX_W - 16;
 
         // Legible pixel text (slice 7 R1 M3): VT323 at 16px for values, Press Start 2P at
         // 8px for the small labels and the header; whole-pixel sizes only.
@@ -394,7 +452,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         // Hospital header
         const header = scene.add.text(cx, y, 'NORTHGATE GENERAL HOSPITAL NHS TRUST', {
             fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#1a1a1a',
-            align: 'center', lineSpacing: 4, wordWrap: { width: RX_W - 16 }
+            align: 'center', lineSpacing: 4, wordWrap: { width: headerW }
         }).setOrigin(0.5, 0);
         y += Math.ceil(header.height) + 4;
 
@@ -450,14 +508,35 @@ export class InfusionPumpMinigame extends MinigameScene {
             y += 4;
             row('ALLERGIES', this.sd.allergies, { ...valueStyle, color: '#b00020' });
         }
+
+        // Stacked, the record is as tall as its rows; the pump goes 8px below it
+        if (L.stacked) {
+            L.rx.h = Math.ceil(y + 4 - RX_Y);
+            L.pmp.y = RX_Y + L.rx.h + 8;
+        }
+        bg.fillStyle(0xf5f0e8);
+        bg.fillRect(RX_X, RX_Y, RX_W, L.rx.h);
+        bg.lineStyle(2, 0xc8b880);
+        bg.strokeRect(RX_X, RX_Y, RX_W, L.rx.h);
     }
 
     // ── Pump device (right panel) ─────────────────────────────────────────────
 
     _buildPumpDevice(scene) {
-        const gfx = scene.add.graphics();
+        const L = this._L;
+        // Bezel (grey pump body), drawn under the screen and keys once its height is known
+        const gfx = scene.add.graphics().setDepth(-2);
 
-        // Bezel (grey pump body)
+        const scrH = this._buildScreen(scene);
+        this._G = InfusionPumpMinigame.pumpGeometry(L.pmp, scrH);
+        this._buildKeypad(scene);
+        this._buildConfirmButton(scene);
+
+        if (L.stacked) {
+            L.pmp.h = this._G.confY + CONF_H + 12 - L.pmp.y;
+            L.h = L.pmp.y + L.pmp.h + 8;
+        }
+        const { x: PMP_X, y: PMP_Y, w: PMP_W, h: PMP_H } = L.pmp;
         gfx.fillStyle(0xc0c5c8);
         gfx.fillRect(PMP_X, PMP_Y, PMP_W, PMP_H);
         gfx.lineStyle(3, 0x8a9199);
@@ -472,71 +551,91 @@ export class InfusionPumpMinigame extends MinigameScene {
          [PMP_X + inset, PMP_Y + PMP_H - inset - screwSize],
          [PMP_X + PMP_W - inset - screwSize, PMP_Y + PMP_H - inset - screwSize]
         ].forEach(([sx, sy]) => gfx.fillRect(sx, sy, screwSize, screwSize));
-
-        this._buildScreen(scene);
-        this._buildKeypad(scene);
-        this._buildConfirmButton(scene);
     }
 
+    // Draws the pump screen and returns its height. Side by side the rows sit at fixed
+    // offsets in a 155px screen; stacked, the screen is narrower, so rows wrap and each goes
+    // below the last, and the screen grows to hold them and a two-line message.
     _buildScreen(scene) {
-        const gfx = scene.add.graphics();
-
-        // Screen background
-        gfx.fillStyle(0x0a1a0a);
-        gfx.fillRect(SCR_X, SCR_Y, SCR_W, SCR_H);
-
-        // Screen border — stored as rectangle so we can animate it on accept
-        this._screenRect = scene.add.rectangle(
-            SCR_X + SCR_W / 2, SCR_Y + SCR_H / 2, SCR_W, SCR_H
-        ).setStrokeStyle(2, 0x1a3a1a).setFillStyle();  // transparent fill, only stroke
+        const L = this._L;
+        const { scr } = InfusionPumpMinigame.pumpGeometry(L.pmp);
+        const { x: SCR_X, y: SCR_Y, w: SCR_W } = scr;
+        const flow = L.stacked;
+        // Screen background, under the rows
+        const gfx = scene.add.graphics().setDepth(-1);
 
         const sx = SCR_X + 8;
-        const screenText = { fontFamily: 'VT323', fontSize: '16px', color: '#00e060' };
+        const wrap = flow ? { wordWrap: { width: SCR_W - 16 } } : {};
+        const screenText = { fontFamily: 'VT323', fontSize: '16px', color: '#00e060', ...wrap };
+        let y = SCR_Y + 8;
+        const line = (fixedY, text, style = screenText) => {
+            const t = scene.add.text(sx, flow ? y : fixedY, text, style);
+            if (flow) y += Math.ceil(t.height) + 2;
+            return t;
+        };
 
-        scene.add.text(sx, SCR_Y + 8,  `DRUG: ${this.drugName}`,         screenText);
-        scene.add.text(sx, SCR_Y + 26, 'CURRENT RATE:  -- mg/hr',         screenText);
-        scene.add.text(sx, SCR_Y + 44, 'VOL REMAINING: 50 mL',            screenText);
+        line(SCR_Y + 8,  `DRUG: ${this.drugName}`);
+        line(SCR_Y + 26, 'CURRENT RATE:  -- mg/hr');
+        line(SCR_Y + 44, 'VOL REMAINING: 50 mL');
 
         // Divider line on screen, clear of the VOL REMAINING glyphs above it and the rows below
         // (slice 7 R3 m3): the 16px VT323 row at +44 inks down to about +62
+        const divY = flow ? y + 2 : SCR_Y + 66;
         const dg = scene.add.graphics();
         dg.lineStyle(2, 0x1a5a1a);
-        dg.lineBetween(SCR_X + 4, SCR_Y + 66, SCR_X + SCR_W - 4, SCR_Y + 66);
+        dg.lineBetween(SCR_X + 4, divY, SCR_X + SCR_W - 4, divY);
+        if (flow) y = divY + 3;
 
         const libraryCompromised = this._libraryTampered();
 
         if (libraryCompromised && this.sd.library_ok_global) {
-            scene.add.text(sx, SCR_Y + 69,
-                `LIBRARY RANGE: ${this.libraryMin}${this.libraryMax != null ? ' \u2013 ' + this.libraryMax : ''} mg/hr`, {
-                fontFamily: 'VT323', fontSize: '16px', color: '#00e060'
+            line(SCR_Y + 69,
+                `LIBRARY RANGE: ${this.libraryMin}${this.libraryMax != null ? ' – ' + this.libraryMax : ''} mg/hr`, {
+                fontFamily: 'VT323', fontSize: '16px', color: '#00e060', ...wrap
             });
-            scene.add.text(sx, SCR_Y + 84, 'ENTER NEW RATE (mg/hr):', screenText);
+            line(SCR_Y + 84, 'ENTER NEW RATE (mg/hr):');
         } else if (libraryCompromised) {
-            scene.add.text(sx, SCR_Y + 69, '! DRUG LIB MIN: 25 mg/hr  [LIBRARY OVERRIDE]', {
-                fontFamily: 'VT323', fontSize: '16px', color: '#ff8800'
+            line(SCR_Y + 69, '! DRUG LIB MIN: 25 mg/hr  [LIBRARY OVERRIDE]', {
+                fontFamily: 'VT323', fontSize: '16px', color: '#ff8800', ...wrap
             });
-            scene.add.text(sx, SCR_Y + 84, 'ENTER OVERRIDE RATE (mg/hr):', {
+            line(SCR_Y + 84, 'ENTER OVERRIDE RATE (mg/hr):', {
                 ...screenText, color: '#ff8800'
             });
         } else if (this.restoredMin != null && this.restoredMax != null) {
-            scene.add.text(sx, SCR_Y + 69, `LIBRARY RANGE: ${this.restoredMin} \u2013 ${this.restoredMax} mg/hr`, {
-                fontFamily: 'VT323', fontSize: '16px', color: '#00e060'
+            line(SCR_Y + 69, `LIBRARY RANGE: ${this.restoredMin} – ${this.restoredMax} mg/hr`, {
+                fontFamily: 'VT323', fontSize: '16px', color: '#00e060', ...wrap
             });
-            scene.add.text(sx, SCR_Y + 84, 'ENTER NEW RATE (mg/hr):', screenText);
+            line(SCR_Y + 84, 'ENTER NEW RATE (mg/hr):');
         } else {
-            scene.add.text(sx, SCR_Y + 74, 'ENTER NEW RATE (mg/hr):', screenText);
+            if (flow) y += 4;
+            line(SCR_Y + 74, 'ENTER NEW RATE (mg/hr):');
         }
 
-        // Display row — larger text showing current input + cursor
-        this._displayText = scene.add.text(sx, (libraryCompromised || (this.restoredMin != null && this.restoredMax != null)) ? SCR_Y + 110 : SCR_Y + 102, '_', {
+        // Display row: larger text showing current input + cursor
+        const displayY = flow ? y + 8
+            : (libraryCompromised || (this.restoredMin != null && this.restoredMax != null)) ? SCR_Y + 110 : SCR_Y + 102;
+        this._displayText = scene.add.text(sx, displayY, '_', {
             fontFamily: 'VT323',
             fontSize: '32px',
             color: (libraryCompromised && !this.sd.library_ok_global) ? '#ff8800' : '#00ff88',
-            letterSpacing: 1
+            letterSpacing: 1,
+            ...wrap
         });
+
+        // Stacked: room for a message that wraps to two lines (RATE SET, PHARMACY AGREED)
+        const scrH = flow ? Math.ceil(displayY - SCR_Y + 2 * this._displayText.height + 8) : SCR_H;
+        gfx.fillStyle(0x0a1a0a);
+        gfx.fillRect(SCR_X, SCR_Y, SCR_W, scrH);
+
+        // Screen border, kept as a rectangle so it can change colour on accept
+        this._screenRect = scene.add.rectangle(
+            SCR_X + SCR_W / 2, SCR_Y + scrH / 2, SCR_W, scrH
+        ).setStrokeStyle(2, 0x1a3a1a).setFillStyle();  // transparent fill, only stroke
+        return scrH;
     }
 
     _buildKeypad(scene) {
+        const { ix: PMP_IX, kpY0: KP_Y0, btnW: KP_BTN_W } = this._G;
         const keys = ['1','2','3','4','5','6','7','8','9','.','0','DEL'];
 
         keys.forEach((k, i) => {
@@ -580,6 +679,7 @@ export class InfusionPumpMinigame extends MinigameScene {
     }
 
     _buildConfirmButton(scene) {
+        const { ix: PMP_IX, iw: PMP_IW, confY: CONF_Y } = this._G;
         const cx = PMP_IX + PMP_IW / 2;
         const cy = CONF_Y + CONF_H / 2;
 
@@ -754,6 +854,26 @@ export class InfusionPumpMinigame extends MinigameScene {
         setTimeout(() => this.complete(true), 2000);
     }
 
+    // Pop-ups centre on the part of the canvas the box shows, so a scrolled or stacked pump
+    // shows them where the player is looking (whole canvas pixels, inside the canvas)
+    static modalCentreY(scrollTop, clientHeight, zoom, canvasH, mh) {
+        const z = zoom > 0 ? zoom : 1;
+        const top = Math.max(0, scrollTop / z);
+        const bottom = Math.min(canvasH, (scrollTop + clientHeight) / z);
+        const centre = bottom > top ? (top + bottom) / 2 : canvasH / 2;
+        const lo = mh / 2 + 4;
+        const hi = canvasH - mh / 2 - 4;
+        return Math.round(hi < lo ? canvasH / 2 : Math.min(hi, Math.max(lo, centre)));
+    }
+
+    _modalCentre(mh) {
+        const box = this.gameContainer?.querySelector?.('#ip-phaser-container');
+        const zoom = this.phaserGame?.scale?.zoom || 1;
+        const my = box ? InfusionPumpMinigame.modalCentreY(box.scrollTop, box.clientHeight, zoom, this._L.h, mh)
+            : Math.round(this._L.h / 2);
+        return { mx: Math.round(this._L.w / 2), my };
+    }
+
     // ── Library conflict modal (correct dose flagged by tampered library) ────────
 
     _showLibraryConflictModal(enteredValue) {
@@ -761,12 +881,11 @@ export class InfusionPumpMinigame extends MinigameScene {
         this._modalVisible = true;
         const scene = this.scene;
 
-        const mx = W / 2;
-        const my = H / 2;
-        const mw = 420;
+        const mw = Math.min(420, this._L.w - 16);
         const mh = 320;
+        const { mx, my } = this._modalCentre(mh);
 
-        const overlay  = scene.add.rectangle(mx, my, W, H, 0x000000, 0.78).setDepth(100);
+        const overlay  = scene.add.rectangle(this._L.w / 2, this._L.h / 2, this._L.w, this._L.h, 0x000000, 0.78).setDepth(100);
         const box      = scene.add.rectangle(mx, my, mw, mh, 0x1a0d00)
             .setStrokeStyle(2, 0xff8800).setDepth(101);
         const titleTxt = scene.add.text(mx, my - mh / 2 + 18, this.sd.conflict_title || 'DRUG LIBRARY RANGE CONFLICT', {
@@ -848,13 +967,12 @@ export class InfusionPumpMinigame extends MinigameScene {
         this._modalVisible = true;
         const scene = this.scene;
 
-        const mx = W / 2;   // modal centre x
-        const my = H / 2;   // modal centre y
-        const mw = 380;
+        const mw = Math.min(380, this._L.w - 16);
         const mh = 300;
+        const { mx, my } = this._modalCentre(mh);
 
         // Semi-transparent overlay
-        const overlay = scene.add.rectangle(mx, my, W, H, 0x000000, 0.72).setDepth(100);
+        const overlay = scene.add.rectangle(this._L.w / 2, this._L.h / 2, this._L.w, this._L.h, 0x000000, 0.72).setDepth(100);
 
         // Modal box
         const box = scene.add.rectangle(mx, my, mw, mh, 0x0d1117)
