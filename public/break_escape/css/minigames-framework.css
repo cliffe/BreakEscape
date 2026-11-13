@@ -308,6 +308,16 @@
     transition: background-color 0.3s ease;
 }
 
+/* A conversation's only exit on a phone is its X (UX q100): keep the drawn size but give it
+   a hit area of at least 44 px on small or touch screens. Nothing is drawn. */
+@media (max-width: 600px), (pointer: coarse) {
+    [data-minigame="person-chat"] .minigame-close-button::after {
+        content: '';
+        position: absolute;
+        inset: -10px;
+    }
+}
+
 .minigame-close-button:hover {
     background: #c0392b;
 }

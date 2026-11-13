@@ -82,15 +82,17 @@
     background-color: #000;
 }
 
-/* Caption area - positioned at bottom 1/3 of screen, full width background */
+/* Caption area - a flat dark band at the bottom, as tall as its content, full width.
+   Pixel art (UX slice 16 R1 m14): no gradient fade. The top edge steps down in two 4 px
+   bands drawn by hard shadows with no blur (an outer shadow is only drawn outside the box). */
 .person-chat-caption-area {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     width: 100%;
-    height: 33%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.95));
+    background: rgba(0, 0, 0, 0.82);
+    box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.5), 0 -8px 0 rgba(0, 0, 0, 0.3);
     z-index: 10;
     box-sizing: border-box;
     display: flex;
@@ -184,7 +186,7 @@
     margin: 0;
     white-space: pre-wrap;
     word-wrap: break-word;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.8); /* a hard pixel offset, no blur */
 }
 
 /* Choices and continue button area (right side, fixed width) */
@@ -322,25 +324,64 @@
     width: 0;
 }
 
-/* Responsive adjustments */
-/* @media (max-width: 1200px) {
+/* Phone width (UX slice 16 R1 m11, m12): the portrait sits at the top at its own 4:3 shape
+   and the caption follows it in flow, so the speaker's name and line never cover the face;
+   the line and the choices stack in one column and the choices take the full width. The
+   caption scrolls if a long line and many choices outgrow the space below the portrait. */
+@media (max-width: 600px) {
+    .person-chat-main-content {
+        justify-content: flex-start;
+    }
+
+    .person-chat-portrait-section {
+        position: relative;
+        flex: 0 0 auto;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        max-height: 50%;
+    }
+
     .person-chat-caption-area {
-        height: 40%;
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        align-items: flex-start;
+        padding: 16px;
+        background: #000;
+        box-shadow: none;
+    }
+
+    .person-chat-caption-content {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .person-chat-talk-right {
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
+    .person-chat-speaker-name {
+        font-size: 16px;
+    }
+
+    .person-chat-dialogue-text {
+        font-size: 24px;
+    }
+
+    .person-chat-controls-area {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .person-chat-choice-button {
+        min-width: 0;
     }
 }
-
-@media (max-width: 768px) {
-    .person-chat-caption-area {
-        height: 45%;
-        padding: 10px;
-        gap: 10px;
-    }
-    
-    .person-chat-choice-button {
-        font-size: 18px;
-        padding: 8px 12px;
-    }
-} */
 
 /* ===========================================================================
    VIDEO CALL MODE
