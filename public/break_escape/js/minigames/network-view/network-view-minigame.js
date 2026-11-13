@@ -8,14 +8,20 @@
  * the minigame registry.
  *
  *   header        the link's name, "<device>: <place>" from the server (UX feedback slice 1), a
- *                 subtitle that adds what the name lacks (viewSubtitle), then the link item's
- *                 observations (a Wi-Fi link: "Joined. Reaches <n> hosts." in their place), and
- *                 an optional one-line message. Its own network is the first block's heading.
+ *                 subtitle that adds what the name lacks (viewSubtitle), a Wi-Fi link's status
+ *                 line ("Joined. Reaches <n> hosts."), and an optional one-line message. Title,
+ *                 subtitle and status never repeat each other, so the link item's inventory
+ *                 line is not shown (code review R1 m1). Its own network is the first block's
+ *                 heading; a Wi-Fi view, whose title names the network, heads it "Reachable".
+ *   frame         the panel's 2px frame holds the X (top right, inside the border) and the
+ *                 list; a long list scrolls inside the frame, with a "More below" strip pinned
+ *                 to its bottom edge until the end is reached (R1 m2, m4). The view closes with
+ *                 the X or Esc only: no Close button under it.
  *   down states   one helper, downState, for every kind (slice 1): "(down)" with "No route" for
- *                 a network with no route and its rows, "(powered down)" with "Powered down" for
- *                 a host whose own service is off, "(down)" on the title when an implant's PC is
- *                 off, and "Session kept: <name>" for a session held there. "Remote sign-in off"
- *                 is not a down state: the row stays readable.
+ *                 a network with no route and its rows, "(powered down)" alone for a host whose
+ *                 own service is off (R1 n1: the tag says it), "(down)" on the title when an
+ *                 implant's PC is off, and "Session kept: <name>" for a session held there.
+ *                 "Remote sign-in off" is not a down state: the row stays readable.
  *   a host row    host label, name and one action, decided in this order:
  *                   1. "Remote sign-in off" when the PC's policy blocks it (no control);
  *                   2. Open, with the account's name, when a password session is held there
@@ -44,13 +50,17 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 
 
-// The down-state words (UX feedback slice 1): one set for every kind of row, block and link
+// The down-state words (UX feedback slice 1): one set for every kind of row, block and link.
+// NOT_RESPONDING_TEXT is the powered-down state's name; its row shows only the tag.
 export const REMOTE_OFF_TEXT = 'Remote sign-in off';
 export const NOT_RESPONDING_TEXT = 'Powered down';
 export const NO_ROUTE_TEXT = 'No route';
 export const DOWN_TAG = '(down)';
 export const POWERED_DOWN_TAG = '(powered down)';
 export const sessionKeptText = (name) => `Session kept: ${name}`;
+// The own block's heading on a Wi-Fi view, whose title already names the network (R1 n2)
+export const WIFI_OWN_HEADING = 'Reachable';
+export const MORE_BELOW_TEXT = 'More below';
 // Shown when the view was fetched before the latest globals reached the server (review R2 m3)
 export const STALE_TEXT = 'Still updating, so this may be out of date.';
 // An implant whose own PC is off (review R3 M1): the link is listed and reaches nothing
@@ -77,14 +87,6 @@ export function displayOrder(rows) {
         || rowLabel(a).localeCompare(rowLabel(b), 'en', { numeric: true, sensitivity: 'base' }));
 }
 
-/**
- * The link's observations as the view's subtitle: the item's "Open it to see what it
- * reaches." is for the inventory, and reads wrong once the view is open. Exported for tests.
- */
-export function viewObservations(text) {
-    return String(text || '').replace(/\s*Open it to see what it reaches\.?\s*$/i, '').trim();
-}
-
 const NOT_DOWN = Object.freeze({ down: false, tag: null, reason: null, kept: null });
 
 /**
@@ -104,7 +106,8 @@ export function downState(item, { inDownBlock = false } = {}) {
     }
     const kept = item.heldAs ? String(item.heldAs) : null;
     if (item.route === 'down' || inDownBlock) return { down: true, tag: DOWN_TAG, reason: NO_ROUTE_TEXT, kept };
-    if (item.responding === false) return { down: true, tag: POWERED_DOWN_TAG, reason: NOT_RESPONDING_TEXT, kept };
+    // The tag says it: no "Powered down" reason beside "(powered down)" (code review R1 n1)
+    if (item.responding === false) return { down: true, tag: POWERED_DOWN_TAG, reason: null, kept };
     if (item.kind === 'pc' && item.remoteSignIn === false) return { down: false, tag: null, reason: REMOTE_OFF_TEXT, kept: null };
     return NOT_DOWN;
 }
@@ -173,7 +176,8 @@ export function shareLockable(row, footholdId) {
 
 export class NetworkViewMinigame extends MinigameScene {
     constructor(container, params) {
-        super(container, { ...params, cancelText: 'Close', showCancel: true });
+        // The X and Esc close the view; no Close button under it (code review R1 m4)
+        super(container, { ...params, showCancel: false });
         this.footholdId = params?.footholdId || null;
         this.message = params?.message || null;
         this.view = null;
@@ -198,8 +202,45 @@ export class NetworkViewMinigame extends MinigameScene {
     init() {
         super.init();
         if (this.container?.classList) this.container.classList.add('network-view-minigame');
+        this.buildFrame();
         this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-loading">Connecting...</div></div>';
         this.loaded = this.load();
+    }
+
+    /**
+     * The panel's frame (code review R1 m2, m4): one 2px border round the X, the scrolling
+     * list (the framework's game area) and the "More below" strip, so the X sits inside the
+     * frame at every size and the bottom border is never scrolled away. Render replaces only
+     * the game area's contents.
+     */
+    buildFrame() {
+        const game = this.gameContainer;
+        if (!game?.parentNode || typeof document === 'undefined') return;
+        const frame = document.createElement('div');
+        frame.className = 'network-view-frame';
+        game.parentNode.insertBefore(frame, game);
+        const close = this.container.querySelector('.minigame-close-button');
+        if (close) frame.appendChild(close);
+        frame.appendChild(game);
+        const more = document.createElement('div');
+        more.className = 'network-view-more';
+        more.hidden = true;
+        more.setAttribute('aria-hidden', 'true');
+        more.innerHTML = `<span class="network-view-more-arrow"></span><span>${MORE_BELOW_TEXT}</span>`;
+        frame.appendChild(more);
+        this.frameElement = frame;
+        this.moreElement = more;
+        this.addEventListener(game, 'scroll', () => this.updateScrollCue());
+        if (typeof window !== 'undefined') this.addEventListener(window, 'resize', () => this.updateScrollCue());
+    }
+
+    /** Show "More below" while the list runs past the frame's bottom edge; hide it at the end. */
+    updateScrollCue() {
+        const game = this.gameContainer;
+        if (!game || !this.moreElement) return false;
+        const more = (game.scrollHeight - game.clientHeight - game.scrollTop) > 2;
+        this.moreElement.hidden = !more;
+        return more;
     }
 
     /** GET /network for this foothold (through network-links.js), then the rows. */
@@ -307,13 +348,6 @@ export class NetworkViewMinigame extends MinigameScene {
         return `<div class="network-block network-block-up"><h5 class="network-block-title">${escapeHtml(block.name || block.id)}${via}</h5><ul class="network-view-rows">${body}</ul></div>`;
     }
 
-    /** The link item's own observations, shown in the header (13.4: a link item has no menu). */
-    linkObservations() {
-        const itemId = this.links()?.get?.(this.footholdId)?.itemId || `netlink_${this.footholdId}`;
-        const item = (window.inventory?.items || []).find(it => it?.scenarioData?.id === itemId);
-        return item?.scenarioData?.observations || '';
-    }
-
     /**
      * Rows in display order, with a group heading wherever the kind changes. Every list has its
      * headings, one kind or several (UX feedback slice 1: the same layout on every view).
@@ -382,7 +416,7 @@ export class NetworkViewMinigame extends MinigameScene {
             control = '<button type="button" class="minigame-button network-row-action" data-action="observe">Look</button>';
         }
         return `
-                <li class="network-row network-row-resource" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
+                <li class="network-row network-row-resource${action === 'locked' ? ' network-row-wide' : ''}" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
                     <img class="network-row-icon" src="${icon}" alt="">
                     <span class="network-row-label"><strong>${escapeHtml(row.name || row.id)}</strong>
                         <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on ${escapeHtml(row.host)}` : ''}</span>${action === 'locked' ? `
@@ -397,14 +431,13 @@ export class NetworkViewMinigame extends MinigameScene {
         // like any further network's, so "Wi-Fi: Guest Wi-Fi, on Guest Wi-Fi" no longer repeats
         // and the office network is named beside the networks reached through it.
         // UX feedback slice 1: one header for every kind; a subtitle that adds what the title
-        // lacks; a Wi-Fi link shows the icon and, once joined, a status line in place of the
-        // inventory's observations.
+        // lacks; a Wi-Fi link shows the icon and, once joined, a status line. The inventory
+        // line ("Your drop box on ...") repeated the subtitle, so no view shows it (R1 m1).
         const title = v.name || 'Your link';
-        const ownName = v.network?.name || '';
+        const ownName = v.via === 'wifi' ? WIFI_OWN_HEADING : (v.network?.name || '');
         const linkDown = downState(v);
         const subtitle = viewSubtitle(v);
         const status = this.statusLine();
-        const obs = status ? '' : viewObservations(this.linkObservations());
         const rows = this.rows();
         const icon = v.via === 'wifi' ? `<img class="network-view-title-icon" src="${WIFI_ICON}" alt="">` : '';
         this.gameContainer.innerHTML = `
@@ -413,7 +446,6 @@ export class NetworkViewMinigame extends MinigameScene {
                     <h4 class="network-view-title">${icon}<span>${escapeHtml(title)}</span>${linkDown.tag ? ` ${this.tagHtml(linkDown)}` : ''}</h4>
                     ${subtitle ? `<p class="network-view-subtitle">${escapeHtml(subtitle)}</p>` : ''}
                     ${status ? `<p class="network-view-status">${escapeHtml(status)}</p>` : ''}
-                    ${obs ? `<p class="network-view-observations">${escapeHtml(obs)}</p>` : ''}
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
                     ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}
                 </div>
@@ -435,11 +467,20 @@ export class NetworkViewMinigame extends MinigameScene {
             const row = lookup.find(r => r.id === id);
             if (row) this.addEventListener(btn, 'click', (e) => { e.preventDefault?.(); this.act(row, btn.dataset.action); });
         });
+        this.updateScrollCue();
+        // Images and fonts can change the height after this frame: look again once they settle
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => this.updateScrollCue());
+        this.gameContainer?.querySelectorAll?.('img').forEach(img => {
+            if (!img.complete) this.addEventListener(img, 'load', () => this.updateScrollCue());
+        });
     }
 
-    /** Distinct hosts the drawn, live rows stand on (a share or printer counts its host). */
+    /**
+     * Distinct hosts the drawn, live rows stand on (a share or printer counts its host). A
+     * powered-down host does not answer, so it is not counted (code review R1 n3).
+     */
     reachedHostCount() {
-        return new Set(this.allRows().map(r => String(r.host || r.id))).size;
+        return new Set(this.allRows().filter(r => !downState(r).down).map(r => String(r.host || r.id))).size;
     }
 
     /** A joined Wi-Fi link's status line, or '' (a link of any other kind, or one that is down). */
@@ -510,7 +551,10 @@ export class NetworkViewMinigame extends MinigameScene {
             network: this.view?.network ? { id: this.view.network.id, name: this.view.network.name } : null,
             title: this.view?.name || null,
             subtitle: this.view ? viewSubtitle(this.view) : '',
-            status: this.view ? this.statusLine() : '',
+            // `status` is the load state (loading, ready, gone, error); the header's status line
+            // has its own field (code review R1 m3)
+            statusLine: this.view ? this.statusLine() : '',
+            moreBelow: !!(this.moreElement && !this.moreElement.hidden),
             responding: this.view?.responding !== false,
             message: this.message,
             notice: this.notice,

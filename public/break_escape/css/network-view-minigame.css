@@ -4,11 +4,8 @@
 .network-view {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    background: #10161c;
-    /* UX feedback slice 1: every border in the view is 2px; the panel is as tall as its rows */
-    border: 2px solid #444;
-    padding: 12px;
+    gap: 6px;
+    padding: 10px;
     color: #e8eef2;
     font-size: 18px;
     /* Pixel fonts have no italic or bold cut: never let the browser fake one */
@@ -16,15 +13,67 @@
     font-synthesis: none;
 }
 
-/* The view's game area is as tall as the view (main3-02: no tall empty panel), centred with
-   Close under it; long lists scroll inside it */
-.network-view-minigame .minigame-game-container {
-    height: auto;
-    max-height: 100%;
+/* The panel's frame (code review R1 m2, m4): one 2px border round the X, the list and the
+   "More below" strip. It is as tall as its rows (main3-02: no tall empty panel) and never
+   taller than the screen, so its bottom border always shows; a long list scrolls inside. */
+.network-view-frame {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: calc(100% - 24px);
     max-width: 1000px;
+    max-height: calc(100% - 24px);
+    min-height: 0;
+    background: #10161c;
+    border: 2px solid #444;
+}
+
+.network-view-minigame .network-view-frame .minigame-game-container {
+    flex: 1 1 auto;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    margin: 0;
     overflow-y: auto;
     background: transparent;
     box-shadow: none;
+}
+
+/* The X inside the frame's top-right corner, clear of the 2px border, at every size */
+.network-view-minigame .network-view-frame .minigame-close-button {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+}
+
+/* "More below": pinned to the frame's bottom edge while the list runs on, hidden at the end */
+.network-view-more {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #1d2a36;
+    border-top: 2px solid #2d3a44;
+    color: #9ee6ff;
+    font-size: 16px;
+}
+
+.network-view-more[hidden] {
+    display: none;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps (rows 12, 8 and 4 wide) */
+.network-view-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #9ee6ff;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
 }
 
 .network-view * {
@@ -33,7 +82,9 @@
 
 .network-view-header {
     border-bottom: 2px solid #2d3a44;
-    padding-bottom: 8px;
+    padding-bottom: 6px;
+    /* Room for the X in the frame's corner */
+    padding-right: 40px;
 }
 
 .network-view-title {
@@ -86,22 +137,35 @@
     color: #9aa6ae;
 }
 
+/* Two columns once the panel is wide enough (code review R1 m2); headings and wide rows span */
 .network-view-rows {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 4px 6px;
+}
+
+.network-view-rows > .network-row-group,
+.network-view-rows > .network-row-empty,
+.network-view-rows > .network-row-wide {
+    grid-column: 1 / -1;
 }
 
 /* No border round a row: a lighter fill on the block's darker one, 4px apart (main3-04) */
 .network-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 6px 8px;
+    gap: 8px;
+    padding: 2px 6px;
     background: #223140;
+}
+
+/* Row buttons a size down from the framework's, so a row is little taller than its icon */
+.network-view .network-row-action {
+    padding: 4px 12px;
+    font-size: 16px;
 }
 
 .network-row-icon {
@@ -137,7 +201,7 @@
 }
 
 .network-row-group {
-    margin: 6px 0 0 0;
+    margin: 2px 0 0 0;
     color: #9ee6ff;
     font-size: 16px;
     text-transform: none;
@@ -189,7 +253,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 14px 6px 8px;
+    padding: 2px 12px 2px 6px;
     background: #2a2016;
     border: 2px solid #8a6420;
     color: #ffe0a0;
@@ -223,16 +287,16 @@
 .network-block {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 8px;
+    gap: 4px;
+    padding: 6px;
     border: 2px solid #2d3a44;
     background: #131b22;
 }
 
 .network-block-title {
     /* a heading bar across the block, so each network (and a pivot's "through") stands out */
-    margin: -8px -8px 2px -8px;
-    padding: 4px 8px;
+    margin: -6px -6px 2px -6px;
+    padding: 2px 8px;
     font-size: 20px;
     color: #9ee6ff;
     background: #1d2a36;
