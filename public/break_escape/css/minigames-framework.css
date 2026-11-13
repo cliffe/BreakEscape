@@ -154,8 +154,10 @@
 }
 
 /* A frame never grows past the shell: it scrolls inside itself (scenes that hold more than
-   a short window can show set their own overflow) rather than spill out of the window */
-.minigame-container > .minigame-game-container {
+   a short window can show set their own overflow) rather than spill out of the window.
+   :where() gives it no specificity, so a scene's own max-width (the PIN plate's 600px) or
+   box-sizing still wins. */
+:where(.minigame-container > .minigame-game-container) {
     max-width: 100%;
     max-height: 100%;
     box-sizing: border-box;

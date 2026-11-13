@@ -72,8 +72,8 @@ test('the shell is border-box, centres safely and scrolls', () => {
     assert.equal(r.left, '0');
 });
 
-test('the game area is capped to the shell, so a frame scrolls inside rather than spills', () => {
-    const r = rule(framework, '.minigame-container > .minigame-game-container');
+test('the game area is capped to the shell with no specificity, so scene sizes still win', () => {
+    const r = rule(framework, ':where(.minigame-container > .minigame-game-container)');
     assert.equal(r['max-width'], '100%');
     assert.equal(r['max-height'], '100%');
     assert.equal(r['box-sizing'], 'border-box');
