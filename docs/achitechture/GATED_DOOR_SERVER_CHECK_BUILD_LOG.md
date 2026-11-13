@@ -78,4 +78,41 @@ Client (`public/break_escape/js/systems/objectives-manager.js`):
 Fixture: `test_objectives` (startRoom `reception`; `office1` is pin-locked `1234`; `enter_office` is an
 `enter_room` task on `office1` reached through the door unlock that writes `unlockedRooms`).
 
-<!-- live-proof-results -->
+Headless Chromium (`chrome-headless-shell`), keyless server on :3652, `setFPS(20)`. The door unlock
+landed normally in every honest case (office1 seeded into `unlockedRooms` via `new-game.rb --unlock`,
+which runs the same `unlock_room!` durable write); what is delayed, dropped, skipped or taken offline is
+the soft `currentRoom` sync and the pre-flush, and the completion itself. Driver script (scratch, not
+committed): `scratchpad/builder/enter_room_live_proof.mjs`. Each case used its own game and browser
+context; server-side truth read back afterwards with `bin/rails runner`.
+
+Side-evidence: in every game the start-room `enter_room` task (`explore_reception`) completed on boot
+with no boundary crossing, i.e. the init replay / first room-detect tick fires in the live game.
+
+- **Case 1a, delayed `currentRoom` + pre-flush (game 3311).** `sync_state` delayed 4s via
+  Playwright `route`; one completion POST; `enter_office` completed, not refused. Server: completed.
+  Proves the completion does not wait on the `currentRoom` sync.
+- **Case 1b, dropped `currentRoom` + pre-flush (game 3312).** `sync_state` aborted; one completion POST;
+  completed. Server: completed. Proves the durable `unlockedRooms` write carries the check with the
+  pre-flush aborted.
+- **Case 2, old tab, no pre-flush (game 3313).** `safeSyncOnce` stubbed to a no-op and every `sync_state`
+  aborted (no `currentRoom` ever synced); one completion POST; completed. Server: completed. An old
+  client with no pre-flush is not refused.
+- **Case 3, offline then reconnect (game 3314).** `context.setOffline(true)`, then fire the completion:
+  the four retries exhausted to a transient failure, `enter_office` reverted to active and the task id
+  entered the in-memory queue (`enterRoomQueue` had it, size 1) with no success while offline. Then
+  `context.setOffline(false)` fired the browser `online` event; the client's own `online` handler drained
+  the queue (one further POST, no driver re-post) and `enter_office` completed, queue back to size 0.
+  Server: completed. Proves the queue is fed from the real offline path and the client recovers by itself
+  on reconnect.
+- **Case 4, duplicated / retried completion (game 3315).** The completion, then a raw duplicate POST:
+  the first completed; the duplicate returned `{ success: true, message: 'Already completed' }`; the task
+  stayed completed, credited once. Server: completed. Proves idempotency over durable state.
+- **Case 5, forge, refused (game 3316).** A tampered client that never reached office1 (not in any
+  durable list) posted the completion: the server refused (`Room not reached`, `retryable: true`), the
+  client re-synced and re-posted exactly once (two POSTs total), the room was still not durable, and the
+  refusal surfaced once ("Objective Blocked"); the task stayed active and was not queued. Server:
+  `enter_office` still active, office1 not in `unlockedRooms`. Proves the check bites on a true forge and
+  the retryable refusal does not launder it into a pass.
+
+All five cases pass: a legitimate player is never refused under delay, drop, old-tab, offline/reconnect
+or duplicate, and a forge is refused.
