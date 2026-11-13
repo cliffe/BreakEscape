@@ -181,3 +181,28 @@ UI_SHELL_BUILD_LOG.md "Merge batch"), game 3346. Shots: `node <scratchpad>/ui-co
 --port <port> --specs <scratchpad>/ui-consoles/specs.mjs --only network-segmentation-map --out
 <scratchpad>/ui-consoles/after2`, then `python3 -I <scratchpad>/ui-consoles/sheet.py after2
 after2/sheets` for a contact sheet.
+
+## Review round 1 fixes (2026-11-13)
+
+Findings from UI_CONSOLES_REVIEW_R1.md, fixed on top of c19b0f136.
+
+| Finding | Change | Proof |
+|---|---|---|
+| M1 segmentation map panel off the right edge (901 to 1100px) | Stacking breakpoint raised from 900px to 1100px (map 760px + panel up to 320px), stacked map `min-height` 480px so all six clinical devices stay inside their zone box. The map's rule lines are drawn from the area's own rectangle, so the map was not made to scroll on its own. | Shots at 1400, 1024, 915, 800, 667, 390, 360: panel inside the window at every size; shell X check 168 / 0 |
+| M2 button fonts | `.minigame-container button { font-family: GNF }` wins over single-class Press Start rules, so the scene rules now declare what renders: backup confirm, `.siem-btn` and `.ip-more-below` are GNF 16px; the phone rules that set 8px are removed | New static tests in minigame-consoles-fit (family and size per rule, no GNF under 16px in the four sheets) |
+| M3 log filter pop-ups | Info pop-ups use the shared X in their header row; flag confirm and flag rejected keep named buttons and no X; the scene X hides while any pop-up is open | Live: closes visible = scene X only, pop-up X only, none (confirm) |
+| m1 SIS title under X | `.sis-modal h4 { overflow-wrap: anywhere }` | 360x740 detail shot |
+| m2 Esc | Base minigame calls an optional `handleEscapeKey()` before closing; SIS, ESD and log filter close their pop-up or confirm and keep the scene open | Live on game 3105 and 3104: Esc 1 closes the pop-up, Esc 2 closes the scene (SIS, ESD, log filter intel and flag confirm); node test |
+| m3 X across band edge | Warranty letterhead `min-height: 62px`; SIS header box `margin-top: 28px` under 600px so the X sits in the dark band | 390x844 shots |
+| m4 graph pane scrollbar | `pixel-scroll` on `#bce-graph-pane` | Game 3403 shot, pixel scrollbar |
+| m5 small GNF text | `.nsm-device` 16px, `.siem-source-count` 16px, `.siem-sources-empty` 12px to 16px; claims nav column 244px (228px on the narrow layout) so "Correspondence" fits, with `overflow-wrap: anywhere` as a fallback | fit tests, claims shot at 1024x768 |
+| m6 SCADA historian at 667x375 | Under 560px height `.sh-charts` scrolls (pixel scrollbar), so the chart and time axis stay reachable | 667x375 shot |
+| Extra | Segmentation map action bar and SEVER button wrap at 360px (was cut by 10px) | 360x740 shot |
+
+Esc leaving NotesMinigame open: not a defect. Closing SIS, ESD or other scenes opened from an
+object returns the player to the Notes container they came from (the X does the same: checked by
+clicking it), so Esc after the pop-up was gone is the scene closing normally. It could not be
+reproduced as a leftover; with the new hook, Esc on a pop-up no longer closes the scene at all.
+
+Gotcha: `closeBtn.ariaLabel` rather than `setAttribute`, because the log filter tests use a fake
+DOM element without it.
