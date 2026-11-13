@@ -369,7 +369,10 @@ html .game-display-dialog {
     text-wrap: balance;
     line-height: 1.6;
     width: max-content;
-    max-width: min(720px, calc(100vw - 32px));
+    /* the label is zoomed by --hud-zoom, so the window width is divided back down or a
+       long caption ran off both sides of a phone (UX slice 16 R2 m6) */
+    max-width: min(720px, calc(100vw / var(--hud-zoom, 1) - 32px));
+    box-sizing: border-box; /* the themed frame and padding count inside the limit */
 
     background: rgba(0, 0, 0, 0.72);
     border: 2px solid rgba(255, 255, 255, 0.18);
@@ -381,6 +384,16 @@ html .game-display-dialog {
 
 #hud-info-label.visible {
     opacity: 1;
+}
+
+/* Phones held upright: Punch and Block sit in a row above the inventory strip (bottom
+   116px, 68px buttons with an 11px ring), so the HUD caption moves up above that row
+   instead of being cut by it (UX slice 16 R2 m6). Both are zoomed by --hud-zoom. */
+@media (max-width: 899.98px) and (orientation: portrait),
+       (max-width: 899.98px) and (min-height: 500.02px) {
+  body:has(#combat-buttons) #hud-info-label {
+    bottom: 200px;
+  }
 }
 
 /* Phone unread message badge */
