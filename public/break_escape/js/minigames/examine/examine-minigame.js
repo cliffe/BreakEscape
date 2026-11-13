@@ -10,6 +10,9 @@ import { escapeHtml as esc } from '../../utils/escape-html.js';
  * inventory items with no other action and text-only room objects.
  */
 export class ExamineMinigame extends MinigameScene {
+    // The X sits inside the card's frame, not out in the window's corner (critique A40)
+    static closeInsideFrame = true;
+
     init() {
         super.init();
         this.container.classList.add('examine-minigame');
@@ -20,9 +23,7 @@ export class ExamineMinigame extends MinigameScene {
 
         this.gameContainer.innerHTML = `
             <div class="examine-panel">
-                <div class="examine-image-box">
-                    ${p.imageSrc ? `<img class="examine-sprite" alt="${esc(p.itemName)}">` : ''}
-                </div>
+                ${p.imageSrc ? `<div class="examine-image-box"><img class="examine-sprite" alt="${esc(p.itemName)}"></div>` : ''}
                 <h3 class="examine-name">${esc(displayDashes(p.itemName || p.title || ''))}</h3>
                 ${observations ? `<p class="examine-observations">${observations}</p>` : ''}
                 ${text ? `<div class="examine-text">${text}</div>` : ''}

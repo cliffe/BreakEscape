@@ -1,6 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 
 // Device names, MACs and UUIDs are scenario text: escaped once on the way into HTML.
 
@@ -23,6 +24,12 @@ export class BleScannerMinigame extends MinigameScene {
         this.BLE_SCAN_RANGE = 150;
         this.BLE_SCAN_INTERVAL = 200;
         this.UPDATE_THROTTLE = 100;
+    }
+
+    // The list runs on past its bottom edge (A23)
+    static hasMoreBelow(box) {
+        if (!box) return false;
+        return box.scrollHeight - box.clientHeight - box.scrollTop > 2;
     }
 
     init() {
@@ -70,7 +77,8 @@ export class BleScannerMinigame extends MinigameScene {
                 <span>Detected Devices</span>
                 <div class="ble-device-count">0 devices</div>
             </div>
-            <div class="ble-device-list" id="ble-device-list"></div>
+            <div class="ble-device-list pixel-scroll" id="ble-device-list"></div>
+            <div class="ble-device-more" id="ble-device-more" hidden aria-hidden="true"><span class="ble-device-more-arrow"></span><span>${MORE_BELOW_TEXT}</span></div>
         `;
 
         const actionPanel = document.createElement('div');
@@ -108,6 +116,16 @@ export class BleScannerMinigame extends MinigameScene {
         this.gameContainer.appendChild(header);
         this.gameContainer.appendChild(controls);
         this.gameContainer.appendChild(listContainer);
+        const deviceList = listContainer.querySelector('#ble-device-list');
+        this._updateMoreBelow = () => {
+            const cue = listContainer.querySelector('#ble-device-more');
+            if (cue) cue.hidden = !BleScannerMinigame.hasMoreBelow(deviceList);
+        };
+        deviceList.addEventListener('scroll', this._updateMoreBelow, { passive: true });
+        if (typeof window.ResizeObserver === 'function') {
+            this._moreObserver = new window.ResizeObserver(this._updateMoreBelow);
+            this._moreObserver.observe(deviceList);
+        }
         this.gameContainer.appendChild(actionPanel);
         this.gameContainer.appendChild(hintPanel);
 
@@ -330,10 +348,12 @@ export class BleScannerMinigame extends MinigameScene {
                 ? `No ${activeCategory} devices found.`
                 : 'No BLE devices detected. Walk near a BLE device.';
             list.appendChild(empty);
+            this._updateMoreBelow?.();
             return;
         }
 
         devices.forEach(device => list.appendChild(this.renderDeviceRow(device)));
+        this._updateMoreBelow?.();
     }
 
     renderDeviceRow(device) {
@@ -620,6 +640,7 @@ export class BleScannerMinigame extends MinigameScene {
     }
 
     cleanup() {
+        if (this._moreObserver) { this._moreObserver.disconnect(); this._moreObserver = null; }
         this.stopScanning();
         if (this._successTimeout) {
             clearTimeout(this._successTimeout);

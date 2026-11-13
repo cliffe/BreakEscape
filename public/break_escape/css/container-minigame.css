@@ -484,6 +484,10 @@
     font-style: italic;
 }
 
+.container-actions:empty {
+    display: none;   /* no stray rule with nothing under it (critique A33) */
+}
+
 .container-actions {
     display: flex;
     justify-content: center;
@@ -538,9 +542,18 @@
         text-align: center;
     }
     
+    /* Columns as wide as an item's label, so "Office key" and "Old phone" do not run
+       into each other on a phone (critique A32) */
     .container-contents-grid {
-        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+        /* the labels hang under each slot: the row gap leaves room for two lines */
+        gap: 44px 16px;
+        padding-bottom: 36px;
+        justify-items: center;
+    }
+
+    .container-content-label {
+        width: 88px;
     }
     
     .container-content-slot {
