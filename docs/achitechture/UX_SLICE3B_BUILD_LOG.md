@@ -85,3 +85,43 @@ Under the shared lock, on 2e0fda0e8:
 - `MERGE_BATCH=1 bin/test-js -j 3`: 598 files passed, 0 failed.
 
 f7b3edb12 came after (two refusal lines lose their em dashes, text only); the rfid test files that load that module were rerun and pass (revocation 7, door screen 42, denial hold 10).
+
+## Review round 1 fixes
+
+Review: `UX_SLICE3B_REVIEW_R1.md` (B 0, M 1, m 9). Commit 72142e6a7.
+
+- **M1, a late yes on an object.** `unlockTarget` takes `{ autoOpen }` (default true). The late path (`onLateAccessUnlock`) passes `late: true` to `applyRfidAccessUnlock`, which calls `unlockTarget` with `autoOpen: false`: the object is unlocked, its contents kept, `item_unlocked` and the toast as before, and the container waits for the player. A yes while the copier is still up opens the container as before. Test in `access-rfid-acl.test.mjs`: the late path never calls `handleContainerInteraction`; the `onComplete` path does.
+- **m1, oracle at an open lock.** `GamesController#unlock` notes whether the target was already open (`room_unlocked?` or `object_unlocked?`) before `validate_unlock`, and then skips `rfid_unlock_card_answer`. Rails pin: after a copy opens the records door, requests with either copy or both get `success: true` with no `viaCopy` and no `cardId`.
+- **m2, refused badge event.** When the held keycards are refused and the copier opens, `emitDoorUnlockFailed` fires once (`wrong_card`, or `uid_only` for that answer), with the usual payload and the `door_unlock_failed:<room>` event, and no toast.
+- **m3, refused badge at the reader.** `startRfidReader` passes `refusedKeycards`; the door screen shows "Your badge was refused. Try a saved card." (plural for more than one) under the reader head and leaves those badges out of the tap list.
+- **m4, signs.** `test_access_doors` D2 to D5 now say to Emulate the copy at the door. D3 says the server room opens with the badge you hold (Ian's spare badge stays in the inventory, so the first request opens it), and to Emulate the copy without the badge. Validator: 0 ❌, 1 warning (existing).
+- **m5, cancelled keycards only.** Step 3 opens the copier with `accessList: true` at an access-list lock, so it opens on the reader, where the cancelled card is refused, not on the menu.
+- **m6, two copiers on one door.** `applyRfidAccessUnlock` returns at once when the target is already open on the client. A late yes also closes a copier still up on the same lock (`params.rfidLockTarget`). Test: two copiers both answered yes give one `door_unlocked`, one `unlockDoor` and one toast.
+- **m7, busy state on a tap.** A held-card tap at an access list shows "Checking <card>..." under the reader head and disables the door list until the answer replaces the screen; entries do nothing while `_accessPending` is true. Disabled entries are dimmed (`rfid-minigame.css`).
+- **m8, the icon.** `public/break_escape/assets/icons/card-copier-32.png`: a new 32x32 portrait drawing (body 20x30, screen at the top with signal waves and text lines, a d-pad and a round button below, header dashes and a battery, in the frame's oranges with the dark outline), drawn by hand as a pixel grid with the free pixelart_workbench (`draw`), no paid generation. `copyIcon()` uses it at x2 (`COPIER_ICON_SIZE` 32, `COPIER_ICON_SCALE` 2), the hand's scale. The 16x16 `card-copier.png` is kept. Comparison for the user: `ux-shots/slice3b-r1fix/card-copier-icon-16-vs-32.png` (top row every icon pixel at x4; bottom row as the menu shows them). **Still awaiting the user's choice.**
+- **m9, tests on public paths.** `rfid-door-screen.test.mjs` checks `gameResult.serverResponse`, `cardName` and `emulated` only, and ends refusals by running the hold timer (the public path back to the reader) instead of `_endDenial()`.
+- **The close X inside the frame.** `RFIDMinigame` sets `closeInsideFrame` with `closeAnchor()` on `.flipper-zero-frame` and its own `placeCloseButton`: 12px in from the frame's top and right (clear of the 2px outline, the 2px bevel and the body's stepped corner), level with the header's name line, and the header's battery moved left to stay 8px clear. Re-placed on resize and frame resize (the base class watcher). Measured live: at 1400x1000 the X is at 878 to 908 in a frame ending at 920; at 390x844 at 332 to 362 in a frame ending at 374; the battery ends 8px left of the X at both.
+
+### Tests
+
+- `access-rfid-acl.test.mjs` 39/39 (new: m2 for wrong_card and uid_only, no event when no badge was tried, M1, m6, m5; the doors stub now sets `doorProperties.locked = false` as the real `unlockDoor` does).
+- `rfid-door-screen.test.mjs` 45/45 (new: m3, m7, the X placement at 1400x1000, 390x844 and a frame taller than the window).
+- `action-menu.test.mjs` 16/16 (the 32px icon at x2).
+- Rails `access_model_rfid_test.rb` 48/48.
+- Full suites under the shared lock, on 72142e6a7: `RBENV_VERSION=2.7.8 bin/rails test` 2391 runs, 42552 assertions, 0 failures, 0 errors, 1 skip; `MERGE_BATCH=1 bin/test-js -j 3` 598 files passed, 0 failed.
+
+### Live proof
+
+Keyless server on :3065 from this worktree, setFPS(20) with fixed steps, scrollbars shown, stopped afterwards. New games of `test_access_doors` (swapped onto `test_access_social` hosts): 2977 (A, 1400x1000), 2978 (A, 390x844), 2979 (B, 1400x1000), 2980 (B, 390x844). Script `slice3b-r1fix-tools/proof.js` in the session scratchpad.
+
+- A: the visitor card alone is sent and refused (422); one `door_unlock_failed` with reason `wrong_card`; the copier opens with "Your badge was refused. Try a saved card." and no Tap entry for the visitor card; Emulate sends `FIN-DANA-01` alone (200); "Access Granted" and the toast naming the copy. Two unlock requests in all. Server: `finance_office` unlocked, `serverClones` holds FIN-DANA-01, in both games.
+- B: no keycard, the copier opens at once with no request and no event; the unrecorded copy is refused (422, "Card not accepted"); a cancelled copy is refused with no request. Server: `finance_office` still locked, no clones.
+- The menu shows the 32px icon at 64x64 beside the hand, both `pixelated`.
+
+Shots in `ux-shots/slice3b-r1fix/` (session scratchpad), each looked at: `menu-icons`, `menu-icons-zoom`, `acl-keycard-refused-copier-at-reader`, `acl-close-x-zoom`, `acl-emulating-dana`, `acl-emulate-access-granted`, `acl-door-opened-toast`, `acl-no-keycard-copier-opens-at-once`, `acl-close-x-zoom-b`, `acl-unrecorded-copy-refused`, `acl-cancelled-copy-refused`, each at 1400x1000 and 390x844; and `card-copier-icon-16-vs-32.png`.
+
+### Open after round 1
+
+- The icon choice (16 or 32) is the user's.
+- M1 and m6 were not driven live (a late yes needs the copier closed mid-request); unit tests cover them.
+- Noticed, not changed: the 390x844 toast shot shows a grey horizontal scrollbar strip along the bottom of the page under the game, outside the copier. It looks like the game page's own overflow, not part of this slice.
