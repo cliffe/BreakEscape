@@ -1,0 +1,13 @@
+{
+  "key": "6b5a7861529fdcc19a58a1b71f16fc12",
+  "npc": "torres_phone",
+  "text": "They pick people with someone to lose. Look for the ones with a sick parent.",
+  "voice": "Schedar",
+  "style": "Senior engineer in his late forties, born in Madrid and twenty years in England. Speak with a consistent light Castilian Spanish accent in fluent British English throughout — do not shift to any other accent. Low, soft pitch; slow, worn pace. Exhausted and grieving, past the point of lying; quietly desperate rather than angry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:23:27Z"
+}
