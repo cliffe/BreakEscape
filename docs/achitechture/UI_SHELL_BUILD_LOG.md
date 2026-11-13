@@ -174,3 +174,59 @@ overrides scene sizes; (2) `pkill -f` or a `pgrep -f` wait loop whose pattern ap
 own command line matches your own shell (one killed the shell, one waited for ever); (3) jsdom
 does not expand the `overflow` shorthand, so audit unit tests set overflow-x and overflow-y;
 (4) the dusting and container files overlap slice 9 (Close buttons, X placement).
+
+
+## Round 2 (2026-11-13): A09, A23, like-for-like audit, tip shots
+
+Commit 6da40d3f6 (tests in test/js/minigame-shell-fit.test.mjs, now 20).
+
+- A09 lockpicking: on desktop widths (over 768px) the game works out the room left for the
+  canvas (game area less the strips around it) and zooms the Phaser canvas by the largest whole
+  number that fits (`LockpickingMinigamePhaser.wholeZoom`, 1 when it does not fit, re-fitted on
+  resize); the canvas box is widened to 600px times the zoom and, on windows over 560px tall,
+  centred in the frame with auto margins. At 1400x1000 the lock now draws at 2x in the middle.
+  Phone and short windows are unchanged.
+- A23 BLE scanner: the device list is a `.pixel-scroll` box with a "More below" strip under it
+  (shown while the list runs on, same words and stepped arrow as the network view and the PC
+  desktop); the local 6px scrollbar rules are gone; SAVE is the cyan accent with a 2px border
+  (filled when saved). The "Paired" chip wrapping onto its own row was left as is.
+- Note: the ble-scanner scene has no entry in specs.mjs (the 90 before shots have bluetooth
+  scanner only); its check shots are in run2/wip with run2/spec-ble.mjs.
+
+Like-for-like audit: the same tools/playtest/ui-rules-audit.mjs (tip version), `--all`, game
+3084, 1400x1000, 800x600, 915x412, 390x844. "Before" is main at 6b2344e20 (a detached worktree
+.claude/worktrees/p-ui-shell-main, served on :3452, server stopped, worktree left for the
+orchestrator), "after" is the tip with 6da40d3f6 on :3450. Counts are breaches, then
+surface-sizes.
+
+| Run | window-offscreen | frame-offscreen | clipped |
+|---|---|---|---|
+| main 6b2344e20 | 28 (28) | 10 (10) | 64 (18) |
+| tip | 0 (0) | 4 (4) | 53 (16) |
+
+Remaining breaches on the tip, by scene:
+
+| Scene (sizes) | Reason | Owner |
+|---|---|---|
+| ESD pushbutton (800, 915) frame-offscreen | scene-owned 620px panel height | consoles |
+| claims management (800, 915) frame-offscreen | scene-owned fixed height | consoles |
+| command board (915) clipped x5 | status rows cut at the game area's bottom | consoles |
+| SIEM (390) clipped x3 | pane titles wider than the panel on a phone | consoles |
+| network segmentation map (390) clipped | SVG wider than its area | consoles |
+| SCADA historian (915, 390) clipped x4 | chart SVG taller than its box; range buttons past the right panel | consoles |
+| ransomware display (390) clipped x2 | timer row wider than the screen | consoles |
+| drug library integrity (390) clipped | disabled tab past the right edge | consoles |
+| biometrics, Bluetooth scanner (all sizes) clipped x5, x4 | the controls block is collapsed to zero height by its toggle, so its search box and chips count as cut: an audit false positive on a collapsed block | shell (audit rule) |
+| title screen (390) clipped | logo mid-zoom, by design | shell (accepted) |
+
+Nothing remains on the social or phone scenes (phone chat, person chat, notes, dusting,
+combination, cryptex show only the older font-size or style findings, no clipped or offscreen
+breach), so the social follow-up branch has no breach to take from this audit.
+(mg-dusting, mg-notes, mg-cryptex, mg-combination breached only on main.)
+
+Tests: the files touching a changed module or the shell tests (6 files: minigame-shell-fit,
+minigame-pixel-art, minigame-html-sweep-c, minigame-title-escape, engine-fixes-pass4b,
+escaping-shared-helpers): 6 passed, 0 failed (full suites are the orchestrator's).
+
+Shots: run2/shots-after in the scratchpad ui-shell folder, same names as shots/before,
+re-shot on the tip.
