@@ -2589,3 +2589,91 @@ No change. Chunk 3 only reads NPC records on the client; nothing is written to o
   cleared by **chunk 5** (template rewrite).
 - The three validator sub-tests in my files depend on **chunk 4**'s `validate_npc_needs.rb` fold being
   committed (see cross-chunk note).
+
+## Step 8c chunk 4 — the Ruby validators, verify-run, the leak scanner, and their node tests (2026-11-13)
+
+Branch `build/hard-8c` (tip `6c6483a74` at start: chunk 1 and chunk 3 committed; chunk 2's Ruby runtime
+readers, the ship filter and its tests are present in the tree, uncommitted). Chunk 4 of the seven-chunk
+split: the three validator derivers, `verify-run.rb`, the leak scanner, and the six node tests the plan
+assigns. No runtime reader, schema, template or `validate_scenario.rb` edit (owned by other chunks).
+
+### What changed
+
+- **`scripts/validate_npc_habits.rb`.** `effective_lock` reads the owner's `habits.screen`
+  (`owner.dig('habits', 'screen')`, was top-level `screenHabit`). The effective-rule printout source
+  labels and the author-facing warnings now name `habits.screen`: the `:authored_screen_habit` conflict
+  warning, `habit_source`, the default-rule label, and `screen_effects` (`habit not applied: the NPC
+  sets habits.screen`, `habits.screen lockChance ...`).
+- **`scripts/validate_npc_needs.rb`.** The print-habit check reads `npc.dig('habits', 'print')` and all
+  its error/warning text names `habits.print`. The screen-habit/autoLockSeconds check reads
+  `habits.screen` (presence via `npc['habits'].key?('screen')`, value via `dig`, and the owner fallback
+  `dig('habits', 'screen')`); the `screen_habits:` keyword doc comment follows.
+- **`scripts/validate_access_work.rb`.** `usbHabit` left `A_ONLY_FIELDS` (the whole `habits` block is
+  not an A-only field); a separate check flags `habits.usb` on a non-room NPC record. `check_usb_habit`
+  reads `npc.dig('habits', 'usb')` and its messages name `habits.usb`; `check_usb_give_order`/
+  `check_usb_ko_route` read `npc.dig('habits', 'usb', 'setGlobal')`; the `usb_refusal_beats?` walk skip
+  list is `%w[globalVariables usb]` (so the habit's own declaration is not read as a beat; policy `usb`
+  string values are harmless to skip and the `setGlobal` string is already guarded). The careful-guest
+  warnings now teach `"habits": { "screen": { "lockChance": 0 } }`.
+- **`tools/playtest/verify-run.rb`.** The per-NPC habits line reads the screen habit from
+  `npc.dig('habits', 'screen')` and is labelled `habits.screen`; `screen`/`print`/`usb` are excluded
+  from the `values` key=value dump (they get their own treatment or are server-only), so the awareness
+  habit values print unchanged.
+- **`tools/playtest/lib/access_leak_scanner.rb`.** Mirrors the chunk-2 ship filter: `WITHHELD_KEYS`
+  drops `habits` and `WITHHELD_WORK_KEYS` drops `usbHabit` (both now covered by the habits allow list);
+  a new `SHIPPED_HABIT_KEYS = %w[screen print]` and `scan_withheld_keys` flags any `habits` sub-key
+  outside that allow list (`npc:<id>/habits.<key>`), so a leaked `locksScreen`/`writesDown`/`password`/
+  `passwordPattern`/`holdsDoors`/`usb` is caught. The `withheld_key` description is updated. This touches
+  line 145 (`WITHHELD_KEYS`) as well as the re-anchor's cited 147/320, because the re-anchor's citations
+  came from grepping the three retired key names and `habits` is not one of them; removing `habits` is
+  required for correctness now that `habits.screen`/`.print` ship.
+
+### Tests
+
+Node (single files, `node --test`):
+- `validator-strict-keys.test.mjs`: 15 pass, 0 fail (was 3 fail). Folded the NPC fixture's
+  `screenHabit`/`printHabit`/`usbHabit` into `habits.screen`/`.print`/`.usb` (each keeping `...c`), moved
+  the three slip cases and pointers to `#/rooms/r1/npcs/0/habits/{screen,print,usb}`, and pointed the
+  closed-block enumeration at `D.npc.properties.habits.properties.{screen,print,usb}`.
+- `validator-npc-habits.test.mjs`: 46 pass, 0 fail (was 4 fail). Folded the authored `screenHabit`
+  fixtures into `habits.screen`; the report-line and warning assertions now read `habits.screen`.
+- `validator-usb-habit.test.mjs`: 25 pass, 0 fail (was 19 fail). Folded `usbHabit` into `habits.usb`
+  throughout; all assertions name `habits.usb`.
+- `validator-access-work.test.mjs`: 38 pass, 0 fail (was 1 fail). Folded the borrower's `screenHabit`
+  into `habits.screen`.
+- `validator-access-model.test.mjs`: 36 pass, 0 fail. Folded jake's `screenHabit`/`printHabit` edits
+  into `habits.screen`/`.print`.
+- `playtest-verify-run-access.test.mjs`: 15 pass, 0 fail. Folded the three NPCs' `screenHabit` into
+  `habits.screen`; the report expectation reads `habits.screen`.
+
+Ruby test of a changed script: `test/unit/access_leak_scanner_test.rb` (chunk 2 owns this file and has
+updated it in the tree to expect `npc:omar/habits.password` and `npc:omar/habits.usb`): **43 runs, 258
+assertions, 0 failures** against this chunk's scanner — chunk 2 and chunk 4 agree on the allow-list
+behaviour.
+
+Assertions changed in meaning: none weakened. Every assertion that named an old top-level habit key now
+names the folded path (`habits.screen`/`.print`/`.usb`) and tests the same behaviour; the strict-keys
+slip cases still prove the folded sub-blocks are closed and allow `^_`.
+
+### Expected failures left for later chunks
+
+- `test/unit/scenario_schema_test.rb` `test_corpus_has_no_setglobal_map_under_nil` (1 failure): the live
+  `test_access_social` template still authors top-level `usbHabit`, whose `setGlobal` the chunk-1 schema
+  no longer places, so the walk reaches it "under nil". Cleared by **chunk 5** (template rewrite). Not a
+  chunk-4 file.
+- The three authored-habit templates (`test_access_social`, `test_access_work`, `test_needs_sims`) still
+  validate with retired-key errors until **chunk 5** rewrites them.
+
+### Sync size
+
+No change. These are validator/diagnostic scripts; none reads or writes player_state. The leak scanner
+reads captured response bodies only.
+
+### Files touched
+
+`scripts/validate_npc_habits.rb`, `scripts/validate_npc_needs.rb`, `scripts/validate_access_work.rb`,
+`tools/playtest/verify-run.rb`, `tools/playtest/lib/access_leak_scanner.rb`,
+`test/js/validator-strict-keys.test.mjs`, `test/js/validator-npc-habits.test.mjs`,
+`test/js/validator-usb-habit.test.mjs`, `test/js/validator-access-work.test.mjs`,
+`test/js/validator-access-model.test.mjs`, `test/js/playtest-verify-run-access.test.mjs`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.

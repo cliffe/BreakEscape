@@ -553,7 +553,7 @@ function hClean() {
         pc('hot_desk'), pc('sam_pc', { offWhen: 'dana_pc_off', affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } }),
         pc('ruth_pc'));
     s.rooms.office.npcs.push(
-        worker('ian', { screenHabit: { lockChance: 0 }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot_desk' }] }),
+        worker('ian', { habits: { screen: { lockChance: 0 } }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot_desk' }] }),
         worker('sam', { workarounds: [{ at: 50, do: 'share_login', with: 'ruth' }] }),
         worker('ruth'));
     return s;
@@ -569,19 +569,19 @@ test('H: a clean fixture raises nothing; the work report no longer says "Not per
     assert.ok(!has(lines, 'Not performed'), lines.join('\n'));
 });
 
-test('H: a borrower with no screenHabit is warned (it opens nothing); lockChance 0 or locksScreen never is not', { skip }, () => {
+test('H: a borrower with no habits.screen is warned (it opens nothing); lockChance 0 or locksScreen never is not', { skip }, () => {
     let s = hClean();
-    delete npcOf(s, 'ian').screenHabit;
+    delete npcOf(s, 'ian').habits;
     assertHas(warnings(issues(s)), "ian's workaround 0 (borrow_session): ian is a careful guest");
     s = hClean();
-    npcOf(s, 'ian').screenHabit = { lockChance: 1 };
+    npcOf(s, 'ian').habits = { screen: { lockChance: 1 } };
     assertHas(warnings(issues(s)), 'ian is a careful guest');
     s = hClean();
-    delete npcOf(s, 'ian').screenHabit;
+    delete npcOf(s, 'ian').habits;
     npcOf(s, 'ian').habits = { locksScreen: 'never' };
     assert.ok(!has(issues(s), 'careful guest'), issues(s).join('\n'));
     s = hClean();
-    delete npcOf(s, 'ian').screenHabit;
+    delete npcOf(s, 'ian').habits;
     npcOf(s, 'ian').habits = { locksScreen: 'always' };
     assertHas(warnings(issues(s)), 'ian is a careful guest');
 });

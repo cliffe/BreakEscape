@@ -354,7 +354,7 @@ module ValidateAccessWork
     else []
     end
   end
-  A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed usbHabit].freeze
+  A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed].freeze
   STATION_POOL = 'station_fail'
   NO_ACCESS_POOL = 'work_fail_no_access'
   FALLBACK_POOL = 'work_fail'
@@ -403,6 +403,10 @@ module ValidateAccessWork
         next unless npc.key?(field)
 
         err(issues, "'#{path}' has '#{field}', which is allowed only on room NPCs (rooms.<id>.npcs[]): " \
+                    'other NPC records reach the browser unfiltered.')
+      end
+      if npc['habits'].is_a?(Hash) && npc['habits'].key?('usb')
+        err(issues, "'#{path}' has 'habits.usb', which is allowed only on room NPCs (rooms.<id>.npcs[]): " \
                     'other NPC records reach the browser unfiltered.')
       end
     end
@@ -505,7 +509,7 @@ module ValidateAccessWork
     nid = npc['id']
     plan = AW.work_plan?(json_data, npc)
     social = AW.need?(npc, 'social_media') && !AW.phone?(npc)
-    check_usb_habit(json_data, npc, plan, issues) if npc.key?('usbHabit')
+    check_usb_habit(json_data, npc, plan, issues) if npc['habits'].is_a?(Hash) && npc['habits'].key?('usb')
 
     if plan || social
       dm = npc['needsDeferMin']
@@ -574,33 +578,33 @@ module ValidateAccessWork
   # The USB habit (USB_HABIT_PLAN.md, q39): its shape, its global, and whether it can act
   def check_usb_habit(json_data, npc, plan, issues)
     nid = npc['id']
-    h = npc['usbHabit']
+    h = npc.dig('habits', 'usb')
     unless h.is_a?(Hash)
-      err(issues, "#{nid}.usbHabit must be an object { every, setGlobal }.")
+      err(issues, "#{nid}.habits.usb must be an object { every, setGlobal }.")
       return
     end
     if h.key?('every') && !(h['every'].is_a?(Integer) && AW::USB_EVERY_RANGE.cover?(h['every']))
-      err(issues, "#{nid}.usbHabit.every is #{h['every'].inspect}; it must be a whole number from 1 to 10.")
+      err(issues, "#{nid}.habits.usb.every is #{h['every'].inspect}; it must be a whole number from 1 to 10.")
     end
     if h.key?('setGlobal') && !(h['setGlobal'].is_a?(String) && declared_globals(json_data).key?(h['setGlobal']))
-      err(issues, "#{nid}.usbHabit.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
+      err(issues, "#{nid}.habits.usb.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
     end
     check_usb_stick(json_data, npc, issues)
     unless plan
-      warn(issues, "#{nid} has a usbHabit but no work plan (a work need and a non-empty workNeeds list): only judged work " \
+      warn(issues, "#{nid} has a habits.usb but no work plan (a work need and a non-empty workNeeds list): only judged work " \
                    'uses are checked, so the habit never acts. Give it a work plan, or remove the habit.')
       return
     end
     # Review R1 m5: the copy is made at the NPC's own PC only
     st = AW.station(json_data, npc)
     unless st
-      warn(issues, "#{nid} has a usbHabit but no station (needsHome naming an object in a room): the copy is made only " \
+      warn(issues, "#{nid} has a habits.usb but no station (needsHome naming an object in a room): the copy is made only " \
                    "at the NPC's own PC, so the habit never acts. Set needsHome, or remove the habit.")
       return
     end
     return unless h['setGlobal'].is_a?(String) && !AW.usb_habit_refused?(json_data, npc)
 
-    warn(issues, "#{nid}.usbHabit.setGlobal '#{h['setGlobal']}' can never be set: the policy at '#{st['id']}' allows a USB " \
+    warn(issues, "#{nid}.habits.usb.setGlobal '#{h['setGlobal']}' can never be set: the policy at '#{st['id']}' allows a USB " \
                  'stick, so the copy is never refused. Check the policy name (an unknown one falls back to the default) ' \
                  'or its usb field.')
   end
@@ -612,7 +616,7 @@ module ValidateAccessWork
     unless stick
       other = Array(npc['itemsHeld']).find { |i| i.is_a?(Hash) && i['type'] == 'usb' && AW.present_string?(i['id']) }
       extra = other ? " ('#{other['id']}' has usbClass '#{other['usbClass']}'; a habit stick is a storage stick)" : ''
-      err(issues, "#{nid} has a usbHabit but holds no USB stick#{extra}: add a { \"type\": \"usb\", \"id\": ..., \"sprite\": " \
+      err(issues, "#{nid} has a habits.usb but holds no USB stick#{extra}: add a { \"type\": \"usb\", \"id\": ..., \"sprite\": " \
                   "\"usb_bowl1\", \"usbClass\": \"storage\", \"takeable\": true } item to its itemsHeld. Its files default to " \
                   "#{AW::USB_STICK_DEFAULT_FILE}; list others in its contents.")
       return
@@ -677,13 +681,13 @@ module ValidateAccessWork
   # block gated on the habit's setGlobal.
   def check_usb_give_order(json_data, npc, stick, issues)
     nid = npc['id']
-    glob = npc.dig('usbHabit', 'setGlobal')
+    glob = npc.dig('habits', 'usb', 'setGlobal')
     return unless usb_refusal_beats?(json_data, nid, glob)
 
     ungated = usb_stick_gives(json_data, npc, stick).reject { |_where, conds| conds.any? { |c| names_global?(c, glob) } }
     return if ungated.empty?
 
-    want = glob.is_a?(String) ? "a choice gated on {#{glob}}" : 'a choice offered only after the refusal (set usbHabit.setGlobal and gate on it)'
+    want = glob.is_a?(String) ? "a choice gated on {#{glob}}" : 'a choice offered only after the refusal (set habits.usb.setGlobal and gate on it)'
     warn(issues, "#{nid}'s ink gives the USB stick '#{stick['id']}' (#{ungated.map(&:first).join(', ')}) where the player " \
                  "can take it before #{nid}'s first refusal; the habit then stops and anything keyed on the refusal " \
                  "(npc_usb_refused:#{nid}#{glob ? ", #{glob}" : ''}, a usb_refused post) never happens. Offer the give from #{want}.")
@@ -696,7 +700,7 @@ module ValidateAccessWork
     nid = npc['id']
     return if npc['koImmune'] == true || json_data['disableAttacks'] == true
 
-    glob = npc.dig('usbHabit', 'setGlobal')
+    glob = npc.dig('habits', 'usb', 'setGlobal')
     vents = Array(npc.dig('feed', 'posts')).select { |p| p.is_a?(Hash) && p.dig('when', 'cause') == 'usb_refused' }.map { |p| p['id'] }.compact
     refusal = lambda do |m|
       pat = m['eventPattern'].to_s
@@ -747,7 +751,7 @@ module ValidateAccessWork
       case v
       when Hash
         v.each do |k, x|
-          next if %w[globalVariables usbHabit].include?(k)
+          next if %w[globalVariables usb].include?(k)
           found = true if k == 'cause' && x == 'usb_refused'
           walk.call(x, k)
         end
@@ -993,7 +997,7 @@ module ValidateAccessWork
     end
 
     # Per room NPC, its resolved list: the kind's own rules. A guest's screen habit is read on
-    # the copy with slice 9.1's habits expanded (locksScreen fills screenHabit), as the server reads it.
+    # the copy with slice 9.1's habits expanded (locksScreen fills habits.screen), as the server reads it.
     expanded = expanded_room_npcs(json_data)
     room_npcs(json_data).each do |e|
       npc = e[:npc]
@@ -1161,12 +1165,12 @@ module ValidateAccessWork
                    "#{lacking.include?('social_media') ? ' and its feed post is refused' : ''}.")
     end
     if BreakEscape::AccessIdentities.screen_always_locks?({}, guest)
-      warn(issues, "#{tag}: #{nid} is a careful guest (no screenHabit, or one that always locks), so it signs out of " \
-                   "'#{pid}' and the workaround opens nothing. Author \"screenHabit\": { \"lockChance\": 0 } or " \
+      warn(issues, "#{tag}: #{nid} is a careful guest (no habits.screen, or one that always locks), so it signs out of " \
+                   "'#{pid}' and the workaround opens nothing. Author \"habits\": { \"screen\": { \"lockChance\": 0 } } or " \
                    'locksScreen: "never" on a borrower meant to leave the session open.')
     end
     if pc.key?('lockChance') || pc.key?('locksScreenOnLeave')
-      warn(issues, "#{tag}: '#{pid}' sets lockChance or locksScreenOnLeave, which a guest ignores (its own screenHabit decides).")
+      warn(issues, "#{tag}: '#{pid}' sets lockChance or locksScreenOnLeave, which a guest ignores (its own habits.screen decides).")
     end
     if holds_forbidden?(pc)
       warn(issues, "#{tag} opens a session at '#{pid}', which is a flag station or VM launcher: a modified browser can reach " \

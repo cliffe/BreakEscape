@@ -432,7 +432,7 @@ test('a knock-out that always locks is no route; one that can find the PC open i
     assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), 'locksScreenOnLeave false: a knock-out leaves it open');
     sc = clean();
     delete obj(sc, 'jake_pc').lockChance;
-    npc(sc, 'jake').screenHabit = { lockIfAwayOverSeconds: 20 };
+    npc(sc, 'jake').habits = { screen: { lockIfAwayOverSeconds: 20 } };
     assertHas(warnings(issues(sc)), NEVER_LEAVES);
 });
 
@@ -444,10 +444,10 @@ test('each leave route keeps the never-leaves warning silent', { skip }, () => {
             lobby(sc).objects.push({ id: 'dana_phone', type: 'notes', name: 'Phone', deskPhone: true, owner: 'dana' });
         },
         'a print command': sc => { npc(sc, 'jake').eventMappings = [{ eventPattern: 'go', needs: { print: 'copier' } }]; },
-        'an own print hook with a printHabit': sc => {
+        'an own print hook with a habits.print': sc => {
             obj(sc, 'jake_pc').affordance = { satisfies: 'thirst' };
             npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } };
-            npc(sc, 'jake').printHabit = {};
+            npc(sc, 'jake').habits = { print: {} };
         },
         'an interest with an item and a place': sc => {
             npc(sc, 'jake').interests = { mail: 2 };
@@ -490,7 +490,7 @@ test('droppable sources, social media prints and every cautious movement source 
         'B2: a print hook on the own station used for social media': sc => {
             npc(sc, 'jake').needs = { social_media: { decayPerMin: 10, urgentAt: 40 } };
             npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } };
-            npc(sc, 'jake').printHabit = {};
+            npc(sc, 'jake').habits = { print: {} };
         },
         'a patrol': sc => { npc(sc, 'jake').behavior = { patrol: { waypoints: [{ x: 2, y: 2 }] } }; },
         'a scripted move': sc => { npc(sc, 'jake').eventMappings = [{ eventPattern: 'alarm', patrolOverride: { targetTile: { x: 1, y: 1 } } }]; },
@@ -500,7 +500,7 @@ test('droppable sources, social media prints and every cautious movement source 
         'a station hook': sc => { npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } }; },
         'an interest': sc => { npc(sc, 'jake').interests = { mail: 2 }; },
         'answersPhones with no colleague phone': sc => { npc(sc, 'jake').answersPhones = true; },
-        'a printHabit': sc => { npc(sc, 'jake').printHabit = { fetchAfterSeconds: [10, 20] }; }
+        'a habits.print': sc => { npc(sc, 'jake').habits = { print: { fetchAfterSeconds: [10, 20] } }; }
     };
     for (const [label, edit] of Object.entries(routes)) {
         const sc = clean();

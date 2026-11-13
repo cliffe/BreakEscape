@@ -85,8 +85,8 @@ test('a clean fixture raises nothing', () => {
     assert.deepEqual(out.habits, []);
     assertHas(out.lines, 'dana: level low (level from role front_desk)');
     assertHas(out.lines, 'locksScreen never (preset)');
-    assertHas(out.lines, 'screenHabit lockChance 0, read at dana_pc');
-    assertHas(out.lines, 'screenHabit lockChance 1, read at ian_pc');
+    assertHas(out.lines, 'habits.screen lockChance 0, read at dana_pc');
+    assertHas(out.lines, 'habits.screen lockChance 1, read at ian_pc');
 });
 
 test('a scenario with no awareness, habits or roles has no report', () => {
@@ -126,7 +126,7 @@ test('passwordPattern naming no object', () => {
 
 // ── locksScreen ───────────────────────────────────────────────────────────────
 
-test('locksScreen by name that does nothing: no workstation, every PC sets a field, an authored screenHabit', () => {
+test('locksScreen by name that does nothing: no workstation, every PC sets a field, an authored habits.screen', () => {
     let out = run(scenario({ npcs: [person('dana', { habits: { locksScreen: 'never' } })] }));
     assertHas(warnings(out.habits), 'owns no workstation');
     assertHas(out.lines, 'no effect: owns no workstation');
@@ -136,10 +136,10 @@ test('locksScreen by name that does nothing: no workstation, every PC sets a fie
     assertHas(warnings(out.habits), 'sets lockChance or locksScreenOnLeave, which wins');
     assertHas(out.lines, 'dana_pc: the PC sets lockChance, habit not applied there');
 
-    out = run(scenario({ npcs: [person('dana', { needsHome: 'dana_pc', habits: { locksScreen: 'never' }, screenHabit: { lockChance: 1 } })],
+    out = run(scenario({ npcs: [person('dana', { needsHome: 'dana_pc', habits: { locksScreen: 'never', screen: { lockChance: 1 } } })],
         objects: [loginPc('dana_pc')] }));
-    assertHas(warnings(out.habits), 'the authored screenHabit wins');
-    assertHas(out.lines, 'habit not applied: the NPC sets screenHabit');
+    assertHas(warnings(out.habits), 'the authored habits.screen wins');
+    assertHas(out.lines, 'habit not applied: the NPC sets habits.screen');
 });
 
 test('a preset that does nothing draws no warning', () => {
@@ -180,7 +180,7 @@ test('a workstation with a locksScreen habit and no locked art draws the sprite 
 function mapped(level, pattern, condition, { pcExtra = {}, policy = null, habit = null } = {}) {
     const owner = person('ann', { needsHome: 'ws', eventMappings: [{ eventPattern: pattern, ...(condition ? { condition } : {}), setGlobal: { x: true } }] });
     if (level) owner.habits = { locksScreen: level };
-    if (habit) owner.screenHabit = habit;
+    if (habit) owner.habits = { ...(owner.habits || {}), screen: habit };
     const pc = station('ws', pcExtra);
     const extra = {};
     if (policy) { extra.policies = { p: policy }; pc.policy = 'p'; }
@@ -218,7 +218,7 @@ test('mappings that need neither state draw nothing', () => {
     assert.deepEqual(warnings(mapped('never', 'global_variable_changed:x', null).habits), []);
 });
 
-test('no habit: an authored screenHabit decides, and autoLockSeconds silences both', () => {
+test('no habit: an authored habits.screen decides, and autoLockSeconds silences both', () => {
     assertHas(warnings(mapped(null, 'workstation_owner_returned:ws', 'data.wasLocked === true', { habit: { lockIfAwayOverSeconds: 20 } }).habits), some);
     assertHas(warnings(mapped(null, 'workstation_owner_returned:ws', 'data.wasLocked === true', { habit: { lockChance: 0 } }).habits), never);
     for (const habit of [{ lockIfAwayOverSeconds: 20 }, { lockChance: 0 }]) {
@@ -257,8 +257,8 @@ test('an owned workstation with no authored id draws the id warning and is liste
     }));
     assertHas(warnings(out.habits), "give the object the id 'office_pc_0'");
     assertHas(warnings(out.habits), "give the object the id 'office_pc_1'");
-    assertHas(out.lines, 'screenHabit lockChance 0, read at office_pc_0');
-    assertHas(out.lines, 'screenHabit lockChance 1, read at office_pc_1');
+    assertHas(out.lines, 'habits.screen lockChance 0, read at office_pc_0');
+    assertHas(out.lines, 'habits.screen lockChance 1, read at office_pc_1');
 });
 
 // ── writesDown ────────────────────────────────────────────────────────────────

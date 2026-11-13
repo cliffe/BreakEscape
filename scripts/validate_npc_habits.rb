@@ -155,7 +155,7 @@ module ValidateNpcHabits
                      "(#{screen[:pcs].map { |pc| pc[:id] }.join(', ')}) sets lockChance or locksScreenOnLeave, which wins: " \
                      'the habit does nothing.')
       when :authored_screen_habit
-        warn(issues, "#{who} has locksScreen '#{screen[:value]}' and an authored screenHabit: the authored screenHabit " \
+        warn(issues, "#{who} has locksScreen '#{screen[:value]}' and an authored habits.screen: the authored habits.screen " \
                      'wins and the habit is not applied.')
       end
     end
@@ -330,7 +330,7 @@ module ValidateNpcHabits
     return [fraction(chance), 'its lockChance', late] if chance.is_a?(Numeric)
     return [pc['locksScreenOnLeave'] == false ? 0 : 1, 'its locksScreenOnLeave', late] if pc.key?('locksScreenOnLeave')
 
-    habit = owner.is_a?(Hash) ? owner['screenHabit'] : nil
+    habit = owner.is_a?(Hash) ? owner.dig('habits', 'screen') : nil
     if habit.is_a?(Hash)
       where = habit_source(owner, item)
       if habit['lockIfAwayOverSeconds'].is_a?(Numeric)
@@ -338,7 +338,7 @@ module ValidateNpcHabits
       end
       return [habit['lockChance'].is_a?(Numeric) ? fraction(habit['lockChance']) : 1, where, late]
     end
-    [1, 'the default (no lock field and no screenHabit)', late]
+    [1, 'the default (no lock field and no habits.screen)', late]
   end
 
   def fraction(value)
@@ -351,7 +351,7 @@ module ValidateNpcHabits
 
   def habit_source(owner, item)
     screen = item && item[:screen]
-    return "the owner '#{owner['id']}' screenHabit" unless screen && screen[:filled]
+    return "the owner '#{owner['id']}' habits.screen" unless screen && screen[:filled]
 
     from = item[:sources]['locksScreen'] == :explicit ? 'by name' : "from the #{item[:level]} preset"
     "the owner '#{owner['id']}' locksScreen '#{screen[:value]}' (#{from})"
@@ -518,13 +518,13 @@ module ValidateNpcHabits
     return [] unless screen
 
     case screen[:reason]
-    when :authored_screen_habit then return ['habit not applied: the NPC sets screenHabit']
+    when :authored_screen_habit then return ['habit not applied: the NPC sets habits.screen']
     when :no_workstation then return ['no effect: owns no workstation']
     end
     out = []
     applied = screen[:pcs].select { |pc| pc[:applied] }
     if screen[:filled]
-      out << "screenHabit lockChance #{screen[:lock_chance]}, read at #{applied.map { |pc| pc[:id] }.join(', ')}"
+      out << "habits.screen lockChance #{screen[:lock_chance]}, read at #{applied.map { |pc| pc[:id] }.join(', ')}"
     end
     screen[:pcs].reject { |pc| pc[:applied] }.each do |pc|
       out << "#{pc[:id]}: the PC sets #{pc[:field]}, habit not applied there"

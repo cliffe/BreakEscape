@@ -117,10 +117,10 @@ const HABITS_SCENARIO = {
         { id: 'plain', type: 'notes' }
       ],
       npcs: [
-        { id: 'dana', needsHome: 'dana_pc', habits: { locksScreen: 'never' }, screenHabit: { lockChance: 0 },
+        { id: 'dana', needsHome: 'dana_pc', habits: { locksScreen: 'never', screen: { lockChance: 0 } },
           creds: { username: 'dreyes', password: 'Dana-Secret-PW' } },
-        { id: 'priya', needsHome: 'priya_pc', habits: { locksScreen: 'never' }, screenHabit: { lockChance: 0 } },
-        { id: 'omar', needsHome: 'omar_pc', habits: { locksScreen: 'always', writesDown: true }, screenHabit: { lockChance: 1 } }
+        { id: 'priya', needsHome: 'priya_pc', habits: { locksScreen: 'never', screen: { lockChance: 0 } } },
+        { id: 'omar', needsHome: 'omar_pc', habits: { locksScreen: 'always', writesDown: true, screen: { lockChance: 1 } } }
       ]
     }
   }
@@ -130,8 +130,8 @@ test('--access prints the habits block of values for a game with expanded habits
   const r = verify(['1', '--access'], ACCESS_STATE, { STUB_SCENARIO: JSON.stringify(HABITS_SCENARIO), STUB_POSTIT: 'omar_pc' });
   assert.equal(r.status, 0, r.out);
   assert.match(r.out, /\nhabits\n/);
-  assert.match(r.out, /npc dana\s+locksScreen=never\s+screenHabit \{"lockChance":0\}/);
-  assert.match(r.out, /npc omar\s+locksScreen=always writesDown=true\s+screenHabit \{"lockChance":1\}/);
+  assert.match(r.out, /npc dana\s+locksScreen=never\s+habits\.screen \{"lockChance":0\}/);
+  assert.match(r.out, /npc omar\s+locksScreen=always writesDown=true\s+habits\.screen \{"lockChance":1\}/);
   assert.match(r.out, /pc\s+dana_pc\s+owner dana\s+no lock field\s+alwaysLocks false\s+hasPostit false/);
   assert.match(r.out, /pc\s+priya_pc\s+owner priya\s+lockChance 1\s+alwaysLocks true\s+hasPostit false/);
   assert.match(r.out, /pc\s+omar_pc\s+owner omar\s+no lock field\s+alwaysLocks true\s+hasPostit true/);

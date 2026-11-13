@@ -54,10 +54,10 @@ function scenario(mutate = () => {}) {
         npcs: [{
           id: 'dana', displayName: 'Dana', npcType: 'person', position: { x: 3, y: 3 }, spriteSheet: 'hacker',
           creds: { username: 'dana', password: 'Winter2026!', ...c },
-          habits: { locksScreen: 'sometimes', writesDown: false, ...c },
-          screenHabit: { lockChance: 0.5, lockIfAwayOverSeconds: 30, ...c },
-          printHabit: { fetchAfterSeconds: [20, 40], forgetChance: 0.2, ...c },
-          usbHabit: { every: 5, ...c },
+          habits: { locksScreen: 'sometimes', writesDown: false, ...c,
+            screen: { lockChance: 0.5, lockIfAwayOverSeconds: 30, ...c },
+            print: { fetchAfterSeconds: [20, 40], forgetChance: 0.2, ...c },
+            usb: { every: 5, ...c } },
           frustration: { perFail: 10, easePerSuccess: 5, ...c },
           needs: { work: { decayPerMin: 4, urgentAt: 40, ...c } },
           workarounds: [{ at: 60, do: 'writes_down', ...c }],
@@ -94,9 +94,9 @@ const SLIPS = [
   ['NPC feed posts[]', (j) => rename(npc(j).feed.posts[0], 'text', 'txt'), '#/rooms/r1/npcs/0/feed/posts/0', 'txt', 'text'],
   ['NPC creds', (j) => rename(npc(j).creds, 'password', 'passwrd'), '#/rooms/r1/npcs/0/creds', 'passwrd', 'password'],
   ['NPC habits', (j) => rename(npc(j).habits, 'writesDown', 'writesdown'), '#/rooms/r1/npcs/0/habits', 'writesdown', 'writesDown'],
-  ['NPC screenHabit (lockchance)', (j) => rename(npc(j).screenHabit, 'lockChance', 'lockchance'), '#/rooms/r1/npcs/0/screenHabit', 'lockchance', 'lockChance'],
-  ['NPC printHabit', (j) => rename(npc(j).printHabit, 'forgetChance', 'forgetChanse'), '#/rooms/r1/npcs/0/printHabit', 'forgetChanse', 'forgetChance'],
-  ['NPC usbHabit', (j) => rename(npc(j).usbHabit, 'every', 'evrey'), '#/rooms/r1/npcs/0/usbHabit', 'evrey', 'every'],
+  ['NPC habits.screen (lockchance)', (j) => rename(npc(j).habits.screen, 'lockChance', 'lockchance'), '#/rooms/r1/npcs/0/habits/screen', 'lockchance', 'lockChance'],
+  ['NPC habits.print', (j) => rename(npc(j).habits.print, 'forgetChance', 'forgetChanse'), '#/rooms/r1/npcs/0/habits/print', 'forgetChanse', 'forgetChance'],
+  ['NPC habits.usb', (j) => rename(npc(j).habits.usb, 'every', 'evrey'), '#/rooms/r1/npcs/0/habits/usb', 'evrey', 'every'],
   ['NPC frustration', (j) => rename(npc(j).frustration, 'easePerSuccess', 'easePerSucess'), '#/rooms/r1/npcs/0/frustration', 'easePerSucess', 'easePerSuccess'],
   ['NPC needs entry', (j) => rename(npc(j).needs.work, 'urgentAt', 'urgentat'), '#/rooms/r1/npcs/0/needs/work', 'urgentat', 'urgentAt'],
   ['object affordance (restore for restores)', (j) => rename(pc(j).affordance, 'restores', 'restore'), '#/rooms/r1/objects/0/affordance', 'restore', 'restores'],
@@ -175,7 +175,7 @@ test('full validator: each slip prints exactly one line naming the key (no secon
   });
 });
 
-test('full validator: "_" keys in habits, screenHabit, printHabit and every other block print nothing', { skip }, async () => {
+test('full validator: "_" keys in habits (screen, print, usb) and every other block print nothing', { skip }, async () => {
   const [base] = await fullRuns([scenario()]);
   assert.ok(base.stdout.includes('Validating scenario'), base.stdout.slice(0, 400));
   assert.deepEqual(base.lines.filter((l) => l.includes('_why') || l.includes("'_comment'")), []);
@@ -281,9 +281,9 @@ test('every step 2 block is closed in the schema with "_" keys allowed', () => {
     'npc.feed.posts[]': D.npc.properties.feed.properties.posts.items,
     'npc.creds': D.npc.properties.creds,
     'npc.habits': D.npc.properties.habits,
-    'npc.screenHabit': D.npc.properties.screenHabit,
-    'npc.printHabit': D.npc.properties.printHabit,
-    'npc.usbHabit': D.npc.properties.usbHabit,
+    'npc.habits.screen': D.npc.properties.habits.properties.screen,
+    'npc.habits.print': D.npc.properties.habits.properties.print,
+    'npc.habits.usb': D.npc.properties.habits.properties.usb,
     'npc.frustration': D.npc.properties.frustration,
     'npc.needs.*': D.npc.properties.needs.additionalProperties,
     'item.affordance (via definitions/affordance)': D.affordance,

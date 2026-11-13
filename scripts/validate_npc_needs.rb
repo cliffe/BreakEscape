@@ -14,7 +14,7 @@ module ValidateNpcNeeds
 
   Obj = Struct.new(:id, :room, :data, :x, :y, keyword_init: true)
 
-  # screen_habits: { npc id => screenHabit } from the habits expansion (slice 9.1), read by
+  # screen_habits: { npc id => habits.screen } from the habits expansion (slice 9.1), read by
   # the autoLockSeconds rule before the authored field. Default {}: today's output.
   def self.check(json, screen_habits: {})
     return [] unless json.is_a?(Hash) && json['rooms'].is_a?(Hash)
@@ -332,9 +332,9 @@ module ValidateNpcNeeds
     end
   end
 
-  # Slice 17 (OFFICE_LIFE_PLAN 12.3): print and forget. A hook's chance (0-1); printHabit's shape
+  # Slice 17 (OFFICE_LIFE_PLAN 12.3): print and forget. A hook's chance (0-1); habits.print's shape
   # and bounds; a mapping's needs.print command; affordance.uncollectedAfterSeconds. An owner (a
-  # printHabit or a print command) needs a needsHome object, where the errand takes the print; a
+  # habits.print or a print command) needs a needsHome object, where the errand takes the print; a
   # habit with nothing that prints for it does nothing; a producer in a room the owner may not
   # reach is never fetched from. Per producer, slots against printing NPCs (forgotten prints hold
   # slots until a reload or a recycle).
@@ -391,20 +391,20 @@ module ValidateNpcNeeds
         end
         issues << "❌ ERROR: #{where} mapping '#{m['eventPattern']}' needs.print forget must be true or false." if spec.key?('forget') && ![true, false].include?(spec['forget'])
       end
-      habit = npc['printHabit']
+      habit = npc.dig('habits', 'print')
       unless habit.nil?
         if habit.is_a?(Hash)
           if habit.key?('fetchAfterSeconds') && !fetch_range_ok?(habit['fetchAfterSeconds'])
-            issues << "❌ ERROR: #{where} printHabit.fetchAfterSeconds must be [min, max] seconds, 0 <= min <= max <= 3600 (default [20, 60])."
+            issues << "❌ ERROR: #{where} habits.print.fetchAfterSeconds must be [min, max] seconds, 0 <= min <= max <= 3600 (default [20, 60])."
           end
-          issues << "❌ ERROR: #{where} printHabit.forgetChance must be a number from 0 to 1 (default 0)." if habit.key?('forgetChance') && !(habit['forgetChance'].is_a?(Numeric) && habit['forgetChance'] >= 0 && habit['forgetChance'] <= 1)
-          issues << "❌ ERROR: #{where} printHabit.weight must be 0.1 to 10 (default 2)." if habit.key?('weight') && !(habit['weight'].is_a?(Numeric) && habit['weight'] >= 0.1 && habit['weight'] <= 10)
-          issues << "❌ ERROR: #{where} printHabit.shareAfterSeconds must be seconds > 0 (unset: a forgotten print stays reserved)." if habit.key?('shareAfterSeconds') && !(habit['shareAfterSeconds'].is_a?(Numeric) && habit['shareAfterSeconds'].positive?)
+          issues << "❌ ERROR: #{where} habits.print.forgetChance must be a number from 0 to 1 (default 0)." if habit.key?('forgetChance') && !(habit['forgetChance'].is_a?(Numeric) && habit['forgetChance'] >= 0 && habit['forgetChance'] <= 1)
+          issues << "❌ ERROR: #{where} habits.print.weight must be 0.1 to 10 (default 2)." if habit.key?('weight') && !(habit['weight'].is_a?(Numeric) && habit['weight'] >= 0.1 && habit['weight'] <= 10)
+          issues << "❌ ERROR: #{where} habits.print.shareAfterSeconds must be seconds > 0 (unset: a forgotten print stays reserved)." if habit.key?('shareAfterSeconds') && !(habit['shareAfterSeconds'].is_a?(Numeric) && habit['shareAfterSeconds'].positive?)
         else
-          issues << "❌ ERROR: #{where} printHabit must be an object."
+          issues << "❌ ERROR: #{where} habits.print must be an object."
         end
         if hooked.empty? && commanded.empty?
-          issues << "⚠️ WARNING: #{where} has a printHabit but no revealOutput hook and no mapping print command; nothing prints as it, so the habit does nothing."
+          issues << "⚠️ WARNING: #{where} has a habits.print but no revealOutput hook and no mapping print command; nothing prints as it, so the habit does nothing."
         end
       end
       owner_prods = (habit.nil? ? [] : hooked) + commanded
@@ -415,7 +415,7 @@ module ValidateNpcNeeds
       home = npc['needsHome']
       home_obj = home.is_a?(String) ? by_id[home]&.first : nil
       unless home_obj
-        issues << "❌ ERROR: #{where} owns its prints (printHabit or a print command) but has no needsHome object; the fetch errand takes the print to its needsHome object and has nowhere to go."
+        issues << "❌ ERROR: #{where} owns its prints (habits.print or a print command) but has no needsHome object; the fetch errand takes the print to its needsHome object and has nowhere to go."
         next
       end
       home_room = home_obj.room || npc_room
@@ -494,7 +494,7 @@ module ValidateNpcNeeds
     out
   end
 
-  # Slice 16 (OFFICE_LIFE_PLAN 12.2): the owner's screenHabit and the machine's autoLockSeconds.
+  # Slice 16 (OFFICE_LIFE_PLAN 12.2): the owner's habits.screen and the machine's autoLockSeconds.
   # The same rules as systems/workstation-state.js: an object's own lockChance or
   # locksScreenOnLeave wins over the habit; auto-lock only ever locks an open screen.
   LOCK_FIELDS = %w[lockChance locksScreenOnLeave].freeze
@@ -523,10 +523,10 @@ module ValidateNpcNeeds
     end
     stations = objs.select { |o| o.data.is_a?(Hash) && o.data['id'].is_a?(String) && workstation?(o.data) }
     npcs.each do |_, npc|
-      next unless npc.key?('screenHabit')
+      next unless npc['habits'].is_a?(Hash) && npc['habits'].key?('screen')
 
-      where = "NPC '#{npc['id']}' screenHabit"
-      h = npc['screenHabit']
+      where = "NPC '#{npc['id']}' habits.screen"
+      h = npc.dig('habits', 'screen')
       unless h.is_a?(Hash)
         issues << "❌ ERROR: #{where} must be an object { lockChance, lockIfAwayOverSeconds }."
         next
@@ -563,7 +563,7 @@ module ValidateNpcNeeds
         next
       end
       owner_id = station_owner(d, npcs)
-      habit = screen_habits.key?(owner_id) ? screen_habits[owner_id] : npcs.find { |_, n| n['id'] == owner_id }&.last&.dig('screenHabit')
+      habit = screen_habits.key?(owner_id) ? screen_habits[owner_id] : npcs.find { |_, n| n['id'] == owner_id }&.last&.dig('habits', 'screen')
       always = d['lockChance'].is_a?(Numeric) ? d['lockChance'] >= 1 : (d.key?('locksScreenOnLeave') ? d['locksScreenOnLeave'] != false : !habit_leaves_open?(habit))
       if always
         issues << "⚠️ WARNING: #{where} never applies: the screen always locks when its owner leaves (locksScreenOnLeave, lockChance 1 or no habit that leaves it open), and auto-lock only locks an open screen."
