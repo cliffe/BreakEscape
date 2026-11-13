@@ -172,7 +172,9 @@
     align-items: center;
     margin-bottom: 10px;
     margin-right: 40px;   /* clear of the X, which sits inside the frame's top right (slice 7 R1) */
-    padding: 10px 10px 10px 32px;   /* clear of the expand toggle at its top left (R2) */
+    /* The expand toggle sits beside the header box, not across its border (critique A20) */
+    margin-left: 32px;
+    padding: 10px;
     background: rgba(0, 188, 212, 0.1);
     border: 2px solid #00bcd4;
     /* border-radius: 6px; */
@@ -537,8 +539,9 @@
         font-size: 18px;
     }
     
+    /* The chips stay inline and wrap, as at every other size (critique A21) */
     .bluetooth-categories {
-        flex-direction: column;
+        flex-wrap: wrap;
         gap: 5px;
     }
     

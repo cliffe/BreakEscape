@@ -14,6 +14,9 @@
     width: 100%;
     height: 100%;
     position: relative;
+    /* The logo's zoom to 200% stays inside the screen: the minigame shell scrolls now (UI
+       shell build), and the zoom would otherwise give it a sideways scrollbar on a phone */
+    overflow: hidden;
     background: transparent;
     display: flex;
     flex-direction: column;
