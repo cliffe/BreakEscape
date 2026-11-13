@@ -313,26 +313,87 @@ test('9.3a: the captured list shows only targets in accounts; the password only 
     assert.deepEqual(capturedSignIns(CAPTURES, undefined, undefined), [], 'a missing accounts map is {}');
 });
 
-test('9.3a: the remote screen has no tiles, says how it is reached, and a capture fills the form', () => {
+test('9.3a / UX 2b0: the remote screen has no tiles of its own, says how it is reached, and a captured tile fills the form', () => {
     const mg = openRemote(capturedSignIns(CAPTURES, { lena: 'lfox', ian: 'ishaw' }, { lena: 'Ledger-Lena-9' }));
-    assert.equal(document.querySelectorAll('.signin-tile').length, 0);
+    assert.equal(document.querySelectorAll('#signin-tiles').length, 0, 'none of the PC\'s own account tiles (q92)');
     assert.match(q('.signin-remote').textContent, /Remote sign-in through Drop box: comms room/);
-    const items = [...document.querySelectorAll('.signin-captured-item')];
-    assert.deepEqual(items.map(b => b.textContent), ['Finance (Lena) (lfox)', 'ishaw (ishaw)']);
-    items[1].click();
-    assert.equal(q('#signin-username').value, 'ishaw', 'the username always');
+    assert.equal(document.querySelectorAll('.signin-captured-item').length, 0, 'no plain text buttons');
+    const tiles = [...document.querySelectorAll('#signin-captured .signin-captured-tile')];
+    assert.deepEqual(tiles.map(b => [b.querySelector('.signin-name').textContent, b.querySelector('.signin-username').textContent]),
+        [['Finance (Lena)', 'lfox'], ['ishaw', 'ishaw']], 'with no NPC record, the capture\'s label names the tile');
+    assert.ok(q('#signin-captured .signin-other'), 'an Other user tile for typing');
+    assert.ok(q('#signin-captured .signin-other').classList.contains('selected'), 'the typed form is the starting choice');
+    assert.ok(visible(q('#signin-username-row')), 'the Username field is there for typing');
+    tiles[1].click();
+    assert.equal(mg.signInState.selected, 'ishaw');
+    assert.equal(visible(q('#signin-username-row')), false, 'a tile chooses the account: no Username field');
     assert.equal(q('#password-field').value, '', 'no password the server has not served');
-    items[0].click();
-    assert.equal(q('#signin-username').value, 'lfox');
+    assert.ok(tiles[1].classList.contains('selected'));
+    assert.match(q('#signin-selected').textContent, /ishaw \(ishaw\)/);
+    tiles[0].click();
+    assert.equal(mg.signInState.selected, 'lfox');
     assert.equal(q('#password-field').value, 'Ledger-Lena-9');
+    assert.ok(q('.signin-mode').classList.contains('signin-chosen'), 'a captured account folds the row in a short window');
     assert.deepEqual(mg.getTestState().signIn.captured.map(c => [c.username, c.fillsPassword]), [['lfox', true], ['ishaw', false]]);
+    assert.deepEqual(mg.getTestState().signIn.tiles, [], 'the PC\'s own tiles stay empty in the test state');
     assert.equal(JSON.stringify(mg.getTestState()).includes('Ledger-Lena-9'), false, 'the test state carries no password');
+    q('#signin-captured .signin-other').click();
+    assert.equal(mg.signInState.other, true);
+    assert.ok(visible(q('#signin-username-row')), 'Other user brings the typed form back');
+    assert.equal(q('.signin-mode').classList.contains('signin-chosen'), false, 'typing keeps the captured tiles in view');
+    tiles[0].click();
+    q('#signin-change').click();
+    assert.equal(mg.signInState.other, true, 'Change goes back to the typed form and the tiles');
+    assert.equal(mg.signInState.selected, null);
 });
 
-test('9.3a: with no captures the list says so', () => {
+test('UX 2b0: a captured tile is named and pictured from the NPC record the client holds', async () => {
+    const savedImage = globalThis.Image;
+    globalThis.Image = fakeImage({ '/break_escape/assets/characters/female_blowse_v2_headshot.png': [32, 32] });
+    const lena = { id: 'lena', displayName: 'Lena Fox', spriteSheet: 'female_blowse_v2', spriteTalk: 'assets/characters/female_blowse_talk.png', creds: { username: 'lfox' } };
+    window.npcManager = { getNPC: (id) => (id === 'lena' ? lena : null), npcs: new Map([['lena', lena]]) };
+    try {
+        openRemote(capturedSignIns(CAPTURES, { lena: 'lfox', ian: 'ishaw' }, {}));
+        await settle();
+        const [lenaTile, ianTile] = [...document.querySelectorAll('.signin-captured-tile')];
+        assert.equal(lenaTile.querySelector('.signin-name').textContent, 'Lena Fox');
+        assert.equal(lenaTile.title, 'Lena Fox, Finance (Lena)', 'the role label stays on the tile');
+        const pic = lenaTile.querySelector('.signin-portrait');
+        assert.equal(pic.dataset.headshot, 'female_blowse_v2', 'the authored headshot');
+        assert.match(pic.style.backgroundImage, /female_blowse_v2_headshot\.png/);
+        assert.equal(ianTile.querySelector('.signin-portrait').textContent, tileInitials('ishaw'), 'no record and no picture: initials');
+        lenaTile.click();
+        await settle();
+        const box = q('.signin-selected-headshot');
+        if (box) assert.match(box.style.backgroundImage, /female_blowse_v2_headshot\.png/, 'the chosen line shows the same face');
+    } finally {
+        globalThis.Image = savedImage;
+        delete window.npcManager;
+    }
+});
+
+test('UX 2b0: a captured tile signs in with its own username, and a refusal keeps the tile chosen', async () => {
+    const mg = openRemote(capturedSignIns(CAPTURES, { lena: 'lfox', ian: 'ishaw' }, { lena: 'Ledger-Lena-9' }));
+    q('#signin-username').value = 'typed-name';
+    nextResult = { ok: false, reason: 'not_permitted', message: 'This account cannot sign in here', attemptsLeft: null };
+    document.querySelectorAll('.signin-captured-tile')[1].click();
+    q('#password-field').value = 'guess';
+    await mg.submitPassword();
+    assert.deepEqual(signIns, [['lena_pc', 'ishaw', 'guess', { foothold: 'jack_comms_port' }]], 'the tile\'s username, not the typed one');
+    assert.equal(mg.signInState.selected, 'ishaw');
+    assert.match(messageText(), /cannot sign in here/);
+    nextResult = { ok: true, session: { username: 'lfox', displayName: 'Lena Fox' } };
+    document.querySelectorAll('.signin-captured-tile')[0].click();
+    await mg.submitPassword();
+    assert.deepEqual(signIns[1], ['lena_pc', 'lfox', 'Ledger-Lena-9', { foothold: 'jack_comms_port' }]);
+});
+
+test('9.3a: with no captures the list says so, under its own heading, and the typed form shows', () => {
     openRemote([]);
-    assert.equal(document.querySelectorAll('.signin-captured-item').length, 0);
-    assert.match(q('#signin-captured').textContent, /None yet/);
+    assert.equal(document.querySelectorAll('.signin-tile').length, 0, 'no Other user tile with nothing to choose between');
+    assert.equal(q('.signin-captured-title').textContent, 'Captured sign-ins');
+    assert.match(q('.signin-captured-empty').textContent, /None yet/);
+    assert.ok(visible(q('#signin-username-row')));
 });
 
 test('9.3a: the captured list fills in after the screen has opened (review R1 minor 1)', () => {
@@ -344,9 +405,10 @@ test('9.3a: the captured list fills in after the screen has opened (review R1 mi
     q('#signin-captured').innerHTML = mg.capturedListHtml();
     assert.match(q('#signin-captured').textContent, /Checking/);
     mg.setCapturedSignIns(capturedSignIns(CAPTURES, { lena: 'lfox' }, { lena: 'Ledger-Lena-9' }));
-    const items = [...document.querySelectorAll('.signin-captured-item')];
-    assert.deepEqual(items.map(b => b.textContent), ['Finance (Lena) (lfox)']);
-    items[0].click();
+    const tiles = [...document.querySelectorAll('.signin-captured-tile')];
+    assert.deepEqual(tiles.map(b => b.querySelector('.signin-username').textContent), ['lfox']);
+    assert.ok(q('#signin-captured .signin-other').classList.contains('selected'), 'the late tiles show the typed form still chosen');
+    tiles[0].click();
     assert.equal(q('#password-field').value, 'Ledger-Lena-9');
     assert.equal(mg.getTestState().signIn.capturedLoading, false);
 });

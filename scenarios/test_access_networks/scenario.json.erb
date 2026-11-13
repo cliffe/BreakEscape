@@ -137,6 +137,8 @@
     }
   },
 
+  "social": { "captures": { "revealSecret": true } },
+
   "policies": {
     "hardened": { "remote": "blocked" },
     "counted": { "maxAttempts": 5, "remote": "allowed" },
@@ -281,6 +283,26 @@
               "text": "P8: the vault opened. The whole chain needed the box: the code came from a box with no screen.",
               "observations": "A receipt from the vault."
             }
+          ]
+        },
+        {
+          "type": "notes", "id": "capture_note_lena", "name": "Capture card: Lena", "position": { "x": 4, "y": 6 },
+          "takeable": false, "interactable": true, "active": true, "readable": true,
+          "readDisplay": "gameDisplay", "addToNotes": false,
+          "observations": "A test card for the capture log.",
+          "text": "CAPTURE CARD (test)\n\nReading this records Lena's sign-in in the capture log. Her tile then shows under Captured sign-ins on a remote sign-in screen.",
+          "triggerOnInteract": [
+            { "type": "add_capture", "capture": { "targetId": "lena", "roleLabel": "Harbour office, finance", "kind": "credential", "address": "lfox", "note": "Test capture for the remote sign-in tiles." } }
+          ]
+        },
+        {
+          "type": "notes", "id": "capture_note_ian", "name": "Capture card: Ian", "position": { "x": 4, "y": 7 },
+          "takeable": false, "interactable": true, "active": true, "readable": true,
+          "readDisplay": "gameDisplay", "addToNotes": false,
+          "observations": "A test card for the capture log.",
+          "text": "CAPTURE CARD (test)\n\nReading this records Ian's sign-in in the capture log. Lena's PC turns his account away: a wrong-account check.",
+          "triggerOnInteract": [
+            { "type": "add_capture", "capture": { "targetId": "ian", "roleLabel": "Harbour office, IT", "kind": "credential", "address": "ishaw", "note": "Test capture for the remote sign-in tiles (an account Lena's PC refuses)." } }
           ]
         },
         {
