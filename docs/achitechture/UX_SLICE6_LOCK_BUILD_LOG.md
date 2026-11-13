@@ -89,12 +89,86 @@ shows the sign-in screen with Sam pre-chosen (03), a wrong password is refused a
 locked (04), the right password returns to the desktop (container minigame) and clears the lock
 (05).
 
+## 2026-11-13 - review fixes (R1 and integrator), lock made a real server boundary
+
+The access-model owner ruled that Lock is a re-authentication gate, a real server boundary,
+not a screen lock. Every finding from both reviews is now resolved. Tip `788395b13`.
+
+### Where the gate lives
+
+One shared predicate: `Game#session_identity(pc_id)` returns nil for a locked session
+(game.rb ~1957). Every read path resolves the signed-in identity through it, so a locked PC
+is refused exactly as a signed-out one, and future routes inherit the gate:
+
+- `render_login_desktop` (games_controller.rb:2465): no identity -> `no_session` 403. Covers
+  the local desktop and the remote/foothold desktop (one method serves both).
+- `scope_admitted_by_session?` (game.rb): no identity -> a copy/transfer from a locked
+  desktop is refused ("Not signed in", games_controller.rb:2766, and the scope check at 2772).
+- `session_admits?` login_pc branch (game.rb): now also `!session_locked_at?(scope[:id])`, so a
+  desktop folder read through a locked session is refused.
+- `resource_admits_player?` (network_access.rb:1241): skips a locked session, so a share
+  mapped only through a locked PC (list and file read) answers "not found".
+
+A new helper `session_locked_at?(pc_id)` reads the stored record for the two admit tests that
+check for a held Hash directly rather than through `session_identity`.
+
+### R1 and integrator findings - outcomes
+
+- R1 BLOCKER 1 / integrator M1 (lock enforced only in the client; a forged GET reached the
+  locked desktop and a share's secret): FIXED by the gate above. Proven refused live (below).
+- R1 MAJOR 1 / integrator M2 (locking a claim or guest session a password can never unlock):
+  FIXED. `lock_session!` refuses a session whose `via` is not `'password'` with the same 422 as
+  an unheld PC (game.rb). Client `pcSessions.canLock(pcId)` and the `lockSession` guard never
+  offer or attempt it for a claim/guest session (pc-sessions.js).
+- R1 MINOR 1 / integrator n2, n3 (no tests for read-gating, a second account, a claim/guest
+  lock): FIXED. See Tests below.
+- R1 MINOR 2 (`sessionLockingSupported` unconditional): FIXED. True only when the scenario has
+  at least one sign-in PC, via `Game#scenario_has_login_pc?` (games_controller.rb:429).
+- integrator n1 (`set_session_locked!(..., false)` branch dead): kept per the owner's decision,
+  with a one-line comment that it is for a future keyring grant.
+
+### Tests
+
+- Rails, real controller paths. access_model_login_test.rb (+5): the local desktop is refused
+  while locked and served after the password; a profile copy is refused while locked and
+  allowed after the password; locking a claimed owner session is 422 and leaves it unlocked;
+  locking a guest session (via claim, with a guestSessions marker) is 422; a second permitted
+  account (Dana) signs in at a jake-locked PC and gets a fresh session, never the locked
+  desktop. network_remote_signin_test.rb (+2): a share on a locked PC is refused (list and a
+  file) then served after the password; the remote/foothold desktop is refused as signed-out
+  then served after a remote re-sign-in. Both files green: login 32 runs, remote 29 runs, each
+  0 failures (61/634 assertions together). Related access suites green: desktop/shares/
+  footholds/pivot/no_password 91 runs, 0 failures.
+- Node: pc-sessions.test.mjs (+3) for `canLock` (offered only for a held password session while
+  supported; false without support; `lockSession` never POSTs for a claim/guest). 42 runs, 0
+  failures. Related session node suites all green (remote-signin, signin-routing,
+  password-signin-mode, etc.).
+
+### Live proof on :3467 (game 3253, test_access_networks, sam_pc)
+
+- The R1 forged reads reproduced and now refused. Unlocked (control): `GET /container/sam_pc`
+  200, `GET /container/scanned_inbox` 200 with the letter text. After `lock_session!` on
+  sam_pc: `GET /container/sam_pc` -> 403 `no_session`, `GET /container/scanned_inbox` -> 404
+  not found. Same shape as the signed-out state.
+- Client flow via the playtest harness and the window.__test bridge: the game loaded the
+  locked session from the server (the reload case), opening sam_pc showed the sign-in screen
+  with Sam pre-chosen (password field only, a Change control); a wrong password kept the lock
+  (server session still `locked:true`); the right password opened the desktop (ContainerMinigame)
+  and cleared the lock (server session back to `{id sam, via password}`).
+
 ## Handover
 
-- Done: server lock (`locked` on the session record), `POST /lock_session`, capability flag,
-  client `lockSession`/`isLocked`/`lockingSupported`, pre-chosen sign-in on a locked open,
-  Rails + node tests.
-- Open: live browser proof on :3465.
+- Done: the lock is now a real server boundary (re-auth gate); every read path refuses a locked
+  PC through `session_identity`; `lock_session!` refuses non-password sessions 422; client
+  `canLock` + `lockSession` guard; `sessionLockingSupported` gated on a sign-in PC existing;
+  Rails + node tests; forged-request and client-flow live proof on :3467. Committed at
+  `788395b13`. Server stopped by PID; harness session closed.
+- Open: nothing from the two reviews. The start-panel UI that calls `canLock`/`lockSession` is
+  built on another branch (out of this diff); it should read `pcSessions.canLock(pcId)` to
+  decide whether to show Lock.
 - Gotchas: a new member action needs `set_game` AND `with_game_lock` AND a `GamePolicy`
   predicate, or it 500s. `locked` is added to the sessions answer only when true, so the
-  existing exact-equality scenario tests still pass.
+  existing exact-equality scenario tests still pass. `session_for_client` reads the raw session
+  record (not `session_identity`), so gating `session_identity` for locked sessions does not
+  affect the scenario answer or reload. Guest sessions are `via: 'claim'` on the server, so the
+  non-password guard covers them.
