@@ -264,6 +264,14 @@
     min-height: auto;
 }
 
+/* A full-window console's game area fills the window exactly. Its 20px top and bottom margins
+   used to spill evenly off both edges of the centred shell; now the shell centres safely and
+   scrolls (UI shell build), they would push the console 20px down and past the bottom. */
+.minigame-controls-overlay > .minigame-game-container {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 .minigame-button {
     background: #3498db;
     color: white;
