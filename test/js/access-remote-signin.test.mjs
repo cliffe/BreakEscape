@@ -38,6 +38,8 @@ put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
 copy('utils/computer-keywords.js');
+copy('utils/pc-monitor.js');
+copy('utils/npc-headshot.js');
 copy('utils/author-html.js');
 put('systems/inventory.js',
     'export async function addToInventory() { return { ok: true }; }\n' +

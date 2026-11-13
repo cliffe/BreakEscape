@@ -26,6 +26,8 @@ put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
 copy('utils/computer-keywords.js');
+copy('utils/pc-monitor.js');
+copy('utils/npc-headshot.js');
 copy('utils/author-html.js');
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js',
@@ -119,9 +121,14 @@ test('the desktop loads from container for the session and names the account, wi
     assert.match(document.querySelector('.desktop-account-bar').textContent.replace(/\s+/g, ' '), /Signed in as Ian Shaw \(ishaw\)/);
     assert.ok(document.getElementById('desktop-switch-user'));
     assert.ok(document.getElementById('desktop-sign-out'));
-    // the account bar sits above the observations
-    const info = document.querySelector('.container-info');
-    assert.ok(info.querySelector('.desktop-account-bar').compareDocumentPosition(info.querySelector('p')) & window.Node.DOCUMENT_POSITION_FOLLOWING);
+    // the account bar sits above the observations: in the PC monitor (UX slice 2c) the bar
+    // is the screen's top bar and the observations are in the taskbar under the icons
+    const bar = document.querySelector('.pc-desktop-topbar .desktop-account-bar');
+    const note = document.querySelector('.desktop-taskbar .desktop-taskbar-note');
+    assert.ok(bar && note, 'top bar and taskbar note');
+    assert.ok(bar.compareDocumentPosition(note) & window.Node.DOCUMENT_POSITION_FOLLOWING);
+    assert.ok(document.querySelector('.pc-monitor .pc-monitor-screen .desktop-account-bar'), 'the bar is on the monitor screen');
+    assert.equal(document.querySelector('.pc-monitor-name').textContent, mg.containerItem.scenarioData.name, 'the PC name on the chin');
     assert.deepEqual(events.filter(([n]) => n === 'pc_desktop_opened').map(([, d]) => d),
         [{ pcId: 'hot_desk', npcId: 'ian', via: 'password', restored: false }]);
     assert.deepEqual(mg.getTestState().signedInAs, { username: 'ishaw', displayName: 'Ian Shaw' });

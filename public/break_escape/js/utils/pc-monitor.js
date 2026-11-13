@@ -41,6 +41,9 @@ export const PC_BEZEL = Object.freeze({
 export const PC_POSTIT_INSET = Object.freeze({ full: 24, compact: 12 });
 export const PC_POSTIT_GAP = 4;
 
+/** The bezel's outline and the screen's rim, both 2px (css/pc-monitor.css). */
+export const PC_FRAME_EDGE = 2;
+
 const even = (v) => Math.max(0, Math.floor(v / 2) * 2);
 
 /**
@@ -55,8 +58,9 @@ export function pcMonitorMetrics(viewW, viewH) {
     const vh = Math.max(0, Math.floor(Number(viewH) || 0));
     const compact = vw < PC_COMPACT_BELOW || vh < PC_COMPACT_BELOW;
     const bezel = compact ? PC_BEZEL.compact : PC_BEZEL.full;
-    const availW = Math.max(0, vw - 2 * bezel.gutter - 2 * bezel.side);
-    const availH = Math.max(0, vh - 2 * bezel.gutter - bezel.top - bezel.chin - bezel.hang);
+    const edges = 4 * PC_FRAME_EDGE;
+    const availW = Math.max(0, vw - 2 * bezel.gutter - 2 * bezel.side - edges);
+    const availH = Math.max(0, vh - 2 * bezel.gutter - bezel.top - bezel.chin - bezel.hang - edges);
 
     // Landscape space: a 16:10 screen. Portrait space (a phone held upright): a portrait
     // monitor that follows the space, no taller than 3:4.
@@ -71,15 +75,19 @@ export function pcMonitorMetrics(viewW, viewH) {
     width = even(width);
     height = even(height);
 
-    const outerW = width + 2 * bezel.side;
-    const outerH = height + bezel.top + bezel.chin;
+    // The bezel's 2px outline and the screen's 2px rim on each side (css/pc-monitor.css)
+    const outerW = width + 2 * bezel.side + 4 * PC_FRAME_EDGE;
+    const outerH = height + bezel.top + bezel.chin + 4 * PC_FRAME_EDGE;
     const left = Math.max(0, Math.floor((vw - outerW) / 2));
     const top = Math.max(0, Math.floor((vh - outerH - bezel.hang) / 2));
     const inset = compact ? PC_POSTIT_INSET.compact : PC_POSTIT_INSET.full;
+    // The screen's bottom edge on the frame: the bezel's 2px outline, the strip, the rim,
+    // the screen and the rim again
+    const screenBottom = 3 * PC_FRAME_EDGE + bezel.top + height;
     const postit = {
         left: bezel.side + inset,
-        top: bezel.top + height + PC_POSTIT_GAP,
-        maxWidth: Math.max(120, Math.min(260, Math.floor(outerW * 0.45)))
+        top: screenBottom + PC_POSTIT_GAP,
+        maxWidth: Math.max(120, Math.min(340, Math.floor(outerW * 0.45)))
     };
     return { compact, bezel, screen: { width, height }, width: outerW, height: outerH, left, top, postit };
 }

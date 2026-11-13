@@ -894,10 +894,11 @@
     height: 32px;
 }
 
-/* A share's folder window on the screen: it fills the screen less a margin of wallpaper */
+/* A share's folder window on the screen: maximised, so no wallpaper shows and it never reads
+   as another PC's desktop (slice 2a, main3-08) */
 .pc-monitor .share-folder-layout.pc-share {
     height: 100%;
-    padding: 12px;
+    padding: 0;
     box-sizing: border-box;
 }
 
@@ -922,9 +923,6 @@
     text-overflow: ellipsis;
 }
 
-.pc-monitor[data-compact] .share-folder-layout.pc-share {
-    padding: 6px;
-}
 
 .pc-monitor[data-compact] .container-contents-grid.share-folder-files {
     min-height: 0;

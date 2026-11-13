@@ -152,6 +152,17 @@ test('the password device panel shows a hostile lockable name as text (lockable 
     const lockable = { texture: { key: 'pc' }, scenarioData: { name: HOSTILE, observations: HOSTILE } };
     const mg = new PasswordMinigame(fresh(), { title: 'Enter password', lockable, requiresKeyboardInput: true });
     initQuietly(mg);
+    // A computer's lock sits in the PC monitor frame (UX slice 2c): the name on the chin,
+    // the observations on the screen, no device picture
+    assertText(document.querySelector('.pc-monitor-name'), 'password lockable name (monitor chin)');
+    assertText(document.querySelector('.pc-screen-note'), 'password lockable observations (screen note)');
+    assert.equal(document.querySelector('img.password-image'), null, 'no device picture in the monitor');
+});
+
+test('the password device panel shows a hostile lockable name as text (a non-computer lockable)', () => {
+    const lockable = { texture: { key: 'safe' }, scenarioData: { type: 'safe', name: HOSTILE, observations: HOSTILE } };
+    const mg = new PasswordMinigame(fresh(), { title: 'Enter password', lockable, requiresKeyboardInput: true });
+    initQuietly(mg);
     assertText(document.querySelector('.password-info h4'), 'password lockable name');
     assertText(document.querySelector('.password-info p'), 'password lockable observations');
     assertAttr(document.querySelector('img.password-image'), 'alt', 'password lockable image');
@@ -217,8 +228,9 @@ test('the container panel shows a hostile name and observations as text (desktop
     const mg = new ContainerMinigame(fresh(), { containerItem, contents: [], mode: 'pc', desktopMode: true });
     await initQuietlyAsync(mg);
     assert.ok(document.querySelector('.desktop-mode'), 'desktop mode rendered');
-    assertText(document.querySelector('.container-info h4'), 'desktop panel name');
-    assertText(document.querySelector('.container-info p'), 'desktop panel observations');
+    // In the PC monitor (UX slice 2c): the name on the chin, the observations in the taskbar
+    assertText(document.querySelector('.pc-monitor-name'), 'desktop monitor name');
+    assertText(document.querySelector('.desktop-taskbar-note'), 'desktop taskbar observations');
 });
 
 test('the lockpicking item panel shows a hostile item name as text', () => {

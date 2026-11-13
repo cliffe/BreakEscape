@@ -52,7 +52,6 @@
     position: absolute;
     box-sizing: content-box;
     overflow: hidden;
-    margin: -2px 0 0 -2px;
     border: 2px solid #111111;
     background-color: #1e3a28;
     background-image: url('../assets/mini-games/desktop-wallpaper.png');
@@ -86,7 +85,7 @@
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
-    padding: 0 calc(var(--pc-bezel-side, 20px) - 2px);
+    padding: 0 var(--pc-bezel-side, 20px);
     box-sizing: border-box;
 }
 
@@ -148,12 +147,21 @@
     font-size: 12px;
 }
 
+/* The theme's thin button skin, so a chin button fits inside the chin (the full skin's
+   12px edges made it taller than the chin) */
+[data-ui-theme] .pc-monitor-controls .minigame-button {
+    border-width: var(--ui-small-button-px);
+    border-image-source: var(--ui-small-button-image);
+    border-image-slice: var(--ui-small-button-slice) fill;
+    border-image-width: var(--ui-small-button-px);
+}
+
 /* The X in the bezel's top strip, its right edge over the screen's right edge, so it is
    inside the frame and never on the screen */
 .pc-monitor-bezel > .minigame-close-button.pc-monitor-close {
     position: absolute;
     top: calc((var(--pc-bezel-top, 38px) - 30px) / 2) !important;
-    right: calc(var(--pc-bezel-side, 20px) - 2px) !important;
+    right: var(--pc-bezel-side, 20px) !important;
     left: auto;
     margin: 0;
     z-index: 5;

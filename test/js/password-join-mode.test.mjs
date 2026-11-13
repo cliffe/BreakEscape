@@ -24,6 +24,8 @@ put('utils/helpers.js', 'export function makeDraggable() {}\n');
 copy('utils/escape-html.js');
 copy('utils/lock-scope-refusal.js');
 copy('utils/computer-keywords.js');
+copy('utils/pc-monitor.js');
+copy('utils/npc-headshot.js');
 copy('utils/display-dashes.js'); // the real module, so the header's escapeHtml(displayDashes(...)) is exercised as it ships
 copy('minigames/framework/base-minigame.js');
 copy('minigames/password/password-minigame.js');
