@@ -129,3 +129,12 @@ and the threading scope is understated for Chunk B. Fix MAJOR-1 (full call tree 
 `scenario_data`-only reload), tighten the "nothing can be taken" caveat to the vectors actually
 checked or add the validator guard (MAJOR-2), and resolve the four minors. With those, the plan is
 buildable chunk by chunk with tests and live proofs that would catch a broken live path.
+
+## Outcomes
+
+- MAJOR-1 (B2 scenario threading): fixed. Confirmed in code that `complete_task!` reads `scenario_data` in five unconditional sites (`initialize_objectives`, `find_task_in_scenario`, `apply_task_set_globals!`, `check_aim_completion`, `recheck_pending_mission_conclusions!`). Plan now replaces per-call threading with a `scenario_data`-only load via `stored_scenario_data`, set on the record once per request and only when a credit is about to fire; confirmed no clobber (the sync merge lives in `player_state`, not `scenario_data`); cost is zero on a non-crediting sync.
+- MAJOR-2 ("nothing can be taken"): fixed. Confirmed loose pickup (`:2661-2666`) and `update_room` (`:1008`) are room-gated, but the container-unlock branch, `submit_flag` and `login` are not gated on the containing room (the `:1897` gate is `vm_panel`). Caveat narrowed to loose collectibles; added a validator error forbidding any secret-bearing object (locked container, flag/launch station, login PC) in a split gated room.
+- m1 (hard-rfid coupling at the credit site): fixed. Build split now states the viaCredential write is blocked until `build/hard-rfid` lands and describes the required behaviour (ignore client `card_ids`, read held cards/live clones from server state, refuse a `requires`-only lock held by a non-holder); removed the prerequisite-branch line citations.
+- m2 (runtime split predicate): fixed. §3.1 now defines the model-side predicate (server-owned pass, or mere presence of an `rfid_cloner`), notes over-split is safe, and leaves reachability to the validator.
+- m3 (line drift): fixed. Transaction corrected to `games_controller.rb:1137`, `serve_opened_room` to `:1139`.
+- m4 (migration anchor): fixed. §9 pins the all-split-rooms demotion scan to the game `show` action (`:193`), not the per-room `GET`.

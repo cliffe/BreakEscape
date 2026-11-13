@@ -80,11 +80,12 @@ passes, and one unprovable case:
   `return !rfid_requires_revoked?(lock)` (`game.rb:2541`), which is **true for a player holding
   nothing**, and the clone POST sends no `card_ids` (`doors.js:684-693`). So the shipped rfid
   validation proves no possession; it cannot carry the credential credit on its own. This path is
-  therefore a **prerequisite** path: it depends on branch `build/hard-rfid`, which hardens
-  `rfid_lock_passes?` for every rfid lock, including a `requires`-only lock, so that it returns true
-  only when the server confirms the player provably holds a keycard or a live clone whose `card_id`
-  is in the lock's `requires`, read from server-held inventory and `serverClones` honouring
-  `rfid_cloner_held?` (`game.rb:2449,2457,2465,2491`), never from a client field. The lab's
+  validation proves no possession; it cannot carry the credential credit on its own. The credential
+  credit therefore depends on `build/hard-rfid` landing first (see **Prerequisite** above). The
+  behaviour this path needs from that branch: for a `requires`-only rfid lock, `rfid_lock_passes?`
+  returns true only when the server confirms the player provably holds a keycard or a live clone
+  whose `card_id` is in the lock's `requires`, reading held cards and live clones from server-held
+  state and ignoring the client-sent `card_ids` (the clone unlock POSTs none). The lab's
   `cm_records_badge` is reachable through an `rfid_cloner`; `test_gate_tailgate`'s `test_staff_badge`
   likewise. viaCredential credits only when that server possession check has passed (§3.3b).
 - **Server-owned pass global.** `playerMayPassIf` names a global the server owns, so its truth
@@ -119,6 +120,16 @@ and keeps the saved `currentRoom` in step with the avatar so there is no snap-ba
   - `split_gated_door?(room_id)` (door-keyed, attempt-independent): true when the room's door has a
     `gate.openFor` and the split condition holds. Selects the credential branch (3.3b), where the
     `method: rfid` unlock carries `attempt: null` and the NPC-keyed helper would never match.
+- **The runtime split predicate, model-side.** Both helpers run in the model, so they must not
+  reimplement the validator's full card/cloner reachability pass. The runtime test is the simplest
+  safe one: a gate splits when its `playerMayPassIf` is a server-owned global, **or** the scenario
+  contains an `rfid_cloner` object at all (presence is enough; the model does not trace whether a
+  specific card is reachable from it). This can over-split (mark a gate split when its particular
+  card is not in fact cloneable), but an over-split gate credits nothing it should not: the viaPass
+  credit still needs a true server-owned global and the viaCredential credit is still gated on the
+  possession check (§3.3b), so a wrongly split gate just keeps its room in `npcRouteRooms` until one
+  of those passes, exactly as a non-split gate would stay client-trusted. The validator (§11) owns
+  the sharper reachability check and warns the author; the model stays cheap and conservative.
 
 ### 3.2 Serving the room
 
@@ -126,8 +137,15 @@ and keeps the saved `currentRoom` in step with the avatar so there is no snap-ba
   `npcRouteRooms`, so Len's own passage and an honest player who walks up to the room still load
   it. The accessibility check at `:533` gains the second list. A served room is not an earned
   room: this exposes the route room's objects and NPCs to an un-promoted (possibly tampered)
-  client, which is the accepted caveat that a gate keeps a player out, not a secret. Collection
-  stays blocked (3.3), so nothing can be taken.
+  client, which is the accepted caveat that a gate keeps a player out, not a secret. **Loose
+  collectibles stay blocked** (3.3): the pickup path refuses an item in a locked room not in
+  `unlockedRooms` (`games_controller.rb:2661-2666`) and `update_room` is gated on `room_unlocked?`
+  (`:1008`), so no loose item in the route room can be taken. The guarantee is narrowed to loose
+  collectibles on purpose: the other take/read vectors (container unlock, flag submission, sign-in)
+  are not gated on the *containing* room being in `unlockedRooms`, so the plan does not rely on them
+  being blocked by this list. Instead the validator forbids any secret-bearing object in a split
+  gated room, so such an object can never be authored into a served-but-unearned room (§11). The lab's
+  `secure_area` holds no locked container, flag station or login PC, so nothing leaks there today.
 - The auto-unlock on room access (`games_controller.rb:539-541`) must not promote an
   `npcRouteRooms`-only room. Its guard at `:539` is `if !is_unlocked`, and `is_unlocked` at `:526`
   reads only `unlockedRooms`, so without a change it would append the route room to `unlockedRooms`
@@ -159,29 +177,47 @@ designed.
 
 `sync_state` loads the row with `SYNC_STATE_COLUMNS` only (`games_controller.rb:2022`, no
 `scenario_data`), so **every** scenario read on this path raises `ActiveModel::MissingAttributeError`.
-This is not limited to reading the gate blob. The viaPass credit, once the pass check is to run,
-calls in order: the guard `!room_unlocked?(room_id)` -> `start_room?` -> `scenario_data['startRoom']`
-(`game.rb:122-127`); then `complete_task!(..., trusted: true)` -> `find_task_in_scenario` ->
-`scenario_data['objectives']` (`game.rb:5217`), plus `check_aim_completion` (`game.rb:5361`). Each of
-those reads the bare `scenario_data` column, so a `pick` for the gate blob alone does not save them.
+This is not limited to reading the gate blob. The viaPass credit runs the whole `complete_task!` call
+tree, and that tree reads `scenario_data` in five places, every one of them unconditional:
 
-The fix is the one the capture path already uses on this same narrow sync row: fetch the scenario
-**once** through the existing `stored_scenario_data` single-source helper (`game.rb:797-806`, which
-reads the loaded attribute on a full load and does one `pick` on the sync row) and **thread it as a
-`scenario:` keyword** into every scenario-consuming call on the promotion path, mirroring
-`record_capture!(entry, scenario: scenario)` (`games_controller.rb:923`) and
-`migrate_legacy_captures!(scenario:)` (`:919`). Concretely: the pass check reads `playerMayPassIf`
-and `creditOnPass.viaPass` from that scenario; the `room_unlocked?`/`start_room?` guard, the
-`creditOnPass` task completion and the aim check take the injected scenario rather than reading the
-column. This is the cheaper and safer of the two options over a full-row reload: a mid-merge reload
-would discard the in-flight `player_state` merge that `sync_state` is still building, whereas the
-injection reuses an established one-source mechanism, touches scenario reads only on the promotion path,
-and runs its single `pick` only when a promotion is actually pending (not on every sync). SYNC SIZE
-is unchanged: the scenario is server-held, read-only, and never part of the client payload (§8).
+- the promotion guard `!room_unlocked?` -> `start_room?` -> `scenario_data['startRoom']`;
+- `complete_task!` -> `initialize_objectives`, whose first line reads `scenario_data['objectives']`;
+- `complete_task!` -> `find_task_in_scenario` -> `scenario_data['objectives']`;
+- `complete_task!` -> `process_task_completion` -> `apply_task_set_globals!` -> `scenario_data['globalVariables']`
+  (whenever the credited task has an `onComplete.setGlobal`);
+- `complete_task!` -> `check_aim_completion` -> `scenario_data['objectives']`, and the sibling
+  `recheck_pending_mission_conclusions!` -> `scenario_data['objectives']`, both called inside
+  `complete_task!`.
+
+So a `pick` for the gate blob alone, or threading the scenario into the guard and a couple of named
+calls, still raises in `initialize_objectives` before any credit is written.
+
+The fix is a **`scenario_data`-only load on the sync path**, done once per request and only when a
+credit is about to fire. The moment the pass check decides to promote (room in `npcRouteRooms`, not
+in `unlockedRooms`, and the server-owned `playerMayPassIf` is true), fetch the scenario once through
+the existing `stored_scenario_data` single-source helper (`game.rb:797-806`, which reads the loaded
+attribute on a full load and does one `pick` on the sync row) and set it on the in-memory record
+before the credit runs, so every `scenario_data` read in the call tree above resolves normally with
+no per-call keyword threading. Clear the attribute's dirty state after setting it (it is immutable
+and identical to the stored value) so the record's `save!` does not rewrite the large `scenario_data`
+column; the write stays narrow (`player_state` and the stat columns), as a plain sync.
+
+This cannot clobber the in-flight merge. `sync_state` builds its result entirely in `player_state`
+(`merge_last_write_wins_sections` mutates `player_state['currentRoom']`, `merge_global_variables!`
+writes `player_state['globalVariables']`, and so on); `scenario_data` is a different attribute that
+the merge never touches and never reads back. Setting `scenario_data` adds nothing to and removes
+nothing from the merge being built.
+
+Cost per sync: **zero on a sync that credits nothing**. The `stored_scenario_data` fetch is reached
+only after the promotion decision is made, so a sync with no `currentRoom` for a route room, or one
+whose pass check fails, issues no extra query and reads no scenario. On the rare crediting sync it is
+one `pick` of `scenario_data`, read-only and server-held; with the dirty state cleared the follow-up
+`save!` carries the same columns a normal sync would. SYNC SIZE is unchanged: the scenario is never
+part of the client payload (§8).
 
 #### 3.3b Credential path, in the `unlock` action
 
-In the `unlock` action's door branch (`games_controller.rb:1139-1148`), select the credential path
+In the `unlock` action's door branch (`serve_opened_room` call at `games_controller.rb:1139`), select the credential path
 with the door-keyed `split_gated_door?(target_id)`, independent of `attempt`. Credit viaCredential
 only when the **server possession check passes**: the player provably holds a keycard or a live
 clone whose `card_id` is in the door's `requires`. That check is `rfid_lock_passes?` as hardened by
@@ -195,7 +231,7 @@ same possession result so the two cannot drift. When possession passes and the r
 steps are the `creditOnPass.viaCredential` write, the `npcRouteRooms` delete, and a `save!` after
 the credit write (a `viaCredential` block that sets a global but completes no task would otherwise
 not persist, since only `complete_task!` saves at its tail). All of this sits inside the existing
-`ActiveRecord::Base.transaction` opened at `games_controller.rb:1141`, so a mid-write failure rolls
+`ActiveRecord::Base.transaction` opened at `games_controller.rb:1137`, so a mid-write failure rolls
 back the credit, the room unlock and the list delete together. This credits the clone the moment the
 server validates the badge, whether or not Len's route has already recorded the room, and covers
 `test_gate_tailgate`'s `test_staff_badge` unlock.
@@ -277,10 +313,14 @@ could never reach must be refused; and hardening must never block a student play
   through the server-checked passage (section 7).
 - **Best effort (control-flow only).** The physical gate animation, the avatar's position, and the
   no-vest slip-in stay client-driven. A tampered client can still place the avatar inside the room
-  and read the route room's objects; it still cannot *take* anything (collection reads
-  `unlockedRooms`) or earn the finding. This is the accepted "a gate keeps a player out, not a
-  secret" line: an honest player always reaches the room the intended way (wear the hi-vis, or clone
-  the badge), and a cheat saves at most the walk, not the earn.
+  and read the route room's objects; it still cannot take a **loose collectible** (pickup reads
+  `unlockedRooms`, `games_controller.rb:2661-2666`) or earn the finding. The other take/read vectors
+  (container unlock, flag submission, sign-in) are not gated on the containing room, so this plan does
+  not lean on them being blocked here; instead the validator keeps any secret-bearing object out of a
+  split gated room (§11), so there is nothing in such a room for those vectors to serve. This is the
+  accepted "a gate keeps a player out, not a secret" line: an honest player always reaches the room
+  the intended way (wear the hi-vis, or clone the badge), and a cheat saves at most the walk, not the
+  earn.
 
 ## 6. Which scenarios use gated doors, and how each keeps working
 
@@ -395,11 +435,15 @@ derivation whose size is fixed by the scenario, none of them part of the client-
   unlock). A player who already earned it (credit global true) is left in `unlockedRooms`,
   untouched.
 - **Migration trigger and ordering.** The demotion reads the scenario, so pin it to a request that
-  already holds the full row and runs before the first collection or `currentRoom` sync: the room
-  `GET` / game show (`games_controller.rb:506`, `:193`). It must run **before** that request's own
-  auto-unlock block (`:539-541`), whose `if !is_unlocked` reads only `unlockedRooms` (`:526`), or the
-  same `GET` would re-append the room it just removed. Do not wire it to `sync_state`, which loads
-  the row without `scenario_data` and is often the first request after deploy.
+  already holds the full row and runs before the first collection or `currentRoom` sync. Run the
+  all-split-rooms scan in the game `show` action (`games_controller.rb:193`), which is room-agnostic
+  and loads the full row, so it sees every split room in one pass before its own state writes. Do
+  **not** scope it to the per-room `GET room/<id>` (`:506`): that request carries one room id, so
+  wiring the scan there would miss a split room the player is not currently loading. When the scan
+  does run on a request that then serves a room, it must run **before** that request's auto-unlock
+  block (`:539-541`), whose `if !is_unlocked` reads only `unlockedRooms` (`:526`), or the same `GET`
+  would re-append the room it just removed. Do not wire it to `sync_state`, which loads the row
+  without `scenario_data` and is often the first request after deploy.
 
 ## 10. Reload, slow client, offline client
 
@@ -435,6 +479,16 @@ Validator (`scripts/validate_scenario.rb`):
   read-only). Warn if a credit global still has a client `setGlobal` mapping writing it (a half-done
   migration). Warn if a `creditOnPass.completeTask` task is not in the server-completed-only set
   (section 7).
+- **No secret-bearing object in a split gated room (error).** A served route room is readable by an
+  un-promoted client before the pass is earned, and the server does not gate container unlock, flag
+  submission or sign-in on the *containing* room being in `unlockedRooms` (only loose-item pickup and
+  `update_room` are, `games_controller.rb:2661-2666`, `:1008`). So a split gated room must not hold a
+  locked container, a flag or launch station, or a sign-in PC: any of these could leak its secret or
+  be submitted/claimed from a served-but-unearned room. For every split gated door's `connectedRoom`,
+  fail if the room contains an object that is a locked container, a `flagStation`/launch device, or a
+  `loginPc`. This keeps the guarantee structural: an author cannot place a secret behind a tailgate
+  gate, so the un-gated take/read vectors have nothing to serve there. (Loose collectibles are allowed:
+  they stay blocked by the pickup room check.)
 - The dungeon-graph edge for a split gated door should read "gated: credential or server pass". The
   generator's gate-label block (`scripts/generate_dungeon_graph.rb:489-508`) only labels a gate that
   has a `noHold` and skips any gate with a `playerMayPassIf` (`:498-500`), so the lab's gate gets no
@@ -450,9 +504,12 @@ Rails (`test/controllers/break_escape/`, `test/models/break_escape/`), one each:
    NOT in `unlockedRooms`, no credit global, `tailgate_in` incomplete. (The designed slip-in.)
 2. `POST /wear` the hi-vis, then `sync currentRoom: secure_area`: promoted to `unlockedRooms`,
    `kp_badge_tailgated` server-true, `tailgate_in` complete. This runs the whole viaPass credit on
-   the narrow sync row (no `scenario_data` column), so it proves the scenario-injection fix: the
-   guard, the credit and the aim check all take the scenario fetched via `stored_scenario_data`, and
-   none raises `MissingAttributeError`.
+   the narrow sync row (no `scenario_data` column), so it proves the `scenario_data`-only load: with
+   the scenario fetched once via `stored_scenario_data` and set on the record before the credit, the
+   guard, `initialize_objectives`, `find_task_in_scenario`, `apply_task_set_globals!`,
+   `check_aim_completion` and `recheck_pending_mission_conclusions!` all read it, and none raises
+   `MissingAttributeError`. Assert the saved row still carries `currentRoom` and the merged globals
+   (the in-flight `player_state` merge was not clobbered).
 3. Hold the cloned `cm_records_badge`, no hi-vis, `POST /unlock method: rfid` on the records door
    (with `build/hard-rfid` in the tree): credited via `viaCredential`, `kp_records_cloned`
    server-true, `tailgate_in` complete, before and without any `method: npc` route having run.
@@ -476,10 +533,10 @@ Rails (`test/controllers/break_escape/`, `test/models/break_escape/`), one each:
    refuses the unlock, and no promotion or credit follows. (As shipped, before `build/hard-rfid`,
    this lock trusts a non-holder; the test asserts the hardened behaviour.)
 9. Migration: seed a game with `secure_area` in `unlockedRooms`, every credit global false,
-   `tailgate_in` incomplete, credit writers removed: a `GET room/secure_area` moves the room back
-   into `npcRouteRooms`, sets `routeRoomsMigrated`, and that request's auto-unlock does not re-add
-   it; wearing the hi-vis and entering then credits it. A second seeded game with the credit already
-   true is left in `unlockedRooms`, untouched.
+   `tailgate_in` incomplete, credit writers removed: the game `show` demotion scan moves the room
+   back into `npcRouteRooms`, sets `routeRoomsMigrated`, and a following `GET room/secure_area`
+   auto-unlock does not re-add it; wearing the hi-vis and entering then credits it. A second seeded
+   game with the credit already true is left in `unlockedRooms`, untouched.
 10. `GET room` on a route room (not migrated) leaves `unlockedRooms` unchanged (the auto-unlock
    guard, 3.2).
 
@@ -503,12 +560,17 @@ unlock. The tampered step is the proof the fix bites. Record game ids in the bui
   `split_gated_door?` helpers; the `unlock` action route-room branch (3.5); `GET room` and
   auto-unlock changes (3.2); `currentRoom` acceptance for route rooms (3.3a, acceptance only). Rails
   tests 1, 6, 10. No credit yet.
-- **Chunk B: the credit, server-owned.** Prerequisite: `build/hard-rfid` is in the tree before the
-  credential write. `creditOnPass` schema; `serverCreditGlobals` derivation and read-only union
-  (3.4); `write_server_globals!` credit write; the `viaPass` check on `currentRoom` with the
-  scenario-injection fix threading `stored_scenario_data` through the guard/credit/aim calls (3.3a,
-  B2); the `viaCredential` write in the `unlock` action gated on the hardened possession check (3.3b,
-  B1). Rails tests 2, 3, 3b, 4, 7, 8.
+- **Chunk B: the credit, server-owned.** `creditOnPass` schema; `serverCreditGlobals` derivation and
+  read-only union (3.4); `write_server_globals!` credit write; the `viaPass` check on `currentRoom`
+  with the `scenario_data`-only load (fetch via `stored_scenario_data` once, only when a credit is
+  about to fire, set on the record so the whole `complete_task!` call tree reads it; 3.3a, B2). Rails
+  tests 2, 4, 7. **The credential write (viaCredential, 3.3b) is blocked until `build/hard-rfid`
+  lands** and must not be built before it: the clone unlock POST sends no `card_ids`, so the credit
+  can only be gated on real possession once the hardened `rfid_lock_passes?` reads held cards and live
+  clones from server state and returns false for a `requires`-only lock held by a non-holder. The
+  builder confirms that hardened behaviour in the merged branch, then wires the viaCredential credit
+  to the same possession result (3.3b, B1) and adds Rails tests 3, 3b, 8. If `build/hard-rfid` has
+  not landed, ship Chunk B's viaPass half and hold viaCredential (see Q2).
 - **Chunk C: server-completed tasks.** `serverCompletedOnly` set; the `complete_task!` and
   `skip_task!` guards; the `trusted:` keyword (section 7). Rails tests 5, 5b, 5c.
 - **Chunk D: scenario migration and lab edits.** Add `creditOnPass` to the lab gate; remove the
