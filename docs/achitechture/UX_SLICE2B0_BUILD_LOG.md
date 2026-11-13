@@ -46,3 +46,29 @@ No scroller inside the monitor and no horizontal overflow in any shot (measured 
 
 - Showing the target PC's own account tiles over the network (the PC's `loginPicker` stays ignored for a remote screen; `picker: false` and `tiles: []` are still passed by `openRemoteSignInScreen`).
 - Any policy field for what a remote screen may show.
+
+## Round 1 fixes
+
+Review: `UX_SLICE2B0_REVIEW_R1.md` (B 0, M 2, m 3, n 4).
+
+**Merge.** main f956f5355 merged into the branch (b165f8fbb), no rebase. No conflicts.
+
+**M1, revealSecret.** `test_access_networks` no longer reveals captured secrets: `social.captures.revealSecret` is now `false`. The two lobby capture cards stay, so the tiles still have something to show. A captured tile fills only the username, and the password is still typed from its earned source: P5 still needs the letter, P8 still needs the handover note. `/capture_secrets` returns an empty `secrets` map with the flag off (`Game#capture_secrets_for_client`), so no password can fill unless an earned source served it. Live, every run's test state shows `fillsPassword: false` for both tiles and an empty password field once a tile is chosen. PLAYTEST.md says so.
+
+Validator: 0 ❌, and the same 7 warnings as main. Removing the flag outright brought in two new warnings ("NPC 'lena' / 'ian' has a capture route ... but social.captures.revealSecret is not set"). These are not the forged-capture warnings that `captureProof` covers; they flag a missing switch. The validator now warns only when the key is absent, so an explicit `revealSecret: false` counts as a choice and is not warned about (`scripts/validate_scenario.rb`, test in `validator-access-model.test.mjs`). No other scenario sets the key to false, so no other output changes.
+
+**M2, loading.** While `/capture_secrets` loads, the remote screen shows the heading with "Checking..." under it: no form, no "Choose an account." line, and no focus on any field (`other` starts false). When the list arrives the screen decides once: the tiles, or with none the typed form, which takes focus at that point. A player already in the typed form keeps it, and focus in a field now counts as typing. Tests: no focused field while loading; tiles arriving leave no field focused; an empty list shows the form and focuses Username only then; focus with nothing typed keeps the form.
+
+**m1, empty state.** Kept the line and moved it below the form, as one line: "Captured sign-ins: none yet." The form comes first, and the line still tells the player that captured sign-ins exist and will show up here, which the form alone does not. The block moves above the form while it is loading or holds tiles (`placeCapturedBlock`, `data-state` on the block).
+
+**m2, selection.** One loop over every `.signin-tile` asks `signInTileSelected`, which owns the rule for both the PC's own tiles and the captured ones. Nothing depends on loop order now.
+
+**m3, live proof.** Keyless server on :3060, new games of `test_access_networks`, scrollbars shown (15px measured in each run), physics `setFPS(20)` with fixed steps. `/capture_secrets` held back 6 s by wrapping `ApiClient.get` in the page, so the loading state could be shot. Games 3205 (800x600), 3197 (915x412, DPR 3, touch), 3198 (1400x1000), 3199 (390x844, DPR 3, touch). States: `empty`, `loading`, `tiles`, `lena-chosen`, `ian-chosen`, `ian-refused` (Ian's password typed as if read from the handover note; "This account can't sign in on this PC."). Shots in the session scratchpad `r1f2b0/shots/<state>__<size>.png`. Measured in every shot: no scroller inside the monitor, nothing outside the screen area, no horizontal page scroll; focus on `body` in loading and tiles, on Username in empty, on Password once a tile is chosen.
+
+**Nits.**
+- n1: `.signin-captured-item` removed from `css/network-view-minigame.css`.
+- n2: the "Captured sign-ins" heading and "Checking..." are centred over the tile row.
+- n3: left. At 390x844 the Other user tile wraps to four lines and stretches the row; the keyboard screen does the same, so it belongs to the shared tile module.
+- n4: at 800x600 (scale 1, no `data-short`) the tile row stays visible after a tile or Other user is chosen. Nothing folds there, as on the keyboard screen; this is expected, not a missed fold.
+
+**Tests.** `password-signin-mode` 61 pass. Every JS test that imports `password-minigame.js`, the two CSS files, `test_access_networks` or `validate_scenario.rb` (76 files): 1183 pass, 0 fail. Rails `sync_payload_size_test.rb`, `format_8a_corpus_test.rb` and `scenario_schema_test.rb`: 37 runs, 0 failures.
