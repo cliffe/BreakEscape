@@ -238,4 +238,42 @@ redesign is needed and no blocker remains.
 
 ## Outcomes
 
-(To be completed by the orchestrator when folding R8 into the plan.)
+All five findings verified in the code at this tree and folded into the plan.
+
+- **major 1 (feed point mis-cited).** Confirmed: a plain offline drop returns
+  `{ success: false, transient: true }` from `serverCompleteTask` (`objectives-manager.js:1149`,
+  5xx `:1140-1142`), `serverCompleteTaskWithRetry` exhausts (`:607-625`) and the flow lands in the
+  `!response.success` branch `:687-694`, reverting at `:689`, not in the `:719-731` catch. §8.3 and
+  §14 Chunk F now key the enqueue on `response.transient === true` in the `:687-694` branch and on a
+  thrown error in the `:719-731` catch, naming `:687-694` as the dominant offline path. Live-proof
+  Case 3 now asserts the task entered the queue from the transient path.
+- **minor 1 (drop rule).** Confirmed the `enter_room` forge refusal carries `retryable: true`, so
+  "retryable absent" was wrong. The bound is now explicit: the queue is fed only by a transient or
+  thrown failure, and the drain re-runs `completeTask`, which re-adds the id only on a fresh transient
+  or thrown failure; a drained entry that returns any not-transient outcome (success, or a
+  `room_not_reachable` retryable refusal whose race the inline one-sync-one-repost path owns) is
+  dropped and never retries forever.
+- **minor 2 (no sync-success hook).** Confirmed `state-sync.js` `sync()` (`:598-605`) resolves to a
+  boolean via `_syncOnce` (`:618-671`) and fires no event/callback, and `ObjectivesManager` has no
+  subscription. Decision taken: do **not** add a hook to the shared module; drain from the `online`
+  listener plus the syncs `ObjectivesManager` already awaits (pre-flush `:613-615` and the inline
+  retryable re-sync), via a re-entry-guarded `drainEnterRoomQueue()`. The "next successful sync"
+  phrasing is removed. Reason: the `online` listener alone meets the reconnect requirement and the
+  change stays inside one file.
+- **minor 3 (conclude/end-screen).** Addressed: the drain removes the entry then re-runs
+  `this.completeTask(taskId)` (never a bare `serverCompleteTask`), so the full path at `:662-718`
+  (ending confirm, `missionConcluded` end screen, conclude-race `warning` pre-flush) still applies to
+  a task that ends a mission. Added a node test: a queued `enter_room` completion that concludes a
+  mission triggers `handleMissionConcluded` on the drained re-post.
+- **minor 4 (reload-in-room self-heal + init replay).** Described accurately: `room_entered` fires on
+  the first `updatePlayerRoom` tick after a reload (`currentPlayerRoom` reset to `''`,
+  `rooms.js:103`/`:1038`; emit `:3178`/`:3200`), but if that tick precedes `ObjectivesManager` init
+  the single emit is dropped at the `!this.initialized` guard (`:551`, `initialized=true` at `:110`)
+  and only the next crossing completes it. Recommendation adopted: Chunk F adds a small, idempotent
+  **init replay** (after `:110`, if `window.currentPlayerRoom` is non-empty, call
+  `handleRoomEntered(window.currentPlayerRoom)` once), which closes the gap in both init/tick
+  orderings; the "next crossing" guarantee stays as the floor.
+
+Drain trigger chosen: `online` listener plus `ObjectivesManager`'s own awaited syncs, through
+`drainEnterRoomQueue()` re-running `completeTask`; no sync-success hook added. Init replay: yes,
+recommended and folded into Chunk F.

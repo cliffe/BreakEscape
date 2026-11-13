@@ -624,12 +624,18 @@ can pass; and if a tight race still loses it, the retryable refusal re-posts aft
 the slip-in completes without a bespoke ordering step.
 
 **A bounded in-memory re-send queue for offline and network failures.** The retryable re-post above
-heals an ordering gap within one request. A longer failure, the network drops or
-`serverCompleteTaskWithRetry` exhausts its roughly 2.25s transient backoff
-(`objectives-manager.js:607-625`), reverts the task to active (`objectives-manager.js:725`), and today
-the completion re-fires only when the avatar next crosses the room boundary. To cover the
-offline-then-reconnect case, `ObjectivesManager` keeps a small re-send queue of `enter_room`
-completions that failed for a transient or network reason:
+heals an ordering gap within one request. A longer failure needs the queue. A plain offline drop does
+not throw: `serverCompleteTask` catches the `fetch` rejection and returns
+`{ success: false, transient: true, error }` (`objectives-manager.js:1149`), and a 5xx returns the same
+shape (`:1140-1142`). `serverCompleteTaskWithRetry` loops four times over its roughly 2.25s backoff
+(150, 300, 600, 1200 ms; `:607-625`) and returns that transient object. Back in `completeTask`, a
+transient return lands in the `!response.success` branch (`:687-694`), which reverts the task to active
+at `:689` and alerts: this is the dominant offline path. The other feed is the thrown-error catch
+(`:719-731`), which reverts at `:725` and fires only when something in the `try` throws, not on a plain
+network drop. Today, after either revert, the completion re-fires only when the avatar next crosses the
+room boundary. To cover the offline-then-reconnect case, `ObjectivesManager` keeps a small re-send
+queue of `enter_room` completions that failed for a transient or network reason, fed from both those
+points:
 
 - **In memory only, never in `player_state`.** The queue is a field on `ObjectivesManager`, so it is
   never part of any sync payload and the SYNC SIZE RULE is untouched.
@@ -638,10 +644,30 @@ completions that failed for a transient or network reason:
   scenario (a handful), never one per attempt.
 - **Scoped to `enter_room`.** Only `enter_room` completions enter it; every other task keeps its
   current behaviour and never queues.
-- **Drained on reconnect and on sync.** A `window.addEventListener('online', ...)` handler re-posts each
-  queued completion once; the next successful `window.stateSync.sync()` also drains it. An entry is
-  dropped on a successful completion or on a non-retryable refusal (a true forge, `retryable` absent),
-  so it never retries forever and a forge is never laundered by the queue.
+- **Fed only by a transient or network failure.** The enqueue sits in the `!response.success` branch
+  (`:687-694`), keyed on `response.transient === true` (the exhausted-retry/offline path), and in the
+  thrown-error catch (`:719-731`). A genuine non-retryable refusal (`!transient && !retryable`) reverts
+  and alerts as today without enqueuing, and an inline `retryable` refusal (`room_not_reachable`, the
+  honest residual race or a forge) is handled by the one-sync-one-repost path above, not the queue. So
+  a forge never enters the queue.
+- **Drained through the normal completion path, so the bound is explicit and no ending is dropped.**
+  There is no sync-success event in `state-sync.js` (`sync()` at `state-sync.js:598-605` resolves to a
+  boolean from `_syncOnce` at `:618-671` and fires no event or callback), and `ObjectivesManager` has
+  no sync-success subscription. Rather than add one, the drain fires from two points inside
+  `ObjectivesManager` itself: a `window.addEventListener('online', ...)` handler (the proven precedent
+  is `conclude-mission.js:156`), and each sync `ObjectivesManager` already awaits (the conclude-race
+  pre-flush at `:613-615` and the inline retryable re-sync). Both call `drainEnterRoomQueue()`, guarded
+  against re-entry so a drain-triggered sync does not recurse. The `online` listener alone already meets
+  the reconnect requirement; adding no event to the shared `state-sync` module keeps the change inside
+  one file. Draining **removes the entry, then re-runs `this.completeTask(taskId)`** (never a bare
+  `serverCompleteTask`), so a drained completion goes through the full path at `:662-718`: the
+  `endingCheck` confirm, the `missionConcluded` end-screen trigger and the conclude-race `warning`
+  pre-flush all still apply to a task that ends a mission. Because only a fresh transient or thrown
+  failure re-adds the id (the feed rule above), a drained entry that comes back any **not-transient**
+  outcome, success or any refusal (`room_not_reachable` retryable among them, whose race the inline
+  one-sync-one-repost path owns), is simply gone. So the bound is explicit: the queue drops on success
+  and on any not-transient refusal and can never retry forever; `complete_task!`'s already-completed
+  branch makes a duplicate a no-op, so draining never double-credits.
 
 Because the completion reads durable `unlockedRooms`, a drained re-post succeeds whenever the player
 honestly reached the room, and `complete_task!`'s already-completed branch makes a duplicate a no-op, so
@@ -649,13 +675,30 @@ draining can never double-credit.
 
 **Reload while offline.** The queue is memory-only, so a reload clears it. The room is still in
 `unlockedRooms` on the server (durable, monotonic), and the `enter_room` task reloads active (the
-offline failure left it active, `objectives-manager.js:725`). When the player next crosses into the
-room, the `room_entered` event (`objectives-manager.js:353`) calls `handleRoomEntered`
-(`objectives-manager.js:550`), which re-fires `completeTask` for the active `enter_room` task
-(`objectives-manager.js:558`); the completion reads the persisted `unlockedRooms` and passes. So
-reload-while-offline is covered by the existing on-entry re-fire, not by the queue, and the accepted
-low-stakes behaviour (a task may stay active until the player next crosses a room boundary) still
-holds.
+offline failure left it active, `:689` or `:725`). The self-heal does not need a boundary crossing.
+`currentPlayerRoom` is a module-level `''` reset on load (`rooms.js:103`, `:1038`), so the first
+`updatePlayerRoom` tick after a reload sees `'' -> <roomId>` for the room the avatar already occupies
+and emits `room_entered` (emit guard `rooms.js:3178`, emit `:3200`). `ObjectivesManager` subscribes at
+`:352` and calls `handleRoomEntered` (`:550`), which re-fires `completeTask` for the active `enter_room`
+task (`:558`); the completion reads the persisted `unlockedRooms` and passes. The one ordering gap:
+`handleRoomEntered` returns early while `!this.initialized` (`:551`), so if that first `updatePlayerRoom`
+tick runs before `ObjectivesManager` finishes initialising (`this.initialized = true` at `:110`), the
+single auto-emit is dropped and, because `currentPlayerRoom` is then set, no further emit comes until
+the avatar actually leaves and re-enters.
+
+**Chunk F closes that gap with an init replay.** At the end of `initialize` (after `:110`), replay the
+current room once: if `window.currentPlayerRoom` is a non-empty string, call
+`handleRoomEntered(window.currentPlayerRoom)`. This is recommended because it is small (one guarded
+call) and safe: `handleRoomEntered` only completes an active `enter_room` task for that room,
+`completeTask` early-returns for a task already `completed`/`completing` (`:657`), and the server check
+is idempotent, so the replay can never double-complete or complete a task for a room the player has not
+reached. If init runs before the first tick, `currentPlayerRoom` is still `''` and the replay is a
+no-op, but init is then finished so the tick's own emit is caught; if init runs after the tick, the
+dropped emit is recovered by the replay. So the standing-in-the-room self-heal lands in both orderings,
+and the conservative guarantee stays "the next crossing completes it" for anything the replay does not
+cover. So reload-while-offline is covered by this init replay and the on-entry re-fire, not by the
+queue, and the accepted low-stakes behaviour (a task may stay active until the player next crosses a
+room boundary) still holds as the floor.
 
 Why the pre-flush, not a server grace timer or deferred completion: it needs no per-task pending
 state on the server (a grace timer or a deferred-completion queue would add state that must expire
@@ -674,10 +717,12 @@ covered:
   held in the bounded in-memory re-send queue (above), re-posted on the browser `online` event and on
   the next successful state sync. `unlockedRooms` persisted across the gap, so the re-post passes.
 - **Reload mid-entry (including reload while offline).** `unlockedRooms` is persisted and the task
-  reloads active; `currentRoom` is restored on reload. A completion attempted after reload passes, and
-  if none is attempted the next crossing into the room re-fires it through `handleRoomEntered` (above).
-  (Room entry is low-stakes control flow, so a task left active after reload until the player next
-  crosses a room boundary is acceptable.)
+  reloads active; `currentRoom` is restored on reload. With the Chunk F init replay, the post-reload
+  auto-detection of the room the avatar already stands in re-fires the completion through
+  `handleRoomEntered` without a crossing (whichever of init and the first `updatePlayerRoom` tick runs
+  first); the next crossing re-fires it as the fallback. A completion attempted after reload reads the
+  persisted `unlockedRooms` and passes. (Room entry is low-stakes control flow, so a task left active
+  after reload until the player next crosses a room boundary is acceptable.)
 - **Room entered then left before the task posts.** `currentRoom` has moved on, but `unlockedRooms`
   still holds the target (monotonic), so the check passes. This is exactly why the union includes
   `unlockedRooms` and not only `currentRoom`.
@@ -951,11 +996,21 @@ Add `objectives-manager` tests for the `enter_room` completion path:
   reject, a `retryable` refusal still awaits the (rejecting) sync, swallows its rejection, and sends the
   single re-post. Fails if the re-sync rejection propagated and swallowed the re-post (the honest
   residual-race player would otherwise see the generic "Could not save" error).
-- **Offline re-send queue.** A transient or network failure of an `enter_room` completion queues the
-  task id in the in-memory queue; firing the `window` `online` event re-posts it once and it succeeds; a
-  following successful `stateSync.sync()` also drains it; a non-retryable refusal drops it without
-  re-posting; re-queuing the same task id does not grow the queue (at most one entry per task id).
-  Fails if the queue were unbounded, never drained, or drained a forge.
+- **Offline re-send queue, feed and bound.** A transient return (`{ success: false, transient: true }`,
+  the exhausted-retry/offline path landing in the `:687-694` branch) of an `enter_room` completion
+  queues the task id; a thrown error (the `:719-731` catch) also queues it; a non-transient refusal
+  (`!transient`, retryable or not) reverts without queuing. Firing the `window` `online` event drains
+  the queue (re-posting through `completeTask`) once and it succeeds; a sync `ObjectivesManager` itself
+  awaits also drains it. A drained entry whose re-post comes back a non-transient refusal is dropped (it
+  is not re-added, because only a transient or thrown failure feeds the queue), so it never retries
+  forever. Re-queuing the same task id does not grow the queue (at most one entry per task id). Fails if
+  the enqueue were wired only to the `:719` catch (missing the dominant offline path), if the queue were
+  unbounded, never drained, or drained a forge.
+- **Queued completion that concludes a mission.** A queued `enter_room` completion is the task that
+  concludes a mission. On drain the queue re-runs `completeTask`, so the `missionConcluded` end-screen
+  path (`:697-700`) and the conclude-race `warning` pre-flush (`:701-718`) still fire; assert the end
+  screen is triggered (`handleMissionConcluded`) on the drained re-post. Fails if the drain re-posted a
+  bare `serverCompleteTask` and bypassed the ending handling.
 
 Node (`bin/test-js`), the object-unlock retry (§3.6), in a `unlock-system` test file, exercising
 `notifyServerUnlock` with a stubbed `apiClient.unlock` and `window.stateSync.sync`:
@@ -1003,11 +1058,14 @@ proves. Record game ids in the build log.
    client is not refused.
 3. **Offline then reconnect, the client's own queue re-posts.** With the door `/unlock` already landed,
    drive the honest player into the target room, then take the browser offline with Playwright's
-   `context.setOffline(true)` and fire the `enter_room` completion: it fails on the network, reverts to
-   active, and enters the in-memory re-send queue (§8.3). Then `context.setOffline(false)`, which fires
-   the browser `online` event. The client's own `online` handler re-posts the queued completion, with no
-   proof-driver re-post, and it completes. **Proves:** `unlockedRooms` persisted across the gap and the
-   client recovers by itself on reconnect; reconnection timing does not refuse an honest player.
+   `context.setOffline(true)` and fire the `enter_room` completion: the retries exhaust, it returns a
+   transient failure, reverts to active at `:689`, and enters the in-memory re-send queue from that
+   transient branch (§8.3). Assert the task id is actually in the queue before reconnect, so the proof
+   fails if the enqueue were wired only to the thrown-error catch and missed the dominant offline path.
+   Then `context.setOffline(false)`, which fires the browser `online` event. The client's own `online`
+   handler drains the queue through `completeTask`, with no proof-driver re-post, and it completes.
+   **Proves:** the queue is fed from the real offline path, `unlockedRooms` persisted across the gap, and
+   the client recovers by itself on reconnect; reconnection timing does not refuse an honest player.
 4. **Duplicated or retried completion.** Fire the `enter_room` completion twice (and let the client
    retry path re-post). Both report success, the task is completed once, and any credited global or
    counter is written once. **Proves:** idempotent completion over durable state; a retry or
@@ -1059,13 +1117,19 @@ proves. Record game ids in the build log.
   `objectives-manager.js` pre-flush on the `enter_room` completion path and its handling of a
   `retryable` refusal (one re-sync wrapped so a rejecting sync still proceeds, then one re-post, then
   surface); the **bounded in-memory re-send queue** of failed `enter_room` completions (§8.3): a field
-  on `ObjectivesManager`, keyed by task id, fed by the transient/network failure paths
-  (`objectives-manager.js:719-731` and the exhausted `serverCompleteTaskWithRetry`), drained by a
-  `window` `online` listener and by the next successful `window.stateSync.sync()`, dropped on success or
-  a non-retryable refusal, never in `player_state`. Rails tests 14-21; the node pre-flush, old-tab,
-  retry, rejecting-re-sync and offline-queue tests; the five-case browser live proof under real network
-  delays (section 13), with Case 3 driving real offline and online via Playwright `context.setOffline`.
-  Independent of Chunks A-E, so it can build in parallel.
+  on `ObjectivesManager`, keyed by task id, fed from the two failure points in `completeTask` (the
+  transient/offline branch `objectives-manager.js:687-694`, enqueuing on `response.transient === true`,
+  and the thrown-error catch `:719-731`), drained by a `window` `online` listener and by the syncs
+  `ObjectivesManager` itself awaits (the pre-flush `:613-615` and the inline retryable re-sync) through a
+  re-entry-guarded `drainEnterRoomQueue()` that re-runs `this.completeTask(taskId)` so the end-screen and
+  conclude-race handling at `:662-718` still apply, dropped on success or any not-transient outcome,
+  never in `player_state` (no sync-success hook is added to `state-sync.js`); and the **init replay**
+  that closes the reload-in-room ordering gap (§8.3): at the end of `initialize` (after `:110`), if
+  `window.currentPlayerRoom` is non-empty, call `handleRoomEntered(window.currentPlayerRoom)` once.
+  Rails tests 14-21; the node pre-flush, old-tab, retry, rejecting-re-sync, offline-queue and
+  queued-mission-conclude tests; the five-case browser live proof under real network delays (section 13),
+  with Case 3 driving real offline and online via Playwright `context.setOffline` and asserting the task
+  entered the queue from the transient path. Independent of Chunks A-E, so it can build in parallel.
 
 ## 15. Decisions (2026-11-13)
 
