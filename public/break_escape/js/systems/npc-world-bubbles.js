@@ -127,6 +127,34 @@ export function followUpBeyond(left, next) {
     return pagesText([left]);
 }
 
+/**
+ * Pure: the hints a newer answer should still carry from an older bubble: every unread hint of
+ * `hints` (a list, one entry a gate) whose text is not `next`'s. So "H G" plus a new H gives
+ * "G H", never H twice (R5 n1).
+ */
+export function hintsBeyond(hints, next) {
+    const nk = textKey(next);
+    const seen = new Set(nk ? [nk] : []);
+    const out = [];
+    for (const h of Array.isArray(hints) ? hints : []) {
+        const k = textKey(h);
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        out.push(pagesText([h]));
+    }
+    return out;
+}
+
+/**
+ * Is a minigame open now? One whose `_ending` is set is closing: person-chat drains the barks it
+ * held from its own cleanup() while the framework still holds it, and holdsBarks() already counts
+ * it as closed (R5 m1).
+ */
+export function minigameOpenNow() {
+    const m = win().MinigameFramework?.currentMinigame;
+    return !!(m && !m._ending);
+}
+
 // ---- pure helpers ----
 
 /** Pure: may this NPC's bubble show at all? */
@@ -353,6 +381,16 @@ export function followUpLeft(st) {
     return pagesText(st.pages.slice(from));
 }
 
+/**
+ * Pure: a bark state's hints (st.hints, one entry a gate) while any of its follow-up is unread,
+ * else []. A state with no list (made before R5) gives its follow-up text as one entry.
+ */
+export function hintsLeft(st) {
+    const left = followUpLeft(st);
+    if (!left) return [];
+    return Array.isArray(st.hints) && st.hints.length ? [...st.hints] : [left];
+}
+
 const wordsIn = (s) => String(s).split(/\s+/).filter(Boolean).length;
 
 /** Pure: each page's share of `totalMs` by word count, at least `minMs` a page. */
@@ -405,7 +443,34 @@ export class NpcWorldBubbles {
         this.chatterVoice = new Map();    // npcId -> { line, speak }
         this.chatterShown = new Map();    // npcId -> line
         this.chatterSkipped = new Map();  // npcId -> line
+        this.chatterMust = new Map();     // npcId -> an exchange or call line: never skipped (R5 m2)
         this._updatedAt = null;
+    }
+
+    /**
+     * An exchange or call line (npc-needs.js world.speak: info.knot or info.call). It is voiced at
+     * once, not deferred, and is never skipped for want of room: with no bubble to fit it goes to
+     * a silent toast, once. The exchange counts as heard (heard_<knot>), so the player must get
+     * every line (R5 m2). At most one entry per NPC, dropped when the line ends.
+     */
+    mustShowChatter(npcId, line) {
+        if (!npcId || !line) return;
+        this.chatterMust.set(npcId, line);
+    }
+
+    /** A must-show line with no bubble: as a toast of its own, silent (its voice is playing). */
+    _toastChatter(npcId, line, why) {
+        this.chatterMust.delete(npcId);
+        this.chatterShown.delete(npcId);
+        this.chatterSkipped.set(npcId, line);   // not placed in a bubble later in the line
+        this._note(npcId, 'chatter-toast', { text: line, why });
+        const npc = win().npcManager?.getNPC?.(npcId) || null;
+        try {
+            win().barkSystem?.showBark?.({
+                npcId, npcName: npc?.displayName || npcId, avatar: npc?.avatar, message: line,
+                playSound: false, useTTS: false, forceToast: true, openPhone: false
+            });
+        } catch (e) { /* never break a frame */ }
     }
 
     /**
@@ -427,8 +492,12 @@ export class NpcWorldBubbles {
         if (v) { try { v.speak(); } catch (e) { /* audio never breaks a frame */ } }
     }
 
-    /** A chatter line with no room: skipped; a voice waiting for it is dropped, one playing stopped. */
+    /**
+     * A chatter line with no room: skipped; a voice waiting for it is dropped, one playing stopped.
+     * An exchange or call line is toasted instead (mustShowChatter).
+     */
     _skipChatter(npcId, line, why) {
+        if (this.chatterMust.get(npcId) === line) { this._toastChatter(npcId, line, why); return; }
         const waiting = this.chatterVoice.get(npcId);
         if (waiting && waiting.line === line) this.chatterVoice.delete(npcId);
         const wasShown = this.chatterShown.get(npcId) === line;
@@ -620,7 +689,7 @@ export class NpcWorldBubbles {
             npcRoom: roomId,
             playerRoom: win().currentPlayerRoom,
             dark: roomId ? roomIsDark(roomId) : false,
-            minigameOpen: !!win().MinigameFramework?.currentMinigame,
+            minigameOpen: minigameOpenNow(),
             onCamera: live ? this._onCamera(sprite) : false
         };
     }
@@ -645,8 +714,8 @@ export class NpcWorldBubbles {
         if (!tag) return closed;
         for (const st of [...this.says.values()]) {
             if (st.tag !== tag) continue;
-            // Only what the new answer does not already show (R4 m1)
-            const rest = followUpBeyond(followUpLeft(st), followUp);
+            // Only the hints the new answer does not already show (R4 m1, R5 n1)
+            const rest = hintsBeyond(hintsLeft(st), followUp).join(' ');
             this._end(st.npcId, 'superseded', { handOn: !!rest, rest });
             closed.push(st.npcId);
         }
@@ -681,11 +750,14 @@ export class NpcWorldBubbles {
         // pages of the old line not yet read go after the new line, once (R3 m1)
         const old = this.says.get(npcId) || null;
         const next = followUp ? pagesText([followUp]) : '';
-        // The whole unread follow-up, less what the new one already shows (R4 m1, n1)
-        const carried = old ? followUpBeyond(followUpLeft(old), next) : '';
+        // Every unread hint the old bubble carries, less the new one: kept as a list, so a hint
+        // is never shown twice however the gates alternate (R4 m1, R5 n1)
+        const carriedHints = old ? hintsBeyond(hintsLeft(old), next) : [];
+        const carried = carriedHints.join(' ');
         if (old) this._end(npcId, 'replaced', { handOn: false });
         const lost = typeof onFollowUpLost === 'function' ? onFollowUpLost : (old?.onFollowUpLost || null);
-        const allFollow = [carried, next].filter(Boolean).join(' ');
+        const hints = [...carriedHints, ...(next ? [next] : [])];
+        const allFollow = hints.join(' ');
         const extra = allFollow ? pageLine(allFollow) : [];
         const pages = [...linePages, ...extra];
         const others = [...this.says.keys()].map(id => ({ npcId: id, distance: this._distance(this._spriteAndRoom(id).sprite) }));
@@ -699,7 +771,7 @@ export class NpcWorldBubbles {
         if (cap.evict) this._leave(cap.evict, 'pushed');
         const reading = readingMs(line);
         const st = {
-            npcId, line, pages, linePages: linePages.length, page: 0, started: this.now(), pageStarted: this.now(),
+            npcId, line, pages, hints, linePages: linePages.length, page: 0, started: this.now(), pageStarted: this.now(),
             times: [...pageTimes(linePages, lineTotalMs({ audioMs, readingMs: reading })), ...followUpTimes(extra)],
             audioMs: audioMs > 0 ? audioMs : null, onRemainder, onDone, tag: tag || null, onFollowUpLost: lost,
             stillValid: typeof stillValid === 'function' ? stillValid : null, validAt: this.now()
@@ -786,7 +858,7 @@ export class NpcWorldBubbles {
         const sys = win().npcNeedsSystem;
         const mgr = win().npcBehaviorManager;
         const playerRoom = win().currentPlayerRoom;
-        const minigameOpen = !!win().MinigameFramework?.currentMinigame;
+        const minigameOpen = minigameOpenNow();
         const cands = [];
         const info = new Map();
         for (const st of this.says.values()) {
@@ -814,6 +886,9 @@ export class NpcWorldBubbles {
                 const sprite = b?.sprite;
                 if (!sprite || !sprite.active || !sprite.visible || sprite.destroyed) continue;
                 if (!speechShown({ npcRoom: b.roomId, playerRoom, dark: roomIsDark(b.roomId), minigameOpen })) continue;
+                // Off camera: no bubble to place, so no candidate; its voice plays from the end
+                // loop below, as for another room (R5 n2)
+                if (!this._onCamera(sprite)) continue;
                 cands.push({ npcId: id, distance: this._distance(sprite) });
                 info.set(id, { sprite, line: st.talking.line, picture: st.talking.picture || null, partnerId: st.talking.partnerId, bark: false });
             }
@@ -892,6 +967,9 @@ export class NpcWorldBubbles {
         for (const [id, line] of [...this.chatterShown]) {
             if (!shown.has(id) || chatterNow.get(id) !== line) this.chatterShown.delete(id);
         }
+        for (const [id, line] of [...this.chatterMust]) {
+            if (chatterNow.get(id) !== line) this.chatterMust.delete(id);
+        }
         // A voice still waiting was for a line with no bubble to place (off camera, a dark room,
         // a minigame open): it speaks as before. One whose NPC has a bark up, or whose line has
         // ended or been skipped, is dropped.
@@ -902,6 +980,9 @@ export class NpcWorldBubbles {
         }
     }
 
+    /** Forget the HUD rects, so the next pass reads them again (window or canvas resize, R3 n1). */
+    clearHudCache() { this._hud = null; }
+
     /**
      * The fixed HUD panels on screen, as world rects (hard, for placeBubble): the Objectives
      * panel, the inventory tray, the health and info labels, the music and toggle buttons, the
@@ -910,8 +991,6 @@ export class NpcWorldBubbles {
      * camera's view each frame. Anything hidden, empty or covering most of the screen (a full
      * screen layer) is left out. None without a DOM, a canvas or a view (node tests). R2 m2.
      */
-    /** Forget the HUD rects, so the next pass reads them again (window or canvas resize, R3 n1). */
-    clearHudCache() { this._hud = null; }
 
     _hudRects(view, scene = null) {
         if (!view || typeof document === 'undefined') return [];

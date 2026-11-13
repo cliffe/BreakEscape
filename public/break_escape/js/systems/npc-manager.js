@@ -860,14 +860,6 @@ export default class NPCManager {
   }
 
   /**
-   * Fetch the NPC's story and import the InkEngine class in the background, once, so the first
-   * knot bark runs with no await and a gate refusal it answers in view is marked in time: without
-   * it the door showed its notification over her bubble (R3 n4). Read only: the ink endpoint and
-   * the story cache. The engine itself is still built on first use (so a conversation that opens
-   * first keeps getInkEngine's global-variable sync). Failures are ignored: the bark then loads
-   * as before.
-   */
-  /**
    * The story JSON if either cache has it: ours, or the room loader's (npcLazyLoader fetches each
    * room's stories before it registers the NPCs; without this the preload fetched them again:
    * UX slice 5 R4 n3). A loader copy is put in ours. Null when neither has it.
@@ -881,6 +873,14 @@ export default class NPCManager {
     return cached;
   }
 
+  /**
+   * Fetch the NPC's story and import the InkEngine class in the background, once, so the first
+   * knot bark runs with no await and a gate refusal it answers in view is marked in time: without
+   * it the door showed its notification over her bubble (R3 n4). Read only: the ink endpoint and
+   * the story cache. The engine itself is still built on first use (so a conversation that opens
+   * first keeps getInkEngine's global-variable sync). Failures are ignored: the bark then loads
+   * as before.
+   */
   _preloadKnotBark(npcId) {
     if (this.preloadKnotBarks === false) return null;
     const npc = this.npcs.get(npcId);
