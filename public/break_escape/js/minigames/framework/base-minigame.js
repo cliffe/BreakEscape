@@ -13,9 +13,8 @@ export class MinigameScene {
 
     // The X closes a minigame (and Esc), so the shell draws no Cancel button beside it
     // (UX slice 7 R1, the user's screenshot notes). A scene whose bottom button is not a
-    // second close opts back in: the password screen (slice 2a owns it), lockpicking (its
-    // button can reset the pins), the notes reader (Continue) and conversations (End
-    // Conversation). The .minigame-controls row stays for the scenes' own footer buttons
+    // second close opts back in: the password screen (slice 2a owns it), the notes reader
+    // (Continue) and conversations (End Conversation). The .minigame-controls row stays for the scenes' own footer buttons
     // (Add to Notepad) and hides itself when empty.
     static keepsCancelButton = false;
 
