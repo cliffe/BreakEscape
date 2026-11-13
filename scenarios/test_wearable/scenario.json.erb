@@ -57,12 +57,12 @@
         {
           "type": "notes1", "id": "sign_w1", "name": "Sign: W1 Put on",
           "position": { "x": 1, "y": 2 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
-          "text": "W1. Take the hi-vis vest from the floor. Click it in your inventory and choose Put on, then confirm.\nYour avatar wears the courier hi-vis. The vest's slot gets an amber frame and a (worn) label. vest_on is true.\nKim is your teammate (seenBy ignore), so she does not stop you."
+          "text": "W1. Take the hi-vis vest from the floor. A click in the room only takes it, and this first take asks once: Put it on now? Choose Put it on. (Choose Leave it off instead, and it stays in your inventory: click it there, choose Put on, then Put it on in the confirm, which warns you to change out of sight.) Neither question has an X.\nYour avatar wears the courier hi-vis. The vest's slot gets an amber frame and a (worn) label. vest_on is true.\nKim is your teammate (seenBy ignore), so she does not stop you."
         },
         {
           "type": "notes1", "id": "sign_w2", "name": "Sign: W2 Take off",
           "position": { "x": 2, "y": 2 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
-          "text": "W2. Click the vest again: Take off, then confirm. Your own avatar is back, the frame and label go, vest_on is false.\nPut it on again and click the locker: it comes off with no confirm (take_off action)."
+          "text": "W2. Click the vest in your inventory: Take off, then Take it off in the confirm (Keep it on leaves it on). Your own avatar is back, the frame and label go, vest_on is false.\nPut it on again and click the locker: it comes off with no confirm (take_off action)."
         },
         {
           "type": "notes1", "id": "sign_w3", "name": "Sign: W3 Hook",
@@ -72,7 +72,7 @@
         {
           "type": "notes1", "id": "sign_w4", "name": "Sign: W4 One at a time",
           "position": { "x": 4, "y": 2 }, "takeable": false, "readable": true, "readDisplay": "gameDisplay", "addToNotes": false,
-          "text": "W4. Wear the vest. Take the guard jacket and click it in your inventory, then confirm.\nYou wear the guard uniform; the frame moves to the jacket; vest_on is false and jacket_on is true. Take the jacket off again before W5."
+          "text": "W4. Wear the vest. Take the guard jacket and choose Put it on when it asks (or Leave it off, then click it in your inventory and choose Put on: the jacket has no confirm, so it goes straight on; Examine there reads it).\nYou wear the guard uniform; the frame moves to the jacket; vest_on is false and jacket_on is true. Take the jacket off again before W5."
         },
         {
           "type": "notes1", "id": "sign_w6", "name": "Sign: W6 Drop",
@@ -94,12 +94,12 @@
             "global": "vest_on",
             "unseenOnly": true,
             "seenBy": { "ignore": ["kim"] },
-            "confirmOn": "Put the hi-vis vest on?",
-            "confirmOff": "Take the hi-vis vest off?",
+            "confirmOn": "Put the hi-vis vest on? Change where only Kim can see you: anyone else stops you.",
+            "confirmOff": "Take the hi-vis vest off? You look like a visitor again.",
             "onWear": [ { "type": "hint", "title": "Vest on", "message": "You are wearing the hi-vis vest." } ],
             "onRemove": [ { "type": "hint", "title": "Vest off", "message": "The hi-vis vest is off." } ]
           },
-          "observations": "A hi-vis vest. Take it, then click it in your inventory to put it on or take it off."
+          "observations": "A hi-vis vest. Take it, then click it in your inventory and choose Put on or Take off."
         },
         {
           "type": "id_badge", "id": "jacket", "name": "Guard jacket",
@@ -108,11 +108,9 @@
           "takeable": true, "interactable": true, "active": true,
           "wearable": {
             "costume": "guard",
-            "global": "jacket_on",
-            "confirmOn": "Put the guard jacket on?",
-            "confirmOff": "Take the guard jacket off?"
+            "global": "jacket_on"
           },
-          "observations": "A security guard's jacket. Take it, then click it in your inventory to put it on or take it off."
+          "observations": "A security guard's jacket. Take it, then click it in your inventory and choose Put on or Take off."
         },
         {
           "type": "aes_hivis_hook", "id": "quick_hook", "name": "Quick-change hook",
