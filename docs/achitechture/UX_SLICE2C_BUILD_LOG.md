@@ -107,6 +107,8 @@ See "Round 1 live proof" below: m01_first_contact, Kevin's Workstation (password
 
 Run without the lock, every file that touches a changed module (23 files): all pass. `pc-monitor-frame.test.mjs` 24 tests, `password-signin-mode.test.mjs` 54.
 
+Full suites under the shared lock, on `e60135807` (the last code commit): `bin/rails test` 2386 runs, 42523 assertions, 0 failures, 0 errors, 1 skip; `MERGE_BATCH=1 bin/test-js -j 3` 599 files passed, 0 failed.
+
 ## Round 1 live proof
 
 Keyless server on :3062 (stopped afterwards), setFPS(20) with fixed steps, scrollbars shown, new games only, made with `tools/playtest/new-game.rb`: m01_first_contact 2903 and 2908 to 2910 (`--start-room kevin_office`), 2904 to 2907 (`--start-room derek_office`); test_access_signin 2898; test_access_networks 2911, 2915, 2916, 2917. Driver: the scratchpad's `ux-shots/slice2c-r1fix/drive.mjs`; shots (png and webp) and one log per run in the same folder.
