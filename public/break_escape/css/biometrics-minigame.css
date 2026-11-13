@@ -4,7 +4,8 @@
     /* Compact interface similar to Bluetooth scanner */
     position: fixed !important;
     top: 5vh !important;
-    right: 2vw !important;
+    left: 2vw !important;   /* left side, clear of the top-right HUD buttons (UI shell R3 m1) */
+    right: auto !important;
     width: 350px !important;
     height: auto !important;
     max-height: 60vh !important;
