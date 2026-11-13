@@ -143,10 +143,12 @@ export function shortCropOffset(img, src, readAlpha = frameAlphaReader) {
  * A 32x32 picture of an NPC in a box element (the desktop's account bar): the headshot at
  * x1, else the same fallback as a sign-in tile (R1 m8), the 32x32 head crop of the talk
  * sheet at scale 1, with the keys logged; else the box is hidden. `talkUrl` is the talk
- * portrait's URL. `ImageCtor` and `readAlpha` are injectable for tests.
+ * portrait's URL. `ImageCtor` and `readAlpha` are injectable for tests. `onResult` hears what
+ * was drawn ({ src, width, height, left, top, kind }, offsets as background positions) or
+ * null when the box was hidden, so a caller can keep it (the taskbar, pc-taskbar.js).
  */
 export function applyHeadshotBox(el, source, { talkUrl = null, ImageCtor = (typeof Image !== 'undefined' ? Image : null),
-                                               readAlpha = frameAlphaReader, onMissing = noteMissingHeadshot } = {}) {
+                                               readAlpha = frameAlphaReader, onMissing = noteMissingHeadshot, onResult = null } = {}) {
     if (!el?.style) return;
     const keys = headshotKeys(source);
     const urls = keys.map(headshotUrl);
@@ -157,8 +159,13 @@ export function applyHeadshotBox(el, source, { talkUrl = null, ImageCtor = (type
         el.style.backgroundPosition = pos;
         el.dataset.frame = kind;
         el.hidden = false;
+        if (onResult) {
+            const [width, height] = String(size).split(' ').map(v => parseInt(v, 10) || 0);
+            const [left, top] = String(pos).split(' ').map(v => parseInt(v, 10) || 0);
+            onResult({ src, width, height, left, top, kind });
+        }
     };
-    const hide = () => { el.hidden = true; el.style.backgroundImage = ''; };
+    const hide = () => { el.hidden = true; el.style.backgroundImage = ''; onResult?.(null); };
     if (!ImageCtor) { hide(); return; }
     const crop = () => {
         if (!talkUrl) { hide(); return; }
@@ -187,8 +194,8 @@ export function applyHeadshotBox(el, source, { talkUrl = null, ImageCtor = (type
             const w = img.naturalWidth || img.width;
             const h = img.naturalHeight || img.height;
             if (w !== SHORT_PORTRAIT_PX || h !== SHORT_PORTRAIT_PX) { tryAt(i + 1); return; }
-            show(urls[i], `${w}px ${h}px`, '0px 0px', 'headshot');
             el.dataset.headshot = keys[i];
+            show(urls[i], `${w}px ${h}px`, '0px 0px', 'headshot');
         };
         img.onerror = () => tryAt(i + 1);
         img.src = urls[i];

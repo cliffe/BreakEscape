@@ -353,3 +353,233 @@
     font-size: 16px;
     line-height: 18px;
 }
+
+/* ── The taskbar and start panel (UX slice 6, option C; js/utils/pc-taskbar.js) ──────────
+   Along the bottom of the screen in every view of a PC (desktop, share window, file): Start,
+   the open window, the account's 32px headshot and name, the computer name. The panel opens
+   above it. 2px borders, square corners, GNF at 16px, pictures at whole-number scales. */
+.pc-monitor .pc-has-taskbar {
+    position: relative;
+}
+
+.pc-monitor .pc-share.pc-has-taskbar > .container-minigame.share-folder {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+}
+
+.pc-monitor .pc-taskbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    background: #16202a;
+    border-top: 2px solid #3a4a58;
+    color: #dde6ee;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.pc-monitor .pc-taskbar button.pc-os-btn.pc-start-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 4px 8px;
+}
+
+.pc-monitor .pc-taskbar button.pc-os-btn.pc-start-btn.pc-start-open {
+    filter: brightness(1.25);
+}
+
+.pc-start-icon,
+.pc-start-item-icon {
+    flex: 0 0 auto;
+    image-rendering: pixelated;
+}
+
+.pc-monitor .pc-taskbar-window {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 2px 6px;
+    border: 2px solid #5a6a78;
+    background: #22303c;
+}
+
+.pc-monitor .pc-taskbar-spacer {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pc-monitor .pc-taskbar-account {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 1 auto;
+    min-width: 32px;
+    overflow: hidden;
+}
+
+.pc-monitor .pc-taskbar-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pc-monitor .pc-headshot {
+    flex: 0 0 auto;
+    box-sizing: content-box;
+    background-color: #2c3e50;
+    image-rendering: pixelated;
+}
+
+.pc-monitor .pc-taskbar-headshot {
+    width: 32px;
+    height: 32px;
+}
+
+.pc-monitor .pc-start-headshot {
+    width: 64px;
+    height: 64px;
+    border: 2px solid #4a5560;
+}
+
+.pc-monitor .pc-taskbar-host {
+    flex: 0 0 auto;
+    color: #9ee6ff;
+}
+
+.pc-monitor .pc-taskbar-remote {
+    flex: 0 0 auto;
+    padding: 0 4px;
+    border: 2px solid #c08a2a;
+    color: #ffe0a0;
+}
+
+.pc-monitor .pc-taskbar .minigame-button {
+    flex: 0 0 auto;
+}
+
+/* A narrow screen (a phone): the account is its headshot, the window tab shorter */
+.pc-monitor[data-narrow] .pc-taskbar-name,
+.pc-monitor[data-narrow] .pc-taskbar-remote {
+    display: none;
+}
+
+.pc-monitor[data-narrow] .pc-taskbar-window {
+    max-width: 30%;
+}
+
+.pc-monitor .pc-start-panel {
+    position: absolute;
+    left: 0;
+    bottom: 38px;
+    z-index: 6;
+    width: 300px;
+    max-width: 100%;
+    max-height: calc(100% - 38px);
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: #1c2833;
+    border: 2px solid #5a6a78;
+    color: #dde6ee;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+}
+
+.pc-monitor .pc-start-panel[hidden] {
+    display: none;
+}
+
+.pc-monitor .pc-start-account {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: #22303c;
+    border-bottom: 2px solid #3a4a58;
+}
+
+.pc-monitor .pc-start-who {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.pc-monitor .pc-start-name,
+.pc-monitor .pc-start-line {
+    overflow-wrap: anywhere;
+}
+
+.pc-monitor .pc-start-username {
+    color: #9fb0bf;
+}
+
+.pc-monitor .pc-start-section,
+.pc-monitor .pc-start-actions {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 6px;
+}
+
+.pc-monitor .pc-start-section {
+    border-bottom: 2px solid #3a4a58;
+}
+
+.pc-monitor .pc-start-heading {
+    padding: 0 2px;
+    color: #9ee6ff;
+    text-transform: uppercase;
+}
+
+.pc-monitor .pc-start-line {
+    padding: 0 2px 0 10px;
+}
+
+.pc-monitor .pc-start-remote {
+    color: #ffe0a0;
+}
+
+.pc-monitor button.pc-start-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0;
+    padding: 2px 6px;
+    border: 2px solid transparent;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.pc-monitor button.pc-start-item:hover,
+.pc-monitor button.pc-start-item:focus-visible {
+    border-color: #9ee6ff;
+    background: #22303c;
+    outline: none;
+}
+
+/* The desktop's description, above the taskbar: wrapped, up to three lines, then it scrolls */
+.pc-monitor .pc-desktop > .pc-desktop-status {
+    flex: 0 0 auto;
+    display: flex;
+    padding: 2px 8px;
+    background: #1c1c1c;
+    border-top: 2px solid #3a3a3a;
+}

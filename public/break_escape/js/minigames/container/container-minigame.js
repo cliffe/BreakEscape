@@ -10,7 +10,7 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
-import { applyHeadshotBox, npcRecordFor, headshotSourceFor } from '../../utils/npc-headshot.js';
+import { mountPcTaskbar, pcTaskbarModel, lockSupported, rememberDesktop, rememberedDesktop, findPcData } from '../../utils/pc-taskbar.js';
 
 
 
@@ -426,6 +426,14 @@ export class ContainerMinigame extends MinigameScene {
             containerName: this.containerItem?.scenarioData?.name || null,
             // A sign-in desktop: the account shown, and the Copy / Move dialog when open
             signedInAs: this.loginSession() ? { username: this.loginSession().username, displayName: this.loginSession().displayName } : null,
+            // The taskbar (UX slice 6): computer name, the account shown, the panel's state
+            taskbar: this.taskbarModel ? {
+                host: this.taskbarModel.host,
+                account: this.taskbarModel.account ? { kind: this.taskbarModel.account.kind, name: this.taskbarModel.account.name } : null,
+                panelOpen: !!this.taskbar?.isOpen?.(),
+                places: ['Desktop', ...this.taskbarModel.places.map(p => p.name)],
+                actions: this.taskbarModel.actions
+            } : null,
             sourcePcId: this.sourcePcId || null,
             transferDialog: this.transferDialog ? { item: this.transferDialog.item?.name || null, choices: this.transferDialog.choices.map(c => TRANSFER_LABELS[c]) } : null,
             items,
@@ -646,6 +654,7 @@ export class ContainerMinigame extends MinigameScene {
             this._unregisterDesktop();
             this._unregisterDesktop = null;
         }
+        this.taskbar?.destroy?.();
         this.pcMonitor?.destroy?.();
         if (typeof super.cleanup === 'function') super.cleanup();
         this.reportNetworkExit();
@@ -912,6 +921,7 @@ export class ContainerMinigame extends MinigameScene {
             </div>
             </div>
         `;
+            this.mountTaskbar(this.gameContainer.querySelector('.share-folder-layout.pc-share'), { windowTitle: name });
             return;
         }
         this.gameContainer.innerHTML = `
@@ -957,7 +967,6 @@ export class ContainerMinigame extends MinigameScene {
             : `Signed in as <strong>${escapeHtml(name)}</strong> (${escapeHtml(session.username)})`;
         return `${remoteLine}${claimLine}
                     <div class="desktop-account-bar">
-                        ${this.pcMonitor ? '<span class="desktop-account-headshot" aria-hidden="true" hidden></span>' : ''}
                         <span class="desktop-account-name">${who}</span>
                         <span class="desktop-account-actions">
                             <button type="button" class="minigame-button desktop-account-btn" id="desktop-switch-user">Switch user</button>
@@ -1007,16 +1016,17 @@ export class ContainerMinigame extends MinigameScene {
     }
     
     /**
-     * The desktop on the monitor's screen (UX slice 2c): a top bar with the signed-in account
-     * (headshot, name, Switch user, Sign out), the icons on the wallpaper, and a taskbar with
-     * the computer's description. The PC's name is on the bezel's top strip and the post-it on the frame.
+     * The desktop on the monitor's screen (UX slices 2c and 6): a top strip only for a claimed
+     * or remote session's notice, the icons on the wallpaper, the computer's description, and
+     * the taskbar with Start, the account and the computer name (utils/pc-taskbar.js). The PC's
+     * name is on the bezel's top strip and the post-it on the frame.
      */
     createMonitorDesktopUI() {
-        const account = this.accountBarHtml();
+        const notices = this.sessionNoticesHtml();
         const note = this.headerObservations();
         this.gameContainer.innerHTML = `
             <div class="container-minigame desktop-mode pc-desktop">
-                ${account ? `<div class="pc-desktop-topbar">${account}
+                ${notices ? `<div class="pc-desktop-topbar">${notices}
                 </div>` : ''}
                 <div class="desktop-background pixel-scroll">
                     <div class="desktop-icons" id="desktop-icons">
@@ -1024,16 +1034,97 @@ export class ContainerMinigame extends MinigameScene {
                     </div>
                 </div>
                 <div class="desktop-more" hidden aria-hidden="true"><span class="desktop-more-arrow"></span><span class="desktop-more-text">${DESKTOP_MORE_BELOW_TEXT}</span></div>
-                ${(note || this.isTakeable) ? `<div class="desktop-taskbar">
-                    ${note ? `<span class="desktop-taskbar-note pixel-scroll">${escapeHtml(displayDashes(note))}</span>` : ''}
-                    <div class="desktop-actions">
-                        ${this.isTakeable ? '<button class="minigame-button" id="take-container-btn">Take Container</button>' : ''}
-                    </div>
-                </div>` : ''}
+                ${note ? `<div class="pc-desktop-status"><span class="desktop-taskbar-note pixel-scroll">${escapeHtml(displayDashes(note))}</span></div>` : ''}
             </div>
         `;
-        this.applyAccountHeadshot();
+        this.mountTaskbar(this.gameContainer.querySelector('.pc-desktop'));
         this.watchDesktopScroll();
+    }
+
+    /** A sign-in desktop's remote and claim lines (the account itself is on the taskbar). */
+    sessionNoticesHtml() {
+        const session = this.loginSession();
+        if (!session) return '';
+        const linkName = this.remote ? (window.networkLinks?.get?.(this.remote.footholdId)?.name || 'your link') : null;
+        const remoteLine = this.remote ? `
+                    <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>` : '';
+        const claim = claimLineText(session);
+        const claimLine = claim ? `
+                    <div class="desktop-claim-line">${escapeHtml(claim)}</div>` : '';
+        return `${remoteLine}${claimLine}`;
+    }
+
+    /** The desktop lockable this view belongs to: itself, the share's parent, or the kept one. */
+    desktopLockable() {
+        if (this.desktopMode) return this.containerItem;
+        if (this.parentLockable) return this.parentLockable;
+        return rememberedDesktop(this.monitorPcId())?.containerItem || null;
+    }
+
+    /**
+     * The taskbar and start panel along the bottom of the screen (UX slice 6) for a desktop or
+     * a share window opened from one. A share opened from the network view has no PC, so none.
+     */
+    mountTaskbar(host, { windowTitle = '' } = {}) {
+        if (!this.pcMonitor || !host || this.mode === 'npc') return;
+        const pcId = this.monitorPcId();
+        if (!pcId) return;
+        const desktop = this.desktopLockable();
+        const pcData = desktop?.scenarioData || findPcData(pcId);
+        const session = window.pcSessions?.get?.(pcId) || null;
+        const remote = this.remote || desktop?.scenarioData?.remote || (session?.remote === true ? { footholdId: session.footholdId } : null);
+        const linkName = remote?.footholdId ? (window.networkLinks?.get?.(remote.footholdId)?.name || null) : null;
+        let places;
+        if (this.desktopMode) {
+            places = (this.contents || []).filter(i => i?.type === 'network_share' && i.id);
+            rememberDesktop(pcId, { containerItem: this.containerItem, places });
+        } else {
+            places = rememberedDesktop(pcId)?.places || [];
+        }
+        const model = pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places, lockSupported: lockSupported() });
+        this.taskbarModel = model;
+        this.taskbar = mountPcTaskbar(host, model, {
+            windowTitle,
+            takeable: this.isTakeable && this.desktopMode,
+            shareIcon: SHARE_ICON,
+            onPlace: (p) => this.taskbarPlace(p),
+            onAction: (a) => this.taskbarAction(a, pcId)
+        });
+    }
+
+    /** Start panel Places: the desktop, or a mapped share (opened as from the desktop). */
+    taskbarPlace(place) {
+        if (place?.kind === 'share') { this.openMappedShare(place.item, this.desktopLockable()); return; }
+        if (place?.kind !== 'desktop' || this.desktopMode) return;
+        // A share window's own Close goes back to the desktop it came from
+        if (this.parentLockable) { this.closeByPlayer(); return; }
+        const desktop = this.desktopLockable();
+        this.exitReason = 'share';
+        this.complete(false);
+        if (desktop && typeof window.startContainerMinigame === 'function') window.startContainerMinigame(desktop, null, false, true);
+    }
+
+    /** Start panel Lock, Switch user and Sign out (through pc-sessions.js). */
+    taskbarAction(action, pcId) {
+        if (action === 'signout') { window.pcSessions?.signOut?.(pcId); return; }
+        if (action === 'lock') { if (lockSupported()) window.pcSessions.lock(pcId); return; }
+        if (action === 'switch') this.switchUser();
+    }
+
+    /**
+     * Switch user: the sign-in screen replaces this view; the session stays until another
+     * account signs in, and leaving the screen comes back to the desktop.
+     */
+    switchUser() {
+        const desktop = this.desktopLockable();
+        if (!desktop) return;
+        const remote = desktop.scenarioData?.remote?.footholdId ? desktop.scenarioData.remote : null;
+        this.exitReason = 'switch';
+        // A remote desktop's Switch user is the remote screen: no tiles, no sticky note.
+        // It starts at once and replaces this view; if it did not, this view is still open
+        // and its own Close must land as a close (review R1 minor 1)
+        window.openLoginSignIn?.(desktop, remote ? { switching: true, remote } : { switching: true });
+        if (remote && window.MinigameFramework?.currentMinigame === this && !this._ending) this.exitReason = 'close';
     }
 
     /**
@@ -1063,21 +1154,6 @@ export class ContainerMinigame extends MinigameScene {
         // The centred words at an even width, so they land on a whole pixel (as a share's names)
         if (below && was) evenShareLabels(more, '.desktop-more-text');
         return below;
-    }
-
-    /**
-     * The signed-in account's headshot in the desktop's top bar (UX slice 2c), with the same
-     * fallback as a sign-in tile: the talk sheet's head crop, and the keys logged (R1 m8).
-     */
-    applyAccountHeadshot() {
-        const box = this.gameContainer?.querySelector?.('.desktop-account-headshot');
-        const session = this.loginSession();
-        if (!box || !session) return;
-        const record = npcRecordFor({ npcId: session.npcId, username: session.username });
-        const talk = typeof record?.spriteTalk === 'string' ? record.spriteTalk : '';
-        const talkUrl = !talk ? null
-            : (/^(\/|https?:|data:)/.test(talk) ? talk : `/break_escape/${talk.startsWith('assets/') ? '' : 'assets/'}${talk}`);
-        applyHeadshotBox(box, headshotSourceFor({}, record), { talkUrl });
     }
 
     populateContents() {
@@ -1243,18 +1319,7 @@ export class ContainerMinigame extends MinigameScene {
 
         // A sign-in desktop's Switch user and Sign out (through pc-sessions.js)
         const switchBtn = this.gameContainer?.querySelector('#desktop-switch-user');
-        if (switchBtn) {
-            // The sign-in screen replaces this desktop; the session stays until another
-            // account signs in, and leaving the screen comes back here.
-            this.addEventListener(switchBtn, 'click', () => {
-                this.exitReason = 'switch';
-                // A remote desktop's Switch user is the remote screen: no tiles, no sticky note.
-                // It starts at once and replaces this desktop; if it did not, this desktop is
-                // still open and its own Close must land as a close (review R1 minor 1)
-                window.openLoginSignIn?.(this.containerItem, this.remote ? { switching: true, remote: this.remote } : { switching: true });
-                if (this.remote && window.MinigameFramework?.currentMinigame === this && !this._ending) this.exitReason = 'close';
-            });
-        }
+        if (switchBtn) this.addEventListener(switchBtn, 'click', () => this.switchUser());
         const signOutBtn = this.gameContainer?.querySelector('#desktop-sign-out');
         if (signOutBtn) {
             this.addEventListener(signOutBtn, 'click', () => window.pcSessions?.signOut?.(this.loginPcId));
@@ -1270,14 +1335,14 @@ export class ContainerMinigame extends MinigameScene {
      * Open a mapped share's stub (4.5): a folder whose contents come from
      * GET /container/<resourceId>. It keeps this desktop's lockable and reopens it on Close.
      */
-    openMappedShare(item) {
+    openMappedShare(item, parent = this.containerItem) {
         if (!item?.id) return;
         const share = {
             scenarioData: { ...item, locked: false },
             name: 'network_share',
             objectId: `share_${item.id}`,
             sourcePcId: this.sourcePcId || undefined,
-            parentLockable: this.containerItem
+            parentLockable: parent || this.containerItem
         };
         this.exitReason = 'share';
         this.complete(false);
