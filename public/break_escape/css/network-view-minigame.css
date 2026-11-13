@@ -229,6 +229,11 @@
     font-size: 16px;
 }
 
+/* A host label never breaks at its hyphen in a narrow column ("HB-" / "GUEST-01") */
+.network-row-hostname {
+    white-space: nowrap;
+}
+
 .network-row-tag {
     color: #b8c4cc;
     font-size: 16px;
