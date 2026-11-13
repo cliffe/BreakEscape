@@ -101,7 +101,7 @@ export function measurePixelText(chars, text, { lineHeight = PIXEL_LINE_HEIGHT, 
     }
     if (left === Infinity) { left = 0; right = 0; }
     const o = outline ? 1 : 0;
-    return { left, right, top: -o, bottom: (lines.length - 1) * lineHeight + PIXEL_LINE_BOX + o, lines: lines.length };
+    return { left, right, top: outline ? -1 : 0, bottom: (lines.length - 1) * lineHeight + PIXEL_LINE_BOX + o, lines: lines.length };
 }
 
 /** Pure: the width of one line's ink, in font pixels before scale. */

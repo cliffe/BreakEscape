@@ -2,7 +2,7 @@
 // (npc-world-bubbles.js say()), with no pulsing talk icon and no toast; the toast stays for NPCs
 // out of view and phone contacts. Long lines page (at most 3 lines a page) timed to the audio;
 // leaving view sends the rest to the toast; at most MAX_BUBBLES bubbles, barks before chatter.
-// The bubble is pixel art: VT323, 2 px whole-pixel frame, no rounded rects.
+// The bubble is pixel art: GNF (bitmap sheet, q105), 2 px whole-pixel frame, no rounded rects.
 // The real modules run against jsdom.
 // Run with: bin/test-js test/js/ux-bark-bubbles.test.mjs
 import test from 'node:test';
@@ -30,7 +30,7 @@ const NPCBarkSystem = barksMod.default;
 const { routeBark } = barksMod;
 const B = await imp('systems/npc-world-bubbles.js');
 const { NpcWorldBubbles, crispText, pageLine, pagesText, pageTimes, lineTotalMs, readingMs, wrapLines, onCamera, placeBubble,
-    MAX_LIFT, HEAD_POINT_DY, hookCameraPass, followUpTimes, MAX_BUBBLES, PAGE_LINES, LINE_CHARS, PAGE_MIN_MS, AUDIO_TAIL_MS, SPEECH_FONT, SPEECH_FONT_PX, BORDER_PX, CAMERA_MARGIN, TEXT_RIGHT_SLACK } = B;
+    MAX_LIFT, HEAD_POINT_DY, hookCameraPass, followUpTimes, MAX_BUBBLES, PAGE_LINES, LINE_CHARS, PAGE_MIN_MS, AUDIO_TAIL_MS, SPEECH_FONT, SPEECH_FONT_SCALE, BORDER_PX, CAMERA_MARGIN, TEXT_RIGHT_SLACK } = B;
 const { displayDashes } = await imp('utils/display-dashes.js');
 const { npcIconAnchor } = await imp('systems/npc-office-visuals.js');
 
@@ -263,15 +263,18 @@ test('a fifth bark farther than all four goes to the toast; a nearer one takes t
 
 // ---- pixel art ----
 
-test('pixel art: VT323 at whole pixels, 2 px frame, no rounded rects, no scale, whole-pixel positions', () => {
+test('pixel art: GNF at whole pixels, 2 px frame, no rounded rects, no scale, whole-pixel positions', () => {
     const r = rig({ npcs: { sara: { x: 100.4, y: 100.6, room: 'hall' } } });
     r.bubbles.say('sara', LONG);
     r.bubbles.update();
     const bb = r.bubbles.bubbles.get('sara');
+    // This rig has no bitmapText, so the helper's fallback canvas Text is used: GNF at its native size
+    // (the bitmap path is tested in pixel-text.test.mjs)
+    assert.ok(bb.text.pixelFallback);
     assert.equal(bb.text.style.fontFamily, SPEECH_FONT);
-    assert.match(SPEECH_FONT, /VT323/);
-    assert.equal(bb.text.style.fontSize, `${SPEECH_FONT_PX}px`);
-    assert.ok(Number.isInteger(SPEECH_FONT_PX));
+    assert.match(SPEECH_FONT, /GNF/);
+    assert.equal(bb.text.style.fontSize, '10.24px');
+    assert.ok(Number.isInteger(SPEECH_FONT_SCALE));
     const names = bb.g.calls.map(c => c[0]);
     for (const banned of ['fillRoundedRect', 'strokeRoundedRect', 'fillTriangle', 'lineBetween']) {
         assert.ok(!names.includes(banned), `${banned} called`);
