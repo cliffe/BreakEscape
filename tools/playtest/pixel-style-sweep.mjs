@@ -60,7 +60,8 @@ const REVIEW_IDS = {
 // Scenes with one card for every size (the page shows them at 1400x1000)
 const REVIEW_SCENE_IDS = {
     'bluetooth-scanner': 'unlock-13', 'esd-pushbutton': 'unlock-28', 'infusion-pump': 'unlock-29',
-    'alarm-panel': 'unlock-32', 'cryptex': 'unlock-39', 'combination': 'unlock-40', 'examine': 'unlock-41'
+    'alarm-panel': 'unlock-32', 'cryptex': 'unlock-39', 'combination': 'unlock-40', 'examine': 'unlock-41',
+    'network-architecture': 'unlock-31', 'forensic-data-platform': 'unlock-33'
 };
 
 // Slice 7 scope, worst first (UNLOCK_GAPS_BUILD_LOG.md minigame sweep). The framework shell
