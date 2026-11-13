@@ -1185,3 +1185,90 @@ NOT DONE (second handover), in plan order:
    `git merge-base main build/harden-8a`), setFPS(20) fixed steps on; an old game made on the base,
    loaded on the branch, upgrading to format 1 under the row lock; an outage through `offWhen`; an
    old tab's sync refused with 409 and the header; `verify-run.rb` progress.
+
+### Step 8a live proof (2026-11-13, third builder)
+
+Item 8 above is now done. Two keyless servers sharing the development database, `setFPS(20)` with
+fixed steps on, headless. The branch server on **:3080** ran from `p-harden-8a` (tip `4c9b2a552`;
+the task was briefed at `23e68344f`, which the parallel corpus/parity commit advanced, tests only,
+no change to the upgrader or the readers this proof exercises; `FormatUpgrade.current` is 1). The
+base server on **:3081** ran from a hand-made base worktree `.claude/worktrees/p-harden-8a-base` at
+`git merge-base main build/harden-8a` = **`8b6cf6a0d`** (step 7 merged, inert at current 0);
+`node_modules` symlinked from `p-9-2-h`, `.bundle/config` copied from `p-9-2-h`. No `db:` task was
+run anywhere. Drivers and the read-only row reader live in the session scratchpad (`p-8a-proof/`),
+nothing added to the repo.
+
+**How the old games were made (deviation from the plan, on the brief's instruction).** The plan's
+"Old games for live proofs" rule makes a test scenario's old game with a one-off runner that
+prepares the data; the brief for this proof instead directed `tools/playtest/swap-scenario-game.rb`.
+Each old game was therefore made on the base with
+`swap-scenario-game.rb <scenario> <scenario> --unlock-all` (current 0, so stored `formatVersion` 0,
+unprepared raw render), then played on the base server's real page to pick up takeable items so
+player_state held real item copies. One consequence is recorded under 3a below: because the base
+game is unprepared, the branch's first load re-prepares it (the transform changes `scenario_data`,
+so `ensure_current_format!` re-runs `prepare_scenario_data!`), so the upgraded row also gains the
+loader's usual fills; the outage-key rename itself is isolated and exact.
+
+Games (all development DB): **2613** `test_access_networks` and **2614** `test_access_work` (old,
+base, upgraded on the branch); **2620** `test_access_networks` (new branch game, 3e). None of the
+three outage scenarios has a takeable object carrying the outage key, so the item copies picked up
+(spare USB stick, keystroke injector, storage USB sticks) carry no outage field; the player_state
+transform walks them and correctly leaves them unchanged.
+
+**Before (base, pre-upgrade), read-only runner.**
+- 2613: `formatVersion` 0; `scenario_data/networks/server_net/downIf`; one
+  `scenario_data/rooms/workshop/objects[2]/affordance/offWhen` (bench_pc); inventory copies
+  `kit_stick`, `kit_badusb` (no outage key). Base `GET /scenario`: status 200, header **0**,
+  bootstrap `formatVersion` 0.
+- 2614: `formatVersion` 0; seven `resources/*/downIf` (crm, rota, stores, printer, intranet,
+  printer_w7, finance_share); one `rooms/cable_room/objects[1]/affordance/offWhen`; inventory copies
+  `kit_usb`, `kit_badusb`.
+
+**3a. Upgrade on the branch's real load, under the row lock.** Loading each game on :3080 goes
+through `set_game` to `Game#ensure_current_format!` (`with_lock { reload; upgrade; save }`). After
+the load, read-only runner:
+- 2613: `formatVersion` **1**; zero `downIf`, zero `affordance.offWhen`; two `offWhen`, at
+  `rooms/workshop/objects[2]/offWhen` (object level) and `networks/server_net/offWhen`. Inventory
+  copies `kit_stick`, `kit_badusb` unchanged, none carrying `downIf`/`affordance.offWhen`/`offWhen`.
+  Branch `GET /scenario`: status 200, header **1**, bootstrap `formatVersion` 1; one page load, no
+  `be-format-reload` key.
+- 2614: `formatVersion` **1**; zero `downIf`, zero `affordance.offWhen`; eight `offWhen` (seven
+  `resources/*/offWhen`, one `rooms/cable_room/objects[1]/offWhen`). Inventory copies unchanged.
+The outage-key rename is exactly the 8a transform; the row's other differences from the base row are
+the expected `prepare_scenario_data!` fills of a first-time load of an unprepared game (see the
+deviation note), not an 8a change.
+
+**3b. The outage still works after upgrade (object `offWhen`, branch game 2613).** In the workshop,
+with `bench_pc_off` true and synced, `interact bench_pc` opens nothing (the PC is off). With
+`bench_pc_off` false and synced, `interact bench_pc` opens the sign-in (`password`) minigame (the PC
+is back on). The field the client reads is the object-level `offWhen` the step moved up from
+`affordance.offWhen`.
+
+**3c. An old tab is refused (409 + header).** A base tab (old code, :3081) was opened on 2613 while
+it was still format 0 (bootstrap `formatVersion` 0, header 0; it holds 0). The branch then upgraded
+2613 to format 1 (3a). The still-open base tab's next `set_game` request, `GET /room/lobby`,
+returned **409** with body
+`{"error":"format","message":"This game was saved by a newer version of Break Escape (format 1; this server reads up to 0)","current":0}`;
+base responses carry `X-Break-Escape-Format: 0`. The format guard reloaded the tab once (session key
+`be-format-reload:2613:0:0`), and the reloaded base `show` route is itself the full-page 409 HTML
+refusal ("newer version of Break Escape (format 1; this server reads up to 0)", header
+`X-Break-Escape-Format: 0`). Note: on the base (current 0) `sync_state` is inert and does not itself
+refuse, so a concurrent base sync returned 200; the refusal surfaces on the `set_game` routes (room
+fetch and show), which the guard wraps. This is the intended "a game upgraded by a newer branch
+refuses to load on older code".
+
+**3d. `verify-run.rb` on the upgraded games.** 2613: "progress recorded, 7 rooms beyond the first",
+inventory Notepad, Spare USB stick, Keystroke injector; exit 0. 2614: "progress recorded, 22 rooms
+beyond the first", inventory Notepad and the two storage USB sticks; exit 0.
+
+**3e. A new game on the branch is format 1 and plays.** `swap-scenario-game.rb` of
+`test_access_networks` on the branch created **2620** stamped `formatVersion` **1** at creation
+(`scenario_data` carries `offWhen`, no `downIf`). Played on :3080: items picked up and synced, and
+`verify-run.rb` reports "progress recorded"; the stored row stays `formatVersion` 1 with `offWhen`
+intact.
+
+**Servers and clean-up.** Both servers were stopped by their own PIDs (branch puma pid 3843423 on
+:3080, base puma pid 3843420 on :3081); both confirmed down. The base worktree
+`.claude/worktrees/p-harden-8a-base` is **left in place** (as the task directed), not moved to
+`tmp/delete/`. Games 2613, 2614 and 2620 are development-DB games that carry the proof's picked-up
+items; they are at format 1 and reusable, recorded here. No other game was touched.
