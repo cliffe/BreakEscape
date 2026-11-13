@@ -114,6 +114,12 @@ export class RFIDMinigame extends MinigameScene {
     handleCardTap(card) {
         console.log('📡 Card tapped:', card.scenarioData?.name);
 
+        // The copier's own Read, from the inventory (no reader): a held card picked there is
+        // read for copying, as when the card itself is clicked in the inventory.
+        if (!this.isLockingAttempt && this.hasCloner && card && card.scenarioData) {
+            return this.startHeldCardRead(card);
+        }
+
         // Get card ID (standard: card_id, else the lock the card opens)
         const cardId = card.scenarioData?.card_id || window.lockRef(card.scenarioData);
 
@@ -150,6 +156,20 @@ export class RFIDMinigame extends MinigameScene {
     }
 
     /**
+     * Read a held keycard for copying, from the copier's Read list. The copier becomes a
+     * clone of that card: the same read, result, Save and server record as a held card
+     * clicked in the inventory (interactions.js, cloneFrom 'inventory').
+     * @param {Object} card - an inventory keycard item ({ scenarioData })
+     */
+    startHeldCardRead(card) {
+        this.mode = 'clone';
+        this.cardToClone = card.scenarioData;
+        this.cloneFrom = 'inventory';
+        this.cloneSource = null;
+        this.ui.showReadingScreen();
+    }
+
+    /**
      * Show a refusal until the player taps the screen or DENIAL_HOLD_MS passes, then go
      * back(). On a door, also report it (params.onRefused: unlock-system's
      * emitDoorUnlockFailed, which emits door_unlock_failed and door_unlock_failed:<room>).
@@ -169,6 +189,12 @@ export class RFIDMinigame extends MinigameScene {
         }
         let done = false;
         const onTap = (e) => { if (e && e.stopPropagation) e.stopPropagation(); finish(); };
+        // Enter or Space continues too (R5 n1): the screen takes the focus while it shows
+        const onKey = (e) => {
+            if (!e || (e.key !== 'Enter' && e.key !== ' ')) return;
+            if (e.preventDefault) e.preventDefault();
+            onTap(e);
+        };
         const finish = () => {
             if (done) return;
             done = true;
@@ -176,10 +202,18 @@ export class RFIDMinigame extends MinigameScene {
             back();
         };
         this._denial = {
-            screen, onTap,
+            screen, onTap, onKey,
             timer: setTimeout(finish, DENIAL_HOLD_MS),
-            // Listen from the next tick, so the click that tapped the card doesn't count
-            armTimer: setTimeout(() => { if (!done && screen) screen.addEventListener('click', onTap); }, 0)
+            // Listen from the next tick, so the click (or Enter) that tapped the card doesn't count
+            armTimer: setTimeout(() => {
+                if (done || !screen) return;
+                screen.addEventListener('click', onTap);
+                screen.addEventListener('keydown', onKey);
+                if (typeof screen.focus === 'function') {
+                    screen.setAttribute?.('tabindex', '-1');
+                    try { screen.focus({ preventScroll: true }); } catch (e) { /* not focusable */ }
+                }
+            }, 0)
         };
         if (this.isLockingAttempt && typeof this.params.onRefused === 'function') {
             try { this.params.onRefused(reason); } catch (e) { console.warn('onRefused failed:', e); }
@@ -193,7 +227,10 @@ export class RFIDMinigame extends MinigameScene {
         this._denial = null;
         clearTimeout(d.timer);
         clearTimeout(d.armTimer);
-        if (d.screen && d.screen.removeEventListener) d.screen.removeEventListener('click', d.onTap);
+        if (d.screen && d.screen.removeEventListener) {
+            d.screen.removeEventListener('click', d.onTap);
+            d.screen.removeEventListener('keydown', d.onKey);
+        }
     }
 
     /**

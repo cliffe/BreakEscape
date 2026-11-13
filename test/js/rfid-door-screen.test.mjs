@@ -537,7 +537,8 @@ test('the details screen puts Emulate and Back in the footer', () => {
     const { g, footer, restore } = withFooter({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
     try {
         g.ui.showCardDetails(visitor());
-        assert.deepEqual(footer.children.map(c => c.className), ['flipper-menu-item', 'flipper-button-back']);
+        assert.deepEqual(footer.children.map(c => c.className), ['flipper-button', 'flipper-button-back'], 'Emulate is a footer button (R5 n2)');
+        assert.deepEqual(footer.children.map(c => c.tag), ['button', 'button'], 'real buttons: Tab reaches them (R5 n1)');
         assert.equal(footer.children[0].textContent, '> Emulate');
         assert.match(allText(footer.children[1]), /Back/);
         assert.ok(!flat(screen).some(e => /flipper-button-back|flipper-menu-item/.test(e.className)), 'none left in the body');
@@ -568,13 +569,28 @@ test('the emulating and reading screens show their status first', () => {
     } finally { restore(); }
 });
 
-test('the protocol screen puts Back and Abandon in the footer', () => {
+test('the protocol screen puts its action, then Back and Abandon, in the footer (R5 m1)', () => {
     const { g, footer, restore } = withFooter({ mode: 'clone', cardToClone: mifare() });
     try {
-        g.ui.showProtocolInfo(mifare());
-        assert.deepEqual(footer.children.map(c => c.className), ['flipper-button-back', 'flipper-button-back']);
-        assert.match(allText(footer.children[0]), /Back/);
-        assert.equal(footer.children[1].textContent, 'Abandon read');
+        const weak = { card_id: 'w', rfid_protocol: 'MIFARE_Classic_Weak_Defaults', name: 'Staff badge' };
+        const desfire = { card_id: 'd', rfid_protocol: 'MIFARE_DESFire', name: 'Exec badge' };
+        const cases = [
+            [mifare(), ['> Darkside Attack (~30 sec)', '  Dictionary Attack (unlikely)']],
+            [weak, ['> Dictionary Attack (instant)']],
+            [desfire, ['> Save UID Only']],
+            [em(), ['> Read & Clone']],
+        ];
+        for (const [card, labels] of cases) {
+            g.ui.showProtocolInfo(card);
+            assert.deepEqual(footer.children.map(c => c.className), ['flipper-buttons flipper-footer-actions', 'flipper-footer-row']);
+            const [actions, row] = footer.children;
+            assert.deepEqual(actions.children.map(b => b.textContent), labels, card.rfid_protocol);
+            assert.ok(actions.children.every(b => b.tag === 'button' && /flipper-button/.test(b.className)));
+            assert.deepEqual(row.children.map(c => c.className), ['flipper-button-back', 'flipper-button-back']);
+            assert.match(allText(row.children[0]), /Back/);
+            assert.equal(row.children[1].textContent, 'Abandon read');
+            assert.ok(!flat(screen).some(e => e.tag === 'button'), 'no control left in the body');
+        }
     } finally { restore(); }
 });
 
@@ -625,4 +641,157 @@ test('the footer, display and pixel scrollbar rules', () => {
     assert.doesNotMatch(bars, /rgba|border-radius/);
     assert.doesNotMatch(css, /\.flipper-screen::-webkit-scrollbar|\.flipper-card-list::-webkit-scrollbar/, 'the old translucent bars are gone');
     assert.doesNotMatch(rule('.flipper-card-list'), /overflow-y|max-height/, 'one scroller per screen');
+});
+
+// UX slice 3a R5 n1, n3 and the tray Read: keyboard focus, keys, list positions
+// Elements that can take focus and be clicked, as a browser's buttons can
+function withFocus(fn) {
+    const realCreate = document.createElement;
+    document.activeElement = null;
+    document.createElement = (tag) => {
+        const e = realCreate(tag);
+        e.tagName = String(tag).toUpperCase();
+        e.isConnected = true;
+        e.focus = function (opts) { document.activeElement = this; this.focusOpts = opts; };
+        e.click = function () { this.listeners.click?.(); };
+        return e;
+    };
+    try { return fn(); } finally { document.createElement = realCreate; document.activeElement = null; }
+}
+const buttonsIn = (...roots) => roots.flatMap(flat).filter(e => e.tag === 'button');
+const key = (k, target) => {
+    const ev = { key: k, target, stopped: false, prevented: false,
+        stopPropagation() { this.stopped = true; }, preventDefault() { this.prevented = true; } };
+    return ev;
+};
+
+test('each screen opens with its main control focused, so Enter does its main action (R5 n1)', () => withFocus(() => {
+    window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [visitor(), em()] } }];
+    const { g, footer, restore } = withFooter({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+    try {
+        g.ui.showMainMenu('unlock');
+        assert.equal(document.activeElement.textContent, '> Read');
+        g.ui.showSavedCards();
+        assert.equal(document.activeElement.textContent, '> Visitor card 07', 'the first card');
+        g.ui.showCardDetails(visitor());
+        assert.equal(document.activeElement.textContent, '> Emulate');
+        g.ui.showTapInterface();
+        assert.equal(document.activeElement, footer.children[0], 'no card to tap: Back');
+        g.ui.showCardDataScreen(visitor());
+        assert.equal(document.activeElement.textContent, 'Save');
+        g.ui.showProtocolInfo({ card_id: 'w', rfid_protocol: 'MIFARE_Classic_Weak_Defaults', name: 'Staff badge' });
+        assert.equal(document.activeElement.textContent, '> Dictionary Attack (instant)');
+        const d = makeGame({ mode: 'unlock', requiredCardIds: ['VISITOR-07'], availableCards: [] });
+        d.ui.showDoorScreen();
+        assert.match(document.activeElement._html, /Emulate Visitor card 07/, 'at a reader: the first saved card');
+    } finally { restore(); window.inventory.items = []; }
+}));
+
+test('Enter and Space press the focused control; arrows move between controls; Esc is left alone', () => withFocus(() => {
+    window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [visitor(), em()] } }];
+    const { g, footer, restore } = withFooter({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+    try {
+        g.ui.frameElement = { querySelectorAll: () => buttonsIn(screen, footer), contains: () => true };
+        g.ui.showSavedCards();
+        const [first, second, back] = buttonsIn(screen, footer);
+        let ev = key('ArrowDown', first);
+        assert.equal(g.ui.onKey(ev), true);
+        assert.equal(document.activeElement, second);
+        assert.ok(ev.stopped && ev.prevented, 'the world never sees it');
+        g.ui.onKey(key('ArrowDown', second));
+        g.ui.onKey(key('ArrowDown', back));
+        assert.equal(document.activeElement, back, 'stops at the last control');
+        g.ui.onKey(key('ArrowUp', back));
+        assert.equal(document.activeElement, second);
+        ev = key('Escape', second);
+        assert.equal(g.ui.onKey(ev), false);
+        assert.equal(ev.stopped, false, 'Esc bubbles to the close handler');
+        ev = key('Enter', second);
+        assert.equal(g.ui.onKey(ev), true);
+        assert.ok(ev.stopped && ev.prevented);
+        assert.match(texts(), /RFID > Saved > Details/, 'Enter opened the second card');
+        assert.match(texts(), /Server Room Card/);
+        g.ui.onKey(key(' ', document.activeElement));
+        assert.match(texts(), /Emulating/, 'Space pressed Emulate');
+        g.ui.cleanup();
+        // A key on something that is not a copier control does nothing
+        assert.equal(g.ui.onKey(key('Enter', { tagName: 'DIV' })), false);
+    } finally { restore(); window.inventory.items = []; }
+}));
+
+test('Back from details, or a refusal, keeps the list where it was (R5 n3)', () => withFocus(() => {
+    const twelve = Array.from({ length: 12 }, (_, i) => ({ ...visitor(), card_id: `c${i}`, name: `Card ${i + 1}` }));
+    window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: twelve } }];
+    const { g, footer, restore } = withFooter({ mode: 'unlock', requiredCardIds: [], availableCards: [] });
+    try {
+        g.ui.showMainMenu('unlock');
+        screen.scrollTop = 0;
+        g.ui.showSavedCards();
+        screen.scrollTop = 380;
+        buttonsIn(screen)[11].click();
+        assert.equal(screen.scrollTop, 0, 'details open at their top');
+        footer.children[1].click();   // Back
+        assert.match(texts(), /RFID > Saved/);
+        assert.equal(screen.scrollTop, 380, 'the list where it was');
+        assert.equal(document.activeElement.textContent, '> Card 12', 'on the card picked');
+        assert.deepEqual(document.activeElement.focusOpts, { preventScroll: true });
+        footer.children[0].click();   // Back to the menu, then Saved again: the top
+        g.ui.showSavedCards();
+        assert.equal(screen.scrollTop, 0);
+        assert.equal(document.activeElement.textContent, '> Card 1');
+    } finally { restore(); }
+
+    // At a reader: a wrong card's refusal returns to the door list where it was
+    const d = makeGame({ mode: 'unlock', requiredCardIds: ['nope'], availableCards: [] });
+    d.ui.showEmulationScreen = () => d.ui.showError('Card not accepted');
+    screen.scrollTop = 0;
+    d.ui.showDoorScreen();
+    screen.scrollTop = 250;
+    buttonsIn(screen)[9].click();
+    assert.equal(screen.scrollTop, 0);
+    d.ui.showSavedCards();          // what the refusal goes back to
+    assert.equal(screen.scrollTop, 250);
+    assert.match(document.activeElement._html, /Emulate Card 10/);
+    window.inventory.items = [];
+}));
+
+test('the tray copier\'s Read lists the held keycards and reads the one picked for copying', () => {
+    window.inventory.items = [{ scenarioData: { type: 'rfid_cloner', saved_cards: [] } }];
+    const held = { objectId: 'inventory_keycard_v', scenarioData: { type: 'keycard', name: 'Visitor card 07', card_id: 'VISITOR-07', rfid_protocol: 'EM4100' } };
+    const g = makeGame({ mode: 'unlock', availableCards: [held], hasCloner: true });
+    g.ui.showTapInterface();
+    assert.doesNotMatch(texts(), /No keycards in inventory/);
+    const row = items().find(e => /Visitor card 07/.test(e.textContent));
+    assert.ok(row, 'the held card is listed');
+    let reading = false;
+    g.ui.showReadingScreen = () => { reading = true; };
+    row.listeners.click();
+    assert.equal(reading, true, 'the read starts');
+    assert.equal(g.mode, 'clone');
+    assert.equal(g.cardToClone, held.scenarioData);
+    assert.equal(g.cloneFrom, 'inventory', 'recorded as a held card, as an inventory click does');
+    assert.equal(g.gameResult, null, 'no "Card Read" result that closes the copier');
+    // At a reader a held card is still a tap, not a read
+    const door = makeGame({ mode: 'unlock', requiredCardIds: ['VISITOR-07'], availableCards: [held], hasCloner: true });
+    globalThis.setTimeout = () => 0;
+    try { door.handleCardTap(held); } finally { globalThis.setTimeout = realTimeout; }
+    assert.equal(door.mode, 'unlock');
+    assert.equal(door.gameResult.success, true);
+    window.inventory.items = [];
+});
+
+test('Enter continues from a refusal, as a tap does', async () => {
+    const g = makeGame({ mode: 'unlock', requiredCardIds: ['x'], availableCards: [] });
+    let back = 0;
+    screen.focus = function () { document.activeElement = this; };
+    screen.setAttribute = function (k, v) { this[k] = v; };
+    g._showDenial('Card not accepted', () => { back++; }, 'wrong_card', 'Not this one.');
+    await new Promise(r => realTimeout(r, 5));
+    assert.equal(document.activeElement, screen, 'the refusal takes the focus');
+    screen.listeners.keydown(key('Escape', screen));
+    assert.equal(back, 0, 'Esc is not a continue');
+    screen.listeners.keydown(key('Enter', screen));
+    assert.equal(back, 1);
+    assert.equal(g._denial, null, 'the hold timer is cleared');
+    document.activeElement = null;
 });

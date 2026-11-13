@@ -1248,7 +1248,10 @@ export function handleObjectInteraction(sprite) {
             console.log('Starting RFID minigame from inventory (unlock mode)');
             window.startRFIDMinigame(null, null, {
                 mode: 'unlock',
-                availableCards: [],
+                // The copier's Read lists the keycards held, to copy one (it said "No
+                // keycards in inventory" while one was held: UX slice 3a R5)
+                availableCards: ((window.inventory && window.inventory.items) || []).filter(item =>
+                    item && item.scenarioData && item.scenarioData.type === 'keycard'),
                 hasCloner: true
             });
             return;

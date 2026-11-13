@@ -239,6 +239,79 @@
     margin-top: 0;
 }
 
+/* Footer buttons on the orange body: a dark fill with a light top-left and a dark
+   bottom-right bevel, orange text, so each reads as a raised button and never as orange
+   on orange (UX slice 3a R5 n2). Abandon read keeps its grey. */
+.flipper-footer .flipper-button {
+    background: #2a2a2a;
+    color: #FFA500;
+    box-shadow: inset 2px 2px 0 #4d4d4d, inset -2px -2px 0 #111;
+}
+
+.flipper-footer .flipper-button:hover {
+    background: #3d3d3d;
+}
+
+.flipper-footer .flipper-button-secondary {
+    background: #555;
+    color: #fff;
+    box-shadow: inset 2px 2px 0 #6a6a6a, inset -2px -2px 0 #333;
+}
+
+.flipper-footer .flipper-button-secondary:hover {
+    background: #6a6a6a;
+}
+
+/* The protocol screen's attacks (or Read & Clone, Save UID Only), stacked over the
+   Back and Abandon read row (R5 m1) */
+.flipper-footer .flipper-footer-actions {
+    flex-direction: column;
+    gap: 6px;
+}
+
+.flipper-footer .flipper-footer-actions .flipper-button {
+    flex: none;
+    padding: 8px 12px;
+}
+
+.flipper-footer-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* The copier's controls are real buttons (R5 n1): no browser button look */
+.flipper-zero-frame button {
+    margin: 0;
+    font-family: 'GNF', monospace;
+    line-height: normal;
+    border-radius: 0;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.flipper-zero-frame button.flipper-menu-item {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+/* The control the keyboard is on: a 2px white pixel ring, square, clear on the grey
+   screen and on the orange body alike */
+.flipper-zero-frame button:focus {
+    outline: none;
+}
+
+.flipper-zero-frame button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 0;
+}
+
+.flipper-zero-frame button.flipper-menu-item:focus-visible {
+    border-color: #FFA500;
+    background: #4d4d4d;
+}
+
 /* Breadcrumb */
 .flipper-breadcrumb {
     font-size: 14px;
