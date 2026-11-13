@@ -6,11 +6,11 @@
     flex-direction: column;
     gap: 10px;
     background: #10161c;
-    border: 4px solid #444;
+    /* UX feedback slice 1: every border in the view is 2px; the panel is as tall as its rows */
+    border: 2px solid #444;
     padding: 12px;
     color: #e8eef2;
     font-size: 18px;
-    min-height: 220px;
     /* Pixel fonts have no italic or bold cut: never let the browser fake one */
     font-style: normal;
     font-synthesis: none;
@@ -26,9 +26,35 @@
 }
 
 .network-view-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin: 0 0 4px 0;
     font-size: 22px;
     color: #9ee6ff;
+}
+
+/* wifi.png 11 x 8, x2 */
+.network-view-title-icon {
+    width: 22px;
+    height: 16px;
+    flex: 0 0 22px;
+    image-rendering: pixelated;
+}
+
+.network-view-title .network-row-tag {
+    color: #c8a0a0;
+}
+
+.network-view-subtitle {
+    margin: 0 0 4px 0;
+    color: #b8c4cc;
+    font-size: 16px;
+}
+
+.network-view-status {
+    margin: 4px 0 0 0;
+    color: #a8f0b0;
 }
 
 .network-view-observations {
@@ -55,16 +81,16 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
+/* No border round a row: a lighter fill on the block's darker one, 4px apart (main3-04) */
 .network-row {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 6px 8px;
-    background: #18222b;
-    border: 2px solid #2d3a44;
+    background: #223140;
 }
 
 .network-row-icon {
@@ -123,11 +149,23 @@
     font-size: 16px;
 }
 
+.network-row-tag {
+    color: #b8c4cc;
+    font-size: 16px;
+}
+
 .network-row-control {
     flex: 0 0 auto;
     display: flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+/* "Session kept: <name>": a held session that comes back with the host or the route */
+.network-row-kept {
+    color: #ffe0a0;
+    font-size: 16px;
 }
 
 .network-row-off {
@@ -201,12 +239,12 @@
 }
 
 .network-row-down {
-    background: #1b1e21;
-    border-color: #33383c;
+    background: #1e2226;
     color: #868d93;
 }
 
 .network-row-down .network-row-name,
+.network-row-down .network-row-tag,
 .network-row-down .network-row-off {
     color: #868d93;
     /* No synthesised slant on the pixel font in a greyed row */
