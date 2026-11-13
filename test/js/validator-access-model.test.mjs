@@ -280,6 +280,9 @@ test('a capture route on an account holder without revealSecret is a warning', {
     assertHas(warnings(issues(sc)), "NPC 'jake' has a capture route");
     sc.social = { captures: { revealSecret: true } };
     assert.ok(!has(issues(sc), 'has a capture route'));
+    // An explicit false is a choice: the password is typed from its earned source
+    sc.social = { captures: { revealSecret: false } };
+    assert.ok(!has(issues(sc), 'has a capture route'));
 });
 
 test("a #clone_keycard tag naming another NPC's card is a warning", { skip }, () => {

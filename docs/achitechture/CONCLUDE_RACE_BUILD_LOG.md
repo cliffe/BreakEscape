@@ -1,0 +1,297 @@
+# Conclude race build log
+
+Branch: `build/conclude-race` (from main `2f5471209`). Worktree `.claude/worktrees/p-conclude-race`.
+
+## The bug
+
+A task completes on the same beat that sets a global named in the mission's
+`concludeRequires.globals`. The task-completion POST (`POST .../objectives/tasks/:id`)
+can reach the server before the state sync (`PUT .../sync_state`) that carries that
+global. The server reads `player_state['globalVariables'][var]`, finds it absent, and
+answers with a conclusion warning (`Game#unmet_conclude_requirements`,
+`game.rb` ~3711-3726). The client shows it as a "Not Yet…" toast
+(`objectives-manager.js` ~660-664). The global lands a moment later and the mission
+concludes anyway, so the warning is shown over the ending.
+
+Reported by the release-readiness session: sis02 hit it; about 69 awareness `ca*`
+scenarios gate on episode/triage globals (ca01 completes its task from an eventMapping
+on the gate global's change, the race shape). sis01's "Not Yet" was a *different* bug
+(its debrief task completes when the debrief opens, minutes before `debrief_complete`
+is set) and is fixed in its scenario on `build/rel-fixes`; it is not a race and not a
+proof case here.
+
+## Root cause
+
+Nothing ordered the pending global sync before the task-completion POST. The parallel
+**conclude** path was already protected: `concludeMission()` in
+`music/scenario-music-events.js` (lines 369-373) flushes `window.stateSync.sync()`
+twice before `POST .../conclude`. The task-completion path had no equivalent.
+
+## The fix
+
+Mirror the proven conclude-path pre-flush on the task-completion and skip paths, and
+heal a residual race with an idempotent re-post.
+
+1. **Primary (client, root cause).** `ObjectivesManager.flushPendingGlobals()` awaits
+   `window.stateSync.sync()` twice. It is called before the completion POST (in
+   `serverCompleteTaskWithRetry`, once, ahead of the retry loop) and before the skip
+   POST (in `skipTask`). `sync()` sends `buildChanges()` — deltas only, and nothing at
+   all when nothing changed — so no growth of `player_state` (SYNC SIZE RULE).
+2. **Second line of defence (client + server).** If the completion still returns a
+   conclusion `warning` (a tight residual race, or the flush failed), the client flushes
+   again and re-posts the completion. The server's "already completed" branch in
+   `Game#complete_task!` now re-evaluates the gate (`recheck_pending_mission_conclusions!`)
+   and reports `missionConcluded` / `warning`, so the idempotent re-post can conclude the
+   mission instead of leaving it stranded. The client shows the toast only if the gate is
+   *still* unmet after the re-post. The warning is not merely dropped.
+
+### What each request now sends
+
+- `PUT .../sync_state` (the pre-flush): unchanged — `buildChanges()` deltas (changed
+  globals among them), or no request when nothing changed. Bounded, delta-only.
+- `POST .../objectives/tasks/:id` (completion): **body unchanged** (`submittedFlags` /
+  `currentCount` only where already sent). Response may now also carry
+  `missionConcluded` / `warning` on the *already-completed* branch — fields the client
+  already handles.
+- `POST .../objectives/tasks/:id/skip`: unchanged body; same pre-flush ahead of it.
+
+### Cheat policy
+
+No new trust. `concludeRequires.globals` is already the client-reported weak gate
+(`game.rb` comment at `unmet_conclude_requirements`); hard secrets gate via
+`concludeRequires.tasksCompleted` (server-validated flags), untouched. The global still
+travels the same validated sync path; the fix only orders it before the POST.
+
+## Files touched
+
+- `public/break_escape/js/systems/objectives-manager.js`
+- `app/models/break_escape/game.rb`
+- `test/js/conclude-race.test.mjs` (new)
+- `test/controllers/break_escape/conclude_race_test.rb` (new; the Rails test uses an
+  inline `scenario_data`, so no scenario directory was added)
+
+## Tests
+
+Written failing first, then made green by the fix.
+
+- `test/js/conclude-race.test.mjs` (node, 2 tests): the pre-flush runs before the
+  completion POST; a residual warning is healed by a flush + idempotent re-post that
+  concludes (no "Not Yet" toast). Red before the fix (no flush; warning not healed).
+- `test/controllers/break_escape/conclude_race_test.rb` (Rails, 2 tests): completing
+  the gate task before its global syncs warns and does not conclude (reproduces the
+  race); a re-post after the global arrives concludes the mission. The second was red
+  before the server change (returned "Already completed" with no `missionConcluded`).
+
+Touched-file importers run (no full suites):
+
+- node, every test importing `objectives-manager.js` (15 files): all pass.
+  credits-header-text 8, credits-mission-exit 4, ending-check 21, ending-credits-audio 13,
+  ending-replay-credits 3, objectives-all-optional-aim 3, objectives-global-unlock 7,
+  objectives-network-footholds 8, objectives-required-marker 10, objectives-reveal 12,
+  objectives-signin-pc 3, objectives-skip 6, objectives-target-ids 6, success-screen 16,
+  conclude-race 2.
+- Rails, every test exercising `complete_task!` / the already-completed branch:
+  task_set_global, social_sync_then_emit, conclude_mission, conclude_race (22/112),
+  game_test + reload_persistence (168/668), games_controller + game_state_locking
+  (68/230). All pass.
+
+## Live proof (run 2026-11-13)
+
+Run in a real headless browser, setFPS(20) with fixed steps on. Branch server: keyless,
+`:3061` from this worktree (`tmp/keyless-3061.log`). Base server: a hand-made worktree at
+main `2f5471209` (`p-conclude-base`), keyless on `:3063` (`:3060` and `:3062` were taken by
+another session; `tmp/keyless-3063.log`). The "Not Yet" toast is caught by wrapping
+`window.gameAlert`. Request order is read from each server's request log; the server record
+(`status`, `mission_concluded_at`, the gate global) is the authority.
+
+**Case 1 - plain path (`test_conclude_race`, committed).** A switch object's
+`triggerOnInteract` runs a plain `set_global gate_global` (apply-actions.js, emitAlways); an
+NPC `eventMapping` on `global_variable_changed:gate_global` completes `final_task`, the single
+task of a `missionConclusion` aim with `concludeRequires.globals: ["gate_global"]`.
+
+- Base / main (game 3192... see below; plain-path game **3185** on `:3063`): the log shows
+  only `POST .../objectives/tasks/final_task` (line 14064) with **no** preceding
+  `PUT .../sync_state` for the gate. The "Not Yet..." toast fired
+  ("Complete required objectives first to conclude the mission."). Server record:
+  `status=in_progress`, `mission_concluded_at=nil`, `gate_global=nil` - the global never
+  reached the server and the mission was left stranded. The race reproduced.
+- Branch (game **3177** on `:3061`): `PUT .../sync_state` (log line 42123) **precedes**
+  `POST .../objectives/tasks/final_task` (42135); exactly one completion POST, 200. No toast
+  (only "Task Complete" / "Objective Complete"). Server record: `status=completed`,
+  `mission_concluded_at` set, `gate_global=true`. The fix orders the sync first and the
+  mission concludes on the first POST.
+
+**Case 2 - sis02's old globals gate (`test_sis02_conclude`, scratch, not committed).** A copy
+of sis02 with the old gate restored (`concludeRequires.globals: ["debrief_complete"]`). The
+gate takes the plain path: `npc_priya_s.ink` `closing_end` sets `#set_global:debrief_complete`
+(chat-helpers.js, immediate emit, no sync) then `#complete_task:talk_to_priya_s` on the next
+beat. Head-start seeded the two prerequisite aims complete and `priya_s_visible`; the driver
+emitted the reveal event, then navigated the debrief to "Nothing else from us." (`closing_end`).
+
+- Branch (game **3190** on `:3061`): `PUT .../sync_state` (log line 70831) **precedes** both
+  `POST .../conclude` (70849) and `POST .../objectives/tasks/talk_to_priya_s` (70850). No
+  "Not Yet" toast; `status=completed`, `mission_concluded_at` set, `debrief_complete=true`.
+  sis02's gate concludes cleanly on the branch.
+
+**Case 3 - ca01 (`ca01_invoice_fraud`), no-regression only.** Driven by the committed full
+episode-e1 bridge script (`tools/playtest/se/bridge-e1-full.jsonl`) through the real inbox
+triage, whose `triage-starter.js` already does sync-then-emit.
+
+- Branch (game **3191** on `:3061`): the triage's several `PUT .../sync_state` all precede
+  `POST .../objectives/tasks/sort_payments_inbox` (log line 85320). `status=completed`,
+  `mission_concluded_at` set, gate `episode_e1_invoice_fraud_defend_complete=true`,
+  `sort_payments_inbox` and `land_supplier_contact` completed. No "Not Yet".
+- Base / main (game **3192** on `:3063`): concludes identically (`status=completed`,
+  gate `true`). `check-bridge.mjs` reports the same 11/14 evals pass on both branch and base,
+  with the same three failures (bridge lines 7, 65, 73) - pre-existing drift in the recorded
+  assertions against the current build, present on main too, not caused by this fix. ca01
+  concludes as before: no regression.
+
+Screenshots of the endings are in the scratchpad (`branch_3177.png`, `base_3185.png`,
+`branch_sis02_3190.png`). Validator on the committed `test_conclude_race`: 0 errors, 0 known,
+1 advisory warning (no `*_talk.png` portrait for the gate NPC).
+
+### Note on prior test text
+
+The two automated tests exercise the real code paths, not mocks of them: the node test drives the real
+`ObjectivesManager.completeTask` flow (only `stateSync`/`fetch` are seams) and asserts
+the sync runs before the completion POST; the Rails test goes over real HTTP through
+the real controller and `Game#complete_task!`. Both reproduce the ordering and are red
+before the fix.
+
+### Important finding that changes the proof cases
+
+- **ca01's conclude gate is already protected**, so it will NOT show the race live.
+  Its gate global `episode_e1_invoice_fraud_defend_complete` is written by the inbox
+  triage minigame through `triage-starter.js` `persistTriageResult`, which already does
+  "sync, then emit": it writes the globals with `deferEmit`, awaits
+  `stateSync.syncConfirmed()`, and only then emits `global_variable_changed:...complete`
+  (the event that completes `sort_payments_inbox`). That is a per-feature workaround for
+  this exact race. ca01 has the shape but the triage path hand-rolled the fix.
+- **The generic race is the plain path**: `apply-actions.js` `setGlobal` calls
+  `writeGlobal(..., { emitAlways: true })`, which emits the change immediately, no sync.
+  Any eventMapping that completes a conclude-gate task on that change is the race. The
+  engine fix makes this path safe, so a scenario no longer needs the triage-starter
+  workaround. This is the case to prove live.
+
+### Live-proof plan (for the follow-up runner)
+
+Keyless server on :3061 only (start by hand like `tools/playtest/start-keyless-server.sh`
+but `-p 3061`; log at `tmp/keyless-3061.log`; stop it after, by PID). Use setFPS(20),
+fixed steps on. No VM flags needed (sis02 and ca01 have no VMs).
+
+1. **Minimal plain-path scenario** (cleanest): a scenario with a start room, an
+   interactable whose `onInteract` runs `setGlobal gate_global true` (the plain,
+   immediate-emit path), an eventMapping `global_variable_changed:gate_global ->
+   completeTask: final_task`, and a `missionConclusion` aim whose single task is
+   `final_task` with `concludeRequires.globals: ["gate_global"]` and a `bond_visualiser`
+   conclusionScreen. Create a game row directly (a `bin/rails runner` with inline
+   `scenario_data`, as `conclude_race_test.rb` does — avoids seeding a Mission). Load
+   `/break_escape/games/:id`, drive the interact via `window.__test`, assert the credits
+   open and no "Not Yet" toast fired. Then `grep` `tmp/keyless-3061.log` for the order:
+   `Started PUT ".../sync_state"` must precede `Started POST ".../objectives/tasks/final_task"`,
+   and that POST completes 200 (not a 422/warning). `tools/playtest/count-task-posts.sh`
+   and `verify-run.rb <id>` confirm the single completion and `mission_concluded_at`.
+2. **sis02 old-gate test copy**: copy sis02's scenario to `scenarios/test_*` (or a scratch
+   row), restore its old globals conclude gate (the FLAG SESSION global, set via the plain
+   path, not triage), drive to the FLAG SESSION beat and conclusion, same log-order check.
+   Do NOT edit sis02 itself.
+3. **ca01**: expected to conclude cleanly BECAUSE triage-starter already syncs-then-emits;
+   worth running once to confirm no regression and to show the log order (the sync lands
+   before the `sort_payments_inbox` POST either way). Not a demonstration of the engine
+   fix on its own.
+
+## Handover
+
+Status at hand-back (near context budget):
+
+- **Done and committed** (`2fb8f961e`): the engine fix + both failing-first tests + build
+  log. Branch `build/conclude-race` off main `2f5471209`, worktree
+  `.claude/worktrees/p-conclude-race`.
+- **Root cause / fix / request payloads**: see the sections above. No `player_state`
+  growth; no new server trust.
+- **Tests green**: node conclude-race 2/2 and all 15 objectives-manager importers; Rails
+  conclude_race 2/2 plus task_set_global, social_sync_then_emit, conclude_mission,
+  game_test, reload_persistence, games_controller, game_state_locking (all pass). Full
+  suites deliberately not run (test-lock rule).
+- **Open**: the three browser live proofs (plan above). Note the ca01/triage-starter
+  finding — ca01 will not show the race on its own.
+- **Gotchas**: `complete_task!`'s already-completed branch now returns `missionConcluded`
+  and sometimes `warning`; two existing tests assert only `json['message']`, still green.
+  The conclude POST path (`scenario-music-events.js` `concludeMission`) already pre-flushed;
+  only the task-completion and skip paths were missing it.
+- **Files touched**: `public/break_escape/js/systems/objectives-manager.js`,
+  `app/models/break_escape/game.rb`, `test/js/conclude-race.test.mjs`,
+  `test/controllers/break_escape/conclude_race_test.rb`, this log.
+
+## Round 1 fixes (2026-11-13)
+
+Addresses `docs/achitechture/CONCLUDE_RACE_REVIEW_R1.md`.
+
+### Merge main
+
+`git merge da5f53f34` into `build/conclude-race` (merge commit `93d006ad9`).
+The merge was clean, no conflicts. It brought sis01's debrief task move to
+`debrief_end` with an empty conclude gate (scenario and ink only) and the UX
+slice 4 inventory work. None of it touched the conclude-race files, so there was
+nothing to resolve.
+
+### Rulings applied
+
+- **M1 (done).** `complete_task` in `app/controllers/break_escape/games_controller.rb`
+  now guards the `on_task_complete` hook with `!result.key?(:message)`, matching
+  `skip_task`. The idempotent "Already completed" re-post the conclude-race
+  fallback makes no longer fires the host rescore hook a second time. Rails test
+  added: `the on_task_complete hook does not fire a second time on the idempotent
+  re-post`.
+- **M2 (done).** The pre-flush is scoped. `ObjectivesManager.scenarioGatesOnGlobals()`
+  (cached) is true only when some aim declares `concludeRequires.globals`. The
+  completion and skip paths now do a single `stateSync.sync()` round-trip before
+  the POST only for such scenarios; every other scenario keeps its original
+  timing. The warning fallback (full `flushPendingGlobals()` + a single re-post)
+  is unchanged as the second line of defence. Node tests added for both branches
+  (gated scenario pre-flushes; a tasksCompleted-only gate does not).
+- **m1 (backlog only).** Offline/failed sync at the concluding beat leaves the
+  task done locally but the mission unconcludable until reload. Logged in
+  `docs/IDEAS_BACKLOG.md`; not fixed.
+- **m2 (done).** Added: node, a still-unmet gate toasts "Not Yet" exactly once
+  after the fallback; node, the skip path pre-flushes when the scenario gates on
+  a global; Rails, a re-post with the global still false does not conclude and
+  warns; Rails, a re-post after conclusion is idempotent (no re-announce, no
+  warning, no second award).
+- **n1 (done).** `was_concluded_before` renamed to `was_not_concluded_before` at
+  all three sites in `app/models/break_escape/game.rb` (the complete_task!
+  already-completed branch, the fresh-completion path and skip_task!). Pure
+  rename, no behaviour change.
+- **Backlog (ca01 bridge drift).** The three recorded-assertion drifts in
+  `tools/playtest/se/bridge-e1-full.jsonl` (lines 7, 65, 73), present on main,
+  logged in `docs/IDEAS_BACKLOG.md`.
+
+### Tests after the fixes (touched files and their importers; no full suites)
+
+- node `test/js/conclude-race.test.mjs`: 6/6 (2 original + 4 new).
+- node, every importer of `objectives-manager.js` (15 files): 126/126.
+- Rails `conclude_race_test.rb`: 5 runs, 33 assertions, 0 failures.
+- Rails `games_controller_test.rb` + `game_state_locking_test.rb`: 68 runs,
+  230 assertions, 0 failures.
+- Rails `conclude_mission_test.rb` + `task_set_global_test.rb` +
+  `social_sync_then_emit_test.rb`: 20 runs, 99 assertions, 0 failures.
+
+### Live re-check (plain path, branch)
+
+Keyless server on `:3061` from this worktree, setFPS(20), fixed steps on. A new
+game of `test_conclude_race` via `swap-scenario-game.rb` (host `test_seating`),
+game **3214**. The driver cleared the title/brief overlays, threw the Gate switch
+(plain `set_global`), and wrapped `window.gameAlert` to catch any "Not Yet" toast.
+
+- Request order (`tmp/keyless-3061.log`): `PUT .../games/3214/sync_state`
+  (log line 14243) **precedes** `POST .../games/3214/objectives/tasks/final_task`
+  (14255). Exactly one completion POST.
+- Toasts seen: "Task Complete" and "Objective Complete!" only. **No "Not Yet"**
+  (0 captured).
+- Server record (game 3214): `status=completed`, `mission_concluded_at` set,
+  `gate_global=true`, `final_task=completed`. The mission concluded on the first
+  POST.
+
+The fix still orders the sync before the completion POST and concludes without a
+warning, on current `build/conclude-race` after the main merge.

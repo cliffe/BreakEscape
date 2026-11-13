@@ -1,0 +1,13 @@
+{
+  "key": "00932f10655b517bef8a1a2ca24e7bea",
+  "npc": "bed5_patient",
+  "text": "She's gone. She stopped breathing.",
+  "voice": "Aoede",
+  "style": "Polish-born woman in her early eighties, bed-bound, alert, anxious but trying to stay calm. Speak with a consistent northern English with a Polish lilt accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T16:00:39Z"
+}
