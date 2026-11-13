@@ -88,14 +88,14 @@ export async function releaseHeldBarks(queue, o) {
     // Wait for max(voice end + pause, shown + gap); the voice wait is capped. After the last
     // bark, wait only if it spoke: a bark that came in meanwhile is now queued and goes next.
     const gap = sleep(gapMs);
-    let ended = false;
+    let ended = false, capTimer = null;
     const spoke = await Promise.race([
       Promise.resolve(voiceEnd).then(v => { ended = true; return !!v; }, () => { ended = true; return false; }),
-      sleep(voiceCapMs).then(() => {
+      new Promise(r => { capTimer = setTimeout(r, voiceCapMs); }).then(() => {
         if (!ended) log('[barks] held bark voice wait capped:', textOf(payload));
         return true;
       })
-    ]);
+    ]).finally(() => clearTimeout(capTimer));   // the wait settled: drop the cap timer
     if (spoke) await Promise.all([gap, sleep(pauseMs)]);
     else if (queue.length > 0) await gap;
   }

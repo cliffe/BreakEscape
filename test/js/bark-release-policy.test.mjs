@@ -373,3 +373,98 @@ test('NPCBarkSystem: a minigame opening during the last held voice keeps the nex
     assert.deepEqual(whats(sys), ['start ravi', 'end ravi', 'start helen']);
   } finally { window.currentConversationMinigameType = null; }
 });
+
+// ---- review round 1 minors (m1, m4, m5) ----
+
+function fakeAudio() {
+  const a = new EventTarget();
+  a.paused = false; a.ended = false;
+  return a;
+}
+
+test('NPCBarkSystem: _voiceEnd removes its listeners from a reused audio element once the wait ends', async () => {
+  const sys = barkSystem();
+  const audio = fakeAudio();
+  const live = new Set();
+  const add = audio.addEventListener.bind(audio), rem = audio.removeEventListener.bind(audio);
+  audio.addEventListener = (ev, fn) => { live.add(`${ev}`); add(ev, fn); };
+  audio.removeEventListener = (ev, fn) => { live.delete(`${ev}`); rem(ev, fn); };
+  sys.ttsManagers.set('ravi', { audio });
+  const p = sys._voiceEnd('ravi', Promise.resolve(5000));
+  await wait(5);
+  assert.deepEqual([...live].sort(), ['emptied', 'ended', 'error', 'pause'], 'listening while the voice plays');
+  audio.ended = true; audio.dispatchEvent(new Event('ended'));
+  assert.equal(await p, true);
+  assert.equal(live.size, 0, 'every listener removed after the wait');
+});
+
+test('NPCBarkSystem: a pause (as from muting) ends the wait', async () => {
+  const sys = barkSystem();
+  const audio = fakeAudio();
+  sys.ttsManagers.set('ravi', { audio });
+  let settled = false;
+  const p = sys._voiceEnd('ravi', Promise.resolve(5000)).then(v => { settled = true; return v; });
+  await wait(10);
+  assert.equal(settled, false, 'still waiting while it plays');
+  audio.paused = true; audio.dispatchEvent(new Event('pause'));
+  assert.equal(await p, true);
+});
+
+test('NPCBarkSystem: an unknown or infinite clip length does not end the wait at once (m1)', async () => {
+  const sys = barkSystem();
+  for (const len of [Infinity, NaN, -5]) {
+    const audio = fakeAudio();
+    sys.ttsManagers.set('ravi', { audio });
+    let settled = false;
+    const p = sys._voiceEnd('ravi', Promise.resolve(len)).then(v => { settled = true; return v; });
+    await wait(1300);
+    if (len === Infinity) {
+      assert.equal(settled, false, 'Infinity: no timer, waits for the audio event');
+      audio.ended = true; audio.dispatchEvent(new Event('ended'));
+      assert.equal(await p, true);
+    } else if (Number.isNaN(len)) {
+      assert.equal(await p, false, 'NaN is no voice');
+    } else {
+      assert.equal(settled, false, 'negative length: no timer either');
+      audio.ended = true; audio.dispatchEvent(new Event('ended'));
+      await p;
+    }
+  }
+});
+
+test('NPCBarkSystem: a bark that joins the queue just before the drain ends is released, not stranded (m4)', async () => {
+  const sys = barkSystem();
+  const real = sys.deferredBarkQueue;
+  let armed = false, injected = false;
+  const orig = sys._renderBark;
+  sys._renderBark = (p) => { armed = true; return orig(p); };
+  sys.deferredBarkQueue = new Proxy(real, {
+    get(t, k) {
+      if (k === 'length' && armed && !injected && t.length === 0) {
+        injected = true;                                   // arrives as the policy's loop exits
+        t.push({ npcId: 'helen', text: 'late', voiceMs: 0 });
+        return 0;                                          // the policy saw it empty
+      }
+      const v = t[k];
+      return typeof v === 'function' ? v.bind(t) : v;
+    }
+  });
+  try {
+    window.currentConversationMinigameType = 'person-chat';
+    sys.showBark({ npcId: 'ravi', text: 'first', voiceMs: 10 });
+    window.currentConversationMinigameType = null;
+    await sys.drainDeferredBarks();
+    assert.equal(injected, true);
+    assert.deepEqual(whats(sys).filter(w => w.startsWith('start')), ['start first', 'start late']);
+    assert.equal(real.length, 0);
+    assert.equal(sys.isDrainingDeferred, false);
+  } finally { window.currentConversationMinigameType = null; }
+});
+
+test('the voice cap timer is cleared once the wait settles (m3)', async () => {
+  const q = [{ npcId: 'a', text: 'a' }];
+  const t0 = Date.now();
+  await releaseHeldBarks(q, { shouldHold: () => false, render: () => ({ voiceEnd: Promise.resolve(true) }), gapMs: 1, voiceCapMs: 60000, pauseMs: 1, log: () => {} });
+  assert.ok(Date.now() - t0 < 500);
+  // a 60 s timer left behind would keep node from exiting; the suite finishing is the proof
+});

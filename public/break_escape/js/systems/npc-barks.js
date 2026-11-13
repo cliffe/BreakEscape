@@ -272,13 +272,17 @@ export default class NPCBarkSystem {
     } finally {
       this.isDrainingDeferred = false;
     }
+    // A bark that joined the queue after the policy's last look (its showBark call saw the
+    // drain still running and returned) would wait for the next trigger: go round once more.
+    // Each pass shows at least one bark or drops one, so this ends; the flag guards re-entry.
+    if (this.deferredBarkQueue.length > 0 && !this._shouldDefer()) return this.drainDeferredBarks();
   }
 
   /**
    * Settles when a rendered bark's voice has finished: true if it played, false if there was
    * none (no TTS, a 503, a failed fetch). `started` is _renderBark's promise, which settles
    * with the clip length in ms once playback starts. The end is the audio element's
-   * ended/pause/error event (stop() pauses it), or the clip length plus a second if no event
+   * ended/pause/error/emptied event (stop() pauses it), or the clip length plus a second if no event
    * comes. The release policy also caps the whole wait.
    */
   async _voiceEnd(npcId, started) {
@@ -294,7 +298,8 @@ export default class NPCBarkSystem {
         if (audio) for (const ev of events) audio.removeEventListener(ev, done);
         resolve(true);
       };
-      timer = setTimeout(done, ms + 1000);
+      // An unknown or infinite length arms no timer: the events and the policy cap end the wait.
+      if (Number.isFinite(ms) && ms > 0) timer = setTimeout(done, ms + 1000);
       if (!audio) return;
       if (audio.ended || audio.paused) { done(); return; }
       for (const ev of events) audio.addEventListener(ev, done);
