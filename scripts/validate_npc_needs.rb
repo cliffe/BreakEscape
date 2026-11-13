@@ -433,7 +433,7 @@ module ValidateNpcNeeds
     end
   end
 
-  # Slice 18a (OFFICE_LIFE_PLAN 12.4): affordance.offWhen (the requireGlobal form) takes a source
+  # Slice 18a (OFFICE_LIFE_PLAN 12.4): an object's offWhen (the requireGlobal form; affordance.offWhen before format 1) takes a source
   # out while it holds. Each name it reads must be a declared global (error); something should set
   # it (warning; ink is not read). A hint action with no title shows "Intelligence Received", a spy
   # title, so in a scenario with needs NPCs or officePresets it warns.

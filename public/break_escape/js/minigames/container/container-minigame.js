@@ -113,7 +113,7 @@ export function networkScreenKind(item) {
 export const PC_OFF_TEXT = 'This PC is off.';
 
 /**
- * Does a sign-in PC's `affordance.offWhen` hold on these globals? The same reading as
+ * Does a sign-in PC's object-level `offWhen` hold on these globals? The same reading as
  * unlock-system.js pcSwitchedOff and the server's host_service_off? (a global name, or
  * { name: value } all to match). Kept here so this module imports nothing more.
  */

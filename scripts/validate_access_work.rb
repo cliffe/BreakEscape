@@ -1067,7 +1067,7 @@ module ValidateAccessWork
 
   # { global name => [where] } for the places the server reads a global: an unlockCondition
   # globalVariable, concludeRequires.globals, exportGlobals, a resource's offWhen, a route's
-  # gate globals and an affordance offWhen
+  # gate globals and an object's offWhen
   def server_read_globals(json_data)
     reads = Hash.new { |h, k| h[k] = [] }
     walk = lambda do |node|
