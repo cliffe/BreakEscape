@@ -181,3 +181,56 @@ Display only, unchanged: nothing added to player_state and nothing new is sent. 
 
 ### Handover (R3)
 Done: m1, m2, n1 to n5, the chatter question. Not done: the action icons' depth (left for its own change, as the review says). Live note: at 915x412 Dana's bubble in `main-16` sits just under Lee's head box (22 px) over his shoulders; the head stays clear, as the rule says. Files: `npc-world-bubbles.js`, `npc-barks.js`, `npc-manager.js`, `doors.js`; `test/js/ux-bark-bubbles-r3.test.mjs` (new).
+
+## R4 fixes (review `UX_SLICE5_REVIEW_R4.md`)
+
+### Findings
+- **m1 (the hint doubled from its last page): fixed.** New pure `followUpBeyond(left, next)` in `npc-world-bubbles.js`: the unread follow-up counts as the same hint when the new hint equals it or ends with it (letters and digits only, the old `key()` hoisted to `textKey`). When the unread follow-up ends with the new hint (it carried an older hint first), only the older part is kept. `closeTagged` hands on only what the door's notification does not show; `say()` carries only what the new follow-up does not show. No hint shows twice on either path.
+- **n1 (a fragment cut mid-sentence): fixed.** `followUpLeft` returns the whole follow-up while any of it is unread (the page on screen counts), and '' once the bubble is done. `_leave` on a hint page hands on the whole hint, not its tail. A reader on the last hint page sees the first half again, but every toast reads as a sentence.
+- **n2 (flash and ghost under the bubbles with lighting off): fixed.** I chose to set the bubble depth from whether lighting is on. `bubbleDepth()` gives LIGHT_DEPTH + 3 (100003) with lighting on, and `BUBBLE_DEPTH_UNLIT` (8500) with it off. 8500 is under the proximity ghost (9000) and the screen flash (`overlayDepth(10000)`, 10000), and above the action icons (5000). The depth is set at creation and checked each frame a bubble is placed, so turning lighting on or off moves the bubbles on the next frame. With lighting on, the ghost stays under the bubbles (and under the light map) as in R3; the review counted that as better.
+- **n3 (duplicate story GETs): fixed.** New `NPCManager._storyFromLoader(path)` reads our story cache, then `npcLazyLoader.getCachedStory`, and copies a loader copy into ours. `_preloadKnotBark` and `_showBarkFromKnot` both use it before any GET.
+- **n4 (chatter voiced with no bubble; dropped mid-line), as the orchestrator ruled: fixed.**
+  - `world.speak` in `npc-needs.js` now goes through the bubble layer's `deferChatterVoice`. The voice starts on the frame `update()` places the line's bubble.
+  - A chatter line that finds no room (the bubble cap, no place, or its own NPC's bark) is skipped entirely: no voice, no waiting voice, and it is not shown later. It still expires on the needs clock as before.
+  - A chatter bubble on screen that loses its place mid-line (a bark takes it) has its voice stopped (`npcChatterVoice.cancel`) and is not shown again.
+  - Where no bubble can be placed at all (NPC off camera, a minigame open, a dark room), the line is voiced as before. If the layer has run no frame for 500 ms, `deferChatterVoice` returns false and the voice plays at once.
+  - A waiting voice is dropped when its line has ended. On a first frame while the font is still loading, the voice waits for the next frame and is not played.
+  - State: at most one waiting voice, one shown line and one skip mark per NPC. Each clears when the line ends. No text is added: chatter text still comes only from scenario files, and a skipped line makes no toast.
+
+### Tests (no lock)
+- New `ux-bark-bubbles-r4.test.mjs`, 21 pass:
+  - m1: cooldown `closeTagged` from the last hint page gives no toast; the next refusal from the last hint page gives the line and then the hint once; case and dash variants count as the same hint; an older carried hint plus the current one, each once; `closeTagged` with another gate's hint hands hers on whole.
+  - n1: `stillValid` on the last page and leaving view on the last page each hand on the whole hint; `followUpLeft` while unread and once done.
+  - n2: the depth with lighting off is under the flash and ghost and over the icons; with lighting on, above the light map; a toggle moves the depth on the next frame.
+  - n3: the preload reads the loader's copy, the first knot bark with no preload reads it too, and a story in neither cache is fetched once.
+  - n4: a placed chatter line is voiced once; with no room it is skipped (no voice, no waiting entry, not shown later, no toast, the next line shows); a bark taking its place stops its voice; its own bark skips it; with no bubble to place it is voiced as before; on a font-loading frame it is not voiced; a voice whose line ended is dropped; the needs world defers only while the layer runs.
+- `ux-bark-bubbles-r3.test.mjs`: the R3 m2 depth test now turns lighting on (with it off the depth is the R4 one), and "a hint read to the end is not carried" became the R4 n1 rule (carried whole).
+- Every test file importing a changed module (`npc-world-bubbles`, `npc-needs`, `npc-manager`) or the R3 list (`npc-barks`, `doors`, `core/game`, `npc-action-icons`, `interactions`, `locked-hint`, `main.js`): 142 files, 142 passed.
+
+### Live proof (keyless server on :3338 from this worktree, headless, setFPS(20), fixed steps on, scrollbars shown: 15 px probe)
+Drivers are in `scratchpad/`: `slice5_r4fix_hint.mjs` (the reviewer's hint driver), `slice5_r4fix_shots.mjs` (final shots), `slice5_r4fix_depth.mjs`, `slice5_r4fix_chatter.mjs`, `slice5_r4fix_drop.mjs`, `slice5_r4fix_load.mjs` and `slice5_r4fix_phone2.mjs`. All games are new, from `swap-scenario-game.rb test_access_habits <dir>`. Numbers and shots are in `scratchpad/ux-shots/slice5-r4fix/`; the final shots are in `scratchpad/ux-shots/slice5-final/`.
+- **Hint paths** (`test_bark_bubbles`, 2695 at 1400x1000 and 2696 at 915x412). The table counts every time either half comes into view. A is "Store B needs a staff badge. Reception" and B is "issues them to visitors with an escort.":
+  - Cooldown refusal from the last hint page: B in her bubble, then the notification with A and B. A 1, B 2, no toast (was B 3, with a fragment toast).
+  - Her next refusal from the last hint page: B on screen, then her new bubble with the line, A and B. A 1, B 2 (was B 3, with the half repeated).
+  - `stillValid` false on the last hint page: one toast with the whole hint. A 1, B 1 (was a mid-sentence toast).
+  - Line page, first hint page, `close()`, `closeTagged` with another hint and with none, and the dark room: as in R4, each once.
+- **n2 depth** (`slice5_r4fix_depth.mjs`; player stood next to an interactable object to raise its ghost, a bubble over an NPC, then a 1.5 s red flash):
+  - `test_phone_calls`, lighting off, game 2718: bubble 8500, ghost 9000, flash 10000. Both are above the bubble; in `unlit-depth-flash` the bubble is tinted red. The scenario opens conversations and calls on timers, so for this check only the driver closed them and held new ones off.
+  - `test_bark_bubbles`, lighting on, game 2717: bubble 100003, flash 100110 (above), ghost 9000 (under the bubble and the light map, as in R3).
+  - Games 2699, 2702, 2709, 2710 and 2716 were driver retries (scene lookup, choosing an interactable object, the scenario's conversation).
+- **n3** (`sis01_healthcare`, game 2705): 7 ink GETs at load, one per story, plus the briefing's second `sarah_mitchell`, which R4 counted too. bed4_patient and bed2_patient are each fetched once (twice before). Both preload entries exist; neither made a GET.
+- **n4 no room** (`test_needs_sims`, 2722 at 1400x1000 and 2723 at 800x600). Three 7 s lines, voiced through the needs system's own `_speak`, then a bark:
+  - 1400x1000: Tom's line was placed and voiced. Amara's and Grace's found no room, were skipped from their first frame, were never voiced and never shown.
+  - 800x600: two task notifications covered the view, so all three were skipped and none was voiced.
+  - Afterwards: 0 waiting voices and 0 skip marks. Bubble overlap, outside-view and HUD frames were all 0.
+  - Games 2700 and 2701 ran before the font-frame fix: the first frame with the font still loading voiced all three, which is why that path now waits.
+- **n4 bark takes the place** (`test_needs_sims`, game 2724, `big-drop-*`): Amara's line was shown and voiced once. Four barks filled the cap, her bubble went, `cancel('amara')` was called once, and her line was not shown again after the barks ended.
+- **Final shots** (`slice5-final/`, games 2697 at 1400x1000, 2698 at 800x600, 2704 at 915x412): `main-16` (Dana's refusal bubble, no notification, no toast), `main-16b-hint-page`, `f`, `f2`, `g`, `g2`, `h`, `k` and `i-hud-resize-*`, all refreshed. `f2` (stale on the hint page) is now the whole hint as one toast. HUD resize: 0 overlap frames at every size.
+- **Phone calls regression** (`test_phone_calls`, game 2703): Basic rings and the answer connects. A person bark during the call is held (queue 1), then shown as a bubble after the call. The phone contact's bark is a toast. A declined voicemail gives "New voicemail".
+- Server stopped afterwards.
+
+### Sync
+Display only, unchanged. Nothing is added to player_state and no request is new. The preload now makes fewer GETs. Chatter voice state is in memory, at most one entry of each kind per NPC.
+
+### Handover (R4)
+Done: m1, n1, n2, n3 and n4. Files: `npc-world-bubbles.js`, `npc-needs.js` (world.speak), `npc-manager.js`, `test/js/ux-bark-bubbles-r4.test.mjs` (new) and `test/js/ux-bark-bubbles-r3.test.mjs`. Open: with lighting on, the ghost stays under the bubbles (R3 behaviour). Raising it above them in both modes would also put it above the light map, which is a separate decision.
