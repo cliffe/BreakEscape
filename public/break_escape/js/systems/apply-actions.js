@@ -402,7 +402,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
 
             // Show confirmation dialog, then execute nested actions if confirmed
             // action: { type: 'confirm_action', text, onConfirm: [...actions],
-            //           confirmLabel?, cancelLabel? }
+            //           confirmLabel?, cancelLabel?, closeButton? }
             // The labels name the two choices (UX slice 15, R4e: a switch says "Switch off" and
             // "Leave it"); a missing or empty label keeps gameConfirm's Confirm or Cancel.
             case 'confirm_action': {
@@ -412,8 +412,10 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                 }
                 const { text, onConfirm } = action;
                 const label = (v, fallback) => (typeof v === 'string' && v.trim() ? v : fallback);
-                window.gameConfirm(text, label(action.confirmLabel, 'Confirm'),
-                    label(action.cancelLabel, 'Cancel')).then(confirmed => {
+                // closeButton: false drops the X (UX slice 4, q99), as the wearable confirms do
+                const confirmArgs = [text, label(action.confirmLabel, 'Confirm'), label(action.cancelLabel, 'Cancel')];
+                if (action.closeButton === false) confirmArgs.push({ closeButton: false });
+                window.gameConfirm(...confirmArgs).then(confirmed => {
                     if (confirmed && Array.isArray(onConfirm)) {
                         applyActions(onConfirm, { source, gameId, objectId });
                     }

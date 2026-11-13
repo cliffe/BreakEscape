@@ -156,6 +156,15 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     padding-right: 0;
 }
 
+/* Its two named buttons keep each label on one line; on a narrow screen they wrap as
+   whole buttons instead of breaking a label ("Take / off") */
+.game-confirm-dialog.game-confirm-no-close .game-confirm-buttons {
+    flex-wrap: wrap;
+}
+.game-confirm-dialog.game-confirm-no-close .game-confirm-btn {
+    white-space: nowrap;
+}
+
 .game-confirm-message {
     font-family: 'GNF', monospace;
     font-size: 22px;
