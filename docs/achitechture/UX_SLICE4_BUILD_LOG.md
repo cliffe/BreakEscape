@@ -96,6 +96,34 @@ Proof gotcha: Chrome treats `--hide-scrollbars=false` as the switch being set, s
 - At 390 the portrait ring scrolls with the strip, so it goes off screen while the strip is scrolled to the end. The cue brings it back. Making the ring sticky would let slots slide under the gradient backing.
 - The lab's hook text still says "click it there to put it on or take it off"; a click now opens the two-entry menu. Left as it is.
 
+## Round 2 fixes
+
+Review: `UX_SLICE4_REVIEW_R2.md` (B 0, M 0, m 7). Branch at 0e8768d41, which already merges slice 16's tip dedfa3422.
+
+- m1 (b095a41f1): `refreshHoveredLabel` (`inventory.js`) returns early when `matchMedia('(hover: none)')` matches, so a tray refresh no longer flashes the last-tapped item's name on a phone. The check is a local `screenCannotHover` with the same test as `cannotHover` in `ui/info-label.js`, not an import of it: ten test harnesses stub `info-label.js` with `setHudLabel` and `clearHudLabel` only, and a new named import would break each of them. Test: `inventory-tray-narrow.test.mjs`, a `(hover: none)` stub gives no label, a hover screen still gets it.
+- m4 (6d00997c9): `heldItemHasText` (`inventory-menu.js`, exported) decides Examine for a wearable that cannot be dropped. It resolves `observations` (with the sprite's own fallback) and `text` through `resolveObjectField` and their variants, the same fields `examineTextFor` reads; `interactions.js` is not imported because it imports `inventory-menu.js`. `conditional-text.js` has no imports, and every harness that loads `inventory-menu.js` does so by file URL or stubs it, so no copy list changed. Test (`wearables.test.mjs`): text only, a conditional observation before and after its global, and blank text.
+- m6 (6d00997c9): a tray picture larger than the 64 px box gets the shared open hand (`openHandIcon()`, 32 px cells drawn at 2x) in place of a fractional shrink; pictures that fit still scale up by a whole number. Test in `inventory-menu.test.mjs` (100x50 and 65x10 give the hand, 64x30 stays 1x, 30x25 goes 2x).
+- m5 (70a20ddb2): the lab's hook observations, the Hi-vis off hint and the changing locker hint, and test_wearable's vest and jacket observations now say "click it there (or in your inventory) and choose Put on" (or "Put on or Take off"), matching the lab's Drop here pattern. These are observations and hints, not spoken lines. Validator: lab_physical_pentest and test_wearable, 0 ❌ each.
+- m2 (084b4a2fe): `#hud-info-label` (148), `#npc-bark-container` (108) and `--combat-strip-height` (108) in `ui-themes.css`, and `#combat-buttons` (116) and the upright-phone caption with combat (200) in `hud.css`, all add `var(--tray-scrollbar, 0px)`. Test in `hud-caption-wrap.test.mjs`; its slice 16 caption test reads the new `calc()`.
+- m3: proved live, below.
+- m7, not fixed (code reading only, no server on main): the band is very likely on main too. Main's `css/main.css` is the same as this branch's (`body` with no `overflow: hidden`, `#game-container` at `100vw`), and the only slice 4 change to the page shell is the `pixel-scroll` class on `#inventory-container`, a `position: fixed` element, which cannot add to the page's scroll area. The band is 15 px, the width of Chrome's default root scrollbar, not the 14 px pixel scrollbar, and it appears only in shots with scrollbars shown, which earlier rounds did not take. So it fits the canvas being sized while a root scrollbar existed during load. For the backlog: `overflow: hidden` on `html, body` in the game view and a Phaser scale refresh after load, checked on main with scrollbars shown.
+
+### Tests (R2)
+
+Run without the lock, per the test rule. inventory-tray-narrow 6, inventory-menu 21, wearables 34, hud-caption-wrap 4, and every file that imports or stubs `inventory.js` or `inventory-menu.js` (34 files, all pass, including wearable-hooks, lab-ux-ui, examine-minigame, minigame-launch-routes, interaction-warning, wearable-take-offer, item-drop, inventory-tray), plus the JS tests that read either scenario. Rails: lab_physical_pentest_content, tts_mission_lines, wearable controller and scenario_schema, 48 runs, 0 failures. Full suites left to the orchestrator's merge batch.
+
+### Live proof (R2)
+
+Keyless server on :3064, new games of test_needs_sims (combat on, hearts drawn): 3069 at 520x760 (desktop, no touch), 3070 at 390x844 (touch), 3071 at 1000x700. Scrollbars shown, measured 14 px in every shot (`--tray-scrollbar` 14px). Each run overflows the strip by cloning tray slots (display only), puts a long caption in `#hud-info-label` and one bark element in `#npc-bark-container`, then measures. Shots and JSON in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/scratchpad/ux-shots/slice4-r2fix/` (a, strip at the start; b, at the end; c and d, bar health at the end and start; e at 390, hearts with nothing over them). Script: `scratchpad/slice4r2_shots.mjs`.
+
+- The strip is 122 px tall. The bark container's bottom is 122 px, so a bark ends on the strip's top edge. The caption clears the combat row (520x760: caption bottom 546, buttons with their ring from 551; 390x844: 630 and 635).
+- Punch and Block keep the same gap as with no scrollbar: the button box ends 8 px above the strip, and the 11 px bezel ring reaches 3 px into its top edge, as it did at bar 0 (116 against 108 plus 11). At 1000x700 they centre on the taller strip with the rule's 8 px lift (631 against 639).
+- m3, 390x844: hearts at x 8 to 176, y 690 to 722, above the ring and left of Block (x 191), with the strip both at its start and scrolled to the end; the bar style sits in the same place (8 to 162). The caption is above both.
+
+### Noticed in R2, not changed
+
+- At 390 a bark (bottom 108 plus the scrollbar, `max-width` 300) covers the hearts and most of Block while it shows (shot `a-stack-start-390x844.png`). The hearts moved there in R1 M3; the bark over Punch and Block already happened before this slice. Barks are brief and take no pointer events. A fix would raise barks above the hearts at 480 and below, or narrow them beside the combat row.
+
 ## Handover
 
-Done. Commits: bf83e3ca9, 8e6b9abc1 (slice), 55779aba7 (merge slice 16, M1, M2, m3), fafc5ce53 (R1 fixes).
+Done. Commits: bf83e3ca9, 8e6b9abc1 (slice), 55779aba7 (merge slice 16, M1, M2, m3), fafc5ce53 (R1 fixes), b095a41f1, 6d00997c9, 70a20ddb2, 084b4a2fe (R2 fixes). The two new menu icons still await the user's approval.
