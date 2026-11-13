@@ -483,6 +483,16 @@
     flex: 0 0 auto;
 }
 
+.pc-monitor .pc-taskbar .pc-take-btn {
+    min-width: 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 16px;
+    line-height: 18px;
+}
+
 .pc-monitor .pc-taskbar .pc-take-short {
     display: none;
 }

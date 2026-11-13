@@ -140,3 +140,42 @@ Keyless server on :3460; games 3232 (m01), 3233 and 3252 (test_access_networks),
   `container-shares`.
 - Gotcha: a game created before a scenario change keeps its old scenario (game 3233 had no
   capture cards); make a new game for a scenario that changed.
+
+## 2026-11-13: review round 1 fixes
+
+All six minors and both nits from `UX_SLICE6_REVIEW_R1.md`. Live proof on a keyless server (:3462)
+with the test_access_networks scenario swapped into a game (`tools/playtest/swap-scenario-game.rb`,
+copy in the scratch folder, with an added takeable "Spare PC"; no mission edited), at 1400x1000
+and 390x844, scrollbars shown. Lock is not merged here, so the live Lock proofs stub
+`pcSessions.lockingSupported` and `lockSession` in the page.
+
+- m1 Take Container cut off at 390: fixed. The button has an `aria-label` "Take Container", reads
+  "Take" on a narrow screen, and the taskbar drops the computer name there (the bezel names the
+  PC). Measured at 390: taskbar 342 px, button 259 to 338, nothing cut. At 1400 the full label fits.
+- m2 Lock from a reader: fixed. `lockPcSession` takes `onRefuse`; the reader asks the server and
+  stays open, says a refusal on its own message line, and closes only on success. The desktop
+  shows a refusal as a line above the taskbar inside the screen (`.pc-taskbar-notice`), not as an
+  alert over the game world. Both seen live at both sizes.
+- m3 Switch user in a reader: fixed by hiding it. `pcTaskbarModel` takes `canSwitch`; a reader
+  or share with no desktop to return to does not list it. Live: reader with no remembered desktop
+  lists Lock and Sign out only; with one it lists Switch user too.
+- m4 Places labels: fixed. `.pc-start-item-icon` is a fixed 26x18 box, image centred at its own
+  size (`object-fit: none`). Measured: Desktop and Scanned-Inbox labels start at the same x.
+- m5 head-crop fallback: removed. `applyHeadshotBox` no longer takes a talk image or crops; no
+  authored `<key>_headshot.png` means the box is hidden and the caller draws the pixel
+  silhouette (taskbar, panel, and now the sign-in screen's selected account in
+  `password-minigame.js`). The talk image is not even requested (tested). Not changed: the
+  sign-in tiles' own talk-sheet crop in `applyTilePortrait` (slice 2c, on main, with its own
+  tests); the user may want that ruled on too.
+- m6 tests: added a reader test each for Lock (refusal, success, order), Switch user (hidden, and
+  opens the sign-in screen) and Sign out, and a count of document capture listeners (none at rest,
+  three with the panel open, none after shut, Esc x5, the X, and a reader's cleanup).
+- nit 1 Tab leaves the panel open: fixed. Focus moving out of the panel and Start closes it.
+  Live: five Tabs from the first entry end with the panel shut.
+- nit 2 failed lookup cached: left as is. A missing file and a failed request look the same, and
+  the file is authored, so one lookup per account stays.
+
+Tests: `pc-taskbar` 22 (was 14), `pc-monitor-frame` 48; 27 test files that import a changed module
+(434 tests) all pass. Files: `pc-taskbar.js`, `npc-headshot.js`, `password-minigame.js`,
+`container-minigame.js`, `text-file-minigame.js`, `css/pc-monitor.css`, `pc-taskbar.test.mjs`,
+`pc-monitor-frame.test.mjs`.
