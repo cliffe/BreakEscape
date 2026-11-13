@@ -974,9 +974,15 @@ test('R5 m2, m3, n2 to n5: the CSS', () => {
     // m3: Press Start 2P on its 8px grid
     assert.match(rule('.signin-title'), /font-size: 16px;/);
     for (const m of css.matchAll(/font-family: 'Press Start 2P'[^}]*?font-size: (\d+)px/g)) {
-        if (m.index < css.indexOf('/* ── Sign-in mode')) continue;
         assert.equal(+m[1] % 8, 0, `Press Start 2P at ${m[1]}px`);
     }
+    assert.match(rule('.password-info h4'), /font-size: 16px;[\s\S]*font-weight: normal;/);
+    // the frame's X (the framework gives it Press Start 2P at 18px)
+    assert.match(rule('.password-frame > .minigame-close-button'), /font-size: 16px;/);
+    // no synthetic bold on GNF, and no 13.33px button default
+    assert.match(rule('.attempts-counter span'), /font-weight: normal;/);
+    assert.match(rule('.keyboard-toggle-btn'), /font-size: 16px;/);
+    assert.match(rule('.signin-tile'), /font-size: 16px;/);
     // n2: the key's label colour fades with its background
     assert.match(rule('.key'), /transition: [^;]*color 0\.2s ease/);
     // n3: the padding and border sit inside the field's 100%
