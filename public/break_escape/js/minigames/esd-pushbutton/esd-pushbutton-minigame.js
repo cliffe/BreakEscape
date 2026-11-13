@@ -29,6 +29,13 @@ import { escapeHtml } from '../../utils/escape-html.js';
  */
 
 export class EsdPushbuttonMinigame extends MinigameScene {
+    // The X sits inside the yellow panel, clear of the label (critique B X4)
+    static closeInsideFrame = true;
+
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.esd-panel') || this.gameContainer;
+    }
+
     constructor(container, params) {
         params = params || {};
         const sd = params.lockable?.scenarioData?.minigameData || {};

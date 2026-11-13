@@ -44,6 +44,9 @@ function normalizeStatus(status) {
 }
 
 export class SisConfigThresholdMinigame extends MinigameScene {
+    // The X sits inside the panel frame, beside the padded header (critique B X4)
+    static closeInsideFrame = true;
+
     constructor(container, params = {}) {
         super(container, params);
         this.rows = Array.isArray(params.rows) && params.rows.length > 0 ? params.rows : DEFAULT_ROWS;
@@ -82,8 +85,8 @@ export class SisConfigThresholdMinigame extends MinigameScene {
                         <div>${escapeHtml(displayDashes(row.parameter || ''))}</div>
                         <div class="sis-row-meta">${escapeHtml(displayDashes(row.lastModified || ''))} | ${escapeHtml(displayDashes(row.modifiedBy || ''))}</div>
                     </td>
-                    <td>${escapeHtml(displayDashes(row.currentValue || ''))}</td>
-                    <td class="${statusClass}">${escapeHtml(status)}</td>
+                    <td data-label="Current Value">${escapeHtml(displayDashes(row.currentValue || ''))}</td>
+                    <td class="${statusClass}" data-label="Status">${escapeHtml(status)}</td>
                 </tr>
             `;
         }).join('');

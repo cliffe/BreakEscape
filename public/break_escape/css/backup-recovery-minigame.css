@@ -1,25 +1,19 @@
 .backup-recovery-minigame-container {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    max-width: 100vw;
-    height: 100vh;
-    max-height: 100vh;
-    justify-content: flex-start;
-    align-items: center;
-    padding: 0;
+    padding: 16px;
 }
 
 .backup-recovery-game-container {
     width: 80vw;
     max-width: 1600px;
-    min-height: 80vh;
-    height: 80vh;
+    height: auto;
+    max-height: 100%;
     padding: 0;
-    margin: 0;
-    display: block;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
     background: transparent;
     box-shadow: none;
+    box-sizing: border-box;
 }
 
 .backup-recovery-shell {
@@ -32,14 +26,17 @@
     --mg07-success: #4f9a61;
     --mg07-muted: #a8b4bb;
 
-    background: linear-gradient(180deg, #171c20 0%, var(--mg07-bg) 100%);
+    background: var(--mg07-bg);
     border: 2px solid var(--mg07-border);
     color: var(--mg07-text);
-    min-height: 100%;
-    height: 100%;
-    padding: 56px 18px 72px 18px;
+    height: auto;
+    max-height: 100%;
+    min-height: 0;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow: auto;
     display: grid;
-    grid-template-rows: auto auto minmax(220px, 1fr) auto;
+    grid-template-rows: auto auto auto auto;
     gap: 10px;
 }
 
@@ -48,9 +45,10 @@
     background: #111518;
     color: var(--mg07-text);
     font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
-    line-height: 1.5;
+    font-size: 16px;
+    line-height: 24px;
     padding: 12px;
+    margin-right: 44px;
 }
 
 /* Key slots: what material the console currently holds (scenarioData `keySlots`). */
@@ -137,7 +135,8 @@
 
 .backup-recovery-icon {
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
+    line-height: 16px;
     color: var(--mg07-muted);
 }
 
@@ -149,8 +148,8 @@
     align-items: center;
     justify-content: center;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 8px;
+    line-height: 16px;
 }
 
 .backup-recovery-marker.is-danger {
@@ -167,8 +166,8 @@
 
 .backup-recovery-source-name {
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
-    line-height: 1.5;
+    font-size: 8px;
+    line-height: 16px;
 }
 
 .backup-recovery-status-badge {
@@ -220,8 +219,8 @@
 
 .backup-recovery-panel-header {
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
-    line-height: 1.4;
+    font-size: 8px;
+    line-height: 16px;
 }
 
 .backup-recovery-panel-banner {
@@ -274,9 +273,9 @@
     background: #c9882f;
     color: #17100a;
     font-family: 'Press Start 2P', monospace;
-    font-size: 20px;
-    line-height: 1.45;
-    padding: 18px 14px;
+    font-size: 16px;
+    line-height: 24px;
+    padding: 12px 14px;
     cursor: pointer;
 }
 
@@ -295,20 +294,29 @@
 
 @media (max-width: 860px) {
     .backup-recovery-minigame-container {
-        width: 100vw;
-        height: 100vh;
-        max-height: 100vh;
+        padding: 8px;
     }
 
     .backup-recovery-game-container {
-        width: 92vw;
-        height: 88vh;
-        min-height: 88vh;
+        width: 100%;
     }
 
     .backup-recovery-shell {
-        padding: 54px 12px 68px 12px;
-        grid-template-rows: auto auto minmax(180px, 1fr) auto;
+        padding: 12px;
+    }
+
+    .backup-recovery-header {
+        font-size: 8px;
+        line-height: 16px;
+    }
+
+    /* The slot state goes on its own line under the name (critique B BR3) */
+    .backup-recovery-slot {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .backup-recovery-slot-state {
+        grid-column: 2;
     }
 
     .backup-recovery-tiles {
@@ -320,16 +328,16 @@
     }
 
     .backup-recovery-confirm-btn {
-        font-size: 14px;
-        padding: 16px 10px;
+        font-size: 8px;
+        line-height: 16px;
+        padding: 12px 10px;
     }
 }
 
 /* Outcome screen — shown after confirm, before minigame closes */
 
 .backup-recovery-shell--outcome {
-    grid-template-rows: auto 1fr;
-    padding-top: 80px;
+    grid-template-rows: auto auto;
 }
 
 .backup-recovery-outcome-panel {
@@ -360,6 +368,6 @@
 
 .backup-recovery-outcome-status {
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
-    line-height: 1.5;
+    font-size: 8px;
+    line-height: 16px;
 }

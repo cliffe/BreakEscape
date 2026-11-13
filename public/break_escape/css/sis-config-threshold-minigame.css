@@ -2,21 +2,21 @@
 
 .sis-threshold-minigame-container {
     background: rgba(13, 20, 32, 0.72);
-    border: 2px solid #2b3446;
 }
 
 .sis-threshold-minigame-game-container {
     max-width: 620px;
-    margin: 20px auto;
+    margin: 0 auto;
     width: 100%;
-    background: rgba(17, 26, 40, 0.78) !important;
+    background: #111a28 !important;
     border: 2px solid #263246;
-    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.5);
     padding: 12px;
-    height: 50vh;
+    height: auto;
+    max-height: 100%;
+    overflow: auto;
     box-sizing: border-box;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .sis-threshold {
@@ -24,7 +24,6 @@
     color: #e9edf5;
     padding: 8px;
     width: 100%;
-    min-height: 100%;
     position: relative;
     box-sizing: border-box;
     display: flex;
@@ -35,7 +34,7 @@
 .sis-threshold-header {
     background: #133f73;
     border: 2px solid #2b5d93;
-    padding: 10px 12px;
+    padding: 10px 48px 10px 12px;
     font-size: 18px;
     letter-spacing: 0.4px;
 }
@@ -75,22 +74,19 @@
 
 .sis-status-green {
     color: #84d78a;
-    font-weight: 700;
 }
 
 .sis-status-amber {
     color: #ffd14b;
-    font-weight: 700;
 }
 
 .sis-status-red {
     color: #ff6a6a;
-    font-weight: 700;
 }
 
 .sis-row-meta {
     color: #9ea7b7;
-    font-size: 14px;
+    font-size: 16px;
     margin-top: 4px;
 }
 
@@ -132,9 +128,7 @@
 }
 
 .sis-btn-compare:hover {
-    box-shadow: 0 0 12px rgba(255, 209, 75, 0.45);
     filter: brightness(1.08);
-    transform: translateY(-1px);
 }
 
 .sis-btn-confirm:hover {
@@ -158,7 +152,7 @@
 .sis-help {
     margin-top: 8px;
     color: #c9cfd9;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .sis-overlay {
@@ -253,7 +247,7 @@
 
 .sis-compare-item {
     margin: 0 0 6px 0;
-    font-size: 17px;
+    font-size: 18px;
     line-height: 1.35;
     color: #eef3ff;
     word-break: break-word;
@@ -261,5 +255,44 @@
 
 .sis-compare-item-alert {
     color: #ffd46b;
-    font-weight: 700;
+}
+
+/* Phones: the three table columns become one card per row, the column names drawn in each
+   cell (critique B SIS1) */
+@media (max-width: 600px) {
+    .sis-threshold-minigame-game-container {
+        padding: 6px;
+    }
+
+    .sis-threshold-table thead {
+        display: none;
+    }
+
+    .sis-threshold-table,
+    .sis-threshold-table tbody,
+    .sis-threshold-table tr,
+    .sis-threshold-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .sis-threshold-table tr {
+        margin-bottom: 8px;
+        border: 2px solid #2a2f3b;
+    }
+
+    .sis-threshold-table td {
+        border: 0;
+        padding: 4px 8px;
+    }
+
+    .sis-threshold-table td[data-label]::before {
+        content: attr(data-label) ': ';
+        color: #9ea7b7;
+    }
+
+    .sis-compare-grid {
+        grid-template-columns: 1fr;
+    }
 }

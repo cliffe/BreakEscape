@@ -80,6 +80,13 @@ export class BackupRecoveryMinigame extends MinigameScene {
     // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
     static controlsOverlay = true;
 
+    // The X sits inside the console frame, beside the header (critique B X4)
+    static closeInsideFrame = true;
+
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.backup-recovery-shell') || this.gameContainer;
+    }
+
     constructor(container, params) {
         params = params || {};
         params.title = params.title || 'Backup Recovery Console';
@@ -403,7 +410,7 @@ export class BackupRecoveryMinigame extends MinigameScene {
         }
 
         this.gameContainer.innerHTML = `
-            <div class="backup-recovery-shell backup-recovery-shell--outcome">
+            <div class="backup-recovery-shell backup-recovery-shell--outcome pixel-scroll">
                 <div class="backup-recovery-header">${escapeText(headerText)}</div>
                 <div class="backup-recovery-outcome-panel backup-recovery-outcome-panel--${escapeHtml(panelTone)}">
                     <div class="backup-recovery-outcome-status">${escapeText(statusText)}</div>
@@ -600,7 +607,7 @@ export class BackupRecoveryMinigame extends MinigameScene {
                     </ul>`;
 
         this.gameContainer.innerHTML = `
-            <div class="backup-recovery-shell">
+            <div class="backup-recovery-shell pixel-scroll">
                 <div class="backup-recovery-header">${escapeText(consoleTitle)}${slotsMarkup}</div>
 
                 <div class="backup-recovery-tiles" role="list">
