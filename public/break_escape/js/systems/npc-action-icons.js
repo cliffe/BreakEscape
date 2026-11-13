@@ -557,8 +557,9 @@ export class NpcActionIcons {
             const roomId = b?.roomId;
             const seen = !!(st && sprite && sprite.active && sprite.visible && !sprite.destroyed)
                 && iconShown({ npcRoom: roomId, playerRoom, dark: roomIsDark(roomId) });
-            // A speech bubble (slice 8, npc-world-bubbles.js) hides both while the NPC talks
-            const talking = !!st?.talking;
+            // A speech bubble (slice 8, npc-world-bubbles.js) hides both while the NPC talks,
+            // chatter or a bark (UX slice 5)
+            const talking = !!st?.talking || !!win().npcWorldBubbles?.hasLine?.(id);
             const bubble = seen && !talking ? thoughtBubble(st, actionIcons, optIn) : null;
             let bb = this.bubbles.get(id);
             if (!bubble) { if (bb) bb.box.setVisible(false); }

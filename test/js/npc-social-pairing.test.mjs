@@ -299,7 +299,7 @@ function rig({ scenario = {}, state, room = 'office', minigame = null }) {
             setText(t) { o.text = t; return o; }, setDepth() { return o; }, setScale() { return o; },
             setData(k, v) { o.data[k] = v; return o; },
             clear() { return o; }, fillStyle() { return o; }, lineStyle() { return o; },
-            fillRoundedRect() { return o; }, strokeRoundedRect() { return o; }, fillCircle() { return o; }, strokeCircle() { return o; },
+            fillRoundedRect() { return o; }, strokeRoundedRect() { return o; }, fillRect() { return o; }, strokeRect() { return o; }, fillCircle() { return o; }, strokeCircle() { return o; },
             fillTriangle() { return o; }, lineBetween() { return o; } };
         return o;
     };
@@ -322,7 +322,7 @@ test('talking hides the action icon and the thought bubble; the speech bubble sh
     try {
         rig({ scenario: { showPressingNeeds: true }, state });
         const icons = new NpcActionIcons();
-        const speech = new NpcWorldBubbles();
+        const speech = new NpcWorldBubbles({ fontsReady: true });
         icons.update(); speech.update();
         assert.equal(icons.icons.get('tom').box.visible, true);
         assert.equal(icons.bubbles.get('tom').box.visible, true);
@@ -352,13 +352,13 @@ test('speech bubbles: not from another room, not in the dark, not under a miniga
     const state = { job: null, talking: { line: 'Hi.', partnerId: 'amy' } };
     try {
         rig({ state, room: 'kitchen' });
-        const a = new NpcWorldBubbles(); a.update();
+        const a = new NpcWorldBubbles({ fontsReady: true }); a.update();
         assert.equal(a.bubbles.size, 0, 'other room');
         rig({ state, minigame: { npcId: 'amy' } });
-        const b = new NpcWorldBubbles(); b.update();
+        const b = new NpcWorldBubbles({ fontsReady: true }); b.update();
         assert.equal(b.bubbles.size, 0, 'under a minigame');
         rig({ state });
-        const c = new NpcWorldBubbles(); c.update();
+        const c = new NpcWorldBubbles({ fontsReady: true }); c.update();
         assert.equal(c.bubbles.get('tom').box.visible, true);
     } finally { delete globalThis.window; }
 });
