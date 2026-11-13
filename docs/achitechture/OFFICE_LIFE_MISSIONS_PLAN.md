@@ -65,7 +65,7 @@ Limits that shape the design:
 
 - **Only loaded rooms exist.** The needs system sees objects only in rooms the player has opened. A kitchen behind an unopened door is never used, and an NPC in an unloaded room is not simulated. Each NPC's post and need objects belong in its own room, or in a room that is always loaded with it.
 - **Scripts win over needs.** A scripted walk (`goToAndStay`, a patrolOverride, a walk home after a conversation) suspends needs. An eventMapping can set `"needs": "suspend"` or `"resume"`. A needs NPC may not also have `behavior.patrol`.
-- **There is no "be at your post for this beat" guarantee.** A story-critical conversation needs the NPC to be reachable. Either the NPC stays stationary, or it keeps needs only inside its own room, or the beat suspends needs first.
+- **There is no "be at your post for this beat" guarantee.** A story-critical conversation needs the NPC to be reachable. Only three protections count: (1) the NPC is stationary (no `needs`); (2) its needs are confined to its own room (`needsRooms` lists only that room, and every need target is in it); (3) a `"needs": "resume"` mapping, which walks the NPC home, then a `"suspend"` mapping, both on a named event that always comes before the beat (for example `room_entered:<room>`). A bare `suspend` freezes an NPC where it stands, possibly in another room, and a conversation the player starts has no earlier event to hang it on. `deferrable: false` is not a protection: it marks a story need that skips the avoid and queue checks, so the NPC leaves more readily, and it is used only where a beat needs the NPC to walk to something.
 - **Any NPC can become hostile.** Attacks are on in every campaign mission unless `disableAttacks` is set. Attacking a non-hostile NPC turns it hostile (`public/break_escape/js/systems/player-combat.js:453`). The needs system skips knocked-out, hostile and hidden NPCs, and a unit test covers the drop and walk-home. The live path is unproved: an NPC attacked mid-walk outside its post room, calming down, walking back, and its `globalVarOnKO`, `taskOnKO` and KO item drops firing once (gap E1).
 - **Reload resets needs.** Need levels, queues and positions live in the browser and restart at the posts on reload. Only scalar globals are saved.
 - **Old `npc_arrived:<id>` mappings now also see needs arrivals.** No m01 to m10 mission has one today, but a check guards against new ones.
@@ -93,7 +93,7 @@ Layout: `.claude/skills/mission-office-life/SKILL.md` (frontmatter `name` and `d
 
 Triggers: "bring office life into m0X", "add office life", "make the staff feel alive", "add a kitchen and coffee to the mission", "add needs to the NPCs", "add physical-pentest openings to m0X".
 
-The skill plans first, then builds. Stages 1 and 2 produce a plan in the mission folder. Stage 3 settles approvals with the user. Stages 4 to 8 build, review, dress, voice and close it. Each stage has inputs, outputs and an exit test.
+The skill plans first, then builds. Stages 1 and 2 produce a plan in the mission folder. Stage 3 settles approvals with the user. Stage 4 builds and dresses it, stage 5 reviews and playtests it, stage 6 finishes the art that copies the final look, stage 7 voices it and stage 8 closes and merges it. Each stage has inputs, outputs and an exit test.
 
 Agent routing, from AGENTS.md "Choosing a model":
 
@@ -171,7 +171,7 @@ An Opus planner writes `scenarios/<m>/office_life/PLAN.md` from the analysis. It
    | NPC | class | post | leash | needs | company groups and avoids | habits | beats protected by | if attacked mid-walk |
    |---|---|---|---|---|---|---|---|---|
 
-   "Beats protected by" names how each story beat stays safe: the NPC is stationary, keeps needs inside its own room, uses `deferrable: false`, or a `needs: suspend` mapping runs before the beat. The last column says what the E1 probe result means for this NPC.
+   "Beats protected by" names which of the three protections in section 2 keeps each story beat safe, and for protection 3 names the preceding event. The last column says what the E1 probe result means for this NPC.
 3. Rooms and objects: each new or changed object, with its room, position, sprite key, preset or hand-written affordance, and a dressing note (square to the walls). A new room comes with the door that joins it and the lock it uses.
 4. Levers: what the player can do to move people (deliver the cake, ring a desk phone, throw a breaker, jam the printer) and what each lever opens. Every lever is optional.
 5. Physical-pentest openings: each opening, the cyber security lesson it carries, the optional content it rewards, and the CyBOK area if it adds one. Any opening that touches a critical-path lock is listed separately as an approval item (rule 2).
@@ -207,7 +207,7 @@ Paid steps wait for the picks. Mission-local work that needs no approval carries
 
 Work happens on a branch, `build/office-life-<m>`. A Sonnet implementer works from the approved plan in slices, one commit per slice, with explicit paths. An Opus writer handles the exchange and phone-call knots. The security-writing agent type handles the pentest openings' text. The slices, in order:
 
-1. New rooms and objects, then presets, needs, posts, leashes and privacy. Tiled decor that should take part (a coffee point or copier drawn into the map) is declared as a scenario object so it can carry a preset. An undeclared decor sprite is hidden when another sprite with the same image is claimed, so every same-image twin in the room is declared too, or given a distinct variant. Preset queue cells are checked against neighbouring objects and walls, and replaced with hand-written `queue.cells` (or `"queue": false`) where they clash.
+1. New rooms and objects, then presets, needs, posts, leashes and privacy. Tiled decor that should take part (a coffee point or copier drawn into the map) is declared as a scenario object so it can carry a preset. An undeclared decor sprite is hidden when another sprite with the same image is claimed, so every same-image twin in the room is declared too, or given a distinct variant. Preset queue cells and `useFrom` approach cells are checked against neighbouring objects and walls, and hand-written where they clash (`queue.cells`, `"queue": false`, or `useFrom`).
 2. Workstation habits (screen, print, USB) and awareness.
 3. Chatter pools and exchange knots.
 4. Levers and physical-pentest openings, with any switches, reveal slots, magnet spots and desk phones they need.
@@ -277,18 +277,18 @@ New tooling for the skill. None of it changes the game at runtime.
 | Id | Check or tool | Kind | Why the missions need it |
 |---|---|---|---|
 | V1 | `--office-summary`: one line per NPC, in a stable order so it diffs. It gives class hints (owns a knot that sets a task, is a key or card source, has `behavior.hostile`, patrols, `initiallyHidden`, can be attacked because `disableAttacks` is unset), then the post, leash, needs, groups and avoids, habits, and the number of chatter lines and exchanges. | info flag | The stage 0 baseline and every slice diff. OFFICE_LIFE_PLAN.md 12.11 already asks for it. |
-| V2 | A needs NPC who owns a knot that sets a required task, or is the target of a conversation-mode mapping, or is a key or card source, and whose needs can take it out of its own room without `deferrable: false` or a `needs: suspend` mapping before the beat. | warning | Story NPCs must stay reachable. |
+| V2 | A needs NPC who owns a knot that sets a required task, or is the target of a conversation-mode mapping, or is a key or card source, and whose needs can take it out of its own room, unless a `resume` then `suspend` mapping pair on one event precedes the beat. `deferrable: false` never exempts. | warning | Story NPCs must stay reachable. |
 | V3 | An `npc_arrived:<id>` mapping on an NPC that has `needs`. | warning | Needs arrivals fire these mappings. Nothing to catch today; cheap insurance. |
 | V4 | A needs NPC in a scenario without `disableAttacks`, until the E1 probe has passed. After that it becomes an info line that lists the NPC's KO globals and tasks for the reviewer. | warning, then info | Any NPC can be attacked mid-walk. |
-| V5 | A required task, objective, `concludeRequires`, required lock, or mapping that completes a required task, whose trigger is a global written only by office life or an office-life event. The globals are a workaround `setGlobal`, an `onUse.setGlobal`, `<id>_servings`, `heard_<knot>` (exchanges and phone calls), the workstation globals including `<id>_accessed`, and the reveal globals. The events are matched by prefix from one constant, `OFFICE_LIFE_EVENT_PREFIXES`, which covers the `npc_` needs, chatter, exchange, call, print, workaround and post events, the `workstation_` events, `desk_phone_`, `magnet_`, `object_revealed`, `door_propped` and `item_dropped`. A fixture test checks the constant against the event catalogue in `NPC_NEEDS_SYSTEM.md`, so a new engine event cannot slip past. | error | Rule 1. Extends the existing workaround-global rule to every office-life global and event. |
-| V6 | `rails break_escape:tts:office_lines[<mission>]`, a rake task in the existing `break_escape:tts` namespace beside `tts:wasted`, run keyless against the development database (it reads only; no database setup or migration commands from a worktree) that uses `TtsLineExtractor` with `chatter: true`. It lists every chatter, exchange, call and bark clip **per voice**, counted exactly as the extractor counts them, marks each as cached or uncached under the current cache key, and totals characters and clips. | report task | Prices the voice cost in stage 2 and drives stage 7. It has to live in Rails, because the cache key and line extractor do. |
+| V5 | A required task, objective, `concludeRequires`, required lock, or mapping that completes a required task, whose trigger is a global written only by office life or an office-life event. The globals are a workaround `setGlobal`, an `onUse.setGlobal`, `<id>_servings`, `heard_<knot>` (exchanges and phone calls), the workstation globals including `<id>_accessed`, and the reveal globals. The events come from one constant, `OFFICE_LIFE_EVENT_PREFIXES`, with exact prefixes: `npc_left_post`, `npc_returned_post`, `npc_posted`, `npc_used`, `npc_queued`, `npc_turned_back`, `npc_chatted`, `npc_overheard`, `npc_mutter`, `npc_exchange_heard`, `npc_call_heard`, `npc_caught_at_post`, `npc_print_`, `npc_announced`, `npc_workaround`, `npc_saw_magnet`, `workstation_`, `desk_phone_`, `magnet_`, `object_revealed`, `door_propped`, and `item_dropped` only for an item with an `interests` tag. Combat and KO events are not office life and are never listed. A fixture test checks the constant against the event catalogue in `NPC_NEEDS_SYSTEM.md`. | error | Rule 1. Extends the existing workaround-global rule to every office-life global and event. |
+| V6 | `bin/rails "app:break_escape:tts:office_lines[<mission>]"` (the same form as the existing `tts:wasted` task), a rake task in the existing `break_escape:tts` namespace beside `tts:wasted`, run keyless against the development database (it reads only; no database setup or migration commands from a worktree) that uses `TtsLineExtractor` with `chatter: true`. It lists every chatter, exchange, call and bark clip **per voice**, counted exactly as the extractor counts them, marks each as cached or uncached under the current cache key, and totals characters and clips. | report task | Prices the voice cost in stage 2 and drives stage 7. It has to live in Rails, because the cache key and line extractor do. |
 | V7 | A chatter pool line that repeats another pool line or an existing bark word for word, or matches the first line of the same NPC's ink opener. | warning | npc-dialog-review's "same fact twice" rule, made mechanical. |
 | V8 | Sync budget: counts, by kind, every piece in section 7 that the scenario can write, and prints each kind's total and the sum. Warns when a kind passes its cap. | info, warning above a cap | Keeps the sync size rule visible. |
 | V9 | `scripts/lock_key_diff.rb <baseline>`: reads the lock nodes, key edges and `optional` flags from the JSON that `generate_dungeon_graph.rb` writes, and adds from the rendered scenario a hash of each lock's requirement, the `gate`s, `access` lists, `wearable`s, task and objective triggers, and the aim chain. It diffs the result against the stage 0 baseline and flags any new door or gate whose far side holds a required task or a critical-path lock. | report tool | Rule 2. Reusing the graph's lock parser keeps one parser in step with format changes. |
 
-All nine are built before the pilot's stage 4. Each gets fixture tests under `test/` and a line in `README_scenario_design.md`.
+All nine are built before the pilot's stage 4. Each gets fixture tests under `test/` and a line in `README_scenario_design.md`. A fixture test also asserts that V5 reports 0 errors on m01 to m10 as they stand, so its event list cannot catch existing combat and KO mappings.
 
-Format steps 8b and 8c rewrite the owner and habit readers in the same validator files and rename keys that V1 reads. So the tooling is built **after 8b and 8c have merged**, on the format 3 names (section 8). The lock and key diff (V9) and the rake task (V6) touch no renamed key and can be built earlier.
+Format steps 8b and 8c rewrite the owner and habit readers in `validate_npc_needs.rb`, `validate_access_work.rb` and `validate_scenario.rb`. To stay out of that work, V1, V2, V4, V5, V7 and V8 live in a new file, `scripts/validate_office_life.rb`, called from `validate_scenario.rb` with one line. It reads renamable keys only through a small name table keyed on `FormatUpgrade.current`, which gains its format 2 and format 3 rows when 8b and 8c land. V3 is a one-line rule in the same file. V6 and V9 touch no renamed key.
 
 ## 5. Per-mission fit
 
@@ -301,7 +301,7 @@ This table comes from a survey of the ten scenario files on 2026-11-13. "Cached"
 | m03 ghost_in_the_machine | Pentest firm, night infiltration | 7 rooms, no kitchen, few staff. Cached 643. | Tier 0, or a small Tier 1: a coffee point and an exchange at reception before the night transition. | Night premise. The night transition is a story beat. |
 | m04 critical_failure | Battery storage plant | Ops office and reception only. Hostile operatives. Timed. Cached 525. | Tier 1. An ops-office kettle, and desk presets for Robert Vance confined to his room. A little shift chatter. | Live threat and a timer. Hostile NPCs never get needs. |
 | m05 insider_trading | Quantum crypto company hunting an insider, from 16:30 | Break room (leaflet note) and an open office with no declared objects. Every staff NPC is story-critical: Owen (required talk, RFID clone source), Patricia (keycard; two records), Halloran (badge in the flag deduction), Lisa (talk task, KO task). Cached 725. | Tier 2 or 3. Kitchen kit in the break room, with Lisa's needs confined to it. A thinning evening office with one or two new ambient staff at new desks. Screen-lock and print habits on those new desks. Story staff stationary. | Every existing NPC carries a beat. The visible life needs new NPCs and desks, so art and approvals come first. |
-| m06 follow_the_money | A crypto exchange late at night, still staffed; the player poses as a visiting supervisor | Trading floor with Irina (story-critical, holds a server-room item) and Dani (optional flavour, `taskOnKO` fallback), a trading workstation, and a coffee point and copier drawn as Tiled decor. Priya (optional flavour) works in the blockchain lab. Water coolers in the lobby and checkpoint as decor. All four floor walls already have doors. The floor's POV background is two images. No campaign feed. Cached 566. | Tier 2 inside existing rooms. Declare the floor's coffee point and copier as scenario objects, and every same-image monitor on the floor. Dani posted and leashed to the floor; Priya posted in the lab (its door to the floor is unlocked) with leave to use the floor's coffee point. Screen habits on trading desks. A print-and-forget printout of optional intel. One player lever, chosen in stage 2: neither a cake nor a breaker exists in m06, so the lever needs an in-world source (a declared desk phone with an extension on a note, or a cake from the lobby). Openings limited to workstation, print and left-behind slots. Night-crew chatter in NPC-own pools. A new kitchenette is an optional Tier 3 approval item (extra door, Tiled work, two POV redos). The checkpoint guard and Kemal Aydin (who patrols, holds a sight challenge and a cover beat, and is the CEO office's key source) are left as they are. | The visitor cover: staff lines must fit an FCA supervisor walking the floor at night. Irina and Satoshi carry the story and stay stationary. The floor's POV background shows the copier and coffee point on the back wall, unlike the map, and its left or right image follows the NPC's position, so Dani's post decides which image shows. |
+| m06 follow_the_money | A crypto exchange late at night, still staffed; the player poses as a visiting supervisor | Trading floor with Irina (story-critical, holds a server-room item) and Dani (optional flavour, `taskOnKO` fallback), a trading workstation, and a coffee point and copier drawn as Tiled decor. Priya (optional flavour) works in the blockchain lab. Water coolers in the lobby and checkpoint as decor. All four floor walls already have doors. The floor's POV background is two images. No campaign feed. Cached 566. | Tier 2 inside existing rooms. Declare the floor's coffee point and copier as scenario objects, and every same-image monitor on the floor. Dani posted and leashed to the floor; Priya posted in the lab (its door to the floor is unlocked) with leave to use the floor's coffee point. Screen habits on Dani's desk PC and Priya's lab PC (the stage 2 plan says which PC the existing `trading_workstation` becomes; Irina's stays attended). A print-and-forget printout of optional intel. The lever is a cake magnet: Dani and Priya get a `hunger` need and their own `cake` and announce pools, and the cake comes from an in-world source the stage 2 plan names (`cake1.png` exists). A desk-phone lever would move nobody here, because an owner at the desk answers without getting up and only an idle colleague posted in the same room walks over, so it waits for a second needs NPC on the floor (Tier 3). Openings limited to workstation, print and left-behind slots. Night-crew chatter in NPC-own pools. A new kitchenette is an optional Tier 3 approval item (extra door, Tiled work, two POV redos). The checkpoint guard and Kemal Aydin (who patrols, holds a sight challenge and a cover beat, and is the CEO office's key source) are left as they are. | The visitor cover: staff lines must fit an FCA supervisor walking the floor at night. Irina and Satoshi carry the story and stay stationary. The floor's POV background shows the copier and coffee point on the back wall, unlike the map, and its left or right image follows the NPC's position, so Dani's post decides which image shows. |
 | m07 architects_gambit | Grid control facility | 6 rooms. Badge station, handover sheet, abandoned workstation. Elena is the only friendly staff member; the rest are hostile. Timed. Cached 629. | Tier 1. Elena gets desk presets and needs confined to the server room, with a kettle there. Shift-handover chatter. | Crisis timer, and only one friendly NPC. |
 | m08 the_mole | SAFETYNET HQ | Break room with a coffee-machine note, visitor badge printer, operations floor. Colleagues are suspects or allies; ATHENA is an AI receptionist; Nightshade has two records. The off-duty agent in the break room is a sight beat (he catches lock picking). Cached 39, because most of m08 is unvoiced, so its voicing cost is mainly the existing backlog. | Tier 2. A real coffee machine in the break room. Needs for the junior analyst. The off-duty agent stays stationary or keeps needs inside the break room. Suspects stationary. Exchanges that add colour without new clues. | Every named NPC matters to the deduction, and exchanges must not leak or contradict clues. |
 | m09 digital_archaeology | Records archive after hours (finale) | No break room. Hostile staff. Sorensen has three records. Heavily scripted. Cached 137. | Tier 0, or Tier 1 limited to a front-desk kettle and a short pool for Jesse Tran. | Scripted finale with hostile staff. |
@@ -338,7 +338,7 @@ One mission is in implementation at a time. The next mission's analysis and desi
 
 ## 7. Sync size
 
-Needs state lives in the browser and is never synced: levels, positions, queues, cooldowns and chatter bags. Office life reaches the server and player_state only in the forms below. Each mission plan fills in this table with its own numbers, and V8 prints the counts.
+Needs state lives in the browser and is never synced: levels, positions, queues, cooldowns and chatter bags. Office life reaches the server and player_state only in the forms below. Each mission plan fills in this table with its own numbers. Plan reviewers check the sums by hand in stage 2; V8 confirms them from stage 4 on.
 
 | Piece | Where it lives | How it is sent | Cap per mission |
 |---|---|---|---|
@@ -354,6 +354,8 @@ Needs state lives in the browser and is never synced: levels, positions, queues,
 | An attacked NPC | `npcHostility` and the KO record, as for any NPC today | one entry per NPC when it changes | bounded by the cast; not new to office life |
 | A claimed unlocked session | the server's `sessions` and `signedInPcs`, sent in the bootstrap | one entry when claimed, removed when it ends | one per owned workstation; covered by the workstation cap |
 | A propped door | `door_propped:<room>` event plus the workaround's `setGlobal` (row above) | one key | covered by the workaround cap |
+| New `onceOnly` mappings | the keyed `triggeredEvents` section | one key when each first fires | one per new `onceOnly` mapping; at most 10 |
+| A picked-up printout, left-behind item or cake | the inventory, echoed whole on `POST /inventory` as for any pickup today | the existing echo | at most 4 office-life items per mission; not a new mechanism |
 
 Openings that write state sent whole are **not used by the pilot** and need their own approval item with a sync note: capture-log targets (`se_captures`, `__capture_log_seen`, both sent whole on each new capture), cloned cards (the cloner's `saved_cards`, sent whole in every inventory echo), footholds, lockouts and worn disguises. A later mission that adds one is capped at 2 capture targets, 1 clonable card and 1 foothold, and its plan states the bytes each adds to those whole-sent records. The pilot's openings are limited to workstation, print and left-behind slots, which use only the rows above.
 
@@ -374,18 +376,18 @@ Scenario-format hardening step 8a (format 1, `offWhen` everywhere) is built. Ste
 | `needsHome` implies an owner | `needsHome` no longer implies one; write `owner` | same |
 | `screenHabit`, `printHabit`, `usbHabit` | unchanged | `habits.screen`, `habits.print`, `habits.usb` |
 
-The schema is closed. Each step swaps the old key for the new one in the same commit, so the validator and loader accept only one set of names at any time. The template rewrite tool (`tools/format/rewrite_templates.rb`) arrives with 8b. 8b's scope, proofs and counts are fixed to the scenarios that hold retired keys when it is built.
+The schema is closed. Each step swaps the old key for the new one in the same commit, so the validator and loader accept only one set of names at any time. The template rewrite tool (`tools/format/rewrite_templates.rb --step <version>`) arrives with 8b and edits template text from the step's own transform. 8b's scope is the templates on main when it is built, so a mission still on its branch is not in it.
 
-The order is:
+The rule:
 
-1. Stages 0 to 3 (analyse, design, approvals) do not depend on field names, so they run now. Plans name fields by meaning (owner, private, screen habit), and `references/field-map.md` gives the exact key.
-2. 8b and 8c merge.
-3. The validator tooling (V1 to V5, V7, V8) is built on the format 3 names.
-4. The pilot's stage 4 starts.
+1. Stages 0 to 3 (analyse, design, approvals) do not depend on field names. Plans name fields by meaning (owner, private, screen habit), and `references/field-map.md` gives the exact key.
+2. Stage 4 writes the names of `FormatUpgrade.current` at that moment. If only 8b has merged, ownership uses format 2 names and habits keep today's names.
+3. When the branch rebases over 8b or 8c, the implementer runs `rewrite_templates.rb` for that step on the branch, re-runs the validator and V9, and logs the diff as mechanical. A key rename changes no spoken text and so re-keys no audio, and it needs no new dialogue review.
+4. No renamable key is placed inside an ERB loop or tag, so the rewrite maps each one to a single span.
+5. The branch also rebases over the other hardening steps that touch the pilot while it is open (step 3's clue marker in m06, and steps 6a and 6b, which mark NPC fields client-visible or server-only), re-running the validator and V9 each time. The 6a-1 field list must include NPC `needs`, `chatter` and `exchanges`, which the client reads.
+6. When 8b and 8c land, `references/patterns.md` and `references/field-map.md` are regenerated from the rewritten showcase scenarios, and the office-life validator's name table gains the new rows.
 
-Whatever has merged, `references/field-map.md` tells the implementer to write the names of `FormatUpgrade.current` at that moment. If only 8b has merged, ownership uses format 2 names and habits keep today's names.
-
-If the pilot is ready before 8b and 8c have merged, it waits. Writing today's names would quietly widen 8b's scope, add m06 to its proofs, and give a freshly reviewed mission a second rename diff. If the wait turns long (8c not merged within three weeks of the pilot's approvals), the orchestrator asks the hardening session to add the pilot to its scope first, then writes today's names. It never places a renamable key inside an ERB loop or tag.
+The alternative is to hold stage 4 until 8b and 8c have both merged. That avoids the rewrite diff, but 8c is only planned, so the wait has no end date (decision 3).
 
 Ownership is always written explicitly (an owner on every owned workstation, desk phone and private object), never left to `needsHome`. That keeps the 8b warning "needsHome no longer sets an owner" from firing.
 
@@ -399,13 +401,13 @@ The pilot needs **no runtime engine change**. That keeps it clear of the product
 | E2 | No vending preset (the sprites exist) and no toilet. | optional, all missions | A vending entry in `office-presets.json` (hunger and thirst, a short use, a coin sound). Only test scenarios set `officePresets` today, so it changes no deployed game, but it is shared data and an approval item. It lands after the pilot, as its own item. Toilets: not planned. |
 | E3 | Performance with more than 6 needs NPCs is unmeasured. The 6-NPC showcase has a mean tick of 0.19 ms. | m05, m08, any Tier 3 | Measure frame time with all of the pilot's needs NPCs active, at normal frame rate, before review. Measure first for any mission that would have more than 8. |
 | E4 | Lazy room loading: a kitchen behind an unopened door is never used. | all | A design rule, not engine work. Need targets sit in rooms that load with the NPC's own room, or the plan accepts that the kitchen comes alive once the player opens it. |
-| E5 | No guarantee that an NPC is at its post for a beat. | all with story NPCs | A design rule plus V2. Story NPCs stay stationary, keep needs inside their own room, or the beat suspends needs first through an existing eventMapping. A "summon to post" helper is backlog only. |
+| E5 | No guarantee that an NPC is at its post for a beat. | all with story NPCs | A design rule plus V2: the three protections in section 2. A "summon to post" helper is backlog only. |
 
 ## 10. Voicing
 
 The user deferred voicing the office-life chatter pools until the proper office-life scenarios exist. Whether the pilot counts as one is the user's call (decision 4). The plan below fits either answer.
 
-- **During development**, all office-life playtests run on the keyless server on :3001, so no audio is generated. New lines show as text and speech bubbles. Nobody plays a pass branch on :3000 or any other keyed server, which would generate clips on first play. If that happens anyway, `tts:wasted` and the tts-audio pruning step clear the stray clips before commit.
+- **During development**, the branch lives in its own worktree, and every stage 5 and stage 6 run uses a keyless server started from that worktree on :3002 (`tools/playtest/new-game.rb` run from the worktree, with the port set; the suite runner's default of :3001 serves only the main checkout). No audio is generated, and new lines show as text and speech bubbles. The worktree shares the development database: seeding is allowed, and `db:create`, `db:schema:load`, `db:migrate`, `db:reset`, `db:drop` and `db:setup` are never run. Only the batch-tip checks after the merge run on :3001. Nobody plays a pass branch on :3000 or any other keyed server, which would generate clips on first play. If that happens anyway, `tts:wasted` and the tts-audio pruning step clear the stray clips before commit.
 - **Voice before merge.** Missions ship together in the gem, and releases are cut as branches from main. Reverting one mission's commits from a release branch would conflict with later work, so office-life content reaches main only once it is voiced. Voicing runs straight after the reviews and playtests close, so a branch waits days, not weeks.
 - **Merge rule.** The voiced `build/office-life-<m>` branch merges into the current merge batch like any other build branch. The mission's own checks run on the batch tip next to the full suites (`bin/rails test`, `bin/test-js -j 3`): the validator, the route suite, V9, V6 (0 uncached office-life clips) and a short Haiku regression playtest. Main is fast-forwarded to exactly the hash those runs used. A voice-style change on main re-keys clips, so V6 runs on every batch tip that carries the mission.
 - **Safety net.** The bump-version skill gains a step: run V6 across `scenarios/m*/` and stop on any uncached office-life clip (section 13).
@@ -443,7 +445,7 @@ Each mission plan carries a costs table:
 | New NPC | concept through agy (free), then the PixelLab pipeline: bust, visemes from a talk run, 8-direction walk with the standard animations, seated frames if they sit | 0 to 2 | user (cast and image generation) |
 | Voice | Gemini TTS through tts-audio, priced in clips by V6 | section 10 ranges | user |
 | Engine or shared data | section 9 | none for the pilot | user |
-| Review and playtest time | section 12 | 3 to 5 design rounds, about 5 dialogue cycles, 2 to 5 design-review rounds, up to 3 playtest rounds | orchestrator |
+| Review and playtest time | section 12 | 3 to 5 plan rounds, 2 to 5 implementation-review rounds, 2 to 5 design-review rounds, about 5 dialogue cycles, up to 3 playtest rounds | orchestrator |
 
 All of a mission's approvals go to the user on one review page in stage 3, with the plan's recommendation marked for each.
 
@@ -474,30 +476,30 @@ Each round is a fresh read-only Opus reviewer, with findings tagged blocker, maj
    - the walkthrough and the aim chain;
    - that each opening teaches what the plan says;
    - that "does the player always know what to do next?" still holds with NPCs moving.
-4. **npc-dialog-review** of the new pools and knots. It checks:
+4. **npc-dialog-review** of the new pools and knots. On the pilot, a short sample (a few chatter lines and one exchange) goes to the user before the dialogue cycles continue, as AGENTS.md's calibration step asks. It checks:
    - the voice against the spy-thriller aim;
    - social compatibility in each exchange;
    - that no exchange leaks or contradicts a clue;
    - the 40-character rule;
    - repetition (V7).
-5. **Playtests** (playtest-scenario), on :3001:
+5. **Playtests** (playtest-scenario), on the branch worktree's keyless server on :3002 (section 10):
    - A Haiku regression run of the mission's existing walkthrough with office life on. Every step must pass, and nothing mapped to NPC position may fire early or twice.
    - A Sonnet persona run of 10 to 15 minutes. It uses the levers (cake, desk phone, breaker), watches the office day, tries each opening, attacks one moving NPC, and reloads once mid-mission.
    - A check through the `window.__test.needs` bridge that posts, leashes and privacy hold.
    - A frame-time reading (E3).
    - Where the mission sets `roomTone`, a listen through a north or south door as well as an east or west one.
 
-   At most 3 rounds, then a short confirmation run. A run counts only when `tools/playtest/verify-run.rb` shows progress. Any Haiku "stuck" claim is checked by a Sonnet run before it counts.
+   At most 3 rounds, then a short confirmation run. A run counts only when `tools/playtest/verify-run.rb` shows progress. Any Haiku "stuck" claim is checked by a Sonnet run before it counts. The blind playtest that ends AGENTS.md's phase 5 waits for the lab-sheet update, which the user has written last.
 6. **Art follow-ups** (stage 6) and their closing check, then **voice** (stage 7), then **close and merge** (stage 8).
 
 ## 13. Building the skill itself
 
 1. Write `.claude/skills/mission-office-life/SKILL.md` and the four reference files from this plan. An Opus writer does this, followed by one review round by a fresh Opus reviewer against the showcase scenarios.
-2. Build V9 (the lock and key diff) and V6 (the voice report task), with fixture tests, and add the V6 stop to the bump-version skill. A Sonnet implementer works from a short spec, followed by one Opus code review.
+2. Build the tooling: V9 (the lock and key diff), V6 (the voice report task), and `scripts/validate_office_life.rb` with V1 to V5, V7 and V8, all with fixture tests. Add the V6 stop to the bump-version skill, and add a short office-life section to the tts-audio skill (V6, `ttsPregenerateChatter: true`, voice before merge, the :3002 branch server for drafts), whose current note says chatter is generated on first play. A Sonnet implementer works from a short spec, followed by one Opus code review.
 3. Run the E1 probe.
 4. Run the pilot's stages 0 to 3 on m06.
-5. Once 8b and 8c have merged, build V1 to V5, V7 and V8 on the format 3 names, with fixture tests and one Opus code review.
-6. Run the pilot's stages 4 to 8.
+5. Run the pilot's stages 4 to 8.
+6. When 8b and 8c land, regenerate `patterns.md` and `field-map.md` and extend the office-life validator's name table.
 7. Revise the skill from the pilot's log, then continue the rollout (section 6).
 
 ## 14. Decisions for the user
@@ -511,8 +513,8 @@ Each round is a fresh read-only Opus reviewer, with findings tagged blocker, maj
    - (b) Never add office life to m01.
    - (c) Do it in the normal order and re-run the gate playtests.
 3. **Format steps 8b and 8c.**
-   - (a) Design now; build the tooling and implement after both have merged; if 8c slips more than three weeks, add the pilot to the hardening scope and write today's names. Recommended.
-   - (b) Implement now on today's names and let the rewrite tool rename them.
+   - (a) Implement on the names current at the time, and run the rewrite tool on the branch when it rebases over each step, logging the diff as mechanical. Recommended: 8c has no date yet, and the rename re-keys no audio.
+   - (b) Hold the pilot's stage 4 until both 8b and 8c have merged.
 4. **Voicing.**
    - (a) The pilot counts as a proper office-life scenario: voice each mission's new lines in one batch straight after its reviews and playtests, then merge. Recommended.
    - (b) Keep voicing deferred: finished missions wait on their branches until several are voiced together in one batch.
