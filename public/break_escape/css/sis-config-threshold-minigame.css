@@ -181,6 +181,23 @@
     margin: 0 auto;
 }
 
+/* The detail and compare pop-ups are not confirms: they close with the shared X, inside the
+   pop-up's frame, and their title stops short of it */
+.sis-modal-with-x {
+    position: relative;
+}
+
+.sis-modal .sis-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+}
+
+.sis-modal-with-x h4 {
+    padding-right: 40px;
+}
+
 .sis-modal h4 {
     margin: 0 0 8px 0;
     color: #f4f7fb;

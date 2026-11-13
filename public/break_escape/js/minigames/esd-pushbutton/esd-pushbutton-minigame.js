@@ -175,6 +175,30 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         if (window.playUISound) window.playUISound('lock');
     }
 
+    // A confirm keeps its two named buttons and has no X (user rule): the scene X, which sits
+    // over the confirm's corner, hides while it is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#minigame-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // The confirm covers the part of the panel in view: on a short window the panel scrolls,
+    // so the confirm goes where the panel is scrolled to and the panel holds still under it
+    _pinConfirmToView(open) {
+        const modal = this.confirmModal;
+        const panel = modal?.closest?.('.esd-panel');
+        if (!modal || !panel) return;
+        if (open) {
+            modal.style.top = `${panel.scrollTop}px`;
+            modal.style.bottom = 'auto';
+            modal.style.height = `${panel.clientHeight}px`;
+            panel.style.overflowY = 'hidden';
+        } else {
+            modal.style.top = modal.style.bottom = modal.style.height = '';
+            panel.style.overflowY = '';
+        }
+    }
+
     handleButtonPress() {
         if (!this.authorizationGranted || this.alreadyActivated) return;
         if (this.state !== 'GUARD_OPEN') return;
@@ -182,12 +206,16 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         this.state = 'CONFIRM_MODAL';
         this.confirmModal.classList.add('active');
         this.confirmModal.setAttribute('aria-hidden', 'false');
+        this._hideSceneX(true);
+        this._pinConfirmToView(true);
     }
 
     hideConfirmModal() {
         this.state = 'GUARD_OPEN';
         this.confirmModal.classList.remove('active');
         this.confirmModal.setAttribute('aria-hidden', 'true');
+        this._hideSceneX(false);
+        this._pinConfirmToView(false);
     }
 
     handleConfirm() {
@@ -197,6 +225,8 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         this.state = 'ACTIVATED';
         this.confirmModal.classList.remove('active');
         this.confirmModal.setAttribute('aria-hidden', 'true');
+        this._hideSceneX(false);
+        this._pinConfirmToView(false);
 
         this.buttonElement.classList.add('pressed');
         this.buttonElement.setAttribute('disabled', 'true');

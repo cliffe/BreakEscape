@@ -32,11 +32,28 @@ test('no scene draws its own Close / Close Terminal / [CLOSE] button beside the 
     const banned = [/>\s*Close\s*</, />\s*\[?\s*CLOSE( TERMINAL)?\s*\]?\s*</i, /textContent\s*=\s*'\[CLOSE\]'/,
         /cms-close-button/, /cdf-close-btn/, /wcc-close-btn/, /bce-close-btn/, /lf-close-btn/];
     for (const [name, rel] of Object.entries(SCENES)) {
-        // The SIS config detail and compare pop-ups keep a Close that shuts the pop-up only,
-        // not the scene; their scene X is still the one close control
-        const text = name === 'sis-config-threshold' ? src(rel).replace(/id="sis-(detail|compare)-close">Close</g, '') : src(rel);
-        for (const re of banned) assert.doesNotMatch(text, re, `${name} still has ${re}`);
+        for (const re of banned) assert.doesNotMatch(src(rel), re, `${name} still has ${re}`);
     }
+});
+
+test('pop-ups that are not confirms close with the shared X; confirms keep two named buttons and no X', () => {
+    const sis = src(SCENES['sis-config-threshold']);
+    for (const id of ['sis-detail-close', 'sis-compare-close']) {
+        assert.match(sis, new RegExp(`class="minigame-close-button sis-modal-close" id="${id}" aria-label="Close">&times;<`), `${id} is the shared X`);
+    }
+    assert.match(sis, /id="sis-confirm-no">Cancel</);
+    assert.match(sis, /id="sis-confirm-yes">Confirm</);
+    assert.match(css('sis-config-threshold-minigame.css'), /\.sis-modal-with-x h4 \{[^}]*padding-right: 40px/, 'pop-up title stops short of its X');
+    const esd = src(SCENES['esd-pushbutton']);
+    assert.match(esd, /id="esd-confirm">CONFIRM - INITIATE SHUTDOWN</);
+    assert.match(esd, /id="esd-cancel">CANCEL</);
+    // The scene X hides while a confirm or pop-up is open, so one X shows at a time
+    for (const text of [sis, esd]) {
+        assert.match(text, /_hideSceneX\(true\)/);
+        assert.match(text, /_hideSceneX\(false\)/);
+    }
+    const ehr = src(SCENES['ehr-terminal']);
+    assert.match(ehr, /\[UNDERSTOOD\]/, 'EHR keeps its acknowledgement');
 });
 
 test('log filter draws inside the game area, so the framework X is never wiped (LF1)', () => {
