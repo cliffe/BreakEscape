@@ -70,3 +70,70 @@ export async function playThrough(page, bridge, mark, vw, { steps = [], dwellMs 
   await vw.drain();
   return vw.lines;
 }
+
+// Added for the endgame takes (t04 to t08): the m04 helpers (globals, playChat, closeAll, syncNow, ttsBusy).
+export { globals, playChat, closeAll, syncNow, ttsBusy } from '../m04/_live.mjs';
+import { playChat as _playChat, globals as _globals } from '../m04/_live.mjs';
+
+// Spine: loading_dock -> open_stacks -> reading_room (west) -> restricted_stacks (north) -> restricted_cage (east).
+const SPINE = ['loading_dock', 'open_stacks', 'reading_room', 'restricted_stacks', 'restricted_cage'];
+const SIDE = { server_closet: 'open_stacks', sorensen_office: 'restricted_stacks', tape_room: 'restricted_stacks', salvage_cage: 'tape_room' };
+
+/**
+ * Answers the night clerk's re-challenge in open_stacks ("Still auditing?") with the cover line, if one is up.
+ * Returns true if a clerk chat was handled. Never picks "I'm not an auditor".
+ */
+export async function handleClerk(page, bridge, mark = () => {}) {
+  const s = await bridge.getState();
+  const d = s.dialogue;
+  if (!d) return false;
+  const txt = JSON.stringify(d).slice(0, 2000);
+  if (!/Coyote|auditing|Same as before/i.test(txt)) return false;
+  await _playChat(page, bridge, mark, { prefer: [/^Same as before\. Carry on/i, /Carry on/i], avoid: [/not an auditor/i, /.*/], donePicks: 1, dwellMs: 600, settleMs: 500, timeoutMs: 60000 }).catch(e => mark('clerk-chat', { e: String(e).slice(0, 160) }));
+  return true;
+}
+
+/** Passes a lingering "Continue?" title card with a player gesture (Enter, then a click), as playtest-session does. */
+export async function passTitle(page, bridge) {
+  for (let i = 0; i < 12; i++) {
+    const s = await bridge.getState();
+    if (!(s.activeMinigame && s.activeMinigame.id === 'title-screen')) return i > 0;
+    if (i % 2 === 0) await page.keyboard.press('Enter'); else await page.mouse.click(960, 540);
+    await new Promise(res => setTimeout(res, 1500));
+  }
+  throw new Error('title screen did not close');
+}
+
+/** Walk from wherever the player is to `room` via the hub, room by room, answering the clerk on the way. */
+export async function walkTo(page, bridge, room, mark = () => {}) {
+  await passTitle(page, bridge);
+  for (let hop = 0; hop < 8; hop++) {
+    const at = (await bridge.getState()).player.room;
+    if (at === room) return at;
+    let next;
+    if (SIDE[at]) next = SIDE[at];
+    else if (!SPINE.includes(room)) next = room;
+    else next = SPINE[SPINE.indexOf(at) + (SPINE.indexOf(room) > SPINE.indexOf(at) ? 1 : -1)];
+    const r = await bridge.enterRoom(next, { timeoutMs: 45000 });
+    mark('enter', { room: next, ok: r && r.ok });
+    await new Promise(res => setTimeout(res, 1500));
+    for (let i = 0; i < 3; i++) { if (!(await handleClerk(page, bridge, mark))) break; }
+  }
+  const p = (await bridge.getState()).player.room;
+  if (p !== room) throw new Error('could not reach ' + room + ' (at ' + p + ')');
+  return p;
+}
+
+/** Opens the phone on Agent HaX's thread. */
+export async function openHax(bridge) {
+  const r = await bridge.openInventoryItem('phone');
+  if (!r || !r.ok) throw new Error('phone did not open ' + JSON.stringify(r).slice(0, 200));
+  await bridge.waitForMinigame('phone-chat', { timeoutMs: 8000 });
+  await new Promise(res => setTimeout(res, 1500));
+  const c = await bridge.minigame.clickText('Agent HaX');
+  return c;
+}
+
+export const endgameGlobals = (page) => _globals(page, ['flag3_submitted', 'flag4_submitted', 'cage_opened', 'nightshade_file_held', 'notebook_read', 'hand_before_name',
+  'hand_matched', 'identity_scene_started', 'identity_scene_done', 'hour_read_started', 'hour_read_done', 'tesseract_call_started', 'tesseract_call_done',
+  'albion_notified', 'start_debrief', 'report_done', 'legacy_clock_run']);
