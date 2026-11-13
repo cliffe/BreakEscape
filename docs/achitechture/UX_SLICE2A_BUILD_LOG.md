@@ -213,11 +213,53 @@ Shots in the session scratchpad under `ux-shots/slice2a-final/`, named by review
 
 ### Not done, and notes
 
-- `main-05` and `main3-07` need a retake: the driver's run measured no password frame for them (Ian's PC at it_room did not open a sign-in screen in that run, and the SV-FS02 remote sign-in did not open from `openRemoteSignIn`), so those two files do not show the intended screens.
-- Boxes of odd width centred inside the frame (the field label, Submit, Add to Notepad, some tile names, "Choose an account.") still sit on half a pixel horizontally. The frame itself is whole; fixing these needs even widths per element.
-- The 64px tile still draws the 128px talk frame at x0.5 (`background-size: 200%` of a 64px box). R3 n1 covered the 32px box only.
+- `main-05` and `main3-07` did not show the intended screens. Corrected in R4 (review R4 n5): both were mistakes in this round's driver, not game bugs. For main-05 the driver left the hot desk desktop open after closing Switch user (that X returns to the desktop, as designed), so `interact('ian_pc')` returned `minigame-active`; and `it_room` is not next to `hot_desk_room`, so the route has to go through the lobby. For main3-07 the driver searched the network view's `hosts` for `sv_fs02` before any office session had been signed in through the box (SV-FS02 is listed only after that pivot), and the server host is not in that array even afterwards; the view's own Sign in button opens the screen. The R4 review retook both (`slice2a-r4/main-05.png`, game 2681; `slice2a-r4/main3-07.png`, game 2707), and the R4 fixes proof refreshes them in `slice2a-final/` (see "R4 fixes").
+- Boxes of odd width centred inside the frame (the field label, Submit, Add to Notepad, some tile names, "Choose an account.") still sit on half a pixel horizontally. The frame itself is whole. Fixed in R4 (m2).
+- The 64px tile still draws the 128px talk frame at x0.5 (`background-size: 200%` of a 64px box). R3 n1 covered the 32px box only. Fixed in R4 (m1).
 - When an NPC has a 32x32 `avatar`, the short window shows that headshot rather than the talk-frame crop. Test_access_signin has no avatars, so the proof shows the crop, which shows the face better. Switching the order is one line in `applyTilePortrait`.
 
 ### Handover (R3)
 
 Done: m1 to m5, n1, n2. Commits: c732c8d78 (fixes and tests), plus the follow-up (damage-guard comment, note reveal at 915x412) and this log. Open: q98 (prompt skin); the two retakes above.
+
+## R4 fixes
+
+Review: `UX_SLICE2A_REVIEW_R4.md` (89ea3a504; 0 blockers, 0 majors, 2 minors, 5 nits). All seven fixed.
+
+| Finding | Fix | Files |
+| --- | --- | --- |
+| m1, the 64px tile was the 128px frame at half size | `setTilePortrait` puts the sheet at its own size (`256px 256px`) and cuts a 64x64 head crop with the same finder as the 32px box (`headCropOffset(alpha, frameSize, 64)`, so the 64 crop is the 32 crop's centre and top). Every path is whole-scale: a talk sheet is cut at scale 1 in both boxes; a 64x64 image is shown at scale 1, with a 32x32 head crop of it in the short window; a 32x32 headshot is shown at x2 in the 64px box and at scale 1 in the 32px box. No `contain`, `cover` or percentage size is left. | `password-minigame.js` |
+| m2, odd boxes inside the frame on half pixels | `snapInnerBoxes` walks every box in the frame in document order after the frame is snapped, and moves any box whose left or top is fractional onto the pixel: an in-flow box by a relative `left`/`top` (added to its own), a positioned one (the eye toggle) by `translate`, so its anchors stay. `unsnapInnerBoxes` undoes it before each pass, so offsets never add up. It runs with the frame snap (first paint, resize, ResizeObserver) and also from a MutationObserver on the frame (new text changes a centred box's width without changing the frame's size); the records of its own style writes are dropped with `takeRecords()`. An image load (capture phase) and a late font also re-snap. `wholePixelOffset` keeps six decimal places, because Chrome lays out in 1/64px steps and the Add to Notepad icon was 0.015625px off. `.keyboard-toggle-btn` and `.key` no longer use `transition: all`, so a snapped `left`/`top` lands at once. | `password-minigame.js`, `password-minigame.css` |
+| n1, an empty Submit pushed the post-it half out of view | `showScreenMessage` reveals the `.postit-note` first, then the line, as `setSignInMessage` does. | `password-minigame.js` |
+| n2, chosen and Switch user overflowed 4 to 5px at 915x412 | The short-window `.signin-screen` has 4px gaps (was 6) and 6px padding above and below (was 8). Gaps alone left the chosen screen 3px over. | `password-minigame.css` |
+| n3, the finder missed 4 bedside portraits; odd sheets used `contain` | `PORTRAIT_CROP_OVERRIDES`, keyed by talk sheet file name, gives the 64 and 32 crops for mr_ahmed, mr_pryce, mrs_kowalski and ms_okafor (checked by eye at 4x: `bedside-crops.png`). A picture that is not a talk sheet and not exactly 32x32 or 64x64 (the two 120x120 hood sheets) is skipped: the avatar is tried next, then initials in Press Start 2P. | `password-minigame.js` |
+| n4, dead `duration` | Dropped from `showScreenMessage` and its three callers; the no-line fallback box keeps a fixed 1500ms. | `password-minigame.js` |
+| n5, the build log listed main-05 and main3-07 as owed | The R3 "Not done" bullet now says both were driver mistakes and points to the retakes; the two later bullets are marked fixed in R4. | this log |
+
+The override is a table in the engine rather than a `portraitCrop` field in scenario data: none of the four is a sign-in account today, and a scenario field would need the server's tile builder (`login_account_tiles`) to pass it. That is one more key per tile if it is wanted later. No synced state is added; every change is client display only.
+
+### Tests
+
+New in `password-signin-mode.test.mjs`: the 64x64 crop at scale 1; no portrait box ever gets a size that is not a whole multiple of the image (talk sheets at 256 and 512, a 64 avatar, a 32 headshot, an override sheet, a 120 and a 128 picture), and the base `.signin-portrait` rule sets no size; the overrides stay inside the frame and win over the finder; an odd sheet falls through to the headshot; the inner snap (a relative box, a positioned box by translate, no build-up on a second pass, a new message re-snapped by the observer); the 1/64px step; unsnap restores inline values; no `transition: all`; the note revealed before the line; no `duration`; the 4px gap rule. The test that measures every state at every size is the live one below (JSDOM has no layout): `geom` lists every visible element in `.password-frame` whose left or top is not whole.
+
+Run without the lock: the 34 node test files that import or read `password-minigame.js` or its CSS, `minigames/index.js`, `network-links.js` or `minigame-starters.js`. 443 pass, 0 fail.
+
+### Live proof
+
+Keyless server on :3318 from this worktree, stopped afterwards. Headless Chromium with scrollbars shown, `setFPS(20)` with fixed steps on (`[20, true]` logged on every run). The driver is the R4 review's, with the final shot names: `slice2a-final/drive-r4.mjs`, logs in `slice2a-final/logs-r4/` (run 1's in `logs-r4-run1/`). New games:
+- Run 1 (before the 1/64px, load and font fixes), 2725 to 2736: found the Add to Notepad icon 0.015625px off and one late `.password-info` re-flow.
+- Run 2 (all fixes but the padding), 2737 to 2748: test_access_signin (swapped onto test_access_networks) for the hot desk, Switch user, Ian's PC, the lockout PC and the archive at 1400x1000, 800x600 and 915x412 (2737 to 2742); m01 (`--start-room kevin_office`) at the three sizes (2743 to 2745); test_access_networks (`--give kit_dropbox`) at 1400x1000 and 915x412 (2746, 2747); test_access_habits (swapped, `--start-room omar_room`, 2748).
+- Run 3 (final CSS), 2760 to 2763: the sign-in and lockout scenes at 800x600 and 915x412.
+
+Measured:
+- m2: no visible element in the frame has a fractional left or top in any state at any size: tiles, chosen, wrong, Change, Switch user, Ian's PC (open, refused), lockout (one left, locked), archive (open, wrong), plain (open, empty, wrong, refusal, network error, maxed), Wi-Fi (open, empty, wrong), Lena's and SV-FS02's remote sign-ins and Omar's PC. Every count is 0.
+- m1: at 1400x1000 the three account tiles are `256px 256px` at `-42px -5px`, `-37px -14px` and `-32px -4px`; at 800x600 and 915x412 the 32px boxes are at scale 1 as before. `portrait-64px-3x.png` and `portrait-32px-3x.png` are the live boxes enlarged 3x.
+- n1: on m01 at 915x412 an empty Submit leaves the note at 232 to 329, inside the area (to 329); it was 290 to 387.
+- n2: at 915x412 the chosen and Switch user screens overflow by 0 with no scrollbar (were 5 and 4). A wrong password still scrolls the area (41px) with the note and the line in view, as R3 m4 set.
+- End to end, unchanged: local sign-in, Switch user and its X back to the desktop, Ian's PC refusing `sokafor` then signing in `ishaw`, lockout and Esc with `locked_out`, the archive unlock with no stale return, the Wi-Fi prompt, remote sign-in to Lena's PC, Ledger-Archive, SV-FS02 after the pivot (refused `lfox`, then `ishaw`), Backup-Vault. X and Esc end with `closedByPlayer` and no toast. No page errors; the console errors are the expected 422s and the faked 403 and 500.
+
+Shots in `ux-shots/slice2a-final/` (refreshed): `main-01` to `main-05`, `main-07`, `main-08`, `main-09`, `main-11`, `main-12`, `main3-01`, `main3-05`, `main3-07`, `main3-08`, `unlock-44`, `unlock-53`, `chosen-*`, `wrong-*`, `tiles-*`, `switch-*`, `tiles-crop-*`, `plain-wrong-1400x1000`, `archive-wrong-*`, `stale-after-notes-*`, `portrait-64px-3x`, `portrait-32px-3x`, `bedside-crops`. `main-05` is Ian's PC refusing `sokafor` (game 2737); `main3-07` is the SV-FS02 remote sign-in (game 2746).
+
+### Handover (R4)
+
+Done: m1, m2, n1 to n5. Commits: 6794aa8b1 (fixes and tests), 2c050b621 (1/64px step, image and font re-snap, gaps), 4be85c8e0 (padding), and this log. Open: q98 (prompt skin). Possible follow-up: a scenario `portraitCrop` field passed through the tile builder, if a posed portrait ever becomes a sign-in account.
