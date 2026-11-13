@@ -65,5 +65,32 @@ Names seen live: "Drop box: Comms room", "Drop box: Workshop", "Keystroke inject
 - A long view (the jack and implant views with a pivot block) fills the screen and scrolls inside its game area; the pivot block is below the fold until scrolled, and Close sits over the HUD row as in every minigame. A scroll cue was not added.
 - Headless door controller and powered-down PC icons wait on the art in section 5 (slice 8).
 
+## R1 fixes
+
+From `docs/achitechture/UX_SLICE1_CODE_REVIEW_R1.md` (0 blockers, 0 majors, 4 minors, 5 nits) and the orchestrator's rulings. Every finding is fixed.
+
+- m1, header repeats: the inventory line is gone from every view (`linkObservations` and `viewObservations` removed). The header is the title, the subtitle and, on Wi-Fi only, the joined line. A JS test checks that no header line repeats or contains another, for the jack and both implant views.
+- m2, long views: the panel now has a frame (`.network-view-frame`, 2px) that holds the X, the scrolling list and a "More below" strip with a stepped 12x6 arrow. The frame is never taller than the screen less 24px, so its bottom border always shows. The strip shows while the list runs past the bottom and hides at the end (`updateScrollCue` on scroll, resize, render and image load). The header is sticky, so rows scroll under it and never under the X. Rows lay out in a grid, `repeat(auto-fill, minmax(340px, 1fr))`: two columns at 800 wide and up. Group headings, empty lines and locked shares (with their long note) span both. Tighter spacing: row padding 2px 6px, row buttons 4px 12px at 16px, block padding 6px, panel gap 6px. A resource row's host label no longer breaks at its hyphen. At 1400x1000 every view now fits. At 800x600 the jack, Wi-Fi and powered-down views fit; the pivot, down and implant views scroll inside the frame with the cue. At 915x412 the Wi-Fi and powered-down views fit and the others scroll.
+- m3, `getTestState()`: `status` is the load state again; the header line is `statusLine`. A new `moreBelow` field says whether the cue shows.
+- m4 and the out-of-scope Close: the view passes `showCancel: false`, so there is no Close button; the X is moved into the frame at top 6px, right 6px, clear of the border at every size; Esc still closes (framework handler). Tests click `#minigame-close`; a new test checks there is no `#minigame-cancel`, the X's parent is the frame, and Esc ends the trip with `closed`.
+- n1: a powered-down row shows "(powered down)" only; `downState` gives it no reason. No-route rows are unchanged.
+- n2: a Wi-Fi view heads its own block "Reachable" (`WIFI_OWN_HEADING`).
+- n3: the joined count leaves out rows `downState` marks down.
+- n4: `readable_object_name` gives the object's name, else a PC's host label, else the id with spaces and a capital ("Bench port b"). Used for the view's `source` name and the n5 suffix.
+- n5: `distinct_link_name`: when a default name is already held by another foothold, the newer one becomes "<default>, <source object name>" (a number follows only if that is taken too). Authored names are never changed. Jack and both implant shapes; Wi-Fi names a network, so it cannot clash. Stored once at grant, so sync is unchanged (one string per record).
+
+### Tests
+- `test/js/network-view.test.mjs`: 40/40 (one obsolete `viewObservations` test removed, five added: header lines, X and Esc, scroll cue, columns and wide rows, joined count). Also green: `escaping-shared-helpers` 20, `network-links` 66, `network-links-routing` 4, `access-remote-signin` 15, `toast-once-across-panel-handover` 6.
+- `test/controllers/break_escape/network_link_names_test.rb`: 11/11 (two new: two drop boxes in one room get different names; an unnamed jack is named readably in the link and the view).
+- Network Rails tests (every `*network*_test.rb` in `test/controllers/break_escape` and `test/models/break_escape`, under the lock): 191 runs, 3483 assertions, 0 failures, 0 errors, 0 skips.
+- Validator `--no-graph`: `test_access_networks` 0 ❌, `lab_physical_pentest` 0 ❌.
+
+### Live proof
+Keyless server on :3302 from this worktree, headless, physics at 20 fps with fixed steps on. New games by `tools/playtest/swap-scenario-game.rb test_access_networks scenarios/test_access_networks --unlock-all`: 2475 for the final shots; 2470 and 2471 for two earlier passes (before the sticky header and the host-label fix), kept in `first-pass/` and `second-pass-2471/`. Setup through the real `window.ApiClient` calls, each view opened through `window.networkLinks.open` after a reload. Shots at 1400x1000, 800x600 and 915x412 in the scratchpad `ux-shots/slice1-r1fix/`: `jack`, `pivot-top`, `pivot` (scrolled to the end), `down-no-route`, `wifi-joined`, `implant-injector`, `implant-stick`, `powered-down`. In every shot: load state `ready`, no Close button, the X inside the frame, the frame's bottom border on screen, the cue shown exactly when the list is not at its end. No page errors.
+
+### Open
+- The Wi-Fi glyph still awaits the user's approval (unchanged).
+- The own block heading on jack and implant views repeats the network named in the subtitle ("On Harbour office LAN, ..." then "Harbour office LAN"). The ruling covered the Wi-Fi view only, so this is left as it was.
+
 ## Handover
 Done: all of slice 1. Nothing in progress. Commits on `build/ux-net`: see the report.
