@@ -57,3 +57,64 @@ The server was stopped by PID afterwards.
 ## Handover
 
 Done in full; nothing in progress. Files: npc-manager.js, README_scenario_design.md, scripts/scenario-schema.json, test/js/npc-bark-delay.test.mjs, this log. Merge note: the change in npc-manager.js is one config line, one constructor line, the `_delayBark` method above `_handleEventMapping`, and the two bark call sites; build/ux-barks edits nearby for answeredInView.
+
+## R1 fixes
+
+Review: `docs/achitechture/BARK_DELAY_FIX_REVIEW_R1.md` (commit `03a7984b6`; 0 blockers, 0 majors, 7 minors, 3 nits). Fix commit `164b14e02`.
+
+### m1. A delayed bark due during a chat with its own NPC is held, not dropped (fixed)
+
+`_delayBark` no longer drops a bark when the player is in a person-chat with the barking NPC. The bark goes to `showBark`, whose hold policy keeps it behind any open person-chat and re-checks its condition when the chat closes, which is what a `barkDelay: 0` bark already did. Helen's sis01 mapping is unchanged. The README `barkDelay` entry now says a bark that comes due while the player talks to that NPC waits for the conversation to close and is shown then if its condition still holds. Test: "due during a person-chat with that NPC: handed to showBark to hold, not dropped" (it fails on the old code, which dropped the nurse's bark).
+
+### m2. sis01 ICO deadline barks after the debrief (fixed)
+
+Sarah Mitchell's and Dr Hartley's `ico_deadline_missed` mappings now have `"condition": "value === true && !globalVars.debrief_complete"`. `debrief_complete` is the global that ends the mission: `concludeRequires` lists it, the victory music triggers on it, and `npc_sharma.ink` `debrief_end` sets it before `#exit_conversation`. Both barks are held behind the forced debrief; when it closes the hold's re-check finds `debrief_complete` true and drops them. If the player picks "Give me a few minutes" the debrief closes without setting it, so the lines still show then.
+
+### m3 and m4. sis01 death reactions spaced by line length (fixed)
+
+Each bark starts after the one before it has finished: about 350 ms a spoken word, plus a 500 ms gap, rounded up to 100 ms. The order is the authors' order (by their original delays, ties in file order). Only `barkDelay` numbers changed.
+
+| Event | NPC (bark line) | Words | Old barkDelay | New barkDelay | Voice ends about |
+|---|---|---|---|---|---|
+| patient_bed2_deceased | Sarah Mitchell (scenario.json.erb:901 or 909) | 6 | 1500 | 1500 (unchanged) | 3600 |
+| patient_bed2_deceased | David Osei (2231) | 12 | 1500 | 4100 | 8300 |
+| patient_bed2_deceased | Helen Carver (2314) | 12 | 2500 | 8800 | 13000 |
+| patient_bed2_deceased | Mrs Kowalski (1321) | 5 | 3000 | 13500 | 15250 |
+| patient_bed4_deceased | Amy Clarke (1096) | 4 | 800 | 800 (unchanged) | 2200 |
+| patient_bed4_deceased | Sarah Mitchell (928) | 10 | 2500 | 2500 (unchanged) | 6000 |
+| patient_bed4_deceased | Helen Carver (2307) | 8 | 2500 | 6500 | 9300 |
+
+The ERB comment by Mrs Kowalski's mapping still says "delayed 3 s"; it was left alone because the ruling allowed only `barkDelay` numbers to change.
+
+### m5 to m7. Tests (fixed)
+
+- m5: the onceOnly test now repeats the event at 6000 ms, after the bark has landed and the default 5000 ms cooldown has run out, and asserts no second timer and one bark. A control test with `onceOnly: false` and the same timings gets two barks (1500 and 7500), so the first test fails without onceOnly.
+- m6: the cooldown test repeats at 9000 ms (blocked from either start) and again at 10200 ms, and asserts barks at 1500 and 11700. Measured from the landing at 1500 the cooldown would still be running at 10200.
+- m7: a knot-bark test (`knot` plus `storyPath`, `_showBarkFromKnot` stubbed) checks it is not called at 1499 ms, is called at 1500 ms with the `stillValid` closure, and is not called if the NPC is removed during the delay.
+
+### n1. Room-change drop kept (documented)
+
+The README `barkDelay` entry now says the room check follows the NPC's sprite, so an NPC that walks out of its room during the delay loses the pending bark.
+
+### n2. Not changed
+
+Optional in the review and not in the rulings.
+
+### n3. Test count (corrected)
+
+`grep -rlE "npc-manager(\.m?js)?['\"]" test/js` finds 34 files that import or copy npc-manager.js by a literal path. `grep -rl npc-manager test/js` finds 41 files, 40 of them `*.test.mjs` (the other is `phone-ring-harness.mjs`, used by phone-ringer tests). The earlier "40 files" was the 40 test files that mention it, not the ones that import it.
+
+### Tests
+
+`npc-bark-delay.test.mjs`: 17 tests, all pass. All 40 `*.test.mjs` files that mention npc-manager (`bin/test-js -j 3`, no lock): 40 passed, 0 failed. Validator on sis01 (`--no-graph`): 0 ❌, 14 warnings, the same 14 as before the change.
+
+### Live proof
+
+Keyless headless server on :3092 from this worktree (no GEMINI key), `setFPS(20)` with `fixedStep` true (read back from the world), new games from `tools/playtest/swap-scenario-game.rb test_seating sis01_healthcare --unlock-all`. Script in the session scratchpad (`bark-delay/r1proof.mjs`) wraps `barkSystem.showBark` and `_renderBark` and polls the open minigame every 50 ms. Times are from the start of the step.
+
+- Game 2566 (Helen, m1): walked ward_7 to the incident room, talked to Helen ("What do you need from me?", "Should we bring in the NCSC?", "Ask them now"), then "I'll get back to it". `ncsc_notified` was set at about 6.7 s inside her chat. Her bark reached `showBark` at 7228 ms with the person-chat open and was deferred. The chat closed at 9.1 s, "Releasing 1 held bark(s)" was logged and the line rendered at 9084 ms.
+- Game 2568 (Ms Okafor's death, m3): walked through the incident room back to ward_7, so every reacting NPC was loaded, no minigame open, then set and emitted `patient_bed2_deceased`. Rendered: Sarah 1522, David 4114, Helen 8816, Mrs Kowalski 13504. Each starts after the previous line's estimated end (3600, 8300, 13000).
+- Game 2611 (ICO deadline into the debrief, m2): walked through the incident room back to ward_7, then set and emitted `ico_deadline_missed`. Priya S.'s forced debrief opened at 595 ms. Sarah's bark reached `showBark` at 2006 ms and Dr Hartley's at 3006 ms, both deferred behind the debrief. The probe drove the debrief to its end, never picking "Give me a few minutes". It closed at 251.3 s with `debrief_complete` true; "Releasing 2 held bark(s)" was logged, then both were dropped as stale ("dropped held bark (stale)", sarah_mitchell and dr_hartley). Nothing rendered in the 12 s that followed.
+- In game 2568 each death bark rendered within 1 ms of reaching `showBark`, since no minigame was open.
+
+Games 2553 (started in the incident room, where the start position could not reach Helen), 2554 and 2555 (created, not used), 2565 (Helen's opening offered no NCSC route), 2569, 2576 and 2590 (the key-press choice did not take in the debrief; 2611 clicks the choice buttons) were used for setup and are not proof. The server was stopped by PID afterwards.
