@@ -187,7 +187,7 @@ export class TextFileMinigame extends MinigameScene {
         const remote = desktop?.scenarioData?.remote?.footholdId ? desktop.scenarioData.remote
             : (session?.remote === true ? { footholdId: session.footholdId } : null);
         const linkName = remote?.footholdId ? (window.networkLinks?.get?.(remote.footholdId)?.name || null) : null;
-        this.taskbarModel = m.pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places: kept?.places || [], lockSupported: m.lockSupported() });
+        this.taskbarModel = m.pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places: kept?.places || [], lockSupported: m.lockSupported(), canSwitch: !!desktop });
         const leaveFor = (open) => {
             // Not the player's own Close: the reader does not reopen what it came from
             if (window.MinigameFramework?.currentMinigame === this) this.complete(false);
@@ -206,7 +206,15 @@ export class TextFileMinigame extends MinigameScene {
             },
             onAction: (action) => {
                 if (action === 'signout') { leaveFor(() => window.pcSessions?.signOut?.(pcId)); return; }
-                if (action === 'lock') { if (m.lockSupported()) leaveFor(() => m.lockPcSession(pcId)); return; }
+                if (action === 'lock') {
+                    if (!m.lockSupported()) return;
+                    // Ask the server first: the reader stays open and says a refusal inside the
+                    // monitor; it closes only once the lock succeeded (R1 m2)
+                    m.lockPcSession(pcId, { onRefuse: (msg) => this.notify(msg, false, 3000) }).then((result) => {
+                        if (result?.ok && window.MinigameFramework?.currentMinigame === this) this.complete(false);
+                    });
+                    return;
+                }
                 if (action === 'switch' && desktop) {
                     const r = desktop.scenarioData?.remote?.footholdId ? desktop.scenarioData.remote : null;
                     leaveFor(() => window.openLoginSignIn?.(desktop, r ? { switching: true, remote: r } : { switching: true }));

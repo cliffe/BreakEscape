@@ -1081,7 +1081,7 @@ export class ContainerMinigame extends MinigameScene {
         } else {
             places = rememberedDesktop(pcId)?.places || [];
         }
-        const model = pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places, lockSupported: lockSupported() });
+        const model = pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places, lockSupported: lockSupported(), canSwitch: !!desktop });
         this.taskbarModel = model;
         this.taskbar = mountPcTaskbar(host, model, {
             windowTitle,
@@ -1107,7 +1107,8 @@ export class ContainerMinigame extends MinigameScene {
     /** Start panel Lock, Switch user and Sign out (through pc-sessions.js). */
     taskbarAction(action, pcId) {
         if (action === 'signout') { window.pcSessions?.signOut?.(pcId); return; }
-        if (action === 'lock') { lockPcSession(pcId); return; }
+        // A refusal shows inside the monitor; on success pc-sessions.js closes this view
+        if (action === 'lock') { lockPcSession(pcId, { onRefuse: (msg) => this.taskbar?.notice?.(displayDashes(msg)) }); return; }
         if (action === 'switch') this.switchUser();
     }
 

@@ -300,7 +300,9 @@ test('Lock shows only when the server reports locking, the client can lock, and 
     startBtn().click();
     document.getElementById('pc-start-lock').click();
     await settle();
-    assert.equal(alerts[0]?.[0], 'This session cannot be locked');
+    assert.equal(alerts.length, 0, 'not an alert over the game world');
+    assert.equal(document.querySelector('.pc-monitor .pc-taskbar-notice')?.textContent, 'This session cannot be locked', 'said inside the monitor');
+    assert.equal(ended.length, 0, 'the desktop stays open');
 });
 
 test('a share window opened from the desktop keeps the account in view and goes back through Desktop', async () => {
@@ -354,4 +356,171 @@ test('a share opened from the network view has no PC, so no taskbar', async () =
     window.MinigameFramework.currentMinigame = mg;
     await mg.init();
     assert.equal(document.querySelector('.pc-taskbar'), null);
+});
+
+// ── Review round 1 fixes (slice 6 fix 1) ─────────────────────────────────────
+
+const FILE = { name: 'Hot desk PC', pcId: 'hot_desk' };
+async function openReader({ withDesktop = true, setup = null } = {}) {
+    base();
+    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    if (setup) setup();
+    const desktopItem = loginPc();
+    if (withDesktop) rememberDesktop('hot_desk', { containerItem: desktopItem, places: [SHARE] });
+    const mg = new TextFileMinigame(document.getElementById('mg'), { title: 'notes.txt', fileName: 'notes.txt', fileContent: 'hello', pcScreen: FILE });
+    window.MinigameFramework.currentMinigame = mg;
+    mg.init();
+    mg.start();
+    await mg.taskbarReady;
+    return { mg, desktopItem };
+}
+const panelItem = (id) => { startBtn().click(); return document.getElementById(id); };
+
+test('R1 m1: Take Container on a takeable desktop has a whole label and a short form for a narrow screen', async () => {
+    base();
+    await open(plainPc({ type: 'laptop' }), { contents: [], isTakeable: true });
+    const bar = document.querySelector('.pc-taskbar');
+    const take = document.getElementById('take-container-btn');
+    assert.ok(bar.classList.contains('pc-taskbar-takeable'), 'the taskbar knows it holds the button (the narrow rule hides the computer name)');
+    assert.equal(take.getAttribute('aria-label'), 'Take Container');
+    assert.equal(take.querySelector('.pc-take-long').textContent, 'Take Container');
+    assert.equal(take.querySelector('.pc-take-short').textContent, 'Take');
+    take.click();
+    // a desktop that cannot be taken has neither
+    base();
+    await open(plainPc(), { contents: [] });
+    assert.equal(document.getElementById('take-container-btn'), null);
+    assert.equal(document.querySelector('.pc-taskbar-takeable'), null);
+});
+
+test('R1 m2: Lock from a reader asks the server first; a refusal is said in the monitor and the reader stays', async () => {
+    let release;
+    await openReader({ setup: () => {
+        sessions.lockingSupported = () => true;
+        sessions.lockSession = () => new Promise((r) => { release = r; });
+    } });
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a);
+    panelItem('pc-start-lock').click();
+    await settle();
+    assert.equal(ended.length, 0, 'still open while the server has not answered');
+    release({ ok: false, reason: 'refused', message: 'This session cannot be locked' });
+    await settle();
+    assert.equal(ended.length, 0, 'a refusal leaves the reader open');
+    assert.equal(document.querySelector('.pc-file-message')?.textContent, 'This session cannot be locked');
+    assert.ok(document.querySelector('.pc-file-message-error'));
+    assert.equal(alerts.length, 0, 'not an alert over the game world');
+});
+
+test('R1 m2: Lock from a reader closes it only once the server agrees', async () => {
+    base();
+    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    sessions.lockingSupported = () => true;
+    const asked = [];
+    sessions.lockSession = async (pcId) => { asked.push(pcId); return { ok: true }; };
+    rememberDesktop('hot_desk', { containerItem: loginPc(), places: [] });
+    const mg = new TextFileMinigame(document.getElementById('mg'), { title: 'notes.txt', fileName: 'notes.txt', fileContent: 'hello', pcScreen: FILE });
+    window.MinigameFramework.currentMinigame = mg;
+    mg.init(); mg.start(); await mg.taskbarReady;
+    panelItem('pc-start-lock').click();
+    assert.equal(ended.length, 0, 'not closed before the answer');
+    await settle();
+    assert.deepEqual(asked, ['hot_desk']);
+    assert.equal(ended.length, 1, 'closed after a successful lock');
+});
+
+test('R1 m3: a reader with no remembered desktop does not offer Switch user; with one, it opens the sign-in screen', async () => {
+    const bare = await openReader({ withDesktop: false });
+    startBtn().click();
+    assert.equal(document.getElementById('pc-start-switch'), null, 'nothing to come back to');
+    assert.ok(document.getElementById('pc-start-signout'), 'Sign out stays');
+    assert.deepEqual(bare.mg.taskbarModel.actions, ['signout']);
+    const kept = await openReader();
+    panelItem('pc-start-switch').click();
+    assert.equal(signInScreens.length, 1);
+    assert.equal(signInScreens[0][0], kept.desktopItem);
+    assert.deepEqual(signInScreens[0][1], { switching: true });
+    assert.equal(ended.length, 1, 'the reader gives way to the sign-in screen');
+});
+
+test('R1 m6: a reader\'s Sign out signs the PC out and leaves the reader', async () => {
+    await openReader();
+    const out = [];
+    sessions.signOut = async (pcId) => { out.push(pcId); };
+    panelItem('pc-start-signout').click();
+    assert.deepEqual(out, ['hot_desk']);
+    assert.equal(ended.length, 1);
+});
+
+test('R1 m6: the document capture listeners go back to none after the X, Esc and a reader, panel open or not', async () => {
+    base();
+    const held = new Set();
+    const captured = { get size() { return held.size; } };
+    const tag = new Map();
+    const id = (fn) => { if (!tag.has(fn)) tag.set(fn, tag.size); return tag.get(fn); };
+    const add = document.addEventListener.bind(document), remove = document.removeEventListener.bind(document);
+    const isCapture = (t, c) => ['keydown', 'pointerdown', 'mousedown'].includes(t) && (c === true || c?.capture === true);
+    document.addEventListener = (t, fn, c) => { if (isCapture(t, c)) held.add(`${t}:${id(fn)}`); add(t, fn, c); };
+    document.removeEventListener = (t, fn, c) => { if (isCapture(t, c)) held.delete(`${t}:${id(fn)}`); remove(t, fn, c); };
+    try {
+        await sessions.signIn('hot_desk', 'ishaw', 'x');
+        const resting = captured.size;
+        const desk = await open(loginPc());
+        assert.equal(captured.size, resting, 'none at rest with the panel shut');
+        startBtn().click();
+        assert.equal(captured.size - resting, 3, 'three while the panel is open');
+        startBtn().click();
+        assert.equal(captured.size, resting, 'none after it shuts');
+        for (let i = 0; i < 4; i++) { startBtn().click(); esc(); }
+        assert.equal(captured.size, resting, 'none after five opens closed with Esc');
+        startBtn().click();
+        document.querySelector('#minigame-close')?.click();
+        desk.cleanup(); // what the framework's endMinigame runs after the X
+        assert.equal(ended.length, 1);
+        assert.equal(captured.size, resting, 'none after the X with the panel open');
+        // a reader
+        const { mg } = await openReader();
+        startBtn().click();
+        assert.equal(captured.size - resting, 3);
+        mg.cleanup();
+        assert.equal(captured.size, resting, 'none after the reader closes with the panel open');
+    } finally {
+        document.addEventListener = add; document.removeEventListener = remove;
+    }
+});
+
+test('R1 m5: no authored headshot means the silhouette, and the talk image is never fetched or cropped', async () => {
+    base();
+    const requested = [];
+    const Base = fakeImage({});
+    globalThis.Image = window.Image = class extends Base { set src(u) { requested.push(u); super.src = u; } get src() { return super.src; } };
+    window.npcManager.npcs.set('ian', { id: 'ian', spriteSheet: 'ian_sprite', spriteTalk: 'assets/characters/ian_talk.png' });
+    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    await open(loginPc());
+    await settle(12);
+    const box = document.querySelector('.pc-taskbar-headshot');
+    assert.equal(box.dataset.frame, 'silhouette');
+    assert.ok(box.style.backgroundImage.includes(PC_SILHOUETTE_URL));
+    assert.equal(requested.filter(u => /_talk\.png/.test(u)).length, 0, 'the talk image is not even loaded');
+    assert.equal(document.querySelector('.pc-start-headshot').dataset.frame, 'silhouette');
+});
+
+test('R1 nit 1: Tab out of the panel closes it; moving between its entries does not', async () => {
+    base();
+    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    await open(loginPc());
+    startBtn().click();
+    const items = [...document.querySelectorAll('.pc-start-panel [role="menuitem"]')];
+    items[0].focus();
+    items[1].focus();
+    assert.equal(panelOpen(), true, 'focus inside the panel');
+    const outside = document.querySelector('.desktop-background');
+    outside.tabIndex = 0;
+    outside.focus();
+    assert.equal(panelOpen(), false, 'focus left the panel and Start');
+    // and Start to the panel keeps it open
+    startBtn().click();
+    assert.equal(panelOpen(), true);
+    startBtn().focus();
+    assert.equal(panelOpen(), true, 'Start is part of the menu');
 });

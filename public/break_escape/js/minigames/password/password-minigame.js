@@ -7,7 +7,7 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, cssZoomOf, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
-import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox,
+import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox, SILHOUETTE_URL,
     SHORT_PORTRAIT_PX, TILE_PORTRAIT_PX, isTalkSheetSize, portraitCropOverride, headCropOffset, frameAlphaReader } from '../../utils/npc-headshot.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
 // falls back the same way as a tile); exported here too for the tests and callers that
@@ -1701,10 +1701,18 @@ export class PasswordMinigame extends MinigameScene {
         if (box.dataset.headshotFor === tile.username && !box.hidden) return;
         box.dataset.headshotFor = tile.username;
         const record = tile.record !== undefined ? tile.record : npcRecordFor({ username: tile.username });
-        const talk = typeof record?.spriteTalk === 'string' ? record.spriteTalk : '';
-        const talkUrl = !talk ? null
-            : (/^(\/|https?:|data:)/.test(talk) ? talk : `/break_escape/${talk.startsWith('assets/') ? '' : 'assets/'}${talk}`);
-        applyHeadshotBox(box, headshotSourceFor(tile, record), { talkUrl });
+        // The authored headshot, else the pixel silhouette: never a crop of the talk image
+        applyHeadshotBox(box, headshotSourceFor(tile, record), {
+            onResult: (r) => {
+                if (r) return;
+                box.style.backgroundImage = `url("${SILHOUETTE_URL}")`;
+                box.style.backgroundRepeat = 'no-repeat';
+                box.style.backgroundSize = '32px 32px';
+                box.style.backgroundPosition = '0px 0px';
+                box.dataset.frame = 'silhouette';
+                box.hidden = false;
+            }
+        });
     }
 
     /**

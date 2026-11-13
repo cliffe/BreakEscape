@@ -404,6 +404,15 @@
     image-rendering: pixelated;
 }
 
+/* Every panel entry's icon sits in the same 26x18 box, drawn at its own size and centred
+   (no scaling), so the labels line up whether the icon is 16x16 or the 26x18 folder */
+.pc-start-item-icon {
+    width: 26px;
+    height: 18px;
+    object-fit: none;
+    object-position: center;
+}
+
 .pc-monitor .pc-taskbar-window {
     flex: 0 1 auto;
     min-width: 0;
@@ -472,6 +481,41 @@
 
 .pc-monitor .pc-taskbar .minigame-button {
     flex: 0 0 auto;
+}
+
+.pc-monitor .pc-taskbar .pc-take-short {
+    display: none;
+}
+
+/* A narrow screen: Take Container reads "Take" (its label stays whole for readers) and the
+   computer name, which the bezel already shows, gives way so the button is not cut off */
+.pc-monitor[data-narrow] .pc-taskbar-takeable .pc-take-long {
+    display: none;
+}
+
+.pc-monitor[data-narrow] .pc-taskbar-takeable .pc-take-short {
+    display: inline;
+}
+
+.pc-monitor[data-narrow] .pc-taskbar-takeable .pc-taskbar-host {
+    display: none;
+}
+
+/* A line above the taskbar inside the screen: why a Lock was refused */
+.pc-monitor .pc-taskbar-notice {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    bottom: 42px;
+    z-index: 7;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    background: #3a1a1a;
+    border: 2px solid #c0392b;
+    color: #ffd7d0;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
 }
 
 /* A narrow screen (a phone): the account is its headshot, the window tab shorter */

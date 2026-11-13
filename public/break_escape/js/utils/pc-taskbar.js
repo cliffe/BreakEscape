@@ -23,10 +23,10 @@
  */
 import { escapeHtml } from './escape-html.js';
 import { displayDashes } from './display-dashes.js';
-import { applyHeadshotBox, npcRecordFor, headshotSourceFor } from './npc-headshot.js';
+import { applyHeadshotBox, npcRecordFor, headshotSourceFor, SILHOUETTE_URL } from './npc-headshot.js';
 
 const ICONS = '/break_escape/assets/icons';
-export const PC_SILHOUETTE_URL = `${ICONS}/pc-user-silhouette.png`;
+export const PC_SILHOUETTE_URL = SILHOUETTE_URL;
 export const PC_TASKBAR_ICONS = Object.freeze({
     start: `${ICONS}/pc-start.png`,
     desktop: `${ICONS}/pc-desktop.png`,
@@ -73,7 +73,7 @@ export function pcHostName(pcData, session = null) {
  * `account` is { kind: 'session', name, username, npcId, claimed } or
  * { kind: 'desktopUser', name, character } or null.
  */
-export function pcTaskbarModel({ pcData = null, session = null, remote = false, linkName = null, places = [], lockSupported = false } = {}) {
+export function pcTaskbarModel({ pcData = null, session = null, remote = false, linkName = null, places = [], lockSupported = false, canSwitch = true } = {}) {
     const signIn = pcData?.lockType === 'login' || !!session;
     let account = null;
     if (signIn) {
@@ -92,7 +92,9 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
     }
     const isRemote = !!remote || session?.remote === true;
     const lockable = lockSupported && session?.via === 'password' && session?.guest !== true;
-    const actions = signIn && session ? [...(lockable ? ['lock'] : []), 'switch', 'signout'] : [];
+    // Switch user needs the PC's desktop to come back to; a view with none (a reader reached
+    // without the desktop this page load) does not offer it rather than do nothing (R1 m3)
+    const actions = signIn && session ? [...(lockable ? ['lock'] : []), ...(canSwitch ? ['switch'] : []), 'signout'] : [];
     return {
         signIn,
         account,
@@ -111,11 +113,18 @@ export function lockSupported(sessions = win().pcSessions) {
         && typeof sessions?.lockSession === 'function';
 }
 
-/** Lock the PC's held session (pc-sessions.js closes its views); a refusal says why. */
-export async function lockPcSession(pcId, sessions = win().pcSessions) {
+/**
+ * Lock the PC's held session. The server is asked first; pc-sessions.js closes the PC's
+ * views only once it agrees. A refusal is said through `onRefuse(message)` (inside the
+ * monitor, R1 m2), else as an alert. Resolves the result ({ ok, ... }).
+ */
+export async function lockPcSession(pcId, { sessions = win().pcSessions, onRefuse = null } = {}) {
     if (!lockSupported(sessions)) return { ok: false, reason: 'unsupported' };
     const result = await sessions.lockSession(pcId);
-    if (result && result.ok === false && result.message) win().gameAlert?.(result.message, 'warning', 'Lock', 3000);
+    if (result && result.ok === false && result.message) {
+        if (typeof onRefuse === 'function') onRefuse(result.message);
+        else win().gameAlert?.(result.message, 'warning', 'Lock', 3000);
+    }
     return result;
 }
 
@@ -137,11 +146,11 @@ export function pcTaskbarHtml(model, { windowTitle = '', takeable = false } = {}
         </span>` : '';
     const win = windowTitle ? `
         <span class="pc-taskbar-window" title="${escapeHtml(displayDashes(windowTitle))}">${escapeHtml(displayDashes(windowTitle))}</span>` : '';
-    return `<div class="pc-taskbar" role="toolbar" aria-label="Taskbar">
+    return `<div class="pc-taskbar${takeable ? ' pc-taskbar-takeable' : ''}" role="toolbar" aria-label="Taskbar">
         <button type="button" class="pc-os-btn pc-start-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="pc-start-panel"><img class="pc-start-icon" src="${PC_TASKBAR_ICONS.start}" alt=""><span>Start</span></button>${win}
         <span class="pc-taskbar-spacer"></span>${account}
         ${m.remote ? '<span class="pc-taskbar-remote">Remote</span>' : ''}<span class="pc-taskbar-host">${escapeHtml(displayDashes(m.host))}</span>
-        ${takeable ? '<button class="minigame-button" id="take-container-btn">Take Container</button>' : ''}
+        ${takeable ? '<button class="minigame-button pc-take-btn" id="take-container-btn" aria-label="Take Container"><span class="pc-take-long" aria-hidden="true">Take Container</span><span class="pc-take-short" aria-hidden="true">Take</span></button>' : ''}
     </div>`;
 }
 
@@ -193,12 +202,6 @@ export function taskbarHeadshotCount() {
     return headshotCache.size;
 }
 
-const talkUrlOf = (record) => {
-    const talk = typeof record?.spriteTalk === 'string' ? record.spriteTalk : '';
-    if (!talk) return null;
-    return /^(\/|https?:|data:)/.test(talk) ? talk : `/break_escape/${talk.startsWith('assets/') ? '' : 'assets/'}${talk}`;
-};
-
 function paint(el, result, scale) {
     if (!el?.style) return;
     if (!result) {
@@ -221,8 +224,8 @@ function paint(el, result, scale) {
 
 /**
  * The account's picture in a box at a whole-number `scale` (1 in the taskbar's 32px box, 2 in
- * the panel's 64px one): the authored headshot, else the talk sheet's head crop (as the sign-in
- * tiles), else the pixel silhouette. One lookup per account, kept for the next view.
+ * the panel's 64px one): the authored `<key>_headshot.png`, else the pixel silhouette. The talk
+ * image is never cropped (standing rule, R1 m5). One lookup per account, kept for the next view.
  */
 export function applyAccountPicture(el, account, { scale = 1, ImageCtor } = {}) {
     if (!el || !account) return;
@@ -244,7 +247,6 @@ export function applyAccountPicture(el, account, { scale = 1, ImageCtor } = {}) 
     };
     const box = { style: {}, dataset: {}, hidden: true };
     const options = {
-        talkUrl: account.kind === 'session' ? talkUrlOf(record) : null,
         onResult: (r) => finish(r ? { ...r, key: box.dataset.headshot || null } : null)
     };
     if (ImageCtor !== undefined) options.ImageCtor = ImageCtor;
@@ -357,6 +359,16 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
         doc.removeEventListener('pointerdown', onPress, true);
         doc.removeEventListener('mousedown', onPress, true);
     }
+    // Tab (or any focus move) out of the panel and Start closes it (R1 nit 1). A null target
+    // is the window losing focus or a press on plain wall, which onPress already handles.
+    const onFocusOut = (e) => {
+        if (!open) return;
+        const to = e.relatedTarget;
+        if (!to || panel.contains(to) || start.contains(to)) return;
+        close();
+    };
+    panel.addEventListener('focusout', onFocusOut);
+    start.addEventListener('focusout', onFocusOut);
     start.addEventListener('click', (e) => {
         e.stopPropagation();
         if (open) close(); else show();
@@ -373,12 +385,27 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
             if (item) onPlace({ kind: 'share', item });
         }
     });
+    // A short line above the taskbar, inside the screen (a refused Lock says why here, R1 m2)
+    let noticeTimer = null;
+    const notice = (text, ms = 3500) => {
+        let line = root.querySelector?.('.pc-taskbar-notice');
+        if (!line) {
+            line = doc.createElement('div');
+            line.className = 'pc-taskbar-notice';
+            line.setAttribute('role', 'alert');
+            root.appendChild(line);
+        }
+        line.textContent = String(text || '');
+        clearTimeout(noticeTimer);
+        noticeTimer = setTimeout(() => line.remove(), ms);
+    };
     return {
         taskbar,
         panel,
+        notice,
         open: show,
         close,
         isOpen: () => open,
-        destroy: close
+        destroy: () => { close(); clearTimeout(noticeTimer); }
     };
 }

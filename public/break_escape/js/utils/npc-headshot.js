@@ -1,8 +1,9 @@
 /**
  * An NPC's headshot (UX slice 2c): the character's own `<key>_headshot.png` (32x32) in
  * assets/characters, wherever the PC flow shows an identity (sign-in tiles, the desktop's
- * signed-in account). The talk portrait is cropped only when no headshot file exists, the
- * same way on a tile and in the desktop bar, and the keys tried are logged once.
+ * signed-in account). A sign-in tile crops the talk portrait when no headshot file exists;
+ * the desktop's account and the selected account (applyHeadshotBox) never do: the authored
+ * file, else the pixel silhouette. The keys tried are logged once.
  *
  * The key comes from, in order: an avatar that is already a headshot, the world sprite
  * (spriteSheet, after any lookalike swap), then the talk portrait's stem, its `_v2` sprite
@@ -139,16 +140,20 @@ export function shortCropOffset(img, src, readAlpha = frameAlphaReader) {
     return alpha ? headCropOffset(alpha, frameSize, SHORT_PORTRAIT_PX) : { left: frameSize / 2 - SHORT_PORTRAIT_PX / 2, top: 0 };
 }
 
+/** The pixel silhouette shown where an NPC has no authored headshot file. */
+export const SILHOUETTE_URL = '/break_escape/assets/icons/pc-user-silhouette.png';
+
 /**
- * A 32x32 picture of an NPC in a box element (the desktop's account bar): the headshot at
- * x1, else the same fallback as a sign-in tile (R1 m8), the 32x32 head crop of the talk
- * sheet at scale 1, with the keys logged; else the box is hidden. `talkUrl` is the talk
- * portrait's URL. `ImageCtor` and `readAlpha` are injectable for tests. `onResult` hears what
- * was drawn ({ src, width, height, left, top, kind }, offsets as background positions) or
- * null when the box was hidden, so a caller can keep it (the taskbar, pc-taskbar.js).
+ * A 32x32 picture of an NPC in a box element (the desktop's account bar, the sign-in screen's
+ * selected account): the authored `<key>_headshot.png` at x1, with the keys tried logged when
+ * none exists, else the box is hidden and `onResult` hears null so the caller draws the pixel
+ * silhouette. The talk image is never cropped here (standing rule: only the authored headshot,
+ * else the silhouette). `ImageCtor` is injectable for tests. `onResult` hears what was drawn
+ * ({ src, width, height, left, top, kind }, offsets as background positions) or null when
+ * nothing was, so a caller can keep it (the taskbar, pc-taskbar.js).
  */
-export function applyHeadshotBox(el, source, { talkUrl = null, ImageCtor = (typeof Image !== 'undefined' ? Image : null),
-                                               readAlpha = frameAlphaReader, onMissing = noteMissingHeadshot, onResult = null } = {}) {
+export function applyHeadshotBox(el, source, { ImageCtor = (typeof Image !== 'undefined' ? Image : null),
+                                               onMissing = noteMissingHeadshot, onResult = null } = {}) {
     if (!el?.style) return;
     const keys = headshotKeys(source);
     const urls = keys.map(headshotUrl);
@@ -167,26 +172,13 @@ export function applyHeadshotBox(el, source, { talkUrl = null, ImageCtor = (type
     };
     const hide = () => { el.hidden = true; el.style.backgroundImage = ''; onResult?.(null); };
     if (!ImageCtor) { hide(); return; }
-    const crop = () => {
-        if (!talkUrl) { hide(); return; }
-        const img = new ImageCtor();
-        img.onload = () => {
-            const w = img.naturalWidth || img.width;
-            const h = img.naturalHeight || img.height;
-            if (!isTalkSheetSize(w, h)) { hide(); return; }
-            const off = shortCropOffset(img, talkUrl, readAlpha);
-            show(talkUrl, `${w}px ${h}px`, `${off.left ? -off.left : 0}px ${off.top ? -off.top : 0}px`, 'head-crop');
-        };
-        img.onerror = hide;
-        img.src = talkUrl;
-    };
     const tryAt = (i) => {
         if (i >= urls.length) {
             if (keys.length) {
                 el.dataset.headshotMissing = keys.join(' ');
                 onMissing?.(keys);
             }
-            crop();
+            hide();
             return;
         }
         const img = new ImageCtor();

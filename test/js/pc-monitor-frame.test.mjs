@@ -437,21 +437,21 @@ test('no headshot file: the talk crop as before, and the key is logged once', as
     assert.equal(el.dataset.headshotMissing, 'ms_okafor_v2 ms_okafor');
 });
 
-test('R1 m8: the desktop bar falls back the same way as a tile: the talk sheet\'s 32x32 head crop', async () => {
+test('the desktop bar never crops the talk image: no headshot file hides the box and logs every key', async () => {
     const box = document.createElement('span');
     const missing = [];
+    const heard = [];
+    const asked = [];
+    const Base = fakeImage({ '/break_escape/assets/characters/ms_okafor_talk.png': [256, 256] });
     applyHeadshotBox(box, { spriteSheet: 'ms_okafor_sprite', portrait: 'assets/characters/ms_okafor_talk.png' }, {
-        talkUrl: '/break_escape/assets/characters/ms_okafor_talk.png',
-        ImageCtor: fakeImage({ '/break_escape/assets/characters/ms_okafor_talk.png': [256, 256] }),
-        readAlpha: () => null, onMissing: (k) => missing.push(k)
+        ImageCtor: class extends Base { set src(u) { asked.push(u); super.src = u; } get src() { return super.src; } },
+        onMissing: (k) => missing.push(k), onResult: (r) => heard.push(r)
     });
     for (let i = 0; i < 6; i++) await settle(5);
     assert.deepEqual(missing, [['ms_okafor_sprite', 'ms_okafor_v2', 'ms_okafor']], 'every key, the sprite sheet first');
-    assert.equal(box.dataset.frame, 'head-crop');
-    assert.equal(box.hidden, false);
-    assert.equal(box.style.backgroundSize, '256px 256px', 'at scale 1');
-    // the bedside override (the same crop as the short tile)
-    assert.equal(box.style.backgroundPosition, '-36px -30px');
+    assert.equal(box.hidden, true, 'hidden: the caller draws the silhouette');
+    assert.deepEqual(heard, [null]);
+    assert.equal(asked.some(u => /_talk\.png/.test(u)), false, 'the talk image is never loaded');
     // a headshot file wins, at x1
     const shot = document.createElement('span');
     applyHeadshotBox(shot, { spriteSheet: 'male_nerd_v2' }, {
