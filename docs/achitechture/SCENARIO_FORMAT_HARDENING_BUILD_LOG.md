@@ -2995,3 +2995,79 @@ games left at format 3, recorded here; no other game was touched.
   the repo except this log's proof section"; `dump_habits.rb` is the read-only row reader.
 - **For chunk 7:** the full-suite sweep and the stale author-facing docs still naming the retired habit
   keys (chunk-5 handover list) remain.
+
+## Step 8c chunk 7 — full suites and fallout (2026-11-13)
+
+Branch `build/hard-8c` at `fba01a77a` (chunks 1 to 6 done, `build/hard-8b` and main merged in). Chunk 7
+is the last chunk: fold the stale author-facing docs, re-check the cross-chunk node sub-tests, run both
+full suites under the shared lock, and record the green tip.
+
+### What changed
+
+- **Stale author-facing docs folded** (`screenHabit`/`printHabit`/`usbHabit` ->
+  `habits.screen`/`habits.print`/`habits.usb`): `scenarios/test_access_social/PLAYTEST.md` (2 `usbHabit`),
+  `scenarios/test_access_work/PLAYTEST.md` (2 `screenHabit`), `scenarios/test_needs_sims/README.md`
+  (1 `screenHabit`, 2 `printHabit`), `scenarios/test_access_habits/PLAYTEST.md` (11 `screenHabit`),
+  `scenarios/test_access_habits/mission.json` `test_objective` (1 `screenHabit`),
+  `scenarios/lab_physical_pentest/PLAYTEST.md` (2 `screenHabit`), and the `usbHabit.setGlobal` comment in
+  `scenarios/test_access_social/ink/kim.ink`. The five named scenarios have no other README/PLAYTEST hits
+  (only test_needs_sims carries a README; the others' author doc is PLAYTEST.md).
+- **`kim.ink` recompiled** with `bin/inklecate -o kim.json kim.ink` (the repo's `scripts/compile-ink.sh`
+  path): `kim.json` is byte-identical before and after, the ink change being comment-only. No `.ink.json`
+  twin exists for this file.
+- **`scripts/scenario-schema.json`:** two `revealOutput`/needs-command description strings that named
+  `printHabit` in prose now say `habits.print` (the field itself was already removed in chunk 1). JSON
+  still parses. This is the only out-of-scope live mention folded; see the sweep below for the ones left.
+
+### Cross-chunk node sub-tests (chunk 3 / chunk 4)
+
+Chunk 3's note warned that the validator sub-tests in `npc-office-visuals.test.mjs`,
+`npc-print-forget.test.mjs` and `npc-printer-power.test.mjs` were aligned to chunk 4's then-uncommitted
+`validate_npc_needs.rb` wording. Chunk 4 is committed; all three pass against the committed validator
+(`bin/test-js` of the three files: 3 passed, 0 failed).
+
+### Full suites (shared lock, tip `0305bd1ad`)
+
+- **JS** (`flock <tests.lock> bin/test-js -j 3`): **617 files passed, 0 failed.**
+- **Rails** (`flock <tests.lock> bin/rails test`, `RBENV_VERSION=2.7.8`): **2486 runs, 44421 assertions,
+  0 failures, 0 errors, 1 skip.**
+
+Both suites ran on the same tip `0305bd1ad` (the chunk 7 doc/schema commit), green with no fallout to fix.
+No test file carried a stale inline habit fixture or assertion that the owning chunk missed (the 8b lesson
+did not recur in 8c). No known timing flake needed a rerun.
+
+### Grep sweep (whole tree)
+
+`grep -rn 'screenHabit|printHabit|usbHabit'` over the repo (node_modules and .git aside) leaves only
+legitimate hits:
+- `lib/break_escape/format_upgrade.rb` — the `retired` list (the rename source of truth).
+- `scripts/validate_scenario.rb:1001` — a comment naming the three retired NPC keys in the dedup logic.
+- `lib/break_escape/npc_habits.rb:93` — a comment contrasting the pre-fold bare top-level `screenHabit`.
+- `scripts/scenario-schema.json` — none left (the two prose mentions folded above).
+- `test/fixtures/format_8a/*`, `format_8b/*`, `format_8c/*` — frozen historical renders (old side still
+  carries the keys by design).
+- `test/unit/format_upgrade_test.rb`, `format_8b_corpus_test.rb`, `format_8c_corpus_test.rb`,
+  `test/controllers/break_escape/format_8c_deployed_noop_test.rb`, `test/js/validator-retired-keys.test.mjs`,
+  `test/js/format-8c-reader-parity.test.mjs`, `tools/format/rewrite_templates.rb` — the transform/fold
+  machinery and its tests, which must name both sides of the rename.
+- `docs/achitechture/*` and `docs/handover/*` — build-log / plan / patch history.
+- `scenarios/lab_physical_pentest/IMPROVEMENT_LOOP_LOG.md:831` — a dated slice-17 log entry recording the
+  `printHabit` feature at the commits that built it (history, left as written).
+- `tools/playtest/test_access_habits-report.md` — a generated historical playtest report (left as written).
+
+### Sync size
+
+No change. Chunk 7 touches docs, a schema description string and test fixtures only; no sync path.
+
+### Files touched
+
+`scenarios/test_access_social/PLAYTEST.md`, `scenarios/test_access_social/ink/kim.ink`,
+`scenarios/test_access_work/PLAYTEST.md`, `scenarios/test_needs_sims/README.md`,
+`scenarios/test_access_habits/PLAYTEST.md`, `scenarios/test_access_habits/mission.json`,
+`scenarios/lab_physical_pentest/PLAYTEST.md`, `scripts/scenario-schema.json`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Done when
+
+Both full suites green on one tip (`0305bd1ad`), the grep sweep clean of stray live mentions, the three
+cross-chunk node files passing against the committed validator. Step 8c is ready for code review.
