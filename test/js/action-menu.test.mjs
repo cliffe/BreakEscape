@@ -141,7 +141,8 @@ test('Copy and Take carry pixel icons at whole-number scales', () => {
     assert.equal(copy.icon.src, '/assets/icons/card-copier-32.png');
     assert.equal(copy.icon.width, 64, '32px at x2');
     assert.equal(copy.icon.height, 64);
-    assert.equal(copy.icon.width / 32, take.icon.cell * 2 / 32, 'the hand\'s scale');
+    // The hand is a 32px cell drawn in the 64px box: its scale is 64 / cell
+    assert.equal(copy.icon.width / 32, 64 / take.icon.cell, 'the hand\'s scale');
     const png = readFileSync(join(here, '../../public/break_escape/assets/icons/card-copier-32.png'));
     assert.equal(png.readUInt32BE(16), 32, 'the icon file is 32px wide');
     assert.equal(png.readUInt32BE(20), 32, 'and 32px tall');

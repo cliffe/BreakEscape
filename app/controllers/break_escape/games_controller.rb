@@ -1100,7 +1100,7 @@ module BreakEscape
       already_open = method == 'rfid' && card_ids &&
                      (target_type == 'door' ? @game.room_unlocked?(target_id) : @game.object_unlocked?(target_id))
 
-      is_valid =@game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
+      is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
 
       unless is_valid
         # Under a session the player holds at a PC that is off, or over a route that is down

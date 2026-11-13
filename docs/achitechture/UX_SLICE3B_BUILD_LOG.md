@@ -120,6 +120,25 @@ Keyless server on :3065 from this worktree, setFPS(20) with fixed steps, scrollb
 
 Shots in `ux-shots/slice3b-r1fix/` (session scratchpad), each looked at: `menu-icons`, `menu-icons-zoom`, `acl-keycard-refused-copier-at-reader`, `acl-close-x-zoom`, `acl-emulating-dana`, `acl-emulate-access-granted`, `acl-door-opened-toast`, `acl-no-keycard-copier-opens-at-once`, `acl-close-x-zoom-b`, `acl-unrecorded-copy-refused`, `acl-cancelled-copy-refused`, each at 1400x1000 and 390x844; and `card-copier-icon-16-vs-32.png`.
 
+## Review round 2 fixes: handover (context limit reached)
+
+Review: `UX_SLICE3B_REVIEW_R2.md` (25fcf0c1b). Asked: m1, m2, m3, m5, m6, m7; m4 (inventory scrollbar) skipped, slice 4 reworks it.
+
+Done (this commit):
+
+- m3: `games_controller.rb` `is_valid = @game.validate_unlock` spacing.
+- m7 (test part): `action-menu.test.mjs` now asserts `copy.icon.width / 32 === 64 / take.icon.cell`, which fails if either scale changes. 16/16; Rails rfid 48/48. The unused PNG stays until the user picks.
+
+Open, for a fresh agent:
+
+- m2: in `GamesController#unlock`, add `alreadyOpen: true` to the success body when `already_open` (door and object branches). `rfidOpenedLine` (unlock-system.js) returns "The door is already open." for `alreadyOpen`. In `rfid-minigame.js` `_askAccessList`, when `response.alreadyOpen`, show "Already open" instead of "Access Granted" and set `result.cardName = null`. Extend the Rails test "after a copy opened the door, further requests say nothing about the cards sent" to assert `alreadyOpen`; add a door-screen test and an `rfidOpenedLine` case in `access-rfid-acl.test.mjs`.
+- m1, live proof of the late yes: on a keyless :3065 server, new test_access_doors game. Script base: `slice3b-r1fix-tools/proof.js` in the session scratchpad (A path copies Dana's badge). Use `page.route('**/unlock', r => setTimeout(() => r.continue(), 1500))` only after Dana's copy is saved. Object case: enter finance_office (needs a first opening) then interact `finance_cabinet`, Emulate Dana, press Escape while `.flipper-emulating` shows; check no `.container-minigame`/no active minigame, cabinet `scenarioData.locked === false`, one "Opened with" toast, one `item_unlocked` (hook `window.eventDispatcher.on`). Door case: second touch of the finance door while the first answer is out, Emulate in the second copier; count `door_unlocked` events (expect 1). The cabinet needs a fresh game where finance_office is opened by some other route first, or open the door first in the same game, then do the cabinet.
+- m5: shots of the reader screen and emulation screen at 915x412 and 800x600 (`acl-*-915x412`, `acl-*-800x600`). The phone rule (max-width 530px) does not apply at those widths, so the bands there come from the wide rules; check whether the frame is cramped before cutting anything in `rfid-minigame.css:746-770`. If cut, rework the `100vh - 104px` terms and the pinned test "at phone width the frame starts below the close X" in `rfid-door-screen.test.mjs`.
+- m6: one more hand-drawn 32x32 portrait alternative with pixelart_workbench (`draw`, grid recipe as in `slice3b-r1fix-tools/copier32.py`): no d-pad, a small screen with two signal arcs, a card held to the top edge or a card slot, one wide button row. Save as `public/break_escape/assets/icons/card-copier-32b.png` (not wired). Build `ux-shots/slice3b-r1fix/card-copier-icon-choices.png` with `slice3b-r1fix-tools/compare.py` extended to four columns (16, 32, 32b, hand) at x4 and at menu size. Keep all three files.
+- Then: full suites under the lock, build log, commit.
+
+Gotchas: write scripts with Write, not heredocs. The test-bridge `interact` on the finance door returns the copier straight away when no keycard is held. `doorOpen()` in proof.js reads a client field that does not exist (prints null); check the server with `bin/rails runner` instead.
+
 ### Open after round 1
 
 - The icon choice (16 or 32) is the user's.
