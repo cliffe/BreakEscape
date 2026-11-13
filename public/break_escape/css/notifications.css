@@ -161,8 +161,15 @@ body:has([data-minigame="phone-chat"]) #notification-container {
 
 .game-confirm-buttons {
     display: flex;
+    /* A named button keeps its label on one line ("Switch off", not "Switch / off" at
+       phone width, UX q99); two that cannot sit side by side take a row each */
+    flex-wrap: wrap;
     gap: 14px;
     justify-content: flex-end;
+}
+
+.game-confirm-buttons .game-confirm-btn {
+    white-space: nowrap;
 }
 
 .game-confirm-btn {
