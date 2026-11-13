@@ -77,9 +77,17 @@ Not touched: `pc-monitor.js`, the start panel UI, the taskbar.
 
 ## Status
 
-Server, client API and tests done and green. JS suites for every file importing the changed
-modules pass. Live proof on :3465 (Sam's PC in test_access_networks): PENDING at time of
-first commit.
+Server, client API and tests done and green. Merged main (tip 1ce7486c7) into the branch:
+one conflict in password-minigame.js (slice 2b0's remote-capture `other` default vs my
+preselect) resolved by combining both; Rails login tests 36/0 and node pc-sessions/
+password-signin-mode/access-remote-signin/access-signin-routing all pass after the merge.
+
+Live proof on :3465 (Sam's PC in test_access_networks, playtest harness) PASSED, shots in the
+session scratch folder: sign in (01-02), lockSession -> {ok:true} and isLocked true; reload
+keeps `locked` on the server (GET /scenario) and the client restores it; opening the locked PC
+shows the sign-in screen with Sam pre-chosen (03), a wrong password is refused and the PC stays
+locked (04), the right password returns to the desktop (container minigame) and clears the lock
+(05).
 
 ## Handover
 
