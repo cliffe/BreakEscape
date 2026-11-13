@@ -911,7 +911,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             },
             {
               "eventPattern": "global_variable_changed:ico_deadline_missed",
-              "condition": "value === true",
+              "condition": "value === true && !globalVars.debrief_complete",
               "onceOnly": true,
               "setGlobal": { "sharma_visible": true, "debrief_started": true },
               "bark": "The ICO deadline's gone. They want you in the incident room, now.",
@@ -1319,8 +1319,8 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "onceOnly": true,
               "targetKnot": "state_deceased",
               "bark": "She's gone. She stopped breathing.",
-              "barkDelay": 3000
-<%# Witness bark delayed 3 s to stagger after the critical bark. %>
+              "barkDelay": 5000
+<%# Witness bark: second of the four reactions to Ms Okafor's death, straight after Sarah's crash call (Sarah 1.5 s, Mrs Kowalski 5 s, David 8 s, Helen 14.4 s), spaced by each voice's measured speech rate so the voices do not overlap. %>
             }
           ]
         },
@@ -2229,7 +2229,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "bark": "Ms Okafor's dead? That's exactly what the library was meant to stop.",
-              "barkDelay": 1500
+              "barkDelay": 8000
             }
           ]
         },
@@ -2305,14 +2305,14 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "condition": "value === true",
               "onceOnly": true,
               "bark": "Mr Ahmed? I'll have to tell the Board.",
-              "barkDelay": 2500
+              "barkDelay": 6500
             },
             {
               "eventPattern": "global_variable_changed:patient_bed2_deceased",
               "condition": "value === true",
               "onceOnly": true,
               "bark": "Ms Okafor? Through the pump? God. I'll have to tell the Board.",
-              "barkDelay": 2500
+              "barkDelay": 14400
             }
           ]
         },
@@ -2352,7 +2352,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             },
             {
               "eventPattern": "global_variable_changed:ico_deadline_missed",
-              "condition": "value === true",
+              "condition": "value === true && !globalVars.debrief_complete",
               "onceOnly": true,
               "bark": "The ICO deadline has gone. We need to talk.",
               "barkDelay": 3000
