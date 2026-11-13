@@ -116,5 +116,27 @@ Keyless server on :3304 from this worktree, headless with the browser's scrollba
 - Other minigames' scrollbars adopt `.pixel-scroll` in a later slice; their own per-minigame rules are untouched here.
 - Firefox cannot draw a border on a scrollbar thumb, so there the bar is flat colours only; not checked live (no Firefox here).
 
+## R3 fixes
+
+From `docs/achitechture/UX_SLICE1_CODE_REVIEW_R3.md` (0 blockers, 0 majors, 2 minors, 2 nits). Every finding is fixed.
+
+- m1, title and subtitle both name the port: the server counts only jacks that can take a device as a room's link peers (`link_peer_jacks`: a jack with no port security). A port-security jack is refused before any record is written, so it never needs telling apart. Port security is scenario data, so names stay deterministic; a future port-security bypass should count those jacks again. In `test_access_networks` the comms link is "Drop box: Comms room" again. On the client, `viewSubtitle` leaves out "at <source>" when the name already ends with ", <source>" or ", <source> <n>", so an implant beside another implantable PC reads "On Harbour office LAN" under "Keystroke injector: Desks, Sam's PC".
+- m2, a down row in a narrow column: `.network-row-kept` and `.network-row-title` are nowrap, so "Session kept: Ian Shaw" and "SV-FS02 (down)" each stay on one line. The first live pass showed the nowrap note then sat over the host's second line at 800x600, so down rows also wrap (`.network-row-down { flex-wrap: wrap }`, the control right-aligned with `margin-left: auto`): when the label and the reason do not fit side by side, "No route" and the kept note drop under the label. Other rows are unchanged.
+- n1: the open button is `Open <span class="network-row-who">(name)</span>`, with the span nowrap, so a narrow column breaks it as "Open" / "(Lena Fox)".
+- n2: `.pixel-scroll` resets `scrollbar-color` and `scrollbar-width` to `auto`, so Chrome keeps the art under a parent that sets them; the guarded Firefox block after it still wins there. The comment says an adopter drops its own rules.
+
+### Tests
+- `test/js/network-view.test.mjs` (under the lock): 43/43. New: title and subtitle never both name the source (suffixed, numbered and plain names); a down row keeps the kept note whole and the host with its tag, with the wrap rule. Extended: the columns test checks the open button's nowrap name span; the `.pixel-scroll` test checks the two resets come before the guarded block. Also green without the lock: `escaping-shared-helpers` and `engine-fixes-round6`, 29.
+- `test/controllers/break_escape/network_link_names_test.rb`: new case, a jack beside a port-security jack keeps the plain room name and the secure port writes no record.
+- Network Rails tests (all 15 `*network*_test.rb` in `test/controllers/break_escape` and `test/models/break_escape`, under the lock): 195 runs, 3511 assertions, 0 failures, 0 errors, 0 skips.
+- Validator `--no-graph`: `test_access_networks` 0 ❌, `lab_physical_pentest` 0 ❌.
+
+### Live proof
+Keyless server on :3306 from this worktree, headless with the browser's scrollbars shown, physics at 20 fps with fixed steps on, stopped afterwards. New games by `tools/playtest/swap-scenario-game.rb test_access_networks scenarios/test_access_networks --unlock-all`: 2578 for the main3 views, 2579 for the own-down pair (its stored `office_lan` carries a test-only `downIf: office_offline`, on that game row only). Games 2570 and 2571 were the first pass, before the down-row wrap; their shots are kept in `superseded-2570/`. Setup through the real `window.ApiClient` calls, each view opened through `window.networkLinks.open` after a reload. Shots in the scratchpad `ux-shots/slice1-final/` at 1400x1000, 800x600 and 915x412, named after the review page ids, scrolled to the top and bottom (main3-06 also the middle): `main3-02` (Wi-Fi joined), `main3-04` (jack), `main3-06` (pivot), `main3-09` (no route), `main3-10` (injector), `main3-13` (USB stick), `main3-15` (powered down), `after-net-own-down` and `after-reload`. Measured in every shot (`run.log`): load state ready; no host and tag split; no kept note on two lines; no label text overlapped by a control; no row overflows; the X inside the frame; the frame on screen; no sideways page scroll; the list's computed `scrollbar-color` is `auto`. "Open (name)" buttons are one line at 1400x1000 and 915x412 and break before the bracket at 800x600. No page errors.
+
+### Open
+- The Wi-Fi glyph still awaits the user's approval (unchanged).
+- Remote sign-in reached from a row keeps the layout points R2 noted; they belong to the sign-in slice.
+
 ## Handover
 Done: all of slice 1. Nothing in progress. Commits on `build/ux-net`: see the report.
