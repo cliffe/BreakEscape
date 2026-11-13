@@ -153,14 +153,15 @@ What changed in this scenario, on purpose (a behaviour change of the showcase):
     { "condition": "globalVars.tom_pc_screen_locked", "value": "... He locked it before he walked off." },
     { "condition": "globalVars.tom_pc_owner_away",    "value": "... He has left it unlocked ..." }
   ],
-  "affordance": { "private": true }
+  "owner": "tom",                 // his desk PC: the one NPC who owns it
+  "private": true                 // only its owner uses it (object-level, was affordance.private)
 }
 // amara_pc and sanjay_pc: "workstation": true (locksScreenOnLeave defaults to true: locked on every leave)
 // Tom's mappings: workstation_owner_left:tom_pc with data.screenLocked === false -> spot_open_screen
 ```
 
-Nothing else is authored for the dots. Every workstation whose owner is known (`needsHome` or
-`screenOwner`) gets them from `lighting.js`: a steady blue dot at the screen's top-right corner while
+Nothing else is authored for the dots. Every workstation whose owner is known (its
+`owner` field) gets them from `lighting.js`: a steady blue dot at the screen's top-right corner while
 `<id>_screen_locked`, a larger warm-white dot that breathes while `<id>_owner_away` and not locked,
 none while the owner is at the desk. The screen's own glow does not change. A room `lighting.emitters`
 entry on the object id with `"indicators": [...]` replaces them (`[]` turns them off).
@@ -347,7 +348,7 @@ either way, and Marek follows Tom's `npc_queued` either way; only Sanjay's socia
 ### Slice 11 re-run: something left on an empty desk (2026-11-06, keyless :3001, headless, load 2-9)
 
 **Annotated example.** Tom's ID badge (`tom_badge`, `id_badge` sprite) is declared on the open
-desk top between his laptop and keyboard, hidden, with `"leftBehindBy": "tom"`,
+desk top between his laptop and keyboard, hidden, with `"owner": "tom"`,
 `"leftBehindChance": 0.7` and its own `"revealOnGlobal": "tom_badge_left"`. Each time Tom really
 leaves his desk (a coffee or a meal; working at his own PC doesn't count), a seeded roll keyed on
 his leave count decides whether he forgets it. With this scenario's seed, leaves 1, 2 and 4 leave it

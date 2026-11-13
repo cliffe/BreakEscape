@@ -912,7 +912,8 @@
             "restores": 10,
             "useSeconds": 5
           },
-          "observations": "Rosa's PC: a sign-in PC."
+          "observations": "Rosa's PC: a sign-in PC.",
+          "owner": "rosa"
         },
         {
           "type": "aes_elec_cabinet1",
@@ -1047,7 +1048,8 @@
             "restores": 10,
             "useSeconds": 5
           },
-          "observations": "Amy's PC: a sign-in PC."
+          "observations": "Amy's PC: a sign-in PC.",
+          "owner": "amy"
         }
       ],
       "npcs": [
@@ -1131,7 +1133,8 @@
             "restores": 10,
             "useSeconds": 5
           },
-          "observations": "Dana's PC: a sign-in PC."
+          "observations": "Dana's PC: a sign-in PC.",
+          "owner": "dana"
         },
         {
           "type": "aes_elec_cabinet1",
@@ -1288,7 +1291,8 @@
             "useSeconds": 5
           },
           "observations": "Omar's PC: a sign-in PC.",
-          "lockChance": 0
+          "lockChance": 0,
+          "owner": "omar"
         }
       ],
       "npcs": [
@@ -1460,7 +1464,8 @@
             "restores": 10,
             "useSeconds": 5
           },
-          "observations": "Kai's PC: a sign-in PC."
+          "observations": "Kai's PC: a sign-in PC.",
+          "owner": "kai"
         }
       ],
       "npcs": [
@@ -1550,7 +1555,8 @@
             "offWhen": "ian_pc_unplugged"
           },
           "observations": "Ian's PC: a sign-in PC.",
-          "lockChance": 1
+          "lockChance": 1,
+          "owner": "ian"
         },
         {
           "type": "pc",
@@ -1566,11 +1572,11 @@
           "affordance": {
             "satisfies": "work",
             "restores": 10,
-            "useSeconds": 5,
-            "private": true
+            "useSeconds": 5
           },
           "observations": "Pat's PC: a sign-in PC.",
-          "screenOwner": "temp_user"
+          "owner": "temp_user",
+          "private": true
         },
         {
           "type": "pc",
@@ -1766,7 +1772,8 @@
             "restores": 10,
             "useSeconds": 5
           },
-          "observations": "Nia's PC: a sign-in PC."
+          "observations": "Nia's PC: a sign-in PC.",
+          "owner": "nia"
         },
         {
           "type": "ups_cabinet1",
@@ -1922,7 +1929,8 @@
             "useSeconds": 5
           },
           "observations": "Mei's PC: a sign-in PC. It locks whenever she leaves.",
-          "lockChance": 1
+          "lockChance": 1,
+          "owner": "mei"
         },
         {
           "type": "ups_cabinet1",
@@ -2310,7 +2318,8 @@
             "restores": 10,
             "useSeconds": 5
           },
-          "observations": "Ellis's PC: a sign-in PC."
+          "observations": "Ellis's PC: a sign-in PC.",
+          "owner": "ellis"
         },
         {
           "type": "notes1",
@@ -2464,7 +2473,8 @@
             "restores": 10,
             "useSeconds": 5
           },
-          "observations": "Sam's PC: a sign-in PC."
+          "observations": "Sam's PC: a sign-in PC.",
+          "owner": "sam"
         },
         {
           "type": "aes_elec_cabinet1",
@@ -2615,7 +2625,8 @@
             "satisfies": "work",
             "restores": 10,
             "useSeconds": 5
-          }
+          },
+          "owner": "jake"
         },
         {
           "type": "pc",
@@ -2654,7 +2665,8 @@
             "satisfies": "work",
             "restores": 10,
             "useSeconds": 5
-          }
+          },
+          "owner": "leo"
         },
         {
           "type": "qdc_fridge1",

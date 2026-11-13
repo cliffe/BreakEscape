@@ -1836,3 +1836,144 @@ npc_lockout_l,npc_workaround,access_model_login,network_remote_signin}_test.rb`,
   owner claim reads `pc['owner']` (`login_pc_owner`); a Friendface phone taken on the base server is
   still taken after the upgrade because the player_state transform renames its stored `phoneOf` to
   `owner`, which `SocialFeed` reads.
+
+## Step 8b chunk 4 — template rewrite, corpus equivalence, reader parity (2026-11-13)
+
+Chunk 4 of the five-chunk split: the nine templates move to format 2 (one owner field), the frozen
+format_8b fixtures, the Ruby corpus/parity test and the JS reader-parity test, and the real-transform
+no-op proof on the deployed scenarios. Built on chunks 1 to 3 (schema/transform/validator, Ruby and
+JS readers), branch `build/hard-8b`.
+
+### Template rewrite (moved keys per scenario)
+
+`tools/format/rewrite_templates.rb --step 2` (new) rewrites the seven pure-JSON templates as surgical
+source edits that keep each file's own formatting: it uses the real `FormatUpgrade::STEP_8B` transform
+as an oracle (render the template, transform, edit the source to that shape), does file-level renames
+for the item keys that live outside room objects (`phoneOf`/`leftBehindBy`), and rewrites each
+affected affordance block to match its inline-or-multiline source style. It verifies, per scenario,
+that the rewritten template re-renders to exactly `transform(old)` and holds no retired owner key, and
+refuses an ERB template. The two ERB templates (`lab_physical_pentest`, `test_capture_log`) are
+hand-edited.
+
+Keys moved (objects changed), matching the re-anchor's derived-owner counts:
+
+- `test_access_habits`: 17 objects — 9 derived PC `owner`s, 8 coffee objects move `affordance.owners`
+  (a one-element `owner` list) + `affordance.private` up to object level.
+- `test_access_sessions`: 14 — 7 derived PC `owner`s, 7 coffee `affordance.owners`+`private` moves.
+- `test_access_social`: 16 derived PC `owner`s + 11 item `phoneOf` -> `owner` on NPC-held Friendface
+  phones.
+- `test_access_work`: 13 — 12 derived PC `owner`s, 1 `screenOwner` -> `owner` and `affordance.private`
+  -> `private` (pat_pc).
+- `test_needs_sims`: 5 — amara/sanjay/tom PCs derive `owner` and move `affordance.private` up (two
+  drain the affordance to `{}`), `phoneOwner` -> `owner` + `deskPhone: true` (tom_phone),
+  `leftBehindBy` -> `owner` (tom_badge).
+- `test_npc_needs`: 2 derived PC `owner`s (no retired keys).
+- `test_clone_left_card`: 1 `leftBehindBy` -> `owner`.
+- `test_capture_log` (ERB, hand): 1 `screenOwner` -> `owner` (mel_pc).
+- `lab_physical_pentest` (ERB, hand, labs track): 2 `screenOwner` -> `owner` (staff_pc, staff_pc_2),
+  3 `leftBehindBy` -> `owner` (pierce_comms_card, pierce_printout, hampshire_badge), kieran_laptop
+  derives `owner: ["kieran"]` and moves `affordance.private` up to `private`, and one ERB note naming
+  `leftBehindBy pierce` now says `owner pierce`. Only the owner keys and their notes were touched.
+
+All nine validate with 0 errors (`--no-graph`). No dungeon_graph was written (every run used
+`--no-graph`).
+
+### Corpus equivalence and reader parity
+
+`test/fixtures/format_8b/*` freezes the old render (template at the merge base `2f5471209`, which
+still carries the pre-8b owner keys) and the new render (the rewritten template) for the four
+scenarios that cover every transform path: habits (affordance.owners/private move), social (item
+phoneOf), work (screenOwner + affordance.private + derived), needs_sims (phoneOwner desk phone,
+leftBehindBy badge, drained affordances, derived). Both sides are frozen so a later scenario edit
+cannot make `transform(old)` drift from `new`; the live templates are guarded separately by an
+edit-proof retired-key check in each test (per the 8a lesson: never compare live templates with HEAD).
+
+- `test/unit/format_8b_corpus_test.rb` (29 runs, 490 assertions, 0 fail): `transform(old) == new`,
+  the transform is a no-op on new, `retired_keys_in(new)` empty, and the prepared-data agreement. The
+  prepared check uses `prepared(transform(old)) == prepared(new)`, NOT 8a's `transform(prepared(old))`:
+  the real load pipeline is upgrade then prepare (`Game#ensure_current_format!`), `prepare_scenario_data!`
+  derives owner-dependent state (an NPC's `screenHabit` from the workstation it owns) and does not
+  itself run the upgrade, so unlike 8a the transform and prepare do NOT commute. Reader parity: the
+  old `AccessIdentities.owner_id`, `OwnerClaim.owners_of`/`permitted?`/`colleague_phone?` and the
+  left-behind owner, reproduced inline, equal the live readers for every object. `owner_id` parity is
+  scoped to the workstation domain (the isWorkstation rule plus any object that carried an explicit
+  screenOwner): a non-workstation needsHome target (e.g. a USB-policy PC) got no derived owner by
+  design, and no caller reads `owner_id` for one.
+- `test/js/format-8b-reader-parity.test.mjs` (12 subtests, pass): the old `ownerOf(data, npcs)` loaded
+  from the merge-base module text via `git show`, the new `ownerOf(data)` from the live module; equal
+  over every workstation across the four scenarios, plus the edit-proof live-template guard.
+
+Both tests bite: prefixing a frozen owner value turns each red (verified, then restored).
+
+### Ruby/JS disagreement
+
+None. No object is two NPCs' `needsHome` on the corpus (asserted per scenario in both tests), so the
+old Ruby `owner_id` (first room NPC) and old JS `ownerOf` (first in the room's npcs list) could never
+resolve to different owners; first-match order is never observable and the single-owner merge is
+unambiguous.
+
+### Deployed-scenarios no-op (real transform)
+
+`test/controllers/break_escape/format_8b_deployed_noop_test.rb` (4 runs, 12 assertions, 0 fail)
+renders m01, sis01, sis02 and lab_social_engineering through the real `Mission::ScenarioBinding` and
+applies the real `STEP_8B` (not a stub): a no-op on every one, no retired owner key present. The
+step-7 deployed-scenarios test stubs `FormatUpgrade.steps`, so it never exercised the real transform;
+this closes the chunk-1 handover note.
+
+### Failures cleared
+
+- `format_8a_corpus_test` (was 9, then 6): the 8a fixtures predate 8b and carried the now-retired
+  owner keys. STEP_8A (outage) and STEP_8B (owner) touch disjoint keys, so both sides of the social,
+  work and needs_sims 8a pairs were upgraded through STEP_8B in place; `transform_8a(old) == new`
+  still holds and the owner keys are gone. 21 runs, 0 fail; the 8a JS parity still passes; the 8a
+  README records the upgrade.
+- `npc-left-behind.test.mjs` and `npc-needs-slots.test.mjs` validator sub-tests: pass (the rewritten
+  test_needs_sims validates clean).
+- `lab_physical_pentest_secrets_test.rb` (was 3 fail, lines 94/482/506): 38 runs, 0 fail (staff_pc /
+  staff_pc_2 now carry `owner`).
+
+### Tests run (single files, no full suite)
+
+format_8b_corpus (29/0), format_8b_deployed_noop (4/0), format_8a_corpus (21/0); format-8b-reader-parity,
+format-8a-reader-parity, npc-left-behind, npc-needs-slots, validator-office-presets,
+lab-physical-pentest-route-lines (JS, pass); scenario_schema_test + lab_physical_pentest_content_test +
+npc_habits_clues_test (28/0); lab_physical_pentest_secrets_test (38/0). Validator on all nine templates:
+0 errors each (`--no-graph`).
+
+### Pre-existing failures found (NOT chunk 4's, for the orchestrator)
+
+Six validator node tests that drive the Ruby validator with inline fixtures still carry the old owner
+keys and so fail against chunk 2's owner-reading validator: `validator-access-work`,
+`validator-access-model`, `validator-access-social`, `validator-npc-habits`, `validator-npc-leash`,
+`validator-strict-keys`. They were last touched at step 8a, not by chunk 2, and chunk 3's handover
+named this set as "chunk 1/2's". They are independent of the chunk-4 template/fixture work (their
+fixtures are inline, not the live templates) and migrating them needs chunk 2's exact new validator
+wording, so they are left for a chunk-2 follow-up.
+
+### Sync size
+
+No growth. Templates and fixtures only; no synced state changed. The transform renames in place and
+derives at most one bounded key per object, as chunks 1 to 3 recorded.
+
+### Files touched
+
+The nine `scenarios/*/scenario.json.erb`; `tools/format/rewrite_templates.rb`;
+`test/fixtures/format_8b/*` (README + 8 json); `test/fixtures/format_8a/{README.md,
+test_access_social,test_access_work,test_needs_sims}.{old,new}.json`;
+`test/unit/format_8b_corpus_test.rb`; `test/js/format-8b-reader-parity.test.mjs`;
+`test/controllers/break_escape/format_8b_deployed_noop_test.rb`; `README_scenario_design.md`;
+`scenarios/test_needs_sims/README.md`; this build log.
+
+### Handover
+
+- **Done:** chunk 4 as specified. All nine templates are format 2 and validate clean; corpus
+  equivalence, both-side reader parity and the deployed no-op pass and bite; the listed chunk-1-to-3
+  failures are cleared; the owner field docs in `README_scenario_design.md` and
+  `scenarios/test_needs_sims/README.md` moved to the new names (grep of living READMEs and scenario
+  notes is clean).
+- **For chunk 5 (live proofs):** the rewritten templates are the live path; test_access_sessions owner
+  claim, test_needs_sims desk-phone ring / left-behind reveal, test_access_social Jake's phone and the
+  lab left-card beat all read the new owner fields. The merge base for the old-game proof is
+  `2f5471209`.
+- **For the orchestrator:** the six validator node tests above (chunk-2 owner-fixture migration gap)
+  need a chunk-2 follow-up before the batch merges.
