@@ -46,7 +46,7 @@ function clean() {
             lobby: {
                 type: 'room_office', connections: { north: 'finance_office' },
                 objects: [
-                    { id: 'jake_pc', type: 'pc', name: "Jake's PC", locked: true, lockType: 'login', access: { roles: ['staff'] }, lockChance: 0 },
+                    { id: 'jake_pc', type: 'pc', name: "Jake's PC", locked: true, lockType: 'login', access: { roles: ['staff'] }, lockChance: 0, owner: 'jake' },
                     { id: 'hot_desk', type: 'pc', name: 'Hot desk', locked: true, lockType: 'login' },
                     { id: 'jake_badge_copy', type: 'keycard', name: 'Badge', card_id: '4F00A1C2', identity: 'jake' }
                 ],
@@ -106,10 +106,10 @@ test('unresolved person, policy and card references are errors', { skip }, () =>
     assertHas(out, "requires card 'NO-SUCH-CARD', which no NPC or keycard carries");
 });
 
-test('a screenOwner naming no room NPC is an error on a sign-in PC', { skip }, () => {
+test('an owner naming no room NPC is an error on a sign-in PC', { skip }, () => {
     const sc = clean();
-    obj(sc, 'hot_desk').screenOwner = 'ghost';
-    assertHas(errors(issues(sc)), "sign-in PC 'hot_desk' screenOwner 'ghost' names unknown person");
+    obj(sc, 'hot_desk').owner = 'ghost';
+    assertHas(errors(issues(sc)), "sign-in PC 'hot_desk' owner 'ghost' names unknown person");
 });
 
 test('a profile item id shared with another profile item or a room object is an error', { skip }, () => {
@@ -258,8 +258,8 @@ test('an owner placed in a different room from its workstation is a warning', { 
     const jake = npc(sc, 'jake');
     lobby(sc).npcs = lobby(sc).npcs.filter(n => n.id !== 'jake');
     sc.rooms.finance_office.npcs = [jake];
-    // a plain workstation owned through screenOwner counts too
-    sc.rooms.finance_office.objects = [{ id: 'dana_ws', type: 'pc', name: 'Dana desk', workstation: true, screenOwner: 'dana' }];
+    // a plain workstation owned through owner counts too
+    sc.rooms.finance_office.objects = [{ id: 'dana_ws', type: 'pc', name: 'Dana desk', workstation: true, owner: 'dana' }];
     const out = warnings(issues(sc));
     assertHas(out, "NPC 'jake' owns workstation 'jake_pc' in room 'lobby' but is placed in room 'finance_office'");
     assertHas(out, "NPC 'dana' owns workstation 'dana_ws' in room 'finance_office' but is placed in room 'lobby'");
@@ -438,7 +438,7 @@ test('each leave route keeps the never-leaves warning silent', { skip }, () => {
         'a need source elsewhere': sc => lobby(sc).objects.push({ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst' } }),
         "a colleague's phone": sc => {
             npc(sc, 'jake').answersPhones = true;
-            lobby(sc).objects.push({ id: 'dana_phone', type: 'notes', name: 'Phone', phoneOwner: 'dana' });
+            lobby(sc).objects.push({ id: 'dana_phone', type: 'notes', name: 'Phone', deskPhone: true, owner: 'dana' });
         },
         'a print command': sc => { npc(sc, 'jake').eventMappings = [{ eventPattern: 'go', needs: { print: 'copier' } }]; },
         'an own print hook with a printHabit': sc => {
@@ -462,7 +462,7 @@ test('each leave route keeps the never-leaves warning silent', { skip }, () => {
     const misses = {
         'the only source is the own PC': sc => { obj(sc, 'jake_pc').affordance = { satisfies: 'thirst' }; },
         'the only source is private to somebody else': sc => {
-            lobby(sc).objects.push({ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst', private: true, owners: ['dana'] } });
+            lobby(sc).objects.push({ id: 'water', type: 'notes', name: 'Water', private: true, owner: ['dana'], affordance: { satisfies: 'thirst' } });
         },
         'a needs set command and a droppable item for another need': sc => {
             npc(sc, 'jake').eventMappings = [{ eventPattern: 'go', needs: { set: { thirst: 90 } } }];

@@ -43,8 +43,8 @@ function scenario(mutate = () => {}) {
       r1: {
         type: 'room_office', connections: {}, access: { ...access },
         objects: [
-          { type: 'pc', id: 'pc1', name: 'PC', access: { ...access },
-            affordance: { satisfies: 'work', restores: 20, owners: ['dana'], ...c },
+          { type: 'pc', id: 'pc1', name: 'PC', access: { ...access }, owner: ['dana'], private: true,
+            affordance: { satisfies: 'work', restores: 20, ...c },
             triggerOnInteract: [
               { type: 'grant_foothold', pc: 'pc1', needsDropped: 'stick', name: 'USB foothold', ...c },
               { type: 'confirm_action', text: 'Plug it in?', onConfirm: [
@@ -99,7 +99,7 @@ const SLIPS = [
   ['NPC usbHabit', (j) => rename(npc(j).usbHabit, 'every', 'evrey'), '#/rooms/r1/npcs/0/usbHabit', 'evrey', 'every'],
   ['NPC frustration', (j) => rename(npc(j).frustration, 'easePerSuccess', 'easePerSucess'), '#/rooms/r1/npcs/0/frustration', 'easePerSucess', 'easePerSuccess'],
   ['NPC needs entry', (j) => rename(npc(j).needs.work, 'urgentAt', 'urgentat'), '#/rooms/r1/npcs/0/needs/work', 'urgentat', 'urgentAt'],
-  ['object affordance (owner for owners)', (j) => rename(pc(j).affordance, 'owners', 'owner'), '#/rooms/r1/objects/0/affordance', 'owner', 'owners'],
+  ['object affordance (restore for restores)', (j) => rename(pc(j).affordance, 'restores', 'restore'), '#/rooms/r1/objects/0/affordance', 'restore', 'restores'],
   ['grant_foothold in triggerOnInteract', (j) => rename(pc(j).triggerOnInteract[0], 'needsDropped', 'needDropped'), '#/rooms/r1/objects/0/triggerOnInteract/0', 'needDropped', 'needsDropped'],
   ['grant_foothold in onConfirm', (j) => rename(pc(j).triggerOnInteract[1].onConfirm[0], 'needsHeld', 'needsheld'), '#/rooms/r1/objects/0/triggerOnInteract/1/onConfirm/0', 'needsheld', 'needsHeld'],
   ['grant_foothold in a timer', (j) => { j.timers[0].actions[0].pcId = 'pc1'; }, '#/timers/0/actions/0', 'pcId', null]

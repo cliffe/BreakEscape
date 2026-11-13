@@ -55,8 +55,22 @@ function person(id, extra = {}) {
 const loginPc = (id, extra = {}) => ({ id, type: 'pc', name: id, locked: true, lockType: 'login', sprite: 'pc_desktop', ...extra });
 const station = (id, extra = {}) => ({ id, type: 'pc', name: id, workstation: true, sprite: 'pc_desktop', ...extra });
 const note = (id, text, extra = {}) => ({ id, type: 'notes', name: id, readable: true, text, ...extra });
+// Format 2: needsHome no longer derives ownership. The loader (and the template rewrite) write an
+// explicit `owner` onto each id-bearing PC an NPC's needsHome names; reproduce that here so the
+// fixtures carry the owner the old derivation used to supply. An id-less owned PC sets owner inline.
+function assignOwners(s) {
+    for (const room of Object.values(s.rooms || {})) {
+        const objs = room.objects || [];
+        for (const n of room.npcs || []) {
+            if (typeof n.needsHome !== 'string') continue;
+            const pc = objs.find(o => o && o.id === n.needsHome && o.type === 'pc');
+            if (pc && pc.owner === undefined) pc.owner = n.id;
+        }
+    }
+    return s;
+}
 function scenario({ npcs = [], objects = [], extra = {} } = {}) {
-    return { startRoom: 'office', rooms: { office: { type: 'room_office', connections: {}, objects, npcs } }, ...extra };
+    return assignOwners({ startRoom: 'office', rooms: { office: { type: 'room_office', connections: {}, objects, npcs } }, ...extra });
 }
 
 // ── Clean ─────────────────────────────────────────────────────────────────────
@@ -238,8 +252,8 @@ test('the office life autoLockSeconds check sees the filled habit; called withou
 test('an owned workstation with no authored id draws the id warning and is listed with its fill', () => {
     const out = run(scenario({
         npcs: [person('ann', { awareness: 'low' }), person('bob', { needsHome: 'office_pc_1', awareness: 'high' })],
-        objects: [{ type: 'pc', name: 'Ann PC', workstation: true, sprite: 'pc_desktop', screenOwner: 'ann' },
-            { type: 'pc', name: 'Bob PC', workstation: true, sprite: 'pc_desktop' }]
+        objects: [{ type: 'pc', name: 'Ann PC', workstation: true, sprite: 'pc_desktop', owner: 'ann' },
+            { type: 'pc', name: 'Bob PC', workstation: true, sprite: 'pc_desktop', owner: 'bob' }]
     }));
     assertHas(warnings(out.habits), "give the object the id 'office_pc_0'");
     assertHas(warnings(out.habits), "give the object the id 'office_pc_1'");
@@ -255,7 +269,7 @@ test('writesDown: no account, no sign-in PC, every PC authors its own note', () 
     out = run(scenario({ npcs: [person('omar', { needsHome: 'ws', habits: { writesDown: true } })], objects: [station('ws')] }));
     assertHas(warnings(out.habits), 'owns no sign-in PC');
     out = run(scenario({ npcs: [person('omar', { needsHome: 'omar_pc', habits: { writesDown: true } })],
-        objects: [loginPc('omar_pc', { postitNote: 'Printer 4410' }), loginPc('omar_pc2', { screenOwner: 'omar', showPostit: false })] }));
+        objects: [loginPc('omar_pc', { postitNote: 'Printer 4410' }), loginPc('omar_pc2', { owner: 'omar', showPostit: false })] }));
     assertHas(warnings(out.habits), 'authors its own postitNote or sets showPostit: false');
 });
 

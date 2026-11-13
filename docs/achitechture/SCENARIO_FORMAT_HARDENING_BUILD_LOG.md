@@ -1977,3 +1977,45 @@ test_access_social,test_access_work,test_needs_sims}.{old,new}.json`;
   `2f5471209`.
 - **For the orchestrator:** the six validator node tests above (chunk-2 owner-fixture migration gap)
   need a chunk-2 follow-up before the batch merges.
+
+## Step 8b chunk-2 follow-up — validator node fixtures to one owner field (2026-11-13)
+
+Migrated the six validator node tests the chunk-4 handover named, so each inline fixture uses the
+format-2 owner shape (`owner`, `private`, `deskPhone`, `leftBehindChance`) and checks against the
+current validator wording. No validator script changed. Branch `build/hard-8b`, built on `d8cf09321`.
+
+### What changed (per file)
+
+- **validator-npc-leash.test.mjs** (12/12): `cooler` helper hoists `private`/`owners` to object-level
+  `private`/`owner`; the two inline `tom_pc` fixtures moved `affordance.private`/`owners` up. The
+  `affordance.owners names unknown NPC` assertion is now `object '…' owner names unknown NPC` (validate
+  _npc_needs wording). The "needsHome makes Tom its owner" case: needsHome no longer owns, so the
+  private `tom_pc` carries an explicit `owner: 'tom'` and still serves nobody-warning-free (intent
+  kept, not weakened).
+- **validator-access-social.test.mjs** (25/25): the held Friendface phone and the test fixtures use
+  `owner` not `phoneOf`; the `phoneOf 'nobody' names no room NPC` assertion is now `owner 'nobody'…`.
+  Dropped the "phoneOf on another type warns" sub-case: `phoneOf` is retired to `owner`, which is
+  valid on any object kind, so that warning no longer exists (retired-key error is covered in
+  validator-retired-keys.test.mjs). Title updated.
+- **validator-access-model.test.mjs** (36/36): `jake_pc` carries explicit `owner: 'jake'` (was derived
+  from needsHome); `screenOwner`→`owner` on the hot_desk and dana_ws fixtures with the matching
+  `owner '…' names unknown person` / `through owner` wording; the colleague-phone leave route uses
+  `deskPhone: true, owner`; the private-source miss uses object-level `private`/`owner`.
+- **validator-strict-keys.test.mjs** (15/15): the base `pc1` fixture moved `affordance.owners` to
+  object-level `owner`/`private`. The `owners→owner` affordance slip (the retired key) is replaced by
+  a `restores→restore` affordance slip, which still proves affordance is a closed, hinted block.
+- **validator-npc-habits.test.mjs** (46/46) and **validator-access-work.test.mjs** (38/38): added an
+  `assignOwners` helper that writes an explicit `owner` onto each id-bearing PC an NPC's needsHome
+  names (mirrors chunk-2's `assign_owners!`), reproducing the old derivation the loader no longer
+  does; explicit `screenOwner`/`affordance.private` fixtures renamed; the `owns '…' through screenOwner`
+  assertion is now `through owner`. An id-less owned PC (the id-warning fixture) sets `owner` inline.
+
+### Tests
+
+- The six files: 12 + 25 + 36 + 15 + 46 + 38 = 172, all pass.
+- Full `test/js/validator-*.test.mjs` suite: 893 tests, 891 pass, 2 fail. The two failures are in files
+  outside this assignment and share the same chunk-2 gap (they still author retired owner fields):
+  `validator-access-reactive.test.mjs` ("C2: a clean reactive feed raises nothing", uses `phoneOf`) and
+  `validator-network-model.test.mjs` ("headless … on an owned workstation is an error", uses a
+  needsHome-derived owner). The chunk-4 handover's "six" undercounts: these two need the same
+  migration. Left for the orchestrator (not in this agent's file ownership).
