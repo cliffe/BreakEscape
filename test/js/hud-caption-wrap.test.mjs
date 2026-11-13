@@ -28,7 +28,7 @@ test('the caption wraps and never truncates', () => {
 test('the caption keeps a readable width instead of shrinking to half the screen', () => {
     const r = rule('#hud-info-label');
     assert.match(r, /width:\s*max-content/);
-    assert.match(r, /max-width:\s*min\(\d+px,\s*calc\(100vw - 32px\)\)/);
+    assert.match(r, /max-width:\s*min\(\d+px,\s*calc\(100vw \/ var\(--hud-zoom, 1\) - 32px\)\)/, "divided by the HUD zoom (R2 m6)");
 });
 
 test('on an upright phone the caption sits above Punch and Block (UX slice 16 R2 m6)', () => {
