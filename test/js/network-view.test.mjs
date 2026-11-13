@@ -705,7 +705,8 @@ test('the view closes with the X or Esc only: no Close button, the X inside the 
     links.open('jack_comms_port');
     await settle();
     assert.equal(document.querySelector('#minigame-cancel'), null, 'no framework Close button');
-    assert.equal(document.querySelector('.minigame-controls'), null);
+    // The shared shell may keep an empty controls row (slice 7); it must hold no button
+    assert.equal(document.querySelectorAll('.minigame-controls button').length, 0, 'no button in the controls row');
     const frame = document.querySelector('.network-view-frame');
     assert.ok(frame, 'the frame exists');
     const x = document.querySelector('#minigame-close');

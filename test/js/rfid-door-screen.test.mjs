@@ -433,7 +433,9 @@ test('the copier has no Cancel button: the X and Esc close it', () => {
     assert.doesNotMatch(code, /this\.params = params;/, 'the merged params are not replaced');
     // The base scene draws no Cancel row when showCancel is false, and keeps the X and Esc
     const base = readFileSync(src('minigames/framework/base-minigame.js'), 'utf8');
-    assert.match(base, /const showCancel = this\.params\.showCancel !== false/);
+    // Since slice 7 a scene draws Cancel only if it opts in with keepsCancelButton; the copier does not
+    assert.match(base, /const showCancel = this\.constructor\.keepsCancelButton === true && this\.params\.showCancel !== false/);
+    assert.doesNotMatch(code, /keepsCancelButton\s*=\s*true/, 'the copier does not opt back in to Cancel');
     assert.match(base, /id="minigame-close"/);
     assert.match(base, /e\.key === 'Escape'[\s\S]*?this\.closeByPlayer\(\)/);
 });
