@@ -30,7 +30,8 @@
  * tested in node.
  */
 import { isDroppableInventoryItem, dropInventoryItem } from './item-drop.js';
-import { showInteractionMenu, menuIconsBase } from '../ui/interaction-menu.js';
+import { showInteractionMenu, menuIconsBase, openHandIcon } from '../ui/interaction-menu.js';
+import { resolveObjectField } from '../utils/conditional-text.js';
 
 // interactions.js takes the chain's drop test and the drop itself from here, so the
 // menu and the chain read the same functions.
@@ -93,9 +94,9 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     if (!isDroppableInventoryItem(sprite, items)) {
         // A wearable that cannot be dropped (the lab's carried vest) still has two things
         // to do when it has something to read: put it on or take it off, and Examine
-        // (UX slice 4 R1 m5). With nothing to read its click stays the one toggle.
-        const hasText = typeof data.observations === 'string' && data.observations.trim();
-        if (wearLabel && hasText) return [{ id: 'use', label: wearLabel }, { id: 'examine', label: 'Examine' }];
+        // (UX slice 4 R1 m5). With nothing to read its click stays the one toggle. "Something
+        // to read" is what Examine would show (heldItemHasText, UX slice 4 R2 m4).
+        if (wearLabel && heldItemHasText(sprite, ctxWindow)) return [{ id: 'use', label: wearLabel }, { id: 'examine', label: 'Examine' }];
         return null;
     }
 
@@ -116,14 +117,30 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     return entries;
 }
 
+/**
+ * Whether Examine would show anything for a held item: its observations or text after their
+ * conditional variants, the same fields examineTextFor (interactions.js) resolves. That
+ * function is not imported, because interactions.js imports this file.
+ */
+export function heldItemHasText(sprite, w = typeof window !== 'undefined' ? window : {}) {
+    const data = sprite?.scenarioData;
+    if (!data) return false;
+    const vars = w?.gameState?.globalVariables || {};
+    const nonBlank = (v) => typeof v === 'string' && v.trim() !== '';
+    return nonBlank(resolveObjectField(data, 'observations', sprite?.observations || null, vars)) ||
+        nonBlank(resolveObjectField(data, 'text', null, vars));
+}
+
 // The menu draws icons in a 64px box (ui/interaction-menu.js)
 const MENU_ICON_BOX = 64;
 
 /**
  * The icon of one tray menu entry (UX slice 4 R1 m1): the item's own tray picture for the
  * entry that uses it (Put on, Take off, Use), and the shared menu icons for Drop here and
- * Examine. Drawn at a whole-number scale (or an exact halving for a large picture), so
- * pixel art stays crisp. Undefined when there is nothing to draw.
+ * Examine. Drawn at a whole-number scale, so pixel art stays crisp. A picture larger than
+ * the 64px box would need shrinking by a fraction, so it gets the shared open hand (the
+ * world menu's "use this" icon) instead (UX slice 4 R2 m6). Undefined when there is
+ * nothing to draw.
  */
 export function inventoryMenuIcon(id, el) {
     if (id === 'drop') return { src: `${menuIconsBase()}/menu-drop.png`, width: 64, height: 64 };
@@ -133,7 +150,8 @@ export function inventoryMenuIcon(id, el) {
     const h = el.naturalHeight || 0;
     if (!(w > 0 && h > 0)) return { src: el.src };
     const big = Math.max(w, h);
-    const scale = big <= MENU_ICON_BOX ? Math.floor(MENU_ICON_BOX / big) : 1 / Math.ceil(big / MENU_ICON_BOX);
+    if (big > MENU_ICON_BOX) return openHandIcon();
+    const scale = Math.floor(MENU_ICON_BOX / big);
     return { src: el.src, width: Math.round(w * scale), height: Math.round(h * scale) };
 }
 

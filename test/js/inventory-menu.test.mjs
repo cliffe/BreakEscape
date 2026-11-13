@@ -160,8 +160,14 @@ test('every tray menu entry has a pixel icon: the item picture for Use, shared i
         assert.equal(b.toString('ascii', 1, 4), 'PNG', f);
         assert.deepEqual([b.readUInt32BE(16), b.readUInt32BE(20)], [32, 32], f);
     }
-    // A large picture is halved exactly, never scaled by a fraction; no picture, no icon
-    assert.deepEqual(inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 100, naturalHeight: 50 }), { src: 'a.png', width: 50, height: 25 });
+    // A picture larger than the 64px box is never shrunk (R2 m6): it gets the shared open hand,
+    // drawn at a whole-number scale; one that fits is scaled up by a whole number
+    const hand = inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 100, naturalHeight: 50 });
+    assert.deepEqual(hand, { src: '/break_escape/assets/icons/hand_frames.png', frame: 0, cols: 4, cell: 32 });
+    assert.equal(Number.isInteger(64 / hand.cell), true);
+    assert.equal(inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 65, naturalHeight: 10 }).src, hand.src);
+    assert.deepEqual(inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 64, naturalHeight: 30 }), { src: 'a.png', width: 64, height: 30 });
+    assert.deepEqual(inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 30, naturalHeight: 25 }), { src: 'a.png', width: 60, height: 50 });
     assert.equal(inventoryMenuIcon('use', {}), undefined);
     // The rendered menu draws them
     showInteractionMenu(shown, 10, 20, 'Beacon', { numberKeys: true });

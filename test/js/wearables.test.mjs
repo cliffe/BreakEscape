@@ -350,6 +350,22 @@ test('the tray menu: a wearable that cannot be dropped has Put on and Examine wh
     const pen = { scenarioData: { id: 'pen', type: 'pen', name: 'Pen', observations: 'A pen.' } };
     assert.equal(inventoryMenuFor(pen, { inventoryItems: [pen], dropBlocked: null, window: w }), null);
 });
+
+test('the tray menu: Examine for a wearable that cannot be dropped uses what Examine would show (R2 m4)', () => {
+    const w = { wearables: { menuLabel: (d) => W.menuLabel(d, w) }, gameState: { wornItem: null, globalVariables: {} } };
+    const ask = (el) => inventoryMenuFor(el, { inventoryItems: [el], dropBlocked: null, window: w });
+    // Only text, no observations
+    const textOnly = { scenarioData: { ...COAT, text: 'Property of the lab.' } };
+    assert.deepEqual(ask(textOnly).map(e => e.label), ['Put on', 'Examine']);
+    // Observations that only exist under a condition
+    const variant = { scenarioData: { ...COAT, observationVariants: [{ condition: 'globalVars.seen_coat', value: 'A coat you saw earlier.' }] } };
+    assert.equal(ask(variant), null, 'nothing to read until the condition holds');
+    w.gameState.globalVariables.seen_coat = true;
+    assert.deepEqual(ask(variant).map(e => e.label), ['Put on', 'Examine']);
+    // Blank text counts as nothing to read
+    const blank = { scenarioData: { ...COAT, observations: '  ', text: '' } };
+    assert.equal(ask(blank), null);
+});
 test('the server refusal message is shown as plain text', async () => {
     const { w, deps } = rig({ refuse: true });
     delete deps.alert;
