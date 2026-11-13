@@ -610,8 +610,12 @@ durable membership is not yet visible to the completion (below), the server answ
 `window.stateSync.sync()` (flushing `currentRoom` and picking up the server's latest durable state),
 **wrapped so a rejecting sync still proceeds to the one re-post** (the re-sync is awaited for its
 ordering, never for its success, the same tolerance the pre-flush has), then re-posts the completion
-once; only a re-post that is still refused surfaces to the player. So a true forge (never unlocked,
-never slipped in) is refused and surfaced, while any honest ordering gap self-heals on the next sync.
+once. A **transient** re-post result (a network blip dropping that single re-post) is not a refusal:
+it takes the transient path below (revert to active and enqueue), so an honest player never sees a hard
+"Room not reached" over a double-fault; only a genuine **non-transient** refusal surfaces to the player
+(R9 minor 1). So a true forge (never unlocked, never slipped in) is refused and surfaced, while any
+honest ordering gap self-heals on the next sync, and an honest player whose re-post drops offline is
+carried by the queue rather than stranded.
 The object-unlock refusal (§3.6) applies the same rule in its own client system: one sync, one
 re-post, bounded. They are two handlers applying one rule, not one shared code path.
 
@@ -653,13 +657,18 @@ points:
 - **Drained through the normal completion path, so the bound is explicit and no ending is dropped.**
   There is no sync-success event in `state-sync.js` (`sync()` at `state-sync.js:598-605` resolves to a
   boolean from `_syncOnce` at `:618-671` and fires no event or callback), and `ObjectivesManager` has
-  no sync-success subscription. Rather than add one, the drain fires from two points inside
-  `ObjectivesManager` itself: a `window.addEventListener('online', ...)` handler (the proven precedent
-  is `conclude-mission.js:156`), and each sync `ObjectivesManager` already awaits (the conclude-race
-  pre-flush at `:613-615` and the inline retryable re-sync). Both call `drainEnterRoomQueue()`, guarded
-  against re-entry so a drain-triggered sync does not recurse. The `online` listener alone already meets
-  the reconnect requirement; adding no event to the shared `state-sync` module keeps the change inside
-  one file. Draining **removes the entry, then re-runs `this.completeTask(taskId)`** (never a bare
+  no sync-success subscription. Rather than add one, the drain fires from inside
+  `ObjectivesManager` itself. The load-bearing reconnect drain is a
+  `window.addEventListener('online', ...)` handler (the proven precedent is `conclude-mission.js:156`);
+  that listener alone meets the offline-then-reconnect requirement. The awaited-sync drains are
+  opportunistic: the drain also runs after each sync `ObjectivesManager` itself awaits on the
+  `enter_room` path, namely the **new `enter_room` pre-flush** (§8.3, scoped to the completion path) and
+  the inline retryable re-sync. The conclude-race pre-flush inside `serverCompleteTaskWithRetry`
+  (`:613-614`) is gated on `scenarioGatesOnGlobals()` and does **not** fire for a pure `enter_room`
+  scenario (no `concludeRequires.globals`), so it is not a drain trigger there; the `online` listener and
+  the `enter_room` pre-flush cover the reconnect and in-session cases (R9 minor 2). All call
+  `drainEnterRoomQueue()`, guarded against re-entry so a drain-triggered sync does not recurse. Adding no
+  event to the shared `state-sync` module keeps the change inside one file. Draining **removes the entry, then re-runs `this.completeTask(taskId)`** (never a bare
   `serverCompleteTask`), so a drained completion goes through the full path at `:662-718`: the
   `endingCheck` confirm, the `missionConcluded` end-screen trigger and the conclude-race `warning`
   pre-flush all still apply to a task that ends a mission. Because only a fresh transient or thrown
@@ -1119,8 +1128,11 @@ proves. Record game ids in the build log.
   surface); the **bounded in-memory re-send queue** of failed `enter_room` completions (§8.3): a field
   on `ObjectivesManager`, keyed by task id, fed from the two failure points in `completeTask` (the
   transient/offline branch `objectives-manager.js:687-694`, enqueuing on `response.transient === true`,
-  and the thrown-error catch `:719-731`), drained by a `window` `online` listener and by the syncs
-  `ObjectivesManager` itself awaits (the pre-flush `:613-615` and the inline retryable re-sync) through a
+  and the thrown-error catch `:719-731`), drained by the load-bearing `window` `online` listener and,
+  opportunistically, by the syncs `ObjectivesManager` itself awaits on the `enter_room` path (the new
+  `enter_room` pre-flush and the inline retryable re-sync; the conclude-race pre-flush at `:613-614` is
+  gated on `scenarioGatesOnGlobals()` and does not fire for a pure `enter_room` scenario, R9 minor 2)
+  through a
   re-entry-guarded `drainEnterRoomQueue()` that re-runs `this.completeTask(taskId)` so the end-screen and
   conclude-race handling at `:662-718` still apply, dropped on success or any not-transient outcome,
   never in `player_state` (no sync-success hook is added to `state-sync.js`); and the **init replay**

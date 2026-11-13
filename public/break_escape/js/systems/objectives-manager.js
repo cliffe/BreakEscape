@@ -34,6 +34,13 @@ export class ObjectivesManager {
     this.syncTimeouts = {};   // Debounced sync timers
     this.initialized = false;
 
+    // Bounded in-memory re-send queue of enter_room completions that failed for a
+    // transient or network reason (plan section 8.3). A Set keyed by task id, so
+    // re-queuing an id is a no-op and the queue holds at most one entry per
+    // enter_room task. Never part of any sync payload (SYNC SIZE RULE).
+    this.enterRoomQueue = new Set();
+    this._drainingEnterRoomQueue = false;
+
     this.setupEventListeners();
 
     // Teach the ending warning how to rebuild a held missionConclusion-aim ending after a reload
@@ -41,6 +48,12 @@ export class ObjectivesManager {
     if (typeof window !== 'undefined') {
       window.endingCheck?.registerRebuilder?.('aim', (record) =>
         (record?.taskId ? () => this.completeTask(record.taskId) : null));
+
+      // Reconnect drain: when the browser comes back online, re-post any queued
+      // enter_room completions (the load-bearing reconnect trigger, plan section 8.3).
+      if (typeof window.addEventListener === 'function') {
+        window.addEventListener('online', () => this.drainEnterRoomQueue());
+      }
     }
   }
   
@@ -110,6 +123,21 @@ export class ObjectivesManager {
     this.initialized = true;
     console.log(`📋 Objectives initialized: ${this.aims.length} aims, ${Object.keys(this.taskIndex).length} tasks`);
     this.notifyListeners();
+
+    // Init replay (plan section 8.3): if the avatar already stands in a room on a
+    // reload-in-place, the single post-reload room_entered auto-emit may have fired
+    // before this manager finished initialising (handleRoomEntered returns early
+    // while !this.initialized), dropping the only emit until the next crossing.
+    // Replay the current room once now that tasks are loaded. Idempotent:
+    // handleRoomEntered only completes an active enter_room task for that room,
+    // completeTask early-returns for a completed/completing task, and the server
+    // check is idempotent, so this can never double-complete or complete a task for
+    // a room the player has not reached. A no-op if no room is set yet (init ran
+    // before the first tick), in which case the tick's own emit is caught.
+    if (typeof window !== 'undefined' && typeof window.currentPlayerRoom === 'string'
+        && window.currentPlayerRoom !== '') {
+      this.handleRoomEntered(window.currentPlayerRoom);
+    }
   }
   
   /**
@@ -625,6 +653,58 @@ export class ObjectivesManager {
   }
 
   /**
+   * Await one state sync for ordering only, swallowing a rejection. The enter_room
+   * check passes on durable server state regardless of this sync, so a rejecting or
+   * absent sync must never block or fail the completion POST (plan section 8.3).
+   */
+  async safeSyncOnce() {
+    try {
+      await window.stateSync?.sync?.();
+    } catch (_e) {
+      // Awaited for ordering, never for success.
+    }
+  }
+
+  /**
+   * Add an enter_room completion that failed for a transient or network reason to
+   * the bounded re-send queue (plan section 8.3). Keyed by task id (a Set), so
+   * re-queuing is a no-op and the queue cannot grow per attempt. Only enter_room
+   * tasks enter it; every other task keeps its current behaviour.
+   */
+  enqueueEnterRoom(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || task.type !== 'enter_room') return;
+    this.enterRoomQueue.add(taskId);
+  }
+
+  /**
+   * Re-post queued enter_room completions. Fired from the browser `online` event
+   * (the reconnect trigger) and, opportunistically, after the syncs this manager
+   * itself awaits (the enter_room pre-flush and the inline retryable re-sync).
+   * Removes each entry, then re-runs the full this.completeTask(taskId) path, so a
+   * drained completion that ends a mission still fires the end-screen and
+   * conclude-race handling. Only a fresh transient or thrown failure re-adds the id
+   * (the feed rule in completeTask), so a drained entry that comes back success or
+   * any not-transient refusal is dropped and cannot retry forever; the server's
+   * already-completed branch makes a duplicate a no-op. Re-entry guarded so a
+   * drain-triggered sync does not recurse into another drain.
+   */
+  async drainEnterRoomQueue() {
+    if (this._drainingEnterRoomQueue) return;
+    if (!this.enterRoomQueue || this.enterRoomQueue.size === 0) return;
+    this._drainingEnterRoomQueue = true;
+    try {
+      const ids = Array.from(this.enterRoomQueue);
+      for (const taskId of ids) {
+        this.enterRoomQueue.delete(taskId);
+        await this.completeTask(taskId);
+      }
+    } finally {
+      this._drainingEnterRoomQueue = false;
+    }
+  }
+
+  /**
    * Re-run pickups that arrived while a collect task was 'completing' and the
    * completion was then rejected/reverted. No-op if nothing was queued.
    */
@@ -683,13 +763,52 @@ export class ObjectivesManager {
 
     // Server validation
     try {
-      const response = await this.serverCompleteTaskWithRetry(taskId);
+      // enter_room pre-flush (plan section 8.3): order the soft currentRoom signal
+      // before the completion POST so the server's player_reached_room? sees the
+      // latest synced room. Awaited for ordering only (safeSyncOnce swallows a
+      // rejection); the durable unlockedRooms/npcRouteRooms write carries the check,
+      // so a rejecting, aborted or absent sync never blocks the POST. Also drain any
+      // queued enter_room completions while we are flushing.
+      if (task.type === 'enter_room') {
+        await this.safeSyncOnce();
+        this.drainEnterRoomQueue();
+      }
+
+      let response = await this.serverCompleteTaskWithRetry(taskId);
+
+      // Inline retryable re-post (plan section 8.3): a `retryable` refusal
+      // ('Room not reached') means the durable membership may not have reached the
+      // completion yet (an honest ordering gap) or the room was never reached (a
+      // forge). Re-sync once (for ordering, never for success) and re-post once.
+      // An honest gap self-heals; a forge is refused again and surfaced below. A
+      // transient re-post result (a network blip during that single re-post) falls
+      // through to the transient path below (revert and enqueue), not a hard
+      // surface (R9 minor 1).
+      if (!response.success && response.retryable) {
+        await this.safeSyncOnce();
+        this.drainEnterRoomQueue();
+        response = await this.serverCompleteTask(taskId);
+      }
+
       if (!response.success) {
-        console.warn(`⚠️ Server rejected task completion: ${response.error}`);
         task.status = 'active'; // Revert on server rejection
         this.replayPendingPickups(task);
-        if (window.gameAlert) {
-          window.gameAlert(response.error || 'Not yet…', 'warning', 'Objective Blocked');
+        if (task.type === 'enter_room' && response.transient) {
+          // Offline, a 5xx, an exhausted retry, or an inline retryable re-post that
+          // then dropped offline (R9 minor 1). Queue it: the browser `online` event
+          // and the next awaited sync re-post it, and the durable unlockedRooms
+          // write persists across the gap, so the re-post passes once the network
+          // returns. The honest player is never stranded, so no hard block here.
+          this.enqueueEnterRoom(taskId);
+          if (window.gameAlert) {
+            window.gameAlert('Could not save that objective yet. It will retry -- keep playing.',
+                             'warning', 'Sync Pending');
+          }
+        } else {
+          console.warn(`⚠️ Server rejected task completion: ${response.error}`);
+          if (window.gameAlert) {
+            window.gameAlert(response.error || 'Not yet…', 'warning', 'Objective Blocked');
+          }
         }
         return;
       }
@@ -724,6 +843,12 @@ export class ObjectivesManager {
       console.error('Failed to sync task completion with server:', error);
       task.status = 'active';
       this.replayPendingPickups(task);
+      // An enter_room completion that threw (the second failure feed, plan
+      // section 8.3) also enters the re-send queue, so it re-posts on reconnect or
+      // the next awaited sync rather than waiting for the next boundary crossing.
+      if (task.type === 'enter_room') {
+        this.enqueueEnterRoom(taskId);
+      }
       if (window.gameAlert) {
         window.gameAlert('Could not save that objective. It will retry -- keep playing.',
                          'error', 'Sync Error');
