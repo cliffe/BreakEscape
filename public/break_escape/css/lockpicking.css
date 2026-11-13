@@ -155,7 +155,8 @@
     #phaser-game-container {
         max-width: 100%;
         width: 100%;
-        margin: 10px auto;
+        /* clear of the X in the top-right corner (R2 m2) */
+        margin: 32px auto 10px;
     }
 
     /* Compact the item info strip so more room is given to the canvas */

@@ -26,10 +26,12 @@
 .ap-panel-wrap {
     background: #080e1b;
     border: 2px solid #2a3a5a;
-    width: 460px;
-    /* Never narrower or shorter than its native size: the labels are 8px pixel text drawn in
-       the SVG, so the panel scrolls in .ap-game-container instead of scaling them down
-       (UI shell review M5) */
+    width: 100%;
+    max-width: 460px;
+    /* Text is never scaled: the labels are 8px pixel text drawn in the SVG. On a phone the
+       panel takes the screen's width instead of keeping 460px, and the SVG (1:1,
+       preserveAspectRatio slice) loses only its empty right-hand end, so nothing scrolls
+       sideways (UI shell reviews M5, R2 M2) */
     flex: 0 0 auto;
     box-sizing: border-box;
     display: flex;
@@ -79,7 +81,8 @@
     /* Drawn at the viewBox size (1:1, set in the markup), never scaled */
     flex: 0 0 auto;
     align-self: center;
-    max-width: none;
+    width: 100%;
+    max-width: 420px;
 }
 
 /* Colour transitions on the lamps */

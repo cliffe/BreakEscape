@@ -100,6 +100,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const { MinigameScene } = await import(pathToFileURL(join(root, 'js/minigames/framework/base-minigame.js')).href);
+const setVw = (w) => Object.defineProperty(document.documentElement, 'clientWidth', { value: w, configurable: true });
 const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
 
 test('the default X is fixed to the window, left of the shell scrollbar (M1)', () => {
@@ -121,6 +122,7 @@ test('placeCloseButton works in window coordinates: a scrolled shell or frame mo
     class Framed extends MinigameScene { static closeInsideFrame = true; }
     const mg = new Framed(document.getElementById('mg'), { title: 'Box' });
     mg.init();
+    setVw(800);
     mg.container.getBoundingClientRect = () => rect(0, 0, 800, 600);
     // The frame starts 300px above the window and 120px left of it: scrolled down and sideways
     mg.gameContainer.getBoundingClientRect = () => rect(-120, -300, 600, 1000);
@@ -139,12 +141,47 @@ test('placeCloseButton keeps the X inside the window when the frame runs past it
     class Framed extends MinigameScene { static closeInsideFrame = true; }
     const mg = new Framed(document.getElementById('mg'), { title: 'Box' });
     mg.init();
+    setVw(390);
     mg.container.getBoundingClientRect = () => rect(0, 0, 390, 844);
     mg.gameContainer.getBoundingClientRect = () => rect(-300, 10, 900, 300);
     mg.placeCloseButton();
     const btn = document.getElementById('minigame-close');
     assert.equal(btn.style.top, '14px');
     assert.equal(btn.style.right, '4px', 'the visible right edge of the shell, less the gap');
+});
+
+test('placeCloseButton measures from the window when the shell is a narrow panel (R2 B1)', () => {
+    document.body.innerHTML = '<div id="mg"></div>';
+    class Framed extends MinigameScene { static closeInsideFrame = true; }
+    const mg = new Framed(document.getElementById('mg'), { title: 'Box' });
+    mg.init();
+    // A 380px panel at the left of a 1400px window, as the scanners are
+    setVw(1400);
+    mg.container.getBoundingClientRect = () => rect(0, 60, 380, 400);
+    mg.gameContainer.getBoundingClientRect = () => rect(2, 70, 376, 380);
+    mg.placeCloseButton();
+    const btn = document.getElementById('minigame-close');
+    // the frame's right edge is at 378: right = 1400 - 378 + 4, not 8
+    assert.equal(btn.style.right, '1026px');
+});
+
+test('a closeInsideFrame X follows a scroll inside the game area, not only on the shell (R2 m1)', () => {
+    document.body.innerHTML = '<div id="mg"></div>';
+    class Framed extends MinigameScene { static closeInsideFrame = true; }
+    const mg = new Framed(document.getElementById('mg'), { title: 'Box' });
+    mg.init();
+    let placed = 0;
+    mg.placeCloseButton = () => { placed++; };
+    mg.start();
+    const before = placed;
+    const inner = document.createElement('div');
+    mg.gameContainer.appendChild(inner);
+    inner.dispatchEvent(new window.Event('scroll'));
+    assert.ok(placed > before, 'a scroller inside the shell re-places the X (capture phase)');
+    mg.cleanup();
+    const after = placed;
+    inner.dispatchEvent(new window.Event('scroll'));
+    assert.equal(placed, after, 'the listener is removed on cleanup');
 });
 
 test('a closeInsideFrame scene re-places its X when the shell scrolls', () => {
@@ -215,6 +252,12 @@ test('alarm panel: scrolls on a short window, stepped lamps, 8px labels, X in th
     assert.equal(g['justify-content'], 'safe center');
     assert.equal(rule(c, '.ap-panel-wrap')['max-height'], undefined, 'never scaled or shrunk below its native size (M5)');
     assert.equal(rule(c, '.ap-panel-wrap').flex, '0 0 auto');
+    // R2 M2: the panel takes a phone's width at 1:1 instead of scrolling sideways; the SVG keeps
+    // its scale (slice from the top left) and only loses empty space on the right
+    assert.equal(rule(c, '.ap-panel-wrap').width, '100%');
+    assert.equal(rule(c, '.ap-panel-wrap')['max-width'], '460px');
+    assert.equal(rule(c, '.ap-svg')['max-width'], '420px');
+    assert.match(src('minigames/alarm-panel/alarm-panel-minigame.js'), /preserveAspectRatio="xMinYMin slice"/);
     assert.match(src('minigames/alarm-panel/alarm-panel-minigame.js'), /<svg class="ap-svg" width="\$\{SVG_W\}" height="\$\{SVG_H\}"/);
     assert.equal(rule(c, '.ap-label')['font-size'], '8px');
     assert.equal(rule(c, '.ap-row-sep')['stroke-width'], '2');
@@ -326,6 +369,15 @@ test('notes: the page scroll box starts below the X, so its scrollbar never runs
     const r = rule(css('notes.css'), '.notes-minigame-content-area');
     assert.equal(r.top, '48px');
     assert.match(r.height, /calc\(90% - 48px\)/);
+});
+
+test('notes: the short-landscape rule keeps the 48px offset in its height and drops the top padding (R2 M1)', () => {
+    const c = css('notes.css');
+    const m = c.match(/@media \(orientation: landscape\) and \(max-height: 640px\) \{([\s\S]*?)\n\}\n/);
+    assert.ok(m, 'short-landscape block found');
+    const line = m[1].match(/\.notes-minigame-content-area \{([^}]*)\}/)[1];
+    assert.match(line, /height: calc\(94% - 48px\)/);
+    assert.match(line, /padding: 0 /, 'no top padding on top of the 48px offset');
 });
 
 test('lockpicking on phones: the canvas box has the canvas shape and the strip follows it (M4)', () => {

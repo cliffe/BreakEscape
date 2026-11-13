@@ -293,3 +293,95 @@ Handover: nothing in progress. Open: consoles owners (m5, m7 and the breaches ab
 timing and dial `scrollIntoView` tests; a before/after re-shot of lockpicking at 390x844 to see the
 strip under the lock (checked by CSS and the numbers only). The keyless server on :3450 is still
 running (tmp/pids/server-3450.pid), left for the orchestrator.
+
+## Review round 2 fixes (2026-11-13)
+
+Review: docs/achitechture/UI_SHELL_REVIEW_R2.md (at 73a4557fe). Paths are under public/break_escape/
+unless they start with tools/, test/ or docs/. Game 3084 on the keyless server :3450, headless
+shell with scrollbars shown.
+
+| Finding | Outcome |
+|---|---|
+| B1 scanner X invisible and unclickable | Fixed. `placeCloseButton` (js/minigames/framework/base-minigame.js) now measures `right` from the window (`document.documentElement.clientWidth`), because the X is `position: fixed`; the clamp to the shell's visible edge uses the same base. Live, shell-x-check at four sizes: biometrics, BLE scanner and Bluetooth scanner all pass the in-frame and `elementFromPoint` tests (biometrics 1400x1000 X now at 312,78, inside the panel; before 1362,78). Shot biometrics-1400x1000.png, biometrics-390x844.png. |
+| M1 notes text box past the page | Fixed. css/notes.css short-landscape rule: `height: calc(94% - 48px)` and `padding: 0 9% 9% 17%` (no top padding). Live: text box bottom against notepad bottom 382 / 406 at 915x412, 558 / 594 at 800x600, 361 / 384 at 844x390; the audit no longer reports notes `overflow` at any size. |
+| M2 alarm panel on phones | Fixed without scaling. `.ap-panel-wrap` is `width: 100%; max-width: 460px`, `.ap-svg` is `width: 100%; max-width: 420px`, and the SVG has `preserveAspectRatio="xMinYMin slice"` with its height attribute kept, so the scale stays 1 and only the empty right-hand end is cut. At 390x844 with four lamps the panel is 358px wide, no sideways scroll, the X inside the frame (338-368 against the border at 373). The footer wraps. A very long status text on a lamp row would now be cut at the panel's edge rather than scroll: none of the current missions has one (not checked beyond the test scenarios). Shot alarm-panel-390x844.png, alarm-panel-1400x1000.png. |
+| m1 X follows scrolls inside the game area | Fixed. The scroll listener is registered on the shell in the capture phase (scroll does not bubble); `addEventListener` in the framework takes an options argument and removes the listener with the same options on cleanup. Unit test (a scroll on a child re-places the X; none after cleanup). |
+| m2 lockpicking X over the canvas (phones) | Fixed, simple: portrait phone `margin: 32px auto 10px` on `#phaser-game-container` (css/lockpicking.css). Not re-shot. |
+| m3 shell-x-check bites B1 | Done (below). |
+| m4 `--strict` | Done: `--strict` also fails on `x-on-frame` and `overflow`; the summary line prints both counts. |
+| Wiring | Done (below). |
+
+### shell-x-check changes (tools/playtest/shell-x-check.mjs)
+
+- For scenes that put the X in a frame (class `minigame-close-in-frame`): the X's box must be inside
+  the frame's inner rect (`closeAnchor()`, border excluded), both before and after scrolling.
+- For every scene: `document.elementFromPoint` at the X's centre must return the X (or a child): it
+  is visible, on top and clickable.
+- Scrolls every scroll box to the end in both axes (was down only).
+- Default sizes now include 1400x1000; phone chat is checked (it is no longer skipped); params added
+  for phone chat, BLE scanner, Bluetooth scanner and the alarm panel (four lamps).
+- Proof it fails on the old code: run against the unfixed B1 code, `--scenes
+  biometrics,ble-scanner,bluetooth-scanner,notes` gave 12 FAIL lines (every scanner at every size,
+  for example "biometrics 1400x1000: X not inside its frame (X 1362,78-1392,108; frame inner
+  4,74-346,294); X not clickable: elementFromPoint at its centre returns canvas"; at 390x844 the X
+  straddled the border, 352-382 against 378) and `SHELL-X-CHECK 16 checked, 12 failed`. After the
+  fix the same scenes pass, and the full run reports 0 failed (see Results).
+- ui-rules-audit.mjs also got the alarm panel's four-lamp params, so it audits the real panel.
+
+### Merge batch: how to run the shell X check
+
+test/js/shell-x-check.test.mjs now FAILS under `MERGE_BATCH=1` when `SHELL_X_PORT` or
+`SHELL_X_GAME` is unset (message says how to set them). Without `MERGE_BATCH=1` it still skips.
+The orchestrator (or integrator) needs, before `MERGE_BATCH=1 bin/test-js -j 3`:
+
+    # 1. a keyless server serving the tree being merged (a free port, here 3451; the keyless
+    #    script is hard-wired to :3001, so start it by hand the same way)
+    cd <merge tree>
+    mkdir -p tmp
+    env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true nohup bundle exec rails server \
+        -b 127.0.0.1 -p 3451 -P tmp/pids/server-3451.pid > tmp/keyless-3451.log 2>&1 &
+    #    or, on :3001: tools/playtest/start-keyless-server.sh
+    # 2. a game: open http://127.0.0.1:3451/break_escape/missions in a browser (or drive
+    #    tools/playtest/session-start.sh), start any mission with a title-only start such as the
+    #    test_seating scenario, and read the game id from the URL /break_escape/games/<id>
+    #    (a POST /break_escape/games with mission_id also makes one; it needs the CSRF token)
+    # 3. the variables, then the suite
+    export PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+    export SHELL_X_PORT=3451 SHELL_X_GAME=<game id>
+    MERGE_BATCH=1 bin/test-js -j 3
+    # the check on its own (about 10 minutes for every scene at four sizes):
+    node tools/playtest/shell-x-check.mjs --port 3451 --game <game id>
+    # and the audit gate:
+    node tools/playtest/ui-rules-audit.mjs --port 3451 --game <game id> --all --strict --skip person-chat,network-view \
+        --sizes 1400x1000,800x600,915x412,390x844
+
+`SHELL_X_SCENES=a,b` narrows the check. Stop the server afterwards by its pid file. The audit gate
+still exits 1 for the consoles' own breaches (list below), so a merge batch compares its
+SUMMARY line with this section rather than expecting a clean exit.
+
+### Results (four sizes: 1400x1000, 800x600, 915x412, 390x844)
+
+| Run | window-offscreen | frame-offscreen | clipped | x-on-frame | overflow | `--strict` |
+|---|---|---|---|---|---|---|
+| R2 review, 73a4557fe | 0 (0) | 5 (5) | 23 (8) | 12 (not counted) | not counted | exit 1 |
+| this tip | 0 (0) | 5 (5) | 23 (8) | 0 (0) | 29 (12) | exit 1, 0 not audited |
+
+`overflow` is now counted for every surface, so 29 includes breaches in other scenes that were never
+tallied before; none is notes or a scanner. They are: backup recovery (content of its scrolling
+shell, all three small sizes), claims management, ESD pushbutton, EHR terminal, coverage decision
+form, SIS config threshold and network architecture (consoles' own, already in the earlier lists).
+frame-offscreen 5 is the same set as the last round plus the alarm panel at 915x412, now audited
+with four lamps: the panel (440px tall) scrolls in its game area on a short window by design (A41).
+Clipped is unchanged (command board, SCADA historian, SIEM, ransomware display, drug library,
+network segmentation map, title screen: consoles' own).
+
+shell-x-check, all registered scenes at four sizes (1400x1000, 800x600, 915x412, 390x844): 164 surface-sizes checked, 0 failed, exit 0 (the R2 tip run reported 160 and passed the scanners wrongly).
+
+Tests run (no full suites, per the rule): every test file that imports or names a changed module
+(137 files, 1977 pass); rfid-door-screen failed once under `node --test` (a test-runner message
+deserialisation error, as in earlier rounds) and passes alone under plain `node` (46). New tests:
+placeCloseButton from a narrow panel (B1), scroll inside the game area and removal on cleanup (m1),
+notes short-landscape rule (M1), alarm panel width rules (M2).
+
+Open: a before/after shot of lockpicking at 390x844 with the new top margin; the consoles' breaches
+above; per-kind baseline delta for `--strict` (not built). The :3450 server is still running.

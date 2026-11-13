@@ -150,9 +150,12 @@ export class MinigameScene {
         const scrollbar = Math.max(0, (frame.offsetWidth || 0) - (frame.clientWidth || 0) - borders);
         // The visible edge of the shell, less its own scrollbar
         const edge = c.right - shellBar;
-        const right = c.right - Math.min(r.right, edge) + (parseFloat(cs.borderRightWidth) || 0) + scrollbar + gap;
+        // `right` of a fixed box counts from the window's right edge, not the shell's (R2 B1:
+        // a shell that is a narrow panel, as the scanners are, put the X at the window edge)
+        const vw = document.documentElement.clientWidth || window.innerWidth;
+        const right = vw - Math.min(r.right, edge) + (parseFloat(cs.borderRightWidth) || 0) + scrollbar + gap;
         btn.style.top = `${Math.round(top)}px`;
-        btn.style.right = `${Math.round(Math.max(right, shellBar + gap))}px`;
+        btn.style.right = `${Math.round(Math.max(right, vw - c.right + shellBar + gap))}px`;
         btn.classList.add('minigame-close-in-frame');
     }
 
@@ -185,7 +188,9 @@ export class MinigameScene {
         raf(place);
         this.addEventListener(window, 'resize', place);
         // A scrolled shell keeps the X at the visible top of the frame
-        if (this.container?.addEventListener) this.addEventListener(this.container, 'scroll', place);
+        // (scroll does not bubble, so listen in the capture phase: a game area that is the
+        // scroller inside the shell moves the frame too, R2 m1)
+        if (this.container?.addEventListener) this.addEventListener(this.container, 'scroll', place, { capture: true, passive: true });
         if (typeof window.ResizeObserver === 'function') {
             const frame = this.closeAnchor?.();
             if (frame) {
@@ -258,9 +263,9 @@ export class MinigameScene {
         }
     }
     
-    addEventListener(element, eventType, handler) {
-        element.addEventListener(eventType, handler);
-        this._eventListeners.push({ element, eventType, handler });
+    addEventListener(element, eventType, handler, options) {
+        element.addEventListener(eventType, handler, options);
+        this._eventListeners.push({ element, eventType, handler, options });
     }
     
     showSuccess(message, autoClose = true, duration = 2000) {
@@ -382,8 +387,8 @@ export class MinigameScene {
     }
 
     cleanup() {
-        this._eventListeners.forEach(({ element, eventType, handler }) => {
-            element.removeEventListener(eventType, handler);
+        this._eventListeners.forEach(({ element, eventType, handler, options }) => {
+            element.removeEventListener(eventType, handler, options);
         });
         this._eventListeners = [];
         

@@ -107,7 +107,7 @@ export class AlarmPanelMinigame extends MinigameScene {
     <span class="ap-panel-title">${panelTitle}</span>
     <span class="ap-live-dot" title="Live — updates on global variable changes"></span>
   </div>
-  <svg class="ap-svg" width="${SVG_W}" height="${SVG_H}" viewBox="0 0 ${SVG_W} ${SVG_H}" xmlns="http://www.w3.org/2000/svg">
+  <svg class="ap-svg" width="${SVG_W}" height="${SVG_H}" viewBox="0 0 ${SVG_W} ${SVG_H}" preserveAspectRatio="xMinYMin slice" xmlns="http://www.w3.org/2000/svg">
     ${rows}
   </svg>
   <div class="ap-footer">${footer}</div>

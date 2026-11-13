@@ -205,6 +205,8 @@ const BUILTIN_PARAMS = {
     // are reported as not audited (give --skip person-chat,network-view to allow it, or a --surfaces entry)
     'container': { title: 'Container', containerItem: { name: 'Locker', scenarioData: { name: 'Locker', contents: [] } }, contents: [] },
     'phone-chat': { title: 'Phone', npcId: 'test_npc' },
+    // four lamp rows, so the panel has its real width and height (R2 M2)
+    'alarm-panel': { lockable: { scenarioData: { minigameData: { lamps: [{ label: 'FRONT DOOR', offStatus: 'CLOSED' }, { label: 'FIRE ZONE 2', offStatus: 'CLEAR' }, { label: 'MAINS POWER', offStatus: 'NORMAL' }, { label: 'SERVER ROOM NETWORK', offStatus: 'LINK UP' }] } } } },
     'ble-scanner': { title: 'BLE scanner', devices: [{ name: 'Printer', mac: 'AA:BB:CC:00:11:22', rssi: -48 }] },
     'bluetooth-scanner': { title: 'Bluetooth scanner', devices: [{ name: 'Printer', mac: 'AA:BB:CC:00:11:22', rssi: -48 }] }
 };
@@ -263,8 +265,8 @@ async function main() {
     }
     await browser.close();
     // Summary: the shell and frame checks, counted over every surface and size
-    const counts = { 'window-offscreen': 0, 'frame-offscreen': 0, clipped: 0 };
-    const where = { 'window-offscreen': new Set(), 'frame-offscreen': new Set(), clipped: new Set() };
+    const counts = { 'window-offscreen': 0, 'frame-offscreen': 0, clipped: 0, 'x-on-frame': 0, overflow: 0 };
+    const where = { 'window-offscreen': new Set(), 'frame-offscreen': new Set(), clipped: new Set(), 'x-on-frame': new Set(), overflow: new Set() };
     for (const [name, bySize] of Object.entries(report)) {
         for (const [size, r] of Object.entries(bySize)) {
             for (const b of r.breaches) {
@@ -274,9 +276,9 @@ async function main() {
             }
         }
     }
-    console.log(`SUMMARY window-offscreen ${counts['window-offscreen']} (${where['window-offscreen'].size} surface-sizes), frame-offscreen ${counts['frame-offscreen']} (${where['frame-offscreen'].size}), clipped ${counts.clipped} (${where.clipped.size})`);
+    console.log(`SUMMARY window-offscreen ${counts['window-offscreen']} (${where['window-offscreen'].size} surface-sizes), frame-offscreen ${counts['frame-offscreen']} (${where['frame-offscreen'].size}), clipped ${counts.clipped} (${where.clipped.size}), x-on-frame ${counts['x-on-frame']} (${where['x-on-frame'].size}), overflow ${counts.overflow} (${where.overflow.size})`);
     if (opt('json', null)) writeFileSync(opt('json'), JSON.stringify(report, null, 2));
-    const fits = counts['window-offscreen'] + counts['frame-offscreen'] + counts.clipped;
+    const fits = counts['window-offscreen'] + counts['frame-offscreen'] + counts.clipped + counts['x-on-frame'] + counts.overflow;
     // A scene that did not open (or threw on open) was never audited, so "clean" means nothing for
     // it: --strict counts it as a failure unless it is on --skip (review m4)
     const skip = new Set((opt('skip', '') || '').split(',').filter(Boolean));

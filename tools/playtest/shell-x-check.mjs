@@ -4,6 +4,9 @@
 //   - the close X's box is wholly inside the viewport (M1, M2),
 //   - the X does not sit on the shell's own scrollbar or on the scrollbar of the box under it
 //     (M3: the notes page),
+//   - for scenes that put the X in a frame, the X's box is inside that frame's border (R2 B1), and
+//   - document.elementFromPoint at the X's centre returns the X: it is visible, on top and can be
+//     clicked (R2 B1: a clip-path cut it away),
 // and, for the PIN pad, that showing a wrapped wrong-code message does not move the keys (m2).
 //
 //   node tools/playtest/shell-x-check.mjs --port 3450 --game 3084 [--scenes a,b] [--sizes 915x412,800x600,390x844]
@@ -19,7 +22,7 @@ const argv = process.argv.slice(2);
 const opt = (n, d) => { const i = argv.indexOf(`--${n}`); return i >= 0 ? argv[i + 1] : d; };
 const PORT = opt('port', '3001');
 const GID = opt('game', null);
-const SIZES = opt('sizes', '915x412,800x600,390x844').split(',').map(s => s.split('x').map(Number));
+const SIZES = opt('sizes', '1400x1000,915x412,800x600,390x844').split(',').map(s => s.split('x').map(Number));
 const IS_MAIN = import.meta.url === pathToFileURL(process.argv[1] || '').href;
 
 const LONG = Array.from({ length: 14 }, (_, i) => `${i + 1}. Rules of engagement: stay inside the agreed scope, log every action with a time, and stop and report if you find personal data you were not cleared to see.`).join('\n');
@@ -28,7 +31,11 @@ export const PARAMS = {
     notes: { title: 'Rules of engagement', noteContent: LONG, observationText: 'Pinned by the door.' },
     'text-file': { title: 'notes.txt', fileName: 'notes.txt', fileContent: 'Line one.\nLine two.', content: 'Line one.\nLine two.' },
     combination: { title: 'Padlock', combination: [7, 21, 39], dials: 3 },
-    cryptex: { title: 'Cryptex', password: 'CIPHER', wheels: 6 }
+    cryptex: { title: 'Cryptex', password: 'CIPHER', wheels: 6 },
+    'phone-chat': { title: 'Phone', npcId: 'test_npc' },
+    'alarm-panel': { lockable: { scenarioData: { minigameData: { lamps: [{ label: 'FRONT DOOR', offStatus: 'CLOSED' }, { label: 'FIRE ZONE 2', offStatus: 'CLEAR' }, { label: 'MAINS POWER', offStatus: 'NORMAL' }, { label: 'SERVER ROOM NETWORK', offStatus: 'LINK UP' }] } } } },
+    'ble-scanner': { title: 'BLE scanner', devices: [{ name: 'Printer', mac: 'AA:BB:CC:00:11:22', rssi: -48 }] },
+    'bluetooth-scanner': { title: 'Bluetooth scanner', devices: [{ name: 'Printer', mac: 'AA:BB:CC:00:11:22', rssi: -48 }] }
 };
 
 // Pure check, run in the page: where is the X, and is it clear of the scrollbars?
@@ -44,12 +51,25 @@ export function xReport() {
         for (const el of mg.querySelectorAll('*')) {
             const cs = getComputedStyle(el);
             if (/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight) el.scrollTop = el.scrollHeight;
+            if (/(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth) el.scrollLeft = el.scrollWidth;
         }
     };
     const measure = (label) => {
         const b = x.getBoundingClientRect();
         const issues = [];
         if (b.left < 0 || b.top < 0 || b.right > vw + 0.5 || b.bottom > vh + 0.5) issues.push(`X outside the viewport (${Math.round(b.left)},${Math.round(b.top)}-${Math.round(b.right)},${Math.round(b.bottom)} in ${vw}x${vh})`);
+        // B1: inside the frame it belongs to (not on or past the border), and clickable
+        if (x.classList.contains('minigame-close-in-frame')) {
+            const frame = window.MinigameFramework?.currentMinigame?.closeAnchor?.();
+            if (frame) {
+                const f = frame.getBoundingClientRect();
+                const l = f.left + frame.clientLeft, t = f.top + frame.clientTop;
+                const rr = l + frame.clientWidth, bb = t + frame.clientHeight;
+                if (b.left < l - 0.5 || b.top < t - 0.5 || b.right > rr + 0.5 || b.bottom > bb + 0.5) issues.push(`X not inside its frame (X ${Math.round(b.left)},${Math.round(b.top)}-${Math.round(b.right)},${Math.round(b.bottom)}; frame inner ${Math.round(l)},${Math.round(t)}-${Math.round(rr)},${Math.round(bb)})`);
+            }
+        }
+        const hit = document.elementFromPoint((b.left + b.right) / 2, (b.top + b.bottom) / 2);
+        if (!hit || !(hit === x || x.contains(hit))) issues.push(`X not clickable: elementFromPoint at its centre returns ${hit ? hit.tagName.toLowerCase() + '.' + String(hit.className).split(' ')[0] : 'nothing'}`);
         const barW = Math.max(0, mg.offsetWidth - mg.clientWidth);
         if (barW && b.right > vw - barW + 0.5) issues.push(`X over the shell scrollbar (right ${Math.round(b.right)}, bar from ${vw - barW})`);
         // any scroll box under the X whose own scrollbar the X covers
@@ -86,7 +106,7 @@ async function main() {
     await page.waitForTimeout(2000);
     const registered = await page.evaluate(() => Object.keys(window.MinigameFramework.registeredScenes || {}));
     const scenes = opt('scenes', null)?.split(',') || registered;
-    const skipped = new Set((opt('skip', 'person-chat,network-view,phone-chat') || '').split(','));
+    const skipped = new Set((opt('skip', 'person-chat,network-view') || '').split(','));
     let fails = 0, checked = 0;
     const openScene = async (s) => {
         await page.evaluate(async ({ s, p }) => {
