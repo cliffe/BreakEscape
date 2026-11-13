@@ -8,6 +8,13 @@
 //   shadow     a box-shadow, text-shadow or drop-shadow filter with a blur radius
 //   gradient   a CSS gradient in background-image or border-image
 //   font       a text element whose first font family is not GNF, Press Start 2P or VT323
+//   size       pixel-font text at a fractional size, or VT323 under 16px (its legible minimum)
+//   cancel     a Cancel button beside the X (the X closes a minigame; only the password
+//              screen keeps its own, owned by slice 2a)
+//   canvas     a Phaser canvas scene drawn smoothed, or canvas text in a non-pixel font, at a
+//              fractional size, or VT323 under 16px
+// Once per run it also checks that VT323 really loaded from the self-hosted file (a font
+// name in the computed style says nothing about the face that was drawn): fontsLoaded.
 // Diegetic pages (an email body, a web page inside a browser) may mark their root with
 // data-diegetic; inside one only the font check applies.
 //
@@ -33,6 +40,12 @@ const JSON_OUT = opt('json', null);
 const SHOTS = opt('shots', null);
 const TAG = opt('tag', 'shot');
 const SIZES = opt('sizes', '1400x1000').split(',').map(s => s.split('x').map(Number));
+// --names unlock: shots of scenes on the UX review page also get the page's id in the name
+const REVIEW_IDS = {
+    'container 915x412': 'unlock-43', 'password 915x412': 'unlock-44', 'pin 915x412': 'unlock-47',
+    'text-file 915x412': 'unlock-48', 'container 800x600': 'unlock-52', 'password 800x600': 'unlock-53',
+    'combination 800x600': 'unlock-54', 'cryptex 800x600': 'unlock-55', 'pin 800x600': 'unlock-56'
+};
 
 // Slice 7 scope, worst first (UNLOCK_GAPS_BUILD_LOG.md minigame sweep). The framework shell
 // is checked in every scene, so it is not a scene of its own.
@@ -59,6 +72,11 @@ const PARAMS = {
         content: 'Line one of the file.\nLine two of the file.\n\nA last line.'
     },
     'notes': { title: 'Note', noteContent: 'A short note to read.', observationText: 'Seen on the desk.' },
+    'infusion-pump': { title: 'Infusion pump' },
+    'ncsc-brief': { title: 'NCSC Attribution Brief' },
+    'combination': { title: 'Padlock', requiredCombination: '1234' },
+    'cryptex': { title: 'Cryptex', requiredWord: 'CODE' },
+    'password': { title: 'Workstation', correctPassword: 'secret', showHint: true, hintText: 'A hint', showKeyboard: false },
     'network-architecture': {
         title: 'Network architecture',
         zones: [{ id: 'corp', label: 'Corporate', x: 20, y: 20, w: 300, h: 200 }],
@@ -66,6 +84,39 @@ const PARAMS = {
         lines: [{ from: 'fw', to: 'srv' }]
     }
 };
+
+// Scenes that draw only a gate or an empty list until the game holds something: seed the
+// working state before the start (pre) or drive the scene into it after (post), so the sweep
+// and the shots cover the screen players use (review R1 M2).
+const BLE = [['Smart Lock', 'AA:BB:CC:00:11:33', ['180f', 'fff0'], true], ['Office Printer', 'AA:BB:CC:00:11:22', ['1800'], false]];
+const SETUP = {
+    'infusion-pump': { pre: () => { window.gameState.globalVariables.paper_charts_collected = true; } },
+    'ncsc-brief': {
+        pre: () => { window.gameState.globalVariables.warranty_checklist_complete = true; },
+        post: () => { document.querySelector('#ncsc-open-btn')?.click(); return !!document.querySelector('.ncsc-content, .ncsc-brief-content, .ncsc-section'); }
+    },
+    'ble-scanner': {
+        post: (devs) => {
+            const m = window.MinigameFramework.currentMinigame;
+            for (const [n, mac, u, near] of devs) m.addBleDevice(n, mac, u, near, null);
+            m.updatePanel?.(); m.updateBlePanel?.(); m.renderDevices?.();
+            return m.bleDevices.length;
+        },
+        arg: BLE
+    },
+    'bluetooth-scanner': {
+        post: () => {
+            const m = window.MinigameFramework.currentMinigame;
+            m.addBluetoothDevice('Phone', 'AA:BB:CC:00:11:44', 'Smartphone', true);
+            m.addBluetoothDevice('Headset', 'AA:BB:CC:00:11:55', 'Audio', false);
+            m.updateBluetoothPanel?.();
+            return m.bluetoothDevices.length;
+        }
+    },
+    'biometrics': { pre: () => { window.gameState.biometricSamples = [{ owner: 'Alice Chen', quality: 0.92, sourceName: 'Coffee mug' }, { owner: 'Bob Okafor', quality: 0.55, sourceName: 'Door handle' }]; } },
+    'fingerprint-reader': { pre: () => { window.gameState.biometricSamples = [{ owner: 'Alice Chen', quality: 0.92, sourceName: 'Coffee mug' }, { owner: 'Bob Okafor', quality: 0.55, sourceName: 'Door handle' }]; } }
+};
+const KEEPS_CANCEL = ['password'];
 
 // --params file.json: { scene: params } taken from a real scenario object (its minigameData),
 // for scenes that draw little without one (forensic data platform, network architecture).
@@ -103,7 +154,9 @@ function hardGradient(fn) {
 }
 
 async function startScene(page, scene, params) {
-    return page.evaluate(async ({ scene, params }) => {
+    const setup = SETUP[scene] || {};
+    if (setup.pre) await page.evaluate(setup.pre);
+    const res = await page.evaluate(async ({ scene, params }) => {
         const mf = window.MinigameFramework;
         try { mf.forceCloseMinigame?.(); } catch { /* none open */ }
         document.querySelectorAll('.minigame-container').forEach(n => n.remove());
@@ -117,10 +170,67 @@ async function startScene(page, scene, params) {
         window.removeEventListener('unhandledrejection', onErr);
         return { errors, open: !!document.querySelector('.minigame-container') };
     }, { scene, params });
+    if (setup.post) {
+        try { res.setup = await page.evaluate(setup.post, setup.arg); } catch (e) { res.errors.push(`setup: ${e.message}`); }
+        await page.waitForTimeout(800);
+    }
+    return res;
 }
 
-async function checkScene(page) {
-    return page.evaluate(({ ALLOWED, hardSrc }) => {
+// VT323 must be the self-hosted face, loaded: the computed font-family only names it.
+async function checkFonts(page) {
+    return page.evaluate(async () => {
+        try { await document.fonts.load('16px VT323'); } catch { /* reported below */ }
+        await document.fonts.ready;
+        const faces = [...document.fonts].filter(f => f.family.replace(/["']/g, '') === 'VT323');
+        // Glyph widths: VT323 is much narrower than the fallback monospace
+        const c = document.createElement('canvas').getContext('2d');
+        c.font = '32px VT323, monospace'; const vt = c.measureText('MMMMWWWW0000').width;
+        c.font = '32px monospace'; const mono = c.measureText('MMMMWWWW0000').width;
+        const remote = performance.getEntriesByType('resource').map(e => e.name).filter(n => /fonts\.(googleapis|gstatic)\.com/.test(n));
+        return {
+            loaded: faces.some(f => f.status === 'loaded') && document.fonts.check('16px VT323'),
+            faces: faces.map(f => f.status),
+            glyphWidth: { vt323: Math.round(vt), monospace: Math.round(mono) },
+            remote
+        };
+    });
+}
+
+// Phaser canvas scenes: the DOM sweep cannot see inside the canvas, so read the game config
+// and the scene's Text objects instead.
+async function checkCanvas(page) {
+    return page.evaluate((ALLOWED) => {
+        const m = window.MinigameFramework.currentMinigame;
+        const pg = m?.phaserGame || m?.game || null;
+        if (!pg || !pg.config) return null;
+        const breaches = [];
+        const cfg = pg.config;
+        if (!cfg.pixelArt && cfg.antialias !== false) breaches.push({ kind: 'canvas', where: 'phaser config', detail: 'smoothed (no pixelArt / antialias false)' });
+        if (!cfg.roundPixels && !cfg.pixelArt) breaches.push({ kind: 'canvas', where: 'phaser config', detail: 'roundPixels off' });
+        let texts = 0;
+        for (const sc of pg.scene.getScenes(true)) {
+            const walk = (list) => {
+                for (const o of list) {
+                    if (o.list) walk(o.list);
+                    if (o.type !== 'Text' || !o.visible) continue;
+                    texts++;
+                    const fam = (o.style.fontFamily || '').split(',')[0].replace(/["']/g, '').trim().toLowerCase();
+                    const size = parseFloat(o.style.fontSize);
+                    const where = `text "${String(o.text).slice(0, 24)}"`;
+                    if (!ALLOWED.includes(fam)) breaches.push({ kind: 'canvas', where, detail: `font ${o.style.fontFamily}` });
+                    else if (!Number.isInteger(size) || (fam === 'vt323' && size < 16)) breaches.push({ kind: 'canvas', where, detail: `${fam} ${o.style.fontSize}` });
+                }
+            };
+            walk(sc.children.list);
+        }
+        return { texts, breaches };
+    }, ALLOWED_FONTS);
+}
+
+async function checkScene(page, scene) {
+    const KEEP = KEEPS_CANCEL.includes(scene);
+    return page.evaluate(({ ALLOWED, hardSrc, KEEP }) => {
         // eslint-disable-next-line no-new-func
         const hardGradient = new Function(`return (${hardSrc})`)();
         const root = document.querySelector('.minigame-container');
@@ -167,7 +277,12 @@ async function checkScene(page) {
                 if (bs.length) breaches.push({ kind: 'shadow', where, detail: `box ${cs.boxShadow.slice(0, 60)}` });
                 const ts = shadowBlurs(cs.textShadow).filter(b => b > 0);
                 if (ts.length) breaches.push({ kind: 'shadow', where, detail: `text ${cs.textShadow.slice(0, 60)}` });
-                if (/blur\(|drop-shadow\([^)]*\s[1-9]/.test(cs.filter || '')) breaches.push({ kind: 'shadow', where, detail: `filter ${cs.filter}` });
+                // drop-shadow(colour x y blur): strip the colour first, then take the third length
+                // (review R1 m1: the old test read the colour's digits)
+                const filter = cs.filter || '';
+                const drops = filter.match(/drop-shadow\((?:[^()]|\([^()]*\))*\)/g) || [];
+                const blurredDrop = drops.some(d => shadowBlurs(d.slice(12, -1)).some(b => b > 0));
+                if (/blur\(/.test(filter) || blurredDrop) breaches.push({ kind: 'shadow', where, detail: `filter ${filter}` });
                 const grads = ((cs.backgroundImage || '') + ' ' + (cs.borderImageSource || ''))
                     .match(/(repeating-)?(linear|radial|conic)-gradient\((?:[^()]|\([^()]*\))*\)/gi) || [];
                 const soft = grads.filter(g => !hardGradient(g));
@@ -177,9 +292,16 @@ async function checkScene(page) {
             if (isText) {
                 const first = (cs.fontFamily.split(',')[0] || '').replace(/["']/g, '').trim().toLowerCase();
                 if (!ALLOWED.includes(first)) breaches.push({ kind: 'font', where, detail: cs.fontFamily.slice(0, 50) });
+                else {
+                    const size = parseFloat(cs.fontSize);
+                    if (!Number.isInteger(size)) breaches.push({ kind: 'size', where, detail: `${first} ${cs.fontSize}` });
+                    else if (first === 'vt323' && size < 16) breaches.push({ kind: 'size', where, detail: `vt323 ${cs.fontSize}` });
+                }
             }
         };
         let elements = 0;
+        const cancel = root.querySelector('#minigame-cancel');
+        if (cancel && cancel.getBoundingClientRect().width > 0 && !KEEP) breaches.push({ kind: 'cancel', where: path(cancel), detail: cancel.textContent.trim() });
         for (const el of [root, ...root.querySelectorAll('*')]) {
             if (el.closest('svg') && el.tagName.toLowerCase() !== 'svg' && !(el instanceof HTMLElement)) {
                 // SVG shapes: only text needs a pixel font
@@ -203,7 +325,7 @@ async function checkScene(page) {
             }
         }
         return { elements, breaches };
-    }, { ALLOWED: ALLOWED_FONTS, hardSrc: hardGradient.toString() });
+    }, { ALLOWED: ALLOWED_FONTS, hardSrc: hardGradient.toString(), KEEP });
 }
 
 async function main() {
@@ -230,6 +352,8 @@ async function main() {
     scenes = scenes.filter(s => registered.includes(s) || (console.log(`not registered: ${s}`), false));
 
     const report = {};
+    const fonts = await checkFonts(page);
+    console.log(`VT323 ${fonts.loaded ? 'loaded' : 'NOT LOADED'} (faces ${fonts.faces.join(',') || 'none'}; 12 glyphs ${fonts.glyphWidth.vt323}px vs monospace ${fonts.glyphWidth.monospace}px)${fonts.remote.length ? `; remote font requests: ${fonts.remote.length}` : ''}`);
     if (SHOTS) mkdirSync(SHOTS, { recursive: true });
     for (const scene of scenes) {
         const params = PARAMS[scene] || { title: scene };
@@ -238,11 +362,14 @@ async function main() {
             await page.setViewportSize({ width: w, height: h });
             const st = await startScene(page, scene, params);
             if (!res) {
-                const chk = await checkScene(page);
-                res = { ...st, ...chk };
+                const chk = await checkScene(page, scene);
+                const cv = await checkCanvas(page);
+                res = { ...st, ...chk, canvasTexts: cv?.texts ?? null };
+                if (cv) res.breaches.push(...cv.breaches);
             }
             if (SHOTS) {
-                const png = join(SHOTS, `${scene}_${w}x${h}_${TAG}.png`);
+                const id = REVIEW_IDS[`${scene} ${w}x${h}`];
+                const png = join(SHOTS, `${id ? `${id}_` : ''}${scene}_${w}x${h}_${TAG}.png`);
                 await page.screenshot({ path: png, type: 'png' });
                 // webp via ImageMagick (lossless, so the pixels stay sharp)
                 execFileSync('convert', [png, '-define', 'webp:lossless=true', png.replace(/\.png$/, '.webp')]);
@@ -251,16 +378,17 @@ async function main() {
         }
         const byKind = {};
         for (const b of res.breaches) byKind[b.kind] = (byKind[b.kind] || 0) + 1;
-        report[scene] = { inScope: SCOPE.includes(scene), open: res.open, errors: res.errors, elements: res.elements, byKind, breaches: res.breaches };
+        report[scene] = { inScope: SCOPE.includes(scene), open: res.open, setup: res.setup ?? null, errors: res.errors, elements: res.elements, canvasTexts: res.canvasTexts, byKind, breaches: res.breaches };
         const sum = Object.entries(byKind).map(([k, n]) => `${k} ${n}`).join(', ') || 'clean';
         console.log(`${SCOPE.includes(scene) ? '*' : ' '} ${scene.padEnd(28)} ${String(res.elements).padStart(4)} el  ${sum}${res.errors.length ? `  ERR ${res.errors[0].slice(0, 80)}` : ''}${res.open ? '' : '  (did not open)'}`);
     }
     await page.evaluate(() => { try { window.MinigameFramework.forceCloseMinigame?.(); } catch { /* none */ } });
     await browser.close();
-    if (JSON_OUT) writeFileSync(JSON_OUT, JSON.stringify(report, null, 2));
+    if (JSON_OUT) writeFileSync(JSON_OUT, JSON.stringify({ fonts, scenes: report }, null, 2));
     const failing = Object.entries(report).filter(([, r]) => r.inScope && r.breaches.length);
+    if (!fonts.loaded) console.log('FAIL: VT323 did not load from the self-hosted file');
     console.log(failing.length ? `FAIL: ${failing.length} in-scope scene(s) break the pixel-art rule` : 'PASS: every in-scope scene meets the pixel-art rule');
-    process.exit(failing.length ? 1 : 0);
+    process.exit(failing.length || !fonts.loaded ? 1 : 0);
 }
 
 main().catch(e => { console.error(e); process.exit(2); });

@@ -1,7 +1,6 @@
 /* Text File Minigame Styles */
 
-/* Import VT font */
-@import url('https://fonts.googleapis.com/css2?family=VT323:wght@400&display=swap');
+/* VT323 is self-hosted in fonts.css */
 
 /* Text File Minigame Container */
 .text-file-container {
