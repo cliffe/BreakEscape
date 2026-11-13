@@ -174,7 +174,54 @@ Checked in every run:
 - The frame is the same box for lock, wrong password and desktop, sign-in and desktop, remote sign-in, remote desktop and the share. Every visible box with text or a border in the screen is on a whole pixel (0 off the grid).
 - The bezel name is 16px at x2. The Wi-Fi key join still opens in the old password frame (`guest_ap2`, by the lift).
 
+## Review round 3 fixes
+
+Review: `docs/achitechture/UX_SLICE2C_REVIEW_R3.md` (B 0, M 2, m 6). All eight fixed in this slice, M2 included (the orchestrator moved it out of the backlog and into 2c).
+
+### M1. The remote sign-in screen has one look for slabs and one for buttons
+
+- `.pc-screen-area .signin-captured`: the solid note look (`#101820`, 2px `#2a3a48` border, `#dde6ee`), up to 360px wide like the form. Its title is white and sits on the items' line (`width: auto`): with one capture listed, the title on its own line put the x2 screen 20px past the bottom (found in the live check).
+- Captured items carry `pc-os-btn` in the monitor, also after the list arrives (`setCapturedSignIns`).
+- The labels inside the screen have the same 2px border.
+
+### M2. A file opened from a PC opens inside its monitor frame
+
+- The desktop and a share hand `pcScreen: { name, pcId }` on the item they open (`ContainerMinigame.pcScreenExtras`), on a click and on the Copy / Move dialog's Open. `TextFileMinigame` reads it (`pcScreenOf`), mounts the PC monitor with the same name and kept post-it height, so the frame is the same box as the desktop or share.
+- In the frame the file is a maximised window in the share window's look: the file name in the title bar, Copy, Select All and Add to Notepad as `pc-os-btn`, the text in GNF at 16px (weight 400) on the dark pane, the observations in the status bar. No traffic lights, no translateY press, no see-through shadows. The X is on the bezel. Results ("Copied.", "All text selected") go on the toolbar instead of a full-window toast. The X returns to the desktop or share as before. Back from the Notepad, the reader keeps its frame (`pcScreen` in `pendingTextFileReturn`).
+- A file read from the world keeps the old viewer.
+- Other windows that open from a desktop: the Copy / Move dialog on a share ran past the screen's top and bottom at x2. In the monitor it is now centred without a transform, at most its window's height (it scrolls with the pixel scrollbar if it must), with GNF 16px in the title bar and the PC's thin buttons. The test scenarios' and m01's desktops hold only text files; a readable note (the Notes viewer) opened from a desktop still opens full window (not in any test desktop; left open).
+
+### Minors
+
+- m1: the chosen account line has a 32px headshot box (`.signin-selected-headshot`, `applyHeadshotBox`, the desktop bar's fallback) at every size; hidden for Other user and before a choice.
+- m2: fields in the monitor are `#5a6a78` at rest and `#9ee6ff` on focus. The old frame keeps its green.
+- m3: `.submit-btn` and `.hint-btn` have 2px borders (`#1e8449`, `#b9770e`) and 2px less padding.
+- m4: no plate behind a desktop icon in the monitor; the hover is a `#9ee6ff` 2px edge on the icon and the label. The labels keep the solid screen-note backing from R2.
+- m5: the visual viewport test now mounts a frame with a fake view whose `visualViewport` is an `EventTarget`, fires resize and scroll on it and checks that the metrics object and the inline style are unchanged (a window resize does update). The `currentCSSZoom` source regex, the cross-file "More below" regex and the `padding`/`align-self` checks are gone. New jsdom tests load the real stylesheets and read computed styles: the x2 fold (tiles hidden once chosen, Change shown, tiles back after Change, x1 unchanged) and the hidden title. The live driver also logs `tilesShown` and `titleShown`.
+- m6: `MORE_BELOW_TEXT` lives in `js/utils/more-below.js`, imported by the network view (re-exported) and the desktop; the constant sits above `evenShareLabels`' JSDoc. The PC password screen no longer reveals the message line it has just emptied. (The RFID screen keeps its own copy of the words; not in the review.)
+
+Tests: `pc-monitor-frame.test.mjs` 35 (R3 tests for the fold and title, the chosen headshot, the captured box, the field, button and icon rules, the reader in the frame at four sizes), `container-transfer-dialog.test.mjs` (Open hands on the PC screen). Harness copy lists gained `utils/more-below.js` and `utils/pc-monitor.js` where needed.
+
+## Round 3 live proof
+
+Keyless server on :3062 (stopped afterwards), setFPS(20) with fixed steps, scrollbars shown, new games only (`tools/playtest/new-game.rb`): test_access_signin 2998, 3001, 3004, 3007; m01_first_contact 3000, 3003, 3006, 3009 (`--start-room kevin_office`); test_access_networks 3035 to 3038 (the final run; 2999 to 3008 and 3018 to 3021 were earlier runs before the dialog and Open fixes). Driver and logs: the scratchpad's `ux-shots/slice2c-r3fix/` (`drive.mjs`, `run-all.sh`, one log per run). Shots there as PNG at 1400x1000, 800x600, 915x412 and 390x844: `main-01`, `main-02`, `main-03`, `desktop-overflow`, `desktop-overflow-scrolled`, `desktop-overflow-click`, `textfile`, `textfile-msg`, `remote-signin`, `remote-signin-captured`, `remote-signin-filled`, `remote-desktop`, `shares`, `share-dialog`, `share-file`, `wifi-join`, `m01-kevin-lock`, `m01-kevin-wrong`, `m01-kevin-desktop`.
+
+The captured sign-in is a display fixture in the page (`setCapturedSignIns` with one entry): test_access_networks has no capture to earn. The overflowing desktop is the R2 fixture.
+
+Checked in every run:
+
+- x2 (1400x1000): tiles fold once an account is chosen, the title is hidden at every size, the chosen line shows `male_office_worker_v2` as a headshot at every size.
+- Remote sign-in, with no capture and with one, and after filling from the capture: screen scroll 0 at every size, 0 boxes off the pixel grid; the captured box is `rgb(16, 24, 32)` with a 2px border, the item has `pc-os-btn`, both labels have 2px borders, the fields read `#9ee6ff` (focused) and `#5a6a78`.
+- Text file from the hot desk (a real mouse click on the last icon) and from the share (the dialog's Open): the same frame as the desktop or share, no window controls, GNF 16px weight 400, all three buttons `pc-os-btn` with no transform, status bar present, the old viewer absent. Select All writes its line on the toolbar and no toast. The X returns to the desktop or share in the same frame.
+- The Copy / Move dialog is inside the screen at every size, nothing to scroll, four `pc-os-btn` buttons.
+- m01: lock, wrong password and desktop are one frame; no scroll after a wrong password; no badge.
+- The Wi-Fi join still opens in the old frame, now with a bordered Submit.
+
 ## Handover
+
+Round 3 done. Commits: `c96413436` (the fixes and tests), `9c1275bc1` (Copy / Move dialog fits the screen, captured title on the items' line), `df83bd790` (the dialog's Open keeps the frame), and the docs commit with this section. Full suites: `bin/rails test` on `c96413436`: 2386 runs, 42523 assertions, 0 failures, 0 errors, 1 skip (later commits change JS and CSS only). `MERGE_BATCH=1 bin/test-js -j 3` on `c96413436` (it picked up the later JS edits as it ran): 599 files passed, 0 failed; a rerun on `df83bd790` is queued under the shared lock.
+
+Open: the Copy / Move dialog can sit half a pixel off the grid horizontally (its window's width minus its own is odd); a readable note opened from a desktop still opens the Notes viewer full window; the WebKit check of `cssZoomOf` still needs the user's yes.
 
 Round 2 done. Commits: `ef0239c30` (the fixes and tests), `f1eae17e4` (icon labels as wide as their text), `fe2745e44` (x2 sign-in folds its tiles), `159748439` (x2 title hidden, More below text even), `a97c789d1` (no on-screen title in any PC monitor), and the docs commit with this section.
 
