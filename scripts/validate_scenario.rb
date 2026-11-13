@@ -811,11 +811,11 @@ def check_unknown_fields(json_data)
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
     captureProof
-    maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance screenHabit printHabit
+    maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance
     answersPhones phoneCalls call
     role creds staff cloneable
     awareness habits
-    workNeeds frustration workarounds phone socialUse feed usbHabit
+    workNeeds frustration workarounds phone socialUse feed
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
@@ -998,7 +998,10 @@ def check_unknown_fields(json_data)
         next unless npc.is_a?(Hash)
         npc_path = "rooms/#{room_id}/npcs[#{idx}](#{npc['id'] || '?'})"
         npc.each_key do |key|
-          unless known_npc_fields.include?(key)
+          # A retired NPC key (renamed by a FormatUpgrade step: screenHabit, printHabit, usbHabit)
+          # reaches here as an unknown field, but check_retired_keys already prints its rename line;
+          # suppress the redundant unknown-field warning so a reintroduced key prints only that line.
+          unless known_npc_fields.include?(key) || retired_item_keys.include?(key)
             warnings << "⚠️ WARNING: '#{npc_path}' has unknown field '#{key}'#{unknown_key_hint(key, known_npc_fields)} — this field will be ignored by the game engine."
           end
         end
@@ -1294,12 +1297,13 @@ def headless_npc_records(json_data)
   end
 end
 
-# { npc id => screenHabit } for every room NPC with one in the expanded copy (slice 9.1):
+# { npc id => habits.screen } for every room NPC with one in the expanded copy (slice 9.1):
 # authored and filled alike, for ValidateNpcNeeds.check's screen_habits: keyword.
 def npc_screen_habits(expanded)
   BreakEscape::AccessIdentities.room_npcs(expanded).each_with_object({}) do |entry, out|
     npc = entry[:npc]
-    out[npc['id']] = npc['screenHabit'] if npc.key?('screenHabit') && npc['id']
+    habits = npc['habits']
+    out[npc['id']] = habits['screen'] if habits.is_a?(Hash) && habits.key?('screen') && npc['id']
   end
 end
 
@@ -7089,7 +7093,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   end
   find_rewards.call(json_data)
   # Owner claim q78, judged as the server judges it: on the data as prepared at game creation
-  # (habits expanded, so screenHabit is filled; object ids stamped), and only where check 10 is
+  # (habits expanded, so habits.screen is filled; object ids stamped), and only where check 10 is
   # the reason the claim is refused. An owner with no account or not on the PC's access list, a
   # screen that always locks and a policy with autoLockMin 0 are refused by an earlier check.
   claim_data = nil

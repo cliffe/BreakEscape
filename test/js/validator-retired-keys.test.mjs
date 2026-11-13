@@ -192,3 +192,30 @@ test('8b: owner, private and deskPhone print no unknown-field warning', { skip }
     const out = unknownWarnings({ rooms: { r: { objects: [{ id: 'pc', type: 'pc', name: 'PC', owner: 'a', private: true, deskPhone: true }] } } });
     assert.deepEqual(out.filter(l => /'(owner|private|deskPhone)'/.test(l)), []);
 });
+
+// ---- Step 8c (format 3): the three NPC habit keys fold into the habits block ----
+
+for (const [key, now] of [
+    ['screenHabit', 'habits.screen'],
+    ['printHabit', 'habits.print'],
+    ['usbHabit', 'habits.usb'],
+]) {
+    test(`8c: a retired NPC ${key} is one rename error to ${now}`, { skip }, () => {
+        const out = issues({ rooms: { r: { npcs: [{ id: 'rosa', [key]: { foo: 1 } }] } } });
+        assert.equal(out.length, 1, JSON.stringify(out));
+        assert.match(out[0], new RegExp(`ERROR:.*npcs/0/${key}.*renamed to '${now.replace('.', '\\.')}' in format 3`));
+    });
+}
+
+test('8c: folded habits.screen/.print/.usb print no unknown-field warning', { skip }, () => {
+    const out = unknownWarnings({ rooms: { r: { npcs: [{ id: 'rosa',
+        habits: { screen: { lockChance: 0 }, print: { forgetChance: 0.5 }, usb: { every: 2 } } }] } } });
+    assert.deepEqual(out.filter(l => /unknown field/.test(l)), []);
+});
+
+test('8c: a reintroduced top-level screenHabit on an NPC prints no unknown-field warning', { skip }, () => {
+    // check_retired_keys prints the rename error; check_unknown_fields suppresses the redundant
+    // unknown-field warning for a retired NPC key, so one slip prints one line.
+    const out = unknownWarnings({ rooms: { r: { npcs: [{ id: 'rosa', screenHabit: { lockChance: 0 } }] } } });
+    assert.deepEqual(out.filter(l => /'screenHabit'/.test(l)), []);
+});

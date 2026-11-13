@@ -2409,3 +2409,114 @@ The three keys fold as: `screenHabit` -> `habits.screen`, `printHabit` -> `habit
   transform).
 - **Done when.** Both full suites green on one tip (flakes reruns aside); the grep sweep is clean; the
   branch is ready for code review.
+
+## Step 8c chunk 1 — schema, transform, validate_scenario.rb, format upgrade (2026-11-13)
+
+Branch `build/hard-8c` from `e5499e795` (step 8b plus current main; formats 0 to 2 live,
+`FormatUpgrade.current` 2). Chunk 1 of the seven-chunk split: the schema, the `FormatUpgrade` step
+and the `validate_scenario.rb` edits only. Every runtime reader (Ruby and JS), the validator
+derivers, the templates and the fixtures stay on the old names (chunks 2 to 5), so the corpus is not
+validated clean yet; the expected failures that follow clear in later chunks.
+
+### What changed
+
+- **`scripts/scenario-schema.json`.** The closed NPC `habits` block (awareness habits) gains three
+  closed sub-blocks `screen`, `print` and `usb`, each `additionalProperties: false` with `^_` allowed,
+  carrying the keys and descriptions moved from the top-level `screenHabit`/`printHabit`/`usbHabit`
+  definitions. The three top-level keys are removed. The `locksScreen` description (and the moved
+  `screen` description) now name `habits.screen`, not `screenHabit`. No `x-ref` added (step 4 owns
+  that).
+- **`lib/break_escape/format_upgrade.rb`.** `STEP_8C` (version 3, name `habits_in_one_block`); `STEPS`
+  is now `[STEP_8A, STEP_8B, STEP_8C]` so `current` is 3. The `scenario` transform
+  `habits_in_one_block!` walks every live Hash (`AuthorNotes.each_live`, `free: :skip`) and folds the
+  three top-level habit keys into the NPC's `habits` block via `fold_one_hash_habit_fields!`, creating
+  `habits` only where at least one key is present; each move is guarded by `unless habits.key?(new)`
+  so a second run or format-3 data is a no-op and an already-folded value wins, and the top-level key
+  is always removed. The `player_state` transform is `->(state) { state }` — a no-op: no sync path
+  stores an NPC record (grep of `app`/`lib`: player_state holds `npcFrustration`, `phonesTaken`,
+  `npc_given_items`, `sharedLogins`, `encounteredNPCs`, never an NPC hash with habit keys).
+  `retired`: NPC `screenHabit` -> `habits.screen`, `printHabit` -> `habits.print`,
+  `usbHabit` -> `habits.usb`, each `path: nil` (match anywhere; the keys are unique to NPC records,
+  as 8b did for its item keys).
+- **`scripts/validate_scenario.rb`.** `known_npc_fields` loses `screenHabit`, `printHabit`, `usbHabit`.
+  `npc_screen_habits` reads `habits.screen` from the expanded copy, not `screenHabit`. The owner-claim
+  ship-note comment (`:7092` area) now says "`habits.screen` is filled". The NPC unknown-field loop in
+  `check_unknown_fields` now suppresses the redundant unknown-field warning for a retired NPC key
+  (reusing the `retired_item_keys` set, which holds every retired entry's key), so a reintroduced
+  top-level `screenHabit` prints only the one rename line from `check_retired_keys` (the 8a/8b dedup
+  pattern, now for NPC keys). The validator derivers in `validate_npc_habits.rb`/`validate_npc_needs.rb`/
+  `validate_access_work.rb`, `verify-run.rb` and the leak scanner are untouched (chunk 4).
+
+### Tests
+
+- `test/unit/format_upgrade_test.rb` (RBENV_VERSION=2.7.8): **22 runs, 112 assertions, 0 failures.**
+  Added four 8c tests (the fold into a new and into an existing `habits` block, with a note left as
+  written; the fold of a loader-filled `screenHabit` on prepared data via `NpcHabits.expand!`,
+  unchanged; idempotence and no-op on format-3; the player_state no-op). Updated the three current-bump
+  assertions the version-3 step moved (`formatVersion`/`ran` now cover all three steps; the dev-switch
+  teardown leaves `current` 3).
+- `test/js/validator-retired-keys.test.mjs`: **29 tests, 0 fail** (was 24). Added the three NPC retired
+  keys (each one rename line to `habits.screen`/`.print`/`.usb` in format 3); the folded
+  `habits.screen`/`.print`/`.usb` print no unknown-field warning; a reintroduced top-level `screenHabit`
+  on an NPC prints no unknown-field warning (the dedup).
+- `test/controllers/break_escape/format_8c_deployed_noop_test.rb` (new): **4 runs, 60 assertions, 0
+  failures.** The real `STEP_8C` scenario transform is a no-op on each of m01_first_contact,
+  sis01_healthcare, sis02_energy and lab_social_engineering, and the raw render carries no
+  `screenHabit`/`printHabit`/`usbHabit`/`awareness` and no `habits.locksScreen`, so the loader fills no
+  habit either; a full `upgrade!` only stamps `formatVersion` 3.
+- Hand check: the full validator on test_access_social prints exactly 6 retired-key errors
+  (5 `screenHabit` + 1 `usbHabit`, matching the re-anchor) and no duplicate unknown-field warning; it
+  does not crash on the now-empty `npc_screen_habits` map.
+- Importers of `format_upgrade.rb` (current 2 to 3): `format_version_test` + `format_deployed_scenarios_test`
+  + `upgrade_games_tool_test` (29 runs, 0 fail — they stub `steps`); `access_model_loader_test`,
+  `npc_habits_loader_test`, `capture_proofs_test`, `reload_persistence_test` (123 runs, 0 fail). Node
+  tests that name a habit key and were not expected to change: `validator-usb-habit` (25),
+  `validator-access-work` (38), `validator-access-model` (36), `playtest-verify-run-access` (15),
+  `workstation-state` (55), `npc-office-visuals` (36), `npc-print-forget` (15), `npc-printer-power`
+  (14) — all 0 fail.
+
+### Expected failures left for later chunks
+
+- `test/unit/format_8a_corpus_test.rb`: **9 failures**; `test/unit/format_8b_corpus_test.rb`: **10
+  failures.** Both assert the live templates carry no retired key and the frozen format-2 render holds
+  none; the un-rewritten corpus still authors the habit keys (test_access_social 5 `screenHabit` + 1
+  `usbHabit`, test_access_work 3 `screenHabit`, test_needs_sims 2 `screenHabit` + 1 `printHabit`).
+  Cleared by **chunk 5** (template rewrite). Counts and paths match the re-anchor's per-scenario lists.
+- The three authored-habit scenarios (test_access_social, test_access_work, test_needs_sims) do not
+  validate clean (retired-key errors) until **chunk 5** rewrites them.
+- `test/js/validator-strict-keys.test.mjs`: **3 failures.** Two: a reintroduced top-level `screenHabit`
+  is now a retired key (one rename line, no schema unknown-key line), so the test's count of 1 schema
+  line for `screenHabit` reads 0. One: the closed-block enumeration reads the removed top-level habit
+  schema paths and raises on `additionalProperties`. Cleared by **chunk 4** (it owns this test and
+  moves its habit paths to `habits.screen`/`.print`/`.usb`).
+- `test/js/validator-npc-habits.test.mjs`: **1 failure** (`the office life autoLockSeconds check sees
+  the filled habit`, line 240). The fixture fills a habit from `awareness: 'low'`; in chunk 1 the
+  loader (`NpcHabits`) still fills `screenHabit` while `npc_screen_habits` already reads `habits.screen`,
+  so the screen-habit map is empty and the autoLockSeconds warning fires. Cleared by **chunk 2**, which
+  makes `NpcHabits.fill_screen_habit!`/`expand!` fill `habits.screen`.
+
+### Sync size
+
+No growth. NPC records are not stored in player_state, so the `player_state` transform is a no-op and
+nothing a sync writes or reads changes. The scenario transform renames keys inside NPC records in
+`scenario_data` only, once per game at load.
+
+### Files touched
+
+`scripts/scenario-schema.json`, `lib/break_escape/format_upgrade.rb`, `scripts/validate_scenario.rb`,
+`test/unit/format_upgrade_test.rb`, `test/js/validator-retired-keys.test.mjs`,
+`test/controllers/break_escape/format_8c_deployed_noop_test.rb`,
+`docs/achitechture/SCENARIO_FORMAT_HARDENING_BUILD_LOG.md`.
+
+### Handover
+
+- **Done:** chunk 1 as specified. `FormatUpgrade.current` is 3; the three named chunk-1 test files pass
+  alone.
+- **For chunk 2 (Ruby runtime readers):** `NpcHabits.fill_screen_habit!`/`expand!`, `AccessIdentities`,
+  `OwnerClaim`, `AccessWork.usb_habit`/`work.usb`, `NpcFrustration`, and the `Game` ship filter still
+  read the old names. Making the loader fill `habits.screen` clears the `validator-npc-habits` line-240
+  failure (chunk 1's `npc_screen_habits` already reads the folded path).
+- **For chunk 4:** `validator-strict-keys.test.mjs` needs its habit schema paths moved to
+  `habits.screen`/`.print`/`.usb` and its `screenHabit` slip case treated as a retired key.
+- **For chunk 5:** rewrite the three authored-habit templates and freeze the `format_8c` fixtures; the
+  9 + 10 corpus-test failures and the three scenarios' retired-key errors clear then.

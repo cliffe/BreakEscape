@@ -77,8 +77,8 @@ module BreakEscape
       }
       state = { 'inventory' => [{ 'id' => 'c', 'affordance' => { 'offWhen' => 'c_off', 'useSeconds' => 2 } }] }
       res = FU.upgrade!(data, state)
-      assert_equal 2, data['formatVersion']
-      assert_equal %w[one_outage_field_offWhen one_owner_field], res[:ran]
+      assert_equal 3, data['formatVersion']
+      assert_equal %w[one_outage_field_offWhen one_owner_field habits_in_one_block], res[:ran]
       assert_equal 'net_off', data.dig('networks', 'n', 'offWhen')
       refute data['networks']['n'].key?('downIf')
       assert_equal 'jam', data.dig('resources', 'r', 'offWhen')
@@ -137,7 +137,7 @@ module BreakEscape
     test 'step 8b writes one owner from every old field and derives from needsHome' do
       data = owner_scenario
       res = FU.upgrade!(data, {})
-      assert_equal 2, data['formatVersion']
+      assert_equal 3, data['formatVersion']
       assert_includes res[:ran], 'one_owner_field'
       objs = data['rooms']['office']['objects'].each_with_object({}) { |o, h| h[o['id']] = o }
 
@@ -204,6 +204,83 @@ module BreakEscape
       before = Marshal.load(Marshal.dump(state))
       FU.one_owner_field_in_player_state!(state)
       assert_equal before, state, 'rename-only is idempotent'
+    end
+
+    # Step 8c (format 3): the real STEP_8C transform. Habits in one block.
+    def habit_scenario
+      {
+        'rooms' => {
+          'office' => {
+            'npcs' => [
+              { 'id' => 'rosa',
+                'screenHabit' => { 'lockChance' => 0 },
+                'printHabit' => { 'forgetChance' => 0.5 },
+                'usbHabit' => { 'every' => 2 } },
+              # a loader-filled screenHabit beside an authored awareness habits block
+              { 'id' => 'priya', 'habits' => { 'locksScreen' => 'always' }, 'screenHabit' => { 'lockChance' => 1 } },
+              { 'id' => 'sam' }
+            ],
+            '_note' => { 'npcs' => [{ 'id' => 'ghost', 'screenHabit' => { 'lockChance' => 0.3 } }] }
+          }
+        }
+      }
+    end
+
+    test 'step 8c folds the three habit keys into the habits block, with and without an existing block' do
+      data = habit_scenario
+      res = FU.upgrade!(data, {})
+      assert_equal 3, data['formatVersion']
+      assert_includes res[:ran], 'habits_in_one_block'
+      npcs = data['rooms']['office']['npcs'].each_with_object({}) { |n, h| h[n['id']] = n }
+
+      assert_equal({ 'lockChance' => 0 }, npcs['rosa']['habits']['screen'], 'screenHabit becomes habits.screen')
+      assert_equal({ 'forgetChance' => 0.5 }, npcs['rosa']['habits']['print'], 'printHabit becomes habits.print')
+      assert_equal({ 'every' => 2 }, npcs['rosa']['habits']['usb'], 'usbHabit becomes habits.usb')
+      refute npcs['rosa'].key?('screenHabit')
+      refute npcs['rosa'].key?('printHabit')
+      refute npcs['rosa'].key?('usbHabit')
+
+      assert_equal 'always', npcs['priya']['habits']['locksScreen'], 'the existing awareness habit is kept'
+      assert_equal({ 'lockChance' => 1 }, npcs['priya']['habits']['screen'], 'the folded key joins the existing block')
+      refute npcs['priya'].key?('screenHabit')
+
+      refute npcs['sam'].key?('habits'), 'an NPC with no habit key gets no habits block'
+      assert_equal({ 'lockChance' => 0.3 }, data['rooms']['office']['_note']['npcs'][0]['screenHabit'],
+                   'a note is left as written')
+    end
+
+    test 'step 8c folds a loader-filled screenHabit on prepared data, unchanged' do
+      scenario = {
+        'rooms' => { 'office' => {
+          'npcs' => [{ 'id' => 'priya', 'awareness' => 'high', 'needsHome' => 'priya_pc' }],
+          'objects' => [{ 'id' => 'priya_pc', 'workstation' => true, 'owner' => 'priya' }]
+        } }
+      }
+      BreakEscape::NpcHabits.expand!(scenario)
+      npc = scenario['rooms']['office']['npcs'][0]
+      assert npc.key?('screenHabit'), 'the loader filled a screenHabit from awareness'
+      filled = Marshal.load(Marshal.dump(npc['screenHabit']))
+
+      FU.habits_in_one_block!(scenario)
+      refute npc.key?('screenHabit')
+      assert_equal filled, npc['habits']['screen'], 'the filled screenHabit folds to habits.screen unchanged'
+      assert_equal 'always', npc['habits']['locksScreen'], 'the awareness habit block is preserved'
+    end
+
+    test 'step 8c is idempotent and a no-op on format-3 data' do
+      data = habit_scenario
+      FU.upgrade!(data, {})
+      before = Marshal.load(Marshal.dump(data))
+      FU.habits_in_one_block!(data)
+      assert_equal before, data, 'running the transform again changes nothing'
+    end
+
+    test 'step 8c player_state transform is a no-op (NPC records are not stored in player_state)' do
+      state = { 'inventory' => [{ 'id' => 'badge' }], 'npcFrustration' => { 'rosa' => 1 },
+                'phonesTaken' => %w[jake] }
+      before = Marshal.load(Marshal.dump(state))
+      BreakEscape::FormatUpgrade::STEP_8C[:player_state].call(state)
+      assert_equal before, state, 'the player_state transform changes nothing'
     end
 
     test 'upgrade! runs the steps above the stored version in order and is idempotent' do
@@ -300,7 +377,7 @@ module BreakEscape
       assert_nil FU.install_dev_test_step!(env: 'development', enabled: true)
     ensure
       FU::STEPS.reject! { |s| s[:version] == 900 }
-      assert_equal 2, FU.current, 'the 900 dev step is removed, leaving steps 8a and 8b (format 2)'
+      assert_equal 3, FU.current, 'the 900 dev step is removed, leaving steps 8a, 8b and 8c (format 3)'
     end
   end
 end

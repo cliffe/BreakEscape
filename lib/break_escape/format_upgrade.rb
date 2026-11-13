@@ -88,7 +88,30 @@ module BreakEscape
       ]
     }.freeze
 
-    STEPS = [STEP_8A, STEP_8B]
+    # Step 8c (format 3), habits in one block: the three top-level office-life habit keys fold into
+    # the NPC's closed `habits` block (today the home of the awareness habits), so one block holds a
+    # person's habits:
+    #   - `screenHabit` becomes `habits.screen` (lockChance, lockIfAwayOverSeconds);
+    #   - `printHabit` becomes `habits.print`;
+    #   - `usbHabit` becomes `habits.usb`.
+    # Each keeps its own keys. The scenario transform walks every live Hash (free: :skip) and moves
+    # the three keys into `habits`, creating `habits` where absent; a key already folded wins, so a
+    # second run or format-3 data is a no-op. NPC records are not stored in player_state (no sync
+    # path stores an NPC hash), so the `player_state` transform is a no-op that returns the state
+    # unchanged. Both walks skip notes and free data, so an old key in a note is left as written.
+    STEP_8C = {
+      version: 3,
+      name: 'habits_in_one_block',
+      scenario: ->(data) { BreakEscape::FormatUpgrade.habits_in_one_block!(data) },
+      player_state: ->(state) { state },
+      retired: [
+        { path: nil, key: 'screenHabit', now: 'habits.screen' },
+        { path: nil, key: 'printHabit', now: 'habits.print' },
+        { path: nil, key: 'usbHabit', now: 'habits.usb' }
+      ]
+    }.freeze
+
+    STEPS = [STEP_8A, STEP_8B, STEP_8C]
 
     # Old keys a deployed scenario still uses, each with the step that retired it. Empty
     # (section 1 of the plan: none of the four deployed scenarios uses any retired key). The place
@@ -441,6 +464,40 @@ module BreakEscape
         next unless room['npcs'].is_a?(Array)
 
         room['npcs'].each { |npc| walk.call(npc['itemsHeld']) if npc.is_a?(Hash) }
+      end
+    end
+
+    # The three top-level office-life habit keys, each paired with its folded key inside `habits`.
+    HABIT_FOLD = { 'screenHabit' => 'screen', 'printHabit' => 'print', 'usbHabit' => 'usb' }.freeze
+
+    # Step 8c. The scenario transform: walk every live Hash (free: :skip) and fold the three
+    # top-level habit keys into the NPC's `habits` block. Notes and free data are skipped, so an old
+    # key in a note is left as written. Idempotent: on data already folded (no top-level habit key)
+    # it does nothing, and a key already present under `habits` wins.
+    def habits_in_one_block!(data)
+      BreakEscape::AuthorNotes.each_live(data, BreakEscape::ScenarioSchema.root, free: :skip) do |value, _n, _keys|
+        fold_one_hash_habit_fields!(value) if value.is_a?(Hash)
+      end
+      data
+    end
+
+    # Move the top-level `screenHabit`/`printHabit`/`usbHabit` of one Hash into its `habits` block
+    # as `screen`/`print`/`usb`. `habits` is created only when at least one key is present, so a Hash
+    # with none is untouched. Each move is guarded by `unless habits.key?(new)` so a second run or an
+    # already-folded value is a no-op (the folded value wins); the top-level key is always removed.
+    def fold_one_hash_habit_fields!(value)
+      return unless HABIT_FOLD.keys.any? { |k| value.key?(k) }
+
+      habits = value['habits']
+      unless habits.is_a?(Hash)
+        habits = {}
+        value['habits'] = habits
+      end
+      HABIT_FOLD.each do |old_key, new_key|
+        next unless value.key?(old_key)
+
+        moved = value.delete(old_key)
+        habits[new_key] = moved unless habits.key?(new_key)
       end
     end
 
