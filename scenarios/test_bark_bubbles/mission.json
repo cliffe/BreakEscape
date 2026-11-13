@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Speech bubble barks",
+  "description": "Throwaway engine test for speech bubble barks: a person NPC in view says a bark in a bubble over their head (long lines in pages), an NPC in another room and a phone contact still use the toast.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 2,
+  "test_type": "bark_bubbles",
+  "test_objective": "Verify bark routing (bubble in view; toast out of view, in the dark, under a minigame and for phone contacts), paging of a 150-character bark, the remainder toast on leaving view, and the pixel-art bubble"
+}
