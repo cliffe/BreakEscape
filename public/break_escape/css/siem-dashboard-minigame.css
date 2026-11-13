@@ -531,7 +531,10 @@
         height: 100%;
     }
 
+    /* tall enough for the X, which sits in this row (n1) */
     .siem-header {
+        min-height: 40px;
+        box-sizing: border-box;
         padding: 4px 12px;
     }
 

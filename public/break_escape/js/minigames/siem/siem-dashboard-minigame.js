@@ -232,6 +232,12 @@ export class SiemDashboardMinigame extends MinigameScene {
     // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
     static controlsOverlay = true;
 
+    // The X sits inside the console panel's own border, in its header row beside the clock,
+    // not over the corner where that border turns (slice 7 R5 n1)
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.siem-panel') || this.gameContainer;
+    }
+
     constructor(container, params = {}) {
         super(container, {
             ...params,

@@ -31,7 +31,11 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 8px 14px;
+    /* The right padding keeps the legend clear of the X (30px wide, 4px inside the frame's
+       top-right corner) with an 8px gap (slice 7 R5 m6) */
+    padding: 8px 46px 8px 14px;
+    min-height: 38px;
+    box-sizing: border-box;
     background: #0a0f1e;
     border-bottom: 2px solid #1e3a5a;
     flex-shrink: 0;
