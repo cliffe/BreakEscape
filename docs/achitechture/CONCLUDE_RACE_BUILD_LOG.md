@@ -223,3 +223,75 @@ Status at hand-back (near context budget):
 - **Files touched**: `public/break_escape/js/systems/objectives-manager.js`,
   `app/models/break_escape/game.rb`, `test/js/conclude-race.test.mjs`,
   `test/controllers/break_escape/conclude_race_test.rb`, this log.
+
+## Round 1 fixes (2026-11-13)
+
+Addresses `docs/achitechture/CONCLUDE_RACE_REVIEW_R1.md`.
+
+### Merge main
+
+`git merge da5f53f34` into `build/conclude-race` (merge commit `93d006ad9`).
+The merge was clean, no conflicts. It brought sis01's debrief task move to
+`debrief_end` with an empty conclude gate (scenario and ink only) and the UX
+slice 4 inventory work. None of it touched the conclude-race files, so there was
+nothing to resolve.
+
+### Rulings applied
+
+- **M1 (done).** `complete_task` in `app/controllers/break_escape/games_controller.rb`
+  now guards the `on_task_complete` hook with `!result.key?(:message)`, matching
+  `skip_task`. The idempotent "Already completed" re-post the conclude-race
+  fallback makes no longer fires the host rescore hook a second time. Rails test
+  added: `the on_task_complete hook does not fire a second time on the idempotent
+  re-post`.
+- **M2 (done).** The pre-flush is scoped. `ObjectivesManager.scenarioGatesOnGlobals()`
+  (cached) is true only when some aim declares `concludeRequires.globals`. The
+  completion and skip paths now do a single `stateSync.sync()` round-trip before
+  the POST only for such scenarios; every other scenario keeps its original
+  timing. The warning fallback (full `flushPendingGlobals()` + a single re-post)
+  is unchanged as the second line of defence. Node tests added for both branches
+  (gated scenario pre-flushes; a tasksCompleted-only gate does not).
+- **m1 (backlog only).** Offline/failed sync at the concluding beat leaves the
+  task done locally but the mission unconcludable until reload. Logged in
+  `docs/IDEAS_BACKLOG.md`; not fixed.
+- **m2 (done).** Added: node, a still-unmet gate toasts "Not Yet" exactly once
+  after the fallback; node, the skip path pre-flushes when the scenario gates on
+  a global; Rails, a re-post with the global still false does not conclude and
+  warns; Rails, a re-post after conclusion is idempotent (no re-announce, no
+  warning, no second award).
+- **n1 (done).** `was_concluded_before` renamed to `was_not_concluded_before` at
+  all three sites in `app/models/break_escape/game.rb` (the complete_task!
+  already-completed branch, the fresh-completion path and skip_task!). Pure
+  rename, no behaviour change.
+- **Backlog (ca01 bridge drift).** The three recorded-assertion drifts in
+  `tools/playtest/se/bridge-e1-full.jsonl` (lines 7, 65, 73), present on main,
+  logged in `docs/IDEAS_BACKLOG.md`.
+
+### Tests after the fixes (touched files and their importers; no full suites)
+
+- node `test/js/conclude-race.test.mjs`: 6/6 (2 original + 4 new).
+- node, every importer of `objectives-manager.js` (15 files): 126/126.
+- Rails `conclude_race_test.rb`: 5 runs, 33 assertions, 0 failures.
+- Rails `games_controller_test.rb` + `game_state_locking_test.rb`: 68 runs,
+  230 assertions, 0 failures.
+- Rails `conclude_mission_test.rb` + `task_set_global_test.rb` +
+  `social_sync_then_emit_test.rb`: 20 runs, 99 assertions, 0 failures.
+
+### Live re-check (plain path, branch)
+
+Keyless server on `:3061` from this worktree, setFPS(20), fixed steps on. A new
+game of `test_conclude_race` via `swap-scenario-game.rb` (host `test_seating`),
+game **3214**. The driver cleared the title/brief overlays, threw the Gate switch
+(plain `set_global`), and wrapped `window.gameAlert` to catch any "Not Yet" toast.
+
+- Request order (`tmp/keyless-3061.log`): `PUT .../games/3214/sync_state`
+  (log line 14243) **precedes** `POST .../games/3214/objectives/tasks/final_task`
+  (14255). Exactly one completion POST.
+- Toasts seen: "Task Complete" and "Objective Complete!" only. **No "Not Yet"**
+  (0 captured).
+- Server record (game 3214): `status=completed`, `mission_concluded_at` set,
+  `gate_global=true`, `final_task=completed`. The mission concluded on the first
+  POST.
+
+The fix still orders the sync before the completion POST and concludes without a
+warning, on current `build/conclude-race` after the main merge.
