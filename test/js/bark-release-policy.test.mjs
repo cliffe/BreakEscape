@@ -11,8 +11,24 @@ const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '../../public/break_escape/js/systems/bark-release-policy.js');
 const dir = mkdtempSync(join(tmpdir(), 'bark-release-'));
 writeFileSync(join(dir, 'policy.mjs'), readFileSync(src, 'utf8'));
-const { releaseHeldBarks, HELD_BARK_GAP_MS, HELD_BARK_CAP } =
+const { releaseHeldBarks, HELD_BARK_GAP_MS, HELD_BARK_CAP, HELD_BARK_VOICE_CAP_MS } =
   await import(pathToFileURL(join(dir, 'policy.mjs')).href);
+
+// npc-barks.js with its imports stubbed, except the real policy (gap and voice cap shortened
+// through globals so the tests run on real timers in milliseconds).
+writeFileSync(join(dir, 'npc-barks.mjs'), `
+import { releaseHeldBarks as realRelease } from './policy.mjs';
+const releaseHeldBarks = (q, o) => realRelease(q, { ...o, gapMs: globalThis.__gapMs, voiceCapMs: globalThis.__capMs });
+const ASSETS_PATH = '', overlayDepth = () => 0, displayDashes = (s) => s;
+const workstationPopupOpen = () => false, phoneThreadOpenFor = () => false, openPhoneThread = () => null, threadTextKey = () => '';
+const barkLifetimeMs = () => 0, barksToTrim = () => 0, BARK_RESUME_MIN_MS = 0, inventoryBlockedByForcedMinigame = () => false;
+const phoneBarkText = (s) => s;
+class TTSManager {}
+` + readFileSync(join(here, '../../public/break_escape/js/systems/npc-barks.js'), 'utf8')
+  .replace(/^import [\s\S]*?;\s*$/gm, '').replace('export default class', 'export class'));
+globalThis.window = globalThis.window || {};
+const { NPCBarkSystem } = await import(pathToFileURL(join(dir, 'npc-barks.mjs')).href);
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
 const bark = (text, extra = {}) => ({ npcId: 'n', text, ...extra });
 function harness({ hold = () => false, persistent = () => false } = {}) {
@@ -128,4 +144,206 @@ test('wiring: the persistent-copy check finds the NPC manager although main.js n
   const barks = readFileSync(join(here, '../../public/break_escape/js/systems/npc-barks.js'), 'utf8');
   const body = barks.slice(barks.indexOf('_hasPersistentCopy(payload) {'));
   assert.match(body.slice(0, 600), /this\.npcManager \|\| \(typeof window !== 'undefined' \? window\.npcManager : null\)/);
+});
+
+// ---- the last held bark's voice (train 31: Ravi's held bark ran 1.2 s into Helen's) ----
+
+function deferred() { let resolve; const p = new Promise(r => { resolve = r; }); return { p, resolve }; }
+
+test('a voiced last bark keeps the release going: a bark that joins during its voice waits for it', async () => {
+  const order = [];
+  const voice = deferred();
+  const q = [bark('ravi')];
+  const opts = {
+    shouldHold: () => false,
+    render: (p) => { order.push(`show ${p.text}`); return p.text === 'ravi' ? { voiceEnd: voice.p } : undefined; },
+    sleep: (ms) => wait(ms === 5 ? 5 : 1000), gapMs: 5, voiceCapMs: 1000, log: () => {}
+  };
+  const run = releaseHeldBarks(q, opts);
+  await wait(10);
+  q.push(bark('helen'));                       // her barkDelay fires while his voice plays
+  order.push('helen due');
+  await wait(10);
+  assert.deepEqual(order, ['show ravi', 'helen due'], 'not shown over his voice');
+  order.push('ravi voice ends'); voice.resolve(true);
+  assert.equal(await run, 2);
+  assert.deepEqual(order, ['show ravi', 'helen due', 'ravi voice ends', 'show helen']);
+});
+
+test('the wait after a voice is the longer of the voice and the gap', async () => {
+  const order = [];
+  const q = [bark('a'), bark('b')];
+  await releaseHeldBarks(q, {
+    shouldHold: () => false,
+    render: (p) => { order.push(`show ${p.text}`); return { voiceEnd: wait(5).then(() => { order.push(`end ${p.text}`); return true; }) }; },
+    sleep: (ms) => wait(ms), gapMs: 30, voiceCapMs: 1000, log: () => {}
+  });
+  assert.deepEqual(order, ['show a', 'end a', 'show b', 'end b']);
+});
+
+test('no voice (TTS 503, no audio): the last bark ends the release at once, as before', async () => {
+  const sleeps = [];
+  const t0 = Date.now();
+  const shown = await releaseHeldBarks([bark('a')], {
+    shouldHold: () => false,
+    render: () => ({ voiceEnd: Promise.resolve(false) }),
+    sleep: (ms) => { sleeps.push(ms); return new Promise(() => {}); },   // a gap that never ends
+    gapMs: 5000, voiceCapMs: 60000, log: () => {}
+  });
+  assert.equal(shown, 1);
+  assert.ok(Date.now() - t0 < 500, 'did not wait the gap');
+});
+
+test('cap: a voice that never settles is waited for at most voiceCapMs, then the line goes on', async () => {
+  const logs = [];
+  const q = [bark('hung'), bark('next')];
+  const shown = [];
+  const t0 = Date.now();
+  const n = await releaseHeldBarks(q, {
+    shouldHold: () => false,
+    render: (p) => { shown.push(p.text); return { voiceEnd: new Promise(() => {}) }; },
+    sleep: (ms) => wait(ms), gapMs: 5, voiceCapMs: 40, log: (...a) => logs.push(a.join(' '))
+  });
+  assert.equal(n, 2);
+  assert.deepEqual(shown, ['hung', 'next']);
+  assert.ok(Date.now() - t0 < 1000);
+  assert.ok(logs.some(l => l.includes('capped') && l.includes('hung')));
+  assert.equal(HELD_BARK_VOICE_CAP_MS, 30000);
+});
+
+test('cap: no "capped" log when the voice ended first', async () => {
+  const logs = [];
+  await releaseHeldBarks([bark('a')], {
+    shouldHold: () => false,
+    render: () => ({ voiceEnd: Promise.resolve(true) }),
+    sleep: (ms) => wait(ms), gapMs: 5, voiceCapMs: 30, log: (...a) => logs.push(a.join(' '))
+  });
+  await wait(50);
+  assert.equal(logs.length, 0);
+});
+
+test('a minigame opening during the last voice holds the bark that joined; it shows on the next release', async () => {
+  let open = false;
+  const voice = deferred();
+  const shown = [];
+  const q = [bark('ravi')];
+  const opts = {
+    shouldHold: () => open,
+    render: (p) => { shown.push(p.text); return p.text === 'ravi' ? { voiceEnd: voice.p } : undefined; },
+    sleep: (ms) => wait(ms), gapMs: 5, voiceCapMs: 1000, log: () => {}
+  };
+  const run = releaseHeldBarks(q, opts);
+  await wait(10);
+  q.push(bark('helen'));
+  open = true;
+  voice.resolve(true);
+  assert.equal(await run, 1);
+  assert.deepEqual(q.map(p => p.text), ['helen'], 'still held');
+  open = false;
+  await releaseHeldBarks(q, opts);
+  assert.deepEqual(shown, ['ravi', 'helen']);
+});
+
+test('stale and capped rules still apply to barks released after a voice', async () => {
+  let valid = true;
+  const voice = deferred();
+  const shown = [];
+  const q = [bark('a')];
+  const run = releaseHeldBarks(q, {
+    shouldHold: () => false,
+    render: (p) => { shown.push(p.text); return p.text === 'a' ? { voiceEnd: voice.p } : undefined; },
+    sleep: (ms) => wait(ms), gapMs: 5, voiceCapMs: 1000, log: () => {}
+  });
+  await wait(5);
+  q.push(bark('gone', { stillValid: () => valid }), bark('kept'));
+  valid = false;
+  voice.resolve(true);
+  await run;
+  assert.deepEqual(shown, ['a', 'kept']);
+});
+
+// ---- the same through NPCBarkSystem.showBark / drainDeferredBarks ----
+
+function barkSystem() {
+  globalThis.__gapMs = 5; globalThis.__capMs = 2000;
+  const sys = new NPCBarkSystem(null);
+  sys.container = { querySelectorAll: () => [] };
+  sys.events = [];
+  const t0 = Date.now();
+  sys._renderBark = (p) => {
+    sys.events.push({ at: Date.now() - t0, what: `start ${p.text}` });
+    if (!p.voiceMs) return Promise.resolve(null);
+    // A fake audio element: playing, ends after voiceMs
+    const audio = new EventTarget();
+    audio.paused = false; audio.ended = false;
+    sys.ttsManagers.set(p.npcId, { audio });
+    setTimeout(() => {
+      audio.ended = true; audio.paused = true;
+      sys.events.push({ at: Date.now() - t0, what: `end ${p.text}` });
+      audio.dispatchEvent(new Event('ended'));
+    }, p.voiceMs);
+    return Promise.resolve(p.voiceMs);
+  };
+  return sys;
+}
+const whats = (sys) => sys.events.map(e => e.what);
+
+test('NPCBarkSystem: a bark due while the last held voice plays is held behind it (train 31)', async () => {
+  const sys = barkSystem();
+  try {
+    window.currentConversationMinigameType = 'person-chat';     // the network map panel
+    sys.showBark({ npcId: 'ravi', text: 'ravi', voiceMs: 80 });
+    assert.equal(sys.deferredBarkQueue.length, 1);
+    window.currentConversationMinigameType = null;
+    const drained = sys.drainDeferredBarks();
+    await wait(20);
+    assert.equal(sys.isDrainingDeferred, true, 'still busy while his voice plays');
+    sys.showBark({ npcId: 'helen', text: 'helen', voiceMs: 30 });   // her barkDelay fires
+    assert.deepEqual(whats(sys), ['start ravi'], 'held, not rendered over him');
+    await drained;
+    await wait(80);
+    assert.deepEqual(whats(sys), ['start ravi', 'end ravi', 'start helen', 'end helen']);
+    assert.equal(sys.isDrainingDeferred, false);
+    assert.equal(sys.deferredBarkQueue.length, 0);
+  } finally { window.currentConversationMinigameType = null; }
+});
+
+test('NPCBarkSystem: a bark that was never held renders at once, with no added delay', async () => {
+  const sys = barkSystem();
+  sys.showBark({ npcId: 'ravi', text: 'plain', voiceMs: 50 });
+  assert.deepEqual(whats(sys), ['start plain'], 'rendered in the same tick');
+  assert.equal(sys.deferredBarkQueue.length, 0);
+  sys.showBark({ npcId: 'helen', text: 'second' });
+  await wait(0);
+  assert.deepEqual(whats(sys), ['start plain', 'start second'], 'not held behind the first voice');
+  await wait(70);
+});
+
+test('NPCBarkSystem: no audio event (element gone) falls back to the clip length plus a second', async () => {
+  const sys = barkSystem();
+  const t0 = Date.now();
+  const ended = await sys._voiceEnd('nobody', Promise.resolve(20));
+  assert.equal(ended, true);
+  assert.ok(Date.now() - t0 >= 1000 && Date.now() - t0 < 1600);
+  assert.equal(await sys._voiceEnd('nobody', Promise.resolve(null)), false, 'no voice');
+  assert.equal(await sys._voiceEnd('nobody', Promise.reject(new Error('fetch failed'))), false);
+});
+
+test('NPCBarkSystem: a minigame opening during the last held voice keeps the next bark held', async () => {
+  const sys = barkSystem();
+  try {
+    window.currentConversationMinigameType = 'person-chat';
+    sys.showBark({ npcId: 'ravi', text: 'ravi', voiceMs: 50 });
+    window.currentConversationMinigameType = null;
+    const drained = sys.drainDeferredBarks();
+    await wait(10);
+    sys.showBark({ npcId: 'helen', text: 'helen' });
+    window.currentConversationMinigameType = 'person-chat';     // the player opens a chat
+    await drained;
+    assert.deepEqual(whats(sys), ['start ravi', 'end ravi']);
+    assert.equal(sys.deferredBarkQueue.length, 1);
+    window.currentConversationMinigameType = null;
+    await sys.drainDeferredBarks();
+    assert.deepEqual(whats(sys), ['start ravi', 'end ravi', 'start helen']);
+  } finally { window.currentConversationMinigameType = null; }
 });

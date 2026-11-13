@@ -8,7 +8,10 @@
 //     against the original event data, or a timed text's skipIfGlobal). False => dropped
 //     as "stale". A bark with no stillValid() can't go stale.
 //  3. One at a time, HELD_BARK_GAP_MS apart (or until its voice finishes, if longer).
-//     If a minigame opens mid-release, the rest wait for the next release.
+//     The wait also follows the last bark if it was voiced, so a bark arriving while that
+//     voice plays joins the line instead of talking over it. A voice that never settles
+//     is waited for at most HELD_BARK_VOICE_CAP_MS. If a minigame opens mid-release (or
+//     during that last wait), the rest wait for the next release.
 //  4. Cap: if more than HELD_BARK_CAP are still waiting, the oldest beyond the newest
 //     HELD_BARK_CAP are dropped ("capped"), but only barks with a persistent copy
 //     (hasPersistentCopy(): the text is in a phone thread the player can reopen).
@@ -17,6 +20,7 @@
 
 export const HELD_BARK_GAP_MS = 2500;
 export const HELD_BARK_CAP = 3;
+export const HELD_BARK_VOICE_CAP_MS = 30000;
 
 const textOf = (p) => (p && (p.text || p.message)) || '';
 
@@ -45,19 +49,23 @@ export function pruneHeldBarks(queue, { hasPersistentCopy = () => false, cap = H
 
 /**
  * Release held barks in order, one at a time.
- * @param {Array} queue           held payloads, oldest first (mutated)
+ * @param {Array} queue           held payloads, oldest first (mutated; barks pushed while it
+ *                                runs are released too, in order)
  * @param {Object} o
  * @param {Function} o.shouldHold   () => true while a minigame is open
- * @param {Function} o.render       async (payload) => optional promise that settles when its voice ends
+ * @param {Function} o.render       (payload) => optional { voiceEnd }: voiceEnd is a promise
+ *                                  that settles when its voice has ended, true if a voice played
  * @param {Function} [o.sleep]      (ms) => Promise
  * @param {Function} [o.hasPersistentCopy]
  * @param {number}   [o.gapMs]
+ * @param {number}   [o.voiceCapMs]  longest wait for one voice to end
  * @param {Function} [o.log]
  * @returns {Promise<number>} how many barks were shown
  */
 export async function releaseHeldBarks(queue, o) {
   const {
     shouldHold, render, hasPersistentCopy = () => false, gapMs = HELD_BARK_GAP_MS,
+    voiceCapMs = HELD_BARK_VOICE_CAP_MS,
     sleep = (ms) => new Promise(r => setTimeout(r, ms)), log = console.debug
   } = o;
   if (queue.length === 0 || shouldHold()) return 0;
@@ -67,9 +75,25 @@ export async function releaseHeldBarks(queue, o) {
     if (shouldHold()) break;                 // a minigame opened: the rest wait for it
     const payload = queue.shift();
     if (isStale(payload)) { drop(payload, 'stale', log); continue; }
-    const voice = await render(payload);
+    const out = await render(payload);
     shown++;
-    if (queue.length > 0) await Promise.all([voice || Promise.resolve(), sleep(gapMs)]);
+    const voiceEnd = out && typeof out === 'object' ? out.voiceEnd : null;
+    if (!voiceEnd) {
+      if (queue.length > 0) await sleep(gapMs);
+      continue;
+    }
+    // Wait for the voice (capped) and the gap together. After the last bark, wait only if
+    // it spoke: a bark that came in meanwhile is now in the queue and the loop goes on.
+    const gap = sleep(gapMs);
+    let ended = false;
+    const spoke = await Promise.race([
+      Promise.resolve(voiceEnd).then(v => { ended = true; return !!v; }, () => { ended = true; return false; }),
+      sleep(voiceCapMs).then(() => {
+        if (!ended) log('[barks] held bark voice wait capped:', textOf(payload));
+        return true;
+      })
+    ]);
+    if (spoke || queue.length > 0) await gap;
   }
   return shown;
 }

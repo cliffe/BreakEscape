@@ -173,6 +173,8 @@ export default class NPCBarkSystem {
     // (payload.stillValid) and stale ones dropped; one every ~2.5 s; more than 3 waiting drops
     // the oldest ones that also sit in a phone thread. Drops are logged with console.debug.
     // A bark arriving mid-release joins the end of the line, so it can't jump the queue.
+    // The release lasts until the last held bark's voice ends (isDrainingDeferred), so a
+    // bark due while that voice plays waits for it instead of talking over it.
     if (this._shouldDefer(payload) || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) {
       console.log('💬 conversation/minigame open — deferring bark:', payload.text || payload.message);
       this.deferredBarkQueue.push(payload);
@@ -264,12 +266,39 @@ export default class NPCBarkSystem {
     try {
       await releaseHeldBarks(this.deferredBarkQueue, {
         shouldHold: () => this._shouldDefer(),
-        render: (payload) => this._renderBark(payload),
+        render: (payload) => ({ voiceEnd: this._voiceEnd(payload.npcId, this._renderBark(payload)) }),
         hasPersistentCopy: (payload) => this._hasPersistentCopy(payload)
       });
     } finally {
       this.isDrainingDeferred = false;
     }
+  }
+
+  /**
+   * Settles when a rendered bark's voice has finished: true if it played, false if there was
+   * none (no TTS, a 503, a failed fetch). `started` is _renderBark's promise, which settles
+   * with the clip length in ms once playback starts. The end is the audio element's
+   * ended/pause/error event (stop() pauses it), or the clip length plus a second if no event
+   * comes. The release policy also caps the whole wait.
+   */
+  async _voiceEnd(npcId, started) {
+    let ms = null;
+    try { ms = await started; } catch (e) { console.debug('[barks] held bark render failed:', e); return false; }
+    if (!ms) return false;
+    const audio = npcId && this.ttsManagers.get(npcId)?.audio;
+    return new Promise(resolve => {
+      const events = ['ended', 'pause', 'error', 'emptied'];
+      let timer = null;
+      const done = () => {
+        clearTimeout(timer);
+        if (audio) for (const ev of events) audio.removeEventListener(ev, done);
+        resolve(true);
+      };
+      timer = setTimeout(done, ms + 1000);
+      if (!audio) return;
+      if (audio.ended || audio.paused) { done(); return; }
+      for (const ev of events) audio.addEventListener(ev, done);
+    });
   }
 
   /**
