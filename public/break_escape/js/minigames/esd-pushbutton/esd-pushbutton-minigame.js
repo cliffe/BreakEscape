@@ -210,6 +210,13 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         this._pinConfirmToView(true);
     }
 
+    // Esc is Cancel while the confirm is open; with none open it closes the scene
+    handleEscapeKey() {
+        if (this.state !== 'CONFIRM_MODAL') return false;
+        this.hideConfirmModal();
+        return true;
+    }
+
     hideConfirmModal() {
         this.state = 'GUARD_OPEN';
         this.confirmModal.classList.remove('active');

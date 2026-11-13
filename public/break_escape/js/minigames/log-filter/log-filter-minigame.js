@@ -351,6 +351,7 @@ export class LogFilterMinigame extends MinigameScene {
     _switchTab(tabId) {
         this._currentTab = tabId;
         this._overlayMode = null;
+        this._hideSceneX(false);
         this._updateTabActiveClass();
 
         const body = this._dom.body;
@@ -949,12 +950,29 @@ export class LogFilterMinigame extends MinigameScene {
     _openOverlay(mode) {
         this._overlayMode = mode;
         this._renderOverlay();
+        this._hideSceneX(true);
     }
 
     _closeOverlay() {
         this._overlayMode = null;
-        const existing = this._dom.body.querySelector('.lf-overlay');
+        const existing = this._dom.body?.querySelector('.lf-overlay');
         if (existing) existing.remove();
+        this._hideSceneX(false);
+    }
+
+    // One close control at a time (UI consoles rule): pop-ups carry their own X, the two
+    // confirm-style ones carry named buttons and no X, so the scene X hides while one is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#minigame-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // Esc acts as Cancel on an open pop-up and leaves the scene open; with none open it
+    // closes the scene as before (base-minigame handleEscapeKey hook)
+    handleEscapeKey() {
+        if (!this._overlayMode) return false;
+        this._closeOverlay();
+        return true;
     }
 
     _renderOverlay() {
@@ -981,11 +999,17 @@ export class LogFilterMinigame extends MinigameScene {
         const hdr = this._el('div', 'lf-overlay-header');
         const t = this._el('span');
         t.textContent = displayDashes(title);
-        const closeBtn = this._el('button', 'lf-overlay-close');
-        closeBtn.textContent = '[✕]';
-        closeBtn.addEventListener('click', () => this._closeOverlay());
         hdr.appendChild(t);
-        hdr.appendChild(closeBtn);
+        // Confirm-style pop-ups keep their named buttons and have no X; the rest use the
+        // shared X, inside the pop-up
+        if (this._overlayMode !== 'flag_confirm' && this._overlayMode !== 'flag_rejected') {
+            const closeBtn = this._el('button', 'minigame-close-button lf-overlay-close');
+            closeBtn.type = 'button';
+            closeBtn.ariaLabel = 'Close';
+            closeBtn.textContent = '\u00d7';
+            closeBtn.addEventListener('click', () => this._closeOverlay());
+            hdr.appendChild(closeBtn);
+        }
         panel.appendChild(hdr);
         const body = this._el('div', 'lf-overlay-body');
         panel.appendChild(body);

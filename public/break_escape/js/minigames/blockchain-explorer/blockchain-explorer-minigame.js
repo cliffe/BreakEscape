@@ -446,7 +446,7 @@ export class BlockchainExplorerMinigame extends MinigameScene {
                     ${caseRef}
                 </div>
                 <div class="bce-body">
-                    <div class="bce-graph-pane" id="bce-graph-pane">
+                    <div class="bce-graph-pane pixel-scroll" id="bce-graph-pane">
                         ${this._renderGraph()}
                     </div>
                     <div class="bce-detail" id="bce-detail">

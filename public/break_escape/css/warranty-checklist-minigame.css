@@ -68,6 +68,9 @@
 .wcc-letterhead {
     background: #1a233a;
     padding: 9px 52px 9px 20px;
+    /* Tall enough that the shell X (15px from the top, 30px high) sits wholly inside the bar */
+    min-height: 62px;
+    box-sizing: border-box;
     display: flex;
     flex-wrap: wrap;
     align-items: center;

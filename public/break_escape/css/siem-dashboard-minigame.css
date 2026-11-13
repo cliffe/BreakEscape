@@ -223,7 +223,7 @@
     min-width: 90px;
     height: 36px;
     border: 2px solid #2d3856;
-    font-family: 'Press Start 2P', monospace;
+    font-family: 'GNF', monospace;
     font-size: 16px;
     line-height: 24px;
     color: #ffffff;
@@ -472,7 +472,7 @@
 
 .siem-sources-empty {
     font-family: 'GNF', monospace;
-    font-size: 12px;
+    font-size: 16px;
     color: #6e7583;
     text-align: center;
     padding: 12px;
@@ -518,7 +518,7 @@
 
 .siem-source-count {
     font-family: 'GNF', monospace;
-    font-size: 10px;
+    font-size: 16px;
     color: #00ffff;
     text-align: right;
     min-width: 28px;
@@ -627,8 +627,6 @@
     .siem-btn {
         min-width: 0;
         flex: 1 1 auto;
-        font-size: 8px;
-        line-height: 16px;
     }
 
     .siem-pane-title {

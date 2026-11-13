@@ -163,3 +163,69 @@ test('after-shot fixes: SIEM rows never shrink and wrap the message onto its own
         assert.match(lf, new RegExp(`'${cls} pixel-scroll'`), `${cls} scrolls with the pixel scrollbar`);
     }
 });
+
+test('review round 1: log filter pop-ups follow the one-close-control rule (M3)', () => {
+    const lf = src(SCENES['log-filter']);
+    assert.doesNotMatch(lf, /\[✕\]/, 'no text [✕] left');
+    assert.match(lf, /minigame-close-button lf-overlay-close/, 'info pop-ups use the shared X');
+    assert.match(lf, /_overlayMode !== 'flag_confirm' && this\._overlayMode !== 'flag_rejected'/, 'confirm-style pop-ups have no X');
+    assert.match(lf, /'\[CANCEL\]'/);
+    assert.match(lf, /\[CONFIRM: FLAG ACTIVE SESSION\]/);
+    assert.match(lf, /_hideSceneX\(true\)/);
+    assert.match(lf, /_hideSceneX\(false\)/);
+});
+
+test('review round 1: Esc is Cancel on an open pop-up or confirm and only closes the scene when none is open (m2)', () => {
+    const base = src('framework/base-minigame.js');
+    assert.match(base, /typeof this\.handleEscapeKey === 'function' && this\.handleEscapeKey\(e\)\) return;/);
+    for (const name of ['sis-config-threshold', 'esd-pushbutton', 'log-filter']) {
+        assert.match(src(SCENES[name]), /handleEscapeKey\(\) \{/, `${name} handles Esc on its pop-up`);
+    }
+});
+
+test('review round 1: Esc handler runs the scene hook before closing (behaviour)', () => {
+    // The framework's handler logic, replayed: a hook that returns true stops the close
+    const run = (hook) => {
+        let closed = false;
+        const self = { handleEscapeKey: hook, closeByPlayer() { closed = true; } };
+        const e = { key: 'Escape' };
+        if (!(typeof self.handleEscapeKey === 'function' && self.handleEscapeKey(e))) self.closeByPlayer();
+        return closed;
+    };
+    assert.equal(run(() => true), false, 'pop-up open: scene stays');
+    assert.equal(run(() => false), true, 'no pop-up: scene closes');
+    assert.equal(run(undefined), true, 'no hook: scene closes');
+});
+
+test('review round 1: buttons the framework styles in GNF are declared GNF at their size, none under the font floors (M2, m5)', () => {
+    // .minigame-container button { font-family: GNF } beats a single-class Press Start rule,
+    // so these button rules declare what they render, and no phone rule shrinks them to 8px
+    const fw = css('minigames-framework.css');
+    assert.match(fw, /\.minigame-container button[^{]*\{\s*font-family: 'GNF'/);
+    const backup = css('backup-recovery-minigame.css');
+    assert.match(backup, /\.backup-recovery-confirm-btn \{[^}]*font-family: 'GNF'[^}]*font-size: 16px/);
+    assert.doesNotMatch(backup.slice(backup.indexOf('@media (max-width: 860px)')), /\.backup-recovery-confirm-btn \{[^}]*font-size/);
+    const siem = css('siem-dashboard-minigame.css');
+    assert.match(siem, /\.siem-btn \{[^}]*font-family: 'GNF'[^}]*font-size: 16px/);
+    assert.doesNotMatch(siem.slice(siem.indexOf('@media (max-width: 600px)')), /\.siem-btn \{[^}]*font-size/);
+    assert.match(siem, /\.siem-source-count \{[^}]*font-size: 16px/);
+    assert.match(css('infusion-pump-minigame.css'), /\.ip-more-below \{[^}]*font-family: 'GNF'[^}]*font-size: 16px/);
+    assert.match(css('network-segmentation-map-minigame.css'), /\.nsm-device \{[^}]*font-size: 16px/);
+    // GNF/VT323 text never under 16px, Press Start never under 8px in these sheets (button rules)
+    for (const s of ['backup-recovery', 'siem-dashboard', 'infusion-pump', 'network-segmentation-map']) {
+        for (const m of css(`${s}-minigame.css`).matchAll(/\{([^{}]*font-family:\s*'(GNF|VT323)'[^{}]*)\}/g)) {
+            const size = /font-size:\s*(\d+)px/.exec(m[1]);
+            if (size) assert.ok(+size[1] >= 16, `${s}: ${m[2]} at ${size[1]}px`);
+        }
+    }
+});
+
+test('review round 1: segmentation map keeps its panel in view (M1), SIS title wraps (m1), X bands (m3), graph scrollbar (m4)', () => {
+    const nsm = css('network-segmentation-map-minigame.css');
+    assert.match(nsm, /@media \(max-width: 1100px\) \{\s*\.nsm-body \{\s*flex-direction: column/, 'map and panel stack under 1100px (760px map + 320px panel)');
+    assert.match(css('sis-config-threshold-minigame.css'), /\.sis-modal h4 \{\s*overflow-wrap: anywhere/);
+    assert.match(css('warranty-checklist-minigame.css'), /\.wcc-letterhead \{[^}]*min-height: 62px/);
+    assert.match(css('sis-config-threshold-minigame.css'), /\.sis-threshold-header \{\s*margin-top: 28px/);
+    assert.match(src(SCENES['blockchain-explorer']), /class="bce-graph-pane pixel-scroll"/);
+    assert.match(css('claims-management-system-minigame.css'), /\.cms-nav-label \{[^}]*overflow-wrap: anywhere/);
+});

@@ -199,6 +199,7 @@
 }
 
 .sis-modal h4 {
+    overflow-wrap: anywhere;
     margin: 0 0 8px 0;
     color: #f4f7fb;
     font-size: 20px;
@@ -279,6 +280,11 @@
 @media (max-width: 600px) {
     .sis-threshold-minigame-game-container {
         padding: 6px;
+    }
+
+    /* The shell X sits in the dark band above the blue header box, not across its corner */
+    .sis-threshold-header {
+        margin-top: 28px;
     }
 
     .sis-threshold-table thead {

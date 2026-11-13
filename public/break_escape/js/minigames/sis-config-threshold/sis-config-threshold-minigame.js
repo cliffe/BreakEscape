@@ -248,6 +248,13 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.showSuccess('SIS tamper reported. Priya has been notified.', true, 900);
     }
 
+    // Esc is Cancel on an open pop-up or confirm; with none open it closes the scene
+    handleEscapeKey() {
+        if (!this.overlayEl?.classList.contains('show')) return false;
+        this.closeOverlay();
+        return true;
+    }
+
     closeOverlay() {
         if (!this.overlayEl) return;
         this.overlayEl.classList.remove('show');

@@ -564,19 +564,16 @@
     align-items: center;
 }
 
-.lf-overlay-close {
-    background: none;
-    border: 2px solid #666688;
-    color: #9999bb;
-    font-family: inherit;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 1px 6px;
+/* The shared X, in the header row (not floated over the title) */
+.lf-overlay-header .lf-overlay-close {
+    position: static;
+    flex: none;
+    margin-left: 8px;
 }
 
-.lf-overlay-close:hover {
-    border-color: #ffffff;
-    color: #ffffff;
+.lf-overlay-header span {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .lf-overlay-body {

@@ -124,7 +124,7 @@
 
 .nsm-device {
     font-family: 'GNF', monospace;
-    font-size: 15px;
+    font-size: 16px;
     color: #cccccc;
     background: rgba(255,255,255,0.05);
     border: 2px solid rgba(255,255,255,0.12);
@@ -483,9 +483,9 @@
     border-color: #ff4400;
 }
 
-/* Narrow windows: the consequence panel goes under the map; the map keeps its width and
+/* Windows under 1100px (map 760px + panel up to 320px): the consequence panel goes under the map; the map keeps its width and
    scrolls sideways inside the body (critique B NSM1) */
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
     .nsm-body {
         flex-direction: column;
     }

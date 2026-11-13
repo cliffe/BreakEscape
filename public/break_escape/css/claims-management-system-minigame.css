@@ -142,6 +142,8 @@
 }
 
 .cms-nav-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-size: 22px;
     line-height: 1.1;
 }

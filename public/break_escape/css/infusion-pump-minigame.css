@@ -360,9 +360,9 @@
     align-items: center;
     gap: 8px;
     padding: 6px 10px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    line-height: 16px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 20px;
     color: #9ee6ff;
     background: #0d1324;
     border: 2px solid #9ee6ff;

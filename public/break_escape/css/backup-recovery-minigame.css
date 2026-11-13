@@ -274,7 +274,9 @@
     border: 2px solid #8f6323;
     background: #c9882f;
     color: #17100a;
-    font-family: 'Press Start 2P', monospace;
+    /* GNF: the framework's button rule sets GNF at higher specificity than a single class,
+       so a Press Start declaration here never applied */
+    font-family: 'GNF', monospace;
     font-size: 16px;
     line-height: 24px;
     padding: 12px 14px;
@@ -330,8 +332,6 @@
     }
 
     .backup-recovery-confirm-btn {
-        font-size: 8px;
-        line-height: 16px;
         padding: 12px 10px;
     }
 }
