@@ -217,7 +217,7 @@ item collection reads `unlockedRooms` and the room stays locked, so the honest n
 stands in the room, collects nothing, is credited nothing, and is turned round by the ink as
 designed.
 
-`sync_state` loads the row with `SYNC_STATE_COLUMNS` only (`games_controller.rb:2022`, no
+`sync_state` loads the row with `SYNC_STATE_COLUMNS` only (`games_controller.rb:2027`, no
 `scenario_data`), so **every** scenario read on this path raises `ActiveModel::MissingAttributeError`.
 This is not limited to reading the gate blob. The viaPass credit runs the whole `complete_task!` call
 tree, and that tree reads `scenario_data` in five places, every one of them unconditional:
@@ -381,10 +381,12 @@ in `unlockedRooms`. All of these paths run in the `unlock`/feedback flow on a fu
 - **Transient honest-refusal window, viaPass path only.** viaPass promotes on the `currentRoom` sync
   (§3.3a), not on an `/unlock`, so an honest hi-vis player who enters `secure_area` and unlocks a
   container there within the same batch, before the promoting `currentRoom` sync lands, hits the
-  valid-path `room_not_reachable` refusal. It self-heals: the next sync promotes the room and the client
-  retries. The client gate must therefore treat `room_not_reachable` as **retryable** (re-attempt after
-  the next sync), not a hard error surfaced to the player. In practice the `currentRoom` sync precedes
-  walking to an object by seconds, so the window is unlikely, but the client owns the retry. The
+  valid-path `room_not_reachable` refusal. The server marks it **retryable** (`success: false`,
+  `reason: room_not_reachable`, `retryable: true`, `status: :forbidden`), and the client treats it the
+  same way it treats the `enter_room` retryable refusal (§8.3): it awaits one `window.stateSync.sync()`
+  (which promotes the room) and re-attempts, rather than surfacing a hard error to the player. In
+  practice the `currentRoom` sync precedes walking to an object by seconds, so the window is unlikely,
+  but the client owns the retry, and the two retryable refusals share one handling path. The
   credential path has no such window: it promotes synchronously inside the `/unlock` door branch (§3.3b)
   before any object unlock.
 
@@ -546,9 +548,20 @@ every room the player has reached:
 Add a model predicate `player_reached_room?(room_id)`: true when the room is in `unlockedRooms`, is
 the `startRoom`, is an awareness world room, is in `npcRouteRooms`, or equals the saved
 `currentRoom`. Replace the trust comment in the `enter_room` branch of `complete_task!`
-(`game.rb:3745`) with: refuse (`{ success: false, error: 'Room not reached' }`) unless
-`player_reached_room?(task['targetRoom'])`. `complete_task!` runs on a full game load, so
-`scenario_data` is present and `start_room?`/`awareness_world_room?` read it directly.
+(`game.rb:3745`) with: refuse (`{ success: false, error: 'Room not reached', retryable: true }`)
+unless `player_reached_room?(task['targetRoom'])`. The refusal is marked **retryable** so the client
+can re-sync and re-post rather than strand the task (§8.3). `complete_task!` runs on a full game
+load, so `scenario_data` is present and `start_room?`/`awareness_world_room?` read it directly.
+
+**The durable terms carry the check; the `currentRoom` disjunct is defensive.**
+`merge_last_write_wins_sections` (`games_controller.rb:2098`) only ever sets the saved `currentRoom`
+to a room already in `unlockedRooms`/`startRoom` (and, per §3.3a, `npcRouteRooms`), so a legitimate
+saved `currentRoom` is always a member of one of the other disjuncts already. The `currentRoom` term
+therefore adds no coverage of its own; it is kept as a harmless belt-and-braces disjunct, and a
+builder must not read it as doing independent work or weaken the durable terms in reliance on it. The
+awareness-world case likewise rests on `awareness_world_room?` (and the auto-unlock of a world room
+into `unlockedRooms` on `GET room`), not on `currentRoom`, which the sync guard does not admit for a
+world room directly.
 
 This is a **server sanity check**, not a hard secret gate (cheat policy: room entry is control-flow,
 low stakes). The union is permissive on purpose: it passes every player who honestly reached the
@@ -558,31 +571,64 @@ for a room the player has not legitimately reached, the forge cannot fake the on
 
 ### 8.3 Network delays, races and reconnect
 
-The durable `unlockedRooms` membership is written by the door unlock, which necessarily precedes
-physical entry, so in ordinary play the room is already server-known when the completion POST lands.
-To close the residual ordering gap, reuse the proven conclude-race pre-flush pattern
-(`CONCLUDE_RACE_BUILD_LOG.md`; `ObjectivesManager.flushPendingGlobals()`): before posting an
-`enter_room` completion, `ObjectivesManager` awaits a `window.stateSync.sync()` so the pending
-`currentRoom` (and any entry-driven globals) reaches the server first. `sync()` sends
-`buildChanges()` deltas only, and nothing when nothing changed, so there is no state growth (§9). The
-pre-flush is scoped to the `enter_room` completion path, so every other scenario keeps its current
-timing.
+**The guarantee is the door unlock's durable write, not any client ordering.** A locked door is
+entered only through a server-checked unlock: `handleUnlock` -> `notifyServerUnlock` -> `POST /unlock`
+-> `serve_opened_room` -> `unlock_room!` (`game.rb:116`), which appends the room to `unlockedRooms`.
+An **unlocked** door or open doorway is not a bypass either: `handleUnlock`
+(`unlock-system.js:696`) still POSTs `method: unlocked` (`:721-755`), so the server still runs
+`unlock_room!`. The client awaits that POST (it opens the door and runs `loadRoom` inside the `.then`
+of `notifyServerUnlock`) before the avatar can cross, and the `enter_room` completion fires only on
+`handleRoomEntered` after the avatar is inside. So `unlockedRooms` holds the target **before** the
+avatar physically enters and therefore before the completion POST can be sent, on every honest route.
+`unlockedRooms` is monotonic (it never shrinks when the player leaves) and persisted, so once written
+it is there for the check no matter how the later requests are delayed, dropped, duplicated,
+reconnected or reloaded. `player_reached_room?` reading `unlockedRooms` is what makes the honest
+completion pass; nothing downstream has to arrive in order.
 
-Why the pre-flush, not a server grace timer or deferred completion: the pre-flush is the pattern
-already on main for the conclude race, so there is one mechanism to reason about; it needs no
-per-task pending state on the server (a grace timer or a deferred-completion queue would add state
-that must expire and persist, against the spirit of the SYNC SIZE RULE); and the real guarantee is
-the durable `unlockedRooms` record, which the pre-flush only orders, not creates. Each listed race
-is covered:
+**A pre-flush, where it helps, only improves timing; it is not load-bearing.** Reuse the proven
+conclude-race pre-flush pattern (`ObjectivesManager.flushPendingGlobals()`): before posting an
+`enter_room` completion, `ObjectivesManager` awaits a `window.stateSync.sync()` so any pending
+`currentRoom` and entry-driven globals reach the server first. `sync()` sends `buildChanges()` deltas
+only, and nothing when nothing changed, so there is no state growth (§9), and it is scoped to the
+`enter_room` completion path so every other scenario keeps its current timing. It is a courtesy that
+flushes the soft `currentRoom` signal early; because the check passes on durable `unlockedRooms`
+regardless, a client that cannot or does not pre-flush (an old tab loaded before this change, a
+dropped or aborted sync) still completes honestly. This is why the live proof (§13) must prove the
+completion with the pre-flush delayed, aborted and absent, not merely present.
 
-- **Entry sync arrives after the completion POST.** `unlockedRooms` already holds the room (written
-  by the door unlock before entry); the check passes regardless of the sync. The pre-flush also
-  orders `currentRoom` ahead of the POST.
-- **Slow, retried or duplicated sync.** The check reads the durable lists and is idempotent;
-  `complete_task!`'s already-completed branch makes a duplicate completion a no-op. `currentRoom` is
-  last-write-wins, so a duplicate only re-asserts the same room.
-- **Offline then reconnect.** A completion POST cannot be sent while offline; on reconnect the
-  pre-flush runs, then the POST. `unlockedRooms` persisted across the gap, so the check passes.
+**The refusal is retryable, so a residual race never strands a task.** On the rare path where the
+durable membership is not yet visible to the completion (below), the server answers
+`{ success: false, error: 'Room not reached', retryable: true }`. The client treats a `retryable`
+refusal the way it treats the conclude-race warning and §3.6's `room_not_reachable`: it awaits a
+`window.stateSync.sync()` (flushing `currentRoom` and picking up the server's latest durable state)
+and re-posts the completion once; only a re-post that is still refused surfaces to the player. So a
+true forge (never unlocked, never slipped in) is refused and surfaced, while any honest ordering gap
+self-heals on the next sync. This mirrors §3.6's retryable `room_not_reachable` and keeps the two
+refusals consistent.
+
+**The NPC-route slip-in has a second durable write the pre-flush does not order.** For a route-room
+`enter_room` (`test_gate_tailgate`'s `enter_staff`), the durable membership is `npcRouteRooms`,
+written by the gate NPC's `method: npc` route POST, a separate client->server request the pre-flush
+does not touch. Honest play still holds because the client gate only opens once the NPC holds the
+door, which means that route POST has already fired and `npcRouteRooms` is written before the avatar
+can pass; and if a tight race still loses it, the retryable refusal re-posts after the next sync. So
+the slip-in completes without a bespoke ordering step.
+
+Why the pre-flush, not a server grace timer or deferred completion: it needs no per-task pending
+state on the server (a grace timer or a deferred-completion queue would add state that must expire
+and persist, against the spirit of the SYNC SIZE RULE), and the durable `unlockedRooms`/`npcRouteRooms`
+record is the real guarantee, which the pre-flush only orders, not creates. Each listed condition is
+covered:
+
+- **Entry sync arrives after the completion POST, or never arrives.** `unlockedRooms` already holds
+  the room (written by the door unlock before entry); the check passes regardless of the sync.
+- **Pre-flush delayed, aborted or absent (old tab).** Same durable membership; the completion passes
+  without the pre-flush. The pre-flush only orders the soft `currentRoom` signal.
+- **Slow, retried or duplicated completion.** The check reads the durable lists and is idempotent;
+  `complete_task!`'s already-completed branch makes a duplicate completion a no-op, so a retry or
+  duplicate never double-credits.
+- **Offline then reconnect.** A completion POST cannot be sent while offline; on reconnect the queued
+  completion posts. `unlockedRooms` persisted across the gap, so the check passes.
 - **Reload mid-entry.** `unlockedRooms` is persisted; `currentRoom` is restored on reload. A
   completion attempted after reload passes. (Room entry is low-stakes control flow, so a task left
   active after reload until the player next crosses a room boundary is acceptable.)
@@ -792,28 +838,60 @@ Rails (`test/controllers/break_escape/`, `test/models/break_escape/`), one each:
    as today: the predicate is false (room not in `npcRouteRooms`), so a player who never meets a gate
    sees no change.
 
-**`enter_room` server validation (§8).** Rails, one per race case, each asserting a legitimate player
-is never refused:
+**`enter_room` server validation (§8).** Rails, one per case, each asserting a legitimate player is
+never refused, and each written so it would **fail if the check or its guarantee were removed**. The
+guarantee under test throughout is that the server-checked door unlock writes the target into
+`unlockedRooms` (or the route POST into `npcRouteRooms`) before the avatar can enter, so the durable
+membership is present however the later `currentRoom` sync or pre-flush behaves.
 
-14. **Honest entry, room unlocked.** Target room in `unlockedRooms`, `currentRoom` elsewhere:
-   `complete_task!` for the `enter_room` task succeeds.
-15. **Forge, never reached.** Target room not in `unlockedRooms`/`npcRouteRooms`, not `startRoom`/
-   world, `currentRoom` never synced there: `complete_task!` refuses (`Room not reached`), task stays
-   active.
-16. **Route-room slip-in.** Target room in `npcRouteRooms` only: `enter_room` completes
-   (`player_reached_room?` true), so an honest route slip-in is never refused.
-17. **Entry sync after the completion.** Room in `unlockedRooms` but `currentRoom` not yet synced to
-   it (the ordering race): completion still succeeds on the durable `unlockedRooms` membership.
-18. **Entered then left.** Room in `unlockedRooms`, `currentRoom` already moved to another room:
-   completion still succeeds (union includes `unlockedRooms`, not only `currentRoom`).
-19. **Start room / world room.** An `enter_room` task on `startRoom` (or an awareness world room)
-   completes with no unlock at all.
+14. **Honest entry, room unlocked, `currentRoom` elsewhere.** Target in `unlockedRooms`, saved
+   `currentRoom` is another room (models a delayed, dropped or not-yet-sent entry sync):
+   `complete_task!` for the `enter_room` task succeeds. **Guarantee:** the pre-entry `unlockedRooms`
+   write carries the check. Fails if `player_reached_room?` read only `currentRoom` (regression), or
+   if the trust comment is restored (then nothing is asserted).
+15. **Forge, never reached.** Target not in `unlockedRooms`/`npcRouteRooms`, not `startRoom`/world,
+   `currentRoom` never synced there: `complete_task!` refuses with
+   `{ success: false, error: 'Room not reached', retryable: true }` and the task stays active.
+   **Guarantee:** the check itself. Fails (silently passes a forge) if the trust comment is restored.
+16. **Route-room slip-in.** Target in `npcRouteRooms` only: `enter_room` completes
+   (`player_reached_room?` true). **Guarantee:** the route POST's `npcRouteRooms` write. Fails if the
+   union omits `npcRouteRooms`, refusing the honest slip-in.
+17. **No prior sync at all (old tab).** Target in `unlockedRooms`, no `currentRoom` ever set (null),
+   no entry-driven global written: a completion posted directly, as an old tab with no pre-flush
+   would, succeeds. **Guarantee:** durable `unlockedRooms`, with no reliance on `currentRoom` or any
+   pre-flush. Fails if the check required `currentRoom` to equal the target.
+18. **Duplicated or retried completion is idempotent.** With the target in `unlockedRooms`, complete
+   the `enter_room` task twice (and a third, modelling a client retry): the first succeeds, each
+   later call is a no-op via `complete_task!`'s already-completed branch, and any credited global or
+   counter is written once, not multiplied. **Guarantee:** idempotent completion plus a check that
+   reads only durable state. Fails if a duplicate re-ran the credit or the task flipped back to active.
+19. **Entered then left.** Target in `unlockedRooms`, `currentRoom` already moved to another room:
+   completion still succeeds. **Guarantee:** `unlockedRooms` is monotonic. Fails if the union were
+   narrowed to `currentRoom` only.
+20. **Start room / world room.** An `enter_room` task on `startRoom` (or an awareness world room)
+   completes with no unlock at all. **Guarantee:** the `startRoom`/`awareness_world_room?` disjuncts.
+21. **Retryable refusal self-heals, then forge stays refused.** First complete with the target in no
+   durable list and no `currentRoom`: refused, `retryable: true`, task active. Then add the target to
+   `unlockedRooms` (modelling the sync that the client's retry flushes) and re-post: succeeds. Finally
+   a target that is never added stays refused on every re-post. **Guarantee:** the refusal is
+   retryable, so an honest ordering gap heals on re-post while a true forge is still refused. Fails if
+   the refusal were a hard, non-retryable error (an honest residual race would strand the task) or if
+   the second completion ignored the newly durable membership.
 
 Node (`bin/test-js`): the client gate is unchanged, so its tests stand. Add a scenario-scan check
 that no client `setGlobal` writer of `kp_badge_tailgated` / `kp_records_cloned` remains in the lab.
-Add an `objectives-manager` test that the `enter_room` completion path awaits a `stateSync.sync()`
-pre-flush before the completion POST (mirroring the conclude-race node test), and that it posts
-exactly once on the happy path.
+Add `objectives-manager` tests for the `enter_room` completion path:
+
+- **Pre-flush ordering (happy path).** The path awaits a `stateSync.sync()` before the completion
+  POST (mirroring the conclude-race node test) and posts exactly once.
+- **Completion does not depend on the pre-flush.** With `stateSync.sync()` stubbed to reject or to be
+  absent (an old tab), the completion POST is still sent; the pre-flush is awaited but its outcome
+  never blocks the POST. Fails if a pre-flush error swallowed the completion.
+- **Retryable refusal re-syncs and re-posts once.** When the completion returns
+  `{ success: false, retryable: true, error: 'Room not reached' }`, the client awaits one
+  `stateSync.sync()` and re-posts; a second `retryable` refusal surfaces to the player (one alert, no
+  infinite loop). This exercises the §8.3 / §3.6 retry and would fail if `retryable` were treated as
+  a hard refusal (task stranded) or retried without bound.
 
 Validator: run `LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb <file> --no-graph` on all
 four scenarios; regenerate and commit the lab's dungeon graph (the gated-door edge label changes).
@@ -826,14 +904,36 @@ avatar still stands in the room (no snap-back). Then the honest run (wear hi-vis
 promoted and credited, and the clone run (present `cm_records_badge`) is credited via the rfid
 unlock. The tampered step is the proof the fix bites. Record game ids in the build log.
 
-**Live proof, `enter_room` under a throttled network (§8).** In a headless browser (keyless server
-on the assigned port, `setFPS(20)`, fixed steps on), throttle or delay the room-entry `sync_state`
-request (Playwright `route` with a delay, or network throttling) so it lands after the `enter_room`
-completion POST. Drive an honest player into the target room and confirm the `enter_room` task
-completes and is not refused despite the delayed sync (the durable `unlockedRooms` membership and the
-pre-flush carry it). Then, with a tampered client that never entered the room, `POST` the `enter_room`
-completion directly and confirm the server refuses it (`Room not reached`) and the task stays active.
-Record game ids in the build log.
+**Live proof, `enter_room` under real network delays (§8).** In a headless browser (keyless server
+on the assigned port, `setFPS(20)`, fixed steps on), prove the honest completion against delays the
+player can actually meet, and keep the forge refused. The door `/unlock` is allowed to land normally
+in every honest case (it is what writes the durable `unlockedRooms` membership); what is delayed,
+dropped or skipped is the soft `currentRoom` sync and the pre-flush. Each case names the guarantee it
+proves. Record game ids in the build log.
+
+1. **Delayed, then dropped, `currentRoom` and pre-flush.** With the door `/unlock` already landed,
+   use Playwright `route` to delay the entry `sync_state` by several seconds and, in a repeat,
+   `abort` it entirely. Drive the honest player into the target room and post the `enter_room`
+   completion. It completes and is not refused in either run. **Proves:** the server-checked unlock
+   wrote `unlockedRooms` before the client could enter, so the completion does not depend on the
+   `currentRoom` sync or the pre-flush landing (or landing at all).
+2. **Old tab, no pre-flush.** With the pre-flush disabled (simulating a tab opened before this
+   change), post the completion with no prior `currentRoom` sync for the target. It completes.
+   **Proves:** the durable `unlockedRooms` write, not the client pre-flush, is load-bearing; an old
+   client is not refused.
+3. **Offline then reconnect with a queued completion.** Take the browser offline after entry so the
+   completion cannot be sent, queue it, then reconnect. On reconnect the queued completion posts and
+   completes. **Proves:** `unlockedRooms` persisted across the gap; reconnection timing does not
+   refuse an honest player.
+4. **Duplicated or retried completion.** Fire the `enter_room` completion twice (and let the client
+   retry path re-post). Both report success, the task is completed once, and any credited global or
+   counter is written once. **Proves:** idempotent completion over durable state; a retry or
+   duplicate never double-credits or flips the task back to active.
+5. **Forge, refused.** With a tampered client that never entered the room (target in no durable
+   list), `POST` the `enter_room` completion directly. The server refuses it
+   (`Room not reached`, `retryable: true`), the client re-syncs and re-posts once, the room is still
+   not durably reached, and the refusal surfaces; the task stays active. **Proves:** the check bites
+   on a true forge, and the retryable refusal does not launder a forge into a pass.
 
 ## 14. Build split (chunks a fresh agent can do under about 150k tokens each)
 
@@ -861,10 +961,12 @@ Record game ids in the build log.
   with `visitor_pass` made a worn, server-owned pass (§6, Q1); validator rules (section 12), including
   the server-owned-pass-global rule; dungeon-graph label and regenerate; the four-scenario validator
   run and the keyless-server live proof (section 13).
-- **Chunk F: `enter_room` server validation (§8).** `player_reached_room?`; the check in the
-  `enter_room` branch of `complete_task!` (`game.rb:3745`); the `objectives-manager.js` pre-flush on
-  the `enter_room` completion path. Rails tests 14-19; the node pre-flush test; the throttled-network
-  browser live proof (section 13). Independent of Chunks A-E, so it can build in parallel.
+- **Chunk F: `enter_room` server validation (§8).** `player_reached_room?`; the check and the
+  `retryable` refusal in the `enter_room` branch of `complete_task!` (`game.rb:3745`); the
+  `objectives-manager.js` pre-flush on the `enter_room` completion path and its handling of a
+  `retryable` refusal (re-sync and re-post once, then surface). Rails tests 14-21; the node pre-flush,
+  old-tab and retry tests; the five-case browser live proof under real network delays (section 13).
+  Independent of Chunks A-E, so it can build in parallel.
 
 ## 15. Decisions (2026-11-13)
 

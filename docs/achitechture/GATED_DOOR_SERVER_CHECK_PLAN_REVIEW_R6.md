@@ -176,3 +176,40 @@ about (major 1), so the "network delays" requirement is not yet met; redesign it
 pre-unlock `unlockedRooms` write and to cover an old tab with no pre-flush. Fold in major 1 and the
 four minors (make `Room not reached` retryable or justify it; note the subsumed `currentRoom` disjunct;
 fix the `:2022` pin; note the NPC-route-POST ordering) and build Chunk F with the others.
+
+## Outcomes
+
+All findings were verified in code and folded into the plan.
+
+- **Major 1 (live proof under network delays).** Confirmed: §8.3's awaited pre-flush cannot overtake
+  itself, and the door `/unlock` writes `unlockedRooms` before the client opens the door
+  (`unlock-system.js:696`, `:721-755`; `serve_opened_room` -> `unlock_room!`, `game.rb:116`), so the
+  honest reorder the old proof described cannot arise. §13's "Live proof, `enter_room` under a
+  throttled network" is replaced by five cases that exercise delays a player can meet: (1) the door
+  unlock lands, then the `currentRoom` sync and pre-flush are delayed and, in a repeat, aborted
+  (Playwright `route`), and the completion still passes; (2) an old tab with no pre-flush posts the
+  completion with no prior sync and passes; (3) offline then reconnect with a queued completion
+  passes; (4) a duplicated or retried completion is idempotent and never double-credits; (5) the
+  forged no-entry completion stays refused (`Room not reached`), and the retryable re-post does not
+  launder it. Each case states the guarantee it proves (the pre-entry `unlockedRooms` write). §8.3 now
+  pins that guarantee explicitly and demotes the pre-flush to a timing courtesy. Rails tests 14-21 and
+  the node pre-flush/old-tab/retry tests each fail if the check or its guarantee is removed.
+
+- **Minor 1 (retryable refusal).** Taken, retryable preferred. The `enter_room` refusal is now
+  `{ success: false, error: 'Room not reached', retryable: true }` (§8.2); the client awaits one
+  `stateSync.sync()` and re-posts once, surfacing only a still-refused forge (§8.3). §3.6's
+  `room_not_reachable` is aligned to the same `retryable` flag and shared client handling, so the two
+  refusals are consistent.
+
+- **Minor 2 (subsumed `currentRoom`).** §8.2 now states the `currentRoom` disjunct is defensive and
+  carries no independent coverage, and that the awareness-world case rests on `awareness_world_room?`,
+  not `currentRoom`.
+
+- **Minor 3 (pin drift).** §3.3a corrected: `SYNC_STATE_COLUMNS` is `games_controller.rb:2027`
+  (verified).
+
+- **Minor 4 (NPC-route POST ordering).** §8.3 now notes the pre-flush does not order the gate NPC's
+  `method: npc` route POST that writes `npcRouteRooms`; honest play holds because the gate opens only
+  after that POST has fired, and the retryable refusal covers any residual race.
+
+Chunk F (§14) updated to list tests 14-21, the retryable handling, and the five-case live proof.
