@@ -739,7 +739,7 @@
 .bce-mx-fb-bad  { color: #ff9b8f; background: #1d0f0e; }
 .bce-mx-fb-info { color: #f0c040; }
 
-.bce-mx-footer-btns { display: flex; gap: 8px; }
+.bce-mx-footer-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .bce-mx-files-btn { color: #9aa4af; }
 
 /* Phones: the graph above the detail pane, each at full width (critique B BCE1) */

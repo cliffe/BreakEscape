@@ -206,3 +206,19 @@ reproduced as a leftover; with the new hook, Esc on a pop-up no longer closes th
 
 Gotcha: `closeBtn.ariaLabel` rather than `setAttribute`, because the log filter tests use a fake
 DOM element without it.
+
+## Review round 2 fixes (2026-11-13)
+
+Findings from UI_CONSOLES_REVIEW_R2.md, fixed on top of 40d178748.
+
+| Finding | Change | Proof |
+|---|---|---|
+| M1 segmentation map unusable on landscape phones | Under `max-height: 500px` the whole `.nsm-wrapper` scrolls as one column (pixel scrollbar); `.nsm-body` is `flex: none` so the map keeps its 480px and the 257px action bar scrolls with the rest instead of being pinned. A map wider than the window still scrolls sideways inside the body. | 667x375, 740x360, 844x390, 915x412: 19/19 devices, 3/3 rule lines and the SEVER button each reachable by scroll (script nsm.mjs) |
+| m1 confirm and pop-ups | Segmentation map confirm: scene X (`#nsm-close`) hidden while open, `handleEscapeKey` cancels it. Same rule on the infusion pump confirms (`_hideSceneX`, Esc = re-enter) and the SCADA historian report confirm (two named buttons, no X). The drug library source pop-up is not a confirm, so it gets the shared X in its header row, the scene X hides, Esc closes it. | pop.mjs and nsm.mjs: scene X hidden while open, Esc 1 closes only the pop-up, Esc 2 closes the scene, at 1400x1000, 915x412, 390x844, 667x375 |
+| m2 Esc test | The behaviour test loads the real `base-minigame.js` (copied with its two utility imports into a temp folder), captures the keydown handler `start()` registers and fires Escape. Asserts hook first then close, hook only when it returns true, close when there is no hook, no handler under `disableClose`. | minigame-consoles-fit |
+| m3 map labels | Rule labels, the "!" marker and "LINK SEVERED" are 16px VT323, normal weight. The "!" triangle grows to fit. Direct rules sit 46px apart (was 32px) so a label clears the next marker. Map `min-width` 760px to 840px and the stacking breakpoint 1100px to 1180px so the gap between zones holds a 16px label without touching the zone borders. | Shots at 1400x1000, 1181x800, 1024x768, 915x412 |
+| m4 button fonts | `.nsm-sever-btn`, `.nsm-modal-btn`, `.cms-button`, `.ehr-terminal-button`, `.bce-flag-btn`, `.bce-close-btn`, `.bce-mx-slot-btn`, `.ip-confirm-btn`, `.ip-modal-btn`, `.ransomware-display-btn` declare GNF 16px / 24px line (the ones that said Press Start 2P 8px rendered GNF at 8px). New static test: no rule whose selector ends in a button class and has specificity at or below the framework's `.minigame-container button` declares Press Start 2P, across the console sheets. | minigame-consoles-fit |
+
+Gotcha: the segmentation map replaces the container HTML, so its X is `#nsm-close`, not the framework `#minigame-close`.
+
+Proof after the fixes (game 3346): audit --strict 0/1/0/0/3 (the two known lines, alarm panel 915x412 and network architecture 390x844), shell X check 168 checked, 0 failed. Blockchain mixer board footer buttons wrap (`flex-wrap`) now that `.bce-close-btn` is 16px. Shots in the session scratchpad `ui-consoles-fix2/`.
