@@ -72,3 +72,16 @@ Validator: 0 ❌, and the same 7 warnings as main. Removing the flag outright br
 - n4: at 800x600 (scale 1, no `data-short`) the tile row stays visible after a tile or Other user is chosen. Nothing folds there, as on the keyboard screen; this is expected, not a missed fold.
 
 **Tests.** `password-signin-mode` 61 pass. Every JS test that imports `password-minigame.js`, the two CSS files, `test_access_networks` or `validate_scenario.rb` (76 files): 1183 pass, 0 fail. Rails `sync_payload_size_test.rb`, `format_8a_corpus_test.rb` and `scenario_schema_test.rb`: 37 runs, 0 failures.
+
+## Round 2 minors
+
+Review: `UX_SLICE2B0_REVIEW_R2.md` (0 B, 0 M, 1 m, 4 n). Main merged first as 50fc4f9ed (`git merge da5f53f34`, no rebase, no conflicts). Fixes in 4cc63ae42.
+
+- m1: the remote screen's wait for its Captured sign-ins is capped at 3 s (`REMOTE_CAPTURES_WAIT_MS` in `unlock-system.js`). The sync wait and the fetch are unchanged; when the cap passes first, the screen gets an empty list marked as still on its way, so the typed form shows and Username takes focus once, as for an empty list, with the line "Captured sign-ins: still checking." below the form. A list that arrives later adds its tiles through a quiet redraw that moves no focus and does not scroll. A player still in the form keeps it (the existing typing guard); one who left the form gets the tiles. An answer inside the cap clears the timer, so the screen fills once.
+- n1: `remoteCapturedSignIns` now tells a failed `/capture_secrets` from an empty list, and the line reads "Captured sign-ins could not be loaded."
+- n2: one bullet in `README_scenario_design.md` beside the capture-proof guidance: the server serves a captured password only with `revealSecret: true`, and an explicit `false` is a deliberate choice that silences the capture-route warning.
+- n3, n4: left, as the review asks (both belong to the shared tile module).
+
+**Tests.** `access-remote-signin` 17 pass (2 new, fake timers: the cap at 3000 ms, a late list after it, an answer inside the cap filling once, a failed fetch). `password-signin-mode` 64 pass (3 new: focus once at the cap and none while waiting, late tiles moving no focus, a player who left the form getting the tiles, the failed line). Every JS test file that imports `unlock-system.js` or `password-minigame.js` (43 files): 589 pass, 0 fail.
+
+**Live.** Keyless server from this worktree (on :3062, the port in the copied review harness; :3060 was free and unused), new game 3220 of `test_access_networks`, 915x412, DPR 3, touch, scrollbars shown (15 px measured). Both cards read, box planted, then a page-level wrapper made `/capture_secrets` answer 7 s late. A 50 ms poll in the page measured: "Checking..." with no form and no field focused; the form shown 3010 ms after "Checking..." appeared, with focus in Username and the line "still checking."; the two tiles arrived at 7122 ms with focus still in Username. In this short window the typed form keeps the tile row folded behind Change, as it does for any chosen form there. With the wrapper made to throw, the screen showed the typed form and "Captured sign-ins could not be loaded." No horizontal scroll. Shots `r2m2b0/shots/r2-{loading,capped,late-tiles,failed}__915x412.png` in the session scratchpad. Server and browser stopped afterwards.
