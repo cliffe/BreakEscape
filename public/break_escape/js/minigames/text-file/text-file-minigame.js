@@ -23,6 +23,8 @@ export function textFileNotebookEntry(data) {
 }
 
 export class TextFileMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         super(container, params);
         

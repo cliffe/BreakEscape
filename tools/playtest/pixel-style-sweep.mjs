@@ -19,7 +19,7 @@
 // data-diegetic; inside one only the font check applies.
 //
 //   node tools/playtest/pixel-style-sweep.mjs [--port 3340] [--game 2401] [--scenes a,b]
-//        [--all] [--params scene-params.json] [--json out.json] [--shots dir --tag before] [--sizes 1400x1000,800x600]
+//        [--all] [--offline] [--params scene-params.json] [--json out.json] [--shots dir --tag before] [--sizes 1400x1000,800x600]
 //
 // Without --all it sweeps the slice 7 list (SCOPE below) and exits 1 if any of them breaks
 // the rule. With --all it sweeps every registered scene and reports, but still fails only
@@ -73,6 +73,15 @@ const PARAMS = {
     },
     'notes': { title: 'Note', noteContent: 'A short note to read.', observationText: 'Seen on the desk.' },
     'infusion-pump': { title: 'Infusion pump' },
+    'container': (() => {
+        const contents = [
+            { type: 'notes', name: 'Memo', text: 'Back by five.', takeable: true },
+            { type: 'key', name: 'Office key', takeable: true },
+            { type: 'phone', name: 'Old phone', takeable: true }
+        ];
+        return { title: 'Filing cabinet', contents, isTakeable: false, desktopMode: false,
+            containerItem: { objectId: 'sweep_cabinet', name: 'sweep_cabinet', scenarioData: { id: 'sweep_cabinet', name: 'Filing cabinet', type: 'filing_cabinet', contents } } };
+    })(),
     'ncsc-brief': { title: 'NCSC Attribution Brief' },
     'combination': { title: 'Padlock', requiredCombination: '1234' },
     'cryptex': { title: 'Cryptex', requiredWord: 'CODE' },
@@ -92,7 +101,7 @@ const BLE = [['Smart Lock', 'AA:BB:CC:00:11:33', ['180f', 'fff0'], true], ['Offi
 const SETUP = {
     'infusion-pump': { pre: () => { window.gameState.globalVariables.paper_charts_collected = true; } },
     'ncsc-brief': {
-        pre: () => { window.gameState.globalVariables.warranty_checklist_complete = true; },
+        pre: (p) => { window.gameState.globalVariables[p?.lockable?.scenarioData?.gateVar || 'warranty_checklist_complete'] = true; },
         post: () => { document.querySelector('#ncsc-open-btn')?.click(); return !!document.querySelector('.ncsc-content, .ncsc-brief-content, .ncsc-section'); }
     },
     'ble-scanner': {
@@ -155,7 +164,7 @@ function hardGradient(fn) {
 
 async function startScene(page, scene, params) {
     const setup = SETUP[scene] || {};
-    if (setup.pre) await page.evaluate(setup.pre);
+    if (setup.pre) await page.evaluate(setup.pre, params);
     const res = await page.evaluate(async ({ scene, params }) => {
         const mf = window.MinigameFramework;
         try { mf.forceCloseMinigame?.(); } catch { /* none open */ }
@@ -332,6 +341,8 @@ async function main() {
     const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE, headless: true });
     const page = await browser.newPage({ viewport: { width: SIZES[0][0], height: SIZES[0][1] } });
     await page.addInitScript(() => { try { localStorage.setItem('tutorial_declined', 'true'); } catch { /* blocked */ } });
+    // --offline: block the Google font hosts, to prove nothing depends on them
+    if (flag('offline')) await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
     await page.goto(`http://127.0.0.1:${PORT}/break_escape/games/${GID}?skip_resume=1`, { waitUntil: 'domcontentloaded', timeout: 90000 });
     await page.waitForFunction(() => !!window.__test, null, { timeout: 240000 });
     await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 90000 }));

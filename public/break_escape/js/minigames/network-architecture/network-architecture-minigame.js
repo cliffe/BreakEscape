@@ -29,6 +29,8 @@ const txt = (value) => escapeHtml(displayDashes(value));
  *                    nodes follow the same shape as main nodes but without zone
  */
 export class NetworkArchitectureMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
     static controlsOverlay = true;
 
@@ -80,7 +82,7 @@ export class NetworkArchitectureMinigame extends MinigameScene {
     <div class="nad-legend">
       <span class="nad-leg-item"><span class="nad-leg-line nad-leg-normal"></span>Intended path</span>
       <span class="nad-leg-item"><span class="nad-leg-line nad-leg-boundary"></span>IT/OT boundary</span>
-      <span class="nad-leg-item"><span class="nad-leg-line nad-leg-legacy"></span>Legacy exception ⚠</span>
+      <span class="nad-leg-item"><span class="nad-leg-line nad-leg-legacy"></span>Legacy exception !</span>
       <span class="nad-leg-item"><span class="nad-leg-line nad-leg-hardwired"></span>Hardwired interlock</span>
       <span class="nad-leg-item"><span class="nad-leg-line nad-leg-attack"></span>Attack path</span>
     </div>
@@ -147,12 +149,12 @@ export class NetworkArchitectureMinigame extends MinigameScene {
         zones.forEach(z => {
             const zx = z.x !== undefined ? z.x : 8;
             const zw = z.width !== undefined ? z.width : 780;
-            zonesSvg += `<rect class="nad-zone" x="${escapeHtml(zx)}" y="${escapeHtml(z.y)}" width="${escapeHtml(zw)}" height="${escapeHtml(z.h)}" fill="${escapeHtml(z.fill)}" stroke="${escapeHtml(z.stroke)}" stroke-width="1"/>`;
+            zonesSvg += `<rect class="nad-zone" x="${escapeHtml(zx)}" y="${escapeHtml(z.y)}" width="${escapeHtml(zw)}" height="${escapeHtml(z.h)}" fill="${escapeHtml(z.fill)}" stroke="${escapeHtml(z.stroke)}" stroke-width="2"/>`;
             zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(zx + 6)}" y="${escapeHtml(z.y + 11)}">${txt(z.label)}</text>`;
         });
 
         externalOrgs.forEach(org => {
-            zonesSvg += `<rect class="nad-zone" x="${escapeHtml(org.x)}" y="${escapeHtml(org.y)}" width="${escapeHtml(org.w)}" height="${escapeHtml(org.h)}" fill="#0d1a0d" stroke="#14532d" stroke-width="1"/>`;
+            zonesSvg += `<rect class="nad-zone" x="${escapeHtml(org.x)}" y="${escapeHtml(org.y)}" width="${escapeHtml(org.w)}" height="${escapeHtml(org.h)}" fill="#0d1a0d" stroke="#14532d" stroke-width="2"/>`;
             zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(org.x + 6)}" y="${escapeHtml(org.y + 11)}">${txt(org.label)}</text>`;
             if (org.label2) {
                 zonesSvg += `<text class="nad-zone-label" x="${escapeHtml(org.x + 6)}" y="${escapeHtml(org.y + 22)}">${txt(org.label2)}</text>`;
@@ -165,7 +167,7 @@ export class NetworkArchitectureMinigame extends MinigameScene {
             const nodeClass = n.nodeClass || zone?.nodeClass || 'ot';
             const zoneCls = nodeClass === 'safe' ? 'nad-node-safe' :
                             nodeClass === 'it'   ? 'nad-node-it'   : 'nad-node-ot';
-            const warnBadge = n.warn ? `<text class="nad-node-warn" x="${escapeHtml(n.x + n.w - 6)}" y="${escapeHtml(n.y + 10)}">⚠</text>` : '';
+            const warnBadge = n.warn ? `<text class="nad-node-warn" x="${escapeHtml(n.x + n.w - 6)}" y="${escapeHtml(n.y + 10)}">!</text>` : '';
 
             nodesSvg += `
 <g class="nad-node ${zoneCls}" id="nad-${escapeHtml(n.id)}" data-id="${escapeHtml(n.id)}" style="cursor:pointer" role="button" tabindex="0">
@@ -256,7 +258,7 @@ export class NetworkArchitectureMinigame extends MinigameScene {
             .join('');
 
         const vulnHtml = node.vuln
-            ? `<div class="nad-detail-vuln"><span class="nad-detail-vuln-badge">⚠ VULNERABILITY</span><div class="nad-detail-vuln-text">${txt(node.vuln)}</div></div>`
+            ? `<div class="nad-detail-vuln"><span class="nad-detail-vuln-badge">! VULNERABILITY</span><div class="nad-detail-vuln-text">${txt(node.vuln)}</div></div>`
             : '';
 
         detail.innerHTML = `

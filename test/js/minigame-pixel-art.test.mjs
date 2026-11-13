@@ -162,7 +162,42 @@ function jsBreaches(file) {
         }
         for (const g of gradients(line)) if (!gradientIsHard(g)) found.push(`gradient: ${at}`);
         if (/border(-(top|right|bottom|left))?\s*:\s*1px\s+(solid|dashed|dotted)/.test(line)) found.push(`hairline: ${at}`);
+        // Canvas and SVG lines, and style setters (review R1 m2)
+        if (/\b(lineStyle|setStrokeStyle)\(\s*(0?\.\d+|1)\s*,/.test(line)) found.push(`hairline: ${at}`);
+        if (/stroke-width['"]?\s*[,=:]\s*['"](0?\.\d+|1(\.\d+)?)['"]/.test(line)) found.push(`hairline: ${at}`);
+        if (/\.style\.border(Top|Right|Bottom|Left)?\s*=\s*['"`]\s*1px\b/.test(line)) found.push(`hairline: ${at}`);
+        for (const m of line.matchAll(/\.style\.(?:boxShadow|textShadow)\s*=\s*['"`]([^'"`]+)['"`]/g)) {
+            if (blurs(m[1]).some(b => b > 0)) found.push(`shadow: ${at}`);
+        }
+        for (const m of line.matchAll(/\.setShadow\(([^)]*)\)/g)) {
+            const args = m[1].split(',').map(a => a.trim());
+            if (parseFloat(args[3] || '0') > 0) found.push(`shadow: ${at}`);
+        }
+        // VT323 is legible from 16px, and pixel faces need whole-pixel sizes (review R1 M3, m5)
+        if (/VT323/.test(line)) {
+            for (const m of line.matchAll(/(?:fontSize\s*:\s*['"`]|font-size\s*[:=,]\s*['"]?)(\d+(?:\.\d+)?)/g)) {
+                if (parseFloat(m[1]) < 16) found.push(`size: ${at} VT323 ${m[1]}px`);
+            }
+        }
+        // Symbols the pixel fonts lack, drawn from a smooth fallback font (review R1 m4)
+        const glyph = line.replace(/\/\/.*$/, '').match(/[\u2300-\u23ff\u2600-\u27bf\u2b00-\u2bff]|[\u{1F300}-\u{1FAFF}]|\\u(23|26|27)[0-9a-f]{2}/iu);
+        if (glyph && !/console\.|data-key=/.test(line)) found.push(`glyph: ${at} ${glyph[0]}`);
     });
+    return found;
+}
+
+// VT323 under 16px in the CSS. Sizes in px only (em sizes follow their parent). The network
+// diagram's labels are SVG text in viewBox units, scaled with the diagram: they wait for a
+// diagram redesign with larger node boxes (slice 7 R1, left for a follow-up).
+const SVG_UNIT_LABELS = ['.nad-line-label', '.nad-node-label', '.nad-node-sub'];
+function cssSmallVt323(file) {
+    const found = [];
+    for (const { selector, decls } of cssRules(read(file))) {
+        if (SVG_UNIT_LABELS.includes(selector)) continue;
+        const fam = decls.find(([k]) => k === 'font-family');
+        const size = decls.find(([k]) => k === 'font-size');
+        if (fam && /^['"]?VT323/i.test(fam[1]) && size && /^\d+(\.\d+)?px$/.test(size[1]) && parseFloat(size[1]) < 16) found.push(`${file} ${selector} ${size[1]}`);
+    }
     return found;
 }
 
@@ -190,6 +225,41 @@ for (const dir of JS_DIRS) {
         assert.deepEqual(found, [], `${found.length} breach(es):\n${found.slice(0, 40).join('\n')}`);
     });
 }
+
+test('the R1 checks: canvas hairlines, VT323 sizes and missing glyphs are caught', () => {
+    const re = /\b(lineStyle|setStrokeStyle)\(\s*(0?\.\d+|1)\s*,/;
+    assert.ok(re.test('gfx.lineStyle(1, 0xc8b880);'));
+    assert.ok(!re.test('gfx.lineStyle(2, 0xc8b880);'));
+});
+
+for (const file of CSS_FILES) {
+    test(`VT323 is 16px or larger: ${file}`, () => {
+        const found = cssSmallVt323(file);
+        assert.deepEqual(found, [], found.join('\n'));
+    });
+}
+
+test('no minigame in the slice draws a Cancel beside the X; the shell keeps Esc and the X', () => {
+    const base = read('js/minigames/framework/base-minigame.js');
+    assert.match(base, /static keepsCancelButton = false;/);
+    assert.match(base, /const showCancel = this\.constructor\.keepsCancelButton === true/);
+    assert.match(base, /e\.key === 'Escape'/);
+    for (const dir of JS_DIRS) {
+        // notes keeps its Continue, the way on from reading a note
+        if (dir.endsWith('/notes')) continue;
+        for (const f of jsFiles(dir)) assert.doesNotMatch(read(f), /keepsCancelButton = true/, `${f} keeps a Cancel`);
+    }
+    assert.match(read('css/minigames-framework.css'), /\.minigame-controls:empty\s*\{\s*display: none;/);
+});
+
+test('VT323 is self-hosted, with its licence, and nothing loads Google Fonts', () => {
+    const fonts = read('css/fonts.css');
+    assert.match(fonts, /font-family: 'VT323';[\s\S]*?url\('\.\.\/assets\/fonts\/VT323\/VT323-latin\.woff2'\)/);
+    assert.ok(readdirSync(join(ROOT, 'assets/fonts/VT323')).includes('OFL.txt'));
+    for (const rel of [...CSS_FILES, 'css/bond-visualiser.css', ...JS_DIRS.flatMap(jsFiles)]) {
+        assert.doesNotMatch(read(rel), /fonts\.googleapis\.com|fonts\.gstatic\.com/, rel);
+    }
+});
 
 test('framework buttons glow with a hard 2px ring on hover, not a blurred glow', () => {
     const rules = cssRules(read('css/utilities.css')).filter(r => /\.minigame-button:hover/.test(r.selector));

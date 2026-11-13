@@ -179,7 +179,7 @@
 /* Observation text */
 .notes-minigame-observation {
     font-family: 'GNF', monospace;
-    font-style: italic;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
     color: #666;
     font-size: 18px;
     line-height: 1.4;
@@ -203,6 +203,7 @@
 
 /* Edit button */
 .notes-minigame-edit-btn {
+    font-size: 16px;   /* whole-pixel size (the browser's button default is 13.33px) */
     position: absolute;
     top: -8px;
     right: -8px;

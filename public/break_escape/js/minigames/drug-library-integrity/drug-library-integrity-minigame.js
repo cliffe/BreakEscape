@@ -43,6 +43,8 @@ function randomHex(len) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 export class DrugLibraryIntegrityMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -546,13 +548,13 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
         else if (allConsulted) restoreClass += ' dli-restore-btn-active';
 
         const restoreLabel = restored
-            ? `\u2713 LIBRARY RESTORED \u2014 ${this._changesText('backup', true)}`
+            ? `LIBRARY RESTORED \u2014 ${this._changesText('backup', true)}`
             : allConsulted
-                ? `[ RESTORE FROM BACKUP \u2014 ${this._changesText('backup', true)} \u2713 confirmed by backup + ${sources.length} sources ]`
+                ? `[ RESTORE FROM BACKUP \u2014 ${this._changesText('backup', true)} : confirmed by backup + ${sources.length} sources ]`
                 : `[ RESTORE FROM BACKUP \u2014 ${this._changesText('backup', true)} ]`;
 
         const restoreHint = restored
-            ? `<div class="dli-restore-hint" style="color:#33cc66">\u2713 Library restored successfully.</div>`
+            ? `<div class="dli-restore-hint" style="color:#33cc66">Library restored successfully.</div>`
             : allConsulted
                 ? `<div class="dli-restore-hint">All sources consulted \u2014 restore authorised.</div>`
                 : `<div class="dli-restore-hint">Verify correct value from independent sources before restoring.</div>`;
@@ -727,7 +729,7 @@ ${c.warning ? `<div class="dli-modal-warning">${escapeHtml(displayDashes(c.warni
         if (restoreBtn) {
             restoreBtn.disabled = true;
             restoreBtn.className = 'dli-restore-btn dli-restore-btn-done';
-            restoreBtn.textContent = `\u2713 LIBRARY RESTORED \u2014 ${this._changesText('backup', true, true)}`;
+            restoreBtn.textContent = `LIBRARY RESTORED \u2014 ${this._changesText('backup', true, true)}`;
         }
 
         // Fire completion globals

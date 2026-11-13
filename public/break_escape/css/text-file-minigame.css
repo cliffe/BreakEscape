@@ -72,6 +72,7 @@
     width: 12px;
     height: 12px;
     border: none;
+    font-size: 12px;   /* whole-pixel size (the browser's button default is 13.33px) */
     cursor: pointer;
     transition: all 0.2s ease;
 }

@@ -218,6 +218,8 @@ const TRANSFER_LABELS = {
 };
 
 export class ContainerMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         super(container, params);
         this.containerItem = params.containerItem;

@@ -2,6 +2,8 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
 
 export class CryptexMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params = {}) {
         super(container, {
             ...params,

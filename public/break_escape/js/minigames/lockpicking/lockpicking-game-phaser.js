@@ -23,6 +23,9 @@ import { escapeHtml as escapeItemText } from '../../utils/escape-html.js';
 
 // Phaser Lockpicking Minigame Scene implementation
 export class LockpickingMinigamePhaser extends MinigameScene {
+    // Its bottom button can reset the pins (closeButtonAction), not only close
+    static keepsCancelButton = true;
+
     constructor(container, params) {
         super(container, params);
         

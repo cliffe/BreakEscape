@@ -120,6 +120,12 @@
     flex-shrink: 0;
 }
 
+/* No Cancel beside the X any more (slice 7 R1): the row holds only a scene's own
+   footer buttons, such as Add to Notepad, and takes no room when it has none */
+.minigame-controls:empty {
+    display: none;
+}
+
 /* Full-window consoles keep a bar at the bottom of their own frame for Cancel,
    and their game area fills the screen, so in the flow Cancel would be pushed off
    the bottom (and the header off the top). They keep the old overlay placement.

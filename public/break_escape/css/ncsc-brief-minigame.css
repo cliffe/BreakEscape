@@ -65,10 +65,21 @@
     text-align: center;
 }
 
+/* Pixel icons from assets/icons at whole-number scale, in place of the emoji and
+   symbol glyphs the pixel fonts lack (slice 7 R1 m4) */
 .ncsc-envelope-icon {
-    font-size: 48px;
-    color: #8b949e;
-    line-height: 1;
+    display: block;
+    margin: 0 auto;
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+}
+
+.ncsc-badge-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: -2px;
+    image-rendering: pixelated;
 }
 
 .ncsc-envelope-name {
@@ -83,7 +94,7 @@
     font-size: 20px;
     color: #6e7681;
     letter-spacing: 0.03em;
-    font-style: italic;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
 }
 
 /* ── Status badges ───────────────────────────────────────────────────────────── */
@@ -174,7 +185,7 @@
 .ncsc-brief-meta {
     font-size: 19px;
     color: #6e7681;
-    font-style: italic;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
     line-height: 1.6;
 }
 

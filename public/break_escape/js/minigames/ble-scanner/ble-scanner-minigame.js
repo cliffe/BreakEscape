@@ -5,6 +5,8 @@ import { escapeHtml } from '../../utils/escape-html.js';
 // Device names, MACs and UUIDs are scenario text: escaped once on the way into HTML.
 
 export class BleScannerMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         params = params || {};
         if (!params.title) params.title = 'BLE Scanner';
@@ -78,7 +80,7 @@ export class BleScannerMinigame extends MinigameScene {
         actionPanel.innerHTML = `
             <div class="ble-action-header">
                 <span id="ble-action-title">No target selected</span>
-                <button class="ble-clear-target-btn" id="ble-clear-target">✕ Clear</button>
+                <button class="ble-clear-target-btn" id="ble-clear-target">Clear</button>
             </div>
             <div class="ble-action-target-info" id="ble-action-info"></div>
             <div class="ble-action-section" id="ble-pin-section" style="display:none">
@@ -357,8 +359,8 @@ export class BleScannerMinigame extends MinigameScene {
         }
 
         const statusIcons = [
-            device.targeted ? '<span class="ble-device-icon" title="Targeted">🎯</span>' : '',
-            device.paired   ? '<span class="ble-device-icon" title="Paired">✓</span>'  : '',
+            device.targeted ? '<span class="ble-device-icon" title="Targeted">TARGET</span>' : '',
+            device.paired   ? '<span class="ble-device-icon" title="Paired">PAIRED</span>'  : '',
         ].join('');
 
         el.innerHTML = `
@@ -375,7 +377,7 @@ export class BleScannerMinigame extends MinigameScene {
         const saveBtn = document.createElement('button');
         saveBtn.className = `ble-save-btn${device.saved ? ' ble-save-btn--saved' : ''}`;
         saveBtn.title = device.saved ? 'Saved' : 'Save device';
-        saveBtn.textContent = '💾';
+        saveBtn.textContent = 'SAVE';
         el.querySelector('.ble-device-icons').prepend(saveBtn);
         this.addEventListener(saveBtn, 'click', (e) => {
             e.stopPropagation();
@@ -470,7 +472,7 @@ export class BleScannerMinigame extends MinigameScene {
         }
 
         if (device.paired) {
-            this.showActionFeedback('✓ Device already paired', 'success');
+            this.showActionFeedback('Device already paired', 'success');
             this.disablePinButtons();
         }
     }
@@ -562,7 +564,7 @@ export class BleScannerMinigame extends MinigameScene {
         this.syncBleDevices();
         this.disablePinButtons();
         this.updatePanel();
-        this.showActionFeedback(`✓ Paired via ${method}`, 'success');
+        this.showActionFeedback(`Paired via ${method}`, 'success');
 
         const sd = device._scenarioData || {};
 

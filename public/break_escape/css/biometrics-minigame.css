@@ -491,7 +491,7 @@
 
 .sample-date {
     color: #666;
-    font-style: italic;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
     font-size: 10px;
 }
 

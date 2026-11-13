@@ -44,7 +44,7 @@
 }
 
 .dli-console-files {
-  font-size: 14px;
+  font-size: 16px;
   color: #0088cc;
   margin-top: 4px;
   display: flex;
@@ -174,7 +174,7 @@
 .dli-lib-table th {
   background: #161b22;
   color: #7d8590;
-  font-size: 14px;
+  font-size: 16px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 5px 8px;
@@ -217,7 +217,7 @@
 
 .dli-badge-scanning {
   color: #33aa44;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.5px;
 }
 
@@ -299,7 +299,7 @@
 
 .dli-hash-row {
   margin: 4px 0;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .dli-hash-label {
@@ -314,9 +314,9 @@
 
 .dli-hash-note {
   margin-top: 8px;
-  font-size: 14px;
+  font-size: 16px;
   color: #7d8590;
-  font-style: italic;
+  font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
 }
 
 .dli-sha-label {
@@ -388,7 +388,7 @@
 
 .dli-diff-panel-meta {
   color: #7d8590;
-  font-size: 14px;
+  font-size: 16px;
   margin-top: 2px;
 }
 
@@ -398,7 +398,7 @@
 .dli-diff-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .dli-diff-table td {
@@ -482,7 +482,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 16px;
   color: transparent;
 }
 
@@ -498,7 +498,7 @@
 .dli-source-label small {
   display: block;
   color: #7d8590;
-  font-size: 14px;
+  font-size: 16px;
   margin-top: 2px;
 }
 
@@ -509,7 +509,7 @@
   background: #0d1c36;
   color: #58a6ff;
   font-family: 'VT323', monospace;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   cursor: pointer;
   white-space: nowrap;
@@ -532,7 +532,7 @@
   background: #081a0d;
   color: #33cc66;
   font-family: 'VT323', monospace;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   cursor: default;
   white-space: nowrap;
@@ -574,7 +574,7 @@
 
 .dli-restore-hint {
   margin-top: 6px;
-  font-size: 14px;
+  font-size: 16px;
   color: #7d8590;
   text-align: center;
 }
@@ -645,7 +645,7 @@
   background: #1c1600;
   border-left: 3px solid #ccaa00;
   border-radius: 0;
-  font-size: 14px;
+  font-size: 16px;
   color: #ccaa00;
   line-height: 1.5;
 }
@@ -694,7 +694,7 @@
 .dli-fleet-table th {
   background: #161b22;
   color: #7d8590;
-  font-size: 14px;
+  font-size: 16px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 5px 10px;

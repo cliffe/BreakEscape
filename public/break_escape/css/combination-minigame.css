@@ -123,8 +123,11 @@
 }
 
 .combination-dial-display {
-    font-size: 56px;
-    font-weight: bold;
+    /* Press Start 2P: chunky square digits, like a padlock's stamped number wheels
+       (the user asked for a different pixel face here, slice 7 R1). 32px is 4x its
+       8px grid, so every pixel lands whole. */
+    font-size: 32px;
+    font-weight: normal;
     color: #ffffff;
     background: #0f1826;
     border: 2px solid #334466;
@@ -134,8 +137,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'VT323', 'GNF', monospace;
-    letter-spacing: 0.1em;
+    font-family: 'Press Start 2P', monospace;
+    letter-spacing: 0;
     flex-shrink: 0;
 }
 

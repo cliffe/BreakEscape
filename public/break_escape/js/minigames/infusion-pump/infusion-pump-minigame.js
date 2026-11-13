@@ -29,6 +29,8 @@ const CONF_Y  = KP_Y0 + 4 * (KP_BTN_H + KP_GAP) + 3;  // ~416
 const CONF_H  = 54;
 
 export class InfusionPumpMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -130,6 +132,10 @@ export class InfusionPumpMinigame extends MinigameScene {
                 width: W,
                 height: H,
                 backgroundColor: '#0d1324',
+                // The canvas is scaled to fit: draw it with hard pixels, never smoothed
+                // (slice 7 R1 M3)
+                pixelArt: true,
+                roundPixels: true,
                 scene: InfusionPumpScene,
                 audio: {
                     context: MusicController.context
@@ -160,25 +166,28 @@ export class InfusionPumpMinigame extends MinigameScene {
 
         const cx = RX_X + RX_W / 2;  // 153
         const x0 = RX_X + 10;         // left margin for labels
-        const x1 = RX_X + 80;         // left margin for values
+        const x1 = RX_X + 96;         // left margin for values (labels are 8px a letter)
 
+        // Legible pixel text (slice 7 R1 M3): VT323 at 16px for values, Press Start 2P at
+        // 8px for the small labels and the header; whole-pixel sizes only.
         const mono = { fontFamily: 'VT323', color: '#1a1a1a' };
-        const labelStyle = { ...mono, fontSize: '11px', color: '#666666' };
-        const valueStyle = { ...mono, fontSize: '13px' };
-        const tinyStyle  = { ...mono, fontSize: '10px', color: '#444444' };
+        const labelStyle = { fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#666666', padding: { top: 4 } };
+        const valueStyle = { ...mono, fontSize: '16px', wordWrap: { width: RX_X + RX_W - 8 - x1 } };
+        const tinyStyle  = { ...mono, fontSize: '16px', color: '#444444' };
 
         // Hospital header
-        scene.add.text(cx, 24, 'NORTHGATE GENERAL HOSPITAL NHS TRUST', {
-            ...mono, fontSize: '8px', fontStyle: 'bold', align: 'center', wordWrap: { width: RX_W - 16 }
+        scene.add.text(cx, 14, 'NORTHGATE GENERAL HOSPITAL NHS TRUST', {
+            fontFamily: "'Press Start 2P', monospace", fontSize: '8px', color: '#1a1a1a',
+            align: 'center', lineSpacing: 4, wordWrap: { width: RX_W - 16 }
         }).setOrigin(0.5, 0);
 
-        scene.add.text(cx, 38, 'WARD 7 \u2014 MEDICATION ADMINISTRATION RECORD', {
+        scene.add.text(cx, 36, 'WARD 7: MEDICATION ADMINISTRATION RECORD', {
             ...tinyStyle, align: 'center', wordWrap: { width: RX_W - 16 }
         }).setOrigin(0.5, 0);
 
         // Divider
-        gfx.lineStyle(1, 0xc8b880);
-        gfx.lineBetween(RX_X + 6, 54, RX_X + RX_W - 6, 54);
+        gfx.lineStyle(2, 0xc8b880);
+        gfx.lineBetween(RX_X + 6, 56, RX_X + RX_W - 6, 56);
 
         // Patient info fields
         const fields1 = [
@@ -202,7 +211,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         // letter-spacing so the decimal is visually tiny, tempting misread as "100".
         gfx.fillStyle(0xede8d8);
         gfx.fillRect(RX_X + 6, 130, RX_W - 12, 52);
-        gfx.lineStyle(1, 0xc8b880);
+        gfx.lineStyle(2, 0xc8b880);
         gfx.strokeRect(RX_X + 6, 130, RX_W - 12, 52);
 
         scene.add.text(x0, 134, 'RATE', labelStyle);
@@ -231,17 +240,17 @@ export class InfusionPumpMinigame extends MinigameScene {
 
         // Signature fields
         scene.add.text(x0, 236, 'PRESCRIBER', labelStyle);
-        scene.add.text(x1, 236, this.sd.prescriber || 'Dr. J. Patel', { ...valueStyle, fontStyle: 'italic' });
+        scene.add.text(x1, 236, this.sd.prescriber || 'Dr. J. Patel', valueStyle);
 
         scene.add.text(x0, 252, 'PHARMACY', labelStyle);
-        scene.add.text(x1, 252, 'Checked \u2713', valueStyle);
+        scene.add.text(x1, 252, 'Checked', valueStyle);
 
         scene.add.text(x0, 268, 'NURSE', labelStyle);
-        scene.add.text(x1, 268, '________________', { ...mono, fontSize: '9px', color: '#aaaaaa' });
+        scene.add.text(x1, 268, '____________', { ...mono, fontSize: '16px', color: '#aaaaaa' });
 
         if (this.sd.allergies) {
             scene.add.text(x0, 288, 'ALLERGIES', labelStyle);
-            scene.add.text(x1, 288, this.sd.allergies, { ...valueStyle, color: '#b00020', fontStyle: 'bold' });
+            scene.add.text(x1, 288, this.sd.allergies, { ...valueStyle, color: '#b00020' });
         }
     }
 
@@ -292,7 +301,7 @@ export class InfusionPumpMinigame extends MinigameScene {
 
         // Divider line on screen
         const dg = scene.add.graphics();
-        dg.lineStyle(1, 0x1a5a1a);
+        dg.lineStyle(2, 0x1a5a1a);
         dg.lineBetween(SCR_X + 4, SCR_Y + 60, SCR_X + SCR_W - 4, SCR_Y + 60);
 
         const libraryCompromised = this._libraryTampered();
@@ -300,19 +309,19 @@ export class InfusionPumpMinigame extends MinigameScene {
         if (libraryCompromised && this.sd.library_ok_global) {
             scene.add.text(sx, SCR_Y + 63,
                 `LIBRARY RANGE: ${this.libraryMin}${this.libraryMax != null ? ' \u2013 ' + this.libraryMax : ''} mg/hr`, {
-                fontFamily: 'VT323', fontSize: '13px', color: '#00e060'
+                fontFamily: 'VT323', fontSize: '16px', color: '#00e060'
             });
             scene.add.text(sx, SCR_Y + 78, 'ENTER NEW RATE (mg/hr):', screenText);
         } else if (libraryCompromised) {
-            scene.add.text(sx, SCR_Y + 63, '\u26A0 DRUG LIB MIN: 25 mg/hr  [LIBRARY OVERRIDE]', {
-                fontFamily: 'VT323', fontSize: '13px', color: '#ff8800'
+            scene.add.text(sx, SCR_Y + 63, '! DRUG LIB MIN: 25 mg/hr  [LIBRARY OVERRIDE]', {
+                fontFamily: 'VT323', fontSize: '16px', color: '#ff8800'
             });
             scene.add.text(sx, SCR_Y + 78, 'ENTER OVERRIDE RATE (mg/hr):', {
                 ...screenText, color: '#ff8800'
             });
         } else if (this.restoredMin != null && this.restoredMax != null) {
             scene.add.text(sx, SCR_Y + 63, `LIBRARY RANGE: ${this.restoredMin} \u2013 ${this.restoredMax} mg/hr`, {
-                fontFamily: 'VT323', fontSize: '13px', color: '#00e060'
+                fontFamily: 'VT323', fontSize: '16px', color: '#00e060'
             });
             scene.add.text(sx, SCR_Y + 78, 'ENTER NEW RATE (mg/hr):', screenText);
         } else {
@@ -329,7 +338,7 @@ export class InfusionPumpMinigame extends MinigameScene {
     }
 
     _buildKeypad(scene) {
-        const keys = ['1','2','3','4','5','6','7','8','9','.','0','\u232B'];
+        const keys = ['1','2','3','4','5','6','7','8','9','.','0','DEL'];
 
         keys.forEach((k, i) => {
             const col = i % 3;
@@ -341,7 +350,7 @@ export class InfusionPumpMinigame extends MinigameScene {
             const cy = by + KP_BTN_H / 2;
 
             // Colour differentiation
-            const isBack    = (k === '\u232B');
+            const isBack    = (k === 'DEL');
             const isDot     = (k === '.');
             const fillNorm  = isBack ? 0xd8c0b0 : isDot ? 0xd8d8c0 : 0xd0d5d8;
             const fillHover = isBack ? 0xe8d0c0 : isDot ? 0xe8e8d0 : 0xe0e5e8;
@@ -355,7 +364,7 @@ export class InfusionPumpMinigame extends MinigameScene {
                 .on('pointerout',   () => btn.setFillStyle(this.confirmed ? fillNorm : fillNorm))
                 .on('pointerdown',  () => {
                     btn.setFillStyle(fillDown);
-                    if (k === '\u232B') this.handleBackspace();
+                    if (k === 'DEL') this.handleBackspace();
                     else if (k === '.') this.handleDecimal();
                     else this.handleDigit(k);
                 })
@@ -574,14 +583,14 @@ export class InfusionPumpMinigame extends MinigameScene {
         }).setOrigin(0.5).setDepth(102);
         const entryTxt = scene.add.text(mx, my - 10,
             `Your entry: ${enteredValue} mg/hr \u2014 flagged as below minimum`, {
-            fontFamily: 'VT323', fontSize: '14px', color: '#ffcc88',
+            fontFamily: 'VT323', fontSize: '16px', color: '#ffcc88',
             align: 'center', wordWrap: { width: mw - 40 }
         }).setOrigin(0.5).setDepth(102);
         const marTxt   = scene.add.text(mx, my + 18, `Paper MAR prescription: ${this.rateDisplay}`, {
-            fontFamily: 'VT323', fontSize: '15px', color: '#dddddd'
+            fontFamily: 'VT323', fontSize: '16px', color: '#dddddd'
         }).setOrigin(0.5).setDepth(102);
         const promptTxt = scene.add.text(mx, my + 40, this.sd.conflict_prompt || 'Trust the paper record and override the device?', {
-            fontFamily: 'VT323', fontSize: '14px', color: '#aaaaaa',
+            fontFamily: 'VT323', fontSize: '16px', color: '#aaaaaa',
             align: 'center', wordWrap: { width: mw - 40 }
         }).setOrigin(0.5).setDepth(102);
 
@@ -677,7 +686,7 @@ export class InfusionPumpMinigame extends MinigameScene {
         // Prompt
         const promptTxt = scene.add.text(mx, my + 40, 'Does this match the paper prescription?', {
             fontFamily: 'VT323',
-            fontSize: '11px',
+            fontSize: '16px',
             color: '#aaaaaa'
         }).setOrigin(0.5).setDepth(102);
 

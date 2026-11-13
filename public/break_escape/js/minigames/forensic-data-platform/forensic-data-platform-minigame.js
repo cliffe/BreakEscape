@@ -198,6 +198,8 @@ function _renderBlocks(blocks, globals) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class ForensicDataPlatformMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -327,7 +329,7 @@ export class ForensicDataPlatformMinigame extends MinigameScene {
         this._confirmed = true;
 
         const confirmedVar = this.params.confirmedVar       || 'forensic_chain_verified';
-        const successText  = this.params.confirmSuccessText || '✓ Causal chain confirmed and logged.';
+        const successText  = this.params.confirmSuccessText || 'Causal chain confirmed and logged.';
         const confirmLabel = this.params.confirmLabel       || 'CONFIRM CAUSAL CHAIN';
 
         const btn  = this.gameContainer.querySelector('#fdp-confirm-btn');

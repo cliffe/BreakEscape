@@ -399,7 +399,7 @@
 .bluetooth-device-timestamp {
     font-size: 18px;
     color: #666;
-    font-style: italic;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
 }
 
 /* Instructions */

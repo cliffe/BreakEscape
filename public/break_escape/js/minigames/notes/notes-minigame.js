@@ -21,6 +21,11 @@ function setObservationText(div, text) {
 
 // Notes Minigame Scene implementation
 export class NotesMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
+    // The bottom button is Continue, the way on from reading a note
+    static keepsCancelButton = true;
+
     constructor(container, params) {
         // Ensure params is defined before calling parent constructor
         params = params || {};

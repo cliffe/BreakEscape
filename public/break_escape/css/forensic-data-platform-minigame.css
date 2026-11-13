@@ -52,7 +52,7 @@
     font-size: 19px;
     color: #6e7681;
     letter-spacing: 0.04em;
-    font-style: italic;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
 }
 
 /* ── Tab bar ─────────────────────────────────────────────────────────────────── */
@@ -372,7 +372,7 @@
     padding: 14px 16px;
     margin: 10px 0;
     font-size: 19px;
-    font-style: italic;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
     color: #c9d1d9;
     line-height: 1.75;
 }

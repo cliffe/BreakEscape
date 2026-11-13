@@ -301,9 +301,9 @@
 }
 
 /* Session overlay: glow uses border-color since text is always white */
-#session-resume-btn:hover  { box-shadow: 0 0 10px #4CAF50; }
-#session-restart-btn:hover { box-shadow: 0 0 10px #777; }
-#session-new-btn:hover     { box-shadow: 0 0 10px #1a6fb0; }
+#session-resume-btn:hover  { box-shadow: 0 0 0 2px #4CAF50; }
+#session-restart-btn:hover { box-shadow: 0 0 0 2px #777; }
+#session-new-btn:hover     { box-shadow: 0 0 0 2px #1a6fb0; }
 
 /* Physical "press" feel on click */
 .minigame-button:active,

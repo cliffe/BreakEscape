@@ -11,6 +11,20 @@ export class MinigameScene {
     // true on a full-window console that keeps Cancel overlaid on its own bottom bar
     static controlsOverlay = false;
 
+    // The X closes a minigame (and Esc), so the shell draws no Cancel button beside it
+    // (UX slice 7 R1, the user's screenshot notes). A scene whose bottom button is not a
+    // second close opts back in: the password screen (slice 2a owns it), lockpicking (its
+    // button can reset the pins), the notes reader (Continue) and conversations (End
+    // Conversation). The .minigame-controls row stays for the scenes' own footer buttons
+    // (Add to Notepad) and hides itself when empty.
+    static keepsCancelButton = false;
+
+    // true: the X sits inside the scene's frame at its top right, never on the frame's border
+    // or out on the screen's corner (UX slice 7 R1). The frame is closeAnchor(), the game
+    // area unless a scene names another element. Opt-in, because a few scenes place the X
+    // with their own CSS (title bars, the blockchain explorer, the shredded document).
+    static closeInsideFrame = false;
+
     constructor(container, params) {
         this.container = container;
         this.params = params;
@@ -24,10 +38,10 @@ export class MinigameScene {
     }
     
     init() {
-        // Check if cancel button should be shown (default: true)
-        // disableClose hides the × button and the cancel button and blocks Esc — useful for forced cutscene conversations
+        // disableClose hides the × button and the cancel button and blocks Esc, for forced
+        // cutscene conversations. Cancel is drawn only for a scene that keeps it (above).
         const disableClose = this.params.disableClose === true;
-        const showCancel = this.params.showCancel !== false && !disableClose;
+        const showCancel = this.constructor.keepsCancelButton === true && this.params.showCancel !== false && !disableClose;
 
         this.container.innerHTML = `
             <button class="minigame-close-button" id="minigame-close" ${disableClose ? 'style="display:none"' : ''}>&times;</button>
@@ -36,7 +50,7 @@ export class MinigameScene {
             </div>
             <div class="minigame-game-container"></div>
             <div class="minigame-message-container"></div>
-            ${showCancel ? `<div class="minigame-controls"><button class="minigame-button" id="minigame-cancel">${escapeHtml(this.params.cancelText || 'Cancel')}</button></div>` : ''}
+            <div class="minigame-controls">${showCancel ? `<button class="minigame-button" id="minigame-cancel">${escapeHtml(this.params.cancelText || 'Cancel')}</button>` : ''}</div>
         `;
 
         // A full-window console whose frame keeps a bar at its bottom for Cancel opts in to
@@ -80,9 +94,49 @@ export class MinigameScene {
         }
     }
     
+    // The element whose top-right corner holds the X (closeInsideFrame scenes)
+    closeAnchor() {
+        return this.gameContainer;
+    }
+
+    // Puts the X inside the frame: below and left of the frame's border by a 4px gap, kept
+    // on screen when a frame is taller or wider than the window.
+    placeCloseButton() {
+        const btn = this.container?.querySelector?.('#minigame-close');
+        const frame = this.closeAnchor?.();
+        if (!btn || !frame?.getBoundingClientRect || btn.style.display === 'none') return;
+        const r = frame.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        const c = this.container.getBoundingClientRect();
+        const cs = window.getComputedStyle(frame);
+        const gap = 4;
+        const top = Math.max(r.top, c.top) + (parseFloat(cs.borderTopWidth) || 0) + gap - c.top;
+        const right = c.right - Math.min(r.right, c.right) + (parseFloat(cs.borderRightWidth) || 0) + gap;
+        btn.style.top = `${Math.round(top)}px`;
+        btn.style.right = `${Math.round(right)}px`;
+        btn.classList.add('minigame-close-in-frame');
+    }
+
+    _watchCloseButton() {
+        const place = () => { if (this.gameState.isActive) this.placeCloseButton(); };
+        const raf = window.requestAnimationFrame || ((f) => setTimeout(f, 16));
+        raf(place);
+        this.addEventListener(window, 'resize', place);
+        if (typeof window.ResizeObserver === 'function') {
+            const frame = this.closeAnchor?.();
+            if (frame) {
+                this._closeObserver = new window.ResizeObserver(place);
+                this._closeObserver.observe(frame);
+            }
+        }
+    }
+
     start() {
         this.gameState.isActive = true;
         console.log("Minigame started");
+        if (this.constructor.closeInsideFrame === true && this.params.disableClose !== true) {
+            try { this._watchCloseButton(); } catch (e) { console.warn('placeCloseButton', e); }
+        }
         
         // Esc-to-close handler — skipped if disableClose is set
         if (this.params.disableClose !== true) {
@@ -268,6 +322,9 @@ export class MinigameScene {
         });
         this._eventListeners = [];
         
+        this._closeObserver?.disconnect?.();
+        this._closeObserver = null;
+
         // Clean up fallback close handler
         if (this._fallbackCloseHandler) {
             document.removeEventListener('keydown', this._fallbackCloseHandler);

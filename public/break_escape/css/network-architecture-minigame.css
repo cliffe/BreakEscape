@@ -60,7 +60,7 @@
     align-items: center;
     gap: 5px;
     font-family: 'VT323', monospace;
-    font-size: 10px;
+    font-size: 16px;
     color: #94a3b8;
 }
 
@@ -109,7 +109,7 @@
 
 .nad-zone-label {
     font-family: 'Press Start 2P', monospace;
-    font-size: 6px;
+    font-size: 8px;
     fill: #64748b;
     letter-spacing: 0.3px;
     pointer-events: none;
@@ -232,15 +232,15 @@
     flex-shrink: 0;
     box-sizing: border-box;
     font-family: 'VT323', monospace;
-    font-size: 11px;
+    font-size: 16px;
     color: #94a3b8;
     line-height: 1.5;
 }
 
 .nad-detail-hint {
     color: #334155;
-    font-style: italic;
-    font-size: 11px;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
+    font-size: 16px;
     padding: 8px 0;
 }
 
@@ -266,7 +266,7 @@
 
 .nad-detail-vuln-badge {
     font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
+    font-size: 8px;
     color: #f59e0b;
     display: block;
     margin-bottom: 4px;
@@ -274,13 +274,13 @@
 
 .nad-detail-vuln-text {
     color: #fbbf24;
-    font-size: 11px;
+    font-size: 16px;
     line-height: 1.5;
 }
 
 .nad-detail-paths-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 7px;
+    font-size: 8px;
     color: #64748b;
     margin-bottom: 6px;
     letter-spacing: 0.3px;
@@ -288,7 +288,7 @@
 
 .nad-detail-no-paths {
     color: #334155;
-    font-style: italic;
+    font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
 }
 
 .nad-detail-path {
@@ -304,11 +304,11 @@
 
 .nad-path-claim {
     color: #f59e0b;
-    font-size: 10px;
+    font-size: 16px;
 }
 
 .nad-path-desc {
     color: #94a3b8;
-    font-size: 10px;
+    font-size: 16px;
     margin-top: 2px;
 }

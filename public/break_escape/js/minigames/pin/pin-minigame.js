@@ -18,6 +18,8 @@ export function clearPinAttemptHistory() { pinAttemptHistory.clear(); }
 
 // PIN Minigame Scene implementation
 export class PinMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         // Ensure params is defined before calling parent constructor
         params = params || {};
@@ -181,7 +183,9 @@ export class PinMinigame extends MinigameScene {
         if (this.allowBackspace) {
             const backspaceButton = document.createElement('button');
             backspaceButton.className = 'pin-minigame-key pin-minigame-backspace';
-            backspaceButton.textContent = '⌫';
+            // "DEL", as on the infusion pump: the pixel fonts have no erase glyph (slice 7 R1 m4)
+            backspaceButton.textContent = 'DEL';
+            backspaceButton.setAttribute('aria-label', 'Delete last digit');
             backspaceButton.addEventListener('click', () => this.handleBackspace());
             this.keypadElement.appendChild(backspaceButton);
         }

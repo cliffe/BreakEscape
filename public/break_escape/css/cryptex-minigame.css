@@ -114,8 +114,10 @@
 }
 
 .cryptex-wheel-display {
-    font-size: 56px;
-    font-weight: bold;
+    /* GNF: broad engraved-looking capitals for the letter wheels (the user asked for a
+       different pixel face here, slice 7 R1), at a whole size with no synthetic bold */
+    font-size: 48px;
+    font-weight: normal;
     color: #ffffff;
     background: #0f1826;
     border: 2px solid #334466;
@@ -125,8 +127,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'VT323', 'GNF', monospace;
-    letter-spacing: 0.1em;
+    font-family: 'GNF', monospace;
+    letter-spacing: 0;
     flex-shrink: 0;
     transition: border-color 0.2s, color 0.2s;
 }

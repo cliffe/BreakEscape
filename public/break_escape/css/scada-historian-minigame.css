@@ -105,6 +105,9 @@
     flex-shrink: 0;
 }
 .sh-rack-checkbox.checked { border-color: #f5a623; background: #1a1a08; }
+/* Ticked: a solid 6px square inside the box, pixel art in place of a tick glyph the pixel
+   fonts lack (slice 7 R1 m4) */
+.sh-rack-checkbox.checked::after { content: ''; width: 6px; height: 6px; background: #f5a623; }
 .sh-divider { border: none; border-top: 2px solid #334466; margin: 8px 0; }
 .sh-annotate-btn {
     background: #1a1a1a;

@@ -8,14 +8,18 @@
 
 .pin-minigame-game-container {
     background: #55616e !important;
-    padding: 20px;
-    /* room for the Cancel button, which sits over the bottom of the panel */
-    padding-bottom: 56px;
+    /* The plate fills the height behind the display, every key and the attempts log
+       (the user preferred the old full back plate, slice 7 R1). Nothing sits over its
+       bottom now the Cancel row has gone, and the content is centred in it; on a short
+       screen it scrolls inside the plate rather than spilling past its edges. */
+    padding: 20px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
     gap: 20px;
+    overflow-y: auto;
+    box-sizing: border-box;
 
     max-width: 600px;
     margin: 12px auto;
@@ -209,7 +213,7 @@
 .pin-minigame-backspace {
     background: #e74c3c;
     border-color: #c0392b;
-    font-size: 20px;
+    font-size: 12px;   /* "DEL", the same size as ENTER */
 }
 
 .pin-minigame-backspace:hover {
@@ -332,13 +336,13 @@
 .pin-minigame-attempt-feedback {
     font-size: 12px;
     opacity: 0.8;
-    font-style: italic;
+    font-style: normal;   /* no synthetic slant on a pixel font (slice 7 R1 n5) */
 }
 
 .pin-minigame-attempt-empty {
     text-align: center;
     color: #666;
-    font-style: italic;
+    font-style: normal;
     padding: 20px;
 }
 
@@ -525,4 +529,38 @@
 
 .pin-minigame-cracker-help .pin-minigame-light:first-child {
     margin-left: 0;
+}
+
+/* Short screens (800x600 and below): a tighter pad so the display, every key and the
+   attempts log all fit on the plate (slice 7 R1) */
+@media (max-height: 700px) {
+    .pin-minigame-game-container { padding: 12px 20px; gap: 12px; }
+    .pin-minigame-interface { gap: 10px; }
+    .pin-minigame-display-container { margin-bottom: 0; }
+    .pin-minigame-display { font-size: 32px; padding: 8px 20px; }
+    .pin-minigame-keypad { gap: 8px; padding: 14px; }
+    .pin-minigame-key { min-height: 40px; padding: 8px; }
+    .pin-minigame-attempts-container { padding: 10px; }
+    .pin-minigame-attempts-title { margin-bottom: 6px; }
+    .pin-minigame-attempts-log { max-height: 72px; }
+    .pin-minigame-attempt-empty { padding: 6px; }
+}
+
+/* Landscape phones (915x412): the keypad stands beside the display and the attempts
+   log, so the whole pad fits the plate's height */
+@media (max-height: 520px) and (min-width: 700px) {
+    .pin-minigame-game-container { max-width: 760px; }
+    .pin-minigame-interface {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: 24px;
+        row-gap: 10px;
+        align-items: center;
+        justify-items: center;
+        max-width: 720px;
+    }
+    .pin-minigame-interface > * { grid-column: 1; }
+    .pin-minigame-interface > .pin-minigame-keypad { grid-column: 2; grid-row: 1 / span 6; width: 260px; }
+    .pin-minigame-key { min-height: 36px; padding: 6px; }
+    .pin-minigame-attempts-log { max-height: 60px; }
 }

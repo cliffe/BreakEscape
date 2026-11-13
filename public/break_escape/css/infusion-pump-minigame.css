@@ -27,92 +27,8 @@
     box-sizing: border-box;
 }
 
-/* ---- Prescription panel (left) ---- */
-.ip-prescription-panel {
-    width: 38%;
-    min-width: 200px;
-    background: #f5f0e8;
-    color: #1a1a1a;
-    border: 2px solid #c8b880;
-    padding: 14px 12px;
-    overflow-y: auto;
-    box-sizing: border-box;
-    font-family: 'VT323', monospace;
-    font-size: 10px;
-    line-height: 1.5;
-    flex-shrink: 0;
-}
-
-.ip-rx-header {
-    font-size: 8px;
-    font-weight: bold;
-    text-align: center;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 2px;
-}
-
-.ip-rx-sub {
-    font-size: 7px;
-    text-align: center;
-    color: #444;
-    margin-bottom: 8px;
-}
-
-.ip-rx-divider {
-    border-top: 2px solid #c8b880;
-    margin: 8px 0;
-}
-
-.ip-rx-field {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 4px;
-}
-
-.ip-rx-label {
-    color: #666;
-    font-size: 8px;
-    min-width: 60px;
-    text-transform: uppercase;
-    flex-shrink: 0;
-}
-
-.ip-rx-value {
-    color: #1a1a1a;
-    font-size: 9px;
-}
-
-/* The critical dose line — ambiguous decimal rendered in VT323 */
-.ip-rx-dose-line {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    margin-bottom: 4px;
-    background: #ede8d8;
-    border: 2px solid #c8b880;
-    padding: 4px 6px;
-}
-
-.ip-rx-dose-value {
-    font-family: 'GNF', monospace;
-    font-size: 30px;
-    color: #1a1a1a;
-    line-height: 1;
-    letter-spacing: -2px;  /* tight tracking makes the decimal very small */
-}
-
-.ip-rx-sig {
-    font-style: italic;
-    font-size: 12px;
-    color: #333;
-}
-
-.ip-rx-blank {
-    color: #aaa;
-    font-size: 9px;
-    letter-spacing: 1px;
-}
+/* The MAR card is drawn on the Phaser canvas (infusion-pump-minigame.js); its old
+   HTML rules had no users and were removed (slice 7 R1 n1). */
 
 /* ---- Pump device (right) ---- */
 .ip-pump-device {
@@ -322,7 +238,7 @@
 .ip-modal-prompt {
     color: #aaaaaa;
     font-family: 'VT323', monospace;
-    font-size: 11px;
+    font-size: 16px;
     margin-bottom: 20px;
 }
 
@@ -396,7 +312,7 @@
 .ip-no-charts-sub {
     color: #888;
     font-family: 'VT323', monospace;
-    font-size: 12px;
+    font-size: 16px;
     line-height: 1.5;
     max-width: 320px;
 }
