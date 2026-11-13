@@ -27,7 +27,7 @@
     max-height: calc(100% - 24px);
     min-height: 0;
     background: #10161c;
-    border: 2px solid #444;
+    border: 2px solid #6b7f8f;
     color: #e8eef2;
     /* Pixel fonts have no italic or bold cut: never let the browser fake one */
     font-style: normal;
@@ -305,6 +305,27 @@
     border: 2px solid #8a6420;
     color: #ffe0a0;
     font-size: 18px;
+}
+
+/* The badge never shrinks under the share's text; the text column wraps instead, and on a
+   phone the badge drops under it (critique B NV1) */
+.network-row-wide > .network-row-control {
+    flex-shrink: 0;
+}
+
+.network-row-wide > .network-row-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+    .network-row-wide {
+        flex-wrap: wrap;
+    }
+
+    .network-row-wide > .network-row-control {
+        margin-left: auto;
+    }
 }
 
 .network-row-padlock {

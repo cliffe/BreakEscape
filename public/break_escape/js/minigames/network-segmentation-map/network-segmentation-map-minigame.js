@@ -59,7 +59,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                     <span class="nsm-title-text">${escapeTitle(displayDashes(title))}</span>
                     <span class="nsm-status-badge">ACTIVE INCIDENT</span>
                 </div>
-                <div class="nsm-body">
+                <div class="nsm-body pixel-scroll">
                     <div class="nsm-topology-area" id="nsm-topology-area">
                         <div class="nsm-zones">
                             ${this._buildZonesHTML()}
@@ -728,7 +728,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         t.setAttribute('text-anchor', 'middle');
         t.setAttribute('fill',        '#ff7700');
         t.setAttribute('font-size',   '9');
-        t.setAttribute('font-family', 'monospace');
+        t.setAttribute('font-family', "'VT323', monospace");
         t.setAttribute('font-weight', 'bold');
         t.textContent = '!';
         g.appendChild(t);

@@ -40,8 +40,8 @@
     text-align: center;
     /* The X sits inside the frame's top right, on this bar: the bar is tall enough to hold
        it above the amber rule, and the text keeps clear of it (slice 7 R2 n2) */
-    padding: 6px 44px;
-    min-height: 42px;
+    padding: 6px 52px;
+    min-height: 50px;
     box-sizing: border-box;
     display: flex;
     align-items: center;
