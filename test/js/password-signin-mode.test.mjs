@@ -968,8 +968,9 @@ test('R5 n1: the snap reads every box before it writes; a child moved with its p
 test('R5 m2, m3, n2 to n5: the CSS', () => {
     const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
     const rule = (sel) => { const i = css.indexOf(`${sel} {`); assert.ok(i >= 0, sel); return css.slice(i, css.indexOf('}', i)); };
-    // m2: the plain and prompt screens' note ends left of Submit
-    assert.match(rule('.password-minigame-area:not(.signin-mode) .postit-note'), /max-width: 200px;/);
+    // m2: in a short window the plain screen's note is pulled up 4px less, clear of Submit
+    const shortCss = css.slice(css.indexOf('@media (max-height: 640px)'));
+    assert.match(shortCss, /\.password-frame \.password-minigame-area:not\(\.signin-mode\) \.postit-note \{\s*margin-top: -44px;/);
     // m3: Press Start 2P on its 8px grid
     assert.match(rule('.signin-title'), /font-size: 16px;/);
     for (const m of css.matchAll(/font-family: 'Press Start 2P'[^}]*?font-size: (\d+)px/g)) {
