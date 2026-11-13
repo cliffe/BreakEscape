@@ -45,6 +45,7 @@ function mk(scene, kind) {
         get height() { return o.kind === 'text' ? String(o.text).split('\n').length * 16 : 16; },
         setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
         setTexture(k) { o.textureKey = k; return o; }, setText(t) { o.text = t; return o; }, setDepth() { return o; },
+        setTint(t) { o.tint = t; return o; }, setFontSize(f) { o.fontSize = f; return o; }, destroy() { o.destroyed = true; },
         setData(k, v) { o.data[k] = v; return o; }, getData(k) { return o.data[k]; }, setScale(s) { calls.push(['setScale', s]); return o; } };
     for (const m of ['clear', 'fillStyle', 'lineStyle', 'fillRect', 'strokeRect', 'fillRoundedRect', 'strokeRoundedRect', 'fillTriangle', 'lineBetween']) {
         o[m] = (...a) => { calls.push([m, ...a]); return o; };
@@ -727,4 +728,128 @@ test('R2 n1: closeTagged closes the bubbles answering that event, with no remain
     assert.equal(r.bubbles.hasLine('lee'), true);
     assert.deepEqual(rest, []);
     assert.deepEqual(r.bubbles.closeTagged(null), []);
+});
+
+// ---- the bitmap sheet (q105 R1 m9, M2) ----
+
+import { readFileSync } from 'node:fs';
+const GNF_XML = readFileSync(join(here, '../../public/break_escape/assets/fonts/gnf-bitmap/gnf.xml'), 'utf8');
+const GNF = (() => {
+    const num = (str, k) => parseInt(str.match(new RegExp(`\\b${k}="(-?\\d+)"`))[1], 10);
+    const chars = {};
+    for (const m of GNF_XML.matchAll(/<char [^>]*>/g)) {
+        const c = m[0];
+        chars[num(c, 'id')] = { x: num(c, 'x'), y: num(c, 'y'), width: num(c, 'width'), height: num(c, 'height'),
+            xOffset: num(c, 'xoffset'), yOffset: num(c, 'yoffset'), xAdvance: num(c, 'xadvance') };
+    }
+    return { lineHeight: num(GNF_XML.match(/<common [^>]*>/)[0], 'lineHeight'), chars };
+})();
+const { measurePixelText, pixelSafe } = await imp('utils/pixel-text.js');
+const inkWidth = (line) => { const m = measurePixelText(GNF.chars, pixelSafe(line, GNF.chars)); return m.right - m.left; };
+
+/** The rig with a BitmapText factory and the real gnf.xml in the cache (`cached` false: not loaded yet). */
+function bitmapRig(opts = {}, { cached = true } = {}) {
+    const r = rig(opts);
+    const state = { cached };
+    r.scene.add.bitmapText = (x, y, key, t, size) => { const o = mk(r.scene, 'bitmap'); o.key = key; o.fontSize = size; return o; };
+    r.scene.cache = { bitmapFont: { get: (k) => (state.cached && k === 'gnf' ? { data: GNF } : undefined), exists: (k) => state.cached && k === 'gnf' } };
+    r.scene.add.container = (x, y, list = []) => {
+        const c = mk(r.scene, 'container'); c.list = [...list];
+        c.getIndex = (o) => c.list.indexOf(o);
+        c.remove = (o) => { c.list = c.list.filter(x => x !== o); return c; };
+        c.addAt = (o, i) => { c.list.splice(i, 0, o); return c; };
+        c.add = (o) => { c.list.push(o); return c; };
+        return c;
+    };
+    r.state = state;
+    return r;
+}
+
+test('bubble on the bitmap sheet: frame sized from the GNF box, text on whole pixels inside it', () => {
+    const r = bitmapRig({ npcs: { sara: { x: 100.4, y: 100.6, room: 'hall' } } });
+    r.bubbles.say('sara', 'Hello there');
+    r.bubbles.update();
+    const bb = r.bubbles.bubbles.get('sara');
+    assert.equal(bb.text.kind, 'bitmap');
+    assert.ok(!bb.text.pixelFallback);
+    const ink = inkWidth('Hello there');
+    let w = ink + 2 * 4 + 2 * BORDER_PX; if (w % 2) w++;
+    assert.equal(bb.w, w, 'width from the glyphs\' ink');
+    assert.equal(bb.h, 11 + 2 * 2 + 2 * BORDER_PX, 'one 11 px line box');
+    assert.ok(Number.isInteger(bb.text.x) && Number.isInteger(bb.text.y));
+});
+
+test('bubbleTextScale: the review\'s worked examples, the HUD step, and the clamp', () => {
+    const { bubbleTextScale } = B;
+    assert.equal(bubbleTextScale({ scale: 2, dpr: 1 }), 1, '1400x1000 desktop');
+    assert.equal(bubbleTextScale({ scale: 1, dpr: 1 }), 1, '390x844 at dpr 1');
+    assert.equal(bubbleTextScale({ scale: 2, dpr: 3 }), 2, 'phone at dpr 3');
+    assert.equal(bubbleTextScale({ scale: 1, dpr: 2 }), 2, 'phone at dpr 2');
+    assert.equal(bubbleTextScale({ scale: 1, dpr: 1 }), 1);
+    assert.equal(bubbleTextScale({ scale: 2, dpr: 2 }), 1, 'desktop at dpr 2: one game px is a CSS px');
+    assert.equal(bubbleTextScale({ scale: 2, dpr: 1, hudStep: 1 }), 2, 'a bigger HUD makes bigger bubbles');
+    assert.equal(bubbleTextScale({ scale: 2, dpr: 1, hudStep: -1 }), 1, 'a smaller HUD never goes below x1');
+    assert.equal(bubbleTextScale({ scale: 1, dpr: 3, hudStep: 2 }), 3, 'at most x3');
+    for (const s of [1, 2, 3, 4]) for (const d of [1, 1.5, 2, 3]) {
+        const k = bubbleTextScale({ scale: s, dpr: d });
+        assert.ok(Number.isInteger(k) && k >= 1 && k <= 3);
+        if (k < 3) assert.ok(7 * k * s / d >= 7 - 1e-9, `capitals at least 7 CSS px (scale ${s}, dpr ${d})`);
+    }
+});
+
+test('bubbleWrapPx and pageLine: wrap by drawn width, at most 144 font px and under half the view at the scale', () => {
+    const { bubbleWrapPx, wrapBubbleLines, WRAP_MAX_PX } = B;
+    assert.equal(bubbleWrapPx({}), WRAP_MAX_PX);
+    assert.equal(bubbleWrapPx({ viewWidth: 1170 / 2, textScale: 1 }), 144, 'wide enough view: the 144 px cap');
+    assert.equal(bubbleWrapPx({ viewWidth: 585, textScale: 2 }), Math.floor(0.45 * 585 / 2), 'phone at x2');
+    const limit = bubbleWrapPx({ viewWidth: 585, textScale: 2 });
+    for (const wrap of [{ chars: GNF.chars, limit: 144 }, { chars: GNF.chars, limit }]) {
+        const pages = pageLine(LONG, { wrap });
+        assert.equal(pagesText(pages), LONG.split(/\s+/).join(' '), 'every word, in order');
+        for (const p of pages) {
+            const lines = p.split('\n');
+            assert.ok(lines.length <= PAGE_LINES);
+            for (const l of lines) assert.ok(inkWidth(l) <= wrap.limit || !l.includes(' '), `"${l}" is ${inkWidth(l)} px, over ${wrap.limit}`);
+        }
+    }
+    // The drawn width, not the character count: 24 narrow letters fit where 24 wide ones do not
+    assert.equal(wrapBubbleLines('iiiiiiiiiiii iiiiiiiiiiii', { chars: GNF.chars, limit: 144 }).length, 1);
+    assert.equal(wrapBubbleLines('MMMMMMMMMMMM MMMMMMMMMMMM', { chars: GNF.chars, limit: 144 }).length, 2);
+    // Without the font, the old character wrap
+    assert.deepEqual(pageLine(LONG), pageLine(LONG, { wrap: null }));
+});
+
+test('setDisplayScale: a phone at dpr 3 gets x2 bubbles, live bubbles take the new scale and are measured again', () => {
+    const r = bitmapRig({ npcs: { sara: { x: 100, y: 100, room: 'hall' } } });
+    r.bubbles.say('sara', 'Hello there');
+    r.bubbles.update();
+    const bb = r.bubbles.bubbles.get('sara');
+    const h1 = bb.h, w1 = bb.w;
+    assert.equal(r.bubbles.setDisplayScale({ scale: 2, dpr: 3, hudStep: 0, viewWidth: 585 }), 2);
+    assert.equal(bb.line, null, 'measured again at the next pass');
+    r.bubbles.update();
+    assert.equal(bb.h - 2 * 2 - 2 * BORDER_PX, (h1 - 2 * 2 - 2 * BORDER_PX) * 2, 'text box twice as tall');
+    assert.ok(bb.w > w1);
+    // A new bubble after the change is made at x2 too
+    const fresh = r.bubbles._make(r.scene);
+    r.bubbles._render(fresh, 'Hi');
+    assert.equal(fresh.h, 11 * 2 + 2 * 2 + 2 * BORDER_PX);
+    // Back to desktop: x1 again
+    assert.equal(r.bubbles.setDisplayScale({ scale: 2, dpr: 1, viewWidth: 700 }), 1);
+});
+
+test('a bubble made before the sheet loaded switches to the bitmap text once it is cached (R1 m5)', () => {
+    const r = bitmapRig({ npcs: { sara: { x: 100, y: 100, room: 'hall' } } }, { cached: false });
+    r.bubbles.say('sara', 'First line');
+    r.bubbles.update();
+    const bb = r.bubbles.bubbles.get('sara');
+    assert.ok(bb.text.pixelFallback, 'canvas Text before the sheet');
+    const old = bb.text;
+    r.state.cached = true;
+    r.bubbles.say('sara', 'Second line');
+    r.bubbles.update();
+    assert.equal(bb.text.kind, 'bitmap');
+    assert.ok(old.destroyed, 'the canvas Text is gone');
+    assert.ok(bb.box.list.includes(bb.text) && !bb.box.list.includes(old), 'swapped in the bubble\'s container');
+    assert.equal(bb.text.text, 'Second line');
 });
