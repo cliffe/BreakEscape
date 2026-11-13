@@ -102,4 +102,8 @@ Live proof (keyless :3066 from this worktree, 1400x1000, scrollbars shown, `setF
 - Game 2996: courier choice shown with `courier_ready` set directly, "Door unlocked: Post & Print Room", the server holds P1 unlocked, the player walks in.
 - Shots, session scratchpad `ux-shots/lab-wedge-r1fix/`: r1-01 to r1-12. Scripts `lwr1/wedge_r1.mjs`, `lwr1/reload_r1.mjs`, `lwr1/courier_r1.mjs`.
 
-R1 suite results: see below.
+R1 suite results, under the shared test lock:
+
+- `RBENV_VERSION=2.7.8 bin/rails test`: 2392 runs, 42745 assertions, 0 failures, 0 errors, 1 skip (run from 6f27be98a; the later commit 2c1c71429 changes one readable string and the backlog, and the five lab Rails files were rerun on it: 57 runs, 0 failures).
+- `MERGE_BATCH=1 bin/test-js -j 3`: 598 files passed, 0 failed (run from 0a802ed6f).
+- Validator (`--no-graph`): `lab_physical_pentest` 0 ❌ (new warning: the two extinguishers 0 px apart, intended); `test_access_work` 0 ❌.
