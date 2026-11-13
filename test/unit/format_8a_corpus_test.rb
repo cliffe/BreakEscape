@@ -4,17 +4,25 @@ require 'test_helper'
 # (SCENARIO_FORMAT_HARDENING_PLAN.md, "The corpus equivalence check" and "Reader parity"). It is a
 # committed test rather than a one-off script so the equivalence is re-checked on every run.
 #
-# For each of the four scenarios the step rewrites, the old render (old field names) is a vendored
-# fixture under test/fixtures/format_8a/<scenario>.old.json (captured from the pre-8a template at the
-# merge base; see that folder's README) and the new render (new names) is the current template,
-# rendered with srand(1). Reading the old side from a fixture, not through git, keeps the equivalence
-# meaningful once 8a is on main and lets the test run in a gitless checkout. The test shows:
-#   - the step's `scenario` transform applied to the old render equals the new render;
+# For each of the four scenarios the step rewrites, BOTH sides of the equivalence are vendored
+# fixtures, frozen at this branch's tip: the old render (old field names) is
+# test/fixtures/format_8a/<scenario>.old.json (captured from the pre-8a template at the merge base)
+# and the new render (new names) is <scenario>.new.json (the post-8a template rendered with
+# srand(1)); the folder's README records how each was made. Freezing both sides keeps the
+# equivalence a check of the transform alone: a later edit to one of the four test scenarios (a
+# sign's wording, a dropped linkName override) changes the live render but not the frozen pair, so it
+# cannot make transform(old) drift from the new render. Reading from fixtures, not through git, also
+# keeps the check meaningful once 8a is on main and lets it run in a gitless checkout. The test shows:
+#   - the step's `scenario` transform applied to the frozen old render equals the frozen new render;
 #   - the transform leaves the new render unchanged (a no-op on format-1 data);
 #   - `retired_keys_in` finds nothing in the new render;
 #   - `prepare_scenario_data!` on each side (an unsaved Game built with the data) agrees the same
 #     way: the transform applied to the prepared old data equals the prepared new data. This also
 #     exercises the transform on prepared data (plan step 8a, "the step on prepared data").
+#
+# A separate, edit-proof check renders each of the four LIVE templates and asserts `retired_keys_in`
+# finds nothing. That guards against an old field name coming back into a scenario without pinning
+# its content to a frozen expectation.
 #
 # Reader parity: the pre-8a outage readers are reproduced inline here (the old object reader read
 # `affordance.offWhen`; networks and resources read a bare `downIf`), and run on the old render; the
@@ -47,7 +55,17 @@ module BreakEscape
       JSON.parse(File.read(File.join(FIXTURE_DIR, "#{name}.old.json")))
     end
 
+    # The frozen new render: the post-8a template rendered at this branch's tip and vendored beside
+    # the .old.json (see the folder's README). Both sides of the equivalence are frozen, so a later
+    # edit to a test scenario (a sign's wording, a dropped linkName override) cannot break the
+    # equivalence; the live template is guarded instead by the separate retired-key check below.
     def new_render(name)
+      JSON.parse(File.read(File.join(FIXTURE_DIR, "#{name}.new.json")))
+    end
+
+    # The live template render, for the edit-proof retired-key check. This is what new_render used to
+    # return before both sides were frozen.
+    def live_render(name)
       render(File.read(template_path(name)))
     end
 
@@ -139,6 +157,19 @@ module BreakEscape
                      "#{name}: the transform on prepared old data must equal prepared new data"
         assert_empty FU.retired_keys_in(prepared_new),
                      "#{name}: no retired key remains in prepared new data"
+      end
+    end
+
+    # ---- Live template guard (edit-proof) ------------------------------------
+    # Rendered from the live template, not a frozen fixture, so it bites whenever a retired outage key
+    # (networks/resources `downIf`, an object/item `affordance.offWhen`) comes back into one of the
+    # four scenarios. It pins no content, only the absence of old names, so ordinary scenario edits
+    # pass untouched.
+
+    SCENARIOS.each do |name|
+      test "#{name}: the live template carries no retired outage key" do
+        assert_empty FU.retired_keys_in(live_render(name)),
+                     "#{name}: a retired outage key is back in the live template"
       end
     end
 

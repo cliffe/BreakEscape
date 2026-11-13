@@ -1,18 +1,32 @@
-# Format 8a old-render fixtures
+# Format 8a outage-rename fixtures
 
-Each `<scenario>.old.json` is the rendered scenario data for one of the four scenarios that
-format-hardening step 8a rewrites, captured from the pre-8a template (the outage fields in their old
-shape: networks and resources carry `downIf`, objects carry `affordance.offWhen`).
+Both sides of the step-8a corpus equivalence are frozen here, one pair per scenario:
 
-These let `test/unit/format_8a_corpus_test.rb` and `test/js/format-8a-reader-parity.test.mjs` check
-that the step 8a transform turns the old shape into the current template and that the old and new
-outage readers agree, without reading anything through git. That keeps the equivalence meaningful
-after 8a lands on main (where a merge base would otherwise point at the new code) and lets the tests
-run in a gitless checkout.
+- `<scenario>.old.json` — the rendered scenario data in its **pre-8a** shape (networks and resources
+  carry `downIf`; objects carry `affordance.offWhen`).
+- `<scenario>.new.json` — the same scenario rendered from the **post-8a** template (one outage field
+  `offWhen`: a bare `downIf` becomes `offWhen`; an `affordance.offWhen` moves up to the object).
+
+`test/unit/format_8a_corpus_test.rb` and `test/js/format-8a-reader-parity.test.mjs` read this frozen
+pair. Freezing both sides keeps the equivalence a check of the step-8a transform alone: `transform(old)`
+must equal `new`. A later edit to one of the four test scenarios (a sign's wording, a dropped
+`linkName` override) changes the live render but not the frozen pair, so it cannot make the
+equivalence drift. The live templates are instead guarded by a separate, edit-proof check in each
+test: render the live template and assert no retired outage key has come back. Reading both sides from
+fixtures, not through git, also keeps the check meaningful once 8a is on main (a merge base would
+otherwise point at the new code) and lets the tests run in a gitless checkout.
 
 ## How they were made
 
-Captured from the merge base `8b6cf6a0d` (the main commit 8a was based on). For each scenario the
-base template `scenarios/<scenario>/scenario.json.erb` was rendered (`srand(1)` then ERB; the four
-carry no ERB tags, so this is a plain parse) and written as pretty JSON. To regenerate after a
-deliberate corpus change, render each base template the same way and overwrite the file.
+- `.old.json`: captured from the merge base `8b6cf6a0d` (the main commit 8a was based on). Each base
+  template `scenarios/<scenario>/scenario.json.erb` was rendered (`srand(1)` then ERB; the four carry
+  no ERB tags, so this is a plain parse) and written as pretty JSON.
+- `.new.json`: captured from this branch's templates at its tip, rendered the same way (`srand(1)`
+  then ERB via `BreakEscape::Mission::ScenarioBinding`, then `JSON.pretty_generate`). On the branch
+  where 8a lands (before any later scenario edit) `transform(old)` already equals this render, which
+  is why it is safe to freeze.
+
+To regenerate after a deliberate corpus change, re-render the relevant base template for the `.old`
+side and the current template for the `.new` side the same way, and overwrite the file. A change that
+alters the step-8a transform is the only thing that should move `.new.json` relative to
+`transform(.old.json)`.

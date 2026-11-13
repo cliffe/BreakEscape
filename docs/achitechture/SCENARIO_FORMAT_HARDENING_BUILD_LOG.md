@@ -1367,3 +1367,34 @@ pre-commit rubocop hooks both re-outdent the lines and the pre-commit hook block
 still carries the deeper alignment, so main's indentation cannot be restored without an inline
 `rubocop:disable` (itself new noise) or a config change. Left as the branch (and rubocop) has it.
 
+
+## Step 8a corpus-test design fix (2026-11-13)
+
+Batch 21 (main + network-views slice 1 + copier + barkDelay + step 8a) failed two step-8a corpus
+tests for `test_access_networks`: the equivalence and the `prepare_scenario_data!` check. Slice 1
+legitimately edited that scenario (dropped `linkName` overrides, changed sign text), so the corpus
+test's "new" side, which it read by rendering the LIVE template, no longer equalled
+`transform(old fixture)`. Any later edit to one of the four test scenarios would break the test the
+same way. A test-design flaw, not a transform bug.
+
+**Fix: freeze both sides.** The new render is now vendored beside the old one as
+`test/fixtures/format_8a/<scenario>.new.json`, captured from this branch's templates at its tip
+(`srand(1)` then ERB via `Mission::ScenarioBinding`, then pretty JSON). On this branch
+`transform(old)` already equals that render, so freezing it is safe; a later scenario edit changes
+the live render but not the frozen pair. The equivalence and prepare checks, and the Ruby/JS reader
+parity, now read the frozen pair.
+
+**Edit-proof live guard.** A separate test in each file renders the four LIVE templates and asserts
+no retired outage key has come back (`retired_keys_in` in Ruby; an inline object/network/resource
+walk in the node test). It pins no content, so ordinary scenario edits pass, but a returning
+`downIf` or `affordance.offWhen` turns it red.
+
+**JS reader parity decision.** The node parity test also read its "new" side from the live template
+and matched objects to the frozen old fixture by id, so an object-set change in a scenario would
+break it too. Its new side now reads `<scenario>.new.json`. It stays a reader-vs-reader check (old
+`pcSwitchedOff` on the old render vs live `pcSwitchedOff` on the new render), never a frozen-expected
+blob, and is edit-proof; the live guard above covers returning old names.
+
+**Proof it still bites.** Prefixing the renamed value in `rename_one_hash_outage_fields!` turns the
+Ruby corpus test red (6 failures); reverting restores green (21 runs, 298 assertions, 0 failures).
+The node parity test passes (1 file). README updated with how both sides are made.

@@ -4,12 +4,15 @@
 // `pcSwitchedOff` inline and extracts the live one from unlock-system.js (the exported pure
 // evaluator every object-off reader shares), then shows that, over every object in the four
 // rewritten scenarios and a sweep of the outage globals, the old reader on the old render and the
-// new reader on the new render give the same verdict. The old render is a vendored fixture under
-// test/fixtures/format_8a/<scenario>.old.json (see that folder's README); nothing is read through
-// git, so the parity stays meaningful once 8a is on main and the test runs in a gitless checkout. It
-// also checks the needs-target membership the step must not change: every object keeps a truthy
-// affordance (an emptied one stays `{}`), so none drops out of the candidate lists, and bench_pc is
-// the one emptied affordance.
+// new reader on the new render give the same verdict. BOTH renders are vendored fixtures, frozen at
+// the branch tip: <scenario>.old.json (old field names) and <scenario>.new.json (new names); see the
+// folder's README. This keeps the parity a reader-vs-reader check that a later edit to one of the
+// four scenarios cannot break, and (as before) reads nothing through git, so it stays meaningful once
+// 8a is on main and runs in a gitless checkout. A separate, edit-proof check reads each LIVE template
+// and asserts no retired outage key (an object/item `affordance.offWhen`, a network/resource
+// `downIf`) has come back. It also checks the needs-target membership the step must not change: every
+// object keeps a truthy affordance (an emptied one stays `{}`), so none drops out of the candidate
+// lists, and bench_pc is the one emptied affordance.
 //
 // Run with: bin/test-js test/js/format-8a-reader-parity.test.mjs
 import test from 'node:test';
@@ -54,9 +57,17 @@ function pcSwitchedOffOld(data, globals) {
 const newUnlock = readFileSync(join(repo, UNLOCK), 'utf8');
 const pcSwitchedOffNew = extractFn(newUnlock, 'pcSwitchedOff');
 
+// The frozen old and new renders. Both are vendored so the parity is a reader-vs-reader check that a
+// later scenario edit cannot break; the live template is guarded separately by liveScenario below.
 function readScenario(name, old) {
-    if (old) return JSON.parse(readFileSync(join(FIXTURE_DIR, `${name}.old.json`), 'utf8'));
-    const path = `scenarios/${name}/scenario.json.erb`; // no ERB in these four, so a plain parse
+    const file = old ? `${name}.old.json` : `${name}.new.json`;
+    return JSON.parse(readFileSync(join(FIXTURE_DIR, file), 'utf8'));
+}
+
+// The live template render, for the edit-proof retired-key guard (no ERB in these four, so a plain
+// parse). This is what readScenario's new side used to read before both sides were frozen.
+function liveScenario(name) {
+    const path = `scenarios/${name}/scenario.json.erb`;
     return JSON.parse(readFileSync(join(repo, path), 'utf8'));
 }
 
@@ -111,6 +122,39 @@ for (const name of SCENARIOS) {
             }
         }
         assert.ok(checked >= 1, `${name}: at least one object outage checked`);
+    });
+}
+
+// Edit-proof guard on the live templates: a retired outage key coming back into any of the four
+// scenarios turns this red, without pinning any content. An object or item carries the condition on
+// its own `affordance.offWhen` before 8a; a network or resource carries a bare `downIf`.
+function retiredKeysInLive(data) {
+    const hits = [];
+    for (const [id, net] of Object.entries(data.networks || {})) {
+        if (net && typeof net === 'object' && 'downIf' in net) hits.push(`networks/${id}.downIf`);
+    }
+    for (const [id, res] of Object.entries(data.resources || {})) {
+        if (res && typeof res === 'object' && 'downIf' in res) hits.push(`resources/${id}.downIf`);
+    }
+    const walk = (node, path) => {
+        if (Array.isArray(node)) {
+            node.forEach((v, i) => walk(v, `${path}[${i}]`));
+        } else if (node && typeof node === 'object') {
+            const aff = node.affordance;
+            if (aff && typeof aff === 'object' && !Array.isArray(aff) && 'offWhen' in aff) {
+                hits.push(`${path}.affordance.offWhen`);
+            }
+            for (const [k, v] of Object.entries(node)) walk(v, `${path}/${k}`);
+        }
+    };
+    walk(data.rooms || {}, 'rooms');
+    return hits;
+}
+
+for (const name of SCENARIOS) {
+    test(`${name}: the live template carries no retired outage key`, () => {
+        assert.deepEqual(retiredKeysInLive(liveScenario(name)), [],
+            `${name}: a retired outage key is back in the live template`);
     });
 }
 
