@@ -92,7 +92,7 @@ Review: `docs/achitechture/UX_SLICE16_REVIEW_R2.md`. Commits 3c156fff7, a8c244d4
 
 Related files run alone: confirm-holds-keys 10, info-label-proximity, hud-caption-wrap, person-chat-pixel-art 3, and every `test/js` file that imports notifications, apply-actions, info-label or the person chat (72 files): all pass.
 
-Suites under the lock (started on e1b2dd137; 01713900e, one CSS media rule, landed during the run): see the handover lines below for the counts.
+Suites under the lock, on e1b2dd137 (01713900e, one CSS media rule, and the build log commits landed during the run): Rails 2392 runs, 42555 assertions, 0 failures, 0 errors, 1 skip. JS `MERGE_BATCH=1 bin/test-js -j 3`: 602 files passed, 0 failed.
 
 Live proof on :3063 (keyless, from this worktree), new games only (3022 to 3033, 3046 to 3056; 3024, 3025, 3027, 3033 and 3048 to 3051 were runs that did not reach the check), headless shell, `setFPS(20)` with fixed steps on. Scrollbars: every run up to game 3056 passed `--hide-scrollbars=false`, which Chrome reads as hide (it only checks that the switch is present), so those shots show no scrollbars. The m4 and m6 shots at 390 were taken again on game 3059 with `ignoreDefaultArgs: ['--hide-scrollbars']` and no hide switch, and without touch emulation (mobile emulation draws overlay scrollbars); the caption's scrollbar measures 14 px there. Shots and JSON reports in `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/scratchpad/ux-shots/slice16-r2fix/`:
 
