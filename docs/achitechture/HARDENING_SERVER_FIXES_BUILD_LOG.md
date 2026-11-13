@@ -81,3 +81,60 @@ Tests (`test/js/npc-exchange-heard.test.mjs`, 2 new, 17 pass): a cut by a knock-
 still-using NPC's `useUntil` to its own pre-hold end (< the knot-end hold); a cut while an NPC is
 frozen in a player conversation hands the hold back off `useRemaining`. Re-ran the npc-needs
 importer suites: 693 further node tests pass.
+
+## Item 4 — A locked start item can never be opened
+
+Status: needs a decision (not built).
+
+Confirmed on the code. A start item lives in two places: the stored inventory copy in
+`player_state['inventory']`, which `initialize_player_state` now runs through
+`filter_requires_and_contents_recursive` (game.rb ~5744-5754), so its lock answer and contents are
+stripped; and the authored `scenario_data['startItemsInInventory']`, which keeps the answer. The
+server's object unlock path (`validate_unlock`, game.rb:3155), `pin_cracker_feedback` (3250) and
+`password_case_mismatch?` (3262) all resolve the lock through `find_scenario_object` (3316), which
+walks rooms, account profiles, resources, held grants, held USB sticks and released NPC containers,
+but not `startItemsInInventory`. So a locked start item is found nowhere with its answer: its
+`/unlock` can never pass. No shipped scenario has a locked start item (checked the corpus), so this
+is latent.
+
+Options:
+- A. Enable it: add `scenario_data['startItemsInInventory']` as a source in `find_scenario_object`
+  (iterate each authored start item through `find_object_in_contents`, after the existing sources).
+  The answer is read server-side only, never synced, so the stripped client copy is unaffected and
+  the security property (no answer reaches the client) holds. Pattern-matches the held-grant and
+  held-USB sources already there, and fixes the pin-cracker and password-case paths at the same
+  time. Small and low risk; adds the locked-start-item feature. Needs: a Rails test that opens a
+  locked start item (cryptex/key) and a test that no lock answer reaches the client by any sync.
+- B. Forbid it: a validator error on a `startItemsInInventory` item (at any depth) with
+  `locked: true`, so authors cannot ship an unopenable item. Smaller, but removes the capability.
+
+Recommendation: A. Hardening should not block intended play, a locked start item an author ships
+should open, and the answer stays server-side. B is the fallback if locked start items are judged
+out of scope. Left for the orchestrator to greenlight before building.
+
+## Item 2 — Re-issuing a revoked card id stays refused
+
+Status: needs a decision (no server change; working as intended).
+
+Confirmed on the code. `revoked_card_ids` is grow-only: `merge_global_variables!` (game.rb:341)
+unions it on every sync, and `held_rfid_cards` excludes revoked ids, so once a `card_id` is revoked
+it stays refused for the rest of the game. There is no un-revoke path (the revoked-cards review R1
+found none). A scenario that revoked a card and later gave the player the same `card_id` again would
+leave that card dead.
+
+Decision under the cheat policy: the grow-only stickiness is correct and must stay. An RFID card is
+a captured access credential; letting a client un-revoke one (through any sync, key, type,
+carry-over, format or reload path) would be a cheat vector past a revoked secret. No shipped scenario
+re-issues a revoked id, so no honest unlock is blocked today. The review itself concluded "no code
+change needed now".
+
+Options for the authoring foot-gun (a future validator aid, not a game-behaviour change):
+- A. Add a validator warning on a `give_item` (or a start item) whose `card_id` some `revoke_card`
+  action in the same scenario cancels, so the boundary is explicit. Fires on nothing in the corpus,
+  so no known-failures entry is needed; purely advisory. Needs a corpus run to confirm no false
+  positives and a small validator test.
+- B. Do nothing; document that authors give a re-issued card a fresh `card_id` (already in the
+  review).
+
+Recommendation: keep the server behaviour; A is a low-value nicety the orchestrator can greenlight
+if the authoring guard is wanted. Not built.
