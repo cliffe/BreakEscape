@@ -113,11 +113,16 @@ container route, and neither the answer nor any client payload carries it. Full 
 161 assertions). Related tests re-run green: `npc_container_unlock_test.rb`,
 `unlock_response_filter_test.rb`, `access_model_desktop_test.rb`, `game_test.rb` (138 runs together).
 
-Browser proof: no shipped or test scenario holds a locked start item (confirmed against the corpus),
-so there is no in-game walkthrough step to drive. The Rails integration tests exercise the real
-controller routes (the same `/unlock` endpoint the client lock minigame posts to), so the server path
-the game runs is covered. A locked start item was not added to a test scenario, since the real-route
-integration test already proves the path and no corpus scenario uses the feature.
+Browser proof (PASS): no shipped scenario holds a locked start item, so one was added to the small
+test scenario `test_unlock_gaps` (a cryptex-locked "Pocket Cryptex" in `startItemsInInventory`,
+answer POCKET, holding a note). The validator stays at 0 errors for it. On the keyless server on
+:3622 (worktree server, headless chromium), a fresh game was opened and the real page's `ApiClient`
+was driven exactly as the lock minigame does on submit (`ApiClient.unlock('object',
+'test_start_cryptex', <attempt>, 'cryptex')`): the start item is in the client tray, a wrong answer
+is refused ("Invalid attempt"), the right answer opens the item and serves the note contents
+(`test_start_note`), and the answer does not appear in the reply. Proof script kept in the agent
+scratchpad (hard-fixes-2/locked-start-item-proof.mjs); the one-off mission registration (one row,
+not a re-seed) was done with hard-fixes-2/register_mission.rb.
 
 ### Original decision write-up (kept for reference)
 
