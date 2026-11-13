@@ -4932,7 +4932,7 @@ export function createEngineWorld() {
         // waits for the bubble layer to place the line, and a line with no room is not voiced
         // (UX slice 5 R4 n4). An exchange or call line (info.knot or info.call) is not deferred:
         // it is voiced at once and the bubble layer toasts it when no bubble fits, since the
-        // exchange counts as heard (heard_<knot>) once its lines are done (R5 m2)
+        // exchange counts as heard (heard_<knot>) when its lines are done or it is cut after a heard line (R5 m2)
         speak: (id, line, info) => {
             const v = W().npcChatterVoice;
             const wb = W().npcWorldBubbles;
