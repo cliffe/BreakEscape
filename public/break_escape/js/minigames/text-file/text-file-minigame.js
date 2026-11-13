@@ -1,7 +1,6 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
-import { escapeHtml } from '../../utils/escape-html.js';
-import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
+import { escapeHtml, escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mountPcMonitor, postitNotebookEntry } from '../../utils/pc-monitor.js';
 
 // File names, types and observations are scenario text: escaped before they reach HTML
