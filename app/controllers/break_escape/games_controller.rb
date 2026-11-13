@@ -194,6 +194,13 @@ module BreakEscape
       authorize @game if defined?(Pundit)
       @mission = @game.mission
 
+      # Stored-game soft-lock migration (GATED_DOOR_SERVER_CHECK_PLAN.md §10). show is room-agnostic
+      # and holds the full row, so this sees every split gated room in one pass before any room GET or
+      # currentRoom sync, and before this request's auto-unlock. It is read-only (no lock) for every
+      # game with nothing stuck, and takes its own row lock only for the one-time demotion of a stored
+      # soft-locked game, so show keeps its lock-free read-only cost in the common case.
+      @game.migrate_soft_locked_route_rooms!
+
       # Load player preference data for the in-game modal
       @player_preference = current_player_preference || create_default_preference
       @player_preference.scenario_context = @game.scenario_data

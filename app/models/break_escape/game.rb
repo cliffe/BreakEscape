@@ -461,6 +461,113 @@ module BreakEscape
       player_state['currentRoom'] == room_id
     end
 
+    # Stored-game soft-lock migration (GATED_DOOR_SERVER_CHECK_PLAN.md §10). A game saved before this
+    # work may have a split gate's room already in unlockedRooms (Len's route ran) but no credit set,
+    # because the player had not yet worn the hi-vis or cloned a badge when the client still wrote the
+    # credit. After deploy the client credit writers are gone and promotion runs only for a room in
+    # npcRouteRooms, so such a room would be stuck unlocked-but-uncredited and its credited task
+    # (tailgate_in) could never complete. One-shot fix: move each soft-locked split room back into
+    # npcRouteRooms so the earn check re-runs on the next entry (viaPass on the currentRoom sync, or
+    # viaCredential on an rfid unlock). A room whose credit is already earned stays in unlockedRooms,
+    # untouched. Runs only on a full load (scenario_data present), pinned to the game show action (§10),
+    # never the narrow sync row, and before any auto-unlock that reads unlockedRooms.
+    #
+    # show is a read-only action that must not routinely pay a row lock. So this scans lock-free first
+    # (any_soft_locked_route_room?) and returns without a write for every game with nothing stuck (the
+    # common case). Only when a genuinely soft-locked stored game is found does it take its own row lock,
+    # re-check under it (a concurrent earn may have promoted the room meanwhile), demote and stamp
+    # routeRoomsMigrated once. The flag short-circuits later loads of a game that was migrated.
+    def migrate_soft_locked_route_rooms!
+      return unless player_state.is_a?(Hash)
+      return if player_state['routeRoomsMigrated']
+      return unless has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
+      return unless any_soft_locked_route_room?
+
+      # The lock-free scan derives and memoises serverCreditGlobals into player_state as a read-path
+      # side effect (as worn_global_names does); with_lock refuses a record with unpersisted changes,
+      # so discard that transient dirty state. with_lock reloads the row under the lock and re-derives
+      # it, so nothing is lost. show has no other pending player_state write at this point.
+      clear_attribute_change('player_state')
+
+      with_lock do
+        return if player_state['routeRoomsMigrated']
+
+        unlocked = player_state['unlockedRooms']
+        unlocked = [] unless unlocked.is_a?(Array)
+
+        split_gated_room_ids.each do |room_id|
+          next unless unlocked.include?(room_id)
+          gate = gate_for_connected_room(room_id)
+          next unless gate.is_a?(Hash)
+          credit = gate['creditOnPass']
+          next unless credit.is_a?(Hash)
+          next unless route_room_soft_locked?(credit)
+
+          unlocked.delete(room_id)
+          player_state['npcRouteRooms'] ||= []
+          player_state['npcRouteRooms'] << room_id unless player_state['npcRouteRooms'].include?(room_id)
+        end
+
+        player_state['unlockedRooms'] = unlocked
+        player_state['routeRoomsMigrated'] = true
+        save!
+      end
+    end
+
+    # Read-only (no lock, no write): true when a split gated room is in unlockedRooms and still
+    # soft-locked, so the migration has demotion work to do. The gate that keeps show lock-free.
+    def any_soft_locked_route_room?
+      unlocked = Array(player_state['unlockedRooms'])
+      split_gated_room_ids.any? do |room_id|
+        next false unless unlocked.include?(room_id)
+        gate = gate_for_connected_room(room_id)
+        credit = gate.is_a?(Hash) ? gate['creditOnPass'] : nil
+        credit.is_a?(Hash) && route_room_soft_locked?(credit)
+      end
+    end
+
+    # The connectedRoom id of every door whose gate has an openFor and splits (§3.1). Doors live in the
+    # adjacent room's doors array, so this walks all rooms. Used by the soft-lock migration (§10).
+    def split_gated_room_ids
+      return [] unless scenario_data.is_a?(Hash)
+      rooms = scenario_data['rooms']
+      return [] unless rooms.is_a?(Hash)
+
+      ids = []
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          next unless door.is_a?(Hash)
+          gate = door['gate']
+          next unless gate.is_a?(Hash) && gate['openFor'].present?
+          room_id = door['connectedRoom']
+          next if room_id.blank?
+          ids << room_id if gate_splits?(gate)
+        end
+      end
+      ids.uniq
+    end
+
+    # True when a split gated room is soft-locked: every creditOnPass global is still false/unset and
+    # every credited task is still incomplete, so the player had not earned the pass when the room was
+    # unlocked (§10). A single truthy credit global or completed credited task means the pass was earned,
+    # so the room is left in unlockedRooms.
+    def route_room_soft_locked?(credit)
+      globals = player_state['globalVariables']
+      globals = {} unless globals.is_a?(Hash)
+
+      credit.each_value do |block|
+        next unless block.is_a?(Hash)
+        set = block['setGlobal']
+        if set.is_a?(Hash)
+          set.each_key { |name| return false if globals[name.to_s] }
+        end
+        task_id = block['completeTask']
+        return false if task_id.present? && task_status(task_id) == 'completed'
+      end
+      true
+    end
+
     # Object management
     def unlock_object!(object_id)
       player_state['unlockedObjects'] ||= []

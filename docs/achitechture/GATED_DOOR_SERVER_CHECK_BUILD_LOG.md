@@ -286,6 +286,91 @@ branch of `complete_task!` returns `retryable`). No behavioural change for curre
 - No scenario edits, no lab `creditOnPass` (Chunk D); no validator rule, fixtures or live proof
   (Chunk E). The Chunk E validator owes the `requires`-only split-gate assertion (R2 MINOR 2, above).
 
+## Chunk D: scenario migration and lab edits (2026-11-13)
+
+Built on `955285782` (Chunks A, B, C landed). The lab `creditOnPass`, removal of the client credit
+writers and backstops, and the §10 soft-lock demotion. No validator rule, fixture or graph work
+(Chunk E).
+
+### Done
+
+Scenario (`scenarios/lab_physical_pentest/scenario.json.erb`):
+
+- The records door gate (`secure_area`, was `:1372`) gains `creditOnPass` with a `viaPass` block
+  (`setGlobal kp_badge_tailgated`, `completeTask tailgate_in`) and a `viaCredential` block
+  (`setGlobal kp_records_cloned`, `completeTask tailgate_in`), per §3.4.
+- Removed the two client credit writers (found by grep, not line number, as §6 says; they had drifted
+  to `:915` kp_badge_tailgated and `:932` kp_records_cloned) and the two `room_entered:secure_area`
+  `completeTask tailgate_in` backstops on `ruth_phone` (were `:728`, `:729`). Once `tailgate_in` is
+  `serverCompletedOnly` (Chunk C) those backstops could never complete the task. The removed JSON is
+  recorded in the worktree's `tmp/delete/lab_physical_pentest_client_credit_writers.removed.json5`
+  (gitignored), per the common rules. The stale ERB comments that described the removed mappings were
+  updated to point at the server credit instead.
+- Kept, per §6 and the load-bearing-oddities rule: Len's `len_never_fires` `unlockDoor: secure_area`
+  mapping (grants Len the server unlock permission), and the presentation mappings (`len_at_door`
+  door_gate cues, `player_on_floor`, `kp_tailgate_cue`, `kp_len_held_cue`). No other scenario touched.
+
+Model (`app/models/break_escape/game.rb`): the §10 soft-lock demotion.
+
+- `migrate_soft_locked_route_rooms!`: for a stored game saved before this work, move a split gated
+  room that sits in `unlockedRooms` with its `creditOnPass` globals all false/unset and its credited
+  task incomplete back into `npcRouteRooms`, so the earn check re-runs (viaPass on the currentRoom
+  sync, or viaCredential on an rfid unlock). An already-earned room is left in `unlockedRooms`. Stamps
+  `player_state['routeRoomsMigrated']` and runs once. `show` is a read-only action that must not
+  routinely take a row lock (`games_controller_test` asserts this), so the method scans lock-free
+  first (`any_soft_locked_route_room?`) and returns with no write when nothing is stuck; only a
+  genuinely soft-locked stored game pays its own `with_lock`. The lock-free scan memoises
+  `serverCreditGlobals` into `player_state` as a read-path side effect, so the dirty state is cleared
+  (`clear_attribute_change`) before `with_lock`, which refuses a dirty record.
+- Helpers `split_gated_room_ids`, `any_soft_locked_route_room?`, `route_room_soft_locked?`.
+
+Controller (`app/controllers/break_escape/games_controller.rb`): `show` calls
+`@game.migrate_soft_locked_route_rooms!` after `@mission` is set, before the sprite guard and before
+any room GET or sync, so a stored game is demoted before this request's auto-unlock. No
+`with_game_lock` wrapper (the model self-locks only when it has work), so `show` stays lock-free in
+the common case.
+
+### Tests
+
+- Rails, new `test/models/break_escape/lab_gated_migration_test.rb` (6 runs, 37 assertions) and
+  `test/controllers/break_escape/lab_gated_door_test.rb` (5 runs, 41 assertions), all green, both
+  against the REAL lab scenario file (Mission `lab_physical_pentest`, not a fixture). Covers plan
+  test 9 (demote a soft-locked room; leave an earned room; runs once; nothing-to-do stays lock-free)
+  and the honest-player rule (§5): both lab routes still complete `tailgate_in` and open `secure_area`
+  through the real endpoints (viaPass: `wear` + `unlock method:npc` + `sync currentRoom`; viaCredential:
+  `unlock method:rfid` with a cloned `cm_records_badge`), a wrong clone is refused, and a stored
+  soft-locked game is demoted on `show`, not re-added by `GET room`, and then finishes the honest run.
+- Node, new `test/js/lab-gated-credit-scan.test.mjs` (3 runs, green): no client eventMapping writes a
+  credit global or completes `tailgate_in`, and the gate declares `creditOnPass` for both routes.
+- Neighbours, all green: `gated_route_room_test`, `gated_door_credit_test`,
+  `gated_server_completed_task_test`, `enter_room_validation_test`, the three gated controller tests,
+  `lab_physical_pentest_content_test`, `game_test`, `games_controller_test` (228 runs, 2686
+  assertions in the combined batch); node `lab-physical-pentest-debrief` (9).
+
+### Validator
+
+`LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb scenarios/lab_physical_pentest/scenario.json.erb --no-graph`:
+0 errors, 6 warnings. Identical to the base commit's warnings; the only change is the `ruth_phone`
+`room_entered:hall` index pair shifting from (4, 5) to (2, 3) because the two backstops were removed
+from the head of that NPC's eventMappings. Graph regeneration is Chunk E, so `--no-graph`.
+
+### Checked: nothing else client-side completes tailgate_in
+
+Grepped ink, scenario eventMappings and engine JS for `tailgate_in`: no remaining client writer or
+completeTask (only the task definition, the gate's `creditOnPass`, updated comments and playtest/doc
+markdown). So an honest client no longer posts `tailgate_in` directly, which Chunk C's complete-side
+guard would now refuse.
+
+### Plan drift
+
+- The client credit writers had drifted from the plan's `:915`/`:932` to the same lines by coincidence
+  at `955285782`; the backstops were still at `:728`/`:729`. Found by grep per §6.
+- Plan §10 said the demotion "sets a routeRoomsMigrated flag so it runs once" run "in the game show
+  action". Implemented so `show` stays lock-free (its architectural rule): the flag is stamped (and a
+  row lock taken) only when an actual demotion fires. A game that never had a stuck room does not get
+  the flag and re-runs the cheap read-only scan on each show, which is idempotent. No behavioural
+  difference for a soft-locked game; it is demoted once and the flag short-circuits later loads.
+
 ## Chunk F: enter_room server validation (section 8)
 
 Branch `build/hard-tailgate-f`, built on `b1256d2be` (main merged in). Independent of Chunks A to E.
