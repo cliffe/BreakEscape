@@ -171,3 +171,35 @@ and leave the honest hi-vis player exposed to a hard refusal in the viaPass wind
 major 1 (assign and pin the object-path client retry; fix the "one handling path" claim) and the four
 minors (Case 3 wording and offline stranding; wrap the retryable re-sync; split test 11 across A/B;
 assert object-unlock re-post idempotency), then build.
+
+## Outcomes
+
+All findings verified against the code at the current tree and folded into the plan.
+
+- **Major 1 (object-unlock client retry).** Verified the two client systems are separate:
+  object/door unlocks funnel through `notifyServerUnlock` (`unlock-system.js:22-45`), whose
+  `apiClient.unlock` throws a 403 with the body on `error.body` (`api-client.js:47-57`), caught and
+  swallowed today at `unlock-system.js:39-41`; `enter_room` completions run in `objectives-manager.js`.
+  §3.6 now gives the object path its own retry in that catch: recognise a `room_not_reachable` retryable
+  body, await one `window.stateSync.sync()` wrapped so a rejecting sync still proceeds, re-post the
+  `apiClient.unlock` once (fires only on that reason-and-flag body, never for a door). The "two refusals
+  share one handling path" claim is replaced throughout (§3.6, §8.3) by "two handlers applying one rule
+  (one sync, one re-post, bounded)". Assigned to Chunk A, with four `unlock-system` object-retry node
+  tests (retry succeeds after promotion; forged attempt still refused after its one re-post; no spin; no
+  retry for other refusals or doors). Object-unlock re-post idempotency added as Rails test 11c.
+- **Minor 1 (offline).** Rather than reword Case 3, a bounded in-memory re-send queue of `enter_room`
+  completions is added (§8.3, Chunk F): a field on `ObjectivesManager`, keyed by task id (at most one
+  entry per `enter_room` task), never in `player_state` (SYNC SIZE RULE holds), re-sent on the browser
+  `online` event and on the next successful state sync, dropped on success or a non-retryable refusal.
+  Reload-while-offline is answered: the queue clears on reload, but the room persists in `unlockedRooms`
+  and the task reloads active, so the next crossing re-fires it via the `room_entered` event
+  (`objectives-manager.js:353`) -> `handleRoomEntered` (`:550`) -> `completeTask` (`:558`). Live-proof
+  Case 3 now drives real offline/online via Playwright `context.setOffline`, with no proof-driver
+  re-post.
+- **Minor 2 (wrap the re-sync).** §8.3 and §3.6 now state the retryable re-sync is wrapped so a
+  rejecting sync still proceeds to the one re-post; node tests added for a rejecting re-sync on both the
+  completion path and the object-unlock path.
+- **Minor 3 (test 11 split).** Rails test 11 is split: 11a (refusal while unpromoted) in Chunk A, 11b
+  (acceptance after promotion) in Chunk B, with the A->B build order noted in both chunks.
+- **Minor 4 (object-unlock idempotency).** Added as Rails test 11c in Chunk B: a re-posted object unlock
+  after promotion credits the `unlock_object` task once via `unlockedObjects` membership.

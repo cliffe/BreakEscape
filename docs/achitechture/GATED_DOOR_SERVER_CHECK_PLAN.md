@@ -382,13 +382,21 @@ in `unlockedRooms`. All of these paths run in the `unlock`/feedback flow on a fu
   (§3.3a), not on an `/unlock`, so an honest hi-vis player who enters `secure_area` and unlocks a
   container there within the same batch, before the promoting `currentRoom` sync lands, hits the
   valid-path `room_not_reachable` refusal. The server marks it **retryable** (`success: false`,
-  `reason: room_not_reachable`, `retryable: true`, `status: :forbidden`), and the client treats it the
-  same way it treats the `enter_room` retryable refusal (§8.3): it awaits one `window.stateSync.sync()`
-  (which promotes the room) and re-attempts, rather than surfacing a hard error to the player. In
-  practice the `currentRoom` sync precedes walking to an object by seconds, so the window is unlikely,
-  but the client owns the retry, and the two retryable refusals share one handling path. The
-  credential path has no such window: it promotes synchronously inside the `/unlock` door branch (§3.3b)
-  before any object unlock.
+  `reason: room_not_reachable`, `retryable: true`, `status: :forbidden`). The object-unlock path owns
+  its own retry, in its own client system. Every object unlock funnels through `notifyServerUnlock`
+  (`unlock-system.js:22-45`), whose `apiClient.unlock` POST throws on a 403 with the refusal body on
+  `error.body` (`api-client.js:47-57` sets `err.status` and `err.body`), caught today at
+  `unlock-system.js:39-41`. That catch recognises a `room_not_reachable` retryable body, awaits one
+  `window.stateSync.sync()` (which promotes the room via viaPass) **wrapped so a rejecting sync still
+  proceeds to the one re-post**, then re-posts the same `apiClient.unlock` once; on a successful re-post
+  it returns the server's answer and the unlock completes, so no hard error reaches the player in the
+  short pre-promotion window. The retry fires only on this reason-and-flag body, so every other refusal,
+  and every door unlock (`type === 'door'`, never gated by §3.6), is unchanged. This is the **same
+  rule** the `enter_room` completion follows in its own system (§8.3): one sync, one re-post, bounded,
+  then surface. The two refusals are handled in two different client systems (`unlock-system.js` for
+  the object unlock, `objectives-manager.js` for the completion); they do not share one code path, they
+  apply the one rule. The credential path has no such window: it promotes synchronously inside the
+  `/unlock` door branch (§3.3b) before any object unlock.
 
 Doors are unaffected: the gate is only on the object branch (`target_type != 'door'`). A door into a
 route room is the split itself (§3.5); its objects are what this gate holds. After promotion the room
@@ -598,13 +606,14 @@ completion with the pre-flush delayed, aborted and absent, not merely present.
 
 **The refusal is retryable, so a residual race never strands a task.** On the rare path where the
 durable membership is not yet visible to the completion (below), the server answers
-`{ success: false, error: 'Room not reached', retryable: true }`. The client treats a `retryable`
-refusal the way it treats the conclude-race warning and §3.6's `room_not_reachable`: it awaits a
-`window.stateSync.sync()` (flushing `currentRoom` and picking up the server's latest durable state)
-and re-posts the completion once; only a re-post that is still refused surfaces to the player. So a
-true forge (never unlocked, never slipped in) is refused and surfaced, while any honest ordering gap
-self-heals on the next sync. This mirrors §3.6's retryable `room_not_reachable` and keeps the two
-refusals consistent.
+`{ success: false, error: 'Room not reached', retryable: true }`. The client awaits one
+`window.stateSync.sync()` (flushing `currentRoom` and picking up the server's latest durable state),
+**wrapped so a rejecting sync still proceeds to the one re-post** (the re-sync is awaited for its
+ordering, never for its success, the same tolerance the pre-flush has), then re-posts the completion
+once; only a re-post that is still refused surfaces to the player. So a true forge (never unlocked,
+never slipped in) is refused and surfaced, while any honest ordering gap self-heals on the next sync.
+The object-unlock refusal (§3.6) applies the same rule in its own client system: one sync, one
+re-post, bounded. They are two handlers applying one rule, not one shared code path.
 
 **The NPC-route slip-in has a second durable write the pre-flush does not order.** For a route-room
 `enter_room` (`test_gate_tailgate`'s `enter_staff`), the durable membership is `npcRouteRooms`,
@@ -613,6 +622,40 @@ does not touch. Honest play still holds because the client gate only opens once 
 door, which means that route POST has already fired and `npcRouteRooms` is written before the avatar
 can pass; and if a tight race still loses it, the retryable refusal re-posts after the next sync. So
 the slip-in completes without a bespoke ordering step.
+
+**A bounded in-memory re-send queue for offline and network failures.** The retryable re-post above
+heals an ordering gap within one request. A longer failure, the network drops or
+`serverCompleteTaskWithRetry` exhausts its roughly 2.25s transient backoff
+(`objectives-manager.js:607-625`), reverts the task to active (`objectives-manager.js:725`), and today
+the completion re-fires only when the avatar next crosses the room boundary. To cover the
+offline-then-reconnect case, `ObjectivesManager` keeps a small re-send queue of `enter_room`
+completions that failed for a transient or network reason:
+
+- **In memory only, never in `player_state`.** The queue is a field on `ObjectivesManager`, so it is
+  never part of any sync payload and the SYNC SIZE RULE is untouched.
+- **Keyed by task id, so it cannot grow.** Each entry is keyed by the completion's task id; re-queuing a
+  task already present is a no-op, so the queue holds at most one entry per `enter_room` task in the
+  scenario (a handful), never one per attempt.
+- **Scoped to `enter_room`.** Only `enter_room` completions enter it; every other task keeps its
+  current behaviour and never queues.
+- **Drained on reconnect and on sync.** A `window.addEventListener('online', ...)` handler re-posts each
+  queued completion once; the next successful `window.stateSync.sync()` also drains it. An entry is
+  dropped on a successful completion or on a non-retryable refusal (a true forge, `retryable` absent),
+  so it never retries forever and a forge is never laundered by the queue.
+
+Because the completion reads durable `unlockedRooms`, a drained re-post succeeds whenever the player
+honestly reached the room, and `complete_task!`'s already-completed branch makes a duplicate a no-op, so
+draining can never double-credit.
+
+**Reload while offline.** The queue is memory-only, so a reload clears it. The room is still in
+`unlockedRooms` on the server (durable, monotonic), and the `enter_room` task reloads active (the
+offline failure left it active, `objectives-manager.js:725`). When the player next crosses into the
+room, the `room_entered` event (`objectives-manager.js:353`) calls `handleRoomEntered`
+(`objectives-manager.js:550`), which re-fires `completeTask` for the active `enter_room` task
+(`objectives-manager.js:558`); the completion reads the persisted `unlockedRooms` and passes. So
+reload-while-offline is covered by the existing on-entry re-fire, not by the queue, and the accepted
+low-stakes behaviour (a task may stay active until the player next crosses a room boundary) still
+holds.
 
 Why the pre-flush, not a server grace timer or deferred completion: it needs no per-task pending
 state on the server (a grace timer or a deferred-completion queue would add state that must expire
@@ -627,11 +670,14 @@ covered:
 - **Slow, retried or duplicated completion.** The check reads the durable lists and is idempotent;
   `complete_task!`'s already-completed branch makes a duplicate completion a no-op, so a retry or
   duplicate never double-credits.
-- **Offline then reconnect.** A completion POST cannot be sent while offline; on reconnect the queued
-  completion posts. `unlockedRooms` persisted across the gap, so the check passes.
-- **Reload mid-entry.** `unlockedRooms` is persisted; `currentRoom` is restored on reload. A
-  completion attempted after reload passes. (Room entry is low-stakes control flow, so a task left
-  active after reload until the player next crosses a room boundary is acceptable.)
+- **Offline then reconnect.** A completion POST cannot be sent while offline. The failed completion is
+  held in the bounded in-memory re-send queue (above), re-posted on the browser `online` event and on
+  the next successful state sync. `unlockedRooms` persisted across the gap, so the re-post passes.
+- **Reload mid-entry (including reload while offline).** `unlockedRooms` is persisted and the task
+  reloads active; `currentRoom` is restored on reload. A completion attempted after reload passes, and
+  if none is attempted the next crossing into the room re-fires it through `handleRoomEntered` (above).
+  (Room entry is low-stakes control flow, so a task left active after reload until the player next
+  crosses a room boundary is acceptable.)
 - **Room entered then left before the task posts.** `currentRoom` has moved on, but `unlockedRooms`
   still holds the target (monotonic), so the check passes. This is exactly why the union includes
   `unlockedRooms` and not only `currentRoom`.
@@ -822,13 +868,22 @@ Rails (`test/controllers/break_escape/`, `test/models/break_escape/`), one each:
    game with the credit already true is left in `unlockedRooms`, untouched.
 10. `GET room` on a route room (not migrated) leaves `unlockedRooms` unchanged (the auto-unlock
    guard, 3.2).
-11. **Object-action gate, refused then accepted (§3.6).** Seed `secure_area` in `npcRouteRooms` (route
-   run, not promoted) holding a locked container with a readable finding inside. `POST /unlock` on that
-   container with the right key held: refused (`status: :forbidden`, `reason: room_not_reachable`), not
-   in `unlockedObjects`, no contents in the answer, any `unlock_object` task incomplete. Then wear the
-   pass / promote `secure_area`, repeat: the container unlocks, contents are served, the task
-   completes. This is the un-promoted-with-the-right-code refusal and the post-promotion acceptance.
-   (Lab or `test_gate_tailgate` fixture.)
+11a. **Object-action gate, refused while unpromoted (§3.6, Chunk A).** Seed `secure_area` in
+   `npcRouteRooms` (route run, not promoted) holding a locked container with a readable finding inside.
+   `POST /unlock` on that container with the right key held: refused (`status: :forbidden`,
+   `reason: room_not_reachable`, `retryable: true`), not in `unlockedObjects`, no contents in the
+   answer, any `unlock_object` task incomplete. This is the un-promoted-with-the-right-code refusal, and
+   it stands on Chunk A alone (the room never promotes without the credit). (Lab or `test_gate_tailgate`
+   fixture.)
+11b. **Object-action gate, accepted after promotion (§3.6, Chunk B).** Continuing from 11a, wear the
+   pass / promote `secure_area` (viaPass on the `currentRoom` sync, or viaCredential on an rfid unlock):
+   the container unlocks, contents are served, and the `unlock_object` task completes. This half needs
+   Chunk B's promotion, so it lives in Chunk B and depends on Chunk A's gate (build order A then B).
+11c. **Object-unlock re-post is idempotent (§3.6, Chunk B).** With `secure_area` promoted, `POST /unlock`
+   the same container twice (modelling the object-path client re-post after the sync): the first unlocks
+   and completes the `unlock_object` task; the second reads `unlockedObjects` membership and is a no-op,
+   so the task credit and any credited global or counter is written once, not twice. **Guarantee:** the
+   post-promotion unlock is idempotent, so the §3.6 re-post cannot double-fire the object-task credit.
 12. **Feedback leaks gated (§3.6).** With a PIN cracker held and a pin-locked object in a route room, a
    wrong `POST /unlock method:pin`: no `feedback` pips in the answer while the room is in
    `npcRouteRooms`; after promotion the pips return. Same shape for the password case-mismatch hint, and
@@ -890,8 +945,33 @@ Add `objectives-manager` tests for the `enter_room` completion path:
 - **Retryable refusal re-syncs and re-posts once.** When the completion returns
   `{ success: false, retryable: true, error: 'Room not reached' }`, the client awaits one
   `stateSync.sync()` and re-posts; a second `retryable` refusal surfaces to the player (one alert, no
-  infinite loop). This exercises the §8.3 / §3.6 retry and would fail if `retryable` were treated as
-  a hard refusal (task stranded) or retried without bound.
+  infinite loop). This exercises the §8.3 retry and would fail if `retryable` were treated as a hard
+  refusal (task stranded) or retried without bound.
+- **Retryable refusal with a rejecting re-sync still re-posts once.** With `stateSync.sync()` stubbed to
+  reject, a `retryable` refusal still awaits the (rejecting) sync, swallows its rejection, and sends the
+  single re-post. Fails if the re-sync rejection propagated and swallowed the re-post (the honest
+  residual-race player would otherwise see the generic "Could not save" error).
+- **Offline re-send queue.** A transient or network failure of an `enter_room` completion queues the
+  task id in the in-memory queue; firing the `window` `online` event re-posts it once and it succeeds; a
+  following successful `stateSync.sync()` also drains it; a non-retryable refusal drops it without
+  re-posting; re-queuing the same task id does not grow the queue (at most one entry per task id).
+  Fails if the queue were unbounded, never drained, or drained a forge.
+
+Node (`bin/test-js`), the object-unlock retry (§3.6), in a `unlock-system` test file, exercising
+`notifyServerUnlock` with a stubbed `apiClient.unlock` and `window.stateSync.sync`:
+
+- **Object unlock retries on a `room_not_reachable` retryable body.** When `apiClient.unlock` throws a
+  403 whose `error.body` is `{ success: false, reason: 'room_not_reachable', retryable: true }`,
+  `notifyServerUnlock` awaits one `stateSync.sync()` and re-posts once; the second post (after
+  promotion) returns success, so the unlock completes and no denied outcome reaches the player.
+- **Forged object unlock stays refused after its one re-post.** When both the first and the re-posted
+  `apiClient.unlock` return the `room_not_reachable` refusal (the room never promotes), the client
+  re-posts exactly once and then surfaces the refusal; it does not loop. Fails if the retry spun or
+  never surfaced.
+- **Rejecting re-sync still re-posts the object unlock once.** With `stateSync.sync()` stubbed to reject,
+  the object-unlock retry swallows the rejection and still sends its single re-post.
+- **No retry for other refusals or doors.** A non-`room_not_reachable` refusal, or a `type === 'door'`
+  unlock, is not retried (returned as today), so unrelated unlock paths are untouched.
 
 Validator: run `LANG=C.UTF-8 /usr/bin/ruby3.2 scripts/validate_scenario.rb <file> --no-graph` on all
 four scenarios; regenerate and commit the lab's dungeon graph (the gated-door edge label changes).
@@ -921,10 +1001,13 @@ proves. Record game ids in the build log.
    change), post the completion with no prior `currentRoom` sync for the target. It completes.
    **Proves:** the durable `unlockedRooms` write, not the client pre-flush, is load-bearing; an old
    client is not refused.
-3. **Offline then reconnect with a queued completion.** Take the browser offline after entry so the
-   completion cannot be sent, queue it, then reconnect. On reconnect the queued completion posts and
-   completes. **Proves:** `unlockedRooms` persisted across the gap; reconnection timing does not
-   refuse an honest player.
+3. **Offline then reconnect, the client's own queue re-posts.** With the door `/unlock` already landed,
+   drive the honest player into the target room, then take the browser offline with Playwright's
+   `context.setOffline(true)` and fire the `enter_room` completion: it fails on the network, reverts to
+   active, and enters the in-memory re-send queue (§8.3). Then `context.setOffline(false)`, which fires
+   the browser `online` event. The client's own `online` handler re-posts the queued completion, with no
+   proof-driver re-post, and it completes. **Proves:** `unlockedRooms` persisted across the gap and the
+   client recovers by itself on reconnect; reconnection timing does not refuse an honest player.
 4. **Duplicated or retried completion.** Fire the `enter_room` completion twice (and let the client
    retry path re-post). Both report success, the task is completed once, and any credited global or
    counter is written once. **Proves:** idempotent completion over durable state; a retry or
@@ -940,9 +1023,15 @@ proves. Record game ids in the build log.
 - **Chunk A: server split and serve.** `npcRouteRooms` list; `gated_route_room?` and
   `split_gated_door?` helpers; the `unlock` action route-room branch (3.5); `GET room` and
   auto-unlock changes (3.2); `currentRoom` acceptance for route rooms (3.3a, acceptance only); the
-  object-action gate (§3.6): the valid-path controller guard on the `/unlock` object branch and the
+  object-action gate (§3.6): the valid-path controller guard on the `/unlock` object branch (rendering
+  `{ success: false, reason: room_not_reachable, retryable: true, status: :forbidden }`) and the
   `nil`/`false` returns in `pin_cracker_feedback`, `password_case_mismatch?` and `uid_only_refusal?`.
-  Rails tests 1, 6, 10, 11, 12, 13. No credit yet.
+  **The object-path client retry (§3.6):** in `notifyServerUnlock` (`unlock-system.js:22-45`, catch at
+  `:39-41`), recognise a `room_not_reachable` retryable `error.body`, await one `window.stateSync.sync()`
+  wrapped so a rejecting sync still proceeds, and re-post the `apiClient.unlock` once, returning the
+  re-post's answer on success and surfacing the refusal otherwise (fires only on that reason-and-flag
+  body, never for a door). Rails tests 1, 6, 10, 11a, 12, 13; the four `unlock-system` object-retry node
+  tests (§13). No credit yet.
 - **Chunk B: the credit, server-owned.** `creditOnPass` schema; `serverCreditGlobals` derivation and
   read-only union (3.4); `write_server_globals!` credit write; the `viaPass` check on `currentRoom`
   with the `scenario_data`-only load (fetch via `stored_scenario_data` once, only when a credit is
@@ -951,6 +1040,10 @@ proves. Record game ids in the build log.
   `rfid_lock_passes?` -> `rfid_requires_held?` (`game.rb:2545`, `2563`), merged on main: the credit
   is gated on that server possession result, never on the client-sent `card_ids` (the clone POST
   sends none). Wire the viaCredential credit to that result (3.3b, B1) and add Rails tests 3, 3b, 8.
+  **The object-action gate's acceptance path (§3.6)** needs promotion, so its acceptance and idempotency
+  tests land here: Rails tests 11b (container unlocks and the `unlock_object` task completes after
+  promotion) and 11c (the object-unlock re-post is idempotent, crediting the task once). Build order is
+  Chunk A then Chunk B: A builds the gate and the client retry, B promotes and proves acceptance.
 - **Chunk C: server-completed tasks.** `serverCompletedOnly` set; the `complete_task!` and
   `skip_task!` guards; the `trusted:` keyword (section 7). Rails tests 5, 5b, 5c.
 - **Chunk D: scenario migration and lab edits.** Add `creditOnPass` to the lab gate; remove the
@@ -964,8 +1057,14 @@ proves. Record game ids in the build log.
 - **Chunk F: `enter_room` server validation (§8).** `player_reached_room?`; the check and the
   `retryable` refusal in the `enter_room` branch of `complete_task!` (`game.rb:3745`); the
   `objectives-manager.js` pre-flush on the `enter_room` completion path and its handling of a
-  `retryable` refusal (re-sync and re-post once, then surface). Rails tests 14-21; the node pre-flush,
-  old-tab and retry tests; the five-case browser live proof under real network delays (section 13).
+  `retryable` refusal (one re-sync wrapped so a rejecting sync still proceeds, then one re-post, then
+  surface); the **bounded in-memory re-send queue** of failed `enter_room` completions (§8.3): a field
+  on `ObjectivesManager`, keyed by task id, fed by the transient/network failure paths
+  (`objectives-manager.js:719-731` and the exhausted `serverCompleteTaskWithRetry`), drained by a
+  `window` `online` listener and by the next successful `window.stateSync.sync()`, dropped on success or
+  a non-retryable refusal, never in `player_state`. Rails tests 14-21; the node pre-flush, old-tab,
+  retry, rejecting-re-sync and offline-queue tests; the five-case browser live proof under real network
+  delays (section 13), with Case 3 driving real offline and online via Playwright `context.setOffline`.
   Independent of Chunks A-E, so it can build in parallel.
 
 ## 15. Decisions (2026-11-13)
