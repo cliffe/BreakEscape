@@ -6,7 +6,7 @@ Sync: client display only. Nothing new in player_state; no sync changes.
 
 ## Checks (built first, failing on the old tree)
 
-- `test/js/minigame-pixel-art.test.mjs` (static, node): reads the CSS of the framework shell and the slice 7 minigames, and the minigames' own JS for inline styles (style strings, SVG attributes, Phaser text). Fails on a border or outline under 2px, a hard shadow 1px wide, border-radius without a clip-path in the same rule, a blurred box-shadow, text-shadow or drop-shadow, a smooth gradient, or a first font family that is not GNF, Press Start 2P, VT323 or a `--se-font-*` / `--ui-*font` variable. Hard-stop gradients (the CRT scanlines on framework buttons, the dashed legend lines) count as pixel art. Also pins the framework button hover to a hard ring. On the old tree: 14 of 29 tests failed (about 320 breaches). Now 29 of 29 pass.
+- `test/js/minigame-pixel-art.test.mjs` (static, node): reads the CSS of the framework shell and the slice 7 minigames, and the minigames' own JS for inline styles (style strings, SVG attributes, Phaser text). Fails on a border or outline under 2px, a hard shadow 1px wide, border-radius without a clip-path in the same rule, a blurred box-shadow, text-shadow or drop-shadow, a smooth gradient, or a first font family that is not GNF, Press Start 2P, VT323 or a `--se-font-*` / `--ui-*font` variable. Hard-stop gradients (the CRT scanlines on framework buttons, the dashed legend lines) count as pixel art. Also pins the framework button hover to a hard ring. On the old tree: 17 of 29 tests failed (about 320 breaches; the review's count, R1 n4). Now 29 of 29 pass.
 - `tools/playtest/pixel-style-sweep.mjs` (live, Playwright): opens each scene with `MinigameFramework.startMinigame` on a keyless server and checks the computed style of every visible element and its `::before` / `::after` inside the minigame window, with the same rules. `data-diegetic` on a page root limits the check inside it to fonts (no scene uses it yet). Default is the slice 7 list; `--all` reports every registered scene but still fails only on the slice 7 list. `--params file.json` takes real scenario params (used for the forensic data platform and network architecture, taken from sis03_cyber_insurance and test-network-architecture). `--shots` writes lossless webp shots per scene and size.
   - Old tree: all 14 slice 7 scenes failed. Now: "PASS: every in-scope scene meets the pixel-art rule".
 
@@ -37,3 +37,52 @@ Keyless headless server on :3340 from this worktree, setFPS(20) with fixed steps
 ## Handover
 
 Not needed: finished inside the budget.
+
+## R1 fixes
+
+Review: `UX_SLICE7_REVIEW_R1.md` (0 blockers, 3 majors, 5 minors, 5 nits). Commits 02d26249b, 645d23766, dfae28cb4, 10e87fe85, 959affc00 and the combination spacing commit after it.
+
+Sync: client display only. Nothing new in player_state; no sync changes.
+
+### Review findings
+
+- M1, fixed. VT323 is self-hosted: `assets/fonts/VT323/VT323-latin.woff2` and `VT323-latin-ext.woff2` from the @fontsource/vt323 5.3.0 npm package (tarball shasum checked against the registry), unmodified, with `OFL.txt` beside them; `@font-face` with the upstream unicode ranges in `fonts.css`. The Google Fonts `@import`s in `text-file-minigame.css` and `bond-visualiser.css` and the two `<link>`s the notes minigame added at load are gone. The sweep checks the face really loaded (`document.fonts` status, `document.fonts.check('16px VT323')` and glyph widths, 156px against 231px for the monospace fallback) and lists any request to a Google font host; `--offline` blocks those hosts. Before: 2 remote font requests; after: none, VT323 loaded with the hosts blocked.
+- M2, fixed. The sweep seeds each working state: pump charts global, NCSC gate global then BREAK SEAL pressed, BLE and Bluetooth devices added on the running scene (Bluetooth panel expanded), two biometric samples for the kit (panel expanded) and the reader. `--params` from `sis03_cyber_insurance` (forensic platform, NCSC brief) and `test-network-architecture`. Phaser scenes get a canvas check: game config (pixelArt or antialias off, roundPixels) and every Text object's face and size.
+- M3, fixed. Pump canvas: `pixelArt: true`, `roundPixels: true`; MAR values and the sub-header VT323 16px, labels and header Press Start 2P 8px, value column moved right to fit; screen lines, both prompts and the conflict texts 16px; gate text and `.ip-modal-prompt` 16px.
+- m1, fixed. Drop-shadow blur is parsed after the colour is stripped, as for box shadows.
+- m2, fixed. Pump dividers, SCADA grid, ticks, axes and series, network architecture zone outlines are 2px. The static test now flags `lineStyle(1`, `setStrokeStyle(1`, SVG `stroke-width` 1, `.style.border = '1px`, blurred `.style.boxShadow` and `setShadow` blur.
+- m3, fixed. The themed person-chat hover resets `box-shadow`; the three `#session-*-btn:hover` glows are hard 2px rings. The theme's `--ui-glow-filter` is left for the theme pass.
+- m4, fixed. PIN erase key reads DEL (both keypads; the pump's key value is now 'DEL' too). NCSC brief: envelope `icons/mail-new.png` at 4x, badge `npc-lock.png` and `mark-tick.png` at 1x, the warning and lightning glyphs dropped. Pump "Checked", SCADA ticked rack a solid 6px square. Also plain text for other symbol glyphs in slice scenes: BLE (TARGET, PAIRED, SAVE, Clear), kit and Bluetooth expand toggles (+ and -), SIEM section marks (>), SCADA (>, !), drug library and forensic platform ticks, network architecture warnings (!), reader result marks ([+], [~], [x]). The static test flags symbol glyphs in slice JS.
+- m5, fixed. VT323 is 16px or more in the drug library, SCADA and network architecture HTML; SCADA charts are drawn at the chart area's own pixel size, so axis labels are 16px on screen. The static test checks VT323 px sizes in the slice CSS. Left: the network diagram's node and line labels are SVG text in viewBox units (7 to 9); they need larger node boxes, so they are exempted in the test by name.
+- n1, fixed: the dead `.ip-prescription-panel` and `.ip-rx-*` rules are removed. Most other pump CSS classes (`.ip-pump-*`, `.ip-modal-*`, `.ip-key*`) have no users either; left.
+- n2, not changed (noise only).
+- n3, not done (unlikely cases).
+- n4, fixed above.
+- n5, fixed: italics in the slice CSS and the pump prescriber are upright.
+
+### The user's notes (Part B)
+
+- No Cancel beside the X. The shell (`base-minigame.js`) no longer draws Cancel by default: `static keepsCancelButton = true` opts back in, used by password (slice 2a owns it; listed for that round), lockpicking (its button can reset the pins), the notes reader (Continue) and person chat (End Conversation). `showCancel: true` in a scene's params no longer draws it. The `.minigame-controls` row stays for footer buttons (Add to Notepad) and hides when empty. Esc and the X close as before. SCADA's own [CLOSE] went too. This removes Cancel from the RFID copier as a side effect of the shell default (its files are untouched; slice 3a removes its opt-in). Tests that clicked `#minigame-cancel` now click `#minigame-close`.
+- X inside the frame. `static closeInsideFrame = true` places the X 4px inside the top-right of `closeAnchor()` (the game area, the pump canvas, the reader panel), on start, resize and frame resize. Opted in: the 14 slice scenes plus container, combination and cryptex. Scanner headers keep 40px clear for it. The audit script (`ui-rules-audit.mjs` from p-ux-audit) reports 0 x-on-frame on the 17 scenes at all three sizes.
+- Frame wraps content. Combination, cryptex and container windows scroll inside the frame and use tighter rows under 560px high; the reader panel scrolls inside its frame; the PIN plate wraps every key; SCADA's chart gives up height. Container at 915x412 (unlock-43) now wraps.
+- PIN back plate (unlock-47, unlock-56). Traced to d043ab9a1 (Cancel row into the column) and 36f0c92b0 (`min-height: 0` on the game area). The plate is full height again, `min-height: auto`, content centred with `safe center`, scrolling inside if needed; tighter keys under 700px high and the keypad beside the display and log on landscape phones. Kept pixel art.
+- Combination and cryptex (unlock-54, unlock-55) are separate minigames (`js/minigames/combination/`, `js/minigames/cryptex/`), not themes on PIN or password. Digits: Press Start 2P 48px; letters: VT323 64px; no synthetic bold (orchestrator rulings). Dials sit closer under 960px wide.
+- Text file (unlock-48): the X sits inside the window's title bar, top right.
+
+Per shot (after): unlock-43 container wraps, X inside; unlock-44 and unlock-53 password unchanged (slice 2a); unlock-47 PIN at 915x412 two columns, all inside the plate; unlock-48 X inside the title bar; unlock-52 container 800x600 no Cancel; unlock-54 combination new digits, all inside; unlock-55 cryptex new letters, all inside; unlock-56 PIN at 800x600 whole pad on the plate.
+
+### Proof
+
+Keyless headless server on :3342 from this worktree, setFPS(20) with fixed steps on, stopped afterwards. Game 2457 (test_seating, made with swap-scenario-game.rb). Shots: scratchpad `ux-shots/slice7-r1/`, 18 scenes at 1400x1000, 800x600 and 915x412, before (public/ from 71ad39fef) and after, review ids in the names. Sweep: before 14 of 14 in-scope scenes fail; after PASS with VT323 loaded offline. Tests: minigame-pixel-art 46 of 46; 165 test files that import a changed module, all pass after five were moved from Cancel to the X.
+
+### Left for other slices
+
+- Slice 2a: the password Cancel (`keepsCancelButton` on PasswordMinigame) and its ⌫ key.
+- Slice 3a: rfid-minigame.js still passes `showCancel: true`, now inert.
+- Slice 9 remainder (folded in, not finished in this budget): drop the 35 now-inert `showCancel: true` params; remove the `.minigame-controls-overlay` rules (`minigames-framework.css`) and `static controlsOverlay` (and rewrite `minigame-controls-layout.test.mjs`); X at 16px; `gameDisplay` Close; opt the remaining scenes (lockpicking, person chat, phone chat, notes Continue, consoles outside slice 7) into `closeInsideFrame` or decide their bottom buttons; ESD, SIEM, EHR retakes.
+- Audit leftovers: faux-bold and Press Start 2P off-grid sizes across the slice scenes (the audit counts 381 and 219); SIEM DISMISS is an alert action flagged as cancel-beside-x (false positive); the kit's collapsed panel overflows its frame when opened title-only.
+- Network diagram SVG labels (see m5); unused pump CSS.
+
+## Handover (R1)
+
+Stopped at the call budget. Done: everything above, committed. Open: the slice 9 remainder and audit leftovers listed above. Files touched: see the commits. Gotchas: `bin/test-js` with a file list is the quickest way to run importers; the audit script needs its playwright import pointed at this worktree's node_modules when run from the scratchpad.
